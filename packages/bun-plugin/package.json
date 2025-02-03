@@ -1,0 +1,60 @@
+{
+  "name": "bun-plugin-stx",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "A Bun plugin that allows for using Laravel Blade-like syntax.",
+  "author": "Chris Breuer <chris@stacksjs.org>",
+  "license": "MIT",
+  "homepage": "https://github.com/stacksjs/stx#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stacksjs/stx.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stacksjs/stx/issues"
+  },
+  "keywords": [
+    "blade",
+    "css",
+    "bun",
+    "stx",
+    "plugin",
+    "generation",
+    "typescript",
+    "stacks"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
+    },
+    "./*": {
+      "import": "./dist/*"
+    }
+  },
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "LICENSE.md",
+    "README.md",
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun --bun build.ts",
+    "lint": "bunx eslint .",
+    "lint:fix": "bunx eslint . --fix",
+    "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
+    "changelog": "bunx changelogen --output CHANGELOG.md",
+    "prepublishOnly": "bun run build",
+    "release": "bun run changelog && bunx bumpp package.json --all",
+    "test": "bun test",
+    "typecheck": "bun tsc --noEmit"
+  },
+  "dependencies": {
+    "@stacksjs/stx": "workspace:*"
+  }
+}
