@@ -1,0 +1,69 @@
+{
+  "name": "bun-plugin-blade",
+  "type": "module",
+  "version": "0.1.1",
+  "description": "A Bun plugin that allows for using blade along the Bun server.",
+  "author": "Chris Breuer <chris@stacksjs.org>",
+  "license": "MIT",
+  "homepage": "https://github.com/stacksjs/bun-plugin-blade#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stacksjs/bun-plugin-blade.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stacksjs/bun-plugin-blade/issues"
+  },
+  "keywords": [
+    "blade",
+    "css",
+    "bun",
+    "plugin",
+    "generation",
+    "typescript",
+    "stacks"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "import": "./dist/*"
+    }
+  },
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["LICENSE.md", "README.md", "dist"],
+  "scripts": {
+    "build": "bun build.ts",
+    "lint": "bunx eslint .",
+    "lint:fix": "bunx eslint . --fix",
+    "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
+    "changelog": "bunx changelogen --output CHANGELOG.md",
+    "prepublishOnly": "bun run build",
+    "release": "bun run changelog && bunx bumpp package.json --all",
+    "test": "bun test",
+    "typecheck": "bun tsc --noEmit"
+  },
+  "devDependencies": {
+    "@stacksjs/eslint-config": "^3.15.1-beta.4",
+    "@types/bun": "^1.2.2",
+    "@blade/core": "^65.4.3",
+    "bumpp": "^10.0.1",
+    "bun-plugin-dtsx": "^0.21.9",
+    "changelogen": "^0.5.7",
+    "lint-staged": "^15.4.3",
+    "simple-git-hooks": "^2.11.1",
+    "typescript": "^5.7.3"
+  },
+  "overrides": {
+    "@blade/core": "65.4.3",
+    "unconfig": "0.3.10"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "bun lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,ts}": "bunx eslint . --fix"
+  }
+}
