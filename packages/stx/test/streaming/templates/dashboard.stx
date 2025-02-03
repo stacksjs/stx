@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <style>
+    /* Base styles that load immediately with the shell */
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.5;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      background-color: #f5f7fa;
+    }
+    .dashboard {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      min-height: 100vh;
+    }
+    .sidebar {
+      background-color: #2c3e50;
+      color: white;
+      padding: 1rem;
+    }
+    .main-content {
+      padding: 1.5rem;
+    }
+    .loading {
+      opacity: 0.6;
+      position: relative;
+    }
+    .loading::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      animation: loading 1.5s infinite;
+    }
+    @keyframes loading {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    .panel {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+  <script>
+    // Data will be progressively injected by the server
+    export const title = "Loading Dashboard...";
+    // This is initial default data, but the server will pass in more data
+    // via the streaming sections
+  </script>
+</head>
+<body>
+  <div class="dashboard">
+    <div class="sidebar">
+      <h2>Admin Dashboard</h2>
+      <nav>
+        <ul>
+          <li><a href="/dashboard">Dashboard</a></li>
+          <li><a href="/users">Users</a></li>
+          <li><a href="/analytics">Analytics</a></li>
+          <li><a href="/settings">Settings</a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="main-content">
+      <h1>{{ title || "Dashboard" }}</h1>
+
+      <!-- @section:header -->
+      <header class="panel user-welcome">
+        <div class="user-info">
+          <img src="{{ user.avatar }}" alt="{{ user.name }}" class="user-avatar" />
+          <div>
+            <h2>Welcome, {{ user.name }}</h2>
+            <p>Role: {{ user.role }}</p>
+          </div>
+        </div>
+      </header>
+      <!-- @endsection:header -->
+
+      <!-- @section:stats -->
+      @island('stats-panel')
+        <div class="panel stats-panel">
+          <h3>Statistics</h3>
+          <div class="stats-grid">
+            @foreach (stats.items as stat)
+              <div class="stat-card">
+                <div class="stat-value">{{ stat.value }}</div>
+                <div class="stat-label">{{ stat.label }}</div>
+              </div>
+            @endforeach
+          </div>
+          <div class="chart-container">
+            <!-- Charts will be added by client-side hydration -->
+          </div>
+          <script props>
+            "chartType": "bar",
+            "height": 300,
+            "stats": stats
+          </script>
+        </div>
+      @endisland
+      <!-- @endsection:stats -->
+
+      <div class="dashboard-grid">
+        <!-- @section:activity -->
+        @island('activity-feed')
+          <div class="panel activity-feed">
+            <h3>Recent Activity</h3>
+            <ul class="activity-list">
+              @foreach (activity as item)
+                <li class="activity-item">
+                  <span class="activity-time">{{ item.time }}</span>
+                  <span class="activity-desc">{{ item.description }}</span>
+                  <span class="activity-user">{{ item.user }}</span>
+                </li>
+              @endforeach
+            </ul>
+            <button class="load-more hidden">Load more</button>
+            <script props>
+              "maxItems": 10,
+              "refreshInterval": 30000
+            </script>
+          </div>
+        @endisland
+        <!-- @endsection:activity -->
+
+        <!-- @section:notifications -->
+        @island('notification-panel')
+          <div class="panel notifications-panel">
+            <h3>Notifications</h3>
+            <ul class="notification-list">
+              @foreach (notifications as notification)
+                <li class="notification {{ notification.read ? 'read' : 'unread' }}" data-id="{{ notification.id }}">
+                  {{ notification.message }}
+                </li>
+              @endforeach
+            </ul>
+            <script props>
+              "realtime": true,
+              "autoRefresh": true
+            </script>
+          </div>
+        @endisland
+        <!-- @endsection:notifications -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Load client hydration code -->
+  <script type="module" src="/assets/js/dashboard.js"></script>
+</body>
+</html>

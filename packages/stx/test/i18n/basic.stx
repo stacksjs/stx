@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>STX i18n Test</title>
+</head>
+<body>
+  <h1>Translation Tests</h1>
+
+  <h2>Basic Translation</h2>
+  <p>@translate('welcome')</p>
+
+  <h2>Translation with Parameters</h2>
+  <p>@translate('greeting', { "name": "John" })</p>
+
+  <h2>Nested Translation</h2>
+  <p>@translate('nav.home')</p>
+
+  <h2>Translation with Content Fallback</h2>
+  <p>@translate('nonexistent')Fallback Content@endtranslate</p>
+
+  <h2>Filter Translation</h2>
+  <p>{{ 'welcome' | translate }}</p>
+  <p>{{ 'greeting' | translate({ "name": "Alice" }) }}</p>
+
+  <h2>Short Alias</h2>
+  <p>{{ 'welcome' | t }}</p>
+  <p>{{ 'greeting' | t({ "name": "Bob" }) }}</p>
+
+  <h2>German Translation</h2>
+  <div id="german-translations" data-lang="de">
+    <!-- These will be used by setting locale to de in config -->
+    <p>@translate('welcome')</p>
+    <p>@translate('greeting', { "name": "Hans" })</p>
+    <p>@translate('nav.about')</p>
+    <p>@translate('buttons.save')</p>
+  </div>
+</body>
+</html>

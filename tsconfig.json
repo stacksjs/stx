@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "target": "esnext",
+    "lib": ["esnext"],
+    "moduleDetection": "force",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "types": ["bun"],
+    "allowImportingTsExtensions": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "declaration": true,
+    "declarationMap": true,
+    "noEmit": true,
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedDeclarations": true,
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@stacksjs/stx": ["./packages/stx/src/index.ts"],
+      "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"],
+      "bun-plugin-stx/client": ["./packages/bun-plugin/src/client.ts"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx"]
+}
