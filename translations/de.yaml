@@ -1,0 +1,14 @@
+welcome: Willkommen bei STX
+greeting: Hallo, :name!
+nav:
+  home: Startseite
+  about: Über uns
+  contact: Kontakt
+buttons:
+  submit: Absenden
+  cancel: Abbrechen
+  save: Speichern
+errors:
+  required: Dieses Feld ist erforderlich
+  email: Bitte geben Sie eine gültige E-Mail-Adresse ein
+  minLength: Dieses Feld muss mindestens :length Zeichen lang sein

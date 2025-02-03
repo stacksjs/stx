@@ -1,0 +1,24 @@
+{
+  "name": "bun-queue-dashboard",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@unocss/reset": "^66.1.0-beta.13",
+    "d3": "7.9.0"
+  },
+  "devDependencies": {
+    "@iconify-json/carbon": "^1.2.8",
+    "@types/d3": "7.4.3",
+    "@unocss/preset-icons": "^66.1.0-beta.13",
+    "@unocss/preset-uno": "^66.1.0-beta.13",
+    "@unocss/preset-web-fonts": "^66.1.0-beta.13",
+    "@unocss/transformer-directives": "^66.1.0-beta.13",
+    "unocss": "^66.1.0-beta.13"
+  }
+}
