@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import { processBasicFormDirectives, processFormInputDirectives, processErrorDirective } from '../../src/forms'
+import { processBasicFormDirectives, processErrorDirective, processFormInputDirectives, processForms } from '../../src/forms'
 
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp')
@@ -38,7 +38,7 @@ describe('STX Form Directives', () => {
 
   it('should process @form directive with defaults', () => {
     const template = `@form()@endform`
-    const result = processFormInputDirectives(template, {})
+    const result = processForms(template, {}, '', {})
 
     expect(result).toContain('<form method="POST" action="">')
     expect(result).toContain('</form>')
@@ -46,7 +46,7 @@ describe('STX Form Directives', () => {
 
   it('should process @form directive with explicit method and action', () => {
     const template = `@form('GET', '/search')@endform`
-    const result = processFormInputDirectives(template, {})
+    const result = processForms(template, {}, '', {})
 
     expect(result).toContain('<form method="GET" action="/search">')
   })
@@ -54,7 +54,7 @@ describe('STX Form Directives', () => {
   it('should process @form directive with PUT method', () => {
     const template = `@form('PUT', '/update')@endform`
     const context = {}
-    const result = processFormInputDirectives(template, context)
+    const result = processForms(template, context, '', {})
 
     // Should use POST with method spoofing for PUT
     expect(result).toContain('<form method="POST" action="/update">')
@@ -63,7 +63,7 @@ describe('STX Form Directives', () => {
 
   it('should process @form directive with attributes', () => {
     const template = `@form('POST', '/submit', {class: 'form-class', id: 'form-id'})@endform`
-    const result = processFormInputDirectives(template, {})
+    const result = processForms(template, {}, '', {})
 
     expect(result).toContain('<form method="POST" action="/submit" class="form-class" id="form-id">')
   })
@@ -84,9 +84,9 @@ describe('STX Form Directives', () => {
 
   it('should process @input directive with attributes', () => {
     const template = `<form>@input('email', '', {type: 'email', placeholder: 'Enter email'})</form>`
-    const result = processFormInputDirectives(template, {})
+    const result = processForms(template, {}, '', {})
 
-    expect(result).toContain('<input type="email" name="email" value="" class="form-control" placeholder="Enter email">')
+    expect(result).toContain('<input type="email" name="email" value="" class="form-control"  placeholder="Enter email">')
   })
 
   it('should process @input directive with old value from context', () => {
@@ -216,8 +216,8 @@ describe('STX Form Directives', () => {
       errors: {
         email: 'Invalid email address',
         has: (field: string) => field === 'email',
-        get: (field: string) => field === 'email' ? 'Invalid email address' : ''
-      }
+        get: (field: string) => field === 'email' ? 'Invalid email address' : '',
+      },
     }
 
     const result = processErrorDirective(template, context)
@@ -237,8 +237,8 @@ describe('STX Form Directives', () => {
       errors: {
         email: 'Invalid email address',
         has: (field: string) => field === 'email',
-        first: (field: string) => field === 'email' ? 'Invalid email address' : ''
-      }
+        first: (field: string) => field === 'email' ? 'Invalid email address' : '',
+      },
     }
 
     const result = processErrorDirective(template, context)
@@ -272,8 +272,8 @@ describe('STX Form Directives', () => {
     const context = {
       errors: {
         email: 'Invalid email',
-        has: (field: string) => field === 'email'
-      }
+        has: (field: string) => field === 'email',
+      },
     }
 
     const result = processFormInputDirectives(template, context)

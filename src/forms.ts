@@ -82,10 +82,12 @@ export function processFormInputDirectives(template: string, context: Record<str
   let result = template
 
   // Process @form directive
-  // Fix regex backtracking issue by simplifying and making the pattern more specific
   result = result.replace(
-    /@form\(\s*(?:['"]([^'"]+)['"]\s*,\s*)?(?:['"]([^'"]+)['"]\s*,)?\s*(?:\{([^}]+)\})?\)/g,
-    (match, method = 'POST', action = '', attributes = '') => {
+    /@form\(\s*(?:(?:'([^']+)'|"([^"]+)")\s*)?(?:,\s*(?:'([^']+)'|"([^"]+)")?)?\s*(?:,\s*\{([^}]+)\}\s*)?\)/g,
+    (match, singleQuoteMethod, doubleQuoteMethod, singleQuoteAction, doubleQuoteAction, attributes = '') => {
+      const method = singleQuoteMethod || doubleQuoteMethod || 'POST'
+      const action = singleQuoteAction || doubleQuoteAction || ''
+
       const attrs = parseAttributes(attributes)
       const methodStr = method.toUpperCase()
       const htmlMethod = ['GET', 'POST'].includes(methodStr) ? methodStr : 'POST'
@@ -109,10 +111,13 @@ export function processFormInputDirectives(template: string, context: Record<str
 
   // Process @input directive
   result = result.replace(
-    /@input\(\s*['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"]\s*)?(?:,\s*\{([^}]+)\})?\)/g,
-    (match, name, value = '', attributes = '') => {
+    /@input\(\s*(?:'([^']+)'|"([^"]+)")\s*(?:,\s*(?:(?:'([^']*)'|"([^"]*)")\s*)?)?(?:,\s*\{([^}]+)\})?\s*\)/g,
+    (match, singleQuoteName, doubleQuoteName, singleQuoteValue, doubleQuoteValue, attributes = '') => {
+      const name = singleQuoteName || doubleQuoteName || ''
+      const value = singleQuoteValue || doubleQuoteValue || ''
+
       const attrs = parseAttributes(attributes)
-      const oldValue = getOldValue(name, context) || (value ? evaluateExpression(value, context) : '')
+      const oldValue = getOldValue(name, context) || (value || '')
 
       // Get type from attributes or default to text
       const typeMatch = attrs.match(/type=['"]([^'"]+)['"]/i)
@@ -408,32 +413,6 @@ function getOldValue(field: string, context: Record<string, any>): any {
 }
 
 /**
- * Helper function to evaluate a simple expression in the context
- */
-function evaluateExpression(expr: string, context: Record<string, any>): string {
-  try {
-    // Check if the expression is a string literal (surrounded by quotes)
-    if ((expr.startsWith('\'') && expr.endsWith('\''))
-      || (expr.startsWith('"') && expr.endsWith('"'))) {
-      // Return the string without quotes
-      return expr.substring(1, expr.length - 1)
-    }
-
-    // Simple expression evaluation
-    // eslint-disable-next-line no-new-func
-    const evalFn = new Function(...Object.keys(context), `
-      try { return ${expr.trim()}; } catch (e) { return ''; }
-    `)
-    const result = evalFn(...Object.values(context))
-    return result !== undefined && result !== null ? String(result) : ''
-  }
-  catch (error) {
-    console.error(`Error evaluating expression ${expr}:`, error)
-    return ''
-  }
-}
-
-/**
  * Helper function to parse attributes string to HTML attributes string
  */
 function parseAttributes(attributesStr: string): string {
@@ -441,13 +420,13 @@ function parseAttributes(attributesStr: string): string {
     return ''
 
   const attrs: string[] = []
-  const attrRegex = /([\w-]+)\s*:\s*(['"]?)([^,'"]+)\2/g
+  // Match key:value pairs with proper handling of quoted values and commas
+  const attrRegex = /([\w-]+)\s*:\s*(['"]?)([^,'"]*)\2(?:,|$)/g
 
-  // Fix the assignment in while statement
   let match: RegExpExecArray | null
   while ((match = attrRegex.exec(attributesStr)) !== null) {
     const [, name, , value] = match
-    attrs.push(`${name}="${value}"`)
+    attrs.push(`${name}="${value.trim()}"`)
   }
 
   return attrs.join(' ')
