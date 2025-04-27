@@ -9,6 +9,8 @@ import path from 'node:path'
 interface STXOptions {
   /** Path to partials directory, defaults to 'partials' in the same directory as the template */
   partialsDir?: string
+  /** Path to components directory, defaults to 'components' in the same directory as the template */
+  componentsDir?: string
   /** Enable debug mode for detailed error messages */
   debug?: boolean
 }
@@ -22,11 +24,14 @@ declare module 'bun' {
 
 const defaultOptions: STXOptions = {
   partialsDir: undefined,
+  componentsDir: undefined,
   debug: false,
 }
 
 // Cache for partials to avoid repeated file reads
 const partialsCache = new Map<string, string>()
+// Cache for components to avoid repeated file reads
+const componentsCache = new Map<string, string>()
 
 const plugin: BunPlugin = {
   name: 'bun-plugin-stx',
@@ -256,6 +261,16 @@ async function processDirectives(
     return sections[name] || defaultContent || ''
   })
 
+  // Component processing needs to happen first so that the component's directives
+  // can be processed with the right context
+  const componentsDir = options.componentsDir || path.join(path.dirname(filePath), 'components')
+
+  // First, process component directives
+  output = await processComponentDirectives(output, context, filePath, componentsDir, options)
+
+  // Then process custom tag components
+  output = await processCustomElements(output, context, filePath, componentsDir, options)
+
   // Process include and partial directives
   output = await processIncludes(output, context, filePath, options)
 
@@ -265,6 +280,379 @@ async function processDirectives(
   output = processExpressions(output, context, filePath)
 
   return output
+}
+
+/**
+ * Process @component directives
+ */
+async function processComponentDirectives(
+  template: string,
+  context: Record<string, any>,
+  filePath: string,
+  componentsDir: string,
+  options: STXOptions,
+): Promise<string> {
+  let output = template
+  const processedComponents = new Set<string>() // Prevent infinite recursion
+
+  // Find all component directives in the template
+  const componentRegex = /@component\s*\(['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g
+  let match
+
+  // eslint-disable-next-line no-cond-assign
+  while (match = componentRegex.exec(output)) {
+    const [fullMatch, componentPath, propsString] = match
+    let props = {}
+
+    // Parse props if provided
+    if (propsString) {
+      try {
+        // eslint-disable-next-line no-new-func
+        const propsFn = new Function(...Object.keys(context), `return ${propsString}`)
+        props = propsFn(...Object.values(context))
+      }
+      catch (error: any) {
+        output = output.replace(fullMatch, `[Error parsing component props: ${error.message}]`)
+        continue
+      }
+    }
+
+    // Process the component
+    const processedContent = await renderComponent(componentPath, props, '', componentsDir, context, filePath, options, processedComponents)
+
+    // Replace in the output
+    output = output.replace(fullMatch, processedContent)
+
+    // Reset regex index to start from the beginning
+    componentRegex.lastIndex = 0
+  }
+
+  return output
+}
+
+/**
+ * Process custom element components (both kebab-case and PascalCase)
+ */
+async function processCustomElements(
+  template: string,
+  context: Record<string, any>,
+  filePath: string,
+  componentsDir: string,
+  options: STXOptions,
+): Promise<string> {
+  let output = template
+  const processedComponents = new Set<string>() // Prevent infinite recursion
+
+  // First handle self-closing kebab-case components
+  const kebabSelfClosingRegex = /<([a-z][a-z0-9]*-[a-z0-9-]*)([^>]*?)\s*\/>/g
+  output = await processTagComponents(kebabSelfClosingRegex, output, false, true)
+
+  // Then handle kebab-case components with content
+  const kebabWithContentRegex = /<([a-z][a-z0-9]*-[a-z0-9-]*)([^>]*)>([\s\S]*?)<\/\1>/g
+  output = await processTagComponents(kebabWithContentRegex, output, false, false)
+
+  // More specific pattern for multiline indented PascalCase components
+  const pascalCaseMultilineRegex = /<([A-Z][a-zA-Z0-9]*)\s*\n([\s\S]*?)\/>/g
+  output = await processMultilineTagComponents(pascalCaseMultilineRegex, output, true, true)
+
+  // Special case for self-closing PascalCase components (one line)
+  const pascalCaseSelfClosingRegex = /<([A-Z][a-zA-Z0-9]*)([^>]*?)\s*\/>/g
+  output = await processTagComponents(pascalCaseSelfClosingRegex, output, true, true)
+
+  // Look for PascalCase components with all uppercase tag names first (more specific)
+  const pascalCaseAllCapsRegex = /<([A-Z][A-Z0-9]+)([^>]*)>([\s\S]*?)<\/\1>/g
+  output = await processTagComponents(pascalCaseAllCapsRegex, output, true, false)
+
+  // Then handle PascalCase components with content
+  const pascalCaseRegex = /<([A-Z][a-zA-Z0-9]*)([^>]*)>([\s\S]*?)<\/\1>/g
+  output = await processTagComponents(pascalCaseRegex, output, true, false)
+
+  return output
+
+  // Helper function specifically for multiline indented PascalCase components
+  async function processMultilineTagComponents(regex: RegExp, html: string, isPascalCase: boolean, _isSelfClosing: boolean): Promise<string> {
+    let result = html
+    let match
+
+    // eslint-disable-next-line no-cond-assign
+    while (match = regex.exec(result)) {
+      // Extract component name and attributes block
+      const fullMatch = match[0]
+      const tagName = match[1]
+      const attributesBlock = match[2] || ''
+
+      const matchIndex = match.index
+
+      // Convert the tag name to a component path
+      let componentPath
+      if (isPascalCase) {
+        // Convert PascalCase to kebab-case for the file path
+        componentPath = tagName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+      }
+      else {
+        componentPath = tagName
+      }
+
+      // Parse attributes from multiline format
+      const props: Record<string, any> = {}
+      const attrLines = attributesBlock.split('\n')
+
+      for (const line of attrLines) {
+        const trimmedLine = line.trim()
+        if (!trimmedLine)
+          continue
+
+        // Match attribute="value" pattern - more comprehensive pattern to capture quotes properly
+        const attrMatch = trimmedLine.match(/([^\s=]+)=["'](.+?)["']/)
+        if (attrMatch) {
+          const [, attrName, attrValue] = attrMatch
+
+          // Directly assign attribute value to props without evaluating
+          props[attrName] = attrValue
+        }
+      }
+
+      // Process the component
+      const processedContent = await renderComponent(
+        componentPath,
+        props,
+        '', // No content for self-closing tags
+        componentsDir,
+        context,
+        filePath,
+        options,
+        processedComponents,
+      )
+
+      // Replace the custom element with the processed component
+      result = result.substring(0, matchIndex) + processedContent + result.substring(matchIndex + fullMatch.length)
+
+      // Reset regex to avoid infinite loop
+      regex.lastIndex = 0
+    }
+
+    return result
+  }
+
+  // Helper function to process components by regex
+  async function processTagComponents(regex: RegExp, html: string, isPascalCase: boolean, isSelfClosing: boolean): Promise<string> {
+    let result = html
+    let match
+
+    // eslint-disable-next-line no-cond-assign
+    while (match = regex.exec(result)) {
+      // Extract match components based on regex pattern
+      const fullMatch = match[0]
+      const tagName = match[1]
+      const attributesStr = match[2] || ''
+      const content = isSelfClosing ? '' : match[3] || ''
+
+      const matchIndex = match.index
+
+      // Convert the tag name to a component path
+      let componentPath
+
+      if (isPascalCase) {
+        // Convert PascalCase to kebab-case for the file path
+        componentPath = tagName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+      }
+      else {
+        componentPath = tagName
+      }
+
+      // Parse attributes into props
+      const props: Record<string, any> = {}
+
+      if (attributesStr) {
+        // Match attributes in the format: prop="value" or :prop="value" or v-bind:prop="value"
+        const attrRegex = /(:|v-bind:)?([^\s=]+)(?:=["']([^"']*)["'])?/g
+        let attrMatch
+
+        // eslint-disable-next-line no-cond-assign
+        while (attrMatch = attrRegex.exec(attributesStr)) {
+          const [, bindPrefix, attrName, attrValue] = attrMatch
+
+          // Skip nodes, event handlers, and other non-prop attributes
+          if (attrName === 'class' || attrName.startsWith('on') || attrName === 'style' || attrName === 'id') {
+            props[attrName] = attrValue !== undefined ? attrValue : true
+            continue
+          }
+
+          if (bindPrefix) {
+            // Dynamic attribute with : or v-bind: prefix, evaluate the expression
+            try {
+              // eslint-disable-next-line no-new-func
+              const valueFn = new Function(...Object.keys(context), `return ${attrValue}`)
+              props[attrName] = valueFn(...Object.values(context))
+            }
+            catch (error) {
+              console.error(`Error evaluating binding for ${attrName}:`, error)
+              props[attrName] = `[Error evaluating: ${attrValue}]`
+            }
+          }
+          else {
+            // Static attribute
+            props[attrName] = attrValue !== undefined ? attrValue : true
+          }
+        }
+      }
+
+      // Check if this is a self-closing tag by looking for '/>' at the end of attributesStr
+      const isSelfClosingTag = fullMatch.trimEnd().endsWith('/>') || (isPascalCase && !fullMatch.includes('</'))
+
+      // Process the component with its slot content
+      const processedContent = await renderComponent(
+        componentPath,
+        props,
+        isSelfClosingTag ? '' : content.trim(),
+        componentsDir,
+        context,
+        filePath,
+        options,
+        processedComponents,
+      )
+
+      // Replace the custom element with the processed component
+      result = result.substring(0, matchIndex) + processedContent + result.substring(matchIndex + fullMatch.length)
+
+      // Reset regex to avoid infinite loop when replacement is shorter than original
+      regex.lastIndex = 0
+    }
+
+    return result
+  }
+}
+
+/**
+ * Shared function to render a component with props and slot content
+ */
+async function renderComponent(
+  componentPath: string,
+  props: Record<string, any>,
+  slotContent: string,
+  componentsDir: string,
+  parentContext: Record<string, any>,
+  parentFilePath: string,
+  options: STXOptions,
+  processedComponents = new Set<string>(),
+): Promise<string> {
+  if (processedComponents.has(componentPath)) {
+    // Avoid infinite recursion
+    return `[Circular component reference: ${componentPath}]`
+  }
+
+  processedComponents.add(componentPath)
+
+  try {
+    // Determine the actual file path
+    let componentFilePath = componentPath
+
+    // If it doesn't end with .stx, add the extension
+    if (!componentPath.endsWith('.stx')) {
+      componentFilePath = `${componentPath}.stx`
+    }
+
+    // If it's a relative path without ./ or ../, assume it's in the components directory
+    if (!componentFilePath.startsWith('./') && !componentFilePath.startsWith('../')) {
+      componentFilePath = path.join(componentsDir, componentFilePath)
+    }
+    else {
+      // Otherwise, resolve from the current template directory
+      componentFilePath = path.resolve(path.dirname(parentFilePath), componentFilePath)
+    }
+
+    // Check if the component is cached
+    let componentContent: string
+    if (componentsCache.has(componentFilePath)) {
+      componentContent = componentsCache.get(componentFilePath)!
+    }
+    else {
+      // Read the file
+      try {
+        componentContent = await Bun.file(componentFilePath).text()
+        // Cache for future use
+        componentsCache.set(componentFilePath, componentContent)
+      }
+      catch (error: any) {
+        return `[Error loading component: ${error.message}]`
+      }
+    }
+
+    // Create a new context with component props and slot content
+    const componentContext: Record<string, any> = {
+      ...parentContext,
+      ...props,
+      slot: slotContent,
+    }
+
+    // Extract any script content from the component
+    const scriptMatch = componentContent.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
+    const scriptContent = scriptMatch ? scriptMatch[1] : ''
+
+    if (scriptContent) {
+      await extractVariables(scriptContent, componentContext, componentFilePath)
+    }
+
+    // Remove script tags from the component template
+    let templateContent = componentContent
+    if (scriptMatch) {
+      templateContent = templateContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i, '')
+    }
+
+    // Find and replace any direct references to {{ text || slot }} with the actual value
+    if (slotContent && templateContent.includes('{{ text || slot }}')) {
+      templateContent = templateContent.replace(/\{\{\s*text\s*\|\|\s*slot\s*\}\}/g, slotContent)
+    }
+
+    // Handle HTML content in component props
+    for (const [key, value] of Object.entries(componentContext)) {
+      if (typeof value === 'string') {
+        // Check if the content looks like HTML (has tags)
+        if (
+          (value.includes('<') && value.includes('>'))
+          || value.includes('&lt;')
+          || value.includes('&quot;')
+        ) {
+          // If this is a content prop, we need to make sure it's not double-escaped
+          const unescaped = unescapeHtml(value)
+          componentContext[key] = unescaped
+        }
+      }
+    }
+
+    // First, process any nested components in this component
+    const componentOptions = {
+      ...options,
+      componentsDir: path.dirname(componentFilePath),
+    }
+
+    // Process the component content recursively with the new context
+    const result = await processDirectives(templateContent, componentContext, componentFilePath, componentOptions)
+
+    return result
+  }
+  catch (error: any) {
+    return `[Error processing component: ${error.message}]`
+  }
+  finally {
+    // Remove from processed set to allow future uses
+    processedComponents.delete(componentPath)
+  }
+}
+
+/**
+ * HTML unescape function to reverse escapeHtml
+ */
+function unescapeHtml(html: string): string {
+  if (!html)
+    return ''
+
+  return html
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, '\'')
+    .replace(/&amp;/g, '&')
 }
 
 /**
@@ -761,8 +1149,51 @@ function processExpressions(template: string, context: Record<string, any>, _fil
 
   // Process escaped template delimiters @{{ ... }} -> {{ ... }}
   output = output.replace(/@\{\{/g, '{{')
+
   // Also handle escaped @if, @foreach, etc. directives
   output = output.replace(/@@/g, '@')
+
+  // Process {!! raw expressions !!} (unescaped)
+  output = output.replace(/\{!!\s*([^!]+?)\s*!!\}/g, (_, expr) => {
+    try {
+      const trimmedExpr = expr.trim()
+
+      // eslint-disable-next-line no-new-func
+      const exprFn = new Function(...Object.keys(context), `
+        try {
+          return ${trimmedExpr};
+        } catch (e) {
+          if (e instanceof Error) {
+            return \`[Error evaluating raw HTML: \${e.message}]\`;
+          }
+          return \`[Error evaluating raw HTML: \${String(e)}]\`;
+        }
+      `)
+      const result = exprFn(...Object.values(context))
+
+      // Apply same conversion as regular expressions
+      if (result === null || result === undefined) {
+        return ''
+      }
+      else if (typeof result === 'number') {
+        // Convert numbers directly to string to avoid [object Object] issues
+        return String(result)
+      }
+      else if (typeof result === 'object') {
+        try {
+          return JSON.stringify(result)
+        }
+        catch {
+          return String(result)
+        }
+      }
+
+      return String(result)
+    }
+    catch (error: any) {
+      return `[Error: Could not evaluate raw expression: ${error.message || String(error)}]`
+    }
+  })
 
   // Process {{ expressions }} (escaped)
   output = output.replace(/\{\{([^}]+)\}\}/g, (_, expr) => {
@@ -1026,39 +1457,6 @@ function processExpressions(template: string, context: Record<string, any>, _fil
     }
     catch (error: any) {
       return `[Error: ${error instanceof Error ? error.message : String(error)}]`
-    }
-  })
-
-  // Process {!! raw expressions !!} (unescaped)
-  output = output.replace(/\{!!([^}]+)!!\}/g, (_, expr) => {
-    try {
-      const trimmedExpr = expr.trim()
-
-      // eslint-disable-next-line no-new-func
-      const exprFn = new Function(...Object.keys(context), `return ${trimmedExpr}`)
-      const result = exprFn(...Object.values(context))
-
-      // Apply same conversion as regular expressions
-      if (result === null || result === undefined) {
-        return ''
-      }
-      else if (typeof result === 'number') {
-        // Convert numbers directly to string to avoid [object Object] issues
-        return String(result)
-      }
-      else if (typeof result === 'object') {
-        try {
-          return JSON.stringify(result)
-        }
-        catch {
-          return String(result)
-        }
-      }
-
-      return String(result)
-    }
-    catch {
-      return `[Error: Could not evaluate raw expression: ${expr.trim()}]`
     }
   })
 
