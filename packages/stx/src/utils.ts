@@ -585,43 +585,6 @@ export function processFormDirectives(template: string, context: Record<string, 
 }
 
 /**
- * Process @error directive for form validation
- */
-export function processErrorDirective(template: string, context: Record<string, any>): string {
-  // Process @error('field') directives
-  return template.replace(/@error\(['"]([^'"]+)['"]\)([\s\S]*?)@enderror/g, (match, field, content) => {
-    try {
-      // Check if errors object exists and has the specified field
-      if (context.errors
-        && typeof context.errors === 'object'
-        && typeof context.errors.has === 'function'
-        && context.errors.has(field)) {
-        // Replace any expressions in the content with actual values
-        return content.replace(/\{\{([^}]+)\}\}/g, (_: string, expr: string) => {
-          try {
-            // Simple expression evaluation for error messages
-            if (expr.trim() === '$message' || expr.trim() === 'message') {
-              return context.errors.get(field)
-            }
-            return expr
-          }
-          catch {
-            return expr
-          }
-        })
-      }
-
-      // No error for this field, return empty
-      return ''
-    }
-    catch (error) {
-      console.error(`Error processing @error directive:`, error)
-      return match // Return unchanged if error
-    }
-  })
-}
-
-/**
  * Process @json directive to output JSON
  */
 export function processJsonDirective(template: string, context: Record<string, any>): string {

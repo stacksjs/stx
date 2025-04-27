@@ -503,62 +503,6 @@ async function processCustomElements(
 }
 
 /**
- * Process @form directives for forms
- */
-export function processFormDirectives(template: string, context: Record<string, any>, filePath: string = '', options: StxOptions = {}): string {
-  return processForms(template, context, filePath, options)
-}
-
-/**
- * Process @error directive for form validation
- */
-export function processErrorDirective(template: string, context: Record<string, any>): string {
-  // Process @error('field') directives
-  return template.replace(/@error\(['"]([^'"]+)['"]\)([\s\S]*?)@enderror/g, (match, field, content) => {
-    try {
-      // Check if errors object exists and has the specified field
-      if (context.errors
-        && typeof context.errors === 'object'
-        && typeof context.errors.has === 'function'
-        && context.errors.has(field)) {
-        // Replace any expressions in the content with actual values
-        return content.replace(/\{\{([^}]+)\}\}/g, (_: string, expr: string) => {
-          try {
-            // Simple expression evaluation for error messages
-            if (expr.trim() === '$message' || expr.trim() === 'message') {
-              return context.errors.get(field)
-            }
-
-            // Handle expressions with errors.first() call
-            if (expr.trim().includes('errors.first') || expr.trim().includes('$errors.first')) {
-              // Extract the message using the errors.first method
-              return context.errors.first(field)
-            }
-
-            // For other expressions, try to evaluate them
-            // eslint-disable-next-line no-new-func
-            const evalFn = new Function(...Object.keys(context), `
-              try { return ${expr.trim()}; } catch (e) { return '${expr.trim()}'; }
-            `)
-            return evalFn(...Object.values(context))
-          }
-          catch {
-            return expr
-          }
-        })
-      }
-
-      // No error for this field, return empty
-      return ''
-    }
-    catch (error) {
-      console.error(`Error processing @error directive:`, error)
-      return match // Return unchanged if error
-    }
-  })
-}
-
-/**
  * Process @json directive to output JSON
  */
 export function processJsonDirective(template: string, context: Record<string, any>): string {

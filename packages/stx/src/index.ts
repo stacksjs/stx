@@ -1,3 +1,4 @@
+import { plugin } from 'bun-plugin-stx'
 export * from './auth'
 export * from './caching'
 export * from './config'
@@ -25,3 +26,5 @@ export * from './utils'
 
 // Export web component functions for advanced usage
 export { buildWebComponents, webComponentDirectiveHandler } from './web-components'
+
+export default plugin

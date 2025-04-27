@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import { processBasicFormDirectives, processErrorDirective, processFormInputDirectives, processForms } from '../../packages/stx/src/forms'
+import { processBasicFormDirectives, processErrorDirective, processFormInputDirectives, processForms } from '../../src/forms'
 
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp')
@@ -297,7 +297,7 @@ describe('STX Markdown Support', () => {
 **Bold text**
 @endmarkdown</div>`
 
-    const processedContent = await import('../../packages/stx/src/markdown').then(module =>
+    const processedContent = await import('../../src/markdown').then(module =>
       module.processMarkdownDirectives(template, {}),
     )
 
@@ -314,7 +314,7 @@ Line 1
 Line 2
 @endmarkdown</div>`
 
-    const processedContent = await import('../../packages/stx/src/markdown').then(module =>
+    const processedContent = await import('../../src/markdown').then(module =>
       module.processMarkdownDirectives(template, {}),
     )
 
@@ -329,7 +329,7 @@ Line 2
 Unclosed code block
 @endmarkdown</div>`
 
-    const processedContent = await import('../../packages/stx/src/markdown').then(module =>
+    const processedContent = await import('../../src/markdown').then(module =>
       module.processMarkdownDirectives(template, {}),
     )
 
