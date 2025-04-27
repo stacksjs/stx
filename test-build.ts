@@ -1,6 +1,6 @@
 import { build } from 'bun'
 import process from 'node:process'
-import stxPlugin from './src/index'
+import stxPlugin from './packages/stx/src/index'
 
 async function runTestBuild() {
   // eslint-disable-next-line no-console

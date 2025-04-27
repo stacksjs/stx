@@ -21,6 +21,6 @@
     "skipDefaultLibCheck": true,
     "skipLibCheck": true
   },
-  "files": ["src/stx.d.ts"],
+  "files": ["packages/stx/stx.d.ts"],
   "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx"]
 }

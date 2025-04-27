@@ -1,4 +1,4 @@
-import type { StxOptions } from './src/types'
+import type { StxOptions } from './packages/stx/src/types'
 
 const config: StxOptions = {
   enabled: true,

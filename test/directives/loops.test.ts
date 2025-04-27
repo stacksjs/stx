@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import stxPlugin from '../../src/index'
+import stxPlugin from '../../packages/stx/src/index'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
 
 describe('STX Loop Directives', () => {

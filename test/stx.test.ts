@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import stxPlugin from '../src/index'
+import stxPlugin from '../packages/stx/src/index'
 
 const TEST_DIR = import.meta.dir
 const OUTPUT_DIR = path.join(TEST_DIR, 'out')

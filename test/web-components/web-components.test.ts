@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import { buildWebComponents } from '../../src/web-components'
+import { buildWebComponents } from '../../packages/stx/src/web-components'
 import { OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
 
 describe('STX Web Components', () => {
