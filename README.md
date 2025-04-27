@@ -1,4 +1,4 @@
-![Social Card of Bun Plugin blade](https://github.com/stacksjs/bun-plugin-blade/blob/main/.github/art/cover.jpg)
+![Social Card of Bun Plugin blade](https://github.com/stacksjs/bun-plugin-stx/blob/main/.github/art/cover.jpg)
 
 [![npm version][npm-version-src]][npm-version-href]
 [![GitHub Actions][github-actions-src]][github-actions-href]
@@ -8,7 +8,7 @@
 
 WIP 🚧
 
-# bun-plugin-blade
+# bun-plugin-stx
 
 > Blade is the simple, yet powerful templating engine provided with Stacks.
 
@@ -21,7 +21,7 @@ WIP 🚧
 ## Usage
 
 ```bash
-bun install -d bun-plugin-blade
+bun install -d bun-plugin-stx
 ```
 
 ### Bundler
@@ -31,8 +31,8 @@ You may now use the plugin now via `Bun.build`:
 ```ts
 // build.ts
 import type { UserConfig } from 'blade'
-import { plugin as blade } from 'bun-plugin-blade'
-// import blade from 'bun-plugin-blade'
+import { plugin as blade } from 'bun-plugin-stx'
+// import blade from 'bun-plugin-stx'
 
 Bun.build({
   entrypoints: ['./src/index.html'],
@@ -90,7 +90,7 @@ For this to work, though, you have to ensure that the plugin is defined in your 
 
 ```toml
 [serve.static]
-plugins = [ "bun-plugin-blade" ]
+plugins = [ "bun-plugin-stx" ]
 ```
 
 ## Testing
@@ -101,7 +101,7 @@ bun test
 
 ## Changelog
 
-Please see our [releases](https://github.com/stacksjs/bun-plugin-blade/releases) page for more information on what has changed recently.
+Please see our [releases](https://github.com/stacksjs/bun-plugin-stx/releases) page for more information on what has changed recently.
 
 ## Contributing
 
@@ -141,17 +141,17 @@ Many thanks to the following core technologies & people who have contributed to 
 
 ## License
 
-The MIT License (MIT). Please see [LICENSE](https://github.com/stacksjs/bun-plugin-blade/tree/main/LICENSE.md) for more information.
+The MIT License (MIT). Please see [LICENSE](https://github.com/stacksjs/bun-plugin-stx/tree/main/LICENSE.md) for more information.
 
 Made with 💙
 
 <!-- Badges -->
-[npm-version-src]: <https://img.shields.io/npm/v/bun-plugin-blade?style=flat-square>
-[npm-version-href]: <https://npmjs.com/package/bun-plugin-blade>
-[npm-downloads-src]: <https://img.shields.io/npm/dm/bun-plugin-blade?style=flat-square>
-[npm-downloads-href]: <https://npmjs.com/package/bun-plugin-blade>
-[github-actions-src]: <https://img.shields.io/github/actions/workflow/status/stacksjs/bun-plugin-blade/ci.yml?style=flat-square&branch=main>
-[github-actions-href]: <https://github.com/stacksjs/bun-plugin-blade/actions?query=workflow%3Aci>
+[npm-version-src]: <https://img.shields.io/npm/v/bun-plugin-stx?style=flat-square>
+[npm-version-href]: <https://npmjs.com/package/bun-plugin-stx>
+[npm-downloads-src]: <https://img.shields.io/npm/dm/bun-plugin-stx?style=flat-square>
+[npm-downloads-href]: <https://npmjs.com/package/bun-plugin-stx>
+[github-actions-src]: <https://img.shields.io/github/actions/workflow/status/stacksjs/bun-plugin-stx/ci.yml?style=flat-square&branch=main>
+[github-actions-href]: <https://github.com/stacksjs/bun-plugin-stx/actions?query=workflow%3Aci>
 
-<!-- [codecov-src]: https://img.shields.io/codecov/c/gh/stacksjs/bun-plugin-blade/main?style=flat-square
-[codecov-href]: https://codecov.io/gh/stacksjs/bun-plugin-blade -->
+<!-- [codecov-src]: https://img.shields.io/codecov/c/gh/stacksjs/bun-plugin-stx/main?style=flat-square
+[codecov-href]: https://codecov.io/gh/stacksjs/bun-plugin-stx -->

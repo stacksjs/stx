@@ -1,7 +1,7 @@
 import type { BunPlugin } from 'bun'
 
 const plugin: BunPlugin = {
-  name: 'bun-plugin-blade',
+  name: 'bun-plugin-stx',
   async setup(build) {
     build.onLoad({ filter: /\.html$/ }, async ({ path }) => {
       const html = await Bun.file(path).text()
@@ -12,6 +12,7 @@ const plugin: BunPlugin = {
 
       // Create execution context from script
       const sandbox = { module: { exports: {} } }
+      // eslint-disable-next-line no-new-func
       new Function('exports', scriptMatch?.[1] || '')(sandbox.module.exports)
       const context = { ...sandbox.module.exports }
 
@@ -25,6 +26,7 @@ const plugin: BunPlugin = {
         .replace(/@endif/g, '`}')
 
       // Evaluate template with context
+      // eslint-disable-next-line no-new-func
       const templateFn = new Function(...Object.keys(context), `return \`${jsTemplate}\`;`)
       const output = templateFn(...Object.values(context))
 
