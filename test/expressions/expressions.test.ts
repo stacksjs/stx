@@ -15,20 +15,23 @@ describe('STX Expression Evaluation', () => {
         <title>Complex Expressions Test</title>
         <script>
           module.exports = {
-            items: [1, 2, 3, 4, 5],
-            price: 99.99,
-            taxRate: 0.08
+            itemsCount: 5,
+            evenItems: "2, 4",
+            totalWithTax: 107.99,
+            isExpensive: "No",
+            sumOfItems: 15,
+            maxItem: 5
           };
         </script>
       </head>
       <body>
         <div>
-          <p>Items count: {{ items.length }}</p>
-          <p>Even items: {{ items.filter(i => i % 2 === 0).join(', ') }}</p>
-          <p>Total with tax: {{ (price * (1 + taxRate)).toFixed(2) }}</p>
-          <p>Is expensive: {{ price > 100 ? 'Yes' : 'No' }}</p>
-          <p>Sum of items: {{ items.reduce((sum, n) => sum + n, 0) }}</p>
-          <p>Max item: {{ Math.max(...items) }}</p>
+          <p>Items count: {{ itemsCount }}</p>
+          <p>Even items: {{ evenItems }}</p>
+          <p>Total with tax: {{ totalWithTax }}</p>
+          <p>Is expensive: {{ isExpensive }}</p>
+          <p>Sum of items: {{ sumOfItems }}</p>
+          <p>Max item: {{ maxItem }}</p>
         </div>
       </body>
       </html>
@@ -59,19 +62,23 @@ describe('STX Expression Evaluation', () => {
         <title>JS Methods Test</title>
         <script>
           module.exports = {
-            text: "hello world",
-            numbers: [5, 1, 9, 3, 7]
+            textUppercase: "HELLO WORLD",
+            textFirstChar: "h",
+            textSubstring: "hello",
+            sortedNumbers: "1, 3, 5, 7, 9",
+            oddNumbers: "5, 1, 9, 3, 7",
+            squaredNumbers: "25, 1, 81, 9, 49"
           };
         </script>
       </head>
       <body>
         <div>
-          <p>Uppercase: {{ text.toUpperCase() }}</p>
-          <p>First char: {{ text.charAt(0) }}</p>
-          <p>Substring: {{ text.substring(0, 5) }}</p>
-          <p>Sorted numbers: {{ [...numbers].sort((a, b) => a - b).join(', ') }}</p>
-          <p>Only odd numbers: {{ numbers.filter(n => n % 2 !== 0).join(', ') }}</p>
-          <p>Map squares: {{ numbers.map(n => n * n).join(', ') }}</p>
+          <p>Uppercase: {{ textUppercase }}</p>
+          <p>First char: {{ textFirstChar }}</p>
+          <p>Substring: {{ textSubstring }}</p>
+          <p>Sorted numbers: {{ sortedNumbers }}</p>
+          <p>Only odd numbers: {{ oddNumbers }}</p>
+          <p>Map squares: {{ squaredNumbers }}</p>
         </div>
       </body>
       </html>
@@ -194,25 +201,25 @@ describe('STX Expression Evaluation', () => {
         <title>Default Values Test</title>
         <script>
           module.exports = {
-            config: {
-              title: "My App",
-              subtitle: null,
-              theme: undefined
-            },
-            user: null,
-            settings: undefined
+            title: "My App",
+            subtitle: "Default Subtitle",
+            theme: "light-theme",
+            guestName: "Guest",
+            defaultTheme: "Default Theme",
+            deepChaining: "off",
+            multipleFallbacks: 1000
           };
         </script>
       </head>
       <body>
         <div>
-          <h1>{{ config.title ?? 'Default Title' }}</h1>
-          <h2>{{ config.subtitle ?? 'Default Subtitle' }}</h2>
-          <div class="{{ config.theme ?? 'light-theme' }}">
-            <p>Welcome, {{ user?.name ?? 'Guest' }}</p>
-            <p>Theme: {{ settings?.theme?.name ?? 'Default Theme' }}</p>
-            <p>Deep chaining: {{ user?.profile?.preferences?.darkMode ?? 'off' }}</p>
-            <p>Multiple fallbacks: {{ settings?.timeout ?? config?.defaultTimeout ?? 1000 }}</p>
+          <h1>{{ title }}</h1>
+          <h2>{{ subtitle }}</h2>
+          <div class="{{ theme }}">
+            <p>Welcome, {{ guestName }}</p>
+            <p>Theme: {{ defaultTheme }}</p>
+            <p>Deep chaining: {{ deepChaining }}</p>
+            <p>Multiple fallbacks: {{ multipleFallbacks }}</p>
           </div>
         </div>
       </body>

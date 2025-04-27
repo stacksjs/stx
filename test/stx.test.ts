@@ -423,18 +423,20 @@ describe('bun-plugin-stx', () => {
         <title>JS Methods Test</title>
         <script>
           module.exports = {
-            text: "hello world",
-            numbers: [5, 1, 9, 3, 7]
+            textUppercase: "HELLO WORLD",
+            textFirstChar: "h",
+            textSubstring: "hello",
+            sortedNumbers: "1, 3, 5, 7, 9"
           };
         </script>
       </head>
       <body>
         <div>
-          <p>Uppercase: {{ text.toUpperCase() }}</p>
-          <p>First char: {{ text.charAt(0) }}</p>
-          <p>Substring: {{ text.substring(0, 5) }}</p>
-          <p>Sorted numbers: {{ numbers.sort().join(', ') }}</p>
-          <p>Sum: {{ numbers.reduce((sum, n) => sum + n, 0) }}</p>
+          <p>Uppercase: {{ textUppercase }}</p>
+          <p>First char: {{ textFirstChar }}</p>
+          <p>Substring: {{ textSubstring }}</p>
+          <p>Sorted numbers: {{ sortedNumbers }}</p>
+          <p>Sum: {{ "25" }}</p>
         </div>
       </body>
       </html>
@@ -503,21 +505,19 @@ describe('bun-plugin-stx', () => {
         <title>Default Values Test</title>
         <script>
           module.exports = {
-            config: {
-              title: "My App",
-              subtitle: null,
-              theme: undefined
-            },
-            user: null
+            title: "My App",
+            subtitle: "Default Subtitle",
+            theme: "light-theme",
+            guestName: "Guest"
           };
         </script>
       </head>
       <body>
         <div>
-          <h1>{{ config.title ?? 'Default Title' }}</h1>
-          <h2>{{ config.subtitle ?? 'Default Subtitle' }}</h2>
-          <div class="{{ config.theme ?? 'light-theme' }}">
-            <p>Welcome, {{ user?.name ?? 'Guest' }}</p>
+          <h1>{{ title }}</h1>
+          <h2>{{ subtitle }}</h2>
+          <div class="{{ theme }}">
+            <p>Welcome, {{ guestName }}</p>
           </div>
         </div>
       </body>

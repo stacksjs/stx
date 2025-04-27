@@ -146,7 +146,7 @@ describe('STX Basic Variable Rendering', () => {
         <script>
           module.exports = {
             productName: "${productName}",
-            price: ${price}
+            price: "${price}"
           };
         </script>
       </head>
