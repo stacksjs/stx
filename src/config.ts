@@ -12,6 +12,14 @@ export const defaultConfig: StxConfig = {
   cacheVersion: '1.0.0',
   customDirectives: [],
   middleware: [],
+  i18n: {
+    defaultLocale: 'en',
+    locale: 'en',
+    translationsDir: 'translations',
+    format: 'yaml',
+    fallbackToKey: true,
+    cache: true,
+  },
 }
 
 // eslint-disable-next-line antfu/no-top-level-await

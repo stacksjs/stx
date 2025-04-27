@@ -50,6 +50,24 @@ export interface Middleware {
   description?: string
 }
 
+/**
+ * Internationalization (i18n) configuration
+ */
+export interface I18nConfig {
+  /** Default locale to use when translation is not found */
+  defaultLocale: string
+  /** Current locale */
+  locale: string
+  /** Path to directory containing translation files */
+  translationsDir: string
+  /** Format of translation files (json, yaml, yml, or js) */
+  format: 'json' | 'yaml' | 'yml' | 'js'
+  /** Whether to fallback to the key when translation is not found */
+  fallbackToKey: boolean
+  /** Cache translations in memory */
+  cache: boolean
+}
+
 export interface StxConfig {
   /** Enable STX plugin */
   enabled: boolean
@@ -69,6 +87,8 @@ export interface StxConfig {
   customDirectives?: CustomDirective[]
   /** Middleware for pre/post-processing templates */
   middleware?: Middleware[]
+  /** Internationalization (i18n) configuration */
+  i18n?: Partial<I18nConfig>
 }
 
 export type StxOptions = Partial<StxConfig>

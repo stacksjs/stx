@@ -9,6 +9,16 @@ import { createDetailedErrorMessage } from './utils'
  */
 export type FilterFunction = (value: any, ...args: any[]) => any
 
+// Global context for access in filters
+let globalContext: Record<string, any> = {}
+
+/**
+ * Set global context for filters
+ */
+export function setGlobalContext(context: Record<string, any>): void {
+  globalContext = context
+}
+
 export const defaultFilters: Record<string, FilterFunction> = {
   // String transformation filters
   uppercase: (value: any) => {
@@ -28,14 +38,21 @@ export const defaultFilters: Record<string, FilterFunction> = {
   number: (value: any, decimals: number = 0) => {
     if (value === undefined || value === null)
       return ''
-    return Number(value).toFixed(decimals)
+    try {
+      const numValue = Number(value)
+      return Number.isNaN(numValue) ? '' : numValue.toFixed(Number.parseInt(String(decimals), 10))
+    }
+    catch {
+      return ''
+    }
   },
 
   // Array filters
   join: (value: any, separator: string = ',') => {
     if (!Array.isArray(value))
       return ''
-    return value.join(separator)
+    // Join the array with the separator without escaping
+    return value.join(String(separator))
   },
 
   // Safety filters
@@ -43,6 +60,54 @@ export const defaultFilters: Record<string, FilterFunction> = {
     if (value === undefined || value === null)
       return ''
     return escapeHtml(String(value))
+  },
+
+  // Translation filter
+  translate: (value: any, params: Record<string, any> = {}) => {
+    // Access translations from the current context
+    const context = globalContext
+    if (!context || !context.__translations) {
+      return value
+    }
+
+    // Use the translation function
+    const translations = context.__translations
+    const fallbackToKey = context.__i18nConfig?.fallbackToKey ?? true
+
+    // Split the key by dots to access nested properties
+    const parts = String(value).split('.')
+    let translation = translations
+
+    // Traverse through the translations object
+    for (const part of parts) {
+      if (translation === undefined || translation === null) {
+        break
+      }
+      translation = translation[part]
+    }
+
+    // If translation not found, fallback to key if enabled
+    if (translation === undefined || translation === null) {
+      return fallbackToKey ? value : ''
+    }
+
+    // Replace parameters in the translation string
+    let result = String(translation)
+
+    // Replace :parameter style placeholders
+    Object.entries(params).forEach(([paramKey, paramValue]) => {
+      result = result.replace(
+        new RegExp(`:${paramKey}`, 'g'),
+        String(paramValue),
+      )
+    })
+
+    return result
+  },
+
+  // Short alias for translate
+  t: (value: any, params: Record<string, any> = {}) => {
+    return defaultFilters.translate(value, params)
   },
 }
 
@@ -62,6 +127,9 @@ export function escapeHtml(unsafe: string): string {
  * Process template expressions including variables, filters, and operations
  */
 export function processExpressions(template: string, context: Record<string, any>, filePath: string): string {
+  // Set the global context for access in filters
+  setGlobalContext(context)
+
   let output = template
 
   // Replace triple curly braces with unescaped expressions {{{ expr }}} - similar to {!! expr !!}
@@ -133,46 +201,114 @@ export function applyFilters(value: any, filterExpression: string, context: Reco
     return value
   }
 
-  // Split by pipe, but handle cases where pipes might be in strings
-  const filters = filterExpression.split('|').map(f => f.trim())
-
   // Process each filter in sequence
-  return filters.reduce((result, filterStr) => {
-    if (!filterStr)
-      return result
+  let result = value
+  let remainingExpression = filterExpression.trim()
 
-    // Handle filter arguments - split by colon but respect strings
-    const filterParts = filterStr.split(':').map(p => p.trim())
-    const filterName = filterParts[0]
-    const args = filterParts.slice(1)
+  // Process filters one by one to handle complex parameters like objects
+  while (remainingExpression.length > 0) {
+    // Find the next filter name
+    const filterMatch = remainingExpression.match(/^(\w+)/)
+    if (!filterMatch) {
+      // No valid filter name, skip this part
+      break
+    }
+
+    const filterName = filterMatch[1]
+    // Remove the filter name from the remaining expression
+    remainingExpression = remainingExpression.substring(filterName.length).trim()
 
     // Find the filter function
     const filterFn = defaultFilters[filterName]
-
     if (!filterFn) {
       throw new Error(`Filter not found: ${filterName}`)
     }
 
-    // Apply the filter with arguments
-    try {
-      // Parse arguments if needed
-      const parsedArgs = args.map((arg) => {
-        // Try to evaluate the argument as an expression
+    // Check if there are parameters (starting with parenthesis)
+    let params: any[] = []
+
+    // Special case for filter:param syntax (like number:2)
+    if (remainingExpression.startsWith(':')) {
+      const colonParamMatch = remainingExpression.match(/^:([^|\s]+)/)
+      if (colonParamMatch) {
+        const paramValue = colonParamMatch[1].trim()
         try {
-          return evaluateExpression(arg, context, true)
+          // Try to convert to number if possible
+          const numValue = Number(paramValue)
+          params = [Number.isNaN(numValue) ? paramValue : numValue]
         }
         catch {
-          // If fails, return the raw string
-          return arg
+          params = [paramValue] // Fallback to string
         }
-      })
 
-      return filterFn(result, ...parsedArgs)
+        // Update the remaining expression
+        remainingExpression = remainingExpression.substring(colonParamMatch[0].length).trim()
+      }
+    }
+    // Standard parenthesis parameters
+    else if (remainingExpression.startsWith('(')) {
+      // Find the matching closing parenthesis
+      let openParens = 1
+      let closeIndex = 1
+      while (openParens > 0 && closeIndex < remainingExpression.length) {
+        if (remainingExpression[closeIndex] === '(')
+          openParens++
+        if (remainingExpression[closeIndex] === ')')
+          openParens--
+        closeIndex++
+      }
+
+      if (openParens === 0) {
+        // We found a matching closing parenthesis
+        const paramsString = remainingExpression.substring(1, closeIndex - 1).trim()
+
+        // Parse the parameters
+        if (paramsString) {
+          try {
+            // Check if it's a simple JSON-like object
+            if (paramsString.startsWith('{') && paramsString.endsWith('}')) {
+              // Evaluate as an object
+              const paramObj = evaluateExpression(`(${paramsString})`, context, true)
+              params = [paramObj]
+            }
+            else {
+              // Split by commas and parse each parameter
+              params = paramsString.split(',').map((p) => {
+                const trimmed = p.trim()
+                return evaluateExpression(trimmed, context, true)
+              })
+            }
+          }
+          catch {
+            // If parsing fails, use the raw parameters
+            params = [paramsString]
+          }
+        }
+
+        // Remove the processed parameters from the remaining expression
+        remainingExpression = remainingExpression.substring(closeIndex).trim()
+      }
+    }
+
+    // Apply the filter with parameters
+    try {
+      result = filterFn(result, ...params)
     }
     catch (error: any) {
       throw new Error(`Error applying filter '${filterName}': ${error.message}`)
     }
-  }, value)
+
+    // If there's more to process, the next character should be a pipe
+    if (remainingExpression.startsWith('|')) {
+      remainingExpression = remainingExpression.substring(1).trim()
+    }
+    else {
+      // No more filters
+      break
+    }
+  }
+
+  return result
 }
 
 /**

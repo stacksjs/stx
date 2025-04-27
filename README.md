@@ -296,6 +296,105 @@ Output unescaped HTML content:
 {!! rawHtmlContent !!}
 ```
 
+### Internationalization (i18n)
+
+STX supports internationalization to help you build multilingual applications. Translation files are stored in YAML format (JSON also supported) and support nested keys and parameter replacements.
+
+#### Configuration
+
+Configure i18n in your build script:
+
+```js
+import stxPlugin from 'bun-plugin-stx'
+
+await build({
+  entrypoints: ['./templates/home.stx'],
+  outdir: './dist',
+  plugins: [stxPlugin],
+  stx: {
+    i18n: {
+      locale: 'en',               // Current locale
+      defaultLocale: 'en',        // Fallback locale
+      translationsDir: 'translations', // Directory containing translations
+      format: 'yaml',             // Format of translation files (yaml, yml, json, or js)
+      fallbackToKey: true,        // Use key as fallback when translation not found
+      cache: true                 // Cache translations in memory
+    }
+  }
+})
+```
+
+#### Translation Files
+
+Create translation files in your translationsDir:
+
+```yaml
+# translations/en.yaml
+welcome: Welcome to STX
+greeting: Hello, :name!
+nav:
+  home: Home
+  about: About
+  contact: Contact
+```
+
+```yaml
+# translations/de.yaml
+welcome: Willkommen bei STX
+greeting: Hallo, :name!
+nav:
+  home: Startseite
+  about: Über uns
+  contact: Kontakt
+```
+
+#### Using Translations
+
+STX provides multiple ways to use translations in your templates:
+
+1. **@translate Directive**
+
+   ```html
+   <!-- Basic translation -->
+   <p>@translate('welcome')</p>
+
+   <!-- With parameters -->
+   <p>@translate('greeting', { "name": "John" })</p>
+
+   <!-- Nested keys -->
+   <p>@translate('nav.home')</p>
+
+   <!-- With fallback content -->
+   <p>@translate('missing.key')Fallback Content@endtranslate</p>
+   ```
+
+2. **Filter Syntax**
+
+   ```html
+   <!-- Basic translation as filter -->
+   <p>{{ 'welcome' | translate }}</p>
+
+   <!-- With parameters -->
+   <p>{{ 'greeting' | translate({ "name": "Alice" }) }}</p>
+
+   <!-- Short alias -->
+   <p>{{ 'nav.home' | t }}</p>
+   ```
+
+Parameters in translations use the `:param` syntax, similar to Laravel:
+
+```yaml
+greeting: Hello, :name!
+items: You have :count items in your cart.
+```
+
+Then in your template:
+
+```html
+<p>@translate('greeting', { "name": "John" })</p>
+<p>@translate('items', { "count": 5 })</p>
+```
+
 ## TypeScript Support
 
 STX includes TypeScript declarations for importing .stx files. Make sure your `tsconfig.json` includes the necessary configuration:

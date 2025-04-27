@@ -4,6 +4,7 @@ import path from 'node:path'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
 import { processCustomDirectives } from './custom-directives'
 import { processExpressions } from './expressions'
+import { processTranslateDirective } from './i18n'
 import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
 import { processLoops } from './loops'
 import { runPostProcessingMiddleware, runPreProcessingMiddleware } from './middleware'
@@ -192,6 +193,9 @@ async function processOtherDirectives(
   // Process auth directives
   output = processAuthDirectives(output, context)
 
+  // Process @translate directives
+  output = await processTranslateDirective(output, context, filePath, options)
+
   // Process @json directive
   output = processJsonDirective(output, context)
 
@@ -204,14 +208,8 @@ async function processOtherDirectives(
   // Process @isset and @empty directives
   output = processIssetEmptyDirectives(output, context)
 
-  // Process @csrf, @method directives
-  output = processFormDirectives(output, context)
-
-  // Process @error directive
-  output = processErrorDirective(output, context)
-
   // Component processing needs to happen first so component directives can be processed with the right context
-  const componentsDir = options.componentsDir || path.join(path.dirname(filePath), 'components')
+  const componentsDir = path.resolve(path.dirname(filePath), options.componentsDir || 'components')
 
   // First, process component directives
   output = await processComponentDirectives(output, context, filePath, componentsDir, options, dependencies)
@@ -228,10 +226,17 @@ async function processOtherDirectives(
   // Process loop directives (@foreach, @for, @while)
   output = processLoops(output, context, filePath)
 
-  // Process expressions last to avoid interfering with other directives
+  // Process form directives
+  output = processFormDirectives(output, context)
+
+  // Process @error directive
+  output = processErrorDirective(output, context)
+
+  // Process expressions last so other directives have a chance
+  // to modify the output first
   output = processExpressions(output, context, filePath)
 
-  // Run post-processing middleware after all directives have been processed
+  // Run post-processing middleware after all directives
   output = await runPostProcessingMiddleware(output, context, filePath, options)
 
   return output

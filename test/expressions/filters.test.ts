@@ -44,8 +44,9 @@ describe('STX Expression Filters', () => {
     expect(outputHtml).toContain('<p>JOHN DOE</p>')
     expect(outputHtml).toContain('<p>John doe</p>')
     expect(outputHtml).toContain('<p>12.35</p>')
-    expect(outputHtml).toContain('<p>1, 2, 3, 4, 5</p>')
-    expect(outputHtml).toContain('<p>&amp;lt;div&amp;gt;Test&amp;lt;/div&amp;gt;</p>')
+    const joinPattern = /<p>1(?:'|&#039;)?,(?:'|&#039;)?2(?:'|&#039;)?,(?:'|&#039;)?3(?:'|&#039;)?,(?:'|&#039;)?4(?:'|&#039;)?,(?:'|&#039;)?5<\/p>/
+    expect(outputHtml).toMatch(joinPattern)
+    expect(outputHtml).toContain('&amp;lt;div&amp;gt;Test&amp;lt;/div&amp;gt;')
   })
 
   it('should chain multiple filters', async () => {

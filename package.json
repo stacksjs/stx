@@ -46,6 +46,9 @@
     "test": "bun test",
     "typecheck": "bun tsc --noEmit"
   },
+  "optionalDependencies": {
+    "yaml": "^2.3.4"
+  },
   "devDependencies": {
     "@stacksjs/eslint-config": "^4.10.2-beta.3",
     "@types/bun": "^1.2.10",

@@ -1,3 +1,15 @@
+## [Unreleased]
+
+### Added
+
+- Internationalization (i18n) support
+  - Added `@translate` directive for translation in templates
+  - Added translate and t filters for expression-based translations
+  - Support for nested translation keys
+  - Parameter replacement in translations with `:param` syntax
+  - Support for multiple locales with fallback
+  - Translation caching for improved performance
+  - YAML format support for translation files (with fallback to JSON)
 
 ## v0.1.0...main
 
@@ -13,7 +25,6 @@
 
 ## ...main
 
-
 ### 🏡 Chore
 
 - Initial commit ([6769fc2](https://github.com/stacksjs/bun-plugin-unocss/commit/6769fc2))
@@ -22,4 +33,3 @@
 ### ❤️ Contributors
 
 - Chris ([@chrisbbreuer](http://github.com/chrisbbreuer))
-
