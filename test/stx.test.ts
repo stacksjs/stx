@@ -492,7 +492,9 @@ describe('bun-plugin-stx', () => {
 
     expect(outputHtml).toContain('<p>Valid expression: 2</p>')
     expect(outputHtml).toContain('<p>Null check: No user</p>')
-    expect(outputHtml).toContain('[Error:')
+    expect(outputHtml).toContain('[Error evaluating:')
+    expect(outputHtml).toContain('nonExistentVar')
+    expect(outputHtml).toContain('methodThatDoesntExist')
   })
 
   // Test default value handling

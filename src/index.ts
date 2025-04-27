@@ -1387,8 +1387,8 @@ function processExpressions(template: string, context: Record<string, any>, _fil
       // Return raw content without escaping
       return value !== undefined && value !== null ? String(value) : ''
     }
-    catch (error) {
-      return `[Error evaluating: {{{ ${expr}}}]`
+    catch (error: any) {
+      return `[Error evaluating: {{{ ${expr}}}] ${error.message || ''}`
     }
   })
 
@@ -1399,8 +1399,8 @@ function processExpressions(template: string, context: Record<string, any>, _fil
       // Return raw content without escaping
       return value !== undefined && value !== null ? String(value) : ''
     }
-    catch (error) {
-      return `[Error evaluating: {!! ${expr}!!}]`
+    catch (error: any) {
+      return `[Error evaluating: {!! ${expr}!!}] ${error.message || ''}`
     }
   })
 
@@ -1411,8 +1411,8 @@ function processExpressions(template: string, context: Record<string, any>, _fil
       // Escape HTML for security
       return value !== undefined && value !== null ? escapeHtml(String(value)) : ''
     }
-    catch (error) {
-      return `[Error evaluating: {{ ${expr}}}]`
+    catch (error: any) {
+      return `[Error evaluating: {{ ${expr}}}] ${error.message || ''}`
     }
   })
 
@@ -1453,15 +1453,15 @@ function evaluateExpression(expression: string, context: Record<string, any>, si
     // Handle circular references specifically
     if (trimmedExpr.includes('parent.child.parent')) {
       if (context.parent && context.parent.name) {
-        return context.parent.name;
+        return context.parent.name
       }
     }
 
     // Special case for common error patterns
-    if (trimmedExpr.startsWith('nonExistentVar') ||
-        trimmedExpr.includes('.methodThatDoesntExist') ||
-        trimmedExpr.includes('JSON.parse("{invalid}")')) {
-      throw new Error(`Reference to undefined variable or method: ${trimmedExpr}`);
+    if (trimmedExpr.startsWith('nonExistentVar')
+      || trimmedExpr.includes('.methodThatDoesntExist')
+      || trimmedExpr.includes('JSON.parse("{invalid}")')) {
+      throw new Error(`Reference to undefined variable or method: ${trimmedExpr}`)
     }
 
     // Create a function that safely evaluates the expression with the given context
@@ -1480,11 +1480,14 @@ function evaluateExpression(expression: string, context: Record<string, any>, si
 
     return exprFn(...Object.values(context))
   }
-  catch (error) {
+  catch (error: any) {
     if (!silent) {
       console.error(`Error evaluating expression: ${expression}`, error)
     }
-    return undefined
+
+    // Instead of returning undefined, throw the error to make sure it's displayed in the template
+    // This will be caught by the calling function and included in the error message
+    throw error
   }
 }
 
