@@ -2,6 +2,7 @@ import type { StxConfig } from './types'
 import { resolve } from 'node:path'
 import { loadConfig } from 'bunfig'
 import { markdownDirectiveHandler } from './markdown'
+import { webComponentDirectiveHandler } from './web-components'
 
 export const defaultConfig: StxConfig = {
   enabled: true,
@@ -18,6 +19,12 @@ export const defaultConfig: StxConfig = {
       hasEndTag: true,
       description: 'Render markdown content to HTML',
     },
+    {
+      name: 'webcomponent',
+      handler: webComponentDirectiveHandler,
+      hasEndTag: false,
+      description: 'Include a web component in the template',
+    },
   ],
   middleware: [],
   i18n: {
@@ -27,6 +34,11 @@ export const defaultConfig: StxConfig = {
     format: 'yaml',
     fallbackToKey: true,
     cache: true,
+  },
+  webComponents: {
+    enabled: false,
+    outputDir: 'dist/web-components',
+    components: [],
   },
 }
 

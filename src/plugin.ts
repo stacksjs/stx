@@ -6,6 +6,7 @@ import { cacheTemplate, checkCache } from './caching'
 import { defaultConfig } from './config'
 import { processDirectives } from './process'
 import { extractVariables } from './utils'
+import { buildWebComponents } from './web-components'
 
 export const plugin: BunPlugin = {
   name: 'bun-plugin-stx',
@@ -14,6 +15,29 @@ export const plugin: BunPlugin = {
     const options: StxOptions = {
       ...defaultConfig,
       ...build.config?.stx,
+    }
+
+    // Track all dependencies for web component building
+    const allDependencies = new Set<string>()
+
+    // Get web components output path
+    const webComponentsPath = options.webComponents?.enabled
+      ? `./${path.relative(path.dirname(build.config?.outdir || 'dist'), options.webComponents.outputDir || 'dist/web-components')}`
+      : '/web-components'
+
+    // Build web components if enabled
+    const builtComponents: string[] = []
+    if (options.webComponents?.enabled) {
+      try {
+        const components = await buildWebComponents(options, allDependencies)
+        builtComponents.push(...components)
+        if (options.debug && components.length > 0) {
+          console.log(`Successfully built ${components.length} web components`)
+        }
+      }
+      catch (error) {
+        console.error('Failed to build web components:', error)
+      }
     }
 
     build.onLoad({ filter: /\.stx$/ }, async ({ path: filePath }) => {
@@ -47,6 +71,11 @@ export const plugin: BunPlugin = {
           // Add some useful globals
           __filename: filePath,
           __dirname: path.dirname(filePath),
+          // Add STX config info
+          __stx: {
+            webComponentsPath,
+            builtComponents,
+          },
         }
 
         // Execute script content to extract variables
@@ -57,6 +86,9 @@ export const plugin: BunPlugin = {
 
         // Process all directives
         output = await processDirectives(output, context, filePath, options, dependencies)
+
+        // Track dependencies for this file
+        dependencies.forEach(dep => allDependencies.add(dep))
 
         // Cache the processed output if caching is enabled
         if (options.cache && options.cachePath) {

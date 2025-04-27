@@ -68,6 +68,40 @@ export interface I18nConfig {
   cache: boolean
 }
 
+/**
+ * Web component definition
+ */
+export interface WebComponent {
+  /** Name of the web component class */
+  name: string
+  /** HTML tag to register (must include a hyphen) */
+  tag: string
+  /** Path to the STX component file to convert */
+  file: string
+  /** Optional element to extend (default: HTMLElement) */
+  extends?: string
+  /** Whether to use shadow DOM (default: true) */
+  shadowDOM?: boolean
+  /** Whether to use a template element (default: true) */
+  template?: boolean
+  /** Path to an external stylesheet to link */
+  styleSource?: string
+  /** List of attributes to observe */
+  attributes?: string[]
+}
+
+/**
+ * Web components configuration
+ */
+export interface WebComponentConfig {
+  /** Enable web component integration */
+  enabled: boolean
+  /** Directory to output web components */
+  outputDir: string
+  /** Web components to build */
+  components: WebComponent[]
+}
+
 export interface StxConfig {
   /** Enable STX plugin */
   enabled: boolean
@@ -89,6 +123,8 @@ export interface StxConfig {
   middleware?: Middleware[]
   /** Internationalization (i18n) configuration */
   i18n?: Partial<I18nConfig>
+  /** Web Components integration configuration */
+  webComponents?: Partial<WebComponentConfig>
 }
 
 export type StxOptions = Partial<StxConfig>

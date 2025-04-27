@@ -436,6 +436,107 @@ Then in your template:
 <p>@translate('items', { "count": 5 })</p>
 ```
 
+### Web Components Integration
+
+STX now provides seamless integration with Web Components, allowing you to automatically build and use custom elements from your STX components.
+
+#### Configuration
+
+Enable web component integration in your build configuration:
+
+```ts
+import { build } from 'bun'
+import stxPlugin from 'bun-plugin-stx'
+
+await build({
+  entrypoints: ['./templates/home.stx'],
+  outdir: './dist',
+  plugins: [stxPlugin],
+  config: {
+    stx: {
+      webComponents: {
+        enabled: true,
+        outputDir: 'dist/web-components',
+        components: [
+          {
+            name: 'MyButton', // Class name for the component
+            tag: 'my-button', // HTML tag name (must contain a hyphen)
+            file: 'components/button.stx', // Path to the STX component
+            attributes: ['type', 'text', 'disabled'] // Observed attributes
+          },
+          {
+            name: 'MyCard',
+            tag: 'my-card',
+            file: 'components/card.stx',
+            shadowDOM: true, // Use Shadow DOM (default: true)
+            template: true, // Use template element (default: true)
+            styleSource: 'styles/card.css', // Optional external stylesheet
+            attributes: ['title', 'footer']
+          }
+        ]
+      }
+    }
+  }
+})
+```
+
+#### Using Web Components in Templates
+
+Include web components in your templates with the `@webcomponent` directive:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Web Component Demo</title>
+
+  <!-- Include the web components -->
+  @webcomponent('my-button')
+  @webcomponent('my-card')
+</head>
+<body>
+  <h1>Web Components Demo</h1>
+
+  <!-- Use the custom elements -->
+  <my-button type="primary" text="Click Me"></my-button>
+
+  <my-card title="Card Title" footer="Card Footer">
+    This is the card content
+  </my-card>
+</body>
+</html>
+```
+
+#### Source STX Components
+
+The original STX components can be simple:
+
+```html
+<!-- components/button.stx -->
+<button class="btn {{ type ? 'btn-' + type : '' }}" {{ disabled ? 'disabled' : '' }}>
+  {{ text || slot }}
+</button>
+
+<!-- components/card.stx -->
+<div class="card">
+  <div class="card-header">{{ title }}</div>
+  <div class="card-body">
+    {{ slot }}
+  </div>
+  <div class="card-footer">{{ footer }}</div>
+</div>
+```
+
+#### Advanced Options
+
+Web components support several configuration options:
+
+- `shadowDOM`: Enable/disable Shadow DOM (default: true)
+- `template`: Use template element for better performance (default: true)
+- `extends`: Extend a specific HTML element class
+- `styleSource`: Path to external stylesheet
+- `attributes`: List of attributes to observe for changes
+
 ## TypeScript Support
 
 STX includes TypeScript declarations for importing .stx files. Make sure your `tsconfig.json` includes the necessary configuration:

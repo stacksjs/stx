@@ -13,4 +13,7 @@ export { createTranslateFilter, getTranslation, loadTranslation, processTranslat
 export { markdownDirectiveHandler, processMarkdownDirectives } from './markdown'
 
 // Export types for users
-export type { CustomDirective, I18nConfig, Middleware, StxConfig, StxOptions } from './types'
+export type { CustomDirective, I18nConfig, Middleware, StxConfig, StxOptions, WebComponent, WebComponentConfig } from './types'
+
+// Export web component functions for advanced usage
+export { buildWebComponents, webComponentDirectiveHandler } from './web-components'
