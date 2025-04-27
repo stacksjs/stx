@@ -36,8 +36,15 @@ const plugin: BunPlugin = {
           // This is a risky approach, but helps with simple variable extraction
           // eslint-disable-next-line no-new-func
           const directFn = new Function(`
-            // Execute script content directly
-            ${scriptContent}
+            // Execute script content directly but protect against module not defined
+            try {
+              ${scriptContent}
+            } catch (e) {
+              // Ignore module not defined errors
+              if (!e.toString().includes('module is not defined')) {
+                throw e;
+              }
+            }
 
             // Return all defined variables
             return {
@@ -57,8 +64,11 @@ const plugin: BunPlugin = {
             }
           })
         }
-        catch (error) {
-          console.warn('Could not extract variables directly:', error)
+        catch (error: any) {
+          // Suppress specific module errors
+          if (!error.toString().includes('module is not defined')) {
+            console.warn('Could not extract variables directly:', error)
+          }
         }
 
         // Process template
