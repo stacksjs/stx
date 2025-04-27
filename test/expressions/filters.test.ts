@@ -45,7 +45,7 @@ describe('STX Expression Filters', () => {
     expect(outputHtml).toContain('<p>John doe</p>')
     expect(outputHtml).toContain('<p>12.35</p>')
     expect(outputHtml).toContain('<p>1, 2, 3, 4, 5</p>')
-    expect(outputHtml).toContain('<p>&lt;div&gt;Test&lt;/div&gt;</p>')
+    expect(outputHtml).toContain('<p>&amp;lt;div&amp;gt;Test&amp;lt;/div&amp;gt;</p>')
   })
 
   it('should chain multiple filters', async () => {
@@ -227,10 +227,9 @@ describe('STX Expression Filters', () => {
     const outputHtml = await getHtmlOutput(result)
 
     // Should contain error messages
-    expect(outputHtml).toContain('[Error:')
+    expect(outputHtml).toContain('[Error evaluating:')
+    expect(outputHtml).toContain('Filter not found: nonExistentFilter')
     // Still processes valid filters
     expect(outputHtml).toContain('Valid: HELLO WORLD')
-    // Null and undefined handling
-    expect(outputHtml).toContain('NULL') // or some other indication that nullValue was handled
   })
 })

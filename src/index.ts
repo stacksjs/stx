@@ -248,6 +248,11 @@ async function processDirectives(
   // Process escaped @@ directives (convert @@ to @)
   output = output.replace(/@@/g, '@')
 
+  // Process escaped @{{ }} expressions before other directives
+  output = output.replace(/@\{\{([\s\S]*?)\}\}/g, (_, content) => {
+    return `{{ ${content} }}`
+  })
+
   // Store stacks for @push/@stack directives
   const stacks: Record<string, string[]> = {}
 
@@ -1235,124 +1240,44 @@ function processLoops(template: string, context: Record<string, any>, filePath: 
 }
 
 /**
- * Default filters implementation
+ * Add basic filter support to expressions
  */
 type FilterFunction = (value: any, ...args: any[]) => any
 
 const defaultFilters: Record<string, FilterFunction> = {
   // String transformation filters
   uppercase: (value: any) => {
-    // Special case for null to make tests pass
-    if (value === null)
-      return 'NULL'
-    return String(value ?? '').toUpperCase()
+    return value !== undefined && value !== null ? String(value).toUpperCase() : ''
   },
-  lowercase: (value: any) => String(value ?? '').toLowerCase(),
+  lowercase: (value: any) => {
+    return value !== undefined && value !== null ? String(value).toLowerCase() : ''
+  },
   capitalize: (value: any) => {
-    const str = String(value ?? '')
-    if (!str)
+    if (value === undefined || value === null)
       return ''
+    const str = String(value)
     return str.charAt(0).toUpperCase() + str.slice(1)
   },
 
-  // String manipulation filters
-  trim: (value: any) => String(value ?? '').trim(),
-  reverse: (value: any) => String(value ?? '').split('').reverse().join(''),
-  truncate: (value: any, length = 30, suffix = '...') => {
-    const str = String(value ?? '')
-    if (str.length <= length)
-      return str
-    return str.slice(0, length) + suffix
-  },
-  slice: (value: any, start = 0, end?: number) => String(value ?? '').slice(start, end),
-  replace: (value: any, search: string, replace: string) => {
-    const str = String(value ?? '')
-    // Handle cases where search or replace might be undefined
-    if (!search)
-      return str
-    return str.replace(new RegExp(String(search).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), replace || '')
-  },
-
   // Number filters
-  number: (value: any, decimals = 0) => {
-    const num = Number.parseFloat(value)
-    if (Number.isNaN(num))
-      return '0'
-    return num.toFixed(decimals)
+  number: (value: any, decimals: number = 0) => {
+    if (value === undefined || value === null)
+      return ''
+    return Number(value).toFixed(decimals)
   },
 
   // Array filters
-  join: (value: any, separator = ',') => {
+  join: (value: any, separator: string = ',') => {
     if (!Array.isArray(value))
       return ''
     return value.join(separator)
   },
-  map: (value: any, callback: string) => {
-    if (!Array.isArray(value))
-      return []
-    try {
-      // eslint-disable-next-line no-new-func
-      const mapFn = new Function('item', 'index', 'array', `return ${callback}`)
-      return value.map((item, index, array) => mapFn(item, index, array))
-    }
-    catch {
-      return []
-    }
-  },
-
-  // Object filters
-  keys: (value: any) => {
-    if (typeof value !== 'object' || value === null)
-      return []
-    return Object.keys(value)
-  },
-  values: (value: any) => {
-    if (typeof value !== 'object' || value === null)
-      return []
-    return Object.values(value)
-  },
 
   // Safety filters
   escape: (value: any) => {
-    if (value === null || value === undefined)
+    if (value === undefined || value === null)
       return ''
     return escapeHtml(String(value))
-  },
-  safe: (value: any) => value,
-
-  // Special handling for null/undefined
-  default: (value: any, defaultValue = '') => {
-    return value ?? defaultValue
-  },
-
-  // Format filters
-  formatDate: (value: any, format = 'yyyy-MM-dd') => {
-    if (!value)
-      return ''
-    try {
-      const date = new Date(value)
-      if (Number.isNaN(date.getTime()))
-        return '[Invalid date]'
-
-      // Simple formatting implementation
-      if (format === 'short') {
-        return date.toLocaleDateString()
-      }
-      else if (format === 'long') {
-        return date.toLocaleDateString(undefined, {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        })
-      }
-
-      // Return ISO string as fallback
-      return date.toISOString().split('T')[0]
-    }
-    catch {
-      return '[Date format error]'
-    }
   },
 }
 
@@ -1369,16 +1294,10 @@ function escapeHtml(unsafe: string): string {
 }
 
 /**
- * Process expressions ({{ }}, {!! !!})
+ * Process template expressions including variables, filters, and operations
  */
 function processExpressions(template: string, context: Record<string, any>, _filePath: string): string {
   let output = template
-
-  // Process escaped template delimiters @{{ ... }} -> {{ ... }}
-  // Need to handle this before other expressions
-  output = output.replace(/@\{\{([\s\S]*?)\}\}/g, (_, content) => {
-    return `{{ ${content.trim()} }}`
-  })
 
   // Replace triple curly braces with unescaped expressions {{{ expr }}} - similar to {!! expr !!}
   output = output.replace(/\{\{\{([\s\S]*?)\}\}\}/g, (_, expr) => {
@@ -1420,23 +1339,54 @@ function processExpressions(template: string, context: Record<string, any>, _fil
 }
 
 /**
- * Process @json directive to output JSON
+ * Apply filters to a value
  */
-function processJsonDirective(template: string, context: Record<string, any>): string {
-  // Handle @json(data) and @json(data, pretty) directives
-  return template.replace(/@json\(\s*([^,)]+)(?:\s*,\s*(true|false))?\s*\)/g, (match, dataPath, pretty) => {
+function applyFilters(value: any, filterExpression: string, context: Record<string, any>): any {
+  // No filters to apply
+  if (!filterExpression.trim()) {
+    return value
+  }
+
+  // Split by pipe, but handle cases where pipes might be in strings
+  const filters = filterExpression.split('|').map(f => f.trim())
+
+  // Process each filter in sequence
+  return filters.reduce((result, filterStr) => {
+    if (!filterStr)
+      return result
+
+    // Handle filter arguments - split by colon but respect strings
+    const filterParts = filterStr.split(':').map(p => p.trim())
+    const filterName = filterParts[0]
+    const args = filterParts.slice(1)
+
+    // Find the filter function
+    const filterFn = defaultFilters[filterName]
+
+    if (!filterFn) {
+      throw new Error(`Filter not found: ${filterName}`)
+    }
+
+    // Apply the filter with arguments
     try {
-      const data = evaluateExpression(dataPath.trim(), context)
-      if (pretty === 'true') {
-        return JSON.stringify(data, null, 2)
-      }
-      return JSON.stringify(data)
+      // Parse arguments if needed
+      const parsedArgs = args.map((arg) => {
+        // Try to evaluate the argument as an expression
+        try {
+          return evaluateExpression(arg, context, true)
+        }
+        catch (e) {
+          // If fails, return the raw string
+          return arg
+        }
+      })
+
+      return filterFn(result, ...parsedArgs)
     }
-    catch (error) {
-      console.error(`Error processing @json directive: ${error}`)
-      return match // Return unchanged if there's an error
+    catch (error: any) {
+      throw new Error(`Error applying filter '${filterName}': ${error.message}`)
     }
-  })
+  }, value)
 }
 
 /**
@@ -1454,6 +1404,28 @@ function evaluateExpression(expression: string, context: Record<string, any>, si
     if (trimmedExpr.includes('parent.child.parent')) {
       if (context.parent && context.parent.name) {
         return context.parent.name
+      }
+    }
+
+    // Check if expression contains a filter (pipe symbol)
+    const pipeIndex = trimmedExpr.indexOf('|')
+
+    if (pipeIndex > 0) {
+      // Split into expression and filters
+      const baseExpr = trimmedExpr.substring(0, pipeIndex).trim()
+      const filterExpr = trimmedExpr.substring(pipeIndex + 1).trim()
+
+      // Check for logical OR operator (||) which might be mistaken for a filter
+      if (trimmedExpr.includes('||')) {
+        // This is not a filter but a logical OR expression
+        // Fall through to normal evaluation
+      }
+      else {
+        // Evaluate the base expression
+        const baseValue = evaluateExpression(baseExpr, context, true)
+
+        // Apply filters to the result
+        return applyFilters(baseValue, filterExpr, context)
       }
     }
 
@@ -1489,6 +1461,26 @@ function evaluateExpression(expression: string, context: Record<string, any>, si
     // This will be caught by the calling function and included in the error message
     throw error
   }
+}
+
+/**
+ * Process @json directive to output JSON
+ */
+function processJsonDirective(template: string, context: Record<string, any>): string {
+  // Handle @json(data) and @json(data, pretty) directives
+  return template.replace(/@json\(\s*([^,)]+)(?:\s*,\s*(true|false))?\s*\)/g, (match, dataPath, pretty) => {
+    try {
+      const data = evaluateExpression(dataPath.trim(), context)
+      if (pretty === 'true') {
+        return JSON.stringify(data, null, 2)
+      }
+      return JSON.stringify(data)
+    }
+    catch (error) {
+      console.error(`Error processing @json directive: ${error}`)
+      return match // Return unchanged if there's an error
+    }
+  })
 }
 
 /**
