@@ -1,4 +1,5 @@
 import type { BunPlugin } from 'bun'
+import fs from 'node:fs'
 import path from 'node:path'
 
 /**
@@ -246,11 +247,27 @@ async function processDirectives(
 
   // Process sections and yields before includes
   const sections: Record<string, string> = {}
+  let layoutPath = ''
+
+  // Extract layout if used
+  const layoutMatch = output.match(/@extends\(\s*['"]([^'"]+)['"]\s*\)/)
+  if (layoutMatch) {
+    layoutPath = layoutMatch[1]
+    // Remove the @extends directive from the template
+    output = output.replace(/@extends\(\s*['"]([^'"]+)['"]\s*\)/, '')
+  }
 
   // Extract sections
-  output = output.replace(/@section\s*\(['"]([^'"]+)['"]\)([\s\S]*?)@endsection/g, (_, name, content) => {
+  output = output.replace(/@section\(\s*['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"]\s*)?\)([\s\S]*?)(?:@endsection|@show)/g, (match, name, value, content) => {
+    // If single line section with value
+    if (value) {
+      sections[name] = value
+      return ''
+    }
+
+    // Multi-line section
     sections[name] = content.trim()
-    return '' // Remove section definitions from the output
+    return ''
   })
 
   // Add sections to context
@@ -260,6 +277,28 @@ async function processDirectives(
   output = output.replace(/@yield\s*\(['"]([^'"]+)['"](?:,\s*['"]([^'"]+)['"])?\)/g, (_, name, defaultContent) => {
     return sections[name] || defaultContent || ''
   })
+
+  // Process @push, @stack and @prepend directives
+  output = processPushStackDirectives(output)
+
+  // Load and process the layout if one was specified
+  if (layoutPath) {
+    const layoutFullPath = await resolveTemplatePath(layoutPath, filePath, options)
+    if (layoutFullPath) {
+      let layoutContent = await Bun.file(layoutFullPath).text()
+
+      // Apply sections to yields in the layout
+      layoutContent = layoutContent.replace(/@yield\(\s*['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"]\s*)?\)/g, (match, sectionName, defaultContent) => {
+        if (sections[sectionName]) {
+          return sections[sectionName]
+        }
+        return defaultContent || ''
+      })
+
+      // Process all directives in the layout
+      output = await processDirectives(layoutContent, context, layoutFullPath, options)
+    }
+  }
 
   // Component processing needs to happen first so that the component's directives
   // can be processed with the right context
@@ -277,9 +316,135 @@ async function processDirectives(
   // Process regular directives
   output = processConditionals(output, context, filePath)
   output = processLoops(output, context, filePath)
+
+  // Process @error directive
+  output = processErrorDirective(output, context)
+
+  // Process form directives (@csrf, @method)
+  output = processFormDirectives(output, context)
+
+  // Process @isset and @empty directives
+  output = processIssetEmptyDirectives(output, context)
+
+  // Process @env directive
+  output = processEnvDirective(output, context)
+
+  // Process @once directive
+  output = processOnceDirective(output)
+
+  // Process JSON directive
+  output = processJsonDirective(output, context)
+
+  // Process expressions last to avoid interfering with other directives
   output = processExpressions(output, context, filePath)
 
   return output
+}
+
+/**
+ * Resolve a template path based on the current file path
+ */
+async function resolveTemplatePath(templatePath: string, currentFilePath: string, options: STXOptions): Promise<string | null> {
+  // Try relative to current file
+  const dirPath = path.dirname(currentFilePath)
+
+  // Handle common paths
+  // 1. Absolute path (starts with /)
+  if (templatePath.startsWith('/')) {
+    return path.join(process.cwd(), templatePath)
+  }
+
+  // 2. Direct path relative to current file
+  const directPath = path.join(dirPath, templatePath)
+  if (await fileExists(directPath)) {
+    return directPath
+  }
+
+  // 3. Add .stx extension if not present
+  if (!templatePath.endsWith('.stx')) {
+    const pathWithExt = `${directPath}.stx`
+    if (await fileExists(pathWithExt)) {
+      return pathWithExt
+    }
+  }
+
+  // 4. Try from project root or view directory if configured
+  const viewsPath = options.partialsDir || path.join(process.cwd(), 'views')
+  const fromRoot = path.join(viewsPath, templatePath)
+  if (await fileExists(fromRoot)) {
+    return fromRoot
+  }
+
+  // 5. With extension from project root
+  if (!templatePath.endsWith('.stx')) {
+    const fromRootWithExt = `${fromRoot}.stx`
+    if (await fileExists(fromRootWithExt)) {
+      return fromRootWithExt
+    }
+  }
+
+  console.warn(`Template not found: ${templatePath} (referenced from ${currentFilePath})`)
+  return null
+}
+
+/**
+ * Check if a file exists
+ */
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    const stat = await fs.promises.stat(filePath)
+    return stat.isFile()
+  }
+  catch (error) {
+    return false
+  }
+}
+
+/**
+ * Process @push, @stack, and @prepend directives
+ */
+function processPushStackDirectives(template: string): string {
+  // Store for stacks
+  const stacks: Record<string, string[]> = {}
+  let result = template
+
+  // Process @push directives
+  result = result.replace(/@push\(['"]([^'"]+)['"]\)([\s\S]*?)@endpush/g, (match, name, content) => {
+    if (!stacks[name]) {
+      stacks[name] = []
+    }
+
+    // Add content to the end of the stack
+    stacks[name].push(content)
+
+    // Remove the directive from the output
+    return ''
+  })
+
+  // Process @prepend directives
+  result = result.replace(/@prepend\(['"]([^'"]+)['"]\)([\s\S]*?)@endprepend/g, (match, name, content) => {
+    if (!stacks[name]) {
+      stacks[name] = []
+    }
+
+    // Add content to the beginning of the stack
+    stacks[name].unshift(content)
+
+    // Remove the directive from the output
+    return ''
+  })
+
+  // Replace @stack directives with their content
+  result = result.replace(/@stack\(['"]([^'"]+)['"]\)/g, (match, name) => {
+    if (stacks[name] && stacks[name].length > 0) {
+      return stacks[name].join('')
+    }
+
+    // Empty stack
+    return ''
+  })
+
+  return result
 }
 
 /**
@@ -1461,6 +1626,286 @@ function processExpressions(template: string, context: Record<string, any>, _fil
   })
 
   return output
+}
+
+/**
+ * Process @json directive to output JSON
+ */
+function processJsonDirective(template: string, context: Record<string, any>): string {
+  // Handle @json(data) and @json(data, pretty) directives
+  return template.replace(/@json\(\s*([^,)]+)(?:\s*,\s*(true|false))?\s*\)/g, (match, dataPath, pretty) => {
+    try {
+      const data = evaluateExpression(dataPath.trim(), context)
+      if (pretty === 'true') {
+        return JSON.stringify(data, null, 2)
+      }
+      return JSON.stringify(data)
+    }
+    catch (error) {
+      console.error(`Error processing @json directive: ${error}`)
+      return match // Return unchanged if there's an error
+    }
+  })
+}
+
+/**
+ * Evaluate an expression within the given context
+ */
+function evaluateExpression(expression: string, context: Record<string, any>): any {
+  try {
+    // Create a list of variable names and values for the Function constructor
+    const keys = Object.keys(context)
+    const values = keys.map(key => context[key])
+
+    // Create and execute a function that evaluates the expression in the context
+    const fn = new Function(...keys, `return ${expression};`)
+    return fn(...values)
+  }
+  catch (error) {
+    console.error(`Error evaluating expression "${expression}":`, error)
+    return undefined
+  }
+}
+
+/**
+ * Process @once directive blocks
+ */
+function processOnceDirective(template: string): string {
+  // Use an ordered map to keep track of the first occurrence of each content
+  const onceBlocks: Map<string, { content: string, index: number }> = new Map()
+
+  // Find all @once/@endonce blocks with their positions
+  const onceMatches: Array<{ match: string, content: string, start: number, end: number }> = []
+
+  const regex = /@once\s*([\s\S]*?)@endonce/g
+  let match
+  while ((match = regex.exec(template)) !== null) {
+    const fullMatch = match[0]
+    const content = match[1]
+    const start = match.index
+    const end = start + fullMatch.length
+
+    onceMatches.push({
+      match: fullMatch,
+      content: content.trim(), // Normalize content
+      start,
+      end,
+    })
+  }
+
+  // Keep track of which blocks to keep (first occurrence) and which to remove
+  const blocksToRemove: Set<number> = new Set()
+
+  // Group blocks by their content
+  for (let i = 0; i < onceMatches.length; i++) {
+    const { content } = onceMatches[i]
+
+    if (onceBlocks.has(content)) {
+      // This is a duplicate, mark for removal
+      blocksToRemove.add(i)
+    }
+    else {
+      // This is the first occurrence, keep it
+      onceBlocks.set(content, { content, index: i })
+    }
+  }
+
+  // Build the result by removing duplicate blocks
+  let result = template
+  // Process in reverse order to not affect positions of earlier blocks
+  const sortedMatchesToRemove = Array.from(blocksToRemove)
+    .map(index => onceMatches[index])
+    .sort((a, b) => b.start - a.start) // Sort in reverse order
+
+  for (const { start, end } of sortedMatchesToRemove) {
+    // Replace the block with empty string
+    result = result.substring(0, start) + result.substring(end)
+  }
+
+  // Finally, remove all @once/@endonce tags, keeping the content
+  result = result.replace(/@once\s*([\s\S]*?)@endonce/g, '$1')
+
+  return result
+}
+
+/**
+ * Process @env directive to conditionally render content based on environment
+ */
+function processEnvDirective(template: string, context: Record<string, any>): string {
+  let result = template
+
+  // Match @env('environment') / @elseenv('environment') / @else / @endenv blocks
+  const envPattern = /@env\((?:'|")?(.*?)(?:'|")?\)([\s\S]*?)(?:@elseenv\((?:'|")?(.*?)(?:'|")?\)([\s\S]*?))?(?:@else([\s\S]*?))?@endenv/g
+
+  return result.replace(envPattern, (match, envValue, content, elseEnvValue, elseEnvContent, elseContent) => {
+    try {
+      const currentEnv = context.NODE_ENV || process.env.NODE_ENV || 'development'
+
+      // Handle array of environments like @env(['local', 'development'])
+      let envArray: string[] = []
+
+      // Check if it's an array notation
+      if (envValue.startsWith('[') && envValue.endsWith(']')) {
+        // Parse the array string, accounting for different formats
+        const arrayContent = envValue.slice(1, -1).trim()
+
+        // Split by comma and clean up quotes
+        envArray = arrayContent.split(',')
+          .map((e: string) => e.trim().replace(/^['"]|['"]$/g, ''))
+          .filter(Boolean)
+      }
+      else {
+        envArray = [envValue]
+      }
+
+      // If current environment matches one in the array, show the content
+      if (envArray.includes(currentEnv)) {
+        return content
+      }
+
+      // Check elseenv condition if it exists
+      if (elseEnvValue && elseEnvContent) {
+        let elseEnvArray: string[] = []
+
+        // Check if it's an array notation
+        if (elseEnvValue.startsWith('[') && elseEnvValue.endsWith(']')) {
+          const arrayContent = elseEnvValue.slice(1, -1).trim()
+          elseEnvArray = arrayContent.split(',')
+            .map((e: string) => e.trim().replace(/^['"]|['"]$/g, ''))
+            .filter(Boolean)
+        }
+        else {
+          elseEnvArray = [elseEnvValue]
+        }
+
+        if (elseEnvArray.includes(currentEnv)) {
+          return elseEnvContent
+        }
+      }
+
+      // Return else content if it exists
+      return elseContent || ''
+    }
+    catch (error) {
+      console.error(`Error processing @env directive:`, error)
+      return match // Return unchanged if error
+    }
+  })
+}
+
+/**
+ * Process @isset and @empty directives
+ */
+function processIssetEmptyDirectives(template: string, context: Record<string, any>): string {
+  let result = template
+
+  // Process @isset directive
+  result = result.replace(/@isset\(([^)]+)\)([\s\S]*?)(?:@else([\s\S]*?))?@endisset/g, (match, variable, content, elseContent) => {
+    try {
+      // Evaluate the variable path
+      const value = evaluateExpression(variable.trim(), context)
+
+      // Check if it's defined and not null
+      if (value !== undefined && value !== null) {
+        return content
+      }
+
+      return elseContent || ''
+    }
+    catch (error) {
+      console.error(`Error processing @isset directive:`, error)
+      return match // Return unchanged if error
+    }
+  })
+
+  // Process @empty directive
+  result = result.replace(/@empty\(([^)]+)\)([\s\S]*?)(?:@else([\s\S]*?))?@endempty/g, (match, variable, content, elseContent) => {
+    try {
+      // Evaluate the variable path
+      const value = evaluateExpression(variable.trim(), context)
+
+      // Check if it's empty
+      const isEmpty = value === undefined || value === null || value === ''
+        || (Array.isArray(value) && value.length === 0)
+        || (typeof value === 'object' && Object.keys(value).length === 0)
+
+      if (isEmpty) {
+        return content
+      }
+
+      return elseContent || ''
+    }
+    catch (error) {
+      console.error(`Error processing @empty directive:`, error)
+      return match // Return unchanged if error
+    }
+  })
+
+  return result
+}
+
+/**
+ * Process @csrf and @method directives for forms
+ */
+function processFormDirectives(template: string, context: Record<string, any>): string {
+  let result = template
+
+  // Process @csrf directive
+  result = result.replace(/@csrf/g, () => {
+    if (context.csrf && typeof context.csrf === 'object') {
+      // Check if field is provided directly
+      if (context.csrf.field) {
+        return context.csrf.field
+      }
+
+      // Use token if available
+      if (context.csrf.token) {
+        return `<input type="hidden" name="_token" value="${context.csrf.token}">`
+      }
+    }
+
+    // Default fallback with empty token
+    return '<input type="hidden" name="_token" value="">'
+  })
+
+  // Process @method directive
+  result = result.replace(/@method\(['"]([^'"]+)['"]\)/g, (match, method) => {
+    // Method spoofing for non-GET/POST methods
+    if (method && ['PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
+      return `<input type="hidden" name="_method" value="${method.toUpperCase()}">`
+    }
+
+    // Return unchanged if not a supported method
+    return match
+  })
+
+  return result
+}
+
+/**
+ * Process @error directive for form validation
+ */
+function processErrorDirective(template: string, context: Record<string, any>): string {
+  // Process @error('field') directives
+  return template.replace(/@error\(['"]([^'"]+)['"]\)([\s\S]*?)@enderror/g, (match, field, content) => {
+    try {
+      // Check if errors object exists and has the specified field
+      if (context.errors
+        && typeof context.errors === 'object'
+        && typeof context.errors.has === 'function'
+        && context.errors.has(field)) {
+        // Replace any expressions in the content
+        return processExpressions(content, context, '')
+      }
+
+      // No error for this field, return empty
+      return ''
+    }
+    catch (error) {
+      console.error(`Error processing @error directive:`, error)
+      return match // Return unchanged if error
+    }
+  })
 }
 
 export default plugin
