@@ -1,12 +1,12 @@
-import type { StxOptions } from './types'
-
 /* eslint-disable no-console, regexp/no-super-linear-backtracking */
+import type { StxOptions } from './types'
 import path from 'node:path'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
 import { processCustomDirectives } from './custom-directives'
 import { processExpressions } from './expressions'
 import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
 import { processLoops } from './loops'
+import { runPostProcessingMiddleware, runPreProcessingMiddleware } from './middleware'
 import { renderComponent, resolveTemplatePath } from './utils'
 
 /**
@@ -183,6 +183,9 @@ async function processOtherDirectives(
 ): Promise<string> {
   let output = template
 
+  // Run pre-processing middleware before any directives
+  output = await runPreProcessingMiddleware(output, context, filePath, options)
+
   // Process custom directives first
   output = await processCustomDirectives(output, context, filePath, options)
 
@@ -227,6 +230,9 @@ async function processOtherDirectives(
 
   // Process expressions last to avoid interfering with other directives
   output = processExpressions(output, context, filePath)
+
+  // Run post-processing middleware after all directives have been processed
+  output = await runPostProcessingMiddleware(output, context, filePath, options)
 
   return output
 }

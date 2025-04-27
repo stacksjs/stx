@@ -11,6 +11,7 @@ export const defaultConfig: StxConfig = {
   cachePath: '.stx-cache',
   cacheVersion: '1.0.0',
   customDirectives: [],
+  middleware: [],
 }
 
 // eslint-disable-next-line antfu/no-top-level-await

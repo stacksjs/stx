@@ -26,6 +26,30 @@ export interface CustomDirective {
   description?: string
 }
 
+/**
+ * Middleware handler function
+ */
+export type MiddlewareHandler = (
+  template: string,
+  context: Record<string, any>,
+  filePath: string,
+  options: StxOptions
+) => string | Promise<string>
+
+/**
+ * Middleware definition
+ */
+export interface Middleware {
+  /** Unique name for the middleware */
+  name: string
+  /** Handler function for the middleware */
+  handler: MiddlewareHandler
+  /** When to run this middleware (before or after directive processing) */
+  timing: 'before' | 'after'
+  /** Optional description for documentation */
+  description?: string
+}
+
 export interface StxConfig {
   /** Enable STX plugin */
   enabled: boolean
@@ -43,6 +67,8 @@ export interface StxConfig {
   cacheVersion: string
   /** Custom directives registered by the user */
   customDirectives?: CustomDirective[]
+  /** Middleware for pre/post-processing templates */
+  middleware?: Middleware[]
 }
 
 export type StxOptions = Partial<StxConfig>
