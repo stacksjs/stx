@@ -19,8 +19,11 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedDeclarations": true,
     "skipDefaultLibCheck": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": {
+      "@stacksjs/stx": ["./packages/stx/src/index.ts"],
+      "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"]
+    }
   },
-  "files": ["packages/stx/stx.d.ts"],
   "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx"]
 }

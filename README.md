@@ -1,4 +1,4 @@
-![Social Card of Bun Plugin blade](https://github.com/stacksjs/bun-plugin-stx/blob/main/.github/art/cover.jpg)
+![Social Card of Bun Plugin blade](https://github.com/stacksjs/stx/blob/main/.github/art/cover.jpg)
 
 [![npm version][npm-version-src]][npm-version-href]
 [![GitHub Actions][github-actions-src]][github-actions-href]
@@ -617,7 +617,7 @@ bun test
 
 ## Changelog
 
-Please see our [releases](https://github.com/stacksjs/bun-plugin-stx/releases) page for more information on what has changed recently.
+Please see our [releases](https://github.com/stacksjs/stx/releases) page for more information on what has changed recently.
 
 ## Contributing
 
@@ -657,7 +657,7 @@ Many thanks to the following core technologies & people who have contributed to 
 
 ## License
 
-The MIT License (MIT). Please see [LICENSE](https://github.com/stacksjs/bun-plugin-stx/tree/main/LICENSE.md) for more information.
+The MIT License (MIT). Please see [LICENSE](https://github.com/stacksjs/stx/tree/main/LICENSE.md) for more information.
 
 Made with 💙
 
@@ -666,8 +666,8 @@ Made with 💙
 [npm-version-href]: <https://npmjs.com/package/bun-plugin-stx>
 [npm-downloads-src]: <https://img.shields.io/npm/dm/bun-plugin-stx?style=flat-square>
 [npm-downloads-href]: <https://npmjs.com/package/bun-plugin-stx>
-[github-actions-src]: <https://img.shields.io/github/actions/workflow/status/stacksjs/bun-plugin-stx/ci.yml?style=flat-square&branch=main>
-[github-actions-href]: <https://github.com/stacksjs/bun-plugin-stx/actions?query=workflow%3Aci>
+[github-actions-src]: <https://img.shields.io/github/actions/workflow/status/stacksjs/stx/ci.yml?style=flat-square&branch=main>
+[github-actions-href]: <https://github.com/stacksjs/stx/actions?query=workflow%3Aci>
 
-<!-- [codecov-src]: https://img.shields.io/codecov/c/gh/stacksjs/bun-plugin-stx/main?style=flat-square
-[codecov-href]: https://codecov.io/gh/stacksjs/bun-plugin-stx -->
+<!-- [codecov-src]: https://img.shields.io/codecov/c/gh/stacksjs/stx/main?style=flat-square
+[codecov-href]: https://codecov.io/gh/stacksjs/stx -->

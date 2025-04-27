@@ -1,12 +1,8 @@
 /* eslint-disable no-console */
 import type { BunPlugin } from 'bun'
-import type { StxOptions } from './types'
+import type { StxOptions } from '@stacksjs/stx'
 import path from 'node:path'
-import { cacheTemplate, checkCache } from './caching'
-import { defaultConfig } from './config'
-import { processDirectives } from './process'
-import { extractVariables } from './utils'
-import { buildWebComponents } from './web-components'
+import { cacheTemplate, checkCache, defaultConfig, processDirectives, extractVariables, buildWebComponents } from '@stacksjs/stx'
 
 export const plugin: BunPlugin = {
   name: 'bun-plugin-stx',

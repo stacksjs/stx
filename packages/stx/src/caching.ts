@@ -1,6 +1,7 @@
 import type { StxOptions } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileExists } from './utils'
 
 /**
  * Cache entry structure
@@ -116,17 +117,4 @@ export async function cacheTemplate(
 export function hashFilePath(filePath: string): string {
   const hash = new Bun.CryptoHasher('sha1').update(filePath).digest('hex')
   return hash.substring(0, 16)
-}
-
-/**
- * Check if a file exists
- */
-export async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    const stat = await fs.promises.stat(filePath)
-    return stat.isFile()
-  }
-  catch {
-    return false
-  }
 }

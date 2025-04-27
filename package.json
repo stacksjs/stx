@@ -1,17 +1,18 @@
 {
-  "name": "bun-plugin-stx",
+  "name": "stx",
   "type": "module",
+  "private": true,
   "version": "0.0.0",
-  "description": "A Bun plugin that allows for using Laravel Blade-like syntax.",
+  "description": "A fast & powerful UI / templating engine. Laravel Blade-inspired. Powered by Bun.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
-  "homepage": "https://github.com/stacksjs/bun-plugin-stx#readme",
+  "homepage": "https://github.com/stacksjs/stx#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/stacksjs/bun-plugin-stx.git"
+    "url": "git+https://github.com/stacksjs/stx.git"
   },
   "bugs": {
-    "url": "https://github.com/stacksjs/bun-plugin-stx/issues"
+    "url": "https://github.com/stacksjs/stx/issues"
   },
   "keywords": [
     "blade",
@@ -75,5 +76,8 @@
     "bunfig": "^0.8.3",
     "changelogen": "^0.6.1",
     "typescript": "^5.8.3"
-  }
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }
