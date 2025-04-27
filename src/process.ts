@@ -3,6 +3,7 @@ import type { StxOptions } from './types'
 /* eslint-disable no-console, regexp/no-super-linear-backtracking */
 import path from 'node:path'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
+import { processCustomDirectives } from './custom-directives'
 import { processExpressions } from './expressions'
 import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
 import { processLoops } from './loops'
@@ -181,6 +182,9 @@ async function processOtherDirectives(
   dependencies: Set<string>,
 ): Promise<string> {
   let output = template
+
+  // Process custom directives first
+  output = await processCustomDirectives(output, context, filePath, options)
 
   // Process auth directives
   output = processAuthDirectives(output, context)

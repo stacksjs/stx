@@ -186,6 +186,63 @@ There are two ways to expose data in your STX templates:
 
 ### Template Directives
 
+#### Custom Directives
+
+STX supports defining your own custom directives for template processing:
+
+```ts
+import type { CustomDirective } from 'bun-plugin-stx'
+// Configure custom directives
+import stxPlugin from 'bun-plugin-stx'
+
+// Create custom directives
+const uppercaseDirective: CustomDirective = {
+  name: 'uppercase',
+  handler: (content, params) => {
+    return params[0] ? params[0].toUpperCase() : content.toUpperCase()
+  },
+  // No hasEndTag needed for single-parameter directives
+}
+
+const wrapDirective: CustomDirective = {
+  name: 'wrap',
+  handler: (content, params) => {
+    const className = params[0] || 'default-wrapper'
+    return `<div class="${className}">${content}</div>`
+  },
+  hasEndTag: true, // This directive requires an end tag (@wrap...@endwrap)
+}
+
+// Register custom directives
+await build({
+  entrypoints: ['./src/index.ts', './templates/home.stx'],
+  outdir: './dist',
+  plugins: [stxPlugin],
+  stx: {
+    customDirectives: [uppercaseDirective, wrapDirective],
+  },
+})
+```
+
+Then use them in your templates:
+
+```html
+<!-- Single-parameter directive -->
+<p>@uppercase('hello world')</p>
+
+<!-- Block directive with content and optional parameter -->
+@wrap(highlight)
+  <p>This content will be wrapped in a div with class "highlight"</p>
+@endwrap
+```
+
+Custom directives have access to:
+
+- `content`: The content between start and end tags (for block directives)
+- `params`: Array of parameters passed to the directive
+- `context`: The template data context (all variables)
+- `filePath`: The current template file path
+
 #### Variables
 
 Display content with double curly braces:
