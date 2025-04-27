@@ -6,7 +6,7 @@
 [![npm downloads][npm-downloads-src]][npm-downloads-href]
 <!-- [![Codecov][codecov-src]][codecov-href] -->
 
-# stx
+# bun-plugin-stx
 
 A Blade-like template engine plugin for Bun, enabling simple and powerful templating with .stx files.
 

@@ -12,3 +12,4 @@ temp
 tsconfig.tsbuildinfo
 /test/out
 /.stx-cache
+/packages/stx/.stx-cache

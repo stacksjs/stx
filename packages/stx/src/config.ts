@@ -40,6 +40,14 @@ export const defaultConfig: StxConfig = {
     outputDir: 'dist/web-components',
     components: [],
   },
+  docs: {
+    enabled: false,
+    outputDir: 'docs',
+    format: 'markdown',
+    components: true,
+    templates: true,
+    directives: true,
+  },
 }
 
 // eslint-disable-next-line antfu/no-top-level-await

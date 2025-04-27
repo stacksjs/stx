@@ -3,6 +3,7 @@ export * from './auth'
 export * from './caching'
 export * from './config'
 export * from './custom-directives'
+export * from './docs'
 export * from './expressions'
 export * from './forms'
 
@@ -19,7 +20,7 @@ export * from './middleware'
 export * from './process'
 
 // Export types for users
-export type { CustomDirective, I18nConfig, Middleware, StxConfig, StxOptions, WebComponent, WebComponentConfig } from './types'
+export type { ComponentDoc, ComponentPropDoc, CustomDirective, DirectiveDoc, DocFormat, DocGeneratorConfig, I18nConfig, Middleware, StxConfig, StxOptions, TemplateDoc, WebComponent, WebComponentConfig } from './types'
 
 export * from './types'
 export * from './utils'

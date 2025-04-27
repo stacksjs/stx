@@ -88,6 +88,8 @@ export interface WebComponent {
   styleSource?: string
   /** List of attributes to observe */
   attributes?: string[]
+  /** Description of the component for documentation */
+  description?: string
 }
 
 /**
@@ -100,6 +102,99 @@ export interface WebComponentConfig {
   outputDir: string
   /** Web components to build */
   components: WebComponent[]
+}
+
+/**
+ * Documentation format options
+ */
+export type DocFormat = 'markdown' | 'html' | 'json'
+
+/**
+ * Component property documentation
+ */
+export interface ComponentPropDoc {
+  /** Name of the property */
+  name: string
+  /** Type of the property (e.g., string, number, boolean) */
+  type?: string
+  /** Whether the property is required */
+  required?: boolean
+  /** Default value if any */
+  default?: string
+  /** Description of the property */
+  description?: string
+}
+
+/**
+ * Component documentation
+ */
+export interface ComponentDoc {
+  /** Name of the component */
+  name: string
+  /** File path */
+  path: string
+  /** Component description */
+  description?: string
+  /** Component properties/attributes */
+  props: ComponentPropDoc[]
+  /** Example usage */
+  example?: string
+  /** Whether this is a web component */
+  isWebComponent?: boolean
+  /** HTML tag if it's a web component */
+  tag?: string
+}
+
+/**
+ * Template documentation
+ */
+export interface TemplateDoc {
+  /** Template name */
+  name: string
+  /** File path */
+  path: string
+  /** Description */
+  description?: string
+  /** Used components */
+  components?: string[]
+  /** Used directives */
+  directives?: string[]
+}
+
+/**
+ * Directive documentation
+ */
+export interface DirectiveDoc {
+  /** Directive name */
+  name: string
+  /** Description */
+  description?: string
+  /** Has end tag */
+  hasEndTag: boolean
+  /** Example usage */
+  example?: string
+}
+
+/**
+ * Documentation generator configuration
+ */
+export interface DocGeneratorConfig {
+  /** Enable documentation generation */
+  enabled: boolean
+  /** Output directory for documentation */
+  outputDir: string
+  /** Format of generated documentation */
+  format: DocFormat
+  /** Generate docs for components */
+  components: boolean
+  /** Generate docs for templates */
+  templates: boolean
+  /** Generate docs for directives */
+  directives: boolean
+  /** Extra content to include in documentation */
+  extraContent?: string
+  /** Custom template for documentation */
+  template?: string
 }
 
 export interface StxConfig {
@@ -125,6 +220,8 @@ export interface StxConfig {
   i18n?: Partial<I18nConfig>
   /** Web Components integration configuration */
   webComponents?: Partial<WebComponentConfig>
+  /** Documentation generator configuration */
+  docs?: Partial<DocGeneratorConfig>
 }
 
 export type StxOptions = Partial<StxConfig>
