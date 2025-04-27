@@ -65,7 +65,7 @@
   },
   "dependencies": {
     "marked": "^15.0.11",
-    "yaml": "^2.3.4"
+    "yaml": "^2.7.1"
   },
   "devDependencies": {
     "@stacksjs/eslint-config": "^4.10.2-beta.3",
