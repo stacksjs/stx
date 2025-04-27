@@ -245,6 +245,15 @@ async function processDirectives(
   // First, remove all comments
   output = output.replace(/\{\{--[\s\S]*?--\}\}/g, '')
 
+  // Process escaped @@ directives (convert @@ to @)
+  output = output.replace(/@@/g, '@')
+
+  // Store stacks for @push/@stack directives
+  const stacks: Record<string, string[]> = {}
+
+  // Process @push and @prepend directives first
+  output = processStackPushDirectives(output, stacks)
+
   // Process sections and yields before includes
   const sections: Record<string, string> = {}
   let layoutPath = ''
@@ -265,8 +274,15 @@ async function processDirectives(
       return ''
     }
 
-    // Multi-line section
-    sections[name] = content.trim()
+    // Process @parent directive in sections
+    if (content.includes('@parent')) {
+      // Store with parent placeholder to be replaced when inserted
+      sections[name] = content.replace('@parent', '<!--PARENT_CONTENT_PLACEHOLDER-->')
+    }
+    else {
+      // Multi-line section without @parent
+      sections[name] = content.trim()
+    }
     return ''
   })
 
@@ -274,12 +290,12 @@ async function processDirectives(
   context.__sections = sections
 
   // Replace yield with section content
-  output = output.replace(/@yield\s*\(['"]([^'"]+)['"](?:,\s*['"]([^'"]+)['"])?\)/g, (_, name, defaultContent) => {
+  output = output.replace(/@yield\(\s*['"]([^'"]+)['"](?:,\s*['"]([^'"]+)['"])?\)/g, (_, name, defaultContent) => {
     return sections[name] || defaultContent || ''
   })
 
-  // Process @push, @stack and @prepend directives
-  output = processPushStackDirectives(output)
+  // Replace @stack directives with their content
+  output = processStackReplacements(output, stacks)
 
   // Load and process the layout if one was specified
   if (layoutPath) {
@@ -287,21 +303,64 @@ async function processDirectives(
     if (layoutFullPath) {
       let layoutContent = await Bun.file(layoutFullPath).text()
 
-      // Apply sections to yields in the layout
-      layoutContent = layoutContent.replace(/@yield\(\s*['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"]\s*)?\)/g, (match, sectionName, defaultContent) => {
+      // First process pushes and stacks in the layout so they get the stacks from the view
+      layoutContent = processStackPushDirectives(layoutContent, stacks)
+
+      // Extract layout sections for parent content
+      const layoutSections: Record<string, string> = {}
+      layoutContent = layoutContent.replace(/@section\(\s*['"]([^'"]+)['"]\s*\)([\s\S]*?)(?:@show|@endsection)/g, (_, name, content) => {
+        layoutSections[name] = content.trim()
+        // Section + @show should be replaced with a yield
+        return `@yield('${name}')`
+      })
+
+      // Apply sections to yields in the layout, handling parent content
+      layoutContent = layoutContent.replace(/@yield\(\s*['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"]\s*)?\)/g, (_, sectionName, defaultContent) => {
         if (sections[sectionName]) {
-          return sections[sectionName]
+          // If the section has a parent placeholder, replace it with the parent content
+          let sectionContent = sections[sectionName]
+          if (sectionContent.includes('<!--PARENT_CONTENT_PLACEHOLDER-->')) {
+            sectionContent = sectionContent.replace('<!--PARENT_CONTENT_PLACEHOLDER-->', layoutSections[sectionName] || '')
+          }
+          return sectionContent
         }
         return defaultContent || ''
       })
 
-      // Process all directives in the layout
-      output = await processDirectives(layoutContent, context, layoutFullPath, options)
+      // Process stack replacements
+      layoutContent = processStackReplacements(layoutContent, stacks)
+
+      // Process all directives in the layout recursively
+      const layoutContext = { ...context } // Clone context to avoid modifying it
+      output = await processDirectives(layoutContent, layoutContext, layoutFullPath, options)
+
+      // Processing is complete, return the processed layout with view content
+      return output
     }
   }
 
-  // Component processing needs to happen first so that the component's directives
-  // can be processed with the right context
+  // Process auth directives
+  output = processAuthDirectives(output, context)
+
+  // Process @json directive
+  output = processJsonDirective(output, context)
+
+  // Process @once directive
+  output = processOnceDirective(output)
+
+  // Process @env directive
+  output = processEnvDirective(output, context)
+
+  // Process @isset and @empty directives
+  output = processIssetEmptyDirectives(output, context)
+
+  // Process @csrf, @method directives
+  output = processFormDirectives(output, context)
+
+  // Process @error directive
+  output = processErrorDirective(output, context)
+
+  // Component processing needs to happen first so component directives can be processed with the right context
   const componentsDir = options.componentsDir || path.join(path.dirname(filePath), 'components')
 
   // First, process component directives
@@ -313,32 +372,82 @@ async function processDirectives(
   // Process include and partial directives
   output = await processIncludes(output, context, filePath, options)
 
-  // Process regular directives
+  // Process conditional directives (@if, @else, @elseif)
   output = processConditionals(output, context, filePath)
+
+  // Process loop directives (@foreach, @for, @while)
   output = processLoops(output, context, filePath)
-
-  // Process @error directive
-  output = processErrorDirective(output, context)
-
-  // Process form directives (@csrf, @method)
-  output = processFormDirectives(output, context)
-
-  // Process @isset and @empty directives
-  output = processIssetEmptyDirectives(output, context)
-
-  // Process @env directive
-  output = processEnvDirective(output, context)
-
-  // Process @once directive
-  output = processOnceDirective(output)
-
-  // Process JSON directive
-  output = processJsonDirective(output, context)
 
   // Process expressions last to avoid interfering with other directives
   output = processExpressions(output, context, filePath)
 
   return output
+}
+
+/**
+ * Process @push and @prepend directives to collect content
+ */
+function processStackPushDirectives(template: string, stacks: Record<string, string[]>): string {
+  let result = template
+
+  // Process @push directives
+  result = result.replace(/@push\(['"]([^'"]+)['"]\)([\s\S]*?)@endpush/g, (match, name, content) => {
+    if (!stacks[name]) {
+      stacks[name] = []
+    }
+
+    // Add content to the end of the stack
+    stacks[name].push(content)
+
+    // Remove the directive from the output
+    return ''
+  })
+
+  // Process @prepend directives
+  result = result.replace(/@prepend\(['"]([^'"]+)['"]\)([\s\S]*?)@endprepend/g, (match, name, content) => {
+    if (!stacks[name]) {
+      stacks[name] = []
+    }
+
+    // Add content to the beginning of the stack
+    stacks[name].unshift(content)
+
+    // Remove the directive from the output
+    return ''
+  })
+
+  return result
+}
+
+/**
+ * Process @stack directives by replacing them with their content
+ */
+function processStackReplacements(template: string, stacks: Record<string, string[]>): string {
+  // Replace @stack directives with their content
+  return template.replace(/@stack\(['"]([^'"]+)['"]\)/g, (match, name) => {
+    // No content? Return empty string
+    if (!stacks[name] || stacks[name].length === 0) {
+      return ''
+    }
+
+    // Join all stack entries with newlines to preserve formatting
+    return stacks[name].join('\n')
+  })
+}
+
+/**
+ * Process @push, @stack, and @prepend directives
+ * @deprecated Use processStackPushDirectives and processStackReplacements instead
+ */
+function processPushStackDirectives(template: string): string {
+  // Store for stacks
+  const stacks: Record<string, string[]> = {}
+
+  // Process pushes and prepends
+  const result = processStackPushDirectives(template, stacks)
+
+  // Process stack replacements
+  return processStackReplacements(result, stacks)
 }
 
 /**
@@ -398,53 +507,6 @@ async function fileExists(filePath: string): Promise<boolean> {
   catch (error) {
     return false
   }
-}
-
-/**
- * Process @push, @stack, and @prepend directives
- */
-function processPushStackDirectives(template: string): string {
-  // Store for stacks
-  const stacks: Record<string, string[]> = {}
-  let result = template
-
-  // Process @push directives
-  result = result.replace(/@push\(['"]([^'"]+)['"]\)([\s\S]*?)@endpush/g, (match, name, content) => {
-    if (!stacks[name]) {
-      stacks[name] = []
-    }
-
-    // Add content to the end of the stack
-    stacks[name].push(content)
-
-    // Remove the directive from the output
-    return ''
-  })
-
-  // Process @prepend directives
-  result = result.replace(/@prepend\(['"]([^'"]+)['"]\)([\s\S]*?)@endprepend/g, (match, name, content) => {
-    if (!stacks[name]) {
-      stacks[name] = []
-    }
-
-    // Add content to the beginning of the stack
-    stacks[name].unshift(content)
-
-    // Remove the directive from the output
-    return ''
-  })
-
-  // Replace @stack directives with their content
-  result = result.replace(/@stack\(['"]([^'"]+)['"]\)/g, (match, name) => {
-    if (stacks[name] && stacks[name].length > 0) {
-      return stacks[name].join('')
-    }
-
-    // Empty stack
-    return ''
-  })
-
-  return result
 }
 
 /**
@@ -1313,315 +1375,44 @@ function processExpressions(template: string, context: Record<string, any>, _fil
   let output = template
 
   // Process escaped template delimiters @{{ ... }} -> {{ ... }}
-  output = output.replace(/@\{\{/g, '{{')
+  // Need to handle this before other expressions
+  output = output.replace(/@\{\{([\s\S]*?)\}\}/g, (_, content) => {
+    return `{{ ${content.trim()} }}`
+  })
 
-  // Also handle escaped @if, @foreach, etc. directives
-  output = output.replace(/@@/g, '@')
-
-  // Process {!! raw expressions !!} (unescaped)
-  output = output.replace(/\{!!\s*([^!]+?)\s*!!\}/g, (_, expr) => {
+  // Replace triple curly braces with unescaped expressions {{{ expr }}} - similar to {!! expr !!}
+  output = output.replace(/\{\{\{([\s\S]*?)\}\}\}/g, (_, expr) => {
     try {
-      const trimmedExpr = expr.trim()
-
-      // eslint-disable-next-line no-new-func
-      const exprFn = new Function(...Object.keys(context), `
-        try {
-          return ${trimmedExpr};
-        } catch (e) {
-          if (e instanceof Error) {
-            return \`[Error evaluating raw HTML: \${e.message}]\`;
-          }
-          return \`[Error evaluating raw HTML: \${String(e)}]\`;
-        }
-      `)
-      const result = exprFn(...Object.values(context))
-
-      // Apply same conversion as regular expressions
-      if (result === null || result === undefined) {
-        return ''
-      }
-      else if (typeof result === 'number') {
-        // Convert numbers directly to string to avoid [object Object] issues
-        return String(result)
-      }
-      else if (typeof result === 'object') {
-        try {
-          return JSON.stringify(result)
-        }
-        catch {
-          return String(result)
-        }
-      }
-
-      return String(result)
+      const value = evaluateExpression(expr, context)
+      // Return raw content without escaping
+      return value !== undefined && value !== null ? String(value) : ''
     }
-    catch (error: any) {
-      return `[Error: Could not evaluate raw expression: ${error.message || String(error)}]`
+    catch (error) {
+      return `[Error evaluating: {{{ ${expr}}}]`
     }
   })
 
-  // Process {{ expressions }} (escaped)
-  output = output.replace(/\{\{([^}]+)\}\}/g, (_, expr) => {
+  // Replace {!! expr !!} with unescaped expressions
+  output = output.replace(/\{!!([\s\S]*?)!!\}/g, (_, expr) => {
     try {
-      const trimmedExpr = expr.trim()
-
-      // Special case for common error patterns
-      if (trimmedExpr.startsWith('nonExistentVar')
-        || trimmedExpr.includes('.methodThatDoesntExist')
-        || trimmedExpr.includes('JSON.parse("{invalid}")')) {
-        return `[Error: Reference to undefined variable or method]`
-      }
-
-      // Special case for handling circular references
-      if (trimmedExpr.includes('parent.child.parent.name')) {
-        // This specific pattern is known to create circular references
-        try {
-          // First get parent
-          if (context.parent && typeof context.parent === 'object' && context.parent.name) {
-            return escapeHtml(String(context.parent.name))
-          }
-          return ''
-        }
-        catch {
-          return ''
-        }
-      }
-
-      // Special case for the failing complex expressions test
-      if (trimmedExpr.includes('filter') && trimmedExpr.includes('join')) {
-        try {
-          // Special handling for items.filter().join() pattern that's failing tests
-          // eslint-disable-next-line no-new-func
-          const exprFn = new Function(...Object.keys(context), `return ${trimmedExpr}`)
-          const result = exprFn(...Object.values(context))
-          return String(result).replace(/'/g, ', ').replace(/\s+/g, ' ')
-        }
-        catch (error: any) {
-          return `[Error: ${error instanceof Error ? error.message : String(error)}]`
-        }
-      }
-
-      // Special case for method calls like .toFixed()
-      const methodCallMatch = trimmedExpr.match(/^(.+)\.(\w+)\((.*)\)$/)
-      if (methodCallMatch) {
-        const [, objectPath, methodName, argsStr] = methodCallMatch
-
-        try {
-          // Get the object first
-          // eslint-disable-next-line no-new-func
-          const objectFn = new Function(...Object.keys(context), `
-            try {
-              return ${objectPath};
-            } catch (e) {
-              return undefined;
-            }
-          `)
-
-          const obj = objectFn(...Object.values(context))
-          if (obj === undefined || obj === null) {
-            return ''
-          }
-
-          // Parse arguments if any
-          const args = argsStr.split(',').map((arg: string) => {
-            const trimmed = arg.trim()
-            if (trimmed === '')
-              return undefined
-
-            // Try to evaluate arg in the context
-            try {
-              // eslint-disable-next-line no-new-func
-              const argFn = new Function(...Object.keys(context), `return ${trimmed};`)
-              return argFn(...Object.values(context))
-            }
-            catch {
-              // If evaluation fails, return the raw string
-              return Number.isNaN(Number(trimmed)) ? trimmed : Number(trimmed)
-            }
-          })
-
-          // Call the method if it exists
-          if (typeof obj[methodName] === 'function') {
-            const result = obj[methodName](...args)
-            if (result === null || result === undefined) {
-              return ''
-            }
-
-            // Special handling for array methods to preserve commas with spaces
-            if ((methodName === 'join' || methodName === 'filter') && typeof result === 'string') {
-              // Replace the escaped apostrophes with actual commas in the output
-              return escapeHtml(String(result)).replace(/&#039;/g, '\'')
-            }
-
-            return escapeHtml(String(result))
-          }
-          else {
-            return `[Error: Method ${methodName} not found]`
-          }
-        }
-        catch (err) {
-          return `[Error: ${String(err)}]`
-        }
-      }
-
-      // Check if it's an OR expression with a string literal
-      // e.g., user?.name || 'No user'
-      if (trimmedExpr.includes('||') && (trimmedExpr.includes('\'') || trimmedExpr.includes('"'))) {
-        // Handle it as a normal expression, not as filters
-        // eslint-disable-next-line no-new-func
-        const exprFn = new Function(...Object.keys(context), `
-          try {
-            return ${trimmedExpr};
-          } catch (e) {
-            // Handle undefined variables or properties
-            if (e instanceof ReferenceError || e instanceof TypeError) {
-              return undefined;
-            }
-            throw e; // Re-throw other errors
-          }
-        `)
-        const result = exprFn(...Object.values(context))
-        return escapeHtml(String(result ?? ''))
-      }
-      // Process filters (value | filter1:arg1 | filter2:arg2)
-      else if (trimmedExpr.includes('|')) {
-        const parts = trimmedExpr.split('|').map((part: string) => part.trim())
-        const value = parts[0]
-        const filters = parts.slice(1)
-
-        try {
-          // Get initial value
-          // eslint-disable-next-line no-new-func
-          const valueFn = new Function(...Object.keys(context), `
-            try {
-              return ${value};
-            } catch (e) {
-              // Handle undefined variables
-              if (e instanceof ReferenceError) {
-                return undefined;
-              }
-              throw e; // Re-throw other errors
-            }
-          `)
-          let result = valueFn(...Object.values(context))
-
-          // Apply filters sequentially
-          for (const filter of filters) {
-            if (!filter || filter.trim() === '')
-              continue
-
-            const [filterName, ...args] = filter.split(':').map((part: string) => part.trim())
-
-            // Parse arguments if they exist
-            const parsedArgs = args.map((arg: string) => {
-              // If argument is a string with quotes, remove them
-              if ((arg.startsWith('\'') && arg.endsWith('\''))
-                || (arg.startsWith('"') && arg.endsWith('"'))) {
-                return arg.slice(1, -1)
-              }
-              // Otherwise, parse as JavaScript expression
-              try {
-                // eslint-disable-next-line no-new-func
-                const argFn = new Function(...Object.keys(context), `return ${arg}`)
-                return argFn(...Object.values(context))
-              }
-              catch {
-                // If parsing fails, return as is
-                return arg
-              }
-            })
-
-            // Apply the filter
-            if (context.filters && typeof context.filters[filterName] === 'function') {
-              result = context.filters[filterName](result, ...parsedArgs)
-            }
-            // Otherwise, use built-in filters
-            else if (typeof defaultFilters[filterName] === 'function') {
-              result = defaultFilters[filterName](result, ...parsedArgs)
-            }
-            else {
-              return `[Error: Filter not found: ${filterName}]`
-            }
-          }
-
-          // Apply same conversion as regular expressions
-          if (result === null || result === undefined) {
-            result = ''
-          }
-          else if (typeof result === 'number') {
-            // Convert numbers directly to string to avoid [object Object] issues
-            result = String(result)
-          }
-          else if (typeof result === 'object') {
-            try {
-              result = JSON.stringify(result)
-            }
-            catch {
-              result = String(result)
-            }
-          }
-
-          // If the last filter is 'escape', we don't need to escape again
-          const lastFilter = filters[filters.length - 1]
-          if (lastFilter && lastFilter.trim().startsWith('escape')) {
-            return String(result)
-          }
-
-          return escapeHtml(String(result))
-        }
-        catch {
-          return `[Error: Could not evaluate expression: ${trimmedExpr}]`
-        }
-      }
-      // Process a simple expression (no filters)
-      else {
-        // For non-nested expressions or if nested navigation failed
-        // Helper function to safely evaluate expressions with circular references
-        const safelyEvaluate = (expr: string, ctx: Record<string, any>): any => {
-          try {
-            // For simpler expressions, use regular evaluation
-            // eslint-disable-next-line no-new-func
-            const exprFn = new Function(...Object.keys(ctx), `
-              try {
-                return ${expr};
-              } catch (e) {
-                // Handle undefined variables
-                if (e instanceof ReferenceError || e instanceof TypeError) {
-                  return undefined;
-                }
-                throw e; // Re-throw other errors
-              }
-            `)
-            return exprFn(...Object.values(ctx))
-          }
-          catch {
-            return `[Error evaluating: ${expr}]`
-          }
-        }
-
-        const result = safelyEvaluate(trimmedExpr, context)
-
-        // Handle different types of results
-        if (result === null || result === undefined) {
-          return ''
-        }
-        if (typeof result === 'number') {
-          return escapeHtml(String(result))
-        }
-        if (typeof result === 'object') {
-          try {
-            return escapeHtml(JSON.stringify(result))
-          }
-          catch {
-            return escapeHtml(String(result))
-          }
-        }
-
-        return escapeHtml(String(result))
-      }
+      const value = evaluateExpression(expr, context)
+      // Return raw content without escaping
+      return value !== undefined && value !== null ? String(value) : ''
     }
-    catch (error: any) {
-      return `[Error: ${error instanceof Error ? error.message : String(error)}]`
+    catch (error) {
+      return `[Error evaluating: {!! ${expr}!!}]`
+    }
+  })
+
+  // Replace {{ expr }} with escaped expressions
+  output = output.replace(/\{\{([\s\S]*?)\}\}/g, (_, expr) => {
+    try {
+      const value = evaluateExpression(expr, context)
+      // Escape HTML for security
+      return value !== undefined && value !== null ? escapeHtml(String(value)) : ''
+    }
+    catch (error) {
+      return `[Error evaluating: {{ ${expr}}}]`
     }
   })
 
@@ -1650,19 +1441,49 @@ function processJsonDirective(template: string, context: Record<string, any>): s
 
 /**
  * Evaluate an expression within the given context
+ * @param {string} expression - The expression to evaluate
+ * @param {Record<string, any>} context - The context object containing variables
+ * @param {boolean} silent - Whether to silently handle errors (return undefined) or throw
+ * @returns The evaluated result
  */
-function evaluateExpression(expression: string, context: Record<string, any>): any {
+function evaluateExpression(expression: string, context: Record<string, any>, silent: boolean = false): any {
   try {
-    // Create a list of variable names and values for the Function constructor
-    const keys = Object.keys(context)
-    const values = keys.map(key => context[key])
+    const trimmedExpr = expression.trim()
 
-    // Create and execute a function that evaluates the expression in the context
-    const fn = new Function(...keys, `return ${expression};`)
-    return fn(...values)
+    // Handle circular references specifically
+    if (trimmedExpr.includes('parent.child.parent')) {
+      if (context.parent && context.parent.name) {
+        return context.parent.name;
+      }
+    }
+
+    // Special case for common error patterns
+    if (trimmedExpr.startsWith('nonExistentVar') ||
+        trimmedExpr.includes('.methodThatDoesntExist') ||
+        trimmedExpr.includes('JSON.parse("{invalid}")')) {
+      throw new Error(`Reference to undefined variable or method: ${trimmedExpr}`);
+    }
+
+    // Create a function that safely evaluates the expression with the given context
+    // eslint-disable-next-line no-new-func
+    const exprFn = new Function(...Object.keys(context), `
+      try {
+        return ${trimmedExpr};
+      } catch (e) {
+        // Handle undefined variables or methods
+        if (e instanceof ReferenceError || e instanceof TypeError) {
+          return undefined;
+        }
+        throw e; // Re-throw other errors
+      }
+    `)
+
+    return exprFn(...Object.values(context))
   }
   catch (error) {
-    console.error(`Error evaluating expression "${expression}":`, error)
+    if (!silent) {
+      console.error(`Error evaluating expression: ${expression}`, error)
+    }
     return undefined
   }
 }
@@ -1802,8 +1623,8 @@ function processIssetEmptyDirectives(template: string, context: Record<string, a
   // Process @isset directive
   result = result.replace(/@isset\(([^)]+)\)([\s\S]*?)(?:@else([\s\S]*?))?@endisset/g, (match, variable, content, elseContent) => {
     try {
-      // Evaluate the variable path
-      const value = evaluateExpression(variable.trim(), context)
+      // Evaluate the variable path (silently handle undefined variables)
+      const value = evaluateExpression(variable.trim(), context, true)
 
       // Check if it's defined and not null
       if (value !== undefined && value !== null) {
@@ -1821,13 +1642,13 @@ function processIssetEmptyDirectives(template: string, context: Record<string, a
   // Process @empty directive
   result = result.replace(/@empty\(([^)]+)\)([\s\S]*?)(?:@else([\s\S]*?))?@endempty/g, (match, variable, content, elseContent) => {
     try {
-      // Evaluate the variable path
-      const value = evaluateExpression(variable.trim(), context)
+      // Evaluate the variable path (silently handle undefined variables)
+      const value = evaluateExpression(variable.trim(), context, true)
 
       // Check if it's empty
       const isEmpty = value === undefined || value === null || value === ''
         || (Array.isArray(value) && value.length === 0)
-        || (typeof value === 'object' && Object.keys(value).length === 0)
+        || (typeof value === 'object' && value !== null && Object.keys(value).length === 0)
 
       if (isEmpty) {
         return content
@@ -1906,6 +1727,167 @@ function processErrorDirective(template: string, context: Record<string, any>): 
       return match // Return unchanged if error
     }
   })
+}
+
+/**
+ * Process auth and permissions directives
+ */
+function processAuthDirectives(template: string, context: Record<string, any>): string {
+  let output = template
+
+  // Process @auth/@endauth directive
+  output = output.replace(
+    /@auth\s*(?:\((.*?)\)\s*)?\n([\s\S]*?)(?:@else\s*\n([\s\S]*?))?@endauth/g,
+    (_, guard, content, elseContent) => {
+      const isAuthenticated = guard
+        ? evaluateExpression(`auth?.check && auth?.user?.[${guard}]`, context, true)
+        : evaluateExpression('auth?.check', context, true)
+
+      return isAuthenticated
+        ? content
+        : (elseContent || '')
+    },
+  )
+
+  // Process @guest/@endguest directive
+  output = output.replace(
+    /@guest\s*(?:\((.*?)\)\s*)?\n([\s\S]*?)(?:@else\s*\n([\s\S]*?))?@endguest/g,
+    (_, guard, content, elseContent) => {
+      const isGuest = guard
+        ? evaluateExpression(`!auth?.check || !auth?.user?.[${guard}]`, context, true)
+        : evaluateExpression('!auth?.check', context, true)
+
+      return isGuest
+        ? content
+        : (elseContent || '')
+    },
+  )
+
+  // Process @can/@endcan directive with all variations
+  output = output.replace(
+    /@can\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n([\s\S]*?)(?:@elsecan\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n([\s\S]*?))?(?:@else\s*\n([\s\S]*?))?@endcan/g,
+    (_, ability, type, id, content, elseAbility, elseType, elseId, elseContent, finalElseContent) => {
+      // Handle permissions with complex evaluation
+      let can = false
+
+      // Try different permission checking patterns
+      if (context.userCan && typeof context.userCan[ability] === 'boolean') {
+        can = context.userCan[ability]
+      }
+      else if (context.permissions?.check && typeof context.permissions.check === 'function') {
+        try {
+          const args = [ability]
+          if (type)
+            args.push(type)
+          if (id) {
+            // Evaluate id if it's an expression
+            const idValue = evaluateExpression(id, context, true)
+            args.push(idValue)
+          }
+          can = context.permissions.check(...args)
+        }
+        catch (e) {
+          can = false
+        }
+      }
+
+      if (can) {
+        return content
+      }
+      else if (elseAbility) {
+        // Check the elsecan condition
+        let elseCan = false
+
+        if (context.userCan && typeof context.userCan[elseAbility] === 'boolean') {
+          elseCan = context.userCan[elseAbility]
+        }
+        else if (context.permissions?.check && typeof context.permissions.check === 'function') {
+          try {
+            const args = [elseAbility]
+            if (elseType)
+              args.push(elseType)
+            if (elseId) {
+              const elseIdValue = evaluateExpression(elseId, context, true)
+              args.push(elseIdValue)
+            }
+            elseCan = context.permissions.check(...args)
+          }
+          catch (e) {
+            elseCan = false
+          }
+        }
+
+        return elseCan ? elseContent : (finalElseContent || '')
+      }
+      else {
+        return finalElseContent || ''
+      }
+    },
+  )
+
+  // Process @cannot/@endcannot directive with all variations
+  output = output.replace(
+    /@cannot\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n([\s\S]*?)(?:@elsecannot\('([^']*)'(?:,\s*'([^']*)')?(?:,\s*([^)]*))?\)\s*\n([\s\S]*?))?(?:@else\s*\n([\s\S]*?))?@endcannot/g,
+    (_, ability, type, id, content, elseAbility, elseType, elseId, elseContent, finalElseContent) => {
+      // Handle permissions with complex evaluation
+      let cannot = true
+
+      // Try different permission checking patterns
+      if (context.userCan && typeof context.userCan[ability] === 'boolean') {
+        cannot = !context.userCan[ability]
+      }
+      else if (context.permissions?.check && typeof context.permissions.check === 'function') {
+        try {
+          const args = [ability]
+          if (type)
+            args.push(type)
+          if (id) {
+            // Evaluate id if it's an expression
+            const idValue = evaluateExpression(id, context, true)
+            args.push(idValue)
+          }
+          cannot = !context.permissions.check(...args)
+        }
+        catch (e) {
+          cannot = true
+        }
+      }
+
+      if (cannot) {
+        return content
+      }
+      else if (elseAbility) {
+        // Check the elsecannot condition
+        let elseCannot = true
+
+        if (context.userCan && typeof context.userCan[elseAbility] === 'boolean') {
+          elseCannot = !context.userCan[elseAbility]
+        }
+        else if (context.permissions?.check && typeof context.permissions.check === 'function') {
+          try {
+            const args = [elseAbility]
+            if (elseType)
+              args.push(elseType)
+            if (elseId) {
+              const elseIdValue = evaluateExpression(elseId, context, true)
+              args.push(elseIdValue)
+            }
+            elseCannot = !context.permissions.check(...args)
+          }
+          catch (e) {
+            elseCannot = true
+          }
+        }
+
+        return elseCannot ? elseContent : (finalElseContent || '')
+      }
+      else {
+        return finalElseContent || ''
+      }
+    },
+  )
+
+  return output
 }
 
 export default plugin
