@@ -6,7 +6,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { processConditionals } from './conditionals'
 import { processExpressions } from './expressions'
-import { fileExists } from './utils'
+import { createDetailedErrorMessage, fileExists } from './utils'
 
 // Cache for partials to avoid repeated file reads
 export const partialsCache: Map<string, string> = new Map()
@@ -40,7 +40,7 @@ export async function processIncludes(
   })
 
   // Process @includeWhen directive
-  output = output.replace(/@includeWhen\s*\(([^,]+),\s*['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (_, condition, includePath, varsString) => {
+  output = output.replace(/@includeWhen\s*\(([^,]+),\s*['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (match, condition, includePath, varsString, offset) => {
     try {
       // Evaluate the condition
       // eslint-disable-next-line no-new-func
@@ -57,14 +57,20 @@ export async function processIncludes(
       }
       return ''
     }
-    catch (error) {
-      console.error(`Error evaluating @includeWhen condition: ${error}`)
-      return `[Error in @includeWhen: ${error}]`
+    catch (error: any) {
+      return createDetailedErrorMessage(
+        'Include',
+        `Error evaluating @includeWhen condition: ${error.message}`,
+        filePath,
+        template,
+        offset,
+        match,
+      )
     }
   })
 
   // Process @includeUnless directive
-  output = output.replace(/@includeUnless\s*\(([^,]+),\s*['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (_, condition, includePath, varsString) => {
+  output = output.replace(/@includeUnless\s*\(([^,]+),\s*['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (match, condition, includePath, varsString, offset) => {
     try {
       // Evaluate the condition
       // eslint-disable-next-line no-new-func
@@ -81,37 +87,107 @@ export async function processIncludes(
       }
       return ''
     }
-    catch (error) {
-      console.error(`Error evaluating @includeUnless condition: ${error}`)
-      return `[Error in @includeUnless: ${error}]`
+    catch (error: any) {
+      return createDetailedErrorMessage(
+        'Include',
+        `Error evaluating @includeUnless condition: ${error.message}`,
+        filePath,
+        template,
+        offset,
+        match,
+      )
     }
   })
 
   // Process @includeFirst directive
-  output = output.replace(/@includeFirst\s*\(\s*\[([^\]]+)\](?:,\s*(\{[^}]*\}))?\)/g, (_, pathsString, varsString) => {
+  // This tries multiple includes and uses the first one that exists
+  const includeFirstRegex = /@includeFirst\s*\(\s*(\[[^\]]+\])\s*(?:,\s*(\{[^}]+\})\s*)?\)/g
+  let includeFirstMatch
+
+  // eslint-disable-next-line no-cond-assign
+  while (includeFirstMatch = includeFirstRegex.exec(output)) {
+    const [fullMatch, pathArrayString, varsString] = includeFirstMatch
+    const matchOffset = includeFirstMatch.index
+
     try {
       // Parse the array of paths
-      const pathsArrayString = `[${pathsString}]`
-      // eslint-disable-next-line no-new-func
-      const pathsFn = new Function(`return ${pathsArrayString}`)
-      const paths = pathsFn()
+      const pathArray = JSON.parse(pathArrayString.replace(/'/g, '"'))
 
-      // Find the first existing file
-      for (const path of paths) {
-        const includeFilePath = resolvePath(path, partialsDir, filePath)
-        if (includeFilePath && fs.existsSync(includeFilePath)) {
-          // Track the first dependency that exists
-          dependencies.add(includeFilePath)
-          return `@include('${path}'${varsString ? `, ${varsString}` : ''})`
+      // Parse local variables if provided
+      let localVars = {}
+      if (varsString) {
+        try {
+          // eslint-disable-next-line no-new-func
+          const varsFn = new Function(`return ${varsString}`)
+          localVars = varsFn()
+        }
+        catch (error: any) {
+          output = output.replace(
+            fullMatch,
+            createDetailedErrorMessage(
+              'Include',
+              `Error parsing includeFirst variables: ${error.message}`,
+              filePath,
+              template,
+              matchOffset,
+              fullMatch,
+            ),
+          )
+          continue
         }
       }
-      return '' // None of the files exist
+
+      // Try each path in order
+      let foundValidPath = false
+      for (const includePath of pathArray) {
+        // Get the actual file path
+        const includeFilePath = resolvePath(includePath, partialsDir, filePath)
+        if (!includeFilePath) {
+          continue // Skip to next path
+        }
+
+        // Check if file exists
+        if (await fileExists(includeFilePath)) {
+          // Process the include with our helper function
+          const processed = await processIncludeHelper(includePath, localVars, template, matchOffset)
+          output = output.replace(fullMatch, processed)
+          foundValidPath = true
+          break
+        }
+      }
+
+      // No valid include found
+      if (!foundValidPath) {
+        output = output.replace(
+          fullMatch,
+          createDetailedErrorMessage(
+            'Include',
+            `None of the includeFirst paths exist: ${pathArrayString}`,
+            filePath,
+            template,
+            matchOffset,
+            fullMatch,
+          ),
+        )
+      }
     }
-    catch (error) {
-      console.error(`Error processing @includeFirst: ${error}`)
-      return `[Error in @includeFirst: ${error}]`
+    catch (error: any) {
+      output = output.replace(
+        fullMatch,
+        createDetailedErrorMessage(
+          'Include',
+          `Error processing @includeFirst: ${error.message}`,
+          filePath,
+          template,
+          matchOffset,
+          fullMatch,
+        ),
+      )
     }
-  })
+
+    // Reset regex to start from beginning since we've modified the string
+    includeFirstRegex.lastIndex = 0
+  }
 
   // Helper function to resolve paths
   function resolvePath(includePath: string, partialsDir: string, filePath: string): string | null {
@@ -141,14 +217,20 @@ export async function processIncludes(
     }
   }
 
-  // Replace all includes recursively
-  const processedIncludes = new Set<string>() // Prevent infinite recursion
+  // Keep track of processed includes to prevent infinite recursion
+  const processedIncludes = new Set<string>()
 
-  // Define a function to process a single include
-  async function processInclude(includePath: string, localVars: Record<string, any> = {}): Promise<string> {
+  // Define a helper function to process a single include
+  async function processIncludeHelper(includePath: string, localVars: Record<string, any> = {}, templateStr: string, offsetPos: number): Promise<string> {
     if (processedIncludes.has(includePath)) {
       // Avoid infinite recursion
-      return `[Circular include: ${includePath}]`
+      return createDetailedErrorMessage(
+        'Include',
+        `Circular include detected: ${includePath}`,
+        filePath,
+        templateStr,
+        offsetPos,
+      )
     }
 
     processedIncludes.add(includePath)
@@ -157,7 +239,13 @@ export async function processIncludes(
       // Get resolved path
       const includeFilePath = resolvePath(includePath, partialsDir, filePath)
       if (!includeFilePath) {
-        return `[Error: Could not resolve path for ${includePath}]`
+        return createDetailedErrorMessage(
+          'Include',
+          `Could not resolve path for include: ${includePath}`,
+          filePath,
+          templateStr,
+          offsetPos,
+        )
       }
 
       // Track dependency
@@ -174,7 +262,13 @@ export async function processIncludes(
           partialsCache.set(includeFilePath, partialContent)
         }
         catch (error: any) {
-          return `[Error loading include: ${error.message}]`
+          return createDetailedErrorMessage(
+            'Include',
+            `Error loading include file ${includePath}: ${error.message}`,
+            filePath,
+            templateStr,
+            offsetPos,
+          )
         }
       }
 
@@ -206,7 +300,13 @@ export async function processIncludes(
       return processedContent
     }
     catch (error: any) {
-      return `[Error processing include: ${error.message}]`
+      return createDetailedErrorMessage(
+        'Include',
+        `Error processing include ${includePath}: ${error.message}`,
+        filePath,
+        templateStr,
+        offsetPos,
+      )
     }
     finally {
       // Remove from processed set to allow future uses
@@ -222,6 +322,7 @@ export async function processIncludes(
   // eslint-disable-next-line no-cond-assign
   while (match = includeRegex.exec(output)) {
     const [fullMatch, includePath, varsString] = match
+    const matchOffset = match.index
     let localVars = {}
 
     // Parse local variables if provided
@@ -232,13 +333,22 @@ export async function processIncludes(
         localVars = varsFn()
       }
       catch (error: any) {
-        output = output.replace(fullMatch, `[Error parsing include variables: ${error.message}]`)
+        output = output.replace(
+          fullMatch,
+          createDetailedErrorMessage(
+            'Include',
+            `Error parsing include variables for ${includePath}: ${error.message}`,
+            filePath,
+            template,
+            matchOffset,
+          ),
+        )
         continue
       }
     }
 
     // Process the include
-    const processedContent = await processInclude(includePath, localVars)
+    const processedContent = await processIncludeHelper(includePath, localVars, template, matchOffset)
 
     // Replace in the output
     output = output.replace(fullMatch, processedContent)

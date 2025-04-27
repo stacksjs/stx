@@ -226,8 +226,8 @@ describe('STX Expression Filters', () => {
 
     const outputHtml = await getHtmlOutput(result)
 
-    // Should contain error messages
-    expect(outputHtml).toContain('[Error evaluating:')
+    // Should contain error messages in the new format
+    expect(outputHtml).toContain('Expression Error')
     expect(outputHtml).toContain('Filter not found: nonExistentFilter')
     // Still processes valid filters
     expect(outputHtml).toContain('Valid: HELLO WORLD')

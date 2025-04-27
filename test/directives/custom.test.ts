@@ -283,9 +283,10 @@ describe('STX Custom Directives', () => {
 
     const outputHtml = await getHtmlOutput(result)
 
-    // Check that the error is properly handled
+    // Check that the error is properly handled with the new format
     expect(outputHtml).toContain('<p>Before error</p>')
-    expect(outputHtml).toContain('[Error in @error: Intentional test error]')
+    expect(outputHtml).toContain('Custom Directive Error')
+    expect(outputHtml).toContain('Intentional test error')
     expect(outputHtml).toContain('<p>After error</p>')
   })
 

@@ -709,3 +709,98 @@ export function processOnceDirective(template: string): string {
 
   return result
 }
+
+/**
+ * Get source line number from an error in a template
+ * This helps provide more precise error messages
+ * @param template The full template string
+ * @param errorPosition The character position of the error (if available)
+ * @param errorPattern The pattern to locate in the template (fallback if position not available)
+ * @returns Line number and context information
+ */
+export function getSourceLineInfo(
+  template: string,
+  errorPosition?: number,
+  errorPattern?: string,
+): { lineNumber: number, lineContent: string, context: string } {
+  // Default values if we can't extract info
+  let lineNumber = 0
+  let lineContent = ''
+  let context = ''
+
+  try {
+    // If we have a position, find the line containing that position
+    if (typeof errorPosition === 'number' && errorPosition >= 0) {
+      const lines = template.split('\n')
+      let currentPos = 0
+
+      for (let i = 0; i < lines.length; i++) {
+        currentPos += lines[i].length + 1 // +1 for the newline character
+        if (currentPos >= errorPosition) {
+          lineNumber = i + 1 // Lines start at 1
+          lineContent = lines[i].trim()
+
+          // Get some context (preceding and following lines)
+          const start = Math.max(0, i - 2)
+          const end = Math.min(lines.length, i + 3)
+          context = lines.slice(start, end).map((line, idx) => {
+            const contextLineNum = start + idx + 1
+            const marker = contextLineNum === lineNumber ? '> ' : '  '
+            return `${marker}${contextLineNum}: ${line}`
+          }).join('\n')
+
+          break
+        }
+      }
+    }
+    // If no position but we have a pattern, find the line containing the pattern
+    else if (errorPattern) {
+      const patternPos = template.indexOf(errorPattern)
+      if (patternPos >= 0) {
+        return getSourceLineInfo(template, patternPos)
+      }
+    }
+  }
+  catch (_err) {
+    // Fallback - at least return what we know about the error
+  }
+
+  return { lineNumber, lineContent, context }
+}
+
+/**
+ * Create a descriptive error message with line information
+ * @param errorType Type of error (e.g., "Expression", "Directive")
+ * @param errorMessage The base error message
+ * @param filePath The file where the error occurred
+ * @param template The template content
+ * @param errorPosition The position of the error (if known)
+ * @param errorPattern A pattern to locate the error (fallback)
+ * @returns A formatted error message
+ */
+export function createDetailedErrorMessage(
+  errorType: string,
+  errorMessage: string,
+  filePath: string,
+  template: string,
+  errorPosition?: number,
+  errorPattern?: string,
+): string {
+  const { lineNumber, context } = getSourceLineInfo(template, errorPosition, errorPattern)
+
+  let detailedMessage = `[${errorType} Error`
+
+  if (lineNumber > 0) {
+    detailedMessage += ` at line ${lineNumber}`
+  }
+
+  detailedMessage += ` in ${filePath.split('/').pop()}]`
+  detailedMessage += `: ${errorMessage}`
+
+  // Add detailed context for debug mode
+  if (context) {
+    detailedMessage += `\n\nContext:\n${context}`
+  }
+
+  return detailedMessage
+}

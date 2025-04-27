@@ -186,8 +186,8 @@ describe('STX Expression Evaluation', () => {
     expect(outputHtml).toContain('<p>Valid expression: 2</p>')
     // Null handling should work with default values
     expect(outputHtml).toContain('<p>Null check: No user</p>')
-    // Errors should be caught and displayed
-    expect(outputHtml).toContain('[Error evaluating:')
+    // Errors should be caught and displayed with new format
+    expect(outputHtml).toContain('Expression Error')
     expect(outputHtml).toContain('nonExistentVar')
     expect(outputHtml).toContain('methodThatDoesntExist')
     // Division by zero should return Infinity

@@ -1,4 +1,5 @@
 import type { CustomDirective, StxOptions } from './types'
+import { createDetailedErrorMessage } from './utils'
 
 /**
  * Process all custom directives registered in the app
@@ -71,12 +72,13 @@ async function processDirectiveWithEndTag(
   const pattern = new RegExp(`${startTag}(?:\\s*\\(([^)]+)\\))?([\\s\\S]*?)${endTag}`, 'g')
 
   // Keep track of replacements to handle nested directives properly
-  const replacements: Array<{ original: string, processed: string }> = []
+  const replacements: Array<{ original: string, processed: string, startIndex: number }> = []
 
   // Find all directive patterns
   let match = pattern.exec(output)
   while (match !== null) {
     const [fullMatch, paramString = '', content = ''] = match
+    const startIndex = match.index || 0
 
     try {
       // Parse parameters
@@ -92,6 +94,7 @@ async function processDirectiveWithEndTag(
       replacements.push({
         original: fullMatch,
         processed,
+        startIndex,
       })
     }
     catch (error) {
@@ -100,10 +103,18 @@ async function processDirectiveWithEndTag(
         console.error(`Error processing custom directive @${name}:`, error)
       }
 
-      // Replace with error message if processing fails
+      // Replace with detailed error message if processing fails
       replacements.push({
         original: fullMatch,
-        processed: `[Error in @${name}: ${errorMessage}]`,
+        processed: createDetailedErrorMessage(
+          'Custom Directive',
+          `Error in @${name}${paramString ? `(${paramString})` : ''}: ${errorMessage}`,
+          filePath,
+          template,
+          startIndex,
+          fullMatch,
+        ),
+        startIndex,
       })
     }
 
@@ -138,12 +149,13 @@ async function processDirectiveWithoutEndTag(
   const pattern = new RegExp(`@${name}\\s*\\(([^)]+)\\)`, 'g')
 
   // Keep track of replacements
-  const replacements: Array<{ original: string, processed: string }> = []
+  const replacements: Array<{ original: string, processed: string, startIndex: number }> = []
 
   // Find all directive patterns
   let match = pattern.exec(output)
   while (match !== null) {
     const [fullMatch, paramString = ''] = match
+    const startIndex = match.index || 0
 
     try {
       // Parse parameters
@@ -157,6 +169,7 @@ async function processDirectiveWithoutEndTag(
       replacements.push({
         original: fullMatch,
         processed,
+        startIndex,
       })
     }
     catch (error) {
@@ -165,10 +178,18 @@ async function processDirectiveWithoutEndTag(
         console.error(`Error processing custom directive @${name}:`, error)
       }
 
-      // Replace with error message if processing fails
+      // Replace with detailed error message if processing fails
       replacements.push({
         original: fullMatch,
-        processed: `[Error in @${name}: ${errorMessage}]`,
+        processed: createDetailedErrorMessage(
+          'Custom Directive',
+          `Error in @${name}(${paramString}): ${errorMessage}`,
+          filePath,
+          template,
+          startIndex,
+          fullMatch,
+        ),
+        startIndex,
       })
     }
 

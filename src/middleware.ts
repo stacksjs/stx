@@ -1,4 +1,5 @@
 import type { Middleware, StxOptions } from './types'
+import { createDetailedErrorMessage } from './utils'
 
 /**
  * Process middleware registered in the application
@@ -43,10 +44,25 @@ export async function processMiddleware(
         console.warn(`Middleware ${middleware.name} did not return a string`)
       }
     }
-    catch (error) {
+    catch (error: any) {
       if (options.debug) {
         console.error(`Error in middleware ${middleware.name}:`, error)
       }
+
+      // Provide more detailed error information for debugging
+      if (options.debug) {
+        // Insert a helpful error message in the output
+        const errorMessage = createDetailedErrorMessage(
+          'Middleware',
+          `Error in middleware '${middleware.name}': ${error instanceof Error ? error.message : String(error)}`,
+          filePath,
+          template,
+        )
+
+        // Add a visible error message to the template
+        output = output.replace(/<body[^>]*>/, `$&\n<div style="color:red;background:#ffeeee;padding:10px;border:1px solid #ff0000;margin:10px 0;font-family:monospace;white-space:pre-wrap;">${errorMessage}</div>\n`)
+      }
+
       // Continue with other middleware even if one fails
     }
   }

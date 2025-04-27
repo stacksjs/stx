@@ -2,6 +2,8 @@
  * Module for processing template expressions and filters
  */
 
+import { createDetailedErrorMessage } from './utils'
+
 /**
  * Add basic filter support to expressions
  */
@@ -59,42 +61,63 @@ export function escapeHtml(unsafe: string): string {
 /**
  * Process template expressions including variables, filters, and operations
  */
-export function processExpressions(template: string, context: Record<string, any>, _filePath: string): string {
+export function processExpressions(template: string, context: Record<string, any>, filePath: string): string {
   let output = template
 
   // Replace triple curly braces with unescaped expressions {{{ expr }}} - similar to {!! expr !!}
-  output = output.replace(/\{\{\{([\s\S]*?)\}\}\}/g, (_, expr) => {
+  output = output.replace(/\{\{\{([\s\S]*?)\}\}\}/g, (match, expr, offset) => {
     try {
       const value = evaluateExpression(expr, context)
       // Return raw content without escaping
       return value !== undefined && value !== null ? String(value) : ''
     }
     catch (error: any) {
-      return `[Error evaluating: {{{ ${expr}}}] ${error.message || ''}`
+      return createDetailedErrorMessage(
+        'Expression',
+        `Error evaluating: {{{ ${expr.trim()}}}}: ${error.message || ''}`,
+        filePath,
+        template,
+        offset,
+        match,
+      )
     }
   })
 
   // Replace {!! expr !!} with unescaped expressions
-  output = output.replace(/\{!!([\s\S]*?)!!\}/g, (_, expr) => {
+  output = output.replace(/\{!!([\s\S]*?)!!\}/g, (match, expr, offset) => {
     try {
       const value = evaluateExpression(expr, context)
       // Return raw content without escaping
       return value !== undefined && value !== null ? String(value) : ''
     }
     catch (error: any) {
-      return `[Error evaluating: {!! ${expr}!!}] ${error.message || ''}`
+      return createDetailedErrorMessage(
+        'Expression',
+        `Error evaluating: {!! ${expr.trim()} !!}: ${error.message || ''}`,
+        filePath,
+        template,
+        offset,
+        match,
+      )
     }
   })
 
   // Replace {{ expr }} with escaped expressions
-  output = output.replace(/\{\{([\s\S]*?)\}\}/g, (_, expr) => {
+  output = output.replace(/\{\{([\s\S]*?)\}\}/g, (match, expr, offset) => {
     try {
       const value = evaluateExpression(expr, context)
       // Escape HTML for security
       return value !== undefined && value !== null ? escapeHtml(String(value)) : ''
     }
     catch (error: any) {
-      return `[Error evaluating: {{ ${expr}}}] ${error.message || ''}`
+      return createDetailedErrorMessage(
+        'Expression',
+        `Error evaluating: {{ ${expr.trim()} }}: ${error.message || ''}`,
+        filePath,
+        template,
+        offset,
+        match,
+      )
     }
   })
 

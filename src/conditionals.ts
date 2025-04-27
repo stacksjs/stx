@@ -2,6 +2,9 @@
  * Module for processing conditional directives (@if, @elseif, @else, @unless)
  */
 
+import { evaluateAuthExpression } from './auth'
+import { createDetailedErrorMessage } from './utils'
+
 /**
  * Process conditionals (@if, @elseif, @else, @unless)
  */
@@ -13,12 +16,20 @@ export function processConditionals(template: string, context: Record<string, an
     return `@if (!(${condition}))${content}@endif`
   })
 
-  // Process @if-elseif-else statements recursively
+  // Process @isset and @empty directives separately
+  output = processIssetEmptyDirectives(output, context, filePath)
+
+  // Process @env directives separately
+  output = processEnvDirective(output, context, filePath)
+
+  // Process @auth and @guest directives separately
+  output = processAuthDirectives(output, context)
+
+  // Process @if, @else, @elseif directives
   const processIfStatements = () => {
-    // First pass: process the innermost @if-@endif blocks
     let hasMatches = false
 
-    output = output.replace(/@if\s*\(([^)]+)\)([\s\S]*?)@endif/g, (match, condition, content) => {
+    output = output.replace(/@if\s*\(([^)]+)\)([\s\S]*?)@endif/g, (match, condition, content, offset) => {
       hasMatches = true
 
       try {
@@ -43,8 +54,14 @@ export function processConditionals(template: string, context: Record<string, an
               }
             }
             catch (error: any) {
-              console.error(`Error in elseif condition in ${filePath}:`, error)
-              return `[Error in @elseif: ${error instanceof Error ? error.message : String(error)}]`
+              return createDetailedErrorMessage(
+                'Directive',
+                `Error in @elseif(${elseifMatches[1]}): ${error instanceof Error ? error.message : String(error)}`,
+                filePath,
+                template,
+                offset + match.indexOf('@elseif'),
+                `@elseif(${elseifMatches[1]})`,
+              )
             }
           }
 
@@ -58,8 +75,14 @@ export function processConditionals(template: string, context: Record<string, an
         }
       }
       catch (error: any) {
-        console.error(`Error in if condition in ${filePath}:`, error)
-        return `[Error in @if: ${error instanceof Error ? error.message : String(error)}]`
+        return createDetailedErrorMessage(
+          'Directive',
+          `Error in @if(${condition}): ${error instanceof Error ? error.message : String(error)}`,
+          filePath,
+          template,
+          offset,
+          `@if(${condition})`,
+        )
       }
     })
 
@@ -239,11 +262,11 @@ export function processAuthDirectives(template: string, context: Record<string, 
 /**
  * Process @isset and @empty directives
  */
-export function processIssetEmptyDirectives(template: string, context: Record<string, any>): string {
+export function processIssetEmptyDirectives(template: string, context: Record<string, any>, filePath?: string): string {
   let result = template
 
   // Process @isset directive
-  result = result.replace(/@isset\(([^)]+)\)([\s\S]*?)(?:@else([\s\S]*?))?@endisset/g, (match, variable, content, elseContent) => {
+  result = result.replace(/@isset\(([^)]+)\)((?:.|\n)*?)(?:@else((?:.|\n)*?))?@endisset/g, (match, variable, content, elseContent, offset) => {
     try {
       // Evaluate the variable path (silently handle undefined variables)
       const value = evaluateAuthExpression(variable.trim(), context)
@@ -255,14 +278,26 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
 
       return elseContent || ''
     }
-    catch (error) {
-      console.error(`Error processing @isset directive:`, error)
-      return match // Return unchanged if error
+    catch (error: any) {
+      if (filePath) {
+        return createDetailedErrorMessage(
+          'Directive',
+          `Error processing @isset directive: ${error.message}`,
+          filePath,
+          template,
+          offset,
+          match,
+        )
+      }
+      else {
+        console.error(`Error processing @isset directive:`, error)
+        return match // Return unchanged if error
+      }
     }
   })
 
   // Process @empty directive
-  result = result.replace(/@empty\(([^)]+)\)([\s\S]*?)(?:@else([\s\S]*?))?@endempty/g, (match, variable, content, elseContent) => {
+  result = result.replace(/@empty\(([^)]+)\)((?:.|\n)*?)(?:@else((?:.|\n)*?))?@endempty/g, (match, variable, content, elseContent, offset) => {
     try {
       // Evaluate the variable path (silently handle undefined variables)
       const value = evaluateAuthExpression(variable.trim(), context)
@@ -278,9 +313,21 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
 
       return elseContent || ''
     }
-    catch (error) {
-      console.error(`Error processing @empty directive:`, error)
-      return match // Return unchanged if error
+    catch (error: any) {
+      if (filePath) {
+        return createDetailedErrorMessage(
+          'Directive',
+          `Error processing @empty directive: ${error.message}`,
+          filePath,
+          template,
+          offset,
+          match,
+        )
+      }
+      else {
+        console.error(`Error processing @empty directive:`, error)
+        return match // Return unchanged if error
+      }
     }
   })
 
@@ -290,13 +337,13 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
 /**
  * Process @env directive to conditionally render content based on environment
  */
-export function processEnvDirective(template: string, context: Record<string, any>): string {
+export function processEnvDirective(template: string, context: Record<string, any>, filePath?: string): string {
   const result = template
 
   // Match @env('environment') / @elseenv('environment') / @else / @endenv blocks
-  const envPattern = /@env\((?:'|")?(.*?)(?:'|")?\)([\s\S]*?)(?:@elseenv\((?:'|")?(.*?)(?:'|")?\)([\s\S]*?))?(?:@else([\s\S]*?))?@endenv/g
+  const envPattern = /@env\((['"]?)(.*?)\1\)((?:.|\n)*?)(?:@elseenv\((['"]?)(.*?)\4\)((?:.|\n)*?))?(?:@else((?:.|\n)*?))?@endenv/g
 
-  return result.replace(envPattern, (match, envValue, content, elseEnvValue, elseEnvContent, elseContent) => {
+  return result.replace(envPattern, (match, quote1, envValue, content, quote2, elseEnvValue, elseEnvContent, elseContent, offset) => {
     try {
       const currentEnv = context.NODE_ENV || process.env.NODE_ENV || 'development'
 
@@ -345,33 +392,21 @@ export function processEnvDirective(template: string, context: Record<string, an
       // Return else content if it exists
       return elseContent || ''
     }
-    catch (error) {
-      console.error(`Error processing @env directive:`, error)
-      return match // Return unchanged if error
+    catch (error: any) {
+      if (filePath) {
+        return createDetailedErrorMessage(
+          'Directive',
+          `Error processing @env directive: ${error.message}`,
+          filePath,
+          template,
+          offset,
+          match,
+        )
+      }
+      else {
+        console.error(`Error processing @env directive:`, error)
+        return match // Return unchanged if error
+      }
     }
   })
-}
-
-/**
- * Helper function to evaluate expressions in auth directives
- */
-function evaluateAuthExpression(expression: string, context: Record<string, any>): any {
-  try {
-    // eslint-disable-next-line no-new-func
-    const exprFn = new Function(...Object.keys(context), `
-      try {
-        return ${expression};
-      } catch (e) {
-        // Handle undefined variables or methods
-        if (e instanceof ReferenceError || e instanceof TypeError) {
-          return undefined;
-        }
-        throw e; // Re-throw other errors
-      }
-    `)
-    return exprFn(...Object.values(context))
-  }
-  catch {
-    return undefined
-  }
 }
