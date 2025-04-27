@@ -6,8 +6,6 @@
 [![npm downloads][npm-downloads-src]][npm-downloads-href]
 <!-- [![Codecov][codecov-src]][codecov-href] -->
 
-WIP 🚧
-
 # bun-plugin-stx
 
 A Bun plugin that enables Laravel Blade-like syntax in `.stx` files. This plugin allows you to write templates with dynamic content using a simple yet powerful syntax.

@@ -7,7 +7,7 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "types": ["node"],
+    "types": ["bun"],
     "allowImportingTsExtensions": true,
     "strict": true,
     "strictNullChecks": true,
@@ -20,5 +20,7 @@
     "isolatedDeclarations": true,
     "skipDefaultLibCheck": true,
     "skipLibCheck": true
-  }
+  },
+  "files": ["src/stx.d.ts"],
+  "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx"]
 }
