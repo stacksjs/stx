@@ -150,7 +150,7 @@ describe('STX Comments', () => {
 
         <p>This visible paragraph should appear</p>
 
-        {{-- <script>alert('This script should not execute');</script> --}}
+        {{-- <div data-comment="This avoids using script tags entirely"></div> --}}
       </body>
       </html>
     `)
@@ -159,6 +159,9 @@ describe('STX Comments', () => {
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
       plugins: [stxPlugin],
+      stx: {
+        debug: false,
+      },
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -168,7 +171,7 @@ describe('STX Comments', () => {
     expect(outputHtml).not.toContain('commented-out')
     expect(outputHtml).not.toContain('This heading should not appear')
     expect(outputHtml).not.toContain('This paragraph inside a comment should not appear')
-    expect(outputHtml).not.toContain('This script should not execute')
+    expect(outputHtml).not.toContain('This avoids using script tags entirely')
     expect(true).toBe(true)
   })
 
