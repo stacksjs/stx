@@ -4,6 +4,7 @@ import type { BunPlugin } from 'bun'
  * STX Plugin for Bun
  * Enables Laravel Blade-like syntax in .stx files
  */
+
 const plugin: BunPlugin = {
   name: 'bun-plugin-stx',
   async setup(build) {
@@ -27,8 +28,8 @@ const plugin: BunPlugin = {
           scriptFn(module)
           Object.assign(context, module.exports)
         }
-        catch (error) {
-          console.warn('Failed to execute script as module:', error)
+        catch (error: any) {
+          console.warn(`Failed to execute script as module in ${path}:`, error)
         }
 
         // Try to extract variables from direct script execution
@@ -65,9 +66,10 @@ const plugin: BunPlugin = {
           })
         }
         catch (error: any) {
-          // Suppress specific module errors
-          if (!error.toString().includes('module is not defined')) {
-            console.warn('Could not extract variables directly:', error)
+          // Only show extraction warnings for unexpected errors
+          if (!error.toString().includes('module is not defined')
+            && !error.toString().includes('Unexpected EOF')) {
+            console.warn(`Variable extraction issue in ${path}:`, error)
           }
         }
 
@@ -102,14 +104,14 @@ const plugin: BunPlugin = {
                   }
                 }
                 catch (error) {
-                  console.error('Error in elseif condition:', error)
+                  console.error(`Error in elseif condition in ${path}:`, error)
                 }
               }
               return '' // Return empty if condition is false and no else/elseif is found
             }
           }
           catch (error) {
-            console.error('Error in if condition:', error)
+            console.error(`Error in if condition in ${path}:`, error)
             return `[Error in @if: ${error instanceof Error ? error.message : String(error)}]`
           }
         })
@@ -144,7 +146,7 @@ const plugin: BunPlugin = {
             }).join('')
           }
           catch (error) {
-            console.error('Error in foreach:', error)
+            console.error(`Error in foreach in ${path}:`, error)
             return `[Error in @foreach: ${error instanceof Error ? error.message : String(error)}]`
           }
         })
@@ -170,7 +172,7 @@ const plugin: BunPlugin = {
             return loopFn(...loopValues)
           }
           catch (error) {
-            console.error('Error in for loop:', error)
+            console.error(`Error in for loop in ${path}:`, error)
             return `[Error in @for: ${error instanceof Error ? error.message : String(error)}]`
           }
         })
@@ -183,7 +185,7 @@ const plugin: BunPlugin = {
             return String(exprFn(...Object.values(context)) ?? '')
           }
           catch (error) {
-            console.error('Error evaluating expression:', error)
+            console.error(`Error evaluating expression in ${path}:`, error)
             return `[Error: ${error instanceof Error ? error.message : String(error)}]`
           }
         })
@@ -196,7 +198,7 @@ const plugin: BunPlugin = {
             return String(exprFn(...Object.values(context)) ?? '')
           }
           catch (error) {
-            console.error('Error evaluating raw expression:', error)
+            console.error(`Error evaluating raw expression in ${path}:`, error)
             return `[Error: ${error instanceof Error ? error.message : String(error)}]`
           }
         })
