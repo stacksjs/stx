@@ -8,12 +8,18 @@
 
 # bun-plugin-stx
 
-A Bun plugin that enables Laravel Blade-like syntax in `.stx` files. This plugin allows you to write templates with dynamic content using a simple yet powerful syntax.
+A Blade-like template engine plugin for Bun, enabling simple and powerful templating with .stx files.
+
+## Features
+
+- 🦋 Laravel Blade-like syntax
+- 🚀 Fast and lightweight
+- 📦 Zero config
 
 ## Installation
 
 ```bash
-bun add bun-plugin-stx --dev
+bun add bun-plugin-stx
 ```
 
 ## Setup
@@ -21,8 +27,11 @@ bun add bun-plugin-stx --dev
 Add the plugin to your `bunfig.toml`:
 
 ```toml
-[plugins]
-stx = "bun-plugin-stx"
+preload = [ "bun-plugin-stx" ]
+
+# or as a serve plugin
+[serve.static]
+plugins = [ "bun-plugin-stx" ]
 ```
 
 Or register the plugin in your build script:
@@ -32,15 +41,82 @@ import { build } from 'bun'
 import stxPlugin from 'bun-plugin-stx'
 
 await build({
-  entrypoints: ['./src/index.ts'],
+  entrypoints: ['./src/index.ts', './templates/home.stx'],
   outdir: './dist',
   plugins: [stxPlugin],
 })
 ```
 
-## Usage
+## Usage with ESM
 
-Create `.stx` files with a syntax similar to Laravel Blade templates. Variables in your script tags must be exported using a module.exports pattern:
+### 1. Configure Bun to use the plugin
+
+In your build script or Bun configuration:
+
+```js
+// build.js
+import { build } from 'bun'
+import stxPlugin from 'bun-plugin-stx'
+
+await build({
+  entrypoints: ['./src/index.ts', './templates/home.stx'],
+  outdir: './dist',
+  plugins: [stxPlugin],
+})
+```
+
+### 2. Import and use .stx files directly
+
+You can import .stx files directly in your ESM code:
+
+```js
+// app.js
+import homeTemplate from './templates/home.stx'
+
+// Use the processed HTML content
+document.body.innerHTML = homeTemplate
+```
+
+### 3. Use with Bun's server
+
+You can serve .stx files directly with Bun's server:
+
+```js
+// server.js
+import { serve } from 'bun'
+import homeTemplate from './home.stx'
+
+serve({
+  port: 3000,
+  fetch(req) {
+    return new Response(homeTemplate, {
+      headers: { 'Content-Type': 'text/html' }
+    })
+  }
+})
+```
+
+Or use as route handlers:
+
+```js
+import about from './about.stx'
+// server.js
+import home from './home.stx'
+
+export default {
+  port: 3000,
+  routes: {
+    '/': home,
+    '/about': about
+  }
+}
+```
+
+## STX Template Syntax
+
+STX templates use a syntax inspired by Laravel Blade. Templates can contain HTML with special directives for rendering dynamic content.
+
+### Basic Example
 
 ```html
 <!DOCTYPE html>
@@ -48,12 +124,10 @@ Create `.stx` files with a syntax similar to Laravel Blade templates. Variables 
 <head>
   <title>STX Example</title>
   <script>
-    // Define your data by exporting from the script tag
-    module.exports = {
-      title: "Hello World",
-      items: ["Apple", "Banana", "Cherry"],
-      showFooter: true
-    };
+    // Define your data as an ESM export
+    export const title = "Hello World";
+    export const items = ["Apple", "Banana", "Cherry"];
+    export const showFooter = true;
   </script>
 </head>
 <body>
@@ -72,42 +146,119 @@ Create `.stx` files with a syntax similar to Laravel Blade templates. Variables 
 </html>
 ```
 
-## Supported Directives
+### Data Export Options
 
-### Conditionals
+There are two ways to expose data in your STX templates:
+
+#### 1. ESM exports (recommended)
 
 ```html
-@if (condition)
-  <!-- content -->
-@elseif (anotherCondition)
-  <!-- content -->
+<script>
+  // Modern ESM named exports
+  export const title = "Hello World";
+  export const count = 42;
+
+  // Export functions
+  export function getFullName(first, last) {
+    return `${first} ${last}`;
+  }
+
+  // Export default object
+  export default {
+    items: ["Apple", "Banana", "Cherry"],
+    showDetails: true
+  };
+</script>
+```
+
+#### 2. Legacy CommonJS (module.exports)
+
+```html
+<script>
+  // Legacy CommonJS exports
+  module.exports = {
+    title: "Hello World",
+    items: ["Apple", "Banana", "Cherry"],
+    showFooter: true
+  };
+</script>
+```
+
+### Template Directives
+
+#### Variables
+
+Display content with double curly braces:
+
+```html
+<h1>{{ title }}</h1>
+<p>{{ user.name }}</p>
+```
+
+#### Conditionals
+
+Use `@if`, `@elseif`, and `@else` for conditional rendering:
+
+```html
+@if (user.isAdmin)
+  <div class="admin-panel">Admin content</div>
+@elseif (user.isEditor)
+  <div class="editor-tools">Editor tools</div>
 @else
-  <!-- content -->
+  <div class="user-view">Regular user view</div>
 @endif
 ```
 
-### Loops
+#### Loops
+
+Iterate over arrays with `@foreach`:
 
 ```html
-<!-- Foreach loop -->
-@foreach (array as item)
-  <!-- content -->
-@endforeach
-
-<!-- For loop -->
-@for (let i = 0; i < 5; i++)
-  <!-- content -->
-@endfor
+<ul>
+  @foreach (items as item)
+    <li>{{ item }}</li>
+  @endforeach
+</ul>
 ```
 
-### Displaying Data
+Use `@for` for numeric loops:
 
 ```html
-<!-- Escaped output -->
-{{ variable }}
+<ol>
+  @for (let i = 1; i <= 5; i++)
+    <li>Item {{ i }}</li>
+  @endfor
+</ol>
+```
 
-<!-- Raw output (unescaped) -->
-{!! rawHtml !!}
+#### Raw HTML
+
+Output unescaped HTML content:
+
+```html
+{!! rawHtmlContent !!}
+```
+
+## TypeScript Support
+
+STX includes TypeScript declarations for importing .stx files. Make sure your `tsconfig.json` includes the necessary configuration:
+
+```json
+{
+  "compilerOptions": {
+    // ... your other options
+    "types": ["bun"]
+  },
+  "files": ["src/stx.d.ts"],
+  "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx"]
+}
+```
+
+Create a declaration file (`src/stx.d.ts`):
+
+```ts
+// Allow importing .stx files
+declare module '*.stx';
 ```
 
 ## Example Server
@@ -159,16 +310,6 @@ The plugin works by:
 3. Processing Blade-like directives (@if, @foreach, etc.) into HTML
 4. Processing variable tags ({{ var }}) with their values
 5. Returning the processed HTML content
-
-## Features
-
-- 🦋 Laravel Blade-like syntax
-- 🚀 Fast and lightweight
-- 📦 Zero config
-
-## License
-
-MIT
 
 ## Testing
 
