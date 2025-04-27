@@ -49,7 +49,7 @@
   "devDependencies": {
     "@stacksjs/eslint-config": "^4.10.2-beta.3",
     "@types/bun": "^1.2.10",
-    "bumpp": "^10.0.1",
+    "bumpp": "^10.1.0",
     "bun-plugin-dtsx": "^0.21.9",
     "changelogen": "^0.6.1",
     "typescript": "^5.8.3"
