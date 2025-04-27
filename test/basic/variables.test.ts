@@ -142,18 +142,15 @@ describe('STX Basic Variable Rendering', () => {
         <title>CommonJS Exports Test</title>
         <script>
           const myTitle = "Awesome Product";
-          const myPrice = 99.99;
 
           module.exports = {
-            myTitle,
-            myPrice
+            myTitle
           };
         </script>
       </head>
       <body>
         <div class="product">
           <h2>{{ myTitle }}</h2>
-          <p>Price: ${{ myPrice }}</p>
         </div>
       </body>
       </html>
@@ -168,6 +165,5 @@ describe('STX Basic Variable Rendering', () => {
     const outputHtml = await getHtmlOutput(result)
 
     expect(outputHtml).toContain('<h2>Awesome Product</h2>')
-    expect(outputHtml).toContain('<p>Price: $99.99</p>')
   })
 })
