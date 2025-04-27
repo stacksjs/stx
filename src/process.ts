@@ -4,6 +4,7 @@ import path from 'node:path'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
 import { processCustomDirectives } from './custom-directives'
 import { processExpressions } from './expressions'
+import { processForms } from './forms'
 import { processTranslateDirective } from './i18n'
 import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
 import { processLoops } from './loops'
@@ -227,7 +228,7 @@ async function processOtherDirectives(
   output = processLoops(output, context, filePath)
 
   // Process form directives
-  output = processFormDirectives(output, context)
+  output = processFormDirectives(output, context, filePath, options)
 
   // Process @error directive
   output = processErrorDirective(output, context)
@@ -500,39 +501,8 @@ async function processCustomElements(
 /**
  * Process @form directives for forms
  */
-export function processFormDirectives(template: string, context: Record<string, any>): string {
-  let result = template
-
-  // Process @csrf directive
-  result = result.replace(/@csrf/g, () => {
-    if (context.csrf && typeof context.csrf === 'object') {
-      // Check if field is provided directly
-      if (context.csrf.field) {
-        return context.csrf.field
-      }
-
-      // Use token if available
-      if (context.csrf.token) {
-        return `<input type="hidden" name="_token" value="${context.csrf.token}">`
-      }
-    }
-
-    // Default fallback with empty token
-    return '<input type="hidden" name="_token" value="">'
-  })
-
-  // Process @method directive
-  result = result.replace(/@method\(['"]([^'"]+)['"]\)/g, (match, method) => {
-    // Method spoofing for non-GET/POST methods
-    if (method && ['PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
-      return `<input type="hidden" name="_method" value="${method.toUpperCase()}">`
-    }
-
-    // Return unchanged if not a supported method
-    return match
-  })
-
-  return result
+export function processFormDirectives(template: string, context: Record<string, any>, filePath: string = '', options: StxOptions = {}): string {
+  return processForms(template, context, filePath, options)
 }
 
 /**

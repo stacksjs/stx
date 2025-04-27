@@ -1,8 +1,14 @@
-import type { StxOptions } from './types'
 /**
  * Module for processing form-related directives
  */
-import { genId } from './utils'
+import type { StxOptions } from './types'
+
+/**
+ * Generate a random ID
+ */
+function genId(): string {
+  return Math.random().toString(36).substring(2, 15)
+}
 
 /**
  * Process all form-related directives
@@ -76,8 +82,9 @@ export function processFormInputDirectives(template: string, context: Record<str
   let result = template
 
   // Process @form directive
+  // Fix regex backtracking issue by simplifying and making the pattern more specific
   result = result.replace(
-    /@form\((?:(?:\s*['"]([^'"]+)['"]\s*,)?\s*['"]([^'"]+)['"]\s*,?)?(?:\s*\{([^}]+)\})?\)/g,
+    /@form\(\s*(?:['"]([^'"]+)['"]\s*,\s*)?(?:['"]([^'"]+)['"]\s*,)?\s*(?:\{([^}]+)\})?\)/g,
     (match, method = 'POST', action = '', attributes = '') => {
       const attrs = parseAttributes(attributes)
       const methodStr = method.toUpperCase()
@@ -405,6 +412,13 @@ function getOldValue(field: string, context: Record<string, any>): any {
  */
 function evaluateExpression(expr: string, context: Record<string, any>): string {
   try {
+    // Check if the expression is a string literal (surrounded by quotes)
+    if ((expr.startsWith('\'') && expr.endsWith('\''))
+      || (expr.startsWith('"') && expr.endsWith('"'))) {
+      // Return the string without quotes
+      return expr.substring(1, expr.length - 1)
+    }
+
     // Simple expression evaluation
     // eslint-disable-next-line no-new-func
     const evalFn = new Function(...Object.keys(context), `
@@ -429,7 +443,8 @@ function parseAttributes(attributesStr: string): string {
   const attrs: string[] = []
   const attrRegex = /([\w-]+)\s*:\s*(['"]?)([^,'"]+)\2/g
 
-  let match
+  // Fix the assignment in while statement
+  let match: RegExpExecArray | null
   while ((match = attrRegex.exec(attributesStr)) !== null) {
     const [, name, , value] = match
     attrs.push(`${name}="${value}"`)
