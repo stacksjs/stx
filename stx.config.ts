@@ -1,4 +1,4 @@
-import type { StxOptions } from './packages/stx/src/types'
+import type { StxOptions } from '@stacksjs/stx'
 
 const config: StxOptions = {
   enabled: true,

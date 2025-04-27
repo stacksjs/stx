@@ -109,3 +109,5 @@ export const plugin: BunPlugin = {
     })
   },
 }
+
+export default plugin
