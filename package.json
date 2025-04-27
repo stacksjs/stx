@@ -52,14 +52,6 @@
     "bumpp": "^10.0.1",
     "bun-plugin-dtsx": "^0.21.9",
     "changelogen": "^0.6.1",
-    "lint-staged": "^15.5.1",
-    "simple-git-hooks": "^2.13.0",
     "typescript": "^5.8.3"
-  },
-  "simple-git-hooks": {
-    "pre-commit": "bun lint-staged"
-  },
-  "lint-staged": {
-    "*.{js,ts}": "bunx eslint . --fix"
   }
 }

@@ -1,9 +1,9 @@
-import home from './home.html'
+import home from './home.stx'
 
 const server = Bun.serve({
-  // Add HTML imports to `static`
-  static: {
-    // Bundle & route home.html to "/home"
+  // Use routes instead of static for HTML imports
+  routes: {
+    // Bundle & route home.stx to "/"
     '/': home,
   },
 
@@ -14,7 +14,7 @@ const server = Bun.serve({
 
   // Handle API requests
   // eslint-disable-next-line unused-imports/no-unused-vars
-  async fetch(req) {
+  fetch(req) {
     // eslint-disable-next-line no-console
     console.log('on server')
 

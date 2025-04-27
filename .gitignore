@@ -10,3 +10,4 @@ logs
 node_modules
 temp
 tsconfig.tsbuildinfo
+/test/out

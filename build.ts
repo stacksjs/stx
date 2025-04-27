@@ -1,24 +1,17 @@
-import process from 'node:process'
-import { dts } from 'bun-plugin-dtsx'
+import { build } from 'bun'
+import stxPlugin from './src/index'
 
-console.log('Building...')
+async function runBuild() {
+  const result = await build({
+    entrypoints: ['./home.stx'],
+    outdir: './dist',
+    plugins: [stxPlugin],
+  })
 
-const result = await Bun.build({
-  entrypoints: ['src/index.ts'],
-  outdir: 'dist',
-  target: 'bun',
-  // minify: true,
-  plugins: [dts()],
-})
-
-if (!result.success) {
-  console.error('Build failed')
-
-  for (const message of result.logs) {
-    console.error(message)
+  console.log('Build completed:', result.success ? '✅' : '❌')
+  if (!result.success) {
+    console.error('Build errors:', result.logs)
   }
-
-  process.exit(1)
 }
 
-console.log('Build complete')
+runBuild().catch(console.error)

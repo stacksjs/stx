@@ -10,57 +10,123 @@ WIP 🚧
 
 # bun-plugin-stx
 
-> Blade is the simple, yet powerful templating engine provided with Stacks.
+A Bun plugin that enables Laravel Blade-like syntax in `.stx` files. This plugin allows you to write templates with dynamic content using a simple yet powerful syntax.
 
-## Features
-
-- 🦋 Laravel Blade-like
-- 🚀 Fast and lightweight
-- 📦 Zero config
-
-## Usage
+## Installation
 
 ```bash
-bun install -d bun-plugin-stx
+bun add bun-plugin-stx --dev
 ```
 
-### Bundler
+## Setup
 
-You may now use the plugin now via `Bun.build`:
+Add the plugin to your `bunfig.toml`:
+
+```toml
+[plugins]
+stx = "bun-plugin-stx"
+```
+
+Or register the plugin in your build script:
 
 ```ts
-// build.ts
-import type { UserConfig } from 'blade'
-import { plugin as blade } from 'bun-plugin-stx'
-// import blade from 'bun-plugin-stx'
+import { build } from 'bun'
+import stxPlugin from 'bun-plugin-stx'
 
-Bun.build({
-  entrypoints: ['./src/index.html'],
+await build({
+  entrypoints: ['./src/index.ts'],
   outdir: './dist',
-  plugins: [
-    blade,
-  ],
+  plugins: [stxPlugin],
 })
 ```
 
-### Server
+## Usage
 
-Additionally, it can also be used in conjunction with HTML imports, via `Bun.serve()`:
+Create `.stx` files with a syntax similar to Laravel Blade templates. Variables in your script tags must be exported using a module.exports pattern:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>STX Example</title>
+  <script>
+    // Define your data by exporting from the script tag
+    module.exports = {
+      title: "Hello World",
+      items: ["Apple", "Banana", "Cherry"],
+      showFooter: true
+    };
+  </script>
+</head>
+<body>
+  <h1>{{ title }}</h1>
+
+  <ul>
+    @foreach (items as item)
+      <li>{{ item }}</li>
+    @endforeach
+  </ul>
+
+  @if (showFooter)
+    <footer>Copyright 2023</footer>
+  @endif
+</body>
+</html>
+```
+
+## Supported Directives
+
+### Conditionals
+
+```html
+@if (condition)
+  <!-- content -->
+@elseif (anotherCondition)
+  <!-- content -->
+@else
+  <!-- content -->
+@endif
+```
+
+### Loops
+
+```html
+<!-- Foreach loop -->
+@foreach (array as item)
+  <!-- content -->
+@endforeach
+
+<!-- For loop -->
+@for (let i = 0; i < 5; i++)
+  <!-- content -->
+@endfor
+```
+
+### Displaying Data
+
+```html
+<!-- Escaped output -->
+{{ variable }}
+
+<!-- Raw output (unescaped) -->
+{!! rawHtml !!}
+```
+
+## Example Server
+
+Run a development server with your STX templates:
 
 ```ts
-// server.ts
-import home from './home.html'
+// serve.ts
+import home from './home.stx'
 
 const server = Bun.serve({
-  static: {
-    // Bundle & route home.html to "/home"
+  routes: {
     '/': home,
   },
+  development: true,
 
-  async fetch(req) {
-    console.log('any other request', req.url)
-
-    // Return 404 for unmatched routes
+  fetch(req) {
     return new Response('Not Found', { status: 404 })
   },
 })
@@ -68,30 +134,43 @@ const server = Bun.serve({
 console.log(`Listening on ${server.url}`)
 ```
 
-```html
-<!-- home.html -->
-<!DOCTYPE html>
-<html>
+## Testing This Plugin
 
-<head>
-  <title>Home</title>
-</head>
+To test the plugin with the included examples:
 
-<body>
-  <div @if="true">Is this shown?</div>
-</body>
+1. Build the test file:
 
-</html>
+```bash
+bun run test-build.ts
 ```
 
-#### Configuration
+2. Run the test server:
 
-For this to work, though, you have to ensure that the plugin is defined in your `bunfig.toml`:
-
-```toml
-[serve.static]
-plugins = [ "bun-plugin-stx" ]
+```bash
+bun run serve-test.ts
 ```
+
+3. Open your browser to the displayed URL (typically `http://localhost:3000`).
+
+## How It Works
+
+The plugin works by:
+
+1. Extracting script tags from .stx files
+2. Creating an execution context with variables from the script
+3. Processing Blade-like directives (@if, @foreach, etc.) into HTML
+4. Processing variable tags ({{ var }}) with their values
+5. Returning the processed HTML content
+
+## Features
+
+- 🦋 Laravel Blade-like syntax
+- 🚀 Fast and lightweight
+- 📦 Zero config
+
+## License
+
+MIT
 
 ## Testing
 
