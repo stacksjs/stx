@@ -1,6 +1,7 @@
 import type { StxConfig } from './types'
 import { resolve } from 'node:path'
 import { loadConfig } from 'bunfig'
+import { markdownDirectiveHandler } from './markdown'
 
 export const defaultConfig: StxConfig = {
   enabled: true,
@@ -10,7 +11,14 @@ export const defaultConfig: StxConfig = {
   cache: true,
   cachePath: '.stx-cache',
   cacheVersion: '1.0.0',
-  customDirectives: [],
+  customDirectives: [
+    {
+      name: 'markdown',
+      handler: markdownDirectiveHandler,
+      hasEndTag: true,
+      description: 'Render markdown content to HTML',
+    },
+  ],
   middleware: [],
   i18n: {
     defaultLocale: 'en',

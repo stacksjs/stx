@@ -285,3 +285,56 @@ describe('STX Form Directives', () => {
     expect(result).toContain('<select name="color" class="form-control">')
   })
 })
+
+describe('STX Markdown Support', () => {
+  it('should process @markdown directive with simple content', async () => {
+    const template = `<div>@markdown
+# Heading
+
+- List item 1
+- List item 2
+
+**Bold text**
+@endmarkdown</div>`
+
+    const processedContent = await import('../../src/markdown').then(module =>
+      module.processMarkdownDirectives(template, {}),
+    )
+
+    expect(processedContent).toContain('<h1>Heading</h1>')
+    expect(processedContent).toContain('<ul>')
+    expect(processedContent).toContain('<li>List item 1</li>')
+    expect(processedContent).toContain('<li>List item 2</li>')
+    expect(processedContent).toContain('<strong>Bold text</strong>')
+  })
+
+  it('should process @markdown directive with options', async () => {
+    const template = `<div>@markdown(breaks)
+Line 1
+Line 2
+@endmarkdown</div>`
+
+    const processedContent = await import('../../src/markdown').then(module =>
+      module.processMarkdownDirectives(template, {}),
+    )
+
+    expect(processedContent).toContain('Line 1<br>')
+  })
+
+  it('should handle @markdown directive with syntax errors gracefully', async () => {
+    const template = `<div>@markdown
+# Valid markdown
+
+\`\`\`invalid
+Unclosed code block
+@endmarkdown</div>`
+
+    const processedContent = await import('../../src/markdown').then(module =>
+      module.processMarkdownDirectives(template, {}),
+    )
+
+    expect(processedContent).toContain('<h1>Valid markdown</h1>')
+    // Despite the syntax error, marked will still render it
+    expect(processedContent).toContain('Unclosed code block')
+  })
+})

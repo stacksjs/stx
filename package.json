@@ -46,7 +46,8 @@
     "test": "bun test",
     "typecheck": "bun tsc --noEmit"
   },
-  "optionalDependencies": {
+  "dependencies": {
+    "marked": "^15.0.11",
     "yaml": "^2.3.4"
   },
   "devDependencies": {

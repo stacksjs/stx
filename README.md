@@ -296,6 +296,47 @@ Output unescaped HTML content:
 {!! rawHtmlContent !!}
 ```
 
+#### Markdown Support
+
+STX supports rendering Markdown content directly in your templates using the `@markdown` directive:
+
+```html
+<div class="content">
+  @markdown
+  # Heading 1
+
+  This is a paragraph with **bold text** and *italic text*.
+
+  - List item 1
+  - List item 2
+  - List item 3
+
+  ```js
+  // Code block
+  function hello() {
+    console.log('Hello world');
+  }
+  ```
+
+  @endmarkdown
+</div>
+```
+
+You can also pass options to the markdown renderer:
+
+```html
+<!-- Enable line breaks (converts single line breaks to <br>) -->
+@markdown(breaks)
+Line 1
+Line 2
+@endmarkdown
+
+<!-- Disable GitHub Flavored Markdown -->
+@markdown(no-gfm)
+Content here
+@endmarkdown
+```
+
 ### Internationalization (i18n)
 
 STX supports internationalization to help you build multilingual applications. Translation files are stored in YAML format (JSON also supported) and support nested keys and parameter replacements.
@@ -313,12 +354,12 @@ await build({
   plugins: [stxPlugin],
   stx: {
     i18n: {
-      locale: 'en',               // Current locale
-      defaultLocale: 'en',        // Fallback locale
+      locale: 'en', // Current locale
+      defaultLocale: 'en', // Fallback locale
       translationsDir: 'translations', // Directory containing translations
-      format: 'yaml',             // Format of translation files (yaml, yml, json, or js)
-      fallbackToKey: true,        // Use key as fallback when translation not found
-      cache: true                 // Cache translations in memory
+      format: 'yaml', // Format of translation files (yaml, yml, json, or js)
+      fallbackToKey: true, // Use key as fallback when translation not found
+      cache: true // Cache translations in memory
     }
   }
 })

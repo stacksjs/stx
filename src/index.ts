@@ -9,5 +9,8 @@ export default plugin
 // Export i18n functions for advanced usage
 export { createTranslateFilter, getTranslation, loadTranslation, processTranslateDirective } from './i18n'
 
+// Export markdown functions for advanced usage
+export { markdownDirectiveHandler, processMarkdownDirectives } from './markdown'
+
 // Export types for users
 export type { CustomDirective, I18nConfig, Middleware, StxConfig, StxOptions } from './types'
