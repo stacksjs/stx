@@ -135,25 +135,25 @@ describe('STX Basic Variable Rendering', () => {
 
   // Test with CommonJS module exports
   it('should handle CommonJS module exports', async () => {
-    const productName = 'Awesome Product'
-    const price = 99.99
-
     const testFile = await createTestFile('commonjs-exports.stx', `
       <!DOCTYPE html>
       <html>
       <head>
         <title>CommonJS Exports Test</title>
         <script>
+          const myTitle = "Awesome Product";
+          const myPrice = 99.99;
+
           module.exports = {
-            productName: "${productName}",
-            price: "${price}"
+            myTitle,
+            myPrice
           };
         </script>
       </head>
       <body>
         <div class="product">
-          <h2>{{ productName }}</h2>
-          <p>Price: ${{ price }}</p>
+          <h2>{{ myTitle }}</h2>
+          <p>Price: ${{ myPrice }}</p>
         </div>
       </body>
       </html>
