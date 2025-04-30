@@ -1,4 +1,16 @@
 
+## v0.0.2...main
+
+[compare changes](https://github.com/stacksjs/stx/compare/v0.0.2...main)
+
+### 🏡 Chore
+
+- Adjust publish script ([12df09e](https://github.com/stacksjs/stx/commit/12df09e))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.0.1...main
 
 [compare changes](https://github.com/stacksjs/stx/compare/v0.0.1...main)
