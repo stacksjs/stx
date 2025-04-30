@@ -1,5 +1,5 @@
 {
-  "name": "@stacksjs/stx",
+  "name": "stx",
   "type": "module",
   "version": "0.0.0",
   "description": "A Bun plugin that allows for using Laravel Blade-like syntax.",
