@@ -1,4 +1,16 @@
 
+## v0.0.4...main
+
+[compare changes](https://github.com/stacksjs/stx/compare/v0.0.4...main)
+
+### 🏡 Chore
+
+- Adjust release script ([a6791bb](https://github.com/stacksjs/stx/commit/a6791bb))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.0.3...main
 
 [compare changes](https://github.com/stacksjs/stx/compare/v0.0.3...main)
