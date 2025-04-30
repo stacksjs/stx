@@ -1,4 +1,16 @@
 
+## v0.0.5...main
+
+[compare changes](https://github.com/stacksjs/stx/compare/v0.0.5...main)
+
+### 🏡 Chore
+
+- Wip ([afce27e](https://github.com/stacksjs/stx/commit/afce27e))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.0.4...main
 
 [compare changes](https://github.com/stacksjs/stx/compare/v0.0.4...main)
