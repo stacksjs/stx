@@ -1,4 +1,16 @@
 
+## v0.0.8...main
+
+[compare changes](https://github.com/stacksjs/stx/compare/v0.0.8...main)
+
+### 🏡 Chore
+
+- Use latest bun ([0ed9ef9](https://github.com/stacksjs/stx/commit/0ed9ef9))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.0.7...main
 
 [compare changes](https://github.com/stacksjs/stx/compare/v0.0.7...main)
