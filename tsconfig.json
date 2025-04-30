@@ -6,6 +6,11 @@
     "moduleDetection": "force",
     "module": "esnext",
     "moduleResolution": "bundler",
+    "paths": {
+      "stx": ["./packages/stx/src/index.ts"],
+      "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"],
+      "bun-plugin-stx/client": ["./packages/bun-plugin/src/client.ts"]
+    },
     "resolveJsonModule": true,
     "types": ["bun"],
     "allowImportingTsExtensions": true,
@@ -19,12 +24,7 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedDeclarations": true,
     "skipDefaultLibCheck": true,
-    "skipLibCheck": true,
-    "paths": {
-      "@stacksjs/stx": ["./packages/stx/src/index.ts"],
-      "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"],
-      "bun-plugin-stx/client": ["./packages/bun-plugin/src/client.ts"]
-    }
+    "skipLibCheck": true
   },
   "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx"]
 }
