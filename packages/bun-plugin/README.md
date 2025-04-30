@@ -577,8 +577,8 @@ import template from './templates/home.stx'
 
 // Create a streaming response
 const stream = await streamTemplate(template, {
-  title: "Streaming Example",
-  items: ["Apple", "Banana", "Cherry"]
+  title: 'Streaming Example',
+  items: ['Apple', 'Banana', 'Cherry']
 })
 
 // Use with Bun's server
@@ -608,12 +608,12 @@ Bun.serve({
   async fetch(req) {
     // Create a new ReadableStream
     const stream = new ReadableStream({
-      type: "direct",
+      type: 'direct',
       async start(controller) {
         // Render the page shell immediately
         controller.write(await renderer.renderShell({
-          title: "Dashboard",
-          user: { name: "John" }
+          title: 'Dashboard',
+          user: { name: 'John' }
         }))
 
         // Simulate fetching data and stream sections as they're ready
@@ -794,7 +794,7 @@ export default function hydrate(el: HTMLElement, props: any) {
   const addButton = el.querySelector('.add-to-cart-btn') as HTMLButtonElement
 
   addButton.addEventListener('click', () => {
-    const quantity = parseInt(quantityInput.value)
+    const quantity = Number.parseInt(quantityInput.value)
 
     // Add to cart logic
     console.log(`Adding ${quantity} items to cart`)
@@ -994,7 +994,7 @@ export default {
     directives: true,
     extraContent: '## Getting Started\n\nThis is additional content to include in the documentation.',
   },
-};
+}
 ```
 
 ### Component Documentation

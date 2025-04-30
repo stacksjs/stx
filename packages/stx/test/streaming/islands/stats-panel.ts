@@ -1,18 +1,20 @@
+/* eslint-disable no-console */
+
 /**
  * Stats Panel Island Component
  * This adds interactive functionality to the server-rendered stats panel
  */
 
 interface StatsPanelProps {
-  refreshInterval?: number;
-  animateChanges?: boolean;
+  refreshInterval?: number
+  animateChanges?: boolean
 }
 
-interface Stat {
-  label: string;
-  value: number;
-  change?: number;
-  trend?: 'up' | 'down' | 'neutral';
+interface _Stat {
+  label: string
+  value: number
+  change?: number
+  trend?: 'up' | 'down' | 'neutral'
 }
 
 // Default export is the hydration function
@@ -52,12 +54,13 @@ function refreshStats(element: HTMLElement, animate: boolean = false): void {
       const changeElement = item.querySelector('.stat-change')
 
       if (valueElement) {
-        const currentValue = parseInt(valueElement.textContent || '0', 10)
+        const currentValue = Number.parseInt(valueElement.textContent || '0', 10)
         const newValue = getRandomChange(currentValue)
 
         if (animate) {
           animateValue(valueElement, currentValue, newValue)
-        } else {
+        }
+        else {
           valueElement.textContent = newValue.toString()
         }
 
@@ -74,9 +77,11 @@ function refreshStats(element: HTMLElement, animate: boolean = false): void {
             trendElement.classList.remove('up', 'down', 'neutral')
             if (newValue > currentValue) {
               trendElement.classList.add('up')
-            } else if (newValue < currentValue) {
+            }
+            else if (newValue < currentValue) {
               trendElement.classList.add('down')
-            } else {
+            }
+            else {
               trendElement.classList.add('neutral')
             }
           }
@@ -97,7 +102,8 @@ function animateValue(element: Element, start: number, end: number): void {
     if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
       clearInterval(timer)
       element.textContent = end.toString()
-    } else {
+    }
+    else {
       element.textContent = Math.round(current).toString()
     }
   }, 20)
@@ -143,6 +149,7 @@ function showStatDetails(statItem: Element): void {
   console.log(`Showing detailed view for: ${label} (${value})`)
 
   // In a real implementation, this might show a modal or expanded view
+  // eslint-disable-next-line no-alert
   alert(`${label}: ${value}\nClick OK to close`)
 }
 

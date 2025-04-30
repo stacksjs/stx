@@ -1,4 +1,4 @@
-import type { Middleware, StxOptions } from './types'
+import type { StxOptions } from './types'
 import { createDetailedErrorMessage } from './utils'
 
 /**

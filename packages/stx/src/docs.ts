@@ -1,3 +1,4 @@
+/* eslint-disable regexp/no-super-linear-backtracking */
 /**
  * STX Documentation Generator
  * Generate documentation for components, templates, and directives
@@ -5,8 +6,8 @@
 import type { ComponentDoc, ComponentPropDoc, DirectiveDoc, DocFormat, DocGeneratorConfig, TemplateDoc } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileExists } from './utils'
 import { config } from './config'
+import { fileExists } from './utils'
 
 /**
  * Extract component properties from a component file
@@ -20,37 +21,43 @@ export async function extractComponentProps(
 
     // Look for script tags with component properties
     const scriptMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
-    if (!scriptMatch) return []
+    if (!scriptMatch)
+      return []
 
     const scriptContent = scriptMatch[1]
     const props: ComponentPropDoc[] = []
 
     // Look for comments above properties
     // Match JSDoc blocks followed by variable declaration or object property
-    const propRegex = /\/\*\*\s*([\s\S]*?)\s*\*\/\s*(?:const|let|var)?\s*(?:([a-zA-Z0-9_$]+)\s*=|(?:module\.exports\.)([a-zA-Z0-9_$]+)\s*=|\s*([a-zA-Z0-9_$]+)\s*:)/g
+    const propRegex = /\/\*\*\s*([\s\S]*?)\s*\*\/\s*(?:(?:const|let|var)\s*)?(?:([\w$]+)\s*=|module\.exports\.([\w$]+)\s*=|\s*([\w$]+)\s*:)/g
 
     let match
+    // eslint-disable-next-line no-cond-assign
     while ((match = propRegex.exec(scriptContent)) !== null) {
       const commentBlock = match[1]
       // Get property name from one of the capture groups that matched
       const propName = match[2] || match[3] || match[4]
 
-      if (!propName) continue
+      if (!propName)
+        continue
 
       // Parse comment block for property metadata
       const propDoc: ComponentPropDoc = { name: propName }
 
       // Extract property type
-      const typeMatch = commentBlock.match(/@type\s+{([^}]+)}/i)
-      if (typeMatch) propDoc.type = typeMatch[1].trim()
+      const typeMatch = commentBlock.match(/@type\s+\{([^}]+)\}/i)
+      if (typeMatch)
+        propDoc.type = typeMatch[1].trim()
 
       // Extract if required
       const requiredMatch = commentBlock.match(/@required/i)
-      if (requiredMatch) propDoc.required = true
+      if (requiredMatch)
+        propDoc.required = true
 
       // Extract default value
       const defaultMatch = commentBlock.match(/@default\s+(.+?)(?:\s+|$)/i)
-      if (defaultMatch) propDoc.default = defaultMatch[1].trim()
+      if (defaultMatch)
+        propDoc.default = defaultMatch[1].trim()
 
       // Extract description (lines without @ tags)
       const descLines = commentBlock
@@ -65,7 +72,7 @@ export async function extractComponentProps(
 
     // If no JSDoc comments are found, try to extract props from module.exports
     if (props.length === 0) {
-      const exportsMatch = scriptContent.match(/module\.exports\s*=\s*{([^}]+)}/i)
+      const exportsMatch = scriptContent.match(/module\.exports\s*=\s*\{([^}]+)\}/i)
       if (exportsMatch) {
         const exportsObject = exportsMatch[1]
         const propLines = exportsObject.split(',').map(line => line.trim()).filter(Boolean)
@@ -95,7 +102,7 @@ export async function extractComponentDescription(componentPath: string): Promis
     const content = await Bun.file(componentPath).text()
 
     // Look for a component description in a comment at the top of the file
-    const commentMatch = content.match(/^\s*<!--\s*([\s\S]*?)\s*-->/i) || content.match(/^\s*\/\*\*\s*([\s\S]*?)\s*\*\//i)
+    const commentMatch = content.match(/^\s*<!--\s*([\s\S]*?)\s*-->/) || content.match(/^\s*\/\*\*\s*([\s\S]*?)\s*\*\//)
 
     if (commentMatch) {
       return commentMatch[1]
@@ -107,7 +114,7 @@ export async function extractComponentDescription(componentPath: string): Promis
 
     return ''
   }
-  catch (error) {
+  catch {
     return ''
   }
 }
@@ -138,8 +145,9 @@ export async function generateComponentDoc(
   else {
     // Regular component example with detected props
     const propsExample = props
-      .map(prop => {
-        if (prop.type === 'boolean') return `:${prop.name}="true"`
+      .map((prop) => {
+        if (prop.type === 'boolean')
+          return `:${prop.name}="true"`
         return `${prop.name}="value"`
       })
       .join('\n  ')
@@ -248,7 +256,8 @@ export async function generateTemplatesDocs(templatesDir: string): Promise<Templ
     const templateDocs: TemplateDoc[] = []
 
     for (const entry of entries) {
-      if (!entry.isFile() || !entry.name.endsWith('.stx')) continue
+      if (!entry.isFile() || !entry.name.endsWith('.stx'))
+        continue
 
       const templatePath = path.join(templatesDir, entry.name)
       const content = await Bun.file(templatePath).text()
@@ -256,22 +265,24 @@ export async function generateTemplatesDocs(templatesDir: string): Promise<Templ
       const name = path.basename(templatePath, '.stx')
 
       // Extract description from comments
-      const descriptionMatch = content.match(/^\s*<!--\s*([\s\S]*?)\s*-->/i) || content.match(/^\s*\/\*\*\s*([\s\S]*?)\s*\*\//i)
+      const descriptionMatch = content.match(/^\s*<!--\s*([\s\S]*?)\s*-->/) || content.match(/^\s*\/\*\*\s*([\s\S]*?)\s*\*\//)
       const description = descriptionMatch
         ? descriptionMatch[1].split('\n').map(line => line.trim().replace(/^\*\s*/, '')).join(' ').trim()
         : ''
 
       // Find components used in template
       const componentRegex = /@component\(\s*['"]([^'"]+)['"]/g
-      const componentTags = /<([A-Z][a-zA-Z0-9]*|[a-z]+-[a-z0-9-]+)(?:\s+[^>]*)?\/?>|\{{\s*slot\s*\}\}/g
+      const componentTags = /<([A-Z][a-zA-Z0-9]*|[a-z]+-[a-z0-9-]+)(?:\s[^>]*)?\/?>|\{\{\s*slot\s*\}\}/g
 
       const components = new Set<string>()
       let match
 
+      // eslint-disable-next-line no-cond-assign
       while ((match = componentRegex.exec(content)) !== null) {
         components.add(match[1])
       }
 
+      // eslint-disable-next-line no-cond-assign
       while ((match = componentTags.exec(content)) !== null) {
         if (match[1] && match[1] !== 'slot') {
           components.add(match[1])
@@ -282,6 +293,7 @@ export async function generateTemplatesDocs(templatesDir: string): Promise<Templ
       const directiveRegex = /@([a-z]+)(?:\s*\(|\s+|$)/g
       const directives = new Set<string>()
 
+      // eslint-disable-next-line no-cond-assign
       while ((match = directiveRegex.exec(content)) !== null) {
         directives.add(match[1])
       }
@@ -375,7 +387,7 @@ export async function generateDirectivesDocs(customDirectives: any[] = []): Prom
         description: 'Short alias for translate directive',
         hasEndTag: false,
         example: '@t("welcome.message", { name: user.name })',
-      }
+      },
     ]
 
     // Add custom directives
@@ -716,9 +728,12 @@ export async function generateDocs(options: {
     await fs.promises.mkdir(outputDir, { recursive: true })
 
     // Log the directories we're using for debugging
+    /* eslint-disable no-console */
     console.log(`Generating documentation...`)
-    if (componentsDir) console.log(`Components directory: ${componentsDir}`)
-    if (templatesDir) console.log(`Templates directory: ${templatesDir}`)
+    if (componentsDir)
+      console.log(`Components directory: ${componentsDir}`)
+    if (templatesDir)
+      console.log(`Templates directory: ${templatesDir}`)
     console.log(`Output directory: ${outputDir}`)
 
     // Generate documentation for components
@@ -758,7 +773,7 @@ export async function generateDocs(options: {
           componentDocs,
           templateDocs,
           directiveDocs,
-          extraContent
+          extraContent,
         )
         extension = 'md'
         break
@@ -768,7 +783,7 @@ export async function generateDocs(options: {
           componentDocs,
           templateDocs,
           directiveDocs,
-          extraContent
+          extraContent,
         )
         extension = 'html'
         break
@@ -778,7 +793,7 @@ export async function generateDocs(options: {
           componentDocs,
           templateDocs,
           directiveDocs,
-          extraContent
+          extraContent,
         )
         extension = 'json'
         break

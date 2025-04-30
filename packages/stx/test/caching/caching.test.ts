@@ -249,7 +249,7 @@ describe('STX Template Caching', () => {
     try {
       await fs.promises.utimes(testFile, fileStat.atime, fileStat.mtime)
     }
-    catch (e) {
+    catch {
       // If this fails, the test might also fail but that's ok
       console.warn('Could not restore file modification time')
     }

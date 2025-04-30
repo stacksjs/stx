@@ -8,9 +8,9 @@ import {
   formatDocsAsJson,
   formatDocsAsMarkdown,
   generateComponentDoc,
-  generateDocs
+  generateDocs,
 } from '../../src/docs'
-import { cleanupTestDirs, createTestFile, setupTestDirs, TEMP_DIR } from '../utils'
+import { cleanupTestDirs, setupTestDirs, TEMP_DIR } from '../utils'
 
 describe('STX Documentation Generator', () => {
   const DOCS_DIR = path.join(TEMP_DIR, 'docs')

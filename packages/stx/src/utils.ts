@@ -597,7 +597,7 @@ export function getSourceLineInfo(
       }
     }
   }
-  catch (_err) {
+  catch {
     // Fallback - at least return what we know about the error
   }
 

@@ -1,9 +1,8 @@
 import type { Middleware } from '../../src/types'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from '../../src/index'
-import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
+import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
 
 describe('STX Middleware', () => {
   beforeAll(async () => {

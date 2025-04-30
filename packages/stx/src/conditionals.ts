@@ -1,7 +1,9 @@
+/* eslint-disable regexp/no-super-linear-backtracking */
 /**
  * Module for processing conditional directives (@if, @elseif, @else, @unless)
  */
 
+import process from 'node:process'
 import { evaluateAuthExpression } from './auth'
 import { createDetailedErrorMessage } from './utils'
 

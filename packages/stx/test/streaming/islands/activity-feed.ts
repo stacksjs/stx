@@ -1,11 +1,13 @@
+/* eslint-disable no-console */
+
 /**
  * Activity Feed Island Component
  * This adds interactive functionality to the server-rendered activity feed
  */
 
 interface ActivityFeedProps {
-  maxItems?: number;
-  refreshInterval?: number;
+  maxItems?: number
+  refreshInterval?: number
 }
 
 // Default export is the hydration function
@@ -122,7 +124,7 @@ function getRandomActivity(): string {
     'Liked an article',
     'Shared content',
     'Uploaded a file',
-    'Changed settings'
+    'Changed settings',
   ]
   return activities[Math.floor(Math.random() * activities.length)]
 }
@@ -134,7 +136,7 @@ function getRandomUser(): string {
     'Michael Brown',
     'Sophia Davis',
     'James Johnson',
-    'Olivia Martinez'
+    'Olivia Martinez',
   ]
   return users[Math.floor(Math.random() * users.length)]
 }

@@ -1,17 +1,18 @@
+/* eslint-disable no-console */
 /**
  * Notification Panel Island Component
  * This adds interactive functionality to the server-rendered notification panel
  */
 
 interface NotificationProps {
-  realtime?: boolean;
-  autoRefresh?: boolean;
+  realtime?: boolean
+  autoRefresh?: boolean
 }
 
 interface Notification {
-  id: number | string;
-  message: string;
-  read: boolean;
+  id: number | string
+  message: string
+  read: boolean
 }
 
 // Default export is the hydration function
@@ -24,12 +25,14 @@ export default function hydrate(element: HTMLElement, props: NotificationProps):
   // Add click handlers to mark as read
   notifications.forEach((notification: Element) => {
     // Skip if already interactive
-    if (notification.getAttribute('data-interactive') === 'true') return
+    if (notification.getAttribute('data-interactive') === 'true')
+      return
 
     // Add click handler
     notification.addEventListener('click', () => {
       const id = notification.getAttribute('data-id')
-      if (id) markAsRead(id, notification as HTMLElement)
+      if (id)
+        markAsRead(id, notification as HTMLElement)
     })
 
     // Add hover effect
@@ -77,9 +80,9 @@ function markAsRead(id: string | number, element: HTMLElement): void {
   fetch(`/api/notifications/${id}/read`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
-    }
-  }).catch(error => {
+      'Content-Type': 'application/json',
+    },
+  }).catch((error) => {
     console.error('Error marking notification as read:', error)
     // Revert visual state on error
     element.classList.remove('read')
@@ -99,7 +102,8 @@ function markAllAsRead(): void {
   // Mark each as read
   unread.forEach((notification: Element) => {
     const id = notification.getAttribute('data-id')
-    if (id) markAsRead(id, notification as HTMLElement)
+    if (id)
+      markAsRead(id, notification as HTMLElement)
   })
 }
 
@@ -115,8 +119,8 @@ function setupRealtimeUpdates(element: HTMLElement): void {
     if (Math.random() < 0.2) {
       addNewNotification(element, {
         id: Date.now(),
-        message: 'New notification ' + new Date().toLocaleTimeString(),
-        read: false
+        message: `New notification ${new Date().toLocaleTimeString()}`,
+        read: false,
       })
     }
   }, 10000) // Check every 10 seconds
@@ -130,7 +134,8 @@ function addNewNotification(element: HTMLElement, notification: Notification): v
 
   // Find the notification list
   const list = element.querySelector('.notification-list')
-  if (!list) return
+  if (!list)
+    return
 
   // Create new notification element
   const item = document.createElement('li')

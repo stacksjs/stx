@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import { createStreamRenderer, streamTemplate, islandDirective, registerStreamingDirectives } from '../../src/streaming'
+import { createStreamRenderer, islandDirective, registerStreamingDirectives, streamTemplate } from '../../src/streaming'
 
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp')
@@ -51,7 +51,8 @@ describe('STX Streaming', () => {
       const result = await reader.read()
       if (result.done) {
         done = true
-      } else {
+      }
+      else {
         chunks.push(result.value)
       }
     }
@@ -232,7 +233,7 @@ describe('STX Streaming', () => {
     // Render section with dynamic data
     const sectionWithData = await renderer.renderSection('dynamic', {
       dynamicTitle: 'Custom Section Title',
-      dynamicContent: 'This content was provided at render time'
+      dynamicContent: 'This content was provided at render time',
     })
 
     expect(sectionWithData).toContain('Custom Section Title')
@@ -460,7 +461,7 @@ describe('STX Partial Hydration', () => {
   // Test island directive
   it('should process @island directive correctly', async () => {
     // Process a template string with the island directive
-    const input = `
+    const _input = `
       <div>
         @island('counter')
           <div class="counter">
@@ -481,7 +482,7 @@ describe('STX Partial Hydration', () => {
       </div>`,
       ['counter'],
       {},
-      'test.stx'
+      'test.stx',
     )
 
     // Verify structure
@@ -513,7 +514,7 @@ describe('STX Partial Hydration', () => {
       content,
       ['user-profile'],
       { userName: 'John Doe' },
-      'test.stx'
+      'test.stx',
     )
 
     // Verify structure and props
@@ -532,7 +533,7 @@ describe('STX Partial Hydration', () => {
       '<div>Island content</div>',
       ['feature-island', 'eager'],
       {},
-      'test.stx'
+      'test.stx',
     )
 
     // Verify priority is set
@@ -547,8 +548,8 @@ describe('STX Partial Hydration', () => {
       hydration: {
         enabled: true,
         mode: 'islands',
-        clientEntry: 'src/client.ts'
-      }
+        clientEntry: 'src/client.ts',
+      },
     })
 
     // Verify the island directive is registered
@@ -562,8 +563,8 @@ describe('STX Partial Hydration', () => {
     // Register with hydration disabled
     const directives = registerStreamingDirectives({
       hydration: {
-        enabled: false
-      }
+        enabled: false,
+      },
     })
 
     // Verify no directives are registered

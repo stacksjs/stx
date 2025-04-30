@@ -1,22 +1,23 @@
+/* eslint-disable no-console */
 /**
  * User Profile Island Component
  * Enhances server-rendered user profile with client-side interactivity
  */
 
 interface UserProfileProps {
-  editable?: boolean;
-  showNotifications?: boolean;
+  editable?: boolean
+  showNotifications?: boolean
 }
 
-interface UserData {
-  name: string;
-  avatar: string;
-  bio: string;
+interface _UserData {
+  name: string
+  avatar: string
+  bio: string
   stats: {
-    followers: number;
-    following: number;
-    posts: number;
-  };
+    followers: number
+    following: number
+    posts: number
+  }
 }
 
 // Default export is the hydration function
@@ -80,7 +81,8 @@ function setupEditableProfile(element: HTMLElement): void {
  */
 function setupEditableField(element: HTMLElement, selector: string, fieldName: string): void {
   const field = element.querySelector(selector) as HTMLElement | null
-  if (!field) return
+  if (!field)
+    return
 
   field.setAttribute('data-original', field.textContent || '')
 
@@ -93,7 +95,8 @@ function setupEditableField(element: HTMLElement, selector: string, fieldName: s
         field.classList.remove('editing')
         saveProfileField(fieldName, field.textContent || '')
         editButton.textContent = 'Edit'
-      } else {
+      }
+      else {
         // Start editing
         field.setAttribute('contenteditable', 'true')
         field.classList.add('editing')
@@ -109,7 +112,8 @@ function setupEditableField(element: HTMLElement, selector: string, fieldName: s
       field.textContent = field.getAttribute('data-original') || ''
       field.setAttribute('contenteditable', 'false')
       field.classList.remove('editing')
-      if (editButton) editButton.textContent = 'Edit'
+      if (editButton)
+        editButton.textContent = 'Edit'
     }
   })
 }
@@ -119,7 +123,8 @@ function setupEditableField(element: HTMLElement, selector: string, fieldName: s
  */
 function simulateAvatarUpload(element: HTMLElement, file: File): void {
   const avatar = element.querySelector('.user-avatar') as HTMLImageElement | null
-  if (!avatar) return
+  if (!avatar)
+    return
 
   // Create loading state
   avatar.classList.add('uploading')
@@ -147,7 +152,8 @@ function simulateAvatarUpload(element: HTMLElement, file: File): void {
  */
 function setupFollowButton(element: HTMLElement): void {
   const followButton = element.querySelector('.follow-button') as HTMLElement | null
-  if (!followButton) return
+  if (!followButton)
+    return
 
   followButton.addEventListener('click', () => {
     const isFollowing = followButton.classList.contains('following')
@@ -156,7 +162,8 @@ function setupFollowButton(element: HTMLElement): void {
       followButton.classList.remove('following')
       followButton.textContent = 'Follow'
       updateFollowerCount(element, -1)
-    } else {
+    }
+    else {
       followButton.classList.add('following')
       followButton.textContent = 'Following'
       updateFollowerCount(element, 1)
@@ -169,9 +176,10 @@ function setupFollowButton(element: HTMLElement): void {
  */
 function updateFollowerCount(element: HTMLElement, change: number): void {
   const countElement = element.querySelector('.follower-count') as HTMLElement | null
-  if (!countElement) return
+  if (!countElement)
+    return
 
-  const currentCount = parseInt(countElement.textContent || '0', 10)
+  const currentCount = Number.parseInt(countElement.textContent || '0', 10)
   const newCount = currentCount + change
   countElement.textContent = newCount.toString()
 }
@@ -189,7 +197,8 @@ function saveProfileField(field: string, value: string): void {
  */
 function setupNotifications(element: HTMLElement): void {
   const notificationBell = element.querySelector('.notification-bell') as HTMLElement | null
-  if (!notificationBell) return
+  if (!notificationBell)
+    return
 
   // Show notification indicator
   const indicator = document.createElement('span')
@@ -223,7 +232,7 @@ function setupProfileTabs(element: HTMLElement): void {
   const tabs = element.querySelectorAll('.profile-tab')
   const tabContents = element.querySelectorAll('.tab-content')
 
-  tabs.forEach(tab => {
+  tabs.forEach((tab) => {
     tab.addEventListener('click', () => {
       // Remove active class from all tabs
       tabs.forEach(t => t.classList.remove('active'))
@@ -235,7 +244,8 @@ function setupProfileTabs(element: HTMLElement): void {
       // Show corresponding content
       const tabId = tab.getAttribute('data-tab')
       const content = element.querySelector(`.tab-content[data-tab="${tabId}"]`)
-      if (content) content.classList.remove('hidden')
+      if (content)
+        content.classList.remove('hidden')
     })
   })
 }

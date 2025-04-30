@@ -30,7 +30,7 @@ export function evaluateAuthExpression(expression: string, context: Record<strin
 
     return exprFn(...Object.values(context))
   }
-  catch (error: any) {
+  catch {
     // Silent fail for auth expressions - return false rather than throwing
     return false
   }

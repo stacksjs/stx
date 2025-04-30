@@ -1,8 +1,8 @@
+import type { CustomDirective, StreamingConfig, StreamRenderer, StxOptions } from './types'
 import path from 'node:path'
-import type { CustomDirective, StxOptions, StreamRenderer, StreamingConfig } from './types'
 import { defaultConfig } from './config'
 import { processDirectives } from './process'
-import { extractVariables, createDetailedErrorMessage } from './utils'
+import { createDetailedErrorMessage, extractVariables } from './utils'
 
 /**
  * Default streaming configuration
@@ -17,7 +17,7 @@ const defaultStreamingConfig: StreamingConfig = {
 /**
  * Section regex pattern to extract sections from templates
  */
-const SECTION_PATTERN = /<!-- @section:([a-zA-Z0-9_-]+) -->([\s\S]*?)<!-- @endsection:\1 -->/g
+const SECTION_PATTERN = /<!-- @section:([\w-]+) -->([\s\S]*?)<!-- @endsection:\1 -->/g
 
 /**
  * Stream a template with data
@@ -74,7 +74,7 @@ export async function streamTemplate(
       catch (error: any) {
         controller.error(error)
       }
-    }
+    },
   })
 }
 
@@ -97,7 +97,7 @@ export async function createStreamRenderer(
   }
 
   // Read the template file
-  let content = await Bun.file(templatePath).text()
+  const content = await Bun.file(templatePath).text()
 
   // Extract script and template sections
   const scriptMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
@@ -115,6 +115,7 @@ export async function createStreamRenderer(
   SECTION_PATTERN.lastIndex = 0
 
   // Extract all sections
+  // eslint-disable-next-line no-cond-assign
   while ((match = SECTION_PATTERN.exec(templateContent)) !== null) {
     const sectionName = match[1]
     const sectionContent = match[2]
@@ -122,7 +123,7 @@ export async function createStreamRenderer(
   }
 
   // Replace all sections with placeholders to create the shell
-  let shellTemplate = templateContent.replace(SECTION_PATTERN, '')
+  const shellTemplate = templateContent.replace(SECTION_PATTERN, '')
 
   // Create the stream renderer
   const renderer: StreamRenderer = {
@@ -163,7 +164,8 @@ export async function createStreamRenderer(
         // Process section template
         const dependencies = new Set<string>()
         return await processDirectives(sections[sectionName], context, templatePath, fullOptions, dependencies)
-      } catch (error: any) {
+      }
+      catch (error: any) {
         // Handle errors gracefully
         const errorMessage = error instanceof Error ? error.message : String(error)
         return createDetailedErrorMessage(
@@ -172,7 +174,7 @@ export async function createStreamRenderer(
           templatePath,
           sections[sectionName] || '',
           0,
-          sections[sectionName] || ''
+          sections[sectionName] || '',
         )
       }
     },
@@ -197,7 +199,7 @@ export async function createStreamRenderer(
 export const islandDirective: CustomDirective = {
   name: 'island',
   hasEndTag: true,
-  handler: (content: string, params: string[], context: Record<string, any>, filePath: string): string => {
+  handler: (content: string, params: string[], _context: Record<string, any>, _filePath: string): string => {
     if (!params || params.length === 0) {
       throw new Error('Island directive requires a name parameter')
     }
@@ -244,13 +246,13 @@ export function registerStreamingDirectives(options: StxOptions = {}): CustomDir
  * @param content Template content
  * @param context Data context
  * @param filePath Template file path
- * @param options STX options
+ * @param _options STX options
  */
 export async function processSectionDirectives(
   content: string,
   context: Record<string, any>,
   filePath: string,
-  options: StxOptions = {},
+  _options: StxOptions = {},
 ): Promise<string> {
   // Just extract sections for now, actual processing is done by the stream renderer
   return content

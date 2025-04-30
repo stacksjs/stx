@@ -3,30 +3,30 @@
 import { createStreamRenderer } from '../../src/streaming'
 
 interface UserData {
-  name: string;
-  role: string;
-  avatar: string;
+  name: string
+  role: string
+  avatar: string
 }
 
 interface StatItem {
-  label: string;
-  value: number;
+  label: string
+  value: number
 }
 
 interface Stats {
-  items: StatItem[];
+  items: StatItem[]
 }
 
 interface ActivityItem {
-  time: string;
-  description: string;
-  user: string;
+  time: string
+  description: string
+  user: string
 }
 
 interface Notification {
-  id: number;
-  message: string;
-  read: boolean;
+  id: number
+  message: string
+  read: boolean
 }
 
 // Mock data fetch functions (in a real app, these would hit a database or API)
@@ -36,7 +36,7 @@ async function fetchUserData(): Promise<UserData> {
   return {
     name: 'Jane Doe',
     role: 'Admin',
-    avatar: 'https://example.com/avatar.jpg'
+    avatar: 'https://example.com/avatar.jpg',
   }
 }
 
@@ -47,8 +47,8 @@ async function fetchStats(): Promise<Stats> {
     items: [
       { label: 'Users', value: 1284 },
       { label: 'Posts', value: 5462 },
-      { label: 'Comments', value: 23156 }
-    ]
+      { label: 'Comments', value: 23156 },
+    ],
   }
 }
 
@@ -58,7 +58,7 @@ async function fetchRecentActivity(): Promise<ActivityItem[]> {
   return [
     { time: '10:45', description: 'New user registered', user: 'John Smith' },
     { time: '09:32', description: 'Comment posted', user: 'Emma Wilson' },
-    { time: '08:17', description: 'Post published', user: 'Michael Brown' }
+    { time: '08:17', description: 'Post published', user: 'Michael Brown' },
   ]
 }
 
@@ -68,7 +68,7 @@ async function fetchNotifications(): Promise<Notification[]> {
   return [
     { id: 1, message: 'Your post was featured', read: false },
     { id: 2, message: 'New comment on your post', read: true },
-    { id: 3, message: 'System maintenance scheduled', read: false }
+    { id: 3, message: 'System maintenance scheduled', read: false },
   ]
 }
 
@@ -92,7 +92,7 @@ async function startServer(): Promise<void> {
               const userData = await fetchUserData()
               const initialData = {
                 title: 'Dashboard',
-                user: userData
+                user: userData,
               }
 
               // Render the shell first for fast initial load
@@ -111,7 +111,7 @@ async function startServer(): Promise<void> {
               // Fetch both activity and notifications in parallel
               const [activity, notifications] = await Promise.all([
                 fetchRecentActivity(),
-                fetchNotifications()
+                fetchNotifications(),
               ])
 
               // Render remaining sections
@@ -123,26 +123,28 @@ async function startServer(): Promise<void> {
 
               // Complete the response
               controller.close()
-            } catch (error) {
+            }
+            catch (error) {
               console.error('Error rendering stream:', error)
               controller.error(error)
             }
-          }
+          },
         })
 
         return new Response(stream, {
           headers: {
             'Content-Type': 'text/html',
-            'Transfer-Encoding': 'chunked'
-          }
+            'Transfer-Encoding': 'chunked',
+          },
         })
       }
 
       // Default response for other routes
       return new Response('Not found', { status: 404 })
-    }
+    },
   })
 
+  /* eslint-disable no-console */
   console.log(`STX streaming example server running at ${server.url}`)
 }
 

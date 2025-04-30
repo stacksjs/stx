@@ -1,3 +1,4 @@
+/* eslint-disable regexp/no-super-linear-backtracking */
 /**
  * Module for processing form-related directives
  */
@@ -424,6 +425,7 @@ function parseAttributes(attributesStr: string): string {
   const attrRegex = /([\w-]+)\s*:\s*(['"]?)([^,'"]*)\2(?:,|$)/g
 
   let match: RegExpExecArray | null
+  // eslint-disable-next-line no-cond-assign
   while ((match = attrRegex.exec(attributesStr)) !== null) {
     const [, name, , value] = match
     attrs.push(`${name}="${value.trim()}"`)

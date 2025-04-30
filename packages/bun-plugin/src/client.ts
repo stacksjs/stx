@@ -37,7 +37,8 @@ async function hydrateIsland(
   name: string,
   handler: () => Promise<any>,
 ): Promise<void> {
-  if (!isBrowser) return
+  if (!isBrowser)
+    return
 
   try {
     // Get island props from the associated script tag
@@ -70,7 +71,8 @@ async function hydrateIsland(
  */
 export function hydrateIslands(handlers: IslandHandlers): void {
   // Skip hydration if not in browser
-  if (!isBrowser) return
+  if (!isBrowser)
+    return
 
   // First pass: prepare islands and hydrate eager ones
   const islands = document.querySelectorAll('[data-island]')
@@ -137,7 +139,8 @@ export function hydrateIslands(handlers: IslandHandlers): void {
  */
 export function preloadIslandHandlers(handlers: IslandHandlers): void {
   // Skip if not in browser
-  if (!isBrowser) return
+  if (!isBrowser)
+    return
 
   // Add preload links to document head
   Object.entries(handlers).forEach(([name, getHandler]) => {
@@ -166,7 +169,8 @@ export function preloadIslandHandlers(handlers: IslandHandlers): void {
  */
 export function initIslands(handlers: IslandHandlers, config: HydrationConfig = {}): void {
   // Skip if not in browser
-  if (!isBrowser) return
+  if (!isBrowser)
+    return
 
   const defaultConfig = {
     autoStart: true,
@@ -186,7 +190,8 @@ export function initIslands(handlers: IslandHandlers, config: HydrationConfig = 
       document.addEventListener('DOMContentLoaded', () => {
         hydrateIslands(handlers)
       })
-    } else {
+    }
+    else {
       // DOM already loaded
       hydrateIslands(handlers)
     }

@@ -718,7 +718,7 @@ export default {
     directives: true,
     extraContent: '## Getting Started\n\nThis is additional content to include in the documentation.',
   },
-};
+}
 ```
 
 ### Component Documentation

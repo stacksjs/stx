@@ -1,3 +1,4 @@
+import process from 'node:process'
 import { CAC } from 'cac'
 import { version } from '../package.json'
 import { docsCommand } from '../src/docs'
@@ -12,7 +13,7 @@ cli
   .command('build', 'Build the project')
   .option('--verbose', 'Enable verbose logging')
   .example('stx build --verbose')
-  .action(async (options?: CliOption) => {
+  .action(async (_options?: CliOption) => {
     // TODO: Implement build command
   })
 
