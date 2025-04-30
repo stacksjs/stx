@@ -17,12 +17,12 @@ await Bun.build({
 })
 
 // Build the streaming examples
-await Bun.build({
-  entrypoints: [
-    './test/streaming/example-server.ts',
-    './test/streaming/client-example.ts',
-    './test/streaming/islands/notification-panel.ts'
-  ],
-  outdir: './test/streaming/dist',
-  target: 'browser',
-})
+// await Bun.build({
+//   entrypoints: [
+//     './test/streaming/example-server.ts',
+//     './test/streaming/client-example.ts',
+//     './test/streaming/islands/notification-panel.ts'
+//   ],
+//   outdir: './test/streaming/dist',
+//   target: 'browser',
+// })
