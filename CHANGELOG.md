@@ -1,4 +1,16 @@
 
+## v0.0.9...main
+
+[compare changes](https://github.com/stacksjs/stx/compare/v0.0.9...main)
+
+### 🏡 Chore
+
+- Zip binary ([30aa527](https://github.com/stacksjs/stx/commit/30aa527))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.0.8...main
 
 [compare changes](https://github.com/stacksjs/stx/compare/v0.0.8...main)
