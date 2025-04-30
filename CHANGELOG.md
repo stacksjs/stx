@@ -1,4 +1,16 @@
 
+## v0.0.6...main
+
+[compare changes](https://github.com/stacksjs/stx/compare/v0.0.6...main)
+
+### 🏡 Chore
+
+- Wip ([bfde40f](https://github.com/stacksjs/stx/commit/bfde40f))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.0.5...main
 
 [compare changes](https://github.com/stacksjs/stx/compare/v0.0.5...main)
