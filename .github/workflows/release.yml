@@ -20,7 +20,7 @@ jobs:
         # env:
         #   BUN_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
         with:
-          bun-version: canary
+          bun-version: latest
 
       - name: Use cached node_modules
         uses: actions/cache@v4
