@@ -13,5 +13,6 @@ tsconfig.tsbuildinfo
 /test/out
 /.stx/cache
 /packages/stx/.stx/cache
-**/stx
-**/stx*
+# Keep these more specific to just match the stx binary files
+/packages/**/bin/stx
+/packages/**/bin/stx*
