@@ -47,10 +47,10 @@ jobs:
         uses: stacksjs/action-releaser@v1.0.0
         with:
           files: |
-            bin/stx-linux-x64.zip
-            bin/stx-linux-arm64.zip
-            bin/stx-windows-x64.zip
-            bin/stx-darwin-x64.zip
-            bin/stx-darwin-arm64.zip
+            packages/stx/bin/stx-linux-x64.zip
+            packages/stx/bin/stx-linux-arm64.zip
+            packages/stx/bin/stx-windows-x64.zip
+            packages/stx/bin/stx-darwin-x64.zip
+            packages/stx/bin/stx-darwin-arm64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
