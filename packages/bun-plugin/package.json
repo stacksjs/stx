@@ -55,6 +55,6 @@
     "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {
-    "stx": "workspace:*"
+    "@stacksjs/stx": "workspace:*"
   }
 }
