@@ -1,0 +1,22 @@
+<script>
+  export const title = slot.title || '';
+  export const footer = slot.footer || '';
+</script>
+
+<div class="card">
+  @if (title)
+    <div class="card-header border-b border-gray-200 pb-4 mb-4">
+      <h3 class="text-xl font-semibold">{{ title }}</h3>
+    </div>
+  @endif
+
+  <div class="card-body">
+    {{ slot }}
+  </div>
+
+  @if (footer)
+    <div class="card-footer border-t border-gray-200 pt-4 mt-4">
+      {{ footer }}
+    </div>
+  @endif
+</div>

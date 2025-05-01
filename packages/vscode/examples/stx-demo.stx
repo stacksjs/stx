@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ pageTitle || 'STX Demo Page' }}</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  {{-- Navigation Component --}}
+  @component('ui/navbar', {
+    activeItem: currentRoute,
+    user: currentUser
+  })
+  @endcomponent
+
+  <main class="container">
+    {{-- If user is logged in, show welcome message --}}
+    @if(user && user.isLoggedIn)
+      <div class="alert alert-success">
+        Welcome back, {{ user.name }}!
+      </div>
+    @else
+      <div class="alert alert-info">
+        Welcome, guest! Please <a href="/login">sign in</a> to continue.
+      </div>
+    @endif
+
+    {{-- Demonstrating TypeScript integration --}}
+    @ts
+      // Define user interface
+      interface User {
+        id: number;
+        name: string;
+        email: string;
+        isLoggedIn: boolean;
+      }
+
+      // Get current user from session
+      const getCurrentUser = (): User | null => {
+        // In a real app, this would check session data
+        return {
+          id: 1,
+          name: 'John Doe',
+          email: 'john@example.com',
+          isLoggedIn: true
+        };
+      };
+
+      const user = getCurrentUser();
+      const formattedDate = new Date().toLocaleDateString();
+    @endts
+
+    <h1>{{ pageTitle }}</h1>
+    <p>Today's date: {{ formattedDate }}</p>
+
+    {{-- Example of using a loop --}}
+    <h2>Product List</h2>
+    <ul class="product-list">
+      @for(product of products)
+        <li class="product-item {{ product.inStock ? 'in-stock' : 'out-of-stock' }}">
+          <h3>{{ product.name }}</h3>
+          <p>{{{ product.description }}}</p>
+          <p class="price">${{ product.price.toFixed(2) }}</p>
+
+          @if(product.inStock)
+            <button class="btn btn-primary">Add to Cart</button>
+          @else
+            <button class="btn btn-secondary" disabled>Out of Stock</button>
+          @endif
+        </li>
+      @endfor
+    </ul>
+
+    {{-- Using include for partial templates --}}
+    @include('partials/footer', {
+      year: new Date().getFullYear(),
+      company: 'Stacks JS'
+    })
+
+    {{-- Using raw to ignore STX processing --}}
+    @raw
+      <div class="template-example">
+        This shows how to use {{ mustache-style }} templates
+        in your STX files without processing.
+      </div>
+    @endraw
+
+    {{-- Translation example --}}
+    <div class="localized-content">
+      <p>@t('common.greeting', { name: user?.name || 'Guest' })</p>
+      <p>@translate('common.copyright', { year: new Date().getFullYear() })</p>
+    </div>
+  </main>
+
+  {{-- JavaScript block for client-side code --}}
+  <script>
+    // Client-side JavaScript
+    document.addEventListener('DOMContentLoaded', () => {
+      const buttons = document.querySelectorAll('.btn-primary');
+
+      buttons.forEach(button => {
+        button.addEventListener('click', (e) => {
+          console.log('Adding product to cart');
+          // Add product to cart logic here
+        });
+      });
+    });
+  </script>
+</body>
+</html>

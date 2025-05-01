@@ -1,0 +1,167 @@
+<div class="dashboard">
+  <section class="welcome-section mb-8">
+    <div class="card p-6 bg-gradient-to-r from-indigo-500 to-blue-600 text-white">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-3xl font-bold mb-2">Welcome to STX DevTools</h1>
+          <p class="text-lg opacity-90">Manage and optimize your STX templates</p>
+        </div>
+        <div class="flex items-center bg-white/20 px-4 py-2 rounded-lg">
+          <span class="i-carbon-branch mr-2"></span>
+          <span>{{ projectInfo.gitBranch }}</span>
+          <span class="mx-2">•</span>
+          <span class="i-carbon-information mr-2"></span>
+          <span>v{{ projectInfo.version }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats-section mb-8">
+    <h2 class="text-2xl font-bold mb-4">Project Overview</h2>
+    <div class="grid grid-cols-5 gap-4">
+      <div class="stat-card bg-white p-4 rounded-lg shadow text-center">
+        <div class="text-2xl font-bold text-indigo-600 mb-1">{{ stats.totalTemplates }}</div>
+        <div class="text-sm text-gray-500">Templates</div>
+      </div>
+
+      <div class="stat-card bg-white p-4 rounded-lg shadow text-center">
+        <div class="text-2xl font-bold text-indigo-600 mb-1">{{ stats.totalComponents }}</div>
+        <div class="text-sm text-gray-500">Components</div>
+      </div>
+
+      <div class="stat-card bg-white p-4 rounded-lg shadow text-center">
+        <div class="text-2xl font-bold text-indigo-600 mb-1">{{ stats.cacheSize }}</div>
+        <div class="text-sm text-gray-500">Cache Size</div>
+      </div>
+
+      <div class="stat-card bg-white p-4 rounded-lg shadow text-center">
+        <div class="text-2xl font-bold text-indigo-600 mb-1">{{ stats.lastBuildTime }}</div>
+        <div class="text-sm text-gray-500">Last Build Time</div>
+      </div>
+
+      <div class="stat-card bg-white p-4 rounded-lg shadow text-center">
+        <div class="text-2xl font-bold text-indigo-600 mb-1">{{ stats.avgRenderTime }}</div>
+        <div class="text-sm text-gray-500">Avg. Render Time</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content-section mb-8">
+    <div class="grid grid-cols-3 gap-6">
+      <div class="col-span-2">
+        <div class="card bg-white p-6 rounded-lg shadow">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">Quick Actions</h3>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4">
+            <a href="/templates" class="quick-action-card flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg hover:bg-indigo-50 transition-colors">
+              <span class="i-carbon-document text-4xl text-indigo-500 mb-3"></span>
+              <span class="font-medium">Browse Templates</span>
+            </a>
+
+            <a href="/performance" class="quick-action-card flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg hover:bg-indigo-50 transition-colors">
+              <span class="i-carbon-chart-line text-4xl text-indigo-500 mb-3"></span>
+              <span class="font-medium">View Performance</span>
+            </a>
+
+            <a href="/config" class="quick-action-card flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg hover:bg-indigo-50 transition-colors">
+              <span class="i-carbon-settings text-4xl text-indigo-500 mb-3"></span>
+              <span class="font-medium">Configure STX</span>
+            </a>
+
+            <button class="quick-action-card flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg hover:bg-indigo-50 transition-colors">
+              <span class="i-carbon-add text-4xl text-indigo-500 mb-3"></span>
+              <span class="font-medium">New Template</span>
+            </button>
+
+            <button class="quick-action-card flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg hover:bg-indigo-50 transition-colors">
+              <span class="i-carbon-add-alt text-4xl text-indigo-500 mb-3"></span>
+              <span class="font-medium">New Component</span>
+            </button>
+
+            <button class="quick-action-card flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg hover:bg-indigo-50 transition-colors">
+              <span class="i-carbon-rocket text-4xl text-indigo-500 mb-3"></span>
+              <span class="font-medium">Optimize All</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card bg-white p-6 rounded-lg shadow">
+          <h3 class="text-xl font-bold mb-4">Recent Activity</h3>
+
+          <div class="space-y-4">
+            @foreach (recentActivity as activity)
+              <div class="activity-item flex items-start border-b border-gray-100 pb-3">
+                <div class="activity-icon mr-3 mt-1">
+                  @if (activity.type === 'template')
+                    <span class="i-carbon-document text-blue-500"></span>
+                  @elseif (activity.type === 'component')
+                    <span class="i-carbon-assembly text-green-500"></span>
+                  @elseif (activity.type === 'config')
+                    <span class="i-carbon-settings text-purple-500"></span>
+                  @endif
+                </div>
+                <div class="activity-content flex-1">
+                  <div class="flex justify-between">
+                    <div class="font-medium">{{ activity.name }}</div>
+                    <div class="text-xs text-gray-500">{{ activity.time }}</div>
+                  </div>
+                  <div class="text-sm text-gray-600">
+                    @if (activity.action === 'created')
+                      Created new {{ activity.type }}
+                    @elseif (activity.action === 'edited')
+                      Edited {{ activity.type }}
+                    @elseif (activity.action === 'updated')
+                      Updated {{ activity.type }} settings
+                    @endif
+                  </div>
+                </div>
+              </div>
+            @endforeach
+          </div>
+
+          <button class="text-indigo-600 text-sm mt-4 hover:underline">View All Activity</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="getting-started-section">
+    <div class="card bg-white p-6 rounded-lg shadow">
+      <h3 class="text-xl font-bold mb-4">Getting Started with STX</h3>
+
+      <div class="grid grid-cols-3 gap-6">
+        <div class="resource-card p-4 border border-gray-200 rounded-lg">
+          <div class="flex items-center mb-3">
+            <span class="i-carbon-document-view text-2xl text-indigo-500 mr-2"></span>
+            <h4 class="font-semibold">Documentation</h4>
+          </div>
+          <p class="text-sm text-gray-600 mb-4">Read the complete STX documentation to learn about all available features.</p>
+          <a href="#" class="text-indigo-600 text-sm hover:underline">View Documentation</a>
+        </div>
+
+        <div class="resource-card p-4 border border-gray-200 rounded-lg">
+          <div class="flex items-center mb-3">
+            <span class="i-carbon-code text-2xl text-indigo-500 mr-2"></span>
+            <h4 class="font-semibold">Examples</h4>
+          </div>
+          <p class="text-sm text-gray-600 mb-4">Browse example templates and learn from real-world implementations.</p>
+          <a href="#" class="text-indigo-600 text-sm hover:underline">View Examples</a>
+        </div>
+
+        <div class="resource-card p-4 border border-gray-200 rounded-lg">
+          <div class="flex items-center mb-3">
+            <span class="i-carbon-help text-2xl text-indigo-500 mr-2"></span>
+            <h4 class="font-semibold">Support</h4>
+          </div>
+          <p class="text-sm text-gray-600 mb-4">Get help from the community or report issues on GitHub.</p>
+          <a href="#" class="text-indigo-600 text-sm hover:underline">Get Support</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div><script type="module" crossorigin src="./chunk-g91hmhf2.js"></script>

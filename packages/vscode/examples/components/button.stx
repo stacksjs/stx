@@ -1,0 +1,119 @@
+{{--
+  Button Component
+  Usage: @component('components/button', {
+    type: 'primary|secondary|danger',
+    size: 'sm|md|lg',
+    disabled: boolean,
+    onClick: function
+  })
+    Button Text
+  @endcomponent
+--}}
+
+@ts
+  interface ButtonProps {
+    type?: 'primary' | 'secondary' | 'danger';
+    size?: 'sm' | 'md' | 'lg';
+    disabled?: boolean;
+    onClick?: () => void;
+  }
+
+  // Set default values for props
+  const props: ButtonProps = {
+    type: $props.type || 'primary',
+    size: $props.size || 'md',
+    disabled: $props.disabled || false,
+    onClick: $props.onClick || (() => {})
+  };
+
+  // Compute classes based on props
+  const getClasses = () => {
+    const classes = ['btn'];
+
+    // Add type class
+    classes.push(`btn-${props.type}`);
+
+    // Add size class
+    classes.push(`btn-${props.size}`);
+
+    // Add disabled class if needed
+    if (props.disabled) {
+      classes.push('btn-disabled');
+    }
+
+    return classes.join(' ');
+  };
+
+  const buttonClasses = getClasses();
+@endts
+
+<button
+  class="{{ buttonClasses }}"
+  {{ props.disabled ? 'disabled' : '' }}
+  @click="props.onClick && props.onClick()"
+>
+  {{-- Render the slot content (button text) --}}
+  {{ $slot }}
+</button>
+
+{{-- Add style scoped to this component --}}
+<style>
+  .btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-block;
+    text-align: center;
+    user-select: none;
+    border: 1px solid transparent;
+    transition: all 0.15s ease-in-out;
+  }
+
+  .btn-primary {
+    background-color: #3490dc;
+    color: white;
+  }
+
+  .btn-secondary {
+    background-color: #6c757d;
+    color: white;
+  }
+
+  .btn-danger {
+    background-color: #e3342f;
+    color: white;
+  }
+
+  .btn-sm {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .btn-md {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .btn-lg {
+    font-size: 1.25rem;
+    padding: 0.75rem 1.5rem;
+  }
+
+  .btn-disabled {
+    opacity: 0.65;
+    pointer-events: none;
+  }
+
+  .btn-primary:hover:not(.btn-disabled) {
+    background-color: #2779bd;
+  }
+
+  .btn-secondary:hover:not(.btn-disabled) {
+    background-color: #5a6268;
+  }
+
+  .btn-danger:hover:not(.btn-disabled) {
+    background-color: #cc1f1a;
+  }
+</style>

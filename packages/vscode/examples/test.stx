@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STX Test Template</title>
+</head>
+<body>
+    <h1>STX Syntax Example</h1>
+
+    {{-- This is an STX comment that won't be rendered --}}
+
+    <div class="container">
+        <!-- TypeScript code block -->
+        @ts
+            const greeting = 'Hello, World!';
+            const user = {
+                name: 'John',
+                email: 'john@example.com',
+                age: 30
+            };
+
+            function formatGreeting(name: string): string {
+                return `Hello, ${name}!`;
+            }
+        @endts
+
+        <!-- JavaScript code block -->
+        @js
+            const currentDate = new Date();
+            console.log('Current date:', currentDate);
+        @endjs
+
+        <!-- Conditional statements -->
+        @if(user.age > 18)
+            <p>{{ user.name }} is an adult.</p>
+        @elseif(user.age > 13)
+            <p>{{ user.name }} is a teenager.</p>
+        @else
+            <p>{{ user.name }} is a child.</p>
+        @endif
+
+        <!-- Loop syntax -->
+        <ul>
+            @for(const item of ['Apple', 'Banana', 'Cherry'])
+                <li>{{ item }}</li>
+            @endfor
+        </ul>
+
+        <!-- Alternative loop syntax -->
+        <ul>
+            @foreach(['Red', 'Green', 'Blue'] as color)
+                <li style="color: {{ color.toLowerCase() }}">{{ color }}</li>
+            @endforeach
+        </ul>
+
+        <!-- Echoing variables with escaping -->
+        <p>Welcome, {{ user.name }}</p>
+
+        <!-- Echoing variables without escaping -->
+        <div>{!! '<strong>This HTML is not escaped</strong>' !!}</div>
+
+        <!-- Triple braces syntax -->
+        <div>{{{ '<em>This is another syntax</em>' }}}</div>
+
+        <!-- Including other templates -->
+        @include('partials.header')
+
+        <!-- Using components -->
+        @component('components.alert', { type: 'error', message: 'Something went wrong!' })
+            <p>Additional content for the alert component</p>
+        @endcomponent
+
+        <!-- Translation -->
+        <p>@translate('welcome.message', { name: user.name })</p>
+        <p>@t('app.version')</p>
+
+        <!-- Raw content that won't be processed -->
+        @raw
+            {{ This will be displayed as is and not processed }}
+            @if(this.wont.be.processed)
+                This won't be processed as a condition
+            @endif
+        @endraw
+
+        <!-- Markdown content -->
+        @markdown
+            # Markdown Header
+
+            This is **bold** and this is *italic*.
+
+            - List item 1
+            - List item 2
+        @endmarkdown
+    </div>
+
+    <footer>
+        &copy; {{ new Date().getFullYear() }} STX Example
+    </footer>
+</body>
+</html>

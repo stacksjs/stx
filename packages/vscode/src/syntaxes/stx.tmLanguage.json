@@ -1,0 +1,363 @@
+{
+  "scopeName": "text.html.ts.stx",
+  "name": "STX",
+  "fileTypes": ["stx"],
+  "patterns": [
+    {
+      "include": "#stx"
+    },
+    {
+      "include": "text.html.derivative"
+    }
+  ],
+  "injections": {
+    "text.html.ts.stx - (meta.embedded | meta.tag | comment.block.stx), L:(text.html.ts.stx meta.tag - (comment.block.stx | meta.embedded.block.stx)), L:(source.js.embedded.html - (comment.block.stx | meta.embedded.block.stx))": {
+      "patterns": [
+        {
+          "include": "#stx"
+        }
+      ]
+    }
+  },
+  "repository": {
+    "stx": {
+      "patterns": [
+        {
+          "begin": "{{--",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.begin.stx"
+            }
+          },
+          "end": "--}}",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.end.stx"
+            }
+          },
+          "name": "comment.block.stx"
+        },
+        {
+          "begin": "(?<!@){{{",
+          "beginCaptures": {
+            "0": {
+              "name": "support.function.construct.begin.stx"
+            }
+          },
+          "contentName": "source.ts",
+          "end": "}}}",
+          "endCaptures": {
+            "0": {
+              "name": "support.function.construct.end.stx"
+            }
+          },
+          "name": "meta.function.echo.stx",
+          "patterns": [
+            {
+              "include": "source.ts"
+            }
+          ]
+        },
+        {
+          "begin": "(?<![@{]){{",
+          "beginCaptures": {
+            "0": {
+              "name": "support.function.construct.begin.stx"
+            }
+          },
+          "contentName": "source.ts",
+          "end": "}}",
+          "endCaptures": {
+            "0": {
+              "name": "support.function.construct.end.stx"
+            }
+          },
+          "name": "meta.function.echo.stx",
+          "patterns": [
+            {
+              "include": "source.ts"
+            }
+          ]
+        },
+        {
+          "begin": "(?<!@){!!",
+          "beginCaptures": {
+            "0": {
+              "name": "support.function.construct.begin.stx"
+            }
+          },
+          "contentName": "source.ts",
+          "end": "!!}",
+          "endCaptures": {
+            "0": {
+              "name": "support.function.construct.end.stx"
+            }
+          },
+          "name": "meta.function.echo.stx",
+          "patterns": [
+            {
+              "include": "source.ts"
+            }
+          ]
+        },
+        {
+          "begin": "(@){{",
+          "beginCaptures": {
+            "0": {
+              "name": "begin.bracket.round.stx"
+            },
+            "1": {
+              "name": "variable.other.stx"
+            }
+          },
+          "contentName": "source.ts",
+          "end": "}}",
+          "endCaptures": {
+            "0": {
+              "name": "end.bracket.round.stx"
+            }
+          },
+          "name": "meta.function.echo.stx",
+          "patterns": [
+            {
+              "include": "source.ts"
+            }
+          ]
+        },
+        {
+          "begin": "(?x)(?<![A-Za-z0-9_@]) (@  (?i:\n    auth\n    |break\n    |can\n    |canany\n    |cannot\n    |case\n    |choice\n    |component\n    |continue\n    |dd\n    |dump\n    |each\n    |elsecan\n    |elsecanany\n    |elsecannot\n    |elseif\n    |empty\n    |error\n    |extends\n    |for\n    |foreach\n    |forelse\n    |guest\n    |hassection\n    |if\n    |include\n    |includefirst\n    |includeif\n    |includeunless\n    |includewhen\n    |inject\n    |isset\n    |json\n    |lang\n    |once\n    |prepend\n    |push\n    |section\n    |sectionMissing\n    |slot\n    |stack\n    |switch\n    |unless\n    |unset\n    |while\n    |yield\n    |props\n    |env\n    |js\n    |checked\n    |selected\n    |disabled\n    |style\n    |readonly\n    |required\n    |pushOnce\n    |pushIf\n    |prependOnce\n    |use\n  )[\\t ]*\n)(\\() # Followed by opening parentheses\n",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.stx"
+            },
+            "2": {
+              "name": "begin.bracket.round.stx"
+            }
+          },
+          "contentName": "source.ts",
+          "end": "\\)",
+          "endCaptures": {
+            "0": {
+              "name": "end.bracket.round.stx"
+            }
+          },
+          "name": "meta.directive.stx",
+          "patterns": [
+            {
+              "include": "source.ts"
+            }
+          ]
+        },
+        {
+          "begin": "(?x)(?<![A-Za-z0-9_@]) (@  (?i:\n    append\n    |default\n    |else\n    |endauth\n    |endcan\n    |endcanany\n    |endcannot\n    |endcomponent\n    |endempty\n    |enderror\n    |endfor\n    |endforeach\n    |endforelse\n    |endguest\n    |endif\n    |endisset\n    |endlang\n    |endonce\n    |endprepend\n    |endpush\n    |endsection\n    |endslot\n    |endswitch\n    |endunless\n    |endwhile\n    |overwrite\n    |parent\n    |show\n    |stop\n    |endPushOnce\n    |endPushIf\n    |endPrependOnce\n  )[\\t ]*\n)(\\() # Followed by opening parentheses\n",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.stx"
+            },
+            "2": {
+              "name": "begin.bracket.round.stx"
+            }
+          },
+          "contentName": "comment.stx",
+          "end": "\\)",
+          "endCaptures": {
+            "0": {
+              "name": "end.bracket.round.stx"
+            }
+          },
+          "name": "meta.directive.stx",
+          "patterns": [
+            {
+              "include": "#balance_brackets"
+            }
+          ]
+        },
+        {
+          "match": "(?x)(?<![A-Za-z0-9_@]) @(?:  append\n  |break\n  |continue\n  |default\n  |each\n  |else\n  |overwrite\n  |parent\n  |sectionMissing\n  |show\n  |stack\n  |stop\n)\\b\n",
+          "name": "keyword.stx"
+        },
+        {
+          "match": "(?x)(?<![A-Za-z0-9_@]) @(end)? (?i:  auth\n  |can\n  |canany\n  |cannot\n  |component\n  |empty\n  |error\n  |for\n  |foreach\n  |forelse\n  |guest\n  |if\n  |isset\n  |lang\n  |prepend\n  |push\n  |section\n  |slot\n  |switch\n  |unless\n  |while\n  |once\n  |pushOnce\n  |pushIf\n  |prependOnce\n  |session\n)\\b\n",
+          "name": "keyword.stx"
+        },
+        {
+          "begin": "(?<![A-Za-z0-9_@])@(?i:ts)\\b",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.control.directive.stx"
+            }
+          },
+          "end": "(?<![A-Za-z0-9_@])@(?i:endts)\\b",
+          "endCaptures": {
+            "0": {
+              "name": "keyword.control.directive.stx"
+            }
+          },
+          "patterns": [
+            {
+              "include": "source.ts"
+            }
+          ],
+          "contentName": "source.ts",
+          "name": "meta.embedded.block.ts"
+        },
+        {
+          "begin": "(?<![A-Za-z0-9_@])@(?i:js)\\b",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.control.directive.stx"
+            }
+          },
+          "end": "(?<![A-Za-z0-9_@])@(?i:endjs)\\b",
+          "endCaptures": {
+            "0": {
+              "name": "keyword.control.directive.stx"
+            }
+          },
+          "patterns": [
+            {
+              "include": "source.js"
+            }
+          ],
+          "contentName": "source.js",
+          "name": "meta.embedded.block.js"
+        },
+        {
+          "begin": "(?<![A-Za-z0-9_@])@(?i:script)\\b",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.control.directive.stx"
+            }
+          },
+          "end": "(?<![A-Za-z0-9_@])@(?i:endscript)\\b",
+          "endCaptures": {
+            "0": {
+              "name": "keyword.control.directive.stx"
+            }
+          },
+          "patterns": [
+            {
+              "include": "source.ts"
+            }
+          ],
+          "contentName": "source.ts",
+          "name": "meta.embedded.block.script"
+        },
+        {
+          "begin": "(?<![A-Za-z0-9_@])@(?i:markdown)\\b",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.control.directive.stx"
+            }
+          },
+          "end": "(?<![A-Za-z0-9_@])@(?i:endmarkdown)\\b",
+          "endCaptures": {
+            "0": {
+              "name": "keyword.control.directive.stx"
+            }
+          },
+          "patterns": [
+            {
+              "include": "text.html.markdown"
+            }
+          ],
+          "contentName": "text.html.markdown",
+          "name": "meta.embedded.block.markdown"
+        },
+        {
+          "begin": "(?<![A-Za-z0-9_@])@(?i:raw|verbatim)\\b",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.control.directive.stx"
+            }
+          },
+          "end": "(?<![A-Za-z0-9_@])@(?i:end(?:raw|verbatim))\\b",
+          "endCaptures": {
+            "0": {
+              "name": "keyword.control.directive.stx"
+            }
+          },
+          "contentName": "string.unquoted.raw",
+          "name": "meta.embedded.block.raw"
+        },
+        {
+          "begin": "(?x)(?<![A-Za-z0-9_@]) (@\\w+(?:::w+)?[\\t ]*) (\\() # Followed by opening parentheses",
+          "beginCaptures": {
+            "1": {
+              "name": "entity.name.function.stx"
+            },
+            "2": {
+              "name": "begin.bracket.round.stx"
+            }
+          },
+          "contentName": "source.ts",
+          "end": "\\)",
+          "endCaptures": {
+            "0": {
+              "name": "end.bracket.round.stx"
+            }
+          },
+          "name": "meta.directive.custom.stx",
+          "patterns": [
+            {
+              "include": "source.ts"
+            }
+          ]
+        },
+        {
+          "match": "(?x)(?<![A-Za-z0-9_@]) @\\w+(?:::w+)?\\b",
+          "name": "entity.name.function.stx"
+        },
+        {
+          "begin": "(:[a-z-]+)(=)(\")",
+          "beginCaptures": {
+            "0": {
+              "name": "meta.attribute.directive.stx"
+            },
+            "1": {
+              "name": "entity.other.attribute-name.stx"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.stx"
+            },
+            "3": {
+              "name": "string.quoted.double.stx"
+            }
+          },
+          "end": "(\")",
+          "endCaptures": {
+            "0": {
+              "name": "string.quoted.double.stx"
+            },
+            "1": {
+              "name": "punctuation.definition.string.end.stx"
+            }
+          },
+          "contentName": "source.ts",
+          "patterns": [
+            {
+              "include": "source.ts"
+            }
+          ]
+        }
+      ]
+    },
+    "balance_brackets": {
+      "patterns": [
+        {
+          "begin": "\\(",
+          "end": "\\)",
+          "patterns": [
+            {
+              "include": "#balance_brackets"
+            }
+          ]
+        },
+        {
+          "match": "[^()]+"
+        }
+      ]
+    }
+  },
+  "uuid": "stx-tmlanguage"
+}

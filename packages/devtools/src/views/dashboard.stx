@@ -1,0 +1,193 @@
+<script>
+  // Dashboard data
+  export const pageTitle = "Dashboard";
+
+  // Mock data for templates and components stats
+  export const stats = {
+    totalTemplates: 25,
+    totalComponents: 12,
+    cacheSize: "1.2MB",
+    lastBuildTime: "1.5s",
+    avgRenderTime: "45ms"
+  };
+
+  export const recentTemplates = [
+    { name: "home.stx", path: "/src/views/home.stx", lastModified: "2 hours ago" },
+    { name: "about.stx", path: "/src/views/about.stx", lastModified: "1 day ago" },
+    { name: "product.stx", path: "/src/views/product.stx", lastModified: "3 days ago" }
+  ];
+
+  export const recentComponents = [
+    { name: "Button", path: "/src/components/Button.stx", usage: 15 },
+    { name: "Card", path: "/src/components/Card.stx", usage: 8 },
+    { name: "Navbar", path: "/src/components/Navbar.stx", usage: 5 }
+  ];
+
+  export function refreshData() {
+    // In a real implementation, this would fetch fresh data
+    console.log("Refreshing data...");
+    return true;
+  }
+</script>
+
+@extends('layouts/MainLayout')
+
+<div class="dashboard">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold">Overview</h2>
+    <button class="btn btn-primary" onclick="refreshData()">
+      Refresh Data
+    </button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value">{{ stats.totalTemplates }}</div>
+      <div class="stat-label">Templates</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-value">{{ stats.totalComponents }}</div>
+      <div class="stat-label">Components</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-value">{{ stats.cacheSize }}</div>
+      <div class="stat-label">Cache Size</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-value">{{ stats.lastBuildTime }}</div>
+      <div class="stat-label">Last Build Time</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-value">{{ stats.avgRenderTime }}</div>
+      <div class="stat-label">Avg. Render Time</div>
+    </div>
+  </div>
+
+  <div class="flex gap-6 mt-8">
+    <div class="card flex-1">
+      <h3 class="text-xl font-semibold mb-4">Recent Templates</h3>
+      <table class="w-full">
+        <thead>
+          <tr>
+            <th class="text-left">Name</th>
+            <th class="text-left">Path</th>
+            <th class="text-left">Last Modified</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach (recentTemplates as template)
+            <tr>
+              <td>{{ template.name }}</td>
+              <td>{{ template.path }}</td>
+              <td>{{ template.lastModified }}</td>
+            </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card flex-1">
+      <h3 class="text-xl font-semibold mb-4">Top Components</h3>
+      <table class="w-full">
+        <thead>
+          <tr>
+            <th class="text-left">Name</th>
+            <th class="text-left">Path</th>
+            <th class="text-left">Usage Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach (recentComponents as component)
+            <tr>
+              <td>{{ component.name }}</td>
+              <td>{{ component.path }}</td>
+              <td>{{ component.usage }}</td>
+            </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<style>
+  .dashboard {
+    padding: 20px 0;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+  }
+
+  .stat-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--primary-color);
+  }
+
+  .stat-label {
+    margin-top: 8px;
+    color: var(--secondary-color);
+    font-size: 14px;
+  }
+
+  .flex {
+    display: flex;
+  }
+
+  .flex-1 {
+    flex: 1;
+  }
+
+  .gap-6 {
+    gap: 24px;
+  }
+
+  .mt-8 {
+    margin-top: 32px;
+  }
+
+  .text-xl {
+    font-size: 20px;
+  }
+
+  .font-semibold {
+    font-weight: 600;
+  }
+
+  .mb-4 {
+    margin-bottom: 16px;
+  }
+
+  .w-full {
+    width: 100%;
+  }
+
+  table {
+    border-collapse: collapse;
+  }
+
+  th, td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  th {
+    font-weight: 600;
+    color: var(--secondary-color);
+  }
+</style>

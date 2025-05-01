@@ -1,0 +1,109 @@
+
+
+
+
+<div class="performance-page">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold">Performance Monitoring</h2>
+
+    <div class="flex gap-2">
+      <select class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" onchange="selectTimeRange(this.value)">
+        @foreach (timeRanges as range)
+          <option value="{{ range.value }}" {{ selectedTimeRange === range.value ? 'selected' : '' }}>
+            {{ range.label }}
+          </option>
+        @endforeach
+      </select>
+
+      <button class="btn btn-primary flex items-center">
+        <span class="i-carbon-document-export mr-1"></span>
+        Export Report
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-4 gap-4 mb-6">
+    <div class="card p-4 text-center">
+      <div class="text-3xl font-bold text-primary mb-1">{{ performanceData.avgRenderTime }}</div>
+      <div class="text-sm text-gray-500">Avg. Render Time</div>
+    </div>
+
+    <div class="card p-4 text-center">
+      <div class="text-3xl font-bold text-primary mb-1">{{ performanceData.avgCompileTime }}</div>
+      <div class="text-sm text-gray-500">Avg. Compile Time</div>
+    </div>
+
+    <div class="card p-4 text-center">
+      <div class="text-3xl font-bold text-primary mb-1">{{ performanceData.cacheHitRate }}</div>
+      <div class="text-sm text-gray-500">Cache Hit Rate</div>
+    </div>
+
+    <div class="card p-4 text-center">
+      <div class="text-3xl font-bold text-primary mb-1">{{ performanceData.totalRequests }}</div>
+      <div class="text-sm text-gray-500">Total Requests</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-3 gap-6">
+    <div class="col-span-2">
+      @component('PerformanceChart')
+      @endcomponent
+    </div>
+
+    <div>
+      <div class="card p-6 mb-6">
+        <h3 class="text-xl font-bold mb-4">Template Performance</h3>
+
+        <div class="space-y-4">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <div class="font-medium">Slowest Template</div>
+              <div class="font-mono text-red-600">{{ performanceData.slowestTemplateTime }}</div>
+            </div>
+            <div class="text-sm text-gray-600">{{ performanceData.slowestTemplate }}</div>
+            <button class="text-xs text-blue-600 mt-1 hover:underline">View Details</button>
+          </div>
+
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <div class="font-medium">Fastest Template</div>
+              <div class="font-mono text-green-600">{{ performanceData.fastestTemplateTime }}</div>
+            </div>
+            <div class="text-sm text-gray-600">{{ performanceData.fastestTemplate }}</div>
+            <button class="text-xs text-blue-600 mt-1 hover:underline">View Details</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-6">
+        <h3 class="text-xl font-bold mb-4">Optimization Tips</h3>
+
+        <ul class="space-y-3">
+          <li class="flex gap-2">
+            <span class="i-carbon-idea text-yellow-600 flex-shrink-0 mt-0.5"></span>
+            <div>
+              <div class="font-medium">Enable Template Caching</div>
+              <p class="text-sm text-gray-600">Caching templates can dramatically improve render times.</p>
+            </div>
+          </li>
+
+          <li class="flex gap-2">
+            <span class="i-carbon-idea text-yellow-600 flex-shrink-0 mt-0.5"></span>
+            <div>
+              <div class="font-medium">Optimize Large Lists</div>
+              <p class="text-sm text-gray-600">Use pagination or virtualization for displaying large data sets.</p>
+            </div>
+          </li>
+
+          <li class="flex gap-2">
+            <span class="i-carbon-idea text-yellow-600 flex-shrink-0 mt-0.5"></span>
+            <div>
+              <div class="font-medium">Reduce Component Nesting</div>
+              <p class="text-sm text-gray-600">Deeply nested components can slow down render performance.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div><script type="module" crossorigin src="./chunk-c6th51z1.js"></script>

@@ -1,0 +1,339 @@
+<!-- STX Components and Layouts Example -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>STX Components and Layouts</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .alert {
+            padding: 12px 20px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .alert-info {
+            background-color: #e8f4fd;
+            border-left: 4px solid #2196F3;
+            color: #0c5460;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        .modal {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 0;
+            max-width: 500px;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        .modal-header {
+            background-color: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .modal-body {
+            padding: 20px;
+        }
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            margin-left: 8px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>STX Components and Layouts</h1>
+
+    <!-- Example of extending a layout -->
+    @extends('layouts.main')
+
+    @section('title', 'Components Demo')
+
+    @section('content')
+        <!-- Basic Component Usage -->
+        <section>
+            <h2>Basic Component Usage</h2>
+
+            <div class="card">
+                <h3>Alert Components</h3>
+
+                @component('components.alert')
+                    <strong>Default Alert!</strong> This is a basic alert message.
+                @endcomponent
+
+                @component('components.alert', ['type' => 'info'])
+                    <strong>Info Alert!</strong> This contains information for the user.
+                @endcomponent
+
+                @component('components.alert', ['type' => 'success'])
+                    <strong>Success!</strong> Your operation was completed successfully.
+                @endcomponent
+
+                @component('components.alert', ['type' => 'warning'])
+                    <strong>Warning!</strong> This action might have consequences.
+                @endcomponent
+
+                @component('components.alert', ['type' => 'danger'])
+                    <strong>Danger!</strong> This action cannot be undone.
+                @endcomponent
+            </div>
+        </section>
+
+        <!-- Components with Slots -->
+        <section>
+            <h2>Components with Slots</h2>
+
+            <div class="card">
+                <h3>Modal with Named Slots</h3>
+
+                @component('components.modal')
+                    @slot('title')
+                        Confirmation Required
+                    @endslot
+
+                    <p>Are you sure you want to perform this action?</p>
+                    <p>This cannot be undone once confirmed.</p>
+
+                    @slot('footer')
+                        <button class="btn btn-secondary">Cancel</button>
+                        <button class="btn btn-primary">Confirm</button>
+                    @endslot
+                @endcomponent
+
+                @component('components.modal')
+                    @slot('title')
+                        Delete Account
+                    @endslot
+
+                    <p>Warning: You are about to delete your account and all associated data.</p>
+                    <p>This action is permanent and cannot be undone.</p>
+
+                    @slot('footer')
+                        <button class="btn btn-secondary">Cancel</button>
+                        <button class="btn btn-danger">Delete Account</button>
+                    @endslot
+                @endcomponent
+            </div>
+        </section>
+
+        <!-- Nesting Components -->
+        <section>
+            <h2>Nesting Components</h2>
+
+            <div class="card">
+                <h3>Card Component with Nested Alert</h3>
+
+                @component('components.card', ['title' => 'Important Information'])
+                    <p>This card contains important information about your account.</p>
+
+                    @component('components.alert', ['type' => 'info'])
+                        <strong>Note:</strong> Your subscription will renew on the 15th.
+                    @endcomponent
+
+                    <p>Please review your billing information to ensure it's up to date.</p>
+                @endcomponent
+            </div>
+        </section>
+    @endsection
+
+    @section('sidebar')
+        <div class="card">
+            <h3>Sidebar Content</h3>
+            <p>This content appears in the sidebar.</p>
+
+            @component('components.alert', ['type' => 'info'])
+                <strong>Tip:</strong> You can customize your sidebar in account settings.
+            @endcomponent
+        </div>
+
+        @parent
+    @endsection
+
+    <!-- Section Stacks -->
+    <section>
+        <h2>Section Stacks</h2>
+
+        <div class="card">
+            <h3>Script Stack Example</h3>
+
+            @push('scripts')
+                <script>
+                    console.log('First script in the stack');
+                </script>
+            @endpush
+
+            @push('scripts')
+                <script>
+                    console.log('Second script in the stack');
+                </script>
+            @endpush
+
+            @pushonce('scripts')
+                <script>
+                    console.log('This script will only be included once');
+                </script>
+            @endpushonce
+
+            @pushif(true, 'scripts')
+                <script>
+                    console.log('Conditional script that will be included');
+                </script>
+            @endpushif
+
+            <p>All scripts in the 'scripts' stack:</p>
+            <pre><code>@stack('scripts')</code></pre>
+        </div>
+
+        <div class="card">
+            <h3>Style Stack Example</h3>
+
+            @push('styles')
+                <style>
+                    .custom-text { color: blue; }
+                </style>
+            @endpush
+
+            @push('styles')
+                <style>
+                    .highlight { background-color: yellow; }
+                </style>
+            @endpush
+
+            <p>All styles in the 'styles' stack:</p>
+            <pre><code>@stack('styles')</code></pre>
+        </div>
+    </section>
+
+    <!-- Including Other Templates -->
+    <section>
+        <h2>Including Other Templates</h2>
+
+        <div class="card">
+            <h3>Include Examples</h3>
+
+            <h4>Basic Include</h4>
+            @include('partials.header')
+
+            <h4>Include with Data</h4>
+            @include('partials.user-profile', ['user' => $user])
+
+            <h4>Include When Condition is Met</h4>
+            @includewhen($showAdminPanel, 'partials.admin-panel')
+
+            <h4>Include Unless Condition is Met</h4>
+            @includeunless($user->isRestricted, 'partials.premium-content')
+
+            <h4>Include First Available Template</h4>
+            @includefirst(['partials.custom-footer', 'partials.default-footer'])
+        </div>
+    </section>
+
+    <!-- Using the @once Directive -->
+    <section>
+        <h2>@once Directive</h2>
+
+        <div class="card">
+            <h3>Content That Should Appear Only Once</h3>
+
+            @once
+                <style>
+                    .once-demonstration {
+                        border: 2px dashed purple;
+                        padding: 10px;
+                        margin: 10px 0;
+                    }
+                </style>
+
+                <script>
+                    // This JavaScript will only be included once
+                    console.log('This message will be logged only once.');
+                </script>
+            @endonce
+
+            <div class="once-demonstration">
+                <p>If this template is included multiple times, the style and script above will only be rendered once.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- These examples demonstrate what would typically be in separate files -->
+
+    <!-- Alert Component Template (for reference) -->
+    <template id="alert-component-example">
+        <div class="alert alert-{{ $type ?? 'info' }}">
+            {{ $slot }}
+        </div>
+    </template>
+
+    <!-- Modal Component Template (for reference) -->
+    <template id="modal-component-example">
+        <div class="modal">
+            <div class="modal-header">
+                <h4>{{ $title ?? 'Modal Title' }}</h4>
+            </div>
+            <div class="modal-body">
+                {{ $slot }}
+            </div>
+            <div class="modal-footer">
+                {{ $footer ?? '<button class="btn btn-secondary">Close</button>' }}
+            </div>
+        </div>
+    </template>
+
+    <!-- Card Component Template (for reference) -->
+    <template id="card-component-example">
+        <div class="card">
+            <h3>{{ $title ?? 'Card Title' }}</h3>
+            <div>
+                {{ $slot }}
+            </div>
+        </div>
+    </template>
+</body>
+</html>

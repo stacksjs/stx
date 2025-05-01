@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STX Directives Example</title>
+</head>
+<body>
+  <h1>STX Directives Example</h1>
+
+  @ts
+    // Define some data for the examples
+    const isLoggedIn = true;
+    const userName = 'John Doe';
+    const userRole = 'admin';
+    const items = ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'];
+    const users = [
+      { name: 'Alice', role: 'admin' },
+      { name: 'Bob', role: 'user' },
+      { name: 'Charlie', role: 'user' },
+      { name: 'Diana', role: 'manager' }
+    ];
+
+    // Functions for event handling
+    const handleClick = () => {
+      console.log('Button clicked!');
+    };
+
+    const toggleVisibility = (elementId: string) => {
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.style.display = element.style.display === 'none' ? 'block' : 'none';
+      }
+    };
+  @endts
+
+  {{-- Example of @if directive --}}
+  <div class="login-status">
+    @if(isLoggedIn)
+      <p>Welcome back, {{ userName }}!</p>
+    @else
+      <p>Please log in to continue.</p>
+    @endif
+  </div>
+
+  {{-- Example of @for directive --}}
+  <div class="items-list">
+    <h2>Items List</h2>
+    <ul>
+      @for(const item of items)
+        <li>{{ item }}</li>
+      @endfor
+    </ul>
+  </div>
+
+  {{-- Example of @click directive --}}
+  <div class="buttons-section">
+    <h2>Interactive Buttons</h2>
+    <button @click="handleClick()">Click Me</button>
+    <button @click="toggleVisibility('advanced-section')">Toggle Advanced Section</button>
+  </div>
+
+  {{-- Example of conditional class and style directives --}}
+  <div id="advanced-section"
+       @class="userRole === 'admin' ? 'admin-section' : 'user-section'"
+       @style="isLoggedIn ? 'display: block' : 'display: none'">
+    <h2>Advanced Section</h2>
+    <p>This section is only visible to logged-in users and has different styling based on role.</p>
+  </div>
+
+  {{-- Example of combining multiple directives --}}
+  <div class="users-list">
+    <h2>Users List</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Role</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for(const user of users)
+          <tr @class="user.role === 'admin' ? 'admin-row' : 'user-row'">
+            <td>{{ user.name }}</td>
+            <td>{{ user.role }}</td>
+            <td>
+              <button @click="console.log('User:', user.name)" @if="user.role !== 'admin'">
+                Edit
+              </button>
+            </td>
+          </tr>
+        @endfor
+      </tbody>
+    </table>
+  </div>
+
+  <style>
+    .admin-section {
+      background-color: #f8f9fa;
+      border: 2px solid #28a745;
+      padding: 15px;
+      margin-top: 20px;
+    }
+
+    .user-section {
+      background-color: #e9ecef;
+      border: 1px solid #adb5bd;
+      padding: 15px;
+      margin-top: 20px;
+    }
+
+    .admin-row {
+      background-color: #e8f4f8;
+      font-weight: bold;
+    }
+
+    .user-row {
+      background-color: #ffffff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border: 1px solid #dee2e6;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f8f9fa;
+    }
+  </style>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!-- STX Loop Directives Example -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>STX Loops</title>
+    <style>
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table th, .table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .table th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>STX Loop Directives</h1>
+
+    @ts
+        interface Product {
+            id: number;
+            name: string;
+            price: number;
+            inStock: boolean;
+        }
+
+        interface User {
+            id: number;
+            name: string;
+            email: string;
+        }
+
+        const products: Product[] = [
+            { id: 1, name: 'Laptop', price: 999, inStock: true },
+            { id: 2, name: 'Smartphone', price: 699, inStock: true },
+            { id: 3, name: 'Tablet', price: 399, inStock: false },
+            { id: 4, name: 'Headphones', price: 199, inStock: true }
+        ];
+
+        const users: User[] = [
+            { id: 1, name: 'John Doe', email: 'john@example.com' },
+            { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
+            { id: 3, name: 'Bob Johnson', email: 'bob@example.com' }
+        ];
+
+        const emptyArray: string[] = [];
+        let counter = 0;
+    @endts
+
+    <!-- For Loop -->
+    <section>
+        <h2>For Loop</h2>
+
+        <div class="card">
+            <h3>Counting Example</h3>
+            <ul>
+                @for (let i = 1; i <= 5; i++)
+                    <li>Item #{{ i }}</li>
+                @endfor
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>Array Iteration with For Loop</h3>
+            <ul>
+                @for (let i = 0; i < products.length; i++)
+                    <li>{{ products[i].name }} - ${{ products[i].price }}</li>
+                @endfor
+            </ul>
+        </div>
+    </section>
+
+    <!-- Foreach Loop -->
+    <section>
+        <h2>Foreach Loop</h2>
+
+        <div class="card">
+            <h3>Product List</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (products as product)
+                        <tr>
+                            <td>{{ product.id }}</td>
+                            <td>{{ product.name }}</td>
+                            <td>${{ product.price }}</td>
+                            <td>{{ product.inStock ? 'In Stock' : 'Out of Stock' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h3>User List with Index</h3>
+            <ul>
+                @foreach (users as index => user)
+                    <li>{{ index + 1 }}. {{ user.name }} ({{ user.email }})</li>
+                @endforeach
+            </ul>
+        </div>
+    </section>
+
+    <!-- Forelse Loop (Foreach with Empty Fallback) -->
+    <section>
+        <h2>Forelse Loop (Foreach with Empty Fallback)</h2>
+
+        <div class="card">
+            <h3>Products with Forelse</h3>
+            <div>
+                @forelse (products as product)
+                    <div>
+                        <strong>{{ product.name }}</strong>: ${{ product.price }}
+                    </div>
+                @empty
+                    <p>No products available.</p>
+                @endforelse
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Empty Array with Forelse</h3>
+            <div>
+                @forelse (emptyArray as item)
+                    <div>{{ item }}</div>
+                @empty
+                    <p>The array is empty.</p>
+                @endforelse
+            </div>
+        </div>
+    </section>
+
+    <!-- While Loop -->
+    <section>
+        <h2>While Loop</h2>
+
+        <div class="card">
+            <h3>Simple Counter</h3>
+            <ol>
+                @ts
+                    counter = 0; // Reset counter
+                @endts
+
+                @while (counter < 5)
+                    <li>Counter value: {{ counter }}</li>
+                    @ts
+                        counter++;
+                    @endts
+                @endwhile
+            </ol>
+        </div>
+    </section>
+
+    <!-- Loop Control: Continue and Break -->
+    <section>
+        <h2>Loop Control: Continue and Break</h2>
+
+        <div class="card">
+            <h3>Continue Example (Skip Even Numbers)</h3>
+            <ul>
+                @for (let i = 1; i <= 10; i++)
+                    @if (i % 2 === 0)
+                        @continue
+                    @endif
+                    <li>{{ i }} is odd</li>
+                @endfor
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>Break Example (Stop at 5)</h3>
+            <ul>
+                @foreach (products as product)
+                    @if (product.id > 2)
+                        @break
+                    @endif
+                    <li>{{ product.name }}</li>
+                @endforeach
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>Inline Continue and Break</h3>
+            <ul>
+                @for (let i = 1; i <= 10; i++)
+                    @continue(i % 2 === 0)
+                    <li>{{ i }} is odd</li>
+                @endfor
+            </ul>
+
+            <ul>
+                @foreach (products as product)
+                    @break(product.id > 2)
+                    <li>{{ product.name }}</li>
+                @endforeach
+            </ul>
+        </div>
+    </section>
+
+    <!-- Nested Loops -->
+    <section>
+        <h2>Nested Loops</h2>
+
+        <div class="card">
+            <h3>Multiplication Table</h3>
+            <table class="table">
+                <tbody>
+                    @for (let i = 1; i <= 5; i++)
+                        <tr>
+                            @for (let j = 1; j <= 5; j++)
+                                <td>{{ i }} × {{ j }} = {{ i * j }}</td>
+                            @endfor
+                        </tr>
+                    @endfor
+                </tbody>
+            </table>
+        </div>
+    </section>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Primary Button Example</title>
+</head>
+<body>
+  <h1>Button Component Example</h1>
+
+  {{-- Demo of using the button component --}}
+  @component('components/button', {
+    type: 'primary',
+    size: 'lg',
+    disabled: false,
+    onClick: () => console.log('Button clicked!')
+  })
+    Click Me!
+  @endcomponent
+
+  @ts
+    // TypeScript code to demonstrate component usage
+    interface ButtonProps {
+      type: 'primary' | 'secondary' | 'danger';
+      size: 'sm' | 'md' | 'lg';
+      disabled?: boolean;
+      text: string;
+      onClick?: () => void;
+    }
+
+    const renderButton = (props: ButtonProps) => {
+      return `
+        @component('components/button', {
+          type: '${props.type}',
+          size: '${props.size}',
+          disabled: ${props.disabled || false},
+          onClick: ${props.onClick ? 'props.onClick' : '() => {}'}
+        })
+          ${props.text}
+        @endcomponent
+      `;
+    };
+
+    // Example of programmatically creating buttons
+    const buttons: ButtonProps[] = [
+      { type: 'primary', size: 'md', text: 'Save' },
+      { type: 'secondary', size: 'md', text: 'Cancel' },
+      { type: 'danger', size: 'sm', text: 'Delete', disabled: true }
+    ];
+  @endts
+
+  <div class="button-container">
+    {{ buttons.map(btn => renderButton(btn)).join('') }}
+  </div>
+
+  <footer>
+    <p>This is an example of using the STX Button Component</p>
+  </footer>
+</body>
+</html>

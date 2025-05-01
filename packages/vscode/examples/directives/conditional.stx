@@ -1,0 +1,168 @@
+<!-- STX Conditional Directives Example -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>STX Conditionals</title>
+</head>
+<body>
+    <h1>STX Conditional Directives</h1>
+
+    @ts
+        interface User {
+            id: number;
+            name: string;
+            role: 'admin' | 'editor' | 'user';
+            isLoggedIn: boolean;
+            isVerified: boolean;
+            permissions: string[];
+        }
+
+        const user: User = {
+            id: 1,
+            name: 'Jane Doe',
+            role: 'editor',
+            isLoggedIn: true,
+            isVerified: true,
+            permissions: ['view', 'edit']
+        };
+
+        const items = ['apple', 'banana', 'orange'];
+        const showWelcomeMessage = true;
+    @endts
+
+    <!-- If-Else Statements -->
+    <section>
+        <h2>Basic If-Else</h2>
+
+        @if (user.role === 'admin')
+            <div class="admin-panel">
+                <h3>Admin Panel</h3>
+                <p>Welcome, Administrator!</p>
+            </div>
+        @elseif (user.role === 'editor')
+            <div class="editor-panel">
+                <h3>Editor Panel</h3>
+                <p>Welcome, Editor!</p>
+            </div>
+        @else
+            <div class="user-panel">
+                <h3>User Panel</h3>
+                <p>Welcome, User!</p>
+            </div>
+        @endif
+    </section>
+
+    <!-- Unless Directive -->
+    <section>
+        <h2>Unless Directive (opposite of if)</h2>
+
+        @unless (user.isLoggedIn)
+            <p>Please log in to continue.</p>
+        @endunless
+
+        @unless (items.length === 0)
+            <p>There are {{ items.length }} items available.</p>
+        @endunless
+    </section>
+
+    <!-- Auth Directives -->
+    <section>
+        <h2>Authentication Check</h2>
+
+        @auth
+            <p>You are currently logged in.</p>
+        @else
+            <p>You are not logged in.</p>
+        @endauth
+
+        @guest
+            <p>Welcome, guest! Please consider creating an account.</p>
+        @endguest
+    </section>
+
+    <!-- Can/Cannot Directives -->
+    <section>
+        <h2>Permission Checks</h2>
+
+        @can('edit', user)
+            <button>Edit Profile</button>
+        @endcan
+
+        @cannot('delete', user)
+            <p>You don't have permission to delete this user.</p>
+        @endcannot
+
+        @canany(['edit', 'delete'], user)
+            <div class="action-buttons">
+                <button>Manage User</button>
+            </div>
+        @endcanany
+    </section>
+
+    <!-- Empty Check -->
+    <section>
+        <h2>Empty Check</h2>
+
+        @empty(items)
+            <p>No items found.</p>
+        @else
+            <p>Items are available.</p>
+        @endempty
+    </section>
+
+    <!-- Switch Statement -->
+    <section>
+        <h2>Switch Statement</h2>
+
+        @switch(user.role)
+            @case('admin')
+                <p>Administrator privileges enabled.</p>
+                @break
+
+            @case('editor')
+                <p>Editor privileges enabled.</p>
+                @break
+
+            @default
+                <p>Standard user privileges.</p>
+        @endswitch
+    </section>
+
+    <!-- Environment Check -->
+    <section>
+        <h2>Environment Check</h2>
+
+        @env('production')
+            <script src="/js/analytics.min.js"></script>
+        @elseenv('development')
+            <script src="/js/analytics.dev.js"></script>
+        @elseenv('local')
+            <!-- No analytics in local environment -->
+        @endenv
+    </section>
+
+    <!-- Has Section Check -->
+    <section>
+        <h2>Has Section Check</h2>
+
+        @hassection('sidebar')
+            <div class="layout-with-sidebar">
+                <!-- Content that displays when sidebar exists -->
+            </div>
+        @else
+            <div class="layout-full-width">
+                <!-- Fallback content with no sidebar -->
+            </div>
+        @endif
+    </section>
+
+    <!-- Conditional Display with Ternary Operator -->
+    <section>
+        <h2>Ternary Operator in Echo</h2>
+
+        <p>Status: {{ user.isVerified ? 'Verified' : 'Unverified' }}</p>
+        <p>{{ showWelcomeMessage ? 'Welcome to our site!' : '' }}</p>
+    </section>
+</body>
+</html>

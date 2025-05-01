@@ -16,3 +16,4 @@ tsconfig.tsbuildinfo
 # Keep these more specific to just match the stx binary files
 /packages/**/bin/stx
 /packages/**/bin/stx*
+/packages/devtools/.stx/cache

@@ -24,6 +24,7 @@ entrypoints
 foxundermoon
 gnueabihf
 heroicons
+languageservice
 Laravel
 libc
 msvc

@@ -1,0 +1,200 @@
+{
+  "stx-comment": {
+    "description": "STX comment block",
+    "prefix": "{{--",
+    "body": [
+      "{{-- $1 --}}$0"
+    ]
+  },
+  "stx-raw": {
+    "description": "Displays content without processing expressions",
+    "prefix": "@raw",
+    "body": [
+      "@raw",
+      "\t$0",
+      "@endraw"
+    ]
+  },
+  "stx-markdown": {
+    "description": "Render markdown content as HTML",
+    "prefix": "@markdown",
+    "body": [
+      "@markdown",
+      "\t$0",
+      "@endmarkdown"
+    ]
+  },
+  "stx-verbatim": {
+    "description": "Displays content without processing directives",
+    "prefix": "@verbatim",
+    "body": [
+      "@verbatim",
+      "\t$0",
+      "@endverbatim"
+    ]
+  },
+  "stx-ts": {
+    "description": "Embeds TypeScript code block",
+    "prefix": "@ts",
+    "body": [
+      "@ts",
+      "\t$0",
+      "@endts"
+    ]
+  },
+  "stx-js": {
+    "description": "Embeds JavaScript code block",
+    "prefix": "@js",
+    "body": [
+      "@js",
+      "\t$0",
+      "@endjs"
+    ]
+  },
+  "stx-component": {
+    "description": "Include a component with props",
+    "prefix": "@component",
+    "body": [
+      "@component('${1:name}', { ${2:props} })$0"
+    ]
+  },
+  "stx-webcomponent": {
+    "description": "Include a web component",
+    "prefix": "@webcomponent",
+    "body": [
+      "@webcomponent('${1:name}')$0"
+    ]
+  },
+  "stx-translate": {
+    "description": "Translate a string using the i18n system",
+    "prefix": "@translate",
+    "body": [
+      "@translate('${1:key}', { ${2:params} })$0"
+    ]
+  },
+  "stx-t": {
+    "description": "Short alias for translate directive",
+    "prefix": "@t",
+    "body": [
+      "@t('${1:key}', { ${2:params} })$0"
+    ]
+  },
+  "stx-if": {
+    "description": "Conditional if statement",
+    "prefix": "@if",
+    "body": [
+      "@if(${1:condition})",
+      "\t$0",
+      "@endif"
+    ]
+  },
+  "stx-if-else": {
+    "description": "Conditional if-else statement",
+    "prefix": "@ifelse",
+    "body": [
+      "@if(${1:condition})",
+      "\t$2",
+      "@else",
+      "\t$0",
+      "@endif"
+    ]
+  },
+  "stx-for": {
+    "description": "Loop through items",
+    "prefix": "@for",
+    "body": [
+      "@for(${1:item} of ${2:items})",
+      "\t$0",
+      "@endfor"
+    ]
+  },
+  "stx-foreach": {
+    "description": "Loop through items using forEach",
+    "prefix": "@foreach",
+    "body": [
+      "@foreach(${1:items} as ${2:item})",
+      "\t$0",
+      "@endforeach"
+    ]
+  },
+  "stx-include": {
+    "description": "Include a partial template",
+    "prefix": "@include",
+    "body": [
+      "@include('${1:template}')$0"
+    ]
+  },
+  "stx-json": {
+    "description": "Output variable as JSON",
+    "prefix": "@json",
+    "body": [
+      "@json(${1:variable})$0"
+    ]
+  },
+  "stx-env": {
+    "description": "Check environment condition",
+    "prefix": "@env",
+    "body": [
+      "@env('${1:environment}')",
+      "\t$0",
+      "@endenv"
+    ]
+  },
+  "stx-once": {
+    "description": "Include content only once per rendering cycle",
+    "prefix": "@once",
+    "body": [
+      "@once",
+      "\t$0",
+      "@endonce"
+    ]
+  },
+  "stx-isset": {
+    "description": "Check if variable is set",
+    "prefix": "@isset",
+    "body": [
+      "@isset(${1:variable})",
+      "\t$0",
+      "@endisset"
+    ]
+  },
+  "stx-empty": {
+    "description": "Check if variable is empty",
+    "prefix": "@empty",
+    "body": [
+      "@empty(${1:variable})",
+      "\t$0",
+      "@endempty"
+    ]
+  },
+  "stx-unless": {
+    "description": "Inverse of if statement",
+    "prefix": "@unless",
+    "body": [
+      "@unless(${1:condition})",
+      "\t$0",
+      "@endunless"
+    ]
+  },
+  "stx-echo": {
+    "description": "Echo variable with escaping",
+    "prefix": "{{",
+    "body": [
+      "{{ ${1:variable} }}$0"
+    ]
+  },
+  "stx-echo-raw": {
+    "description": "Echo variable without escaping",
+    "prefix": "{!!",
+    "body": [
+      "{!! ${1:variable} !!}$0"
+    ]
+  },
+  "stx-echo-triple": {
+    "description": "Echo variable with triple braces",
+    "prefix": "{{{",
+    "body": [
+      "{{{ ${1:variable} }}}$0"
+    ]
+  }
+}

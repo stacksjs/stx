@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="{{ currentLocale || 'en' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>@t('site.title') - @t('pages.welcome.title')</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  {{-- Language Selector Component --}}
+  <div class="language-selector">
+    @foreach(availableLocales as locale)
+      <a href="?lang={{ locale.code }}" class="{{ currentLocale === locale.code ? 'active' : '' }}">
+        {{ locale.name }}
+      </a>
+    @endforeach
+  </div>
+
+  {{-- TypeScript for i18n setup --}}
+  @ts
+    interface Locale {
+      code: string;
+      name: string;
+      direction: 'ltr' | 'rtl';
+    }
+
+    // Available locales
+    const availableLocales: Locale[] = [
+      { code: 'en', name: 'English', direction: 'ltr' },
+      { code: 'es', name: 'Español', direction: 'ltr' },
+      { code: 'fr', name: 'Français', direction: 'ltr' },
+      { code: 'ar', name: 'العربية', direction: 'rtl' },
+      { code: 'zh', name: '中文', direction: 'ltr' }
+    ];
+
+    // Get current locale from URL or default to 'en'
+    const getLocale = (): string => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const langParam = urlParams.get('lang');
+
+      if (langParam && availableLocales.some(locale => locale.code === langParam)) {
+        return langParam;
+      }
+
+      return 'en'; // Default locale
+    };
+
+    const currentLocale = getLocale();
+    const isRTL = availableLocales.find(locale => locale.code === currentLocale)?.direction === 'rtl';
+
+    // Set direction attribute on document if RTL
+    if (isRTL) {
+      document.documentElement.dir = 'rtl';
+    }
+  @endts
+
+  <header>
+    <div class="container">
+      <h1>@t('site.title')</h1>
+      <p class="tagline">@t('site.tagline')</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="welcome">
+      <h2>@t('pages.welcome.heading')</h2>
+
+      {{-- Example of translating with parameters --}}
+      <p>@translate('pages.welcome.greeting', { name: userName || @t('common.guest') })</p>
+
+      <p>@t('pages.welcome.description')</p>
+    </section>
+
+    <section class="features">
+      <h2>@t('pages.features.heading')</h2>
+
+      <div class="feature-grid">
+        @foreach(features as feature)
+          <div class="feature-card">
+            <div class="icon">{{ feature.icon }}</div>
+            <h3>@t('features.' + feature.key + '.title')</h3>
+            <p>@t('features.' + feature.key + '.description')</p>
+          </div>
+        @endforeach
+      </div>
+    </section>
+
+    <section class="cta">
+      <h2>@t('pages.cta.heading')</h2>
+      <p>@t('pages.cta.description')</p>
+
+      <a href="/signup" class="btn btn-primary">
+        @t('common.buttons.signup')
+      </a>
+
+      <a href="/learn-more" class="btn btn-secondary">
+        @t('common.buttons.learn_more')
+      </a>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>@translate('site.copyright', { year: new Date().getFullYear() })</p>
+
+      <ul class="footer-links">
+        <li><a href="/about">@t('nav.about')</a></li>
+        <li><a href="/contact">@t('nav.contact')</a></li>
+        <li><a href="/privacy">@t('nav.privacy')</a></li>
+        <li><a href="/terms">@t('nav.terms')</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  {{-- Example of using raw to ignore translation interpolation --}}
+  @raw
+    <!-- This will show the actual translation keys -->
+    <div class="debug-i18n">
+      Translation key: @t('site.title')
+    </div>
+  @endraw
+</body>
+</html>

@@ -1,0 +1,11 @@
+@ts
+  const name = 'World';
+@endts
+
+<h1>Hello, {{ name }}!</h1>
+
+@if(name === 'World')
+  <p>Welcome to STX (Stacks) language support in VS Code!</p>
+@else
+  <p>Hello, stranger!</p>
+@endif
