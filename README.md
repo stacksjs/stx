@@ -541,7 +541,7 @@ Web components support several configuration options:
 
 STX includes TypeScript declarations for importing .stx files. Make sure your `tsconfig.json` includes the necessary configuration:
 
-```json
+```jsonc
 {
   "compilerOptions": {
     // ... your other options
