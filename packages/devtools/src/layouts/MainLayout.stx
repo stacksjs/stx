@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title || 'STX DevTools' }}</title>
+
+  <!-- Using the @js directive for scripts -->
+  @js
+    export const title = "STX DevTools";
+    export const version = "1.0.0";
+
+    // Navigation items with icons
+    export const navItems = [
+      { title: "Dashboard", path: "/", icon: "i-carbon-dashboard" },
+      { title: "Templates", path: "/templates", icon: "i-carbon-document" },
+      { title: "Components", path: "/components", icon: "i-carbon-assembly-cluster" },
+      { title: "Performance", path: "/performance", icon: "i-carbon-chart-line" },
+      { title: "Config", path: "/config", icon: "i-carbon-settings" }
+    ];
+
+    // By default, detect the current path
+    export const currentPath = window.location.pathname;
+  @endjs
+
+  <!-- Inline critical CSS -->
+  <style>
+    :root {
+      --primary-color: #3b82f6;
+      --secondary-color: #6b7280;
+      --background-color: #f9fafb;
+      --text-color: #1f2937;
+      --sidebar-width: 250px;
+      --header-height: 60px;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background-color);
+      color: var(--text-color);
+    }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: #ffffff;
+      border-right: 1px solid #e5e7eb;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .sidebar-logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+
+    .sidebar-version {
+      font-size: 12px;
+      color: var(--secondary-color);
+      margin-top: 5px;
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .nav-item {
+      padding: 12px 20px;
+      border-bottom: 1px solid #f3f4f6;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .nav-item:hover {
+      background-color: #f3f4f6;
+    }
+
+    .nav-item.active {
+      background-color: #ebf5ff;
+      border-left: 3px solid var(--primary-color);
+    }
+
+    .nav-link {
+      color: var(--text-color);
+      text-decoration: none;
+      display: block;
+      display: flex;
+      align-items: center;
+    }
+
+    .nav-icon {
+      margin-right: 10px;
+      width: 20px;
+      height: 20px;
+      color: var(--primary-color);
+    }
+
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      min-height: 100vh;
+    }
+
+    .header {
+      height: var(--header-height);
+      background-color: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .content {
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Utility classes */
+    .card {
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #2563eb;
+    }
+
+    .btn-secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    .flex {
+      display: flex;
+    }
+
+    .justify-between {
+      justify-content: space-between;
+    }
+
+    .items-center {
+      align-items: center;
+    }
+
+    .mt-4 {
+      margin-top: 16px;
+    }
+
+    .mb-6 {
+      margin-bottom: 24px;
+    }
+
+    .text-2xl {
+      font-size: 24px;
+    }
+
+    .font-bold {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">{{ title }}</div>
+        <div class="sidebar-version">v{{ version }}</div>
+      </div>
+      <nav>
+        <ul class="nav-list">
+          @foreach (navItems as item)
+            <li class="nav-item {{ currentPath === item.path ? 'active' : '' }}">
+              <a href="{{ item.path }}" class="nav-link">
+                <span class="nav-icon">
+                  @if (item.icon)
+                    <img src="/icons/{{ item.icon.replace('i-carbon-', '') }}.svg" alt="{{ item.title }}">
+                  @endif
+                </span>
+                {{ item.title }}
+              </a>
+            </li>
+          @endforeach
+        </ul>
+      </nav>
+    </div>
+    <div class="main-content">
+      <header class="header">
+        <h1>{{ pageTitle || title }}</h1>
+      </header>
+      <main class="content">
+        {{ slot }}
+      </main>
+    </div>
+  </div>
+
+  <!-- Optional: Add client-side JS for interactivity -->
+  @js(tag="script")
+    // Detect current path and highlight active nav item
+    document.addEventListener('DOMContentLoaded', () => {
+      const path = window.location.pathname;
+      const navItems = document.querySelectorAll('.nav-item');
+
+      navItems.forEach(item => {
+        const link = item.querySelector('a');
+        if (link.getAttribute('href') === path) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    });
+  @endjs
+</body>
+</html>

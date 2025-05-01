@@ -1,0 +1,146 @@
+
+
+
+
+<div class="templates-page">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold">Templates Overview</h2>
+    <div class="flex gap-2">
+      <button class="btn btn-secondary">
+        <span class="i-carbon-filter mr-1"></span>
+        Filter
+      </button>
+      <button class="btn btn-primary">
+        <span class="i-carbon-add mr-1"></span>
+        New Template
+      </button>
+    </div>
+  </div>
+
+  <div class="grid md:grid-cols-[300px_1fr] gap-6">
+    <!-- Templates List -->
+    <div class="card p-4">
+      <div class="mb-4">
+        <input type="text" placeholder="Search templates..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+
+      <div class="templates-list space-y-2">
+        @foreach (templates as template)
+          <div
+            class="template-item p-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors flex justify-between items-center {{ activeTemplate.id === template.id ? 'bg-blue-50 border-l-4 border-primary' : '' }}"
+            onclick="selectTemplate('{{ template.id }}')"
+          >
+            <div>
+              <div class="font-medium">{{ template.name }}</div>
+              <div class="text-xs text-gray-500 mt-1">{{ template.path }}</div>
+            </div>
+            <div>
+              @if (template.status === 'active')
+                <span class="badge badge-success">Active</span>
+              @elseif (template.status === 'outdated')
+                <span class="badge badge-warning">Outdated</span>
+              @endif
+            </div>
+          </div>
+        @endforeach
+      </div>
+    </div>
+
+    <!-- Template Details -->
+    <div>
+      @if (activeTemplate)
+        <div class="card">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h3 class="text-xl font-bold text-gray-800">{{ activeTemplate.name }}</h3>
+              <p class="text-sm text-gray-500">{{ activeTemplate.path }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="badge badge-info">{{ activeTemplate.size }}</span>
+              <span class="badge">Modified {{ formatDate(activeTemplate.lastModified) }}</span>
+            </div>
+          </div>
+
+          <div class="tabs mb-6">
+            <div class="flex border-b">
+              <div class="tab tab-active px-4 py-2 border-b-2 border-primary font-medium text-primary">Overview</div>
+              <div class="tab px-4 py-2 font-medium text-gray-500 hover:text-gray-800">Code</div>
+              <div class="tab px-4 py-2 font-medium text-gray-500 hover:text-gray-800">Dependencies</div>
+              <div class="tab px-4 py-2 font-medium text-gray-500 hover:text-gray-800">Performance</div>
+            </div>
+          </div>
+
+          @if (activeTemplate.description)
+            <div class="mb-6">
+              <h4 class="text-sm font-semibold uppercase text-gray-500 mb-2">Description</h4>
+              <p class="text-gray-700">{{ activeTemplate.description }}</p>
+            </div>
+          @endif
+
+          <div class="grid grid-cols-2 gap-6 mb-6">
+            <div>
+              <h4 class="text-sm font-semibold uppercase text-gray-500 mb-3">Components Used</h4>
+              <ul class="space-y-2">
+                @foreach (activeTemplate.components as component)
+                  <li class="flex justify-between items-center p-2 bg-blue-50 rounded">
+                    <span class="font-medium">{{ component.name }}</span>
+                    <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">{{ component.usage }}×</span>
+                  </li>
+                @endforeach
+              </ul>
+            </div>
+
+            <div>
+              <h4 class="text-sm font-semibold uppercase text-gray-500 mb-3">Directives Used</h4>
+              <ul class="space-y-2">
+                @foreach (activeTemplate.directives as directive)
+                  <li class="flex justify-between items-center p-2 bg-indigo-50 rounded">
+                    <span class="font-medium">{{  directive.name  }}</span>
+                    <span class="text-sm bg-indigo-100 text-indigo-800 px-2 py-1 rounded">{{ directive.count }}×</span>
+                  </li>
+                @endforeach
+              </ul>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-200 pt-4">
+            <h4 class="text-sm font-semibold uppercase text-gray-500 mb-3">Performance Metrics</h4>
+            <div class="grid grid-cols-3 gap-4">
+              <div class="bg-gray-50 p-3 rounded text-center">
+                <div class="text-lg font-bold text-primary">{{ activeTemplate.performance.renderTime }}</div>
+                <div class="text-xs text-gray-500">Render Time</div>
+              </div>
+              <div class="bg-gray-50 p-3 rounded text-center">
+                <div class="text-lg font-bold text-primary">{{ activeTemplate.performance.compilationTime }}</div>
+                <div class="text-xs text-gray-500">Compilation Time</div>
+              </div>
+              <div class="bg-gray-50 p-3 rounded text-center">
+                <div class="text-lg font-bold text-primary">{{ activeTemplate.performance.cacheHits }}</div>
+                <div class="text-xs text-gray-500">Cache Hits</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 mt-6">
+            <button class="btn btn-outline flex items-center">
+              <span class="i-carbon-edit mr-1"></span>
+              Edit Template
+            </button>
+            <button class="btn btn-primary flex items-center">
+              <span class="i-carbon-rocket mr-1"></span>
+              Optimize
+            </button>
+          </div>
+        </div>
+      @else
+        <div class="card p-8 text-center">
+          <div class="text-gray-400 mb-4">
+            <span class="i-carbon-document text-4xl"></span>
+          </div>
+          <h3 class="text-xl font-medium mb-2">No Template Selected</h3>
+          <p class="text-gray-500">Select a template from the list to view its details</p>
+        </div>
+      @endif
+    </div>
+  </div>
+</div><script type="module" crossorigin src="./chunk-shmz5a37.js"></script>
