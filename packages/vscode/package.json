@@ -90,7 +90,7 @@
     "js-beautify": "^1.10.3"
   },
   "devDependencies": {
-    "@types/glob": "^7.1.1",
+    "@types/glob": "^8.1.0",
     "@types/mocha": "^7.0.1",
     "@types/node": "^12.11.7",
     "@types/vscode": "^1.37.0",
