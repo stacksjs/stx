@@ -37,8 +37,6 @@
     "vscode": "^1.96.0"
   },
   "activationEvents": [
-    "onLanguage:stx",
-    "onCommand:stx.setLanguageMode",
     "workspaceContains:**/*.stx",
     "onStartupFinished"
   ],
@@ -76,36 +74,6 @@
           "meta.embedded.line.typescript": "typescript",
           "meta.component.parameters.stx": "typescript"
         }
-      },
-      {
-        "path": "./src/syntaxes/ts-stx-injection.tmLanguage.json",
-        "scopeName": "source.ts.embedded.stx",
-        "injectTo": ["text.html.ts.stx"]
-      },
-      {
-        "path": "./src/syntaxes/js-stx-injection.tmLanguage.json",
-        "scopeName": "source.js.embedded.stx",
-        "injectTo": ["text.html.ts.stx"]
-      },
-      {
-        "path": "./src/syntaxes/expressions-stx-injection.tmLanguage.json",
-        "scopeName": "source.ts.expression.embedded.stx",
-        "injectTo": ["text.html.ts.stx"]
-      },
-      {
-        "path": "./src/syntaxes/component-stx-injection.tmLanguage.json",
-        "scopeName": "source.component.embedded.stx",
-        "injectTo": ["text.html.ts.stx"]
-      },
-      {
-        "path": "./src/syntaxes/directives-stx-injection.tmLanguage.json",
-        "scopeName": "source.directive.embedded.stx",
-        "injectTo": ["text.html.ts.stx"]
-      },
-      {
-        "path": "./src/syntaxes/comments-stx-injection.tmLanguage.json",
-        "scopeName": "source.comments.embedded.stx",
-        "injectTo": ["text.html.ts.stx"]
       }
     ],
     "snippets": [
@@ -482,9 +450,20 @@
           "default": true,
           "generated": true,
           "description": "Enable completion for view."
+        },
+        "stxTypescriptPlugin.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable TypeScript language features in STX files"
         }
       }
-    }
+    },
+    "typescriptServerPlugins": [
+      {
+        "name": "./dist/typescript-stx-plugin.js",
+        "enableForWorkspaceTypeScriptVersions": true
+      }
+    ]
   },
   "scripts": {
     "package": "bunx --bun vsce package",
@@ -495,28 +474,13 @@
     "color": "#d7e4f5",
     "theme": "light"
   },
-  "extensionPack": [
-    "dotenv.dotenvx-vscode",
-    "amazonwebservices.aws-toolkit-vscode",
-    "antfu.unocss",
-    "antfu.goto-alias",
-    "christian-kohler.npm-intellisense",
-    "davidanson.vscode-markdownlint",
-    "foxundermoon.shell-format",
-    "mattpocock.ts-error-translator",
-    "mikestead.dotenv",
-    "mylesmurphy.prettify-ts",
-    "nhoizey.gremlins",
-    "Orta.vscode-twoslash-queries",
-    "oven.bun-vscode",
-    "streetsidesoftware.code-spell-checker"
-  ],
   "devDependencies": {
     "@vscode/vsce": "^3.3.2",
     "vscode-html-languageservice": "^5.4.0",
     "vscode-languageclient": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.17.5",
-    "@types/vscode": "^1.96.0"
+    "@types/vscode": "^1.96.0",
+    "typescript": "^5.0.0"
   }
 }

@@ -18,9 +18,16 @@ dbaeumer
 degit
 deps
 destructurable
+dotenvx
 dtsx
 eabi
+endfor
+endforeach
+endforelse
+endts
+endwhile
 entrypoints
+Forelse
 foxundermoon
 gnueabihf
 heroicons
