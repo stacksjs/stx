@@ -1,0 +1,263 @@
+<!-- STX JSDoc Examples -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>STX with JSDoc Support</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            color: #333;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            background: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .label {
+            display: inline-block;
+            background: #e0f7fa;
+            color: #006064;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-right: 5px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .note {
+            background: #fffde7;
+            border-left: 4px solid #ffd600;
+            padding: 12px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>JSDoc Support in STX Templates</h1>
+
+    <div class="note">
+        <p>Hover over highlighted TypeScript symbols throughout this example to see JSDoc tooltips in action!</p>
+        <p>You can also use Cmd+click (or Ctrl+click) to navigate to the symbol definitions.</p>
+    </div>
+
+    @ts
+        /**
+         * Represents a product in the inventory system.
+         *
+         * @example
+         * const laptop: Product = { id: 1, name: 'Laptop', price: 999.99, inStock: true };
+         */
+        interface Product {
+            /** Unique identifier for the product */
+            id: number;
+            /** Name of the product */
+            name: string;
+            /** Price in USD */
+            price: number;
+            /** Whether the product is currently available */
+            inStock: boolean;
+        }
+
+        /**
+         * Represents a user of the application.
+         * Users can browse products and place orders.
+         *
+         * @see Order
+         */
+        interface User {
+            /** Unique identifier for the user */
+            id: number;
+            /** User's full name */
+            name: string;
+            /** User's email address */
+            email: string;
+        }
+
+        /**
+         * Represents an order in the system.
+         * An order consists of products purchased by a user.
+         */
+        interface Order {
+            /** Unique identifier for the order */
+            id: number;
+            /** The user who placed the order */
+            user: User;
+            /** List of products in the order */
+            products: Product[];
+            /** Total price of the order in USD */
+            total: number;
+            /** Date when the order was placed */
+            date: Date;
+        }
+
+        /**
+         * Calculate the total price of a collection of products.
+         *
+         * @param products - Array of products to calculate total for
+         * @param applyDiscount - Whether to apply a discount
+         * @param discountRate - Discount rate as a decimal (0.1 = 10%)
+         * @returns The total price after any applied discounts
+         *
+         * @example
+         * // Calculate total price with a 15% discount
+         * const total = calculateTotal(products, true, 0.15);
+         */
+        function calculateTotal(
+            products: Product[],
+            applyDiscount: boolean = false,
+            discountRate: number = 0.1
+        ): number {
+            let total = products.reduce((sum, product) => sum + product.price, 0);
+
+            if (applyDiscount && discountRate > 0) {
+                total = total * (1 - discountRate);
+            }
+
+            return total;
+        }
+
+        /**
+         * Format a price value as a currency string.
+         *
+         * @param price - The price value to format
+         * @param currencyCode - ISO currency code (default: USD)
+         * @returns Formatted price string with currency symbol
+         *
+         * @throws {Error} If price is negative
+         */
+        function formatPrice(price: number, currencyCode: string = 'USD'): string {
+            if (price < 0) {
+                throw new Error('Price cannot be negative');
+            }
+
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: currencyCode
+            }).format(price);
+        }
+
+        /**
+         * @deprecated Use formatPrice instead
+         */
+        function oldFormatPrice(price: number): string {
+            return '$' + price.toFixed(2);
+        }
+
+        // Sample data2
+        const products: Product[] = [
+            { id: 1, name: 'Laptop', price: 999.99, inStock: true },
+            { id: 2, name: 'Smartphone', price: 699.99, inStock: true },
+            { id: 3, name: 'Headphones', price: 199.99, inStock: false }
+        ];
+
+        const user: User = {
+            id: 1,
+            name: 'John Doe',
+            email: 'john@example.com'
+        };
+
+        const order: Order = {
+            id: 12345,
+            user: user,
+            products: products,
+            total: calculateTotal(products),
+            date: new Date()
+        };
+    @endts
+
+    <section>
+        <h2>Interactive Example</h2>
+
+        <div class="card">
+            <h3>Product List</h3>
+            <ul>
+                @foreach (products as product)
+                    <li>
+                        <strong>{{ product.name }}</strong>:
+                        {{ formatPrice(product.price) }}
+                        @if (product.inStock)
+                            <span class="label">In Stock</span>
+                        @else
+                            <span class="label" style="background: #ffebee; color: #b71c1c;">Out of Stock</span>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+
+            <div>
+                <p><strong>Total:</strong> {{ formatPrice(calculateTotal(products)) }}</p>
+                <p><strong>Total with 10% discount:</strong> {{ formatPrice(calculateTotal(products, true)) }}</p>
+            </div>
+
+            <button onclick="alert('Order placed!')">Place Order</button>
+        </div>
+    </section>
+
+    <section>
+        <h2>Order Details</h2>
+
+        <div class="card">
+            <h3>Order #{{ order.id }}</h3>
+            <p><strong>Customer:</strong> {{ order.user.name }} ({{ order.user.email }})</p>
+            <p><strong>Date:</strong> {{ order.date.toLocaleDateString() }}</p>
+            <p><strong>Total:</strong> {{ formatPrice(order.total) }}</p>
+
+            <h4>Items:</h4>
+            <ul>
+                @foreach (order.products as product)
+                    <li>{{ product.name }} - {{ formatPrice(product.price) }}</li>
+                @endforeach
+            </ul>
+        </div>
+    </section>
+
+    <section>
+        <h2>Usage Notes</h2>
+
+        <div class="card">
+            <h3>JSDoc Features Demonstrated</h3>
+            <ul>
+                <li>Interface documentation with <code>@example</code> tag</li>
+                <li>Property-level documentation with inline comments</li>
+                <li>Function documentation with <code>@param</code>, <code>@returns</code>, and <code>@throws</code> tags</li>
+                <li>Cross-referencing with <code>@see</code> tag</li>
+                <li>Deprecation notices with <code>@deprecated</code> tag</li>
+            </ul>
+
+            <h3>How It Works</h3>
+            <p>The STX extension extracts JSDoc comments from TypeScript blocks and makes them available as tooltips when you hover over related symbols.</p>
+            <p>Try hovering over <code>Product</code>, <code>User</code>, <code>calculateTotal</code>, and other symbols in this example.</p>
+        </div>
+    </section>
+</body>
+</html>

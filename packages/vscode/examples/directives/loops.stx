@@ -36,6 +36,11 @@
             inStock: boolean;
         }
 
+        /**
+         * This is a dummy type definition for the User interface.
+         * It is not used in the code, but it is here to demonstrate
+         * how to use the @ts directive to define a type.
+         */
         interface User {
             id: number;
             name: string;

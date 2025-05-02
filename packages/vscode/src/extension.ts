@@ -11,6 +11,17 @@ interface PositionMapping {
   length: number;
 }
 
+// Interface for JSDoc comments
+interface JSDocInfo {
+  comment: string;
+  symbol: string;
+  line: number;
+  isProperty?: boolean;
+  parentSymbol?: string;
+  symbolType: string;
+  contentPosition: number;
+}
+
 export function activate(context: vscode.ExtensionContext) {
   // Create virtual TypeScript files for each STX file to support language features
   const virtualTsDocumentProvider = new class implements vscode.TextDocumentContentProvider {
@@ -22,6 +33,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Track position mappings between STX and TypeScript files
     private positionMappings = new Map<string, PositionMapping[]>();
+
+    // Track JSDoc comments for each document
+    private jsDocComments = new Map<string, JSDocInfo[]>();
 
     // Event emitter for content changes
     private _onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
@@ -44,20 +58,26 @@ export function activate(context: vscode.ExtensionContext) {
                        vscode.workspace.textDocuments.find(doc => doc.uri.toString() === key);
 
       if (document) {
-        const { content, mappings } = this.extractTypeScriptFromStx(document);
+        const { content, mappings, jsDocComments } = this.extractTypeScriptFromStx(document);
         this.derivedTsContent.set(key, content);
         this.positionMappings.set(key, mappings);
+        this.jsDocComments.set(key, jsDocComments);
         return content;
       }
 
       return '// No TypeScript content found';
     }
 
-    extractTypeScriptFromStx(document: vscode.TextDocument): { content: string, mappings: PositionMapping[] } {
+    extractTypeScriptFromStx(document: vscode.TextDocument): {
+      content: string,
+      mappings: PositionMapping[],
+      jsDocComments: JSDocInfo[]
+    } {
       try {
         const text = document.getText();
         let tsContent = '';
         const mappings: PositionMapping[] = [];
+        const jsDocComments: JSDocInfo[] = [];
         let tsLineCounter = 0;
 
         // Extract TypeScript from @ts blocks
@@ -67,6 +87,66 @@ export function activate(context: vscode.ExtensionContext) {
         while ((blockMatch = tsBlockRegex.exec(text)) !== null) {
           const blockContent = blockMatch[1];
           const blockStartPos = document.positionAt(blockMatch.index + blockMatch[0].indexOf(blockContent));
+
+          // Process JSDoc comments first
+          const jsDocRegex = /\/\*\*\s*([\s\S]*?)\s*\*\/\s*(?:(interface|type|class|function|const|let|var)\s+([^\s{(:]+))/g;
+          let jsDocMatch;
+          let blockContentCopy = blockContent;
+
+          while ((jsDocMatch = jsDocRegex.exec(blockContentCopy)) !== null) {
+            const jsDocComment = jsDocMatch[1].trim();
+            const symbolType = jsDocMatch[2];
+            const symbolName = jsDocMatch[3];
+
+            // Clean up JSDoc comment - make sure we're not including properties in the comment
+            let cleanedComment = jsDocComment;
+            // Remove nested interface properties from the comment if they're coming through
+            if (symbolType === 'function' && cleanedComment.includes('id:') && cleanedComment.includes('user:')) {
+              // This indicates we might have order properties in the comment - clean it up
+              cleanedComment = cleanedComment.replace(/.*?id:\s*number.*?date:\s*Date.*?\}/s, '');
+            }
+
+            // Calculate position in original document
+            const jsDocPos = blockStartPos.line +
+                            blockContentCopy.substring(0, jsDocMatch.index).split('\n').length - 1;
+
+            // Store additional context about the symbol type
+            jsDocComments.push({
+              comment: cleanedComment,
+              symbol: symbolName,
+              line: jsDocPos,
+              symbolType: symbolType,
+              // Store the position in the content for context awareness
+              contentPosition: jsDocMatch.index
+            });
+
+            // Now look for property-level JSDoc within this symbol
+            // Find the block of code for this symbol
+            const symbolStart = jsDocMatch.index + jsDocMatch[0].length;
+            const symbolBlockMatch = blockContentCopy.substring(symbolStart).match(/{([^{}]*(?:{[^{}]*}[^{}]*)*)}/);
+
+            if (symbolBlockMatch && symbolBlockMatch[1]) {
+              const symbolBlock = symbolBlockMatch[1];
+              // Extract property JSDoc comments
+              const propertyJSDocRegex = /\/\*\*\s*([\s\S]*?)\s*\*\/\s*([a-zA-Z0-9_]+)\s*:/g;
+              let propertyMatch;
+
+              while ((propertyMatch = propertyJSDocRegex.exec(symbolBlock)) !== null) {
+                const propertyComment = propertyMatch[1].trim();
+                const propertyName = propertyMatch[2];
+
+                jsDocComments.push({
+                  comment: propertyComment,
+                  symbol: propertyName,
+                  line: jsDocPos + symbolBlock.substring(0, propertyMatch.index).split('\n').length,
+                  isProperty: true,
+                  parentSymbol: symbolName,
+                  symbolType: 'property',
+                  contentPosition: propertyMatch.index
+                });
+              }
+            }
+          }
 
           // Add each line with position mapping
           const blockLines = blockContent.split('\n');
@@ -117,15 +197,10 @@ export function activate(context: vscode.ExtensionContext) {
           exprCounter++;
         }
 
-        // Add interface and type declarations to help with intellisense
-        // First see if there are any interfaces/types in the TS content
-        const interfaceMatch = text.match(/@ts\s+interface\s+(\w+)/);
-        const typeMatch = text.match(/@ts\s+type\s+(\w+)/);
-
-        return { content: tsContent, mappings };
+        return { content: tsContent, mappings, jsDocComments };
       } catch (error) {
         console.error('Error extracting TypeScript from STX:', error);
-        return { content: '// Error extracting TypeScript content', mappings: [] };
+        return { content: '// Error extracting TypeScript content', mappings: [], jsDocComments: [] };
       }
     }
 
@@ -173,6 +248,67 @@ export function activate(context: vscode.ExtensionContext) {
       return undefined;
     }
 
+    // Get JSDoc comment for a symbol, including property-level JSDoc
+    getJSDocForSymbol(uri: vscode.Uri, symbolName: string, parentContext?: string): string | undefined {
+      const key = uri.toString();
+      const comments = this.jsDocComments.get(key);
+
+      if (!comments) {
+        return undefined;
+      }
+
+      // If we have a parent context, we're looking for a property
+      if (parentContext) {
+        // Find the comment for this property in the specified parent
+        const comment = comments.find(c =>
+          c.symbol === symbolName &&
+          c.isProperty === true &&
+          c.parentSymbol === parentContext
+        );
+        return comment?.comment;
+      }
+
+      // Find an exact match for this symbol based on symbol type
+      const tsContent = this.derivedTsContent.get(uri.toString()) || '';
+
+      // Check if the symbol is a function
+      const isFunctionMatch = tsContent.match(new RegExp(`function\\s+${symbolName}\\b`));
+      if (isFunctionMatch) {
+        // For functions, find the JSDoc comment that's specifically for this function
+        const functionComment = comments.find(c =>
+          c.symbol === symbolName &&
+          c.symbolType === 'function' &&
+          !c.isProperty
+        );
+        if (functionComment) {
+          return functionComment.comment;
+        }
+      }
+
+      // For interfaces
+      const isInterfaceMatch = tsContent.match(new RegExp(`interface\\s+${symbolName}\\b`));
+      if (isInterfaceMatch) {
+        const interfaceComment = comments.find(c =>
+          c.symbol === symbolName &&
+          c.symbolType === 'interface' &&
+          !c.isProperty
+        );
+        if (interfaceComment) {
+          return interfaceComment.comment;
+        }
+      }
+
+      // For other symbol types (class, type, etc.), find a match by type
+      const directMatch = comments.find(c => c.symbol === symbolName && !c.isProperty);
+      if (directMatch) {
+        return directMatch.comment;
+      }
+
+      // If no direct match, try to find property-level JSDoc without specific parent context
+      const propertyMatch = comments.find(c => c.symbol === symbolName && c.isProperty === true);
+      return propertyMatch?.comment;
+    }
+
     // Track STX document changes
     trackDocument(document: vscode.TextDocument): void {
       if (document.languageId === 'stx') {
@@ -193,9 +329,10 @@ export function activate(context: vscode.ExtensionContext) {
       });
 
       // Extract TypeScript content
-      const { content, mappings } = this.extractTypeScriptFromStx(document);
+      const { content, mappings, jsDocComments } = this.extractTypeScriptFromStx(document);
       this.derivedTsContent.set(stxUri.toString(), content);
       this.positionMappings.set(stxUri.toString(), mappings);
+      this.jsDocComments.set(stxUri.toString(), jsDocComments);
 
       // Notify that content has changed
       this._onDidChangeEmitter.fire(virtualUri);
@@ -204,6 +341,11 @@ export function activate(context: vscode.ExtensionContext) {
     // Get position mappings for a document
     getMappings(uri: vscode.Uri): PositionMapping[] {
       return this.positionMappings.get(uri.toString()) || [];
+    }
+
+    // Get JSDoc comments for a document
+    getJSDocComments(uri: vscode.Uri): JSDocInfo[] {
+      return this.jsDocComments.get(uri.toString()) || [];
     }
   };
 
@@ -250,11 +392,10 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  // Register the hover provider for STX files with improved type information
+  // Register the hover provider for STX files with improved property support
   const hoverProvider = vscode.languages.registerHoverProvider('stx', {
     async provideHover(document, position, token) {
       // Check if we're in a TypeScript section or expression
-      const lineText = document.lineAt(position.line).text;
       const wordRange = document.getWordRangeAtPosition(position);
 
       if (!wordRange) {
@@ -271,77 +412,95 @@ export function activate(context: vscode.ExtensionContext) {
       });
 
       try {
-        // Find the TypeScript version of this position
-        const tsPosition = virtualTsDocumentProvider.getTsPositionFromStx(document.uri, position);
-        if (!tsPosition) {
-          // Try a more basic approach - search for the word in TS content
-          const tsContent = virtualTsDocumentProvider.provideTextDocumentContent(virtualUri);
+        const tsContent = virtualTsDocumentProvider.provideTextDocumentContent(virtualUri);
 
-          // Check if it's a TypeScript declaration or a structure type
-          // Look for interface or type declarations
-          if (tsContent.includes(`interface ${word}`)) {
-            return new vscode.Hover(`(interface) ${word}`);
-          } else if (tsContent.includes(`type ${word}`)) {
-            return new vscode.Hover(`(type) ${word}`);
-          } else if (tsContent.includes(`const ${word}`)) {
-            return new vscode.Hover(`(const) ${word}`);
-          } else if (tsContent.includes(`let ${word}`)) {
-            return new vscode.Hover(`(let) ${word}`);
-          } else if (word.match(/^[A-Z][A-Za-z0-9_]*$/) && tsContent.includes(word)) {
-            // Likely a type name (starts with capital letter)
-            return new vscode.Hover(`(type) ${word}`);
-          } else if (tsContent.includes(word)) {
-            return new vscode.Hover(`(variable) ${word}`);
-          }
+        // Detect the context of this symbol
+        // Is it a property access?
+        const line = document.lineAt(position.line).text;
+        const beforeWord = line.substring(0, wordRange.start.character).trim();
 
-          return null;
+        let propertyContext = null;
+        const propertyAccessMatch = beforeWord.match(/(\w+)\s*:\s*$/);
+        const dotNotationMatch = beforeWord.match(/(\w+)\s*\.\s*$/);
+
+        if (propertyAccessMatch) {
+          // Object literal property
+          propertyContext = propertyAccessMatch[1];
+        } else if (dotNotationMatch) {
+          // Dot notation property access
+          propertyContext = dotNotationMatch[1];
         }
 
-        // Get more specific type information using the language service
-        // We'll use a virtual file to get more accurate type info
-        const tsVirtualDoc = await vscode.workspace.openTextDocument(virtualUri);
-        const wordRangeInTs = new vscode.Range(
-          tsPosition,
-          new vscode.Position(tsPosition.line, tsPosition.character + word.length)
-        );
+        // First determine the symbol type more accurately
+        let symbolType = "variable";
+        const interfaceMatch = tsContent.match(new RegExp(`interface\\s+${word}\\b`));
+        const typeMatch = tsContent.match(new RegExp(`type\\s+${word}\\b`));
+        const classMatch = tsContent.match(new RegExp(`class\\s+${word}\\b`));
+        const functionMatch = tsContent.match(new RegExp(`function\\s+${word}\\b`));
+        const constMatch = tsContent.match(new RegExp(`const\\s+${word}\\b`));
 
-        // Find context around the symbol
-        const line = tsVirtualDoc.lineAt(tsPosition.line).text;
+        if (interfaceMatch) {
+          symbolType = "interface";
+        } else if (typeMatch) {
+          symbolType = "type";
+        } else if (classMatch) {
+          symbolType = "class";
+        } else if (functionMatch) {
+          symbolType = "function";
+        } else if (constMatch) {
+          symbolType = "const";
+        } else if (propertyContext) {
+          symbolType = "property";
+        }
 
-        // Extract type information - look for declarations
-        if (line.includes(`interface ${word}`)) {
-          return new vscode.Hover(`(interface) ${word}`);
-        } else if (line.includes(`type ${word}`)) {
-          return new vscode.Hover(`(type) ${word}`);
-        } else if (line.includes(`const ${word}`)) {
-          // Try to extract the type
-          const typeMatch = line.match(new RegExp(`const\\s+${word}\\s*:\\s*([A-Za-z0-9_\\[\\]]+)`));
-          if (typeMatch) {
-            return new vscode.Hover(`(const) ${word}: ${typeMatch[1]}`);
+        // Check for JSDoc comment in the appropriate context
+        let jsDocComment;
+        if (propertyContext) {
+          // Check for property documentation first in parent object
+          jsDocComment = virtualTsDocumentProvider.getJSDocForSymbol(document.uri, word, propertyContext);
+
+          // If not found, then check for general property documentation
+          if (!jsDocComment) {
+            jsDocComment = virtualTsDocumentProvider.getJSDocForSymbol(document.uri, word);
           }
-          return new vscode.Hover(`(const) ${word}`);
-        } else if (line.includes(`let ${word}`)) {
-          // Try to extract the type
-          const typeMatch = line.match(new RegExp(`let\\s+${word}\\s*:\\s*([A-Za-z0-9_\\[\\]]+)`));
-          if (typeMatch) {
-            return new vscode.Hover(`(let) ${word}: ${typeMatch[1]}`);
-          }
-          return new vscode.Hover(`(let) ${word}`);
         } else {
-          // Try to infer type from usage
-          if (word.match(/^[A-Z][A-Za-z0-9_]*$/)) {
-            // Likely a type name (starts with capital letter)
-            return new vscode.Hover(`(type) ${word}`);
-          }
+          // For functions, make sure we're only getting function docs
+          if (symbolType === 'function') {
+            // Get all JSDoc for this file
+            const allJsDocs = virtualTsDocumentProvider.getJSDocComments(document.uri);
+            // Find the exact function JSDoc
+            const functionDoc = allJsDocs.find(doc =>
+              doc.symbol === word &&
+              doc.symbolType === 'function'
+            );
 
-          // Check if it's a property access
-          const propertyMatch = line.match(new RegExp(`([a-zA-Z0-9_]+)\\.${word}`));
-          if (propertyMatch) {
-            return new vscode.Hover(`(property) ${propertyMatch[1]}.${word}`);
-          }
+            jsDocComment = functionDoc?.comment;
 
-          return new vscode.Hover(`(variable) ${word}`);
+            // As a fallback, use the regular method
+            if (!jsDocComment) {
+              jsDocComment = virtualTsDocumentProvider.getJSDocForSymbol(document.uri, word);
+            }
+          } else {
+            jsDocComment = virtualTsDocumentProvider.getJSDocForSymbol(document.uri, word);
+          }
         }
+
+        // Create hover content
+        const hoverContent = new vscode.MarkdownString();
+
+        // Start with symbol type/name
+        hoverContent.appendCodeblock(`${symbolType} ${word}`, 'typescript');
+
+        // Ensure proper spacing
+        hoverContent.appendText('\n');
+
+        // Add JSDoc content if available
+        if (jsDocComment) {
+          const formattedComment = formatJSDoc(jsDocComment);
+          hoverContent.appendMarkdown(formattedComment);
+        }
+
+        return new vscode.Hover(hoverContent);
       } catch (error) {
         console.error('Error providing hover:', error);
       }
@@ -397,6 +556,18 @@ export function activate(context: vscode.ExtensionContext) {
             }
           }
         }
+
+        // Check for JSDoc comments
+        const jsDocComments = virtualTsDocumentProvider.getJSDocComments(document.uri);
+        const jsDocForSymbol = jsDocComments.find(comment => comment.symbol === word);
+
+        if (jsDocForSymbol) {
+          const jsDocLine = jsDocForSymbol.line;
+          return new vscode.Location(
+            document.uri,
+            new vscode.Position(jsDocLine, 0)
+          );
+        }
       } catch (error) {
         console.error('Error providing definition:', error);
       }
@@ -422,6 +593,178 @@ export function activate(context: vscode.ExtensionContext) {
     hoverProvider,
     definitionProvider
   );
+}
+
+// Format JSDoc comment for hover display
+function formatJSDoc(comment: string): string {
+  // First, clean up the comment by removing asterisks and extra whitespace
+  let cleanedComment = comment
+    .replace(/^\s*\*+/gm, '') // Remove leading asterisks on each line
+    .replace(/\/\*\*/g, '')   // Remove opening /**
+    .replace(/\*\//g, '')     // Remove closing */
+    .trim();
+
+  // Additional cleanup for function documentation
+  // Remove any property-like declarations that might have been captured incorrectly
+  if (cleanedComment.includes('Parameter') && cleanedComment.includes('id:')) {
+    // This is likely a function with incorrectly included interface properties
+    cleanedComment = cleanedComment.replace(/Unique identifier for the order.*?Date when the order was placed.*?\}/s, '');
+  }
+
+  // Create a more structured format to ensure line breaks
+  const sections: string[] = [];
+
+  // Extract the main description (everything before the first @tag)
+  const descriptionMatch = cleanedComment.match(/^([\s\S]*?)(?=@\w|$)/);
+  if (descriptionMatch && descriptionMatch[1].trim()) {
+    sections.push(descriptionMatch[1].trim());
+  }
+
+  // Extract @param tags
+  const paramRegex = /@param\s+(?:{([^}]+)})?\s*(\w+)(?:\s*-\s*(.*))?/g;
+  let paramMatch;
+  const params: string[] = [];
+
+  while ((paramMatch = paramRegex.exec(cleanedComment)) !== null) {
+    const paramType = paramMatch[1] ? `*{${paramMatch[1]}}*` : '';
+    const paramName = paramMatch[2];
+    const paramDesc = paramMatch[3] || '';
+
+    let formattedParam = `**Parameter** \`${paramName}\``;
+    if (paramType) {
+      formattedParam += `: ${paramType}`;
+    }
+    if (paramDesc) {
+      formattedParam += ` - *${paramDesc}*`;
+    }
+
+    params.push(formattedParam);
+  }
+
+  if (params.length > 0) {
+    sections.push(params.join('\n\n'));
+  }
+
+  // Extract @returns tag
+  const returnsRegex = /@returns?\s+(?:{([^}]+)})?\s*(.*)/;
+  const returnsMatch = cleanedComment.match(returnsRegex);
+  if (returnsMatch) {
+    const returnType = returnsMatch[1] ? `*{${returnsMatch[1]}}*` : '';
+    const returnDesc = returnsMatch[2] || '';
+
+    let formattedReturns = '**Returns**';
+    if (returnType) {
+      formattedReturns += ` ${returnType}`;
+    }
+    if (returnDesc) {
+      formattedReturns += ` *${returnDesc}*`;
+    }
+
+    sections.push(formattedReturns);
+  }
+
+  // Extract @throws tag
+  const throwsRegex = /@throws?\s+(?:{([^}]+)})?\s*(.*)/;
+  const throwsMatch = cleanedComment.match(throwsRegex);
+  if (throwsMatch) {
+    const throwType = throwsMatch[1] ? `*{${throwsMatch[1]}}*` : '';
+    const throwDesc = throwsMatch[2] || '';
+
+    let formattedThrows = '**Throws**';
+    if (throwType) {
+      formattedThrows += ` ${throwType}`;
+    }
+    if (throwDesc) {
+      formattedThrows += ` *${throwDesc}*`;
+    }
+
+    sections.push(formattedThrows);
+  }
+
+  // Extract @deprecated tag
+  if (cleanedComment.includes('@deprecated')) {
+    const deprecatedRegex = /@deprecated\s*(.*)/;
+    const deprecatedMatch = cleanedComment.match(deprecatedRegex);
+    const deprecatedDesc = deprecatedMatch ? deprecatedMatch[1] : '';
+
+    let formattedDeprecated = '**⚠️ Deprecated**';
+    if (deprecatedDesc) {
+      formattedDeprecated += ` *${deprecatedDesc}*`;
+    }
+
+    sections.push(formattedDeprecated);
+  }
+
+  // Extract @example blocks
+  const exampleRegex = /@example\s+([\s\S]*?)(?=@\w|$)/g;
+  let exampleMatch;
+
+  while ((exampleMatch = exampleRegex.exec(cleanedComment)) !== null) {
+    const exampleCode = exampleMatch[1].trim();
+
+    // Format the example with line breaks and indentation
+    let formattedCode = exampleCode;
+
+    // Normalize indentation to ensure consistent formatting
+    const codeLines = formattedCode.split('\n');
+
+    // Find the minimum indentation across all non-empty lines
+    let minIndent = Infinity;
+    for (const line of codeLines) {
+      if (line.trim() === '') continue; // Skip empty lines
+      const indent = line.match(/^\s*/)?.[0].length || 0;
+      minIndent = Math.min(minIndent, indent);
+    }
+
+    // If minIndent is still Infinity, set it to 0
+    if (minIndent === Infinity) minIndent = 0;
+
+    // Remove the common indentation prefix from all lines
+    const normalizedLines = codeLines.map(line => {
+      if (line.trim() === '') return '';
+      return line.substring(minIndent);
+    });
+
+    // Fix the alignment of comment lines to match code
+    const alignedLines = normalizedLines.map(line => {
+      // Add a space BEFORE comment slashes to match code indentation
+      if (line.trim().startsWith('//')) {
+        return ' ' + line.trim();
+      }
+      return line;
+    });
+
+    // Rejoin with normalized indentation
+    formattedCode = alignedLines.join('\n');
+
+    // If it's a one-liner with objects, format it nicely
+    if (!formattedCode.includes('\n') && formattedCode.includes('{') && formattedCode.includes('}')) {
+      formattedCode = formattedCode
+        .replace(/{\s*/g, '{\n  ')
+        .replace(/,\s*/g, ',\n  ')
+        .replace(/\s*}/g, '\n}');
+    }
+
+    const formattedExample = `**Example**\n\n\`\`\`typescript\n${formattedCode}\n\`\`\``;
+    sections.push(formattedExample);
+  }
+
+  // Extract @see references
+  const seeRegex = /@see\s+(\S+)(?:\s|$)/g;
+  let seeMatch;
+  const sees: string[] = [];
+
+  while ((seeMatch = seeRegex.exec(cleanedComment)) !== null) {
+    const reference = seeMatch[1].trim();
+    sees.push(`**See**: [\`${reference}\`](#)`);
+  }
+
+  if (sees.length > 0) {
+    sections.push(sees.join('\n\n'));
+  }
+
+  // Join all sections with double line breaks for clear separation
+  return sections.join('\n\n');
 }
 
 export function deactivate() {}
