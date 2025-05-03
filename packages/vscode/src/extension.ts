@@ -405,6 +405,158 @@ export function activate(context: vscode.ExtensionContext) {
       // Get the word at the current position
       const word = document.getText(wordRange);
 
+      // Get the entire line for context analysis
+      const line = document.lineAt(position.line).text;
+
+      // DIRECT BRUTE FORCE APPROACH FOR CSS ELEMENTS
+
+      // Get text before the current position for context
+      const beforeText = line.substring(0, wordRange.start.character);
+
+      // 1. DIRECT CLASS DETECTION - MUST COME FIRST
+      // Check for class selectors (.card)
+      if (beforeText.includes('.') && beforeText.trim().endsWith('.')) {
+        // Force the exact tooltip format for class selectors
+        const hover = new vscode.MarkdownString();
+        hover.isTrusted = true;
+        hover.supportHtml = true;
+
+        // First line: element class
+        hover.appendCodeblock(`<element class="${word}">`, 'html');
+
+        // Add spacing
+        hover.appendText('\n\n');
+
+        // Selector specificity with link
+        hover.appendMarkdown('[Selector Specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Specificity): (0, 1, 0)');
+
+        return new vscode.Hover(hover);
+      }
+
+      // 2. DIRECT ID DETECTION
+      if (beforeText.includes('#') && beforeText.trim().endsWith('#')) {
+        // Force the exact tooltip format for ID selectors
+        const hover = new vscode.MarkdownString();
+        hover.isTrusted = true;
+        hover.supportHtml = true;
+
+        // First line: element id
+        hover.appendCodeblock(`<element id="${word}">`, 'html');
+
+        // Add spacing
+        hover.appendText('\n\n');
+
+        // Selector specificity with link
+        hover.appendMarkdown('[Selector Specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Specificity): (1, 0, 0)');
+
+        return new vscode.Hover(hover);
+      }
+
+      // 3. CLASS ATTRIBUTE DETECTION
+      if (line.includes('class="') || line.includes("class='")) {
+        const classMatch = line.match(/class=["']([^"']*)["']/);
+        if (classMatch && classMatch[1].split(/\s+/).includes(word)) {
+          // Force the exact tooltip format for class attributes
+          const hover = new vscode.MarkdownString();
+          hover.isTrusted = true;
+          hover.supportHtml = true;
+
+          // First line: element class
+          hover.appendCodeblock(`<element class="${word}">`, 'html');
+
+          // Add spacing
+          hover.appendText('\n\n');
+
+          // Selector specificity with link
+          hover.appendMarkdown('[Selector Specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Specificity): (0, 1, 0)');
+
+          return new vscode.Hover(hover);
+        }
+      }
+
+      // 4. DIRECT ELEMENT DETECTION - MUST COME LAST
+      // Common HTML/CSS elements
+      const cssElements = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                         'body', 'html', 'header', 'footer', 'main', 'section', 'article',
+                         'nav', 'ul', 'ol', 'li', 'a', 'button', 'input', 'form', 'table',
+                         'tr', 'td', 'th', 'pre', 'code', 'img', 'strong', 'em', 'label',
+                         'select', 'option', 'textarea', 'style', 'script', 'link', 'meta'];
+
+      // If the word is a CSS element in an appropriate context, show element tooltip
+      if (cssElements.includes(word) &&
+          (line.includes('{') || line.includes('<style>') || line.includes('style'))) {
+        // Force the exact tooltip format
+        const hover = new vscode.MarkdownString();
+        hover.isTrusted = true;
+        hover.supportHtml = true;
+
+        // First line: element name
+        hover.appendCodeblock(`<${word}>`, 'html');
+
+        // Add spacing
+        hover.appendText('\n\n');
+
+        // Selector specificity with link
+        hover.appendMarkdown('[Selector Specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Specificity): (0, 0, 1)');
+
+        return new vscode.Hover(hover);
+      }
+
+      // 5. TYPESCRIPT KEYWORDS
+      // Handle TypeScript keywords with proper tooltips
+      const tsKeywords = ['const', 'let', 'var', 'function', 'interface', 'type', 'class', 'enum',
+                        'import', 'export', 'return', 'async', 'await', 'if', 'else', 'for', 'while',
+                        'switch', 'case', 'default', 'break', 'continue', 'try', 'catch', 'throw',
+                        'new', 'this', 'super', 'extends', 'implements'];
+
+      if (tsKeywords.includes(word)) {
+        // Create hover for TypeScript keyword
+        const hover = new vscode.MarkdownString();
+        hover.isTrusted = true;
+        hover.supportHtml = true;
+
+        // First line: keyword
+        hover.appendCodeblock(`${word}`, 'typescript');
+
+        // Add spacing
+        hover.appendText('\n\n');
+
+        // Add description based on keyword
+        let description = '';
+
+        switch (word) {
+          case 'const':
+            description = 'Declares a constant whose value cannot be reassigned.';
+            break;
+          case 'let':
+            description = 'Declares a block-scoped variable, optionally initializing it to a value.';
+            break;
+          case 'var':
+            description = 'Declares a variable, optionally initializing it to a value.';
+            break;
+          case 'function':
+            description = 'Declares a function with the specified parameters.';
+            break;
+          case 'interface':
+            description = 'Declares an interface that defines the structure of an object.';
+            break;
+          case 'type':
+            description = 'Defines a type alias for a more complex type definition.';
+            break;
+          case 'class':
+            description = 'Declares a class definition for creating objects with shared properties and methods.';
+            break;
+          default:
+            description = `TypeScript keyword: ${word}`;
+            break;
+        }
+
+        hover.appendMarkdown(description);
+
+        return new vscode.Hover(hover);
+      }
+
+      // If the above direct approaches didn't work, proceed with TypeScript hover logic
       // Create virtual TS document
       const virtualUri = document.uri.with({
         scheme: 'stx-ts',
@@ -416,7 +568,6 @@ export function activate(context: vscode.ExtensionContext) {
 
         // Detect the context of this symbol
         // Is it a property access?
-        const line = document.lineAt(position.line).text;
         const beforeWord = line.substring(0, wordRange.start.character).trim();
 
         let propertyContext = null;
