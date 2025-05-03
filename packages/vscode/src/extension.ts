@@ -252,61 +252,163 @@ export function activate(context: vscode.ExtensionContext) {
     getJSDocForSymbol(uri: vscode.Uri, symbolName: string, parentContext?: string): string | undefined {
       const key = uri.toString();
       const comments = this.jsDocComments.get(key);
+      const tsContent = this.derivedTsContent.get(uri.toString()) || '';
 
-      if (!comments) {
+      if (!comments || comments.length === 0) {
         return undefined;
       }
 
       // If we have a parent context, we're looking for a property
       if (parentContext) {
-        // Find the comment for this property in the specified parent
-        const comment = comments.find(c =>
+        // First try to find the property in the specified parent
+        const parentPropComment = comments.find(c =>
           c.symbol === symbolName &&
           c.isProperty === true &&
           c.parentSymbol === parentContext
         );
-        return comment?.comment;
+
+        if (parentPropComment) {
+          return parentPropComment.comment;
+        }
+
+        // If not found in parent, look for a standalone property
+        const propComment = comments.find(c =>
+          c.symbol === symbolName &&
+          c.isProperty === true
+        );
+
+        return propComment?.comment;
       }
 
-      // Find an exact match for this symbol based on symbol type
-      const tsContent = this.derivedTsContent.get(uri.toString()) || '';
+      // For direct symbol lookups, determine the symbol type structurally
+      interface SymbolMatch {
+        comment: JSDocInfo;
+        distance: number;
+        type: string;
+      }
 
-      // Check if the symbol is a function
-      const isFunctionMatch = tsContent.match(new RegExp(`function\\s+${symbolName}\\b`));
-      if (isFunctionMatch) {
-        // For functions, find the JSDoc comment that's specifically for this function
-        const functionComment = comments.find(c =>
+      const symbolMatches: SymbolMatch[] = [];
+
+      // Function check
+      const functionMatch = tsContent.match(new RegExp(`function\\s+${symbolName}\\s*\\(`));
+      if (functionMatch) {
+        // Find all function declarations with this name
+        const functionComments = comments.filter(c =>
           c.symbol === symbolName &&
           c.symbolType === 'function' &&
           !c.isProperty
         );
-        if (functionComment) {
-          return functionComment.comment;
+
+        if (functionComments.length > 0) {
+          // Use the position in content to find the closest match
+          functionComments.forEach(c => {
+            const matchPos = functionMatch.index || 0;
+            const distance = Math.abs((c.contentPosition || 0) - matchPos);
+            symbolMatches.push({ comment: c, distance, type: 'function' });
+          });
         }
       }
 
-      // For interfaces
-      const isInterfaceMatch = tsContent.match(new RegExp(`interface\\s+${symbolName}\\b`));
-      if (isInterfaceMatch) {
-        const interfaceComment = comments.find(c =>
+      // Interface check
+      const interfaceMatch = tsContent.match(new RegExp(`interface\\s+${symbolName}\\s*{`));
+      if (interfaceMatch) {
+        // Extract the entire interface block to determine its bounds
+        const interfaceDefRegex = new RegExp(`interface\\s+${symbolName}\\s*{([^}]*)}`, 's');
+        const interfaceDef = tsContent.match(interfaceDefRegex);
+
+        if (interfaceDef) {
+          const interfaceStart = interfaceMatch.index || 0;
+          const interfaceEnd = (interfaceMatch.index || 0) + interfaceDef[0].length;
+
+          // Find all comments for this interface
+          const interfaceComments = comments.filter(c =>
+            c.symbol === symbolName &&
+            c.symbolType === 'interface' &&
+            !c.isProperty
+          );
+
+          if (interfaceComments.length > 0) {
+            // Use the position in content to find the closest match
+            interfaceComments.forEach(c => {
+              const pos = c.contentPosition || 0;
+              // Check if this comment is close to the interface definition
+              // Use proximity as a criteria for relevance
+              const distance = Math.abs(pos - interfaceStart);
+
+              // Only include comments that appear before the interface (JSDoc usually comes before)
+              // or that are nearby and clearly related
+              if (pos <= interfaceStart + 20) { // Allow a small margin for related comments
+                symbolMatches.push({ comment: c, distance, type: 'interface' });
+              }
+            });
+          }
+        }
+      }
+
+      // Type alias check
+      const typeMatch = tsContent.match(new RegExp(`type\\s+${symbolName}\\s*=`));
+      if (typeMatch) {
+        const typeComments = comments.filter(c =>
           c.symbol === symbolName &&
-          c.symbolType === 'interface' &&
+          c.symbolType === 'type' &&
           !c.isProperty
         );
-        if (interfaceComment) {
-          return interfaceComment.comment;
+
+        if (typeComments.length > 0) {
+          typeComments.forEach(c => {
+            const matchPos = typeMatch.index || 0;
+            const distance = Math.abs((c.contentPosition || 0) - matchPos);
+            symbolMatches.push({ comment: c, distance, type: 'type' });
+          });
         }
       }
 
-      // For other symbol types (class, type, etc.), find a match by type
-      const directMatch = comments.find(c => c.symbol === symbolName && !c.isProperty);
-      if (directMatch) {
-        return directMatch.comment;
+      // Class check
+      const classMatch = tsContent.match(new RegExp(`class\\s+${symbolName}\\s*{`));
+      if (classMatch) {
+        const classComments = comments.filter(c =>
+          c.symbol === symbolName &&
+          c.symbolType === 'class' &&
+          !c.isProperty
+        );
+
+        if (classComments.length > 0) {
+          classComments.forEach(c => {
+            const matchPos = classMatch.index || 0;
+            const distance = Math.abs((c.contentPosition || 0) - matchPos);
+            symbolMatches.push({ comment: c, distance, type: 'class' });
+          });
+        }
       }
 
-      // If no direct match, try to find property-level JSDoc without specific parent context
-      const propertyMatch = comments.find(c => c.symbol === symbolName && c.isProperty === true);
-      return propertyMatch?.comment;
+      // Const/variable check
+      const constMatch = tsContent.match(new RegExp(`const\\s+${symbolName}\\s*=`));
+      if (constMatch) {
+        const constComments = comments.filter(c =>
+          c.symbol === symbolName &&
+          (c.symbolType === 'const' || c.symbolType === 'let' || c.symbolType === 'var') &&
+          !c.isProperty
+        );
+
+        if (constComments.length > 0) {
+          constComments.forEach(c => {
+            const matchPos = constMatch.index || 0;
+            const distance = Math.abs((c.contentPosition || 0) - matchPos);
+            symbolMatches.push({ comment: c, distance, type: 'const' });
+          });
+        }
+      }
+
+      // If we found matches based on structure, use the closest one
+      if (symbolMatches.length > 0) {
+        // Sort by proximity - closest first
+        symbolMatches.sort((a, b) => a.distance - b.distance);
+        return symbolMatches[0].comment.comment;
+      }
+
+      // Fallback to direct symbol match if none of the structural matches worked
+      const directMatch = comments.find(c => c.symbol === symbolName && !c.isProperty);
+      return directMatch?.comment;
     }
 
     // Track STX document changes
@@ -408,14 +510,117 @@ export function activate(context: vscode.ExtensionContext) {
       // Get the entire line for context analysis
       const line = document.lineAt(position.line).text;
 
-      // DIRECT BRUTE FORCE APPROACH FOR CSS ELEMENTS
+      // Check if this is a property access (e.g. product.name)
+      const isPropertyAccess = line.substring(0, wordRange.start.character).trim().endsWith('.');
 
       // Get text before the current position for context
       const beforeText = line.substring(0, wordRange.start.character);
 
+      // If this is a property access, prioritize object property handling over CSS class
+      if (isPropertyAccess) {
+        // Handle property access
+        const propertyMatch = beforeText.match(/(\w+)\.\s*$/);
+        if (propertyMatch) {
+          const objectName = propertyMatch[1];
+
+          // Create virtual TS document uri
+          const virtualUri = document.uri.with({
+            scheme: 'stx-ts',
+            path: document.uri.path + '.ts'
+          });
+
+          // Get TS content
+          const tsContent = virtualTsDocumentProvider.provideTextDocumentContent(virtualUri);
+
+          // Try to determine the object type
+          let objectType = '';
+
+          // Check if it's a loop variable from @foreach
+          const foreachMatchLine = findForeachDeclarationForVariable(document, position.line, objectName);
+          if (foreachMatchLine !== null) {
+            const foreachLine = document.lineAt(foreachMatchLine).text;
+            const foreachMatch = foreachLine.match(/@foreach\s*\(([^)]+)\s+as\s+(\w+)(?:\s*,\s*(\w+))?\)/);
+            if (foreachMatch) {
+              const collectionName = foreachMatch[1].trim();
+
+              // Get collection type
+              const collectionTypeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${collectionName}\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'));
+              if (collectionTypeMatch) {
+                const collectionType = collectionTypeMatch[1];
+                // Extract item type from array type (e.g., Product[] -> Product)
+                if (collectionType.includes('[]')) {
+                  objectType = collectionType.replace('[]', '');
+                } else if (collectionType.includes('Array<')) {
+                  // Handle Array<Type>
+                  const genericMatch = collectionType.match(/Array<([^>]+)>/);
+                  if (genericMatch) {
+                    objectType = genericMatch[1];
+                  }
+                }
+              }
+            }
+          } else {
+            // Check variable declarations
+            const varTypeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${objectName}\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'));
+            if (varTypeMatch) {
+              objectType = varTypeMatch[1];
+            }
+          }
+
+          // If we found the object type, try to find the property type
+          if (objectType) {
+            // Create hover content
+            const hover = new vscode.MarkdownString();
+            hover.isTrusted = true;
+            hover.supportHtml = true;
+
+            // Find the interface/type definition
+            const interfaceMatch = tsContent.match(new RegExp(`interface\\s+${objectType}\\s*{([^}]*)}`, 's'));
+            const typeMatch = tsContent.match(new RegExp(`type\\s+${objectType}\\s*=\\s*{([^}]*)}`, 's'));
+
+            const interfaceContent = interfaceMatch ? interfaceMatch[1] :
+                                    typeMatch ? typeMatch[1] : null;
+
+            if (interfaceContent) {
+              // Look for the property in the interface
+              const propertyMatch = interfaceContent.match(new RegExp(`${word}\\s*:\\s*([^;]+);`));
+
+              if (propertyMatch) {
+                const propertyType = propertyMatch[1].trim();
+
+                // First line: property with type
+                hover.appendCodeblock(`(property) ${objectName}.${word}: ${propertyType}`, 'typescript');
+
+                // Add spacing
+                hover.appendText('\n\n');
+
+                // Look for property JSDoc
+                const allJsDocComments = virtualTsDocumentProvider.getJSDocComments(document.uri);
+                const propJsDoc = allJsDocComments.find(doc =>
+                  doc.symbol === word &&
+                  doc.isProperty &&
+                  doc.parentSymbol === objectType
+                );
+
+                if (propJsDoc) {
+                  const formattedComment = formatJSDoc(propJsDoc.comment);
+                  hover.appendMarkdown(formattedComment);
+                } else {
+                  // Generic description if no JSDoc
+                  hover.appendMarkdown(`Property of \`${objectType}\` interface.`);
+                }
+
+                return new vscode.Hover(hover);
+              }
+            }
+          }
+        }
+      }
+
+      // DIRECT BRUTE FORCE APPROACH FOR CSS ELEMENTS
       // 1. DIRECT CLASS DETECTION - MUST COME FIRST
       // Check for class selectors (.card)
-      if (beforeText.includes('.') && beforeText.trim().endsWith('.')) {
+      if (beforeText.includes('.') && beforeText.trim().endsWith('.') && !isPropertyAccess) {
         // Force the exact tooltip format for class selectors
         const hover = new vscode.MarkdownString();
         hover.isTrusted = true;
@@ -547,13 +752,408 @@ export function activate(context: vscode.ExtensionContext) {
             description = 'Declares a class definition for creating objects with shared properties and methods.';
             break;
           default:
-            description = `TypeScript keyword: ${word}`;
+            description = 'TypeScript keyword: ' + word;
             break;
         }
 
         hover.appendMarkdown(description);
 
         return new vscode.Hover(hover);
+      }
+
+      // 5.5. STX DIRECTIVES
+      // Handle STX directives with detailed tooltips
+      // Check if the word is a directive (starts with @)
+      const isDirective = line.includes('@' + word) || beforeText.trim().endsWith('@');
+
+      if (isDirective || word.startsWith('@')) {
+        // Extract the directive name without the @ if needed
+        const directiveName = word.startsWith('@') ? word.substring(1) : word;
+
+        // Create hover content
+        const hover = new vscode.MarkdownString();
+        hover.isTrusted = true;
+        hover.supportHtml = true;
+
+        // First line: directive
+        hover.appendCodeblock(`@${directiveName}`, 'stx');
+
+        // Add spacing
+        hover.appendText('\n\n');
+
+        // Add description based on directive
+        let description = '';
+        let syntax = '';
+        let example = '';
+
+        switch (directiveName.toLowerCase()) {
+          case 'foreach':
+            description = 'Iterates over an array or collection and renders the content once for each item.';
+            syntax = '@foreach (collection as item[, index])';
+            example = '@foreach (products as product)\n  <li>\\${product.name}: $\\${product.price}</li>\n@endforeach';
+            break;
+          case 'endforeach':
+            description = 'Marks the end of a @foreach loop block.';
+            syntax = '@endforeach';
+            break;
+          case 'if':
+            description = 'Conditionally renders content if the expression evaluates to true.';
+            syntax = '@if (condition)';
+            example = '@if (user.isLoggedIn)\n  <span>Welcome, \\${user.name}!</span>\n@endif';
+            break;
+          case 'else':
+            description = 'Provides an alternative content block to render when the preceding @if condition is false.';
+            syntax = '@else';
+            example = '@if (user.isAdmin)\n  <span>Admin Panel</span>\n@else\n  <span>User Dashboard</span>\n@endif';
+            break;
+          case 'elseif':
+          case 'elif':
+            description = 'Checks an additional condition when the preceding @if or @elseif condition is false.';
+            syntax = '@elseif (condition)';
+            example = '@if (user.isAdmin)\n  <span>Admin Panel</span>\n@elseif (user.isModerator)\n  <span>Moderator Panel</span>\n@else\n  <span>User Dashboard</span>\n@endif';
+            break;
+          case 'endif':
+            description = 'Marks the end of an @if/@elseif/@else conditional block.';
+            syntax = '@endif';
+            break;
+          case 'unless':
+            description = 'Conditionally renders content if the expression evaluates to false (opposite of @if).';
+            syntax = '@unless (condition)';
+            example = '@unless (user.isLoggedIn)\n  <a href="/login">Log in</a>\n@endunless';
+            break;
+          case 'endunless':
+            description = 'Marks the end of an @unless conditional block.';
+            syntax = '@endunless';
+            break;
+          case 'include':
+            description = 'Includes and renders a partial template at the current position.';
+            syntax = '@include (path[, data])';
+            example = '@include (\'partials/header.stx\', { title: \'Home Page\' })';
+            break;
+          case 'component':
+            description = 'Renders a reusable component with the provided props.';
+            syntax = '@component (name[, props])';
+            example = '@component (\'Button\', { label: \'Submit\', type: \'primary\' })';
+            break;
+          case 'slot':
+            description = 'Defines a named slot within a component that can be filled with content.';
+            syntax = '@slot (name)';
+            example = '@slot (\'header\')\n  <h1>Page Title</h1>\n@endslot';
+            break;
+          case 'endslot':
+            description = 'Marks the end of a @slot content block.';
+            syntax = '@endslot';
+            break;
+          case 'ts':
+            description = 'Defines a TypeScript code block for client-side or server-side logic.';
+            syntax = '@ts';
+            example = '@ts\n  // TypeScript code here\n  const user = { name: \'John\', age: 30 };\n@endts';
+            break;
+          case 'endts':
+            description = 'Marks the end of a TypeScript code block.';
+            syntax = '@endts';
+            break;
+          case 'switch':
+            description = 'Evaluates an expression and matches it against multiple cases.';
+            syntax = '@switch (expression)';
+            example = '@switch (user.role)\n  @case (\'admin\')\n    Admin Panel\n  @case (\'user\')\n    User Dashboard\n  @default\n    Access Denied\n@endswitch';
+            break;
+          case 'case':
+            description = 'Defines a case to match within a @switch block.';
+            syntax = '@case (value)';
+            break;
+          case 'default':
+            description = 'Provides a default case within a @switch block when no other cases match.';
+            syntax = '@default';
+            break;
+          case 'endswitch':
+            description = 'Marks the end of a @switch block.';
+            syntax = '@endswitch';
+            break;
+          case 'for':
+            description = 'Creates a for loop with standard initialization, condition, and increment syntax.';
+            syntax = '@for (initialization; condition; increment)';
+            example = '@for (let i = 0; i < 5; i++)\n  <li>Item \\${i + 1}</li>\n@endfor';
+            break;
+          case 'endfor':
+            description = 'Marks the end of a @for loop block.';
+            syntax = '@endfor';
+            break;
+          case 'while':
+            description = 'Creates a while loop that executes as long as the condition is true.';
+            syntax = '@while (condition)';
+            example = '@while (items.length > 0)\n  <li>\\${items.pop()}</li>\n@endwhile';
+            break;
+          case 'endwhile':
+            description = 'Marks the end of a @while loop block.';
+            syntax = '@endwhile';
+            break;
+          case 'continue':
+            description = 'Skips the rest of the current iteration and moves to the next iteration of the loop.';
+            syntax = '@continue';
+            example = '@foreach (items as item)\n  @if (item.hidden)\n    @continue\n  @endif\n  <li>\\${item.name}</li>\n@endforeach';
+            break;
+          case 'break':
+            description = 'Exits the current loop immediately.';
+            syntax = '@break';
+            example = '@foreach (items as item)\n  @if (item.isLast)\n    @break\n  @endif\n  <li>\\${item.name}</li>\n@endforeach';
+            break;
+          default:
+            description = `STX directive: @${directiveName}`;
+            break;
+        }
+
+        // Add description and syntax
+        hover.appendMarkdown(description);
+
+        if (syntax) {
+          hover.appendMarkdown('\n\n**Syntax**\n');
+          hover.appendCodeblock(syntax, 'stx');
+        }
+
+        if (example) {
+          hover.appendMarkdown('\n\n**Example**\n');
+          hover.appendCodeblock(example, 'stx');
+        }
+
+        return new vscode.Hover(hover);
+      }
+
+      // 6. LOOP VARIABLES - Handle @foreach loop variables
+      // Check for @foreach syntax
+      const foreachMatch = line.match(/@foreach\s*\(([^)]+)\s+as\s+(\w+)(?:\s*,\s*(\w+))?\)/);
+      if (foreachMatch) {
+        const iterableVar = foreachMatch[1].trim();
+        const loopVar = foreachMatch[2].trim();
+        const indexVar = foreachMatch[3]?.trim(); // Optional index variable
+
+        // If we're hovering on the collection/iterable variable
+        if (word === iterableVar) {
+          const hover = new vscode.MarkdownString();
+          hover.isTrusted = true;
+          hover.supportHtml = true;
+
+          // Search for type information in the virtual TS file
+          const virtualUri = document.uri.with({
+            scheme: 'stx-ts',
+            path: document.uri.path + '.ts'
+          });
+
+          // Get TS content
+          const tsContent = virtualTsDocumentProvider.provideTextDocumentContent(virtualUri);
+
+          // Try to find the type from declarations like "const products: Product[]"
+          const typeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${word}\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'));
+          const inferredType = typeMatch ? typeMatch[1] : 'array';
+
+          // First line: variable with type
+          hover.appendCodeblock(`const ${word}: ${inferredType}`, 'typescript');
+
+          // Add spacing
+          hover.appendText('\n\n');
+
+          // Description
+          hover.appendMarkdown(`Collection being iterated in the @foreach loop.`);
+
+          return new vscode.Hover(hover);
+        }
+
+        // If we're hovering on the loop variable
+        if (word === loopVar) {
+          const hover = new vscode.MarkdownString();
+          hover.isTrusted = true;
+          hover.supportHtml = true;
+
+          // Get collection type to infer item type
+          const virtualUri = document.uri.with({
+            scheme: 'stx-ts',
+            path: document.uri.path + '.ts'
+          });
+
+          // Get TS content
+          const tsContent = virtualTsDocumentProvider.provideTextDocumentContent(virtualUri);
+
+          // Try to find the type from declarations
+          let itemType = 'any';
+          const collectionTypeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${iterableVar}\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'));
+
+          if (collectionTypeMatch) {
+            const collectionType = collectionTypeMatch[1];
+            // Extract item type from array type (e.g., Product[] -> Product)
+            if (collectionType.includes('[]')) {
+              itemType = collectionType.replace('[]', '');
+            } else if (collectionType.includes('Array<')) {
+              // Handle Array<Type>
+              const genericMatch = collectionType.match(/Array<([^>]+)>/);
+              if (genericMatch) {
+                itemType = genericMatch[1];
+              }
+            }
+          }
+
+          // First line: variable with type
+          hover.appendCodeblock(`const ${word}: ${itemType}`, 'typescript');
+
+          // Add spacing
+          hover.appendText('\n\n');
+
+          // Description
+          hover.appendMarkdown(`Loop variable for each item in the \`${iterableVar}\` collection.`);
+
+          // Now try to find the properties of this type
+          if (itemType !== 'any') {
+            // Look for interface or type definition
+            const interfaceMatch = tsContent.match(new RegExp(`interface\\s+${itemType}\\s*{([^}]*)}`, 's'));
+            const typeMatch = tsContent.match(new RegExp(`type\\s+${itemType}\\s*=\\s*{([^}]*)}`, 's'));
+
+            const typeContent = interfaceMatch ? interfaceMatch[1] :
+                                typeMatch ? typeMatch[1] : null;
+
+            if (typeContent) {
+              // Extract properties
+              hover.appendMarkdown('\n\n**Properties:**\n');
+
+              // Extract each property with its type
+              const propertyRegex = /(\w+)\s*:\s*([^;]+);/g;
+              let propertyMatch;
+              let hasProperties = false;
+
+              while ((propertyMatch = propertyRegex.exec(typeContent)) !== null) {
+                hasProperties = true;
+                const propName = propertyMatch[1];
+                const propType = propertyMatch[2].trim();
+
+                hover.appendMarkdown(`- \`${propName}\`: *${propType}*\n`);
+              }
+
+              // If no properties found in regex (might be complex type), just show raw interface
+              if (!hasProperties && typeContent.trim()) {
+                hover.appendMarkdown('```typescript\n' + typeContent.trim().split('\n').map(line => line.trim()).join('\n') + '\n```');
+              }
+            }
+          }
+
+          return new vscode.Hover(hover);
+        }
+
+        // If we're hovering on the index variable
+        if (indexVar && word === indexVar) {
+          const hover = new vscode.MarkdownString();
+          hover.isTrusted = true;
+          hover.supportHtml = true;
+
+          // First line: variable with type
+          hover.appendCodeblock(`const ${word}: number`, 'typescript');
+
+          // Add spacing
+          hover.appendText('\n\n');
+
+          // Description
+          hover.appendMarkdown(`Index of the current item in the \`${iterableVar}\` collection.`);
+
+          return new vscode.Hover(hover);
+        }
+      }
+
+      // Also check if the current line is inside a @foreach block
+      // This handles cases where the @foreach declaration is on a previous line
+      if (!foreachMatch) {
+        // Look for @foreach in previous lines (up to 10 lines back)
+        let foreachLine = null;
+        let foreachIterableVar = null;
+        let foreachLoopVar = null;
+
+        for (let i = 1; i <= 10; i++) {
+          if (position.line - i >= 0) {
+            const prevLine = document.lineAt(position.line - i).text;
+            const prevForeachMatch = prevLine.match(/@foreach\s*\(([^)]+)\s+as\s+(\w+)(?:\s*,\s*(\w+))?\)/);
+
+            if (prevForeachMatch) {
+              foreachLine = position.line - i;
+              foreachIterableVar = prevForeachMatch[1].trim();
+              foreachLoopVar = prevForeachMatch[2].trim();
+              break;
+            }
+          }
+        }
+
+        // If we found a @foreach and we're hovering on the loop variable
+        if (foreachLine !== null && word === foreachLoopVar) {
+          const hover = new vscode.MarkdownString();
+          hover.isTrusted = true;
+          hover.supportHtml = true;
+
+          // Get collection type to infer item type
+          const virtualUri = document.uri.with({
+            scheme: 'stx-ts',
+            path: document.uri.path + '.ts'
+          });
+
+          // Get TS content
+          const tsContent = virtualTsDocumentProvider.provideTextDocumentContent(virtualUri);
+
+          // Try to find the type from declarations
+          let itemType = 'any';
+          const collectionTypeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${foreachIterableVar}\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'));
+
+          if (collectionTypeMatch) {
+            const collectionType = collectionTypeMatch[1];
+            // Extract item type from array type (e.g., Product[] -> Product)
+            if (collectionType.includes('[]')) {
+              itemType = collectionType.replace('[]', '');
+            } else if (collectionType.includes('Array<')) {
+              // Handle Array<Type>
+              const genericMatch = collectionType.match(/Array<([^>]+)>/);
+              if (genericMatch) {
+                itemType = genericMatch[1];
+              }
+            }
+          }
+
+          // First line: variable with type
+          hover.appendCodeblock(`const ${word}: ${itemType}`, 'typescript');
+
+          // Add spacing
+          hover.appendText('\n\n');
+
+          // Description
+          hover.appendMarkdown(`Loop variable for each item in the \`${foreachIterableVar}\` collection.`);
+
+          // Now try to find the properties of this type
+          if (itemType !== 'any') {
+            // Look for interface or type definition
+            const interfaceMatch = tsContent.match(new RegExp(`interface\\s+${itemType}\\s*{([^}]*)}`, 's'));
+            const typeMatch = tsContent.match(new RegExp(`type\\s+${itemType}\\s*=\\s*{([^}]*)}`, 's'));
+
+            const typeContent = interfaceMatch ? interfaceMatch[1] :
+                                typeMatch ? typeMatch[1] : null;
+
+            if (typeContent) {
+              // Extract properties
+              hover.appendMarkdown('\n\n**Properties:**\n');
+
+              // Extract each property with its type
+              const propertyRegex = /(\w+)\s*:\s*([^;]+);/g;
+              let propertyMatch;
+              let hasProperties = false;
+
+              while ((propertyMatch = propertyRegex.exec(typeContent)) !== null) {
+                hasProperties = true;
+                const propName = propertyMatch[1];
+                const propType = propertyMatch[2].trim();
+
+                hover.appendMarkdown(`- \`${propName}\`: *${propType}*\n`);
+              }
+
+              // If no properties found in regex (might be complex type), just show raw interface
+              if (!hasProperties && typeContent.trim()) {
+                hover.appendMarkdown('```typescript\n' + typeContent.trim().split('\n').map(line => line.trim()).join('\n') + '\n```');
+              }
+            }
+          }
+
+          return new vscode.Hover(hover);
+        }
       }
 
       // If the above direct approaches didn't work, proceed with TypeScript hover logic
@@ -589,6 +1189,36 @@ export function activate(context: vscode.ExtensionContext) {
         const classMatch = tsContent.match(new RegExp(`class\\s+${word}\\b`));
         const functionMatch = tsContent.match(new RegExp(`function\\s+${word}\\b`));
         const constMatch = tsContent.match(new RegExp(`const\\s+${word}\\b`));
+        const letMatch = tsContent.match(new RegExp(`let\\s+${word}\\b`));
+        const varMatch = tsContent.match(new RegExp(`var\\s+${word}\\b`));
+
+        // Look for variable type information
+        let variableType = null;
+        if (constMatch || letMatch || varMatch) {
+          // Try to find type declaration like "const products: Product[]"
+          const varTypeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${word}\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'));
+          if (varTypeMatch) {
+            variableType = varTypeMatch[1];
+          } else {
+            // Try to infer from assignment
+            const assignmentMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${word}\\s*=\\s*([^;]+)`, 'i'));
+            if (assignmentMatch) {
+              // Handle common cases
+              const assignment = assignmentMatch[1].trim();
+              if (assignment.startsWith('"') || assignment.startsWith("'")) {
+                variableType = 'string';
+              } else if (/^\d+(\.\d+)?$/.test(assignment)) {
+                variableType = 'number';
+              } else if (assignment === 'true' || assignment === 'false') {
+                variableType = 'boolean';
+              } else if (assignment.startsWith('[')) {
+                variableType = 'array';
+              } else if (assignment.startsWith('{')) {
+                variableType = 'object';
+              }
+            }
+          }
+        }
 
         if (interfaceMatch) {
           symbolType = "interface";
@@ -600,6 +1230,10 @@ export function activate(context: vscode.ExtensionContext) {
           symbolType = "function";
         } else if (constMatch) {
           symbolType = "const";
+        } else if (letMatch) {
+          symbolType = "let";
+        } else if (varMatch) {
+          symbolType = "var";
         } else if (propertyContext) {
           symbolType = "property";
         }
@@ -639,8 +1273,12 @@ export function activate(context: vscode.ExtensionContext) {
         // Create hover content
         const hoverContent = new vscode.MarkdownString();
 
-        // Start with symbol type/name
-        hoverContent.appendCodeblock(`${symbolType} ${word}`, 'typescript');
+        // Start with symbol type/name and include type information if available
+        if (variableType) {
+          hoverContent.appendCodeblock(`${symbolType} ${word}: ${variableType}`, 'typescript');
+        } else {
+          hoverContent.appendCodeblock(`${symbolType} ${word}`, 'typescript');
+        }
 
         // Ensure proper spacing
         hoverContent.appendText('\n');
@@ -649,6 +1287,61 @@ export function activate(context: vscode.ExtensionContext) {
         if (jsDocComment) {
           const formattedComment = formatJSDoc(jsDocComment);
           hoverContent.appendMarkdown(formattedComment);
+        }
+
+        // For interfaces, add additional context about properties when available
+        if (symbolType === "interface") {
+          // Check if the interface has properties by searching the content
+          const interfaceRegex = new RegExp(`interface\\s+${word}\\s+{([^}]*)}`, 's');
+          const interfaceMatch = tsContent.match(interfaceRegex);
+
+          if (interfaceMatch && interfaceMatch[1]) {
+            const properties = interfaceMatch[1].trim();
+            // Only add properties section if not already in JSDoc and if properties exist
+            if (properties && (!jsDocComment || !jsDocComment.includes("id:") || !jsDocComment.includes("name:"))) {
+              hoverContent.appendMarkdown('\n\n**Properties**\n');
+
+              // Extract and format each property
+              const propertyRegex = /(\w+):\s*([^;]+);/g;
+              let propertyMatch;
+              let propertyList = [];
+
+              while ((propertyMatch = propertyRegex.exec(properties)) !== null) {
+                const propName = propertyMatch[1];
+                const propType = propertyMatch[2].trim();
+                propertyList.push({ name: propName, type: propType });
+                hoverContent.appendMarkdown(`- \`${propName}\`: *${propType}*\n`);
+              }
+
+              // Add a sample usage example if we found properties
+              if (propertyList.length > 0) {
+                // Build dynamic example with the first few properties
+                let exampleProps = propertyList.slice(0, Math.min(3, propertyList.length))
+                  .map(prop => {
+                    // Generate sensible example values based on type
+                    let exampleValue = '';
+                    if (prop.type.includes('string')) {
+                      exampleValue = '"example ' + prop.name + '"';
+                    } else if (prop.type.includes('number')) {
+                      exampleValue = '1';
+                    } else if (prop.type.includes('boolean')) {
+                      exampleValue = 'true';
+                    } else if (prop.type.includes('Date')) {
+                      exampleValue = 'new Date()';
+                    } else if (prop.type.includes('[]')) {
+                      exampleValue = '[]';
+                    } else if (prop.type.includes('object')) {
+                      exampleValue = '{}';
+                    } else {
+                      exampleValue = 'undefined';
+                    }
+                    return '  ' + prop.name + ': ' + exampleValue;
+                  }).join(',\n');
+
+                hoverContent.appendMarkdown(`\n\n**Example**\n\n\`\`\`typescript\nconst ${word.toLowerCase()}: ${word} = {\n${exampleProps}\n};\n\`\`\``);
+              }
+            }
+          }
         }
 
         return new vscode.Hover(hoverContent);
@@ -755,14 +1448,7 @@ function formatJSDoc(comment: string): string {
     .replace(/\*\//g, '')     // Remove closing */
     .trim();
 
-  // Additional cleanup for function documentation
-  // Remove any property-like declarations that might have been captured incorrectly
-  if (cleanedComment.includes('Parameter') && cleanedComment.includes('id:')) {
-    // This is likely a function with incorrectly included interface properties
-    cleanedComment = cleanedComment.replace(/Unique identifier for the order.*?Date when the order was placed.*?\}/s, '');
-  }
-
-  // Create a more structured format to ensure line breaks
+  // Create a structured format to ensure line breaks
   const sections: string[] = [];
 
   // Extract the main description (everything before the first @tag)
@@ -781,12 +1467,12 @@ function formatJSDoc(comment: string): string {
     const paramName = paramMatch[2];
     const paramDesc = paramMatch[3] || '';
 
-    let formattedParam = `**Parameter** \`${paramName}\``;
+    let formattedParam = '**Parameter** `' + paramName + '`';
     if (paramType) {
-      formattedParam += `: ${paramType}`;
+      formattedParam += ': ' + paramType;
     }
     if (paramDesc) {
-      formattedParam += ` - *${paramDesc}*`;
+      formattedParam += ' - *' + paramDesc + '*';
     }
 
     params.push(formattedParam);
@@ -805,10 +1491,10 @@ function formatJSDoc(comment: string): string {
 
     let formattedReturns = '**Returns**';
     if (returnType) {
-      formattedReturns += ` ${returnType}`;
+      formattedReturns += ' ' + returnType;
     }
     if (returnDesc) {
-      formattedReturns += ` *${returnDesc}*`;
+      formattedReturns += ' *' + returnDesc + '*';
     }
 
     sections.push(formattedReturns);
@@ -823,10 +1509,10 @@ function formatJSDoc(comment: string): string {
 
     let formattedThrows = '**Throws**';
     if (throwType) {
-      formattedThrows += ` ${throwType}`;
+      formattedThrows += ' ' + throwType;
     }
     if (throwDesc) {
-      formattedThrows += ` *${throwDesc}*`;
+      formattedThrows += ' *' + throwDesc + '*';
     }
 
     sections.push(formattedThrows);
@@ -840,7 +1526,7 @@ function formatJSDoc(comment: string): string {
 
     let formattedDeprecated = '**⚠️ Deprecated**';
     if (deprecatedDesc) {
-      formattedDeprecated += ` *${deprecatedDesc}*`;
+      formattedDeprecated += ' *' + deprecatedDesc + '*';
     }
 
     sections.push(formattedDeprecated);
@@ -896,7 +1582,7 @@ function formatJSDoc(comment: string): string {
         .replace(/\s*}/g, '\n}');
     }
 
-    const formattedExample = `**Example**\n\n\`\`\`typescript\n${formattedCode}\n\`\`\``;
+    const formattedExample = '**Example**\n\n```typescript\n' + formattedCode + '\n```';
     sections.push(formattedExample);
   }
 
@@ -907,7 +1593,9 @@ function formatJSDoc(comment: string): string {
 
   while ((seeMatch = seeRegex.exec(cleanedComment)) !== null) {
     const reference = seeMatch[1].trim();
-    sees.push(`**See**: [\`${reference}\`](#)`);
+    // Always include all @see references without filtering
+    // Let the context-aware extraction in getJSDocForSymbol handle relevance
+    sees.push('**See**: [`' + reference + '`](#)');
   }
 
   if (sees.length > 0) {
@@ -916,6 +1604,31 @@ function formatJSDoc(comment: string): string {
 
   // Join all sections with double line breaks for clear separation
   return sections.join('\n\n');
+}
+
+// Helper function to find the line number of a @foreach declaration for a given variable
+function findForeachDeclarationForVariable(document: vscode.TextDocument, currentLine: number, variableName: string): number | null {
+  // Look for @foreach in previous lines (up to 10 lines back)
+  for (let i = 0; i <= 10; i++) {
+    // First check the current line
+    if (i === 0) {
+      const line = document.lineAt(currentLine).text;
+      const foreachMatch = line.match(/@foreach\s*\(([^)]+)\s+as\s+(\w+)(?:\s*,\s*(\w+))?\)/);
+      if (foreachMatch && foreachMatch[2].trim() === variableName) {
+        return currentLine;
+      }
+    }
+    // Then check previous lines
+    else if (currentLine - i >= 0) {
+      const prevLine = document.lineAt(currentLine - i).text;
+      const prevForeachMatch = prevLine.match(/@foreach\s*\(([^)]+)\s+as\s+(\w+)(?:\s*,\s*(\w+))?\)/);
+      if (prevForeachMatch && prevForeachMatch[2].trim() === variableName) {
+        return currentLine - i;
+      }
+    }
+  }
+
+  return null;
 }
 
 export function deactivate() {}
