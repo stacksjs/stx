@@ -1,2 +1,5 @@
 [install]
 registry = { url = "https://registry.npmjs.org/", token = "$BUN_AUTH_TOKEN" }
+
+[test]
+preload = "./happydom.ts"

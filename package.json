@@ -72,6 +72,7 @@
     "yaml": "^2.7.1"
   },
   "devDependencies": {
+    "@happy-dom/global-registrator": "^17.4.6",
     "@stacksjs/docs": "^0.70.23",
     "@stacksjs/eslint-config": "^4.10.2-beta.3",
     "@types/bun": "^1.2.11",
