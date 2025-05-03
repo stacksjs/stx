@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STX Animation System Demo</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f7;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    header {
+      padding: 30px;
+      background: linear-gradient(135deg, #6b73ff 0%, #000dff 100%);
+      color: white;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      font-size: 1.2rem;
+      opacity: 0.8;
+      margin-top: 10px;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      padding: 20px;
+      border-left: 4px solid #6b73ff;
+    }
+
+    .demo-section {
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      color: #333;
+      position: relative;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+
+    h2::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: #6b73ff;
+    }
+
+    button {
+      background-color: #6b73ff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+
+    button:hover {
+      background-color: #4e57ff;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .grid-item {
+      background-color: #f0f0f5;
+      padding: 20px;
+      border-radius: 4px;
+      text-align: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+
+    .grid-item:hover {
+      border-color: #6b73ff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .help-text {
+      text-align: center;
+      margin: 10px 0;
+      font-style: italic;
+      color: #666;
+    }
+
+    footer {
+      padding: 20px;
+      text-align: center;
+      background-color: #f0f0f5;
+    }
+
+    code {
+      background-color: #f0f0f5;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.9em;
+    }
+
+    .toggle-btn {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    #reduced-motion-toggle {
+      background-color: #ffa500;
+    }
+
+    /* Animation keyframes */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes flipIn {
+      from { transform: perspective(600px) rotateX(-90deg); opacity: 0; }
+      to { transform: perspective(600px) rotateX(0); opacity: 1; }
+    }
+
+    @keyframes rotateIn {
+      from { transform: rotate(-90deg); opacity: 0; }
+      to { transform: rotate(0); opacity: 1; }
+    }
+
+    /* Animation classes */
+    .animate-fade {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    .animate-slide {
+      animation: slideIn 0.4s ease-out forwards;
+    }
+
+    .animate-scale {
+      animation: scaleIn 0.4s ease-out forwards;
+    }
+
+    .animate-flip {
+      animation: flipIn 0.4s ease-out forwards;
+      transform-style: preserve-3d;
+    }
+
+    .animate-rotate {
+      animation: rotateIn 0.4s ease-out forwards;
+    }
+
+    /* Hidden state */
+    .hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Animation group styles */
+    #group-demo {
+      cursor: pointer;
+      position: relative;
+    }
+
+    #group-demo:after {
+      content: 'Click to replay';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 12px;
+      color: #666;
+      font-style: italic;
+    }
+
+    .sequence-step {
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      background-color: #f8f9fa;
+      transition: all 0.3s ease;
+      opacity: 0;
+    }
+
+    .step-visible {
+      opacity: 1 !important;
+    }
+  </style>
+  <script>
+    module.exports = {
+      title: "STX Animation System",
+      subtitle: "Powerful, accessible animations for your web apps",
+      transitions: [
+        { name: "fade", description: "Smooth opacity transitions" },
+        { name: "slide", description: "Elegant sliding movements" },
+        { name: "scale", description: "Size scaling effects" },
+        { name: "flip", description: "3D flipping animations" },
+        { name: "rotate", description: "Rotation-based animations" },
+      ],
+      showAnimations: true,
+    };
+  </script>
+</head>
+<body>
+
+@motion(true)
+  <div class="container">
+    @transition('fade', 500, 'ease-out')
+      <header id="page-header">
+        <h1>{{ title }}</h1>
+        <div class="subtitle">{{ subtitle }}</div>
+      </header>
+    @endtransition
+
+    <div class="content">
+      @transition('slide', 400, 'ease-out', 100)
+        <div class="demo-section" id="intro">
+          <h2>Introduction</h2>
+          <p>
+            The STX Animation System provides a set of powerful directives to create beautiful,
+            accessible animations in your templates. The system automatically respects users'
+            motion preferences and makes it easy to coordinate complex animations.
+          </p>
+        </div>
+      @endtransition
+
+      @transition('slide', 400, 'ease-out', 200)
+        <div class="demo-section" id="features">
+          <h2>Key Features</h2>
+          <div class="card">
+            <ul>
+              <li>Transition directives with multiple animation types</li>
+              <li>Animation coordination with groups and sequences</li>
+              <li>Automatic respect for users' motion preferences</li>
+              <li>Easy customization of duration, easing, and delay</li>
+              <li>Built-in accessibility considerations</li>
+            </ul>
+          </div>
+        </div>
+      @endtransition
+
+      <div class="demo-section" id="transitions">
+        <h2>Transition Types</h2>
+        <p>Choose a transition type to see it in action:</p>
+
+        <div class="toggle-btn">
+          <button id="show-items">Show Animation Grid</button>
+          <button id="reduced-motion-toggle">Toggle Reduced Motion</button>
+        </div>
+
+        <p class="help-text">After clicking "Show Animation Grid", click on individual items to replay their animations</p>
+
+        <div class="grid">
+          @foreach (transitions as transition, index)
+            @transition(transition.name, 400, 'ease-out', index * 100, 'out')
+              <div class="grid-item stx-out" id="item-{{ index }}">
+                <h3>{{ transition.name }}</h3>
+                <p>{{ transition.description }}</p>
+              </div>
+            @endtransition
+          @endforeach
+        </div>
+      </div>
+
+      @transition('scale', 400, 'ease-out', 300)
+        <div class="demo-section" id="animation-groups">
+          <h2>Animation Groups</h2>
+          <p>Animation groups allow coordinating multiple elements to animate in sequence or together:</p>
+
+          <div class="card" id="group-demo">
+            <div id="step-1" class="sequence-step">1. First, this element appears</div>
+            <div id="step-2" class="sequence-step">2. Then this one follows</div>
+            <div id="step-3" class="sequence-step">3. Finally, this element completes the sequence</div>
+          </div>
+
+          @animationGroup('demo-sequence', '#step-1', '#step-2', '#step-3')
+        </div>
+      @endtransition
+
+      @transition('fade', 400, 'ease-out', 400)
+        <footer id="page-footer">
+          <p>Built with STX Animation System</p>
+        </footer>
+      @endtransition
+    </div>
+  </div>
+@endmotion
+
+<script>
+  // Demo interactivity
+  document.addEventListener('DOMContentLoaded', function() {
+    const showItemsBtn = document.getElementById('show-items');
+    const gridItems = document.querySelectorAll('.grid-item');
+    const reducedMotionToggle = document.getElementById('reduced-motion-toggle');
+    let animationShown = false;
+
+    // Initially ensure all items have stx-out class
+    gridItems.forEach(item => {
+      if (!item.classList.contains('stx-out')) {
+        item.classList.add('stx-out');
+      }
+    });
+
+    // Show grid items when button is clicked
+    showItemsBtn.addEventListener('click', function() {
+      if (!animationShown) {
+        // Show animations
+        console.log('Showing animations for', gridItems.length, 'items');
+        gridItems.forEach((item, index) => {
+          const itemType = item.querySelector('h3').textContent.toLowerCase();
+          setTimeout(() => {
+            // First remove all animation classes
+            item.classList.remove('animate-fade', 'animate-slide', 'animate-scale', 'animate-flip', 'animate-rotate');
+
+            // Add the appropriate animation class based on type
+            item.classList.add(`animate-${itemType}`);
+
+            // Remove the hidden class
+            item.classList.remove('stx-out');
+            item.classList.remove('hidden');
+
+            console.log('Showing item', index, 'with animation type', itemType);
+          }, index * 200);
+        });
+
+        this.textContent = 'Reset Animation Grid';
+        animationShown = true;
+      } else {
+        // Reset animations
+        gridItems.forEach((item) => {
+          // Add hidden state
+          item.classList.add('stx-out');
+          item.classList.add('hidden');
+
+          // Remove animation classes
+          item.classList.remove('animate-fade', 'animate-slide', 'animate-scale', 'animate-flip', 'animate-rotate');
+        });
+
+        this.textContent = 'Show Animation Grid';
+        animationShown = false;
+      }
+    });
+
+    // Add click handler to each grid item to replay its animation
+    gridItems.forEach((item) => {
+      item.addEventListener('click', function() {
+        if (this.classList.contains('stx-out')) return; // Skip if hidden
+
+        const itemType = this.querySelector('h3').textContent.toLowerCase();
+        console.log('Clicked item with type:', itemType);
+
+        // Reset the animation by removing and re-adding classes
+        this.classList.add('hidden');
+
+        // Remove animation classes
+        this.classList.remove('animate-fade', 'animate-slide', 'animate-scale', 'animate-flip', 'animate-rotate');
+
+        // Force a reflow to restart animation
+        void this.offsetWidth;
+
+        // Start animation after a brief delay
+        setTimeout(() => {
+          this.classList.remove('hidden');
+          this.classList.add(`animate-${itemType}`);
+        }, 50);
+      });
+    });
+
+    // Toggle reduced motion
+    reducedMotionToggle.addEventListener('click', function() {
+      if (document.documentElement.getAttribute('data-reduced-motion') === 'true') {
+        document.documentElement.setAttribute('data-reduced-motion', 'false');
+        document.documentElement.style.setProperty('--stx-transition-duration', '');
+        this.textContent = 'Enable Reduced Motion';
+      } else {
+        document.documentElement.setAttribute('data-reduced-motion', 'true');
+        document.documentElement.style.setProperty('--stx-transition-duration', '0ms');
+        this.textContent = 'Disable Reduced Motion';
+      }
+    });
+
+    // Reset sequence animation when clicking on the card
+    const groupDemo = document.getElementById('group-demo');
+    const sequenceSteps = [
+      document.getElementById('step-1'),
+      document.getElementById('step-2'),
+      document.getElementById('step-3')
+    ];
+
+    if (groupDemo) {
+      // Create function to animate the sequence
+      const animateSequence = () => {
+        // Reset all steps first
+        sequenceSteps.forEach(step => {
+          if (step) step.classList.remove('step-visible');
+        });
+
+        // Animate each step with a delay
+        sequenceSteps.forEach((step, index) => {
+          if (!step) return;
+
+          setTimeout(() => {
+            step.classList.add('step-visible');
+          }, index * 500); // Longer delay between steps for clarity
+        });
+      };
+
+      // Show sequence when clicking the demo card
+      groupDemo.addEventListener('click', animateSequence);
+
+      // Trigger initial animation after a small delay
+      setTimeout(animateSequence, 1000);
+    }
+  });
+</script>
+</body>
+</html>

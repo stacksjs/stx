@@ -1,6 +1,7 @@
 /* eslint-disable no-console, regexp/no-super-linear-backtracking */
 import type { StxOptions } from './types'
 import path from 'node:path'
+import { processAnimationDirectives } from './animation'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
 import { processCustomDirectives } from './custom-directives'
 import { processCsrfDirectives } from './csrf'
@@ -199,7 +200,7 @@ async function processOtherDirectives(
   // Add options to context for component processing
   context.__stx_options = options
 
-  // Run pre-processing middleware before any directives
+  // Run pre-processing middleware
   output = await runPreProcessingMiddleware(output, context, filePath, options)
 
   // Process custom directives first
@@ -213,6 +214,9 @@ async function processOtherDirectives(
     // Process custom element components (kebab-case and PascalCase tags)
     output = await processCustomElements(output, context, filePath, options.componentsDir, options, dependencies)
   }
+
+  // Process animations and transitions
+  output = processAnimationDirectives(output, context, filePath, options)
 
   // Process route directives
   output = processRouteDirectives(output)
@@ -274,7 +278,7 @@ async function processOtherDirectives(
   // Process expressions now (delayed to allow other directives to generate expressions)
   output = await processExpressions(output, context, filePath)
 
-  // Run post-processing middleware after all directives
+  // Run post-processing middleware
   output = await runPostProcessingMiddleware(output, context, filePath, options)
 
   // Auto-inject SEO tags if enabled

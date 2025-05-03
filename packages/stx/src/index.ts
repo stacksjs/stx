@@ -1,6 +1,7 @@
 import { plugin as stxPlugin } from 'bun-plugin-stx'
 
 export * from './auth'
+export * from './animation'
 export * from './caching'
 export * from './config'
 export * from './custom-directives'
@@ -26,6 +27,18 @@ export { a11yDirective, checkA11y, getScreenReaderOnlyStyle, processA11yDirectiv
 
 // Export component directives
 export { componentDirective, registerComponentDirectives } from './components'
+
+// Export animation directives
+export {
+  transitionDirective,
+  animationGroupDirective,
+  motionDirective,
+  processAnimationDirectives,
+  registerAnimationDirectives,
+  TransitionType,
+  TransitionDirection,
+  TransitionEase
+} from './animation'
 
 // Export SEO functions and directives
 export {

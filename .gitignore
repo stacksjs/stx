@@ -19,3 +19,4 @@ tsconfig.tsbuildinfo
 /packages/devtools/.stx/cache
 /.stx-output
 /packages/stx/packages/stx/test/out
+/packages/stx/test/streaming/out

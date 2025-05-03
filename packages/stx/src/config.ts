@@ -6,6 +6,7 @@ import { webComponentDirectiveHandler } from './web-components'
 import { a11yDirective, screenReaderDirective } from './a11y'
 import { componentDirective } from './components'
 import { metaDirective, structuredDataDirective } from './seo'
+import { transitionDirective, animationGroupDirective, motionDirective, scrollAnimateDirective } from './animation'
 
 export const defaultConfig: StxConfig = {
   enabled: true,
@@ -33,6 +34,10 @@ export const defaultConfig: StxConfig = {
     componentDirective,
     metaDirective,
     structuredDataDirective,
+    transitionDirective,
+    animationGroupDirective,
+    motionDirective,
+    scrollAnimateDirective,
   ],
   middleware: [],
   i18n: {
@@ -83,6 +88,13 @@ export const defaultConfig: StxConfig = {
       title: 'STX Project',
       description: 'A website built with STX templating engine',
     },
+  },
+  animation: {
+    enabled: true,
+    defaultDuration: 300,
+    defaultEase: 'ease',
+    respectMotionPreferences: true,
+    staggerDelay: 50,
   },
 }
 

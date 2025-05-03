@@ -369,6 +369,22 @@ export interface SeoFeatureConfig {
   defaultImage?: string
 }
 
+/**
+ * Animation configuration
+ */
+export interface AnimationConfig {
+  /** Enable animation system */
+  enabled: boolean
+  /** Default duration for transitions in milliseconds */
+  defaultDuration: number
+  /** Default easing function for transitions */
+  defaultEase: string
+  /** Respect user's motion preferences by default */
+  respectMotionPreferences: boolean
+  /** Default stagger delay for grouped animations */
+  staggerDelay: number
+}
+
 export interface StxConfig {
   /** Enable STX features */
   enabled: boolean
@@ -402,6 +418,8 @@ export interface StxConfig {
   a11y?: Partial<A11yConfig>
   /** SEO configuration */
   seo?: Partial<SeoFeatureConfig>
+  /** Animation system configuration */
+  animation?: Partial<AnimationConfig>
 }
 
 export type StxOptions = Partial<StxConfig>

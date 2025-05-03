@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STX Scroll Animation Demo</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f7;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    header {
+      padding: 40px 20px;
+      background: linear-gradient(135deg, #6b73ff 0%, #000dff 100%);
+      color: white;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      font-size: 1.2rem;
+      opacity: 0.8;
+      margin-top: 10px;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .section {
+      margin-bottom: 60px;
+      padding: 30px;
+      border-radius: 8px;
+      background-color: #f8f9fa;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 30px;
+      padding: 20px;
+      border-left: 4px solid #6b73ff;
+      height: 200px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+
+    .card-description {
+      color: #666;
+    }
+
+    .spacer {
+      height: 500px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f0f2f5;
+      margin: 50px 0;
+      border-radius: 8px;
+      color: #999;
+      font-size: 1.2rem;
+      font-style: italic;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    button {
+      background-color: #6b73ff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+
+    button:hover {
+      background-color: #4e57ff;
+    }
+
+    .controls {
+      margin: 20px 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    #reduced-motion-toggle {
+      background-color: #ffa500;
+    }
+
+    footer {
+      padding: 20px;
+      text-align: center;
+      background-color: #f0f0f5;
+    }
+  </style>
+  <script>
+    module.exports = {
+      title: "Scroll Animation Demo",
+      subtitle: "Animations that trigger on scroll",
+    };
+  </script>
+</head>
+<body>
+
+@motion(true)
+  <div class="container">
+    <header>
+      <h1>{{ title }}</h1>
+      <div class="subtitle">{{ subtitle }}</div>
+    </header>
+
+    <div class="content">
+      <div class="controls">
+        <button id="scroll-down">Scroll Down</button>
+        <button id="reduced-motion-toggle">Toggle Reduced Motion</button>
+      </div>
+
+      <div class="section">
+        <h2>Fade Animations</h2>
+        <p>Elements will fade in when scrolled into view.</p>
+
+        <div class="grid">
+          @scrollAnimate('fade', 500, 'ease-out', 0.1)
+            <div class="card">
+              <div class="card-title">Fade In</div>
+              <div class="card-description">Opacity transition from 0 to 1</div>
+            </div>
+          @endscrollAnimate
+
+          @scrollAnimate('fade', 800, 'ease-in-out', 0.1, 200)
+            <div class="card">
+              <div class="card-title">Delayed Fade</div>
+              <div class="card-description">With 200ms delay and 800ms duration</div>
+            </div>
+          @endscrollAnimate
+        </div>
+      </div>
+
+      <div class="spacer">Scroll down to see more animations</div>
+
+      <div class="section">
+        <h2>Slide Animations</h2>
+        <p>Elements will slide in from different directions.</p>
+
+        <div class="grid">
+          @scrollAnimate('slide-up', 600, 'ease-out', 0.1)
+            <div class="card">
+              <div class="card-title">Slide Up</div>
+              <div class="card-description">Slides in from bottom</div>
+            </div>
+          @endscrollAnimate
+
+          @scrollAnimate('slide-down', 600, 'ease-out', 0.1)
+            <div class="card">
+              <div class="card-title">Slide Down</div>
+              <div class="card-description">Slides in from top</div>
+            </div>
+          @endscrollAnimate
+        </div>
+
+        <div class="grid" style="margin-top: 20px;">
+          @scrollAnimate('slide-right', 600, 'ease-out', 0.1)
+            <div class="card">
+              <div class="card-title">Slide Right</div>
+              <div class="card-description">Slides in from left</div>
+            </div>
+          @endscrollAnimate
+
+          @scrollAnimate('slide-left', 600, 'ease-out', 0.1)
+            <div class="card">
+              <div class="card-title">Slide Left</div>
+              <div class="card-description">Slides in from right</div>
+            </div>
+          @endscrollAnimate
+        </div>
+      </div>
+
+      <div class="spacer">Scroll down to see more animations</div>
+
+      <div class="section">
+        <h2>Scale & Staggered Animations</h2>
+        <p>Elements will scale up with staggered timing.</p>
+
+        <div id="staggered-cards" class="grid">
+          @scrollAnimate('scale', 500, 'ease-out', 0.1, 0)
+            <div class="card" id="card-1">
+              <div class="card-title">First Card</div>
+              <div class="card-description">Scales in first</div>
+            </div>
+          @endscrollAnimate
+
+          @scrollAnimate('scale', 500, 'ease-out', 0.1, 150)
+            <div class="card" id="card-2">
+              <div class="card-title">Second Card</div>
+              <div class="card-description">Scales in with 150ms delay</div>
+            </div>
+          @endscrollAnimate
+
+          @scrollAnimate('scale', 500, 'ease-out', 0.1, 300)
+            <div class="card" id="card-3">
+              <div class="card-title">Third Card</div>
+              <div class="card-description">Scales in with 300ms delay</div>
+            </div>
+          @endscrollAnimate
+
+          @scrollAnimate('scale', 500, 'ease-out', 0.1, 450)
+            <div class="card" id="card-4">
+              <div class="card-title">Fourth Card</div>
+              <div class="card-description">Scales in with 450ms delay</div>
+            </div>
+          @endscrollAnimate
+        </div>
+
+        @animationGroup('staggered-cards', '#card-1', '#card-2', '#card-3', '#card-4')
+      </div>
+
+      @scrollAnimate('fade', 500, 'ease-out')
+        <footer>
+          <p>Built with STX Animation System</p>
+        </footer>
+      @endscrollAnimate
+    </div>
+  </div>
+@endmotion
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Scroll down button
+    const scrollButton = document.getElementById('scroll-down');
+    scrollButton.addEventListener('click', function() {
+      window.scrollBy({
+        top: 500,
+        behavior: 'smooth'
+      });
+    });
+
+    // Toggle reduced motion
+    const reducedMotionToggle = document.getElementById('reduced-motion-toggle');
+    reducedMotionToggle.addEventListener('click', function() {
+      if (document.documentElement.getAttribute('data-reduced-motion') === 'true') {
+        document.documentElement.setAttribute('data-reduced-motion', 'false');
+        document.documentElement.style.setProperty('--stx-transition-duration', '');
+        this.textContent = 'Enable Reduced Motion';
+      } else {
+        document.documentElement.setAttribute('data-reduced-motion', 'true');
+        document.documentElement.style.setProperty('--stx-transition-duration', '0ms');
+        this.textContent = 'Disable Reduced Motion';
+      }
+    });
+  });
+</script>
+</body>
+</html>
