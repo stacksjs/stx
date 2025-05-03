@@ -2,7 +2,7 @@
   "compilerOptions": {
     "incremental": true,
     "target": "esnext",
-    "lib": ["esnext"],
+    "lib": ["esnext", "dom"],
     "moduleDetection": "force",
     "module": "esnext",
     "moduleResolution": "bundler",

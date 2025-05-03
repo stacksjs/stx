@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STX Form Demo</title>
+  <script>
+    module.exports = {
+      title: "STX Form Handling Demo",
+      formData: {
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        agreeTerms: false
+      },
+      errors: {},
+      submitted: false,
+      formFields: [
+        {
+          name: "firstName",
+          label: "First Name",
+          type: "text",
+          required: true,
+          placeholder: "Enter your first name"
+        },
+        {
+          name: "lastName",
+          label: "Last Name",
+          type: "text",
+          required: true,
+          placeholder: "Enter your last name"
+        },
+        {
+          name: "email",
+          label: "Email Address",
+          type: "email",
+          required: true,
+          placeholder: "Enter your email address"
+        },
+        {
+          name: "password",
+          label: "Password",
+          type: "password",
+          required: true,
+          placeholder: "Choose a password",
+          minLength: 8
+        },
+        {
+          name: "confirmPassword",
+          label: "Confirm Password",
+          type: "password",
+          required: true,
+          placeholder: "Confirm your password"
+        }
+      ]
+    };
+  </script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    h1 {
+      color: #2d3748;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .form-container {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .required-mark {
+      color: #e53e3e;
+      margin-left: 0.25rem;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #4299e1;
+      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+    }
+
+    .checkbox-group label {
+      margin-bottom: 0;
+      margin-left: 0.5rem;
+    }
+
+    .error {
+      color: #e53e3e;
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+    }
+
+    input.error-field {
+      border-color: #e53e3e;
+    }
+
+    button {
+      background-color: #4299e1;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #3182ce;
+    }
+
+    button:disabled {
+      background-color: #a0aec0;
+      cursor: not-allowed;
+    }
+
+    .success-message {
+      background-color: #48bb78;
+      color: white;
+      padding: 1rem;
+      border-radius: 4px;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>{{ title }}</h1>
+
+  <div class="form-container">
+    @if(submitted)
+      <div class="success-message">
+        <p>Form submitted successfully!</p>
+        <p>Thank you, {{ formData.firstName }} {{ formData.lastName }}.</p>
+      </div>
+    @endif
+
+    <form id="registration-form">
+      @foreach(formFields as field)
+        <div class="form-group">
+          <label for="{{ field.name }}">
+            {{ field.label }}
+            @if(field.required)
+              <span class="required-mark">*</span>
+            @endif
+          </label>
+
+          <input
+            type="{{ field.type }}"
+            id="{{ field.name }}"
+            name="{{ field.name }}"
+            placeholder="{{ field.placeholder }}"
+            value="{{ formData[field.name] }}"
+            @if(field.required)required@endif
+            @if(field.minLength)minlength="{{ field.minLength }}"@endif
+            class="@if(errors[field.name])error-field@endif"
+          >
+
+          @if(errors[field.name])
+            <div class="error">{{ errors[field.name] }}</div>
+          @endif
+        </div>
+      @endforeach
+
+      <div class="form-group checkbox-group">
+        <input
+          type="checkbox"
+          id="agreeTerms"
+          name="agreeTerms"
+          @if(formData.agreeTerms)checked@endif
+        >
+        <label for="agreeTerms">I agree to the Terms and Conditions</label>
+
+        @if(errors.agreeTerms)
+          <div class="error">{{ errors.agreeTerms }}</div>
+        @endif
+      </div>
+
+      <button type="submit" id="submit-form">Register</button>
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('registration-form');
+      const formFields = {
+        firstName: document.getElementById('firstName'),
+        lastName: document.getElementById('lastName'),
+        email: document.getElementById('email'),
+        password: document.getElementById('password'),
+        confirmPassword: document.getElementById('confirmPassword'),
+        agreeTerms: document.getElementById('agreeTerms')
+      };
+
+      // Track form state
+      const formState = {
+        formData: {
+          firstName: "",
+          lastName: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          agreeTerms: false
+        },
+        errors: {},
+        submitted: false
+      };
+
+      // Validation functions
+      const validators = {
+        required: (value, fieldName) => {
+          if (!value.trim()) {
+            return `${fieldName} is required`;
+          }
+          return null;
+        },
+        email: (value) => {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value)) {
+            return "Please enter a valid email address";
+          }
+          return null;
+        },
+        minLength: (value, length) => {
+          if (value.length < length) {
+            return `This field must be at least ${length} characters`;
+          }
+          return null;
+        },
+        passwordMatch: (password, confirmPassword) => {
+          if (password !== confirmPassword) {
+            return "Passwords do not match";
+          }
+          return null;
+        }
+      };
+
+      // Update form state from inputs
+      function updateFormState() {
+        formState.formData.firstName = formFields.firstName.value;
+        formState.formData.lastName = formFields.lastName.value;
+        formState.formData.email = formFields.email.value;
+        formState.formData.password = formFields.password.value;
+        formState.formData.confirmPassword = formFields.confirmPassword.value;
+        formState.formData.agreeTerms = formFields.agreeTerms.checked;
+      }
+
+      // Clear errors
+      function clearErrors() {
+        formState.errors = {};
+
+        // Remove error styles from inputs
+        Object.values(formFields).forEach(field => {
+          if (field.classList) {
+            field.classList.remove('error-field');
+          }
+        });
+
+        // Remove error messages
+        document.querySelectorAll('.error').forEach(errorElement => {
+          errorElement.remove();
+        });
+      }
+
+      // Validate the form
+      function validateForm() {
+        clearErrors();
+        updateFormState();
+
+        // Validate required fields
+        Object.entries(formFields).forEach(([fieldName, field]) => {
+          // Skip checkbox
+          if (fieldName === 'agreeTerms') return;
+
+          const value = field.value;
+          const requiredError = validators.required(value, fieldName);
+
+          if (requiredError) {
+            formState.errors[fieldName] = requiredError;
+            field.classList.add('error-field');
+
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error';
+            errorElement.textContent = requiredError;
+            field.parentNode.appendChild(errorElement);
+          }
+        });
+
+        // Email validation
+        if (formFields.email.value && !formState.errors.email) {
+          const emailError = validators.email(formFields.email.value);
+          if (emailError) {
+            formState.errors.email = emailError;
+            formFields.email.classList.add('error-field');
+
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error';
+            errorElement.textContent = emailError;
+            formFields.email.parentNode.appendChild(errorElement);
+          }
+        }
+
+        // Password min length
+        if (formFields.password.value && !formState.errors.password) {
+          const minLengthError = validators.minLength(formFields.password.value, 8);
+          if (minLengthError) {
+            formState.errors.password = minLengthError;
+            formFields.password.classList.add('error-field');
+
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error';
+            errorElement.textContent = minLengthError;
+            formFields.password.parentNode.appendChild(errorElement);
+          }
+        }
+
+        // Password match
+        if (
+          formFields.password.value &&
+          formFields.confirmPassword.value &&
+          !formState.errors.confirmPassword
+        ) {
+          const passwordMatchError = validators.passwordMatch(
+            formFields.password.value,
+            formFields.confirmPassword.value
+          );
+
+          if (passwordMatchError) {
+            formState.errors.confirmPassword = passwordMatchError;
+            formFields.confirmPassword.classList.add('error-field');
+
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error';
+            errorElement.textContent = passwordMatchError;
+            formFields.confirmPassword.parentNode.appendChild(errorElement);
+          }
+        }
+
+        // Terms agreement
+        if (!formFields.agreeTerms.checked) {
+          formState.errors.agreeTerms = "You must agree to the terms and conditions";
+
+          const agreeTermsParent = formFields.agreeTerms.parentNode;
+          const errorElement = document.createElement('div');
+          errorElement.className = 'error';
+          errorElement.textContent = formState.errors.agreeTerms;
+          agreeTermsParent.appendChild(errorElement);
+        }
+
+        return Object.keys(formState.errors).length === 0;
+      }
+
+      // Handle form submission
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const isValid = validateForm();
+
+        if (isValid) {
+          // Show success message
+          formState.submitted = true;
+
+          const successMessage = document.createElement('div');
+          successMessage.className = 'success-message';
+          successMessage.innerHTML = `
+            <p>Form submitted successfully!</p>
+            <p>Thank you, ${formState.formData.firstName} ${formState.formData.lastName}.</p>
+          `;
+
+          form.parentNode.insertBefore(successMessage, form);
+          form.style.display = 'none';
+
+          console.log('Form submitted:', formState.formData);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

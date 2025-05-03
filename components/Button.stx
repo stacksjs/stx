@@ -1,0 +1,10 @@
+<button
+  class="btn {{ variant ? 'btn-' + variant : 'btn-primary' }} {{ size ? 'btn-' + size : '' }} {{ classList }}"
+  type="{{ type || 'button' }}"
+  @if(disabled)disabled="disabled"@endif
+>
+  @if(icon)
+    <span class="btn-icon">{{ icon }}</span>
+  @endif
+  {{ text }}
+</button>
