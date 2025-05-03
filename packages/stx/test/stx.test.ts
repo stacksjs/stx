@@ -3,6 +3,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from '../src/index'
 
+// Import a11y tests
+import './a11y/a11y.test'
+
 const TEST_DIR = import.meta.dir
 const OUTPUT_DIR = path.join(TEST_DIR, 'out')
 const TEMP_DIR = path.join(TEST_DIR, 'temp')

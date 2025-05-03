@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accessibility Features Demo</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .container {
+      padding: 1.5rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+    h1, h2, h3 {
+      color: #333;
+    }
+    code {
+      background: #f4f4f4;
+      padding: 0.15rem 0.3rem;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      background: #4a86e8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0.5rem 0;
+    }
+    button:focus {
+      outline: 3px solid #9cb3f0;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+    .a11y-demo {
+      background: #f9f9f9;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-left: 4px solid #4a86e8;
+    }
+  </style>
+  <script>
+    export const users = [
+      { id: 1, name: 'Alex', role: 'Admin' },
+      { id: 2, name: 'Sam', role: 'Editor' },
+      { id: 3, name: 'Jordan', role: 'Viewer' }
+    ]
+
+    export function getDate() {
+      return new Date().toLocaleDateString()
+    }
+  </script>
+</head>
+<body>
+  <h1>STX Accessibility Features</h1>
+  <p>This page demonstrates the accessibility features available in STX.</p>
+  <p>Today's date: {{ getDate() }}</p>
+
+  <div class="container">
+    <h2>1. Accessible Images</h2>
+
+    <div class="a11y-demo">
+      @a11y('alt-text')
+      <img src="path/to/image.jpg" alt="A beautiful mountain landscape with snow-capped peaks">
+    </div>
+
+    <p>The <code>@a11y('alt-text')</code> directive serves as a reminder to include descriptive alt text for images.</p>
+  </div>
+
+  <div class="container">
+    <h2>2. Screen Reader Content</h2>
+
+    <div class="a11y-demo">
+      <button>
+        ×
+        @screenReader(Close dialog)@endScreenReader
+      </button>
+    </div>
+
+    <p>The <code>@screenReader</code> directive allows you to add content that is only visible to screen readers.</p>
+  </div>
+
+  <div class="container">
+    <h2>3. ARIA Descriptions</h2>
+
+    <div class="a11y-demo">
+      <button id="delete-btn" aria-describedby="delete-description">Delete Account</button>
+      @ariaDescribe('delete-btn', 'Warning: This action will permanently delete your account and all associated data')
+    </div>
+
+    <p>The <code>@ariaDescribe</code> directive connects elements with detailed descriptions for screen readers.</p>
+  </div>
+
+  <div class="container">
+    <h2>4. Ensuring Accessible Forms</h2>
+
+    <div class="a11y-demo">
+      <form>
+        <div>
+          <label for="username">Username</label>
+          <input type="text" id="username" @a11y('focus')>
+        </div>
+        <div>
+          <label for="password">Password</label>
+          <input type="password" id="password">
+        </div>
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+
+    <p>Using the <code>@a11y('focus')</code> directive reminds developers to ensure keyboard focus states are visible.</p>
+  </div>
+
+  <div class="container">
+    <h2>5. Dynamic Content Accessibility</h2>
+
+    <div class="a11y-demo">
+      <h3>User List</h3>
+      <ul>
+        @foreach(users as user)
+          <li>
+            <button aria-label="View details for {{user.name}}" @a11y('aria-label')>
+              {{user.name}} - {{user.role}}
+            </button>
+          </li>
+        @endforeach
+      </ul>
+    </div>
+
+    <p>Accessibility directives can be used with other STX directives like <code>@foreach</code>.</p>
+  </div>
+
+  <div class="container">
+    <h2>A11y Command</h2>
+    <p>You can run the STX a11y command to scan your templates for accessibility issues:</p>
+    <pre><code>stx a11y ./templates</code></pre>
+    <p>Or generate an HTML report:</p>
+    <pre><code>stx a11y ./templates --output a11y-report.html</code></pre>
+  </div>
+</body>
+</html>

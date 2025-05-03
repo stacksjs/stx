@@ -51,6 +51,24 @@ export interface Middleware {
 }
 
 /**
+ * Accessibility violation found during a11y checks
+ */
+export interface A11yViolation {
+  /** Type/category of violation */
+  type: string
+  /** The problematic HTML element */
+  element: string
+  /** Description of the issue */
+  message: string
+  /** Impact level of the violation */
+  impact: 'critical' | 'serious' | 'moderate' | 'minor'
+  /** Suggested fix */
+  help: string
+  /** URL to more information */
+  helpUrl?: string
+}
+
+/**
  * Internationalization (i18n) configuration
  */
 export interface I18nConfig {
@@ -257,6 +275,22 @@ export interface Island {
   shadowDOM?: boolean
 }
 
+/**
+ * Accessibility configuration
+ */
+export interface A11yConfig {
+  /** Enable accessibility checks */
+  enabled: boolean
+  /** Automatically add screen reader styles */
+  addSrOnlyStyles: boolean
+  /** Level of accessibility checking to enforce */
+  level: 'AA' | 'AAA'
+  /** Ignore certain types of a11y checks */
+  ignoreChecks?: string[]
+  /** Auto-fix simple a11y issues during template processing */
+  autoFix: boolean
+}
+
 export interface StxConfig {
   /** Enable STX features */
   enabled: boolean
@@ -286,6 +320,8 @@ export interface StxConfig {
   streaming?: Partial<StreamingConfig>
   /** Partial hydration configuration */
   hydration?: Partial<HydrationConfig>
+  /** Accessibility configuration */
+  a11y?: Partial<A11yConfig>
 }
 
 export type StxOptions = Partial<StxConfig>

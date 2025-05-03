@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Good A11y Test</title>
+      </head>
+      <body>
+        <h1>Accessible Page</h1>
+        <img src="image.jpg" alt="An accessible image">
+        <button aria-label="Close">X</button>
+        <label>
+          Name: <input type="text" id="name">
+        </label>
+      </body>
+      </html>

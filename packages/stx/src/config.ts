@@ -3,6 +3,8 @@ import { resolve } from 'node:path'
 import { loadConfig } from 'bunfig'
 import { markdownDirectiveHandler } from './markdown'
 import { webComponentDirectiveHandler } from './web-components'
+import { a11yDirective, screenReaderDirective } from './a11y'
+import { componentDirective } from './components'
 
 export const defaultConfig: StxConfig = {
   enabled: true,
@@ -25,6 +27,9 @@ export const defaultConfig: StxConfig = {
       hasEndTag: false,
       description: 'Include a web component in the template',
     },
+    a11yDirective,
+    screenReaderDirective,
+    componentDirective,
   ],
   middleware: [],
   i18n: {
@@ -60,6 +65,13 @@ export const defaultConfig: StxConfig = {
     clientEntry: 'src/client.ts',
     autoMarkers: true,
     preload: 'lazy',
+  },
+  a11y: {
+    enabled: true,
+    addSrOnlyStyles: true,
+    level: 'AA',
+    autoFix: false,
+    ignoreChecks: [],
   },
 }
 

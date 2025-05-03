@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Bad A11y Test</title>
+      </head>
+      <body>
+        <h1>Inaccessible Page</h1>
+        <h3>Skipped heading level</h3>
+        <img src="image.jpg">
+        <button></button>
+        <input type="text">
+      </body>
+      </html>
