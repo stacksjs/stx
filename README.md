@@ -872,3 +872,93 @@ The documentation will include:
 - Usage examples
 
 This makes it easy for developers to understand how to use your web components in their HTML.
+
+## Other Familiar Features
+
+STX includes several convenient features inspired by Laravel's Blade templating engine:
+
+### View Composers
+
+Register callbacks to be executed when specific views are rendered:
+
+```typescript
+import { composer, composerPattern } from 'stx';
+
+// Register for specific view
+composer('dashboard', (context) => {
+  context.menuItems = ['Home', 'Settings', 'Profile'];
+});
+
+// Register for any view matching a pattern
+composerPattern(/user/, (context) => {
+  context.section = 'User Management';
+});
+```
+
+### CSRF Protection
+
+Built-in CSRF token generation and verification:
+
+```html
+<form method="POST" action="/submit">
+  @csrf
+  <!-- Creates a hidden input with the CSRF token -->
+
+  <!-- Custom field name -->
+  @csrf("my_token")
+</form>
+```
+
+### Form Method Spoofing
+
+Support for RESTful routes with HTML forms:
+
+```html
+<form method="POST" action="/users/1">
+  @method('PUT')
+  <!-- Creates a hidden input for PUT method -->
+
+  <!-- Custom field name -->
+  @method('DELETE', 'http_method')
+</form>
+```
+
+### Named Routes
+
+Generate URLs based on named routes:
+
+```typescript
+import { defineRoute, route } from 'stx';
+
+// Define routes
+defineRoute('users.profile', '/users/:id/profile');
+defineRoute('dashboard', '/dashboard');
+
+// In templates
+<a href="@route('users.profile', {id: 1})">User Profile</a>
+<a href="@route('dashboard')">Dashboard</a>
+
+// Generate URLs in server code
+const url = route('users.profile', {id: 1}); // => '/users/1/profile'
+```
+
+### Environment-Specific Directives
+
+Conditionally render content based on environment:
+
+```html
+@production
+  <script src="/js/analytics.min.js"></script>
+@else
+  <!-- Development tools -->
+  <script src="/js/debug.js"></script>
+@endproduction
+
+@development
+  <div class="dev-banner">Development Mode</div>
+@enddevelopment
+
+@env('staging')
+  <div class="staging-notice">Staging Environment</div>
+@endenv
+```
