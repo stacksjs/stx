@@ -6,7 +6,10 @@
     "lib": [
       "esnext",
       "dom"
-    ]
+    ],
+    "paths": {
+      "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"],
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

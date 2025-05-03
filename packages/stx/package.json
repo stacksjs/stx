@@ -68,6 +68,7 @@
     "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {
+    "bun-plugin-stx": "workspace:*",
     "marked": "^15.0.11",
     "yaml": "^2.7.1"
   }
