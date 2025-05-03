@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { VirtualTsDocumentProvider } from './virtualTsDocumentProvider';
+import { findCssDefinitionForClass } from '../utils/cssUtils';
 
 export function createDefinitionProvider(virtualTsDocumentProvider: VirtualTsDocumentProvider): vscode.DefinitionProvider {
   return {
@@ -11,6 +12,49 @@ export function createDefinitionProvider(virtualTsDocumentProvider: VirtualTsDoc
       }
 
       const word = document.getText(wordRange);
+      const line = document.lineAt(position.line).text;
+
+      // Check if we're in a class attribute (class="note" or className="note")
+      const classAttributeRegex = /(class|className)\s*=\s*["']([^"']*)["']/g;
+      let classAttributeMatch;
+      let isInClassAttribute = false;
+
+      // Reset regex state
+      classAttributeRegex.lastIndex = 0;
+
+      while ((classAttributeMatch = classAttributeRegex.exec(line)) !== null) {
+        const attributeStart = classAttributeMatch.index;
+        const attributeValueStart = attributeStart + classAttributeMatch[0].indexOf(classAttributeMatch[2]);
+        const attributeValueEnd = attributeValueStart + classAttributeMatch[2].length;
+
+        // Check if our position is within the class attribute value
+        if (position.character >= attributeValueStart && position.character <= attributeValueEnd) {
+          isInClassAttribute = true;
+          const classesInAttribute = classAttributeMatch[2].split(/\s+/);
+
+          // Check if the word under cursor is one of these classes
+          if (classesInAttribute.includes(word)) {
+            // Look for the CSS class definition
+            const cssDefinition = findCssDefinitionForClass(document, word);
+            if (cssDefinition) {
+              return new vscode.Location(
+                document.uri,
+                new vscode.Position(cssDefinition.line, cssDefinition.character)
+              );
+            }
+          }
+          break;
+        }
+      }
+
+      // Check if this is a CSS class selector (in a style tag)
+      const text = document.getText();
+      const offset = document.offsetAt(position);
+      if (offset > 0 && text.charAt(offset - 1) === '.') {
+        // This is likely a CSS class selector (.className)
+        // We're already at the definition, so no need to navigate
+        return null;
+      }
 
       // Create virtual TS document uri
       const virtualUri = document.uri.with({

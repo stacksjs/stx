@@ -145,6 +145,57 @@ export function isInStyleTag(document: vscode.TextDocument, position: vscode.Pos
   return false;
 }
 
+// Interface to return the position of a CSS class definition
+export interface CssDefinitionPosition {
+  line: number;
+  character: number;
+}
+
+// Find the position of a CSS class definition in a document
+export function findCssDefinitionForClass(document: vscode.TextDocument, className: string): CssDefinitionPosition | null {
+  try {
+    const text = document.getText();
+
+    // Look for style blocks in the document
+    const styleBlockRegex = /<style[^>]*>([\s\S]*?)<\/style>/g;
+    let styleMatch;
+
+    while ((styleMatch = styleBlockRegex.exec(text)) !== null) {
+      const styleContent = styleMatch[1];
+      const styleStartOffset = styleMatch.index + styleMatch[0].indexOf('>') + 1;
+
+      // Look for class selectors within this style block
+      const selectorRegex = new RegExp(`\\.${className}\\s*{`, 'g');
+      let selectorMatch;
+
+      // We need to search within the style content but keep track of absolute position
+      let relativeText = styleContent;
+      let relativeOffset = 0;
+
+      while ((selectorMatch = selectorRegex.exec(relativeText)) !== null) {
+        // Calculate the document offset where this class is defined
+        const absoluteOffset = styleStartOffset + relativeOffset + selectorMatch.index;
+        const position = document.positionAt(absoluteOffset);
+
+        // Return the position of the class definition
+        return {
+          line: position.line,
+          character: position.character
+        };
+      }
+    }
+
+    // Also look for linked CSS files - future enhancement:
+    // Could open external files but requires additional handling
+
+    // If no definition found
+    return null;
+  } catch (e) {
+    console.error("Error finding CSS class definition:", e);
+    return null;
+  }
+}
+
 // Helper function to check if word is a CSS class name in a style block
 export function isCssClassName(document: vscode.TextDocument, position: vscode.Position, word: string): boolean {
   // First check if we're in a style block
