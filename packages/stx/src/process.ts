@@ -8,6 +8,7 @@ import { processErrorDirective, processFormDirectives } from './forms'
 import { processTranslateDirective } from './i18n'
 import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
 import { processLoops } from './loops'
+import { processJsDirectives, processTsDirectives } from './js-ts'
 import { processMarkdownDirectives } from './markdown'
 import { runPostProcessingMiddleware, runPreProcessingMiddleware } from './middleware'
 import { renderComponent, resolveTemplatePath } from './utils'
@@ -200,6 +201,12 @@ async function processOtherDirectives(
 
   // Process @markdown directives
   output = await processMarkdownDirectives(output, context, filePath)
+
+  // Process @js directives (server-side JavaScript)
+  output = await processJsDirectives(output, context, filePath)
+
+  // Process @ts directives (server-side TypeScript)
+  output = await processTsDirectives(output, context, filePath)
 
   // Process @json directive
   output = processJsonDirective(output, context)

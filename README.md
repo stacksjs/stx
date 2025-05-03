@@ -296,6 +296,80 @@ Output unescaped HTML content:
 {!! rawHtmlContent !!}
 ```
 
+#### Server-Side JavaScript and TypeScript
+
+STX allows you to execute JavaScript or TypeScript code directly on the server during template processing. This code runs only on the server and is removed from the final HTML output.
+
+##### JavaScript (@js)
+
+Use `@js` to execute JavaScript code on the server:
+
+```html
+<script>
+  module.exports = {
+    initialValue: 5
+  };
+</script>
+
+<p>Before: {{ result }}</p>
+
+@js
+  // This code runs on the server and is not included in the output HTML
+  global.result = initialValue * 10;
+
+  // You can access Node.js APIs here
+  if (typeof process !== 'undefined') {
+    global.nodeVersion = process.version;
+  }
+@endjs
+
+<p>After: {{ result }}</p>
+<p>Node.js Version: {{ nodeVersion }}</p>
+```
+
+##### TypeScript (@ts)
+
+Use `@ts` to execute TypeScript code on the server:
+
+```html
+<script>
+  module.exports = {
+    users: [
+      { id: 1, name: 'Alice' },
+      { id: 2, name: 'Bob' }
+    ]
+  };
+</script>
+
+<h1>User List</h1>
+
+@ts
+  // Define TypeScript interfaces
+  interface User {
+    id: number;
+    name: string;
+    displayName?: string;
+  }
+
+  // Process data with TypeScript
+  function processUsers(users: User[]): User[] {
+    return users.map(user => ({
+      ...user,
+      displayName: `User ${user.id}: ${user.name}`
+    }));
+  }
+
+  // Store the processed data in the context
+  global.processedUsers = processUsers(users);
+@endts
+
+<ul>
+  @foreach (processedUsers as user)
+    <li>{{ user.displayName }}</li>
+  @endforeach
+</ul>
+```
+
 #### Markdown Support
 
 STX supports rendering Markdown content directly in your templates using the `@markdown` directive:
