@@ -679,6 +679,99 @@ export function activate(context: vscode.ExtensionContext) {
         }
       }
 
+      // 3.5 HTML TAG DETECTION
+      // Check if this looks like an HTML tag (e.g., <span>, <div>)
+      const htmlTagOpening = line.includes('<' + word);
+      const htmlTagClosing = line.includes('</' + word);
+      const isHtmlTag = htmlTagOpening || htmlTagClosing || (line.match(new RegExp(`<${word}[\\s>]`)) !== null);
+
+      // Common HTML tags list
+      const htmlTags = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                      'strong', 'em', 'a', 'img', 'button', 'input', 'form', 'label',
+                      'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'thead', 'tbody',
+                      'select', 'option', 'textarea', 'header', 'footer', 'nav', 'main',
+                      'section', 'article', 'aside', 'code', 'pre', 'hr', 'br'];
+
+      if (htmlTags.includes(word) && isHtmlTag) {
+        // Create hover for HTML tag
+        const hover = new vscode.MarkdownString();
+        hover.isTrusted = true;
+        hover.supportHtml = true;
+
+        // First line: HTML tag example
+        hover.appendCodeblock(`<${word}></${word}>`, 'html');
+
+        // Add spacing
+        hover.appendText('\n\n');
+
+        // Add description and MDN link
+        let tagDescription = '';
+
+        switch (word) {
+          case 'div':
+            tagDescription = 'Generic container element for flow content with no semantic meaning.';
+            break;
+          case 'span':
+            tagDescription = 'Generic inline container with no semantic meaning. Used for styling or grouping text.';
+            break;
+          case 'p':
+            tagDescription = 'Paragraph element representing a block of text.';
+            break;
+          case 'h1':
+          case 'h2':
+          case 'h3':
+          case 'h4':
+          case 'h5':
+          case 'h6':
+            tagDescription = `Level ${word.substring(1)} heading element. H1 is most important, H6 is least important.`;
+            break;
+          case 'strong':
+            tagDescription = 'Indicates strong importance. Text is typically displayed in bold.';
+            break;
+          case 'em':
+            tagDescription = 'Marks text that has stress emphasis. Text is typically displayed in italic.';
+            break;
+          case 'a':
+            tagDescription = 'Anchor element for creating hyperlinks to other pages, files, or locations.';
+            break;
+          case 'img':
+            tagDescription = 'Embeds an image into the document. Self-closing tag requiring src attribute.';
+            break;
+          case 'button':
+            tagDescription = 'Clickable button element for forms or interactive elements.';
+            break;
+          case 'input':
+            tagDescription = 'Form input element for user data entry. Requires type attribute.';
+            break;
+          case 'form':
+            tagDescription = 'Container for a form with inputs and controls for user submission.';
+            break;
+          case 'ul':
+            tagDescription = 'Unordered list container. Contains li elements.';
+            break;
+          case 'ol':
+            tagDescription = 'Ordered (numbered) list container. Contains li elements.';
+            break;
+          case 'li':
+            tagDescription = 'List item element. Used within ul or ol containers.';
+            break;
+          case 'table':
+            tagDescription = 'Container for tabular data with rows and columns.';
+            break;
+          case 'label':
+            tagDescription = 'Label for a form element. Improves accessibility and usability.';
+            break;
+          default:
+            tagDescription = `HTML ${word} element`;
+            break;
+        }
+
+        hover.appendMarkdown(tagDescription);
+        hover.appendMarkdown(`\n\n[MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/${word})`);
+
+        return new vscode.Hover(hover);
+      }
+
       // 4. DIRECT ELEMENT DETECTION - MUST COME LAST
       // Common HTML/CSS elements
       const cssElements = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
@@ -1192,9 +1285,16 @@ export function activate(context: vscode.ExtensionContext) {
         const letMatch = tsContent.match(new RegExp(`let\\s+${word}\\b`));
         const varMatch = tsContent.match(new RegExp(`var\\s+${word}\\b`));
 
+        // Check if this might be an HTML tag rather than a variable
+        const htmlTagMatch = line.match(new RegExp(`<(/)?${word}(\\s|/?>|$)`));
+        const commonHtmlTags = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                            'strong', 'em', 'a', 'img', 'button', 'input', 'form', 'label',
+                            'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'pre', 'code'];
+        const mightBeHtmlTag = htmlTagMatch !== null || (commonHtmlTags.includes(word) && line.includes('<'));
+
         // Look for variable type information
         let variableType = null;
-        if (constMatch || letMatch || varMatch) {
+        if ((constMatch || letMatch || varMatch) && !mightBeHtmlTag) {
           // Try to find type declaration like "const products: Product[]"
           const varTypeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${word}\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'));
           if (varTypeMatch) {
@@ -1228,14 +1328,17 @@ export function activate(context: vscode.ExtensionContext) {
           symbolType = "class";
         } else if (functionMatch) {
           symbolType = "function";
-        } else if (constMatch) {
+        } else if (constMatch && !mightBeHtmlTag) {
           symbolType = "const";
-        } else if (letMatch) {
+        } else if (letMatch && !mightBeHtmlTag) {
           symbolType = "let";
-        } else if (varMatch) {
+        } else if (varMatch && !mightBeHtmlTag) {
           symbolType = "var";
         } else if (propertyContext) {
           symbolType = "property";
+        } else if (mightBeHtmlTag) {
+          // Skip processing as a variable - the HTML tag handler will take care of this
+          return null;
         }
 
         // Check for JSDoc comment in the appropriate context
