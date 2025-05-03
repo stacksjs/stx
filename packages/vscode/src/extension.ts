@@ -513,8 +513,42 @@ export function activate(context: vscode.ExtensionContext) {
       // Check if this is a property access (e.g. product.name)
       const isPropertyAccess = line.substring(0, wordRange.start.character).trim().endsWith('.');
 
+      // Check if we're inside a CSS/style block
+      const isInStyleBlock = isInStyleTag(document, position);
+
+      // Precise detection for CSS class selectors
+      const isCssClassSelector = isInStyleBlock && document.getText().charAt(document.offsetAt(wordRange.start) - 1) === '.';
+
       // Get text before the current position for context
       const beforeText = line.substring(0, wordRange.start.character);
+
+      // CSS CLASS SELECTOR DETECTION - This comes first
+      if (isCssClassSelector) {
+        // We're in a style block with a class selector like ".note"
+        const hover = new vscode.MarkdownString();
+        hover.isTrusted = true;
+        hover.supportHtml = true;
+
+        // First line: CSS class selector
+        hover.appendCodeblock(`.${word} { }`, 'css');
+
+        // Add spacing
+        hover.appendText('\n\n');
+
+        // Description
+        hover.appendMarkdown('**CSS Class Selector**\n\n');
+        hover.appendMarkdown('Selects all elements with the specified class attribute.\n\n');
+        hover.appendMarkdown('[Selector Specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Specificity): (0, 1, 0)');
+
+        // Show the current styles for this class
+        const cssStyles = findCssStylesForClass(document, word);
+        if (cssStyles && cssStyles.length > 0) {
+          hover.appendMarkdown('\n\n**CSS Properties:**\n\n');
+          hover.appendCodeblock(`.${word} {\n${cssStyles.join('\n')}\n}`, 'css');
+        }
+
+        return new vscode.Hover(hover);
+      }
 
       // If this is a property access, prioritize object property handling over CSS class
       if (isPropertyAccess) {
@@ -618,22 +652,41 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       // DIRECT BRUTE FORCE APPROACH FOR CSS ELEMENTS
-      // 1. DIRECT CLASS DETECTION - MUST COME FIRST
-      // Check for class selectors (.card)
-      if (beforeText.includes('.') && beforeText.trim().endsWith('.') && !isPropertyAccess) {
-        // Force the exact tooltip format for class selectors
+
+      // CSS CLASS SELECTOR DETECTION
+      // This handles both .class selectors in style blocks and class attributes in HTML
+      const isPrecedingDot = beforeText.trim().endsWith('.');
+
+      // Check character before word for more precise detection
+      const charBeforeWordRange = document.getText().charAt(document.offsetAt(wordRange.start) - 1);
+      const isPreciselyPrecedingDot = charBeforeWordRange === '.';
+
+      if ((isPrecedingDot || isPreciselyPrecedingDot) && !isPropertyAccess && !isInStyleBlock) {
+        // Create hover for CSS class
         const hover = new vscode.MarkdownString();
         hover.isTrusted = true;
         hover.supportHtml = true;
 
-        // First line: element class
-        hover.appendCodeblock(`<element class="${word}">`, 'html');
+        if (isInStyleBlock) {
+          // In style block, show as CSS selector
+          hover.appendCodeblock(`.${word} { }`, 'css');
+          hover.appendText('\n\n');
+          hover.appendMarkdown('**CSS Class Selector**\n\n');
+        } else {
+          // Outside style block, show as HTML with class
+          hover.appendCodeblock(`<element class="${word}">`, 'html');
+          hover.appendText('\n\n');
+        }
 
-        // Add spacing
-        hover.appendText('\n\n');
-
-        // Selector specificity with link
+        // Common info for all class selectors
         hover.appendMarkdown('[Selector Specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Specificity): (0, 1, 0)');
+
+        // Show the CSS styles for this class
+        const cssStyles = findCssStylesForClass(document, word);
+        if (cssStyles && cssStyles.length > 0) {
+          hover.appendMarkdown('\n\n**CSS Properties:**\n\n');
+          hover.appendCodeblock(`.${word} {\n${cssStyles.join('\n')}\n}`, 'css');
+        }
 
         return new vscode.Hover(hover);
       }
@@ -675,101 +728,111 @@ export function activate(context: vscode.ExtensionContext) {
           // Selector specificity with link
           hover.appendMarkdown('[Selector Specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Specificity): (0, 1, 0)');
 
+          // Try to find associated CSS styles in the document
+          const cssStyles = findCssStylesForClass(document, word);
+          if (cssStyles && cssStyles.length > 0) {
+            hover.appendMarkdown('\n\n**CSS Properties:**\n\n');
+            hover.appendCodeblock(`.${word} {\n${cssStyles.join('\n')}\n}`, 'css');
+          }
+
           return new vscode.Hover(hover);
         }
       }
 
       // 3.5 HTML TAG DETECTION
       // Check if this looks like an HTML tag (e.g., <span>, <div>)
-      const htmlTagOpening = line.includes('<' + word);
-      const htmlTagClosing = line.includes('</' + word);
-      const isHtmlTag = htmlTagOpening || htmlTagClosing || (line.match(new RegExp(`<${word}[\\s>]`)) !== null);
+      // Don't detect as HTML tag if we're in a style block
+      if (!isInStyleBlock) {
+        const htmlTagOpening = line.includes('<' + word);
+        const htmlTagClosing = line.includes('</' + word);
+        const isHtmlTag = htmlTagOpening || htmlTagClosing || (line.match(new RegExp(`<${word}[\\s>]`)) !== null);
 
-      // Common HTML tags list
-      const htmlTags = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-                      'strong', 'em', 'a', 'img', 'button', 'input', 'form', 'label',
-                      'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'thead', 'tbody',
-                      'select', 'option', 'textarea', 'header', 'footer', 'nav', 'main',
-                      'section', 'article', 'aside', 'code', 'pre', 'hr', 'br'];
+        // Common HTML tags list
+        const htmlTags = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                        'strong', 'em', 'a', 'img', 'button', 'input', 'form', 'label',
+                        'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'thead', 'tbody',
+                        'select', 'option', 'textarea', 'header', 'footer', 'nav', 'main',
+                        'section', 'article', 'aside', 'code', 'pre', 'hr', 'br'];
 
-      if (htmlTags.includes(word) && isHtmlTag) {
-        // Create hover for HTML tag
-        const hover = new vscode.MarkdownString();
-        hover.isTrusted = true;
-        hover.supportHtml = true;
+        if (htmlTags.includes(word) && isHtmlTag) {
+          // Create hover for HTML tag
+          const hover = new vscode.MarkdownString();
+          hover.isTrusted = true;
+          hover.supportHtml = true;
 
-        // First line: HTML tag example
-        hover.appendCodeblock(`<${word}></${word}>`, 'html');
+          // First line: HTML tag example
+          hover.appendCodeblock(`<${word}></${word}>`, 'html');
 
-        // Add spacing
-        hover.appendText('\n\n');
+          // Add spacing
+          hover.appendText('\n\n');
 
-        // Add description and MDN link
-        let tagDescription = '';
+          // Add description and MDN link
+          let tagDescription = '';
 
-        switch (word) {
-          case 'div':
-            tagDescription = 'Generic container element for flow content with no semantic meaning.';
-            break;
-          case 'span':
-            tagDescription = 'Generic inline container with no semantic meaning. Used for styling or grouping text.';
-            break;
-          case 'p':
-            tagDescription = 'Paragraph element representing a block of text.';
-            break;
-          case 'h1':
-          case 'h2':
-          case 'h3':
-          case 'h4':
-          case 'h5':
-          case 'h6':
-            tagDescription = `Level ${word.substring(1)} heading element. H1 is most important, H6 is least important.`;
-            break;
-          case 'strong':
-            tagDescription = 'Indicates strong importance. Text is typically displayed in bold.';
-            break;
-          case 'em':
-            tagDescription = 'Marks text that has stress emphasis. Text is typically displayed in italic.';
-            break;
-          case 'a':
-            tagDescription = 'Anchor element for creating hyperlinks to other pages, files, or locations.';
-            break;
-          case 'img':
-            tagDescription = 'Embeds an image into the document. Self-closing tag requiring src attribute.';
-            break;
-          case 'button':
-            tagDescription = 'Clickable button element for forms or interactive elements.';
-            break;
-          case 'input':
-            tagDescription = 'Form input element for user data entry. Requires type attribute.';
-            break;
-          case 'form':
-            tagDescription = 'Container for a form with inputs and controls for user submission.';
-            break;
-          case 'ul':
-            tagDescription = 'Unordered list container. Contains li elements.';
-            break;
-          case 'ol':
-            tagDescription = 'Ordered (numbered) list container. Contains li elements.';
-            break;
-          case 'li':
-            tagDescription = 'List item element. Used within ul or ol containers.';
-            break;
-          case 'table':
-            tagDescription = 'Container for tabular data with rows and columns.';
-            break;
-          case 'label':
-            tagDescription = 'Label for a form element. Improves accessibility and usability.';
-            break;
-          default:
-            tagDescription = `HTML ${word} element`;
-            break;
+          switch (word) {
+            case 'div':
+              tagDescription = 'Generic container element for flow content with no semantic meaning.';
+              break;
+            case 'span':
+              tagDescription = 'Generic inline container with no semantic meaning. Used for styling or grouping text.';
+              break;
+            case 'p':
+              tagDescription = 'Paragraph element representing a block of text.';
+              break;
+            case 'h1':
+            case 'h2':
+            case 'h3':
+            case 'h4':
+            case 'h5':
+            case 'h6':
+              tagDescription = `Level ${word.substring(1)} heading element. H1 is most important, H6 is least important.`;
+              break;
+            case 'strong':
+              tagDescription = 'Indicates strong importance. Text is typically displayed in bold.';
+              break;
+            case 'em':
+              tagDescription = 'Marks text that has stress emphasis. Text is typically displayed in italic.';
+              break;
+            case 'a':
+              tagDescription = 'Anchor element for creating hyperlinks to other pages, files, or locations.';
+              break;
+            case 'img':
+              tagDescription = 'Embeds an image into the document. Self-closing tag requiring src attribute.';
+              break;
+            case 'button':
+              tagDescription = 'Clickable button element for forms or interactive elements.';
+              break;
+            case 'input':
+              tagDescription = 'Form input element for user data entry. Requires type attribute.';
+              break;
+            case 'form':
+              tagDescription = 'Container for a form with inputs and controls for user submission.';
+              break;
+            case 'ul':
+              tagDescription = 'Unordered list container. Contains li elements.';
+              break;
+            case 'ol':
+              tagDescription = 'Ordered (numbered) list container. Contains li elements.';
+              break;
+            case 'li':
+              tagDescription = 'List item element. Used within ul or ol containers.';
+              break;
+            case 'table':
+              tagDescription = 'Container for tabular data with rows and columns.';
+              break;
+            case 'label':
+              tagDescription = 'Label for a form element. Improves accessibility and usability.';
+              break;
+            default:
+              tagDescription = `HTML ${word} element`;
+              break;
+          }
+
+          hover.appendMarkdown(tagDescription);
+          hover.appendMarkdown(`\n\n[MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/${word})`);
+
+          return new vscode.Hover(hover);
         }
-
-        hover.appendMarkdown(tagDescription);
-        hover.appendMarkdown(`\n\n[MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/${word})`);
-
-        return new vscode.Hover(hover);
       }
 
       // 4. DIRECT ELEMENT DETECTION - MUST COME LAST
@@ -781,23 +844,48 @@ export function activate(context: vscode.ExtensionContext) {
                          'select', 'option', 'textarea', 'style', 'script', 'link', 'meta'];
 
       // If the word is a CSS element in an appropriate context, show element tooltip
-      if (cssElements.includes(word) &&
-          (line.includes('{') || line.includes('<style>') || line.includes('style'))) {
-        // Force the exact tooltip format
-        const hover = new vscode.MarkdownString();
-        hover.isTrusted = true;
-        hover.supportHtml = true;
+      // Prioritize different tooltips based on context
+      if (cssElements.includes(word)) {
+        if (isInStyleBlock) {
+          // Make sure it's not preceded by a period (which would make it a class)
+          const charBeforeWord = document.getText().charAt(document.offsetAt(wordRange.start) - 1);
 
-        // First line: element name
-        hover.appendCodeblock(`<${word}>`, 'html');
+          if (charBeforeWord !== '.') {
+            // If we're in a style block, it's a CSS selector
+            const hover = new vscode.MarkdownString();
+            hover.isTrusted = true;
+            hover.supportHtml = true;
 
-        // Add spacing
-        hover.appendText('\n\n');
+            // First line: CSS element selector
+            hover.appendCodeblock(`${word} { }`, 'css');
 
-        // Selector specificity with link
-        hover.appendMarkdown('[Selector Specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Specificity): (0, 0, 1)');
+            // Add spacing
+            hover.appendText('\n\n');
 
-        return new vscode.Hover(hover);
+            // Description
+            hover.appendMarkdown('**CSS Element Selector**\n\n');
+            hover.appendMarkdown('Selects all elements with the specified tag name.\n\n');
+            hover.appendMarkdown('[Selector Specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Specificity): (0, 0, 1)');
+
+            return new vscode.Hover(hover);
+          }
+        } else if (line.includes('{') || line.includes('<style>') || line.includes('style')) {
+          // Force the exact tooltip format
+          const hover = new vscode.MarkdownString();
+          hover.isTrusted = true;
+          hover.supportHtml = true;
+
+          // First line: element name
+          hover.appendCodeblock(`<${word}>`, 'html');
+
+          // Add spacing
+          hover.appendText('\n\n');
+
+          // Selector specificity with link
+          hover.appendMarkdown('[Selector Specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Specificity): (0, 0, 1)');
+
+          return new vscode.Hover(hover);
+        }
       }
 
       // 5. TYPESCRIPT KEYWORDS
@@ -1292,6 +1380,27 @@ export function activate(context: vscode.ExtensionContext) {
                             'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'pre', 'code'];
         const mightBeHtmlTag = htmlTagMatch !== null || (commonHtmlTags.includes(word) && line.includes('<'));
 
+        // Skip variable processing for CSS class selectors
+        if (isInStyleBlock) {
+          // Check if preceded by a period (which would make it a class)
+          const charBeforeWord = document.getText().charAt(document.offsetAt(wordRange.start) - 1);
+          if (charBeforeWord === '.') {
+            return null;
+          }
+        }
+
+        // For style blocks, make sure we only proceed with variables when in a TypeScript context
+        // Skip if we're in CSS rules (not inside an expression)
+        if (isInStyleBlock && !line.includes('{{') && (
+            line.includes(':') ||
+            line.includes(';') ||
+            line.includes('{') ||
+            line.includes('}')
+        )) {
+          // Likely in CSS rules, not a TypeScript variable
+          return null;
+        }
+
         // Look for variable type information
         let variableType = null;
         if ((constMatch || letMatch || varMatch) && !mightBeHtmlTag) {
@@ -1443,6 +1552,95 @@ export function activate(context: vscode.ExtensionContext) {
 
                 hoverContent.appendMarkdown(`\n\n**Example**\n\n\`\`\`typescript\nconst ${word.toLowerCase()}: ${word} = {\n${exampleProps}\n};\n\`\`\``);
               }
+            }
+          }
+        }
+
+        // CSS PROPERTY AND VALUE DETECTION
+        if (isInStyleBlock) {
+          // Detect if this is a CSS property name or value
+
+          // CSS property pattern: property: value;
+          const isCssPropertyMatch = line.match(/^\s*([a-zA-Z-]+)\s*:/);
+          const isCssProperty = isCssPropertyMatch && isCssPropertyMatch[1] === word;
+
+          // CSS value pattern: property: value;
+          const isCssValueMatch = line.match(/:\s*([^;]+)/);
+          const isCssValue = isCssValueMatch && isCssValueMatch[1].trim().includes(word);
+
+          if (isCssProperty) {
+            // CSS property name
+            const hover = new vscode.MarkdownString();
+            hover.isTrusted = true;
+            hover.supportHtml = true;
+
+            // First line: CSS property
+            hover.appendCodeblock(`${word}: value;`, 'css');
+
+            // Add spacing
+            hover.appendText('\n\n');
+
+            // Try to provide CSS property documentation
+            let propertyDesc = '';
+
+            switch (word) {
+              case 'color':
+                propertyDesc = 'Sets the color of text.';
+                break;
+              case 'background':
+              case 'background-color':
+                propertyDesc = 'Sets the background color of an element.';
+                break;
+              case 'padding':
+                propertyDesc = 'Sets the padding space on all sides of an element.';
+                break;
+              case 'margin':
+                propertyDesc = 'Sets the margin space on all sides of an element.';
+                break;
+              case 'border':
+                propertyDesc = 'Sets the border on all sides of an element.';
+                break;
+              case 'font-size':
+                propertyDesc = 'Specifies the size of the font.';
+                break;
+              case 'display':
+                propertyDesc = 'Specifies how an element is displayed.';
+                break;
+              case 'position':
+                propertyDesc = 'Specifies the positioning method used for an element.';
+                break;
+              default:
+                propertyDesc = 'CSS property.';
+            }
+
+            hover.appendMarkdown(propertyDesc);
+            hover.appendMarkdown(`\n\n[MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/CSS/${word})`);
+
+            return new vscode.Hover(hover);
+          }
+
+          if (isCssValue && !isCssProperty) {
+            // This might be a CSS value
+            const hover = new vscode.MarkdownString();
+            hover.isTrusted = true;
+            hover.supportHtml = true;
+
+            // Try to identify color values
+            if (/^#[0-9a-f]{3,8}$/i.test(word)) {
+              // Hex color value
+              hover.appendCodeblock(word, 'css');
+              hover.appendText('\n\n');
+              hover.appendMarkdown('**CSS Color Value (Hexadecimal)**');
+              return new vscode.Hover(hover);
+            }
+
+            // Common CSS values
+            const commonValues = ['inherit', 'initial', 'unset', 'auto', 'none', 'block', 'inline', 'flex', 'grid'];
+            if (commonValues.includes(word)) {
+              hover.appendCodeblock(`property: ${word};`, 'css');
+              hover.appendText('\n\n');
+              hover.appendMarkdown('**CSS Value**');
+              return new vscode.Hover(hover);
             }
           }
         }
@@ -1732,6 +1930,171 @@ function findForeachDeclarationForVariable(document: vscode.TextDocument, curren
   }
 
   return null;
+}
+
+// Helper function to find CSS styles for a class
+function findCssStylesForClass(document: vscode.TextDocument, className: string): string[] {
+  try {
+    const text = document.getText();
+    const styles: string[] = [];
+    const importedStyles: string[] = [];
+    const documentDir = path.dirname(document.uri.fsPath);
+
+    // Look for style blocks in the document
+    const styleBlockRegex = /<style[^>]*>([\s\S]*?)<\/style>/g;
+    let styleMatch;
+
+    while ((styleMatch = styleBlockRegex.exec(text)) !== null) {
+      const styleContent = styleMatch[1];
+
+      // Look for class selectors
+      const selectorRegex = new RegExp(`\\.${className}\\s*{([^}]*)}`, 'g');
+      let selectorMatch;
+
+      while ((selectorMatch = selectorRegex.exec(styleContent)) !== null) {
+        const properties = selectorMatch[1].trim();
+
+        // Split into individual properties and format them
+        if (properties) {
+          const propLines = properties.split(';')
+            .map(prop => prop.trim())
+            .filter(prop => prop.length > 0)
+            .map(prop => `  ${prop};`);
+
+          styles.push(...propLines);
+        }
+      }
+    }
+
+    // Look for linked CSS files
+    const linkRegex = /<link[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']*)["'][^>]*>/g;
+    let linkMatch;
+
+    while ((linkMatch = linkRegex.exec(text)) !== null) {
+      const href = linkMatch[1];
+
+      // Try to resolve path for local stylesheets
+      if (!href.startsWith('http')) {
+        try {
+          // Resolve path relative to the document
+          const cssPath = path.resolve(documentDir, href);
+
+          // Check if file exists and read it
+          if (fs.existsSync(cssPath)) {
+            const cssContent = fs.readFileSync(cssPath, 'utf8');
+
+            // Find class styles in the external CSS
+            const externalSelectorRegex = new RegExp(`\\.${className}\\s*{([^}]*)}`, 'g');
+            let externalMatch;
+
+            while ((externalMatch = externalSelectorRegex.exec(cssContent)) !== null) {
+              const properties = externalMatch[1].trim();
+
+              if (properties) {
+                const propLines = properties.split(';')
+                  .map(prop => prop.trim())
+                  .filter(prop => prop.length > 0)
+                  .map(prop => `  ${prop}; /* from ${path.basename(cssPath)} */`);
+
+                importedStyles.push(...propLines);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error reading linked stylesheet:", error);
+        }
+      }
+    }
+
+    // Also look for inline styles on elements with this class
+    const inlineStyleRegex = new RegExp(`class=["'][^"']*${className}[^"']*["'][^>]*style=["']([^"']*)["']`, 'g');
+    let inlineMatch;
+
+    while ((inlineMatch = inlineStyleRegex.exec(text)) !== null) {
+      const inlineStyles = inlineMatch[1].trim();
+
+      if (inlineStyles) {
+        // Format inline styles as CSS properties
+        const propLines = inlineStyles.split(';')
+          .map(prop => prop.trim())
+          .filter(prop => prop.length > 0)
+          .map(prop => `  ${prop}; /* inline */`);
+
+        styles.push(...propLines);
+      }
+    }
+
+    // Also check for any style attribute in the same line
+    const classPos = text.indexOf(`class="${className}"`) || text.indexOf(`class='${className}'`);
+    if (classPos !== -1) {
+      const lineNum = document.positionAt(classPos).line;
+      const currentLine = document.lineAt(lineNum).text;
+      const lineStyleMatch = currentLine.match(/style=["']([^"']*)["']/);
+
+      if (lineStyleMatch) {
+        const lineStyles = lineStyleMatch[1].trim();
+
+        if (lineStyles) {
+          // Format inline styles from the current line
+          const propLines = lineStyles.split(';')
+            .map(prop => prop.trim())
+            .filter(prop => prop.length > 0)
+            .map(prop => `  ${prop}; /* inline - current element */`);
+
+          styles.push(...propLines);
+        }
+      }
+    }
+
+    // Combine all styles, prioritizing inline styles first
+    return [...styles, ...importedStyles];
+  } catch (e) {
+    console.error("Error finding CSS styles:", e);
+    return [];
+  }
+}
+
+// Helper function to check if a position is inside a style tag
+function isInStyleTag(document: vscode.TextDocument, position: vscode.Position): boolean {
+  const text = document.getText();
+  const offset = document.offsetAt(position);
+
+  // Find all style blocks in the document
+  const styleBlockRegex = /<style[^>]*>([\s\S]*?)<\/style>/g;
+  let match;
+
+  while ((match = styleBlockRegex.exec(text)) !== null) {
+    const styleStart = match.index + match[0].indexOf('>') + 1;
+    const styleEnd = match.index + match[0].lastIndexOf('<');
+
+    if (offset >= styleStart && offset <= styleEnd) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// Helper function to check if word is a CSS class name in a style block
+function isCssClassName(document: vscode.TextDocument, position: vscode.Position, word: string): boolean {
+  // First check if we're in a style block
+  if (!isInStyleTag(document, position)) {
+    return false;
+  }
+
+  // Get the entire document text and current position
+  const text = document.getText();
+  const offset = document.offsetAt(position);
+
+  // Check if there's a period right before the word at this position
+  // Find the start of the word
+  const wordStart = text.substring(0, offset).lastIndexOf(word);
+  if (wordStart === -1 || wordStart + word.length < offset) {
+    return false;
+  }
+
+  // Check if there's a period right before the word
+  return wordStart > 0 && text.charAt(wordStart - 1) === '.';
 }
 
 export function deactivate() {}
