@@ -291,6 +291,84 @@ export interface A11yConfig {
   autoFix: boolean
 }
 
+/**
+ * SEO OpenGraph configuration
+ */
+export interface OpenGraphConfig {
+  /** Open Graph type (website, article, etc.) */
+  type?: string
+  /** Title for Open Graph */
+  title?: string
+  /** Description for Open Graph */
+  description?: string
+  /** URL for Open Graph */
+  url?: string
+  /** Image URL for Open Graph */
+  image?: string
+  /** Alt text for the OG image */
+  imageAlt?: string
+  /** Width of the OG image */
+  imageWidth?: number
+  /** Height of the OG image */
+  imageHeight?: number
+  /** Site name for Open Graph */
+  siteName?: string
+}
+
+/**
+ * SEO Twitter card configuration
+ */
+export interface TwitterConfig {
+  /** Twitter card type */
+  card?: 'summary' | 'summary_large_image' | 'app' | 'player'
+  /** Title for Twitter card */
+  title?: string
+  /** Description for Twitter card */
+  description?: string
+  /** Image URL for Twitter card */
+  image?: string
+  /** Twitter site handle */
+  site?: string
+  /** Twitter creator handle */
+  creator?: string
+}
+
+/**
+ * SEO configuration
+ */
+export interface SeoConfig {
+  /** Page title */
+  title?: string
+  /** Page description */
+  description?: string
+  /** Page keywords */
+  keywords?: string[] | string
+  /** Robots directives */
+  robots?: string
+  /** Canonical URL */
+  canonical?: string
+  /** Open Graph configuration */
+  openGraph?: OpenGraphConfig
+  /** Twitter card configuration */
+  twitter?: TwitterConfig
+  /** Structured data (JSON-LD) */
+  structuredData?: Record<string, any>
+}
+
+/**
+ * SEO features configuration
+ */
+export interface SeoFeatureConfig {
+  /** Enable automatic SEO features */
+  enabled: boolean
+  /** Default SEO configuration to apply to all pages */
+  defaultConfig?: SeoConfig
+  /** Enable social preview meta tags */
+  socialPreview?: boolean
+  /** Default image URL for social previews */
+  defaultImage?: string
+}
+
 export interface StxConfig {
   /** Enable STX features */
   enabled: boolean
@@ -322,6 +400,8 @@ export interface StxConfig {
   hydration?: Partial<HydrationConfig>
   /** Accessibility configuration */
   a11y?: Partial<A11yConfig>
+  /** SEO configuration */
+  seo?: Partial<SeoFeatureConfig>
 }
 
 export type StxOptions = Partial<StxConfig>

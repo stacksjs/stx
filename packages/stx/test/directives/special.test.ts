@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from '../../src/index'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
+import { processJsonDirective, processOnceDirective } from '../../src/process'
 
 describe('STX Special Directives', () => {
   beforeAll(async () => {
@@ -50,6 +51,12 @@ describe('STX Special Directives', () => {
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
       plugins: [stxPlugin],
+      // Disable SEO features for this test
+      stx: {
+        seo: {
+          enabled: false
+        }
+      }
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -112,6 +119,12 @@ describe('STX Special Directives', () => {
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
       plugins: [stxPlugin],
+      // Disable SEO features for this test
+      stx: {
+        seo: {
+          enabled: false
+        }
+      }
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -514,5 +527,65 @@ describe('STX Special Directives', () => {
 
     // Check for additional scripts
     expect(outputHtml.indexOf('Vendor loaded')).toBeLessThan(outputHtml.indexOf('Analytics tracking'))
+  })
+
+  // Direct test of JSON directive processor
+  it('should directly process @json directive', () => {
+    const template = `
+      <script>
+        const data = @json(testData);
+        const prettyData = @json(testData, true);
+      </script>
+    `
+    const context = {
+      testData: {
+        users: [
+          { id: 1, name: 'Alice' },
+          { id: 2, name: 'Bob' }
+        ],
+        settings: {
+          theme: 'dark',
+          notifications: true
+        }
+      }
+    }
+
+    const result = processJsonDirective(template, context)
+
+    // Check that @json was processed
+    expect(result).toContain('const data = {"users":[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}],"settings":{"theme":"dark","notifications":true}}')
+    expect(result).toContain('const prettyData = {')
+    expect(result).toContain('"users": [')
+  })
+
+  // Direct test of @once directive processor
+  it('should directly process @once directive', () => {
+    const template = `
+      @once
+        <style>.box { color: red; }</style>
+      @endonce
+
+      @once
+        <style>.box { color: red; }</style>
+      @endonce
+
+      @once
+        <script>console.log('Same content');</script>
+      @endonce
+
+      @once
+        <script>console.log('Same content');</script>
+      @endonce
+    `
+
+    const result = processOnceDirective(template)
+
+    // Should keep only one occurrence of each unique content
+    const styleCount = (result.match(/<style>/g) || []).length
+    expect(styleCount).toBe(1)
+
+    // Should keep only one script with the same content
+    const scriptCount = (result.match(/<script>/g) || []).length
+    expect(scriptCount).toBe(1)
   })
 })

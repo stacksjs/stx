@@ -17,6 +17,7 @@ import { processRouteDirectives } from './routes'
 import { renderComponent, resolveTemplatePath } from './utils'
 import { runComposers } from './view-composers'
 import { processA11yDirectives } from './a11y'
+import { processMetaDirectives, processSeoDirective, processStructuredData, injectSeoTags } from './seo'
 
 /**
  * Process all template directives
@@ -253,23 +254,33 @@ async function processOtherDirectives(
   // Process markdown directives
   output = await processMarkdownDirectives(output, context, filePath)
 
-  // Process translation directives
+  // Process translate directives (@translate, @t)
   output = await processTranslateDirective(output, context, filePath, options)
 
-  // Process accessibility directives
+  // Process accessibility directives (@a11y, @screenReader)
   output = processA11yDirectives(output, context, filePath, options)
 
-  // Process expressions ({{ }})
-  output = processExpressions(output, context, filePath)
+  // Process SEO directives (@meta, @seo, @structuredData)
+  output = processMetaDirectives(output, context, filePath, options)
+  output = processStructuredData(output, context, filePath)
+  output = processSeoDirective(output, context, filePath, options)
 
-  // Process JSON directive
+  // Process @json directive
   output = processJsonDirective(output, context)
 
-  // Process once directive
+  // Process @once directive
   output = processOnceDirective(output)
+
+  // Process expressions now (delayed to allow other directives to generate expressions)
+  output = await processExpressions(output, context, filePath)
 
   // Run post-processing middleware after all directives
   output = await runPostProcessingMiddleware(output, context, filePath, options)
+
+  // Auto-inject SEO tags if enabled
+  if (options.seo?.enabled) {
+    output = injectSeoTags(output, context, options)
+  }
 
   return output
 }

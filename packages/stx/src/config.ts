@@ -5,6 +5,7 @@ import { markdownDirectiveHandler } from './markdown'
 import { webComponentDirectiveHandler } from './web-components'
 import { a11yDirective, screenReaderDirective } from './a11y'
 import { componentDirective } from './components'
+import { metaDirective, structuredDataDirective } from './seo'
 
 export const defaultConfig: StxConfig = {
   enabled: true,
@@ -30,6 +31,8 @@ export const defaultConfig: StxConfig = {
     a11yDirective,
     screenReaderDirective,
     componentDirective,
+    metaDirective,
+    structuredDataDirective,
   ],
   middleware: [],
   i18n: {
@@ -72,6 +75,14 @@ export const defaultConfig: StxConfig = {
     level: 'AA',
     autoFix: false,
     ignoreChecks: [],
+  },
+  seo: {
+    enabled: true,
+    socialPreview: true,
+    defaultConfig: {
+      title: 'STX Project',
+      description: 'A website built with STX templating engine',
+    },
   },
 }
 

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Basic meta tags using @meta directive -->
+  @meta("description", "A detailed description of this product page")
+  @meta("keywords", "product, stx, seo, web")
+  @meta("author", "STX Team")
+
+  <!-- Meta tags using @metaTag directive with expanded options -->
+  @metaTag({ name: "robots", content: "index, follow" })
+  @metaTag({ httpEquiv: "content-language", content: "en-US" })
+
+  <!-- Open Graph tags using property attribute -->
+  @metaTag({ property: "og:type", content: "website" })
+  @metaTag({ property: "og:url", content: "https://example.com/product" })
+  @metaTag({ property: "og:image", content: "https://example.com/images/product.jpg" })
+
+  <!-- Automatically generate SEO tags based on context -->
+  @seo({
+    title: pageTitle,
+    description: pageDescription,
+    canonical: pageUrl,
+    openGraph: {
+      type: "product",
+      title: pageTitle,
+      description: pageDescription,
+      image: productImage,
+      imageAlt: productImageAlt,
+      siteName: "STX Demo Store"
+    },
+    twitter: {
+      card: "summary_large_image",
+      site: "@stxframework",
+      creator: "@stxteam"
+    }
+  })
+
+  <!-- Product structured data using JSON-LD -->
+  @structuredData({
+    "@type": "Product",
+    "name": productName,
+    "image": productImage,
+    "description": productDescription,
+    "sku": productSku,
+    "brand": {
+      "@type": "Brand",
+      "name": productBrand
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": productPrice,
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": productRating,
+      "reviewCount": reviewCount
+    }
+  })
+</head>
+<body>
+  <header>
+    <h1>{{ pageTitle }}</h1>
+  </header>
+
+  <main>
+    <section class="product">
+      <div class="product-image">
+        <img src="{{ productImage }}" alt="{{ productImageAlt }}">
+      </div>
+
+      <div class="product-details">
+        <h2>{{ productName }}</h2>
+        <p class="price">${{ productPrice }}</p>
+        <div class="description">{{ productDescription }}</div>
+
+        <div class="rating">
+          Rating: {{ productRating }}/5 ({{ reviewCount }} reviews)
+        </div>
+
+        <button class="add-to-cart">Add to Cart</button>
+      </div>
+    </section>
+
+    <section class="related-products">
+      <h2>Related Products</h2>
+      <!-- Related products would be here -->
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; {{ currentYear }} STX Demo Store. All rights reserved.</p>
+  </footer>
+</body>
+</html>

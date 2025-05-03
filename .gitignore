@@ -18,3 +18,4 @@ tsconfig.tsbuildinfo
 /packages/**/bin/stx*
 /packages/devtools/.stx/cache
 /.stx-output
+/packages/stx/packages/stx/test/out

@@ -1,4 +1,4 @@
-import { plugin } from 'bun-plugin-stx'
+import { plugin as stxPlugin } from 'bun-plugin-stx'
 
 export * from './auth'
 export * from './caching'
@@ -27,12 +27,50 @@ export { a11yDirective, checkA11y, getScreenReaderOnlyStyle, processA11yDirectiv
 // Export component directives
 export { componentDirective, registerComponentDirectives } from './components'
 
+// Export SEO functions and directives
+export {
+  metaDirective,
+  structuredDataDirective,
+  registerSeoDirectives,
+  processMetaDirectives,
+  processSeoDirective,
+  processStructuredData,
+  injectSeoTags
+} from './seo'
+
 // Export types for users
-export type { ComponentDoc, ComponentPropDoc, CustomDirective, DirectiveDoc, DocFormat, DocGeneratorConfig, HydrationConfig, I18nConfig, Island, Middleware, StreamingConfig, StreamRenderer, StxConfig, StxOptions, TemplateDoc, WebComponent, WebComponentConfig, A11yViolation } from './types'
+export type {
+  ComponentDoc,
+  ComponentPropDoc,
+  CustomDirective,
+  DirectiveDoc,
+  DocFormat,
+  DocGeneratorConfig,
+  HydrationConfig,
+  I18nConfig,
+  Island,
+  Middleware,
+  StreamingConfig,
+  StreamRenderer,
+  StxConfig,
+  StxOptions,
+  TemplateDoc,
+  WebComponent,
+  WebComponentConfig,
+  A11yViolation,
+  SeoConfig,
+  SeoFeatureConfig,
+  OpenGraphConfig,
+  TwitterConfig
+} from './types'
 
 export * from './types'
 export * from './utils'
 
 export { buildWebComponents, webComponentDirectiveHandler } from './web-components'
 
-export default plugin
+// Export the plugin as a named export
+export { stxPlugin }
+
+// Also export as default for backward compatibility
+export default stxPlugin
