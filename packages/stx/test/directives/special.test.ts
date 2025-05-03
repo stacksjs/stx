@@ -135,16 +135,16 @@ describe('STX Special Directives', () => {
   })
 
   it('should handle @env directive', async () => {
-    const testFile = await createTestFile('env-directive.stx', `
+    // Set NODE_ENV to 'production' for this test
+    const originalEnv = process.env.NODE_ENV
+    process.env.NODE_ENV = 'production'
+
+    try {
+      const testFile = await createTestFile('env-directive.stx', `
       <!DOCTYPE html>
       <html>
       <head>
         <title>Env Directive Test</title>
-        <script>
-          module.exports = {
-            NODE_ENV: 'production'
-          };
-        </script>
       </head>
       <body>
         <h1>Env Directive</h1>
@@ -155,40 +155,42 @@ describe('STX Special Directives', () => {
           <p class="dev-message">Non-production environment</p>
         @endenv
 
-        @env('development')
-          <p class="dev-only">Development environment</p>
-        @elseenv('staging')
-          <p class="staging-only">Staging environment</p>
+        @production
+          <p class="prod-direct">Using production directive</p>
         @else
-          <p class="other-env">Neither development nor staging</p>
-        @endenv
+          <p class="non-prod-direct">Not using production directive</p>
+        @endproduction
 
-        @env(['local', 'development'])
-          <p class="local-dev">Local or Development environment</p>
+        @development
+          <p class="dev-only">Development environment</p>
         @else
-          <p class="prod-like">Production-like environment</p>
-        @endenv
+          <p class="not-dev">Not development environment</p>
+        @enddevelopment
       </body>
       </html>
     `)
 
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-    })
+      const result = await Bun.build({
+        entrypoints: [testFile],
+        outdir: OUTPUT_DIR,
+        plugins: [stxPlugin],
+      })
 
-    const outputHtml = await getHtmlOutput(result)
+      const outputHtml = await getHtmlOutput(result)
 
-    expect(outputHtml).toContain('<p class="prod-message">Production environment</p>')
-    expect(outputHtml).not.toContain('<p class="dev-message">Non-production environment</p>')
+      expect(outputHtml).toContain('<p class="prod-message">Production environment</p>')
+      expect(outputHtml).not.toContain('<p class="dev-message">Non-production environment</p>')
 
-    expect(outputHtml).not.toContain('<p class="dev-only">Development environment</p>')
-    expect(outputHtml).not.toContain('<p class="staging-only">Staging environment</p>')
-    expect(outputHtml).toContain('<p class="other-env">Neither development nor staging</p>')
+      expect(outputHtml).toContain('<p class="prod-direct">Using production directive</p>')
+      expect(outputHtml).not.toContain('<p class="non-prod-direct">Not using production directive</p>')
 
-    expect(outputHtml).not.toContain('<p class="local-dev">Local or Development environment</p>')
-    expect(outputHtml).toContain('<p class="prod-like">Production-like environment</p>')
+      expect(outputHtml).not.toContain('<p class="dev-only">Development environment</p>')
+      expect(outputHtml).toContain('<p class="not-dev">Not development environment</p>')
+    }
+    finally {
+      // Restore the original NODE_ENV
+      process.env.NODE_ENV = originalEnv
+    }
   })
 
   it('should handle @isset and @empty directives', async () => {
@@ -340,19 +342,16 @@ describe('STX Special Directives', () => {
   })
 
   it('should handle @csrf directive', async () => {
-    const testFile = await createTestFile('csrf-directive.stx', `
+    // First set a known CSRF token for testing
+    const { setCsrfToken, resetCsrfToken } = await import('../../src/csrf')
+    setCsrfToken('12345abcde')
+
+    try {
+      const testFile = await createTestFile('csrf-directive.stx', `
       <!DOCTYPE html>
       <html>
       <head>
         <title>CSRF Directive Test</title>
-        <script>
-          module.exports = {
-            csrf: {
-              token: '12345abcde',
-              field: '<input type="hidden" name="_token" value="12345abcde">'
-            }
-          };
-        </script>
       </head>
       <body>
         <h1>CSRF Directive</h1>
@@ -367,19 +366,30 @@ describe('STX Special Directives', () => {
 
           <button type="submit">Submit</button>
         </form>
+
+        <form method="POST" action="/custom">
+          @csrf("my_token")
+          <button type="submit">Custom Token Name</button>
+        </form>
       </body>
       </html>
     `)
 
-    const result = await Bun.build({
-      entrypoints: [testFile],
-      outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-    })
+      const result = await Bun.build({
+        entrypoints: [testFile],
+        outdir: OUTPUT_DIR,
+        plugins: [stxPlugin],
+      })
 
-    const outputHtml = await getHtmlOutput(result)
+      const outputHtml = await getHtmlOutput(result)
 
-    expect(outputHtml).toContain('<input type="hidden" name="_token" value="12345abcde">')
+      expect(outputHtml).toContain('<input type="hidden" name="_token" value="12345abcde">')
+      expect(outputHtml).toContain('<input type="hidden" name="my_token" value="12345abcde">')
+    }
+    finally {
+      // Reset the CSRF token
+      resetCsrfToken()
+    }
   })
 
   it('should handle @method directive', async () => {

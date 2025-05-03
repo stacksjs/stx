@@ -340,75 +340,52 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
  * Process @env directive to conditionally render content based on environment
  */
 export function processEnvDirective(template: string, context: Record<string, any>, filePath?: string): string {
-  const result = template
+  let output = template
 
-  // Match @env('environment') / @elseenv('environment') / @else / @endenv blocks
-  const envPattern = /@env\((['"]?)(.*?)\1\)((?:.|\n)*?)(?:@elseenv\((['"]?)(.*?)\4\)((?:.|\n)*?))?(?:@else((?:.|\n)*?))?@endenv/g
+  // General @env directive
+  output = output.replace(
+    /@env\s*\(\s*(['"])([^'"]+)\1\s*\)([\s\S]*?)(?:@else([\s\S]*?))?@endenv/g,
+    (_, quote, env, content, elseContent = '') => {
+      const currentEnv = process.env.NODE_ENV || process.env.BUN_ENV || 'development'
+      return currentEnv === env ? content : elseContent
+    },
+  )
 
-  return result.replace(envPattern, (match, quote1, envValue, content, quote2, elseEnvValue, elseEnvContent, elseContent, offset) => {
-    try {
-      const currentEnv = context.NODE_ENV || process.env.NODE_ENV || 'development'
+  // @production directive - renders content only in production environment
+  output = output.replace(
+    /@production([\s\S]*?)(?:@else([\s\S]*?))?@endproduction/g,
+    (_, content, elseContent = '') => {
+      const currentEnv = process.env.NODE_ENV || process.env.BUN_ENV || 'development'
+      return currentEnv === 'production' ? content : elseContent
+    },
+  )
 
-      // Handle array of environments like @env(['local', 'development'])
-      let envArray: string[] = []
+  // @development directive - renders content only in development environment
+  output = output.replace(
+    /@development([\s\S]*?)(?:@else([\s\S]*?))?@enddevelopment/g,
+    (_, content, elseContent = '') => {
+      const currentEnv = process.env.NODE_ENV || process.env.BUN_ENV || 'development'
+      return currentEnv === 'development' ? content : elseContent
+    },
+  )
 
-      // Check if it's an array notation
-      if (envValue.startsWith('[') && envValue.endsWith(']')) {
-        // Parse the array string, accounting for different formats
-        const arrayContent = envValue.slice(1, -1).trim()
+  // @staging directive - renders content only in staging environment
+  output = output.replace(
+    /@staging([\s\S]*?)(?:@else([\s\S]*?))?@endstaging/g,
+    (_, content, elseContent = '') => {
+      const currentEnv = process.env.NODE_ENV || process.env.BUN_ENV || 'development'
+      return currentEnv === 'staging' ? content : elseContent
+    },
+  )
 
-        // Split by comma and clean up quotes
-        envArray = arrayContent.split(',')
-          .map((e: string) => e.trim().replace(/^['"]|['"]$/g, ''))
-          .filter(Boolean)
-      }
-      else {
-        envArray = [envValue]
-      }
+  // @testing directive - renders content only in testing environment
+  output = output.replace(
+    /@testing([\s\S]*?)(?:@else([\s\S]*?))?@endtesting/g,
+    (_, content, elseContent = '') => {
+      const currentEnv = process.env.NODE_ENV || process.env.BUN_ENV || 'development'
+      return currentEnv === 'testing' ? content : elseContent
+    },
+  )
 
-      // If current environment matches one in the array, show the content
-      if (envArray.includes(currentEnv)) {
-        return content
-      }
-
-      // Check elseenv condition if it exists
-      if (elseEnvValue && elseEnvContent) {
-        let elseEnvArray: string[] = []
-
-        // Check if it's an array notation
-        if (elseEnvValue.startsWith('[') && elseEnvValue.endsWith(']')) {
-          const arrayContent = elseEnvValue.slice(1, -1).trim()
-          elseEnvArray = arrayContent.split(',')
-            .map((e: string) => e.trim().replace(/^['"]|['"]$/g, ''))
-            .filter(Boolean)
-        }
-        else {
-          elseEnvArray = [elseEnvValue]
-        }
-
-        if (elseEnvArray.includes(currentEnv)) {
-          return elseEnvContent
-        }
-      }
-
-      // Return else content if it exists
-      return elseContent || ''
-    }
-    catch (error: any) {
-      if (filePath) {
-        return createDetailedErrorMessage(
-          'Directive',
-          `Error processing @env directive: ${error.message}`,
-          filePath,
-          template,
-          offset,
-          match,
-        )
-      }
-      else {
-        console.error(`Error processing @env directive:`, error)
-        return match // Return unchanged if error
-      }
-    }
-  })
+  return output
 }

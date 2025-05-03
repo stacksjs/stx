@@ -3,15 +3,19 @@ import type { StxOptions } from './types'
 import path from 'node:path'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
 import { processCustomDirectives } from './custom-directives'
+import { processCsrfDirectives } from './csrf'
 import { processExpressions } from './expressions'
 import { processErrorDirective, processFormDirectives } from './forms'
 import { processTranslateDirective } from './i18n'
 import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
-import { processLoops } from './loops'
 import { processJsDirectives, processTsDirectives } from './js-ts'
+import { processLoops } from './loops'
+import { processMethodDirectives } from './method-spoofing'
 import { processMarkdownDirectives } from './markdown'
 import { runPostProcessingMiddleware, runPreProcessingMiddleware } from './middleware'
+import { processRouteDirectives } from './routes'
 import { renderComponent, resolveTemplatePath } from './utils'
+import { runComposers } from './view-composers'
 
 /**
  * Process all template directives
@@ -187,6 +191,9 @@ async function processOtherDirectives(
 ): Promise<string> {
   let output = template
 
+  // Run view composers for the current view
+  await runComposers(filePath, context)
+
   // Run pre-processing middleware before any directives
   output = await runPreProcessingMiddleware(output, context, filePath, options)
 
@@ -207,6 +214,15 @@ async function processOtherDirectives(
 
   // Process @ts directives (server-side TypeScript)
   output = await processTsDirectives(output, context, filePath)
+
+  // Process @method directive (form method spoofing)
+  output = processMethodDirectives(output)
+
+  // Process @csrf directive
+  output = processCsrfDirectives(output)
+
+  // Process @route directive for named routes
+  output = processRouteDirectives(output)
 
   // Process @json directive
   output = processJsonDirective(output, context)
