@@ -90,7 +90,7 @@
   },
   "stx-if-else": {
     "description": "Conditional if-else statement",
-    "prefix": "@ifelse",
+    "prefix": "@if-else",
     "body": [
       "@if(${1:condition})",
       "\t$2",
@@ -99,11 +99,27 @@
       "@endif"
     ]
   },
+  "stx-elseif": {
+    "description": "Else-if conditional branch",
+    "prefix": "@elseif",
+    "body": [
+      "@elseif(${1:condition})$0"
+    ]
+  },
+  "stx-unless": {
+    "description": "Inverse of if statement",
+    "prefix": "@unless",
+    "body": [
+      "@unless(${1:condition})",
+      "\t$0",
+      "@endunless"
+    ]
+  },
   "stx-for": {
-    "description": "Loop through items",
+    "description": "Traditional for loop",
     "prefix": "@for",
     "body": [
-      "@for(${1:item} of ${2:items})",
+      "@for(${1:let i = 0}; ${2:i < items.length}; ${3:i++})",
       "\t$0",
       "@endfor"
     ]
@@ -112,9 +128,65 @@
     "description": "Loop through items using forEach",
     "prefix": "@foreach",
     "body": [
-      "@foreach(${1:items} as ${2:item})",
+      "@foreach(${1:items} as ${2:item}${3:, ${4:index}})",
       "\t$0",
       "@endforeach"
+    ]
+  },
+  "stx-while": {
+    "description": "While loop statement",
+    "prefix": "@while",
+    "body": [
+      "@while(${1:condition})",
+      "\t$0",
+      "@endwhile"
+    ]
+  },
+  "stx-switch": {
+    "description": "Switch statement",
+    "prefix": "@switch",
+    "body": [
+      "@switch(${1:value})",
+      "\t@case(${2:option1})",
+      "\t\t$3",
+      "\t\t@break",
+      "\t@case(${4:option2})",
+      "\t\t$5",
+      "\t\t@break",
+      "\t@default",
+      "\t\t$0",
+      "@endswitch"
+    ]
+  },
+  "stx-case": {
+    "description": "Case for switch statement",
+    "prefix": "@case",
+    "body": [
+      "@case(${1:value})",
+      "\t$0",
+      "\t@break"
+    ]
+  },
+  "stx-default": {
+    "description": "Default case for switch statement",
+    "prefix": "@default",
+    "body": [
+      "@default",
+      "\t$0"
+    ]
+  },
+  "stx-break": {
+    "description": "Break from loop or switch",
+    "prefix": "@break",
+    "body": [
+      "@break$0"
+    ]
+  },
+  "stx-continue": {
+    "description": "Continue to next iteration in a loop",
+    "prefix": "@continue",
+    "body": [
+      "@continue$0"
     ]
   },
   "stx-include": {
@@ -122,6 +194,72 @@
     "prefix": "@include",
     "body": [
       "@include('${1:template}')$0"
+    ]
+  },
+  "stx-extends": {
+    "description": "Extend a base layout",
+    "prefix": "@extends",
+    "body": [
+      "@extends('${1:layout}')$0"
+    ]
+  },
+  "stx-section": {
+    "description": "Define a content section",
+    "prefix": "@section",
+    "body": [
+      "@section('${1:name}')",
+      "\t$0",
+      "@endsection"
+    ]
+  },
+  "stx-yield": {
+    "description": "Output the contents of a section",
+    "prefix": "@yield",
+    "body": [
+      "@yield('${1:section}')$0"
+    ]
+  },
+  "stx-transition": {
+    "description": "Apply transition animations to an element",
+    "prefix": "@transition",
+    "body": [
+      "@transition('${1|fade,slide,scale,flip,rotate,custom|}', ${2:400}, '${3|ease,ease-in,ease-out,ease-in-out,linear|}', ${4:0}, '${5|in,out,both|}')",
+      "\t$0",
+      "@endtransition"
+    ]
+  },
+  "stx-motion": {
+    "description": "Control animation display based on user preferences",
+    "prefix": "@motion",
+    "body": [
+      "@motion(${1|true,false|})",
+      "\t$0",
+      "@endmotion"
+    ]
+  },
+  "stx-animation-group": {
+    "description": "Group elements for coordinated animations",
+    "prefix": "@animationGroup",
+    "body": [
+      "@animationGroup('${1:groupName}'${2:, '${3:#selector1}'${4:, '${5:#selector2}'${6:, '${7:#selector3}'}}})"
+    ]
+  },
+  "stx-scroll-animate": {
+    "description": "Trigger animation when element scrolls into view",
+    "prefix": "@scrollAnimate",
+    "body": [
+      "@scrollAnimate('${1|fade,slide,scale,flip,rotate,custom|}', ${2:400}, '${3|ease,ease-in,ease-out,ease-in-out,linear|}', ${4:0.2}, ${5:0})",
+      "\t$0",
+      "@endscrollAnimate"
+    ]
+  },
+  "stx-css": {
+    "description": "Embed CSS code block",
+    "prefix": "@css",
+    "body": [
+      "@css",
+      "\t$0",
+      "@endcss"
     ]
   },
   "stx-json": {
@@ -140,40 +278,11 @@
       "@endenv"
     ]
   },
-  "stx-once": {
-    "description": "Include content only once per rendering cycle",
-    "prefix": "@once",
+  "stx-locale": {
+    "description": "Set locale for content",
+    "prefix": "@locale",
     "body": [
-      "@once",
-      "\t$0",
-      "@endonce"
-    ]
-  },
-  "stx-isset": {
-    "description": "Check if variable is set",
-    "prefix": "@isset",
-    "body": [
-      "@isset(${1:variable})",
-      "\t$0",
-      "@endisset"
-    ]
-  },
-  "stx-empty": {
-    "description": "Check if variable is empty",
-    "prefix": "@empty",
-    "body": [
-      "@empty(${1:variable})",
-      "\t$0",
-      "@endempty"
-    ]
-  },
-  "stx-unless": {
-    "description": "Inverse of if statement",
-    "prefix": "@unless",
-    "body": [
-      "@unless(${1:condition})",
-      "\t$0",
-      "@endunless"
+      "@locale('${1:en}')$0"
     ]
   },
   "stx-echo": {
@@ -197,36 +306,105 @@
       "{{{ ${1:variable} }}}$0"
     ]
   },
-  "stx-transition": {
-    "description": "Apply transition animations to an element",
-    "prefix": "@transition",
+  "stx-component-block": {
+    "description": "Include a component with block content",
+    "prefix": "@component-block",
     "body": [
-      "@transition('${1|fade,slide,scale,flip,rotate,custom|}', ${2:400}, '${3|ease,ease-in,ease-out,ease-in-out,linear|}', ${4:0}, '${5|in,out,both|}')",
+      "@component('${1:name}', { ${2:props} })",
       "\t$0",
-      "@endtransition"
+      "@endcomponent"
     ]
   },
-  "stx-motion": {
-    "description": "Control animation display based on user preferences",
-    "prefix": "@motion",
+  "stx-slot": {
+    "description": "Define a named slot in a component",
+    "prefix": "@slot",
     "body": [
-      "@motion(${1|true,false|})",
+      "@slot('${1:name}')",
       "\t$0",
-      "@endmotion"
+      "@endslot"
     ]
   },
-  "stx-animationgroup": {
-    "description": "Group elements for coordinated animations",
-    "prefix": "@animationGroup",
+  "stx-form": {
+    "description": "HTML form with submit handler",
+    "prefix": "stx-form",
     "body": [
-      "@animationGroup('${1:groupName}', '${2:#selector1}')$0"
+      "<form @submit.prevent=\"${1:handleSubmit}\">",
+      "\t$0",
+      "\t<button type=\"submit\">${2:Submit}</button>",
+      "</form>"
     ]
   },
-  "stx-scrollanimate": {
-    "description": "Trigger animation when element scrolls into view",
-    "prefix": "@scrollAnimate",
+  "stx-input": {
+    "description": "Form input element with binding",
+    "prefix": "stx-input",
     "body": [
-      "@scrollAnimate('${1|fade,slide,scale,flip,rotate,custom|}', ${2:400}, '${3|ease,ease-in,ease-out,ease-in-out,linear|}', ${4:0})$0"
+      "<input type=\"${1|text,email,password,number,tel,url,date|}\" name=\"${2:name}\" @bind=\"${3:value}\" placeholder=\"${4:placeholder}\" />"
+    ]
+  },
+  "stx-layout": {
+    "description": "Basic HTML layout with STX structure",
+    "prefix": "stx-layout",
+    "body": [
+      "<!DOCTYPE html>",
+      "<html lang=\"${1:en}\">",
+      "<head>",
+      "\t<meta charset=\"UTF-8\">",
+      "\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">",
+      "\t<title>${2:Title}</title>",
+      "\t<style>",
+      "\t\t$3",
+      "\t</style>",
+      "</head>",
+      "<body>",
+      "\t$0",
+      "\t<script>",
+      "\t\tmodule.exports = {",
+      "\t\t\t// component data here",
+      "\t\t};",
+      "\t</script>",
+      "</body>",
+      "</html>"
+    ]
+  },
+  "stx-once": {
+    "description": "Include content only once per rendering cycle",
+    "prefix": "@once",
+    "body": [
+      "@once",
+      "\t$0",
+      "@endonce"
+    ]
+  },
+  "stx-csrf": {
+    "description": "Include CSRF protection token",
+    "prefix": "@csrf",
+    "body": [
+      "@csrf$0"
+    ]
+  },
+  "stx-method": {
+    "description": "Specify form submission method",
+    "prefix": "@method",
+    "body": [
+      "@method('${1|GET,POST,PUT,PATCH,DELETE|}')$0"
+    ]
+  },
+  "stx-auth": {
+    "description": "Content only visible to authenticated users",
+    "prefix": "@auth",
+    "body": [
+      "@auth",
+      "\t$0",
+      "@endauth"
+    ]
+  },
+  "stx-guest": {
+    "description": "Content only visible to guests (non-authenticated users)",
+    "prefix": "@guest",
+    "body": [
+      "@guest",
+      "\t$0",
+      "@endguest"
     ]
   }
 }

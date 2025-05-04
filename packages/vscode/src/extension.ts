@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import * as path from 'path'
+import * as fs from 'fs'
 
 import { VirtualTsDocumentProvider } from './providers/virtualTsDocumentProvider';
 import { createHoverProvider } from './providers/hoverProvider';
@@ -10,6 +11,20 @@ export function activate(context: vscode.ExtensionContext) {
   // Create virtual TypeScript files for each STX file to support language features
   const virtualTsDocumentProvider = new VirtualTsDocumentProvider();
   console.log('STX Extension - Activating');
+
+  // Verify snippets file exists
+  const snippetsPath = path.join(context.extensionPath, 'src', 'snippets', 'stx.json');
+  if (fs.existsSync(snippetsPath)) {
+    try {
+      const snippetsContent = fs.readFileSync(snippetsPath, 'utf-8');
+      const snippets = JSON.parse(snippetsContent);
+      console.log(`STX Extension - Loaded ${Object.keys(snippets).length} snippets from ${snippetsPath}`);
+    } catch (error) {
+      console.error(`STX Extension - Error loading snippets: ${error}`);
+    }
+  } else {
+    console.error(`STX Extension - Snippets file not found: ${snippetsPath}`);
+  }
 
   // Ensure STX files are recognized
   // The language should be registered in the package.json
