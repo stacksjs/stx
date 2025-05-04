@@ -16,6 +16,11 @@ export interface JSDocInfo {
   parentSymbol?: string;
   symbolType?: string;
   contentPosition?: number;
+  // New properties for better type information
+  returnType?: string;
+  interfaceContent?: string;
+  propertyType?: string;
+  variableType?: string;
 }
 
 // Export animation types

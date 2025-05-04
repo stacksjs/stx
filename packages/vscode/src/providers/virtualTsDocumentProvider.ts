@@ -144,6 +144,9 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
           tsLineCounter++;
         }
 
+        // Extract interface information from type definitions
+        this.extractInterfaceTypeInfo(blockContent, jsDocComments);
+
         // Add an extra newline for separation
         tsContent += '\n';
         tsLineCounter++;
@@ -184,6 +187,322 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
     } catch (error) {
       console.error('Error extracting TypeScript from STX:', error);
       return { content: '// Error extracting TypeScript content', mappings: [], jsDocComments: [] };
+    }
+  }
+
+  /**
+   * Extracts interface and type information from TypeScript content
+   * @param content The TypeScript content
+   * @param jsDocComments The array to add JSDoc information to
+   */
+  private extractInterfaceTypeInfo(content: string, jsDocComments: JSDocInfo[]): void {
+    try {
+      // Extract function return types - handle both function declarations and arrow functions
+      // Regular function format: function name(...) : ReturnType { ... }
+      const functionRegex = /function\s+(\w+)\s*\(([^)]*)\)\s*:\s*([\w\[\]<>]+)\s*{([^{}]*(?:{[^{}]*}[^{}]*)*)?}/gs;
+      let functionMatch;
+
+      while ((functionMatch = functionRegex.exec(content)) !== null) {
+        const functionName = functionMatch[1];
+        const params = functionMatch[2].trim();
+        const returnType = functionMatch[3];
+        const functionBody = functionMatch[4] || '';
+
+        // Add function return type info
+        jsDocComments.push({
+          comment: `Function returning ${returnType}`,
+          symbol: functionName,
+          line: 0, // Line number not critical here
+          symbolType: 'function',
+          returnType: returnType
+        });
+
+        // Parse parameter types
+        if (params) {
+          const paramList = params.split(',').map(p => p.trim());
+          paramList.forEach(param => {
+            const paramParts = param.split(':').map(p => p.trim());
+            if (paramParts.length >= 2) {
+              const paramName = paramParts[0];
+              const paramType = paramParts[1];
+
+              // Add parameter info
+              jsDocComments.push({
+                comment: `Parameter of ${functionName}`,
+                symbol: paramName,
+                line: 0,
+                isProperty: true,
+                parentSymbol: functionName,
+                symbolType: 'parameter',
+                propertyType: paramType
+              });
+            }
+          });
+        }
+
+        // Extract variables from function body to better understand what it returns
+        if (functionBody) {
+          // Look for return statements
+          const returnStatements = functionBody.match(/return\s+([^;]+);/g);
+          if (returnStatements && returnStatements.length > 0) {
+            const returnVarMatch = returnStatements[0].match(/return\s+(\w+);/);
+            if (returnVarMatch) {
+              const returnVarName = returnVarMatch[1];
+
+              // Find variable declaration inside function
+              const varDeclaration = functionBody.match(new RegExp(`(?:const|let|var)\\s+${returnVarName}\\s*=\\s*({[^;]+});`));
+              if (varDeclaration) {
+                // We have an object literal being returned - extract its structure
+                const objLiteral = varDeclaration[1];
+                if (objLiteral.startsWith('{')) {
+                  jsDocComments.push({
+                    comment: `Return value structure of ${functionName}`,
+                    symbol: returnType,
+                    line: 0,
+                    symbolType: 'interface',
+                    interfaceContent: objLiteral.replace(/^\{|\}$/g, '').trim()
+                  });
+                }
+              }
+            }
+          }
+        }
+
+        // Look for the returned interface
+        if (returnType !== 'string' && returnType !== 'number' && returnType !== 'boolean' &&
+            returnType !== 'any' && returnType !== 'void' && returnType !== 'undefined') {
+          // Extract the base type (remove [] or <> if present)
+          const baseType = returnType.replace(/\[\]$/, '').replace(/<.*>$/, '');
+
+          const interfaceMatch = content.match(new RegExp(`interface\\s+${baseType}\\s*{([^}]*)}`, 's'));
+          if (interfaceMatch) {
+            jsDocComments.push({
+              comment: `Interface definition for ${baseType}`,
+              symbol: baseType,
+              line: 0,
+              symbolType: 'interface',
+              interfaceContent: interfaceMatch[1].trim()
+            });
+
+            // Extract properties from the interface
+            const propertyRegex = /(\w+)\s*:\s*([^;]+);/g;
+            let propertyMatch;
+
+            while ((propertyMatch = propertyRegex.exec(interfaceMatch[1])) !== null) {
+              const propertyName = propertyMatch[1];
+              const propertyType = propertyMatch[2].trim();
+
+              jsDocComments.push({
+                comment: `Property of ${baseType}`,
+                symbol: propertyName,
+                line: 0,
+                isProperty: true,
+                parentSymbol: baseType,
+                symbolType: 'property',
+                propertyType: propertyType
+              });
+            }
+          }
+        }
+      }
+
+      // Also check for arrow functions with explicit return types
+      // Arrow function with explicit type: const name = (): ReturnType => {...}
+      const arrowFunctionWithTypeRegex = /const\s+(\w+)\s*=\s*(?:\([^)]*\)|[^=]*)\s*:\s*([\w\[\]<>|]+)\s*=>\s*(?:{([^}]*)})|((?:{[^}]*}|[^;]+));/gs;
+      let arrowMatch;
+
+      while ((arrowMatch = arrowFunctionWithTypeRegex.exec(content)) !== null) {
+        const functionName = arrowMatch[1];
+        const returnType = arrowMatch[2];
+        const functionBody = arrowMatch[3] || arrowMatch[4] || '';
+
+        // Add function info
+        jsDocComments.push({
+          comment: `Arrow function returning ${returnType}`,
+          symbol: functionName,
+          line: 0,
+          symbolType: 'function',
+          returnType: returnType
+        });
+
+        // If the function directly returns an object literal, extract it
+        const directReturnMatch = functionBody.match(/return\s+({[^;]+});/);
+        if (directReturnMatch) {
+          const objectLiteral = directReturnMatch[1];
+
+          // Clean up the object literal by removing line comments
+          const cleanedLiteral = objectLiteral.replace(/\/\/[^\n]*/g, '').trim();
+
+          // Extract the object structure properly
+          const propertyPattern = /(\w+)\s*:\s*([^,}]+)(?:,|$)/g;
+          let propertyMatch;
+          let interfaceContent = '';
+
+          while ((propertyMatch = propertyPattern.exec(cleanedLiteral)) !== null) {
+            const propName = propertyMatch[1].trim();
+            const propValue = propertyMatch[2].trim();
+
+            // Infer property type from its value
+            let propType = 'any';
+            if (propValue.match(/^['"]/)) {
+              propType = 'string';
+            } else if (propValue.match(/^\d/)) {
+              propType = 'number';
+            } else if (propValue === 'true' || propValue === 'false') {
+              propType = 'boolean';
+            }
+
+            interfaceContent += `${propName}: ${propType};\n  `;
+          }
+
+          if (interfaceContent) {
+            jsDocComments.push({
+              comment: `Return value structure from arrow function ${functionName}`,
+              symbol: returnType,
+              line: 0,
+              symbolType: 'interface',
+              interfaceContent: interfaceContent
+            });
+          }
+        }
+
+        // Check if this is a union type
+        if (returnType.includes('|')) {
+          const baseTypes = returnType.split('|').map(t => t.trim());
+
+          // For types like "User | null", focus on the non-null type
+          const nonNullTypes = baseTypes.filter(t => t !== 'null' && t !== 'undefined');
+
+          if (nonNullTypes.length > 0) {
+            for (const baseType of nonNullTypes) {
+              const interfaceMatch = content.match(new RegExp(`interface\\s+${baseType}\\s*{([^}]*)}`, 's'));
+              if (interfaceMatch) {
+                jsDocComments.push({
+                  comment: `Interface definition for ${baseType} (from union type)`,
+                  symbol: baseType,
+                  line: 0,
+                  symbolType: 'interface',
+                  interfaceContent: interfaceMatch[1].trim()
+                });
+
+                // Also link this to the function
+                jsDocComments.push({
+                  comment: `Return value structure from ${functionName}`,
+                  symbol: functionName,
+                  line: 0,
+                  symbolType: 'interface-reference',
+                  interfaceContent: interfaceMatch[1].trim()
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // Extract variable types and their assignments
+      const variableRegex = /(const|let|var)\s+(\w+)(?:\s*:\s*([\w\[\]<>]+))?\s*=\s*([^;]+);/g;
+      let variableMatch;
+
+      while ((variableMatch = variableRegex.exec(content)) !== null) {
+        const varType = variableMatch[1]; // const, let, var
+        const varName = variableMatch[2];
+        const declaredType = variableMatch[3]; // might be undefined
+        const assignment = variableMatch[4].trim();
+
+        // Check if this is calling a function with a known return type
+        const functionCallMatch = assignment.match(/(\w+)\(\)/);
+        if (functionCallMatch) {
+          const calledFunction = functionCallMatch[1];
+
+          // Find the function's return type from our previously collected info
+          const functionInfo = jsDocComments.find(
+            info => info.symbol === calledFunction && info.symbolType === 'function'
+          );
+
+          if (functionInfo && functionInfo.returnType) {
+            const returnType = functionInfo.returnType;
+
+            // Process union types like "User | null" to focus on the main type
+            let mainType = returnType;
+            if (returnType.includes('|')) {
+              const types = returnType.split('|').map(t => t.trim());
+              const nonNullTypes = types.filter(t => t !== 'null' && t !== 'undefined');
+              if (nonNullTypes.length > 0) {
+                mainType = nonNullTypes[0];
+              }
+            }
+
+            // Add a more detailed comment about this variable
+            jsDocComments.push({
+              comment: `Variable from ${calledFunction}() return value`,
+              symbol: varName,
+              line: 0,
+              symbolType: varType,
+              variableType: mainType
+            });
+
+            // Link this directly to the original function
+            const functionInterfaceInfo = jsDocComments.find(
+              info => info.symbol === functionInfo.returnType && info.symbolType === 'interface'
+            );
+
+            if (functionInterfaceInfo && functionInterfaceInfo.interfaceContent) {
+              // Copy the interface info to this variable
+              jsDocComments.push({
+                comment: `Type structure for ${varName}`,
+                symbol: varName,
+                line: 0,
+                symbolType: 'interface-reference',
+                interfaceContent: functionInterfaceInfo.interfaceContent
+              });
+            }
+
+            // Check for interfaces matching the main type
+            if (mainType !== returnType) {
+              const interfaceInfo = jsDocComments.find(
+                info => info.symbol === mainType && info.symbolType === 'interface'
+              );
+
+              if (interfaceInfo && interfaceInfo.interfaceContent) {
+                // Copy the interface info to this variable
+                jsDocComments.push({
+                  comment: `Type structure for ${varName}`,
+                  symbol: varName,
+                  line: 0,
+                  symbolType: 'interface-reference',
+                  interfaceContent: interfaceInfo.interfaceContent
+                });
+              }
+            }
+          }
+        }
+        // If it's a direct object literal assignment, capture that structure
+        else if (assignment.startsWith('{') && assignment.endsWith('}')) {
+          const objectContent = assignment.slice(1, -1).trim();
+
+          // Add type for the variable
+          if (!declaredType) {
+            jsDocComments.push({
+              comment: `Inferred object structure`,
+              symbol: varName,
+              line: 0,
+              symbolType: varType,
+              variableType: `${varName}Type` // Synthetic type name
+            });
+
+            // Add the interface content
+            jsDocComments.push({
+              comment: `Type structure for ${varName}`,
+              symbol: varName,
+              line: 0,
+              symbolType: 'interface-reference',
+              interfaceContent: objectContent
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error extracting interface and type info:', error);
     }
   }
 

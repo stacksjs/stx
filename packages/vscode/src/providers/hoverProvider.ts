@@ -82,8 +82,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
             case 0: // Transition type
               if (Object.values(TransitionType).includes(fullParam as TransitionType)) {
                 const description = getTransitionTypeDescription(fullParam as TransitionType);
-                hover.appendCodeblock(`@transition('${fullParam}', duration?, ease?, delay?, direction?)`, 'stx');
-                hover.appendMarkdown(`\n\n**Transition Type**: ${description}`);
+                hover.appendMarkdown(`**Transition Type**: ${description}`);
                 hover.appendMarkdown(`\n\n**Available Types**:`);
                 hover.appendMarkdown(`\n- \`fade\`: Smooth opacity transitions`);
                 hover.appendMarkdown(`\n- \`slide\`: Elegant sliding movements`);
@@ -96,8 +95,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               break;
 
             case 1: // Duration
-              hover.appendCodeblock(`@transition(type, ${fullParam}, ease?, delay?, direction?)`, 'stx');
-              hover.appendMarkdown(`\n\n**Duration**: Transition duration in milliseconds (default: 300)`);
+              hover.appendMarkdown(`**Duration**: Transition duration in milliseconds (default: 300)`);
               return new vscode.Hover(hover);
 
             case 2: // Ease
@@ -110,8 +108,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
 
               if (matchingEase || ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear'].includes(fullParam)) {
                 description = getTransitionEaseDescription(fullParam as TransitionEase);
-                hover.appendCodeblock(`@transition(type, duration, '${fullParam}', delay?, direction?)`, 'stx');
-                hover.appendMarkdown(`\n\n**Easing Function**: ${description}`);
+                hover.appendMarkdown(`**Easing Function**: ${description}`);
                 hover.appendMarkdown(`\n\n**Available Easing Functions**:`);
                 hover.appendMarkdown(`\n- \`linear\`: Constant speed throughout`);
                 hover.appendMarkdown(`\n- \`ease\`: Default easing (slight acceleration/deceleration)`);
@@ -124,8 +121,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
                 const hyphenParts = fullParam.split('-');
                 if (hyphenParts.includes(word)) {
                   description = getTransitionEaseDescription(fullParam as TransitionEase);
-                  hover.appendCodeblock(`@transition(type, duration, '${fullParam}', delay?, direction?)`, 'stx');
-                  hover.appendMarkdown(`\n\n**Easing Function**: ${description}`);
+                  hover.appendMarkdown(`**Easing Function**: ${description}`);
                   hover.appendMarkdown(`\n\n**Available Easing Functions**:`);
                   hover.appendMarkdown(`\n- \`linear\`: Constant speed throughout`);
                   hover.appendMarkdown(`\n- \`ease\`: Default easing (slight acceleration/deceleration)`);
@@ -138,15 +134,13 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               break;
 
             case 3: // Delay
-              hover.appendCodeblock(`@transition(type, duration, ease, ${fullParam}, direction?)`, 'stx');
-              hover.appendMarkdown(`\n\n**Delay**: Transition delay in milliseconds (default: 0)`);
+              hover.appendMarkdown(`**Delay**: Transition delay in milliseconds (default: 0)`);
               return new vscode.Hover(hover);
 
             case 4: // Direction
               if (Object.values(TransitionDirection).includes(fullParam as TransitionDirection)) {
                 const description = getTransitionDirectionDescription(fullParam as TransitionDirection);
-                hover.appendCodeblock(`@transition(type, duration, ease, delay, '${fullParam}')`, 'stx');
-                hover.appendMarkdown(`\n\n**Direction**: ${description}`);
+                hover.appendMarkdown(`**Direction**: ${description}`);
                 hover.appendMarkdown(`\n\n**Available Directions**:`);
                 hover.appendMarkdown(`\n- \`in\`: Element transitions in (appears)`);
                 hover.appendMarkdown(`\n- \`out\`: Element transitions out (disappears)`);
@@ -156,19 +150,53 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               break;
           }
         }
+
+        // If we're hovering over the directive name itself
+        if (word === 'transition' || wordRange.start.character <= line.indexOf('@transition') + 11) {
+          let hover = new vscode.MarkdownString();
+          hover.isTrusted = true;
+          hover.supportHtml = true;
+
+          hover.appendMarkdown('Applies animation transitions to elements based on specified parameters.');
+          hover.appendMarkdown('\n\n**Syntax**\n');
+          hover.appendCodeblock('@transition(type, duration?, ease?, delay?, direction?)', 'stx');
+          hover.appendMarkdown('\n\n**Example**\n');
+          hover.appendCodeblock('@transition(\'fade\', 500, \'ease-out\')\n  <div class="animated-content">This content will fade in/out</div>', 'stx');
+          hover.appendMarkdown('\n\n**Parameters**\n');
+          hover.appendMarkdown('- `type` (required): Animation type (\'fade\', \'slide\', \'scale\', \'flip\', \'rotate\', \'custom\')\n');
+          hover.appendMarkdown('- `duration` (optional): Animation duration in milliseconds (default: 300)\n');
+          hover.appendMarkdown('- `ease` (optional): Easing function (\'linear\', \'ease\', \'ease-in\', \'ease-out\', \'ease-in-out\')\n');
+          hover.appendMarkdown('- `delay` (optional): Animation delay in milliseconds (default: 0)\n');
+          hover.appendMarkdown('- `direction` (optional): Animation direction (\'in\', \'out\', \'both\')');
+
+          return new vscode.Hover(hover);
+        }
       }
 
       // Check if we're inside a motion directive
       const motionMatch = line.match(/@motion\((.*?)\)/);
-      if (motionMatch && (word === 'true' || word === 'false')) {
+      if (motionMatch && (word === 'true' || word === 'false' || word === 'motion')) {
         let hover = new vscode.MarkdownString();
         hover.isTrusted = true;
         hover.supportHtml = true;
 
-        hover.appendCodeblock(`@motion(${word})`, 'stx');
-        hover.appendMarkdown(`\n\n**Motion Preference**: ${word === 'true' ? 'Enables' : 'Disables'} animations based on user preference settings.`);
-        hover.appendMarkdown(`\n\nWhen set to \`true\`, animations will be shown to users who haven't requested reduced motion.`);
-        hover.appendMarkdown(`\n\nWhen set to \`false\`, no animations will be shown regardless of user preferences.`);
+        if (word === 'motion' || wordRange.start.character <= line.indexOf('@motion') + 7) {
+          // Hovering over the directive name
+          hover.appendMarkdown('Controls animation preferences based on user accessibility settings.');
+          hover.appendMarkdown('\n\n**Syntax**\n');
+          hover.appendCodeblock('@motion(enabled)', 'stx');
+          hover.appendMarkdown('\n\n**Example**\n');
+          hover.appendCodeblock('@motion(true)\n  <div class="animated-section">This respects user\'s motion preferences</div>', 'stx');
+          hover.appendMarkdown('\n\n**Parameters**\n');
+          hover.appendMarkdown('- `enabled` (required): Boolean indicating whether animations should be enabled\n');
+          hover.appendMarkdown('\nWhen set to `true`, animations will only be shown to users who haven\'t requested reduced motion.\n');
+          hover.appendMarkdown('When set to `false`, animations will be disabled for everyone.');
+        } else {
+          // Hovering over true/false parameter
+          hover.appendMarkdown(`**Motion Preference**: ${word === 'true' ? 'Enables' : 'Disables'} animations based on user preference settings.`);
+          hover.appendMarkdown(`\n\nWhen set to \`true\`, animations will be shown to users who haven't requested reduced motion.`);
+          hover.appendMarkdown(`\n\nWhen set to \`false\`, no animations will be shown regardless of user preferences.`);
+        }
 
         return new vscode.Hover(hover);
       }
@@ -178,7 +206,27 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
       if (animationGroupMatch) {
         // Check if the word is one of the parameters
         const params = animationGroupMatch[1].split(',').map(p => p.trim());
-        if (params.some(p => p.replace(/['"`]/g, '') === word)) {
+
+        // If hovering over the directive name
+        if (word === 'animationGroup' || word === 'animationgroup' ||
+            wordRange.start.character <= line.indexOf('@animationGroup') + 14) {
+          let hover = new vscode.MarkdownString();
+          hover.isTrusted = true;
+          hover.supportHtml = true;
+
+          hover.appendMarkdown('Groups elements for synchronized animations.');
+          hover.appendMarkdown('\n\n**Syntax**\n');
+          hover.appendCodeblock('@animationGroup(name, ...selectors)', 'stx');
+          hover.appendMarkdown('\n\n**Example**\n');
+          hover.appendCodeblock('@animationGroup(\'hero\', \'.header\', \'.main-content\', \'#cta-button\')', 'stx');
+          hover.appendMarkdown('\n\n**Parameters**\n');
+          hover.appendMarkdown('- `name` (required): Unique name for the animation group\n');
+          hover.appendMarkdown('- `selectors` (required): One or more CSS selectors for elements to include in this group');
+
+          return new vscode.Hover(hover);
+        }
+        // Check if we're hovering over parameter
+        else if (params.some(p => p.replace(/['"`]/g, '') === word)) {
           let hover = new vscode.MarkdownString();
           hover.isTrusted = true;
           hover.supportHtml = true;
@@ -186,11 +234,9 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
           const isGroupName = params[0].replace(/['"`]/g, '') === word;
 
           if (isGroupName) {
-            hover.appendCodeblock(`@animationGroup('${word}', ...selectors)`, 'stx');
-            hover.appendMarkdown(`\n\n**Animation Group Name**: Unique identifier for this animation group`);
+            hover.appendMarkdown(`**Animation Group Name**: Unique identifier for this animation group`);
           } else {
-            hover.appendCodeblock(`@animationGroup(name, '${word}', ...)`, 'stx');
-            hover.appendMarkdown(`\n\n**Element Selector**: CSS selector for elements to include in this animation group`);
+            hover.appendMarkdown(`**Element Selector**: CSS selector for elements to include in this animation group`);
           }
 
           return new vscode.Hover(hover);
@@ -202,6 +248,38 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
 
       // Check if this is a property access (e.g. product.name)
       const isPropertyAccess = line.substring(0, wordRange.start.character).trim().endsWith('.');
+
+      // Handle dot notation objects (e.g., common.greeting in @t('common.greeting'))
+      const isDotNotationString = /'([^']*\.[^']*)'/.test(line) || /"([^"]*\.[^"]*)"/.test(line) || /`([^`]*\.[^`]*)`/.test(line);
+      const dotNotationMatch = line.match(/'([^']*\.[^']*)'/)?.[1] || line.match(/"([^"]*\.[^"]*)"/)?.[1] || line.match(/`([^`]*\.[^`]*)`/)?.[1];
+
+      if (isDotNotationString && dotNotationMatch && dotNotationMatch.includes(word)) {
+        // Handle translation keys like 'common.greeting'
+        const parts = dotNotationMatch.split('.');
+        if (parts.length === 2 && (parts[0] === word || parts[1] === word)) {
+          const hover = new vscode.MarkdownString();
+          hover.isTrusted = true;
+          hover.supportHtml = true;
+
+          if (parts[0] === word) {
+            // Show object structure for the namespace (e.g., 'common')
+            hover.appendCodeblock(`// Translation namespace: ${word}`, 'typescript');
+            hover.appendText('\n\n');
+            hover.appendMarkdown(`Translation namespace containing localized strings.\n\n`);
+            hover.appendCodeblock(`${word}: {
+  ${parts[1]}: string,
+  // ... other translation keys
+}`, 'typescript');
+          } else if (parts[1] === word) {
+            // Show property info (e.g., 'greeting')
+            hover.appendCodeblock(`// Translation key: ${parts[0]}.${word}`, 'typescript');
+            hover.appendText('\n\n');
+            hover.appendMarkdown(`Translation key for a localized string.`);
+          }
+
+          return new vscode.Hover(hover);
+        }
+      }
 
       // Precise detection for CSS class selectors
       const isCssClassSelector = inStyleBlock && document.getText().charAt(document.offsetAt(wordRange.start) - 1) === '.';
@@ -431,160 +509,564 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
 
       // STX DIRECTIVES
       // Handle STX directives with detailed tooltips
-      // Check if the word is a directive (starts with @)
-      const isDirective = line.includes('@' + word) || beforeText.trim().endsWith('@');
 
-      if (isDirective || word.startsWith('@')) {
+      // First check if this could be a directive - either with @ prefix or after @
+      const atPosition = line.indexOf('@');
+      const wordAfterAt = atPosition >= 0 && position.character > atPosition;
+      const directiveMatch = line.match(/@(\w+)/);
+      const possibleDirective = directiveMatch ? directiveMatch[1] : null;
+      const isAtOrDirective = word.startsWith('@') || word === possibleDirective || wordAfterAt;
+
+      if (isAtOrDirective) {
         // Extract the directive name without the @ if needed
-        const directiveName = word.startsWith('@') ? word.substring(1) : word;
+        let directiveName = word;
+
+        if (word.startsWith('@')) {
+          directiveName = word.substring(1);
+        } else if (wordAfterAt && possibleDirective === word) {
+          directiveName = word;
+        }
+
+        // Skip if this is just a single "@" character or not a valid directive
+        if (directiveName.length === 0 || directiveName === '@') {
+          return null;
+        }
+
+        // List of valid STX directives
+        const validDirectives = [
+          'if', 'else', 'elseif', 'elif', 'endif',
+          'unless', 'endunless',
+          'for', 'endfor',
+          'foreach', 'endforeach',
+          'while', 'endwhile',
+          'switch', 'case', 'default', 'endswitch',
+          'component', 'endcomponent',
+          'slot', 'endslot',
+          'ts', 'endts',
+          'include',
+          'raw', 'endraw',
+          't', 'translate',
+          'continue', 'break',
+          'transition', 'endtransition', 'animationGroup', 'motion' // Animation directives
+        ];
+
+        // Skip if not a valid directive
+        if (!validDirectives.includes(directiveName.toLowerCase())) {
+          return null;
+        }
 
         // Create hover content
         const hover = new vscode.MarkdownString();
         hover.isTrusted = true;
         hover.supportHtml = true;
 
-        // First line: directive
-        hover.appendCodeblock(`@${directiveName}`, 'stx');
-
-        // Add spacing
-        hover.appendText('\n\n');
-
         // Add description based on directive
         let description = '';
         let syntax = '';
         let example = '';
 
-        switch (directiveName.toLowerCase()) {
+        // Use lowercase for switch to ensure consistent matching
+        const lowerDirective = directiveName.toLowerCase();
+
+        switch (lowerDirective) {
           case 'foreach':
             description = 'Iterates over an array or collection and renders the content once for each item.';
             syntax = '@foreach (collection as item[, index])';
             example = '@foreach (products as product)\n  <li>\\${product.name}: $\\${product.price}</li>\n@endforeach';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'endforeach':
             description = 'Marks the end of a @foreach loop block.';
             syntax = '@endforeach';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'if':
             description = 'Conditionally renders content if the expression evaluates to true.';
             syntax = '@if (condition)';
             example = '@if (user.isLoggedIn)\n  <span>Welcome, \\${user.name}!</span>\n@endif';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'else':
             description = 'Provides an alternative content block to render when the preceding @if condition is false.';
             syntax = '@else';
             example = '@if (user.isAdmin)\n  <span>Admin Panel</span>\n@else\n  <span>User Dashboard</span>\n@endif';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'elseif':
           case 'elif':
             description = 'Checks an additional condition when the preceding @if or @elseif condition is false.';
             syntax = '@elseif (condition)';
             example = '@if (user.isAdmin)\n  <span>Admin Panel</span>\n@elseif (user.isModerator)\n  <span>Moderator Panel</span>\n@else\n  <span>User Dashboard</span>\n@endif';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'endif':
             description = 'Marks the end of an @if/@elseif/@else conditional block.';
             syntax = '@endif';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'unless':
             description = 'Conditionally renders content if the expression evaluates to false (opposite of @if).';
             syntax = '@unless (condition)';
             example = '@unless (user.isLoggedIn)\n  <a href="/login">Log in</a>\n@endunless';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'endunless':
             description = 'Marks the end of an @unless conditional block.';
             syntax = '@endunless';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'include':
             description = 'Includes and renders a partial template at the current position.';
             syntax = '@include (path[, data])';
             example = '@include (\'partials/header.stx\', { title: \'Home Page\' })';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'component':
             description = 'Renders a reusable component with the provided props.';
             syntax = '@component (name[, props])';
             example = '@component (\'Button\', { label: \'Submit\', type: \'primary\' })';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'slot':
             description = 'Defines a named slot within a component that can be filled with content.';
             syntax = '@slot (name)';
             example = '@slot (\'header\')\n  <h1>Page Title</h1>\n@endslot';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'endslot':
             description = 'Marks the end of a @slot content block.';
             syntax = '@endslot';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'ts':
             description = 'Defines a TypeScript code block for client-side or server-side logic.';
             syntax = '@ts';
             example = '@ts\n  // TypeScript code here\n  const user = { name: \'John\', age: 30 };\n@endts';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'endts':
             description = 'Marks the end of a TypeScript code block.';
             syntax = '@endts';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'switch':
             description = 'Evaluates an expression and matches it against multiple cases.';
             syntax = '@switch (expression)';
             example = '@switch (user.role)\n  @case (\'admin\')\n    Admin Panel\n  @case (\'user\')\n    User Dashboard\n  @default\n    Access Denied\n@endswitch';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'case':
             description = 'Defines a case to match within a @switch block.';
             syntax = '@case (value)';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'default':
             description = 'Provides a default case within a @switch block when no other cases match.';
             syntax = '@default';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'endswitch':
             description = 'Marks the end of a @switch block.';
             syntax = '@endswitch';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'for':
             description = 'Creates a for loop with standard initialization, condition, and increment syntax.';
             syntax = '@for (initialization; condition; increment)';
             example = '@for (let i = 0; i < 5; i++)\n  <li>Item \\${i + 1}</li>\n@endfor';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'endfor':
             description = 'Marks the end of a @for loop block.';
             syntax = '@endfor';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'while':
             description = 'Creates a while loop that executes as long as the condition is true.';
             syntax = '@while (condition)';
             example = '@while (items.length > 0)\n  <li>\\${items.pop()}</li>\n@endwhile';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'endwhile':
             description = 'Marks the end of a @while loop block.';
             syntax = '@endwhile';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'continue':
             description = 'Skips the rest of the current iteration and moves to the next iteration of the loop.';
             syntax = '@continue';
             example = '@foreach (items as item)\n  @if (item.hidden)\n    @continue\n  @endif\n  <li>\\${item.name}</li>\n@endforeach';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           case 'break':
             description = 'Exits the current loop immediately.';
             syntax = '@break';
             example = '@foreach (items as item)\n  @if (item.isLast)\n    @break\n  @endif\n  <li>\\${item.name}</li>\n@endforeach';
-            break;
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            return new vscode.Hover(hover);
+          case 't':
+          case 'translate':
+            description = 'Renders translated text using the specified translation key.';
+            syntax = lowerDirective === 't' ?
+                    '@t(key[, parameters])' :
+                    '@translate(key[, parameters])';
+            example = lowerDirective === 't' ?
+                     "@t('common.greeting', { name: user.name })" :
+                     "@translate('common.welcome', { company: 'Acme Inc.' })";
+
+            // Add more details about how translation works
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            // Add specific details about translation keys
+            hover.appendMarkdown('\n\n**Translation Keys**\n');
+            hover.appendMarkdown('Translation keys use dot notation to organize strings:\n');
+            hover.appendCodeblock(`common.greeting: "Hello, {name}"
+common.welcome: "Welcome to {company}"
+errors.notFound: "Page not found"`, 'yaml');
+
+            hover.appendMarkdown('\n\n**Parameter Passing**\n');
+            hover.appendMarkdown('Pass parameters as an object to replace placeholders in translation strings:');
+            hover.appendCodeblock(`@t('common.greeting', { name: user.name })
+// If translation is "Hello, {name}", outputs: "Hello, John"`, 'stx');
+
+            return new vscode.Hover(hover);
+          case 'transition':
+            description = 'Applies animation transitions to elements based on specified parameters.';
+            syntax = '@transition(type, duration?, ease?, delay?, direction?)';
+            example = '@transition(\'fade\', 500, \'ease-out\')\n  <div class="animated-content">This content will fade in/out</div>';
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            hover.appendMarkdown('\n\n**Parameters**\n');
+            hover.appendMarkdown('- `type` (required): Animation type (\'fade\', \'slide\', \'scale\', \'flip\', \'rotate\', \'custom\')\n');
+            hover.appendMarkdown('- `duration` (optional): Animation duration in milliseconds (default: 300)\n');
+            hover.appendMarkdown('- `ease` (optional): Easing function (\'linear\', \'ease\', \'ease-in\', \'ease-out\', \'ease-in-out\')\n');
+            hover.appendMarkdown('- `delay` (optional): Animation delay in milliseconds (default: 0)\n');
+            hover.appendMarkdown('- `direction` (optional): Animation direction (\'in\', \'out\', \'both\')');
+
+            return new vscode.Hover(hover);
+          case 'animationgroup':
+            description = 'Groups elements for synchronized animations.';
+            syntax = '@animationGroup(name, ...selectors)';
+            example = '@animationGroup(\'hero\', \'.header\', \'.main-content\', \'#cta-button\')';
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            hover.appendMarkdown('\n\n**Parameters**\n');
+            hover.appendMarkdown('- `name` (required): Unique name for the animation group\n');
+            hover.appendMarkdown('- `selectors` (required): One or more CSS selectors for elements to include in this group');
+
+            return new vscode.Hover(hover);
+          case 'motion':
+            description = 'Controls animation preferences based on user accessibility settings.';
+            syntax = '@motion(enabled)';
+            example = '@motion(true)\n  <div class="animated-section">This respects user\'s motion preferences</div>';
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            hover.appendMarkdown('\n\n**Parameters**\n');
+            hover.appendMarkdown('- `enabled` (required): Boolean indicating whether animations should be enabled\n');
+            hover.appendMarkdown('\nWhen set to `true`, animations will only be shown to users who haven\'t requested reduced motion.\n');
+            hover.appendMarkdown('When set to `false`, animations will be disabled for everyone.');
+
+            return new vscode.Hover(hover);
+          case 'endtransition':
+            description = 'Marks the end of a @transition block.';
+            syntax = '@endtransition';
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            return new vscode.Hover(hover);
           default:
             description = `STX directive: @${directiveName}`;
-            break;
+
+
+            hover.appendMarkdown(description);
+            return new vscode.Hover(hover);
         }
-
-        // Add description and syntax
-        hover.appendMarkdown(description);
-
-        if (syntax) {
-          hover.appendMarkdown('\n\n**Syntax**\n');
-          hover.appendCodeblock(syntax, 'stx');
-        }
-
-        if (example) {
-          hover.appendMarkdown('\n\n**Example**\n');
-          hover.appendCodeblock(example, 'stx');
-        }
-
-        return new vscode.Hover(hover);
       }
 
       // TYPESCRIPT KEYWORDS
@@ -594,14 +1076,35 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
                         'switch', 'case', 'default', 'break', 'continue', 'try', 'catch', 'throw',
                         'new', 'this', 'super', 'extends', 'implements'];
 
-      if (tsKeywords.includes(word)) {
+      // TypeScript primitive types and other type-related keywords
+      const tsTypes = ['string', 'number', 'boolean', 'any', 'void', 'undefined', 'null', 'never',
+                      'object', 'symbol', 'unknown', 'bigint', 'Array', 'Promise', 'Date'];
+
+      // Check if we're in a type annotation context (e.g., ": number" in an interface or variable declaration)
+      const isInTypeAnnotation = line.substring(0, wordRange.end.character).match(/:\s*\w*$/);
+
+      // Also check if the word appears after a colon in a property definition context
+      const propertyTypeMatch = line.match(/\b\w+\s*:\s*(\w+)/);
+      const isPropertyType = propertyTypeMatch && propertyTypeMatch[1] === word;
+
+      if (tsKeywords.includes(word) || tsTypes.includes(word) ||
+          (isInTypeAnnotation && tsTypes.includes(word)) ||
+          (isPropertyType && tsTypes.includes(word))) {
         // Create hover for TypeScript keyword
         const hover = new vscode.MarkdownString();
         hover.isTrusted = true;
         hover.supportHtml = true;
 
-        // First line: keyword
-        hover.appendCodeblock(`${word}`, 'typescript');
+        let isType = tsTypes.includes(word) ||
+                     (isInTypeAnnotation && tsTypes.includes(word)) ||
+                     (isPropertyType && tsTypes.includes(word));
+
+        // First line: keyword or type
+        if (isType) {
+          hover.appendCodeblock(`type ${word}`, 'typescript');
+        } else {
+          hover.appendCodeblock(`${word}`, 'typescript');
+        }
 
         // Add spacing
         hover.appendText('\n\n');
@@ -610,6 +1113,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
         let description = '';
 
         switch (word) {
+          // TS Keywords
           case 'const':
             description = 'Declares a constant whose value cannot be reassigned.';
             break;
@@ -655,8 +1159,55 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
           case 'else':
             description = 'Specifies a block of code to be executed if the condition is falsy.';
             break;
+
+          // TS Types
+          case 'string':
+            description = 'Represents textual data, a sequence of characters.';
+            break;
+          case 'number':
+            description = 'Represents numeric values (integers and floating-point values).';
+            break;
+          case 'boolean':
+            description = 'Represents a logical value: true or false.';
+            break;
+          case 'any':
+            description = 'Represents any JavaScript value with no constraints.';
+            break;
+          case 'void':
+            description = 'Represents the absence of a value, commonly used as a function return type.';
+            break;
+          case 'undefined':
+            description = 'Represents a value that is not defined or initialized.';
+            break;
+          case 'null':
+            description = 'Represents the intentional absence of any object value.';
+            break;
+          case 'never':
+            description = 'Represents a type of values that never occur (used for functions that never return or always throw).';
+            break;
+          case 'object':
+            description = 'Represents non-primitive types (anything that is not number, string, boolean, symbol, null, or undefined).';
+            break;
+          case 'symbol':
+            description = 'Represents a unique and immutable primitive value.';
+            break;
+          case 'unknown':
+            description = 'Similar to any, but safer because it requires type checking before operations can be performed.';
+            break;
+          case 'bigint':
+            description = 'Represents whole numbers larger than 2^53 - 1.';
+            break;
+          case 'Array':
+            description = 'Represents a collection of values (use Array<type> or type[] syntax).';
+            break;
+          case 'Promise':
+            description = 'Represents a value that might be available now, in the future, or never.';
+            break;
+          case 'Date':
+            description = 'Represents dates and times.';
+            break;
           default:
-            description = 'TypeScript keyword: ' + word;
+            description = isType ? 'TypeScript type: ' + word : 'TypeScript keyword: ' + word;
             break;
         }
 
@@ -756,6 +1307,25 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
                 } else {
                   // Generic description if no JSDoc
                   hover.appendMarkdown(`Property of \`${objectType}\` interface.`);
+
+                  // Add type description if it's a primitive type
+                  if (tsTypes.includes(propertyType)) {
+                    hover.appendText('\n\n');
+                    switch (propertyType) {
+                      case 'string':
+                        hover.appendMarkdown('Represents textual data, a sequence of characters.');
+                        break;
+                      case 'number':
+                        hover.appendMarkdown('Represents numeric values (integers and floating-point values).');
+                        break;
+                      case 'boolean':
+                        hover.appendMarkdown('Represents a logical value: true or false.');
+                        break;
+                      default:
+                        // No additional description
+                        break;
+                    }
+                  }
                 }
 
                 return new vscode.Hover(hover);
@@ -814,11 +1384,24 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
 
         // Look for variable type information
         let variableType = null;
+        let variableInterface = null;
+
         if ((constMatch || letMatch || varMatch) && !mightBeHtmlTag) {
           // Try to find type declaration like "const products: Product[]"
           const varTypeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${word}\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'));
           if (varTypeMatch) {
             variableType = varTypeMatch[1];
+
+            // Try to find the interface or type definition for this type
+            const interfaceDef = tsContent.match(new RegExp(`interface\\s+${variableType.replace('[]', '')}\\s*{([^}]*)}`, 's'));
+            if (interfaceDef) {
+              variableInterface = interfaceDef[1].trim();
+            } else {
+              const typeDef = tsContent.match(new RegExp(`type\\s+${variableType.replace('[]', '')}\\s*=\\s*{([^}]*)}`, 's'));
+              if (typeDef) {
+                variableInterface = typeDef[1].trim();
+              }
+            }
           } else {
             // Try to infer from assignment
             const assignmentMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${word}\\s*=\\s*([^;]+)`, 'i'));
@@ -835,6 +1418,30 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
                 variableType = 'array';
               } else if (assignment.startsWith('{')) {
                 variableType = 'object';
+
+                // Try to parse object structure
+                const objectMatch = assignment.match(/{([^}]*)}/);
+                if (objectMatch) {
+                  variableInterface = objectMatch[1].trim();
+                }
+              } else {
+                // Try to extract type from function call
+                const functionCallMatch = assignment.match(/(\w+)\(\)/);
+                if (functionCallMatch) {
+                  const functionName = functionCallMatch[1];
+
+                  // Look for the function's return type
+                  const functionReturnMatch = tsContent.match(new RegExp(`function\\s+${functionName}\\s*\\(.*\\)\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'));
+                  if (functionReturnMatch) {
+                    variableType = functionReturnMatch[1];
+
+                    // Now try to find the interface definition
+                    const returnInterfaceMatch = tsContent.match(new RegExp(`interface\\s+${variableType.replace('[]', '')}\\s*{([^}]*)}`, 's'));
+                    if (returnInterfaceMatch) {
+                      variableInterface = returnInterfaceMatch[1].trim();
+                    }
+                  }
+                }
               }
             }
           }
@@ -859,12 +1466,111 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
         // Check for JSDoc comment
         const jsDocComment = virtualTsDocumentProvider.getJSDocForSymbol(document.uri, word);
 
+        // Get all JSDoc info for this symbol to access type information
+        const allJsDocs = virtualTsDocumentProvider.getJSDocComments(document.uri);
+        const symbolJsDocInfo = allJsDocs.find(doc => doc.symbol === word);
+
+        // For functions, get return type info
+        const functionInfo = functionMatch ?
+          allJsDocs.find(doc => doc.symbol === word && doc.symbolType === 'function' && doc.returnType) :
+          null;
+
+        // Get interface reference info for better type display
+        const interfaceInfo = allJsDocs.find(
+          doc => doc.symbol === word && doc.symbolType === 'interface-reference' && doc.interfaceContent
+        );
+
         // Create hover content
         const hoverContent = new vscode.MarkdownString();
+        hoverContent.isTrusted = true;
+        hoverContent.supportHtml = true;
 
         // Start with symbol type/name and include type information if available
-        if (variableType) {
+        if (functionInfo) {
+          // Handle functions with return type info
+          const returnType = functionInfo.returnType;
+
+          // Check if it's an arrow function (if symbol type is const/let/var)
+          const isArrowFunction = constMatch || letMatch || varMatch;
+
+          if (isArrowFunction) {
+            hoverContent.appendCodeblock(`${symbolType} ${word} = (): ${returnType} => { ... }`, 'typescript');
+          } else {
+            hoverContent.appendCodeblock(`function ${word}(): ${returnType}`, 'typescript');
+          }
+
+          // If we have the interface definition for the return type, show it
+          const returnTypeInterfaceInfo = allJsDocs.find(
+            doc => doc.symbol === returnType && doc.symbolType === 'interface' && doc.interfaceContent
+          );
+
+          // For union types like "User | null", try to find the main type's interface
+          if (!returnTypeInterfaceInfo && returnType && returnType.includes('|')) {
+            const types = returnType.split('|').map(t => t.trim());
+            const nonNullTypes = types.filter(t => t !== 'null' && t !== 'undefined');
+
+            if (nonNullTypes.length > 0) {
+              const mainType = nonNullTypes[0];
+              const mainTypeInfo = allJsDocs.find(
+                doc => doc.symbol === mainType && doc.symbolType === 'interface' && doc.interfaceContent
+              );
+
+              if (mainTypeInfo) {
+                hoverContent.appendText('\n\n');
+                hoverContent.appendCodeblock(`// Return type:
+interface ${mainType} {
+  ${mainTypeInfo.interfaceContent}
+}`, 'typescript');
+              }
+            }
+          } else if (returnTypeInterfaceInfo) {
+            hoverContent.appendText('\n\n');
+            hoverContent.appendCodeblock(`// Return type:
+interface ${returnType} {
+  ${returnTypeInterfaceInfo.interfaceContent}
+}`, 'typescript');
+          } else if (interfaceInfo) {
+            // If we have a direct interface reference for the function
+            hoverContent.appendText('\n\n');
+            hoverContent.appendCodeblock(`// Return type structure:
+{
+  ${interfaceInfo.interfaceContent}
+}`, 'typescript');
+          }
+        } else if (symbolJsDocInfo && symbolJsDocInfo.variableType) {
+          // If we have detailed type information from our enhanced JSDocInfo
+          const typeInfo = symbolJsDocInfo.variableType;
+          hoverContent.appendCodeblock(`${symbolType} ${word}: ${typeInfo}`, 'typescript');
+
+          // If we have the interface content, show the full type structure
+          if (interfaceInfo && interfaceInfo.interfaceContent) {
+            hoverContent.appendText('\n\n');
+            hoverContent.appendCodeblock(`// Type structure:
+interface ${typeInfo} {
+  ${interfaceInfo.interfaceContent}
+}`, 'typescript');
+          }
+        } else if (variableType) {
           hoverContent.appendCodeblock(`${symbolType} ${word}: ${variableType}`, 'typescript');
+
+          // If we have the interface definition, show it too
+          if (variableInterface) {
+            hoverContent.appendText('\n\n');
+
+            // Nicely format the type structure
+            if (variableType.endsWith('[]')) {
+              // For arrays, show the item type structure
+              hoverContent.appendCodeblock(`// Array of:
+interface ${variableType.replace('[]', '')} {
+  ${variableInterface}
+}`, 'typescript');
+            } else {
+              hoverContent.appendCodeblock(`// Type structure:
+interface ${variableType} {
+  ${variableInterface}
+}`, 'typescript');
+            }
+          }
         } else {
           hoverContent.appendCodeblock(`${symbolType} ${word}`, 'typescript');
         }
