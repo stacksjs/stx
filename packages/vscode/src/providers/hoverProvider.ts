@@ -21,6 +21,60 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
       // Get the entire line for context analysis
       const line = document.lineAt(position.line).text;
 
+      // Skip processing normal text in HTML context
+      const isInHtmlContext = !line.includes('@ts') &&
+                            !line.includes('{{') &&
+                            !isInStyleTag(document, position);
+
+      // Check for HTML tag content
+      const lineBeforeWord = line.substring(0, wordRange.start.character);
+      const lineAfterWord = line.substring(wordRange.end.character);
+
+      // Words that are likely part of regular text content
+      const isCommonWord = /^(the|a|an|this|that|these|those|my|your|his|her|its|our|their|today|tomorrow|yesterday|is|are|was|were|am|be|been|being)$/i.test(word);
+
+      // Check for contractions and possessives ('s)
+      const isContractionOrPossessive = word.endsWith("'s") || word.endsWith("s'") ||
+                                       word.includes("'") || // Any contraction (isn't, don't, etc.)
+                                       lineAfterWord.trim().startsWith("'s"); // Word followed by 's
+
+      // Check if inside sentence structure (surrounded by other words, not in code context)
+      const isInSentence = (lineBeforeWord.trim().match(/[a-zA-Z]$/) || // Word after another word
+                           lineAfterWord.trim().match(/^[a-zA-Z]/) ||  // Word before another word
+                           lineBeforeWord.trim().match(/[:;,.]\s*$/)); // After punctuation
+
+      // Check for punctuation in surrounding context (likely prose, not code)
+      const hasPunctuation = lineBeforeWord.includes('.') || lineBeforeWord.includes(',') ||
+                            lineBeforeWord.includes(':') || lineBeforeWord.includes(';') ||
+                            lineAfterWord.includes('.') || lineAfterWord.includes(',');
+
+      // Determine if this is likely normal text content
+      const isPlainTextWord = isInHtmlContext &&
+                            (isCommonWord ||
+                             isContractionOrPossessive ||
+                             isInSentence ||
+                             hasPunctuation);
+
+      // Check if word appears in an actual code context or looks like a variable
+      const isInCodeExpression = line.includes('{{') && line.includes('}}');
+      const isInAtExpression = line.includes('@') && (line.includes('(') || line.includes(')'));
+      const looksLikeVariable = /^[a-z][a-zA-Z0-9]*$/.test(word) && word.length > 1; // camelCase pattern
+      const looksLikeConstant = /^[A-Z][A-Z0-9_]*$/.test(word); // CONSTANT_CASE pattern
+
+      // Check for common TypeScript/JavaScript keywords without using the pre-declared arrays
+      const isTypescriptKeyword = ['const', 'let', 'var', 'function', 'interface', 'type', 'class', 'enum',
+                                 'import', 'export', 'return', 'async', 'await', 'if', 'else', 'for', 'while',
+                                 'switch', 'case', 'default', 'break', 'continue', 'try', 'catch', 'throw',
+                                 'new', 'this', 'super', 'extends', 'implements', 'string', 'number', 'boolean',
+                                 'any', 'void', 'undefined', 'null', 'never', 'object', 'symbol', 'unknown',
+                                 'bigint', 'Array', 'Promise', 'Date'].includes(word);
+
+      // Combined check: if it's plain text and NOT in a code context, skip the hover
+      if (isPlainTextWord &&
+          !(isInCodeExpression || isInAtExpression || looksLikeVariable || looksLikeConstant || isTypescriptKeyword)) {
+        return null;
+      }
+
       // ANIMATION DIRECTIVE HANDLING
       // Check if we're inside a transition directive
       const transitionMatch = line.match(/@transition\((.*?)\)/);
@@ -1071,14 +1125,7 @@ errors.notFound: "Page not found"`, 'yaml');
 
       // TYPESCRIPT KEYWORDS
       // Handle TypeScript keywords with proper tooltips
-      const tsKeywords = ['const', 'let', 'var', 'function', 'interface', 'type', 'class', 'enum',
-                        'import', 'export', 'return', 'async', 'await', 'if', 'else', 'for', 'while',
-                        'switch', 'case', 'default', 'break', 'continue', 'try', 'catch', 'throw',
-                        'new', 'this', 'super', 'extends', 'implements'];
-
-      // TypeScript primitive types and other type-related keywords
-      const tsTypes = ['string', 'number', 'boolean', 'any', 'void', 'undefined', 'null', 'never',
-                      'object', 'symbol', 'unknown', 'bigint', 'Array', 'Promise', 'Date'];
+      // TypeScript primitive types handled by isTypescriptKeyword defined earlier
 
       // Check if we're in a type annotation context (e.g., ": number" in an interface or variable declaration)
       const isInTypeAnnotation = line.substring(0, wordRange.end.character).match(/:\s*\w*$/);
@@ -1087,17 +1134,21 @@ errors.notFound: "Page not found"`, 'yaml');
       const propertyTypeMatch = line.match(/\b\w+\s*:\s*(\w+)/);
       const isPropertyType = propertyTypeMatch && propertyTypeMatch[1] === word;
 
-      if (tsKeywords.includes(word) || tsTypes.includes(word) ||
-          (isInTypeAnnotation && tsTypes.includes(word)) ||
-          (isPropertyType && tsTypes.includes(word))) {
+      // List of TypeScript types
+      const typesList = ['string', 'number', 'boolean', 'any', 'void', 'undefined', 'null', 'never',
+                        'object', 'symbol', 'unknown', 'bigint', 'Array', 'Promise', 'Date'];
+
+      if (isTypescriptKeyword ||
+          (isInTypeAnnotation && typesList.includes(word)) ||
+          (isPropertyType && typesList.includes(word))) {
         // Create hover for TypeScript keyword
         const hover = new vscode.MarkdownString();
         hover.isTrusted = true;
         hover.supportHtml = true;
 
-        let isType = tsTypes.includes(word) ||
-                     (isInTypeAnnotation && tsTypes.includes(word)) ||
-                     (isPropertyType && tsTypes.includes(word));
+        let isType = typesList.includes(word) ||
+                     (isInTypeAnnotation && typesList.includes(word)) ||
+                     (isPropertyType && typesList.includes(word));
 
         // First line: keyword or type
         if (isType) {
@@ -1215,126 +1266,6 @@ errors.notFound: "Page not found"`, 'yaml');
         return new vscode.Hover(hover);
       }
 
-      // If this is a property access, prioritize object property handling over CSS class
-      if (isPropertyAccess) {
-        // Handle property access
-        const propertyMatch = beforeText.match(/(\w+)\.\s*$/);
-        if (propertyMatch) {
-          const objectName = propertyMatch[1];
-
-          // Create virtual TS document uri
-          const virtualUri = document.uri.with({
-            scheme: 'stx-ts',
-            path: document.uri.path + '.ts'
-          });
-
-          // Get TS content
-          const tsContent = virtualTsDocumentProvider.provideTextDocumentContent(virtualUri);
-
-          // Try to determine the object type
-          let objectType = '';
-
-          // Check if it's a loop variable from @foreach
-          const foreachMatchLine = findForeachDeclarationForVariable(document, position.line, objectName);
-          if (foreachMatchLine !== null) {
-            const foreachLine = document.lineAt(foreachMatchLine).text;
-            const foreachMatch = foreachLine.match(/@foreach\s*\(([^)]+)\s+as\s+(\w+)(?:\s*,\s*(\w+))?\)/);
-            if (foreachMatch) {
-              const collectionName = foreachMatch[1].trim();
-
-              // Get collection type
-              const collectionTypeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${collectionName}\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'));
-              if (collectionTypeMatch) {
-                const collectionType = collectionTypeMatch[1];
-                // Extract item type from array type (e.g., Product[] -> Product)
-                if (collectionType.includes('[]')) {
-                  objectType = collectionType.replace('[]', '');
-                } else if (collectionType.includes('Array<')) {
-                  // Handle Array<Type>
-                  const genericMatch = collectionType.match(/Array<([^>]+)>/);
-                  if (genericMatch) {
-                    objectType = genericMatch[1];
-                  }
-                }
-              }
-            }
-          } else {
-            // Check variable declarations
-            const varTypeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${objectName}\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'));
-            if (varTypeMatch) {
-              objectType = varTypeMatch[1];
-            }
-          }
-
-          // If we found the object type, try to find the property type
-          if (objectType) {
-            // Create hover content
-            const hover = new vscode.MarkdownString();
-            hover.isTrusted = true;
-            hover.supportHtml = true;
-
-            // Find the interface/type definition
-            const interfaceMatch = tsContent.match(new RegExp(`interface\\s+${objectType}\\s*{([^}]*)}`, 's'));
-            const typeMatch = tsContent.match(new RegExp(`type\\s+${objectType}\\s*=\\s*{([^}]*)}`, 's'));
-
-            const interfaceContent = interfaceMatch ? interfaceMatch[1] :
-                                    typeMatch ? typeMatch[1] : null;
-
-            if (interfaceContent) {
-              // Look for the property in the interface
-              const propertyMatch = interfaceContent.match(new RegExp(`${word}\\s*:\\s*([^;]+);`));
-
-              if (propertyMatch) {
-                const propertyType = propertyMatch[1].trim();
-
-                // First line: property with type
-                hover.appendCodeblock(`(property) ${objectName}.${word}: ${propertyType}`, 'typescript');
-
-                // Add spacing
-                hover.appendText('\n\n');
-
-                // Look for property JSDoc
-                const allJsDocComments = virtualTsDocumentProvider.getJSDocComments(document.uri);
-                const propJsDoc = allJsDocComments.find(doc =>
-                  doc.symbol === word &&
-                  doc.isProperty &&
-                  doc.parentSymbol === objectType
-                );
-
-                if (propJsDoc) {
-                  const formattedComment = formatJSDoc(propJsDoc.comment);
-                  hover.appendMarkdown(formattedComment);
-                } else {
-                  // Generic description if no JSDoc
-                  hover.appendMarkdown(`Property of \`${objectType}\` interface.`);
-
-                  // Add type description if it's a primitive type
-                  if (tsTypes.includes(propertyType)) {
-                    hover.appendText('\n\n');
-                    switch (propertyType) {
-                      case 'string':
-                        hover.appendMarkdown('Represents textual data, a sequence of characters.');
-                        break;
-                      case 'number':
-                        hover.appendMarkdown('Represents numeric values (integers and floating-point values).');
-                        break;
-                      case 'boolean':
-                        hover.appendMarkdown('Represents a logical value: true or false.');
-                        break;
-                      default:
-                        // No additional description
-                        break;
-                    }
-                  }
-                }
-
-                return new vscode.Hover(hover);
-              }
-            }
-          }
-        }
-      }
-
       // Create virtual TS document
       const virtualUri = document.uri.with({
         scheme: 'stx-ts',
@@ -1353,6 +1284,10 @@ errors.notFound: "Page not found"`, 'yaml');
         const constMatch = tsContent.match(new RegExp(`const\\s+${word}\\b`));
         const letMatch = tsContent.match(new RegExp(`let\\s+${word}\\b`));
         const varMatch = tsContent.match(new RegExp(`var\\s+${word}\\b`));
+
+        // Check for arrow function pattern
+        const arrowFunctionMatch = tsContent.match(new RegExp(`const\\s+${word}\\s*=\\s*\\([^)]*\\)\\s*:[^=]+=>`, 's'));
+        const isArrowFunction = arrowFunctionMatch !== null;
 
         // Check if this might be an HTML tag rather than a variable
         const htmlTagMatch = line.match(new RegExp(`<(/)?${word}(\\s|/?>|$)`));
@@ -1447,7 +1382,11 @@ errors.notFound: "Page not found"`, 'yaml');
           }
         }
 
-        if (interfaceMatch) {
+        // Set symbol type based on our detections
+        if (isArrowFunction) {
+          symbolType = "function";
+          console.log(`Detected arrow function: ${word}`);
+        } else if (interfaceMatch) {
           symbolType = "interface";
         } else if (typeMatch) {
           symbolType = "type";
@@ -1480,20 +1419,53 @@ errors.notFound: "Page not found"`, 'yaml');
           doc => doc.symbol === word && doc.symbolType === 'interface-reference' && doc.interfaceContent
         );
 
+        // Special handling for arrow functions - directly extract the signature
+        let arrowFunctionSignature = null;
+        if (isArrowFunction) {
+          console.log(`Processing arrow function: ${word}`);
+          // Extract the function signature directly from the source
+          const arrowFunctionMatch = tsContent.match(new RegExp(`const\\s+${word}\\s*=\\s*(\\([^)]*\\))\\s*:\\s*([\\w\\[\\]<>|\\s]+)\\s*=>`, 's'));
+          if (arrowFunctionMatch) {
+            const params = arrowFunctionMatch[1];
+            const returnTypeStr = arrowFunctionMatch[2].trim();
+            arrowFunctionSignature = `${params}: ${returnTypeStr}`;
+            console.log(`Extracted arrow function signature: ${arrowFunctionSignature}`);
+          }
+        }
+
         // Create hover content
         const hoverContent = new vscode.MarkdownString();
         hoverContent.isTrusted = true;
         hoverContent.supportHtml = true;
 
         // Start with symbol type/name and include type information if available
-        if (functionInfo) {
+        if (arrowFunctionSignature) {
+          // Direct display for arrow functions using the signature we extracted
+          hoverContent.appendCodeblock(`${symbolType} ${word} = ${arrowFunctionSignature} => { ... }`, 'typescript');
+          console.log(`Displaying arrow function signature: ${arrowFunctionSignature}`);
+        } else if (functionInfo) {
           // Handle functions with return type info
           const returnType = functionInfo.returnType;
 
           // Check if it's an arrow function (if symbol type is const/let/var)
           const isArrowFunction = constMatch || letMatch || varMatch;
 
-          if (isArrowFunction) {
+          // Look for function signature
+          const functionSignatureInfo = allJsDocs.find(
+            doc => doc.symbol === word && doc.symbolType === 'function-signature' && doc.fullSignature
+          );
+
+          console.log(`Function hover for ${word}:`, functionSignatureInfo ? 'Found signature info' : 'No signature info');
+
+          // If we have the full signature, use it
+          if (functionSignatureInfo && functionSignatureInfo.fullSignature) {
+            console.log(`Using full signature for ${word}: ${functionSignatureInfo.fullSignature}`);
+            if (isArrowFunction) {
+              hoverContent.appendCodeblock(`${symbolType} ${word} = ${functionSignatureInfo.fullSignature} => { ... }`, 'typescript');
+            } else {
+              hoverContent.appendCodeblock(`function ${word}${functionSignatureInfo.fullSignature}`, 'typescript');
+            }
+          } else if (isArrowFunction) {
             hoverContent.appendCodeblock(`${symbolType} ${word} = (): ${returnType} => { ... }`, 'typescript');
           } else {
             hoverContent.appendCodeblock(`function ${word}(): ${returnType}`, 'typescript');
@@ -1572,6 +1544,56 @@ interface ${variableType} {
             }
           }
         } else {
+          // Try to infer variable type if possible
+          // Check if a variable is initialized with a method call
+          const methodCallMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${word}\\s*=\\s*([^;]+\\.\\w+\\(\\))`, 'i'));
+          if (methodCallMatch) {
+            const methodCall = methodCallMatch[1];
+            const dateMethodsReturningString = ['toLocaleDateString', 'toLocaleTimeString', 'toISOString', 'toString', 'toTimeString', 'toDateString'];
+            const dateMethodsReturningNumber = ['getTime', 'valueOf', 'getFullYear', 'getMonth', 'getDate'];
+
+            let inferredType = null;
+
+            // Try to infer from method call
+            for (const method of dateMethodsReturningString) {
+              if (methodCall.includes(`.${method}(`)) {
+                inferredType = 'string';
+                break;
+              }
+            }
+
+            if (!inferredType) {
+              for (const method of dateMethodsReturningNumber) {
+                if (methodCall.includes(`.${method}(`)) {
+                  inferredType = 'number';
+                  break;
+                }
+              }
+            }
+
+            if (inferredType) {
+              hoverContent.appendCodeblock(`${symbolType} ${word}: ${inferredType}`, 'typescript');
+
+              // Add a note about inferred type
+              hoverContent.appendText('\n\n');
+              hoverContent.appendMarkdown(`_Type inferred from method call: \`${methodCall}\`_`);
+              return new vscode.Hover(hoverContent);
+            }
+          }
+
+          // Also check for new instances
+          const newInstanceMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${word}\\s*=\\s*new\\s+(\\w+)`, 'i'));
+          if (newInstanceMatch) {
+            const className = newInstanceMatch[1];
+            hoverContent.appendCodeblock(`${symbolType} ${word}: ${className}`, 'typescript');
+
+            // Add a note about inferred type
+            hoverContent.appendText('\n\n');
+            hoverContent.appendMarkdown(`_Instance of \`${className}\`_`);
+            return new vscode.Hover(hoverContent);
+          }
+
+          // Default case if no type inference succeeded
           hoverContent.appendCodeblock(`${symbolType} ${word}`, 'typescript');
         }
 

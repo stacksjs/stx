@@ -325,6 +325,28 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
           returnType: returnType
         });
 
+        // Capture the full function signature
+        // Use a more specific pattern for each function to improve reliability
+        const functionDefRegex = new RegExp(`const\\s+${functionName}\\s*=\\s*\\(([^)]*)\\)\\s*:\\s*([\\w\\[\\]<>|\\s]+)\\s*=>`, 's');
+        const fullFunctionMatch = content.match(functionDefRegex);
+
+        if (fullFunctionMatch) {
+          const params = fullFunctionMatch[1];
+          const capturedReturnType = fullFunctionMatch[2].trim();
+
+          // Store the full signature for hover display
+          jsDocComments.push({
+            comment: `Full function signature for ${functionName}`,
+            symbol: functionName,
+            line: 0,
+            symbolType: 'function-signature',
+            fullSignature: `(${params}): ${capturedReturnType}`
+          });
+
+          // Also log an explicit message for debugging
+          console.log(`Captured function signature for ${functionName}: (${params}): ${capturedReturnType}`);
+        }
+
         // If the function directly returns an object literal, extract it
         const directReturnMatch = functionBody.match(/return\s+({[^;]+});/);
         if (directReturnMatch) {
@@ -476,6 +498,47 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
             }
           }
         }
+        // Check for method calls that return known types
+        else if (assignment.match(/\.\w+\(\)/)) {
+          const methodCallMatch = assignment.match(/(\w+)\.(\w+)\(\)/);
+          if (methodCallMatch) {
+            const objectName = methodCallMatch[1];
+            const methodName = methodCallMatch[2];
+
+            // Infer types for common method calls
+            let inferredType = null;
+
+            // Handle common Date methods
+            if (objectName === 'Date' ||
+                content.includes(`const ${objectName} = new Date()`)) {
+              if (methodName === 'toLocaleDateString' ||
+                  methodName === 'toLocaleTimeString' ||
+                  methodName === 'toISOString' ||
+                  methodName === 'toString' ||
+                  methodName === 'toDateString' ||
+                  methodName === 'toTimeString') {
+                inferredType = 'string';
+              } else if (methodName === 'getTime' ||
+                        methodName === 'valueOf' ||
+                        methodName === 'getFullYear' ||
+                        methodName === 'getMonth' ||
+                        methodName === 'getDate') {
+                inferredType = 'number';
+              }
+            }
+
+            // Add inferred type
+            if (inferredType) {
+              jsDocComments.push({
+                comment: `Variable from ${objectName}.${methodName}() call`,
+                symbol: varName,
+                line: 0,
+                symbolType: varType,
+                variableType: inferredType
+              });
+            }
+          }
+        }
         // If it's a direct object literal assignment, capture that structure
         else if (assignment.startsWith('{') && assignment.endsWith('}')) {
           const objectContent = assignment.slice(1, -1).trim();
@@ -497,6 +560,22 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
               line: 0,
               symbolType: 'interface-reference',
               interfaceContent: objectContent
+            });
+          }
+        }
+        // Check for new instance creation (e.g., new Date())
+        else if (assignment.startsWith('new ')) {
+          const newInstanceMatch = assignment.match(/new\s+(\w+)/);
+          if (newInstanceMatch) {
+            const className = newInstanceMatch[1];
+
+            // Add type information
+            jsDocComments.push({
+              comment: `Instance of ${className}`,
+              symbol: varName,
+              line: 0,
+              symbolType: varType,
+              variableType: className
             });
           }
         }

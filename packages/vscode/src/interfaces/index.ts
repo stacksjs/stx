@@ -21,6 +21,7 @@ export interface JSDocInfo {
   interfaceContent?: string;
   propertyType?: string;
   variableType?: string;
+  fullSignature?: string;
 }
 
 // Export animation types
