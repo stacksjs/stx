@@ -14,6 +14,9 @@ export interface JSDocInfo {
   line: number;
   isProperty?: boolean;
   parentSymbol?: string;
-  symbolType: string;
-  contentPosition: number;
+  symbolType?: string;
+  contentPosition?: number;
 }
+
+// Export animation types
+export * from './animation-types';

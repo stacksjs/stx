@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { PositionMapping, JSDocInfo } from '../interfaces';
+import { TransitionType, TransitionDirection, TransitionEase } from '../interfaces/animation-types';
 
 export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProvider {
   // Track all STX documents that have been opened
@@ -174,10 +175,211 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
         exprCounter++;
       }
 
+      // Extract animation directives and update tsContent and tsLineCounter
+      const animationResults = this.extractAnimationDirectives(text, tsContent, mappings, jsDocComments, tsLineCounter);
+      tsContent = animationResults.content;
+      tsLineCounter = animationResults.lineCounter;
+
       return { content: tsContent, mappings, jsDocComments };
     } catch (error) {
       console.error('Error extracting TypeScript from STX:', error);
       return { content: '// Error extracting TypeScript content', mappings: [], jsDocComments: [] };
+    }
+  }
+
+  /**
+   * Extract animation directives and add TypeScript definitions for them
+   */
+  private extractAnimationDirectives(
+    text: string,
+    tsContent: string,
+    mappings: PositionMapping[],
+    jsDocComments: JSDocInfo[],
+    tsLineCounter: number
+  ): { content: string, lineCounter: number } {
+    let resultContent = tsContent;
+    let resultLineCounter = tsLineCounter;
+
+    // Add animation system types
+    resultContent += `\n// Animation system types\n`;
+    resultContent += `enum TransitionType {\n  Fade = 'fade',\n  Slide = 'slide',\n  Scale = 'scale',\n  Flip = 'flip',\n  Rotate = 'rotate',\n  Custom = 'custom'\n}\n\n`;
+    resultLineCounter += 9;
+
+    resultContent += `enum TransitionDirection {\n  In = 'in',\n  Out = 'out',\n  Both = 'both'\n}\n\n`;
+    resultLineCounter += 5;
+
+    resultContent += `enum TransitionEase {\n  Linear = 'linear',\n  Ease = 'ease',\n  EaseIn = 'ease-in',\n  EaseOut = 'ease-out',\n  EaseInOut = 'ease-in-out'\n}\n\n`;
+    resultLineCounter += 7;
+
+    // Add documentation comments for each animation type
+    resultContent += `/**\n * Available transition types for STX animations\n * @see https://stx.stacksjs.org/docs/animation\n */\n`;
+    resultContent += `const transitionTypes = {\n`;
+    resultContent += `  /** Smooth opacity transitions */\n  fade: 'fade',\n`;
+    resultContent += `  /** Elegant sliding movements */\n  slide: 'slide',\n`;
+    resultContent += `  /** Size scaling effects */\n  scale: 'scale',\n`;
+    resultContent += `  /** 3D flipping animations */\n  flip: 'flip',\n`;
+    resultContent += `  /** Rotation-based animations */\n  rotate: 'rotate',\n`;
+    resultContent += `  /** Custom animation (requires additional CSS) */\n  custom: 'custom'\n};\n\n`;
+    resultLineCounter += 11;
+
+    // Add documentation for easing functions
+    resultContent += `/**\n * Available easing functions for STX animations\n */\n`;
+    resultContent += `const transitionEasings = {\n`;
+    resultContent += `  /** Linear timing function (constant speed) */\n  linear: 'linear',\n`;
+    resultContent += `  /** Default easing function (slight acceleration and deceleration) */\n  ease: 'ease',\n`;
+    resultContent += `  /** Starts slowly, then speeds up */\n  easeIn: 'ease-in',\n`;
+    resultContent += `  /** Starts quickly, then slows down */\n  easeOut: 'ease-out',\n`;
+    resultContent += `  /** Starts slowly, speeds up in the middle, then slows down at the end */\n  easeInOut: 'ease-in-out'\n};\n\n`;
+    resultLineCounter += 11;
+
+    // Extract @transition directives
+    const transitionRegex = /@transition\(['"]([^'"]+)['"](?:\s*,\s*(\d+))?(?:\s*,\s*['"]([^'"]+)['"])?(?:\s*,\s*(\d+))?(?:\s*,\s*['"]([^'"]+)['"])?\)/g;
+    let transitionMatch;
+    let transitionCounter = 0;
+
+    while ((transitionMatch = transitionRegex.exec(text)) !== null) {
+      const type = transitionMatch[1] as TransitionType;
+      const duration = transitionMatch[2] ? parseInt(transitionMatch[2], 10) : 300;
+      const ease = transitionMatch[3] || 'ease';
+      const delay = transitionMatch[4] ? parseInt(transitionMatch[4], 10) : 0;
+      const direction = transitionMatch[5] || 'both';
+
+      // Add variable declaration for this transition
+      const varName = `transition_${transitionCounter}`;
+      const declaration = `const ${varName}_type: TransitionType = transitionTypes.${type};\n` +
+                         `const ${varName}_duration: number = ${duration};\n` +
+                         `const ${varName}_ease: TransitionEase = '${ease}';\n` +
+                         `const ${varName}_delay: number = ${delay};\n` +
+                         `const ${varName}_direction: TransitionDirection = '${direction}';\n\n`;
+
+      resultContent += declaration;
+      resultLineCounter += 6;
+
+      // Add JSDoc comment for each transition parameter
+      jsDocComments.push({
+        comment: `Transition type: ${this.getTransitionTypeDescription(type as TransitionType)}`,
+        symbol: type,
+        line: transitionMatch.index,
+        symbolType: 'string',
+        contentPosition: transitionMatch.index
+      });
+
+      // Add JSDoc comment for ease parameter if it's specified
+      if (transitionMatch[3]) {
+        const easeComment = this.getTransitionEaseDescription(ease as TransitionEase);
+        jsDocComments.push({
+          comment: `Transition easing: ${easeComment}`,
+          symbol: ease,
+          line: transitionMatch.index,
+          symbolType: 'string',
+          contentPosition: transitionMatch.index
+        });
+      }
+
+      transitionCounter++;
+    }
+
+    // Extract @motion directives
+    const motionRegex = /@motion\(([^)]+)\)/g;
+    let motionMatch;
+    let motionCounter = 0;
+
+    while ((motionMatch = motionRegex.exec(text)) !== null) {
+      const enabled = motionMatch[1].trim() === 'true';
+
+      // Add variable declaration for motion preference
+      const varName = `motion_${motionCounter}`;
+      const declaration = `const ${varName}_enabled: boolean = ${enabled};\n\n`;
+
+      resultContent += declaration;
+      resultLineCounter += 2;
+
+      // Add JSDoc comment for motion preference
+      jsDocComments.push({
+        comment: `Motion preference setting: ${enabled ? 'Enabled' : 'Disabled'}`,
+        symbol: enabled.toString(),
+        line: motionMatch.index,
+        symbolType: 'boolean',
+        contentPosition: motionMatch.index
+      });
+
+      motionCounter++;
+    }
+
+    // Extract @animationGroup directives
+    const animationGroupRegex = /@animationGroup\(['"]([^'"]+)['"](?:\s*,\s*['"]([^'"]+)['"])*\)/g;
+    let animationGroupMatch;
+    let animationGroupCounter = 0;
+
+    while ((animationGroupMatch = animationGroupRegex.exec(text)) !== null) {
+      const groupName = animationGroupMatch[1];
+
+      // Add variable declaration for animation group
+      const varName = `animationGroup_${animationGroupCounter}`;
+      const declaration = `const ${varName}_name: string = '${groupName}';\n\n`;
+
+      resultContent += declaration;
+      resultLineCounter += 2;
+
+      // Add JSDoc comment for animation group
+      jsDocComments.push({
+        comment: `Animation group: ${groupName}`,
+        symbol: groupName,
+        line: animationGroupMatch.index,
+        symbolType: 'string',
+        contentPosition: animationGroupMatch.index
+      });
+
+      animationGroupCounter++;
+    }
+
+    return { content: resultContent, lineCounter: resultLineCounter };
+  }
+
+  /**
+   * Get description for a transition type
+   */
+  private getTransitionTypeDescription(type: TransitionType): string {
+    switch(type) {
+      case TransitionType.Fade:
+        return 'Smooth opacity transitions';
+      case TransitionType.Slide:
+        return 'Elegant sliding movements';
+      case TransitionType.Scale:
+        return 'Size scaling effects';
+      case TransitionType.Flip:
+        return '3D flipping animations';
+      case TransitionType.Rotate:
+        return 'Rotation-based animations';
+      case TransitionType.Custom:
+        return 'Custom animation';
+      default:
+        return 'Unknown transition type';
+    }
+  }
+
+  /**
+   * Get description for a transition easing function
+   */
+  private getTransitionEaseDescription(ease: TransitionEase | string): string {
+    switch(ease) {
+      case TransitionEase.Linear:
+      case 'linear':
+        return 'Linear timing function (constant speed)';
+      case TransitionEase.Ease:
+      case 'ease':
+        return 'Default easing function (slight acceleration and deceleration)';
+      case TransitionEase.EaseIn:
+      case 'ease-in':
+        return 'Starts slowly, then speeds up';
+      case TransitionEase.EaseOut:
+      case 'ease-out':
+        return 'Starts quickly, then slows down';
+      case TransitionEase.EaseInOut:
+      case 'ease-in-out':
+        return 'Starts slowly, speeds up in the middle, then slows down at the end';
+      default:
+        return 'Custom easing function';
     }
   }
 

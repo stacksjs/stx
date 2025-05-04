@@ -3,6 +3,7 @@ import { VirtualTsDocumentProvider } from './virtualTsDocumentProvider';
 import { formatJSDoc } from '../utils/jsdocUtils';
 import { isInStyleTag, findCssStylesForClass } from '../utils/cssUtils';
 import { findForeachDeclarationForVariable } from '../utils/stxUtils';
+import { TransitionType, TransitionDirection, TransitionEase } from '../interfaces/animation-types';
 
 export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocumentProvider): vscode.HoverProvider {
   return {
@@ -20,11 +21,187 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
       // Get the entire line for context analysis
       const line = document.lineAt(position.line).text;
 
+      // ANIMATION DIRECTIVE HANDLING
+      // Check if we're inside a transition directive
+      const transitionMatch = line.match(/@transition\((.*?)\)/);
+      if (transitionMatch) {
+        const params = transitionMatch[1].split(',').map(p => p.trim());
+
+        // Check if the word is one of the parameters or part of a hyphenated parameter (like ease-out)
+        let foundParamIndex = -1;
+        let fullParam = '';
+
+        // First try direct match
+        foundParamIndex = params.findIndex(p => p.replace(/['"`]/g, '') === word);
+
+        // If not found, try to check if it's part of a hyphenated value
+        if (foundParamIndex === -1) {
+          for (let i = 0; i < params.length; i++) {
+            const param = params[i].replace(/['"`]/g, '');
+
+            // Check if the parameter contains hyphen and the word
+            if (param.includes('-')) {
+              const parts = param.split('-');
+              if (parts.includes(word) || param === word) {
+                foundParamIndex = i;
+                fullParam = param;
+                break;
+              }
+            }
+          }
+        } else {
+          fullParam = params[foundParamIndex].replace(/['"`]/g, '');
+        }
+
+        // Special case for "ease" parts
+        if (foundParamIndex === -1 && (word === 'ease' || word === 'in' || word === 'out')) {
+          // Check if there's an ease-in, ease-out, or ease-in-out parameter
+          const easeParams = ['ease-in', 'ease-out', 'ease-in-out'];
+
+          for (let i = 0; i < params.length; i++) {
+            const param = params[i].replace(/['"`]/g, '');
+
+            if (easeParams.includes(param)) {
+              if ((word === 'ease' && param.startsWith('ease')) ||
+                  (word === 'in' && (param === 'ease-in' || param === 'ease-in-out')) ||
+                  (word === 'out' && (param === 'ease-out' || param === 'ease-in-out'))) {
+                foundParamIndex = i;
+                fullParam = param;
+                break;
+              }
+            }
+          }
+        }
+
+        if (foundParamIndex !== -1) {
+          let hover = new vscode.MarkdownString();
+          hover.isTrusted = true;
+          hover.supportHtml = true;
+
+          switch (foundParamIndex) {
+            case 0: // Transition type
+              if (Object.values(TransitionType).includes(fullParam as TransitionType)) {
+                const description = getTransitionTypeDescription(fullParam as TransitionType);
+                hover.appendCodeblock(`@transition('${fullParam}', duration?, ease?, delay?, direction?)`, 'stx');
+                hover.appendMarkdown(`\n\n**Transition Type**: ${description}`);
+                hover.appendMarkdown(`\n\n**Available Types**:`);
+                hover.appendMarkdown(`\n- \`fade\`: Smooth opacity transitions`);
+                hover.appendMarkdown(`\n- \`slide\`: Elegant sliding movements`);
+                hover.appendMarkdown(`\n- \`scale\`: Size scaling effects`);
+                hover.appendMarkdown(`\n- \`flip\`: 3D flipping animations`);
+                hover.appendMarkdown(`\n- \`rotate\`: Rotation-based animations`);
+                hover.appendMarkdown(`\n- \`custom\`: Custom animation (requires additional CSS)`);
+                return new vscode.Hover(hover);
+              }
+              break;
+
+            case 1: // Duration
+              hover.appendCodeblock(`@transition(type, ${fullParam}, ease?, delay?, direction?)`, 'stx');
+              hover.appendMarkdown(`\n\n**Duration**: Transition duration in milliseconds (default: 300)`);
+              return new vscode.Hover(hover);
+
+            case 2: // Ease
+              // Handle hyphenated values like 'ease-out'
+              let description = '';
+
+              // Map the string value to an enum value if possible
+              const easingValues = Object.values(TransitionEase);
+              const matchingEase = easingValues.find(v => v.toString() === fullParam);
+
+              if (matchingEase || ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear'].includes(fullParam)) {
+                description = getTransitionEaseDescription(fullParam as TransitionEase);
+                hover.appendCodeblock(`@transition(type, duration, '${fullParam}', delay?, direction?)`, 'stx');
+                hover.appendMarkdown(`\n\n**Easing Function**: ${description}`);
+                hover.appendMarkdown(`\n\n**Available Easing Functions**:`);
+                hover.appendMarkdown(`\n- \`linear\`: Constant speed throughout`);
+                hover.appendMarkdown(`\n- \`ease\`: Default easing (slight acceleration/deceleration)`);
+                hover.appendMarkdown(`\n- \`ease-in\`: Starts slowly, speeds up`);
+                hover.appendMarkdown(`\n- \`ease-out\`: Starts quickly, slows down`);
+                hover.appendMarkdown(`\n- \`ease-in-out\`: Slow start, fast middle, slow end`);
+                return new vscode.Hover(hover);
+              } else if (fullParam.includes('-') && (fullParam.startsWith('ease-') || fullParam === 'linear')) {
+                // Handle parts of hyphenated values (if word is just "out" from "ease-out")
+                const hyphenParts = fullParam.split('-');
+                if (hyphenParts.includes(word)) {
+                  description = getTransitionEaseDescription(fullParam as TransitionEase);
+                  hover.appendCodeblock(`@transition(type, duration, '${fullParam}', delay?, direction?)`, 'stx');
+                  hover.appendMarkdown(`\n\n**Easing Function**: ${description}`);
+                  hover.appendMarkdown(`\n\n**Available Easing Functions**:`);
+                  hover.appendMarkdown(`\n- \`linear\`: Constant speed throughout`);
+                  hover.appendMarkdown(`\n- \`ease\`: Default easing (slight acceleration/deceleration)`);
+                  hover.appendMarkdown(`\n- \`ease-in\`: Starts slowly, speeds up`);
+                  hover.appendMarkdown(`\n- \`ease-out\`: Starts quickly, slows down`);
+                  hover.appendMarkdown(`\n- \`ease-in-out\`: Slow start, fast middle, slow end`);
+                  return new vscode.Hover(hover);
+                }
+              }
+              break;
+
+            case 3: // Delay
+              hover.appendCodeblock(`@transition(type, duration, ease, ${fullParam}, direction?)`, 'stx');
+              hover.appendMarkdown(`\n\n**Delay**: Transition delay in milliseconds (default: 0)`);
+              return new vscode.Hover(hover);
+
+            case 4: // Direction
+              if (Object.values(TransitionDirection).includes(fullParam as TransitionDirection)) {
+                const description = getTransitionDirectionDescription(fullParam as TransitionDirection);
+                hover.appendCodeblock(`@transition(type, duration, ease, delay, '${fullParam}')`, 'stx');
+                hover.appendMarkdown(`\n\n**Direction**: ${description}`);
+                hover.appendMarkdown(`\n\n**Available Directions**:`);
+                hover.appendMarkdown(`\n- \`in\`: Element transitions in (appears)`);
+                hover.appendMarkdown(`\n- \`out\`: Element transitions out (disappears)`);
+                hover.appendMarkdown(`\n- \`both\`: Element transitions both in and out (default)`);
+                return new vscode.Hover(hover);
+              }
+              break;
+          }
+        }
+      }
+
+      // Check if we're inside a motion directive
+      const motionMatch = line.match(/@motion\((.*?)\)/);
+      if (motionMatch && (word === 'true' || word === 'false')) {
+        let hover = new vscode.MarkdownString();
+        hover.isTrusted = true;
+        hover.supportHtml = true;
+
+        hover.appendCodeblock(`@motion(${word})`, 'stx');
+        hover.appendMarkdown(`\n\n**Motion Preference**: ${word === 'true' ? 'Enables' : 'Disables'} animations based on user preference settings.`);
+        hover.appendMarkdown(`\n\nWhen set to \`true\`, animations will be shown to users who haven't requested reduced motion.`);
+        hover.appendMarkdown(`\n\nWhen set to \`false\`, no animations will be shown regardless of user preferences.`);
+
+        return new vscode.Hover(hover);
+      }
+
+      // Check if we're inside an animationGroup directive
+      const animationGroupMatch = line.match(/@animationGroup\((.*?)\)/);
+      if (animationGroupMatch) {
+        // Check if the word is one of the parameters
+        const params = animationGroupMatch[1].split(',').map(p => p.trim());
+        if (params.some(p => p.replace(/['"`]/g, '') === word)) {
+          let hover = new vscode.MarkdownString();
+          hover.isTrusted = true;
+          hover.supportHtml = true;
+
+          const isGroupName = params[0].replace(/['"`]/g, '') === word;
+
+          if (isGroupName) {
+            hover.appendCodeblock(`@animationGroup('${word}', ...selectors)`, 'stx');
+            hover.appendMarkdown(`\n\n**Animation Group Name**: Unique identifier for this animation group`);
+          } else {
+            hover.appendCodeblock(`@animationGroup(name, '${word}', ...)`, 'stx');
+            hover.appendMarkdown(`\n\n**Element Selector**: CSS selector for elements to include in this animation group`);
+          }
+
+          return new vscode.Hover(hover);
+        }
+      }
+
+      // Check if we're in a CSS/style block
+      const inStyleBlock = isInStyleTag(document, position);
+
       // Check if this is a property access (e.g. product.name)
       const isPropertyAccess = line.substring(0, wordRange.start.character).trim().endsWith('.');
-
-      // Check if we're inside a CSS/style block
-      const inStyleBlock = isInStyleTag(document, position);
 
       // Precise detection for CSS class selectors
       const isCssClassSelector = inStyleBlock && document.getText().charAt(document.offsetAt(wordRange.start) - 1) === '.';
@@ -709,4 +886,67 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
       return null;
     }
   };
+}
+
+/**
+ * Get description for a transition type
+ */
+function getTransitionTypeDescription(type: TransitionType): string {
+  switch(type) {
+    case TransitionType.Fade:
+      return 'Smooth opacity transitions - elements fade in or out';
+    case TransitionType.Slide:
+      return 'Elegant sliding movements - elements slide into or out of view';
+    case TransitionType.Scale:
+      return 'Size scaling effects - elements grow or shrink';
+    case TransitionType.Flip:
+      return '3D flipping animations - elements rotate in 3D space';
+    case TransitionType.Rotate:
+      return 'Rotation-based animations - elements rotate in 2D space';
+    case TransitionType.Custom:
+      return 'Custom animation - requires additional CSS definitions';
+    default:
+      return 'Unknown transition type';
+  }
+}
+
+/**
+ * Get description for a transition direction
+ */
+function getTransitionDirectionDescription(direction: TransitionDirection): string {
+  switch(direction) {
+    case TransitionDirection.In:
+      return 'Element transitions in (appears)';
+    case TransitionDirection.Out:
+      return 'Element transitions out (disappears)';
+    case TransitionDirection.Both:
+      return 'Element transitions both in and out';
+    default:
+      return 'Unknown transition direction';
+  }
+}
+
+/**
+ * Get description for a transition easing function
+ */
+function getTransitionEaseDescription(ease: TransitionEase | string): string {
+  switch(ease) {
+    case TransitionEase.Linear:
+    case 'linear':
+      return 'Linear timing function (constant speed)';
+    case TransitionEase.Ease:
+    case 'ease':
+      return 'Default easing function (slight acceleration and deceleration)';
+    case TransitionEase.EaseIn:
+    case 'ease-in':
+      return 'Starts slowly, then speeds up';
+    case TransitionEase.EaseOut:
+    case 'ease-out':
+      return 'Starts quickly, then slows down';
+    case TransitionEase.EaseInOut:
+    case 'ease-in-out':
+      return 'Starts slowly, speeds up in the middle, then slows down at the end';
+    default:
+      return 'Custom easing function';
+  }
 }

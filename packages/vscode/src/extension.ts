@@ -4,10 +4,53 @@ import * as path from 'path'
 import { VirtualTsDocumentProvider } from './providers/virtualTsDocumentProvider';
 import { createHoverProvider } from './providers/hoverProvider';
 import { createDefinitionProvider } from './providers/definitionProvider';
+import { createCompletionProvider } from './providers/completionProvider';
 
 export function activate(context: vscode.ExtensionContext) {
   // Create virtual TypeScript files for each STX file to support language features
   const virtualTsDocumentProvider = new VirtualTsDocumentProvider();
+  console.log('STX Extension - Activating');
+
+  // Ensure STX files are recognized
+  // The language should be registered in the package.json
+  // but we'll force language association here for any .stx files
+  vscode.workspace.textDocuments.forEach(document => {
+    if (document.fileName.endsWith('.stx') && document.languageId !== 'stx') {
+      vscode.languages.setTextDocumentLanguage(document, 'stx')
+        .then(() => console.log(`Set language ID for ${document.fileName} to stx`));
+    }
+  });
+
+  // Create providers
+  const hoverProvider = vscode.languages.registerHoverProvider(
+    'stx',
+    createHoverProvider(virtualTsDocumentProvider)
+  );
+
+  const definitionProvider = vscode.languages.registerDefinitionProvider(
+    'stx',
+    createDefinitionProvider(virtualTsDocumentProvider)
+  );
+
+  // Create a CompletionItemProvider that works for all directives
+  const completionProvider = createCompletionProvider();
+
+  // Register for basic trigger, when user types "@"
+  const atTriggerCompletionProvider = vscode.languages.registerCompletionItemProvider(
+    'stx', // Use simple string identifier
+    completionProvider,
+    '@' // Trigger on @ symbol
+  );
+
+  // Register for additional triggers for parameter completions
+  const parameterCompletionProvider = vscode.languages.registerCompletionItemProvider(
+    'stx', // Use simple string identifier
+    completionProvider,
+    '\'', // Trigger on quote
+    '"', // Trigger on double-quote
+    '`', // Trigger on backtick
+    ',' // Trigger on comma
+  );
 
   // Register the virtual document provider
   context.subscriptions.push(
@@ -23,11 +66,14 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Track document opens
   const documentOpenListener = vscode.workspace.onDidOpenTextDocument(document => {
-    if (document.languageId === 'stx') {
+    if (document.languageId === 'stx' || document.fileName.endsWith('.stx')) {
       virtualTsDocumentProvider.trackDocument(document);
 
-      // Automatically show TypeScript features for STX files
-      vscode.window.showInformationMessage('Welcome to STX (Stacks) language support!');
+      // If the file has .stx extension but doesn't have stx language ID, set it
+      if (document.languageId !== 'stx' && document.fileName.endsWith('.stx')) {
+        vscode.languages.setTextDocumentLanguage(document, 'stx')
+          .then(() => console.log(`Set language ID for ${document.fileName} to stx`));
+      }
 
       // Open a virtual TypeScript document for this STX file
       const virtualUri = document.uri.with({
@@ -47,22 +93,10 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Process already open documents
   vscode.workspace.textDocuments.forEach(document => {
-    if (document.languageId === 'stx') {
+    if (document.languageId === 'stx' || document.fileName.endsWith('.stx')) {
       virtualTsDocumentProvider.trackDocument(document);
     }
   });
-
-  // Register the hover provider for STX files
-  const hoverProvider = vscode.languages.registerHoverProvider(
-    'stx',
-    createHoverProvider(virtualTsDocumentProvider)
-  );
-
-  // Register definition provider for cmd+click
-  const definitionProvider = vscode.languages.registerDefinitionProvider(
-    'stx',
-    createDefinitionProvider(virtualTsDocumentProvider)
-  );
 
   // Automatically set language ID for .stx files
   const fileOpenListener = vscode.workspace.onDidOpenTextDocument(async (document) => {
@@ -71,6 +105,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     if (extension.toLowerCase() === '.stx' && document.languageId !== 'stx') {
       await vscode.languages.setTextDocumentLanguage(document, 'stx');
+      console.log(`Set language ID for ${fileName} to stx`);
     }
   });
 
@@ -79,8 +114,14 @@ export function activate(context: vscode.ExtensionContext) {
     documentOpenListener,
     fileOpenListener,
     hoverProvider,
-    definitionProvider
+    definitionProvider,
+    atTriggerCompletionProvider,
+    parameterCompletionProvider
   );
+
+  console.log('STX language support activated');
 }
 
-export function deactivate() {}
+export function deactivate() {
+  console.log('STX language support deactivated');
+}

@@ -196,5 +196,37 @@
     "body": [
       "{{{ ${1:variable} }}}$0"
     ]
+  },
+  "stx-transition": {
+    "description": "Apply transition animations to an element",
+    "prefix": "@transition",
+    "body": [
+      "@transition('${1|fade,slide,scale,flip,rotate,custom|}', ${2:400}, '${3|ease,ease-in,ease-out,ease-in-out,linear|}', ${4:0}, '${5|in,out,both|}')",
+      "\t$0",
+      "@endtransition"
+    ]
+  },
+  "stx-motion": {
+    "description": "Control animation display based on user preferences",
+    "prefix": "@motion",
+    "body": [
+      "@motion(${1|true,false|})",
+      "\t$0",
+      "@endmotion"
+    ]
+  },
+  "stx-animationgroup": {
+    "description": "Group elements for coordinated animations",
+    "prefix": "@animationGroup",
+    "body": [
+      "@animationGroup('${1:groupName}', '${2:#selector1}')$0"
+    ]
+  },
+  "stx-scrollanimate": {
+    "description": "Trigger animation when element scrolls into view",
+    "prefix": "@scrollAnimate",
+    "body": [
+      "@scrollAnimate('${1|fade,slide,scale,flip,rotate,custom|}', ${2:400}, '${3|ease,ease-in,ease-out,ease-in-out,linear|}', ${4:0})$0"
+    ]
   }
 }

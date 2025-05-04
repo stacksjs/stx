@@ -461,120 +461,63 @@
     ],
     "description": "Log output to console"
   },
-  "Stacks Component": {
-    "prefix": "com",
+  "Verbatim Block": {
+    "prefix": "@verbatim",
     "body": [
-      "<script setup lang=\"ts\">",
-      "\t$1",
-      "</script>",
-      "",
-      "<template>",
-      "",
-      "</template>",
-      "",
-      "<style scoped>",
-      "",
-      "</style>"
-    ]
-  },
-  "Stacks v-for": {
-    "prefix": "vfor",
-    "body": [
-      "<${1:div} v-for=\"${2:item} in ${2:item}s\" :key=\"${2:item}.id\">",
-      "\t{{ ${2:item} }}",
-      "</${1:div}>"
+      "@verbatim",
+      "\t$0",
+      "@endverbatim"
     ],
-    "description": "vfor statement"
+    "description": "Verbatim content block - content inside will not be compiled"
   },
-  "Stacks v-model Directive": {
-    "prefix": "vmodel",
+  "Empty Check": {
+    "prefix": "@empty",
     "body": [
-      "<input v-model=\"${1:data}\" type=\"text\" />"
+      "@empty(${1:$${2:var}})",
+      "\t$0",
+      "@endempty"
     ],
-    "description": "v-model directive"
+    "description": "Checks if a variable is empty"
   },
-  "Stacks v-model Number Directive": {
-    "prefix": "vmodel-num",
+  "Transition Animation": {
+    "prefix": "@transition",
     "body": [
-      "<input v-model.number=\"${1:numData}\" type=\"number\" step=\"1\" />"
+      "@transition('${1|fade,slide,scale,flip,rotate,custom|}', ${2:400}, '${3|ease,ease-in,ease-out,ease-in-out,linear|}', ${4:0}, '${5|in,out,both|}')",
+      "\t$0",
+      "@endtransition"
     ],
-    "description": "v-model directive number input"
+    "description": "Applies transition animation to an element"
   },
-  "Stacks v-on Shortcut Directive": {
-    "prefix": "von",
+  "Motion Container": {
+    "prefix": "@motion",
     "body": [
-      "@click=\"${1:handler}(${2:arg}, $event)\""
+      "@motion(${1|true,false|})",
+      "\t$0",
+      "@endmotion"
     ],
-    "description": "v-on click handler with arguments"
+    "description": "Controls animation display based on user motion preferences"
   },
-  "Stacks Component with Props Binding": {
-    "prefix": "vel-props",
+  "Animation Group": {
+    "prefix": "@animationGroup",
     "body": [
-      "<${1:component} :${1:propName}=\"${0}\"></${1:component}>"
+      "@animationGroup('${1:groupName}'${2:, '${3:#selector1}'${4:, '${5:#selector2}'}})"
     ],
-    "description": "component element with props"
+    "description": "Groups elements for coordinated animations"
   },
-  "Stacks Named Slot": {
-    "prefix": "vslot-named",
+  "Scroll Animation": {
+    "prefix": "@scrollAnimate",
     "body": [
-      "<template v-slot:${0:name}>${1:defaultcontent}</template>"
+      "@scrollAnimate('${1|fade,slide,scale,flip,rotate|}', ${2:400}, '${3|ease,ease-in,ease-out,ease-in-out,linear|}', ${4:0.2}, ${5:0})",
+      "\t$0",
+      "@endscrollAnimate"
     ],
-    "description": "named slot"
+    "description": "Triggers animation when element scrolls into view"
   },
-  "Stacks Image Source Binding": {
-    "prefix": "vsrc",
+  "Continue statement": {
+    "prefix": "@continue",
     "body": [
-      "<img :src=\"'/path/to/images/' + ${1:fileName}\" alt=\"${2:altText}\"/>"
+      "@continue${1:(${2:$${3:condition}})}$0"
     ],
-    "description": "image source binding"
-  },
-  "Stacks Style Binding": {
-    "prefix": "vstyle",
-    "body": [
-      "<${1:div} :style=\"{ fontSize: ${2:data} + 'px' }\"></${1:div}>"
-    ],
-    "description": "vue inline style binding"
-  },
-  "Stacks Style Binding Object": {
-    "prefix": "vstyle-obj",
-    "body": [
-      "<${1:div} :style=\"[${2:styleObjectA}, ${3:styleObjectB]}\"></${1:div}>"
-    ],
-    "description": "vue inline style binding, objects"
-  },
-  "Stacks Class Binding": {
-    "prefix": "vclass",
-    "body": [
-      "<${1:div} :class=\"{ ${2:className}: ${3:data} }\"></${1:div}>"
-    ],
-    "description": "vue class binding"
-  },
-  "Stacks Class Binding Object": {
-    "prefix": "vclass-obj",
-    "body": [
-      "<${1:div} :class=\"[${2:classNameA}, ${3:classNameB}]\"></${1:div}>"
-    ],
-    "description": "vue class binding"
-  },
-  "Stacks Multiple Conditional Class Bindings": {
-    "prefix": "vclass-obj-mult",
-    "body": [
-      "<${1:div} :class=\"[${2:classNameA}, {${3:classNameB} : ${4:condition}}]\"></${1:div}>"
-    ],
-    "description": "vue multiple conditional class bindings"
-  },
-  "Stacks Emit from Child": {
-    "prefix": "vemit-child",
-    "body": [
-      "@change=\"$emit('change', $event.target.value)\""
-    ],
-    "description": "Stacks Emit from Child Component"
-  },
-  "Stacks Emit to Parent": {
-    "prefix": "vemit-parent",
-    "body": [
-      "@change=\"${1:foo} = $$event\""
-    ],
-    "description": "Stacks Emit to Parent Component"
+    "description": "Continue the current loop"
   }
 }
