@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { VirtualTsDocumentProvider } from './virtualTsDocumentProvider';
 import { findCssDefinitionForClass } from '../utils/cssUtils';
+import { extractTemplatePath, resolveTemplatePath, getTemplatePathRange } from '../utils/templateUtils';
 
 export function createDefinitionProvider(virtualTsDocumentProvider: VirtualTsDocumentProvider): vscode.DefinitionProvider {
   return {
@@ -13,6 +14,26 @@ export function createDefinitionProvider(virtualTsDocumentProvider: VirtualTsDoc
 
       const word = document.getText(wordRange);
       const line = document.lineAt(position.line).text;
+
+      // Check if we're in a template path (within an @include or @component directive)
+      // This handles both regular includes and conditional includes
+      const isRegularDirective = /@(include|component)\s*\(/.test(line);
+      const isConditionalDirective = /@(includeIf|includeWhen|includeUnless|includeFirst)\s*\([^,]*,/.test(line);
+
+      if (isRegularDirective || isConditionalDirective) {
+        const templatePath = extractTemplatePath(line);
+        if (templatePath) {
+          // Check if cursor is within the template path string
+          const templatePathRange = getTemplatePathRange(document, position.line);
+          if (templatePathRange && templatePathRange.contains(position)) {
+            // Resolve the template path to a file
+            const resolvedUri = resolveTemplatePath(document.uri, templatePath);
+            if (resolvedUri) {
+              return new vscode.Location(resolvedUri, new vscode.Position(0, 0));
+            }
+          }
+        }
+      }
 
       // Check if we're in a class attribute (class="note" or className="note")
       const classAttributeRegex = /(class|className)\s*=\s*["']([^"']*)["']/g;

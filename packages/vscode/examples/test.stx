@@ -77,7 +77,7 @@
 
         <!-- Raw content that won't be processed -->
         @raw
-            {{ This will be displayed as is and not processed }}
+            This will be displayed as is and not processed
             @if(this.wont.be.processed)
                 This won't be processed as a condition
             @endif

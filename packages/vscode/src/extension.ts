@@ -6,6 +6,7 @@ import { VirtualTsDocumentProvider } from './providers/virtualTsDocumentProvider
 import { createHoverProvider } from './providers/hoverProvider';
 import { createDefinitionProvider } from './providers/definitionProvider';
 import { createCompletionProvider } from './providers/completionProvider';
+import { createDocumentLinkProvider } from './providers/documentLinkProvider';
 
 export function activate(context: vscode.ExtensionContext) {
   // Create virtual TypeScript files for each STX file to support language features
@@ -45,6 +46,12 @@ export function activate(context: vscode.ExtensionContext) {
   const definitionProvider = vscode.languages.registerDefinitionProvider(
     'stx',
     createDefinitionProvider(virtualTsDocumentProvider)
+  );
+
+  // Register document link provider for template paths
+  const documentLinkProvider = vscode.languages.registerDocumentLinkProvider(
+    'stx',
+    createDocumentLinkProvider()
   );
 
   // Create a CompletionItemProvider that works for all directives
@@ -130,6 +137,7 @@ export function activate(context: vscode.ExtensionContext) {
     fileOpenListener,
     hoverProvider,
     definitionProvider,
+    documentLinkProvider,
     atTriggerCompletionProvider,
     parameterCompletionProvider
   );

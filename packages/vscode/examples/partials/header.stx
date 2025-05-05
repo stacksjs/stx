@@ -1,0 +1,23 @@
+<!-- Header Partial -->
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <a href="/">{{ appName }}</a>
+    </div>
+    <nav class="main-nav">
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/services">Services</a></li>
+        <li><a href="/contact">Contact</a></li>
+        @if (user.loggedIn)
+          <li><a href="/profile">My Profile</a></li>
+          <li><a href="/logout">Logout</a></li>
+        @else
+          <li><a href="/login">Login</a></li>
+          <li><a href="/register">Register</a></li>
+        @endif
+      </ul>
+    </nav>
+  </div>
+</header>

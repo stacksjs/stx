@@ -1,0 +1,18 @@
+<!-- Admin Controls Partial -->
+<div class="admin-controls">
+  <h3>Admin Controls</h3>
+  <div class="admin-panel">
+    <button class="admin-btn">Manage Users</button>
+    <button class="admin-btn">System Settings</button>
+    <button class="admin-btn">View Logs</button>
+    <button class="admin-btn">Content Moderation</button>
+  </div>
+
+  @if (user.isSuperAdmin)
+    <div class="super-admin-controls">
+      <h4>Super Admin Controls</h4>
+      <button class="admin-btn danger">Database Management</button>
+      <button class="admin-btn danger">Security Settings</button>
+    </div>
+  @endif
+</div>
