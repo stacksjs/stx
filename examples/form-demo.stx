@@ -102,7 +102,7 @@
       border-radius: 4px;
       font-size: 1rem;
       cursor: pointer;
-      transition: background-color 0.2s;
+      animation-duration: 0.2s;
     }
 
     button:hover {

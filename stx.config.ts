@@ -8,7 +8,7 @@ export default defineStxConfig({
 
   // Animation options
   animation: {
-    enabled: true,
+    enabled: true, // Keep animations enabled globally
     respectMotionPreferences: true,
   },
 

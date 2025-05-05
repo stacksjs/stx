@@ -164,23 +164,19 @@ function generateMotionPreferencesScript(): string {
  * Checks if the template contains any animation directives
  */
 function hasAnimationDirectives(template: string): boolean {
+  // More specific patterns that indicate actual STX animation usage
   const animationDirectives = [
-    '@animate',
-    '@transition',
-    '@scroll',
-    '@staggered',
-    '@sequence',
-    'class="stx-',
-    'stx-observe',
-    'stx-fade',
-    'stx-scale',
-    'stx-flip',
-    'stx-rotate',
-    'stx-from-',
-    'stx-slide',
+    /@animate\b/,                // @animate directive
+    /@transition\b/,             // @transition directive
+    /@scroll(?:Animate)?\b/,     // @scroll or @scrollAnimate directives
+    /@staggered\b/,              // @staggered directive
+    /@sequence\b/,               // @sequence directive
+    /\bstx-transition\b/,        // STX transition class
+    /\bstx-(?:fade|scale|flip|rotate|slide|from-|observe)\b/, // STX animation classes
+    /data-animate=['"](?:auto|true|false)['"]/, // Animation data attribute
   ];
 
-  return animationDirectives.some(directive => template.includes(directive));
+  return animationDirectives.some(pattern => pattern.test(template));
 }
 
 /**
@@ -564,16 +560,22 @@ export function processAnimationDirectives(
 ): string {
   let output = template;
 
+  // Skip processing if animations are disabled entirely
+  if (options.animation?.enabled === false) {
+    return output;
+  }
+
   // Only process animations if animation directives are present
   if (!hasAnimationDirectives(output)) {
     return output;
   }
 
-  // Add base animation styles
+  // Add base animation styles if not already present
   const hasBaseStyles = output.includes('<style id="stx-animation-base">');
+
   if (!hasBaseStyles) {
     const baseStyles = generateBaseAnimationStyles();
-    output = output.replace('</head>', `<style id="stx-animation-base">\n${baseStyles}\n</style>\n</head>`);
+    output = output.replace('</head>', `${baseStyles}\n</head>`);
   }
 
   // Process animation directives
