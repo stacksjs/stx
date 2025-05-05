@@ -104,7 +104,7 @@
           "begin": "(@){{",
           "beginCaptures": {
             "0": {
-              "name": "begin.bracket.round.stx"
+              "name": "support.function.construct.begin.stx"
             },
             "1": {
               "name": "variable.other.stx"
@@ -114,7 +114,7 @@
           "end": "}}",
           "endCaptures": {
             "0": {
-              "name": "end.bracket.round.stx"
+              "name": "support.function.construct.end.stx"
             }
           },
           "name": "meta.function.echo.stx",
@@ -145,30 +145,6 @@
           "patterns": [
             {
               "include": "source.ts"
-            }
-          ]
-        },
-        {
-          "begin": "(?x)(?<![A-Za-z0-9_@]) (@  (?i:\n    append\n    |default\n    |else\n    |endauth\n    |endcan\n    |endcanany\n    |endcannot\n    |endcomponent\n    |endempty\n    |enderror\n    |endfor\n    |endforeach\n    |endforelse\n    |endguest\n    |endif\n    |endisset\n    |endlang\n    |endonce\n    |endprepend\n    |endpush\n    |endsection\n    |endslot\n    |endswitch\n    |endunless\n    |endwhile\n    |overwrite\n    |parent\n    |show\n    |stop\n    |endPushOnce\n    |endPushIf\n    |endPrependOnce\n  )[\\t ]*\n)(\\() # Followed by opening parentheses\n",
-          "beginCaptures": {
-            "1": {
-              "name": "keyword.stx"
-            },
-            "2": {
-              "name": "begin.bracket.round.stx"
-            }
-          },
-          "contentName": "comment.stx",
-          "end": "\\)",
-          "endCaptures": {
-            "0": {
-              "name": "end.bracket.round.stx"
-            }
-          },
-          "name": "meta.directive.stx",
-          "patterns": [
-            {
-              "include": "#balance_brackets"
             }
           ]
         },
