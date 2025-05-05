@@ -1,6 +1,6 @@
-import { defineStxConfig } from './packages/stx/dist/src';
+import { StxOptions } from '@stacksjs/stx';
 
-export default defineStxConfig({
+const config: StxOptions = {
   // Customize SEO options
   skipDefaultSeoTags: false, // Set to true to disable auto-injection of SEO tags
   defaultTitle: 'STX Project',
@@ -19,4 +19,6 @@ export default defineStxConfig({
   // Other options
   debug: process.env.NODE_ENV !== 'production',
   cache: process.env.NODE_ENV === 'production',
-});
+}
+
+export default config

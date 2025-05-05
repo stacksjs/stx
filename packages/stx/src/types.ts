@@ -51,24 +51,6 @@ export interface Middleware {
 }
 
 /**
- * Accessibility violation found during a11y checks
- */
-export interface A11yViolation {
-  /** Type/category of violation */
-  type: string
-  /** The problematic HTML element */
-  element: string
-  /** Description of the issue */
-  message: string
-  /** Impact level of the violation */
-  impact: 'critical' | 'serious' | 'moderate' | 'minor'
-  /** Suggested fix */
-  help: string
-  /** URL to more information */
-  helpUrl?: string
-}
-
-/**
  * Internationalization (i18n) configuration
  */
 export interface I18nConfig {

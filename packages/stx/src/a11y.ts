@@ -1,17 +1,23 @@
 /* eslint-disable no-console */
 import type { CustomDirective, StxOptions } from './types'
 import * as happyDOM from '@happy-dom/global-registrator'
-import fs from 'node:fs'
 import path from 'node:path'
-import { createDetailedErrorMessage } from './utils'
 
-// Define accessibility violation types
+/**
+ * Accessibility violation found during a11y checks
+ */
 export interface A11yViolation {
+  /** Type/category of violation */
   type: string
+  /** The problematic HTML element */
   element: string
+  /** Description of the issue */
   message: string
+  /** Impact level of the violation */
   impact: 'critical' | 'serious' | 'moderate' | 'minor'
+  /** Suggested fix */
   help: string
+  /** URL to more information */
   helpUrl?: string
 }
 
