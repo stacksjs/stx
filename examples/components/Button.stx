@@ -1,0 +1,10 @@
+<!-- Button Component -->
+<button
+  class="btn btn-{{ variant || 'primary' }} {{ size ? 'btn-' + size : '' }}"
+  {{ disabled ? 'disabled' : '' }}
+>
+  @if(icon)
+    <span class="btn-icon">{{ icon }}</span>
+  @endif
+  {{ text }}
+</button>

@@ -257,72 +257,64 @@ export function processSeoDirective(
 }
 
 /**
- * Auto-inject SEO meta tags if enabled in config
+ * Injects default SEO tags if no @seo directive is used
  */
 export function injectSeoTags(
   html: string,
   context: Record<string, any>,
   options: StxOptions,
 ): string {
-  // Skip if SEO auto-inject is not enabled or SEO config is missing
-  if (!options.seo?.enabled || !options.seo.defaultConfig) {
+  // If the HTML already has meta tags or if auto-injection is disabled, return unchanged
+  if (html.includes('<meta property="og:') ||
+      html.includes('<meta name="twitter:') ||
+      options.skipDefaultSeoTags === true) {
     return html
   }
 
-  const seoConfig = options.seo.defaultConfig
+  // Check if document title is already set
+  const hasTitle = html.includes('<title>') || html.includes('</title>')
 
-  // Check if <head> tag exists and avoid duplicate injections
-  if (!html.includes('<head>') || html.includes('<!-- STX SEO Tags -->')) {
-    return html
+  // Get the title from context or fallback
+  let title = ''
+  if (context.title) {
+    title = context.title
+  } else if (context.meta && context.meta.title) {
+    title = context.meta.title
+  } else {
+    title = options.defaultTitle || 'STX Project'
   }
 
-  // Build default meta tags
-  let metaTags = '<!-- STX SEO Tags -->\n'
-
-  // Merge with page-specific data
-  const config = {
-    ...seoConfig,
-    title: context.title || context.pageTitle || seoConfig.title,
-    description: context.description || context.pageDescription || seoConfig.description,
+  // Get the description from context or fallback
+  let description = ''
+  if (context.description) {
+    description = context.description
+  } else if (context.meta && context.meta.description) {
+    description = context.meta.description
+  } else {
+    description = options.defaultDescription || 'A website built with STX templating engine'
   }
 
-  // Generate basic meta tags
-  if (config.title) {
-    // Don't add title tag if it already exists
-    if (!html.includes('<title>')) {
-      metaTags += `<title>${escapeHtml(config.title)}</title>\n`
-    }
-    metaTags += `<meta name="title" content="${escapeHtml(config.title)}">\n`
+  // Build basic SEO tags
+  const seoTagsMinimal = `
+<!-- STX SEO Tags -->
+<meta name="title" content="${escapeHtml(title)}">
+<meta name="description" content="${escapeHtml(description)}">
+<meta property="og:title" content="${escapeHtml(title)}">
+<meta property="og:description" content="${escapeHtml(description)}">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${escapeHtml(title)}">
+<meta name="twitter:description" content="${escapeHtml(description)}">
+`
+
+  // Add title tag if missing
+  let result = html
+  if (!hasTitle) {
+    result = result.replace(/<head[^>]*>/, `$&\n<title>${escapeHtml(title)}</title>`)
   }
 
-  if (config.description) {
-    metaTags += `<meta name="description" content="${escapeHtml(config.description)}">\n`
-  }
-
-  // Add Open Graph tags if social preview is enabled
-  if (options.seo.socialPreview && config.title) {
-    metaTags += `<meta property="og:title" content="${escapeHtml(config.title)}">\n`
-    if (config.description) {
-      metaTags += `<meta property="og:description" content="${escapeHtml(config.description)}">\n`
-    }
-    if (options.seo.defaultImage) {
-      metaTags += `<meta property="og:image" content="${escapeHtml(options.seo.defaultImage)}">\n`
-    }
-    metaTags += `<meta property="og:type" content="website">\n`
-
-    // Twitter Card
-    metaTags += `<meta name="twitter:card" content="summary_large_image">\n`
-    metaTags += `<meta name="twitter:title" content="${escapeHtml(config.title)}">\n`
-    if (config.description) {
-      metaTags += `<meta name="twitter:description" content="${escapeHtml(config.description)}">\n`
-    }
-    if (options.seo.defaultImage) {
-      metaTags += `<meta name="twitter:image" content="${escapeHtml(options.seo.defaultImage)}">\n`
-    }
-  }
-
-  // Insert meta tags after <head> tag
-  return html.replace('<head>', `<head>\n${metaTags}`)
+  // Add SEO tags
+  return result.replace(/<head[^>]*>/, `$&\n${seoTagsMinimal}\n`)
 }
 
 /**

@@ -420,6 +420,12 @@ export interface StxConfig {
   seo?: Partial<SeoFeatureConfig>
   /** Animation system configuration */
   animation?: Partial<AnimationConfig>
+  /** Skip adding default SEO tags */
+  skipDefaultSeoTags?: boolean
+  /** Default page title if not provided in context */
+  defaultTitle?: string
+  /** Default page description if not provided in context */
+  defaultDescription?: string
 }
 
 export type StxOptions = Partial<StxConfig>

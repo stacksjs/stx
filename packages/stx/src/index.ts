@@ -89,3 +89,9 @@ export { buildWebComponents, webComponentDirectiveHandler } from './web-componen
 export { stxPlugin }
 export default  stxPlugin
 
+// Export main types
+export type { StxOptions, StxConfig, CustomDirective, Middleware } from './types'
+
+// Export helpers
+export { defineStxConfig } from './config'
+

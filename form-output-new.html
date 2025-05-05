@@ -1,24 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- STX SEO Tags -->
+<meta name="title" content="STX Form Handling Demo">
+<meta name="description" content="A website built with STX templating engine">
+<meta property="og:title" content="STX Form Handling Demo">
+<meta property="og:description" content="A website built with STX templating engine">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="STX Form Handling Demo">
+<meta name="twitter:description" content="A website built with STX templating engine">
+
+
+<style id="stx-animation-base">
+  :root {
+    --stx-transition-duration: 300ms;
+    --stx-transition-delay: 0ms;
+    --stx-transition-ease: ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --stx-transition-duration: 0ms;
+    }
+  }
+
+  [data-animate="false"] * {
+    --stx-transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+
+  /* Base transition classes */
+  .stx-transition {
+    transition: opacity var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms),
+                transform var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms);
+    backface-visibility: hidden; /* Improve animation performance */
+    transform-style: preserve-3d; /* Better 3D transforms */
+  }
+
+  /* Fade animations */
+  .stx-fade {
+    transition: opacity var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms);
+  }
+
+  .stx-fade.stx-out {
+    opacity: 0 !important;
+  }
+
+  /* Scale animations */
+  .stx-scale {
+    transition: transform var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms),
+                opacity var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms);
+  }
+
+  .stx-scale.stx-out {
+    transform: scale(0.85) !important;
+    opacity: 0 !important;
+  }
+
+  /* Flip animations */
+  .stx-flip {
+    transition: transform var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms),
+                opacity var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms);
+    perspective: 600px;
+  }
+
+  .stx-flip.stx-out {
+    transform: perspective(600px) rotateX(-90deg) !important;
+    opacity: 0 !important;
+  }
+
+  /* Rotate animations */
+  .stx-rotate {
+    transition: transform var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms),
+                opacity var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms);
+  }
+
+  .stx-rotate.stx-out {
+    transform: rotate(-90deg) !important;
+    opacity: 0 !important;
+  }
+
+  /* Direction-based animations */
+  .stx-from-left, .stx-from-right, .stx-from-top, .stx-from-bottom {
+    transition: transform var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms),
+                opacity var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms);
+  }
+
+  .stx-from-left.stx-out {
+    transform: translateX(-30px) !important;
+    opacity: 0 !important;
+  }
+
+  .stx-from-right.stx-out {
+    transform: translateX(30px) !important;
+    opacity: 0 !important;
+  }
+
+  .stx-from-top.stx-out {
+    transform: translateY(-30px) !important;
+    opacity: 0 !important;
+  }
+
+  .stx-from-bottom.stx-out {
+    transform: translateY(30px) !important;
+    opacity: 0 !important;
+  }
+
+  /* Generic slide animations */
+  .stx-slide {
+    transition: transform var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms),
+                opacity var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms);
+  }
+
+  .stx-slide.stx-out {
+    transform: translateY(30px) !important;
+    opacity: 0 !important;
+  }
+
+  /* Scroll animation observer class */
+  .stx-observe {
+    will-change: opacity, transform;
+    transition: opacity var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms),
+                transform var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms);
+  }
+</style>
+  
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>STX Form Demo</title>
-  <script>
-    module.exports = {
-      title: "STX Form Handling Demo",
-      formData: {
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        agreeTerms: false
-      },
-      errors: {},
-      submitted: false
-    };
-  </script>
+  
   <style>
     body {
       font-family: system-ui, -apple-system, sans-serif;
@@ -123,17 +235,12 @@
       margin-bottom: 1rem;
     }
   </style>
-</head>
+<script type="module" crossorigin src="./chunk-5netdtey.js"></script></head>
 <body>
-  <h1>{{ title }}</h1>
+  <h1>STX Form Handling Demo</h1>
 
   <div class="form-container">
-    @if(submitted)
-      <div class="success-message">
-        <p>Form submitted successfully!</p>
-        <p>Thank you, {{ formData.firstName }} {{ formData.lastName }}.</p>
-      </div>
-    @endif
+    
 
     <form id="registration-form">
       <!-- First Name -->
@@ -147,13 +254,11 @@
           id="firstName"
           name="firstName"
           placeholder="Enter your first name"
-          value="{{ formData.firstName }}"
+          value=""
           required
-          class="{{ errors.firstName ? 'error-field' : '' }}"
+          class=""
         >
-        @if(errors.firstName)
-          <div class="error">{{ errors.firstName }}</div>
-        @endif
+        
       </div>
 
       <!-- Last Name -->
@@ -167,13 +272,11 @@
           id="lastName"
           name="lastName"
           placeholder="Enter your last name"
-          value="{{ formData.lastName }}"
+          value=""
           required
-          class="{{ errors.lastName ? 'error-field' : '' }}"
+          class=""
         >
-        @if(errors.lastName)
-          <div class="error">{{ errors.lastName }}</div>
-        @endif
+        
       </div>
 
       <!-- Email -->
@@ -187,13 +290,11 @@
           id="email"
           name="email"
           placeholder="Enter your email address"
-          value="{{ formData.email }}"
+          value=""
           required
-          class="{{ errors.email ? 'error-field' : '' }}"
+          class=""
         >
-        @if(errors.email)
-          <div class="error">{{ errors.email }}</div>
-        @endif
+        
       </div>
 
       <!-- Password -->
@@ -207,14 +308,12 @@
           id="password"
           name="password"
           placeholder="Choose a password"
-          value="{{ formData.password }}"
+          value=""
           required
           minlength="8"
-          class="{{ errors.password ? 'error-field' : '' }}"
+          class=""
         >
-        @if(errors.password)
-          <div class="error">{{ errors.password }}</div>
-        @endif
+        
       </div>
 
       <!-- Confirm Password -->
@@ -228,13 +327,11 @@
           id="confirmPassword"
           name="confirmPassword"
           placeholder="Confirm your password"
-          value="{{ formData.confirmPassword }}"
+          value=""
           required
-          class="{{ errors.confirmPassword ? 'error-field' : '' }}"
+          class=""
         >
-        @if(errors.confirmPassword)
-          <div class="error">{{ errors.confirmPassword }}</div>
-        @endif
+        
       </div>
 
       <!-- Terms Agreement -->
@@ -243,12 +340,10 @@
           type="checkbox"
           id="agreeTerms"
           name="agreeTerms"
-          {{ formData.agreeTerms ? 'checked' : '' }}
+          
         >
         <label for="agreeTerms">I agree to the Terms and Conditions</label>
-        @if(errors.agreeTerms)
-          <div class="error">{{ errors.agreeTerms }}</div>
-        @endif
+        
       </div>
 
       <button type="submit" id="submit-form">Register</button>
@@ -450,5 +545,48 @@
       });
     });
   </script>
-</body>
+
+<script>
+  // Intersection Observer for scroll animations
+  (function() {
+    const initObserver = () => {
+      if (!('IntersectionObserver' in window)) {
+        // For browsers that don't support IntersectionObserver, show all elements immediately
+        const elements = document.querySelectorAll('.stx-observe');
+        elements.forEach(el => el.classList.remove('stx-out'));
+        return;
+      }
+
+      // Create the observer
+      const options = {
+        root: null, // Use viewport
+        rootMargin: '0px',
+        threshold: 0.1
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.remove('stx-out');
+            // Stop observing after animation is triggered
+            observer.unobserve(entry.target);
+          }
+        });
+      }, options);
+
+      // Start observing elements
+      const elements = document.querySelectorAll('.stx-observe');
+      console.log('Observing', elements.length, 'elements for animations');
+      elements.forEach(el => observer.observe(el));
+    };
+
+    // Initialize observer when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initObserver);
+    } else {
+      initObserver();
+    }
+  })();
+</script>
+  </body>
 </html>

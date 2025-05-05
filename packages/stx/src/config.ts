@@ -1,4 +1,4 @@
-import type { StxConfig } from './types'
+import type { StxConfig, StxOptions } from './types'
 import { resolve } from 'node:path'
 import { loadConfig } from 'bunfig'
 import { markdownDirectiveHandler } from './markdown'
@@ -104,3 +104,10 @@ export const config: StxConfig = await loadConfig({
   cwd: resolve(__dirname, '..'),
   defaultConfig,
 })
+
+/**
+ * Helper function to define STX configuration
+ */
+export function defineStxConfig(config: StxOptions): StxOptions {
+  return config;
+}

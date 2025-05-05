@@ -161,6 +161,29 @@ function generateMotionPreferencesScript(): string {
 }
 
 /**
+ * Checks if the template contains any animation directives
+ */
+function hasAnimationDirectives(template: string): boolean {
+  const animationDirectives = [
+    '@animate',
+    '@transition',
+    '@scroll',
+    '@staggered',
+    '@sequence',
+    'class="stx-',
+    'stx-observe',
+    'stx-fade',
+    'stx-scale',
+    'stx-flip',
+    'stx-rotate',
+    'stx-from-',
+    'stx-slide',
+  ];
+
+  return animationDirectives.some(directive => template.includes(directive));
+}
+
+/**
  * Generates intersection observer script for scroll-based animations
  */
 function generateIntersectionObserverScript(threshold = 0.1, rootMargin = '0px'): string {
@@ -531,7 +554,7 @@ export const motionDirective: CustomDirective = {
 };
 
 /**
- * Process animation directives
+ * Process animation directives in the template
  */
 export function processAnimationDirectives(
   template: string,
@@ -541,22 +564,27 @@ export function processAnimationDirectives(
 ): string {
   let output = template;
 
-  // Add base animation styles to the template
-  if (template.includes('<head>')) {
-    const baseStyles = generateBaseAnimationStyles();
-    output = output.replace('<head>', `<head>\n${baseStyles}`);
-  } else if (!output.includes('id="stx-animation-base"')) {
-    // If no head tag but also no styles already, append to beginning
-    output = `${generateBaseAnimationStyles()}\n${output}`;
+  // Only process animations if animation directives are present
+  if (!hasAnimationDirectives(output)) {
+    return output;
   }
 
-  // Add intersection observer script if using scroll animations
-  if (output.includes('stx-observe') || output.includes('@scrollAnimate')) {
-    const observerScript = generateIntersectionObserverScript();
-    if (output.includes('</body>')) {
-      output = output.replace('</body>', `${observerScript}</body>`);
-    } else {
-      output += observerScript;
+  // Add base animation styles
+  const hasBaseStyles = output.includes('<style id="stx-animation-base">');
+  if (!hasBaseStyles) {
+    const baseStyles = generateBaseAnimationStyles();
+    output = output.replace('</head>', `<style id="stx-animation-base">\n${baseStyles}\n</style>\n</head>`);
+  }
+
+  // Process animation directives
+  // ... existing animation directive processing ...
+
+  // Add intersection observer script for scroll animations if needed
+  if (output.includes('stx-observe')) {
+    const hasObserverScript = output.includes('Intersection Observer for scroll animations');
+    if (!hasObserverScript) {
+      const observerScript = generateIntersectionObserverScript();
+      output = output.replace('</body>', `${observerScript}\n</body>`);
     }
   }
 

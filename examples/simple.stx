@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple STX Component Test</title>
+  <script>
+    module.exports = {
+      message: "Hello from STX"
+    };
+  </script>
+  <style>
+    .card {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin: 10px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>{{ message }}</h1>
+
+  <!-- Manual rendering -->
+  <div class="card">
+    <h2>Fixed Card Title</h2>
+    <p>This is a test card with fixed content.</p>
+  </div>
+
+  <!-- Using component -->
+  @include('SimpleCard', {
+    title: "Fixed Component Title",
+    content: "This is fixed component content."
+  })
+</body>
+</html>

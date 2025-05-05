@@ -1,0 +1,21 @@
+<!-- Card Component -->
+<div class="card {{ classList || '' }}">
+  @if(title)
+    <div class="card-header">
+      <h3>{{ title }}</h3>
+      @if(subtitle)
+        <h4>{{ subtitle }}</h4>
+      @endif
+    </div>
+  @endif
+
+  <div class="card-body">
+    {{ content }}
+  </div>
+
+  @if(footer)
+    <div class="card-footer">
+      {{ footer }}
+    </div>
+  @endif
+</div>
