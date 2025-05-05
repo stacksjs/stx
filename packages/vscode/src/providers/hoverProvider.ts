@@ -30,8 +30,13 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
       const lineBeforeWord = line.substring(0, wordRange.start.character);
       const lineAfterWord = line.substring(wordRange.end.character);
 
-      // Words that are likely part of regular text content
-      const isCommonWord = /^(the|a|an|this|that|these|those|my|your|his|her|its|our|their|today|tomorrow|yesterday|is|are|was|were|am|be|been|being)$/i.test(word);
+      // Check if word is inside code tags
+      const isInCodeTag = lineBeforeWord.includes('<code>') &&
+                         (lineAfterWord.includes('</code>') ||
+                          document.getText().substring(document.offsetAt(wordRange.end)).includes('</code>'));
+
+      // Words that are likely part of regular text content - include more common words
+      const isCommonWord = /^(the|a|an|this|that|these|those|my|your|his|her|its|our|their|today|tomorrow|yesterday|is|are|was|were|am|be|been|being|hello|hi|hey|welcome|try|see|file|use|using|change|modify|modifying|create|update|delete|view|display|show|hide|add|remove)$/i.test(word);
 
       // Check for contractions and possessives ('s)
       const isContractionOrPossessive = word.endsWith("'s") || word.endsWith("s'") ||
@@ -48,12 +53,17 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
                             lineBeforeWord.includes(':') || lineBeforeWord.includes(';') ||
                             lineAfterWord.includes('.') || lineAfterWord.includes(',');
 
+      // Check if we're in heading or paragraph tags (common for plain text)
+      const isInTextTags = /^.*<(p|h[1-6]|li|td|th|dd|dt|figcaption|label)>.*$/i.test(lineBeforeWord) ||
+                          line.match(/<(p|h[1-6]|li|td|th|dd|dt|figcaption|label)>/i);
+
       // Determine if this is likely normal text content
       const isPlainTextWord = isInHtmlContext &&
                             (isCommonWord ||
                              isContractionOrPossessive ||
                              isInSentence ||
-                             hasPunctuation);
+                             hasPunctuation ||
+                             isInTextTags);
 
       // Check if word appears in an actual code context or looks like a variable
       const isInCodeExpression = line.includes('{{') && line.includes('}}');
@@ -69,9 +79,19 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
                                  'any', 'void', 'undefined', 'null', 'never', 'object', 'symbol', 'unknown',
                                  'bigint', 'Array', 'Promise', 'Date'].includes(word);
 
-      // Combined check: if it's plain text and NOT in a code context, skip the hover
-      if (isPlainTextWord &&
-          !(isInCodeExpression || isInAtExpression || looksLikeVariable || looksLikeConstant || isTypescriptKeyword)) {
+      // If the word is inside <code> tags, don't treat it as plain text
+      const shouldShowHoverInCodeTag = isInCodeTag && (
+        looksLikeVariable ||
+        looksLikeConstant ||
+        isTypescriptKeyword ||
+        word.includes('.')
+      );
+
+      // Combined check: if it's plain text and NOT in a code context or special case, skip the hover
+      if ((isPlainTextWord &&
+          !(isInCodeExpression || isInAtExpression || looksLikeVariable || looksLikeConstant || isTypescriptKeyword)) ||
+          // Special case for file paths in code tags - only show hover if it's a code-like item
+          (isInCodeTag && !shouldShowHoverInCodeTag)) {
         return null;
       }
 
