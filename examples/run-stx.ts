@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { serve } from "bun";
-import stxPlugin from "./packages/stx/src";
+import stxPlugin from "../packages/stx/src";
 import fs from "node:fs";
 import path from "node:path";
 

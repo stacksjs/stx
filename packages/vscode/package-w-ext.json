@@ -12,12 +12,9 @@
   "homepage": "https://github.com/stacksjs/stx/tree/main/packages/vscode",
   "extensionPack": [
     "antfu.unocss",
-    "antfu.goto-alias",
     "dotenv.dotenvx-vscode",
     "foxundermoon.shell-format",
     "mattpocock.ts-error-translator",
-    "mikestead.dotenv",
-    "streetsidesoftware.code-spell-checker",
     "mylesmurphy.prettify-ts",
     "Orta.vscode-twoslash-queries",
     "oven.bun-vscode",
