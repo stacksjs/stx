@@ -229,6 +229,177 @@ else {
       }
     })
 
+  cli
+    .command('build [entrypoints...]', 'Bundle your STX files using Bun\'s bundler')
+    .option('--outdir <dir>', 'Output directory for bundled files', { default: 'dist' })
+    .option('--outfile <file>', 'Output file name (for single entrypoint)')
+    .option('--target <target>', 'Target environment: browser, bun, or node', { default: 'browser' })
+    .option('--format <format>', 'Output format: esm, cjs, or iife', { default: 'esm' })
+    .option('--minify', 'Enable minification')
+    .option('--no-minify', 'Disable minification')
+    .option('--sourcemap <type>', 'Sourcemap type: none, linked, inline, or external', { default: 'none' })
+    .option('--splitting', 'Enable code splitting')
+    .option('--no-splitting', 'Disable code splitting')
+    .option('--external <modules>', 'Comma-separated list of modules to exclude from bundle')
+    .option('--packages <mode>', 'Package handling mode: bundle or external', { default: 'bundle' })
+    .option('--watch', 'Watch for changes and rebuild')
+    .option('--public-path <path>', 'Public path for assets')
+    .option('--env <mode>', 'How to handle environment variables: inline, disable, or prefix*')
+    .option('--compile', 'Generate a standalone executable')
+    .option('--root <dir>', 'Project root directory')
+    .example('stx build ./src/index.stx --outfile bundle.js')
+    .example('stx build ./components/*.stx --outdir dist --minify')
+    .example('stx build ./src/index.stx --outfile bundle.js --target bun')
+    .action(async (entrypoints: string[], options: {
+      outdir: string;
+      outfile?: string;
+      target?: 'browser' | 'bun' | 'node';
+      format?: 'esm' | 'cjs' | 'iife';
+      minify?: boolean;
+      sourcemap?: 'none' | 'linked' | 'inline' | 'external' | boolean;
+      splitting?: boolean;
+      external?: string;
+      packages?: 'bundle' | 'external';
+      watch?: boolean;
+      publicPath?: string;
+      env?: 'inline' | 'disable' | string;
+      compile?: boolean;
+      root?: string;
+    }) => {
+      try {
+        console.log('Building files with Bun...')
+
+        if (!entrypoints || entrypoints.length === 0) {
+          console.error('Error: No entrypoints specified')
+          process.exit(1)
+        }
+
+        // Define the type for Bun build options
+        interface BunBuildOptions {
+          entrypoints: string[];
+          target?: 'browser' | 'bun' | 'node';
+          format?: 'esm' | 'cjs' | 'iife';
+          minify?: boolean | {
+            whitespace?: boolean;
+            syntax?: boolean;
+            identifiers?: boolean;
+          };
+          sourcemap?: 'none' | 'linked' | 'inline' | 'external' | boolean;
+          splitting?: boolean;
+          outdir?: string;
+          outfile?: string;
+          publicPath?: string;
+          root?: string;
+          env?: 'inline' | 'disable' | `${string}*`;
+          packages?: 'bundle' | 'external';
+          external?: string[];
+          compile?: boolean;
+          watch?: {
+            onRebuild: (error: Error | null, result: BuildOutput | null) => void;
+          };
+        }
+
+        // Define the type for Bun build output
+        interface BuildOutput {
+          outputs: Array<{
+            path: string;
+            kind: string;
+            hash: string | null;
+          }>;
+          success: boolean;
+          logs: Array<{
+            level: string;
+            message: string;
+          }>;
+        }
+
+        // Prepare build options with proper typing
+        const buildOptions: BunBuildOptions = {
+          entrypoints,
+          target: options.target,
+          format: options.format,
+          minify: options.minify !== false,
+          sourcemap: options.sourcemap,
+          splitting: options.splitting !== false,
+          outdir: options.outdir,
+          publicPath: options.publicPath,
+          root: options.root,
+          env: options.env as 'inline' | 'disable' | `${string}*`,
+          packages: options.packages as 'bundle' | 'external',
+          compile: options.compile
+        }
+
+        // Handle output file override
+        if (options.outfile) {
+          if (entrypoints.length > 1) {
+            console.warn('Warning: --outfile is ignored when building multiple entrypoints')
+          } else {
+            delete buildOptions.outdir
+            buildOptions.outfile = options.outfile
+          }
+        }
+
+        // Handle external modules
+        if (options.external) {
+          buildOptions.external = options.external.split(',').map((e: string) => e.trim())
+        }
+
+        // Handle watch mode
+        if (options.watch) {
+          buildOptions.watch = {
+            onRebuild(error: Error | null, result: BuildOutput | null) {
+              if (error) {
+                console.error('Build failed:', error)
+              } else if (result) {
+                const fileCount = result.outputs.length
+                console.log(`Build succeeded! Generated ${fileCount} file${fileCount !== 1 ? 's' : ''}`)
+              }
+            }
+          }
+        }
+
+        // Execute build
+        const result = await Bun.build(buildOptions) as BuildOutput
+
+        if (result.success) {
+          const outputCount = result.outputs.length
+          console.log(`✓ Build successful! Generated ${outputCount} file${outputCount !== 1 ? 's' : ''}`)
+
+          // Show output file paths
+          if (outputCount > 0 && outputCount <= 10) {
+            console.log('\nGenerated files:')
+            for (const output of result.outputs) {
+              const relativePath = path.relative(process.cwd(), output.path)
+              console.log(`  ${relativePath}`)
+            }
+          }
+
+          // Show any warnings
+          if (result.logs && result.logs.length > 0) {
+            const warnings = result.logs.filter(log => log.level === 'warning')
+            if (warnings.length > 0) {
+              console.log('\nWarnings:')
+              for (const warning of warnings) {
+                console.warn(`  ${warning.message}`)
+              }
+            }
+          }
+        } else {
+          console.error('Build failed with errors')
+          if (result.logs && result.logs.length > 0) {
+            const errors = result.logs.filter(log => log.level === 'error')
+            for (const error of errors) {
+              console.error(`  ${error.message}`)
+            }
+          }
+          process.exit(1)
+        }
+      } catch (error) {
+        console.error('Build failed:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
+
   cli.command('version', 'Show the version of the CLI').action(() => {
     console.log(version)
   })
