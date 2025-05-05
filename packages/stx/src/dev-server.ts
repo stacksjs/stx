@@ -2,8 +2,8 @@ import { serve } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import stxPlugin from 'bun-plugin-stx'
-import { defaultConfig } from './config'
+// TODO: import this from `bun-plugin-stx`. Oddly, there seemingly are issues right now
+import { plugin as stxPlugin } from './plugin'
 
 // Define types for dev server options
 export interface DevServerOptions {

@@ -1,5 +1,7 @@
+// Import plugin from local file to avoid circular dependencies
 import { plugin as stxPlugin } from 'bun-plugin-stx'
 
+// Export all other modules
 export * from './auth'
 export * from './animation'
 export * from './caching'
@@ -83,8 +85,7 @@ export * from './utils'
 
 export { buildWebComponents, webComponentDirectiveHandler } from './web-components'
 
-// Export the plugin as a named export
+// Export the plugin with both named export and as default
 export { stxPlugin }
+export default  stxPlugin
 
-// Also export as default for backward compatibility
-export default stxPlugin
