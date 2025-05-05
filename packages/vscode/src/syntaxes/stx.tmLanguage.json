@@ -177,7 +177,7 @@
           "name": "keyword.stx"
         },
         {
-          "match": "(?x)(?<![A-Za-z0-9_@]) @(end)? (?i:  auth\n  |can\n  |canany\n  |cannot\n  |component\n  |empty\n  |error\n  |for\n  |foreach\n  |forelse\n  |guest\n  |if\n  |isset\n  |lang\n  |prepend\n  |push\n  |section\n  |slot\n  |switch\n  |unless\n  |while\n  |once\n  |pushOnce\n  |pushIf\n  |prependOnce\n  |session\n)\\b\n",
+          "match": "(?x)(?<![A-Za-z0-9_@]) @(end)? (?i:  auth\n  |can\n  |canany\n  |cannot\n  |component\n  |empty\n  |error\n  |for\n  |foreach\n  |forelse\n  |guest\n  |if\n  |isset\n  |lang\n  |markdown\n  |prepend\n  |push\n  |raw\n  |section\n  |slot\n  |switch\n  |unless\n  |while\n  |once\n  |pushOnce\n  |pushIf\n  |prependOnce\n  |session\n)\\b\n",
           "name": "keyword.stx"
         },
         {

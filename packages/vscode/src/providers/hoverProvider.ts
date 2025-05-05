@@ -599,6 +599,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
           'ts', 'endts',
           'include',
           'raw', 'endraw',
+          'markdown', 'endmarkdown',
           't', 'translate',
           'continue', 'break',
           'transition', 'endtransition', 'animationGroup', 'motion' // Animation directives
@@ -1105,6 +1106,80 @@ errors.notFound: "Page not found"`, 'yaml');
           case 'endtransition':
             description = 'Marks the end of a @transition block.';
             syntax = '@endtransition';
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            return new vscode.Hover(hover);
+          case 'markdown':
+            description = 'Embeds Markdown content that will be rendered as HTML in the output.';
+            syntax = '@markdown\n    # Markdown content\n    Text with **bold** and *italic*\n@endmarkdown';
+            example = '@markdown\n    # Product Details\n    \n    This **premium** product includes:\n    - Feature 1\n    - Feature 2\n@endmarkdown';
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            // Add markdown formatting guide
+            hover.appendMarkdown('\n\n**Markdown Formatting**\n');
+            hover.appendMarkdown('- Headings: `# H1`, `## H2`, etc.\n');
+            hover.appendMarkdown('- Bold: `**bold text**`\n');
+            hover.appendMarkdown('- Italic: `*italic text*`\n');
+            hover.appendMarkdown('- Lists: `- item` or `1. item`\n');
+            hover.appendMarkdown('- Links: `[text](url)`\n');
+            hover.appendMarkdown('- Code: `` `code` `` or ````code block````');
+
+            return new vscode.Hover(hover);
+          case 'endmarkdown':
+            description = 'Marks the end of a Markdown content block.';
+            syntax = '@endmarkdown';
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            return new vscode.Hover(hover);
+          case 'raw':
+            description = 'Displays content exactly as is, without processing any STX expressions or directives.';
+            syntax = '@raw\n    Content to display verbatim\n@endraw';
+            example = '@raw\n    <div>\n        Using {{ curly braces }} that should not be processed\n        @if (true) This is not a directive @endif\n    </div>\n@endraw';
+
+            hover.appendMarkdown(description);
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n');
+              hover.appendCodeblock(syntax, 'stx');
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n');
+              hover.appendCodeblock(example, 'stx');
+            }
+
+            hover.appendMarkdown('\n\n**Use Cases**\n');
+            hover.appendMarkdown('- Displaying syntax examples that use STX syntax\n');
+            hover.appendMarkdown('- Including content that contains curly braces or @ symbols\n');
+            hover.appendMarkdown('- Showing code snippets that should not be processed');
+
+            return new vscode.Hover(hover);
+          case 'endraw':
+            description = 'Marks the end of a raw content block.';
+            syntax = '@endraw';
 
             hover.appendMarkdown(description);
 
