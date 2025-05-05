@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STX Demo - Hello World</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      line-height: 1.6;
+      color: #333;
+    }
+    h1 {
+      color: #2563eb;
+      margin-bottom: 1rem;
+    }
+    .card {
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      background-color: #f8fafc;
+      margin-bottom: 1.5rem;
+    }
+    .counter {
+      margin-top: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    .count {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    .time {
+      margin-top: 1rem;
+      color: #64748b;
+    }
+    .color-switcher {
+      margin-top: 2rem;
+    }
+    .color-options {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .color-option {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    .color-option.active {
+      border-color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<script>
+  // Get current time
+  export const currentTime = new Date().toLocaleTimeString();
+
+  // Set initial state
+  export const name = 'World';
+  export const count = 0;
+  export const themeColor = '#2563eb';
+
+  // Define color options
+  export const colors = [
+    { name: 'Blue', value: '#2563eb' },
+    { name: 'Green', value: '#10b981' },
+    { name: 'Purple', value: '#8b5cf6' },
+    { name: 'Red', value: '#ef4444' },
+    { name: 'Orange', value: '#f97316' }
+  ];
+</script>
+
+<h1>Hello, {{ name }}!</h1>
+
+<div class="card">
+  <p>Welcome to the STX dev server. This page is rendered using STX templating engine.</p>
+  <p>Try modifying the <code>examples/hello-world.stx</code> file to see changes automatically reload.</p>
+
+  <div class="time">
+    Page loaded at: {{ currentTime }}
+  </div>
+</div>
+
+<div class="card counter">
+  <button onclick="document.querySelector('.count').textContent = Number(document.querySelector('.count').textContent) - 1">-</button>
+  <div class="count">{{ count }}</div>
+  <button onclick="document.querySelector('.count').textContent = Number(document.querySelector('.count').textContent) + 1">+</button>
+</div>
+
+<div class="card color-switcher">
+  <h3>Theme Color</h3>
+  <p>Click a color to change the theme:</p>
+
+  <div class="color-options">
+    @for (color of colors)
+      <div
+        class="color-option {{ color.value === themeColor ? 'active' : '' }}"
+        style="background-color: {{ color.value }}"
+        onclick="changeThemeColor('{{ color.value }}')"
+        title="{{ color.name }}"
+      ></div>
+    @endfor
+  </div>
+</div>
+
+<script>
+  function changeThemeColor(color) {
+    // Update theme color
+    document.querySelectorAll('h1').forEach(h1 => h1.style.color = color);
+    document.querySelectorAll('button').forEach(btn => {
+      btn.style.backgroundColor = color;
+      btn.addEventListener('mouseenter', () => {
+        btn.style.backgroundColor = adjustColor(color, -20);
+      });
+      btn.addEventListener('mouseleave', () => {
+        btn.style.backgroundColor = color;
+      });
+    });
+
+    // Update active state
+    document.querySelectorAll('.color-option').forEach(option => {
+      if (option.style.backgroundColor === color) {
+        option.classList.add('active');
+      } else {
+        option.classList.remove('active');
+      }
+    });
+  }
+
+  function adjustColor(color, amount) {
+    // Simple function to darken/lighten color
+    const hexToRgb = (hex) => {
+      hex = hex.replace('#', '');
+      return [
+        parseInt(hex.substring(0, 2), 16),
+        parseInt(hex.substring(2, 4), 16),
+        parseInt(hex.substring(4, 6), 16)
+      ];
+    };
+
+    const [r, g, b] = hexToRgb(color);
+    const newR = Math.max(0, Math.min(255, r + amount));
+    const newG = Math.max(0, Math.min(255, g + amount));
+    const newB = Math.max(0, Math.min(255, b + amount));
+
+    return `rgb(${newR}, ${newG}, ${newB})`;
+  }
+
+  // Initialize theme color
+  changeThemeColor('{{ themeColor }}');
+</script>
+
+</body>
+</html>

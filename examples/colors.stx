@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STX Dynamic Colors</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .palette {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+    .color-card {
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .color-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    .color-preview {
+      height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      font-weight: bold;
+    }
+    .color-info {
+      padding: 1rem;
+      background-color: white;
+    }
+    .color-name {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    .color-hex {
+      font-family: monospace;
+      color: #666;
+    }
+    .color-rgb {
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #888;
+      margin-top: 0.5rem;
+    }
+    .contrast {
+      display: flex;
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .contrast-box {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      margin-right: 0.5rem;
+    }
+    .dark-text {
+      color: black;
+      text-shadow: none;
+    }
+    .footer {
+      margin-top: 3rem;
+      text-align: center;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+
+<script>
+  // Color palette data
+  export const paletteTitle = 'STX Color Palette Generator';
+
+  // Generate a random set of harmonious colors
+  export const generatePalette = () => {
+    const palette = [];
+    // Base hue - random value between 0 and 360
+    const baseHue = Math.floor(Math.random() * 360);
+
+    // Create 8 colors based on the base hue
+    for (let i = 0; i < 8; i++) {
+      // Calculate a hue that's offset from the base
+      const hue = (baseHue + i * 45) % 360;
+      // Vary saturation and lightness
+      const saturation = 65 + Math.floor(Math.random() * 35);
+      const lightness = 45 + Math.floor(Math.random() * 30);
+
+      // Create the color object
+      const color = {
+        id: i,
+        name: `Color ${i + 1}`,
+        hsl: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
+        hex: hslToHex(hue, saturation, lightness),
+        rgb: hslToRgb(hue, saturation, lightness),
+        contrastWithWhite: getContrastRatio(hslToRgb(hue, saturation, lightness), [255, 255, 255])
+      };
+
+      palette.push(color);
+    }
+
+    return palette;
+  };
+
+  // Convert HSL to Hex color
+  function hslToHex(h, s, l) {
+    const rgb = hslToRgb(h, s, l);
+    return `#${rgb[0].toString(16).padStart(2, '0')}${rgb[1].toString(16).padStart(2, '0')}${rgb[2].toString(16).padStart(2, '0')}`;
+  }
+
+  // Convert HSL to RGB
+  function hslToRgb(h, s, l) {
+    s /= 100;
+    l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return [
+      Math.round(255 * f(0)),
+      Math.round(255 * f(8)),
+      Math.round(255 * f(4))
+    ];
+  }
+
+  // Calculate contrast ratio between two RGB colors
+  function getContrastRatio(rgb1, rgb2) {
+    const getLuminance = rgb => {
+      const [r, g, b] = rgb.map(c => {
+        c /= 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+
+    const l1 = getLuminance(rgb1);
+    const l2 = getLuminance(rgb2);
+
+    const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+    return Math.round(ratio * 10) / 10;
+  }
+
+  // Generate the palette
+  export const colorPalette = generatePalette();
+
+  // Current timestamp for regeneration display
+  export const timestamp = new Date().toLocaleTimeString();
+</script>
+
+<header>
+  <h1>{{ paletteTitle }}</h1>
+  <p>Refresh the page or edit this file to generate new colors. Last updated: {{ timestamp }}</p>
+</header>
+
+<div class="palette">
+  @for (color of colorPalette)
+    <div class="color-card">
+      <div class="color-preview" style="background-color: {{ color.hex }}">
+        <span class="{{ color.contrastWithWhite < 4.5 ? 'dark-text' : '' }}">{{ color.name }}</span>
+      </div>
+      <div class="color-info">
+        <div class="color-name">{{ color.name }}</div>
+        <div class="color-hex">{{ color.hex }}</div>
+        <div class="color-rgb">{{ color.rgb.join(', ') }}</div>
+        <div class="contrast">
+          <div class="contrast-box" style="background-color: white; border: 1px solid #ddd;"></div>
+          Contrast: {{ color.contrastWithWhite }}:1
+        </div>
+      </div>
+    </div>
+  @endfor
+</div>
+
+<div class="footer">
+  <p>Created with STX Templating Engine</p>
+  <p>Try modifying this file at <code>examples/colors.stx</code></p>
+</div>
+
+</body>
+</html>
