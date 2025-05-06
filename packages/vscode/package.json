@@ -34,7 +34,7 @@
   "main": "./dist/extension.js",
   "icon": "logo.png",
   "engines": {
-    "vscode": "^1.96.0"
+    "vscode": "^1.99.3"
   },
   "activationEvents": [
     "workspaceContains:**/*.stx",
@@ -480,7 +480,7 @@
     "vscode-languageclient": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.17.5",
-    "@types/vscode": "^1.96.0",
-    "typescript": "^5.0.0"
+    "@types/vscode": "^1.99.1",
+    "typescript": "^5.8.3"
   }
 }
