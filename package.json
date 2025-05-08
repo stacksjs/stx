@@ -77,8 +77,8 @@
     "@stacksjs/eslint-config": "^4.10.2-beta.3",
     "@types/bun": "^1.2.12",
     "bumpp": "^10.1.0",
-    "bun-plugin-dtsx": "^0.21.11",
-    "bunfig": "^0.8.4",
+    "bun-plugin-dtsx": "^0.21.12",
+    "bunfig": "^0.8.5",
     "changelogen": "^0.6.1",
     "typescript": "^5.8.3"
   },
