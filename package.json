@@ -69,16 +69,16 @@
   },
   "dependencies": {
     "marked": "^15.0.11",
-    "yaml": "^2.7.1"
+    "yaml": "^2.8.0"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^17.4.7",
     "@stacksjs/docs": "^0.70.23",
     "@stacksjs/eslint-config": "^4.10.2-beta.3",
     "@types/bun": "^1.2.13",
-    "bumpp": "^10.1.0",
+    "bumpp": "^10.1.1",
     "bun-plugin-dtsx": "^0.21.12",
-    "bunfig": "^0.8.5",
+    "bunfig": "^0.10.0",
     "changelogen": "^0.6.1",
     "typescript": "^5.8.3"
   },
