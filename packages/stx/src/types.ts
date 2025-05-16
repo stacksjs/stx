@@ -445,7 +445,7 @@ export type SyntaxHighlightTheme =
   | 'vs'
   | 'vs2015'
   | 'xcode'
-  | 'xt256';
+  | 'xt256'
 
 /**
  * Syntax highlighting configuration

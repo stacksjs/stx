@@ -84,8 +84,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Track document changes
   const documentChangeListener = vscode.workspace.onDidChangeTextDocument((event) => {
-    if (event.document.languageId === 'stx' ||
-        (event.document.languageId === 'markdown' && event.document.fileName.endsWith('.md'))) {
+    if (event.document.languageId === 'stx'
+      || (event.document.languageId === 'markdown' && event.document.fileName.endsWith('.md'))) {
       virtualTsDocumentProvider.updateVirtualTsDocument(event.document)
     }
   })

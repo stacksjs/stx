@@ -44,7 +44,8 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
         this.positionMappings.set(key, mappings)
         this.jsDocComments.set(key, jsDocComments)
         return content
-      } else {
+      }
+      else {
         const { content, mappings, jsDocComments } = this.extractTypeScriptFromStx(document)
         this.derivedTsContent.set(key, content)
         this.positionMappings.set(key, mappings)
@@ -60,9 +61,9 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
    * Extract TypeScript definitions from markdown frontmatter
    */
   extractTypeScriptFromMarkdown(document: vscode.TextDocument): {
-    content: string;
-    mappings: PositionMapping[];
-    jsDocComments: JSDocInfo[];
+    content: string
+    mappings: PositionMapping[]
+    jsDocComments: JSDocInfo[]
   } {
     try {
       const text = document.getText()
@@ -76,7 +77,6 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
 
       if (frontmatterMatch) {
         const frontmatter = frontmatterMatch[1]
-        const frontmatterStartPos = 4 // after '---\n'
 
         // Create a TypeScript interface for the frontmatter data
         tsContent += '/**\n * Frontmatter data extracted from markdown file\n */\n'
@@ -87,7 +87,8 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
         const lines = frontmatter.split('\n')
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i].trim()
-          if (!line || line.startsWith('#')) continue
+          if (!line || line.startsWith('#'))
+            continue
 
           // Match key-value pair patterns like 'key: value'
           const match = line.match(/^(\w+):\s*(.*)$/)
@@ -98,9 +99,11 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
             let propType = 'string'
             if (propValue === 'true' || propValue === 'false') {
               propType = 'boolean'
-            } else if (/^\d+$/.test(propValue)) {
+            }
+            else if (/^\d+$/.test(propValue)) {
               propType = 'number'
-            } else if (/^\[.*\]$/.test(propValue)) {
+            }
+            else if (/^\[.*\]$/.test(propValue)) {
               propType = 'string[]'
             }
 
@@ -145,7 +148,8 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
         tsContent += 'export default content;\n'
 
         tsLineCounter += 8
-      } else {
+      }
+      else {
         // No frontmatter found, provide basic exports
         tsContent += '/** HTML content rendered from markdown */\n'
         tsContent += 'export const content: string;\n\n'
@@ -158,12 +162,13 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
       }
 
       return { content: tsContent, mappings, jsDocComments }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error extracting TypeScript from Markdown:', error)
       return {
         content: '// Error extracting TypeScript content from Markdown\nexport const content: string;\nexport const data: Record<string, any> = {};\nexport default content;',
         mappings: [],
-        jsDocComments: []
+        jsDocComments: [],
       }
     }
   }

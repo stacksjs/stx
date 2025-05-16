@@ -1,11 +1,11 @@
+import type { StxOptions, SyntaxHighlightTheme } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
-import { marked } from 'marked'
 import matter from 'gray-matter'
 import hljs from 'highlight.js'
-import { createDetailedErrorMessage, fileExists } from './utils'
-import type { StxOptions, SyntaxHighlightTheme } from './types'
+import { marked } from 'marked'
 import { config } from './config'
+import { createDetailedErrorMessage, fileExists } from './utils'
 
 // Define a cache for markdown files to avoid repeated file reads
 export const markdownCache: Map<string, {
@@ -23,7 +23,7 @@ export const markdownCache: Map<string, {
 export async function readMarkdownFile(
   filePath: string,
   options: StxOptions = {},
-): Promise<{ content: string; data: Record<string, any> }> {
+): Promise<{ content: string, data: Record<string, any> }> {
   try {
     // Check if the file exists
     if (!await fileExists(filePath)) {
@@ -60,21 +60,21 @@ export async function readMarkdownFile(
         enabled: true,
         serverSide: true,
         defaultTheme: 'github' as SyntaxHighlightTheme,
-        highlightUnknownLanguages: true
-      }
+        highlightUnknownLanguages: true,
+      },
     }
 
     // Parse the markdown content to HTML
-    const parsedContent = await Promise.resolve(marked.parse(matterResult.content));
-    let htmlContent = parsedContent;
+    const parsedContent = await Promise.resolve(marked.parse(matterResult.content))
+    let htmlContent = parsedContent
 
     // Apply syntax highlighting to code blocks if enabled
     if (markdownConfig.syntaxHighlighting?.enabled && markdownConfig.syntaxHighlighting?.serverSide) {
       // Find all code blocks in the HTML and apply syntax highlighting
       htmlContent = applyCodeHighlighting(
         htmlContent,
-        markdownConfig.syntaxHighlighting?.highlightUnknownLanguages || false
-      );
+        markdownConfig.syntaxHighlighting?.highlightUnknownLanguages || false,
+      )
     }
 
     // Prepare the result
@@ -110,7 +110,7 @@ export async function readMarkdownFile(
 
     return {
       content: errorHtml,
-      data: {}
+      data: {},
     }
   }
 }
@@ -120,43 +120,35 @@ export async function readMarkdownFile(
  */
 function applyCodeHighlighting(html: string, highlightUnknown: boolean): string {
   // Find all code blocks in the HTML
-  const codeRegex = /<pre><code( class="language-([^"]+)")?>([^<]+)<\/code><\/pre>/g;
+  const codeRegex = /<pre><code( class="language-([^"]+)")?>([^<]+)<\/code><\/pre>/g
 
   // Replace each code block with a highlighted version
   return html.replace(codeRegex, (match, languageClass, language, code) => {
     if (!language) {
-      return match; // No language specified, return as-is
+      return match // No language specified, return as-is
     }
 
     try {
-      let highlightedCode;
+      let highlightedCode
 
       if (hljs.getLanguage(language)) {
         // Highlight code with specified language
-        highlightedCode = hljs.highlight(code, { language, ignoreIllegals: true }).value;
-        return `<pre><code class="language-${language}">${highlightedCode}</code></pre>`;
-      } else if (highlightUnknown) {
-        // Try auto-detection for unknown languages
-        highlightedCode = hljs.highlightAuto(code).value;
-        return `<pre><code class="language-${language}">${highlightedCode}</code></pre>`;
+        highlightedCode = hljs.highlight(code, { language, ignoreIllegals: true }).value
+        return `<pre><code class="language-${language}">${highlightedCode}</code></pre>`
       }
-    } catch (err) {
-      console.error(`Error highlighting code block with language ${language}:`, err);
+      else if (highlightUnknown) {
+        // Try auto-detection for unknown languages
+        highlightedCode = hljs.highlightAuto(code).value
+        return `<pre><code class="language-${language}">${highlightedCode}</code></pre>`
+      }
+    }
+    catch (err) {
+      console.error(`Error highlighting code block with language ${language}:`, err)
     }
 
     // Return original if highlighting fails
-    return match;
-  });
-}
-
-// Helper function to escape HTML
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    return match
+  })
 }
 
 /**
@@ -169,9 +161,10 @@ export async function processMarkdownFileDirectives(
   filePath: string = '',
   options: StxOptions = {},
 ): Promise<string> {
-  let output = template
+  const output = template
   // Regex to match @markdown-file('path/to/file.md') directives
-  const regex = /@markdown-file\(\s*['"]([^'"]+)['"]\s*(?:,\s*(\{[^}]*\}))?\s*\)/g
+  // Fixed regex to avoid super-linear backtracking
+  const regex = /@markdown-file\(\s*['"]([^'"]+)['"]\s*(?:,\s*(\{[^}]*\}))?\)/g
 
   // Process all matches
   return await replaceAsync(output, regex, async (match, mdFilePath, contextStr, offset) => {
@@ -188,8 +181,46 @@ export async function processMarkdownFileDirectives(
       let additionalContext: Record<string, any> = {}
       if (contextStr) {
         try {
-          // Try to parse the context object
-          additionalContext = Function(`return ${contextStr}`)()
+          // Safely parse JSON using JSON.parse
+          // Wrap contextStr in try/catch since it's user-provided and might not be valid JSON
+          try {
+            additionalContext = JSON.parse(contextStr)
+          }
+          catch {
+            // If it's not valid JSON, it might be a JS object literal
+            // Use a safer approach than Function constructor
+            if (options.debug) {
+              console.warn('Using safer alternative for parsing JS object literal')
+            }
+
+            // Use a simple approach without regex to parse the object literal
+            // First, clean up the string by removing the braces
+            const cleanContextStr = contextStr.replace(/^\s*\{|\}\s*$/g, '').trim()
+
+            // Split by commas that are not inside quotes
+            const entries = cleanContextStr.split(/,(?=\s*\w+\s*:)/)
+
+            // Process each entry
+            for (const entry of entries) {
+              const colonIndex = entry.indexOf(':')
+              if (colonIndex > 0) {
+                // Extract key (trimming whitespace)
+                const key = entry.substring(0, colonIndex).trim()
+
+                // Extract value (trimming whitespace and quotes)
+                let value = entry.substring(colonIndex + 1).trim()
+
+                // Remove quotes if present
+                const hasDoubleQuotes = value.startsWith('"') && value.endsWith('"')
+                const hasSingleQuotes = value.startsWith('\'') && value.endsWith('\'')
+                if (hasDoubleQuotes || hasSingleQuotes) {
+                  value = value.substring(1, value.length - 1)
+                }
+
+                additionalContext[key] = value
+              }
+            }
+          }
         }
         catch (contextError) {
           if (options.debug) {
@@ -212,7 +243,7 @@ export async function processMarkdownFileDirectives(
       let processedContent = content
 
       // Look for {{ variable }} expressions in the HTML content
-      const expressionRegex = /\{\{\s*([^}]+)\s*\}\}/g
+      const expressionRegex = /\{\{([^}]+)\}\}/g
       processedContent = processedContent.replace(expressionRegex, (exprMatch, exprKey) => {
         const trimmedKey = exprKey.trim()
         return mergedContext[trimmedKey] !== undefined ? String(mergedContext[trimmedKey]) : exprMatch
@@ -247,9 +278,9 @@ async function replaceAsync(
   ) => Promise<string>,
 ): Promise<string> {
   // Define the type for our promise results
-  type PromiseResult = {
-    match: string,
-    replacement: string,
+  interface PromiseResult {
+    match: string
+    replacement: string
     index: number
   }
 
@@ -268,7 +299,7 @@ async function replaceAsync(
         match: matchText,
         replacement,
         index: matchIndex,
-      }))
+      })),
     )
   }
 

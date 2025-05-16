@@ -1,43 +1,43 @@
 /* eslint-disable no-console */
+import type { SyntaxHighlightTheme } from './types'
 import { serve } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-// TODO: import this from `bun-plugin-stx`. Oddly, there seemingly are issues right now
-import { plugin as stxPlugin } from './plugin'
 import { readMarkdownFile } from './assets'
 import { config } from './config'
-import type { SyntaxHighlightTheme } from './types'
+// TODO: import this from `bun-plugin-stx`. Oddly, there seemingly are issues right now
+import { plugin as stxPlugin } from './plugin'
 
 // ANSI color codes for terminal output
 const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
-  underscore: '\x1b[4m',
-  blink: '\x1b[5m',
-  reverse: '\x1b[7m',
-  hidden: '\x1b[8m',
+  reset: '\x1B[0m',
+  bright: '\x1B[1m',
+  dim: '\x1B[2m',
+  underscore: '\x1B[4m',
+  blink: '\x1B[5m',
+  reverse: '\x1B[7m',
+  hidden: '\x1B[8m',
 
-  black: '\x1b[30m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  magenta: '\x1b[35m',
-  cyan: '\x1b[36m',
-  white: '\x1b[37m',
-  gray: '\x1b[90m',
+  black: '\x1B[30m',
+  red: '\x1B[31m',
+  green: '\x1B[32m',
+  yellow: '\x1B[33m',
+  blue: '\x1B[34m',
+  magenta: '\x1B[35m',
+  cyan: '\x1B[36m',
+  white: '\x1B[37m',
+  gray: '\x1B[90m',
 
-  bgBlack: '\x1b[40m',
-  bgRed: '\x1b[41m',
-  bgGreen: '\x1b[42m',
-  bgYellow: '\x1b[43m',
-  bgBlue: '\x1b[44m',
-  bgMagenta: '\x1b[45m',
-  bgCyan: '\x1b[46m',
-  bgWhite: '\x1b[47m',
-  bgGray: '\x1b[100m',
+  bgBlack: '\x1B[40m',
+  bgRed: '\x1B[41m',
+  bgGreen: '\x1B[42m',
+  bgYellow: '\x1B[43m',
+  bgBlue: '\x1B[44m',
+  bgMagenta: '\x1B[45m',
+  bgCyan: '\x1B[46m',
+  bgWhite: '\x1B[47m',
+  bgGray: '\x1B[100m',
 }
 
 // Define types for dev server options
@@ -152,24 +152,24 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
             serverSide: true,
             enabled: true,
             defaultTheme: config.markdown?.syntaxHighlighting?.defaultTheme || 'github',
-            highlightUnknownLanguages: true
-          }
-        }
+            highlightUnknownLanguages: true,
+          },
+        },
       })
 
       // Get the default theme from config
-      const markdownConfig = options.markdown?.syntaxHighlighting || config.markdown?.syntaxHighlighting;
-      const defaultTheme = markdownConfig?.defaultTheme || 'github';
+      const markdownConfig = options.markdown?.syntaxHighlighting || config.markdown?.syntaxHighlighting
+      const defaultTheme = markdownConfig?.defaultTheme || 'github'
 
       // Combine available themes
-      const baseThemes: SyntaxHighlightTheme[] = ['github'];  // Always include github
-      const configThemes = markdownConfig?.additionalThemes || [];
-      const availableThemes = [...new Set([...baseThemes, ...configThemes])];
+      const baseThemes: SyntaxHighlightTheme[] = ['github'] // Always include github
+      const configThemes = markdownConfig?.additionalThemes || []
+      const availableThemes = [...new Set([...baseThemes, ...configThemes])]
 
       // Create the theme options HTML
       const themeOptions = availableThemes.map((theme: SyntaxHighlightTheme) =>
-        `<option value="${theme}"${theme === defaultTheme ? ' selected' : ''}>${theme}</option>`
-      ).join('\n      ');
+        `<option value="${theme}"${theme === defaultTheme ? ' selected' : ''}>${theme}</option>`,
+      ).join('\n      ')
 
       // Create a simple HTML wrapper for the content with a nice theme
       htmlContent = `
@@ -293,7 +293,8 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
   </style>
 </head>
 <body>
-  ${Object.keys(data).length > 0 ? `
+  ${Object.keys(data).length > 0
+    ? `
   <div class="frontmatter">
     <h3>Frontmatter</h3>
     ${Object.entries(data).map(([key, value]) => `
@@ -302,7 +303,8 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
       <span>${Array.isArray(value) ? value.join(', ') : value}</span>
     </div>`).join('')}
   </div>
-  ` : ''}
+  `
+    : ''}
 
   <div class="theme-selector">
     Theme:
@@ -652,24 +654,24 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
                   serverSide: true,
                   enabled: true,
                   defaultTheme: config.markdown?.syntaxHighlighting?.defaultTheme || 'github',
-                  highlightUnknownLanguages: true
-                }
-              }
+                  highlightUnknownLanguages: true,
+                },
+              },
             })
 
             // Get the default theme from config
-            const markdownConfig = options.markdown?.syntaxHighlighting || config.markdown?.syntaxHighlighting;
-            const defaultTheme = markdownConfig?.defaultTheme || 'github';
+            const markdownConfig = options.markdown?.syntaxHighlighting || config.markdown?.syntaxHighlighting
+            const defaultTheme = markdownConfig?.defaultTheme || 'github'
 
             // Combine available themes
-            const baseThemes: SyntaxHighlightTheme[] = ['github'];  // Always include github
-            const configThemes = markdownConfig?.additionalThemes || [];
-            const availableThemes = [...new Set([...baseThemes, ...configThemes])];
+            const baseThemes: SyntaxHighlightTheme[] = ['github'] // Always include github
+            const configThemes = markdownConfig?.additionalThemes || []
+            const availableThemes = [...new Set([...baseThemes, ...configThemes])]
 
             // Create the theme options HTML
             const themeOptions = availableThemes.map((theme: SyntaxHighlightTheme) =>
-              `<option value="${theme}"${theme === defaultTheme ? ' selected' : ''}>${theme}</option>`
-            ).join('\n      ');
+              `<option value="${theme}"${theme === defaultTheme ? ' selected' : ''}>${theme}</option>`,
+            ).join('\n      ')
 
             // Create a simple HTML wrapper for the content with a nice theme
             const htmlContent = `
@@ -793,7 +795,8 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   </style>
 </head>
 <body>
-  ${Object.keys(data).length > 0 ? `
+  ${Object.keys(data).length > 0
+    ? `
   <div class="frontmatter">
     <h3>Frontmatter</h3>
     ${Object.entries(data).map(([key, value]) => `
@@ -802,7 +805,8 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       <span>${Array.isArray(value) ? value.join(', ') : value}</span>
     </div>`).join('')}
   </div>
-  ` : ''}
+  `
+    : ''}
 
   <div class="theme-selector">
     Theme:

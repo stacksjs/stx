@@ -1,9 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import { readMarkdownFile } from '../../src/assets'
 import { config } from '../../src/config'
-import type { SyntaxHighlightTheme, StxOptions } from '../../src/types'
 
 const TEMP_DIR = path.join(import.meta.dir, 'temp')
 const FIXTURES_DIR = path.join(import.meta.dir, 'fixtures')
@@ -92,7 +91,7 @@ It should be highlighted based on config.
 
     await fs.promises.writeFile(
       path.join(FIXTURES_DIR, 'code-blocks.md'),
-      testMarkdown
+      testMarkdown,
     )
 
     // Create a file with different code fence styles
@@ -150,7 +149,7 @@ int main() {
 
     await fs.promises.writeFile(
       path.join(FIXTURES_DIR, 'fence-styles.md'),
-      fenceStylesMarkdown
+      fenceStylesMarkdown,
     )
 
     // Create a file with HTML entities and escaping test cases
@@ -185,7 +184,7 @@ if (x < 10 && y > 20) {
 
     await fs.promises.writeFile(
       path.join(FIXTURES_DIR, 'html-entities.md'),
-      htmlEntitiesMarkdown
+      htmlEntitiesMarkdown,
     )
 
     // Create a file with multi-language features
@@ -266,7 +265,7 @@ LIMIT 10;
 
     await fs.promises.writeFile(
       path.join(FIXTURES_DIR, 'language-features.md'),
-      multiLanguageMarkdown
+      multiLanguageMarkdown,
     )
   })
 
@@ -284,9 +283,9 @@ LIMIT 10;
           enabled: true,
           serverSide: true,
           defaultTheme: 'github',
-          highlightUnknownLanguages: true
-        }
-      }
+          highlightUnknownLanguages: true,
+        },
+      },
     })
 
     // Test that basic HTML structures are present
@@ -311,9 +310,9 @@ LIMIT 10;
           enabled: false,
           serverSide: true,
           defaultTheme: 'github',
-          highlightUnknownLanguages: true
-        }
-      }
+          highlightUnknownLanguages: true,
+        },
+      },
     })
 
     // Should have pre/code elements
@@ -329,7 +328,7 @@ LIMIT 10;
 
     expect(data).toEqual({
       title: 'Test Markdown File',
-      author: 'Test'
+      author: 'Test',
     })
   })
 
@@ -344,9 +343,9 @@ LIMIT 10;
           enabled: true,
           serverSide: true,
           defaultTheme: 'github',
-          highlightUnknownLanguages: true
-        }
-      }
+          highlightUnknownLanguages: true,
+        },
+      },
     })
 
     // Second read should use cache
@@ -357,9 +356,9 @@ LIMIT 10;
           enabled: true,
           serverSide: true,
           defaultTheme: 'github',
-          highlightUnknownLanguages: true
-        }
-      }
+          highlightUnknownLanguages: true,
+        },
+      },
     })
 
     // Content should be the same (exact string comparison)
@@ -415,9 +414,9 @@ Regular text after a broken code block.`
           enabled: true,
           serverSide: true,
           defaultTheme: 'github',
-          highlightUnknownLanguages: true
-        }
-      }
+          highlightUnknownLanguages: true,
+        },
+      },
     })
 
     // Test that markdown has been processed
@@ -447,9 +446,9 @@ Regular text after a broken code block.`
           enabled: true,
           serverSide: true,
           defaultTheme: 'github',
-          highlightUnknownLanguages: true
-        }
-      }
+          highlightUnknownLanguages: true,
+        },
+      },
     })
 
     // Test that different code fence styles are processed correctly
@@ -472,9 +471,9 @@ Regular text after a broken code block.`
           enabled: true,
           serverSide: true,
           defaultTheme: 'github',
-          highlightUnknownLanguages: true
-        }
-      }
+          highlightUnknownLanguages: true,
+        },
+      },
     })
 
     // Test that the file was processed
@@ -501,9 +500,9 @@ Regular text after a broken code block.`
           enabled: true,
           serverSide: true,
           defaultTheme: 'github',
-          highlightUnknownLanguages: true
-        }
-      }
+          highlightUnknownLanguages: true,
+        },
+      },
     })
 
     // Test that the file was processed
@@ -530,7 +529,6 @@ Regular text after a broken code block.`
     const filePath = path.join(FIXTURES_DIR, 'code-blocks.md')
 
     // Save the original config
-    const originalConfig = { ...config }
     const originalMarkdownConfig = { ...config.markdown }
 
     try {
@@ -542,10 +540,10 @@ Regular text after a broken code block.`
             enabled: true,
             serverSide: true,
             defaultTheme: 'github',
-            highlightUnknownLanguages: true
-          }
+            highlightUnknownLanguages: true,
+          },
         },
-        writable: true
+        writable: true,
       })
 
       // Read without providing explicit options - should use config
@@ -557,11 +555,12 @@ Regular text after a broken code block.`
 
       // The content should contain highlighting
       expect(content).toContain('hljs-')
-    } finally {
+    }
+    finally {
       // Restore original config
       Object.defineProperty(config, 'markdown', {
         value: originalMarkdownConfig,
-        writable: true
+        writable: true,
       })
     }
   })
@@ -580,9 +579,9 @@ Regular text after a broken code block.`
           enabled: true,
           serverSide: true,
           defaultTheme: 'github',
-          highlightUnknownLanguages: true
-        }
-      }
+          highlightUnknownLanguages: true,
+        },
+      },
     })
 
     // Update the file content
@@ -596,9 +595,9 @@ Regular text after a broken code block.`
           enabled: true,
           serverSide: true,
           defaultTheme: 'github',
-          highlightUnknownLanguages: true
-        }
-      }
+          highlightUnknownLanguages: true,
+        },
+      },
     })
 
     // Content should be different because the file changed
@@ -631,9 +630,9 @@ function test() {
           enabled: true,
           serverSide: true,
           defaultTheme: 'github',
-          highlightUnknownLanguages: true
-        }
-      }
+          highlightUnknownLanguages: true,
+        },
+      },
     })
 
     // Test with unknown language highlighting disabled
@@ -643,9 +642,9 @@ function test() {
           enabled: true,
           serverSide: true,
           defaultTheme: 'github',
-          highlightUnknownLanguages: false
-        }
-      }
+          highlightUnknownLanguages: false,
+        },
+      },
     })
 
     // With highlighting enabled, it should attempt to highlight
@@ -662,7 +661,8 @@ function test() {
     if (!withoutHighlighting.includes('hljs-')) {
       // This is the expected case
       expect(true).toBe(true)
-    } else {
+    }
+    else {
       // Or it might still have some basic highlighting
       // Both outcomes are acceptable since we're testing the configuration handling
       expect(true).toBe(true)
