@@ -4,7 +4,7 @@ import { version } from '../package.json'
 import { docsCommand } from '../src/docs'
 import { scanA11yIssues } from '../src/a11y'
 import path from 'node:path'
-import { serveStxFile } from '../src/dev-server'
+import { serveStxFile, serveMultipleStxFiles } from '../src/dev-server'
 import fs from 'node:fs'
 
 const cli = new CAC('stx')
@@ -13,14 +13,17 @@ interface CliOption {
   verbose: boolean
 }
 
-// Check if a file is being provided directly
-const isDirectFileRun = process.argv.length >= 3 &&
-                        process.argv[2].endsWith('.stx') &&
-                        fs.existsSync(process.argv[2])
+// Helper to check if an argument is a glob pattern
+const isGlob = (arg: string) => arg.includes('*') || arg.includes('?') || arg.includes('{') || arg.includes('[')
 
-if (isDirectFileRun) {
-  // Direct file mode: stx file.stx
-  const filePath = process.argv[2]
+// Check if direct file(s) run mode or glob pattern is provided
+const isDirectMode = process.argv.length >= 3 &&
+                     (process.argv[2].endsWith('.stx') && fs.existsSync(process.argv[2])) ||
+                     isGlob(process.argv[2])
+
+if (isDirectMode) {
+  // Direct file mode: stx file.stx or stx **/*.stx
+  const fileArg = process.argv[2]
   const options = {
     port: 3000,
     watch: true
@@ -37,12 +40,45 @@ if (isDirectFileRun) {
     }
   }
 
-  // Start the dev server directly
-  serveStxFile(filePath, options)
-    .catch(error => {
-      console.error('Failed to start dev server:', error)
-      process.exit(1)
-    })
+  // Check if we're dealing with a glob pattern
+  if (isGlob(fileArg)) {
+    // Handle glob pattern
+    (async () => {
+      try {
+        // Use Bun.glob to find all matching .stx files
+        const files = await Array.fromAsync(new Bun.Glob(fileArg).scan({ onlyFiles: true, absolute: true }))
+
+        // Filter to only include .stx files
+        const stxFiles = fileArg.endsWith('.stx')
+          ? files
+          : files.filter(file => file.endsWith('.stx'))
+
+        if (stxFiles.length === 0) {
+          console.error(`Error: No .stx files found matching pattern: ${fileArg}`)
+          process.exit(1)
+        }
+
+        // Serve multiple STX files directly without extra output
+        // (the server will handle the pretty output)
+        const success = await serveMultipleStxFiles(stxFiles, options)
+
+        if (!success) {
+          process.exit(1)
+        }
+      } catch (error) {
+        console.error('Failed to process STX files:', error)
+        process.exit(1)
+      }
+    })()
+  } else {
+    // Single file mode - launch directly without extra output
+    // (the server will handle the pretty output)
+    serveStxFile(fileArg, options)
+      .catch(error => {
+        console.error('Failed to start dev server:', error)
+        process.exit(1)
+      })
+  }
 }
 else {
   // Normal CLI mode - define all commands
@@ -81,15 +117,47 @@ else {
     .option('--no-watch', 'Disable file watching and auto-reload')
     .example('stx dev template.stx')
     .example('stx dev components/hero.stx --port 8080')
-    .action(async (file, options) => {
+    .example('stx dev **/*.stx')
+    .action(async (filePattern, options) => {
       try {
-        const success = await serveStxFile(file, {
-          port: options.port,
-          watch: options.watch !== false
-        })
+        // Check if the input is a glob pattern
+        if (isGlob(filePattern)) {
+          console.log(`Expanding glob pattern: ${filePattern}`)
 
-        if (!success) {
-          process.exit(1)
+          // Use Bun.Glob to find matching files
+          const files = await Array.fromAsync(new Bun.Glob(filePattern).scan({ onlyFiles: true, absolute: true }))
+
+          // Filter to only include .stx files
+          const stxFiles = filePattern.endsWith('.stx')
+            ? files
+            : files.filter(file => file.endsWith('.stx'))
+
+          if (stxFiles.length === 0) {
+            console.error(`Error: No .stx files found matching pattern: ${filePattern}`)
+            process.exit(1)
+          }
+
+          console.log(`Found ${stxFiles.length} STX ${stxFiles.length === 1 ? 'file' : 'files'} matching ${filePattern}`)
+
+          // Serve multiple STX files
+          const success = await serveMultipleStxFiles(stxFiles, {
+            port: options.port,
+            watch: options.watch !== false
+          })
+
+          if (!success) {
+            process.exit(1)
+          }
+        } else {
+          // Single file mode
+          const success = await serveStxFile(filePattern, {
+            port: options.port,
+            watch: options.watch !== false
+          })
+
+          if (!success) {
+            process.exit(1)
+          }
         }
       }
       catch (error) {
@@ -250,6 +318,7 @@ else {
     .example('stx build ./src/index.stx --outfile bundle.js')
     .example('stx build ./components/*.stx --outdir dist --minify')
     .example('stx build ./src/index.stx --outfile bundle.js --target bun')
+    .example('stx build **/*.stx --outdir dist')
     .action(async (entrypoints: string[], options: {
       outdir: string;
       outfile?: string;
@@ -262,7 +331,7 @@ else {
       packages?: 'bundle' | 'external';
       watch?: boolean;
       publicPath?: string;
-      env?: 'inline' | 'disable' | string;
+      env?: 'inline' | 'disable' | `${string}*`;
       compile?: boolean;
       root?: string;
     }) => {
@@ -273,6 +342,50 @@ else {
           console.error('Error: No entrypoints specified')
           process.exit(1)
         }
+
+        // Expand any glob patterns in entrypoints
+        const expandedEntrypoints: string[] = []
+
+        // Process each entrypoint, expanding globs as needed
+        for (const entrypoint of entrypoints) {
+          if (isGlob(entrypoint)) {
+            // Use Bun.Glob to expand the pattern
+            console.log(`Expanding glob pattern: ${entrypoint}`)
+            try {
+              const matchedFiles = await Array.fromAsync(
+                new Bun.Glob(entrypoint).scan({
+                  onlyFiles: true,
+                  absolute: true
+                })
+              )
+
+              // Filter to only include .stx files if the pattern itself doesn't already specify .stx
+              const stxFiles = entrypoint.endsWith('.stx')
+                ? matchedFiles
+                : matchedFiles.filter(file => file.endsWith('.stx'))
+
+              if (stxFiles.length === 0) {
+                console.warn(`Warning: No .stx files found matching pattern: ${entrypoint}`)
+              } else {
+                console.log(`Found ${stxFiles.length} STX ${stxFiles.length === 1 ? 'file' : 'files'} matching ${entrypoint}`)
+                expandedEntrypoints.push(...stxFiles)
+              }
+            } catch (error) {
+              console.error(`Error expanding glob pattern ${entrypoint}:`, error)
+              process.exit(1)
+            }
+          } else {
+            // Regular file path, add directly
+            expandedEntrypoints.push(entrypoint)
+          }
+        }
+
+        if (expandedEntrypoints.length === 0) {
+          console.error('Error: No valid entrypoints found after expanding glob patterns')
+          process.exit(1)
+        }
+
+        console.log(`Building ${expandedEntrypoints.length} STX ${expandedEntrypoints.length === 1 ? 'file' : 'files'}...`)
 
         // Define the type for Bun build options
         interface BunBuildOptions {
@@ -315,7 +428,7 @@ else {
 
         // Prepare build options with proper typing
         const buildOptions: BunBuildOptions = {
-          entrypoints,
+          entrypoints: expandedEntrypoints,
           target: options.target,
           format: options.format,
           minify: options.minify !== false,
@@ -331,7 +444,7 @@ else {
 
         // Handle output file override
         if (options.outfile) {
-          if (entrypoints.length > 1) {
+          if (expandedEntrypoints.length > 1) {
             console.warn('Warning: --outfile is ignored when building multiple entrypoints')
           } else {
             delete buildOptions.outdir
