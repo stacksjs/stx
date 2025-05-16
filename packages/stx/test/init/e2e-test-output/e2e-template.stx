@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>E2E Test Template</title>
+  <script>
+    export const title = "E2E Template Test";
+  </script>
+</head>
+<body>
+  <h1>{{ title }}</h1>
+</body>
+</html>

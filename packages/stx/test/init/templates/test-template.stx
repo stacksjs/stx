@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Template</title>
+  <script>
+    export const testVar = "This is a test template";
+  </script>
+</head>
+<body>
+  <h1>{{ testVar }}</h1>
+</body>
+</html>

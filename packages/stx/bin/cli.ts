@@ -4,14 +4,14 @@ import process from 'node:process'
 import { CAC } from 'cac'
 import { version } from '../package.json'
 import { scanA11yIssues } from '../src/a11y'
-import { serveMultipleStxFiles, serveStxFile } from '../src/dev-server'
+import { serveMultipleStxFiles, serveStxFile, DevServerOptions } from '../src/dev-server'
 import { docsCommand } from '../src/docs'
+import { initFile } from '../src/init'
+import type { SyntaxHighlightTheme } from '../src/types'
+import os from 'node:os'
+import { fileExists } from '../src/utils'
 
 const cli = new CAC('stx')
-
-// interface CliOption {
-//   verbose: boolean
-// }
 
 // Helper to check if an argument is a glob pattern
 const isGlob = (arg: string) => arg.includes('*') || arg.includes('?') || arg.includes('{') || arg.includes('[')
@@ -28,9 +28,19 @@ const isDirectMode = process.argv.length >= 3 && (
 if (isDirectMode) {
   // Direct file mode: stx file.stx, stx file.md or stx **/*.stx
   const fileArg = process.argv[2]
-  const options = {
+
+  const options: DevServerOptions = {
     port: 3000,
     watch: true,
+    cache: true,
+    markdown: {
+      syntaxHighlighting: {
+        enabled: true,
+        serverSide: true,
+        defaultTheme: 'github' as SyntaxHighlightTheme,
+        highlightUnknownLanguages: true,
+      },
+    },
   }
 
   // Parse any options after the file
@@ -42,41 +52,58 @@ if (isDirectMode) {
     else if (arg === '--no-watch') {
       options.watch = false
     }
+    else if (arg === '--highlight-theme' && i + 1 < process.argv.length) {
+      if (!options.markdown) options.markdown = {};
+      if (!options.markdown.syntaxHighlighting) options.markdown.syntaxHighlighting = {};
+      options.markdown.syntaxHighlighting.defaultTheme = process.argv[++i] as SyntaxHighlightTheme
+    }
+    else if (arg === '--no-highlight') {
+      if (!options.markdown) options.markdown = {};
+      if (!options.markdown.syntaxHighlighting) options.markdown.syntaxHighlighting = {};
+      options.markdown.syntaxHighlighting.enabled = false
+    }
+    else if (arg === '--no-highlight-unknown') {
+      if (!options.markdown) options.markdown = {};
+      if (!options.markdown.syntaxHighlighting) options.markdown.syntaxHighlighting = {};
+      options.markdown.syntaxHighlighting.highlightUnknownLanguages = false
+    }
+    else if (arg === '--no-cache') {
+      options.cache = false
+    }
   }
 
   // Check if we're dealing with a glob pattern
   if (isGlob(fileArg)) {
     // Handle glob pattern
-    (async () => {
-      try {
-        // Use Bun.glob to find all matching files
-        const files = await Array.fromAsync(new Bun.Glob(fileArg).scan({ onlyFiles: true, absolute: true }))
 
-        // Filter to only include supported file types based on the pattern
-        const supportedFiles = fileArg.endsWith('.stx')
-          ? files.filter(file => file.endsWith('.stx'))
-          : fileArg.endsWith('.md')
-            ? files.filter(file => file.endsWith('.md'))
-            : files.filter(file => file.endsWith('.stx') || file.endsWith('.md'))
+    try {
+      // Use Bun.glob to find all matching files
+      const files = await Array.fromAsync(new Bun.Glob(fileArg).scan({ onlyFiles: true, absolute: true }))
 
-        if (supportedFiles.length === 0) {
-          console.error(`Error: No STX or Markdown files found matching pattern: ${fileArg}`)
-          process.exit(1)
-        }
+      // Filter to only include supported file types based on the pattern
+      const supportedFiles = fileArg.endsWith('.stx')
+        ? files.filter(file => file.endsWith('.stx'))
+        : fileArg.endsWith('.md')
+          ? files.filter(file => file.endsWith('.md'))
+          : files.filter(file => file.endsWith('.stx') || file.endsWith('.md'))
 
-        // Serve multiple files directly without extra output
-        // (the server will handle the pretty output)
-        const success = await serveMultipleStxFiles(supportedFiles, options)
-
-        if (!success) {
-          process.exit(1)
-        }
-      }
-      catch (error) {
-        console.error('Failed to process files:', error)
+      if (supportedFiles.length === 0) {
+        console.error(`Error: No STX or Markdown files found matching pattern: ${fileArg}`)
         process.exit(1)
       }
-    })()
+
+      // Serve multiple files directly without extra output
+      // (the server will handle the pretty output)
+      const success = await serveMultipleStxFiles(supportedFiles, options)
+
+      if (!success) {
+        process.exit(1)
+      }
+    }
+    catch (error) {
+      console.error('Failed to process files:', error)
+      process.exit(1)
+    }
   }
   else {
     // Single file mode - launch directly without extra output
@@ -123,13 +150,28 @@ else {
     .command('dev <file>', 'Start a development server for an STX file')
     .option('--port <port>', 'Port to use for the dev server', { default: 3000 })
     .option('--no-watch', 'Disable file watching and auto-reload')
+    .option('--highlight-theme <theme>', 'Syntax highlighting theme for Markdown code blocks', { default: 'github' })
+    .option('--no-highlight', 'Disable syntax highlighting for Markdown code blocks')
+    .option('--no-highlight-unknown', 'Disable syntax highlighting for unknown languages in Markdown')
+    .option('--no-cache', 'Disable caching of parsed files')
     .example('stx dev template.stx')
     .example('stx dev components/hero.stx --port 8080')
     .example('stx dev **/*.stx')
     .example('stx dev docs/guide.md')
     .example('stx dev **/*.md')
+    .example('stx dev docs/guide.md --highlight-theme atom-one-dark')
     .action(async (filePattern, options) => {
       try {
+        // Set up markdown options from CLI parameters
+        const markdownOptions = {
+          syntaxHighlighting: {
+            enabled: options.highlight !== false,
+            serverSide: true,
+            defaultTheme: (options.highlightTheme || 'github') as SyntaxHighlightTheme,
+            highlightUnknownLanguages: options.highlightUnknown !== false,
+          },
+        }
+
         // Check if the input is a glob pattern
         if (isGlob(filePattern)) {
           console.log(`Expanding glob pattern: ${filePattern}`)
@@ -155,7 +197,9 @@ else {
           const success = await serveMultipleStxFiles(supportedFiles, {
             port: options.port,
             watch: options.watch !== false,
-          })
+            markdown: markdownOptions,
+            cache: options.cache !== false,
+          } as DevServerOptions)
 
           if (!success) {
             process.exit(1)
@@ -166,7 +210,9 @@ else {
           const success = await serveStxFile(filePattern, {
             port: options.port,
             watch: options.watch !== false,
-          })
+            markdown: markdownOptions,
+            cache: options.cache !== false,
+          } as DevServerOptions)
 
           if (!success) {
             process.exit(1)
@@ -532,6 +578,39 @@ else {
       }
       catch (error) {
         console.error('Build failed:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
+
+  // New commands to enhance STX functionality
+
+  cli
+    .command('init [file]', 'Create a new STX file')
+    .alias('new')
+    .option('--force', 'Overwrite existing file')
+    .option('--template <file>', 'Path to a template file to use as a base')
+    .example('stx init')
+    .example('stx init page.stx')
+    .example('stx new contact.stx')
+    .example('stx new components/button.stx --template examples/components/button.stx')
+    .action(async (file = 'index.stx', options) => {
+      try {
+        const success = await initFile(file, {
+          force: options.force,
+          template: options.template,
+        })
+
+        if (success) {
+          console.log(`\n✨ Successfully created file: ${file}`)
+          console.log(`\nTo view it in the development server:`)
+          console.log(`  stx dev ${file}\n`)
+        } else {
+          console.error(`\n❌ Failed to create file: ${file}`)
+          process.exit(1)
+        }
+      }
+      catch (error) {
+        console.error('Error creating file:', error)
         process.exit(1)
       }
     })

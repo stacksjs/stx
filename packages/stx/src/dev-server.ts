@@ -54,6 +54,7 @@ export interface DevServerOptions {
       additionalThemes?: SyntaxHighlightTheme[]
     }
   }
+  cache?: boolean
 }
 
 // Function to setup keyboard shortcuts for the server

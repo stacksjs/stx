@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Complex Template</title>
+  <script>
+    export const items = [1, 2, 3, 4, 5];
+    export function double(x) {
+      return x * 2;
+    }
+  </script>
+  <style>
+    body { font-family: sans-serif; }
+    .item { margin: 10px; padding: 5px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    @foreach(items as item)
+      <div class="item">
+        Original: {{ item }}
+        Doubled: {{ double(item) }}
+      </div>
+    @endforeach
+  </div>
+</body>
+</html>

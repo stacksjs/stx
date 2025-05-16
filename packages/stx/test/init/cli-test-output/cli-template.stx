@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CLI Test Template</title>
+  <script>
+    export const title = "CLI Template Test";
+  </script>
+</head>
+<body>
+  <h1>{{ title }}</h1>
+</body>
+</html>

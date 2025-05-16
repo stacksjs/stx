@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <script>
+    export const title = "My STX Project";
+    export const description = "A new project built with STX";
+    export const features = [
+      { name: "Templates", description: "Write HTML with powerful templating syntax" },
+      { name: "Components", description: "Build reusable components" },
+      { name: "Directives", description: "Use powerful directives for logic" }
+    ];
+  </script>
+  <style>
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #2ecc71;
+      --dark-color: #34495e;
+      --light-color: #ecf0f1;
+      --font-main: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      font-family: var(--font-main);
+      line-height: 1.6;
+      color: var(--dark-color);
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    .container {
+      padding: 2rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding: 1rem;
+      background-color: var(--light-color);
+      border-radius: 5px;
+    }
+
+    h1 {
+      color: var(--primary-color);
+    }
+
+    .feature-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .feature-card {
+      padding: 1.5rem;
+      border-radius: 5px;
+      background-color: #fff;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .feature-card h3 {
+      color: var(--primary-color);
+      margin-top: 0;
+    }
+
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      padding: 1rem;
+      background-color: var(--light-color);
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>{{ title }}</h1>
+      <p>{{ description }}</p>
+    </header>
+
+    <main>
+      <section>
+        <h2>Get Started</h2>
+        <p>This is a basic STX project template. You can modify this file or create new STX templates to build your site.</p>
+        <p>To run the development server:</p>
+        <pre><code>stx dev index.stx</code></pre>
+      </section>
+
+      <section>
+        <h2>Features</h2>
+        <div class="feature-list">
+          @foreach(features as feature)
+            <div class="feature-card">
+              <h3>{{ feature.name }}</h3>
+              <p>{{ feature.description }}</p>
+            </div>
+          @endforeach
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Built with <a href="https://github.com/stacksjs/stx">STX</a></p>
+    </footer>
+  </div>
+</body>
+</html>
