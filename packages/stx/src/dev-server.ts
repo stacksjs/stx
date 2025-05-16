@@ -6,12 +6,54 @@ import process from 'node:process'
 // TODO: import this from `bun-plugin-stx`. Oddly, there seemingly are issues right now
 import { plugin as stxPlugin } from './plugin'
 import { readMarkdownFile } from './assets'
+import { config } from './config'
+import type { SyntaxHighlightTheme } from './types'
+
+// ANSI color codes for terminal output
+const colors = {
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  dim: '\x1b[2m',
+  underscore: '\x1b[4m',
+  blink: '\x1b[5m',
+  reverse: '\x1b[7m',
+  hidden: '\x1b[8m',
+
+  black: '\x1b[30m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m',
+  white: '\x1b[37m',
+  gray: '\x1b[90m',
+
+  bgBlack: '\x1b[40m',
+  bgRed: '\x1b[41m',
+  bgGreen: '\x1b[42m',
+  bgYellow: '\x1b[43m',
+  bgBlue: '\x1b[44m',
+  bgMagenta: '\x1b[45m',
+  bgCyan: '\x1b[46m',
+  bgWhite: '\x1b[47m',
+  bgGray: '\x1b[100m',
+}
 
 // Define types for dev server options
 export interface DevServerOptions {
   port?: number
   watch?: boolean
   stxOptions?: any
+  markdown?: {
+    syntaxHighlighting?: {
+      serverSide?: boolean
+      enabled?: boolean
+      defaultTheme?: SyntaxHighlightTheme
+      highlightUnknownLanguages?: boolean
+      additionalThemes?: SyntaxHighlightTheme[]
+    }
+  }
 }
 
 // Function to setup keyboard shortcuts for the server
@@ -23,9 +65,9 @@ function setupKeyboardShortcuts(serverUrl: string, stopServer: () => void) {
     process.stdin.resume()
 
     console.log('\nKeyboard shortcuts:')
-    console.log('  o + Enter - Open in browser')
-    console.log('  c + Enter - Clear console')
-    console.log('  q + Enter (or Ctrl+C) - Quit server')
+    console.log(`  ${colors.cyan}o${colors.reset} + Enter - Open in browser`)
+    console.log(`  ${colors.cyan}c${colors.reset} + Enter - Clear console`)
+    console.log(`  ${colors.cyan}q${colors.reset} + Enter (or ${colors.cyan}Ctrl+C${colors.reset}) - Quit server`)
 
     let buffer = ''
 
@@ -45,32 +87,32 @@ function setupKeyboardShortcuts(serverUrl: string, stopServer: () => void) {
 
         if (cmd === 'o') {
           // Open in browser
-          console.log(`Opening ${serverUrl} in your browser...`)
+          console.log(`${colors.dim}Opening ${colors.cyan}${serverUrl}${colors.dim} in your browser...${colors.reset}`)
           Bun.spawn(['open', serverUrl], { stderr: 'inherit' })
         }
         else if (cmd === 'c') {
           // Clear console
           console.clear()
-          console.log(`Server running at ${serverUrl}`)
-          console.log('Press Ctrl+C to stop the server')
+          console.log(`${colors.green}Server running at ${colors.cyan}${serverUrl}${colors.reset}`)
+          console.log(`Press ${colors.cyan}Ctrl+C${colors.reset} to stop the server`)
           console.log('\nKeyboard shortcuts:')
-          console.log('  o + Enter - Open in browser')
-          console.log('  c + Enter - Clear console')
-          console.log('  q + Enter (or Ctrl+C) - Quit server')
+          console.log(`  ${colors.cyan}o${colors.reset} + Enter - Open in browser`)
+          console.log(`  ${colors.cyan}c${colors.reset} + Enter - Clear console`)
+          console.log(`  ${colors.cyan}q${colors.reset} + Enter (or ${colors.cyan}Ctrl+C${colors.reset}) - Quit server`)
         }
         else if (cmd === 'q') {
           // Quit server
-          console.log('Stopping server...')
+          console.log(`${colors.yellow}Stopping server...${colors.reset}`)
           stopServer()
           process.exit(0)
         }
         else if (cmd === 'h') {
           // Show help/shortcuts
           console.log('\nKeyboard Shortcuts:')
-          console.log('  o + Enter - Open in browser')
-          console.log('  c + Enter - Clear console')
-          console.log('  q + Enter (or Ctrl+C) - Quit server')
-          console.log('  h + Enter - Show this help')
+          console.log(`  ${colors.cyan}o${colors.reset} + Enter - Open in browser`)
+          console.log(`  ${colors.cyan}c${colors.reset} + Enter - Clear console`)
+          console.log(`  ${colors.cyan}q${colors.reset} + Enter (or ${colors.cyan}Ctrl+C${colors.reset}) - Quit server`)
+          console.log(`  ${colors.cyan}h${colors.reset} + Enter - Show this help`)
         }
       }
     })
@@ -86,25 +128,48 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
   // Validate the file exists
   const absolutePath = path.resolve(filePath)
   if (!fs.existsSync(absolutePath)) {
-    console.error(`Error: File not found: ${absolutePath}`)
+    console.error(`${colors.red}Error: File not found: ${colors.bright}${absolutePath}${colors.reset}`)
     return false
   }
 
   // Validate it's a Markdown file
   if (!absolutePath.endsWith('.md')) {
-    console.error(`Error: File must have .md extension: ${absolutePath}`)
+    console.error(`${colors.red}Error: File must have .md extension: ${colors.bright}${absolutePath}${colors.reset}`)
     return false
   }
 
   // Initial processing
-  console.log(`Processing ${filePath}...`)
+  console.log(`${colors.blue}Processing${colors.reset} ${colors.bright}${filePath}${colors.reset}...`)
   let htmlContent: string | null = null
 
   // Function to process the Markdown file
   const processFile = async (): Promise<boolean> => {
     try {
       // Read and process the markdown file
-      const { content, data } = await readMarkdownFile(absolutePath)
+      const { content, data } = await readMarkdownFile(absolutePath, {
+        markdown: {
+          syntaxHighlighting: {
+            serverSide: true,
+            enabled: true,
+            defaultTheme: config.markdown?.syntaxHighlighting?.defaultTheme || 'github',
+            highlightUnknownLanguages: true
+          }
+        }
+      })
+
+      // Get the default theme from config
+      const markdownConfig = options.markdown?.syntaxHighlighting || config.markdown?.syntaxHighlighting;
+      const defaultTheme = markdownConfig?.defaultTheme || 'github';
+
+      // Combine available themes
+      const baseThemes: SyntaxHighlightTheme[] = ['github'];  // Always include github
+      const configThemes = markdownConfig?.additionalThemes || [];
+      const availableThemes = [...new Set([...baseThemes, ...configThemes])];
+
+      // Create the theme options HTML
+      const themeOptions = availableThemes.map((theme: SyntaxHighlightTheme) =>
+        `<option value="${theme}"${theme === defaultTheme ? ' selected' : ''}>${theme}</option>`
+      ).join('\n      ');
 
       // Create a simple HTML wrapper for the content with a nice theme
       htmlContent = `
@@ -114,6 +179,8 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${data.title || path.basename(absolutePath)}</title>
+  <!-- Add highlight.js CSS for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/${defaultTheme}.min.css" id="highlight-theme">
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -124,32 +191,50 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
       padding: 2rem;
     }
     pre, code {
-      background: #f5f5f5;
-      border-radius: 3px;
-      padding: 0.2rem 0.4rem;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    pre {
+      border-radius: 4px;
+      padding: 0;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
     pre code {
       display: block;
       padding: 1rem;
       overflow-x: auto;
     }
+    code {
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+    }
     h1, h2, h3, h4 {
       margin-top: 2rem;
       margin-bottom: 1rem;
     }
+    h1 { color: #111; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
+    h2 { color: #333; border-bottom: 1px solid #f0f0f0; padding-bottom: 0.3rem; }
+    h3 { color: #444; }
     img {
       max-width: 100%;
+      border-radius: 4px;
+      margin: 1rem 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     blockquote {
       border-left: 4px solid #ddd;
       padding-left: 1rem;
       margin-left: 0;
-      color: #666;
+      color: #555;
+      background: #f9f9f9;
+      padding: 0.5rem 1rem;
+      margin: 1.5rem 0;
     }
     table {
       border-collapse: collapse;
       width: 100%;
+      margin: 1.5rem 0;
     }
     th, td {
       border: 1px solid #ddd;
@@ -157,24 +242,53 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
     }
     th {
       background: #f0f0f0;
+      text-align: left;
+    }
+    tr:nth-child(even) {
+      background-color: #f8f8f8;
     }
     a {
       color: #0066cc;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    hr {
+      border: 0;
+      border-top: 1px solid #eee;
+      margin: 2rem 0;
     }
     .frontmatter {
       background: #f8f8f8;
       border-radius: 4px;
-      padding: 1rem;
+      padding: 1.5rem;
       margin-bottom: 2rem;
       font-size: 0.9rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border-left: 4px solid #ddd;
     }
     .frontmatter-item {
       margin-bottom: 0.5rem;
+      display: flex;
     }
     .frontmatter-label {
       font-weight: bold;
-      display: inline-block;
-      min-width: 80px;
+      min-width: 100px;
+      color: #555;
+    }
+    /* Theme selector for code blocks */
+    .theme-selector {
+      margin: 1rem 0;
+      padding: 0.5rem;
+      background: #f8f8f8;
+      border-radius: 4px;
+      text-align: right;
+    }
+    select {
+      padding: 0.25rem 0.5rem;
+      border-radius: 3px;
+      border: 1px solid #ddd;
     }
   </style>
 </head>
@@ -189,14 +303,33 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
     </div>`).join('')}
   </div>
   ` : ''}
+
+  <div class="theme-selector">
+    Theme:
+    <select id="themeSelector" onchange="changeTheme()">
+      ${themeOptions}
+    </select>
+  </div>
+
   ${content}
+
+  <script>
+    function changeTheme() {
+      const theme = document.getElementById('themeSelector').value;
+      let linkElement = document.getElementById('highlight-theme');
+
+      if (linkElement) {
+        linkElement.href = \`https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/\${theme}.min.css\`;
+      }
+    }
+  </script>
 </body>
 </html>
       `
       return true
     }
     catch (error) {
-      console.error('Error processing Markdown file:', error)
+      console.error(`${colors.red}Error processing Markdown file:${colors.reset}`, error)
       return false
     }
   }
@@ -208,7 +341,7 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
   }
 
   // Start a server
-  console.log(`Starting server on http://localhost:${port}...`)
+  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${port}/${colors.reset}...`)
   const server = serve({
     port,
     fetch(request) {
@@ -237,15 +370,15 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
 
   // Print Bun-style output header
   console.clear()
-  console.log(`\nStx  ${process.env.STX_VERSION || 'v0.0.10'}  ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms`)
-  console.log(`\n→  http://localhost:${port}/`)
+  console.log(`\n${colors.blue}STX${colors.reset}  ${colors.green}${process.env.STX_VERSION || 'v0.0.10'}${colors.reset}  ${colors.dim}ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms${colors.reset}`)
+  console.log(`\n${colors.bright}→  ${colors.cyan}http://localhost:${port}/${colors.reset}`)
 
   // Print the route in Bun-like format
-  console.log(`\nRoutes:`)
+  console.log(`\n${colors.yellow}Routes:${colors.reset}`)
   const relativeFilePath = path.relative(process.cwd(), absolutePath)
-  console.log(`  └─ / → ${relativeFilePath}`)
+  console.log(`  ${colors.green}└─ /${colors.reset} → ${colors.bright}${relativeFilePath}${colors.reset}`)
 
-  console.log(`\nPress h + Enter to show shortcuts`)
+  console.log(`\nPress ${colors.cyan}h${colors.reset} + ${colors.cyan}Enter${colors.reset} to show shortcuts`)
 
   // Set up keyboard shortcuts
   setupKeyboardShortcuts(server.url.toString(), () => {
@@ -259,11 +392,11 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
   // Set up file watching if enabled
   if (watch) {
     const dirToWatch = path.dirname(absolutePath)
-    console.log(`Watching ${dirToWatch} for changes...`)
+    console.log(`${colors.blue}Watching ${colors.bright}${dirToWatch}${colors.reset} for changes...`)
 
     const watcher = fs.watch(dirToWatch, { recursive: true }, async (eventType, filename) => {
       if (filename && filename.endsWith('.md')) {
-        console.log(`File ${filename} changed, reprocessing...`)
+        console.log(`${colors.yellow}File ${colors.bright}${filename}${colors.yellow} changed, reprocessing...${colors.reset}`)
         await processFile()
       }
     })
@@ -288,7 +421,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   // Validate the file exists
   const absolutePath = path.resolve(filePath)
   if (!fs.existsSync(absolutePath)) {
-    console.error(`Error: File not found: ${absolutePath}`)
+    console.error(`${colors.red}Error: File not found: ${colors.bright}${absolutePath}${colors.reset}`)
     return false
   }
 
@@ -297,7 +430,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     return serveMarkdownFile(absolutePath, options)
   }
   else if (!absolutePath.endsWith('.stx')) {
-    console.error(`Error: Unsupported file type: ${absolutePath}. Only .stx and .md files are supported.`)
+    console.error(`${colors.red}Error: Unsupported file type: ${colors.bright}${absolutePath}${colors.reset}. Only .stx and .md files are supported.`)
     return false
   }
 
@@ -306,7 +439,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   fs.mkdirSync(outputDir, { recursive: true })
 
   // Initial build
-  console.log(`Building ${filePath}...`)
+  console.log(`${colors.blue}Building ${colors.bright}${filePath}${colors.reset}...`)
   let htmlContent: string | null = null
 
   // Function to build the STX file
@@ -323,14 +456,14 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
       })
 
       if (!result.success) {
-        console.error('Build failed:', result.logs)
+        console.error(`${colors.red}Build failed:${colors.reset}`, result.logs)
         return false
       }
 
       // Find the HTML output
       const htmlOutput = result.outputs.find(o => o.path.endsWith('.html'))
       if (!htmlOutput) {
-        console.error('No HTML output found')
+        console.error(`${colors.red}No HTML output found${colors.reset}`)
         return false
       }
 
@@ -339,7 +472,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
       return true
     }
     catch (error) {
-      console.error('Error building STX file:', error)
+      console.error(`${colors.red}Error building STX file:${colors.reset}`, error)
       return false
     }
   }
@@ -351,7 +484,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   }
 
   // Start a server
-  console.log(`Starting server on http://localhost:${port}...`)
+  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${port}/${colors.reset}...`)
   const server = serve({
     port,
     fetch(request) {
@@ -418,15 +551,15 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
 
   // Print Bun-style output header
   console.clear()
-  console.log(`\nStx  ${process.env.STX_VERSION || 'v0.0.10'}  ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms`)
-  console.log(`\n→  http://localhost:${port}/`)
+  console.log(`\n${colors.blue}STX${colors.reset}  ${colors.green}${process.env.STX_VERSION || 'v0.0.10'}${colors.reset}  ${colors.dim}ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms${colors.reset}`)
+  console.log(`\n${colors.bright}→  ${colors.cyan}http://localhost:${port}/${colors.reset}`)
 
   // Print the route in Bun-like format
-  console.log(`\nRoutes:`)
+  console.log(`\n${colors.yellow}Routes:${colors.reset}`)
   const relativeFilePath = path.relative(process.cwd(), absolutePath)
-  console.log(`  └─ / → ${relativeFilePath}`)
+  console.log(`  ${colors.green}└─ /${colors.reset} → ${colors.bright}${relativeFilePath}${colors.reset}`)
 
-  console.log(`\nPress h + Enter to show shortcuts`)
+  console.log(`\nPress ${colors.cyan}h${colors.reset} + ${colors.cyan}Enter${colors.reset} to show shortcuts`)
 
   // Set up keyboard shortcuts
   setupKeyboardShortcuts(server.url.toString(), () => {
@@ -440,11 +573,11 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   // Set up file watching if enabled
   if (watch) {
     const dirToWatch = path.dirname(absolutePath)
-    console.log(`Watching ${dirToWatch} for changes...`)
+    console.log(`${colors.blue}Watching ${colors.bright}${dirToWatch}${colors.reset} for changes...`)
 
     const watcher = fs.watch(dirToWatch, { recursive: true }, async (eventType, filename) => {
       if (filename && (filename.endsWith('.stx') || filename.endsWith('.js') || filename.endsWith('.ts'))) {
-        console.log(`File ${filename} changed, rebuilding...`)
+        console.log(`${colors.yellow}File ${colors.bright}${filename}${colors.yellow} changed, rebuilding...${colors.reset}`)
         await buildFile()
       }
     })
@@ -479,11 +612,11 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   for (const filePath of filePaths) {
     const absolutePath = path.resolve(filePath)
     if (!fs.existsSync(absolutePath)) {
-      console.error(`Error: File not found: ${absolutePath}`)
+      console.error(`${colors.red}Error: File not found: ${colors.bright}${absolutePath}${colors.reset}`)
       return false
     }
     if (!absolutePath.endsWith('.stx') && !absolutePath.endsWith('.md')) {
-      console.error(`Error: Unsupported file type: ${absolutePath}. Only .stx and .md files are supported.`)
+      console.error(`${colors.red}Error: Unsupported file type: ${colors.bright}${absolutePath}${colors.reset}. Only .stx and .md files are supported.`)
       return false
     }
   }
@@ -496,7 +629,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   const commonDir = findCommonDir(filePaths.map(f => path.dirname(path.resolve(f))))
 
   // Initial build of all files
-  console.log(`Processing ${filePaths.length} files...`)
+  console.log(`${colors.blue}Processing ${colors.bright}${filePaths.length}${colors.reset} files...`)
 
   // Route mapping for serving files
   const routes: RouteMapping = {}
@@ -513,7 +646,30 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
           // Process Markdown file
           try {
             // Read and process the markdown file
-            const { content, data } = await readMarkdownFile(absolutePath)
+            const { content, data } = await readMarkdownFile(absolutePath, {
+              markdown: {
+                syntaxHighlighting: {
+                  serverSide: true,
+                  enabled: true,
+                  defaultTheme: config.markdown?.syntaxHighlighting?.defaultTheme || 'github',
+                  highlightUnknownLanguages: true
+                }
+              }
+            })
+
+            // Get the default theme from config
+            const markdownConfig = options.markdown?.syntaxHighlighting || config.markdown?.syntaxHighlighting;
+            const defaultTheme = markdownConfig?.defaultTheme || 'github';
+
+            // Combine available themes
+            const baseThemes: SyntaxHighlightTheme[] = ['github'];  // Always include github
+            const configThemes = markdownConfig?.additionalThemes || [];
+            const availableThemes = [...new Set([...baseThemes, ...configThemes])];
+
+            // Create the theme options HTML
+            const themeOptions = availableThemes.map((theme: SyntaxHighlightTheme) =>
+              `<option value="${theme}"${theme === defaultTheme ? ' selected' : ''}>${theme}</option>`
+            ).join('\n      ');
 
             // Create a simple HTML wrapper for the content with a nice theme
             const htmlContent = `
@@ -523,6 +679,8 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${data.title || path.basename(absolutePath)}</title>
+  <!-- Add highlight.js CSS for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/${defaultTheme}.min.css" id="highlight-theme">
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -533,32 +691,50 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       padding: 2rem;
     }
     pre, code {
-      background: #f5f5f5;
-      border-radius: 3px;
-      padding: 0.2rem 0.4rem;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    pre {
+      border-radius: 4px;
+      padding: 0;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
     pre code {
       display: block;
       padding: 1rem;
       overflow-x: auto;
     }
+    code {
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+    }
     h1, h2, h3, h4 {
       margin-top: 2rem;
       margin-bottom: 1rem;
     }
+    h1 { color: #111; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
+    h2 { color: #333; border-bottom: 1px solid #f0f0f0; padding-bottom: 0.3rem; }
+    h3 { color: #444; }
     img {
       max-width: 100%;
+      border-radius: 4px;
+      margin: 1rem 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     blockquote {
       border-left: 4px solid #ddd;
       padding-left: 1rem;
       margin-left: 0;
-      color: #666;
+      color: #555;
+      background: #f9f9f9;
+      padding: 0.5rem 1rem;
+      margin: 1.5rem 0;
     }
     table {
       border-collapse: collapse;
       width: 100%;
+      margin: 1.5rem 0;
     }
     th, td {
       border: 1px solid #ddd;
@@ -566,24 +742,53 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
     }
     th {
       background: #f0f0f0;
+      text-align: left;
+    }
+    tr:nth-child(even) {
+      background-color: #f8f8f8;
     }
     a {
       color: #0066cc;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    hr {
+      border: 0;
+      border-top: 1px solid #eee;
+      margin: 2rem 0;
     }
     .frontmatter {
       background: #f8f8f8;
       border-radius: 4px;
-      padding: 1rem;
+      padding: 1.5rem;
       margin-bottom: 2rem;
       font-size: 0.9rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border-left: 4px solid #ddd;
     }
     .frontmatter-item {
       margin-bottom: 0.5rem;
+      display: flex;
     }
     .frontmatter-label {
       font-weight: bold;
-      display: inline-block;
-      min-width: 80px;
+      min-width: 100px;
+      color: #555;
+    }
+    /* Theme selector for code blocks */
+    .theme-selector {
+      margin: 1rem 0;
+      padding: 0.5rem;
+      background: #f8f8f8;
+      border-radius: 4px;
+      text-align: right;
+    }
+    select {
+      padding: 0.25rem 0.5rem;
+      border-radius: 3px;
+      border: 1px solid #ddd;
     }
   </style>
 </head>
@@ -598,7 +803,26 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
     </div>`).join('')}
   </div>
   ` : ''}
+
+  <div class="theme-selector">
+    Theme:
+    <select id="themeSelector" onchange="changeTheme()">
+      ${themeOptions}
+    </select>
+  </div>
+
   ${content}
+
+  <script>
+    function changeTheme() {
+      const theme = document.getElementById('themeSelector').value;
+      let linkElement = document.getElementById('highlight-theme');
+
+      if (linkElement) {
+        linkElement.href = \`https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/\${theme}.min.css\`;
+      }
+    }
+  </script>
 </body>
 </html>
             `
@@ -616,7 +840,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
             }
           }
           catch (error) {
-            console.error(`Error processing Markdown file ${filePath}:`, error)
+            console.error(`${colors.red}Error processing Markdown file ${colors.bright}${filePath}${colors.reset}:`, error)
             continue
           }
         }
@@ -633,14 +857,14 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
           })
 
           if (!result.success) {
-            console.error(`Build failed for ${filePath}:`, result.logs)
+            console.error(`${colors.red}Build failed for ${colors.bright}${filePath}${colors.reset}:`, result.logs)
             continue
           }
 
           // Find the HTML output
           const htmlOutput = result.outputs.find(o => o.path.endsWith('.html'))
           if (!htmlOutput) {
-            console.error(`No HTML output found for ${filePath}`)
+            console.error(`${colors.red}No HTML output found for ${colors.bright}${filePath}${colors.reset}`)
             continue
           }
 
@@ -663,14 +887,14 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
       // Check if we have at least one successful build
       if (Object.keys(routes).length === 0) {
-        console.error('No files were successfully processed')
+        console.error(`${colors.red}No files were successfully processed${colors.reset}`)
         return false
       }
 
       return true
     }
     catch (error) {
-      console.error('Error processing files:', error)
+      console.error(`${colors.red}Error processing files:${colors.reset}`, error)
       return false
     }
   }
@@ -682,7 +906,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   }
 
   // Start a server
-  console.log(`Starting server on http://localhost:${port}...`)
+  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${port}/${colors.reset}...`)
   const server = serve({
     port,
     fetch(request) {
@@ -762,11 +986,11 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
   // Print Bun-style output header
   console.clear()
-  console.log(`\nStx  ${process.env.STX_VERSION || 'v0.0.10'}  ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms`)
-  console.log(`\n→  http://localhost:${port}/`)
+  console.log(`\n${colors.blue}STX${colors.reset}  ${colors.green}${process.env.STX_VERSION || 'v0.0.10'}${colors.reset}  ${colors.dim}ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms${colors.reset}`)
+  console.log(`\n${colors.bright}→  ${colors.cyan}http://localhost:${port}/${colors.reset}`)
 
   // Print the routes in Bun-like format
-  console.log(`\nRoutes:`)
+  console.log(`\n${colors.yellow}Routes:${colors.reset}`)
 
   // Get all routes sorted for display
   const sortedRoutes = Object.entries(routes)
@@ -781,9 +1005,10 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   sortedRoutes.forEach((routeInfo, index) => {
     const isLast = index === sortedRoutes.length - 1
     const prefix = isLast ? '└─ ' : '├─ '
+    const fileTypeLabel = routeInfo.fileType === 'md' ? `${colors.magenta}(markdown)${colors.reset}` : ''
 
     if (routeInfo.route === '/') {
-      console.log(`  ${prefix}/ → ${routeInfo.filePath} ${routeInfo.fileType === 'md' ? '(markdown)' : ''}`)
+      console.log(`  ${colors.green}${prefix}/${colors.reset} → ${colors.bright}${routeInfo.filePath}${colors.reset} ${fileTypeLabel}`)
     }
     else {
       // Format like '/about → ./about/index.stx'
@@ -796,11 +1021,11 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       if (parentPath && !parentPath.startsWith('/'))
         parentPath = `/${parentPath}`
 
-      console.log(`  ${prefix}${displayRoute} → ${routeInfo.filePath} ${routeInfo.fileType === 'md' ? '(markdown)' : ''}`)
+      console.log(`  ${colors.green}${prefix}${displayRoute}${colors.reset} → ${colors.bright}${routeInfo.filePath}${colors.reset} ${fileTypeLabel}`)
     }
   })
 
-  console.log(`\nPress h + Enter to show shortcuts`)
+  console.log(`\nPress ${colors.cyan}h${colors.reset} + ${colors.cyan}Enter${colors.reset} to show shortcuts`)
 
   // Set up keyboard shortcuts
   setupKeyboardShortcuts(server.url.toString(), () => {
@@ -814,7 +1039,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   // Set up file watching if enabled
   if (watch) {
     // Watch the entire common directory for changes
-    console.log(`Watching for changes...`)
+    console.log(`${colors.blue}Watching for changes...${colors.reset}`)
 
     const watcher = fs.watch(commonDir, { recursive: true }, async (eventType, filename) => {
       if (!filename)
@@ -822,7 +1047,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
       // Only rebuild if it's a supported file type
       if (filename.endsWith('.stx') || filename.endsWith('.js') || filename.endsWith('.ts') || filename.endsWith('.md')) {
-        console.log(`File changed: ${filename}, rebuilding...`)
+        console.log(`${colors.yellow}File ${colors.bright}${filename}${colors.yellow} changed, rebuilding...${colors.reset}`)
         await buildFiles()
       }
     })

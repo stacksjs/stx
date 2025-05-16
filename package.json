@@ -69,6 +69,7 @@
   },
   "dependencies": {
     "gray-matter": "^4.0.3",
+    "highlight.js": "^11.11.1",
     "marked": "^15.0.11",
     "yaml": "^2.8.0"
   },

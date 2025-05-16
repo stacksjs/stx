@@ -2,8 +2,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { marked } from 'marked'
 import matter from 'gray-matter'
+import hljs from 'highlight.js'
 import { createDetailedErrorMessage, fileExists } from './utils'
-import type { StxOptions } from './types'
+import type { StxOptions, SyntaxHighlightTheme } from './types'
+import { config } from './config'
 
 // Define a cache for markdown files to avoid repeated file reads
 export const markdownCache: Map<string, {
@@ -49,15 +51,36 @@ export async function readMarkdownFile(
     const fileContent = await fs.promises.readFile(filePath, 'utf-8')
 
     // Parse the content and frontmatter
-    const result = matter(fileContent)
+    const matterResult = matter(fileContent)
+
+    // Get the markdown configuration
+    const markdownConfig = options.markdown || config.markdown || {
+      enabled: true,
+      syntaxHighlighting: {
+        enabled: true,
+        serverSide: true,
+        defaultTheme: 'github' as SyntaxHighlightTheme,
+        highlightUnknownLanguages: true
+      }
+    }
 
     // Parse the markdown content to HTML
-    const htmlContent = await marked.parse(result.content)
+    const parsedContent = await Promise.resolve(marked.parse(matterResult.content));
+    let htmlContent = parsedContent;
+
+    // Apply syntax highlighting to code blocks if enabled
+    if (markdownConfig.syntaxHighlighting?.enabled && markdownConfig.syntaxHighlighting?.serverSide) {
+      // Find all code blocks in the HTML and apply syntax highlighting
+      htmlContent = applyCodeHighlighting(
+        htmlContent,
+        markdownConfig.syntaxHighlighting?.highlightUnknownLanguages || false
+      );
+    }
 
     // Prepare the result
     const parsedResult = {
       content: htmlContent,
-      data: result.data || {},
+      data: matterResult.data || {},
     }
 
     // Cache the result if caching is enabled
@@ -90,6 +113,50 @@ export async function readMarkdownFile(
       data: {}
     }
   }
+}
+
+/**
+ * Apply syntax highlighting to code blocks in HTML content
+ */
+function applyCodeHighlighting(html: string, highlightUnknown: boolean): string {
+  // Find all code blocks in the HTML
+  const codeRegex = /<pre><code( class="language-([^"]+)")?>([^<]+)<\/code><\/pre>/g;
+
+  // Replace each code block with a highlighted version
+  return html.replace(codeRegex, (match, languageClass, language, code) => {
+    if (!language) {
+      return match; // No language specified, return as-is
+    }
+
+    try {
+      let highlightedCode;
+
+      if (hljs.getLanguage(language)) {
+        // Highlight code with specified language
+        highlightedCode = hljs.highlight(code, { language, ignoreIllegals: true }).value;
+        return `<pre><code class="language-${language}">${highlightedCode}</code></pre>`;
+      } else if (highlightUnknown) {
+        // Try auto-detection for unknown languages
+        highlightedCode = hljs.highlightAuto(code).value;
+        return `<pre><code class="language-${language}">${highlightedCode}</code></pre>`;
+      }
+    } catch (err) {
+      console.error(`Error highlighting code block with language ${language}:`, err);
+    }
+
+    // Return original if highlighting fails
+    return match;
+  });
+}
+
+// Helper function to escape HTML
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 /**

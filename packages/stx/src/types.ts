@@ -368,6 +368,114 @@ export interface AnimationConfig {
 }
 
 /**
+ * Available syntax highlighting themes
+ */
+export type SyntaxHighlightTheme =
+  | 'a11y-dark'
+  | 'a11y-light'
+  | 'agate'
+  | 'an-old-hope'
+  | 'androidstudio'
+  | 'arduino-light'
+  | 'arta'
+  | 'ascetic'
+  | 'atom-one-dark'
+  | 'atom-one-dark-reasonable'
+  | 'atom-one-light'
+  | 'brown-paper'
+  | 'codepen-embed'
+  | 'color-brewer'
+  | 'dark'
+  | 'default'
+  | 'devibeans'
+  | 'docco'
+  | 'dracula'
+  | 'far'
+  | 'felipec'
+  | 'foundation'
+  | 'github'
+  | 'github-dark'
+  | 'github-dark-dimmed'
+  | 'github-gist'
+  | 'gml'
+  | 'googlecode'
+  | 'gradient-dark'
+  | 'gradient-light'
+  | 'grayscale'
+  | 'hybrid'
+  | 'idea'
+  | 'intellij-light'
+  | 'ir-black'
+  | 'isbl-editor-dark'
+  | 'isbl-editor-light'
+  | 'kimbie-dark'
+  | 'kimbie-light'
+  | 'lightfair'
+  | 'lioshi'
+  | 'magula'
+  | 'mono-blue'
+  | 'monokai'
+  | 'monokai-sublime'
+  | 'night-owl'
+  | 'nnfx-dark'
+  | 'nnfx-light'
+  | 'nord'
+  | 'obsidian'
+  | 'pandoc'
+  | 'paraiso-dark'
+  | 'paraiso-light'
+  | 'pojoaque'
+  | 'purebasic'
+  | 'qtcreator-dark'
+  | 'qtcreator-light'
+  | 'rainbow'
+  | 'routeros'
+  | 'school-book'
+  | 'shades-of-purple'
+  | 'solarized-dark'
+  | 'solarized-light'
+  | 'srcery'
+  | 'stackoverflow-dark'
+  | 'stackoverflow-light'
+  | 'sunburst'
+  | 'tokyo-night-dark'
+  | 'tokyo-night-light'
+  | 'tomorrow-night-blue'
+  | 'tomorrow-night-bright'
+  | 'vs'
+  | 'vs2015'
+  | 'xcode'
+  | 'xt256';
+
+/**
+ * Syntax highlighting configuration
+ */
+export interface SyntaxHighlightingConfig {
+  /** Enable syntax highlighting */
+  enabled: boolean
+  /** Use server-side highlighting (true) instead of client-side (false) */
+  serverSide: boolean
+  /** Default theme for syntax highlighting */
+  defaultTheme: SyntaxHighlightTheme
+  /** Attempt to highlight code blocks with unknown language */
+  highlightUnknownLanguages: boolean
+  /** List of additional themes to make available in the UI */
+  additionalThemes?: SyntaxHighlightTheme[]
+}
+
+/**
+ * Markdown configuration
+ */
+export interface MarkdownConfig {
+  /** Enable markdown processing */
+  enabled: boolean
+  /** Path to markdown directory */
+  dir?: string
+  /** Syntax highlighting configuration */
+  syntaxHighlighting?: Partial<SyntaxHighlightingConfig>
+}
+
+/**
  * STX configuration options
  */
 export interface StxConfig {
@@ -440,6 +548,8 @@ export interface StxConfig {
   animation?: Partial<AnimationConfig>
   /** Skip adding default SEO tags */
   skipDefaultSeoTags?: boolean
+  /** Markdown configuration */
+  markdown?: Partial<MarkdownConfig>
 }
 
 export type StxOptions = Partial<StxConfig>

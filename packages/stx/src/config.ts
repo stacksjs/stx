@@ -1,6 +1,9 @@
-import type { StxConfig, StxOptions } from './types'
+import type { StxConfig, StxOptions, SyntaxHighlightTheme } from './types'
 import { resolve } from 'node:path'
+// @ts-expect-error - bunfig is not properly typed atm
 import { loadConfig } from 'bunfig'
+import fs from 'node:fs'
+import path from 'node:path'
 import { a11yDirective, screenReaderDirective } from './a11y'
 import { animationGroupDirective, motionDirective, scrollAnimateDirective, transitionDirective } from './animation'
 import { componentDirective } from './components'
@@ -96,8 +99,25 @@ export const defaultConfig: StxConfig = {
     respectMotionPreferences: true,
     staggerDelay: 50,
   },
+  markdown: {
+    enabled: true,
+    syntaxHighlighting: {
+      enabled: true,
+      serverSide: true,
+      defaultTheme: 'github',
+      highlightUnknownLanguages: true,
+      additionalThemes: [
+        'vs',
+        'atom-one-dark',
+        'dracula',
+        'monokai',
+        'solarized-light',
+        'nord',
+        'github-dark'
+      ]
+    }
+  }
 }
-
 // eslint-disable-next-line antfu/no-top-level-await
 export const config: StxConfig = await loadConfig({
   name: 'stx',

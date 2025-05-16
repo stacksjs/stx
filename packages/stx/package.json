@@ -69,7 +69,11 @@
   },
   "dependencies": {
     "bun-plugin-stx": "workspace:*",
+    "highlight.js": "^11.11.1",
     "marked": "^15.0.11",
     "yaml": "^2.8.0"
+  },
+  "devDependencies": {
+    "@types/marked": "^6.0.0"
   }
 }
