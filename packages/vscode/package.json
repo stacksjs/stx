@@ -34,7 +34,7 @@
   "main": "./dist/extension.js",
   "icon": "logo.png",
   "engines": {
-    "vscode": "^1.100.0"
+    "vscode": "^1.100.2"
   },
   "activationEvents": [
     "workspaceContains:**/*.stx",
@@ -475,7 +475,7 @@
     "theme": "light"
   },
   "devDependencies": {
-    "@vscode/vsce": "^3.3.2",
+    "@vscode/vsce": "^3.4.0",
     "vscode-html-languageservice": "^5.4.0",
     "vscode-languageclient": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12",
