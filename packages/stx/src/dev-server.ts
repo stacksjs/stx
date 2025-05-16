@@ -5,6 +5,7 @@ import path from 'node:path'
 import process from 'node:process'
 // TODO: import this from `bun-plugin-stx`. Oddly, there seemingly are issues right now
 import { plugin as stxPlugin } from './plugin'
+import { readMarkdownFile } from './assets'
 
 // Define types for dev server options
 export interface DevServerOptions {
@@ -76,6 +77,208 @@ function setupKeyboardShortcuts(serverUrl: string, stopServer: () => void) {
   }
 }
 
+// Serve a Markdown file directly
+async function serveMarkdownFile(filePath: string, options: DevServerOptions = {}): Promise<boolean> {
+  // Default options
+  const port = options.port || 3000
+  const watch = options.watch !== false
+
+  // Validate the file exists
+  const absolutePath = path.resolve(filePath)
+  if (!fs.existsSync(absolutePath)) {
+    console.error(`Error: File not found: ${absolutePath}`)
+    return false
+  }
+
+  // Validate it's a Markdown file
+  if (!absolutePath.endsWith('.md')) {
+    console.error(`Error: File must have .md extension: ${absolutePath}`)
+    return false
+  }
+
+  // Initial processing
+  console.log(`Processing ${filePath}...`)
+  let htmlContent: string | null = null
+
+  // Function to process the Markdown file
+  const processFile = async (): Promise<boolean> => {
+    try {
+      // Read and process the markdown file
+      const { content, data } = await readMarkdownFile(absolutePath)
+
+      // Create a simple HTML wrapper for the content with a nice theme
+      htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${data.title || path.basename(absolutePath)}</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    pre, code {
+      background: #f5f5f5;
+      border-radius: 3px;
+      padding: 0.2rem 0.4rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    pre code {
+      display: block;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+    h1, h2, h3, h4 {
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+    img {
+      max-width: 100%;
+    }
+    blockquote {
+      border-left: 4px solid #ddd;
+      padding-left: 1rem;
+      margin-left: 0;
+      color: #666;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.5rem;
+    }
+    th {
+      background: #f0f0f0;
+    }
+    a {
+      color: #0066cc;
+    }
+    .frontmatter {
+      background: #f8f8f8;
+      border-radius: 4px;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+    .frontmatter-item {
+      margin-bottom: 0.5rem;
+    }
+    .frontmatter-label {
+      font-weight: bold;
+      display: inline-block;
+      min-width: 80px;
+    }
+  </style>
+</head>
+<body>
+  ${Object.keys(data).length > 0 ? `
+  <div class="frontmatter">
+    <h3>Frontmatter</h3>
+    ${Object.entries(data).map(([key, value]) => `
+    <div class="frontmatter-item">
+      <span class="frontmatter-label">${key}:</span>
+      <span>${Array.isArray(value) ? value.join(', ') : value}</span>
+    </div>`).join('')}
+  </div>
+  ` : ''}
+  ${content}
+</body>
+</html>
+      `
+      return true
+    }
+    catch (error) {
+      console.error('Error processing Markdown file:', error)
+      return false
+    }
+  }
+
+  // Do initial processing
+  const processSuccess = await processFile()
+  if (!processSuccess) {
+    return false
+  }
+
+  // Start a server
+  console.log(`Starting server on http://localhost:${port}...`)
+  const server = serve({
+    port,
+    fetch(request) {
+      const url = new URL(request.url)
+
+      // Serve the main HTML for the root path
+      if (url.pathname === '/') {
+        return new Response(htmlContent, {
+          headers: {
+            'Content-Type': 'text/html',
+          },
+        })
+      }
+
+      // Fallback 404 response
+      return new Response('Not Found', { status: 404 })
+    },
+    error(error) {
+      return new Response(`<pre>${error}\n${error.stack}</pre>`, {
+        headers: {
+          'Content-Type': 'text/html',
+        },
+      })
+    },
+  })
+
+  // Print Bun-style output header
+  console.clear()
+  console.log(`\nStx  ${process.env.STX_VERSION || 'v0.0.10'}  ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms`)
+  console.log(`\n→  http://localhost:${port}/`)
+
+  // Print the route in Bun-like format
+  console.log(`\nRoutes:`)
+  const relativeFilePath = path.relative(process.cwd(), absolutePath)
+  console.log(`  └─ / → ${relativeFilePath}`)
+
+  console.log(`\nPress h + Enter to show shortcuts`)
+
+  // Set up keyboard shortcuts
+  setupKeyboardShortcuts(server.url.toString(), () => {
+    if (watch) {
+      const watcher = fs.watch(path.dirname(absolutePath), { recursive: true })
+      watcher.close()
+    }
+    server.stop()
+  })
+
+  // Set up file watching if enabled
+  if (watch) {
+    const dirToWatch = path.dirname(absolutePath)
+    console.log(`Watching ${dirToWatch} for changes...`)
+
+    const watcher = fs.watch(dirToWatch, { recursive: true }, async (eventType, filename) => {
+      if (filename && filename.endsWith('.md')) {
+        console.log(`File ${filename} changed, reprocessing...`)
+        await processFile()
+      }
+    })
+
+    // Clean up on process exit
+    process.on('SIGINT', () => {
+      watcher.close()
+      server.stop()
+      process.exit(0)
+    })
+  }
+
+  return true
+}
+
 // Build and serve a specific STX file
 export async function serveStxFile(filePath: string, options: DevServerOptions = {}): Promise<boolean> {
   // Default options
@@ -89,9 +292,12 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     return false
   }
 
-  // Validate it's an STX file
-  if (!absolutePath.endsWith('.stx')) {
-    console.error(`Error: File must have .stx extension: ${absolutePath}`)
+  // Check file type and handle accordingly
+  if (absolutePath.endsWith('.md')) {
+    return serveMarkdownFile(absolutePath, options)
+  }
+  else if (!absolutePath.endsWith('.stx')) {
+    console.error(`Error: Unsupported file type: ${absolutePath}. Only .stx and .md files are supported.`)
     return false
   }
 
@@ -259,24 +465,25 @@ interface RouteMapping {
   [routePath: string]: {
     filePath: string
     content: string
+    fileType: 'stx' | 'md'
   }
 }
 
-// Build and serve multiple STX files
+// Build and serve multiple files (STX and Markdown)
 export async function serveMultipleStxFiles(filePaths: string[], options: DevServerOptions = {}): Promise<boolean> {
   // Default options
   const port = options.port || 3000
   const watch = options.watch !== false
 
-  // Validate all files exist and are STX files
+  // Validate all files exist and are supported types
   for (const filePath of filePaths) {
     const absolutePath = path.resolve(filePath)
     if (!fs.existsSync(absolutePath)) {
       console.error(`Error: File not found: ${absolutePath}`)
       return false
     }
-    if (!absolutePath.endsWith('.stx')) {
-      console.error(`Error: File must have .stx extension: ${absolutePath}`)
+    if (!absolutePath.endsWith('.stx') && !absolutePath.endsWith('.md')) {
+      console.error(`Error: Unsupported file type: ${absolutePath}. Only .stx and .md files are supported.`)
       return false
     }
   }
@@ -289,64 +496,181 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   const commonDir = findCommonDir(filePaths.map(f => path.dirname(path.resolve(f))))
 
   // Initial build of all files
-  console.log(`Building ${filePaths.length} STX files...`)
+  console.log(`Processing ${filePaths.length} files...`)
 
   // Route mapping for serving files
   const routes: RouteMapping = {}
 
-  // Function to build all STX files
+  // Function to build all files
   const buildFiles = async (): Promise<boolean> => {
     try {
-      // Build each file individually
+      // Process each file individually
       for (const filePath of filePaths) {
         const absolutePath = path.resolve(filePath)
-        const result = await Bun.build({
-          entrypoints: [absolutePath],
-          outdir: outputDir,
-          plugins: [stxPlugin],
-          define: {
-            'process.env.NODE_ENV': '"development"',
-          },
-          ...options.stxOptions,
-        })
+        const isMarkdown = absolutePath.endsWith('.md')
 
-        if (!result.success) {
-          console.error(`Build failed for ${filePath}:`, result.logs)
-          continue
+        if (isMarkdown) {
+          // Process Markdown file
+          try {
+            // Read and process the markdown file
+            const { content, data } = await readMarkdownFile(absolutePath)
+
+            // Create a simple HTML wrapper for the content with a nice theme
+            const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${data.title || path.basename(absolutePath)}</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    pre, code {
+      background: #f5f5f5;
+      border-radius: 3px;
+      padding: 0.2rem 0.4rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    pre code {
+      display: block;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+    h1, h2, h3, h4 {
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+    img {
+      max-width: 100%;
+    }
+    blockquote {
+      border-left: 4px solid #ddd;
+      padding-left: 1rem;
+      margin-left: 0;
+      color: #666;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.5rem;
+    }
+    th {
+      background: #f0f0f0;
+    }
+    a {
+      color: #0066cc;
+    }
+    .frontmatter {
+      background: #f8f8f8;
+      border-radius: 4px;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+    .frontmatter-item {
+      margin-bottom: 0.5rem;
+    }
+    .frontmatter-label {
+      font-weight: bold;
+      display: inline-block;
+      min-width: 80px;
+    }
+  </style>
+</head>
+<body>
+  ${Object.keys(data).length > 0 ? `
+  <div class="frontmatter">
+    <h3>Frontmatter</h3>
+    ${Object.entries(data).map(([key, value]) => `
+    <div class="frontmatter-item">
+      <span class="frontmatter-label">${key}:</span>
+      <span>${Array.isArray(value) ? value.join(', ') : value}</span>
+    </div>`).join('')}
+  </div>
+  ` : ''}
+  ${content}
+</body>
+</html>
+            `
+
+            // Generate route path based on file location relative to common directory
+            const relativePath = path.relative(commonDir, absolutePath)
+            // Remove .md extension and use as route
+            const routePath = `/${relativePath.replace(/\.md$/, '')}`
+
+            // Add to routes mapping
+            routes[routePath || '/'] = {
+              filePath: absolutePath,
+              content: htmlContent,
+              fileType: 'md',
+            }
+          }
+          catch (error) {
+            console.error(`Error processing Markdown file ${filePath}:`, error)
+            continue
+          }
         }
+        else {
+          // Build STX file
+          const result = await Bun.build({
+            entrypoints: [absolutePath],
+            outdir: outputDir,
+            plugins: [stxPlugin],
+            define: {
+              'process.env.NODE_ENV': '"development"',
+            },
+            ...options.stxOptions,
+          })
 
-        // Find the HTML output
-        const htmlOutput = result.outputs.find(o => o.path.endsWith('.html'))
-        if (!htmlOutput) {
-          console.error(`No HTML output found for ${filePath}`)
-          continue
-        }
+          if (!result.success) {
+            console.error(`Build failed for ${filePath}:`, result.logs)
+            continue
+          }
 
-        // Read the file content
-        const htmlContent = await Bun.file(htmlOutput.path).text()
+          // Find the HTML output
+          const htmlOutput = result.outputs.find(o => o.path.endsWith('.html'))
+          if (!htmlOutput) {
+            console.error(`No HTML output found for ${filePath}`)
+            continue
+          }
 
-        // Generate route path based on file location relative to common directory
-        const relativePath = path.relative(commonDir, absolutePath)
-        // Remove .stx extension and use as route
-        const routePath = `/${relativePath.replace(/\.stx$/, '')}`
+          // Read the file content
+          const htmlContent = await Bun.file(htmlOutput.path).text()
 
-        // Add to routes mapping
-        routes[routePath || '/'] = {
-          filePath: absolutePath,
-          content: htmlContent,
+          // Generate route path based on file location relative to common directory
+          const relativePath = path.relative(commonDir, absolutePath)
+          // Remove .stx extension and use as route
+          const routePath = `/${relativePath.replace(/\.stx$/, '')}`
+
+          // Add to routes mapping
+          routes[routePath || '/'] = {
+            filePath: absolutePath,
+            content: htmlContent,
+            fileType: 'stx',
+          }
         }
       }
 
       // Check if we have at least one successful build
       if (Object.keys(routes).length === 0) {
-        console.error('No STX files were successfully built')
+        console.error('No files were successfully processed')
         return false
       }
 
       return true
     }
     catch (error) {
-      console.error('Error building STX files:', error)
+      console.error('Error processing files:', error)
       return false
     }
   }
@@ -450,6 +774,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
     .map(([route, info]) => ({
       route: route === '/' ? '/' : route,
       filePath: path.relative(process.cwd(), info.filePath),
+      fileType: info.fileType,
     }))
 
   // Display routes in tree-like structure
@@ -458,7 +783,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
     const prefix = isLast ? '└─ ' : '├─ '
 
     if (routeInfo.route === '/') {
-      console.log(`  ${prefix}/ → ${routeInfo.filePath}`)
+      console.log(`  ${prefix}/ → ${routeInfo.filePath} ${routeInfo.fileType === 'md' ? '(markdown)' : ''}`)
     }
     else {
       // Format like '/about → ./about/index.stx'
@@ -471,7 +796,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       if (parentPath && !parentPath.startsWith('/'))
         parentPath = `/${parentPath}`
 
-      console.log(`  ${prefix}${displayRoute} → ${routeInfo.filePath}`)
+      console.log(`  ${prefix}${displayRoute} → ${routeInfo.filePath} ${routeInfo.fileType === 'md' ? '(markdown)' : ''}`)
     }
   })
 
@@ -495,8 +820,8 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       if (!filename)
         return
 
-      // Only rebuild if it's an STX file or related JavaScript/TypeScript file
-      if (filename.endsWith('.stx') || filename.endsWith('.js') || filename.endsWith('.ts')) {
+      // Only rebuild if it's a supported file type
+      if (filename.endsWith('.stx') || filename.endsWith('.js') || filename.endsWith('.ts') || filename.endsWith('.md')) {
         console.log(`File changed: ${filename}, rebuilding...`)
         await buildFiles()
       }

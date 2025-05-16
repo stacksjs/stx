@@ -1,0 +1,103 @@
+<script>
+// You can import markdown directly
+import content, { data as articleData } from '../docs/examples/markdown-example.md'
+
+// Example context data
+const site = {
+  name: 'STX Documentation',
+  theme: 'light',
+  baseUrl: 'https://stx-docs.example.com'
+}
+
+// Combine imported frontmatter with local data
+const context = {
+  site,
+  seriesName: 'Advanced STX Features',
+  ...articleData
+}
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }} | {{ site.name }}</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      color: #333;
+    }
+    header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 1rem;
+    }
+    .meta {
+      color: #666;
+      font-size: 0.9rem;
+    }
+    .content {
+      margin: 2rem 0;
+    }
+    .tag {
+      display: inline-block;
+      background: #f0f0f0;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      margin-right: 0.5rem;
+      font-size: 0.8rem;
+    }
+    footer {
+      margin-top: 2rem;
+      border-top: 1px solid #eee;
+      padding-top: 1rem;
+      font-size: 0.9rem;
+    }
+    code {
+      background: #f5f5f5;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+    pre code {
+      display: block;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>{{ title }}</h1>
+    <p class="meta">By {{ author }} on {{ date }}</p>
+    @if(description)
+      <p><em>{{ description }}</em></p>
+    @endif
+  </header>
+
+  <div class="content">
+    <!-- Method 1: Directly use imported content -->
+    @if(false)
+      {{{ content }}}
+    @endif
+
+    <!-- Method 2: Use the @markdown-file directive (preferred) -->
+    @markdown-file('../docs/examples/markdown-example.md', { seriesName: 'Advanced STX Features' })
+  </div>
+
+  <footer>
+    <div class="tags">
+      <strong>Tags:</strong>
+      @foreach(tags as tag)
+        <span class="tag">{{ tag }}</span>
+      @endforeach
+    </div>
+    <p>This article is part of the {{ seriesName }} series on {{ site.name }}.</p>
+  </footer>
+</body>
+</html>

@@ -16,14 +16,17 @@ const cli = new CAC('stx')
 // Helper to check if an argument is a glob pattern
 const isGlob = (arg: string) => arg.includes('*') || arg.includes('?') || arg.includes('{') || arg.includes('[')
 
+// Helper to check if we support this file type
+const isSupportedFileType = (arg: string) => arg.endsWith('.stx') || arg.endsWith('.md')
+
 // Check if direct file(s) run mode or glob pattern is provided
 const isDirectMode = process.argv.length >= 3 && (
-  (process.argv[2].endsWith('.stx') && fs.existsSync(process.argv[2]))
+  (isSupportedFileType(process.argv[2]) && fs.existsSync(process.argv[2]))
   || isGlob(process.argv[2])
 )
 
 if (isDirectMode) {
-  // Direct file mode: stx file.stx or stx **/*.stx
+  // Direct file mode: stx file.stx, stx file.md or stx **/*.stx
   const fileArg = process.argv[2]
   const options = {
     port: 3000,
@@ -46,29 +49,31 @@ if (isDirectMode) {
     // Handle glob pattern
     (async () => {
       try {
-        // Use Bun.glob to find all matching .stx files
+        // Use Bun.glob to find all matching files
         const files = await Array.fromAsync(new Bun.Glob(fileArg).scan({ onlyFiles: true, absolute: true }))
 
-        // Filter to only include .stx files
-        const stxFiles = fileArg.endsWith('.stx')
-          ? files
-          : files.filter(file => file.endsWith('.stx'))
+        // Filter to only include supported file types based on the pattern
+        const supportedFiles = fileArg.endsWith('.stx')
+          ? files.filter(file => file.endsWith('.stx'))
+          : fileArg.endsWith('.md')
+            ? files.filter(file => file.endsWith('.md'))
+            : files.filter(file => file.endsWith('.stx') || file.endsWith('.md'))
 
-        if (stxFiles.length === 0) {
-          console.error(`Error: No .stx files found matching pattern: ${fileArg}`)
+        if (supportedFiles.length === 0) {
+          console.error(`Error: No STX or Markdown files found matching pattern: ${fileArg}`)
           process.exit(1)
         }
 
-        // Serve multiple STX files directly without extra output
+        // Serve multiple files directly without extra output
         // (the server will handle the pretty output)
-        const success = await serveMultipleStxFiles(stxFiles, options)
+        const success = await serveMultipleStxFiles(supportedFiles, options)
 
         if (!success) {
           process.exit(1)
         }
       }
       catch (error) {
-        console.error('Failed to process STX files:', error)
+        console.error('Failed to process files:', error)
         process.exit(1)
       }
     })()
@@ -121,6 +126,8 @@ else {
     .example('stx dev template.stx')
     .example('stx dev components/hero.stx --port 8080')
     .example('stx dev **/*.stx')
+    .example('stx dev docs/guide.md')
+    .example('stx dev **/*.md')
     .action(async (filePattern, options) => {
       try {
         // Check if the input is a glob pattern
@@ -130,20 +137,22 @@ else {
           // Use Bun.Glob to find matching files
           const files = await Array.fromAsync(new Bun.Glob(filePattern).scan({ onlyFiles: true, absolute: true }))
 
-          // Filter to only include .stx files
-          const stxFiles = filePattern.endsWith('.stx')
-            ? files
-            : files.filter(file => file.endsWith('.stx'))
+          // Filter to only include supported file types
+          const supportedFiles = filePattern.endsWith('.stx')
+            ? files.filter(file => file.endsWith('.stx'))
+            : filePattern.endsWith('.md')
+              ? files.filter(file => file.endsWith('.md'))
+              : files.filter(file => file.endsWith('.stx') || file.endsWith('.md'))
 
-          if (stxFiles.length === 0) {
-            console.error(`Error: No .stx files found matching pattern: ${filePattern}`)
+          if (supportedFiles.length === 0) {
+            console.error(`Error: No STX or Markdown files found matching pattern: ${filePattern}`)
             process.exit(1)
           }
 
-          console.log(`Found ${stxFiles.length} STX ${stxFiles.length === 1 ? 'file' : 'files'} matching ${filePattern}`)
+          console.log(`Found ${supportedFiles.length} ${supportedFiles.length === 1 ? 'file' : 'files'} matching ${filePattern}`)
 
-          // Serve multiple STX files
-          const success = await serveMultipleStxFiles(stxFiles, {
+          // Serve multiple files
+          const success = await serveMultipleStxFiles(supportedFiles, {
             port: options.port,
             watch: options.watch !== false,
           })

@@ -1,9 +1,8 @@
 import { plugin } from 'bun-plugin-stx'
 
 export * from './a11y'
-
 export * from './animation'
-export * from './animation'
+export * from './assets'
 export * from './auth'
 export * from './caching'
 export * from './components'

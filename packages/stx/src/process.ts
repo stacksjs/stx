@@ -1,7 +1,9 @@
 /* eslint-disable no-console, regexp/no-super-linear-backtracking */
 import type { StxOptions } from './types'
+import path from 'path'
 import { processA11yDirectives } from './a11y'
 import { processAnimationDirectives } from './animation'
+import { processMarkdownFileDirectives } from './assets'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
 import { processCsrfDirectives } from './csrf'
 import { processCustomDirectives } from './custom-directives'
@@ -254,7 +256,10 @@ async function processOtherDirectives(
   output = await processJsDirectives(output, context, filePath)
   output = await processTsDirectives(output, context, filePath)
 
-  // Process markdown directives
+  // Process markdown files - new directive for including .md files with frontmatter
+  output = await processMarkdownFileDirectives(output, context, filePath, options)
+
+  // Process markdown directives (@markdown)
   output = await processMarkdownDirectives(output, context, filePath)
 
   // Process translate directives (@translate, @t)

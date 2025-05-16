@@ -37,14 +37,135 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
       || vscode.workspace.textDocuments.find(doc => doc.uri.toString() === key)
 
     if (document) {
-      const { content, mappings, jsDocComments } = this.extractTypeScriptFromStx(document)
-      this.derivedTsContent.set(key, content)
-      this.positionMappings.set(key, mappings)
-      this.jsDocComments.set(key, jsDocComments)
-      return content
+      // Handle different file types
+      if (document.fileName.endsWith('.md')) {
+        const { content, mappings, jsDocComments } = this.extractTypeScriptFromMarkdown(document)
+        this.derivedTsContent.set(key, content)
+        this.positionMappings.set(key, mappings)
+        this.jsDocComments.set(key, jsDocComments)
+        return content
+      } else {
+        const { content, mappings, jsDocComments } = this.extractTypeScriptFromStx(document)
+        this.derivedTsContent.set(key, content)
+        this.positionMappings.set(key, mappings)
+        this.jsDocComments.set(key, jsDocComments)
+        return content
+      }
     }
 
     return '// No TypeScript content found'
+  }
+
+  /**
+   * Extract TypeScript definitions from markdown frontmatter
+   */
+  extractTypeScriptFromMarkdown(document: vscode.TextDocument): {
+    content: string;
+    mappings: PositionMapping[];
+    jsDocComments: JSDocInfo[];
+  } {
+    try {
+      const text = document.getText()
+      let tsContent = ''
+      const mappings: PositionMapping[] = []
+      const jsDocComments: JSDocInfo[] = []
+      let tsLineCounter = 0
+
+      // Extract frontmatter from markdown
+      const frontmatterMatch = text.match(/^---\s*\n([\s\S]*?)\n---\s*\n/)
+
+      if (frontmatterMatch) {
+        const frontmatter = frontmatterMatch[1]
+        const frontmatterStartPos = 4 // after '---\n'
+
+        // Create a TypeScript interface for the frontmatter data
+        tsContent += '/**\n * Frontmatter data extracted from markdown file\n */\n'
+        tsContent += 'export interface FrontmatterData {\n'
+        tsLineCounter += 4
+
+        // Parse YAML-like frontmatter to generate interface properties
+        const lines = frontmatter.split('\n')
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim()
+          if (!line || line.startsWith('#')) continue
+
+          // Match key-value pair patterns like 'key: value'
+          const match = line.match(/^(\w+):\s*(.*)$/)
+          if (match) {
+            const [_, propName, propValue] = match
+
+            // Determine property type based on value
+            let propType = 'string'
+            if (propValue === 'true' || propValue === 'false') {
+              propType = 'boolean'
+            } else if (/^\d+$/.test(propValue)) {
+              propType = 'number'
+            } else if (/^\[.*\]$/.test(propValue)) {
+              propType = 'string[]'
+            }
+
+            // Add property to interface
+            const propLine = `  /** ${propValue} */\n  ${propName}: ${propType};\n`
+            tsContent += propLine
+            tsLineCounter += 2
+
+            // Create position mapping for this property
+            mappings.push({
+              stxLine: i + 1, // +1 because the frontmatter starts at line 1 (after ---)
+              stxChar: 0,
+              tsLine: tsLineCounter - 1, // Point to the property line
+              tsChar: 2, // After indentation
+              length: propName.length + propType.length + 2, // +2 for ': '
+            })
+
+            // Add JSDoc for this property
+            jsDocComments.push({
+              comment: propValue,
+              symbol: propName,
+              line: tsLineCounter - 1,
+              symbolType: 'property',
+              isProperty: true,
+              propertyType: propType,
+            })
+          }
+        }
+
+        // Close the interface
+        tsContent += '}\n\n'
+        tsLineCounter += 2
+
+        // Add data and content exports
+        tsContent += '/** Frontmatter data object */\n'
+        tsContent += 'export const data: FrontmatterData;\n\n'
+
+        tsContent += '/** HTML content rendered from markdown */\n'
+        tsContent += 'export const content: string;\n\n'
+
+        tsContent += '/** Default export is the rendered HTML content */\n'
+        tsContent += 'export default content;\n'
+
+        tsLineCounter += 8
+      } else {
+        // No frontmatter found, provide basic exports
+        tsContent += '/** HTML content rendered from markdown */\n'
+        tsContent += 'export const content: string;\n\n'
+
+        tsContent += '/** Empty frontmatter data */\n'
+        tsContent += 'export const data: Record<string, any> = {};\n\n'
+
+        tsContent += '/** Default export is the rendered HTML content */\n'
+        tsContent += 'export default content;\n'
+      }
+
+      return { content: tsContent, mappings, jsDocComments }
+    } catch (error) {
+      console.error('Error extracting TypeScript from Markdown:', error)
+      return {
+        content: '// Error extracting TypeScript content from Markdown\nexport const content: string;\nexport const data: Record<string, any> = {};\nexport default content;',
+        mappings: [],
+        jsDocComments: []
+      }
+    }
   }
 
   extractTypeScriptFromStx(document: vscode.TextDocument): {

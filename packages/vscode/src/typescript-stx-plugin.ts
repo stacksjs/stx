@@ -12,8 +12,11 @@ function init(_modules: { typescript: typeof ts }): ts.server.PluginModule {
     },
 
     getExternalFiles(project: ts.server.Project): string[] {
-      // Add STX files to the project
-      return project.getFileNames().filter(file => file.endsWith('.stx'))
+      // Add STX and MD files to the project
+      return project.getFileNames().filter(file =>
+        file.endsWith('.stx') ||
+        file.endsWith('.md')
+      )
     },
   }
 }

@@ -10,7 +10,7 @@ import { createHoverProvider } from './providers/hoverProvider'
 import { VirtualTsDocumentProvider } from './providers/virtualTsDocumentProvider'
 
 export function activate(context: vscode.ExtensionContext) {
-  // Create virtual TypeScript files for each STX file to support language features
+  // Create virtual TypeScript files for each STX and MD file to support language features
   const virtualTsDocumentProvider = new VirtualTsDocumentProvider()
   console.log('STX Extension - Activating')
 
@@ -84,13 +84,15 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Track document changes
   const documentChangeListener = vscode.workspace.onDidChangeTextDocument((event) => {
-    if (event.document.languageId === 'stx') {
+    if (event.document.languageId === 'stx' ||
+        (event.document.languageId === 'markdown' && event.document.fileName.endsWith('.md'))) {
       virtualTsDocumentProvider.updateVirtualTsDocument(event.document)
     }
   })
 
   // Track document opens
   const documentOpenListener = vscode.workspace.onDidOpenTextDocument((document) => {
+    // Handle STX files
     if (document.languageId === 'stx' || document.fileName.endsWith('.stx')) {
       virtualTsDocumentProvider.trackDocument(document)
 
@@ -114,11 +116,35 @@ export function activate(context: vscode.ExtensionContext) {
           console.error('Failed to open virtual TypeScript document:', error)
         })
     }
+
+    // Handle Markdown files
+    if (document.languageId === 'markdown' && document.fileName.endsWith('.md')) {
+      virtualTsDocumentProvider.trackDocument(document)
+
+      // Open a virtual TypeScript document for this MD file to support frontmatter
+      const virtualUri = document.uri.with({
+        scheme: 'stx-ts',
+        path: `${document.uri.path}.ts`,
+      })
+
+      // Load the virtual document in the background to activate TypeScript features
+      vscode.workspace.openTextDocument(virtualUri)
+        .then(() => {
+          console.log('TypeScript virtual document created for Markdown file', document.uri.toString())
+        }, (error: Error) => {
+          console.error('Failed to open virtual TypeScript document for Markdown:', error)
+        })
+    }
   })
 
   // Process already open documents
   vscode.workspace.textDocuments.forEach((document) => {
     if (document.languageId === 'stx' || document.fileName.endsWith('.stx')) {
+      virtualTsDocumentProvider.trackDocument(document)
+    }
+
+    // Also track Markdown files
+    if (document.languageId === 'markdown' && document.fileName.endsWith('.md')) {
       virtualTsDocumentProvider.trackDocument(document)
     }
   })
@@ -145,7 +171,7 @@ export function activate(context: vscode.ExtensionContext) {
     parameterCompletionProvider,
   )
 
-  console.log('STX language support activated')
+  console.log('STX language support activated (with Markdown frontmatter support)')
 }
 
 export function deactivate() {

@@ -2,7 +2,7 @@
 import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processDirectives } from '@stacksjs/stx'
+import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processDirectives, readMarkdownFile } from '@stacksjs/stx'
 
 export const plugin: BunPlugin = {
   name: 'bun-plugin-stx',
@@ -35,6 +35,35 @@ export const plugin: BunPlugin = {
         console.error('Failed to build web components:', error)
       }
     }
+
+    // Handler for .md files
+    build.onLoad({ filter: /\.md$/ }, async ({ path: filePath }) => {
+      try {
+        // Process the markdown file with frontmatter
+        const { content: htmlContent, data: frontmatter } = await readMarkdownFile(filePath, options)
+
+        // Create a module that exports both the rendered HTML and the frontmatter data
+        const jsModule = `
+          export const content = ${JSON.stringify(htmlContent)};
+          export const data = ${JSON.stringify(frontmatter)};
+          export default content;
+        `
+
+        return {
+          contents: jsModule,
+          loader: 'js',
+        }
+      }
+      catch (error: any) {
+        console.error('Markdown Processing Error:', error)
+        return {
+          contents: `export const content = "Error processing markdown: ${error.message?.replace(/"/g, '\\"') || 'Unknown error'}";
+                    export const data = {};
+                    export default content;`,
+          loader: 'js',
+        }
+      }
+    })
 
     build.onLoad({ filter: /\.stx$/ }, async ({ path: filePath }) => {
       try {
