@@ -1,4 +1,5 @@
 export { plugin as stxPlugin } from 'bun-plugin-stx'
+import { plugin } from 'bun-plugin-stx'
 
 export * from './auth'
 export * from './animation'
@@ -23,3 +24,6 @@ export * from './seo'
 export * from './types'
 export * from './utils'
 export * from './web-components'
+
+// Add default export
+export default plugin
