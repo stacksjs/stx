@@ -1,6 +1,6 @@
 import type { CustomDirective } from './types'
+import * as path from 'node:path'
 import { renderComponent } from './utils'
-import * as path from 'path'
 
 export const componentDirective: CustomDirective = {
   name: 'component',
@@ -58,9 +58,10 @@ export const componentDirective: CustomDirective = {
             cardClass: 'user-card',
             title: 'User Profile',
             content: '<p>This is the card content.</p>',
-            footer: 'Last updated: Today'
+            footer: 'Last updated: Today',
           }
-        } else {
+        }
+        else {
           // Extract params as a single string first
           const propsString = params.slice(1).join(',').trim()
 
@@ -78,13 +79,15 @@ export const componentDirective: CustomDirective = {
             try {
               // Try parsing as JSON first if possible
               props = JSON.parse(sanitizedPropsString)
-            } catch {
+            }
+            catch {
               // Fall back to Function constructor
               // eslint-disable-next-line no-new-func
               const propsFn = new Function(...contextKeys, `return ${propsString}`)
               props = propsFn(...contextValues)
             }
-          } else {
+          }
+          else {
             // It might be a variable name
             const varName = propsString.trim()
             props = context[varName] || {}
@@ -113,7 +116,7 @@ export const componentDirective: CustomDirective = {
         filePath,
         options,
         undefined,
-        dependencies
+        dependencies,
       )
 
       return rendered

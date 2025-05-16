@@ -1,4 +1,4 @@
-import { test, expect, describe, beforeAll, afterAll } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from '../../src/index'
@@ -17,7 +17,8 @@ function createTestServer(routes: Record<string, string>) {
     // Mock implementation to simulate Bun.serve's processing
     async process(route: string) {
       const template = routes[route]
-      if (!template) return null
+      if (!template)
+        return null
 
       // This simulates what Bun.serve would do with an HTML file
       const result = await Bun.build({
@@ -28,10 +29,11 @@ function createTestServer(routes: Record<string, string>) {
 
       const outputs = result.outputs || []
       const htmlOutput = outputs.find(o => o.path.endsWith('.html'))
-      if (!htmlOutput) return null
+      if (!htmlOutput)
+        return null
 
       return await Bun.file(htmlOutput.path).text()
-    }
+    },
   }
 }
 
@@ -122,7 +124,8 @@ describe('STX Server Import Tests', () => {
     try {
       await fs.promises.rm(TEMPLATE_DIR, { recursive: true, force: true })
       await fs.promises.rm(OUTPUT_DIR, { recursive: true, force: true })
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error cleaning up test directories:', error)
     }
   })
@@ -134,7 +137,7 @@ describe('STX Server Import Tests', () => {
 
     const server = createTestServer({
       '/': homePath,
-      '/dashboard': dashboardPath
+      '/dashboard': dashboardPath,
     })
 
     // Test homepage route
@@ -164,7 +167,7 @@ describe('STX Server Import Tests', () => {
 
   test('should support DOM manipulation after rendering', async () => {
     const server = createTestServer({
-      '/': path.join(TEMPLATE_DIR, 'home.stx')
+      '/': path.join(TEMPLATE_DIR, 'home.stx'),
     })
 
     const html = await server.process('/')

@@ -1,4 +1,4 @@
-import { test, expect, describe, beforeAll, afterAll } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from '../../src/index'
@@ -55,7 +55,8 @@ describe('STX Template Integration Tests', () => {
     try {
       await fs.promises.rm(TEMPLATE_DIR, { recursive: true, force: true })
       await fs.promises.rm(OUTPUT_DIR, { recursive: true, force: true })
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error cleaning up test directories:', error)
     }
   })

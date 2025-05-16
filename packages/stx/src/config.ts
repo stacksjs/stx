@@ -1,12 +1,12 @@
 import type { StxConfig, StxOptions } from './types'
 import { resolve } from 'node:path'
 import { loadConfig } from 'bunfig'
-import { markdownDirectiveHandler } from './markdown'
-import { webComponentDirectiveHandler } from './web-components'
 import { a11yDirective, screenReaderDirective } from './a11y'
+import { animationGroupDirective, motionDirective, scrollAnimateDirective, transitionDirective } from './animation'
 import { componentDirective } from './components'
+import { markdownDirectiveHandler } from './markdown'
 import { metaDirective, structuredDataDirective } from './seo'
-import { transitionDirective, animationGroupDirective, motionDirective, scrollAnimateDirective } from './animation'
+import { webComponentDirectiveHandler } from './web-components'
 
 export const defaultConfig: StxConfig = {
   enabled: true,
@@ -109,5 +109,5 @@ export const config: StxConfig = await loadConfig({
  * Helper function to define STX configuration
  */
 export function defineStxConfig(config: StxOptions): StxOptions {
-  return config;
+  return config
 }

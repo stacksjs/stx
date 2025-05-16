@@ -1,14 +1,14 @@
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
-import { setupTestDirs, cleanupTestDirs } from '../utils'
+import type { StxOptions } from '../../src/types'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import path from 'node:path'
-import { productContext } from './templates/context'
 import {
+  injectSeoTags,
   processMetaDirectives,
   processSeoDirective,
   processStructuredData,
-  injectSeoTags
 } from '../../src/seo'
-import { StxOptions } from '../../src/types'
+import { cleanupTestDirs, setupTestDirs } from '../utils'
+import { productContext } from './templates/context'
 
 describe('SEO template integration', () => {
   beforeAll(async () => {
@@ -29,11 +29,11 @@ describe('SEO template integration', () => {
         enabled: true,
         defaultConfig: {
           title: 'Default Title',
-          description: 'Default description'
+          description: 'Default description',
         },
         socialPreview: true,
-        defaultImage: 'https://example.com/default.jpg'
-      }
+        defaultImage: 'https://example.com/default.jpg',
+      },
     }
 
     // Process each directive type

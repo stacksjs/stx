@@ -1,3 +1,4 @@
+/* eslint-disable unused-imports/no-unused-vars */
 import type { CustomDirective, SeoConfig, StxOptions } from './types'
 import { createDetailedErrorMessage } from './utils'
 
@@ -36,10 +37,12 @@ export function processMetaDirectives(
       // Look for the key in context
       if (contextKey && context[contextKey]) {
         content = context[contextKey]
-      } else if (property.startsWith('og:') && context.openGraph && context.openGraph[parts[1]]) {
+      }
+      else if (property.startsWith('og:') && context.openGraph && context.openGraph[parts[1]]) {
         // Check if defined in openGraph context property
         content = context.openGraph[parts[1]]
-      } else {
+      }
+      else {
         content = ''
       }
 
@@ -59,18 +62,24 @@ export function processMetaDirectives(
       const evalFn = new Function(...Object.keys(context), `return ${attrObject}`)
       const attrs: MetaTag = evalFn(...Object.values(context))
 
-      if (!attrs) return ''
+      if (!attrs)
+        return ''
 
       // Build meta tag based on provided attributes
       let tag = '<meta'
-      if (attrs.name) tag += ` name="${escapeHtml(attrs.name)}"`
-      if (attrs.property) tag += ` property="${escapeHtml(attrs.property)}"`
-      if (attrs.httpEquiv) tag += ` http-equiv="${escapeHtml(attrs.httpEquiv)}"`
-      if (attrs.content) tag += ` content="${escapeHtml(attrs.content)}"`
+      if (attrs.name)
+        tag += ` name="${escapeHtml(attrs.name)}"`
+      if (attrs.property)
+        tag += ` property="${escapeHtml(attrs.property)}"`
+      if (attrs.httpEquiv)
+        tag += ` http-equiv="${escapeHtml(attrs.httpEquiv)}"`
+      if (attrs.content)
+        tag += ` content="${escapeHtml(attrs.content)}"`
       tag += '>'
 
       return tag
-    } catch (error) {
+    }
+    catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       return `<!-- Error in @metaTag: ${errorMessage} -->`
     }
@@ -97,7 +106,8 @@ export function processStructuredData(
       const evalFn = new Function(...Object.keys(context), `return ${dataObject}`)
       const data: StructuredData = evalFn(...Object.values(context))
 
-      if (!data) return ''
+      if (!data)
+        return ''
 
       // If @context isn't set, add schema.org as default
       if (!data['@context']) {
@@ -106,7 +116,8 @@ export function processStructuredData(
 
       // Convert to JSON-LD script tag
       return `<script type="application/ld+json">${JSON.stringify(data)}</script>`
-    } catch (error) {
+    }
+    catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       return `<!-- Error in @structuredData: ${errorMessage} -->`
     }
@@ -134,7 +145,8 @@ export function processSeoDirective(
       const evalFn = new Function(...Object.keys(context), `return ${seoConfig}`)
       const config: Partial<SeoConfig> = evalFn(...Object.values(context))
 
-      if (!config) return ''
+      if (!config)
+        return ''
 
       // Generate meta tags based on the configuration
       let metaTags = ''
@@ -240,7 +252,8 @@ export function processSeoDirective(
       }
 
       return metaTags.trim()
-    } catch (error) {
+    }
+    catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       return createDetailedErrorMessage(
         'SEO Directive',
@@ -266,18 +279,18 @@ export function injectSeoTags(
 ): string {
   // Check if SEO is explicitly disabled in options
   if (options.seo?.enabled === false) {
-    return html;
+    return html
   }
 
   // If the HTML already has meta tags or if auto-injection is disabled, return unchanged
-  if (html.includes('<!-- STX SEO Tags -->') ||
-      options.skipDefaultSeoTags === true) {
-    return html;
+  if (html.includes('<!-- STX SEO Tags -->')
+    || options.skipDefaultSeoTags === true) {
+    return html
   }
 
   // Check if document has a head tag
   if (!html.includes('<head>') && !html.includes('<head ')) {
-    return html;
+    return html
   }
 
   // Check if title is already set
@@ -287,11 +300,14 @@ export function injectSeoTags(
   let title = ''
   if (context.title) {
     title = context.title
-  } else if (context.meta && context.meta.title) {
+  }
+  else if (context.meta && context.meta.title) {
     title = context.meta.title
-  } else if (options.seo?.defaultConfig?.title) {
+  }
+  else if (options.seo?.defaultConfig?.title) {
     title = options.seo.defaultConfig.title
-  } else {
+  }
+  else {
     title = options.defaultTitle || 'STX Project'
   }
 
@@ -299,26 +315,33 @@ export function injectSeoTags(
   let description = ''
   if (context.description) {
     description = context.description
-  } else if (context.meta && context.meta.description) {
+  }
+  else if (context.meta && context.meta.description) {
     description = context.meta.description
-  } else if (options.seo?.defaultConfig?.description) {
+  }
+  else if (options.seo?.defaultConfig?.description) {
     description = options.seo.defaultConfig.description
-  } else {
+  }
+  else {
     description = options.defaultDescription || 'A website built with STX templating engine'
   }
 
   // Get image from context or options
-  let image = '';
+  let image = ''
   if (context.image) {
-    image = context.image;
-  } else if (context.meta && context.meta.image) {
-    image = context.meta.image;
-  } else if (context.openGraph && context.openGraph.image) {
-    image = context.openGraph.image;
-  } else if (options.seo?.defaultImage) {
-    image = options.seo.defaultImage;
-  } else if (options.defaultImage) {
-    image = options.defaultImage;
+    image = context.image
+  }
+  else if (context.meta && context.meta.image) {
+    image = context.meta.image
+  }
+  else if (context.openGraph && context.openGraph.image) {
+    image = context.openGraph.image
+  }
+  else if (options.seo?.defaultImage) {
+    image = options.seo.defaultImage
+  }
+  else if (options.defaultImage) {
+    image = options.defaultImage
   }
 
   // Build basic SEO tags
@@ -332,14 +355,14 @@ export function injectSeoTags(
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(title)}">
 <meta name="twitter:description" content="${escapeHtml(description)}">
-`;
+`
 
   // Add image tags if available
   if (image) {
     seoTagsMinimal += `
 <meta property="og:image" content="${escapeHtml(image)}">
 <meta name="twitter:image" content="${escapeHtml(image)}">
-`;
+`
   }
 
   // Add title tag if missing

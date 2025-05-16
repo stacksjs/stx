@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { serve } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -45,7 +46,8 @@ function setupKeyboardShortcuts(serverUrl: string, stopServer: () => void) {
           // Open in browser
           console.log(`Opening ${serverUrl} in your browser...`)
           Bun.spawn(['open', serverUrl], { stderr: 'inherit' })
-        } else if (cmd === 'c') {
+        }
+        else if (cmd === 'c') {
           // Clear console
           console.clear()
           console.log(`Server running at ${serverUrl}`)
@@ -54,12 +56,14 @@ function setupKeyboardShortcuts(serverUrl: string, stopServer: () => void) {
           console.log('  o + Enter - Open in browser')
           console.log('  c + Enter - Clear console')
           console.log('  q + Enter (or Ctrl+C) - Quit server')
-        } else if (cmd === 'q') {
+        }
+        else if (cmd === 'q') {
           // Quit server
           console.log('Stopping server...')
           stopServer()
           process.exit(0)
-        } else if (cmd === 'h') {
+        }
+        else if (cmd === 'h') {
           // Show help/shortcuts
           console.log('\nKeyboard Shortcuts:')
           console.log('  o + Enter - Open in browser')
@@ -107,9 +111,9 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         outdir: outputDir,
         plugins: [stxPlugin],
         define: {
-          'process.env.NODE_ENV': '"development"'
+          'process.env.NODE_ENV': '"development"',
         },
-        ...options.stxOptions
+        ...options.stxOptions,
       })
 
       if (!result.success) {
@@ -165,18 +169,32 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         let contentType = 'text/plain'
 
         switch (ext) {
-          case '.html': contentType = 'text/html'; break
-          case '.css': contentType = 'text/css'; break
-          case '.js': contentType = 'text/javascript'; break
-          case '.json': contentType = 'application/json'; break
-          case '.png': contentType = 'image/png'; break
-          case '.jpg': case '.jpeg': contentType = 'image/jpeg'; break
-          case '.gif': contentType = 'image/gif'; break
-          case '.svg': contentType = 'image/svg+xml'; break
+          case '.html':
+            contentType = 'text/html'
+            break
+          case '.css':
+            contentType = 'text/css'
+            break
+          case '.js':
+            contentType = 'text/javascript'
+            break
+          case '.json':
+            contentType = 'application/json'
+            break
+          case '.png':
+            contentType = 'image/png'
+            break
+          case '.jpg':
+          case '.jpeg':
+            contentType = 'image/jpeg'
+            break
+          case '.gif':
+            contentType = 'image/gif'
+            break
         }
 
         return new Response(file, {
-          headers: { 'Content-Type': contentType }
+          headers: { 'Content-Type': contentType },
         })
       }
 
@@ -239,8 +257,8 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
 // Interface for mapping routes to built STX file content
 interface RouteMapping {
   [routePath: string]: {
-    filePath: string;
-    content: string;
+    filePath: string
+    content: string
   }
 }
 
@@ -287,9 +305,9 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
           outdir: outputDir,
           plugins: [stxPlugin],
           define: {
-            'process.env.NODE_ENV': '"development"'
+            'process.env.NODE_ENV': '"development"',
           },
-          ...options.stxOptions
+          ...options.stxOptions,
         })
 
         if (!result.success) {
@@ -315,7 +333,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         // Add to routes mapping
         routes[routePath || '/'] = {
           filePath: absolutePath,
-          content: htmlContent
+          content: htmlContent,
         }
       }
 
@@ -377,18 +395,32 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         let contentType = 'text/plain'
 
         switch (ext) {
-          case '.html': contentType = 'text/html'; break
-          case '.css': contentType = 'text/css'; break
-          case '.js': contentType = 'text/javascript'; break
-          case '.json': contentType = 'application/json'; break
-          case '.png': contentType = 'image/png'; break
-          case '.jpg': case '.jpeg': contentType = 'image/jpeg'; break
-          case '.gif': contentType = 'image/gif'; break
-          case '.svg': contentType = 'image/svg+xml'; break
+          case '.html':
+            contentType = 'text/html'
+            break
+          case '.css':
+            contentType = 'text/css'
+            break
+          case '.js':
+            contentType = 'text/javascript'
+            break
+          case '.json':
+            contentType = 'application/json'
+            break
+          case '.png':
+            contentType = 'image/png'
+            break
+          case '.jpg':
+          case '.jpeg':
+            contentType = 'image/jpeg'
+            break
+          case '.gif':
+            contentType = 'image/gif'
+            break
         }
 
         return new Response(file, {
-          headers: { 'Content-Type': contentType }
+          headers: { 'Content-Type': contentType },
         })
       }
 
@@ -417,7 +449,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
     .sort(([pathA], [pathB]) => pathA.localeCompare(pathB))
     .map(([route, info]) => ({
       route: route === '/' ? '/' : route,
-      filePath: path.relative(process.cwd(), info.filePath)
+      filePath: path.relative(process.cwd(), info.filePath),
     }))
 
   // Display routes in tree-like structure
@@ -427,7 +459,8 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
     if (routeInfo.route === '/') {
       console.log(`  ${prefix}/ → ${routeInfo.filePath}`)
-    } else {
+    }
+    else {
       // Format like '/about → ./about/index.stx'
       const routeParts = routeInfo.route.split('/')
       const lastPart = routeParts[routeParts.length - 1] || routeParts[routeParts.length - 2]
@@ -435,7 +468,8 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
       // Get parent path for proper formatting
       let parentPath = routeParts.slice(0, -1).join('/')
-      if (parentPath && !parentPath.startsWith('/')) parentPath = '/' + parentPath
+      if (parentPath && !parentPath.startsWith('/'))
+        parentPath = `/${parentPath}`
 
       console.log(`  ${prefix}${displayRoute} → ${routeInfo.filePath}`)
     }
@@ -458,7 +492,8 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
     console.log(`Watching for changes...`)
 
     const watcher = fs.watch(commonDir, { recursive: true }, async (eventType, filename) => {
-      if (!filename) return
+      if (!filename)
+        return
 
       // Only rebuild if it's an STX file or related JavaScript/TypeScript file
       if (filename.endsWith('.stx') || filename.endsWith('.js') || filename.endsWith('.ts')) {
@@ -480,8 +515,10 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
 // Helper function to find the common directory for multiple paths
 function findCommonDir(paths: string[]): string {
-  if (paths.length === 0) return ''
-  if (paths.length === 1) return paths[0]
+  if (paths.length === 0)
+    return ''
+  if (paths.length === 1)
+    return paths[0]
 
   // Split all paths into components
   const parts = paths.map(p => p.split(path.sep))
@@ -492,7 +529,8 @@ function findCommonDir(paths: string[]): string {
     const part = parts[0][i]
     if (parts.every(p => p[i] === part)) {
       commonParts.push(part)
-    } else {
+    }
+    else {
       break
     }
   }

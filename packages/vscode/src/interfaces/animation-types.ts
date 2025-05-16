@@ -95,25 +95,25 @@ export interface TransitionOptions {
    * Duration of the transition in milliseconds
    * @default 300
    */
-  duration?: number;
+  duration?: number
 
   /**
    * Delay before the transition starts in milliseconds
    * @default 0
    */
-  delay?: number;
+  delay?: number
 
   /**
    * Easing function to use for the transition
    * @default TransitionEase.Ease
    */
-  ease?: TransitionEase | string;
+  ease?: TransitionEase | string
 
   /**
    * Direction of the transition
    * @default TransitionDirection.Both
    */
-  direction?: TransitionDirection | string;
+  direction?: TransitionDirection | string
 }
 
 /**
@@ -124,4 +124,4 @@ export const DEFAULT_TRANSITION_OPTIONS: TransitionOptions = {
   delay: 0,
   ease: TransitionEase.Ease,
   direction: TransitionDirection.Both,
-};
+}

@@ -339,7 +339,7 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
 /**
  * Process @env directive to conditionally render content based on environment
  */
-export function processEnvDirective(template: string, context: Record<string, any>, filePath?: string): string {
+export function processEnvDirective(template: string, _context: Record<string, any>, _filePath?: string): string {
   let output = template
 
   // General @env directive

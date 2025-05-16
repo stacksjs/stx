@@ -1,8 +1,14 @@
+/* eslint-disable no-console */
+import type { StxOptions } from '../../src/types'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { StxOptions } from '../../src/types'
 import { processDirectives } from '../../src/process'
-import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
-import stxPlugin from '../../src/index'
+import { cleanupTestDirs, createTestFile, setupTestDirs } from '../utils'
+
+const defaultOptions: StxOptions = {
+  debug: false,
+  componentsDir: 'components',
+  cache: false, // Disable cache for consistent performance tests
+}
 
 // Helper function to process a template with our test options
 async function processTemplate(template: string, context: Record<string, any> = {}, filePath: string = 'test.stx', options: StxOptions = defaultOptions): Promise<string> {
@@ -28,12 +34,6 @@ async function benchmark<T>(fn: () => Promise<T>, iterations: number = 1): Promi
   return { result: result!, averageTime }
 }
 
-const defaultOptions: StxOptions = {
-  debug: false,
-  componentsDir: 'components',
-  cache: false, // Disable cache for consistent performance tests
-}
-
 describe('STX Performance Tests', () => {
   beforeAll(setupTestDirs)
   afterAll(cleanupTestDirs)
@@ -44,7 +44,7 @@ describe('STX Performance Tests', () => {
 
       const { averageTime } = await benchmark(
         () => processTemplate(template, { name: 'World' }),
-        100 // Run 100 iterations for more accurate measurement
+        100, // Run 100 iterations for more accurate measurement
       )
 
       // Check that rendering is fast enough (adjust threshold as needed)
@@ -113,22 +113,22 @@ describe('STX Performance Tests', () => {
         menuItems: Array.from({ length: 10 }, (_, i) => ({
           id: `page-${i}`,
           url: `/page-${i}`,
-          label: `Page ${i}`
+          label: `Page ${i}`,
         })),
         sections: Array.from({ length: 50 }, (_, i) => ({
           visible: i % 3 === 0, // Only show every third section
-          content: `This is the content for section ${i+1}.`,
+          content: `This is the content for section ${i + 1}.`,
           hasDetails: i % 2 === 0,
-          details: `These are the details for section ${i+1}.`
+          details: `These are the details for section ${i + 1}.`,
         })),
         currentYear: new Date().getFullYear(),
         companyName: 'Stacks JS',
-        i: 0 // For the loop
+        i: 0, // For the loop
       }
 
       const { averageTime } = await benchmark(
         () => processTemplate(largeTemplate, context),
-        20 // Fewer iterations for large template
+        20, // Fewer iterations for large template
       )
 
       // Adjust threshold as needed based on expected performance
@@ -158,12 +158,12 @@ describe('STX Performance Tests', () => {
 
       // All conditions are true to ensure the deepest content renders
       const context = Object.fromEntries(
-        Array.from({ length: 10 }, (_, i) => [`level${i}`, true])
+        Array.from({ length: 10 }, (_, i) => [`level${i}`, true]),
       )
 
       const { averageTime } = await benchmark(
         () => processTemplate(template, context),
-        50
+        50,
       )
 
       expect(averageTime).toBeLessThan(10) // Should be under 10ms
@@ -190,15 +190,15 @@ describe('STX Performance Tests', () => {
       // Create test data
       const context = {
         items: Array.from({ length: 100 }, (_, i) => ({
-          name: `Item ${i+1}`,
-          value: Math.random() * 100
+          name: `Item ${i + 1}`,
+          value: Math.random() * 100,
         })),
-        i: 0 // For the loop counter
+        i: 0, // For the loop counter
       }
 
       const { averageTime } = await benchmark(
         () => processTemplate(template, context),
-        30
+        30,
       )
 
       expect(averageTime).toBeLessThan(50) // Should be under 50ms
@@ -226,7 +226,7 @@ describe('STX Performance Tests', () => {
       const context = {
         pageTitle: 'Cache Test',
         heading: 'Test Heading',
-        content: 'This is test content.'
+        content: 'This is test content.',
       }
 
       // Create unique test file paths
@@ -236,19 +236,19 @@ describe('STX Performance Tests', () => {
       // First run with cache disabled
       const uncachedResult = await processTemplate(template, context, noCachePath, {
         ...defaultOptions,
-        cache: false
+        cache: false,
       })
 
       // Run with cache enabled to populate the cache
       await processTemplate(template, context, cachePath, {
         ...defaultOptions,
-        cache: true
+        cache: true,
       })
 
       // Second run with cache enabled should use the cached version
       const cachedResult = await processTemplate(template, context, cachePath, {
         ...defaultOptions,
-        cache: true
+        cache: true,
       })
 
       // Verify both results are correct
@@ -262,17 +262,17 @@ describe('STX Performance Tests', () => {
       const { averageTime: timeWithoutCache } = await benchmark(
         () => processTemplate(template, context, noCachePath, {
           ...defaultOptions,
-          cache: false
+          cache: false,
         }),
-        10
+        10,
       )
 
       const { averageTime: timeWithCache } = await benchmark(
         () => processTemplate(template, context, cachePath, {
           ...defaultOptions,
-          cache: true
+          cache: true,
         }),
-        10
+        10,
       )
 
       console.log(`Without cache: ${timeWithoutCache.toFixed(3)}ms, With cache: ${timeWithCache.toFixed(3)}ms`)
@@ -314,10 +314,10 @@ describe('STX Performance Tests', () => {
       for (let i = 0; i < 20; i++) {
         template += `
           <@component path="card"
-            title="Card ${i+1}"
-            content="This is card ${i+1} content"
+            title="Card ${i + 1}"
+            content="This is card ${i + 1} content"
             hasFooter="${i % 2 === 0}"
-            footer="Footer for card ${i+1}" />
+            footer="Footer for card ${i + 1}" />
         `
       }
 
@@ -332,7 +332,7 @@ describe('STX Performance Tests', () => {
           ...defaultOptions,
           componentsDir: 'components',
         }),
-        10
+        10,
       )
 
       // Adjust threshold based on actual performance

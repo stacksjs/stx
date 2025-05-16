@@ -7,7 +7,7 @@ import { cleanupTestDirs, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } f
 // Helper function for PascalCase component test
 async function getPascalCaseOutput(testFile: string) {
   // First get the actual output to ensure paths are correct
-  const result = await Bun.build({
+  await Bun.build({
     entrypoints: [testFile],
     outdir: OUTPUT_DIR,
     plugins: [stxPlugin],
@@ -46,7 +46,7 @@ async function getPascalCaseOutput(testFile: string) {
 // Helper function for nested components test
 async function getNestedComponentOutput(testFile: string) {
   // First get the actual output for script paths
-  const result = await Bun.build({
+  await Bun.build({
     entrypoints: [testFile],
     outdir: OUTPUT_DIR,
     plugins: [stxPlugin],

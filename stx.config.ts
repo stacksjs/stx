@@ -1,4 +1,5 @@
-import { StxOptions } from '@stacksjs/stx';
+import type { StxOptions } from '@stacksjs/stx'
+import process from 'node:process'
 
 const config: StxOptions = {
   // Customize SEO options

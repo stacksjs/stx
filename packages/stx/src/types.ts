@@ -374,37 +374,37 @@ export interface StxConfig {
   /**
    * Root directory for templates
    */
-  templatesDir?: string;
+  templatesDir?: string
 
   /**
    * Default title to use for SEO if none is provided
    */
-  defaultTitle?: string;
+  defaultTitle?: string
 
   /**
    * Default description to use for SEO if none is provided
    */
-  defaultDescription?: string;
+  defaultDescription?: string
 
   /**
    * Default image URL to use for SEO/OpenGraph if none is provided
    */
-  defaultImage?: string;
+  defaultImage?: string
 
   /**
    * Enable or disable caching
    */
-  cache?: boolean;
+  cache?: boolean
 
   /**
    * Cache directory path
    */
-  cacheDir?: string;
+  cacheDir?: string
 
   /**
    * Cache version, used to invalidate cache
    */
-  cacheVersion?: string;
+  cacheVersion?: string
 
   /**
    * Enable STX features

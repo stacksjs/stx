@@ -1,4 +1,4 @@
-import { test, expect, describe, beforeAll, afterAll } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -148,51 +148,52 @@ describe('STX with Bun.serve direct imports', () => {
   // Clean up test files
   afterAll(async () => {
     try {
-      await fs.promises.rm(TEMPLATES_DIR, { recursive: true, force: true });
-      await fs.promises.unlink(APP_FILE);
-      await fs.promises.rm(path.join(TEST_DIR, "dist"), { recursive: true, force: true });
-    } catch (error) {
-      console.error('Error cleaning up test files:', error);
+      await fs.promises.rm(TEMPLATES_DIR, { recursive: true, force: true })
+      await fs.promises.unlink(APP_FILE)
+      await fs.promises.rm(path.join(TEST_DIR, 'dist'), { recursive: true, force: true })
+    }
+    catch (error) {
+      console.error('Error cleaning up test files:', error)
     }
   })
 
   // Test that STX imports work in Bun.serve
   test('should properly import and use STX templates in Bun.serve routes', async () => {
     // Import the app module that uses STX templates
-    const { handleRequest } = await import(APP_FILE);
+    const { handleRequest } = await import(APP_FILE)
 
     // Test each route by directly calling the fetch handler
 
     // Test homepage route
-    const homeRequest = new Request("http://localhost:3123/");
-    const homeResponse = await handleRequest(homeRequest);
-    expect(homeResponse.status).toBe(200);
-    const homeHtml = await homeResponse.text();
-    expect(homeHtml).toContain("<h1>Welcome to STX</h1>");
+    const homeRequest = new Request('http://localhost:3123/')
+    const homeResponse = await handleRequest(homeRequest)
+    expect(homeResponse.status).toBe(200)
+    const homeHtml = await homeResponse.text()
+    expect(homeHtml).toContain('<h1>Welcome to STX</h1>')
 
     // Test dashboard route
-    const dashboardRequest = new Request("http://localhost:3123/dashboard");
-    const dashboardResponse = await handleRequest(dashboardRequest);
-    expect(dashboardResponse.status).toBe(200);
-    const dashboardHtml = await dashboardResponse.text();
-    expect(dashboardHtml).toContain("<h1>Dashboard</h1>");
-    expect(dashboardHtml).toContain("Welcome, Test User");
+    const dashboardRequest = new Request('http://localhost:3123/dashboard')
+    const dashboardResponse = await handleRequest(dashboardRequest)
+    expect(dashboardResponse.status).toBe(200)
+    const dashboardHtml = await dashboardResponse.text()
+    expect(dashboardHtml).toContain('<h1>Dashboard</h1>')
+    expect(dashboardHtml).toContain('Welcome, Test User')
 
     // Test API
-    const userRequest = new Request("http://localhost:3123/api/user");
-    const userResponse = await handleRequest(userRequest);
-    expect(userResponse.status).toBe(200);
-    const userData = await userResponse.json();
-    expect(userData.name).toBe("Test User");
+    const userRequest = new Request('http://localhost:3123/api/user')
+    const userResponse = await handleRequest(userRequest)
+    expect(userResponse.status).toBe(200)
+    const userData = await userResponse.json()
+    expect(userData.name).toBe('Test User')
 
     // Test API POST endpoint
-    const itemsRequest = new Request("http://localhost:3123/api/items", {
-      method: "POST"
-    });
-    const itemsResponse = await handleRequest(itemsRequest);
-    expect(itemsResponse.status).toBe(200);
-    const itemsData = await itemsResponse.json();
-    expect(itemsData.success).toBe(true);
-    expect(itemsData.item.name).toBe("New Item");
-  });
-});
+    const itemsRequest = new Request('http://localhost:3123/api/items', {
+      method: 'POST',
+    })
+    const itemsResponse = await handleRequest(itemsRequest)
+    expect(itemsResponse.status).toBe(200)
+    const itemsData = await itemsResponse.json()
+    expect(itemsData.success).toBe(true)
+    expect(itemsData.item.name).toBe('New Item')
+  })
+})

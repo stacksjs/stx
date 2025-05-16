@@ -1,10 +1,9 @@
-import { expect, test, describe, beforeAll } from 'bun:test'
-import { GlobalRegistrator } from '@happy-dom/global-registrator'
-import { processDirectives } from '../../src/process'
+import { beforeAll, describe, expect, test } from 'bun:test'
+import fs from 'node:fs'
+import path from 'node:path'
 import { checkA11y, getScreenReaderOnlyStyle, processA11yDirectives, scanA11yIssues } from '../../src/a11y'
 import { defaultConfig } from '../../src/config'
-import path from 'node:path'
-import fs from 'node:fs'
+import { processDirectives } from '../../src/process'
 
 const TEST_DIR = path.join(import.meta.dir, 'templates')
 
@@ -32,7 +31,7 @@ describe('Accessibility Features', () => {
           Name: <input type="text" id="name">
         </label>
       </body>
-      </html>`
+      </html>`,
     )
 
     fs.writeFileSync(
@@ -50,7 +49,7 @@ describe('Accessibility Features', () => {
         <button></button>
         <input type="text">
       </body>
-      </html>`
+      </html>`,
     )
   })
 
@@ -147,7 +146,7 @@ describe('Accessibility Features', () => {
             Name: <input type="text">
           </label>
         </body>
-      </html>`;
+      </html>`
 
       const violations = await checkA11y(html, 'test.stx')
       expect(violations.length).toBe(0)

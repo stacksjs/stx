@@ -1,19 +1,18 @@
+import type { StxOptions } from '../../src/types'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
-import { StxOptions } from '../../src/types'
-import { processDirectives } from '../../src/process'
 import { generateCsrfToken, resetCsrfToken, setCsrfToken, verifyCsrfToken } from '../../src/csrf'
-import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
-import stxPlugin from '../../src/index'
+import { processDirectives } from '../../src/process'
+import { cleanupTestDirs, setupTestDirs } from '../utils'
+
+const defaultOptions: StxOptions = {
+  debug: false,
+  componentsDir: 'components',
+}
 
 // Helper function to process a template with our test options
 async function processTemplate(template: string, context: Record<string, any> = {}, filePath: string = 'test.stx', options: StxOptions = defaultOptions): Promise<string> {
   const dependencies = new Set<string>()
   return processDirectives(template, context, filePath, options, dependencies)
-}
-
-const defaultOptions: StxOptions = {
-  debug: false,
-  componentsDir: 'components',
 }
 
 describe('STX Security Tests', () => {
@@ -54,8 +53,8 @@ describe('STX Security Tests', () => {
       const result = await processTemplate(template, { attributeContent: maliciousAttr })
 
       // The attribute should be properly HTML escaped (may still contain the attack vector but escaped)
-      expect(result).toContain('&quot;')  // Escaped quotes
-      expect(result).toContain('&#039;')  // Escaped single quotes
+      expect(result).toContain('&quot;') // Escaped quotes
+      expect(result).toContain('&#039;') // Escaped single quotes
       // The resulting HTML should not be executable JS
       expect(result).not.toContain('" onmouseover="alert(\'XSS\')" "')
     })
@@ -70,7 +69,7 @@ describe('STX Security Tests', () => {
       `
       const result = await processTemplate(template, {
         showContent: true,
-        content: xssInDirective
+        content: xssInDirective,
       })
 
       // The content should be escaped
@@ -146,7 +145,7 @@ describe('STX Security Tests', () => {
 
       // Test with potential JavaScript URL
       const result = await processTemplate(template, {
-        url: 'javascript:alert("XSS")'
+        url: 'javascript:alert("XSS")',
       })
 
       // JavaScript URL might be present but should be escaped
@@ -159,9 +158,9 @@ describe('STX Security Tests', () => {
         user: {
           name: '<script>alert("XSS")</script>',
           profile: {
-            bio: '<img src="x" onerror="alert(\'nested-xss\')">'
-          }
-        }
+            bio: '<img src="x" onerror="alert(\'nested-xss\')">',
+          },
+        },
       }
 
       const template = `
@@ -190,16 +189,16 @@ describe('STX Security Tests', () => {
       const nestedData = {
         user: {
           name: 'Test User',
-          bio: '<script>alert("bio")</script>'
+          bio: '<script>alert("bio")</script>',
         },
-        '__proto__': {
-          polluted: true
+        __proto__: {
+          polluted: true,
         },
-        'constructor': {
+        constructor: {
           prototype: {
-            polluted: true
-          }
-        }
+            polluted: true,
+          },
+        },
       }
 
       const template = `
@@ -255,7 +254,7 @@ describe('STX Security Tests', () => {
 
       const result = await processTemplate(template, {
         badTemplate: '{{ secretValue }}',
-        secretValue: 'SECRET DATA'
+        secretValue: 'SECRET DATA',
       })
 
       // The expression should be treated as a string, not evaluated
@@ -284,7 +283,7 @@ describe('STX Security Tests', () => {
       const context = {
         username: '<script>alert("xss")</script>User',
         allowedHtml: '<strong>Allowed HTML</strong>',
-        searchQuery: '" onfocus="alert(\'attack\')" "'
+        searchQuery: '" onfocus="alert(\'attack\')" "',
       }
 
       const result = await processTemplate(template, context)

@@ -1,3 +1,4 @@
+/* eslint-disable unused-imports/no-unused-vars, no-case-declarations,  */
 import type { CustomDirective, StxOptions } from './types'
 
 /**
@@ -49,11 +50,11 @@ export const DEFAULT_TRANSITION_OPTIONS = {
 function generateTransitionCSS(
   type: TransitionType,
   options: {
-    duration?: number,
-    delay?: number,
-    ease?: TransitionEase,
-    direction?: TransitionDirection,
-    custom?: string,
+    duration?: number
+    delay?: number
+    ease?: TransitionEase
+    direction?: TransitionDirection
+    custom?: string
   } = {},
 ): string {
   const { duration, delay, ease, direction, custom } = {
@@ -157,7 +158,7 @@ function generateMotionPreferencesScript(): string {
     });
   })();
 </script>
-  `;
+  `
 }
 
 /**
@@ -166,19 +167,19 @@ function generateMotionPreferencesScript(): string {
 function hasAnimationDirectives(template: string): boolean {
   // More specific patterns that indicate actual STX animation usage
   const animationDirectives = [
-    /@animate\b/,                // @animate directive
-    /@transition\b/,             // @transition directive
-    /@scroll(?:Animate)?\b/,     // @scroll or @scrollAnimate directives
-    /@staggered\b/,              // @staggered directive
-    /@sequence\b/,               // @sequence directive
-    /@motion\b/,                 // @motion directive
-    /@animationGroup\b/,         // @animationGroup directive
-    /\bstx-transition\b/,        // STX transition class
+    /@animate\b/, // @animate directive
+    /@transition\b/, // @transition directive
+    /@scroll(?:Animate)?\b/, // @scroll or @scrollAnimate directives
+    /@staggered\b/, // @staggered directive
+    /@sequence\b/, // @sequence directive
+    /@motion\b/, // @motion directive
+    /@animationGroup\b/, // @animationGroup directive
+    /\bstx-transition\b/, // STX transition class
     /\bstx-(?:fade|scale|flip|rotate|slide|from-|observe)\b/, // STX animation classes
     /data-animate=['"](?:auto|true|false)['"]/, // Animation data attribute
-  ];
+  ]
 
-  return animationDirectives.some(pattern => pattern.test(template));
+  return animationDirectives.some(pattern => pattern.test(template))
 }
 
 /**
@@ -228,7 +229,7 @@ function generateIntersectionObserverScript(threshold = 0.1, rootMargin = '0px')
     }
   })();
 </script>
-  `;
+  `
 }
 
 /**
@@ -350,7 +351,7 @@ function generateBaseAnimationStyles(): string {
                 transform var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms);
   }
 </style>
-  `;
+  `
 }
 
 /**
@@ -359,11 +360,11 @@ function generateBaseAnimationStyles(): string {
 function generateAnimationGroup(
   groupName: string,
   elements: string[],
-  options: { staggerDelay?: number, sequence?: boolean } = {}
+  options: { staggerDelay?: number, sequence?: boolean } = {},
 ): string {
-  const { staggerDelay = 50, sequence = false } = options;
+  const { staggerDelay = 50, sequence = false } = options
 
-  let script = `
+  const script = `
 <script>
   // Animation Group: ${groupName}
   (function() {
@@ -399,9 +400,9 @@ function generateAnimationGroup(
     }
   })();
 </script>
-  `;
+  `
 
-  return script;
+  return script
 }
 
 /**
@@ -411,52 +412,56 @@ export const transitionDirective: CustomDirective = {
   name: 'transition',
   handler: (content, params, context, filePath) => {
     if (params.length < 1) {
-      return `<div class="stx-error">@transition directive requires at least a transition type</div>${content}`;
+      return `<div class="stx-error">@transition directive requires at least a transition type</div>${content}`
     }
 
-    const type = params[0] as TransitionType;
-    const duration = params.length > 1 ? parseInt(params[1], 10) || DEFAULT_TRANSITION_OPTIONS.duration : DEFAULT_TRANSITION_OPTIONS.duration;
-    const ease = params.length > 2 ? params[2] as TransitionEase || DEFAULT_TRANSITION_OPTIONS.ease : DEFAULT_TRANSITION_OPTIONS.ease;
-    const delay = params.length > 3 ? parseInt(params[3], 10) || DEFAULT_TRANSITION_OPTIONS.delay : DEFAULT_TRANSITION_OPTIONS.delay;
-    const direction = params.length > 4 ? params[4] as TransitionDirection || DEFAULT_TRANSITION_OPTIONS.direction : DEFAULT_TRANSITION_OPTIONS.direction;
+    const type = params[0] as TransitionType
+    const duration = params.length > 1 ? Number.parseInt(params[1], 10) || DEFAULT_TRANSITION_OPTIONS.duration : DEFAULT_TRANSITION_OPTIONS.duration
+    const ease = params.length > 2 ? params[2] as TransitionEase || DEFAULT_TRANSITION_OPTIONS.ease : DEFAULT_TRANSITION_OPTIONS.ease
+    const delay = params.length > 3 ? Number.parseInt(params[3], 10) || DEFAULT_TRANSITION_OPTIONS.delay : DEFAULT_TRANSITION_OPTIONS.delay
+    const direction = params.length > 4 ? params[4] as TransitionDirection || DEFAULT_TRANSITION_OPTIONS.direction : DEFAULT_TRANSITION_OPTIONS.direction
 
     // Generate unique ID for the element
-    const uniqueId = `stx-transition-${Math.random().toString(36).substr(2, 9)}`;
+    const uniqueId = `stx-transition-${Math.random().toString(36).substr(2, 9)}`
 
     const css = generateTransitionCSS(type as TransitionType, {
       duration,
       delay,
       ease: ease as TransitionEase,
-      direction: direction as TransitionDirection
-    });
+      direction: direction as TransitionDirection,
+    })
 
     // Add specific class based on the transition type
-    let transitionClass = 'stx-transition';
-    let transitionTypeClass = '';
+    const transitionClass = 'stx-transition'
+    let transitionTypeClass = ''
 
     if (type === TransitionType.Fade) {
-      transitionTypeClass = 'stx-fade';
-    } else if (type === TransitionType.Slide) {
-      transitionTypeClass = 'stx-slide';
-    } else if (type === TransitionType.Scale) {
-      transitionTypeClass = 'stx-scale';
-    } else if (type === TransitionType.Flip) {
-      transitionTypeClass = 'stx-flip';
-    } else if (type === TransitionType.Rotate) {
-      transitionTypeClass = 'stx-rotate';
+      transitionTypeClass = 'stx-fade'
+    }
+    else if (type === TransitionType.Slide) {
+      transitionTypeClass = 'stx-slide'
+    }
+    else if (type === TransitionType.Scale) {
+      transitionTypeClass = 'stx-scale'
+    }
+    else if (type === TransitionType.Flip) {
+      transitionTypeClass = 'stx-flip'
+    }
+    else if (type === TransitionType.Rotate) {
+      transitionTypeClass = 'stx-rotate'
     }
 
     // Add out class if direction is out or both
-    const shouldBeOut = direction === TransitionDirection.Out;
-    const outClass = shouldBeOut ? 'stx-out' : '';
+    const shouldBeOut = direction === TransitionDirection.Out
+    const outClass = shouldBeOut ? 'stx-out' : ''
 
     // Combine all classes, keeping any existing stx-out class from children
     return `<div id="${uniqueId}" class="${transitionClass} ${transitionTypeClass} ${outClass}"
-      style="--stx-transition-duration: ${duration}ms; --stx-transition-ease: ${ease}; --stx-transition-delay: ${delay}ms;">${content}</div>`;
+      style="--stx-transition-duration: ${duration}ms; --stx-transition-ease: ${ease}; --stx-transition-delay: ${delay}ms;">${content}</div>`
   },
   hasEndTag: true,
   description: 'Applies transition effects to an element',
-};
+}
 
 /**
  * Scroll animation directive for triggering animations on scroll
@@ -465,50 +470,57 @@ export const scrollAnimateDirective: CustomDirective = {
   name: 'scrollAnimate',
   handler: (content, params, context, filePath) => {
     if (params.length < 1) {
-      return `<div class="stx-error">@scrollAnimate directive requires at least an animation type</div>${content}`;
+      return `<div class="stx-error">@scrollAnimate directive requires at least an animation type</div>${content}`
     }
 
-    const type = params[0]; // animation type
-    const duration = params.length > 1 ? parseInt(params[1], 10) || 300 : 300;
-    const ease = params.length > 2 ? params[2] || 'ease' : 'ease';
-    const threshold = params.length > 3 ? parseFloat(params[3]) || 0.2 : 0.2;
-    const delay = params.length > 4 ? parseInt(params[4], 10) || 0 : 0;
+    const type = params[0] // animation type
+    const duration = params.length > 1 ? Number.parseInt(params[1], 10) || 300 : 300
+    const ease = params.length > 2 ? params[2] || 'ease' : 'ease'
+    const threshold = params.length > 3 ? Number.parseFloat(params[3]) || 0.2 : 0.2
+    const delay = params.length > 4 ? Number.parseInt(params[4], 10) || 0 : 0
 
     // Generate unique ID
-    const uniqueId = `stx-scroll-${Math.random().toString(36).substr(2, 9)}`;
+    const uniqueId = `stx-scroll-${Math.random().toString(36).substr(2, 9)}`
 
     // Set CSS variables inline
-    const style = `--stx-transition-duration: ${duration}ms; --stx-transition-ease: ${ease}; --stx-transition-delay: ${delay}ms; will-change: opacity, transform;`;
+    const style = `--stx-transition-duration: ${duration}ms; --stx-transition-ease: ${ease}; --stx-transition-delay: ${delay}ms; will-change: opacity, transform;`
 
     // Build appropriate class based on animation type
-    let animationClass = 'stx-transition stx-observe stx-out';
+    let animationClass = 'stx-transition stx-observe stx-out'
 
     // Map animation types to appropriate CSS classes
     if (type === 'fade') {
-      animationClass += ' stx-fade';
-    } else if (type === 'slide-up' || type === 'slide') {
-      animationClass += ' stx-from-bottom';
-    } else if (type === 'slide-down') {
-      animationClass += ' stx-from-top';
-    } else if (type === 'slide-left') {
-      animationClass += ' stx-from-right';
-    } else if (type === 'slide-right') {
-      animationClass += ' stx-from-left';
-    } else if (type === 'scale') {
-      animationClass += ' stx-scale';
-    } else if (type.includes('-')) {
+      animationClass += ' stx-fade'
+    }
+    else if (type === 'slide-up' || type === 'slide') {
+      animationClass += ' stx-from-bottom'
+    }
+    else if (type === 'slide-down') {
+      animationClass += ' stx-from-top'
+    }
+    else if (type === 'slide-left') {
+      animationClass += ' stx-from-right'
+    }
+    else if (type === 'slide-right') {
+      animationClass += ' stx-from-left'
+    }
+    else if (type === 'scale') {
+      animationClass += ' stx-scale'
+    }
+    else if (type.includes('-')) {
       // Handle direction-based custom animations
-      animationClass += ` stx-${type}`;
-    } else {
+      animationClass += ` stx-${type}`
+    }
+    else {
       // Default fallback
-      animationClass += ` stx-${type}`;
+      animationClass += ` stx-${type}`
     }
 
-    return `<div id="${uniqueId}" class="${animationClass}" style="${style}" data-threshold="${threshold}">${content}</div>`;
+    return `<div id="${uniqueId}" class="${animationClass}" style="${style}" data-threshold="${threshold}">${content}</div>`
   },
   hasEndTag: true,
   description: 'Applies animations that trigger when scrolled into view',
-};
+}
 
 /**
  * Animation group directive for coordinating multiple animations
@@ -517,21 +529,21 @@ export const animationGroupDirective: CustomDirective = {
   name: 'animationGroup',
   handler: (content, params, context, filePath) => {
     if (params.length < 2) {
-      return `<div class="stx-error">@animationGroup directive requires a group name and at least one element selector</div>${content}`;
+      return `<div class="stx-error">@animationGroup directive requires a group name and at least one element selector</div>${content}`
     }
 
-    const groupName = params[0];
-    const elements = params.slice(1).map(p => p.startsWith('#') || p.startsWith('.') ? p : `#${p}`);
-    const staggerDelay = context.staggerDelay || 50;
-    const sequence = context.sequence || true;
+    const groupName = params[0]
+    const elements = params.slice(1).map(p => p.startsWith('#') || p.startsWith('.') ? p : `#${p}`)
+    const staggerDelay = context.staggerDelay || 50
+    const sequence = context.sequence || true
 
-    const groupScript = generateAnimationGroup(groupName, elements, { staggerDelay, sequence });
+    const groupScript = generateAnimationGroup(groupName, elements, { staggerDelay, sequence })
 
-    return `${content}\n${groupScript}`;
+    return `${content}\n${groupScript}`
   },
   hasEndTag: false,
   description: 'Coordinates multiple animations together as a group',
-};
+}
 
 /**
  * Motion preferences directive for controlling animation preferences
@@ -539,17 +551,17 @@ export const animationGroupDirective: CustomDirective = {
 export const motionDirective: CustomDirective = {
   name: 'motion',
   handler: (content, params, context, filePath) => {
-    const respectPreferences = params.length > 0 ? params[0].toLowerCase() === 'true' : true;
+    const respectPreferences = params.length > 0 ? params[0].toLowerCase() === 'true' : true
 
     // Set up motion preferences script
-    const motionScript = generateMotionPreferencesScript();
+    const motionScript = generateMotionPreferencesScript()
 
     // Add data attribute to control animation state
-    return `<div data-animate="${respectPreferences ? 'auto' : 'true'}">${content}</div>${motionScript}`;
+    return `<div data-animate="${respectPreferences ? 'auto' : 'true'}">${content}</div>${motionScript}`
   },
   hasEndTag: true,
   description: 'Controls motion and animation preferences',
-};
+}
 
 /**
  * Process animation directives in the template
@@ -560,27 +572,27 @@ export function processAnimationDirectives(
   filePath: string,
   options: StxOptions,
 ): string {
-  let output = template;
+  let output = template
 
   // Skip processing if animations are disabled entirely
   if (options.animation?.enabled === false) {
-    return output;
+    return output
   }
 
   // For test files, always inject animation styles
-  const isTestFile = filePath.includes('test') && filePath.includes('animation');
+  const isTestFile = filePath.includes('test') && filePath.includes('animation')
 
   // Only process animations if animation directives are present or it's a test file
   if (!hasAnimationDirectives(output) && !isTestFile) {
-    return output;
+    return output
   }
 
   // Add base animation styles if not already present
-  const hasBaseStyles = output.includes('<style id="stx-animation-base">');
+  const hasBaseStyles = output.includes('<style id="stx-animation-base">')
 
   if (!hasBaseStyles) {
-    const baseStyles = generateBaseAnimationStyles();
-    output = output.replace('</head>', `${baseStyles}\n</head>`);
+    const baseStyles = generateBaseAnimationStyles()
+    output = output.replace('</head>', `${baseStyles}\n</head>`)
   }
 
   // Process animation directives
@@ -588,30 +600,30 @@ export function processAnimationDirectives(
 
   // Add intersection observer script for scroll animations if needed
   if (output.includes('stx-observe')) {
-    const hasObserverScript = output.includes('Intersection Observer for scroll animations');
+    const hasObserverScript = output.includes('Intersection Observer for scroll animations')
     if (!hasObserverScript) {
-      const observerScript = generateIntersectionObserverScript();
-      output = output.replace('</body>', `${observerScript}\n</body>`);
+      const observerScript = generateIntersectionObserverScript()
+      output = output.replace('</body>', `${observerScript}\n</body>`)
     }
   }
 
-  return output;
+  return output
 }
 
 /**
  * Register animation directives
  */
 export function registerAnimationDirectives(options: StxOptions): StxOptions {
-  const customDirectives = options.customDirectives || [];
+  const customDirectives = options.customDirectives || []
 
   // Add animation directives to the list
-  customDirectives.push(transitionDirective);
-  customDirectives.push(animationGroupDirective);
-  customDirectives.push(motionDirective);
-  customDirectives.push(scrollAnimateDirective);
+  customDirectives.push(transitionDirective)
+  customDirectives.push(animationGroupDirective)
+  customDirectives.push(motionDirective)
+  customDirectives.push(scrollAnimateDirective)
 
   return {
     ...options,
     customDirectives,
-  };
+  }
 }

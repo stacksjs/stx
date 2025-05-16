@@ -1,39 +1,40 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import process from 'node:process'
 import { CAC } from 'cac'
 import { version } from '../package.json'
-import { docsCommand } from '../src/docs'
 import { scanA11yIssues } from '../src/a11y'
-import path from 'node:path'
-import { serveStxFile, serveMultipleStxFiles } from '../src/dev-server'
-import fs from 'node:fs'
+import { serveMultipleStxFiles, serveStxFile } from '../src/dev-server'
+import { docsCommand } from '../src/docs'
 
 const cli = new CAC('stx')
 
-interface CliOption {
-  verbose: boolean
-}
+// interface CliOption {
+//   verbose: boolean
+// }
 
 // Helper to check if an argument is a glob pattern
 const isGlob = (arg: string) => arg.includes('*') || arg.includes('?') || arg.includes('{') || arg.includes('[')
 
 // Check if direct file(s) run mode or glob pattern is provided
-const isDirectMode = process.argv.length >= 3 &&
-                     (process.argv[2].endsWith('.stx') && fs.existsSync(process.argv[2])) ||
-                     isGlob(process.argv[2])
+const isDirectMode = process.argv.length >= 3 && (
+  (process.argv[2].endsWith('.stx') && fs.existsSync(process.argv[2]))
+  || isGlob(process.argv[2])
+)
 
 if (isDirectMode) {
   // Direct file mode: stx file.stx or stx **/*.stx
   const fileArg = process.argv[2]
   const options = {
     port: 3000,
-    watch: true
+    watch: true,
   }
 
   // Parse any options after the file
   for (let i = 3; i < process.argv.length; i++) {
     const arg = process.argv[i]
     if (arg === '--port' && i + 1 < process.argv.length) {
-      options.port = parseInt(process.argv[++i], 10)
+      options.port = Number.parseInt(process.argv[++i], 10)
     }
     else if (arg === '--no-watch') {
       options.watch = false
@@ -65,16 +66,18 @@ if (isDirectMode) {
         if (!success) {
           process.exit(1)
         }
-      } catch (error) {
+      }
+      catch (error) {
         console.error('Failed to process STX files:', error)
         process.exit(1)
       }
     })()
-  } else {
+  }
+  else {
     // Single file mode - launch directly without extra output
     // (the server will handle the pretty output)
     serveStxFile(fileArg, options)
-      .catch(error => {
+      .catch((error) => {
         console.error('Failed to start dev server:', error)
         process.exit(1)
       })
@@ -142,17 +145,18 @@ else {
           // Serve multiple STX files
           const success = await serveMultipleStxFiles(stxFiles, {
             port: options.port,
-            watch: options.watch !== false
+            watch: options.watch !== false,
           })
 
           if (!success) {
             process.exit(1)
           }
-        } else {
+        }
+        else {
           // Single file mode
           const success = await serveStxFile(filePattern, {
             port: options.port,
-            watch: options.watch !== false
+            watch: options.watch !== false,
           })
 
           if (!success) {
@@ -194,7 +198,7 @@ else {
         const totalFiles = Object.keys(results).length
         const totalIssues = Object.values(results).reduce(
           (sum, issues) => sum + issues.length,
-          0
+          0,
         )
 
         // Format and output results
@@ -204,14 +208,17 @@ else {
           if (options.output) {
             await Bun.write(options.output, jsonOutput)
             console.log(`A11y scan results written to ${options.output}`)
-          } else {
+          }
+          else {
             console.log(jsonOutput)
           }
-        } else {
+        }
+        else {
           // User-friendly console output
           if (totalFiles === 0) {
             console.log('✓ No accessibility issues found!')
-          } else {
+          }
+          else {
             console.log(`Found ${totalIssues} accessibility issues in ${totalFiles} files:\n`)
 
             for (const [file, issues] of Object.entries(results)) {
@@ -320,20 +327,20 @@ else {
     .example('stx build ./src/index.stx --outfile bundle.js --target bun')
     .example('stx build **/*.stx --outdir dist')
     .action(async (entrypoints: string[], options: {
-      outdir: string;
-      outfile?: string;
-      target?: 'browser' | 'bun' | 'node';
-      format?: 'esm' | 'cjs' | 'iife';
-      minify?: boolean;
-      sourcemap?: 'none' | 'linked' | 'inline' | 'external' | boolean;
-      splitting?: boolean;
-      external?: string;
-      packages?: 'bundle' | 'external';
-      watch?: boolean;
-      publicPath?: string;
-      env?: 'inline' | 'disable' | `${string}*`;
-      compile?: boolean;
-      root?: string;
+      outdir: string
+      outfile?: string
+      target?: 'browser' | 'bun' | 'node'
+      format?: 'esm' | 'cjs' | 'iife'
+      minify?: boolean
+      sourcemap?: 'none' | 'linked' | 'inline' | 'external' | boolean
+      splitting?: boolean
+      external?: string
+      packages?: 'bundle' | 'external'
+      watch?: boolean
+      publicPath?: string
+      env?: 'inline' | 'disable' | `${string}*`
+      compile?: boolean
+      root?: string
     }) => {
       try {
         console.log('Building files with Bun...')
@@ -355,8 +362,8 @@ else {
               const matchedFiles = await Array.fromAsync(
                 new Bun.Glob(entrypoint).scan({
                   onlyFiles: true,
-                  absolute: true
-                })
+                  absolute: true,
+                }),
               )
 
               // Filter to only include .stx files if the pattern itself doesn't already specify .stx
@@ -366,15 +373,18 @@ else {
 
               if (stxFiles.length === 0) {
                 console.warn(`Warning: No .stx files found matching pattern: ${entrypoint}`)
-              } else {
+              }
+              else {
                 console.log(`Found ${stxFiles.length} STX ${stxFiles.length === 1 ? 'file' : 'files'} matching ${entrypoint}`)
                 expandedEntrypoints.push(...stxFiles)
               }
-            } catch (error) {
+            }
+            catch (error) {
               console.error(`Error expanding glob pattern ${entrypoint}:`, error)
               process.exit(1)
             }
-          } else {
+          }
+          else {
             // Regular file path, add directly
             expandedEntrypoints.push(entrypoint)
           }
@@ -389,41 +399,41 @@ else {
 
         // Define the type for Bun build options
         interface BunBuildOptions {
-          entrypoints: string[];
-          target?: 'browser' | 'bun' | 'node';
-          format?: 'esm' | 'cjs' | 'iife';
+          entrypoints: string[]
+          target?: 'browser' | 'bun' | 'node'
+          format?: 'esm' | 'cjs' | 'iife'
           minify?: boolean | {
-            whitespace?: boolean;
-            syntax?: boolean;
-            identifiers?: boolean;
-          };
-          sourcemap?: 'none' | 'linked' | 'inline' | 'external' | boolean;
-          splitting?: boolean;
-          outdir?: string;
-          outfile?: string;
-          publicPath?: string;
-          root?: string;
-          env?: 'inline' | 'disable' | `${string}*`;
-          packages?: 'bundle' | 'external';
-          external?: string[];
-          compile?: boolean;
+            whitespace?: boolean
+            syntax?: boolean
+            identifiers?: boolean
+          }
+          sourcemap?: 'none' | 'linked' | 'inline' | 'external' | boolean
+          splitting?: boolean
+          outdir?: string
+          outfile?: string
+          publicPath?: string
+          root?: string
+          env?: 'inline' | 'disable' | `${string}*`
+          packages?: 'bundle' | 'external'
+          external?: string[]
+          compile?: boolean
           watch?: {
-            onRebuild: (error: Error | null, result: BuildOutput | null) => void;
-          };
+            onRebuild: (error: Error | null, result: BuildOutput | null) => void
+          }
         }
 
         // Define the type for Bun build output
         interface BuildOutput {
           outputs: Array<{
-            path: string;
-            kind: string;
-            hash: string | null;
-          }>;
-          success: boolean;
+            path: string
+            kind: string
+            hash: string | null
+          }>
+          success: boolean
           logs: Array<{
-            level: string;
-            message: string;
-          }>;
+            level: string
+            message: string
+          }>
         }
 
         // Prepare build options with proper typing
@@ -439,14 +449,15 @@ else {
           root: options.root,
           env: options.env as 'inline' | 'disable' | `${string}*`,
           packages: options.packages as 'bundle' | 'external',
-          compile: options.compile
+          compile: options.compile,
         }
 
         // Handle output file override
         if (options.outfile) {
           if (expandedEntrypoints.length > 1) {
             console.warn('Warning: --outfile is ignored when building multiple entrypoints')
-          } else {
+          }
+          else {
             delete buildOptions.outdir
             buildOptions.outfile = options.outfile
           }
@@ -463,11 +474,12 @@ else {
             onRebuild(error: Error | null, result: BuildOutput | null) {
               if (error) {
                 console.error('Build failed:', error)
-              } else if (result) {
+              }
+              else if (result) {
                 const fileCount = result.outputs.length
                 console.log(`Build succeeded! Generated ${fileCount} file${fileCount !== 1 ? 's' : ''}`)
               }
-            }
+            },
           }
         }
 
@@ -497,7 +509,8 @@ else {
               }
             }
           }
-        } else {
+        }
+        else {
           console.error('Build failed with errors')
           if (result.logs && result.logs.length > 0) {
             const errors = result.logs.filter(log => log.level === 'error')
@@ -507,7 +520,8 @@ else {
           }
           process.exit(1)
         }
-      } catch (error) {
+      }
+      catch (error) {
         console.error('Build failed:', error instanceof Error ? error.message : String(error))
         process.exit(1)
       }

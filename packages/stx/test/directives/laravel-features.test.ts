@@ -1,20 +1,20 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test'
-import { StxOptions } from '../../src/types'
-import { processDirectives } from '../../src/process'
+import type { StxOptions } from '../../src/types'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { generateCsrfToken, resetCsrfToken, setCsrfToken, verifyCsrfToken } from '../../src/csrf'
+import { getOriginalMethod } from '../../src/method-spoofing'
+import { processDirectives } from '../../src/process'
 import { defineRoute, defineRoutes, resetRoutes, route, setAppUrl } from '../../src/routes'
 import { clearComposers, composer, composerPattern } from '../../src/view-composers'
-import { getOriginalMethod } from '../../src/method-spoofing'
+
+const defaultOptions: StxOptions = {
+  debug: false,
+  componentsDir: 'components',
+}
 
 // Helper function to process a template with our test options
 async function processTemplate(template: string, context: Record<string, any> = {}, filePath: string = 'test.stx', options: StxOptions = defaultOptions): Promise<string> {
   const dependencies = new Set<string>()
   return processDirectives(template, context, filePath, options, dependencies)
-}
-
-const defaultOptions: StxOptions = {
-  debug: false,
-  componentsDir: 'components',
 }
 
 describe('Laravel-like Features', () => {
@@ -81,7 +81,7 @@ describe('Laravel-like Features', () => {
 
       // Initial context
       const context = {
-        user: { name: 'Jane', email: 'jane@example.com' }
+        user: { name: 'Jane', email: 'jane@example.com' },
       }
 
       const template = '{{ user.name }} ({{ user.role }}) - Permissions: {{ user.permissions.join(", ") }}'
@@ -316,7 +316,7 @@ describe('Laravel-like Features', () => {
       // Incorrect token of same length should fail
       // Note: timingSafeEqual requires same length
       setCsrfToken(testToken)
-      const wrongTokenSameLength = testToken.substring(0, testToken.length-1) + '!'
+      const wrongTokenSameLength = `${testToken.substring(0, testToken.length - 1)}!`
       expect(verifyCsrfToken(wrongTokenSameLength)).toBe(false)
 
       // Without a token set, verification should fail
@@ -387,23 +387,23 @@ describe('Laravel-like Features', () => {
 
     test('getOriginalMethod extracts method from request body', async () => {
       // Test with default field name
-      const body1 = { '_method': 'PUT', 'name': 'test' }
+      const body1 = { _method: 'PUT', name: 'test' }
       expect(getOriginalMethod(body1)).toBe('PUT')
 
       // Test with custom field name
-      const body2 = { 'http_method': 'DELETE', 'id': 123 }
+      const body2 = { http_method: 'DELETE', id: 123 }
       expect(getOriginalMethod(body2, 'http_method')).toBe('DELETE')
 
       // Test with lowercase method (should be uppercased)
-      const body3 = { '_method': 'patch' }
+      const body3 = { _method: 'patch' }
       expect(getOriginalMethod(body3)).toBe('PATCH')
 
       // Test with missing method field
-      const body4 = { 'name': 'test' }
+      const body4 = { name: 'test' }
       expect(getOriginalMethod(body4)).toBe(null)
 
       // Test with non-string method value
-      const body5 = { '_method': 123 }
+      const body5 = { _method: 123 }
       expect(getOriginalMethod(body5)).toBe(null)
     })
 
@@ -512,9 +512,9 @@ describe('Laravel-like Features', () => {
     test('defineRoutes works with multiple routes', async () => {
       // Define multiple routes at once
       defineRoutes({
-        'login': '/auth/login',
-        'register': '/auth/register',
-        'logout': { path: '/auth/logout', params: { _token: 'csrf' } }
+        login: '/auth/login',
+        register: '/auth/register',
+        logout: { path: '/auth/logout', params: { _token: 'csrf' } },
       })
 
       // Test the routes
@@ -534,7 +534,7 @@ describe('Laravel-like Features', () => {
       `
 
       // Process the template in a way that correctly handles directives
-      let result = await processTemplate(template)
+      const result = await processTemplate(template)
 
       // Take what we get for the first URL and check the second URL is as expected
       expect(result).toContain('/settings')

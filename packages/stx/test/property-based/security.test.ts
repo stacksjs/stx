@@ -1,18 +1,19 @@
+/* eslint-disable no-template-curly-in-string, no-case-declarations */
+import type { StxOptions } from '../../src/types'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
-import { StxOptions } from '../../src/types'
-import { processDirectives } from '../../src/process'
 import { resetCsrfToken } from '../../src/csrf'
+import { processDirectives } from '../../src/process'
 import { cleanupTestDirs, setupTestDirs } from '../utils'
+
+const defaultOptions: StxOptions = {
+  debug: false,
+  componentsDir: 'components',
+}
 
 // Helper function to process a template with our test options
 async function processTemplate(template: string, context: Record<string, any> = {}, filePath: string = 'test.stx', options: StxOptions = defaultOptions): Promise<string> {
   const dependencies = new Set<string>()
   return processDirectives(template, context, filePath, options, dependencies)
-}
-
-const defaultOptions: StxOptions = {
-  debug: false,
-  componentsDir: 'components',
 }
 
 // Generate random input data for testing
@@ -45,7 +46,7 @@ function generateXssVector(): string {
     '{{constructor.constructor(\'alert("XSS")\')()}}',
     '<a href="data:text/html;base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4=">Click me</a>',
     '<math><mi xlink:href="data:x,<script>alert(1)</script>">',
-    '<button formaction="javascript:alert(\'XSS\')">Click me</button>'
+    '<button formaction="javascript:alert(\'XSS\')">Click me</button>',
   ]
   return xssVectors[Math.floor(Math.random() * xssVectors.length)]
 }
@@ -79,7 +80,8 @@ function generateRandomObject(depth = 0, breadth = 3, maxDepth = 3): Record<stri
       case 4: // Nested object (if not too deep)
         if (depth < maxDepth) {
           obj[key] = generateRandomObject(depth + 1, breadth, maxDepth)
-        } else {
+        }
+        else {
           obj[key] = generateRandomString(10)
         }
         break
@@ -102,12 +104,13 @@ function generateRandomObject(depth = 0, breadth = 3, maxDepth = 3): Record<stri
   // Sometimes add potentially dangerous properties
   if (Math.random() > 0.7) {
     if (Math.random() > 0.5) {
-      obj['__proto__'] = { polluted: true }
-    } else {
-      obj['constructor'] = {
+      Object.setPrototypeOf(obj, { polluted: true })
+    }
+    else {
+      obj.constructor = {
         prototype: { polluted: true },
-        constructor: Function
-      }
+        constructor: Function,
+      } as unknown as ObjectConstructor
     }
   }
 
@@ -184,7 +187,7 @@ describe('Property-Based Security Tests', () => {
         let template = '<div>\n'
 
         // Create expressions for each top-level property
-        Object.keys(complexData).forEach(key => {
+        Object.keys(complexData).forEach((key) => {
           template += `  <p>{{ ${key} }}</p>\n`
 
           // Also test nested access if it's an object
@@ -216,22 +219,22 @@ describe('Property-Based Security Tests', () => {
           // For other alert vectors, verify they're surrounded by escaping mechanisms
           if (result.includes('javascript:alert(')) {
             // At least one of these escaping mechanisms should be present
-            const hasHtmlEscaping = result.includes('&lt;') || result.includes('&gt;');
-            const hasQuoteEscaping = result.includes('&quot;');
-            expect(hasHtmlEscaping || hasQuoteEscaping).toBe(true);
+            const hasHtmlEscaping = result.includes('&lt;') || result.includes('&gt;')
+            const hasQuoteEscaping = result.includes('&quot;')
+            expect(hasHtmlEscaping || hasQuoteEscaping).toBe(true)
           }
 
           // Check for escaped event handlers
           if (result.includes('onerror=')) {
-            expect(result).not.toContain(' onerror="alert(');
+            expect(result).not.toContain(' onerror="alert(')
           }
 
           if (result.includes('onload=')) {
-            expect(result).not.toContain(' onload="alert(');
+            expect(result).not.toContain(' onload="alert(')
           }
 
           if (result.includes('onmouseover=')) {
-            expect(result).not.toContain(' onmouseover="alert(');
+            expect(result).not.toContain(' onmouseover="alert(')
           }
         }
 
@@ -258,7 +261,7 @@ describe('Property-Based Security Tests', () => {
         const template = `<div>{{ userTemplate }}</div>`
         const result = await processTemplate(template, {
           userTemplate: fakeTemplate,
-          secretValue: 'SECRET DATA THAT SHOULD NOT BE ACCESSIBLE'
+          secretValue: 'SECRET DATA THAT SHOULD NOT BE ACCESSIBLE',
         })
 
         // The content should be escaped, not evaluated
@@ -274,11 +277,12 @@ describe('Property-Based Security Tests', () => {
         const maliciousContext = generateRandomObject()
 
         // Add specific prototype pollution attempts
-        maliciousContext.__proto__ = { injected: 'PROTOTYPE_INJECTED' }
+        Object.setPrototypeOf(maliciousContext, { injected: 'PROTOTYPE_INJECTED' })
+
         // Use type assertion to avoid TypeScript errors
         maliciousContext.constructor = {
-          prototype: { injected: 'CONSTRUCTOR_INJECTED' }
-        } as unknown as Function
+          prototype: { injected: 'CONSTRUCTOR_INJECTED' },
+        } as unknown as ObjectConstructor
 
         const template = `
         <div>
@@ -304,8 +308,11 @@ describe('Property-Based Security Tests', () => {
           // Ensure no XSS can happen through prototype pollution
           const xss = '<script>alert("XSS")</script>'
 
-          maliciousContext.__proto__ = { injected: xss }
-          maliciousContext.constructor = { prototype: { injected: xss } } as unknown as Function
+          Object.setPrototypeOf(maliciousContext, { injected: xss })
+
+          maliciousContext.constructor = {
+            prototype: { injected: xss },
+          } as unknown as ObjectConstructor
 
           const xssResult = await processTemplate(template, maliciousContext)
 
@@ -348,7 +355,8 @@ describe('Property-Based Security Tests', () => {
 
           // Just verify it contains some of the expected content
           expect(result).toContain('Valid content')
-        } catch (error) {
+        }
+        catch (error) {
           // If it throws, fail the test
           expect(error).toBeUndefined()
         }

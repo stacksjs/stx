@@ -1,18 +1,18 @@
+import type { StxOptions } from '../../src/types'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { StxOptions } from '../../src/types'
+import stxPlugin from '../../src/index'
 import { processDirectives } from '../../src/process'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
-import stxPlugin from '../../src/index'
+
+const defaultOptions: StxOptions = {
+  debug: false,
+  componentsDir: 'components',
+}
 
 // Helper function to process a template with our test options
 async function processTemplate(template: string, context: Record<string, any> = {}, filePath: string = 'test.stx', options: StxOptions = defaultOptions): Promise<string> {
   const dependencies = new Set<string>()
   return processDirectives(template, context, filePath, options, dependencies)
-}
-
-const defaultOptions: StxOptions = {
-  debug: false,
-  componentsDir: 'components',
 }
 
 describe('STX Form Validation Tests', () => {
@@ -48,8 +48,8 @@ describe('STX Form Validation Tests', () => {
         email: 'invalid-email',
         errors: {
           email: 'Please enter a valid email address',
-          password: 'Password must be at least 8 characters'
-        }
+          password: 'Password must be at least 8 characters',
+        },
       }
 
       const resultWithErrors = await processTemplate(template, contextWithErrors)
@@ -63,7 +63,7 @@ describe('STX Form Validation Tests', () => {
       // Test without validation errors
       const contextWithoutErrors = {
         email: 'user@example.com',
-        errors: {}
+        errors: {},
       }
 
       const resultWithoutErrors = await processTemplate(template, contextWithoutErrors)
@@ -97,8 +97,8 @@ describe('STX Form Validation Tests', () => {
       const contextWithErrors = {
         newsletter: true,
         errors: {
-          terms: 'You must agree to the terms'
-        }
+          terms: 'You must agree to the terms',
+        },
       }
 
       const resultWithErrors = await processTemplate(template, contextWithErrors)
@@ -135,8 +135,8 @@ describe('STX Form Validation Tests', () => {
       // Test with validation errors
       const contextWithErrors = {
         errors: {
-          country: 'Please select a country'
-        }
+          country: 'Please select a country',
+        },
       }
 
       const resultWithErrors = await processTemplate(template, contextWithErrors)
@@ -151,7 +151,7 @@ describe('STX Form Validation Tests', () => {
       // Test with selected value
       const contextWithValue = {
         country: 'ca',
-        errors: {}
+        errors: {},
       }
 
       const resultWithValue = await processTemplate(template, contextWithValue)
@@ -297,8 +297,8 @@ describe('STX Form Validation Tests', () => {
       const result = await processTemplate(template, {
         errors: {
           email: 'The email must be a valid email address',
-          password: 'The password must be at least 8 characters'
-        }
+          password: 'The password must be at least 8 characters',
+        },
       })
 
       // Custom error attribute should be preserved
@@ -361,7 +361,7 @@ describe('STX Form Validation Tests', () => {
       // Test with local pickup
       const pickupResult = await processTemplate(template, {
         shipping_method: 'pickup',
-        pickup_location: 'store2'
+        pickup_location: 'store2',
       })
 
       expect(pickupResult).toContain('value="pickup" selected')
@@ -373,7 +373,7 @@ describe('STX Form Validation Tests', () => {
       const expressResult = await processTemplate(template, {
         shipping_method: 'express',
         address: '456 Oak St',
-        phone: '555-1234'
+        phone: '555-1234',
       })
 
       expect(expressResult).toContain('value="express" selected')

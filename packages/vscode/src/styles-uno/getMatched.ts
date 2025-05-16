@@ -1,10 +1,10 @@
 import type { UnoGenerator } from '@unocss/core'
 import type { TextDocument } from 'vscode'
 import type { ContextLoader } from './contextLoader'
-import { defaultIdeMatchExclude, defaultIdeMatchInclude } from './integration/defaults'
-import { getMatchedPositionsFromCode } from './integration/match-positions'
 import { workspace } from 'vscode'
 import { getConfig } from './configs'
+import { defaultIdeMatchExclude, defaultIdeMatchInclude } from './integration/defaults'
+import { getMatchedPositionsFromCode } from './integration/match-positions'
 
 const cache = new Map<string, ReturnType<typeof getMatchedPositionsFromCode>>()
 

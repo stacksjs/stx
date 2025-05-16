@@ -1,13 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from '../../src/index'
-import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
+import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
 
 // Custom helper to create a hardcoded output for the TS test
 async function getTsTestOutput(testFile: string) {
   // First get the actual output to ensure paths are correct
-  const result = await Bun.build({
+  await Bun.build({
     entrypoints: [testFile],
     outdir: OUTPUT_DIR,
     plugins: [stxPlugin],

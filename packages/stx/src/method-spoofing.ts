@@ -28,10 +28,9 @@ export function methodField(method: string, fieldName: string = METHOD_FIELD_NAM
  */
 export function processMethodDirectives(template: string): string {
   // Replace @method directives with hidden input fields
-  return template.replace(/@method\(\s*(['"])([^'"]+)\1\s*(?:,\s*(['"])([^'"]+)\3)?\s*\)/g,
-    (_, outerQuote, method, innerQuote, fieldName) => {
-      return methodField(method, fieldName || METHOD_FIELD_NAME)
-    })
+  return template.replace(/@method\(\s*(['"])([^'"]+)\1\s*(?:,\s*(['"])([^'"]+)\3\s*)?\)/g, (_, outerQuote, method, innerQuote, fieldName) => {
+    return methodField(method, fieldName || METHOD_FIELD_NAME)
+  })
 }
 
 /**

@@ -1,7 +1,7 @@
-/* eslint-disable no-console */
+/* eslint-disable unused-imports/no-unused-vars */
 import type { CustomDirective, StxOptions } from './types'
-import * as happyDOM from '@happy-dom/global-registrator'
 import path from 'node:path'
+import * as happyDOM from '@happy-dom/global-registrator'
 
 /**
  * Accessibility violation found during a11y checks
@@ -112,13 +112,13 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
     const document = parser.parseFromString(html, 'text/html')
 
     // Special case handling for test cases
-    if (html.trim().startsWith('<html lang="en">') &&
-        html.includes('<h1>Title</h1>') &&
-        html.includes('<h2>Subtitle</h2>') &&
-        html.includes('<img src="test.jpg" alt="Test image">') &&
-        html.includes('<button aria-label="Close">X</button>') &&
-        html.includes('<label>') &&
-        html.includes('<input type="text">')) {
+    if (html.trim().startsWith('<html lang="en">')
+      && html.includes('<h1>Title</h1>')
+      && html.includes('<h2>Subtitle</h2>')
+      && html.includes('<img src="test.jpg" alt="Test image">')
+      && html.includes('<button aria-label="Close">X</button>')
+      && html.includes('<label>')
+      && html.includes('<input type="text">')) {
       return []
     }
 
@@ -183,9 +183,9 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
 
     // Check 2: Interactive elements without accessible names
     document.querySelectorAll('button, a, [role="button"]').forEach((el: Element) => {
-      const hasAccessibleName = el.hasAttribute('aria-label') ||
-                               el.hasAttribute('aria-labelledby') ||
-                               (el.textContent && el.textContent.trim().length > 0)
+      const hasAccessibleName = el.hasAttribute('aria-label')
+        || el.hasAttribute('aria-labelledby')
+        || (el.textContent && el.textContent.trim().length > 0)
 
       if (!hasAccessibleName) {
         violations.push({
@@ -223,7 +223,7 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
     let prevLevel = 0
 
     for (const heading of headings) {
-      const level = parseInt(heading.tagName.charAt(1))
+      const level = Number.parseInt(heading.tagName.charAt(1))
 
       if (prevLevel > 0 && level > prevLevel + 1) {
         violations.push({
@@ -263,7 +263,7 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
  */
 export async function scanA11yIssues(
   directory: string,
-  options: { recursive?: boolean; ignorePaths?: string[] } = {},
+  options: { recursive?: boolean, ignorePaths?: string[] } = {},
 ): Promise<Record<string, A11yViolation[]>> {
   const results: Record<string, A11yViolation[]> = {}
   const { recursive = true, ignorePaths = [] } = options
@@ -278,7 +278,7 @@ export async function scanA11yIssues(
   // Manually filter out ignored paths
   for await (const file of glob.scan()) {
     const shouldIgnore = ignorePaths.some(ignorePath =>
-      file.includes(path.normalize(ignorePath))
+      file.includes(path.normalize(ignorePath)),
     )
 
     if (!shouldIgnore) {

@@ -1,4 +1,4 @@
-import { test, expect, describe, beforeAll, afterAll } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from '../../src/index'
@@ -18,7 +18,7 @@ class MockServer {
   development: boolean
 
   constructor(options: {
-    routes?: Record<string, any>,
+    routes?: Record<string, any>
     development?: boolean
   }) {
     this.routes = options.routes || {}
@@ -37,7 +37,8 @@ class MockServer {
   // Process static routes (STX files)
   async processStaticRoute(route: string) {
     const template = this.routes[route]
-    if (!template) return null
+    if (!template)
+      return null
 
     // Simulate what Bun.serve would do with an STX file
     const result = await Bun.build({
@@ -45,13 +46,14 @@ class MockServer {
       outdir: OUTPUT_DIR,
       plugins: [stxPlugin],
       define: {
-        'process.env.NODE_ENV': this.development ? '"development"' : '"production"'
-      }
+        'process.env.NODE_ENV': this.development ? '"development"' : '"production"',
+      },
     })
 
     const outputs = result.outputs || []
     const htmlOutput = outputs.find(o => o.path.endsWith('.html'))
-    if (!htmlOutput) return null
+    if (!htmlOutput)
+      return null
 
     return await Bun.file(htmlOutput.path).text()
   }
@@ -59,15 +61,16 @@ class MockServer {
   // Process API route
   async processApiRoute(route: string, method: 'GET' | 'POST', body?: any) {
     const handler = this.apiHandlers[route]
-    if (!handler || !handler[method]) return null
+    if (!handler || !handler[method])
+      return null
 
     // Create mock request
     const request = new Request(`http://localhost${route}`, {
       method,
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: body ? JSON.stringify(body) : undefined
+      body: body ? JSON.stringify(body) : undefined,
     })
 
     // Call handler
@@ -151,7 +154,8 @@ describe('STX with Bun.serve Routes', () => {
       await fs.promises.rm(TEMPLATE_DIR, { recursive: true, force: true })
       await fs.promises.rm(OUTPUT_DIR, { recursive: true, force: true })
       await fs.promises.rm(API_ROUTES, { recursive: true, force: true })
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error cleaning up test directories:', error)
     }
   })
@@ -164,9 +168,9 @@ describe('STX with Bun.serve Routes', () => {
     const server = new MockServer({
       routes: {
         '/': path.join(TEMPLATE_DIR, 'home.stx'),
-        '/api/users': usersApi
+        '/api/users': usersApi,
       },
-      development: true
+      development: true,
     })
 
     // Test homepage route (STX template)
@@ -186,8 +190,8 @@ describe('STX with Bun.serve Routes', () => {
 
     // Test API POST endpoint
     const createUserResponse = await server.processApiRoute('/api/users', 'POST', {
-      name: "Alice Brown",
-      email: "alice@example.com"
+      name: 'Alice Brown',
+      email: 'alice@example.com',
     })
     expect(createUserResponse).toBeInstanceOf(Response)
 
@@ -200,8 +204,8 @@ describe('STX with Bun.serve Routes', () => {
   test('should support DOM interaction with rendered STX templates', async () => {
     const server = new MockServer({
       routes: {
-        '/': path.join(TEMPLATE_DIR, 'home.stx')
-      }
+        '/': path.join(TEMPLATE_DIR, 'home.stx'),
+      },
     })
 
     const html = await server.processStaticRoute('/')
@@ -238,7 +242,9 @@ describe('STX with Bun.serve Routes', () => {
     const listItems = document.querySelectorAll('.features li')
     expect(listItems.length).toBe(3)
     expect(Array.from(listItems).map(li => li.textContent)).toEqual([
-      'Templates', 'Directives', 'Components'
+      'Templates',
+      'Directives',
+      'Components',
     ])
   })
 })

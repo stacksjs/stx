@@ -1,3 +1,5 @@
+/* eslint-disable no-new-func */
+
 /**
  * Laravel-like named routes system for STX
  *
@@ -51,7 +53,7 @@ export function defineRoutes(routeDefinitions: Record<string, string | RouteDefi
 export function route(
   name: string,
   params: Record<string, any> = {},
-  absolute = false
+  absolute = false,
 ): string {
   const route = routes[name]
 
@@ -67,7 +69,7 @@ export function route(
   let path = route.path
 
   // Replace named parameters (:param)
-  path = path.replace(/:([a-zA-Z0-9_]+)/g, (_, paramName) => {
+  path = path.replace(/:(\w+)/g, (_, paramName) => {
     const value = mergedParams[paramName]
 
     if (value === undefined) {
@@ -99,28 +101,27 @@ export function route(
  * Create a route URL directive processor for STX templates
  */
 export function processRouteDirectives(template: string): string {
-  return template.replace(/@route\(\s*(['"])([^'"]+)\1(?:\s*,\s*(\{[^}]+\}))?\s*(?:,\s*(true|false))?\s*\)/g,
-    (_, quote, routeName, paramsJson, absolute) => {
-      try {
-        // Parse the params object if provided
-        const params = paramsJson ? Function(`return ${paramsJson}`)() : {}
-        // Parse the absolute flag if provided
-        const isAbsolute = absolute === 'true'
+  return template.replace(/@route\(\s*(['"])([^'"]+)\1(?:\s*,\s*(\{[^}]+\}))?\s*(?:,\s*(true|false)\s*)?\)/g, (_, quote, routeName, paramsJson, absolute) => {
+    try {
+      // Parse the params object if provided
+      const params = paramsJson ? new Function(`return ${paramsJson}`)() : {}
+      // Parse the absolute flag if provided
+      const isAbsolute = absolute === 'true'
 
-        return route(routeName, params, isAbsolute)
-      }
-      catch (error) {
-        console.error(`Error processing @route directive: ${error}`)
-        return '#route-error'
-      }
-    })
+      return route(routeName, params, isAbsolute)
+    }
+    catch (error) {
+      console.error(`Error processing @route directive: ${error}`)
+      return '#route-error'
+    }
+  })
 }
 
 /**
  * Reset all routes (mainly for testing)
  */
 export function resetRoutes(): void {
-  Object.keys(routes).forEach(key => {
+  Object.keys(routes).forEach((key) => {
     delete routes[key]
   })
   appUrl = ''

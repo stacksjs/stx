@@ -1,15 +1,15 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist",
     "lib": [
       "esnext",
       "dom"
     ],
+    "rootDir": "src",
     "paths": {
-      "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"],
-    }
+      "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"]
+    },
+    "outDir": "dist"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

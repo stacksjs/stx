@@ -1,16 +1,15 @@
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
+import type { StxOptions } from '../../src/types'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import {
+  injectSeoTags,
+  metaDirective,
   processMetaDirectives,
   processSeoDirective,
   processStructuredData,
-  injectSeoTags,
-  metaDirective,
+  registerSeoDirectives,
   structuredDataDirective,
-  registerSeoDirectives
 } from '../../src/seo'
-import { createTestFile, setupTestDirs, cleanupTestDirs } from '../utils'
-import { stxPlugin } from '../../src'
-import { StxOptions } from '../../src/types'
+import { cleanupTestDirs, createTestFile, setupTestDirs } from '../utils'
 
 describe('SEO features', () => {
   beforeAll(async () => {
@@ -39,8 +38,8 @@ describe('SEO features', () => {
       const template = '<head>@meta("og:title")</head>'
       const context = {
         openGraph: {
-          title: 'Test Page OG'
-        }
+          title: 'Test Page OG',
+        },
       }
       const result = processMetaDirectives(template, context, 'test.stx', {})
       expect(result).toContain('<meta property="og:title" content="Test Page OG">')
@@ -102,7 +101,7 @@ describe('SEO features', () => {
       })</head>`
       const context = {
         productName: 'Test Product',
-        price: '$9.99'
+        price: '$9.99',
       }
       const result = processStructuredData(template, context, 'test.stx')
       expect(result).toContain('"name":"Test Product"')
@@ -226,7 +225,7 @@ describe('SEO features', () => {
       })</head>`
       const context = {
         pageTitle: 'Dynamic Page Title',
-        pageDescription: 'Dynamic page description'
+        pageDescription: 'Dynamic page description',
       }
       const result = processSeoDirective(template, context, 'test.stx', {})
       expect(result).toContain('<title>Dynamic Page Title</title>')
@@ -243,9 +242,9 @@ describe('SEO features', () => {
           enabled: true,
           defaultConfig: {
             title: 'Default Title',
-            description: 'Default description'
-          }
-        }
+            description: 'Default description',
+          },
+        },
       }
       const result = injectSeoTags(html, context, options)
       expect(result).toContain('<!-- STX SEO Tags -->')
@@ -259,8 +258,8 @@ describe('SEO features', () => {
       const context = { title: 'Test Page' }
       const options: StxOptions = {
         seo: {
-          enabled: false
-        }
+          enabled: false,
+        },
       }
       const result = injectSeoTags(html, context, options)
       expect(result).not.toContain('<!-- STX SEO Tags -->')
@@ -273,9 +272,9 @@ describe('SEO features', () => {
         seo: {
           enabled: true,
           defaultConfig: {
-            title: 'Default Title'
-          }
-        }
+            title: 'Default Title',
+          },
+        },
       }
       const result = injectSeoTags(html, context, options)
       expect(result).not.toContain('<!-- STX SEO Tags -->')
@@ -288,9 +287,9 @@ describe('SEO features', () => {
         seo: {
           enabled: true,
           defaultConfig: {
-            title: 'Default Title'
-          }
-        }
+            title: 'Default Title',
+          },
+        },
       }
       const result = injectSeoTags(html, context, options)
       // Count occurrences of the comment
@@ -306,11 +305,11 @@ describe('SEO features', () => {
           enabled: true,
           defaultConfig: {
             title: 'Default Title',
-            description: 'Default description'
+            description: 'Default description',
           },
           socialPreview: true,
-          defaultImage: 'https://example.com/default.jpg'
-        }
+          defaultImage: 'https://example.com/default.jpg',
+        },
       }
       const result = injectSeoTags(html, context, options)
       expect(result).toContain('<meta property="og:title" content="Test Page">')
@@ -326,9 +325,9 @@ describe('SEO features', () => {
         seo: {
           enabled: true,
           defaultConfig: {
-            title: 'Default Title'
-          }
-        }
+            title: 'Default Title',
+          },
+        },
       }
       const result = injectSeoTags(html, context, options)
       // Count occurrences of title tags
@@ -358,7 +357,7 @@ describe('SEO features', () => {
     test('structuredDataDirective should generate JSON-LD script', () => {
       const content = JSON.stringify({
         '@type': 'Person',
-        'name': 'John Doe'
+        'name': 'John Doe',
       })
       const result = structuredDataDirective.handler(content, [], {}, 'test.stx')
       expect(result).toContain('<script type="application/ld+json">')
@@ -374,7 +373,7 @@ describe('SEO features', () => {
 
     test('structuredDataDirective should handle missing @type', () => {
       const content = JSON.stringify({
-        'name': 'John Doe'
+        name: 'John Doe',
       })
       const result = structuredDataDirective.handler(content, [], {}, 'test.stx')
       expect(result).toBe('[Error: structuredData requires @type property]')
@@ -440,10 +439,10 @@ describe('SEO features', () => {
           enabled: true,
           defaultConfig: {
             title: 'Default Title',
-            description: 'Default description'
+            description: 'Default description',
           },
-          socialPreview: true
-        }
+          socialPreview: true,
+        },
       }
 
       // Process each directive type

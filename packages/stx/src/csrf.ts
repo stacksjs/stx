@@ -1,3 +1,5 @@
+import { Buffer } from 'node:buffer'
+
 /**
  * CSRF Protection for STX templates
  *
@@ -77,6 +79,6 @@ export function verifyCsrfToken(token: string): boolean {
   // Constant-time comparison to prevent timing attacks
   return crypto.timingSafeEqual(
     Buffer.from(token),
-    Buffer.from(csrfToken)
+    Buffer.from(csrfToken),
   )
 }

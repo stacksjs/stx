@@ -1,9 +1,12 @@
-export { plugin as stxPlugin } from 'bun-plugin-stx'
 import { plugin } from 'bun-plugin-stx'
 
-export * from './auth'
+export * from './a11y'
+
 export * from './animation'
+export * from './animation'
+export * from './auth'
 export * from './caching'
+export * from './components'
 export * from './config'
 export * from './custom-directives'
 export * from './dev-server'
@@ -16,14 +19,12 @@ export * from './loops'
 export * from './markdown'
 export * from './middleware'
 export * from './process'
-export * from './streaming'
-export * from './a11y'
-export * from './components'
-export * from './animation'
 export * from './seo'
+export * from './streaming'
 export * from './types'
 export * from './utils'
 export * from './web-components'
+export { plugin as stxPlugin } from 'bun-plugin-stx'
 
 // Add default export
 export default plugin

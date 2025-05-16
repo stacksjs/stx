@@ -1,24 +1,23 @@
 /* eslint-disable no-console, regexp/no-super-linear-backtracking */
 import type { StxOptions } from './types'
-import path from 'node:path'
+import { processA11yDirectives } from './a11y'
 import { processAnimationDirectives } from './animation'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
-import { processCustomDirectives } from './custom-directives'
 import { processCsrfDirectives } from './csrf'
+import { processCustomDirectives } from './custom-directives'
 import { processExpressions } from './expressions'
 import { processErrorDirective, processFormDirectives } from './forms'
 import { processTranslateDirective } from './i18n'
 import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
 import { processJsDirectives, processTsDirectives } from './js-ts'
 import { processLoops } from './loops'
-import { processMethodDirectives } from './method-spoofing'
 import { processMarkdownDirectives } from './markdown'
+import { processMethodDirectives } from './method-spoofing'
 import { runPostProcessingMiddleware, runPreProcessingMiddleware } from './middleware'
 import { processRouteDirectives } from './routes'
+import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
 import { renderComponent, resolveTemplatePath } from './utils'
 import { runComposers } from './view-composers'
-import { processA11yDirectives } from './a11y'
-import { processMetaDirectives, processSeoDirective, processStructuredData, injectSeoTags } from './seo'
 
 /**
  * Process all template directives
@@ -469,7 +468,7 @@ async function processCustomElements(
             <p>This is the card content.</p>
           </div>
           <div class="card-footer">Last updated: Today</div>
-        </div>`
+        </div>`,
       )
     }
 

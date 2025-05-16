@@ -2,8 +2,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from '../../src/index'
-import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
 import { processJsonDirective, processOnceDirective } from '../../src/process'
+import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
 
 describe('STX Special Directives', () => {
   beforeAll(async () => {
@@ -54,9 +54,9 @@ describe('STX Special Directives', () => {
       // Disable SEO features for this test
       stx: {
         seo: {
-          enabled: false
-        }
-      }
+          enabled: false,
+        },
+      },
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -122,9 +122,9 @@ describe('STX Special Directives', () => {
       // Disable SEO features for this test
       stx: {
         seo: {
-          enabled: false
-        }
-      }
+          enabled: false,
+        },
+      },
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -541,13 +541,13 @@ describe('STX Special Directives', () => {
       testData: {
         users: [
           { id: 1, name: 'Alice' },
-          { id: 2, name: 'Bob' }
+          { id: 2, name: 'Bob' },
         ],
         settings: {
           theme: 'dark',
-          notifications: true
-        }
-      }
+          notifications: true,
+        },
+      },
     }
 
     const result = processJsonDirective(template, context)

@@ -1,5 +1,5 @@
+import * as path from 'node:path'
 import { createDetailedErrorMessage } from './utils'
-import * as path from 'path'
 
 /**
  * Process JavaScript directives in templates
@@ -44,7 +44,7 @@ export async function processTsDirectives(
     if (context.users && Array.isArray(context.users)) {
       context.processedUsers = context.users.map(user => ({
         ...user,
-        displayName: `User ${user.id}: ${user.name}`
+        displayName: `User ${user.id}: ${user.name}`,
       }))
       context.processedOutput = JSON.stringify(context.processedUsers)
     }
@@ -112,13 +112,13 @@ async function processCodeBlocks(
       if (startTag === '@ts') {
         processedCode = code
           // Remove interface declarations completely
-          .replace(/interface\s+[^{]+\s*{[^}]*}/g, '')
+          .replace(/interface\s[^{]+\{[^}]*\}/g, '')
           // Remove type annotations, but be careful with string literals containing colons
-          .replace(/(?<!["']):\s*[A-Za-z0-9_<>|&[\],\s]+(?=\s*[=,);{}])/g, '')
+          .replace(/(?<!["']):[\w<>|&[\],\s]+(?=[=,);{}])/g, '')
           // Remove function return type annotations
-          .replace(/\)\s*:\s*[A-Za-z0-9_<>|&[\],\s]+(?=\s*[{=])/g, ')')
+          .replace(/\)\s*:[\w<>|&[\],\s]+(?=[{=])/g, ')')
           // Remove generic type parameters
-          .replace(/<[A-Za-z0-9_<>|&[\],\s]+>/g, '')
+          .replace(/<[\w<>|&[\],\s]+>/g, '')
       }
 
       // Execute the code

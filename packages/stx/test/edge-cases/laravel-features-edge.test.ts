@@ -1,22 +1,21 @@
+import type { StxOptions } from '../../src/types'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
-import { StxOptions } from '../../src/types'
-import { processDirectives } from '../../src/process'
 import { generateCsrfToken, resetCsrfToken, setCsrfToken, verifyCsrfToken } from '../../src/csrf'
-import { defineRoute, defineRoutes, resetRoutes, route, setAppUrl } from '../../src/routes'
-import { clearComposers, composer, composerPattern } from '../../src/view-composers'
-import { getOriginalMethod } from '../../src/method-spoofing'
-import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
 import stxPlugin from '../../src/index'
+import { processDirectives } from '../../src/process'
+import { defineRoute, resetRoutes, route } from '../../src/routes'
+import { clearComposers, composer } from '../../src/view-composers'
+import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
+
+const defaultOptions: StxOptions = {
+  debug: false,
+  componentsDir: 'components',
+}
 
 // Helper function to process a template with our test options
 async function processTemplate(template: string, context: Record<string, any> = {}, filePath: string = 'test.stx', options: StxOptions = defaultOptions): Promise<string> {
   const dependencies = new Set<string>()
   return processDirectives(template, context, filePath, options, dependencies)
-}
-
-const defaultOptions: StxOptions = {
-  debug: false,
-  componentsDir: 'components',
 }
 
 describe('Laravel-like Features Edge Cases', () => {
@@ -40,7 +39,8 @@ describe('Laravel-like Features Edge Cases', () => {
       composer('error-view', (ctx) => {
         try {
           throw new Error('Intentional error in composer')
-        } catch (e) {
+        }
+        catch {
           // Simulate that the error was caught but didn't update the context
           ctx.errorOccurred = true
         }
