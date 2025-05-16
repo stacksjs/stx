@@ -264,14 +264,23 @@ export function injectSeoTags(
   context: Record<string, any>,
   options: StxOptions,
 ): string {
-  // If the HTML already has meta tags or if auto-injection is disabled, return unchanged
-  if (html.includes('<meta property="og:') ||
-      html.includes('<meta name="twitter:') ||
-      options.skipDefaultSeoTags === true) {
-    return html
+  // Check if SEO is explicitly disabled in options
+  if (options.seo?.enabled === false) {
+    return html;
   }
 
-  // Check if document title is already set
+  // If the HTML already has meta tags or if auto-injection is disabled, return unchanged
+  if (html.includes('<!-- STX SEO Tags -->') ||
+      options.skipDefaultSeoTags === true) {
+    return html;
+  }
+
+  // Check if document has a head tag
+  if (!html.includes('<head>') && !html.includes('<head ')) {
+    return html;
+  }
+
+  // Check if title is already set
   const hasTitle = html.includes('<title>') || html.includes('</title>')
 
   // Get the title from context or fallback
@@ -280,6 +289,8 @@ export function injectSeoTags(
     title = context.title
   } else if (context.meta && context.meta.title) {
     title = context.meta.title
+  } else if (options.seo?.defaultConfig?.title) {
+    title = options.seo.defaultConfig.title
   } else {
     title = options.defaultTitle || 'STX Project'
   }
@@ -290,12 +301,28 @@ export function injectSeoTags(
     description = context.description
   } else if (context.meta && context.meta.description) {
     description = context.meta.description
+  } else if (options.seo?.defaultConfig?.description) {
+    description = options.seo.defaultConfig.description
   } else {
     description = options.defaultDescription || 'A website built with STX templating engine'
   }
 
+  // Get image from context or options
+  let image = '';
+  if (context.image) {
+    image = context.image;
+  } else if (context.meta && context.meta.image) {
+    image = context.meta.image;
+  } else if (context.openGraph && context.openGraph.image) {
+    image = context.openGraph.image;
+  } else if (options.seo?.defaultImage) {
+    image = options.seo.defaultImage;
+  } else if (options.defaultImage) {
+    image = options.defaultImage;
+  }
+
   // Build basic SEO tags
-  const seoTagsMinimal = `
+  let seoTagsMinimal = `
 <!-- STX SEO Tags -->
 <meta name="title" content="${escapeHtml(title)}">
 <meta name="description" content="${escapeHtml(description)}">
@@ -305,7 +332,15 @@ export function injectSeoTags(
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(title)}">
 <meta name="twitter:description" content="${escapeHtml(description)}">
-`
+`;
+
+  // Add image tags if available
+  if (image) {
+    seoTagsMinimal += `
+<meta property="og:image" content="${escapeHtml(image)}">
+<meta name="twitter:image" content="${escapeHtml(image)}">
+`;
+  }
 
   // Add title tag if missing
   let result = html

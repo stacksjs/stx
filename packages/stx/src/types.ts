@@ -367,8 +367,48 @@ export interface AnimationConfig {
   staggerDelay: number
 }
 
+/**
+ * STX configuration options
+ */
 export interface StxConfig {
-  /** Enable STX features */
+  /**
+   * Root directory for templates
+   */
+  templatesDir?: string;
+
+  /**
+   * Default title to use for SEO if none is provided
+   */
+  defaultTitle?: string;
+
+  /**
+   * Default description to use for SEO if none is provided
+   */
+  defaultDescription?: string;
+
+  /**
+   * Default image URL to use for SEO/OpenGraph if none is provided
+   */
+  defaultImage?: string;
+
+  /**
+   * Enable or disable caching
+   */
+  cache?: boolean;
+
+  /**
+   * Cache directory path
+   */
+  cacheDir?: string;
+
+  /**
+   * Cache version, used to invalidate cache
+   */
+  cacheVersion?: string;
+
+  /**
+   * Enable STX features
+   */
   enabled: boolean
   /** Path to partials directory, defaults to 'partials' in the same directory as the template */
   partialsDir: string
@@ -376,12 +416,8 @@ export interface StxConfig {
   componentsDir: string
   /** Enable debug mode for detailed error messages */
   debug: boolean
-  /** Enable template caching to avoid recompiling unchanged templates */
-  cache: boolean
   /** Directory to store cached templates, defaults to '.stx/cache' in the project root */
   cachePath: string
-  /** Cache version to invalidate cache when the plugin version changes */
-  cacheVersion: string
   /** Custom directives registered by the user */
   customDirectives?: CustomDirective[]
   /** Middleware for pre/post-processing templates */
@@ -404,10 +440,6 @@ export interface StxConfig {
   animation?: Partial<AnimationConfig>
   /** Skip adding default SEO tags */
   skipDefaultSeoTags?: boolean
-  /** Default page title if not provided in context */
-  defaultTitle?: string
-  /** Default page description if not provided in context */
-  defaultDescription?: string
 }
 
 export type StxOptions = Partial<StxConfig>
