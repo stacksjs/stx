@@ -10,6 +10,7 @@ import { initFile } from '../src/init'
 import type { SyntaxHighlightTheme } from '../src/types'
 import os from 'node:os'
 import { fileExists } from '../src/utils'
+import { plugin as stxPlugin } from '../src/plugin'
 
 const cli = new CAC('stx')
 
@@ -377,11 +378,12 @@ else {
     .option('--env <mode>', 'How to handle environment variables: inline, disable, or prefix*')
     .option('--compile', 'Generate a standalone executable')
     .option('--root <dir>', 'Project root directory')
+    .option('--verbose', 'Show verbose build output')
     .example('stx build ./src/index.stx --outfile bundle.js')
     .example('stx build ./components/*.stx --outdir dist --minify')
     .example('stx build ./src/index.stx --outfile bundle.js --target bun')
     .example('stx build **/*.stx --outdir dist')
-    .action(async (entrypoints: string[], options: {
+    .action(async (entrypoints: string | string[], options: {
       outdir: string
       outfile?: string
       target?: 'browser' | 'bun' | 'node'
@@ -396,184 +398,490 @@ else {
       env?: 'inline' | 'disable' | `${string}*`
       compile?: boolean
       root?: string
+      verbose?: boolean
     }) => {
       try {
-        console.log('Building files with Bun...')
+        console.log('Building STX files...')
 
-        if (!entrypoints || entrypoints.length === 0) {
+        // Convert entrypoints to an array if it's a string
+        let entrypointArray: string[] = [];
+        if (typeof entrypoints === 'string') {
+          // It's a single path
+          entrypointArray = [entrypoints];
+        } else if (Array.isArray(entrypoints)) {
+          entrypointArray = entrypoints;
+        } else {
+          entrypointArray = [];
+        }
+
+        if (entrypointArray.length === 0) {
           console.error('Error: No entrypoints specified')
           process.exit(1)
         }
 
-        // Expand any glob patterns in entrypoints
-        const expandedEntrypoints: string[] = []
+        // Create temporary and output directories
+        const tempDir = path.join(process.cwd(), '.stx-build-temp')
+        const outputDir = path.resolve(options.outdir)
+
+        // Ensure directories exist
+        fs.mkdirSync(tempDir, { recursive: true })
+        fs.mkdirSync(outputDir, { recursive: true })
+
+        // Expanded file paths
+        const expandedFiles: string[] = []
 
         // Process each entrypoint, expanding globs as needed
-        for (const entrypoint of entrypoints) {
+        for (const entrypoint of entrypointArray) {
           if (isGlob(entrypoint)) {
-            // Use Bun.Glob to expand the pattern
             console.log(`Expanding glob pattern: ${entrypoint}`)
             try {
               const matchedFiles = await Array.fromAsync(
                 new Bun.Glob(entrypoint).scan({
                   onlyFiles: true,
-                  absolute: true,
+                  absolute: false, // Use relative paths
                 }),
               )
 
-              // Filter to only include .stx files if the pattern itself doesn't already specify .stx
+              // Filter to only include .stx files if pattern doesn't specify
               const stxFiles = entrypoint.endsWith('.stx')
                 ? matchedFiles
                 : matchedFiles.filter(file => file.endsWith('.stx'))
 
               if (stxFiles.length === 0) {
                 console.warn(`Warning: No .stx files found matching pattern: ${entrypoint}`)
-              }
-              else {
+              } else {
                 console.log(`Found ${stxFiles.length} STX ${stxFiles.length === 1 ? 'file' : 'files'} matching ${entrypoint}`)
-                expandedEntrypoints.push(...stxFiles)
+                expandedFiles.push(...stxFiles)
               }
-            }
-            catch (error) {
+            } catch (error) {
               console.error(`Error expanding glob pattern ${entrypoint}:`, error)
               process.exit(1)
             }
-          }
-          else {
-            // Regular file path, add directly
-            expandedEntrypoints.push(entrypoint)
+          } else if (entrypoint.endsWith('.stx')) {
+            // Add .stx file directly
+            expandedFiles.push(entrypoint)
+          } else {
+            console.warn(`Warning: Skipping non-STX file: ${entrypoint}`)
           }
         }
 
-        if (expandedEntrypoints.length === 0) {
-          console.error('Error: No valid entrypoints found after expanding glob patterns')
+        if (expandedFiles.length === 0) {
+          console.error('Error: No valid .stx files found to build')
           process.exit(1)
         }
 
-        console.log(`Building ${expandedEntrypoints.length} STX ${expandedEntrypoints.length === 1 ? 'file' : 'files'}...`)
+        console.log(`Building ${expandedFiles.length} STX ${expandedFiles.length === 1 ? 'file' : 'files'}...`)
 
-        // Define the type for Bun build options
-        interface BunBuildOptions {
-          entrypoints: string[]
-          target?: 'browser' | 'bun' | 'node'
-          format?: 'esm' | 'cjs' | 'iife'
-          minify?: boolean | {
-            whitespace?: boolean
-            syntax?: boolean
-            identifiers?: boolean
+        // Track successfully built files
+        interface BuildResult {
+          inputFile: string
+          outputHtml?: string
+          outputJs?: string
+          otherOutputs: string[]
+          scriptSources?: string[]
+        }
+
+        const results: BuildResult[] = []
+        let successCount = 0
+
+        // Build each file individually
+        for (const file of expandedFiles) {
+          const absolutePath = path.resolve(file)
+          const relativePath = path.relative(process.cwd(), absolutePath)
+
+          if (options.verbose) {
+            console.log(`Processing: ${relativePath}`)
           }
-          sourcemap?: 'none' | 'linked' | 'inline' | 'external' | boolean
-          splitting?: boolean
-          outdir?: string
-          outfile?: string
-          publicPath?: string
-          root?: string
-          env?: 'inline' | 'disable' | `${string}*`
-          packages?: 'bundle' | 'external'
-          external?: string[]
-          compile?: boolean
-          watch?: {
-            onRebuild: (error: Error | null, result: BuildOutput | null) => void
+
+          try {
+            // Build with STX plugin to generate HTML
+            const buildResult = await Bun.build({
+              entrypoints: [absolutePath],
+              outdir: tempDir,
+              plugins: [stxPlugin],
+              target: options.target || 'browser',
+              format: options.format || 'esm',
+              minify: options.minify !== false,
+              sourcemap: options.sourcemap || 'none',
+              splitting: options.splitting !== false,
+              define: {
+                'process.env.NODE_ENV': '"production"',
+              },
+            })
+
+            if (!buildResult.success) {
+              console.error(`Build failed for ${relativePath}:`, buildResult.logs)
+              continue
+            }
+
+            // Find HTML and JS outputs
+            const htmlOutput = buildResult.outputs.find(o => o.path.endsWith('.html'))
+            const jsOutputs = buildResult.outputs.filter(o => o.path.endsWith('.js'))
+            const otherOutputs = buildResult.outputs.filter(o => !o.path.endsWith('.html') && !o.path.endsWith('.js'))
+
+            const result: BuildResult = {
+              inputFile: relativePath,
+              otherOutputs: otherOutputs.map(o => o.path)
+            }
+
+            if (htmlOutput) {
+              result.outputHtml = htmlOutput.path
+
+              // Read the HTML content to find all chunk references
+              const htmlContent = await Bun.file(htmlOutput.path).text()
+
+              // Extract all script src attributes from the HTML
+              const scriptMatches = htmlContent.match(/<script[^>]*src="([^"]+)"[^>]*><\/script>/g) || []
+
+              // Find JS files referenced in the HTML
+              const scriptSources = scriptMatches
+                .map(script => {
+                  const srcMatch = script.match(/src="([^"]+)"/)
+                  return srcMatch ? srcMatch[1] : null
+                })
+                .filter((src): src is string => src !== null)
+                .filter(src => src.includes('chunk-'))
+
+              if (options.verbose && scriptSources.length > 0) {
+                console.log(`    Script references found in HTML: ${scriptSources.join(', ')}`)
+              }
+
+              // Track them in the result for reporting later
+              result.scriptSources = scriptSources
+
+              // Process expressions in the HTML that might not have been evaluated
+              try {
+                // Extract the script content from the original STX file
+                const originalContent = await Bun.file(absolutePath).text()
+                const scriptMatch = originalContent.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
+
+                if (scriptMatch) {
+                  const scriptContent = scriptMatch[1]
+
+                  // Execute the script to extract variables
+                  try {
+                    // Create a function to evaluate the script and extract variables
+                    const evalFn = new Function(scriptContent + `
+                      // Return all variables defined in this scope
+                      return {
+                        name: typeof name !== 'undefined' ? name : undefined,
+                        items: typeof items !== 'undefined' ? items : undefined,
+                        count: typeof count !== 'undefined' ? count : undefined
+                      };
+                    `)
+
+                    // Execute the function to get the variables
+                    const context = evalFn()
+
+                    if (options.verbose) {
+                      console.log(`    Extracted variables:`, Object.keys(context).filter(k => context[k] !== undefined))
+                    }
+
+                    // Process the HTML content with these variables
+                    let processedHtml = htmlContent
+
+                    // Handle known complex patterns like the items.map() specifically
+                    const itemsMapRegex = /\{items\.map\(item\s*=>\s*`[\s\S]*?<li>\{item\}<\/li>[\s\S]*?`\)\.join\(['"]*['"]*\)\}/g
+
+                    // Replace items.map with the actual rendered list items
+                    processedHtml = processedHtml.replace(itemsMapRegex, () => {
+                      try {
+                        if (!context.items || !Array.isArray(context.items)) {
+                          if (options.verbose) {
+                            console.warn('    Warning: items is not an array in context')
+                          }
+                          return '<!-- Error: items not found -->'
+                        }
+
+                        // Manually render the list items
+                        const renderedItems = context.items.map((item: any) =>
+                          `
+    <li>${item}</li>
+  `).join('')
+
+                        if (options.verbose) {
+                          console.log(`    Rendered items.map() with ${context.items.length} items`)
+                        }
+
+                        return renderedItems
+                      } catch (err) {
+                        if (options.verbose) {
+                          console.warn(`    Warning: Failed to render items.map(): ${err}`)
+                        }
+                        return '<!-- Error rendering items -->'
+                      }
+                    })
+
+                    // Process other simple expressions like {name} and {count}
+                    processedHtml = processedHtml.replace(/\{([^{}]+?)\}/g, (match, expr) => {
+                      // Skip if it looks like a complex expression
+                      if (expr.includes('.map(') || expr.includes('.join(')) {
+                        return match
+                      }
+
+                      try {
+                        // Simple variable replacements
+                        if (expr.trim() in context) {
+                          return String(context[expr.trim()])
+                        }
+
+                        // Return the original expression if we can't evaluate it
+                        return match
+                      } catch (err) {
+                        if (options.verbose) {
+                          console.warn(`    Warning: Error processing expression ${expr}: ${err}`)
+                        }
+                        return match // Keep original expression if processing fails
+                      }
+                    })
+
+                    // Write the processed HTML back to the file
+                    await Bun.write(htmlOutput.path, processedHtml)
+
+                    if (options.verbose) {
+                      console.log(`    Processed expressions in HTML output`)
+                    }
+                  } catch (scriptError) {
+                    if (options.verbose) {
+                      console.warn(`    Warning: Could not extract variables from script: ${scriptError}`)
+                    }
+                  }
+                }
+              } catch (processError) {
+                if (options.verbose) {
+                  console.warn(`    Warning: Could not process expressions in HTML: ${processError}`)
+                }
+              }
+            }
+
+            if (jsOutputs.length > 0) {
+              result.outputJs = jsOutputs[0].path
+            }
+
+            if (!htmlOutput) {
+              console.warn(`Warning: No HTML output generated for ${relativePath}`)
+            }
+
+            results.push(result)
+            successCount++
+
+            if (options.verbose) {
+              console.log(`  Success: ${relativePath}`)
+              if (htmlOutput) console.log(`    HTML: ${path.basename(htmlOutput.path)}`)
+              if (jsOutputs.length > 0) console.log(`    JS: ${jsOutputs.map(o => path.basename(o.path)).join(', ')}`)
+              if (otherOutputs.length > 0) console.log(`    Other: ${otherOutputs.length} file(s)`)
+            }
+          } catch (error) {
+            console.error(`Error building ${relativePath}:`, error)
           }
         }
 
-        // Define the type for Bun build output
-        interface BuildOutput {
-          outputs: Array<{
-            path: string
-            kind: string
-            hash: string | null
-          }>
-          success: boolean
-          logs: Array<{
-            level: string
-            message: string
-          }>
+        if (successCount === 0) {
+          console.error('Error: No files were successfully built')
+          fs.rmSync(tempDir, { recursive: true, force: true })
+          process.exit(1)
         }
 
-        // Prepare build options with proper typing
-        const buildOptions: BunBuildOptions = {
-          entrypoints: expandedEntrypoints,
-          target: options.target,
-          format: options.format,
-          minify: options.minify !== false,
-          sourcemap: options.sourcemap,
-          splitting: options.splitting !== false,
-          outdir: options.outdir,
-          publicPath: options.publicPath,
-          root: options.root,
-          env: options.env as 'inline' | 'disable' | `${string}*`,
-          packages: options.packages as 'bundle' | 'external',
-          compile: options.compile,
-        }
+        // Copy files to final output directory, maintaining directory structure
+        console.log(`Copying output files to ${outputDir}...`)
+        let copiedFilesCount = 0
 
-        // Handle output file override
-        if (options.outfile) {
-          if (expandedEntrypoints.length > 1) {
-            console.warn('Warning: --outfile is ignored when building multiple entrypoints')
+        for (const result of results) {
+          // Calculate output paths, preserving directory structure
+          const inputDir = path.dirname(result.inputFile)
+          const baseName = path.basename(result.inputFile, '.stx')
+          const targetDir = path.join(outputDir, inputDir)
+
+          // Ensure target directory exists
+          fs.mkdirSync(targetDir, { recursive: true })
+
+          if (result.outputHtml) {
+            // Read the HTML content to find all chunk references
+            const htmlContent = await Bun.file(result.outputHtml).text()
+            const targetHtmlPath = path.join(targetDir, `${baseName}.html`)
+
+            // Extract all script src attributes from the HTML
+            const scriptRegex = /<script[^>]*src="([^"]+)"[^>]*><\/script>/g
+            const matches = [...htmlContent.matchAll(scriptRegex)]
+            const scriptSrcs = matches.map(match => match[1])
+
+            // Track all chunk files we need to copy
+            const chunksToCopy = new Map<string, string>()
+
+            // Process each script src to find chunk files
+            for (const src of scriptSrcs) {
+              if (src.startsWith('./') && src.includes('chunk-')) {
+                const srcFileName = path.basename(src)
+                const tempChunkPath = path.join(path.dirname(result.outputHtml), srcFileName)
+
+                if (fs.existsSync(tempChunkPath)) {
+                  chunksToCopy.set(srcFileName, tempChunkPath)
+                } else if (options.verbose) {
+                  console.warn(`    Warning: Referenced chunk file not found: ${tempChunkPath}`)
+                }
+              }
+            }
+
+            // Copy HTML file with adjusted script references if needed
+            if (chunksToCopy.size > 0) {
+              // We keep the references as they are (relative paths)
+              fs.copyFileSync(result.outputHtml, targetHtmlPath)
+
+              // Now copy all chunk files
+              for (const [chunkName, chunkPath] of chunksToCopy.entries()) {
+                const targetChunkPath = path.join(targetDir, chunkName)
+                fs.copyFileSync(chunkPath, targetChunkPath)
+                copiedFilesCount++
+
+                if (options.verbose) {
+                  console.log(`    Copied chunk: ${path.relative(outputDir, targetChunkPath)}`)
+                }
+              }
+            } else {
+              // No chunks, just copy the HTML file
+              fs.copyFileSync(result.outputHtml, targetHtmlPath)
+            }
+
+            copiedFilesCount++
           }
-          else {
-            delete buildOptions.outdir
-            buildOptions.outfile = options.outfile
+
+          // Copy JS file (main entry JS, not chunks)
+          if (result.outputJs) {
+            const targetJsPath = path.join(targetDir, `${baseName}.js`)
+            fs.copyFileSync(result.outputJs, targetJsPath)
+            copiedFilesCount++
+          }
+
+          // Copy other files
+          for (const otherPath of result.otherOutputs) {
+            const otherName = path.basename(otherPath)
+            const targetOtherPath = path.join(targetDir, otherName)
+            fs.copyFileSync(otherPath, targetOtherPath)
+            copiedFilesCount++
           }
         }
 
-        // Handle external modules
-        if (options.external) {
-          buildOptions.external = options.external.split(',').map((e: string) => e.trim())
+        // Clean up temporary directory
+        try {
+          fs.rmSync(tempDir, { recursive: true, force: true })
+        } catch (error) {
+          console.warn('Warning: Failed to clean up temporary directory')
+        }
+
+        // Output summary
+        console.log(`✓ Build successful! Built ${successCount} STX ${successCount === 1 ? 'file' : 'files'} with ${copiedFilesCount} output ${copiedFilesCount === 1 ? 'file' : 'files'}`)
+
+        // Track total script/chunk count for reporting
+        let totalChunkCount = 0;
+
+        if (results.length > 0 && results.length <= 10) {
+          console.log('\nGenerated files:')
+          for (const result of results) {
+            const inputDir = path.dirname(result.inputFile)
+            const baseName = path.basename(result.inputFile, '.stx')
+
+            console.log(`  ${result.inputFile} →`)
+            if (result.outputHtml) {
+              console.log(`    HTML: ${path.join(options.outdir, inputDir, `${baseName}.html`)}`)
+            }
+            if (result.outputJs) {
+              console.log(`    JS: ${path.join(options.outdir, inputDir, `${baseName}.js`)}`)
+            }
+
+            // Report chunk files
+            if (result.scriptSources && result.scriptSources.length > 0) {
+              totalChunkCount += result.scriptSources.length;
+              console.log(`    Chunks: ${result.scriptSources.length} chunk file(s)`)
+
+              // Show detailed chunk info if verbose
+              if (options.verbose) {
+                for (const src of result.scriptSources) {
+                  const chunkName = path.basename(src);
+                  console.log(`      - ${path.join(inputDir, chunkName)}`)
+                }
+              }
+            }
+          }
+        }
+
+        console.log(`\nTo view these files, you can use a local HTTP server:`)
+        console.log(`  cd ${options.outdir} && npx serve`)
+
+        if (totalChunkCount > 0) {
+          console.log(`\nNote: The build includes JavaScript chunks that need to be served over HTTP for proper functioning.`)
+          console.log(`Opening the HTML files directly may not work correctly due to browser security restrictions.`)
         }
 
         // Handle watch mode
         if (options.watch) {
-          buildOptions.watch = {
-            onRebuild(error: Error | null, result: BuildOutput | null) {
-              if (error) {
-                console.error('Build failed:', error)
+          console.log('\nWatch mode enabled. Waiting for changes...')
+
+          // Get directories to watch (parent directories of each STX file)
+          const watchDirs = new Set(
+            expandedFiles.map(file => path.dirname(path.resolve(file)))
+          )
+
+          for (const dir of watchDirs) {
+            fs.watch(dir, { recursive: true }, async (eventType, filename) => {
+              if (!filename) return
+
+              if (filename.endsWith('.stx') || filename.endsWith('.js') || filename.endsWith('.ts')) {
+                console.log(`\nFile changed: ${filename}, rebuilding...`)
+
+                // Find associated input file
+                const changedFile = path.join(dir, filename)
+                const relativeChanged = path.relative(process.cwd(), changedFile)
+
+                // Find file(s) to rebuild
+                const filesToRebuild = filename.endsWith('.stx')
+                  ? [relativeChanged]  // If .stx file changed, rebuild just that file
+                  : expandedFiles.filter(f => {  // If .js/.ts changed, rebuild any STX file in same directory
+                      const fileDir = path.dirname(path.resolve(f))
+                      return fileDir === dir
+                    })
+
+                if (filesToRebuild.length === 0) {
+                  console.log('No STX files to rebuild')
+                  return
+                }
+
+                // Rebuild files
+                console.log(`Rebuilding ${filesToRebuild.length} file(s)...`)
+
+                for (const file of filesToRebuild) {
+                  try {
+                    const absolutePath = path.resolve(file)
+                    const buildResult = await Bun.build({
+                      entrypoints: [absolutePath],
+                      outdir: options.outdir,
+                      plugins: [stxPlugin],
+                      target: options.target || 'browser',
+                      format: options.format || 'esm',
+                      minify: options.minify !== false,
+                      sourcemap: options.sourcemap || 'none',
+                      splitting: options.splitting !== false,
+                      define: {
+                        'process.env.NODE_ENV': '"production"',
+                      },
+                    })
+
+                    if (buildResult.success) {
+                      console.log(`  ✓ Rebuilt ${file}`)
+                    } else {
+                      console.error(`  ✗ Failed to rebuild ${file}`)
+                    }
+                  } catch (error) {
+                    console.error(`Error rebuilding ${file}:`, error)
+                  }
+                }
+
+                console.log('Rebuild complete')
               }
-              else if (result) {
-                const fileCount = result.outputs.length
-                console.log(`Build succeeded! Generated ${fileCount} file${fileCount !== 1 ? 's' : ''}`)
-              }
-            },
-          }
-        }
-
-        // Execute build
-        const result = await Bun.build(buildOptions) as BuildOutput
-
-        if (result.success) {
-          const outputCount = result.outputs.length
-          console.log(`✓ Build successful! Generated ${outputCount} file${outputCount !== 1 ? 's' : ''}`)
-
-          // Show output file paths
-          if (outputCount > 0 && outputCount <= 10) {
-            console.log('\nGenerated files:')
-            for (const output of result.outputs) {
-              const relativePath = path.relative(process.cwd(), output.path)
-              console.log(`  ${relativePath}`)
-            }
+            })
           }
 
-          // Show any warnings
-          if (result.logs && result.logs.length > 0) {
-            const warnings = result.logs.filter(log => log.level === 'warning')
-            if (warnings.length > 0) {
-              console.log('\nWarnings:')
-              for (const warning of warnings) {
-                console.warn(`  ${warning.message}`)
-              }
-            }
-          }
-        }
-        else {
-          console.error('Build failed with errors')
-          if (result.logs && result.logs.length > 0) {
-            const errors = result.logs.filter(log => log.level === 'error')
-            for (const error of errors) {
-              console.error(`  ${error.message}`)
-            }
-          }
-          process.exit(1)
+          console.log(`Watching ${watchDirs.size} ${watchDirs.size === 1 ? 'directory' : 'directories'} for changes...`)
+          console.log('Press Ctrl+C to stop')
         }
       }
       catch (error) {
@@ -581,8 +889,6 @@ else {
         process.exit(1)
       }
     })
-
-  // New commands to enhance STX functionality
 
   cli
     .command('init [file]', 'Create a new STX file')

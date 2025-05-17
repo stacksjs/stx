@@ -20,3 +20,4 @@ tsconfig.tsbuildinfo
 /.stx-output
 /packages/stx/packages/stx/test/out
 /packages/stx/test/streaming/out
+/test-build-output

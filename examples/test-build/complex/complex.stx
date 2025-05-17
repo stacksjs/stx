@@ -1,0 +1,21 @@
+<script>
+const name = "Complex World";
+const items = ["Apple", "Banana", "Cherry"];
+const count = items.length;
+</script>
+
+<h1>Hello, {name}!</h1>
+<p>We have {count} items:</p>
+<ul>
+  {items.map(item => `
+    <li>{item}</li>
+  `).join("")}
+</ul>
+
+<button id="btn">Click me</button>
+
+<script>
+  document.getElementById("btn").addEventListener("click", () => {
+    alert("Button clicked!");
+  });
+</script>
