@@ -3,14 +3,159 @@ import path from 'node:path'
 import process from 'node:process'
 import { CAC } from 'cac'
 import { version } from '../package.json'
+import { gitHash } from '../src/release'
 import { scanA11yIssues } from '../src/a11y'
 import { serveMultipleStxFiles, serveStxFile, DevServerOptions } from '../src/dev-server'
 import { docsCommand } from '../src/docs'
 import { initFile } from '../src/init'
 import type { SyntaxHighlightTheme } from '../src/types'
 import os from 'node:os'
-import { fileExists } from '../src/utils'
 import { plugin as stxPlugin } from '../src/plugin'
+import { spawn } from 'node:child_process'
+
+// Test command utilities
+interface TestCommandOptions {
+  watch?: boolean
+  filter?: string
+  reporter?: string
+  timeout?: number
+  coverage?: boolean
+  ui?: boolean
+  verbose?: boolean
+}
+
+/**
+ * Run tests using Bun's test runner with happy-dom for browser environment
+ */
+async function runTests(
+  patterns: string[],
+  options: TestCommandOptions
+): Promise<boolean> {
+  try {
+    // Prepare command arguments
+    const args = ['test'];
+
+    // Expand glob patterns to actual files
+    const expandedPatterns: string[] = [];
+
+    if (patterns && patterns.length > 0) {
+      for (const pattern of patterns) {
+        if (isGlob(pattern)) {
+          // Expand glob pattern to matching files
+          try {
+            const matches = await Array.fromAsync(new Bun.Glob(pattern).scan({ onlyFiles: true, absolute: true }));
+            if (matches.length === 0) {
+              console.warn(`Warning: No files found matching pattern: ${pattern}`);
+            } else {
+              expandedPatterns.push(...matches);
+              if (options.verbose) {
+                console.log(`Found ${matches.length} file(s) matching pattern: ${pattern}`);
+              }
+            }
+          } catch (error) {
+            console.error(`Error expanding glob pattern ${pattern}:`, error);
+            return false;
+          }
+        } else {
+          // Not a glob, add directly
+          expandedPatterns.push(pattern);
+        }
+      }
+    }
+
+    // Check if we have any files to test
+    if (expandedPatterns.length === 0) {
+      console.error('Error: No test files found matching the provided patterns.');
+      return false;
+    }
+
+    // Add the expanded patterns to args
+    args.push(...expandedPatterns);
+
+    // Add options
+    if (options.filter) {
+      args.push('--pattern', options.filter);
+    }
+
+    if (options.timeout) {
+      args.push('--timeout', options.timeout.toString());
+    }
+
+    // Handle reporter options correctly
+    // Bun currently only supports 'junit' reporter with a required output file
+    if (options.reporter && options.reporter !== 'default') {
+      if (options.reporter === 'junit') {
+        // Create a temp file for junit output
+        const junitOutputFile = path.join(os.tmpdir(), `stx-test-report-${Date.now()}.xml`);
+        args.push('--reporter', options.reporter);
+        args.push('--reporter-outfile', junitOutputFile);
+      } else {
+        console.warn(`Warning: Reporter '${options.reporter}' is not supported. Using default reporter.`);
+      }
+    }
+
+    if (options.coverage) {
+      args.push('--coverage');
+    }
+
+    if (options.watch) {
+      args.push('--watch');
+    }
+
+    // Add happy-dom for DOM environment
+    args.push('--preload', path.join(__dirname, '../happy-dom.ts'));
+
+    // Add environment variables for STX test context
+    const env = {
+      ...process.env,
+      STX_TEST_MODE: 'true',
+      STX_TEST_UI: options.ui ? 'true' : 'false',
+      STX_TEST_VERBOSE: options.verbose ? 'true' : 'false'
+    };
+
+    // Build the full command
+    const command = 'bun';
+
+    if (options.verbose) {
+      console.log(`Running: ${command} ${args.join(' ')}`);
+    }
+
+    // Create timestamp for test timing
+    const startTime = performance.now();
+
+    // Execute the command
+    const child = spawn(command, args, {
+      stdio: 'inherit',
+      shell: false,
+      env
+    });
+
+    return new Promise((resolve) => {
+      child.on('close', (code) => {
+        const endTime = performance.now();
+        const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+        if (code === 0) {
+          // console.log(`✓ Tests completed successfully in ${duration}s`);
+          resolve(true);
+        } else {
+          // console.error(`✗ Tests failed with code ${code} after ${duration}s`);
+          resolve(false);
+        }
+      });
+
+      // Handle process interruption
+      process.on('SIGINT', () => {
+        console.log('\nTest run interrupted');
+        child.kill('SIGINT');
+        process.exit(1);
+      });
+    });
+  } catch (error) {
+    console.error('Error running tests:', error instanceof Error ? error.message : String(error));
+    return false;
+  }
+}
 
 const cli = new CAC('stx')
 
@@ -887,6 +1032,59 @@ else {
       catch (error) {
         console.error('Build failed:', error instanceof Error ? error.message : String(error))
         process.exit(1)
+      }
+    })
+
+  cli
+    .command('test [patterns...]', 'Run tests with Bun test runner and browser environment')
+    .option('--watch', 'Watch for changes and rerun tests')
+    .option('--filter <pattern>', 'Only run tests matching the given pattern')
+    .option('--reporter <reporter>', 'Test reporter to use: default or junit (junit requires Bun v1.0+)', { default: 'default' })
+    .option('--timeout <ms>', 'Test timeout in milliseconds', { default: 5000 })
+    .option('--coverage', 'Enable code coverage')
+    .option('--ui', 'Coming soon')
+    .option('--verbose', 'Show verbose output including test command')
+    .example('stx test')
+    .example('stx test packages/stx/test/')
+    .example('stx test **/*.test.ts --verbose')
+    .example('stx test --filter "should process"')
+    .example('stx test --watch --verbose')
+    .example('stx test --reporter junit')
+    .action(async (patterns: string[], options: TestCommandOptions) => {
+      try {
+        console.log(`\x1B[1mstx test\x1B[0m \x1B[2mv${version} (${gitHash})\x1B[0m`);
+
+        // Convert patterns to array if it's a string
+        const patternArray = typeof patterns === 'string' ? [patterns] : patterns || [];
+
+        // Default to finding all test files if no patterns specified
+        if (patternArray.length === 0) {
+          // Common test file patterns
+          patternArray.push('**/*.test.ts', '**/*.test.js', '**/*.spec.ts', '**/*.spec.js');
+        }
+
+        if (options.verbose) {
+          console.log('Test patterns:', patternArray);
+          console.log('Options:', JSON.stringify({
+            watch: options.watch || false,
+            filter: options.filter || 'none',
+            reporter: options.reporter || 'default',
+            timeout: options.timeout || 5000,
+            coverage: options.coverage || false,
+            ui: options.ui || false
+          }, null, 2));
+        }
+
+        // Run tests with provided patterns and options
+        const success = await runTests(patternArray, options);
+
+        // Exit with appropriate code based on test results
+        if (!success && !options.watch) {
+          process.exit(1);
+        }
+      } catch (error) {
+        console.error('Error running tests:', error);
+        process.exit(1);
       }
     })
 
