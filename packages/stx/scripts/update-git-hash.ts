@@ -23,7 +23,8 @@ function getCurrentGitHash(): string {
 
     // Trim the output to remove any whitespace or newlines
     return result.stdout.trim()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to get git hash:', error)
     return 'unknown'
   }
@@ -41,7 +42,8 @@ function updateReleaseFile(gitHash: string) {
     // Write the file
     writeFileSync(releaseFilePath, fileContent, 'utf-8')
     console.log(`Successfully updated git hash to ${gitHash} in release.ts`)
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to update release.ts file:', error)
     process.exit(1)
   }

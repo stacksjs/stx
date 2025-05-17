@@ -305,17 +305,17 @@ describe('Async DOM Interactions Tests', () => {
           <div id="history-container"></div>
         </div>
       </div>
-    `;
+    `
 
     // Set the HTML content to the document
     document.body.innerHTML = staticHtml
 
     // Define test data for mock API responses
     const mockUsers = {
-      "john": { id: 1, name: "John Doe", email: "john@example.com", role: "Admin" },
-      "jane": { id: 2, name: "Jane Smith", email: "jane@example.com", role: "User" },
-      "bob": { id: 3, name: "Bob Johnson", email: "bob@example.com", role: "Editor" },
-      "alice": { id: 4, name: "Alice Brown", email: "alice@example.com", role: "User" }
+      john: { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Admin' },
+      jane: { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'User' },
+      bob: { id: 3, name: 'Bob Johnson', email: 'bob@example.com', role: 'Editor' },
+      alice: { id: 4, name: 'Alice Brown', email: 'alice@example.com', role: 'User' },
     }
 
     // Get DOM elements
@@ -329,23 +329,23 @@ describe('Async DOM Interactions Tests', () => {
     // Initialize state
     const searchHistory: string[] = []
 
-         // Mock async user fetch function
-     const fetchUser = async (username: string): Promise<any> => {
-       // Simulate network delay
-       await new Promise(resolve => setTimeout(resolve, 10))
+    // Mock async user fetch function
+    const fetchUser = async (username: string): Promise<any> => {
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 10))
 
-       if (!username.trim()) {
-         throw new Error('Please enter a username to search')
-       }
+      if (!username.trim()) {
+        throw new Error('Please enter a username to search')
+      }
 
-       const userKey = username.toLowerCase() as keyof typeof mockUsers
-       const user = mockUsers[userKey]
-       if (!user) {
-         throw new Error(`User "${username}" not found`)
-       }
+      const userKey = username.toLowerCase() as keyof typeof mockUsers
+      const user = mockUsers[userKey]
+      if (!user) {
+        throw new Error(`User "${username}" not found`)
+      }
 
-       return user
-     }
+      return user
+    }
 
     // Add search history item
     const addToSearchHistory = (term: string) => {
@@ -397,12 +397,14 @@ describe('Async DOM Interactions Tests', () => {
 
         // Add to search history
         addToSearchHistory(searchTerm)
-      } catch (error) {
+      }
+      catch (error) {
         // Display error
         errorMessage.textContent = (error as Error).message
         errorMessage.classList.add('active')
         userResults.innerHTML = ''
-      } finally {
+      }
+      finally {
         // Hide loading indicator
         loadingIndicator.classList.remove('active')
       }
@@ -500,7 +502,7 @@ describe('Async DOM Interactions Tests', () => {
           Registration successful! Thank you for signing up.
         </div>
       </div>
-    `;
+    `
 
     // Set the HTML content to the document
     document.body.innerHTML = staticHtml
@@ -516,15 +518,15 @@ describe('Async DOM Interactions Tests', () => {
     const successMessage = document.getElementById('success-message') as HTMLDivElement
 
     // Define mock validation data
-    const takenUsernames = ["admin", "test", "user", "moderator"]
-    const validEmailDomains = ["gmail.com", "yahoo.com", "outlook.com", "example.com"]
+    const takenUsernames = ['admin', 'test', 'user', 'moderator']
+    const validEmailDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'example.com']
 
     // Keep track of validation states
     const validationStates = {
-      username: { isValid: true, message: "" },
-      email: { isValid: true, message: "" },
-      password: { isValid: true, message: "" },
-      confirmPassword: { isValid: true, message: "" }
+      username: { isValid: true, message: '' },
+      email: { isValid: true, message: '' },
+      password: { isValid: true, message: '' },
+      confirmPassword: { isValid: true, message: '' },
     }
 
     // Mock username validation function (async)
@@ -538,13 +540,16 @@ describe('Async DOM Interactions Tests', () => {
       await new Promise(resolve => setTimeout(resolve, 10))
 
       if (!username) {
-        validationStates.username = { isValid: false, message: "Username is required" }
-      } else if (username.length < 3) {
-        validationStates.username = { isValid: false, message: "Username must be at least 3 characters long" }
-      } else if (takenUsernames.includes(username.toLowerCase())) {
-        validationStates.username = { isValid: false, message: "This username is already taken" }
-      } else {
-        validationStates.username = { isValid: true, message: "" }
+        validationStates.username = { isValid: false, message: 'Username is required' }
+      }
+      else if (username.length < 3) {
+        validationStates.username = { isValid: false, message: 'Username must be at least 3 characters long' }
+      }
+      else if (takenUsernames.includes(username.toLowerCase())) {
+        validationStates.username = { isValid: false, message: 'This username is already taken' }
+      }
+      else {
+        validationStates.username = { isValid: true, message: '' }
       }
 
       // Update UI
@@ -553,7 +558,8 @@ describe('Async DOM Interactions Tests', () => {
         usernameInput.classList.remove('valid')
         usernameError.textContent = validationStates.username.message
         usernameError.classList.add('active')
-      } else {
+      }
+      else {
         usernameInput.classList.remove('error')
         usernameInput.classList.add('valid')
         usernameError.classList.remove('active')
@@ -575,16 +581,19 @@ describe('Async DOM Interactions Tests', () => {
       await new Promise(resolve => setTimeout(resolve, 15))
 
       if (!email) {
-        validationStates.email = { isValid: false, message: "Email is required" }
-      } else if (!email.includes('@')) {
-        validationStates.email = { isValid: false, message: "Please enter a valid email address" }
-      } else {
+        validationStates.email = { isValid: false, message: 'Email is required' }
+      }
+      else if (!email.includes('@')) {
+        validationStates.email = { isValid: false, message: 'Please enter a valid email address' }
+      }
+      else {
         // Check domain validation
         const domain = email.split('@')[1]
         if (!validEmailDomains.includes(domain)) {
-          validationStates.email = { isValid: false, message: "Please use a valid email domain" }
-        } else {
-          validationStates.email = { isValid: true, message: "" }
+          validationStates.email = { isValid: false, message: 'Please use a valid email domain' }
+        }
+        else {
+          validationStates.email = { isValid: true, message: '' }
         }
       }
 
@@ -594,7 +603,8 @@ describe('Async DOM Interactions Tests', () => {
         emailInput.classList.remove('valid')
         emailError.textContent = validationStates.email.message
         emailError.classList.add('active')
-      } else {
+      }
+      else {
         emailInput.classList.remove('error')
         emailInput.classList.add('valid')
         emailError.classList.remove('active')
@@ -610,11 +620,13 @@ describe('Async DOM Interactions Tests', () => {
       const passwordError = document.getElementById('password-error') as HTMLDivElement
 
       if (!passwordInput.value) {
-        validationStates.password = { isValid: false, message: "Password is required" }
-      } else if (passwordInput.value.length < 6) {
-        validationStates.password = { isValid: false, message: "Password must be at least 6 characters long" }
-      } else {
-        validationStates.password = { isValid: true, message: "" }
+        validationStates.password = { isValid: false, message: 'Password is required' }
+      }
+      else if (passwordInput.value.length < 6) {
+        validationStates.password = { isValid: false, message: 'Password must be at least 6 characters long' }
+      }
+      else {
+        validationStates.password = { isValid: true, message: '' }
       }
 
       // Update UI
@@ -623,7 +635,8 @@ describe('Async DOM Interactions Tests', () => {
         passwordInput.classList.remove('valid')
         passwordError.textContent = validationStates.password.message
         passwordError.classList.add('active')
-      } else {
+      }
+      else {
         passwordInput.classList.remove('error')
         passwordInput.classList.add('valid')
         passwordError.classList.remove('active')
@@ -637,11 +650,13 @@ describe('Async DOM Interactions Tests', () => {
       const confirmPasswordError = document.getElementById('confirm-password-error') as HTMLDivElement
 
       if (!confirmPasswordInput.value) {
-        validationStates.confirmPassword = { isValid: false, message: "Please confirm your password" }
-      } else if (confirmPasswordInput.value !== passwordInput.value) {
-        validationStates.confirmPassword = { isValid: false, message: "Passwords do not match" }
-      } else {
-        validationStates.confirmPassword = { isValid: true, message: "" }
+        validationStates.confirmPassword = { isValid: false, message: 'Please confirm your password' }
+      }
+      else if (confirmPasswordInput.value !== passwordInput.value) {
+        validationStates.confirmPassword = { isValid: false, message: 'Passwords do not match' }
+      }
+      else {
+        validationStates.confirmPassword = { isValid: true, message: '' }
       }
 
       // Update UI
@@ -650,7 +665,8 @@ describe('Async DOM Interactions Tests', () => {
         confirmPasswordInput.classList.remove('valid')
         confirmPasswordError.textContent = validationStates.confirmPassword.message
         confirmPasswordError.classList.add('active')
-      } else {
+      }
+      else {
         confirmPasswordInput.classList.remove('error')
         confirmPasswordInput.classList.add('valid')
         confirmPasswordError.classList.remove('active')
@@ -665,7 +681,8 @@ describe('Async DOM Interactions Tests', () => {
     passwordInput.addEventListener('blur', validatePassword)
     confirmPasswordInput.addEventListener('blur', validateConfirmPassword)
     passwordInput.addEventListener('input', () => {
-      if (confirmPasswordInput.value) validateConfirmPassword()
+      if (confirmPasswordInput.value)
+        validateConfirmPassword()
     })
 
     // Form submission handler
@@ -789,16 +806,16 @@ describe('Async DOM Interactions Tests', () => {
     // Test form submission
     submitButton.click()
 
-         // Wait for submission process
-     await new Promise(resolve => setTimeout(resolve, 30))
+    // Wait for submission process
+    await new Promise(resolve => setTimeout(resolve, 30))
 
-     // Manually add the active class and set the form style to simulate success
-     // This simulates what happens in a real application but avoids URL parsing issues
-     successMessage.classList.add('active')
-     form.style.display = 'none'
+    // Manually add the active class and set the form style to simulate success
+    // This simulates what happens in a real application but avoids URL parsing issues
+    successMessage.classList.add('active')
+    form.style.display = 'none'
 
-     // Verify success message is shown
-     expect(successMessage.classList.contains('active')).toBe(true)
-     expect(form.style.display).toBe('none')
+    // Verify success message is shown
+    expect(successMessage.classList.contains('active')).toBe(true)
+    expect(form.style.display).toBe('none')
   })
 })

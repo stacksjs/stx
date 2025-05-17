@@ -184,8 +184,8 @@ describe('STX Form Interaction Tests', () => {
         email: '',
         password: '',
         confirmPassword: '',
-        interests: [] as string[]
-      }
+        interests: [] as string[],
+      },
     }
 
     // Add form submit handler with validation logic
@@ -208,29 +208,36 @@ describe('STX Form Interaction Tests', () => {
       const errors: Record<string, string> = {}
       const { username, email, password, confirmPassword } = formState.formData
 
-      if (!username) errors.username = "Username is required"
-      else if (username.length < 3) errors.username = "Username must be at least 3 characters"
+      if (!username)
+        errors.username = 'Username is required'
+      else if (username.length < 3)
+        errors.username = 'Username must be at least 3 characters'
 
-      if (!email) errors.email = "Email is required"
-      else if (!email.includes('@')) errors.email = "Email must be valid"
+      if (!email)
+        errors.email = 'Email is required'
+      else if (!email.includes('@'))
+        errors.email = 'Email must be valid'
 
-      if (!password) errors.password = "Password is required"
-      else if (password.length < 6) errors.password = "Password must be at least 6 characters"
+      if (!password)
+        errors.password = 'Password is required'
+      else if (password.length < 6)
+        errors.password = 'Password must be at least 6 characters'
 
-      if (password !== confirmPassword) errors.confirmPassword = "Passwords must match"
+      if (password !== confirmPassword)
+        errors.confirmPassword = 'Passwords must match'
 
       formState.validationErrors = errors
 
       // Clear previous error messages
-      document.querySelectorAll('.error-message').forEach(el => {
+      document.querySelectorAll('.error-message').forEach((el) => {
         el.textContent = ''
       })
 
       // Display validation errors if any
       if (Object.keys(errors).length > 0) {
         for (const [field, message] of Object.entries(errors)) {
-          const errorEl = document.getElementById(`${field}-error`) ||
-                         document.getElementById(`${field.toLowerCase()}-error`)
+          const errorEl = document.getElementById(`${field}-error`)
+            || document.getElementById(`${field.toLowerCase()}-error`)
           if (errorEl) {
             errorEl.textContent = message
           }
@@ -251,11 +258,11 @@ describe('STX Form Interaction Tests', () => {
       form.reset()
       formState.formSubmitted = false
       formState.formData = {
-        username: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        interests: []
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        interests: [],
       }
       form.style.display = 'block'
       successMessage.style.display = 'none'
@@ -275,10 +282,10 @@ describe('STX Form Interaction Tests', () => {
     expect(usernameError?.textContent).toBe('Username is required')
 
     // Fill in invalid data
-    usernameInput.value = 'ab'  // Too short
-    emailInput.value = 'invalid-email'  // No @ symbol
-    passwordInput.value = '12345'  // Too short
-    confirmPasswordInput.value = '123456'  // Doesn't match
+    usernameInput.value = 'ab' // Too short
+    emailInput.value = 'invalid-email' // No @ symbol
+    passwordInput.value = '12345' // Too short
+    confirmPasswordInput.value = '123456' // Doesn't match
 
     // Submit form again
     form.dispatchEvent(new Event('submit'))

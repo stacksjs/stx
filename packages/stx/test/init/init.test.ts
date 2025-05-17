@@ -1,8 +1,8 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test'
-import { initFile } from '../../src/init'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { initFile } from '../../src/init'
 
 // Get the current directory
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -44,10 +44,10 @@ describe('initFile function', () => {
     // Clean up test files after each test
     if (fs.existsSync(TEST_DIR)) {
       // Remove all files and directories in the test directory
-      fs.rmSync(TEST_DIR, { recursive: true, force: true });
+      fs.rmSync(TEST_DIR, { recursive: true, force: true })
 
       // Recreate the empty test directory
-      fs.mkdirSync(TEST_DIR, { recursive: true });
+      fs.mkdirSync(TEST_DIR, { recursive: true })
     }
   })
 
@@ -71,7 +71,8 @@ describe('initFile function', () => {
       const content = fs.readFileSync('index.stx', 'utf-8')
       expect(content).toContain('<!DOCTYPE html>')
       expect(content).toContain('export const title = "My STX Page"')
-    } finally {
+    }
+    finally {
       // Restore the original working directory
       process.chdir(originalCwd)
     }
@@ -100,7 +101,8 @@ describe('initFile function', () => {
       const content = fs.readFileSync(fileName, 'utf-8')
       expect(content).toContain('<!DOCTYPE html>')
       expect(content).toContain('export const title = "My STX Page"')
-    } finally {
+    }
+    finally {
       // Restore the original working directory
       process.chdir(originalCwd)
     }
@@ -128,7 +130,8 @@ describe('initFile function', () => {
       // Check that the file was created
       const fileExists = fs.existsSync(fileName)
       expect(fileExists).toBe(true)
-    } finally {
+    }
+    finally {
       // Restore the original working directory
       process.chdir(originalCwd)
     }
@@ -154,7 +157,8 @@ describe('initFile function', () => {
       // Check that the original file content is preserved
       const content = fs.readFileSync(fileName, 'utf-8')
       expect(content).toBe(originalContent)
-    } finally {
+    }
+    finally {
       // Restore the original working directory
       process.chdir(originalCwd)
     }
@@ -181,7 +185,8 @@ describe('initFile function', () => {
       const content = fs.readFileSync(fileName, 'utf-8')
       expect(content).not.toBe(originalContent)
       expect(content).toContain('<!DOCTYPE html>')
-    } finally {
+    }
+    finally {
       // Restore the original working directory
       process.chdir(originalCwd)
     }
@@ -213,7 +218,8 @@ describe('initFile function', () => {
       const content = fs.readFileSync(fileName, 'utf-8')
       expect(content).toContain('Test Template')
       expect(content).toContain('export const testVar = "This is a test template"')
-    } finally {
+    }
+    finally {
       // Restore the original working directory
       process.chdir(originalCwd)
     }
@@ -240,7 +246,8 @@ describe('initFile function', () => {
       // Check that the file was not created
       const fileExists = fs.existsSync(fileName)
       expect(fileExists).toBe(false)
-    } finally {
+    }
+    finally {
       // Restore the original working directory
       process.chdir(originalCwd)
     }
@@ -302,7 +309,8 @@ describe('initFile function', () => {
       // Check the content of the file exactly matches the template
       const content = fs.readFileSync(fileName, 'utf-8')
       expect(content).toBe(complexTemplate)
-    } finally {
+    }
+    finally {
       // Restore the original working directory
       process.chdir(originalCwd)
     }

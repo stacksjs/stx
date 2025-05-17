@@ -2,8 +2,8 @@ import type { StxOptions, SyntaxHighlightTheme } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
 import matter from 'gray-matter'
-import hljs from 'highlight.js'
 import { marked } from 'marked'
+import { createHighlighter } from 'shiki'
 import { config } from './config'
 import { createDetailedErrorMessage, fileExists } from './utils'
 
@@ -59,7 +59,7 @@ export async function readMarkdownFile(
       syntaxHighlighting: {
         enabled: true,
         serverSide: true,
-        defaultTheme: 'github' as SyntaxHighlightTheme,
+        defaultTheme: 'github-dark' as SyntaxHighlightTheme,
         highlightUnknownLanguages: true,
       },
     }
@@ -71,8 +71,9 @@ export async function readMarkdownFile(
     // Apply syntax highlighting to code blocks if enabled
     if (markdownConfig.syntaxHighlighting?.enabled && markdownConfig.syntaxHighlighting?.serverSide) {
       // Find all code blocks in the HTML and apply syntax highlighting
-      htmlContent = applyCodeHighlighting(
+      htmlContent = await applyCodeHighlighting(
         htmlContent,
+        markdownConfig.syntaxHighlighting?.defaultTheme || 'github-dark',
         markdownConfig.syntaxHighlighting?.highlightUnknownLanguages || false,
       )
     }
@@ -115,31 +116,86 @@ export async function readMarkdownFile(
   }
 }
 
+// Cache the highlighter instance
+let highlighterCache: any = null
+
 /**
- * Apply syntax highlighting to code blocks in HTML content
+ * Apply syntax highlighting to code blocks in HTML content using Shiki
  */
-function applyCodeHighlighting(html: string, highlightUnknown: boolean): string {
+async function applyCodeHighlighting(html: string, theme: SyntaxHighlightTheme, highlightUnknown: boolean): Promise<string> {
   // Find all code blocks in the HTML
   const codeRegex = /<pre><code( class="language-([^"]+)")?>([^<]+)<\/code><\/pre>/g
 
-  // Replace each code block with a highlighted version
-  return html.replace(codeRegex, (match, languageClass, language, code) => {
-    if (!language) {
-      return match // No language specified, return as-is
+  // Initialize highlighter if needed
+  if (!highlighterCache) {
+    try {
+      highlighterCache = await createHighlighter({
+        themes: ['github-dark', 'github-light', 'nord', 'dracula', 'monokai'],
+        langs: ['javascript', 'typescript', 'html', 'css', 'json', 'jsx', 'tsx', 'text', 'bash', 'markdown', 'python', 'ruby', 'c', 'cpp'],
+      })
+    }
+    catch (err) {
+      console.error('Failed to initialize Shiki highlighter:', err)
+      return html // Return original HTML if we can't initialize the highlighter
+    }
+  }
+
+  // Function to process each code block match
+  const processCodeBlock = async (match: string, languageClass: string, language: string, code: string) => {
+    // Unescape HTML entities in the code
+    const decodedCode = code
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, '\'')
+
+    // Determine the language to use
+    const langToUse = language || (highlightUnknown ? 'text' : '')
+
+    // If no language specified and auto-detection disabled, return as-is
+    if (!langToUse) {
+      return match
     }
 
     try {
-      let highlightedCode
+      // Use cached highlighter to render the code
+      let highlighted = ''
 
-      if (hljs.getLanguage(language)) {
-        // Highlight code with specified language
-        highlightedCode = hljs.highlight(code, { language, ignoreIllegals: true }).value
-        return `<pre><code class="language-${language}">${highlightedCode}</code></pre>`
+      // Check if language is supported, fall back to text if not
+      let actualLang = langToUse
+      try {
+        if (!highlighterCache.getLoadedLanguages().includes(langToUse)) {
+          actualLang = 'text'
+        }
       }
-      else if (highlightUnknown) {
-        // Try auto-detection for unknown languages
-        highlightedCode = hljs.highlightAuto(code).value
-        return `<pre><code class="language-${language}">${highlightedCode}</code></pre>`
+      catch {
+        actualLang = 'text'
+      }
+
+      // Get the actual theme to use, defaulting to github-dark if not available
+      let actualTheme = 'github-dark'
+      try {
+        if (highlighterCache.getLoadedThemes().includes(theme)) {
+          actualTheme = theme
+        }
+      }
+      catch {
+        // Keep the default
+      }
+
+      // Generate highlighted HTML
+      highlighted = highlighterCache.codeToHtml(decodedCode, {
+        lang: actualLang,
+        theme: actualTheme,
+      })
+
+      // Extract just the content from the Shiki output (between code tags)
+      const contentRegex = /<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/i
+      const contentMatch = highlighted.match(contentRegex)
+
+      if (contentMatch && contentMatch[1]) {
+        return `<pre><code class="language-${language || 'text'}">${contentMatch[1]}</code></pre>`
       }
     }
     catch (err) {
@@ -148,7 +204,19 @@ function applyCodeHighlighting(html: string, highlightUnknown: boolean): string 
 
     // Return original if highlighting fails
     return match
-  })
+  }
+
+  // Replace each code block with a highlighted version
+  let result = html
+  const matches = html.matchAll(codeRegex)
+
+  for (const match of matches) {
+    const [fullMatch, languageClass, language, code] = match
+    const highlightedBlock = await processCodeBlock(fullMatch, languageClass, language, code)
+    result = result.replace(fullMatch, highlightedBlock)
+  }
+
+  return result
 }
 
 /**

@@ -252,7 +252,7 @@ describe('Dynamic Rendering and Event Delegation Tests', () => {
     }
   })
 
-    test('should render todo component with dynamic interaction', async () => {
+  test('should render todo component with dynamic interaction', async () => {
     // Instead of using the processTemplate, we'll manually set the HTML to avoid URL errors
     // Setting static HTML that matches what we'd expect from the template
     const staticHtml = `
@@ -299,10 +299,10 @@ describe('Dynamic Rendering and Event Delegation Tests', () => {
           <button id="mark-all-btn">Mark All Completed</button>
         </div>
       </div>
-    `;
+    `
 
     // Set the HTML content to the document
-    document.body.innerHTML = staticHtml;
+    document.body.innerHTML = staticHtml
 
     // Verify initial rendering
     const todoItems = document.querySelectorAll('.todo-item')
@@ -344,10 +344,12 @@ describe('Dynamic Rendering and Event Delegation Tests', () => {
 
           // Update stats (simplified implementation for test)
           const totalSpan = document.querySelector('.todo-stats span:nth-child(1)')
-          if (totalSpan) totalSpan.textContent = `Total: ${todoItems.length + 1}`
+          if (totalSpan)
+            totalSpan.textContent = `Total: ${todoItems.length + 1}`
 
           const activeSpan = document.querySelector('.todo-stats span:nth-child(2)')
-          if (activeSpan) activeSpan.textContent = `Active: ${document.querySelectorAll('.todo-item:not(.completed)').length + 1}`
+          if (activeSpan)
+            activeSpan.textContent = `Active: ${document.querySelectorAll('.todo-item:not(.completed)').length + 1}`
         }
       }
     })
@@ -372,7 +374,8 @@ describe('Dynamic Rendering and Event Delegation Tests', () => {
       if (todoItem) {
         if (checkbox.checked) {
           todoItem.classList.add('completed')
-        } else {
+        }
+        else {
           todoItem.classList.remove('completed')
         }
       }
@@ -390,7 +393,7 @@ describe('Dynamic Rendering and Event Delegation Tests', () => {
     expect(filterButtons.length).toBe(3)
 
     // Set up filter functionality
-    filterButtons.forEach(button => {
+    filterButtons.forEach((button) => {
       button.addEventListener('click', (e) => {
         const clickedButton = e.target as HTMLButtonElement
         const filterType = clickedButton.dataset.filter
@@ -400,17 +403,20 @@ describe('Dynamic Rendering and Event Delegation Tests', () => {
         clickedButton.classList.add('active')
 
         // Show/hide todos based on filter
-        document.querySelectorAll('.todo-item').forEach(item => {
+        document.querySelectorAll('.todo-item').forEach((item) => {
           const todoItem = item as HTMLElement
           const isCompleted = todoItem.classList.contains('completed')
 
           if (filterType === 'all') {
             todoItem.style.display = 'flex'
-          } else if (filterType === 'active' && !isCompleted) {
+          }
+          else if (filterType === 'active' && !isCompleted) {
             todoItem.style.display = 'flex'
-          } else if (filterType === 'completed' && isCompleted) {
+          }
+          else if (filterType === 'completed' && isCompleted) {
             todoItem.style.display = 'flex'
-          } else {
+          }
+          else {
             todoItem.style.display = 'none'
           }
         })
@@ -423,11 +429,11 @@ describe('Dynamic Rendering and Event Delegation Tests', () => {
 
     // Verify filter works
     const visibleItems = Array.from(document.querySelectorAll('.todo-item')).filter(
-      item => window.getComputedStyle(item).display !== 'none'
+      item => window.getComputedStyle(item).display !== 'none',
     )
 
     expect(visibleItems.length).toBe(2) // Original completed + newly toggled
-    visibleItems.forEach(item => {
+    visibleItems.forEach((item) => {
       expect(item.classList.contains('completed')).toBe(true)
     })
   })
@@ -500,7 +506,7 @@ describe('Dynamic Rendering and Event Delegation Tests', () => {
           <p>Action log:</p>
         </div>
       </div>
-    `;
+    `
 
     // Set the HTML content to the document
     document.body.innerHTML = staticHtml
@@ -527,7 +533,8 @@ describe('Dynamic Rendering and Event Delegation Tests', () => {
       const target = e.target as HTMLElement
 
       // Only process button clicks
-      if (target.tagName !== 'BUTTON') return
+      if (target.tagName !== 'BUTTON')
+        return
 
       const action = target.dataset.action
       const itemId = target.dataset.id
@@ -539,8 +546,10 @@ describe('Dynamic Rendering and Event Delegation Tests', () => {
         // Perform action based on type
         if (action === 'delete') {
           const itemToRemove = document.querySelector(`.item[data-id="${itemId}"]`)
-          if (itemToRemove) itemToRemove.remove()
-        } else if (action === 'promote') {
+          if (itemToRemove)
+            itemToRemove.remove()
+        }
+        else if (action === 'promote') {
           const itemToPromote = document.querySelector(`.item[data-id="${itemId}"]`)
           if (itemToPromote) {
             itemToPromote.setAttribute('data-category', 'important')

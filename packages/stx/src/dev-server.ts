@@ -152,7 +152,7 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
           syntaxHighlighting: {
             serverSide: true,
             enabled: true,
-            defaultTheme: config.markdown?.syntaxHighlighting?.defaultTheme || 'github',
+            defaultTheme: config.markdown?.syntaxHighlighting?.defaultTheme || 'github-dark',
             highlightUnknownLanguages: true,
           },
         },
@@ -160,10 +160,10 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
 
       // Get the default theme from config
       const markdownConfig = options.markdown?.syntaxHighlighting || config.markdown?.syntaxHighlighting
-      const defaultTheme = markdownConfig?.defaultTheme || 'github'
+      const defaultTheme = markdownConfig?.defaultTheme || 'github-dark'
 
       // Combine available themes
-      const baseThemes: SyntaxHighlightTheme[] = ['github'] // Always include github
+      const baseThemes: SyntaxHighlightTheme[] = ['github-dark'] // Always include github-dark
       const configThemes = markdownConfig?.additionalThemes || []
       const availableThemes = [...new Set([...baseThemes, ...configThemes])]
 
@@ -180,8 +180,44 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${data.title || path.basename(absolutePath)}</title>
-  <!-- Add highlight.js CSS for syntax highlighting -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/${defaultTheme}.min.css" id="highlight-theme">
+  <!-- Shiki syntax highlighting styles -->
+  <style id="shiki-theme">
+    :root {
+      --shiki-color-text: #24292e;
+      --shiki-color-background: #ffffff;
+      --shiki-token-constant: #005cc5;
+      --shiki-token-string: #032f62;
+      --shiki-token-comment: #6a737d;
+      --shiki-token-keyword: #d73a49;
+      --shiki-token-parameter: #24292e;
+      --shiki-token-function: #6f42c1;
+      --shiki-token-string-expression: #032f62;
+      --shiki-token-punctuation: #24292e;
+      --shiki-token-link: #032f62;
+    }
+    pre {
+      background-color: var(--shiki-color-background);
+      padding: 1rem;
+      border-radius: 4px;
+    }
+    code {
+      color: var(--shiki-color-text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .dark-mode {
+      --shiki-color-text: #e1e4e8;
+      --shiki-color-background: #24292e;
+      --shiki-token-constant: #79b8ff;
+      --shiki-token-string: #9ecbff;
+      --shiki-token-comment: #6a737d;
+      --shiki-token-keyword: #f97583;
+      --shiki-token-parameter: #e1e4e8;
+      --shiki-token-function: #b392f0;
+      --shiki-token-string-expression: #9ecbff;
+      --shiki-token-punctuation: #e1e4e8;
+      --shiki-token-link: #9ecbff;
+    }
+  </style>
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -205,6 +241,13 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
       display: block;
       padding: 1rem;
       overflow-x: auto;
+    }
+    /* Apply background color to code blocks based on theme */
+    pre.shiki {
+      background-color: var(--shiki-color-background) !important;
+    }
+    .dark-mode pre.shiki {
+      background-color: var(--shiki-color-background) !important;
     }
     code {
       padding: 0.2rem 0.4rem;
@@ -291,6 +334,43 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
       border-radius: 3px;
       border: 1px solid #ddd;
     }
+
+    /* Dark mode body styles */
+    body.dark-mode {
+      background-color: #121212;
+      color: #e1e4e8;
+    }
+
+    body.dark-mode h1,
+    body.dark-mode h2,
+    body.dark-mode h3 {
+      color: #e1e4e8;
+      border-color: #2f363d;
+    }
+
+    body.dark-mode .theme-selector {
+      background: #2f363d;
+      color: #e1e4e8;
+    }
+
+    body.dark-mode select {
+      background: #24292e;
+      color: #e1e4e8;
+      border-color: #444;
+    }
+
+    body.dark-mode blockquote {
+      background: #24292e;
+      color: #e1e4e8;
+    }
+
+    body.dark-mode .frontmatter {
+      background: #24292e;
+    }
+
+    body.dark-mode a {
+      color: #58a6ff;
+    }
   </style>
 </head>
 <body>
@@ -319,12 +399,20 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
   <script>
     function changeTheme() {
       const theme = document.getElementById('themeSelector').value;
-      let linkElement = document.getElementById('highlight-theme');
 
-      if (linkElement) {
-        linkElement.href = \`https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/\${theme}.min.css\`;
+      // Toggle dark mode class based on theme
+      if (theme.includes('dark') || theme.includes('night') || theme.includes('monokai') ||
+          theme.includes('dracula') || theme.includes('nord') || theme.includes('material')) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
       }
     }
+
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      changeTheme();
+    });
   </script>
 </body>
 </html>
@@ -654,7 +742,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
                 syntaxHighlighting: {
                   serverSide: true,
                   enabled: true,
-                  defaultTheme: config.markdown?.syntaxHighlighting?.defaultTheme || 'github',
+                  defaultTheme: config.markdown?.syntaxHighlighting?.defaultTheme || 'github-dark',
                   highlightUnknownLanguages: true,
                 },
               },
@@ -662,10 +750,10 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
             // Get the default theme from config
             const markdownConfig = options.markdown?.syntaxHighlighting || config.markdown?.syntaxHighlighting
-            const defaultTheme = markdownConfig?.defaultTheme || 'github'
+            const defaultTheme = markdownConfig?.defaultTheme || 'github-dark'
 
             // Combine available themes
-            const baseThemes: SyntaxHighlightTheme[] = ['github'] // Always include github
+            const baseThemes: SyntaxHighlightTheme[] = ['github-dark'] // Always include github-dark
             const configThemes = markdownConfig?.additionalThemes || []
             const availableThemes = [...new Set([...baseThemes, ...configThemes])]
 
@@ -682,8 +770,44 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${data.title || path.basename(absolutePath)}</title>
-  <!-- Add highlight.js CSS for syntax highlighting -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/${defaultTheme}.min.css" id="highlight-theme">
+  <!-- Shiki syntax highlighting styles -->
+  <style id="shiki-theme">
+    :root {
+      --shiki-color-text: #24292e;
+      --shiki-color-background: #ffffff;
+      --shiki-token-constant: #005cc5;
+      --shiki-token-string: #032f62;
+      --shiki-token-comment: #6a737d;
+      --shiki-token-keyword: #d73a49;
+      --shiki-token-parameter: #24292e;
+      --shiki-token-function: #6f42c1;
+      --shiki-token-string-expression: #032f62;
+      --shiki-token-punctuation: #24292e;
+      --shiki-token-link: #032f62;
+    }
+    pre {
+      background-color: var(--shiki-color-background);
+      padding: 1rem;
+      border-radius: 4px;
+    }
+    code {
+      color: var(--shiki-color-text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .dark-mode {
+      --shiki-color-text: #e1e4e8;
+      --shiki-color-background: #24292e;
+      --shiki-token-constant: #79b8ff;
+      --shiki-token-string: #9ecbff;
+      --shiki-token-comment: #6a737d;
+      --shiki-token-keyword: #f97583;
+      --shiki-token-parameter: #e1e4e8;
+      --shiki-token-function: #b392f0;
+      --shiki-token-string-expression: #9ecbff;
+      --shiki-token-punctuation: #e1e4e8;
+      --shiki-token-link: #9ecbff;
+    }
+  </style>
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -707,6 +831,13 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       display: block;
       padding: 1rem;
       overflow-x: auto;
+    }
+    /* Apply background color to code blocks based on theme */
+    pre.shiki {
+      background-color: var(--shiki-color-background) !important;
+    }
+    .dark-mode pre.shiki {
+      background-color: var(--shiki-color-background) !important;
     }
     code {
       padding: 0.2rem 0.4rem;
@@ -793,6 +924,43 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       border-radius: 3px;
       border: 1px solid #ddd;
     }
+
+    /* Dark mode body styles */
+    body.dark-mode {
+      background-color: #121212;
+      color: #e1e4e8;
+    }
+
+    body.dark-mode h1,
+    body.dark-mode h2,
+    body.dark-mode h3 {
+      color: #e1e4e8;
+      border-color: #2f363d;
+    }
+
+    body.dark-mode .theme-selector {
+      background: #2f363d;
+      color: #e1e4e8;
+    }
+
+    body.dark-mode select {
+      background: #24292e;
+      color: #e1e4e8;
+      border-color: #444;
+    }
+
+    body.dark-mode blockquote {
+      background: #24292e;
+      color: #e1e4e8;
+    }
+
+    body.dark-mode .frontmatter {
+      background: #24292e;
+    }
+
+    body.dark-mode a {
+      color: #58a6ff;
+    }
   </style>
 </head>
 <body>
@@ -821,12 +989,20 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   <script>
     function changeTheme() {
       const theme = document.getElementById('themeSelector').value;
-      let linkElement = document.getElementById('highlight-theme');
 
-      if (linkElement) {
-        linkElement.href = \`https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/\${theme}.min.css\`;
+      // Toggle dark mode class based on theme
+      if (theme.includes('dark') || theme.includes('night') || theme.includes('monokai') ||
+          theme.includes('dracula') || theme.includes('nord') || theme.includes('material')) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
       }
     }
+
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      changeTheme();
+    });
   </script>
 </body>
 </html>

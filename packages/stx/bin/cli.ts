@@ -1,17 +1,18 @@
+import type { DevServerOptions } from '../src/dev-server'
+import type { SyntaxHighlightTheme } from '../src/types'
+import { spawn } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { CAC } from 'cac'
 import { version } from '../package.json'
-import { gitHash } from '../src/release'
 import { scanA11yIssues } from '../src/a11y'
-import { serveMultipleStxFiles, serveStxFile, DevServerOptions } from '../src/dev-server'
+import { serveMultipleStxFiles, serveStxFile } from '../src/dev-server'
 import { docsCommand } from '../src/docs'
 import { initFile } from '../src/init'
-import type { SyntaxHighlightTheme } from '../src/types'
-import os from 'node:os'
 import { plugin as stxPlugin } from '../src/plugin'
-import { spawn } from 'node:child_process'
+import { gitHash } from '../src/release'
 
 // Test command utilities
 interface TestCommandOptions {
@@ -29,56 +30,59 @@ interface TestCommandOptions {
  */
 async function runTests(
   patterns: string[],
-  options: TestCommandOptions
+  options: TestCommandOptions,
 ): Promise<boolean> {
   try {
     // Prepare command arguments
-    const args = ['test'];
+    const args = ['test']
 
     // Expand glob patterns to actual files
-    const expandedPatterns: string[] = [];
+    const expandedPatterns: string[] = []
 
     if (patterns && patterns.length > 0) {
       for (const pattern of patterns) {
         if (isGlob(pattern)) {
           // Expand glob pattern to matching files
           try {
-            const matches = await Array.fromAsync(new Bun.Glob(pattern).scan({ onlyFiles: true, absolute: true }));
+            const matches = await Array.fromAsync(new Bun.Glob(pattern).scan({ onlyFiles: true, absolute: true }))
             if (matches.length === 0) {
-              console.warn(`Warning: No files found matching pattern: ${pattern}`);
-            } else {
-              expandedPatterns.push(...matches);
+              console.warn(`Warning: No files found matching pattern: ${pattern}`)
+            }
+            else {
+              expandedPatterns.push(...matches)
               if (options.verbose) {
-                console.log(`Found ${matches.length} file(s) matching pattern: ${pattern}`);
+                console.log(`Found ${matches.length} file(s) matching pattern: ${pattern}`)
               }
             }
-          } catch (error) {
-            console.error(`Error expanding glob pattern ${pattern}:`, error);
-            return false;
           }
-        } else {
+          catch (error) {
+            console.error(`Error expanding glob pattern ${pattern}:`, error)
+            return false
+          }
+        }
+        else {
           // Not a glob, add directly
-          expandedPatterns.push(pattern);
+          expandedPatterns.push(pattern)
         }
       }
     }
 
     // Check if we have any files to test
     if (expandedPatterns.length === 0) {
-      console.error('Error: No test files found matching the provided patterns.');
-      return false;
+      console.error('Error: No test files found matching the provided patterns.')
+      return false
     }
 
     // Add the expanded patterns to args
-    args.push(...expandedPatterns);
+    args.push(...expandedPatterns)
 
     // Add options
     if (options.filter) {
-      args.push('--pattern', options.filter);
+      args.push('--pattern', options.filter)
     }
 
     if (options.timeout) {
-      args.push('--timeout', options.timeout.toString());
+      args.push('--timeout', options.timeout.toString())
     }
 
     // Handle reporter options correctly
@@ -86,74 +90,77 @@ async function runTests(
     if (options.reporter && options.reporter !== 'default') {
       if (options.reporter === 'junit') {
         // Create a temp file for junit output
-        const junitOutputFile = path.join(os.tmpdir(), `stx-test-report-${Date.now()}.xml`);
-        args.push('--reporter', options.reporter);
-        args.push('--reporter-outfile', junitOutputFile);
-      } else {
-        console.warn(`Warning: Reporter '${options.reporter}' is not supported. Using default reporter.`);
+        const junitOutputFile = path.join(os.tmpdir(), `stx-test-report-${Date.now()}.xml`)
+        args.push('--reporter', options.reporter)
+        args.push('--reporter-outfile', junitOutputFile)
+      }
+      else {
+        console.warn(`Warning: Reporter '${options.reporter}' is not supported. Using default reporter.`)
       }
     }
 
     if (options.coverage) {
-      args.push('--coverage');
+      args.push('--coverage')
     }
 
     if (options.watch) {
-      args.push('--watch');
+      args.push('--watch')
     }
 
     // Add happy-dom for DOM environment
-    args.push('--preload', path.join(__dirname, '../happy-dom.ts'));
+    args.push('--preload', path.join(__dirname, '../happy-dom.ts'))
 
     // Add environment variables for STX test context
     const env = {
       ...process.env,
       STX_TEST_MODE: 'true',
       STX_TEST_UI: options.ui ? 'true' : 'false',
-      STX_TEST_VERBOSE: options.verbose ? 'true' : 'false'
-    };
+      STX_TEST_VERBOSE: options.verbose ? 'true' : 'false',
+    }
 
     // Build the full command
-    const command = 'bun';
+    const command = 'bun'
 
     if (options.verbose) {
-      console.log(`Running: ${command} ${args.join(' ')}`);
+      console.log(`Running: ${command} ${args.join(' ')}`)
     }
 
     // Create timestamp for test timing
-    const startTime = performance.now();
+    const startTime = performance.now()
 
     // Execute the command
     const child = spawn(command, args, {
       stdio: 'inherit',
       shell: false,
-      env
-    });
+      env,
+    })
 
     return new Promise((resolve) => {
       child.on('close', (code) => {
-        const endTime = performance.now();
-        const duration = ((endTime - startTime) / 1000).toFixed(2);
+        const endTime = performance.now()
+        const duration = ((endTime - startTime) / 1000).toFixed(2)
 
         if (code === 0) {
           // console.log(`✓ Tests completed successfully in ${duration}s`);
-          resolve(true);
-        } else {
-          // console.error(`✗ Tests failed with code ${code} after ${duration}s`);
-          resolve(false);
+          resolve(true)
         }
-      });
+        else {
+          // console.error(`✗ Tests failed with code ${code} after ${duration}s`);
+          resolve(false)
+        }
+      })
 
       // Handle process interruption
       process.on('SIGINT', () => {
-        console.log('\nTest run interrupted');
-        child.kill('SIGINT');
-        process.exit(1);
-      });
-    });
-  } catch (error) {
-    console.error('Error running tests:', error instanceof Error ? error.message : String(error));
-    return false;
+        console.log('\nTest run interrupted')
+        child.kill('SIGINT')
+        process.exit(1)
+      })
+    })
+  }
+  catch (error) {
+    console.error('Error running tests:', error instanceof Error ? error.message : String(error))
+    return false
   }
 }
 
@@ -199,18 +206,24 @@ if (isDirectMode) {
       options.watch = false
     }
     else if (arg === '--highlight-theme' && i + 1 < process.argv.length) {
-      if (!options.markdown) options.markdown = {};
-      if (!options.markdown.syntaxHighlighting) options.markdown.syntaxHighlighting = {};
+      if (!options.markdown)
+        options.markdown = {}
+      if (!options.markdown.syntaxHighlighting)
+        options.markdown.syntaxHighlighting = {}
       options.markdown.syntaxHighlighting.defaultTheme = process.argv[++i] as SyntaxHighlightTheme
     }
     else if (arg === '--no-highlight') {
-      if (!options.markdown) options.markdown = {};
-      if (!options.markdown.syntaxHighlighting) options.markdown.syntaxHighlighting = {};
+      if (!options.markdown)
+        options.markdown = {}
+      if (!options.markdown.syntaxHighlighting)
+        options.markdown.syntaxHighlighting = {}
       options.markdown.syntaxHighlighting.enabled = false
     }
     else if (arg === '--no-highlight-unknown') {
-      if (!options.markdown) options.markdown = {};
-      if (!options.markdown.syntaxHighlighting) options.markdown.syntaxHighlighting = {};
+      if (!options.markdown)
+        options.markdown = {}
+      if (!options.markdown.syntaxHighlighting)
+        options.markdown.syntaxHighlighting = {}
       options.markdown.syntaxHighlighting.highlightUnknownLanguages = false
     }
     else if (arg === '--no-cache') {
@@ -549,14 +562,16 @@ else {
         console.log('Building STX files...')
 
         // Convert entrypoints to an array if it's a string
-        let entrypointArray: string[] = [];
+        let entrypointArray: string[] = []
         if (typeof entrypoints === 'string') {
           // It's a single path
-          entrypointArray = [entrypoints];
-        } else if (Array.isArray(entrypoints)) {
-          entrypointArray = entrypoints;
-        } else {
-          entrypointArray = [];
+          entrypointArray = [entrypoints]
+        }
+        else if (Array.isArray(entrypoints)) {
+          entrypointArray = entrypoints
+        }
+        else {
+          entrypointArray = []
         }
 
         if (entrypointArray.length === 0) {
@@ -594,18 +609,22 @@ else {
 
               if (stxFiles.length === 0) {
                 console.warn(`Warning: No .stx files found matching pattern: ${entrypoint}`)
-              } else {
+              }
+              else {
                 console.log(`Found ${stxFiles.length} STX ${stxFiles.length === 1 ? 'file' : 'files'} matching ${entrypoint}`)
                 expandedFiles.push(...stxFiles)
               }
-            } catch (error) {
+            }
+            catch (error) {
               console.error(`Error expanding glob pattern ${entrypoint}:`, error)
               process.exit(1)
             }
-          } else if (entrypoint.endsWith('.stx')) {
+          }
+          else if (entrypoint.endsWith('.stx')) {
             // Add .stx file directly
             expandedFiles.push(entrypoint)
-          } else {
+          }
+          else {
             console.warn(`Warning: Skipping non-STX file: ${entrypoint}`)
           }
         }
@@ -666,7 +685,7 @@ else {
 
             const result: BuildResult = {
               inputFile: relativePath,
-              otherOutputs: otherOutputs.map(o => o.path)
+              otherOutputs: otherOutputs.map(o => o.path),
             }
 
             if (htmlOutput) {
@@ -680,7 +699,7 @@ else {
 
               // Find JS files referenced in the HTML
               const scriptSources = scriptMatches
-                .map(script => {
+                .map((script) => {
                   const srcMatch = script.match(/src="([^"]+)"/)
                   return srcMatch ? srcMatch[1] : null
                 })
@@ -706,7 +725,7 @@ else {
                   // Execute the script to extract variables
                   try {
                     // Create a function to evaluate the script and extract variables
-                    const evalFn = new Function(scriptContent + `
+                    const evalFn = new Function(`${scriptContent}
                       // Return all variables defined in this scope
                       return {
                         name: typeof name !== 'undefined' ? name : undefined,
@@ -726,7 +745,7 @@ else {
                     let processedHtml = htmlContent
 
                     // Handle known complex patterns like the items.map() specifically
-                    const itemsMapRegex = /\{items\.map\(item\s*=>\s*`[\s\S]*?<li>\{item\}<\/li>[\s\S]*?`\)\.join\(['"]*['"]*\)\}/g
+                    const itemsMapRegex = /\{items\.map\(item\s*=>\s*`[\s\S]*?<li>\{item\}<\/li>[\s\S]*?`\)\.join\(['"]*\)\}/g
 
                     // Replace items.map with the actual rendered list items
                     processedHtml = processedHtml.replace(itemsMapRegex, () => {
@@ -749,7 +768,8 @@ else {
                         }
 
                         return renderedItems
-                      } catch (err) {
+                      }
+                      catch (err) {
                         if (options.verbose) {
                           console.warn(`    Warning: Failed to render items.map(): ${err}`)
                         }
@@ -758,7 +778,7 @@ else {
                     })
 
                     // Process other simple expressions like {name} and {count}
-                    processedHtml = processedHtml.replace(/\{([^{}]+?)\}/g, (match, expr) => {
+                    processedHtml = processedHtml.replace(/\{([^{}]+)\}/g, (match, expr) => {
                       // Skip if it looks like a complex expression
                       if (expr.includes('.map(') || expr.includes('.join(')) {
                         return match
@@ -772,7 +792,8 @@ else {
 
                         // Return the original expression if we can't evaluate it
                         return match
-                      } catch (err) {
+                      }
+                      catch (err) {
                         if (options.verbose) {
                           console.warn(`    Warning: Error processing expression ${expr}: ${err}`)
                         }
@@ -786,13 +807,15 @@ else {
                     if (options.verbose) {
                       console.log(`    Processed expressions in HTML output`)
                     }
-                  } catch (scriptError) {
+                  }
+                  catch (scriptError) {
                     if (options.verbose) {
                       console.warn(`    Warning: Could not extract variables from script: ${scriptError}`)
                     }
                   }
                 }
-              } catch (processError) {
+              }
+              catch (processError) {
                 if (options.verbose) {
                   console.warn(`    Warning: Could not process expressions in HTML: ${processError}`)
                 }
@@ -812,11 +835,15 @@ else {
 
             if (options.verbose) {
               console.log(`  Success: ${relativePath}`)
-              if (htmlOutput) console.log(`    HTML: ${path.basename(htmlOutput.path)}`)
-              if (jsOutputs.length > 0) console.log(`    JS: ${jsOutputs.map(o => path.basename(o.path)).join(', ')}`)
-              if (otherOutputs.length > 0) console.log(`    Other: ${otherOutputs.length} file(s)`)
+              if (htmlOutput)
+                console.log(`    HTML: ${path.basename(htmlOutput.path)}`)
+              if (jsOutputs.length > 0)
+                console.log(`    JS: ${jsOutputs.map(o => path.basename(o.path)).join(', ')}`)
+              if (otherOutputs.length > 0)
+                console.log(`    Other: ${otherOutputs.length} file(s)`)
             }
-          } catch (error) {
+          }
+          catch (error) {
             console.error(`Error building ${relativePath}:`, error)
           }
         }
@@ -861,7 +888,8 @@ else {
 
                 if (fs.existsSync(tempChunkPath)) {
                   chunksToCopy.set(srcFileName, tempChunkPath)
-                } else if (options.verbose) {
+                }
+                else if (options.verbose) {
                   console.warn(`    Warning: Referenced chunk file not found: ${tempChunkPath}`)
                 }
               }
@@ -882,7 +910,8 @@ else {
                   console.log(`    Copied chunk: ${path.relative(outputDir, targetChunkPath)}`)
                 }
               }
-            } else {
+            }
+            else {
               // No chunks, just copy the HTML file
               fs.copyFileSync(result.outputHtml, targetHtmlPath)
             }
@@ -909,7 +938,8 @@ else {
         // Clean up temporary directory
         try {
           fs.rmSync(tempDir, { recursive: true, force: true })
-        } catch (error) {
+        }
+        catch (error) {
           console.warn('Warning: Failed to clean up temporary directory')
         }
 
@@ -917,7 +947,7 @@ else {
         console.log(`✓ Build successful! Built ${successCount} STX ${successCount === 1 ? 'file' : 'files'} with ${copiedFilesCount} output ${copiedFilesCount === 1 ? 'file' : 'files'}`)
 
         // Track total script/chunk count for reporting
-        let totalChunkCount = 0;
+        let totalChunkCount = 0
 
         if (results.length > 0 && results.length <= 10) {
           console.log('\nGenerated files:')
@@ -935,13 +965,13 @@ else {
 
             // Report chunk files
             if (result.scriptSources && result.scriptSources.length > 0) {
-              totalChunkCount += result.scriptSources.length;
+              totalChunkCount += result.scriptSources.length
               console.log(`    Chunks: ${result.scriptSources.length} chunk file(s)`)
 
               // Show detailed chunk info if verbose
               if (options.verbose) {
                 for (const src of result.scriptSources) {
-                  const chunkName = path.basename(src);
+                  const chunkName = path.basename(src)
                   console.log(`      - ${path.join(inputDir, chunkName)}`)
                 }
               }
@@ -963,12 +993,13 @@ else {
 
           // Get directories to watch (parent directories of each STX file)
           const watchDirs = new Set(
-            expandedFiles.map(file => path.dirname(path.resolve(file)))
+            expandedFiles.map(file => path.dirname(path.resolve(file))),
           )
 
           for (const dir of watchDirs) {
             fs.watch(dir, { recursive: true }, async (eventType, filename) => {
-              if (!filename) return
+              if (!filename)
+                return
 
               if (filename.endsWith('.stx') || filename.endsWith('.js') || filename.endsWith('.ts')) {
                 console.log(`\nFile changed: ${filename}, rebuilding...`)
@@ -979,8 +1010,8 @@ else {
 
                 // Find file(s) to rebuild
                 const filesToRebuild = filename.endsWith('.stx')
-                  ? [relativeChanged]  // If .stx file changed, rebuild just that file
-                  : expandedFiles.filter(f => {  // If .js/.ts changed, rebuild any STX file in same directory
+                  ? [relativeChanged] // If .stx file changed, rebuild just that file
+                  : expandedFiles.filter((f) => { // If .js/.ts changed, rebuild any STX file in same directory
                       const fileDir = path.dirname(path.resolve(f))
                       return fileDir === dir
                     })
@@ -1012,10 +1043,12 @@ else {
 
                     if (buildResult.success) {
                       console.log(`  ✓ Rebuilt ${file}`)
-                    } else {
+                    }
+                    else {
                       console.error(`  ✗ Failed to rebuild ${file}`)
                     }
-                  } catch (error) {
+                  }
+                  catch (error) {
                     console.error(`Error rebuilding ${file}:`, error)
                   }
                 }
@@ -1052,39 +1085,40 @@ else {
     .example('stx test --reporter junit')
     .action(async (patterns: string[], options: TestCommandOptions) => {
       try {
-        console.log(`\x1B[1mstx test\x1B[0m \x1B[2mv${version} (${gitHash})\x1B[0m`);
+        console.log(`\x1B[1mstx test\x1B[0m \x1B[2mv${version} (${gitHash})\x1B[0m`)
 
         // Convert patterns to array if it's a string
-        const patternArray = typeof patterns === 'string' ? [patterns] : patterns || [];
+        const patternArray = typeof patterns === 'string' ? [patterns] : patterns || []
 
         // Default to finding all test files if no patterns specified
         if (patternArray.length === 0) {
           // Common test file patterns
-          patternArray.push('**/*.test.ts', '**/*.test.js', '**/*.spec.ts', '**/*.spec.js');
+          patternArray.push('**/*.test.ts', '**/*.test.js', '**/*.spec.ts', '**/*.spec.js')
         }
 
         if (options.verbose) {
-          console.log('Test patterns:', patternArray);
+          console.log('Test patterns:', patternArray)
           console.log('Options:', JSON.stringify({
             watch: options.watch || false,
             filter: options.filter || 'none',
             reporter: options.reporter || 'default',
             timeout: options.timeout || 5000,
             coverage: options.coverage || false,
-            ui: options.ui || false
-          }, null, 2));
+            ui: options.ui || false,
+          }, null, 2))
         }
 
         // Run tests with provided patterns and options
-        const success = await runTests(patternArray, options);
+        const success = await runTests(patternArray, options)
 
         // Exit with appropriate code based on test results
         if (!success && !options.watch) {
-          process.exit(1);
+          process.exit(1)
         }
-      } catch (error) {
-        console.error('Error running tests:', error);
-        process.exit(1);
+      }
+      catch (error) {
+        console.error('Error running tests:', error)
+        process.exit(1)
       }
     })
 
@@ -1108,7 +1142,8 @@ else {
           console.log(`\n✨ Successfully created file: ${file}`)
           console.log(`\nTo view it in the development server:`)
           console.log(`  stx dev ${file}\n`)
-        } else {
+        }
+        else {
           console.error(`\n❌ Failed to create file: ${file}`)
           process.exit(1)
         }

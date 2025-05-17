@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { spawn } from 'node:child_process'
-import path from 'node:path'
 import fs from 'node:fs'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 // Get the current directory
@@ -70,23 +70,23 @@ describe('STX CLI init command', () => {
     // Clean up test files after each test
     if (fs.existsSync(TEST_DIR)) {
       // Remove all files and directories except the test template
-      const templatePath = path.join(TEST_DIR, 'cli-template.stx');
+      const templatePath = path.join(TEST_DIR, 'cli-template.stx')
 
       // Save the template content
-      let templateContent = '';
+      let templateContent = ''
       if (fs.existsSync(templatePath)) {
-        templateContent = fs.readFileSync(templatePath, 'utf-8');
+        templateContent = fs.readFileSync(templatePath, 'utf-8')
       }
 
       // Remove everything
-      fs.rmSync(TEST_DIR, { recursive: true, force: true });
+      fs.rmSync(TEST_DIR, { recursive: true, force: true })
 
       // Recreate the directory
-      fs.mkdirSync(TEST_DIR, { recursive: true });
+      fs.mkdirSync(TEST_DIR, { recursive: true })
 
       // Restore the template
       if (templateContent) {
-        fs.writeFileSync(templatePath, templateContent);
+        fs.writeFileSync(templatePath, templateContent)
       }
     }
   })

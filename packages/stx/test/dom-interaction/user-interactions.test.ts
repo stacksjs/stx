@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import stxPlugin from '../../src/index'
 
 // Setup test directories
 const TEST_DIR = import.meta.dir
@@ -265,10 +264,10 @@ describe('DOM User Interaction Tests', () => {
   </div>
 </body>
 </html>
-    `;
+    `
 
     // Set HTML in document
-    document.body.innerHTML = html;
+    document.body.innerHTML = html
 
     // Verify the title was rendered correctly
     const title = document.querySelector('h1')
@@ -377,10 +376,10 @@ describe('DOM User Interaction Tests', () => {
   </div>
 </body>
 </html>
-    `;
+    `
 
     // Set HTML in document
-    document.body.innerHTML = html;
+    document.body.innerHTML = html
 
     // Get form elements
     const form = document.getElementById('user-form') as HTMLFormElement
@@ -480,10 +479,10 @@ describe('DOM User Interaction Tests', () => {
   </form>
 </body>
 </html>
-    `;
+    `
 
     // Set HTML in document
-    document.body.innerHTML = html;
+    document.body.innerHTML = html
 
     // Test dynamic DOM manipulation by adding new elements
     const form = document.getElementById('user-form') as HTMLFormElement

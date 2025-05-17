@@ -50,7 +50,8 @@ export async function initFile(fileName: string = 'index.stx', options: InitOpti
 
       templateContent = fs.readFileSync(templatePath, 'utf-8')
       console.log(`Using template from ${options.template}`)
-    } else {
+    }
+    else {
       // Use default template
       templateContent = getDefaultTemplate()
     }
