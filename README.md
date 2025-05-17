@@ -941,8 +941,7 @@ We would like to extend our thanks to the following sponsors for funding Stacks 
 
 Many thanks to the following core technologies & people who have contributed to this package:
 
-- [Laravel](https://laravel.com)
-- [Anthony Fu](https://github.com/antfu)
+- [Laravel Blade](https://laravel.com) - for the initial inspiration
 - [Chris Breuer](https://github.com/chrisbbreuer)
 - [All Contributors](../../contributors)
 
