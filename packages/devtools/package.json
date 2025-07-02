@@ -6,12 +6,16 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "bun run devtools-server.ts",
-    "build": "bun build ./src/index.ts --outdir ./dist"
+    "build": "bun build ./src/index.ts --outdir ./dist",
+    "test": "bun test --preload ./happy-dom.ts",
+    "test:watch": "bun test --watch --preload ./happy-dom.ts",
+    "test:coverage": "bun test --coverage --preload ./happy-dom.ts"
   },
   "dependencies": {
     "bun-plugin-stx": "workspace:*"
   },
   "devDependencies": {
-    "unocss": "^66.3.2"
+    "unocss": "^66.3.2",
+    "happy-dom": "^12.10.3"
   }
 }
