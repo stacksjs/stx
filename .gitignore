@@ -21,3 +21,9 @@ tsconfig.tsbuildinfo
 /packages/stx/packages/stx/test/out
 /packages/stx/test/streaming/out
 /test-build-output
+
+packages/bun-plugin/.stx/
+
+TASKS.md
+
+docs/.vitepress/cache/
