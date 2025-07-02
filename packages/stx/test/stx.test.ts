@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import stxPlugin from '../src/index'
+import stxPlugin from 'bun-plugin-stx'
 
 // Import a11y tests
 import './a11y/a11y.test'

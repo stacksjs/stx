@@ -177,10 +177,54 @@ export async function fileExists(filePath: string): Promise<boolean> {
  * Extract variables from script content
  */
 export async function extractVariables(scriptContent: string, context: Record<string, any>, filePath: string): Promise<void> {
+  // First try to convert ESM exports to CommonJS if needed
+  let processedScript = scriptContent
+  if (scriptContent.includes('export ')) {
+    // Convert ESM exports to CommonJS for execution
+    // Handle multi-line exports by processing them more carefully
+    
+    // 1. Handle export const/let/var with complex values (objects, arrays, etc.)
+    processedScript = processedScript
+      .replace(/export\s+const\s+(\w+)\s*=\s*([\s\S]*?);(?=\s*(?:export|$|<\/script>))/g, 'const $1 = $2; module.exports.$1 = $1;')
+      .replace(/export\s+let\s+(\w+)\s*=\s*([\s\S]*?);(?=\s*(?:export|$|<\/script>))/g, 'let $1 = $2; module.exports.$1 = $1;')
+      .replace(/export\s+var\s+(\w+)\s*=\s*([\s\S]*?);(?=\s*(?:export|$|<\/script>))/g, 'var $1 = $2; module.exports.$1 = $1;')
+    
+    // 2. Handle export function with proper multi-line support
+    processedScript = processedScript
+      .replace(/export\s+function\s+(\w+)\s*\(([^)]*)\)\s*\{([\s\S]*?)\}/g, 'function $1($2) {$3} module.exports.$1 = $1;')
+    
+    // 3. Handle export default
+    processedScript = processedScript
+      .replace(/export\s+default\s+([\s\S]+?)(?=\s*(?:export|$|<\/script>))/g, 'module.exports.default = $1;')
+  }
+
+  // Add a comprehensive approach to collect and export all variables/functions at the end
+  // Instead of inline exports that can interfere with function bodies
+  const exportStatements: string[] = []
+  
+  // First, identify non-exported variables
+  const varMatches = processedScript.matchAll(/(?<!export\s+)(const|let|var)\s+(\w+)\s*=/g)
+  for (const match of varMatches) {
+    const varName = match[2]
+    exportStatements.push(`if (typeof module !== "undefined" && module.exports && typeof ${varName} !== "undefined") { module.exports.${varName} = ${varName}; }`)
+  }
+  
+  // Then, identify non-exported functions
+  const funcMatches = processedScript.matchAll(/(?<!export\s+)function\s+(\w+)\s*\(/g)
+  for (const match of funcMatches) {
+    const funcName = match[1]
+    exportStatements.push(`if (typeof module !== "undefined" && module.exports && typeof ${funcName} !== "undefined") { module.exports.${funcName} = ${funcName}; }`)
+  }
+  
+  // Add all export statements at the end of the script
+  if (exportStatements.length > 0) {
+    processedScript += '\n' + exportStatements.join('\n')
+  }
+  
   // Execute script content in module context for proper variable extraction (CommonJS)
   try {
     // eslint-disable-next-line no-new-func
-    const scriptFn = new Function('module', 'exports', scriptContent)
+    const scriptFn = new Function('module', 'exports', processedScript)
     const module = { exports: {} }
     scriptFn(module, module.exports)
 
@@ -276,11 +320,16 @@ export async function extractVariables(scriptContent: string, context: Record<st
 
   // Legacy approach: try to extract variables from direct script execution
   try {
+    // Use processed script (without exports) for direct execution
+    const directScript = processedScript
+      .replace(/module\.exports\.\w+\s*=\s*\w+;/g, '') // Remove module.exports assignments
+      .replace(/module\.exports\.default\s*=\s*[^;]+;/g, '') // Remove default exports
+    
     // eslint-disable-next-line no-new-func
     const directFn = new Function(`
       // Execute script content directly but protect against module not defined
       try {
-        ${scriptContent}
+        ${directScript}
       } catch (e) {
         // Ignore module not defined errors
         if (!e.toString().includes('module is not defined')) {

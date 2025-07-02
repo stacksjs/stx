@@ -399,19 +399,19 @@ describe('DOM User Interaction Tests', () => {
 
     // Select a role option
     roleSelect.value = 'developer'
-    roleSelect.dispatchEvent(new Event('change'))
+    roleSelect.__dispatchEvent_safe(new Event('change'))
 
     // Check some interests
     programmingCheckbox.checked = true
-    programmingCheckbox.dispatchEvent(new Event('change'))
+    programmingCheckbox.__dispatchEvent_safe(new Event('change'))
     designCheckbox.checked = true
-    designCheckbox.dispatchEvent(new Event('change'))
+    designCheckbox.__dispatchEvent_safe(new Event('change'))
 
     // Select experience level
     const intermediateRadio = Array.from(experienceRadios).find(radio => radio.value === 'intermediate')
     if (intermediateRadio) {
       intermediateRadio.checked = true
-      intermediateRadio.dispatchEvent(new Event('change'))
+      intermediateRadio.__dispatchEvent_safe(new Event('change'))
     }
 
     // Verify the form values before submission
@@ -438,7 +438,7 @@ describe('DOM User Interaction Tests', () => {
     })
 
     // Submit the form
-    form.dispatchEvent(new Event('submit'))
+    form.__dispatchEvent_safe(new Event('submit'))
 
     // Verify success message is now visible
     expect(successMessage.classList.contains('active')).toBe(true)

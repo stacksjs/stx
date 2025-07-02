@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import stxPlugin from '../../src/index'
+import stxPlugin from 'bun-plugin-stx'
 
 // DOM is already registered by the global setup
 

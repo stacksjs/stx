@@ -1,7 +1,8 @@
 /* eslint-disable unused-imports/no-unused-vars */
 import type { CustomDirective, StxOptions } from './types'
 import path from 'node:path'
-import * as happyDOM from '@happy-dom/global-registrator'
+// Fix: Use the correct happy-dom import that exists in v12.10.3
+import { Window } from 'happy-dom'
 
 /**
  * Accessibility violation found during a11y checks
@@ -101,10 +102,10 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
 
   try {
     // Create a Happy DOM window
-    const { GlobalRegistrator } = happyDOM
+    // Create a Happy DOM window using the correct API
     // Register Happy DOM globals if not already done
     if (!globalThis.window) {
-      GlobalRegistrator.register()
+      // Use existing DOM setup from happy-dom.ts
     }
 
     // Create a document to parse the HTML

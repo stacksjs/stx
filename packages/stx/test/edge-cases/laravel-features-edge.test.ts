@@ -1,7 +1,7 @@
 import type { StxOptions } from '../../src/types'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import { generateCsrfToken, resetCsrfToken, setCsrfToken, verifyCsrfToken } from '../../src/csrf'
-import stxPlugin from '../../src/index'
+import stxPlugin from 'bun-plugin-stx'
 import { processDirectives } from '../../src/process'
 import { defineRoute, resetRoutes, route } from '../../src/routes'
 import { clearComposers, composer } from '../../src/view-composers'

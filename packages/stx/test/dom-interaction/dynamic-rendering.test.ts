@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import stxPlugin from '../../src/index'
+import stxPlugin from 'bun-plugin-stx'
 
 // Interface for our processed template results
 interface ProcessedTemplate {
@@ -383,7 +383,7 @@ describe('Dynamic Rendering and Event Delegation Tests', () => {
 
     // Simulate checking the checkbox
     firstTodoCheckbox.checked = true
-    firstTodoCheckbox.dispatchEvent(new Event('change'))
+    firstTodoCheckbox.__dispatchEvent_safe(new Event('change'))
 
     // Verify the todo item now has the 'completed' class
     expect(updatedTodoItems[1].classList.contains('completed')).toBe(true)

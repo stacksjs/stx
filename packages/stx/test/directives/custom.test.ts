@@ -1,7 +1,7 @@
 import type { CustomDirective } from '../../src/types'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import path from 'node:path'
-import stxPlugin from '../../src/index'
+import stxPlugin from 'bun-plugin-stx'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
 
 describe('STX Custom Directives', () => {

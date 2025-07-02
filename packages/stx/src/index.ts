@@ -1,5 +1,3 @@
-import { plugin } from 'bun-plugin-stx'
-
 export * from './a11y'
 export * from './animation'
 export * from './assets'
@@ -25,7 +23,6 @@ export * from './streaming'
 export * from './types'
 export * from './utils'
 export * from './web-components'
-export { plugin as stxPlugin } from 'bun-plugin-stx'
 
-// Add default export
-export default plugin
+// Default export for the STX module
+export default {}

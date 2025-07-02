@@ -1,6 +1,6 @@
 import type { StxOptions } from '../../src/types'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import stxPlugin from '../../src/index'
+import stxPlugin from 'bun-plugin-stx'
 import { processDirectives } from '../../src/process'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
 

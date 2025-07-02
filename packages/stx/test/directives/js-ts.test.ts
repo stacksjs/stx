@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import path from 'node:path'
-import stxPlugin from '../../src/index'
+import stxPlugin from 'bun-plugin-stx'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
 
 // Custom helper to create a hardcoded output for the TS test

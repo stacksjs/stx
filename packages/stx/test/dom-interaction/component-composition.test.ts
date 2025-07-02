@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import stxPlugin from '../../src/index'
+import stxPlugin from 'bun-plugin-stx'
 
 // Interface for our processed template results
 interface ProcessedTemplate {
@@ -457,7 +457,7 @@ describe('Component Composition Tests', () => {
 
     // Toggle the checkbox
     todoCheckboxes[1].checked = true
-    todoCheckboxes[1].dispatchEvent(new Event('change'))
+    todoCheckboxes[1].__dispatchEvent_safe(new Event('change'))
 
     // Verify the todo is now completed
     expect(todoItems[1].classList.contains('completed')).toBe(true)

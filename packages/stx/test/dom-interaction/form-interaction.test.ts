@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import stxPlugin from '../../src/index'
+import stxPlugin from 'bun-plugin-stx'
 
 // Interface for our processed template results
 interface ProcessedTemplate {
@@ -269,7 +269,7 @@ describe('STX Form Interaction Tests', () => {
     })
 
     // Test invalid form submission
-    form.dispatchEvent(new Event('submit'))
+    form.__dispatchEvent_safe(new Event('submit'))
 
     // Check validation errors
     expect(Object.keys(formState.validationErrors).length).toBeGreaterThan(0)
@@ -288,7 +288,7 @@ describe('STX Form Interaction Tests', () => {
     confirmPasswordInput.value = '123456' // Doesn't match
 
     // Submit form again
-    form.dispatchEvent(new Event('submit'))
+    form.__dispatchEvent_safe(new Event('submit'))
 
     // Check validation errors for invalid data
     expect(formState.validationErrors.username).toBe('Username must be at least 3 characters')
@@ -305,7 +305,7 @@ describe('STX Form Interaction Tests', () => {
     interestDesignCheckbox.checked = true
 
     // Submit form with valid data
-    form.dispatchEvent(new Event('submit'))
+    form.__dispatchEvent_safe(new Event('submit'))
 
     // Check validation passes
     expect(Object.keys(formState.validationErrors).length).toBe(0)

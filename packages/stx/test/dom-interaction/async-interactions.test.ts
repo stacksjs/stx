@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import stxPlugin from '../../src/index'
+import stxPlugin from 'bun-plugin-stx'
 
 // Interface for our processed template results
 interface ProcessedTemplate {
@@ -718,7 +718,7 @@ describe('Async DOM Interactions Tests', () => {
 
     // Test 1: Type invalid username and check validation
     usernameInput.value = 'ad'
-    usernameInput.dispatchEvent(new Event('blur'))
+    usernameInput.__dispatchEvent_safe(new Event('blur'))
 
     // Wait for validation
     await new Promise(resolve => setTimeout(resolve, 20))
@@ -730,7 +730,7 @@ describe('Async DOM Interactions Tests', () => {
 
     // Test 2: Type taken username
     usernameInput.value = 'admin'
-    usernameInput.dispatchEvent(new Event('blur'))
+    usernameInput.__dispatchEvent_safe(new Event('blur'))
 
     // Wait for validation
     await new Promise(resolve => setTimeout(resolve, 20))
@@ -741,7 +741,7 @@ describe('Async DOM Interactions Tests', () => {
 
     // Test 3: Type valid username
     usernameInput.value = 'testuser'
-    usernameInput.dispatchEvent(new Event('blur'))
+    usernameInput.__dispatchEvent_safe(new Event('blur'))
 
     // Wait for validation
     await new Promise(resolve => setTimeout(resolve, 20))
@@ -752,7 +752,7 @@ describe('Async DOM Interactions Tests', () => {
 
     // Test email with invalid domain
     emailInput.value = 'test@invalid.com'
-    emailInput.dispatchEvent(new Event('blur'))
+    emailInput.__dispatchEvent_safe(new Event('blur'))
 
     // Wait for validation
     await new Promise(resolve => setTimeout(resolve, 20))
@@ -764,7 +764,7 @@ describe('Async DOM Interactions Tests', () => {
 
     // Fix email
     emailInput.value = 'test@gmail.com'
-    emailInput.dispatchEvent(new Event('blur'))
+    emailInput.__dispatchEvent_safe(new Event('blur'))
 
     // Wait for validation
     await new Promise(resolve => setTimeout(resolve, 20))
@@ -774,7 +774,7 @@ describe('Async DOM Interactions Tests', () => {
 
     // Test password fields
     passwordInput.value = '123'
-    passwordInput.dispatchEvent(new Event('blur'))
+    passwordInput.__dispatchEvent_safe(new Event('blur'))
 
     // Verify password error
     const passwordError = document.getElementById('password-error') as HTMLDivElement
@@ -782,14 +782,14 @@ describe('Async DOM Interactions Tests', () => {
 
     // Fix password
     passwordInput.value = 'password123'
-    passwordInput.dispatchEvent(new Event('blur'))
+    passwordInput.__dispatchEvent_safe(new Event('blur'))
 
     // Verify valid password
     expect(passwordError.classList.contains('active')).toBe(false)
 
     // Test password mismatch
     confirmPasswordInput.value = 'password'
-    confirmPasswordInput.dispatchEvent(new Event('blur'))
+    confirmPasswordInput.__dispatchEvent_safe(new Event('blur'))
 
     // Verify confirm password error
     const confirmPasswordError = document.getElementById('confirm-password-error') as HTMLDivElement
@@ -798,7 +798,7 @@ describe('Async DOM Interactions Tests', () => {
 
     // Fix confirm password
     confirmPasswordInput.value = 'password123'
-    confirmPasswordInput.dispatchEvent(new Event('blur'))
+    confirmPasswordInput.__dispatchEvent_safe(new Event('blur'))
 
     // Verify valid confirm password
     expect(confirmPasswordError.classList.contains('active')).toBe(false)

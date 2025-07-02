@@ -73,7 +73,7 @@ describe('STX with Bun.serve direct imports', () => {
     // Create main app file
     await Bun.write(APP_FILE, `
       import { serve } from "bun";
-      import stxPlugin from "../../src";
+      import stxPlugin from "bun-plugin-stx";
       import path from "path";
 
       // Create HTML files from STX templates

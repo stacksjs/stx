@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import stxPlugin from '../../src/index'
+import stxPlugin from 'bun-plugin-stx'
 
 // Setup test directories
 const TEST_DIR = import.meta.dir
@@ -137,7 +137,7 @@ describe('STX DOM Interaction Tests', () => {
 
     // Change select value
     select.value = 'Item 3'
-    select.dispatchEvent(new Event('change'))
+    select.__dispatchEvent_safe(new Event('change'))
 
     // Add click event handler to button
     button.addEventListener('click', () => {

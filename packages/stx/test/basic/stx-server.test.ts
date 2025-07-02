@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import stxPlugin from '../../src/index'
+import stxPlugin from 'bun-plugin-stx'
 
 // DOM is already registered by the global setup
 
@@ -231,8 +231,13 @@ describe('STX with Bun.serve Routes', () => {
         button.textContent = 'Clicked!'
       })
 
-      // Dispatch click event
-      button.dispatchEvent(new Event('click'))
+      // Dispatch click event (with error handling for happy-dom readonly property issue)
+      try {
+        button.__dispatchEvent_safe(new Event('click'))
+      } catch (error) {
+        // Handle happy-dom readonly property issue by triggering click directly
+        (button as HTMLElement).click()
+      }
 
       expect(clicked).toBe(true)
       expect(button.textContent).toBe('Clicked!')

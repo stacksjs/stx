@@ -233,7 +233,10 @@ async function processOtherDirectives(
   // Process includes (@include, @component, etc.)
   output = await processIncludes(output, context, filePath, options, dependencies)
 
-  // Process conditionals (@if, @unless, etc.)
+  // Process loops (@foreach, @for, etc.) - BEFORE conditionals to handle nested scope properly
+  output = processLoops(output, context, filePath)
+
+  // Process conditionals (@if, @unless, etc.) - AFTER loops to allow loop variables in scope
   output = processConditionals(output, context, filePath)
 
   // Process isset/empty directives
@@ -241,9 +244,6 @@ async function processOtherDirectives(
 
   // Process env directive
   output = processEnvDirective(output, context)
-
-  // Process loops (@foreach, @for, etc.)
-  output = processLoops(output, context, filePath)
 
   // Process form directives
   output = processFormDirectives(output, context)
