@@ -16,6 +16,6 @@
   },
   "devDependencies": {
     "unocss": "^66.3.2",
-    "happy-dom": "^12.10.3"
+    "happy-dom": "^15.10.2"
   }
 }
