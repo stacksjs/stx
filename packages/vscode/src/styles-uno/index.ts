@@ -11,6 +11,10 @@ import { getConfig } from './configs'
 import { ContextLoader } from './contextLoader'
 import { commands as commandNames, displayName, version } from './generated/meta'
 import { log } from './log'
+import { defineConfig } from '@unocss/core'
+import { rules } from './rules'
+import { shortcuts } from './shortcuts'
+import config from './config'
 
 const skipMap = {
   '<!-- @unocss-skip -->': ['<!-- @unocss-skip-start -->\n', '\n<!-- @unocss-skip-end -->'],
@@ -168,3 +172,20 @@ async function rootRegister(
 }
 
 export function deactivate() { }
+
+export default defineConfig({
+  rules,
+  shortcuts,
+  theme: {
+    colors: {
+      primary: '#3b82f6',
+      secondary: '#6b7280',
+      success: '#10b981',
+      warning: '#f59e0b',
+      error: '#ef4444',
+      info: '#3b82f6',
+    },
+  },
+})
+
+export { config as default, rules, shortcuts }

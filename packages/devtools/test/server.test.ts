@@ -4,6 +4,7 @@ import path from 'node:path'
 
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp-server')
+const PACKAGE_ROOT = path.resolve(TEST_DIR, '..')
 
 describe('DEVTOOLS: Server Functionality Tests', () => {
   beforeEach(async () => {
@@ -15,7 +16,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
   })
 
   test('should have devtools server module', async () => {
-    const serverPath = 'devtools-server.ts'
+    const serverPath = path.join(PACKAGE_ROOT, 'devtools-server.ts')
     const exists = await Bun.file(serverPath).exists()
     expect(exists).toBe(true)
     
@@ -25,7 +26,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
   })
 
   test('should export server functionality', async () => {
-    const serverPath = 'devtools-server.ts'
+    const serverPath = path.join(PACKAGE_ROOT, 'devtools-server.ts')
     const content = await Bun.file(serverPath).text()
     
     // Check for server setup code
@@ -33,7 +34,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
   })
 
   test('should have main index module', async () => {
-    const indexPath = 'src/index.ts'
+    const indexPath = path.join(PACKAGE_ROOT, 'src/index.ts')
     const exists = await Bun.file(indexPath).exists()
     expect(exists).toBe(true)
     
@@ -42,7 +43,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
   })
 
   test('should validate package.json configuration', async () => {
-    const packagePath = 'package.json'
+    const packagePath = path.join(PACKAGE_ROOT, 'package.json')
     const exists = await Bun.file(packagePath).exists()
     expect(exists).toBe(true)
     
@@ -55,7 +56,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
   })
 
   test('should have valid STX configuration', async () => {
-    const configPath = 'src/stx.config.ts'
+    const configPath = path.join(PACKAGE_ROOT, 'src/stx.config.ts')
     const exists = await Bun.file(configPath).exists()
     expect(exists).toBe(true)
     
@@ -71,7 +72,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
       'public/performance.html',
       'public/templates.html',
       'public/config.html'
-    ]
+    ].map(asset => path.join(PACKAGE_ROOT, asset))
     
     for (const assetPath of publicAssets) {
       const exists = await Bun.file(assetPath).exists()
@@ -91,7 +92,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
       'public/icons/document.svg',
       'public/icons/settings.svg',
       'public/icons/assembly-cluster.svg'
-    ]
+    ].map(icon => path.join(PACKAGE_ROOT, icon))
     
     for (const iconPath of iconPaths) {
       const exists = await Bun.file(iconPath).exists()
@@ -100,7 +101,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
   })
 
   test('should have proper TypeScript configuration', async () => {
-    const tsconfigPath = 'tsconfig.json'
+    const tsconfigPath = path.join(PACKAGE_ROOT, 'tsconfig.json')
     const exists = await Bun.file(tsconfigPath).exists()
     expect(exists).toBe(true)
     
@@ -112,7 +113,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
   })
 
   test('should validate devtools bundle configuration', async () => {
-    const bunfigPath = 'bunfig.toml'
+    const bunfigPath = path.join(PACKAGE_ROOT, 'bunfig.toml')
     const exists = await Bun.file(bunfigPath).exists()
     expect(exists).toBe(true)
     
@@ -121,7 +122,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
   })
 
   test('should validate UnoCSS configuration', async () => {
-    const unoConfigPath = 'uno.config.ts'
+    const unoConfigPath = path.join(PACKAGE_ROOT, 'uno.config.ts')
     const exists = await Bun.file(unoConfigPath).exists()
     expect(exists).toBe(true)
     
@@ -131,7 +132,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
   })
 
   test('should validate UnoCSS source configuration', async () => {
-    const srcUnoConfigPath = 'src/uno.config.ts'
+    const srcUnoConfigPath = path.join(PACKAGE_ROOT, 'src/uno.config.ts')
     const exists = await Bun.file(srcUnoConfigPath).exists()
     expect(exists).toBe(true)
     
@@ -140,7 +141,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
   })
 
   test('should validate STX type definitions', async () => {
-    const stxTypesPath = 'src/stx.d.ts'
+    const stxTypesPath = path.join(PACKAGE_ROOT, 'src/stx.d.ts')
     const exists = await Bun.file(stxTypesPath).exists()
     expect(exists).toBe(true)
     
@@ -153,7 +154,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
       'public/index.html',
       'public/dashboard.html',
       'public/performance.html'
-    ]
+    ].map(html => path.join(PACKAGE_ROOT, html))
     
     for (const htmlPath of htmlFiles) {
       const content = await Bun.file(htmlPath).text()
@@ -165,13 +166,13 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
   })
 
   test('should validate favicon exists', async () => {
-    const faviconPath = 'public/favicon.ico'
+    const faviconPath = path.join(PACKAGE_ROOT, 'public/favicon.ico')
     const exists = await Bun.file(faviconPath).exists()
     expect(exists).toBe(true)
   })
 
   test('should check for development server setup', async () => {
-    const serverPath = 'devtools-server.ts'
+    const serverPath = path.join(PACKAGE_ROOT, 'devtools-server.ts')
     const content = await Bun.file(serverPath).text()
     
     // Check for server-related code
@@ -179,7 +180,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
   })
 
   test('should validate component integration in views', async () => {
-    const dashboardPath = 'src/views/dashboard.stx'
+    const dashboardPath = path.join(PACKAGE_ROOT, 'src/views/dashboard.stx')
     const content = await Bun.file(dashboardPath).text()
     
     // Check for STX template features
