@@ -1,118 +1,146 @@
-# Install
+# Installation
 
-_This is just an example of the ts-starter docs._
+Getting started with STX is easy. You can install it using your preferred package manager.
 
-Installing `rpx` is easy. Simply pull it in via your package manager of choice, or download the binary directly.
+## Prerequisites
 
-## Package Managers
+- [Bun](https://bun.sh) version 1.0 or higher
+- Node.js 18.0.0 or higher (for npm/yarn/pnpm users)
 
-Choose your package manager of choice:
+## Installation Methods
+
+Choose your package manager:
 
 ::: code-group
 
-```sh [npm]
-npm install --save-dev @stacksjs/rpx
-# npm i -d @stacksjs/rpx
+```sh [bun]
+# Create a new STX project
+bunx create-stx my-project
 
-# or, install globally via
-npm i -g @stacksjs/rpx
+# Or add STX to an existing project
+bun add @stacksjs/stx
 ```
 
-```sh [bun]
-bun install --dev @stacksjs/rpx
-# bun add --dev @stacksjs/rpx
-# bun i -d @stacksjs/rpx
+```sh [npm]
+# Create a new STX project
+npx create-stx my-project
 
-# or, install globally via
-bun add --global @stacksjs/rpx
+# Or add STX to an existing project
+npm install @stacksjs/stx
 ```
 
 ```sh [pnpm]
-pnpm add --save-dev @stacksjs/rpx
-# pnpm i -d @stacksjs/rpx
+# Create a new STX project
+pnpm create stx my-project
 
-# or, install globally via
-pnpm add --global @stacksjs/rpx
+# Or add STX to an existing project
+pnpm add @stacksjs/stx
 ```
 
 ```sh [yarn]
-yarn add --dev @stacksjs/rpx
-# yarn i -d @stacksjs/rpx
+# Create a new STX project
+yarn create stx my-project
 
-# or, install globally via
-yarn global add @stacksjs/rpx
-```
-
-```sh [brew]
-brew install rpx # coming soon
-```
-
-```sh [pkgx]
-pkgx rpx # coming soon
+# Or add STX to an existing project
+yarn add @stacksjs/stx
 ```
 
 :::
 
-Read more about how to use it in the Usage section of the documentation.
+## Project Setup
 
-## Binaries
+After installation, you'll have a new project with the following structure:
 
-Choose the binary that matches your platform and architecture:
-
-::: code-group
-
-```sh [macOS (arm64)]
-# Download the binary
-curl -L https://github.com/stacksjs/rpx/releases/download/v0.9.1/rpx-darwin-arm64 -o rpx
-
-# Make it executable
-chmod +x rpx
-
-# Move it to your PATH
-mv rpx /usr/local/bin/rpx
+```bash
+my-project/
+├── components/        # Reusable UI components
+├── pages/            # Page templates
+├── public/           # Static assets
+├── stx.config.ts     # STX configuration
+├── package.json
+└── README.md
 ```
 
-```sh [macOS (x64)]
-# Download the binary
-curl -L https://github.com/stacksjs/rpx/releases/download/v0.9.1/rpx-darwin-x64 -o rpx
+## Configuration
 
-# Make it executable
-chmod +x rpx
+STX can be configured using `stx.config.ts`:
 
-# Move it to your PATH
-mv rpx /usr/local/bin/rpx
+```ts
+// stx.config.ts
+import { defineConfig } from '@stacksjs/stx'
+
+export default defineConfig({
+  // Project root directory
+  root: '.',
+  
+  // Build output directory
+  outDir: 'dist',
+  
+  // Enable/disable features
+  features: {
+    typescript: true,
+    streaming: true,
+    components: true,
+  },
+  
+  // Plugin configurations
+  plugins: [
+    // Add your plugins here
+  ],
+})
 ```
 
-```sh [Linux (arm64)]
-# Download the binary
-curl -L https://github.com/stacksjs/rpx/releases/download/v0.9.1/rpx-linux-arm64 -o rpx
+## IDE Setup
 
-# Make it executable
-chmod +x rpx
+For the best development experience, we recommend:
 
-# Move it to your PATH
-mv rpx /usr/local/bin/rpx
-```
+1. Install the STX VSCode extension:
+   - Search for "STX" in VSCode extensions
+   - Or install from [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=stacksjs.stx)
 
-```sh [Linux (x64)]
-# Download the binary
-curl -L https://github.com/stacksjs/rpx/releases/download/v0.9.1/rpx-linux-x64 -o rpx
+2. Enable TypeScript support:
+   ```json
+   {
+     "files.associations": {
+       "*.stx": "stx"
+     }
+   }
+   ```
 
-# Make it executable
-chmod +x rpx
+## Development Tools
 
-# Move it to your PATH
-mv rpx /usr/local/bin/rpx
-```
+STX comes with several development tools:
 
-```sh [Windows (x64)]
-# Download the binary
-curl -L https://github.com/stacksjs/rpx/releases/download/v0.9.1/rpx-windows-x64.exe -o rpx.exe
+1. **VSCode Extension**
+   - Syntax highlighting
+   - IntelliSense
+   - Type checking
+   - Component previews
 
-# Move it to your PATH (adjust the path as needed)
-move rpx.exe C:\Windows\System32\rpx.exe
-```
+2. **DevTools**
+   ```bash
+   # Install DevTools
+   bun add -d @stacksjs/devtools
+   
+   # Start development server with DevTools
+   bun run dev
+   ```
 
-::: tip
-You can also find the `rpx` binaries in GitHub [releases](https://github.com/stacksjs/rpx/releases).
-:::
+3. **CLI**
+   ```bash
+   # Create a new component
+   bun stx create component Button
+   
+   # Build for production
+   bun stx build
+   
+   # Start development server
+   bun stx dev
+   ```
+
+## Next Steps
+
+- Read the [Introduction](/intro) to learn about STX's core concepts
+- Check out the [Basic Usage](/usage) guide
+- Explore [Examples](/examples) to see STX in action
+- Join our [Community](/community) for support and discussions

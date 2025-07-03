@@ -91,3 +91,135 @@ Made with 💙
 
 <!-- [codecov-src]: https://img.shields.io/codecov/c/gh/stacksjs/rpx/main?style=flat-square
 [codecov-href]: https://codecov.io/gh/stacksjs/rpx -->
+
+# Introduction to STX
+
+STX is a modern UI engine that combines the elegance of Laravel Blade with the power of Bun. It's designed to make building user interfaces both enjoyable and efficient, with first-class TypeScript support and powerful features out of the box.
+
+## What is STX?
+
+STX is a UI engine that allows you to:
+- Write templates with a clean, familiar syntax
+- Use TypeScript directly in your templates
+- Create reusable components with props and slots
+- Leverage streaming rendering for better performance
+- Build type-safe applications with full IDE support
+
+## Key Features
+
+### 🚀 Performance First
+Built on Bun, STX delivers exceptional performance:
+- Lightning-fast template compilation
+- Minimal runtime overhead
+- Efficient component rendering
+- Smart caching and build optimization
+
+### 💪 Type Safety
+First-class TypeScript support:
+- Full type checking in templates
+- Type-safe props and events
+- IDE autocompletion
+- Error detection at build time
+
+### 🧩 Component System
+Build reusable UI components:
+- Props validation
+- Slots and named slots
+- Component lifecycle hooks
+- Scoped styles
+
+### 🔄 Directives
+Powerful template directives:
+```stx
+@if(user.isAdmin)
+  <admin-panel />
+@else
+  <user-panel />
+@endif
+
+@foreach(items as item)
+  <list-item :data="item" />
+@endforeach
+```
+
+### 🎨 Styling
+Multiple ways to style your components:
+```stx
+<style>
+  .button {
+    @apply bg-blue-500 text-white px-4 py-2 rounded;
+  }
+</style>
+```
+
+### 🛠 Developer Tools
+Comprehensive tooling support:
+- VSCode extension with syntax highlighting and IntelliSense
+- DevTools for debugging and performance monitoring
+- CLI for project scaffolding and build management
+
+## Quick Example
+
+Here's a simple STX component:
+
+```stx
+@ts
+interface ButtonProps {
+  type?: 'primary' | 'secondary'
+  size?: 'sm' | 'md' | 'lg'
+  disabled?: boolean
+}
+@endts
+
+@component('Button', {
+  props: {
+    type: 'primary',
+    size: 'md',
+    disabled: false
+  }
+})
+  <button 
+    class="btn btn-{{ type }} btn-{{ size }}"
+    :disabled="disabled"
+  >
+    <slot></slot>
+  </button>
+
+  <style>
+    .btn {
+      @apply rounded font-medium;
+    }
+    .btn-primary {
+      @apply bg-blue-500 text-white;
+    }
+    .btn-secondary {
+      @apply bg-gray-500 text-white;
+    }
+  </style>
+@endcomponent
+```
+
+## Why STX?
+
+- **Modern**: Built with modern web development practices in mind
+- **Type-Safe**: First-class TypeScript support for better developer experience
+- **Fast**: Powered by Bun for exceptional performance
+- **Familiar**: Blade-inspired syntax that's easy to learn
+- **Tooling**: Great IDE support and developer tools
+- **Flexible**: Works with any backend technology
+
+## Getting Started
+
+Ready to start building with STX? Follow these steps:
+
+1. [Installation Guide](/install) - Set up STX in your project
+2. [Quick Start](/usage) - Learn the basics in 5 minutes
+3. [Examples](/examples) - Explore example components and patterns
+4. [API Reference](/api-reference) - Complete API documentation
+
+## Need Help?
+
+- Join our [Discord Community](https://discord.gg/stacksjs)
+- Check out the [GitHub Repository](https://github.com/stacksjs/stx)
+- Follow us on [Twitter](https://twitter.com/stacksjs)
+- Read our [Best Practices Guide](/best-practices)
