@@ -1,0 +1,62 @@
+/* STX Syntax Highlighting */
+.vp-code-dark [class*="language-"] {
+  /* Dark theme colors */
+  --stx-directive-color: #f97583;
+  --stx-interpolation-color: #9ecbff;
+  --stx-comment-color: #6a737d;
+}
+
+.vp-code-light [class*="language-"] {
+  /* Light theme colors */
+  --stx-directive-color: #d73a49;
+  --stx-interpolation-color: #032f62;
+  --stx-comment-color: #6a737d;
+}
+
+/* STX Directives (@if, @foreach, etc.) */
+.language-html [class*="token"] {
+  color: inherit;
+}
+
+.language-html .token.keyword,
+.language-html .token.directive,
+.language-html [class*="token"]:not(.token-line) > span:first-child {
+  color: var(--stx-directive-color);
+  font-weight: 600;
+}
+
+/* STX Interpolation ({{ }}) */
+.language-html .token.interpolation,
+.language-html .token.punctuation {
+  color: var(--stx-interpolation-color);
+}
+
+/* STX Comments */
+.language-html .token.comment {
+  color: var(--stx-comment-color);
+  font-style: italic;
+}
+
+/* TypeScript blocks */
+.language-html .token.script {
+  color: var(--vp-c-text-1);
+}
+
+/* Ensure proper coloring for HTML tags */
+.language-html .token.tag {
+  color: var(--vp-c-text-1);
+}
+
+.language-html .token.attr-name {
+  color: var(--vp-c-brand);
+}
+
+.language-html .token.attr-value {
+  color: var(--vp-c-text-2);
+}
+
+/* Highlight STX directives */
+.language-html [class*="token"]:not(.token-line) > span[style*="color: #"]:first-child {
+  color: var(--stx-directive-color) !important;
+  font-weight: 600;
+} 

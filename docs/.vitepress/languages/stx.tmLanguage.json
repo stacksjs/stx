@@ -1,0 +1,50 @@
+{
+  "name": "STX",
+  "scopeName": "source.stx",
+  "fileTypes": ["stx"],
+  "patterns": [
+    {
+      "include": "#stx-directives"
+    },
+    {
+      "include": "text.html.basic"
+    }
+  ],
+  "repository": {
+    "stx-directives": {
+      "patterns": [
+        {
+          "name": "keyword.control.directive.stx",
+          "match": "@(if|else|endif|foreach|endforeach|forelse|empty|endforelse|switch|case|default|break|unless|endunless|ts|endts|component|endcomponent|extends|section|endsection|include|yield|parent|import)\\b"
+        },
+        {
+          "name": "punctuation.section.embedded.begin.stx",
+          "begin": "{{",
+          "beginCaptures": {
+            "0": { "name": "punctuation.section.embedded.begin.stx" }
+          },
+          "end": "}}",
+          "endCaptures": {
+            "0": { "name": "punctuation.section.embedded.begin.stx" }
+          },
+          "patterns": [
+            {
+              "include": "source.ts"
+            }
+          ]
+        },
+        {
+          "begin": "@ts\\b",
+          "end": "@endts\\b",
+          "name": "meta.embedded.block.typescript",
+          "contentName": "source.ts",
+          "patterns": [
+            {
+              "include": "source.ts"
+            }
+          ]
+        }
+      ]
+    }
+  }
+} 

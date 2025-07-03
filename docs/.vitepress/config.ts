@@ -4,6 +4,25 @@ export default defineConfig({
   title: 'STX',
   description: 'A modern UI engine powered by Bun',
   
+  markdown: {
+    theme: {
+      light: 'github-light',
+      dark: 'github-dark'
+    },
+    config: (md) => {
+      // Replace STX code blocks with HTML for proper highlighting
+      const fence = md.renderer.rules.fence!
+      md.renderer.rules.fence = (...args) => {
+        const [tokens, idx] = args
+        const token = tokens[idx]
+        if (token.info === 'stx') {
+          token.info = 'html'
+        }
+        return fence(...args)
+      }
+    }
+  },
+  
   themeConfig: {
     siteTitle: 'STX',
     logo: '/logo.svg',

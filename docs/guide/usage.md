@@ -8,23 +8,32 @@ Create a new file `pages/hello.stx`:
 
 ```stx
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <title>Hello STX</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
   @ts
-  const greeting = 'Hello, World!'
-  const items = ['STX', 'is', 'awesome']
+    const greeting = 'Hello, World!'
+    const items = ['STX', 'is', 'awesome']
+    const isLoggedIn = true
   @endts
 
-  <h1>{{ greeting }}</h1>
+  <div class="container">
+    <h1 class="text-2xl font-bold">{{ greeting }}</h1>
 
-  <ul>
-    @foreach(items as item)
-      <li>{{ item }}</li>
-    @endforeach
-  </ul>
+    @if(isLoggedIn)
+      <p class="welcome-message">Welcome back!</p>
+    @endif
+
+    <ul class="list">
+      @foreach(items as item)
+        <li class="list-item">{{ item }}</li>
+      @endforeach
+    </ul>
+  </div>
 </body>
 </html>
 ```
@@ -33,43 +42,107 @@ Create a new file `pages/hello.stx`:
 
 ### Variables and Expressions
 
-Use double curly braces to output variables:
+Use double curly braces for variable interpolation:
+
 ```stx
 <p>Hello, {{ name }}</p>
+
+<span>Total: {{ price * quantity }}</span>
+
+<div class="user-info">
+  <h2>{{ user.name }}</h2>
+  <span>{{ user.email }}</span>
+</div>
 ```
 
 Use the `@ts` directive for TypeScript code:
+
 ```stx
 @ts
-const user = {
-  name: 'John',
-  isAdmin: true
-}
+  interface User {
+    name: string
+    email: string
+    isAdmin: boolean
+  }
+
+  const user: User = {
+    name: 'John',
+    email: 'john@example.com',
+    isAdmin: true
+  }
 @endts
 
-<h1>Welcome, {{ user.name }}</h1>
+<div class="profile">
+  <h1>Welcome, {{ user.name }}</h1>
+  <p>{{ user.email }}</p>
+  
+  @if(user.isAdmin)
+    <admin-badge>Admin User</admin-badge>
+  @endif
+</div>
 ```
 
 ### Conditionals
 
-Use `@if`, `@else`, and `@endif` for conditional rendering:
+STX provides powerful conditional directives:
+
 ```stx
 @if(user.isAdmin)
-  <admin-panel />
+  <admin-panel class="bg-blue-100">
+    <h2>Admin Dashboard</h2>
+    <user-management />
+  </admin-panel>
 @else
-  <user-dashboard />
+  <user-dashboard class="bg-gray-100">
+    <h2>User Dashboard</h2>
+    <user-profile />
+  </user-dashboard>
 @endif
+
+@unless(user.isBlocked)
+  <div class="actions">
+    <button @click="sendMessage">Send Message</button>
+  </div>
+@endunless
+
+@switch(user.role)
+  @case('admin')
+    <admin-view />
+    @break
+  @case('moderator')
+    <moderator-view />
+    @break
+  @default
+    <user-view />
+@endswitch
 ```
 
 ### Loops
 
-Use `@foreach` for iterating over arrays and objects:
+STX offers various looping constructs:
+
 ```stx
-<ul>
+<ul class="user-list">
   @foreach(users as user)
-    <li>{{ user.name }}</li>
+    <li class="user-item" :key="user.id">
+      <user-card :user="user" />
+    </li>
   @endforeach
 </ul>
+
+<div class="grid">
+  @foreach(items as item, index)
+    <div class="grid-item" :style="{ order: index }">
+      {{ item.name }}
+    </div>
+  @endforeach
+</div>
+
+@forelse(notifications as notification)
+  <notification-item :data="notification" />
+@empty
+  <empty-state>No notifications found</empty-state>
+@endforelse
 ```
 
 ## Creating Components
@@ -78,40 +151,54 @@ Components help you create reusable UI elements. Create a new file `components/B
 
 ```stx
 @ts
-interface ButtonProps {
-  type?: 'primary' | 'secondary'
-  size?: 'sm' | 'md' | 'lg'
-  onClick?: () => void
-}
+  interface ButtonProps {
+    type?: 'primary' | 'secondary' | 'danger'
+    size?: 'sm' | 'md' | 'lg'
+    disabled?: boolean
+    onClick?: () => void
+  }
+
+  const variants = {
+    primary: 'bg-blue-500 hover:bg-blue-600 text-white',
+    secondary: 'bg-gray-500 hover:bg-gray-600 text-white',
+    danger: 'bg-red-500 hover:bg-red-600 text-white'
+  }
+
+  const sizes = {
+    sm: 'px-2 py-1 text-sm',
+    md: 'px-4 py-2 text-base',
+    lg: 'px-6 py-3 text-lg'
+  }
 @endts
 
 @component('Button', {
   props: {
     type: 'primary',
     size: 'md',
+    disabled: false,
     onClick: () => {}
   }
 })
   <button 
-    class="btn btn-{{ type }} btn-{{ size }}"
+    class="button {{ variants[type] }} {{ sizes[size] }} rounded-md font-medium transition-colors"
+    :disabled="disabled"
     @click="onClick"
   >
     <slot></slot>
   </button>
 
   <style>
-    .btn {
-      padding: 0.5rem 1rem;
-      border-radius: 0.25rem;
-      font-weight: 500;
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      cursor: pointer;
     }
-    .btn-primary {
-      background: #3b82f6;
-      color: white;
-    }
-    .btn-secondary {
-      background: #6b7280;
-      color: white;
+
+    .button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
   </style>
 @endcomponent
@@ -125,8 +212,28 @@ Import and use components in your templates:
 @import { Button } from '../components/Button'
 
 <div class="actions">
-  <Button type="primary" size="lg" @click="handleClick">
-    Click Me
+  <Button 
+    type="primary" 
+    size="lg" 
+    @click="handleSubmit"
+  >
+    Submit Form
+  </Button>
+
+  <Button 
+    type="secondary" 
+    size="md" 
+    @click="handleCancel"
+  >
+    Cancel
+  </Button>
+
+  <Button 
+    type="danger" 
+    size="md" 
+    :disabled="isLoading"
+  >
+    {{ isLoading ? 'Loading...' : 'Delete' }}
   </Button>
 </div>
 ```
@@ -138,25 +245,34 @@ Create reusable layouts with `@extends` and `@section`:
 1. Create a layout (`layouts/main.stx`):
 ```stx
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>@yield('title')</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>@yield('title') - My App</title>
+  
   @section('head')
+    <link rel="stylesheet" href="/css/main.css">
   @endsection
 </head>
 <body>
-  <nav>
+  <nav class="bg-white shadow">
     @include('partials/navigation')
   </nav>
 
-  <main>
+  <main class="container mx-auto px-4 py-8">
     @section('content')
+      <p>No content provided.</p>
     @endsection
   </main>
 
-  <footer>
+  <footer class="bg-gray-100">
     @include('partials/footer')
   </footer>
+
+  @section('scripts')
+    <script src="/js/app.js"></script>
+  @endsection
 </body>
 </html>
 ```
@@ -165,11 +281,23 @@ Create reusable layouts with `@extends` and `@section`:
 ```stx
 @extends('layouts/main')
 
-@section('title', 'My Page')
+@section('title', 'Dashboard')
+
+@section('head')
+  @parent
+  <link rel="stylesheet" href="/css/dashboard.css">
+@endsection
 
 @section('content')
-  <h1>Welcome to My Page</h1>
-  <p>This is the main content.</p>
+  <div class="dashboard">
+    <h1 class="text-3xl font-bold mb-8">Welcome to Dashboard</h1>
+    
+    <div class="grid grid-cols-3 gap-6">
+      @foreach(widgets as widget)
+        <dashboard-widget :data="widget" />
+      @endforeach
+    </div>
+  </div>
 @endsection
 ```
 
@@ -179,27 +307,58 @@ STX provides first-class TypeScript support:
 
 ```stx
 @ts
-interface User {
-  id: number
-  name: string
-  email: string
-  role: 'admin' | 'user'
-}
+  interface User {
+    id: number
+    name: string
+    email: string
+    role: 'admin' | 'user' | 'moderator'
+    lastActive: Date
+  }
 
-const users: User[] = [
-  { id: 1, name: 'John', email: 'john@example.com', role: 'admin' },
-  { id: 2, name: 'Jane', email: 'jane@example.com', role: 'user' }
-]
+  const users: User[] = [
+    { 
+      id: 1, 
+      name: 'John Doe', 
+      email: 'john@example.com', 
+      role: 'admin',
+      lastActive: new Date()
+    },
+    { 
+      id: 2, 
+      name: 'Jane Smith', 
+      email: 'jane@example.com', 
+      role: 'moderator',
+      lastActive: new Date()
+    }
+  ]
+
+  function formatDate(date: Date): string {
+    return new Intl.DateTimeFormat('en-US').format(date)
+  }
 @endts
 
-<div class="users">
+<div class="users-grid">
   @foreach(users as user)
-    <div class="user-card">
-      <h3>{{ user.name }}</h3>
-      <p>{{ user.email }}</p>
-      <span class="badge badge-{{ user.role }}">
-        {{ user.role }}
-      </span>
+    <div class="user-card" :key="user.id">
+      <div class="card-header">
+        <h3 class="text-xl font-semibold">{{ user.name }}</h3>
+        <span class="badge badge-{{ user.role }}">
+          {{ user.role }}
+        </span>
+      </div>
+      
+      <div class="card-body">
+        <p class="text-gray-600">{{ user.email }}</p>
+        <p class="text-sm text-gray-500">
+          Last active: {{ formatDate(user.lastActive) }}
+        </p>
+      </div>
+
+      @if(user.role === 'admin')
+        <div class="card-footer">
+          <admin-controls :user-id="user.id" />
+        </div>
+      @endif
     </div>
   @endforeach
 </div>
@@ -224,7 +383,7 @@ bun run preview
 
 ## Next Steps
 
-- Learn about [Components](/features/components) in depth
-- Explore [Directives](/features/directives) for template control
-- Understand [TypeScript Integration](/features/typescript)
-- Check out the [VSCode Extension](/tools/vscode) for better development experience
+- Learn about [Components](/guide/components) in depth
+- Explore [Directives](/guide/directives) for template control
+- Understand [TypeScript Integration](/guide/typescript)
+- Check out the [VSCode Extension](/guide/tools/vscode) for better development experience
