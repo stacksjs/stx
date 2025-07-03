@@ -70,8 +70,10 @@
   "devDependencies": {
     "@stacksjs/docs": "^0.70.23",
     "@stacksjs/eslint-config": "^4.14.0-beta.3",
+    "@stacksjs/gitlint": "^0.1.5",
     "@types/bun": "^1.2.17",
     "bumpp": "^10.2.0",
+    "bun-git-hooks": "^0.2.16",
     "bun-plugin-dtsx": "^0.21.12",
     "bunfig": "^0.10.0",
     "changelogen": "^0.6.1",
@@ -86,5 +88,13 @@
   ],
   "dependencies": {
     "shikiji": "^0.10.2"
+  },
+  "git-hooks": {
+    "pre-commit": {
+      "staged-lint": {
+        "*.{js,ts,json,yaml,yml,md}": "bunx --bun eslint . --fix"
+      }
+    },
+    "commit-msg": "bunx gitlint .git/COMMIT_EDITMSG"
   }
 }
