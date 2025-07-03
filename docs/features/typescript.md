@@ -392,4 +392,4 @@ const actions: Actions = {
 - Learn about [Component Testing](/advanced/testing)
 - Explore [State Management](/advanced/state)
 - Understand [Build Configuration](/advanced/build)
-- Check out [Performance Optimization](/advanced/performance) 
+- Check out [Performance Optimization](/features/performance)

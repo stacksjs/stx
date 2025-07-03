@@ -439,7 +439,7 @@ class PerformanceMonitor {
 
 ## Next Steps
 
-- Learn about [Testing](/advanced/testing)
-- Explore [Deployment](/advanced/deployment)
-- Understand [Security](/advanced/security)
-- Check out [Monitoring](/advanced/monitoring) 
+- Learn about [Testing](/features/testing)
+- Explore [Deployment](/features/deployment)
+- Understand [Security](/features/security)
+- Check out [Monitoring](/features/monitoring)

@@ -1,30 +1,30 @@
 # Deployment
 
-This guide covers everything you need to know about deploying STX applications to production environments.
+This guide covers everything you need to know about deploying your STX application to production.
 
 ## Build Process
 
 ### Production Build
 
-Create a production build of your STX application:
+Create a production build of your application:
 
 ```bash
 # Build for production
 bun run build
 
-# Preview production build
+# Preview production build locally
 bun run preview
 ```
 
 The build process:
-1. Compiles templates
-2. Bundles assets
+1. Compiles templates and components
+2. Bundles assets and dependencies
 3. Optimizes for production
 4. Generates static files
 
 ### Build Configuration
 
-Configure your production build in `stx.config.ts`:
+Configure your build in `stx.config.ts`:
 
 ```ts
 import { defineConfig } from '@stacksjs/stx'
@@ -33,72 +33,42 @@ export default defineConfig({
   build: {
     // Output directory
     outDir: 'dist',
-
-    // Public base path
-    base: '/',
-
-    // Minification
+    
+    // Enable minification
     minify: true,
-
-    // Source maps
+    
+    // Generate sourcemaps
     sourcemap: false,
-
-    // Asset handling
-    assetsInlineLimit: 4096,
-    cssCodeSplit: true,
-
-    // Chunk splitting
+    
+    // Custom rollup options
     rollupOptions: {
+      external: ['some-external-dependency'],
       output: {
         manualChunks: {
           vendor: ['lodash', 'axios'],
-          components: ['./src/components/'],
-          utils: ['./src/utils/']
+          components: ['./src/components/']
         }
       }
     },
-
-    // Environment variables
-    env: {
-      API_URL: 'https://api.example.com'
-    }
+    
+    // Asset handling
+    assetsDir: 'assets',
+    assetsInlineLimit: 4096,
+    
+    // CSS options
+    cssCodeSplit: true,
+    cssMinify: true
   }
 })
-```
-
-### Environment Variables
-
-Set up environment variables for different environments:
-
-```bash
-# .env
-NODE_ENV=development
-API_URL=http://localhost:3000
-
-# .env.production
-NODE_ENV=production
-API_URL=https://api.example.com
-
-# .env.staging
-NODE_ENV=staging
-API_URL=https://staging-api.example.com
-```
-
-Access environment variables in your code:
-
-```ts
-const apiUrl = process.env.API_URL
-const isDev = process.env.NODE_ENV === 'development'
 ```
 
 ## Hosting Options
 
 ### Static Hosting
 
-Deploy to static hosting services:
+Deploy to static hosting platforms:
 
 1. **Vercel**
-
 ```bash
 # Install Vercel CLI
 npm i -g vercel
@@ -107,31 +77,7 @@ npm i -g vercel
 vercel
 ```
 
-Configuration (`vercel.json`):
-```json
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "buildCommand": "bun run build",
-        "outputDirectory": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ]
-}
-```
-
 2. **Netlify**
-
 ```bash
 # Install Netlify CLI
 npm i -g netlify-cli
@@ -140,22 +86,9 @@ npm i -g netlify-cli
 netlify deploy
 ```
 
-Configuration (`netlify.toml`):
-```toml
-[build]
-  command = "bun run build"
-  publish = "dist"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-```
-
 3. **GitHub Pages**
-
+Create `.github/workflows/deploy.yml`:
 ```yaml
-# .github/workflows/deploy.yml
 name: Deploy to GitHub Pages
 
 on:
@@ -167,16 +100,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        
+      - uses: oven-sh/setup-bun@v1
       - name: Install dependencies
         run: bun install
-        
       - name: Build
         run: bun run build
-        
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
@@ -186,77 +114,85 @@ jobs:
 
 ### Server Deployment
 
-Deploy to a Node.js server:
+For server-side rendering or API integration:
 
-1. **PM2**
-
-```bash
-# Install PM2
-npm i -g pm2
-
-# Start application
-pm2 start ecosystem.config.js
-```
-
-Configuration (`ecosystem.config.js`):
-```js
-module.exports = {
-  apps: [{
-    name: 'stx-app',
-    script: 'server.js',
-    instances: 'max',
-    exec_mode: 'cluster',
-    env: {
-      NODE_ENV: 'production'
-    }
-  }]
-}
-```
-
-2. **Docker**
-
+1. **Docker**
 ```dockerfile
-# Dockerfile
 FROM oven/bun:latest
 
 WORKDIR /app
-
-# Copy files
 COPY package.json bun.lockb ./
-COPY . .
-
-# Install dependencies
 RUN bun install
 
-# Build
+COPY . .
 RUN bun run build
 
-# Start server
+EXPOSE 3000
 CMD ["bun", "run", "start"]
 ```
 
-Docker Compose:
-```yaml
-# docker-compose.yml
-version: '3'
-services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - API_URL=https://api.example.com
+2. **PM2**
+```bash
+# Install PM2
+npm install -g pm2
+
+# Start application
+pm2 start dist/server.js --name stx-app
+```
+
+## Environment Configuration
+
+### Environment Variables
+
+Create environment-specific files:
+
+```bash
+.env                # Default
+.env.development   # Development
+.env.production    # Production
+.env.local         # Local overrides (git-ignored)
+```
+
+Example `.env.production`:
+```bash
+NODE_ENV=production
+API_URL=https://api.example.com
+CACHE_ENABLED=true
+```
+
+Access in code:
+```ts
+const apiUrl = process.env.API_URL
+```
+
+### Runtime Configuration
+
+Create runtime config (`config/runtime.ts`):
+
+```ts
+export default {
+  api: {
+    baseUrl: process.env.API_URL,
+    timeout: 5000
+  },
+  cache: {
+    enabled: process.env.CACHE_ENABLED === 'true',
+    duration: 3600
+  },
+  features: {
+    analytics: true,
+    feedback: false
+  }
+}
 ```
 
 ## CI/CD Setup
 
 ### GitHub Actions
 
-Set up continuous deployment:
+Create comprehensive CI/CD pipeline:
 
 ```yaml
-# .github/workflows/ci.yml
 name: CI/CD
 
 on:
@@ -270,34 +206,48 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        
+      - uses: oven-sh/setup-bun@v1
       - name: Install dependencies
         run: bun install
-        
       - name: Run tests
         run: bun test
-        
-      - name: Build
-        run: bun run build
+      - name: Run type check
+        run: bun run typecheck
 
-  deploy:
+  build:
     needs: test
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to production
-        uses: some-deployment-action@v1
+      - uses: actions/checkout@v2
+      - uses: oven-sh/setup-bun@v1
+      - name: Install dependencies
+        run: bun install
+      - name: Build
+        run: bun run build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
         with:
-          token: ${{ secrets.DEPLOY_TOKEN }}
+          name: dist
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist
+      - name: Deploy to production
+        run: |
+          # Add your deployment commands here
 ```
 
 ### GitLab CI
 
+Example `.gitlab-ci.yml`:
+
 ```yaml
-# .gitlab-ci.yml
 image: oven/bun:latest
 
 stages:
@@ -310,6 +260,7 @@ test:
   script:
     - bun install
     - bun test
+    - bun run typecheck
 
 build:
   stage: build
@@ -323,143 +274,92 @@ build:
 deploy:
   stage: deploy
   script:
-    - echo "Deploying..."
-    # Add deployment steps
+    - echo "Deploying application..."
+    # Add deployment commands
   only:
     - main
 ```
 
 ## Performance Optimization
 
-### Caching
+### Production Optimizations
 
-Set up proper caching headers:
+1. **Enable Compression**
+```ts
+// server.ts
+import compression from 'compression'
 
-```nginx
-# nginx.conf
-location / {
-    root /usr/share/nginx/html;
-    try_files $uri $uri/ /index.html;
-    
-    # Cache static assets
-    location /assets/ {
-        expires 1y;
-        add_header Cache-Control "public, no-transform";
-    }
-    
-    # Cache API responses
-    location /api/ {
-        proxy_pass http://api-server;
-        proxy_cache my_cache;
-        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
-        proxy_cache_valid 200 60m;
-    }
-}
+app.use(compression())
 ```
 
-### CDN Integration
-
-Use a CDN for static assets:
-
+2. **Cache Control**
 ```ts
-// stx.config.ts
-export default defineConfig({
-  build: {
-    // CDN URL for assets
-    base: 'https://cdn.example.com/',
-    
-    // Asset handling
-    assetsDir: 'assets',
-    
-    // Generate asset manifest
-    manifest: true
-  }
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=31536000')
+  next()
 })
 ```
 
-### Compression
-
-Enable compression:
-
-```nginx
-# nginx.conf
-gzip on;
-gzip_vary on;
-gzip_min_length 10240;
-gzip_proxied expired no-cache no-store private auth;
-gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml;
-gzip_disable "MSIE [1-6]\.";
+3. **Preload Critical Assets**
+```html
+<link rel="preload" href="/assets/main.js" as="script">
+<link rel="preload" href="/assets/main.css" as="style">
 ```
 
-## Monitoring
+### Monitoring
 
-### Error Tracking
-
-Set up error tracking:
-
+1. **Error Tracking**
 ```ts
-// src/utils/errorTracking.ts
-import * as Sentry from '@sentry/browser'
+import * as Sentry from '@sentry/node'
 
-export function setupErrorTracking() {
-  if (process.env.NODE_ENV === 'production') {
-    Sentry.init({
-      dsn: process.env.SENTRY_DSN,
-      environment: process.env.NODE_ENV,
-      tracesSampleRate: 1.0
-    })
-  }
-}
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV
+})
 ```
 
-### Performance Monitoring
-
-Monitor application performance:
-
+2. **Performance Monitoring**
 ```ts
-// src/utils/monitoring.ts
-import { init as initApm } from '@elastic/apm-rum'
+import { metrics } from '@stacksjs/stx/monitoring'
 
-export function setupMonitoring() {
-  if (process.env.NODE_ENV === 'production') {
-    initApm({
-      serviceName: 'my-stx-app',
-      serverUrl: process.env.APM_SERVER_URL,
-      environment: process.env.NODE_ENV
-    })
-  }
-}
+metrics.track('page_load', {
+  duration: performance.now() - startTime
+})
 ```
 
-## Best Practices
+## Security Considerations
 
-1. **Build Process**
-   - Optimize assets
-   - Enable minification
-   - Configure chunking
-   - Set up source maps
+1. **Headers**
+```ts
+import helmet from 'helmet'
 
-2. **Deployment**
-   - Use CI/CD pipelines
-   - Implement staging
-   - Configure monitoring
-   - Set up rollbacks
+app.use(helmet())
+```
 
-3. **Performance**
-   - Enable caching
-   - Use CDN
-   - Optimize loading
-   - Monitor metrics
+2. **CORS**
+```ts
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(','),
+  methods: ['GET', 'POST'],
+  credentials: true
+}))
+```
 
-4. **Security**
-   - Secure headers
-   - Environment variables
-   - Access control
-   - Regular updates
+3. **Content Security Policy**
+```ts
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", "'unsafe-inline'"],
+    styleSrc: ["'self'", "'unsafe-inline'"],
+    imgSrc: ["'self'", 'data:', 'https:'],
+  }
+}))
+```
 
 ## Next Steps
 
-- Learn about [Security](/advanced/security)
-- Explore [Monitoring](/advanced/monitoring)
-- Understand [Scaling](/advanced/scaling)
-- Check out [Maintenance](/advanced/maintenance) 
+- Learn about [Testing](/features/testing)
+- Explore [State Management](/features/state)
+- Check out [Security](/features/security)
+- Review [Monitoring](/features/monitoring) 

@@ -1,12 +1,12 @@
 # State Management
 
-STX provides powerful state management capabilities, from simple component-level state to complex global state management. This guide covers all aspects of state management in STX applications.
+STX provides powerful state management capabilities to help you manage application data effectively. This guide covers both local component state and global application state.
 
 ## Component State
 
-### Local State
+### Basic State Management
 
-The simplest form of state management using local variables:
+Use reactive state in components:
 
 ```stx
 @component('Counter')
@@ -30,56 +30,9 @@ The simplest form of state management using local variables:
 @endcomponent
 ```
 
-### Reactive State
+### Computed Properties
 
-Use `reactive` for more complex state:
-
-```stx
-@component('UserProfile')
-  @ts
-  interface User {
-    name: string
-    email: string
-    preferences: {
-      theme: 'light' | 'dark'
-      notifications: boolean
-    }
-  }
-
-  const user = reactive<User>({
-    name: 'John Doe',
-    email: 'john@example.com',
-    preferences: {
-      theme: 'light',
-      notifications: true
-    }
-  })
-
-  function updatePreferences(theme: 'light' | 'dark') {
-    user.preferences.theme = theme
-  }
-  @endts
-
-  <div class="profile">
-    <h2>{{ user.name }}</h2>
-    <p>{{ user.email }}</p>
-    
-    <div class="preferences">
-      <label>
-        Theme:
-        <select @change="e => updatePreferences(e.target.value)">
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
-      </label>
-    </div>
-  </div>
-@endcomponent
-```
-
-### Computed State
-
-Derive state using computed properties:
+Create derived state:
 
 ```stx
 @component('TodoList')
@@ -90,361 +43,330 @@ Derive state using computed properties:
     completed: boolean
   }
 
-  const todos = reactive<Todo[]>([])
+  const todos = ref<Todo[]>([])
   
-  // Computed properties
   const completedTodos = computed(() => 
-    todos.filter(todo => todo.completed)
+    todos.value.filter(todo => todo.completed)
   )
   
   const incompleteTodos = computed(() => 
-    todos.filter(todo => !todo.completed)
-  )
-  
-  const progress = computed(() => 
-    (completedTodos.value.length / todos.length) * 100
+    todos.value.filter(todo => !todo.completed)
   )
   @endts
 
   <div class="todo-list">
-    <div class="progress">
-      {{ progress.toFixed(1) }}% Complete
-    </div>
-
-    <h3>Incomplete ({{ incompleteTodos.length }})</h3>
-    <ul>
-      @foreach(incompleteTodos as todo)
-        <todo-item :todo="todo" />
-      @endforeach
-    </ul>
-
     <h3>Completed ({{ completedTodos.length }})</h3>
-    <ul>
-      @foreach(completedTodos as todo)
-        <todo-item :todo="todo" />
-      @endforeach
-    </ul>
+    <todo-items :items="completedTodos" />
+    
+    <h3>Incomplete ({{ incompleteTodos.length }})</h3>
+    <todo-items :items="incompleteTodos" />
+  </div>
+@endcomponent
+```
+
+### Watchers
+
+React to state changes:
+
+```stx
+@component('UserProfile')
+  @ts
+  interface User {
+    id: number
+    name: string
+    preferences: Record<string, any>
+  }
+
+  const user = ref<User | null>(null)
+  
+  watch(() => user.value?.preferences, (newPrefs, oldPrefs) => {
+    if (newPrefs !== oldPrefs) {
+      savePreferences(newPrefs)
+    }
+  }, { deep: true })
+  @endts
+
+  <div class="profile">
+    @if(user)
+      <user-preferences :preferences="user.preferences" />
+    @endif
   </div>
 @endcomponent
 ```
 
 ## Global State
 
-### Store Pattern
+### Store Setup
 
-Create a centralized store for global state:
+Create a global store:
 
 ```ts
-// stores/userStore.ts
-import { reactive } from '@stacksjs/stx'
+// store/index.ts
+import { createStore } from '@stacksjs/stx/store'
 
-interface User {
-  id: number
-  name: string
-  email: string
-  role: 'admin' | 'user'
+interface State {
+  user: User | null
+  theme: 'light' | 'dark'
+  notifications: Notification[]
 }
 
-interface UserState {
-  currentUser: User | null
-  loading: boolean
-  error: Error | null
+interface Actions {
+  setUser(user: User | null): void
+  toggleTheme(): void
+  addNotification(notification: Notification): void
 }
 
-interface UserActions {
-  login: (email: string, password: string) => Promise<void>
-  logout: () => Promise<void>
-  updateProfile: (data: Partial<User>) => Promise<void>
-}
-
-const state = reactive<UserState>({
-  currentUser: null,
-  loading: false,
-  error: null
-})
-
-const actions: UserActions = {
-  async login(email, password) {
-    state.loading = true
-    state.error = null
-    try {
-      const user = await api.login(email, password)
-      state.currentUser = user
-    } catch (error) {
-      state.error = error as Error
-      throw error
-    } finally {
-      state.loading = false
-    }
+export const store = createStore<State, Actions>({
+  state: {
+    user: null,
+    theme: 'light',
+    notifications: []
   },
-
-  async logout() {
-    state.loading = true
-    try {
-      await api.logout()
-      state.currentUser = null
-    } catch (error) {
-      state.error = error as Error
-      throw error
-    } finally {
-      state.loading = false
-    }
-  },
-
-  async updateProfile(data) {
-    if (!state.currentUser) return
+  
+  actions: {
+    setUser(state, user) {
+      state.user = user
+    },
     
-    state.loading = true
-    try {
-      const updated = await api.updateProfile(state.currentUser.id, data)
-      state.currentUser = { ...state.currentUser, ...updated }
-    } catch (error) {
-      state.error = error as Error
-      throw error
-    } finally {
-      state.loading = false
+    toggleTheme(state) {
+      state.theme = state.theme === 'light' ? 'dark' : 'light'
+    },
+    
+    addNotification(state, notification) {
+      state.notifications.push(notification)
+    }
+  }
+})
+```
+
+### Using the Store
+
+Access store state in components:
+
+```stx
+@component('AppHeader')
+  @ts
+  import { store } from '@/store'
+  
+  const { user, theme } = store.state
+  const { toggleTheme } = store.actions
+  @endts
+
+  <header :class="{ 'dark': theme === 'dark' }">
+    @if(user)
+      <user-menu :user="user" />
+    @else
+      <login-button />
+    @endif
+    
+    <button @click="toggleTheme">
+      Toggle Theme
+    </button>
+  </header>
+@endcomponent
+```
+
+### Store Modules
+
+Organize state with modules:
+
+```ts
+// store/modules/auth.ts
+export const auth = {
+  state: {
+    user: null,
+    token: null
+  },
+  
+  actions: {
+    async login(state, credentials) {
+      const response = await api.login(credentials)
+      state.user = response.user
+      state.token = response.token
+    },
+    
+    logout(state) {
+      state.user = null
+      state.token = null
     }
   }
 }
 
-export const userStore = {
-  state,
-  ...actions
-}
+// store/index.ts
+import { auth } from './modules/auth'
+
+export const store = createStore({
+  modules: {
+    auth
+  }
+})
 ```
 
-### Using Global State
+## State Persistence
 
-Access global state in components:
+### Local Storage
+
+Persist state to local storage:
+
+```ts
+import { createPersistedStore } from '@stacksjs/stx/store'
+
+export const store = createPersistedStore({
+  state: {
+    theme: 'light',
+    settings: {}
+  },
+  
+  persistence: {
+    key: 'app-state',
+    paths: ['theme', 'settings'],
+    storage: localStorage
+  }
+})
+```
+
+### Custom Storage
+
+Implement custom persistence:
+
+```ts
+const customStorage = {
+  async get(key: string) {
+    const value = await api.getState(key)
+    return JSON.parse(value)
+  },
+  
+  async set(key: string, value: any) {
+    await api.setState(key, JSON.stringify(value))
+  }
+}
+
+export const store = createPersistedStore({
+  // ... store config
+  persistence: {
+    storage: customStorage
+  }
+})
+```
+
+## State Management Patterns
+
+### Component Communication
+
+Share state between components:
 
 ```stx
-@component('UserMenu')
+@component('ParentComponent')
   @ts
-  import { userStore } from '../stores/userStore'
+  const sharedState = ref({
+    value: 0
+  })
+  @endts
+
+  <div>
+    <child-a :state="sharedState" />
+    <child-b :state="sharedState" />
+  </div>
+@endcomponent
+
+@component('ChildA')
+  @ts
+  const props = defineProps<{
+    state: { value: number }
+  }>()
   
-  const { state, logout } = userStore
-  
-  async function handleLogout() {
-    try {
-      await logout()
-      // Redirect to login
-    } catch (error) {
-      // Handle error
-    }
+  function increment() {
+    props.state.value++
   }
   @endts
 
-  <div class="user-menu">
-    @if(state.currentUser)
-      <div class="user-info">
-        <img :src="state.currentUser.avatar" />
-        <span>{{ state.currentUser.name }}</span>
-      </div>
-      
-      <button @click="handleLogout">
-        Logout
-      </button>
-    @else
-      <login-button />
+  <button @click="increment">
+    Increment from A
+  </button>
+@endcomponent
+```
+
+### State Composition
+
+Compose multiple state sources:
+
+```ts
+function useUserState() {
+  const user = ref(null)
+  const loading = ref(false)
+  
+  async function fetchUser(id: number) {
+    loading.value = true
+    try {
+      user.value = await api.getUser(id)
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  return {
+    user,
+    loading,
+    fetchUser
+  }
+}
+
+function usePermissions(user) {
+  const can = (action: string) => {
+    return user.value?.permissions.includes(action)
+  }
+  
+  return { can }
+}
+
+// Usage in component
+@component('UserDashboard')
+  @ts
+  const { user, loading, fetchUser } = useUserState()
+  const { can } = usePermissions(user)
+  @endts
+
+  <div>
+    @if(loading)
+      <loading-spinner />
+    @elseif(user)
+      @if(can('view-dashboard'))
+        <dashboard-content />
+      @endif
     @endif
   </div>
 @endcomponent
 ```
 
-### State Persistence
-
-Persist state across page reloads:
-
-```ts
-// stores/persistentStore.ts
-import { reactive, watch } from '@stacksjs/stx'
-
-interface PersistOptions<T> {
-  key: string
-  storage?: Storage
-  serialize?: (value: T) => string
-  deserialize?: (value: string) => T
-}
-
-export function createPersistentStore<T extends object>(
-  initialState: T,
-  options: PersistOptions<T>
-) {
-  const {
-    key,
-    storage = localStorage,
-    serialize = JSON.stringify,
-    deserialize = JSON.parse
-  } = options
-
-  // Load initial state from storage
-  let savedState: T | null = null
-  try {
-    const saved = storage.getItem(key)
-    if (saved) {
-      savedState = deserialize(saved)
-    }
-  } catch (e) {
-    console.error('Failed to load state:', e)
-  }
-
-  const state = reactive({
-    ...initialState,
-    ...savedState
-  })
-
-  // Watch for changes and save to storage
-  watch(
-    () => state,
-    (newState) => {
-      try {
-        storage.setItem(key, serialize(newState))
-      } catch (e) {
-        console.error('Failed to save state:', e)
-      }
-    },
-    { deep: true }
-  )
-
-  return state
-}
-
-// Usage
-interface Settings {
-  theme: 'light' | 'dark'
-  fontSize: number
-  notifications: boolean
-}
-
-export const settings = createPersistentStore<Settings>(
-  {
-    theme: 'light',
-    fontSize: 16,
-    notifications: true
-  },
-  { key: 'app-settings' }
-)
-```
-
-## Advanced Patterns
-
-### State Composition
-
-Compose multiple stores:
-
-```ts
-// stores/index.ts
-import { userStore } from './userStore'
-import { settingsStore } from './settingsStore'
-import { cartStore } from './cartStore'
-
-export const store = {
-  user: userStore,
-  settings: settingsStore,
-  cart: cartStore
-}
-
-// Provide type helper
-export type Store = typeof store
-
-// Usage in components
-@component('App')
-  @ts
-  import { store } from '../stores'
-  
-  const {
-    user: { state: userState },
-    settings: { theme },
-    cart: { items }
-  } = store
-  @endts
-
-  <div :class="theme">
-    <user-menu :user="userState.currentUser" />
-    <cart-widget :items="items" />
-  </div>
-@endcomponent
-```
-
-### State Middleware
-
-Add middleware for state changes:
-
-```ts
-// stores/middleware.ts
-type Middleware<T> = (
-  state: T,
-  newValue: any,
-  path: string[]
-) => boolean | void
-
-function createMiddleware<T extends object>(
-  state: T,
-  middleware: Middleware<T>[]
-) {
-  return new Proxy(state, {
-    set(target, property, value, receiver) {
-      const path = [String(property)]
-      
-      // Run through middleware
-      for (const fn of middleware) {
-        const result = fn(target, value, path)
-        if (result === false) return false
-      }
-      
-      return Reflect.set(target, property, value, receiver)
-    }
-  })
-}
-
-// Example middleware
-const loggingMiddleware: Middleware<any> = (state, value, path) => {
-  console.log(`Setting ${path.join('.')} to:`, value)
-}
-
-const validationMiddleware: Middleware<any> = (state, value, path) => {
-  if (value === undefined) {
-    console.warn(`Attempting to set undefined at ${path.join('.')}`)
-    return false
-  }
-}
-
-// Usage
-const state = createMiddleware(
-  reactive({ count: 0 }),
-  [loggingMiddleware, validationMiddleware]
-)
-```
-
 ## Best Practices
 
 1. **State Organization**
-   - Keep state as local as possible
-   - Use stores for shared state
-   - Break down complex state
+   - Keep state minimal
+   - Use computed properties
+   - Split into modules
    - Document state shape
 
 2. **Performance**
-   - Use computed for derived state
-   - Avoid deep watching when possible
-   - Implement proper cleanup
-   - Profile state updates
+   - Use shallow refs when possible
+   - Avoid deep watching large objects
+   - Batch updates
+   - Optimize rerenders
 
-3. **Type Safety**
-   - Define interfaces for state
-   - Use strict TypeScript checks
-   - Validate state changes
-   - Document state mutations
+3. **State Access**
+   - Use composition
+   - Implement access control
+   - Handle loading states
+   - Manage side effects
 
-4. **Testing**
-   - Unit test store logic
-   - Mock global state
-   - Test state persistence
-   - Verify computed updates
+4. **Persistence**
+   - Choose appropriate storage
+   - Handle errors
+   - Implement migrations
+   - Secure sensitive data
 
 ## Next Steps
 
-- Learn about [Performance Optimization](/advanced/performance)
-- Explore [Build Configuration](/advanced/build)
-- Understand [Testing](/advanced/testing)
-- Check out [Deployment](/advanced/deployment) 
+- Learn about [Testing](/features/testing)
+- Explore [Performance](/features/performance)
+- Check out [Security](/features/security)
+- Review [Deployment](/features/deployment) 
