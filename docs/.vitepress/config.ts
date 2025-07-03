@@ -10,13 +10,19 @@ export default defineConfig({
       dark: 'github-dark'
     },
     config: (md) => {
-      // Replace STX code blocks with HTML for proper highlighting
+      // Use custom STX syntax highlighting
       const fence = md.renderer.rules.fence!
       md.renderer.rules.fence = (...args) => {
         const [tokens, idx] = args
         const token = tokens[idx]
         if (token.info === 'stx') {
+          // Use HTML highlighting for STX
           token.info = 'html'
+          const rawResult = fence(...args)
+          return rawResult.replace(
+            'language-html',
+            'language-stx'
+          )
         }
         return fence(...args)
       }

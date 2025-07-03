@@ -83,5 +83,8 @@
   "workspaces": [
     "packages/*",
     "!packages/vscode"
-  ]
+  ],
+  "dependencies": {
+    "shikiji": "^0.10.2"
+  }
 }

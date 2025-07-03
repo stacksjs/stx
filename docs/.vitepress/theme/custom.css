@@ -14,49 +14,49 @@
 }
 
 /* STX Directives (@if, @foreach, etc.) */
-.language-html [class*="token"] {
+.language-stx [class*="token"] {
   color: inherit;
 }
 
-.language-html .token.keyword,
-.language-html .token.directive,
-.language-html [class*="token"]:not(.token-line) > span:first-child {
+.language-stx .token.keyword,
+.language-stx .token.directive,
+.language-stx [class*="token"]:not(.token-line) > span:first-child {
   color: var(--stx-directive-color);
   font-weight: 600;
 }
 
 /* STX Interpolation ({{ }}) */
-.language-html .token.interpolation,
-.language-html .token.punctuation {
+.language-stx .token.interpolation,
+.language-stx .token.punctuation {
   color: var(--stx-interpolation-color);
 }
 
 /* STX Comments */
-.language-html .token.comment {
+.language-stx .token.comment {
   color: var(--stx-comment-color);
   font-style: italic;
 }
 
 /* TypeScript blocks */
-.language-html .token.script {
+.language-stx .token.script {
   color: var(--vp-c-text-1);
 }
 
 /* Ensure proper coloring for HTML tags */
-.language-html .token.tag {
+.language-stx .token.tag {
   color: var(--vp-c-text-1);
 }
 
-.language-html .token.attr-name {
+.language-stx .token.attr-name {
   color: var(--vp-c-brand);
 }
 
-.language-html .token.attr-value {
+.language-stx .token.attr-value {
   color: var(--vp-c-text-2);
 }
 
 /* Highlight STX directives */
-.language-html [class*="token"]:not(.token-line) > span[style*="color: #"]:first-child {
+.language-stx [class*="token"]:not(.token-line) > span[style*="color: #"]:first-child {
   color: var(--stx-directive-color) !important;
   font-weight: 600;
 } 

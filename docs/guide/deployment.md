@@ -301,7 +301,7 @@ app.use((req, res, next) => {
 ```
 
 3. **Preload Critical Assets**
-```html
+```stx
 <link rel="preload" href="/assets/main.js" as="script">
 <link rel="preload" href="/assets/main.css" as="style">
 ```
