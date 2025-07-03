@@ -108,7 +108,7 @@ async function runTests(
     }
 
     // Add happy-dom for DOM environment
-    args.push('--preload', path.join(__dirname, '../happy-dom.ts'))
+    args.push('--preload', path.join(__dirname, '../../../test-utils/happy-dom.ts'))
 
     // Add environment variables for STX test context
     const env = {

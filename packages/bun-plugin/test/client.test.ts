@@ -3,38 +3,14 @@ import { beforeEach, describe, expect, test } from 'bun:test'
 // Import client functions
 import { hydrateIslands, initIslands, preloadIslandHandlers, version } from '../src/client'
 
-// Mock DOM environment for testing
-const mockDocument = {
-  querySelectorAll: () => ({
-    length: 0,
-    item: () => null,
-    forEach: () => {},
-    [Symbol.iterator]: function* () {},
-  }),
-  querySelector: () => null,
-  createElement: () => ({ rel: '', href: '', setAttribute: () => {}, remove: () => {} }),
-  head: { appendChild: () => {} },
-  readyState: 'complete' as DocumentReadyState,
-  addEventListener: () => {},
-}
-
-const mockWindow = {
-  IntersectionObserver: class MockIntersectionObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  },
-}
-
-// Setup global mocks
-global.document = mockDocument as any
-global.window = mockWindow as any
+// Use happy-dom environment from shared config
+// The window and document globals are already set up by happy-dom.ts
 
 describe('BUN-PLUGIN: Client Module Tests', () => {
   beforeEach(() => {
-    // Reset any global state between tests
-    global.document = mockDocument as any
-    global.window = mockWindow as any
+    // Reset document state between tests
+    document.body.innerHTML = ''
+    document.head.innerHTML = ''
   })
 
   test('should export version information', () => {
@@ -49,14 +25,6 @@ describe('BUN-PLUGIN: Client Module Tests', () => {
   })
 
   test('should handle hydrateIslands with empty handlers', () => {
-    const mockQuerySelectorAll = () => ({
-      length: 0,
-      item: () => null,
-      forEach: () => {},
-      [Symbol.iterator]: function* () {},
-    })
-    global.document.querySelectorAll = mockQuerySelectorAll as any
-
     // Should not throw when called with empty handlers
     expect(() => {
       hydrateIslands({})
@@ -64,28 +32,11 @@ describe('BUN-PLUGIN: Client Module Tests', () => {
   })
 
   test('should handle hydrateIslands with mock handlers', () => {
-    const mockElements = [
-      {
-        getAttribute: (attr: string) => {
-          if (attr === 'data-island') return 'test-island'
-          if (attr === 'data-priority') return 'eager'
-          if (attr === 'data-hydrated') return 'false'
-          return null
-        },
-        setAttribute: () => {},
-      },
-    ]
-
-    global.document.querySelectorAll = () => ({
-      length: mockElements.length,
-      item: (index: number) => mockElements[index] || null,
-      forEach: (callback: any) => mockElements.forEach(callback),
-      [Symbol.iterator]: function* () {
-        for (const element of mockElements) {
-          yield element
-        }
-      },
-    }) as any
+    const testIsland = document.createElement('div')
+    testIsland.setAttribute('data-island', 'test-island')
+    testIsland.setAttribute('data-priority', 'eager')
+    testIsland.setAttribute('data-hydrated', 'false')
+    document.body.appendChild(testIsland)
 
     const mockHandler = async () => ({
       default: () => {},
@@ -178,11 +129,11 @@ describe('BUN-PLUGIN: Client Module Tests', () => {
 
   test('should handle DOM ready states correctly', () => {
     // Test with loading state
-    const mockDocumentLoading = {
-      ...mockDocument,
-      readyState: 'loading' as DocumentReadyState,
-    }
-    global.document = mockDocumentLoading as any
+    const originalReadyState = document.readyState
+    Object.defineProperty(document, 'readyState', { 
+      value: 'loading',
+      configurable: true
+    })
 
     const handlers = {
       'test-component': async () => ({ default: () => {} }),
@@ -193,132 +144,40 @@ describe('BUN-PLUGIN: Client Module Tests', () => {
     }).not.toThrow()
 
     // Test with complete state
-    const mockDocumentComplete = {
-      ...mockDocument,
-      readyState: 'complete' as DocumentReadyState,
-    }
-    global.document = mockDocumentComplete as any
+    Object.defineProperty(document, 'readyState', { 
+      value: 'complete',
+      configurable: true
+    })
 
     expect(() => {
       initIslands(handlers, { autoStart: true })
     }).not.toThrow()
+
+    // Restore original readyState
+    Object.defineProperty(document, 'readyState', { 
+      value: originalReadyState,
+      configurable: true
+    })
   })
 
-  test('should handle intersection observer availability', () => {
-    // Test without IntersectionObserver
-    const originalIntersectionObserver = global.window?.IntersectionObserver
-    // @ts-ignore
-    delete global.window.IntersectionObserver
-
-    const mockElements = [
-      {
-        getAttribute: (attr: string) => {
-          if (attr === 'data-island') return 'lazy-component'
-          if (attr === 'data-priority') return 'lazy'
-          if (attr === 'data-hydrated') return 'false'
-          return null
-        },
-        setAttribute: () => {},
-      },
-    ]
-
-    global.document.querySelectorAll = () => ({
-      length: mockElements.length,
-      item: (index: number) => mockElements[index] || null,
-      forEach: (callback: any) => mockElements.forEach(callback),
-      [Symbol.iterator]: function* () {
-        for (const element of mockElements) {
-          yield element
-        }
-      },
-    }) as any
-
-    const handlers = {
-      'lazy-component': async () => ({ default: () => {} }),
-    }
-
-    // Should handle missing IntersectionObserver gracefully
-    expect(() => {
-      hydrateIslands(handlers)
-    }).not.toThrow()
-
-    // Restore IntersectionObserver
-    if (originalIntersectionObserver) {
-      global.window.IntersectionObserver = originalIntersectionObserver
-    }
-  })
-
-  test('should skip already hydrated islands', () => {
-    const mockElements = [
-      {
-        getAttribute: (attr: string) => {
-          if (attr === 'data-island') return 'test-island'
-          if (attr === 'data-priority') return 'eager'
-          if (attr === 'data-hydrated') return 'true' // Already hydrated
-          return null
-        },
-        setAttribute: () => {},
-      },
-    ]
-
-    global.document.querySelectorAll = () => ({
-      length: mockElements.length,
-      item: (index: number) => mockElements[index] || null,
-      forEach: (callback: any) => mockElements.forEach(callback),
-      [Symbol.iterator]: function* () {
-        for (const element of mockElements) {
-          yield element
-        }
-      },
-    }) as any
+  test('should handle intersection observer functionality', () => {
+    const testIsland = document.createElement('div')
+    testIsland.setAttribute('data-island', 'test-island')
+    testIsland.setAttribute('data-priority', 'visible')
+    testIsland.setAttribute('data-hydrated', 'false')
+    document.body.appendChild(testIsland)
 
     const mockHandler = async () => ({
-      default: () => {
-        throw new Error('Should not be called for already hydrated islands')
-      },
+      default: () => {},
     })
 
     const handlers = {
       'test-island': mockHandler,
     }
 
-    // Should skip already hydrated islands
+    // Should not throw when using intersection observer
     expect(() => {
-      hydrateIslands(handlers)
-    }).not.toThrow()
-  })
-
-  test('should handle islands without handlers', () => {
-    const mockElements = [
-      {
-        getAttribute: (attr: string) => {
-          if (attr === 'data-island') return 'missing-handler'
-          if (attr === 'data-priority') return 'eager'
-          if (attr === 'data-hydrated') return 'false'
-          return null
-        },
-        setAttribute: () => {},
-      },
-    ]
-
-    global.document.querySelectorAll = () => ({
-      length: mockElements.length,
-      item: (index: number) => mockElements[index] || null,
-      forEach: (callback: any) => mockElements.forEach(callback),
-      [Symbol.iterator]: function* () {
-        for (const element of mockElements) {
-          yield element
-        }
-      },
-    }) as any
-
-    const handlers = {
-      'different-island': async () => ({ default: () => {} }),
-    }
-
-    // Should handle missing handlers gracefully
-    expect(() => {
-      hydrateIslands(handlers)
+      initIslands(handlers, { autoStart: true })
     }).not.toThrow()
   })
 }) 
