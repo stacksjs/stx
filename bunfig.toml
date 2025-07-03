@@ -2,4 +2,4 @@
 registry = { url = "https://registry.npmjs.org/", token = "$BUN_AUTH_TOKEN" }
 
 [test]
-preload = "./packages/stx/happy-dom.ts"
+preload = "./test-utils/happy-dom.ts"

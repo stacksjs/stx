@@ -1,65 +1,85 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STX Template Demo</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-  </style>
-</head>
-<body>
-  <h1>STX Template Demo</h1>
+@ts
+interface PageData {
+  title: string
+  description: string
+  navigation: Array<{ text: string, href: string }>
+  content: string
+}
 
-  <p>This file demonstrates template includes and component functionality.</p>
+const pageData: PageData = {
+  title: 'STX Template Demo',
+  description: 'A demonstration of STX template features',
+  navigation: [
+    { text: 'Home', href: '#' },
+    { text: 'About', href: '#about' },
+    { text: 'Contact', href: '#contact' }
+  ],
+  content: 'This is the main content of the page.'
+}
+@endts
 
-  <h2>Click-Through Demo</h2>
-  <p>You can Ctrl+click or Command+click (on Mac) on the template paths below to navigate to the corresponding files:</p>
+@extends('layouts/main')
 
-  <h3>Include Directives</h3>
-  <div class="includes">
-    <!-- You can click on 'partials/header' to navigate to that file -->
-    @include('partials/header')
+@section('head')
+  <title>{{ pageData.title }}</title>
+  <meta name="description" content="{{ pageData.description }}">
+@endsection
 
-    <!-- Different styles of includes -->
-    @include("partials/header")
-    @include('partials.header')
+@section('header')
+  <nav class="navigation">
+    @foreach(pageData.navigation as item)
+      <a href="{{ item.href }}" class="nav-link">{{ item.text }}</a>
+    @endforeach
+  </nav>
+@endsection
 
-    <!-- Include with parameters -->
-    @include('partials/header', { title: 'Home Page' })
+@section('main')
+  <div class="content">
+    <h1>{{ pageData.title }}</h1>
+    <p>{{ pageData.description }}</p>
 
-    <!-- Conditional includes -->
-    @includeIf(fileExists, 'partials/header')
-    @includeWhen(user.isAdmin, 'partials/admin-controls')
-    @includeUnless(user.isGuest, 'partials/user-profile')
-  </div>
-
-  <h3>Component Directives</h3>
-  <div class="components">
-    <!-- You can click on 'components/alert' to navigate to that component -->
-    @component('components/alert', { type: 'error', message: 'Error message' })
-      <p>Additional content for the alert component</p>
-    @endcomponent
-
-    <!-- Different styles of components -->
-    @component("components/alert")
-      <p>Content for the alert</p>
-    @endcomponent
-
-    @component('components.alert', {
-      type: 'success',
-      message: 'Operation completed successfully',
-      dismissible: true
+    @component('Card', {
+      title: 'Welcome',
+      content: pageData.content,
+      theme: 'light'
     })
-      <p>This is a dismissible success alert</p>
     @endcomponent
+
+    @include('partials/feature-list')
   </div>
-</body>
-</html>
+@endsection
+
+@section('footer')
+  <footer>
+    <p>&copy; {{ new Date().getFullYear() }} STX Demo</p>
+  </footer>
+@endsection
+
+<style>
+  .navigation {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+  }
+  .nav-link {
+    color: #333;
+    text-decoration: none;
+    padding: 0.5rem;
+    border-radius: 4px;
+  }
+  .nav-link:hover {
+    background: #e9ecef;
+  }
+  .content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  footer {
+    text-align: center;
+    padding: 2rem;
+    background: #f8f9fa;
+    margin-top: 2rem;
+  }
+</style>

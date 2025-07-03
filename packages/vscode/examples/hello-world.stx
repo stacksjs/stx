@@ -1,11 +1,29 @@
-@ts
-  const name = 'World';
-@endts
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hello World - STX Example</title>
+</head>
+<body>
+  <h1>Hello World!</h1>
+  
+  @ts
+  const message = "Welcome to STX!"
+  const currentTime = new Date().toLocaleTimeString()
+  @endts
 
-<h1>Hello, {{ name }}!</h1>
+  <div class="message">
+    <p>{{ message }}</p>
+    <p>Current time: {{ currentTime }}</p>
+  </div>
 
-@if(name === 'World')
-  <p>Welcome to STX (Stacks) language support in VS Code!</p>
-@else
-  <p>Hello, stranger!</p>
-@endif
+  <style>
+    .message {
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin: 1rem;
+      text-align: center;
+    }
+  </style>
+</body>
+</html>

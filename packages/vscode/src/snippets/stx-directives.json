@@ -1,0 +1,74 @@
+{
+  "STX If Directive": {
+    "prefix": "@if",
+    "body": [
+      "@if($1)",
+      "  $2",
+      "@endif"
+    ],
+    "description": "Create an @if directive block"
+  },
+  "STX If-Else Directive": {
+    "prefix": "@ifelse",
+    "body": [
+      "@if($1)",
+      "  $2",
+      "@else",
+      "  $3",
+      "@endif"
+    ],
+    "description": "Create an @if-@else directive block"
+  },
+  "STX Foreach Directive": {
+    "prefix": "@foreach",
+    "body": [
+      "@foreach($1 as $2)",
+      "  $3",
+      "@endforeach"
+    ],
+    "description": "Create a @foreach loop"
+  },
+  "STX For Directive": {
+    "prefix": "@for",
+    "body": [
+      "@for($1; $2; $3)",
+      "  $4",
+      "@endfor"
+    ],
+    "description": "Create a @for loop"
+  },
+  "STX While Directive": {
+    "prefix": "@while",
+    "body": [
+      "@while($1)",
+      "  $2",
+      "@endwhile"
+    ],
+    "description": "Create a @while loop"
+  },
+  "STX Section Directive": {
+    "prefix": "@section",
+    "body": [
+      "@section('$1')",
+      "  $2",
+      "@endsection"
+    ],
+    "description": "Create a @section block"
+  },
+  "STX Include Directive": {
+    "prefix": "@include",
+    "body": [
+      "@include('$1'${2:, ['$3' => $4]})"
+    ],
+    "description": "Include a template"
+  },
+  "STX Component Directive": {
+    "prefix": "@component",
+    "body": [
+      "@component('$1'${2:, ['$3' => $4]})",
+      "  $5",
+      "@endcomponent"
+    ],
+    "description": "Create a @component block"
+  }
+} 

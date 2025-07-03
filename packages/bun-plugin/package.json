@@ -51,9 +51,9 @@
     "changelog": "bunx changelogen --output CHANGELOG.md",
     "prepublishOnly": "bun run build",
     "release": "bun run changelog && bunx bumpp package.json --all",
-    "test": "bun test --preload ./happy-dom.ts",
-    "test:watch": "bun test --watch --preload ./happy-dom.ts",
-    "test:coverage": "bun test --coverage --preload ./happy-dom.ts",
+    "test": "bun test --preload ../../test-utils/happy-dom.ts",
+    "test:watch": "bun test --watch --preload ../../test-utils/happy-dom.ts",
+    "test:coverage": "bun test --coverage --preload ../../test-utils/happy-dom.ts",
     "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {

@@ -88,6 +88,60 @@ export enum TransitionEase {
 }
 
 /**
+ * Animation types and configurations for STX
+ */
+
+export type AnimationType = 'fade' | 'slide' | 'scale' | 'flip' | 'rotate' | 'custom'
+
+export type AnimationTiming = 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
+
+export type AnimationDirection = 'in' | 'out' | 'both'
+
+export interface AnimationConfig {
+  /** The type of animation to apply */
+  type: AnimationType
+  /** Duration of the animation in milliseconds */
+  duration?: number
+  /** Timing function for the animation */
+  timing?: AnimationTiming
+  /** Delay before animation starts in milliseconds */
+  delay?: number
+  /** Direction of the animation */
+  direction?: AnimationDirection
+}
+
+export interface TransitionOptions extends AnimationConfig {
+  /** Whether to remove the element from DOM after animation */
+  removeOnComplete?: boolean
+  /** Callback when animation starts */
+  onStart?: () => void
+  /** Callback when animation ends */
+  onComplete?: () => void
+}
+
+export interface MotionConfig {
+  /** Whether animations should be enabled */
+  enabled: boolean
+  /** Default duration for animations in milliseconds */
+  defaultDuration?: number
+  /** Default timing function */
+  defaultTiming?: AnimationTiming
+  /** Whether to respect user's reduced motion preference */
+  respectReducedMotion?: boolean
+}
+
+export interface AnimationGroupConfig {
+  /** Name of the animation group */
+  name: string
+  /** Selectors for elements in the group */
+  selectors: string[]
+  /** Delay between each element's animation */
+  stagger?: number
+  /** Base animation configuration */
+  animation: AnimationConfig
+}
+
+/**
  * Configuration options for transitions
  */
 export interface TransitionOptions {

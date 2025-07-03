@@ -4,6 +4,7 @@ import path from 'node:path'
 
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp-components')
+const PACKAGE_ROOT = path.resolve(TEST_DIR, '..')
 
 describe('DEVTOOLS: STX Components Tests', () => {
   beforeEach(async () => {
@@ -15,7 +16,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
   })
 
   test('should have Card component file', async () => {
-    const cardPath = 'src/components/Card.stx'
+    const cardPath = path.join(PACKAGE_ROOT, 'src/components/Card.stx')
     const exists = await Bun.file(cardPath).exists()
     expect(exists).toBe(true)
     
@@ -25,7 +26,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
   })
 
   test('should have PerformanceChart component file', async () => {
-    const chartPath = 'src/components/PerformanceChart.stx'
+    const chartPath = path.join(PACKAGE_ROOT, 'src/components/PerformanceChart.stx')
     const exists = await Bun.file(chartPath).exists()
     expect(exists).toBe(true)
     
@@ -35,7 +36,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
   })
 
   test('should have TemplateDetails component file', async () => {
-    const templatePath = 'src/components/TemplateDetails.stx'
+    const templatePath = path.join(PACKAGE_ROOT, 'src/components/TemplateDetails.stx')
     const exists = await Bun.file(templatePath).exists()
     expect(exists).toBe(true)
     
@@ -45,7 +46,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
   })
 
   test('should have valid STX syntax in Card component', async () => {
-    const cardPath = 'src/components/Card.stx'
+    const cardPath = path.join(PACKAGE_ROOT, 'src/components/Card.stx')
     const content = await Bun.file(cardPath).text()
     
     // Check for STX directives
@@ -57,7 +58,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
   })
 
   test('should have valid STX syntax in PerformanceChart component', async () => {
-    const chartPath = 'src/components/PerformanceChart.stx'
+    const chartPath = path.join(PACKAGE_ROOT, 'src/components/PerformanceChart.stx')
     const content = await Bun.file(chartPath).text()
     
     // Check for STX directives (performance charts likely use loops for data)
@@ -68,7 +69,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
   })
 
   test('should have valid STX syntax in TemplateDetails component', async () => {
-    const templatePath = 'src/components/TemplateDetails.stx'
+    const templatePath = path.join(PACKAGE_ROOT, 'src/components/TemplateDetails.stx')
     const content = await Bun.file(templatePath).text()
     
     // Check for STX directives
@@ -79,7 +80,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
   })
 
   test('should validate MainLayout structure', async () => {
-    const layoutPath = 'src/layouts/MainLayout.stx'
+    const layoutPath = path.join(PACKAGE_ROOT, 'src/layouts/MainLayout.stx')
     const exists = await Bun.file(layoutPath).exists()
     expect(exists).toBe(true)
     
@@ -103,7 +104,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
       'src/views/performance.stx',
       'src/views/templates.stx',
       'src/views/config.stx'
-    ]
+    ].map(view => path.join(PACKAGE_ROOT, view))
     
     for (const viewPath of views) {
       const exists = await Bun.file(viewPath).exists()
@@ -119,7 +120,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
       'src/components/Card.stx',
       'src/components/PerformanceChart.stx',
       'src/components/TemplateDetails.stx'
-    ]
+    ].map(component => path.join(PACKAGE_ROOT, component))
     
     for (const componentPath of componentPaths) {
       const content = await Bun.file(componentPath).text()
@@ -145,7 +146,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
       'src/components/Card.stx',
       'src/components/PerformanceChart.stx',
       'src/components/TemplateDetails.stx'
-    ]
+    ].map(component => path.join(PACKAGE_ROOT, component))
     
     for (const componentPath of componentPaths) {
       const content = await Bun.file(componentPath).text()

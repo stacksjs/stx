@@ -3,3 +3,6 @@ registry = { url = "https://registry.npmjs.org/", token = "$BUN_AUTH_TOKEN" }
 
 [serve.static]
 plugins = [ "./src/index.ts" ]
+
+[test]
+preload = "../../test-utils/happy-dom.ts"

@@ -406,5 +406,74 @@
       "\t$0",
       "@endguest"
     ]
+  },
+  "STX Template": {
+    "prefix": "stx",
+    "body": [
+      "<template>",
+      "  $1",
+      "</template>",
+      "",
+      "<script>",
+      "export default {",
+      "  name: '$2',",
+      "  props: {",
+      "    $3",
+      "  },",
+      "  setup(props) {",
+      "    $4",
+      "    return {",
+      "      $5",
+      "    }",
+      "  }",
+      "}",
+      "</script>"
+    ],
+    "description": "Create a new STX template"
+  },
+  "STX Component": {
+    "prefix": "stxc",
+    "body": [
+      "<template>",
+      "  <div class=\"$1\">",
+      "    $2",
+      "  </div>",
+      "</template>",
+      "",
+      "<script>",
+      "export default {",
+      "  name: '$3',",
+      "  props: {",
+      "    $4",
+      "  }",
+      "}",
+      "</script>"
+    ],
+    "description": "Create a new STX component"
+  },
+  "STX Layout": {
+    "prefix": "stxl",
+    "body": [
+      "<template>",
+      "  <div class=\"layout\">",
+      "    <header>",
+      "      $1",
+      "    </header>",
+      "    <main>",
+      "      $2",
+      "    </main>",
+      "    <footer>",
+      "      $3",
+      "    </footer>",
+      "  </div>",
+      "</template>",
+      "",
+      "<script>",
+      "export default {",
+      "  name: '$4'",
+      "}",
+      "</script>"
+    ],
+    "description": "Create a new STX layout"
   }
 }

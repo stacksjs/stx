@@ -63,4 +63,4 @@ Object.defineProperty(window.Element.prototype, '__dispatchEvent_safe', {
   writable: false,
   enumerable: false,
   configurable: false
-})
+}) 

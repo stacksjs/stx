@@ -6,132 +6,130 @@
   <title>STX Directives Example</title>
 </head>
 <body>
-  <h1>STX Directives Example</h1>
+  <h1>STX Directives Demo</h1>
 
   @ts
-    // Define some data for the examples
-    const isLoggedIn = true;
-    const userName = 'John Doe';
-    const userRole = 'admin';
-    const items = ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'];
-    const users = [
-      { name: 'Alice', role: 'admin' },
-      { name: 'Bob', role: 'user' },
-      { name: 'Charlie', role: 'user' },
-      { name: 'Diana', role: 'manager' }
-    ];
-
-    // Functions for event handling
-    const handleClick = () => {
-      console.log('Button clicked!');
-    };
-
-    const toggleVisibility = (elementId: string) => {
-      const element = document.getElementById(elementId);
-      if (element) {
-        element.style.display = element.style.display === 'none' ? 'block' : 'none';
-      }
-    };
+  const items = ['Apple', 'Banana', 'Orange', 'Grape']
+  const user = {
+    name: 'John Doe',
+    isAdmin: true,
+    preferences: {
+      theme: 'dark',
+      notifications: true
+    }
+  }
+  const showMessage = true
   @endts
 
-  {{-- Example of @if directive --}}
-  <div class="login-status">
-    @if(isLoggedIn)
-      <p>Welcome back, {{ userName }}!</p>
+  <!-- Conditional Directives -->
+  <section>
+    <h2>Conditional Directives</h2>
+
+    @if(user.isAdmin)
+      <div class="admin-panel">
+        <p>Welcome, Administrator!</p>
+      </div>
     @else
-      <p>Please log in to continue.</p>
+      <div class="user-panel">
+        <p>Welcome, User!</p>
+      </div>
     @endif
-  </div>
 
-  {{-- Example of @for directive --}}
-  <div class="items-list">
-    <h2>Items List</h2>
+    @unless(user.preferences.notifications)
+      <p>You have disabled notifications</p>
+    @endunless
+  </section>
+
+  <!-- Loop Directives -->
+  <section>
+    <h2>Loop Directives</h2>
+
     <ul>
-      @for(const item of items)
-        <li>{{ item }}</li>
-      @endfor
+      @foreach(items as item, index)
+        <li>{{ index + 1 }}. {{ item }}</li>
+      @endforeach
     </ul>
-  </div>
 
-  {{-- Example of @click directive --}}
-  <div class="buttons-section">
-    <h2>Interactive Buttons</h2>
-    <button @click="handleClick()">Click Me</button>
-    <button @click="toggleVisibility('advanced-section')">Toggle Advanced Section</button>
-  </div>
+    @for(let i = 0; i < 3; i++)
+      <p>Counter: {{ i }}</p>
+    @endfor
+  </section>
 
-  {{-- Example of conditional class and style directives --}}
-  <div id="advanced-section"
-       @class="userRole === 'admin' ? 'admin-section' : 'user-section'"
-       @style="isLoggedIn ? 'display: block' : 'display: none'">
-    <h2>Advanced Section</h2>
-    <p>This section is only visible to logged-in users and has different styling based on role.</p>
-  </div>
+  <!-- Switch Directive -->
+  <section>
+    <h2>Switch Directive</h2>
 
-  {{-- Example of combining multiple directives --}}
-  <div class="users-list">
-    <h2>Users List</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Role</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for(const user of users)
-          <tr @class="user.role === 'admin' ? 'admin-row' : 'user-row'">
-            <td>{{ user.name }}</td>
-            <td>{{ user.role }}</td>
-            <td>
-              <button @click="console.log('User:', user.name)" @if="user.role !== 'admin'">
-                Edit
-              </button>
-            </td>
-          </tr>
-        @endfor
-      </tbody>
-    </table>
-  </div>
+    @switch(user.preferences.theme)
+      @case('dark')
+        <p>Dark theme is active</p>
+        @break
+      @case('light')
+        <p>Light theme is active</p>
+        @break
+      @default
+        <p>System theme is active</p>
+    @endswitch
+  </section>
+
+  <!-- Animation Directives -->
+  <section>
+    <h2>Animation Directives</h2>
+
+    @transition('fade', 400, 'ease-in-out')
+      @if(showMessage)
+        <div class="message">
+          <p>This message will fade in/out</p>
+        </div>
+      @endif
+    @endtransition
+
+    @motion(true)
+      <div class="animated-box"></div>
+    @endmotion
+  </section>
+
+  <!-- Raw Content -->
+  <section>
+    <h2>Raw Content</h2>
+
+    @raw
+      <p>This content will not be processed: {{ user.name }}</p>
+    @endraw
+  </section>
 
   <style>
-    .admin-section {
-      background-color: #f8f9fa;
-      border: 2px solid #28a745;
-      padding: 15px;
-      margin-top: 20px;
+    section {
+      margin: 2rem 0;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
-
-    .user-section {
-      background-color: #e9ecef;
-      border: 1px solid #adb5bd;
-      padding: 15px;
-      margin-top: 20px;
+    .admin-panel {
+      background: #e3f2fd;
+      padding: 1rem;
+      border-radius: 4px;
     }
-
-    .admin-row {
-      background-color: #e8f4f8;
-      font-weight: bold;
+    .user-panel {
+      background: #f5f5f5;
+      padding: 1rem;
+      border-radius: 4px;
     }
-
-    .user-row {
-      background-color: #ffffff;
+    .message {
+      background: #4caf50;
+      color: white;
+      padding: 1rem;
+      border-radius: 4px;
     }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .animated-box {
+      width: 50px;
+      height: 50px;
+      background: #ff4081;
+      margin: 1rem 0;
+      animation: bounce 1s infinite;
     }
-
-    th, td {
-      border: 1px solid #dee2e6;
-      padding: 8px;
-      text-align: left;
-    }
-
-    th {
-      background-color: #f8f9fa;
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
     }
   </style>
 </body>
