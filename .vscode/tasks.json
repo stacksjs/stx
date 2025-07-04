@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "bun: build",
+      "command": "cd packages/vscode && bun build.ts",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+} 
