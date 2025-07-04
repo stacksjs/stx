@@ -60,6 +60,6 @@
     "@stacksjs/stx": "workspace:*"
   },
   "devDependencies": {
-    "happy-dom": "^15.10.2"
+    "happy-dom": "^15.11.7"
   }
 }
