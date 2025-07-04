@@ -1,5 +1,5 @@
-import { getHighlighter, bundledLanguages, bundledThemes } from 'shikiji'
-import type { Highlighter } from 'shikiji'
+import { getHighlighter } from 'shiki'
+import type { Highlighter } from 'shiki'
 
 let highlighter: Highlighter
 
