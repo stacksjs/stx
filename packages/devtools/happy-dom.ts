@@ -1,4 +1,5 @@
-import { Window } from 'happy-dom'
+// Use shared happy-dom configuration
+import '../../test-utils/happy-dom'
 
 // Set up DOM globals using happy-dom
 const window = new Window()

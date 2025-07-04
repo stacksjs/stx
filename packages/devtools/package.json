@@ -7,9 +7,9 @@
   "scripts": {
     "dev": "bun run devtools-server.ts",
     "build": "bun build ./src/index.ts --outdir ./dist",
-    "test": "bun test --preload ./happy-dom.ts",
-    "test:watch": "bun test --watch --preload ./happy-dom.ts",
-    "test:coverage": "bun test --coverage --preload ./happy-dom.ts"
+    "test": "bun test --preload ../../test-utils/happy-dom.ts",
+    "test:watch": "bun test --watch --preload ../../test-utils/happy-dom.ts",
+    "test:coverage": "bun test --coverage --preload ../../test-utils/happy-dom.ts"
   },
   "dependencies": {
     "bun-plugin-stx": "workspace:*"
