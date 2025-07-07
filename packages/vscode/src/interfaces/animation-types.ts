@@ -110,7 +110,7 @@ export interface AnimationConfig {
   direction?: AnimationDirection
 }
 
-export interface TransitionOptions extends AnimationConfig {
+export interface TransitionCallbacks {
   /** Whether to remove the element from DOM after animation */
   removeOnComplete?: boolean
   /** Callback when animation starts */

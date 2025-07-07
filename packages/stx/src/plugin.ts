@@ -10,7 +10,7 @@ export const plugin: BunPlugin = {
     // Extract options from config or use defaults
     const options: StxOptions = {
       ...defaultConfig,
-      ...build.config?.stx,
+      ...(build.config as any)?.stx,
     }
 
     // Track all dependencies for web component building

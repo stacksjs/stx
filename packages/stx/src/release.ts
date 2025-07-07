@@ -1,1 +1,1 @@
-export const gitHash = 'f9c3713'
+export const gitHash: string = 'f9c3713'

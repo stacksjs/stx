@@ -1,6 +1,5 @@
 import type { StxConfig, StxOptions } from './types'
 import { resolve } from 'node:path'
-// @ts-expect-error - bunfig is not properly typed atm
 import { loadConfig } from 'bunfig'
 import { a11yDirective, screenReaderDirective } from './a11y'
 import { animationGroupDirective, motionDirective, scrollAnimateDirective, transitionDirective } from './animation'
@@ -102,11 +101,11 @@ export const defaultConfig: StxConfig = {
     syntaxHighlighting: {
       enabled: true,
       serverSide: true,
-      defaultTheme: 'github',
+      defaultTheme: 'github-light',
       highlightUnknownLanguages: true,
       additionalThemes: [
-        'vs',
-        'atom-one-dark',
+        'light-plus',
+        'one-dark-pro',
         'dracula',
         'monokai',
         'solarized-light',

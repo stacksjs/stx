@@ -37,7 +37,12 @@ export enum TransitionEase {
 /**
  * Default transition options
  */
-export const DEFAULT_TRANSITION_OPTIONS = {
+export const DEFAULT_TRANSITION_OPTIONS: {
+  duration: number
+  delay: number
+  ease: string
+  direction: string
+} = {
   duration: 300,
   delay: 0,
   ease: TransitionEase.Ease as string,
