@@ -54,7 +54,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     expect(result.success).toBe(true)
     const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
     const content = await Bun.file(htmlOutput.path).text()
-    
+
     expect(content).toContain('<title>Hello World</title>')
     expect(content).toContain('content="Welcome to STX templating"')
     expect(content).toContain('<h1>Hello World</h1>')
@@ -117,7 +117,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     expect(result.success).toBe(true)
     const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
     const content = await Bun.file(htmlOutput.path).text()
-    
+
     expect(content).toContain('<div class="welcome-banner">')
     expect(content).toContain('<h1>Welcome to the App!</h1>')
     expect(content).toContain('<h2>Hello, Alice!</h2>')
@@ -190,22 +190,22 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     expect(result.success).toBe(true)
     const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
     const content = await Bun.file(htmlOutput.path).text()
-    
+
     // Categories
     expect(content).toContain('<li>Electronics</li>')
     expect(content).toContain('<li>Accessories</li>')
     expect(content).toContain('<li>Software</li>')
-    
+
     // Products
     expect(content).toContain('<h3>Laptop</h3>')
     expect(content).toContain('<p class="price">Price: 999.99</p>')
     expect(content).toContain('<div class="product-card in-stock">')
     expect(content).toContain('<button class="btn-buy">Buy Now</button>')
-    
+
     expect(content).toContain('<h3>Keyboard</h3>')
     expect(content).toContain('<div class="product-card out-of-stock">')
     expect(content).toContain('<button class="btn-notify" disabled>Out of Stock</button>')
-    
+
     // Numbers
     expect(content).toContain('<li>Number 1</li>')
     expect(content).toContain('<li>Number 5</li>')
@@ -284,7 +284,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     expect(result.success).toBe(true)
     const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
     const content = await Bun.file(htmlOutput.path).text()
-    
+
     expect(content).toContain('<h1>Tech Corp</h1>')
     expect(content).toContain('<p>Founded in 2020</p>')
     expect(content).toContain('123 Main St<br>')
@@ -351,18 +351,18 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     expect(result.success).toBe(true)
     const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
     const content = await Bun.file(htmlOutput.path).text()
-    
+
     expect(content).toContain('<h2>John Doe</h2>')
     expect(content).toContain('<span class="initials">J.D.</span>')
     expect(content).toContain('<p>Age: 30 years old</p>')
     expect(content).toContain('<p>Status: Adult</p>')
-    
+
     expect(content).toContain('<h2>Jane Smith</h2>')
     expect(content).toContain('<span class="initials">J.S.</span>')
     expect(content).toContain('<p>Age: 25 years old</p>')
-    
+
     expect(content).toContain('<h2>Bob Johnson</h2>')
     expect(content).toContain('<span class="initials">B.J.</span>')
     expect(content).toContain('<p>Age: 35 years old</p>')
   })
-}) 
+})

@@ -175,7 +175,7 @@ describe('DOM User Interaction Tests', () => {
   })
 
   test('should correctly render STX template with form elements', async () => {
-    const template = path.join(TEMPLATE_DIR, 'user-form.stx')
+    const _template = path.join(TEMPLATE_DIR, 'user-form.stx')
 
     // Instead of building with Bun.build, directly set HTML to avoid URL errors
     const html = `

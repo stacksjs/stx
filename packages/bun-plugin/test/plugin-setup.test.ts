@@ -123,7 +123,7 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
       plugins: [plugin],
       config: {
         stx: {
-          // @ts-ignore - intentionally invalid config for testing
+          // @ts-expect-error - intentionally invalid config for testing
           invalidOption: 'invalid',
         },
       },
@@ -150,4 +150,4 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
     const content = await Bun.file(htmlOutput.path).text()
     expect(content).toContain('<h1>Simple Template</h1>')
   })
-}) 
+})

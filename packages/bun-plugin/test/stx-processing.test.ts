@@ -73,7 +73,7 @@ describe('BUN-PLUGIN: STX File Processing', () => {
     expect(result.outputs.length).toBeGreaterThanOrEqual(1)
     const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
     const content = await Bun.file(htmlOutput.path).text()
-    
+
     // The script should be removed and variables should be processed
     expect(content).not.toContain('<script>')
     expect(content).toContain('<title>Dynamic Title</title>')
@@ -106,7 +106,7 @@ describe('BUN-PLUGIN: STX File Processing', () => {
     expect(result.success).toBe(true)
     const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
     const content = await Bun.file(htmlOutput.path).text()
-    
+
     expect(content).toContain('<div class="container">')
     expect(content).toContain('<header>')
     expect(content).toContain('<h1>Hello, World!</h1>')
@@ -154,7 +154,7 @@ describe('BUN-PLUGIN: STX File Processing', () => {
     expect(result.success).toBe(true)
     const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
     const content = await Bun.file(htmlOutput.path).text()
-    
+
     expect(content).toContain('<h1>Hello, John Doe!</h1>')
     expect(content).toContain('<p>Age: 30</p>')
     expect(content).toContain('<p>Status: Active</p>')
@@ -210,7 +210,7 @@ describe('BUN-PLUGIN: STX File Processing', () => {
     expect(result.success).toBe(true)
     const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
     const content = await Bun.file(htmlOutput.path).text()
-    
+
     expect(content).toContain('<header>')
     expect(content).toContain('<h1>Welcome, Alice!</h1>')
     expect(content).toContain('<span class="badge">Admin</span>')
@@ -282,7 +282,7 @@ describe('BUN-PLUGIN: STX File Processing', () => {
     })
 
     expect(result.success).toBe(true)
-        const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
+    const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
     const content = await Bun.file(htmlOutput.path).text()
 
     expect(content).toContain('<h1>CommonJS Title</h1>')
@@ -315,7 +315,7 @@ describe('BUN-PLUGIN: STX File Processing', () => {
     })
 
     expect(result.success).toBe(true)
-        const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
+    const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
     const content = await Bun.file(htmlOutput.path).text()
 
     expect(content).toContain('<!DOCTYPE html>')
@@ -393,7 +393,7 @@ describe('BUN-PLUGIN: STX File Processing', () => {
     })
 
     expect(result.success).toBe(true)
-        const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
+    const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
     const content = await Bun.file(htmlOutput.path).text()
 
     expect(content).toContain('<title>Complex Template</title>')
@@ -408,4 +408,4 @@ describe('BUN-PLUGIN: STX File Processing', () => {
     expect(content).toContain('<h2>Post 3</h2>')
     expect(content).not.toContain('<h2>Post 2</h2>') // Should be filtered out because published: false
   })
-}) 
+})

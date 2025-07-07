@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 
 // Get the current git hash
 function getCurrentGitHash(): string {

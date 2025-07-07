@@ -19,7 +19,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
     const serverPath = path.join(PACKAGE_ROOT, 'devtools-server.ts')
     const exists = await Bun.file(serverPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(serverPath).text()
     expect(content).toContain('serve')
     expect(content.length).toBeGreaterThan(0)
@@ -28,16 +28,16 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
   test('should export server functionality', async () => {
     const serverPath = path.join(PACKAGE_ROOT, 'devtools-server.ts')
     const content = await Bun.file(serverPath).text()
-    
+
     // Check for server setup code
-    expect(content).toMatch(/serve|port|fetch/);
+    expect(content).toMatch(/serve|port|fetch/)
   })
 
   test('should have main index module', async () => {
     const indexPath = path.join(PACKAGE_ROOT, 'src/index.ts')
     const exists = await Bun.file(indexPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(indexPath).text()
     expect(content.length).toBeGreaterThan(0)
   })
@@ -46,10 +46,10 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
     const packagePath = path.join(PACKAGE_ROOT, 'package.json')
     const exists = await Bun.file(packagePath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(packagePath).text()
     const packageJson = JSON.parse(content)
-    
+
     expect(packageJson.name).toBeDefined()
     expect(packageJson.scripts).toBeDefined()
     expect(packageJson.scripts.test).toBeDefined()
@@ -59,7 +59,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
     const configPath = path.join(PACKAGE_ROOT, 'src/stx.config.ts')
     const exists = await Bun.file(configPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(configPath).text()
     expect(content).toContain('export')
     expect(content).toMatch(/StxConfig|export\s+default|export\s+const/)
@@ -71,13 +71,13 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
       'public/dashboard.html',
       'public/performance.html',
       'public/templates.html',
-      'public/config.html'
+      'public/config.html',
     ].map(asset => path.join(PACKAGE_ROOT, asset))
-    
+
     for (const assetPath of publicAssets) {
       const exists = await Bun.file(assetPath).exists()
       expect(exists).toBe(true)
-      
+
       const content = await Bun.file(assetPath).text()
       // These are HTML fragments/compiled templates, not full HTML documents
       expect(content.length).toBeGreaterThan(0)
@@ -91,9 +91,9 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
       'public/icons/chart-line.svg',
       'public/icons/document.svg',
       'public/icons/settings.svg',
-      'public/icons/assembly-cluster.svg'
+      'public/icons/assembly-cluster.svg',
     ].map(icon => path.join(PACKAGE_ROOT, icon))
-    
+
     for (const iconPath of iconPaths) {
       const exists = await Bun.file(iconPath).exists()
       expect(exists).toBe(true)
@@ -104,10 +104,10 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
     const tsconfigPath = path.join(PACKAGE_ROOT, 'tsconfig.json')
     const exists = await Bun.file(tsconfigPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(tsconfigPath).text()
     const tsconfig = JSON.parse(content)
-    
+
     expect(tsconfig.compilerOptions).toBeDefined()
     expect(tsconfig.compilerOptions.target).toBeDefined()
   })
@@ -116,7 +116,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
     const bunfigPath = path.join(PACKAGE_ROOT, 'bunfig.toml')
     const exists = await Bun.file(bunfigPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(bunfigPath).text()
     expect(content).toContain('[')
   })
@@ -125,7 +125,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
     const unoConfigPath = path.join(PACKAGE_ROOT, 'uno.config.ts')
     const exists = await Bun.file(unoConfigPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(unoConfigPath).text()
     expect(content).toContain('export')
     expect(content).toMatch(/defineConfig|export\s+default/)
@@ -135,7 +135,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
     const srcUnoConfigPath = path.join(PACKAGE_ROOT, 'src/uno.config.ts')
     const exists = await Bun.file(srcUnoConfigPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(srcUnoConfigPath).text()
     expect(content).toContain('export')
   })
@@ -144,7 +144,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
     const stxTypesPath = path.join(PACKAGE_ROOT, 'src/stx.d.ts')
     const exists = await Bun.file(stxTypesPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(stxTypesPath).text()
     expect(content).toMatch(/declare|interface|type|namespace/)
   })
@@ -153,12 +153,12 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
     const htmlFiles = [
       'public/index.html',
       'public/dashboard.html',
-      'public/performance.html'
+      'public/performance.html',
     ].map(html => path.join(PACKAGE_ROOT, html))
-    
+
     for (const htmlPath of htmlFiles) {
       const content = await Bun.file(htmlPath).text()
-      
+
       // These are HTML fragments/compiled templates, not full HTML documents
       expect(content.length).toBeGreaterThan(0)
       expect(content).toMatch(/<div|<section|<h[1-6]/)
@@ -174,18 +174,18 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
   test('should check for development server setup', async () => {
     const serverPath = path.join(PACKAGE_ROOT, 'devtools-server.ts')
     const content = await Bun.file(serverPath).text()
-    
+
     // Check for server-related code
-    expect(content).toMatch(/serve|server|listen|port|Bun\.serve/)
+    expect(content).toMatch(/server|listen|port|Bun\.serve/)
   })
 
   test('should validate component integration in views', async () => {
     const dashboardPath = path.join(PACKAGE_ROOT, 'src/views/dashboard.stx')
     const content = await Bun.file(dashboardPath).text()
-    
+
     // Check for STX template features
-    expect(content).toMatch(/@extends|@include|@foreach|\{\{/);
+    expect(content).toMatch(/@extends|@include|@foreach|\{\{/)
     // Should have some kind of STX directive or placeholder
-    expect(content).toMatch(/@\w+|\{\{.*\}\}/);
+    expect(content).toMatch(/@\w+|\{\{.*\}\}/)
   })
-}) 
+})

@@ -92,17 +92,17 @@ describe('BUN-PLUGIN: Client Module Tests', () => {
 
   test('should handle non-browser environment gracefully', () => {
     // Temporarily remove browser globals
-    const originalDocument = global.document
-    const originalWindow = global.window
+    const originalDocument = globalThis.document
+    const originalWindow = globalThis.window
 
     // Mock typeof checks for browser environment
-    Object.defineProperty(global, 'document', { 
-      value: undefined, 
-      configurable: true 
+    Object.defineProperty(globalThis, 'document', {
+      value: undefined,
+      configurable: true,
     })
-    Object.defineProperty(global, 'window', { 
-      value: undefined, 
-      configurable: true 
+    Object.defineProperty(globalThis, 'window', {
+      value: undefined,
+      configurable: true,
     })
 
     const handlers = {
@@ -117,22 +117,23 @@ describe('BUN-PLUGIN: Client Module Tests', () => {
       preloadIslandHandlers(handlers)
       // If we reach here, the functions have proper environment guards
       expect(true).toBe(true)
-    } catch (error) {
+    }
+    catch (error) {
       // If they throw due to missing document, that's also acceptable behavior
       expect(error).toBeInstanceOf(Error)
     }
 
     // Restore globals
-    global.document = originalDocument
-    global.window = originalWindow
+    globalThis.document = originalDocument
+    globalThis.window = originalWindow
   })
 
   test('should handle DOM ready states correctly', () => {
     // Test with loading state
     const originalReadyState = document.readyState
-    Object.defineProperty(document, 'readyState', { 
+    Object.defineProperty(document, 'readyState', {
       value: 'loading',
-      configurable: true
+      configurable: true,
     })
 
     const handlers = {
@@ -144,9 +145,9 @@ describe('BUN-PLUGIN: Client Module Tests', () => {
     }).not.toThrow()
 
     // Test with complete state
-    Object.defineProperty(document, 'readyState', { 
+    Object.defineProperty(document, 'readyState', {
       value: 'complete',
-      configurable: true
+      configurable: true,
     })
 
     expect(() => {
@@ -154,9 +155,9 @@ describe('BUN-PLUGIN: Client Module Tests', () => {
     }).not.toThrow()
 
     // Restore original readyState
-    Object.defineProperty(document, 'readyState', { 
+    Object.defineProperty(document, 'readyState', {
       value: originalReadyState,
-      configurable: true
+      configurable: true,
     })
   })
 
@@ -180,4 +181,4 @@ describe('BUN-PLUGIN: Client Module Tests', () => {
       initIslands(handlers, { autoStart: true })
     }).not.toThrow()
   })
-}) 
+})

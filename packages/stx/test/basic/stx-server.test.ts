@@ -155,8 +155,8 @@ describe('STX with Bun.serve Routes', () => {
       await fs.promises.rm(OUTPUT_DIR, { recursive: true, force: true })
       await fs.promises.rm(API_ROUTES, { recursive: true, force: true })
     }
-    catch (error) {
-      console.error('Error cleaning up test directories:', error)
+    catch {
+      console.error('Error cleaning up test directories')
     }
   })
 
@@ -234,7 +234,8 @@ describe('STX with Bun.serve Routes', () => {
       // Dispatch click event (with error handling for happy-dom readonly property issue)
       try {
         button.__dispatchEvent_safe(new Event('click'))
-      } catch (error) {
+      }
+      catch {
         // Handle happy-dom readonly property issue by triggering click directly
         (button as HTMLElement).click()
       }

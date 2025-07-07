@@ -42,7 +42,7 @@ async function processTemplate(templatePath: string): Promise<{ html: string, da
   const filteredHtml = html.replace(/<script src="\.\/chunk-[^"]+\.js"><\/script>/g, '')
 
   // Create a mock data object for testing based on the template file
-  const sourceCode = await Bun.file(templatePath).text()
+  const _sourceCode = await Bun.file(templatePath).text()
   const data: StxModuleContent = {
     title: 'User Profile Form',
     placeholders: {
@@ -167,7 +167,7 @@ describe('STX Import Testing', () => {
   test('should support DOM interaction with processed template', async () => {
     // Process the STX file
     const stxFilePath = path.join(TEMPLATE_DIR, 'profile.stx')
-    const { html, data } = await processTemplate(stxFilePath)
+    const { html, data: _data } = await processTemplate(stxFilePath)
 
     // Set the HTML content to the document
     document.body.innerHTML = html

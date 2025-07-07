@@ -15,4 +15,4 @@ export default defineConfig({
       info: '#3b82f6',
     },
   },
-}) 
+})

@@ -25,6 +25,12 @@ interface TestCommandOptions {
   verbose?: boolean
 }
 
+// Helper to check if an argument is a glob pattern
+const isGlob = (arg: string) => arg.includes('*') || arg.includes('?') || arg.includes('{') || arg.includes('[')
+
+// Helper to check if we support this file type
+const isSupportedFileType = (arg: string) => arg.endsWith('.stx') || arg.endsWith('.md')
+
 /**
  * Run tests using Bun's test runner with happy-dom for browser environment
  */
@@ -138,14 +144,14 @@ async function runTests(
     return new Promise((resolve) => {
       child.on('close', (code) => {
         const endTime = performance.now()
-        const duration = ((endTime - startTime) / 1000).toFixed(2)
+        const _duration = ((endTime - startTime) / 1000).toFixed(2)
 
         if (code === 0) {
-          // console.log(`✓ Tests completed successfully in ${duration}s`);
+          // console.log(`✓ Tests completed successfully in ${_duration}s`);
           resolve(true)
         }
         else {
-          // console.error(`✗ Tests failed with code ${code} after ${duration}s`);
+          // console.error(`✗ Tests failed with code ${_duration} after ${_duration}s`);
           resolve(false)
         }
       })
@@ -165,12 +171,6 @@ async function runTests(
 }
 
 const cli = new CAC('stx')
-
-// Helper to check if an argument is a glob pattern
-const isGlob = (arg: string) => arg.includes('*') || arg.includes('?') || arg.includes('{') || arg.includes('[')
-
-// Helper to check if we support this file type
-const isSupportedFileType = (arg: string) => arg.endsWith('.stx') || arg.endsWith('.md')
 
 // Check if direct file(s) run mode or glob pattern is provided
 const isDirectMode = process.argv.length >= 3 && (
@@ -725,6 +725,7 @@ else {
                   // Execute the script to extract variables
                   try {
                     // Create a function to evaluate the script and extract variables
+                    // eslint-disable-next-line no-new-func
                     const evalFn = new Function(`${scriptContent}
                       // Return all variables defined in this scope
                       return {
@@ -939,7 +940,7 @@ else {
         try {
           fs.rmSync(tempDir, { recursive: true, force: true })
         }
-        catch (error) {
+        catch {
           console.warn('Warning: Failed to clean up temporary directory')
         }
 
