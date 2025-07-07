@@ -30,10 +30,10 @@ export default {
   },
 
   // Method to initialize the devtools with a config
-  init(_config?: Partial<StxConfig>) {
+  init: (_config?: Partial<StxConfig>): { start: (port?: number) => number } => {
     // Initialize STX DevTools with config
     return {
-      start(port = 3000) {
+      start: (port = 3000): number => {
         // Start dev server on specified port
         return port
       },

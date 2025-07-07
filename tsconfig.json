@@ -27,5 +27,6 @@
     "skipDefaultLibCheck": true,
     "skipLibCheck": true
   },
-  "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx", "stx"]
+  "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx", "stx"],
+  "exclude": ["packages/vscode/**/*", "node_modules", "dist"]
 }

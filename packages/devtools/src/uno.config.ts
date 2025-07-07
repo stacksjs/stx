@@ -1,6 +1,6 @@
 import { defineConfig } from 'unocss'
 
-export default defineConfig({
+const config: any = defineConfig({
   theme: {
     colors: {},
     fontFamily: {
@@ -9,3 +9,5 @@ export default defineConfig({
   },
   shortcuts: {},
 })
+
+export default config
