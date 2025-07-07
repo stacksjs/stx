@@ -177,31 +177,33 @@ export async function fileExists(filePath: string): Promise<boolean> {
  * Extract variables from script content
  */
 export async function extractVariables(scriptContent: string, context: Record<string, any>, filePath: string): Promise<void> {
-  if (!scriptContent.trim()) return
+  if (!scriptContent.trim())
+    return
 
   // Step 1: Create a safe execution environment
   const module = { exports: {} }
   const exports = module.exports
-  
+
   try {
     // Step 2: Parse and convert the script content systematically
     const convertedScript = convertToCommonJS(scriptContent)
-    
+
     // Step 3: Execute the converted script
     // eslint-disable-next-line no-new-func
     const scriptFn = new Function('module', 'exports', convertedScript)
     scriptFn(module, exports)
-    
+
     // Step 4: Copy results to context
     Object.assign(context, module.exports)
-    
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.warn(`Failed to execute script as CommonJS module in ${filePath}:`, error)
-    
+
     // Fallback: Try alternative parsing approaches
     try {
       await fallbackVariableExtraction(scriptContent, context, filePath)
-    } catch (fallbackError) {
+    }
+    catch (fallbackError) {
       console.warn(`Variable extraction issue in ${filePath}:`, fallbackError)
     }
   }
@@ -213,47 +215,47 @@ export async function extractVariables(scriptContent: string, context: Record<st
 function convertToCommonJS(scriptContent: string): string {
   const lines = scriptContent.split('\n')
   const convertedLines: string[] = []
-  
+
   let i = 0
   while (i < lines.length) {
     const line = lines[i].trim()
-    
+
     if (line.startsWith('export const ') || line.startsWith('export let ') || line.startsWith('export var ')) {
       // Handle export variable declarations
       const result = parseVariableDeclaration(lines, i)
       const { type, name, value } = result
-      
+
       convertedLines.push(`${type} ${name} = ${value};`)
       convertedLines.push(`module.exports.${name} = ${name};`)
-      
+
       i = result.nextIndex
     }
     else if (line.startsWith('export function ')) {
       // Handle export function declarations
       const result = parseFunctionDeclaration(lines, i)
-      
+
       convertedLines.push(result.functionCode)
       convertedLines.push(`module.exports.${result.name} = ${result.name};`)
-      
+
       i = result.nextIndex
     }
     else if (line.startsWith('const ') || line.startsWith('let ') || line.startsWith('var ')) {
       // Handle regular variable declarations
       const result = parseVariableDeclaration(lines, i)
       const { type, name, value } = result
-      
+
       convertedLines.push(`${type} ${name} = ${value};`)
       convertedLines.push(`module.exports.${name} = ${name};`)
-      
+
       i = result.nextIndex
     }
     else if (line.startsWith('function ')) {
       // Handle regular function declarations
       const result = parseFunctionDeclaration(lines, i)
-      
+
       convertedLines.push(result.functionCode)
       convertedLines.push(`module.exports.${result.name} = ${result.name};`)
-      
+
       i = result.nextIndex
     }
     else if (line.includes('module.exports')) {
@@ -270,7 +272,7 @@ function convertToCommonJS(scriptContent: string): string {
       i++
     }
   }
-  
+
   return convertedLines.join('\n')
 }
 
@@ -278,71 +280,75 @@ function convertToCommonJS(scriptContent: string): string {
  * Parse variable declarations (including multi-line objects and arrays)
  */
 function parseVariableDeclaration(lines: string[], startIndex: number): {
-  type: string;
-  name: string;
-  value: string;
-  nextIndex: number;
+  type: string
+  name: string
+  value: string
+  nextIndex: number
 } {
   const firstLine = lines[startIndex].trim()
-  
+
   // Extract type and check for different declaration patterns
-  let match = firstLine.match(/^(?:export\s+)?(const|let|var)\s+(\w+)\s*=\s*(.*)$/)
-  
+  // eslint-disable-next-line regexp/no-super-linear-backtracking
+  const match = firstLine.match(/^(?:export\s+)?(const|let|var)\s+(\w+)\s*=\s*(.*)$/)
+
   // If simple pattern doesn't match, try destructuring pattern
   if (!match) {
+    // eslint-disable-next-line regexp/no-super-linear-backtracking
     const destructuringMatch = firstLine.match(/^(?:export\s+)?(const|let|var)\s+(\{[^}]+\}|\[[^\]]+\])\s*=\s*(.*)$/)
     if (destructuringMatch) {
       const [, type, destructuringPattern, initialValue] = destructuringMatch
       let value = initialValue
       let currentIndex = startIndex
-      
+
       // Check if we need to read multiple lines for the value
       if (needsMultilineReading(initialValue)) {
         const result = readMultilineValue(lines, startIndex, initialValue)
         value = result.value
         currentIndex = result.nextIndex
-      } else {
+      }
+      else {
         currentIndex = startIndex + 1
       }
-      
+
       // Clean up the value
       value = value.trim().replace(/;$/, '')
-      
+
       // For destructuring, create a unique variable name and add the destructuring as well
       const uniqueName = `__destructured_${startIndex}`
-      
+
       return {
         type,
         name: uniqueName,
         value: `${value}; const ${destructuringPattern} = ${uniqueName}`,
-        nextIndex: currentIndex
+        nextIndex: currentIndex,
       }
     }
-    
+
     throw new Error(`Failed to parse variable declaration: ${firstLine}`)
   }
-  
+
   const [, type, name, initialValue] = match
   let value = initialValue
   let currentIndex = startIndex
-  
+
   // Check if we need to read multiple lines for the value
   if (needsMultilineReading(initialValue)) {
     const result = readMultilineValue(lines, startIndex, initialValue)
     value = result.value
     currentIndex = result.nextIndex
-  } else {
+  }
+  else {
     currentIndex = startIndex + 1
   }
-  
+
   // Clean up the value
   value = value.trim().replace(/;$/, '')
-  
+
   return {
     type,
     name,
     value,
-    nextIndex: currentIndex
+    nextIndex: currentIndex,
   }
 }
 
@@ -350,35 +356,36 @@ function parseVariableDeclaration(lines: string[], startIndex: number): {
  * Parse function declarations (including multi-line functions)
  */
 function parseFunctionDeclaration(lines: string[], startIndex: number): {
-  name: string;
-  functionCode: string;
-  nextIndex: number;
+  name: string
+  functionCode: string
+  nextIndex: number
 } {
   const firstLine = lines[startIndex].trim()
-  
+
   // Extract function name
   const match = firstLine.match(/^(?:export\s+)?function\s+(\w+)/)
   if (!match) {
     throw new Error(`Failed to parse function declaration: ${firstLine}`)
   }
-  
+
   const [, name] = match
   let functionCode = firstLine.replace(/^export\s+/, '')
   let currentIndex = startIndex
-  
+
   // Check if function spans multiple lines
   if (needsMultilineFunctionReading(firstLine)) {
     const result = readMultilineFunction(lines, startIndex, functionCode)
     functionCode = result.functionCode
     currentIndex = result.nextIndex
-  } else {
+  }
+  else {
     currentIndex = startIndex + 1
   }
-  
+
   return {
     name,
     functionCode,
-    nextIndex: currentIndex
+    nextIndex: currentIndex,
   }
 }
 
@@ -387,13 +394,13 @@ function parseFunctionDeclaration(lines: string[], startIndex: number): {
  */
 function needsMultilineReading(value: string): boolean {
   const trimmed = value.trim()
-  
+
   // Count braces and brackets
   const openBraces = (trimmed.match(/\{/g) || []).length
   const closeBraces = (trimmed.match(/\}/g) || []).length
   const openBrackets = (trimmed.match(/\[/g) || []).length
   const closeBrackets = (trimmed.match(/\]/g) || []).length
-  
+
   return openBraces > closeBraces || openBrackets > closeBrackets
 }
 
@@ -403,7 +410,7 @@ function needsMultilineReading(value: string): boolean {
 function needsMultilineFunctionReading(functionLine: string): boolean {
   const openBraces = (functionLine.match(/\{/g) || []).length
   const closeBraces = (functionLine.match(/\}/g) || []).length
-  
+
   return openBraces > closeBraces
 }
 
@@ -411,24 +418,24 @@ function needsMultilineFunctionReading(functionLine: string): boolean {
  * Read multi-line values (objects, arrays)
  */
 function readMultilineValue(lines: string[], startIndex: number, initialValue: string): {
-  value: string;
-  nextIndex: number;
+  value: string
+  nextIndex: number
 } {
   let value = initialValue
   let i = startIndex + 1
   let braceCount = (initialValue.match(/\{/g) || []).length - (initialValue.match(/\}/g) || []).length
   let bracketCount = (initialValue.match(/\[/g) || []).length - (initialValue.match(/\]/g) || []).length
-  
+
   while (i < lines.length && (braceCount > 0 || bracketCount > 0)) {
     const nextLine = lines[i]
-    value += '\n' + nextLine
-    
+    value += `\n${nextLine}`
+
     braceCount += (nextLine.match(/\{/g) || []).length - (nextLine.match(/\}/g) || []).length
     bracketCount += (nextLine.match(/\[/g) || []).length - (nextLine.match(/\]/g) || []).length
-    
+
     i++
   }
-  
+
   return { value, nextIndex: i }
 }
 
@@ -436,73 +443,78 @@ function readMultilineValue(lines: string[], startIndex: number, initialValue: s
  * Read multi-line functions
  */
 function readMultilineFunction(lines: string[], startIndex: number, initialFunction: string): {
-  functionCode: string;
-  nextIndex: number;
+  functionCode: string
+  nextIndex: number
 } {
   let functionCode = initialFunction
   let i = startIndex + 1
   let braceCount = (initialFunction.match(/\{/g) || []).length - (initialFunction.match(/\}/g) || []).length
-  
+
   while (i < lines.length && braceCount > 0) {
     const nextLine = lines[i]
-    functionCode += '\n' + nextLine
+    functionCode += `\n${nextLine}`
     braceCount += (nextLine.match(/\{/g) || []).length - (nextLine.match(/\}/g) || []).length
     i++
   }
-  
+
   return { functionCode, nextIndex: i }
 }
 
 /**
  * Fallback variable extraction for edge cases
  */
-async function fallbackVariableExtraction(scriptContent: string, context: Record<string, any>, filePath: string): Promise<void> {
+async function fallbackVariableExtraction(scriptContent: string, context: Record<string, any>, _filePath: string): Promise<void> {
   // Approach 1: Try evaluating individual export statements
+  // eslint-disable-next-line regexp/no-super-linear-backtracking, regexp/optimal-lookaround-quantifier
   const exportMatches = scriptContent.matchAll(/export\s+(const|let|var)\s+(\w+)\s*=\s*([\s\S]*?)(?=\s*(?:export\s+|$))/g)
-  
+
   for (const match of exportMatches) {
     const [, , name, value] = match
-    
+
     try {
       const cleanValue = value.trim().replace(/;$/, '')
       // eslint-disable-next-line no-new-func
       const evalFn = new Function(`return ${cleanValue}`)
       context[name] = evalFn()
-    } catch (e) {
+    }
+    catch {
       // Try wrapping in parentheses for complex objects
       try {
         const cleanValue = value.trim().replace(/;$/, '')
         // eslint-disable-next-line no-new-func
         const evalFn = new Function(`return (${cleanValue})`)
         context[name] = evalFn()
-      } catch (e2) {
+      }
+      catch (e2) {
         console.warn(`Failed to parse export ${name} in fallback:`, e2)
       }
     }
   }
-  
+
   // Approach 2: Try evaluating regular variable declarations
+  // eslint-disable-next-line regexp/no-super-linear-backtracking, regexp/optimal-lookaround-quantifier
   const varMatches = scriptContent.matchAll(/(?:^|\n)\s*(const|let|var)\s+(\w+)\s*=\s*([\s\S]*?)(?=\s*(?:(?:const|let|var|function|export)\s+|$))/g)
-  
+
   for (const match of varMatches) {
     const [, , name, value] = match
-    
+
     if (!(name in context)) {
       try {
         const cleanValue = value.trim().replace(/;$/, '')
         // eslint-disable-next-line no-new-func
         const evalFn = new Function(`return ${cleanValue}`)
         context[name] = evalFn()
-      } catch (e) {
+      }
+      catch {
         // Ignore individual failures in fallback
       }
     }
   }
-  
+
   // Approach 3: Try removing exports and executing directly
   try {
     const directScript = scriptContent.replace(/^export\s+/gm, '')
-    
+
     // eslint-disable-next-line no-new-func
     const directFn = new Function(`
       ${directScript}
@@ -512,14 +524,15 @@ async function fallbackVariableExtraction(scriptContent: string, context: Record
         .join('\n')}
       return result;
     `)
-    
+
     const vars = directFn()
     Object.entries(vars).forEach(([key, value]) => {
       if (value !== undefined && !(key in context)) {
         context[key] = value
       }
     })
-  } catch (e) {
+  }
+  catch {
     // Final fallback failed - this is expected for some complex patterns
   }
 }
