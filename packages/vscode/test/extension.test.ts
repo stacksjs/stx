@@ -65,7 +65,7 @@ describe('VSCODE: Extension Tests', () => {
 
   afterEach(async () => {
     await fs.promises.rm(TEMP_DIR, { recursive: true, force: true })
-    // @ts-ignore
+    // @ts-expect-error - vscode is not defined in global scope during cleanup
     delete globalThis.vscode
   })
 
@@ -73,7 +73,7 @@ describe('VSCODE: Extension Tests', () => {
     const extensionPath = path.join(PACKAGE_ROOT, 'src/extension.ts')
     const exists = await Bun.file(extensionPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(extensionPath).text()
     expect(content).toContain('activate')
     expect(content).toContain('deactivate')
@@ -83,10 +83,10 @@ describe('VSCODE: Extension Tests', () => {
     const packagePath = path.join(PACKAGE_ROOT, 'package.json')
     const exists = await Bun.file(packagePath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(packagePath).text()
     const packageJson = JSON.parse(content)
-    
+
     expect(packageJson.name).toBeDefined()
     expect(packageJson.displayName).toBeDefined()
     expect(packageJson.version).toBeDefined()
@@ -96,7 +96,7 @@ describe('VSCODE: Extension Tests', () => {
     const packagePath = path.join(PACKAGE_ROOT, 'package.json')
     const content = await Bun.file(packagePath).text()
     const packageJson = JSON.parse(content)
-    
+
     expect(packageJson.contributes.languages).toBeDefined()
     const stxLanguage = packageJson.contributes.languages.find((lang: any) => lang.id === 'stx')
     expect(stxLanguage).toBeDefined()
@@ -107,7 +107,7 @@ describe('VSCODE: Extension Tests', () => {
     const configPath = path.join(PACKAGE_ROOT, 'src/languages/stx.configuration.json')
     const exists = await Bun.file(configPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(configPath).text()
     const config = JSON.parse(content)
     expect(config.comments).toBeDefined()
@@ -119,7 +119,7 @@ describe('VSCODE: Extension Tests', () => {
     const grammarPath = path.join(PACKAGE_ROOT, 'src/syntaxes/stx.tmLanguage.json')
     const exists = await Bun.file(grammarPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(grammarPath).text()
     const grammar = JSON.parse(content)
     expect(grammar.scopeName).toBeDefined()
@@ -131,7 +131,7 @@ describe('VSCODE: Extension Tests', () => {
     const completionPath = path.join(PACKAGE_ROOT, 'src/providers/completionProvider.ts')
     const exists = await Bun.file(completionPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(completionPath).text()
     expect(content).toContain('CompletionItemProvider')
     expect(content).toContain('provideCompletionItems')
@@ -141,7 +141,7 @@ describe('VSCODE: Extension Tests', () => {
     const hoverPath = path.join(PACKAGE_ROOT, 'src/providers/hoverProvider.ts')
     const exists = await Bun.file(hoverPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(hoverPath).text()
     expect(content).toContain('HoverProvider')
     expect(content).toContain('provideHover')
@@ -151,7 +151,7 @@ describe('VSCODE: Extension Tests', () => {
     const definitionPath = path.join(PACKAGE_ROOT, 'src/providers/definitionProvider.ts')
     const exists = await Bun.file(definitionPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(definitionPath).text()
     expect(content).toContain('DefinitionProvider')
     expect(content).toContain('provideDefinition')
@@ -161,7 +161,7 @@ describe('VSCODE: Extension Tests', () => {
     const linkPath = path.join(PACKAGE_ROOT, 'src/providers/documentLinkProvider.ts')
     const exists = await Bun.file(linkPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(linkPath).text()
     expect(content).toContain('DocumentLinkProvider')
     expect(content).toContain('provideDocumentLinks')
@@ -171,7 +171,7 @@ describe('VSCODE: Extension Tests', () => {
     const tsPluginPath = path.join(PACKAGE_ROOT, 'src/typescript-stx-plugin.ts')
     const exists = await Bun.file(tsPluginPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(tsPluginPath).text()
     expect(content).toMatch(/LanguageServicePlugin|typescript/)
   })
@@ -181,13 +181,13 @@ describe('VSCODE: Extension Tests', () => {
       'src/utils/cssUtils.ts',
       'src/utils/stxUtils.ts',
       'src/utils/templateUtils.ts',
-      'src/utils/jsdocUtils.ts'
+      'src/utils/jsdocUtils.ts',
     ].map(p => path.join(PACKAGE_ROOT, p))
-    
+
     for (const utilPath of utilityPaths) {
       const exists = await Bun.file(utilPath).exists()
       expect(exists).toBe(true)
-      
+
       const content = await Bun.file(utilPath).text()
       expect(content).toContain('export')
       expect(content.length).toBeGreaterThan(0)
@@ -200,13 +200,13 @@ describe('VSCODE: Extension Tests', () => {
       'src/styles-uno/config.ts',
       'src/styles-uno/rules.ts',
       'src/styles-uno/shortcuts.ts',
-      'src/styles-uno/configs.ts'
+      'src/styles-uno/configs.ts',
     ].map(p => path.join(PACKAGE_ROOT, p))
-    
+
     for (const unoPath of unoFiles) {
       const exists = await Bun.file(unoPath).exists()
       expect(exists).toBe(true)
-      
+
       const content = await Bun.file(unoPath).text()
       expect(content.length).toBeGreaterThan(0)
     }
@@ -214,14 +214,14 @@ describe('VSCODE: Extension Tests', () => {
 
   test('should have snippet files', async () => {
     const snippetPath = path.join(PACKAGE_ROOT, 'src/snippets/stx.json')
-    
+
     const exists = await Bun.file(snippetPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(snippetPath).text()
     const snippets = JSON.parse(content) as Record<string, { description?: string }>
     expect(Object.keys(snippets).length).toBeGreaterThan(0)
-    
+
     // Verify we have both component and directive snippets
     expect(Object.values(snippets).some(s => s.description?.toLowerCase().includes('component'))).toBe(true)
     expect(Object.values(snippets).some(s => s.description?.toLowerCase().includes('directive'))).toBe(true)
@@ -232,13 +232,13 @@ describe('VSCODE: Extension Tests', () => {
       'examples/hello-world.stx',
       'examples/components/component-example.stx',
       'examples/directives/directives-example.stx',
-      'examples/template-demo.stx'
+      'examples/template-demo.stx',
     ].map(p => path.join(PACKAGE_ROOT, p))
-    
+
     for (const examplePath of examplePaths) {
       const exists = await Bun.file(examplePath).exists()
       expect(exists).toBe(true)
-      
+
       const content = await Bun.file(examplePath).text()
       expect(content.length).toBeGreaterThan(0)
     }
@@ -258,7 +258,7 @@ describe('VSCODE: Extension Tests', () => {
     const buildPath = path.join(PACKAGE_ROOT, 'build.ts')
     const exists = await Bun.file(buildPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(buildPath).text()
     expect(content).toMatch(/build|Bun\.build|compile/)
   })
@@ -267,7 +267,7 @@ describe('VSCODE: Extension Tests', () => {
     const tsconfigPath = path.join(PACKAGE_ROOT, 'tsconfig.json')
     const exists = await Bun.file(tsconfigPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(tsconfigPath).text()
     const tsconfig = JSON.parse(content)
     expect(tsconfig.compilerOptions).toBeDefined()
@@ -279,7 +279,7 @@ describe('VSCODE: Extension Tests', () => {
     const changelogPath = path.join(PACKAGE_ROOT, 'CHANGELOG.md')
     const exists = await Bun.file(changelogPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(changelogPath).text()
     // Changelog may be empty initially
     expect(content.length).toBeGreaterThanOrEqual(0)
@@ -289,7 +289,7 @@ describe('VSCODE: Extension Tests', () => {
     const vscodeignorePath = path.join(PACKAGE_ROOT, '.vscodeignore')
     const exists = await Bun.file(vscodeignorePath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(vscodeignorePath).text()
     expect(content).toContain('.vscode')
     expect(content.length).toBeGreaterThan(0)
@@ -298,13 +298,13 @@ describe('VSCODE: Extension Tests', () => {
   test('should validate interface definitions', async () => {
     const interfacePaths = [
       'src/interfaces/index.ts',
-      'src/interfaces/animation-types.ts'
+      'src/interfaces/animation-types.ts',
     ].map(p => path.join(PACKAGE_ROOT, p))
-    
+
     for (const interfacePath of interfacePaths) {
       const exists = await Bun.file(interfacePath).exists()
       expect(exists).toBe(true)
-      
+
       const content = await Bun.file(interfacePath).text()
       expect(content).toMatch(/interface|type|export/)
     }
@@ -314,11 +314,11 @@ describe('VSCODE: Extension Tests', () => {
     const launchPath = path.join(PACKAGE_ROOT, '.vscode/launch.json')
     const exists = await Bun.file(launchPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(launchPath).text()
     // Launch config may have comments, so just check for basic structure
     expect(content).toContain('configurations')
     expect(content).toContain('name')
     expect(content.length).toBeGreaterThan(0)
   })
-}) 
+})

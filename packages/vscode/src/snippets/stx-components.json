@@ -1,1 +1,11 @@
- 
+{
+  "component-template": {
+    "prefix": "stx-component",
+    "body": [
+      "<div class=\"component\">",
+      "  $1",
+      "</div>"
+    ],
+    "description": "STX Component Template"
+  }
+}

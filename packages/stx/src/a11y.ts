@@ -2,7 +2,6 @@
 import type { CustomDirective, StxOptions } from './types'
 import path from 'node:path'
 // Fix: Use the correct happy-dom import that exists in v12.10.3
-import { Window } from 'happy-dom'
 
 /**
  * Accessibility violation found during a11y checks

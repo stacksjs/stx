@@ -27,3 +27,7 @@ packages/bun-plugin/.stx/
 TASKS.md
 
 docs/.vitepress/cache/
+
+bin/
+
+tasks/

@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 
 // Interface for init options
 interface InitOptions {
@@ -24,7 +25,7 @@ export async function initFile(fileName: string = 'index.stx', options: InitOpti
         throw new Error(`File ${fileName} already exists. Use --force to overwrite.`)
       }
 
-      console.log(`File ${fileName} already exists. Overwriting...`)
+      console.warn(`File ${fileName} already exists. Overwriting...`)
     }
 
     // Create directory if it doesn't exist
@@ -49,7 +50,7 @@ export async function initFile(fileName: string = 'index.stx', options: InitOpti
       }
 
       templateContent = fs.readFileSync(templatePath, 'utf-8')
-      console.log(`Using template from ${options.template}`)
+      console.warn(`Using template from ${options.template}`)
     }
     else {
       // Use default template
@@ -59,7 +60,7 @@ export async function initFile(fileName: string = 'index.stx', options: InitOpti
     // Write the file
     fs.writeFileSync(filePath, templateContent)
 
-    console.log(`Created new STX file: ${fileName}`)
+    console.warn(`Created new STX file: ${fileName}`)
     return true
   }
   catch (error) {

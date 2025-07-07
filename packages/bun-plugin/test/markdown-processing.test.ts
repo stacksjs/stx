@@ -70,7 +70,7 @@ Written by: {{ author }}
     expect(result.success).toBe(true)
     const output = result.outputs[0]
     const content = await Bun.file(output.path).text()
-    
+
     // Check if the module exports both content and data
     expect(content).toMatch(/var content = /)
     expect(content).toMatch(/var data = /)
@@ -114,10 +114,10 @@ const user: User = {
     expect(result.success).toBe(true)
     const output = result.outputs[0]
     const content = await Bun.file(output.path).text()
-    
+
     expect(content).toContain('Code Examples')
-    expect(content).toContain('hello')  // function name will be highlighted
-    expect(content).toContain('User')   // interface name will be highlighted
+    expect(content).toContain('hello') // function name will be highlighted
+    expect(content).toContain('User') // interface name will be highlighted
   })
 
   test('should process markdown content and create ESM exports', async () => {
@@ -141,13 +141,13 @@ This is a blog post content.
     expect(result.success).toBe(true)
     const output = result.outputs[0]
     const content = await Bun.file(output.path).text()
-    
+
     // Should export content as HTML string
     expect(content).toMatch(/var content = .*<h1.*>Blog Post.*<\/h1>/)
-    
+
     // Should export frontmatter data
     expect(content).toMatch(/var data = .*layout: "blog".*published: true/)
-    
+
     // Should have default export
     expect(content).toContain('content')
   })
@@ -174,10 +174,10 @@ Just plain markdown content without any frontmatter.
     expect(result.success).toBe(true)
     const output = result.outputs[0]
     const content = await Bun.file(output.path).text()
-    
+
     // Should still export content and empty data
     expect(content).toMatch(/var content = /)
-    expect(content).toMatch(/var data = {}/)
+    expect(content).toMatch(/var data = \{\}/)
   })
 
   test('should handle malformed markdown gracefully', async () => {
@@ -202,7 +202,7 @@ This markdown has invalid frontmatter.
     expect(result.success).toBe(true)
     const output = result.outputs[0]
     const content = await Bun.file(output.path).text()
-    
+
     // Should contain error message for malformed content
     expect(content).toMatch(/Error.*markdown/i)
   })
@@ -237,7 +237,7 @@ Here's a [link](https://example.com) and some \`inline code\`.
     expect(result.success).toBe(true)
     const output = result.outputs[0]
     const content = await Bun.file(output.path).text()
-    
+
     // Check for proper HTML conversion
     expect(content).toContain('<h1>Main Title</h1>')
     expect(content).toContain('<h2>Subtitle</h2>')
@@ -263,9 +263,9 @@ Here's a [link](https://example.com) and some \`inline code\`.
     expect(result.success).toBe(true)
     const output = result.outputs[0]
     const content = await Bun.file(output.path).text()
-    
+
     expect(content).toMatch(/var content = ""/)
-    expect(content).toMatch(/var data = {}/)
+    expect(content).toMatch(/var data = \{\}/)
   })
 
   test('should handle markdown with complex frontmatter data types', async () => {
@@ -304,10 +304,10 @@ Views: {{ meta.views }}
     expect(result.success).toBe(true)
     const output = result.outputs[0]
     const content = await Bun.file(output.path).text()
-    
-    // Check that complex data structures are preserved  
+
+    // Check that complex data structures are preserved
     expect(content).toContain('tags: ["javascript", "typescript", "markdown"]')
     expect(content).toContain('author: { name: "John Doe", email: "john@example.com" }')
     expect(content).toContain('meta: { published: true, rating: 4.5, views: 1250 }')
   })
-}) 
+})

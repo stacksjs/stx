@@ -19,7 +19,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
     const cardPath = path.join(PACKAGE_ROOT, 'src/components/Card.stx')
     const exists = await Bun.file(cardPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(cardPath).text()
     expect(content).toContain('<div')
     expect(content.length).toBeGreaterThan(0)
@@ -29,7 +29,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
     const chartPath = path.join(PACKAGE_ROOT, 'src/components/PerformanceChart.stx')
     const exists = await Bun.file(chartPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(chartPath).text()
     expect(content).toContain('<div')
     expect(content.length).toBeGreaterThan(0)
@@ -39,7 +39,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
     const templatePath = path.join(PACKAGE_ROOT, 'src/components/TemplateDetails.stx')
     const exists = await Bun.file(templatePath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(templatePath).text()
     expect(content).toContain('<div')
     expect(content.length).toBeGreaterThan(0)
@@ -48,10 +48,10 @@ describe('DEVTOOLS: STX Components Tests', () => {
   test('should have valid STX syntax in Card component', async () => {
     const cardPath = path.join(PACKAGE_ROOT, 'src/components/Card.stx')
     const content = await Bun.file(cardPath).text()
-    
+
     // Check for STX directives
     expect(content).toMatch(/@if|@foreach|@endif|@endforeach|\{\{|\}\}/)
-    
+
     // Check for proper HTML structure
     expect(content).toMatch(/<div[^>]*>/)
     expect(content).toMatch(/<\/div>/)
@@ -60,10 +60,10 @@ describe('DEVTOOLS: STX Components Tests', () => {
   test('should have valid STX syntax in PerformanceChart component', async () => {
     const chartPath = path.join(PACKAGE_ROOT, 'src/components/PerformanceChart.stx')
     const content = await Bun.file(chartPath).text()
-    
+
     // Check for STX directives (performance charts likely use loops for data)
     expect(content).toMatch(/@if|@foreach|@endif|@endforeach|\{\{|\}\}/)
-    
+
     // Check for chart-related elements
     expect(content).toMatch(/<div[^>]*>|<canvas[^>]*>|<svg[^>]*>/)
   })
@@ -71,10 +71,10 @@ describe('DEVTOOLS: STX Components Tests', () => {
   test('should have valid STX syntax in TemplateDetails component', async () => {
     const templatePath = path.join(PACKAGE_ROOT, 'src/components/TemplateDetails.stx')
     const content = await Bun.file(templatePath).text()
-    
+
     // Check for STX directives
     expect(content).toMatch(/@if|@foreach|@endif|@endforeach|\{\{|\}\}/)
-    
+
     // Check for details-related elements
     expect(content).toMatch(/<div[^>]*>|<dl[^>]*>|<ul[^>]*>|<table[^>]*>/)
   })
@@ -83,16 +83,16 @@ describe('DEVTOOLS: STX Components Tests', () => {
     const layoutPath = path.join(PACKAGE_ROOT, 'src/layouts/MainLayout.stx')
     const exists = await Bun.file(layoutPath).exists()
     expect(exists).toBe(true)
-    
+
     const content = await Bun.file(layoutPath).text()
-    
+
     // Layout should have basic HTML structure
     expect(content).toContain('<!DOCTYPE html>')
     expect(content).toContain('<html')
     expect(content).toContain('<head>')
     expect(content).toContain('<body>')
     expect(content).toContain('</html>')
-    
+
     // Should have STX content placeholders
     expect(content).toMatch(/@yield|@include|\{\{|\}\}/)
   })
@@ -103,13 +103,13 @@ describe('DEVTOOLS: STX Components Tests', () => {
       'src/views/dashboard.stx',
       'src/views/performance.stx',
       'src/views/templates.stx',
-      'src/views/config.stx'
+      'src/views/config.stx',
     ].map(view => path.join(PACKAGE_ROOT, view))
-    
+
     for (const viewPath of views) {
       const exists = await Bun.file(viewPath).exists()
       expect(exists).toBe(true)
-      
+
       const content = await Bun.file(viewPath).text()
       expect(content.length).toBeGreaterThan(0)
     }
@@ -119,21 +119,21 @@ describe('DEVTOOLS: STX Components Tests', () => {
     const componentPaths = [
       'src/components/Card.stx',
       'src/components/PerformanceChart.stx',
-      'src/components/TemplateDetails.stx'
+      'src/components/TemplateDetails.stx',
     ].map(component => path.join(PACKAGE_ROOT, component))
-    
+
     for (const componentPath of componentPaths) {
       const content = await Bun.file(componentPath).text()
-      
+
       // Check for balanced STX directives
       const ifCount = (content.match(/@if\b/g) || []).length
       const endifCount = (content.match(/@endif\b/g) || []).length
       expect(ifCount).toBe(endifCount)
-      
+
       const foreachCount = (content.match(/@foreach\b/g) || []).length
       const endforeachCount = (content.match(/@endforeach\b/g) || []).length
       expect(foreachCount).toBe(endforeachCount)
-      
+
       // Check for balanced braces
       const openBraces = (content.match(/\{\{/g) || []).length
       const closeBraces = (content.match(/\}\}/g) || []).length
@@ -145,21 +145,21 @@ describe('DEVTOOLS: STX Components Tests', () => {
     const componentPaths = [
       'src/components/Card.stx',
       'src/components/PerformanceChart.stx',
-      'src/components/TemplateDetails.stx'
+      'src/components/TemplateDetails.stx',
     ].map(component => path.join(PACKAGE_ROOT, component))
-    
+
     for (const componentPath of componentPaths) {
       const content = await Bun.file(componentPath).text()
-      
+
       // Check for proper HTML tag closure
-      const openTags = content.match(/<(\w+)[^>]*>/g) || []
-      const closeTags = content.match(/<\/(\w+)>/g) || []
-      
+      const openTags = content.match(/<\w[^>]*>/g) || []
+      const _closeTags = content.match(/<\/\w+>/g) || []
+
       // Basic validation that we have some HTML structure
       expect(openTags.length).toBeGreaterThan(0)
-      
+
       // Check for semantic HTML elements
       expect(content).toMatch(/<div|<section|<article|<header|<main|<aside|<footer/)
     }
   })
-}) 
+})

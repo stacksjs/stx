@@ -177,195 +177,350 @@ export async function fileExists(filePath: string): Promise<boolean> {
  * Extract variables from script content
  */
 export async function extractVariables(scriptContent: string, context: Record<string, any>, filePath: string): Promise<void> {
-  // First try to convert ESM exports to CommonJS if needed
-  let processedScript = scriptContent
-  if (scriptContent.includes('export ')) {
-    // Convert ESM exports to CommonJS for execution
-    // Handle multi-line exports by processing them more carefully
-    
-    // 1. Handle export const/let/var with complex values (objects, arrays, etc.)
-    processedScript = processedScript
-      .replace(/export\s+const\s+(\w+)\s*=\s*([\s\S]*?);(?=\s*(?:export|$|<\/script>))/g, 'const $1 = $2; module.exports.$1 = $1;')
-      .replace(/export\s+let\s+(\w+)\s*=\s*([\s\S]*?);(?=\s*(?:export|$|<\/script>))/g, 'let $1 = $2; module.exports.$1 = $1;')
-      .replace(/export\s+var\s+(\w+)\s*=\s*([\s\S]*?);(?=\s*(?:export|$|<\/script>))/g, 'var $1 = $2; module.exports.$1 = $1;')
-    
-    // 2. Handle export function with proper multi-line support
-    processedScript = processedScript
-      .replace(/export\s+function\s+(\w+)\s*\(([^)]*)\)\s*\{([\s\S]*?)\}/g, 'function $1($2) {$3} module.exports.$1 = $1;')
-    
-    // 3. Handle export default
-    processedScript = processedScript
-      .replace(/export\s+default\s+([\s\S]+?)(?=\s*(?:export|$|<\/script>))/g, 'module.exports.default = $1;')
-  }
+  if (!scriptContent.trim()) return
 
-  // Add a comprehensive approach to collect and export all variables/functions at the end
-  // Instead of inline exports that can interfere with function bodies
-  const exportStatements: string[] = []
+  // Step 1: Create a safe execution environment
+  const module = { exports: {} }
+  const exports = module.exports
   
-  // First, identify non-exported variables
-  const varMatches = processedScript.matchAll(/(?<!export\s+)(const|let|var)\s+(\w+)\s*=/g)
-  for (const match of varMatches) {
-    const varName = match[2]
-    exportStatements.push(`if (typeof module !== "undefined" && module.exports && typeof ${varName} !== "undefined") { module.exports.${varName} = ${varName}; }`)
-  }
-  
-  // Then, identify non-exported functions
-  const funcMatches = processedScript.matchAll(/(?<!export\s+)function\s+(\w+)\s*\(/g)
-  for (const match of funcMatches) {
-    const funcName = match[1]
-    exportStatements.push(`if (typeof module !== "undefined" && module.exports && typeof ${funcName} !== "undefined") { module.exports.${funcName} = ${funcName}; }`)
-  }
-  
-  // Add all export statements at the end of the script
-  if (exportStatements.length > 0) {
-    processedScript += '\n' + exportStatements.join('\n')
-  }
-  
-  // Execute script content in module context for proper variable extraction (CommonJS)
   try {
+    // Step 2: Parse and convert the script content systematically
+    const convertedScript = convertToCommonJS(scriptContent)
+    
+    // Step 3: Execute the converted script
     // eslint-disable-next-line no-new-func
-    const scriptFn = new Function('module', 'exports', processedScript)
-    const module = { exports: {} }
-    scriptFn(module, module.exports)
-
-    // Process any number values to ensure they are correctly handled
-    const processValues = (obj: any): any => {
-      if (typeof obj !== 'object' || obj === null)
-        return obj
-
-      // Handle circular references
-      const seen = new WeakSet()
-
-      const innerProcess = (val: any): any => {
-        if (typeof val !== 'object' || val === null)
-          return val
-
-        // Detect circular references
-        if (seen.has(val)) {
-          return '[Circular Reference]'
-        }
-
-        seen.add(val)
-
-        // Process arrays
-        if (Array.isArray(val)) {
-          return val.map(item => innerProcess(item))
-        }
-
-        // Process objects
-        const result: Record<string, any> = {}
-        for (const [key, value] of Object.entries(val)) {
-          result[key] = innerProcess(value)
-        }
-        return result
-      }
-
-      return innerProcess(obj)
-    }
-
-    Object.assign(context, processValues(module.exports))
-  }
-  catch (error: any) {
+    const scriptFn = new Function('module', 'exports', convertedScript)
+    scriptFn(module, exports)
+    
+    // Step 4: Copy results to context
+    Object.assign(context, module.exports)
+    
+  } catch (error: any) {
     console.warn(`Failed to execute script as CommonJS module in ${filePath}:`, error)
-
-    // Try ES Module style exports
+    
+    // Fallback: Try alternative parsing approaches
     try {
-      // This pattern captures export statements in the script
-      const exportPattern = /export\s(const|let|var|function|default)\s([a-zA-Z_$][\w$]*)?(?:\s*=\s*([^;]+))?/g
-      let match: RegExpExecArray | null
-
-      // Use a different approach to avoid assignment in while condition
-      match = exportPattern.exec(scriptContent)
-      while (match !== null) {
-        const [, type, name, value] = match
-
-        if (type === 'default') {
-          if (value) {
-            try {
-              // eslint-disable-next-line no-new-func
-              const defaultValueFn = new Function(`return ${value}`)
-              const defaultValue = defaultValueFn()
-              if (typeof defaultValue === 'object' && defaultValue !== null) {
-                Object.assign(context, defaultValue)
-              }
-            }
-            catch (e) {
-              console.warn(`Failed to process default export in ${filePath}:`, e)
-            }
-          }
-        }
-        else if (name) {
-          try {
-            // Create a function that executes the export statement and returns the value
-            // eslint-disable-next-line no-new-func
-            const extractFn = new Function(`
-              ${type} ${name} = ${value || 'undefined'};
-              return ${name};
-            `)
-            context[name] = extractFn()
-          }
-          catch (e) {
-            console.warn(`Failed to process export of ${name} in ${filePath}:`, e)
-          }
-        }
-
-        // Get next match
-        match = exportPattern.exec(scriptContent)
-      }
-    }
-    catch (e) {
-      console.warn(`Failed to process ES module exports in ${filePath}:`, e)
+      await fallbackVariableExtraction(scriptContent, context, filePath)
+    } catch (fallbackError) {
+      console.warn(`Variable extraction issue in ${filePath}:`, fallbackError)
     }
   }
+}
 
-  // Legacy approach: try to extract variables from direct script execution
+/**
+ * Convert ES module syntax to CommonJS systematically
+ */
+function convertToCommonJS(scriptContent: string): string {
+  const lines = scriptContent.split('\n')
+  const convertedLines: string[] = []
+  
+  let i = 0
+  while (i < lines.length) {
+    const line = lines[i].trim()
+    
+    if (line.startsWith('export const ') || line.startsWith('export let ') || line.startsWith('export var ')) {
+      // Handle export variable declarations
+      const result = parseVariableDeclaration(lines, i)
+      const { type, name, value } = result
+      
+      convertedLines.push(`${type} ${name} = ${value};`)
+      convertedLines.push(`module.exports.${name} = ${name};`)
+      
+      i = result.nextIndex
+    }
+    else if (line.startsWith('export function ')) {
+      // Handle export function declarations
+      const result = parseFunctionDeclaration(lines, i)
+      
+      convertedLines.push(result.functionCode)
+      convertedLines.push(`module.exports.${result.name} = ${result.name};`)
+      
+      i = result.nextIndex
+    }
+    else if (line.startsWith('const ') || line.startsWith('let ') || line.startsWith('var ')) {
+      // Handle regular variable declarations
+      const result = parseVariableDeclaration(lines, i)
+      const { type, name, value } = result
+      
+      convertedLines.push(`${type} ${name} = ${value};`)
+      convertedLines.push(`module.exports.${name} = ${name};`)
+      
+      i = result.nextIndex
+    }
+    else if (line.startsWith('function ')) {
+      // Handle regular function declarations
+      const result = parseFunctionDeclaration(lines, i)
+      
+      convertedLines.push(result.functionCode)
+      convertedLines.push(`module.exports.${result.name} = ${result.name};`)
+      
+      i = result.nextIndex
+    }
+    else if (line.includes('module.exports')) {
+      // Keep existing module.exports statements
+      convertedLines.push(line)
+      i++
+    }
+    else if (line.trim() && !line.startsWith('//')) {
+      // Keep other non-empty, non-comment lines
+      convertedLines.push(line)
+      i++
+    }
+    else {
+      i++
+    }
+  }
+  
+  return convertedLines.join('\n')
+}
+
+/**
+ * Parse variable declarations (including multi-line objects and arrays)
+ */
+function parseVariableDeclaration(lines: string[], startIndex: number): {
+  type: string;
+  name: string;
+  value: string;
+  nextIndex: number;
+} {
+  const firstLine = lines[startIndex].trim()
+  
+  // Extract type and check for different declaration patterns
+  let match = firstLine.match(/^(?:export\s+)?(const|let|var)\s+(\w+)\s*=\s*(.*)$/)
+  
+  // If simple pattern doesn't match, try destructuring pattern
+  if (!match) {
+    const destructuringMatch = firstLine.match(/^(?:export\s+)?(const|let|var)\s+(\{[^}]+\}|\[[^\]]+\])\s*=\s*(.*)$/)
+    if (destructuringMatch) {
+      const [, type, destructuringPattern, initialValue] = destructuringMatch
+      let value = initialValue
+      let currentIndex = startIndex
+      
+      // Check if we need to read multiple lines for the value
+      if (needsMultilineReading(initialValue)) {
+        const result = readMultilineValue(lines, startIndex, initialValue)
+        value = result.value
+        currentIndex = result.nextIndex
+      } else {
+        currentIndex = startIndex + 1
+      }
+      
+      // Clean up the value
+      value = value.trim().replace(/;$/, '')
+      
+      // For destructuring, create a unique variable name and add the destructuring as well
+      const uniqueName = `__destructured_${startIndex}`
+      
+      return {
+        type,
+        name: uniqueName,
+        value: `${value}; const ${destructuringPattern} = ${uniqueName}`,
+        nextIndex: currentIndex
+      }
+    }
+    
+    throw new Error(`Failed to parse variable declaration: ${firstLine}`)
+  }
+  
+  const [, type, name, initialValue] = match
+  let value = initialValue
+  let currentIndex = startIndex
+  
+  // Check if we need to read multiple lines for the value
+  if (needsMultilineReading(initialValue)) {
+    const result = readMultilineValue(lines, startIndex, initialValue)
+    value = result.value
+    currentIndex = result.nextIndex
+  } else {
+    currentIndex = startIndex + 1
+  }
+  
+  // Clean up the value
+  value = value.trim().replace(/;$/, '')
+  
+  return {
+    type,
+    name,
+    value,
+    nextIndex: currentIndex
+  }
+}
+
+/**
+ * Parse function declarations (including multi-line functions)
+ */
+function parseFunctionDeclaration(lines: string[], startIndex: number): {
+  name: string;
+  functionCode: string;
+  nextIndex: number;
+} {
+  const firstLine = lines[startIndex].trim()
+  
+  // Extract function name
+  const match = firstLine.match(/^(?:export\s+)?function\s+(\w+)/)
+  if (!match) {
+    throw new Error(`Failed to parse function declaration: ${firstLine}`)
+  }
+  
+  const [, name] = match
+  let functionCode = firstLine.replace(/^export\s+/, '')
+  let currentIndex = startIndex
+  
+  // Check if function spans multiple lines
+  if (needsMultilineFunctionReading(firstLine)) {
+    const result = readMultilineFunction(lines, startIndex, functionCode)
+    functionCode = result.functionCode
+    currentIndex = result.nextIndex
+  } else {
+    currentIndex = startIndex + 1
+  }
+  
+  return {
+    name,
+    functionCode,
+    nextIndex: currentIndex
+  }
+}
+
+/**
+ * Check if a value needs multi-line reading
+ */
+function needsMultilineReading(value: string): boolean {
+  const trimmed = value.trim()
+  
+  // Count braces and brackets
+  const openBraces = (trimmed.match(/\{/g) || []).length
+  const closeBraces = (trimmed.match(/\}/g) || []).length
+  const openBrackets = (trimmed.match(/\[/g) || []).length
+  const closeBrackets = (trimmed.match(/\]/g) || []).length
+  
+  return openBraces > closeBraces || openBrackets > closeBrackets
+}
+
+/**
+ * Check if a function needs multi-line reading
+ */
+function needsMultilineFunctionReading(functionLine: string): boolean {
+  const openBraces = (functionLine.match(/\{/g) || []).length
+  const closeBraces = (functionLine.match(/\}/g) || []).length
+  
+  return openBraces > closeBraces
+}
+
+/**
+ * Read multi-line values (objects, arrays)
+ */
+function readMultilineValue(lines: string[], startIndex: number, initialValue: string): {
+  value: string;
+  nextIndex: number;
+} {
+  let value = initialValue
+  let i = startIndex + 1
+  let braceCount = (initialValue.match(/\{/g) || []).length - (initialValue.match(/\}/g) || []).length
+  let bracketCount = (initialValue.match(/\[/g) || []).length - (initialValue.match(/\]/g) || []).length
+  
+  while (i < lines.length && (braceCount > 0 || bracketCount > 0)) {
+    const nextLine = lines[i]
+    value += '\n' + nextLine
+    
+    braceCount += (nextLine.match(/\{/g) || []).length - (nextLine.match(/\}/g) || []).length
+    bracketCount += (nextLine.match(/\[/g) || []).length - (nextLine.match(/\]/g) || []).length
+    
+    i++
+  }
+  
+  return { value, nextIndex: i }
+}
+
+/**
+ * Read multi-line functions
+ */
+function readMultilineFunction(lines: string[], startIndex: number, initialFunction: string): {
+  functionCode: string;
+  nextIndex: number;
+} {
+  let functionCode = initialFunction
+  let i = startIndex + 1
+  let braceCount = (initialFunction.match(/\{/g) || []).length - (initialFunction.match(/\}/g) || []).length
+  
+  while (i < lines.length && braceCount > 0) {
+    const nextLine = lines[i]
+    functionCode += '\n' + nextLine
+    braceCount += (nextLine.match(/\{/g) || []).length - (nextLine.match(/\}/g) || []).length
+    i++
+  }
+  
+  return { functionCode, nextIndex: i }
+}
+
+/**
+ * Fallback variable extraction for edge cases
+ */
+async function fallbackVariableExtraction(scriptContent: string, context: Record<string, any>, filePath: string): Promise<void> {
+  // Approach 1: Try evaluating individual export statements
+  const exportMatches = scriptContent.matchAll(/export\s+(const|let|var)\s+(\w+)\s*=\s*([\s\S]*?)(?=\s*(?:export\s+|$))/g)
+  
+  for (const match of exportMatches) {
+    const [, , name, value] = match
+    
+    try {
+      const cleanValue = value.trim().replace(/;$/, '')
+      // eslint-disable-next-line no-new-func
+      const evalFn = new Function(`return ${cleanValue}`)
+      context[name] = evalFn()
+    } catch (e) {
+      // Try wrapping in parentheses for complex objects
+      try {
+        const cleanValue = value.trim().replace(/;$/, '')
+        // eslint-disable-next-line no-new-func
+        const evalFn = new Function(`return (${cleanValue})`)
+        context[name] = evalFn()
+      } catch (e2) {
+        console.warn(`Failed to parse export ${name} in fallback:`, e2)
+      }
+    }
+  }
+  
+  // Approach 2: Try evaluating regular variable declarations
+  const varMatches = scriptContent.matchAll(/(?:^|\n)\s*(const|let|var)\s+(\w+)\s*=\s*([\s\S]*?)(?=\s*(?:(?:const|let|var|function|export)\s+|$))/g)
+  
+  for (const match of varMatches) {
+    const [, , name, value] = match
+    
+    if (!(name in context)) {
+      try {
+        const cleanValue = value.trim().replace(/;$/, '')
+        // eslint-disable-next-line no-new-func
+        const evalFn = new Function(`return ${cleanValue}`)
+        context[name] = evalFn()
+      } catch (e) {
+        // Ignore individual failures in fallback
+      }
+    }
+  }
+  
+  // Approach 3: Try removing exports and executing directly
   try {
-    // Use processed script (without exports) for direct execution
-    const directScript = processedScript
-      .replace(/module\.exports\.\w+\s*=\s*\w+;/g, '') // Remove module.exports assignments
-      .replace(/module\.exports\.default\s*=\s*[^;]+;/g, '') // Remove default exports
+    const directScript = scriptContent.replace(/^export\s+/gm, '')
     
     // eslint-disable-next-line no-new-func
     const directFn = new Function(`
-      // Execute script content directly but protect against module not defined
-      try {
-        ${directScript}
-      } catch (e) {
-        // Ignore module not defined errors
-        if (!e.toString().includes('module is not defined')) {
-          throw e;
-        }
-      }
-
-      // Return all defined variables, scanning window/global scope
-      return Object.fromEntries(
-        Object.getOwnPropertyNames(this)
-          .filter(key =>
-            // Exclude built-in properties and functions
-            !['global', 'globalThis', 'self', 'window', 'console', 'setTimeout', 'setInterval',
-             'Function', 'Object', 'Array', 'String', 'Number', 'Boolean', 'Error'].includes(key) &&
-            // Only include own properties that aren't functions or built-in properties
-            typeof this[key] !== 'function' &&
-            !key.startsWith('_')
-          )
-          .map(key => [key, this[key]])
-      );
+      ${directScript}
+      const result = {};
+      ${Array.from(scriptContent.matchAll(/(?:const|let|var)\s+(\w+)\s*=/g))
+        .map(match => `if (typeof ${match[1]} !== 'undefined') result.${match[1]} = ${match[1]};`)
+        .join('\n')}
+      return result;
     `)
-
+    
     const vars = directFn()
-    // Only copy defined values
     Object.entries(vars).forEach(([key, value]) => {
-      if (value !== undefined && !context[key]) {
+      if (value !== undefined && !(key in context)) {
         context[key] = value
       }
     })
-  }
-  catch (error: any) {
-    // Only show extraction warnings for unexpected errors
-    if (!error.toString().includes('module is not defined')
-      && !error.toString().includes('Unexpected EOF')) {
-      console.warn(`Variable extraction issue in ${filePath}:`, error)
-    }
+  } catch (e) {
+    // Final fallback failed - this is expected for some complex patterns
   }
 }
 

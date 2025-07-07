@@ -15,7 +15,7 @@
     "bun-plugin-stx": "workspace:*"
   },
   "devDependencies": {
-    "unocss": "^66.3.2",
-    "happy-dom": "^15.10.2"
+    "happy-dom": "^15.10.2",
+    "unocss": "^66.3.2"
   }
 }
