@@ -106,4 +106,4 @@ jobs:
         run: bun run build
 
       - name: Publish Commit
-        run: bunx pkg-pr-new publish
+        run: bunx pkg-pr-new './packages/stx' './packages/bun-plugin'
