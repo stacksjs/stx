@@ -1,4 +1,4 @@
-name: CI
+name: Releaser
 
 on:
   push:
@@ -6,8 +6,7 @@ on:
       - 'v*'
 
 jobs:
-  release:
-    name: Release
+  npm:
     runs-on: ubuntu-latest
 
     steps:
