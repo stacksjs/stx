@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       workspace:
-        description: 'Workspace to update'
+        description: Workspace to update
         required: false
         type: string
 
