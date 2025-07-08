@@ -72,7 +72,6 @@
   "dependencies": {
     "bun-plugin-stx": "workspace:*",
     "gray-matter": "^4.0.3",
-    "happy-dom": "^15.10.2",
     "marked": "^16.0.0",
     "shiki": "^3.7.0",
     "yaml": "^2.8.0"

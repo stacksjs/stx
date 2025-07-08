@@ -58,8 +58,5 @@
   },
   "dependencies": {
     "@stacksjs/stx": "workspace:*"
-  },
-  "devDependencies": {
-    "happy-dom": "^15.10.2"
   }
 }

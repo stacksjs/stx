@@ -67,8 +67,6 @@
     "preview:docs": "bun --bun vitepress preview docs",
     "typecheck": "bun tsc --noEmit"
   },
-  "dependencies": {
-  },
   "devDependencies": {
     "@stacksjs/docs": "^0.70.23",
     "@stacksjs/eslint-config": "^4.14.0-beta.3",
@@ -79,6 +77,7 @@
     "bun-plugin-dtsx": "^0.21.12",
     "bunfig": "^0.10.1",
     "changelogen": "^0.6.1",
+    "happy-dom": "^15.10.2",
     "typescript": "^5.8.3"
   },
   "overrides": {

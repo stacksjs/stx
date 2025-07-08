@@ -13,6 +13,7 @@
         "bun-plugin-dtsx": "^0.21.12",
         "bunfig": "^0.10.1",
         "changelogen": "^0.6.1",
+        "happy-dom": "^15.10.2",
         "typescript": "^5.8.3",
       },
     },
@@ -22,9 +23,6 @@
       "dependencies": {
         "@stacksjs/stx": "workspace:*",
       },
-      "devDependencies": {
-        "happy-dom": "^15.10.2",
-      },
     },
     "packages/devtools": {
       "name": "@stx/devtools",
@@ -33,7 +31,6 @@
         "bun-plugin-stx": "workspace:*",
       },
       "devDependencies": {
-        "happy-dom": "^15.10.2",
         "unocss": "^66.3.2",
       },
     },
@@ -46,7 +43,6 @@
       "dependencies": {
         "bun-plugin-stx": "workspace:*",
         "gray-matter": "^4.0.3",
-        "happy-dom": "^15.10.2",
         "marked": "^16.0.0",
         "shiki": "^3.7.0",
         "yaml": "^2.8.0",
