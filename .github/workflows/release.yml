@@ -56,11 +56,11 @@ jobs:
             packages/stx/bin/stx-darwin-arm64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Extract Version
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-  
+
       - name: Generate Release Changelog
         run: |
           # Generate changelog for this release only
@@ -72,7 +72,7 @@ jobs:
             logsmith --to "${{ steps.version.outputs.VERSION }}" \
               --theme github --format markdown --output RELEASE_NOTES.md
           fi
-  
+
       - name: Update Full Changelog
         run: |
           logsmith --theme github --output CHANGELOG.md
@@ -81,7 +81,7 @@ jobs:
           git add CHANGELOG.md
           git commit -m "docs: update changelog for ${{ steps.version.outputs.VERSION }}" || exit 0
           git push origin HEAD:main
-  
+
       - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
