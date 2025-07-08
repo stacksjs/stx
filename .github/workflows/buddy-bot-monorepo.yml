@@ -1,0 +1,50 @@
+name: Buddy Monorepo Updates
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+    inputs:
+      workspace:
+        description: 'Workspace to update'
+        required: false
+        type: string
+
+jobs:
+  find-workspaces:
+    runs-on: ubuntu-latest
+    outputs:
+      workspaces: ${{ steps.workspaces.outputs.workspaces }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find workspaces
+        id: workspaces
+        run: |
+          if [ "${{ github.event.inputs.workspace }}" != "" ]; then
+            echo "workspaces=["${{ github.event.inputs.workspace }}"]" >> $GITHUB_OUTPUT
+          else
+            # Find all package.json files
+            WORKSPACES=$(find . -name "package.json" -not -path "./node_modules/*" | sed 's|/package.json||' | sed 's|^./||' | jq -R . | jq -s .)
+            echo "workspaces=$WORKSPACES" >> $GITHUB_OUTPUT
+          fi
+
+  update-workspace:
+    needs: find-workspaces
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        workspace: ${{ fromJson(needs.find-workspaces.outputs.workspaces) }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Update workspace dependencies
+        run: |
+          cd ${{ matrix.workspace }}
+          bunx buddy-bot update --verbose
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
