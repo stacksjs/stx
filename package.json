@@ -76,7 +76,7 @@
     "bun-git-hooks": "^0.2.16",
     "bun-plugin-dtsx": "^0.21.12",
     "bunfig": "^0.10.1",
-    "changelogen": "^0.6.1",
+    "changelogen": "^0.6.2",
     "happy-dom": "^18.0.1",
     "typescript": "^5.8.3"
   },
