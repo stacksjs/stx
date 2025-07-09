@@ -6,11 +6,10 @@ const config: GitHooksConfig = {
     'staged-lint': {
       '*.{js,ts,tsx,stx}': 'bun eslint --fix',
       '*.css': ['bun stylelint --fix', 'bun eslint --fix'],
-      '*.md': 'bun prettier --write',
+      '*.md': ['bun prettier --write', 'bun eslint --fix'],
     },
   },
   'commit-msg': 'bun node_modules/@stacksjs/gitlint/dist/bin/cli.js --edit $1',
-  'post-commit': 'bun run changelog:generate',
   'pre-push': 'bun run build',
 }
 
