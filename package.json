@@ -57,6 +57,8 @@
     "zip:darwin-arm64": "zip -j bin/stx-darwin-arm64.zip bin/stx-darwin-arm64",
     "lint": "bun eslint .",
     "lint:fix": "bun eslint . --fix",
+    "prettier:fix": "bun prettier --write",
+    "stylelint:fix": "bun stylelint --fix",
     "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
     "changelog": "bunx changelogen --output CHANGELOG.md",
     "changelog:generate": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --output CHANGELOG.md",
