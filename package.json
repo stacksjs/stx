@@ -1,12 +1,89 @@
 {
   "name": "stx",
-  "version": "0.4.0",
+  "type": "module",
+  "version": "0.0.10",
+  "private": true,
+  "description": "A fast & powerful UI / templating engine. Laravel Blade-inspired. Powered by Bun.",
   "author": "Chris Breuer <chris@stacksjs.org>",
+  "license": "MIT",
+  "homepage": "https://github.com/stacksjs/stx#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/stacksjs/stx.git"
   },
+  "bugs": {
+    "url": "https://github.com/stacksjs/stx/issues"
+  },
+  "keywords": [
+    "blade",
+    "css",
+    "bun",
+    "stx",
+    "plugin",
+    "generation",
+    "typescript",
+    "stacks"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "import": "./dist/*"
+    }
+  },
   "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "stx": "./dist/bin/cli.js"
+  },
+  "files": [
+    "LICENSE.md",
+    "README.md",
+    "dist"
+  ],
+  "scripts": {
+    "build": "cd packages/bun-plugin && bun --bun build.ts && cd ../stx && bun --bun build.ts && cd ../.. && bun run compile",
+    "compile": "bun build ./packages/stx/bin/cli.ts --compile --minify --outfile bin/stx",
+    "compile:all": "bun run compile:linux-x64 && bun run compile:linux-arm64 && bun run compile:windows-x64 && bun run compile:darwin-x64 && bun run compile:darwin-arm64",
+    "compile:linux-x64": "bun build ./packages/stx/bin/cli.ts --compile --minify --target=bun-linux-x64 --outfile bin/stx-linux-x64",
+    "compile:linux-arm64": "bun build ./packages/stx/bin/cli.ts --compile --minify --target=bun-linux-arm64 --outfile bin/stx-linux-arm64",
+    "compile:windows-x64": "bun build ./packages/stx/bin/cli.ts --compile --minify --target=bun-windows-x64 --outfile bin/stx-windows-x64.exe",
+    "compile:darwin-x64": "bun build ./packages/stx/bin/cli.ts --compile --minify --target=bun-darwin-x64 --outfile bin/stx-darwin-x64",
+    "compile:darwin-arm64": "bun build ./packages/stx/bin/cli.ts --compile --minify --target=bun-darwin-arm64 --outfile bin/stx-darwin-arm64",
+    "zip": "bun run zip:all",
+    "zip:all": "bun run zip:linux-x64 && bun run zip:linux-arm64 && bun run zip:windows-x64 && bun run zip:darwin-x64 && bun run zip:darwin-arm64",
+    "zip:linux-x64": "zip -j bin/stx-linux-x64.zip bin/stx-linux-x64",
+    "zip:linux-arm64": "zip -j bin/stx-linux-arm64.zip bin/stx-linux-arm64",
+    "zip:windows-x64": "zip -j bin/stx-windows-x64.zip bin/stx-windows-x64.exe",
+    "zip:darwin-x64": "zip -j bin/stx-darwin-x64.zip bin/stx-darwin-x64",
+    "zip:darwin-arm64": "zip -j bin/stx-darwin-arm64.zip bin/stx-darwin-arm64",
+    "lint": "bun eslint .",
+    "lint:fix": "bun eslint . --fix",
+    "lint:staged": "bun eslint --fix",
+    "prettier:fix": "bun prettier --write",
+    "prettier:staged": "bun prettier --write",
+    "stylelint:fix": "bun stylelint --fix",
+    "stylelint:staged": "bun stylelint --fix",
+    "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
+    "changelog": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --output CHANGELOG.md --theme github --exclude-authors \"dependabot[bot],github-actions[bot]\" --exclude-types \"chore\" --max-commits 50",
+    "changelog:generate": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --output CHANGELOG.md --theme github --exclude-authors \"dependabot[bot],github-actions[bot]\" --exclude-types \"chore\" --max-commits 50",
+    "changelog:json": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --format json --output changelog.json --exclude-types \"chore\" --max-commits 50",
+    "changelog:html": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --format html --output changelog.html --exclude-types \"chore\" --max-commits 50",
+    "prepublishOnly": "bun run build",
+    "release": "bun run scripts/auto-version.ts",
+    "release:major": "bun node_modules/@stacksjs/bumpx/dist/bin/cli.js major --commit --tag --commit-message \"chore(release): bump version to v%s\" --no-push --yes && bun run changelog:generate && git add CHANGELOG.md && git commit --amend --no-edit",
+    "release:minor": "bun node_modules/@stacksjs/bumpx/dist/bin/cli.js minor --commit --tag --commit-message \"chore(release): bump version to v%s\" --no-push --yes && bun run changelog:generate && git add CHANGELOG.md && git commit --amend --no-edit",
+    "release:patch": "bun node_modules/@stacksjs/bumpx/dist/bin/cli.js patch --commit --tag --commit-message \"chore(release): bump version to v%s\" --no-push --yes && bun run changelog:generate && git add CHANGELOG.md && git commit --amend --no-edit",
+    "release:auto": "bun run scripts/auto-version.ts",
+    "setup": "bun run scripts/setup.ts",
+    "test": "bun test",
+    "dev:docs": "bun --bun vitepress dev docs",
+    "build:docs": "bun --bun vitepress build docs",
+    "preview:docs": "bun --bun vitepress preview docs",
+    "typecheck": "bun tsc --noEmit"
+  },
   "devDependencies": {
     "@stacksjs/bumpx": "^0.1.1",
     "@stacksjs/docs": "^0.70.23",
@@ -26,90 +103,9 @@
     "stylelint-config-standard": "^38.0.0",
     "typescript": "^5.8.3"
   },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./*": {
-      "import": "./dist/*"
-    }
-  },
-  "bin": {
-    "stx": "./dist/bin/cli.js"
-  },
-  "bugs": {
-    "url": "https://github.com/stacksjs/stx/issues"
-  },
-  "description": "A fast & powerful UI / templating engine. Laravel Blade-inspired. Powered by Bun.",
-  "files": [
-    "LICENSE.md",
-    "README.md",
-    "dist"
-  ],
-  "git-hooks": {
-    "pre-commit": {
-      "staged-lint": {
-        "*.{js,ts,json,yaml,yml,md}": "bunx --bun eslint . --fix"
-      }
-    },
-    "commit-msg": "bunx @stacksjs/gitlint .git/COMMIT_EDITMSG"
-  },
-  "homepage": "https://github.com/stacksjs/stx#readme",
-  "keywords": [
-    "blade",
-    "css",
-    "bun",
-    "stx",
-    "plugin",
-    "generation",
-    "typescript",
-    "stacks"
-  ],
-  "license": "MIT",
   "overrides": {
     "eslint": "^9.30.1"
   },
-  "private": true,
-  "scripts": {
-    "build": "cd packages/bun-plugin && bun --bun build.ts && cd ../stx && bun --bun build.ts && cd ../.. && bun run compile",
-    "compile": "bun build ./packages/stx/bin/cli.ts --compile --minify --outfile bin/stx",
-    "compile:all": "bun run compile:linux-x64 && bun run compile:linux-arm64 && bun run compile:windows-x64 && bun run compile:darwin-x64 && bun run compile:darwin-arm64",
-    "compile:linux-x64": "bun build ./packages/stx/bin/cli.ts --compile --minify --target=bun-linux-x64 --outfile bin/stx-linux-x64",
-    "compile:linux-arm64": "bun build ./packages/stx/bin/cli.ts --compile --minify --target=bun-linux-arm64 --outfile bin/stx-linux-arm64",
-    "compile:windows-x64": "bun build ./packages/stx/bin/cli.ts --compile --minify --target=bun-windows-x64 --outfile bin/stx-windows-x64.exe",
-    "compile:darwin-x64": "bun build ./packages/stx/bin/cli.ts --compile --minify --target=bun-darwin-x64 --outfile bin/stx-darwin-x64",
-    "compile:darwin-arm64": "bun build ./packages/stx/bin/cli.ts --compile --minify --target=bun-darwin-arm64 --outfile bin/stx-darwin-arm64",
-    "zip": "bun run zip:all",
-    "zip:all": "bun run zip:linux-x64 && bun run zip:linux-arm64 && bun run zip:windows-x64 && bun run zip:darwin-x64 && bun run zip:darwin-arm64",
-    "zip:linux-x64": "zip -j bin/stx-linux-x64.zip bin/stx-linux-x64",
-    "zip:linux-arm64": "zip -j bin/stx-linux-arm64.zip bin/stx-linux-arm64",
-    "zip:windows-x64": "zip -j bin/stx-windows-x64.zip bin/stx-windows-x64.exe",
-    "zip:darwin-x64": "zip -j bin/stx-darwin-x64.zip bin/stx-darwin-x64",
-    "zip:darwin-arm64": "zip -j bin/stx-darwin-arm64.zip bin/stx-darwin-arm64",
-    "lint": "bun eslint .",
-    "lint:fix": "bun eslint . --fix",
-    "prettier:fix": "bun prettier --write",
-    "stylelint:fix": "bun stylelint --fix",
-    "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
-    "changelog": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --output CHANGELOG.md --theme github --exclude-authors \"dependabot[bot],github-actions[bot]\" --exclude-types \"chore\" --max-commits 50",
-    "changelog:generate": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --output CHANGELOG.md --theme github --exclude-authors \"dependabot[bot],github-actions[bot]\" --exclude-types \"chore\" --max-commits 50",
-    "changelog:json": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --format json --output changelog.json --exclude-types \"chore\" --max-commits 50",
-    "changelog:html": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --format html --output changelog.html --exclude-types \"chore\" --max-commits 50",
-    "prepublishOnly": "bun run build",
-    "release": "bun run scripts/auto-version.ts",
-    "release:major": "bun node_modules/@stacksjs/bumpx/dist/bin/cli.js major --commit --tag --commit-message \"chore(release): bump version to v%s\" --no-push --yes && bun run changelog:generate && git add CHANGELOG.md && git commit --amend --no-edit",
-    "release:minor": "bun node_modules/@stacksjs/bumpx/dist/bin/cli.js minor --commit --tag --commit-message \"chore(release): bump version to v%s\" --no-push --yes && bun run changelog:generate && git add CHANGELOG.md && git commit --amend --no-edit",
-    "release:patch": "bun node_modules/@stacksjs/bumpx/dist/bin/cli.js patch --commit --tag --commit-message \"chore(release): bump version to v%s\" --no-push --yes && bun run changelog:generate && git add CHANGELOG.md && git commit --amend --no-edit",
-    "release:auto": "bun run scripts/auto-version.ts",
-    "test": "bun test",
-    "dev:docs": "bun --bun vitepress dev docs",
-    "build:docs": "bun --bun vitepress build docs",
-    "preview:docs": "bun --bun vitepress preview docs",
-    "typecheck": "bun tsc --noEmit"
-  },
-  "type": "module",
-  "types": "./dist/index.d.ts",
   "workspaces": [
     "packages/*",
     "!packages/vscode"
