@@ -63,6 +63,14 @@
 - Chris <chrisbreuer93@gmail.com>
 - renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.0.10...HEAD)
+
+### Contributors
+
+- Adelino Ngomacha <Adelinob335@gmail.com>
+- Chris <chrisbreuer93@gmail.com>
+- renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
+
 ## v0.0.9...main
 
 [compare changes](https://github.com/stacksjs/stx/compare/v0.0.9...main)

@@ -5,8 +5,8 @@ const config: GitHooksConfig = {
   'pre-commit': {
     'staged-lint': {
       '*.{js,ts,tsx,stx}': 'bun eslint --fix',
-      '*.css': ['bun stylelint --fix', 'bun run lint:fix'],
-      '*.md': ['bun prettier --write', 'bun run lint:fix'],
+      '*.css': ['bun stylelint --fix', 'bun eslint --fix'],
+      '*.md': 'bun prettier --write',
     },
   },
   'commit-msg': 'bun node_modules/@stacksjs/gitlint/dist/bin/cli.js --edit $1',
