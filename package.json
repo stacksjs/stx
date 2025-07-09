@@ -1,19 +1,61 @@
 {
   "name": "stx",
-  "type": "module",
-  "version": "0.0.10",
-  "private": true,
-  "description": "A fast & powerful UI / templating engine. Laravel Blade-inspired. Powered by Bun.",
+  "version": "0.4.0",
   "author": "Chris Breuer <chris@stacksjs.org>",
-  "license": "MIT",
-  "homepage": "https://github.com/stacksjs/stx#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/stacksjs/stx.git"
   },
+  "module": "./dist/index.js",
+  "devDependencies": {
+    "@stacksjs/bumpx": "^0.1.1",
+    "@stacksjs/docs": "^0.70.23",
+    "@stacksjs/eslint-config": "^4.14.0-beta.3",
+    "@stacksjs/gitlint": "^0.1.5",
+    "@stacksjs/logsmith": "^0.1.2",
+    "@types/bun": "^1.2.18",
+    "bumpp": "^10.2.0",
+    "bumpx": "^0.1.1",
+    "bun-git-hooks": "^0.2.16",
+    "bun-plugin-dtsx": "^0.21.12",
+    "bunfig": "^0.10.1",
+    "changelogen": "^0.6.2",
+    "happy-dom": "^18.0.1",
+    "prettier": "^3.6.2",
+    "stylelint": "^16.21.1",
+    "stylelint-config-standard": "^38.0.0",
+    "typescript": "^5.8.3"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "import": "./dist/*"
+    }
+  },
+  "bin": {
+    "stx": "./dist/bin/cli.js"
+  },
   "bugs": {
     "url": "https://github.com/stacksjs/stx/issues"
   },
+  "description": "A fast & powerful UI / templating engine. Laravel Blade-inspired. Powered by Bun.",
+  "files": [
+    "LICENSE.md",
+    "README.md",
+    "dist"
+  ],
+  "git-hooks": {
+    "pre-commit": {
+      "staged-lint": {
+        "*.{js,ts,json,yaml,yml,md}": "bunx --bun eslint . --fix"
+      }
+    },
+    "commit-msg": "bunx @stacksjs/gitlint .git/COMMIT_EDITMSG"
+  },
+  "homepage": "https://github.com/stacksjs/stx#readme",
   "keywords": [
     "blade",
     "css",
@@ -24,21 +66,11 @@
     "typescript",
     "stacks"
   ],
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./*": {
-      "import": "./dist/*"
-    }
+  "license": "MIT",
+  "overrides": {
+    "eslint": "^9.30.1"
   },
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "bin": {
-    "stx": "./dist/bin/cli.js"
-  },
-  "files": ["LICENSE.md", "README.md", "dist"],
+  "private": true,
   "scripts": {
     "build": "cd packages/bun-plugin && bun --bun build.ts && cd ../stx && bun --bun build.ts && cd ../.. && bun run compile",
     "compile": "bun build ./packages/stx/bin/cli.ts --compile --minify --outfile bin/stx",
@@ -60,49 +92,26 @@
     "prettier:fix": "bun prettier --write",
     "stylelint:fix": "bun stylelint --fix",
     "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
-    "changelog": "bunx changelogen --output CHANGELOG.md",
-    "changelog:generate": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --output CHANGELOG.md",
-    "changelog:json": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --format json --output changelog.json",
-    "changelog:html": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --format html --output changelog.html",
+    "changelog": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --output CHANGELOG.md --theme github --exclude-authors \"dependabot[bot],github-actions[bot]\" --exclude-types \"chore\" --max-commits 50",
+    "changelog:generate": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --output CHANGELOG.md --theme github --exclude-authors \"dependabot[bot],github-actions[bot]\" --exclude-types \"chore\" --max-commits 50",
+    "changelog:json": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --format json --output changelog.json --exclude-types \"chore\" --max-commits 50",
+    "changelog:html": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --format html --output changelog.html --exclude-types \"chore\" --max-commits 50",
     "prepublishOnly": "bun run build",
-    "release": "bun run changelog && bunx bumpp -r --all",
+    "release": "bun run scripts/auto-version.ts",
+    "release:major": "bun node_modules/@stacksjs/bumpx/dist/bin/cli.js major --commit --tag --commit-message \"chore(release): bump version to v%s\" --no-push --yes && bun run changelog:generate && git add CHANGELOG.md && git commit --amend --no-edit",
+    "release:minor": "bun node_modules/@stacksjs/bumpx/dist/bin/cli.js minor --commit --tag --commit-message \"chore(release): bump version to v%s\" --no-push --yes && bun run changelog:generate && git add CHANGELOG.md && git commit --amend --no-edit",
+    "release:patch": "bun node_modules/@stacksjs/bumpx/dist/bin/cli.js patch --commit --tag --commit-message \"chore(release): bump version to v%s\" --no-push --yes && bun run changelog:generate && git add CHANGELOG.md && git commit --amend --no-edit",
+    "release:auto": "bun run scripts/auto-version.ts",
     "test": "bun test",
     "dev:docs": "bun --bun vitepress dev docs",
     "build:docs": "bun --bun vitepress build docs",
     "preview:docs": "bun --bun vitepress preview docs",
     "typecheck": "bun tsc --noEmit"
   },
-  "devDependencies": {
-    "@stacksjs/docs": "^0.70.23",
-    "@stacksjs/eslint-config": "^4.14.0-beta.3",
-    "@stacksjs/gitlint": "^0.1.5",
-    "@stacksjs/logsmith": "^0.1.2",
-    "@types/bun": "^1.2.18",
-    "bumpp": "^10.2.0",
-    "bumpx": "^0.1.1",
-    "bun-git-hooks": "^0.2.16",
-    "bun-plugin-dtsx": "^0.21.12",
-    "bunfig": "^0.10.1",
-    "changelogen": "^0.6.2",
-    "happy-dom": "^18.0.1",
-    "prettier": "^3.6.2",
-    "stylelint": "^16.21.1",
-    "stylelint-config-standard": "^38.0.0",
-    "typescript": "^5.8.3"
-  },
-  "overrides": {
-    "eslint": "^9.30.1"
-  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
   "workspaces": [
     "packages/*",
     "!packages/vscode"
-  ],
-  "git-hooks": {
-    "pre-commit": {
-      "staged-lint": {
-        "*.{js,ts,json,yaml,yml,md}": "bunx --bun eslint . --fix"
-      }
-    },
-    "commit-msg": "bunx @stacksjs/gitlint .git/COMMIT_EDITMSG"
-  }
+  ]
 }

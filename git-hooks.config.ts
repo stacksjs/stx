@@ -11,6 +11,7 @@ const config: GitHooksConfig = {
   },
   'commit-msg': 'bun node_modules/@stacksjs/gitlint/dist/bin/cli.js --edit $1',
   'pre-push': 'bun run build',
+  'post-commit': 'bun run scripts/auto-version.ts',
 }
 
 export default config

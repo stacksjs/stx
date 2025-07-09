@@ -517,7 +517,7 @@ async function fallbackVariableExtraction(scriptContent: string, context: Record
 
     // eslint-disable-next-line no-new-func
     const directFn = new Function(`
-      ${directScript}
+        ${directScript}
       const result = {};
       ${Array.from(scriptContent.matchAll(/(?:const|let|var)\s+(\w+)\s*=/g))
         .map(match => `if (typeof ${match[1]} !== 'undefined') result.${match[1]} = ${match[1]};`)

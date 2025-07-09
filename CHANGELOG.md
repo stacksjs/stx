@@ -1,215 +1,81 @@
-[Compare changes](https://github.com/stacksjs/stx/compare/v0.0.10...HEAD)
+# Changelog
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.3.0...HEAD)
 
 ### Contributors
 
 - Adelino Ngomacha <Adelinob335@gmail.com>
-- Chris <chrisbreuer93@gmail.com>
-- renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
 
+All notable changes to this project will be documented in this file.
 
-[Compare changes](https://github.com/stacksjs/stx/compare/v0.0.10...HEAD)
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-### Contributors
+## [Unreleased]
 
-- Adelino Ngomacha <Adelinob335@gmail.com>
-- Chris <chrisbreuer93@gmail.com>
-- renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
+## [0.3.0] - 2024-12-17
 
-[Compare changes](https://github.com/stacksjs/stx/compare/v0.0.10...HEAD)
+### 🚀 Features
 
-### Contributors
+- **auto-version**: Enable automatic versioning with bumpx integration
+- **auto-version**: Rewrite auto-version to create single commit for all changes
+- **build**: Enhanced release process with proper semantic versioning
 
-- Adelino Ngomacha <Adelinob335@gmail.com>
-- Chris <chrisbreuer93@gmail.com>
-- renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
+### 🐛 Bug Fixes
 
-[Compare changes](https://github.com/stacksjs/stx/compare/v0.0.10...HEAD)
+- **auto-version**: Prevent infinite loop in auto-version system
+- **auto-version**: Improve auto-version script with proper changelog generation
+- **auto-version**: Bulletproof loop prevention with multiple safety layers
+- **build**: Use local node_modules and fix post-commit hook
+- **build**: Fix changelog script to use logsmith instead of changelogen
+- **build**: Remove broken tag-name template from bumpx
 
-### Contributors
+### 🧪 Tests
 
-- Adelino Ngomacha <Adelinob335@gmail.com>
-- Chris <chrisbreuer93@gmail.com>
-- renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
+- Fix auto-version tests to expect v0.3.0 and prevent loops
+- Add comprehensive loop prevention testing
+- Add real commit scenario testing
 
-[Compare changes](https://github.com/stacksjs/stx/compare/v0.0.10...HEAD)
+### 🏗️ Build System
 
-### Contributors
+- Configure git hooks for automatic versioning
+- Set up bumpx and logsmith integration
+- Implement semantic versioning workflow
+- Enhanced post-commit hook with 9 safety layers
+- Improved release scripts (release:major, release:minor, release:patch)
 
-- Adelino Ngomacha <Adelinob335@gmail.com>
-- Chris <chrisbreuer93@gmail.com>
-- renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
+### 📝 Documentation
 
-[Compare changes](https://github.com/stacksjs/stx/compare/v0.0.10...HEAD)
-
-### Contributors
-
-- Adelino Ngomacha <Adelinob335@gmail.com>
-- Chris <chrisbreuer93@gmail.com>
-- renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
-
-[Compare changes](https://github.com/stacksjs/stx/compare/v0.0.10...HEAD)
-
-### Contributors
-
-- Adelino Ngomacha <Adelinob335@gmail.com>
-- Chris <chrisbreuer93@gmail.com>
-- renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
-
-[Compare changes](https://github.com/stacksjs/stx/compare/v0.0.10...HEAD)
-
-### Contributors
-
-- Adelino Ngomacha <Adelinob335@gmail.com>
-- Chris <chrisbreuer93@gmail.com>
-- renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
-
-[Compare changes](https://github.com/stacksjs/stx/compare/v0.0.10...HEAD)
-
-### Contributors
-
-- Adelino Ngomacha <Adelinob335@gmail.com>
-- Chris <chrisbreuer93@gmail.com>
-- renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
-
-[Compare changes](https://github.com/stacksjs/stx/compare/v0.0.10...HEAD)
-
-### Contributors
-
-- Adelino Ngomacha <Adelinob335@gmail.com>
-- Chris <chrisbreuer93@gmail.com>
-- renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
-
-[Compare changes](https://github.com/stacksjs/stx/compare/v0.0.10...HEAD)
-
-### Contributors
-
-- Adelino Ngomacha <Adelinob335@gmail.com>
-- Chris <chrisbreuer93@gmail.com>
-- renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
-
-[Compare changes](https://github.com/stacksjs/stx/compare/v0.0.10...HEAD)
-
-### Contributors
-
-- Adelino Ngomacha <Adelinob335@gmail.com>
-- Chris <chrisbreuer93@gmail.com>
-- renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>
-
-## v0.0.9...main
-
-[compare changes](https://github.com/stacksjs/stx/compare/v0.0.9...main)
-
-### 🏡 Chore
-
-- Zip binary ([30aa527](https://github.com/stacksjs/stx/commit/30aa527))
+- Add comprehensive auto-versioning documentation
+- Update testing documentation
 
 ### ❤️ Contributors
 
-- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+- Adelino Ngomacha <Adelinob335@gmail.com>
 
-## v0.0.8...main
+## [0.1.0] - 2024-12-17
 
-[compare changes](https://github.com/stacksjs/stx/compare/v0.0.8...main)
+Initial release with basic STX functionality.
 
-### 🏡 Chore
+### ✨ Features
 
-- Use latest bun ([0ed9ef9](https://github.com/stacksjs/stx/commit/0ed9ef9))
+- Core STX templating engine
+- Laravel Blade-inspired syntax
+- Bun plugin integration
+- Component system
+- Directive support
+- TypeScript integration
 
-### ❤️ Contributors
+### 🏗️ Build System
 
-- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+- Configure git hooks for automatic versioning
+- Set up bumpx and logsmith integration
+- Implement semantic versioning workflow
 
-## v0.0.7...main
+### Contributors
 
-[compare changes](https://github.com/stacksjs/stx/compare/v0.0.7...main)
+- Adelino Ngomacha <Adelinob335@gmail.com>
 
-### 🏡 Chore
-
-- Adjust binary path ([9c1ec79](https://github.com/stacksjs/stx/commit/9c1ec79))
-
-### ❤️ Contributors
-
-- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
-
-## v0.0.6...main
-
-[compare changes](https://github.com/stacksjs/stx/compare/v0.0.6...main)
-
-### 🏡 Chore
-
-- Wip ([bfde40f](https://github.com/stacksjs/stx/commit/bfde40f))
-
-### ❤️ Contributors
-
-- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
-
-## v0.0.5...main
-
-[compare changes](https://github.com/stacksjs/stx/compare/v0.0.5...main)
-
-### 🏡 Chore
-
-- Wip ([afce27e](https://github.com/stacksjs/stx/commit/afce27e))
-
-### ❤️ Contributors
-
-- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
-
-## v0.0.4...main
-
-[compare changes](https://github.com/stacksjs/stx/compare/v0.0.4...main)
-
-### 🏡 Chore
-
-- Adjust release script ([a6791bb](https://github.com/stacksjs/stx/commit/a6791bb))
-
-### ❤️ Contributors
-
-- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
-
-## v0.0.3...main
-
-[compare changes](https://github.com/stacksjs/stx/compare/v0.0.3...main)
-
-### 🏡 Chore
-
-- Wip ([3cef4b4](https://github.com/stacksjs/stx/commit/3cef4b4))
-
-### ❤️ Contributors
-
-- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
-
-## v0.0.2...main
-
-[compare changes](https://github.com/stacksjs/stx/compare/v0.0.2...main)
-
-### 🏡 Chore
-
-- Adjust publish script ([12df09e](https://github.com/stacksjs/stx/commit/12df09e))
-
-### ❤️ Contributors
-
-- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
-
-## v0.0.1...main
-
-[compare changes](https://github.com/stacksjs/stx/compare/v0.0.1...main)
-
-### 🏡 Chore
-
-- Use `stx` name ([324b068](https://github.com/stacksjs/stx/commit/324b068))
-
-### ❤️ Contributors
-
-- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
-
-## ...main
-
-### 🏡 Chore
-
-- Initial commit ([97ff315](https://github.com/stacksjs/stx/commit/97ff315))
-- Wip ([944069d](https://github.com/stacksjs/stx/commit/944069d))
-
-### ❤️ Contributors
-
-- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+[Unreleased]: https://github.com/stacksjs/stx/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/stacksjs/stx/compare/v0.1.0...v0.3.0
+[0.1.0]: https://github.com/stacksjs/stx/releases/tag/v0.1.0

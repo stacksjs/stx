@@ -4,6 +4,7 @@
 [![GitHub Actions][github-actions-src]][github-actions-href]
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 [![npm downloads][npm-downloads-src]][npm-downloads-href]
+
 <!-- [![Codecov][codecov-src]][codecov-href] -->
 
 # stx
@@ -37,14 +38,14 @@ plugins = [ "bun-plugin-stx" ]
 Or register the plugin in your build script:
 
 ```ts
-import { build } from 'bun'
-import stxPlugin from 'bun-plugin-stx'
+import { build } from "bun";
+import stxPlugin from "bun-plugin-stx";
 
 await build({
-  entrypoints: ['./src/index.ts', './templates/home.stx'],
-  outdir: './dist',
+  entrypoints: ["./src/index.ts", "./templates/home.stx"],
+  outdir: "./dist",
   plugins: [stxPlugin],
-})
+});
 ```
 
 ## Usage with ESM
@@ -55,14 +56,14 @@ In your build script or Bun configuration:
 
 ```js
 // build.js
-import { build } from 'bun'
-import stxPlugin from 'bun-plugin-stx'
+import { build } from "bun";
+import stxPlugin from "bun-plugin-stx";
 
 await build({
-  entrypoints: ['./src/index.ts', './templates/home.stx'],
-  outdir: './dist',
+  entrypoints: ["./src/index.ts", "./templates/home.stx"],
+  outdir: "./dist",
   plugins: [stxPlugin],
-})
+});
 ```
 
 ### 2. Import and use .stx files directly
@@ -71,10 +72,10 @@ You can import .stx files directly in your ESM code:
 
 ```js
 // app.js
-import homeTemplate from './templates/home.stx'
+import homeTemplate from "./templates/home.stx";
 
 // Use the processed HTML content
-document.body.innerHTML = homeTemplate
+document.body.innerHTML = homeTemplate;
 ```
 
 ### 3. Use with Bun's server
@@ -83,33 +84,33 @@ You can serve .stx files directly with Bun's server:
 
 ```js
 // server.js
-import { serve } from 'bun'
-import homeTemplate from './home.stx'
+import { serve } from "bun";
+import homeTemplate from "./home.stx";
 
 serve({
   port: 3000,
   fetch(req) {
     return new Response(homeTemplate, {
-      headers: { 'Content-Type': 'text/html' }
-    })
-  }
-})
+      headers: { "Content-Type": "text/html" },
+    });
+  },
+});
 ```
 
 Or use as route handlers:
 
 ```js
-import about from './about.stx'
+import about from "./about.stx";
 // server.js
-import home from './home.stx'
+import home from "./home.stx";
 
 export default {
   port: 3000,
   routes: {
-    '/': home,
-    '/about': about
-  }
-}
+    "/": home,
+    "/about": about,
+  },
+};
 ```
 
 ## STX Template Syntax
@@ -121,28 +122,28 @@ STX templates use a syntax inspired by Laravel Blade. Templates can contain HTML
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <title>STX Example</title>
-  <script>
-    // Define your data as an ESM export
-    export const title = "Hello World";
-    export const items = ["Apple", "Banana", "Cherry"];
-    export const showFooter = true;
-  </script>
-</head>
-<body>
-  <h1>{{ title }}</h1>
+  <head>
+    <title>STX Example</title>
+    <script>
+      // Define your data as an ESM export
+      export const title = "Hello World";
+      export const items = ["Apple", "Banana", "Cherry"];
+      export const showFooter = true;
+    </script>
+  </head>
+  <body>
+    <h1>{{ title }}</h1>
 
-  <ul>
-    @foreach (items as item)
+    <ul>
+      @foreach (items as item)
       <li>{{ item }}</li>
-    @endforeach
-  </ul>
+      @endforeach
+    </ul>
 
-  @if (showFooter)
+    @if (showFooter)
     <footer>Copyright 2023</footer>
-  @endif
-</body>
+    @endif
+  </body>
 </html>
 ```
 
@@ -166,7 +167,7 @@ There are two ways to expose data in your STX templates:
   // Export default object
   export default {
     items: ["Apple", "Banana", "Cherry"],
-    showDetails: true
+    showDetails: true,
   };
 </script>
 ```
@@ -179,7 +180,7 @@ There are two ways to expose data in your STX templates:
   module.exports = {
     title: "Hello World",
     items: ["Apple", "Banana", "Cherry"],
-    showFooter: true
+    showFooter: true,
   };
 </script>
 ```
@@ -191,37 +192,37 @@ There are two ways to expose data in your STX templates:
 STX supports defining your own custom directives for template processing:
 
 ```ts
-import type { CustomDirective } from 'bun-plugin-stx'
+import type { CustomDirective } from "bun-plugin-stx";
 // Configure custom directives
-import stxPlugin from 'bun-plugin-stx'
+import stxPlugin from "bun-plugin-stx";
 
 // Create custom directives
 const uppercaseDirective: CustomDirective = {
-  name: 'uppercase',
+  name: "uppercase",
   handler: (content, params) => {
-    return params[0] ? params[0].toUpperCase() : content.toUpperCase()
+    return params[0] ? params[0].toUpperCase() : content.toUpperCase();
   },
   // No hasEndTag needed for single-parameter directives
-}
+};
 
 const wrapDirective: CustomDirective = {
-  name: 'wrap',
+  name: "wrap",
   handler: (content, params) => {
-    const className = params[0] || 'default-wrapper'
-    return `<div class="${className}">${content}</div>`
+    const className = params[0] || "default-wrapper";
+    return `<div class="${className}">${content}</div>`;
   },
   hasEndTag: true, // This directive requires an end tag (@wrap...@endwrap)
-}
+};
 
 // Register custom directives
 await build({
-  entrypoints: ['./src/index.ts', './templates/home.stx'],
-  outdir: './dist',
+  entrypoints: ["./src/index.ts", "./templates/home.stx"],
+  outdir: "./dist",
   plugins: [stxPlugin],
   stx: {
     customDirectives: [uppercaseDirective, wrapDirective],
   },
-})
+});
 ```
 
 Then use them in your templates:
@@ -232,7 +233,7 @@ Then use them in your templates:
 
 <!-- Block directive with content and optional parameter -->
 @wrap(highlight)
-  <p>This content will be wrapped in a div with class "highlight"</p>
+<p>This content will be wrapped in a div with class "highlight"</p>
 @endwrap
 ```
 
@@ -258,11 +259,11 @@ Use `@if`, `@elseif`, and `@else` for conditional rendering:
 
 ```html
 @if (user.isAdmin)
-  <div class="admin-panel">Admin content</div>
+<div class="admin-panel">Admin content</div>
 @elseif (user.isEditor)
-  <div class="editor-tools">Editor tools</div>
+<div class="editor-tools">Editor tools</div>
 @else
-  <div class="user-view">Regular user view</div>
+<div class="user-view">Regular user view</div>
 @endif
 ```
 
@@ -273,7 +274,7 @@ Iterate over arrays with `@foreach`:
 ```html
 <ul>
   @foreach (items as item)
-    <li>{{ item }}</li>
+  <li>{{ item }}</li>
   @endforeach
 </ul>
 ```
@@ -283,7 +284,7 @@ Use `@for` for numeric loops:
 ```html
 <ol>
   @for (let i = 1; i <= 5; i++)
-    <li>Item {{ i }}</li>
+  <li>Item {{ i }}</li>
   @endfor
 </ol>
 ```
@@ -307,20 +308,15 @@ Use `@js` to execute JavaScript code on the server:
 ```html
 <script>
   module.exports = {
-    initialValue: 5
+    initialValue: 5,
   };
 </script>
 
 <p>Before: {{ result }}</p>
 
-@js
-  // This code runs on the server and is not included in the output HTML
-  global.result = initialValue * 10;
-
-  // You can access Node.js APIs here
-  if (typeof process !== 'undefined') {
-    global.nodeVersion = process.version;
-  }
+@js // This code runs on the server and is not included in the output HTML
+global.result = initialValue * 10; // You can access Node.js APIs here if
+(typeof process !== 'undefined') { global.nodeVersion = process.version; }
 @endjs
 
 <p>After: {{ result }}</p>
@@ -335,37 +331,23 @@ Use `@ts` to execute TypeScript code on the server:
 <script>
   module.exports = {
     users: [
-      { id: 1, name: 'Alice' },
-      { id: 2, name: 'Bob' }
-    ]
+      { id: 1, name: "Alice" },
+      { id: 2, name: "Bob" },
+    ],
   };
 </script>
 
 <h1>User List</h1>
 
-@ts
-  // Define TypeScript interfaces
-  interface User {
-    id: number;
-    name: string;
-    displayName?: string;
-  }
-
-  // Process data with TypeScript
-  function processUsers(users: User[]): User[] {
-    return users.map(user => ({
-      ...user,
-      displayName: `User ${user.id}: ${user.name}`
-    }));
-  }
-
-  // Store the processed data in the context
-  global.processedUsers = processUsers(users);
-@endts
+@ts // Define TypeScript interfaces interface User { id: number; name: string;
+displayName?: string; } // Process data with TypeScript function
+processUsers(users: User[]): User[] { return users.map(user => ({ ...user,
+displayName: `User ${user.id}: ${user.name}` })); } // Store the processed data
+in the context global.processedUsers = processUsers(users); @endts
 
 <ul>
   @foreach (processedUsers as user)
-    <li>{{ user.displayName }}</li>
+  <li>{{ user.displayName }}</li>
   @endforeach
 </ul>
 ```
@@ -374,25 +356,16 @@ Use `@ts` to execute TypeScript code on the server:
 
 STX supports rendering Markdown content directly in your templates using the `@markdown` directive:
 
-```html
+````html
 <div class="content">
-  @markdown
-  # Heading 1
+  @markdown # Heading 1 This is a paragraph with **bold text** and *italic
+  text*. - List item 1 - List item 2 - List item 3 ```js // Code block function
+  hello() { console.log('Hello world'); }
+</div>
+````
 
-  This is a paragraph with **bold text** and *italic text*.
+@endmarkdown
 
-  - List item 1
-  - List item 2
-  - List item 3
-
-  ```js
-  // Code block
-  function hello() {
-    console.log('Hello world');
-  }
-  ```
-
-  @endmarkdown
 </div>
 ```
 
@@ -400,15 +373,10 @@ You can also pass options to the markdown renderer:
 
 ```html
 <!-- Enable line breaks (converts single line breaks to <br>) -->
-@markdown(breaks)
-Line 1
-Line 2
-@endmarkdown
+@markdown(breaks) Line 1 Line 2 @endmarkdown
 
 <!-- Disable GitHub Flavored Markdown -->
-@markdown(no-gfm)
-Content here
-@endmarkdown
+@markdown(no-gfm) Content here @endmarkdown
 ```
 
 ### Internationalization (i18n)
@@ -420,23 +388,23 @@ STX supports internationalization to help you build multilingual applications. T
 Configure i18n in your build script:
 
 ```js
-import stxPlugin from 'bun-plugin-stx'
+import stxPlugin from "bun-plugin-stx";
 
 await build({
-  entrypoints: ['./templates/home.stx'],
-  outdir: './dist',
+  entrypoints: ["./templates/home.stx"],
+  outdir: "./dist",
   plugins: [stxPlugin],
   stx: {
     i18n: {
-      locale: 'en', // Current locale
-      defaultLocale: 'en', // Fallback locale
-      translationsDir: 'translations', // Directory containing translations
-      format: 'yaml', // Format of translation files (yaml, yml, json, or js)
+      locale: "en", // Current locale
+      defaultLocale: "en", // Fallback locale
+      translationsDir: "translations", // Directory containing translations
+      format: "yaml", // Format of translation files (yaml, yml, json, or js)
       fallbackToKey: true, // Use key as fallback when translation not found
-      cache: true // Cache translations in memory
-    }
-  }
-})
+      cache: true, // Cache translations in memory
+    },
+  },
+});
 ```
 
 #### Translation Files
@@ -519,39 +487,39 @@ STX now provides seamless integration with Web Components, allowing you to autom
 Enable web component integration in your build configuration:
 
 ```ts
-import { build } from 'bun'
-import stxPlugin from 'bun-plugin-stx'
+import { build } from "bun";
+import stxPlugin from "bun-plugin-stx";
 
 await build({
-  entrypoints: ['./templates/home.stx'],
-  outdir: './dist',
+  entrypoints: ["./templates/home.stx"],
+  outdir: "./dist",
   plugins: [stxPlugin],
   config: {
     stx: {
       webComponents: {
         enabled: true,
-        outputDir: 'dist/web-components',
+        outputDir: "dist/web-components",
         components: [
           {
-            name: 'MyButton', // Class name for the component
-            tag: 'my-button', // HTML tag name (must contain a hyphen)
-            file: 'components/button.stx', // Path to the STX component
-            attributes: ['type', 'text', 'disabled'] // Observed attributes
+            name: "MyButton", // Class name for the component
+            tag: "my-button", // HTML tag name (must contain a hyphen)
+            file: "components/button.stx", // Path to the STX component
+            attributes: ["type", "text", "disabled"], // Observed attributes
           },
           {
-            name: 'MyCard',
-            tag: 'my-card',
-            file: 'components/card.stx',
+            name: "MyCard",
+            tag: "my-card",
+            file: "components/card.stx",
             shadowDOM: true, // Use Shadow DOM (default: true)
             template: true, // Use template element (default: true)
-            styleSource: 'styles/card.css', // Optional external stylesheet
-            attributes: ['title', 'footer']
-          }
-        ]
-      }
-    }
-  }
-})
+            styleSource: "styles/card.css", // Optional external stylesheet
+            attributes: ["title", "footer"],
+          },
+        ],
+      },
+    },
+  },
+});
 ```
 
 #### Using Web Components in Templates
@@ -561,23 +529,22 @@ Include web components in your templates with the `@webcomponent` directive:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Web Component Demo</title>
+  <head>
+    <title>Web Component Demo</title>
 
-  <!-- Include the web components -->
-  @webcomponent('my-button')
-  @webcomponent('my-card')
-</head>
-<body>
-  <h1>Web Components Demo</h1>
+    <!-- Include the web components -->
+    @webcomponent('my-button') @webcomponent('my-card')
+  </head>
+  <body>
+    <h1>Web Components Demo</h1>
 
-  <!-- Use the custom elements -->
-  <my-button type="primary" text="Click Me"></my-button>
+    <!-- Use the custom elements -->
+    <my-button type="primary" text="Click Me"></my-button>
 
-  <my-card title="Card Title" footer="Card Footer">
-    This is the card content
-  </my-card>
-</body>
+    <my-card title="Card Title" footer="Card Footer">
+      This is the card content
+    </my-card>
+  </body>
 </html>
 ```
 
@@ -619,10 +586,10 @@ STX includes TypeScript declarations for importing .stx files. Make sure your `t
 {
   "compilerOptions": {
     // ... your other options
-    "types": ["bun"]
+    "types": ["bun"],
   },
   "files": ["src/stx.d.ts"],
-  "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx"]
+  "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx"],
 }
 ```
 
@@ -630,7 +597,7 @@ Create a declaration file (`src/stx.d.ts`):
 
 ```ts
 // Allow importing .stx files
-declare module '*.stx';
+declare module "*.stx";
 ```
 
 ## Example Server
@@ -639,20 +606,20 @@ Run a development server with your STX templates:
 
 ```ts
 // serve.ts
-import home from './home.stx'
+import home from "./home.stx";
 
 const server = Bun.serve({
   routes: {
-    '/': home,
+    "/": home,
   },
   development: true,
 
   fetch(req) {
-    return new Response('Not Found', { status: 404 })
+    return new Response("Not Found", { status: 404 });
   },
-})
+});
 
-console.log(`Listening on ${server.url}`)
+console.log(`Listening on ${server.url}`);
 ```
 
 ## Testing This Plugin
@@ -722,14 +689,15 @@ export default {
   // ...other config options
   docs: {
     enabled: true,
-    outputDir: 'docs',
-    format: 'markdown', // 'markdown', 'html', or 'json'
+    outputDir: "docs",
+    format: "markdown", // 'markdown', 'html', or 'json'
     components: true,
     templates: true,
     directives: true,
-    extraContent: '## Getting Started\n\nThis is additional content to include in the documentation.',
+    extraContent:
+      "## Getting Started\n\nThis is additional content to include in the documentation.",
   },
-}
+};
 ```
 
 ### Component Documentation
@@ -771,7 +739,7 @@ STX can extract component metadata from JSDoc comments in your component files:
   module.exports = {
     type,
     title,
-    message
+    message,
   };
 </script>
 ```
@@ -787,18 +755,18 @@ export default {
   // ... other config
   webComponents: {
     enabled: true,
-    outputDir: 'dist/web-components',
+    outputDir: "dist/web-components",
     components: [
       {
-        name: 'MyButton',
-        tag: 'my-button',
-        file: 'components/button.stx',
-        attributes: ['type', 'text', 'disabled'],
-        description: 'A customizable button component'
-      }
-    ]
-  }
-}
+        name: "MyButton",
+        tag: "my-button",
+        file: "components/button.stx",
+        attributes: ["type", "text", "disabled"],
+        description: "A customizable button component",
+      },
+    ],
+  },
+};
 ```
 
 The documentation will include:
@@ -819,16 +787,16 @@ STX includes several convenient features inspired by Laravel's Blade templating 
 Register callbacks to be executed when specific views are rendered:
 
 ```typescript
-import { composer, composerPattern } from 'stx';
+import { composer, composerPattern } from "stx";
 
 // Register for specific view
-composer('dashboard', (context) => {
-  context.menuItems = ['Home', 'Settings', 'Profile'];
+composer("dashboard", (context) => {
+  context.menuItems = ["Home", "Settings", "Profile"];
 });
 
 // Register for any view matching a pattern
 composerPattern(/user/, (context) => {
-  context.section = 'User Management';
+  context.section = "User Management";
 });
 ```
 
@@ -885,18 +853,14 @@ Conditionally render content based on environment:
 
 ```html
 @production
-  <script src="/js/analytics.min.js"></script>
+<script src="/js/analytics.min.js"></script>
 @else
-  <!-- Development tools -->
-  <script src="/js/debug.js"></script>
-@endproduction
-
-@development
-  <div class="dev-banner">Development Mode</div>
-@enddevelopment
-
-@env('staging')
-  <div class="staging-notice">Staging Environment</div>
+<!-- Development tools -->
+<script src="/js/debug.js"></script>
+@endproduction @development
+<div class="dev-banner">Development Mode</div>
+@enddevelopment @env('staging')
+<div class="staging-notice">Staging Environment</div>
 @endenv
 ```
 
@@ -952,12 +916,15 @@ The MIT License (MIT). Please see [LICENSE](https://github.com/stacksjs/stx/tree
 Made with 💙
 
 <!-- Badges -->
-[npm-version-src]: <https://img.shields.io/npm/v/bun-plugin-stx?style=flat-square>
-[npm-version-href]: <https://npmjs.com/package/bun-plugin-stx>
-[npm-downloads-src]: <https://img.shields.io/npm/dm/bun-plugin-stx?style=flat-square>
-[npm-downloads-href]: <https://npmjs.com/package/bun-plugin-stx>
-[github-actions-src]: <https://img.shields.io/github/actions/workflow/status/stacksjs/stx/ci.yml?style=flat-square&branch=main>
-[github-actions-href]: <https://github.com/stacksjs/stx/actions?query=workflow%3Aci>
+
+[npm-version-src]: https://img.shields.io/npm/v/bun-plugin-stx?style=flat-square
+[npm-version-href]: https://npmjs.com/package/bun-plugin-stx
+[npm-downloads-src]: https://img.shields.io/npm/dm/bun-plugin-stx?style=flat-square
+[npm-downloads-href]: https://npmjs.com/package/bun-plugin-stx
+[github-actions-src]: https://img.shields.io/github/actions/workflow/status/stacksjs/stx/ci.yml?style=flat-square&branch=main
+[github-actions-href]: https://github.com/stacksjs/stx/actions?query=workflow%3Aci
 
 <!-- [codecov-src]: https://img.shields.io/codecov/c/gh/stacksjs/stx/main?style=flat-square
 [codecov-href]: https://codecov.io/gh/stacksjs/stx -->
+
+# Test completed successfully

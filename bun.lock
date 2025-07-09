@@ -4,6 +4,7 @@
     "": {
       "name": "stx",
       "devDependencies": {
+        "@stacksjs/bumpx": "^0.1.1",
         "@stacksjs/docs": "^0.70.23",
         "@stacksjs/eslint-config": "^4.14.0-beta.3",
         "@stacksjs/gitlint": "^0.1.5",
@@ -609,6 +610,8 @@
     "@shikijs/vscode-textmate": ["@shikijs/vscode-textmate@10.0.2", "", {}, "sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg=="],
 
     "@sindresorhus/merge-streams": ["@sindresorhus/merge-streams@2.3.0", "", {}, "sha512-LtoMMhxAlorcGhmFYI+LhPgbPZCkgP6ra1YL604EeF6U98pLlQ3iWIGMdWSC+vWmPBWBNgmDBAhnAobLROJmwg=="],
+
+    "@stacksjs/bumpx": ["@stacksjs/bumpx@0.1.1", "", { "dependencies": { "cac": "^6.7.14" }, "bin": { "bumpx": "dist/bin/cli.js" } }, "sha512-ixL0WL5VcCrznAky8W1rSoTNyC1CM9uxImvUXOGslaKXz+l3Wnm57kpTSwG67LP/CYZ4dpBz5lDv3J1utINBRA=="],
 
     "@stacksjs/cli": ["@stacksjs/cli@0.70.23", "", {}, "sha512-pbu6xESAtRIppcEQlhmRq0yZa1lnYAwtQHh7DmfDcUgVjvahQGe7PXoX+m2dhdFDRthFIVuLeHvrAf1JYv/JOQ=="],
 
