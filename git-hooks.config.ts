@@ -5,7 +5,10 @@ const config: GitHooksConfig = {
   'pre-commit': {
     'staged-lint': {
       '*.{js,ts,tsx,stx}': './node_modules/.bin/eslint --fix',
-      '*.{ts,tsx,stx}': ['./node_modules/.bin/eslint --fix', './node_modules/.bin/prettier --write'],
+      '*.{ts,tsx,stx}': [
+        './node_modules/.bin/eslint --fix',
+        './node_modules/.bin/prettier --write',
+      ],
       '*.css': './node_modules/.bin/stylelint --fix',
       '*.md': './node_modules/.bin/prettier --write',
     },
