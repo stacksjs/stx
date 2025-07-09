@@ -5,10 +5,7 @@ const config: GitHooksConfig = {
   "pre-commit": {
     "staged-lint": {
       "*.{js,ts,tsx,stx}": "bun eslint --fix",
-      "*.{ts,tsx,stx}": [
-        "bun eslint --fix",
-        "bun prettier --write",
-      ],
+      "*.{ts,tsx,stx}": ["bun eslint --fix", "bun prettier --write"],
       "*.css": "bun stylelint --fix",
       "*.md": "bun prettier --write",
     },
