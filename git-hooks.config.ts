@@ -1,18 +1,18 @@
 // git-hooks.config.ts
-import type { GitHooksConfig } from 'bun-git-hooks'
+import type { GitHooksConfig } from "bun-git-hooks";
 
 const config: GitHooksConfig = {
-  'pre-commit': {
-    stagedLint: {
-      '*.js': 'eslint --fix',
-      '*.{ts,tsx}': ['eslint --fix', 'prettier --write'],
-      '*.css': 'stylelint --fix',
-      '*.md': 'prettier --write'
-    }
+  "pre-commit": {
+    "staged-lint": {
+      "*.{js,ts,tsx,stx}": "bunx eslint --fix",
+      "*.{ts,tsx,stx}": ["bunx eslint --fix", "bunx prettier --write"],
+      "*.css": "bunx stylelint --fix",
+      "*.md": "bunx prettier --write",
+    },
   },
-  'commit-msg': 'bun commitlint --edit $1',
-  'pre-push': 'bun run build',
-  'verbose': true,
-}
+  "commit-msg": "bunx @stacksjs/gitlint --edit $1",
+  "post-commit": "bun run changelog:generate",
+  "pre-push": "bun run build",
+};
 
-export default config
+export default config;
