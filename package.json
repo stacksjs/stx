@@ -109,7 +109,7 @@
   "git-hooks": {
     "pre-commit": {
       "staged-lint": {
-        "*.{js,ts}": "bun eslint --fix"
+        "*.{js,ts,json,yaml,yml,md}": "bun lint:fix"
       }
     },
     "commit-msg": "bunx gitlint .git/COMMIT_EDITMSG"
