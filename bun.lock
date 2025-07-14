@@ -12,7 +12,7 @@
         "@types/bun": "^1.2.18",
         "bumpp": "^10.2.0",
         "bumpx": "^0.1.1",
-        "bun-git-hooks": "^0.2.16",
+        "bun-git-hooks": "^0.2.17",
         "bun-plugin-dtsx": "^0.21.12",
         "bunfig": "^0.10.1",
         "changelogen": "^0.6.2",
@@ -971,7 +971,7 @@
 
     "bumpx": ["bumpx@0.1.1", "", { "bin": { "bumpx": "bin.js" } }, "sha512-d3IG/xLGPhvjD8v3BAPd8AKB2G0Zi/QHQA43+fd9rRi3wChyqjmGDqVIMlJTMvdWSAYTj44cfmMKFkQ4ByTl7A=="],
 
-    "bun-git-hooks": ["bun-git-hooks@0.2.16", "", { "bin": { "git-hooks": "dist/bin/cli.js", "bun-git-hooks": "dist/bin/cli.js" } }, "sha512-xMqVjRKnhgFJIRfGPHzhGGWMOekqWvo36VlP7v+aUMGg4Qjgk2YsdVIItpx94P5/IwKyWvwAdngXJDmhcxTz/Q=="],
+    "bun-git-hooks": ["bun-git-hooks@0.2.17", "", { "bin": { "git-hooks": "dist/bin/cli.js", "bun-git-hooks": "dist/bin/cli.js" } }, "sha512-bBdGPdjN9v+Hq5YO1+TzlTFqbspOrlja8oGJzrm3oyJA2vrWk1MFixqjKD9Qi6ZH/NgyBWsvQSs327YSEXqW8Q=="],
 
     "bun-plugin-dtsx": ["bun-plugin-dtsx@0.21.12", "", { "dependencies": { "@stacksjs/dtsx": "^0.8.1" } }, "sha512-VqGDRoTKEnkD508k9jRlcwFoEEJXtjqLMGN+brRP4/3vH0wfLZkZiWG5jc490roZOmphrQlo5NgfFB/j71+Qtg=="],
 

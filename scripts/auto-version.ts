@@ -19,7 +19,7 @@ const execAsync = promisify(exec)
  * 5. Maximum run frequency limits
  */
 
-const LOCK_FILE = '/tmp/stx-auto-version.lock'
+const LOCK_FILE = '/tmp/stx-auto-version.lock'  
 
 interface AutoVersionResult {
   success: boolean
