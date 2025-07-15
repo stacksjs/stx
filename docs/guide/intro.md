@@ -212,14 +212,14 @@ interface ButtonProps {
 
 Ready to start building with STX? Follow these steps:
 
-1. [Installation Guide](/install) - Set up STX in your project
-2. [Quick Start](/usage) - Learn the basics in 5 minutes
+1. [Installation Guide](/guide/install) - Set up STX in your project
+2. [Quick Start](/guide/usage) - Learn the basics in 5 minutes
 3. [Examples](/examples) - Explore example components and patterns
-4. [API Reference](/api-reference) - Complete API documentation
+4. [API Reference](/api/reference) - Complete API documentation
 
 ## Need Help?
 
 - Join our [Discord Community](https://discord.gg/stacksjs)
 - Check out the [GitHub Repository](https://github.com/stacksjs/stx)
 - Follow us on [Twitter](https://twitter.com/stacksjs)
-- Read our [Best Practices Guide](/best-practices)
+- Read our [Best Practices Guide](/guide/best-practices)

@@ -9,7 +9,7 @@ STX uses an intuitive template syntax that extends HTML with additional features
 Use double curly braces for text interpolation:
 
 ```html
-<div>{{ message }}</div>
+<div>&#123;&#123; message &#125;&#125;</div>
 ```
 
 ### Attributes
@@ -22,10 +22,10 @@ Bind attributes using the `:` shorthand:
 
 ### Raw HTML
 
-Use `{{{ }}}` for raw HTML interpolation (use with caution):
+Use `&#123;&#123;&#123; &#125;&#125;&#125;` for raw HTML interpolation (use with caution):
 
 ```html
-<div>{{{ rawHtml }}}</div>
+<div>&#123;&#123;&#123; rawHtml &#125;&#125;&#125;</div>
 ```
 
 ## Directives
@@ -43,7 +43,7 @@ Use `{{{ }}}` for raw HTML interpolation (use with caution):
 ```html
 <ul>
   <li @each="item in items" :key="item.id">
-    {{ item.name }}
+    &#123;&#123; item.name &#125;&#125;
   </li>
 </ul>
 ```

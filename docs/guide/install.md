@@ -140,7 +140,7 @@ STX comes with several development tools:
 
 ## Next Steps
 
-- Read the [Introduction](/intro) to learn about STX's core concepts
-- Check out the [Basic Usage](/usage) guide
+- Read the [Introduction](/guide/intro) to learn about STX's core concepts
+- Check out the [Basic Usage](/guide/usage) guide
 - Explore [Examples](/examples) to see STX in action
-- Join our [Community](/community) for support and discussions
+- Join our [Community](/community/) for support and discussions

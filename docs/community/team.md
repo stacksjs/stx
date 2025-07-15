@@ -12,7 +12,7 @@ import {
   VPTeamPageSection,
   VPTeamMembers
 } from 'vitepress/theme'
-import { core, emeriti } from './_data/team'
+import { core, emeriti } from '../_data/team.js'
 </script>
 
 <VPTeamPage>
