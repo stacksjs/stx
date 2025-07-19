@@ -85,12 +85,12 @@
     "typecheck": "bun tsc --noEmit"
   },
   "devDependencies": {
-    "@stacksjs/bumpx": "^0.1.1",
+    "@stacksjs/bumpx": "^0.1.2",
     "@stacksjs/docs": "^0.70.23",
     "@stacksjs/eslint-config": "^4.14.0-beta.3",
     "@stacksjs/gitlint": "^0.1.5",
     "@stacksjs/logsmith": "^0.1.2",
-    "@types/bun": "^1.2.18",
+    "@types/bun": "^1.2.19",
     "bumpp": "^10.2.0",
     "bumpx": "^0.1.1",
     "bun-git-hooks": "^0.2.17",
@@ -99,7 +99,7 @@
     "changelogen": "^0.6.2",
     "happy-dom": "^18.0.1",
     "prettier": "^3.6.2",
-    "stylelint": "^16.21.1",
+    "stylelint": "^16.22.0",
     "stylelint-config-standard": "^38.0.0",
     "typescript": "^5.8.3"
   },
