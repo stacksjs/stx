@@ -86,24 +86,24 @@
     "typecheck": "bun tsc --noEmit"
   },
   "devDependencies": {
-    "@stacksjs/bumpx": "^0.1.1",
+    "@stacksjs/bumpx": "^0.1.7",
     "@stacksjs/docs": "^0.70.23",
     "@stacksjs/eslint-config": "^4.14.0-beta.3",
     "@stacksjs/gitlint": "^0.1.5",
-    "@stacksjs/logsmith": "^0.1.2",
-    "@types/bun": "^1.2.18",
+    "@stacksjs/logsmith": "^0.1.6",
+    "@types/bun": "^1.2.20",
     "bumpx": "^0.1.1",
-    "bun-git-hooks": "^0.2.17",
+    "bun-git-hooks": "^0.2.19",
     "bun-plugin-dtsx": "^0.21.12",
-    "bunfig": "^0.10.1",
+    "bunfig": "^0.14.1",
     "happy-dom": "^18.0.1",
     "prettier": "^3.6.2",
-    "stylelint": "^16.21.1",
+    "stylelint": "^16.23.1",
     "stylelint-config-standard": "^38.0.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2"
   },
   "overrides": {
-    "eslint": "^9.31.0"
+    "eslint": "^9.33.0"
   },
   "git-hooks": {
     "pre-commit": {
