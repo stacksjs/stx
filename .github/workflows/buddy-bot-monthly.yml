@@ -6,9 +6,9 @@ on:
   workflow_dispatch: # Allow manual triggering
     inputs:
       strategy:
-        description: 'Update strategy'
+        description: Update strategy
         required: false
-        default: 'major'
+        default: major
         type: choice
         options:
           - all
@@ -16,7 +16,7 @@ on:
           - minor
           - patch
       dry_run:
-        description: 'Dry run (preview only)'
+        description: Dry run (preview only)
         required: false
         default: false
         type: boolean

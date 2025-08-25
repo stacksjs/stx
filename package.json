@@ -59,25 +59,19 @@
     "zip:windows-x64": "zip -j bin/stx-windows-x64.zip bin/stx-windows-x64.exe",
     "zip:darwin-x64": "zip -j bin/stx-darwin-x64.zip bin/stx-darwin-x64",
     "zip:darwin-arm64": "zip -j bin/stx-darwin-arm64.zip bin/stx-darwin-arm64",
-    "lint": "bun eslint .",
-    "lint:fix": "bun eslint . --fix",
     "lint:staged": "bun eslint --fix",
     "prettier:fix": "bun prettier --write",
     "prettier:staged": "bun prettier --write",
     "stylelint:fix": "bun stylelint --fix",
     "stylelint:staged": "bun stylelint --fix",
     "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
-    "logsmith": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js",
-    "changelog": "bun logsmith --output CHANGELOG.md --theme github --exclude-authors \"dependabot[bot],github-actions[bot]\" --exclude-types \"chore\" --max-commits 50",
-    "changelog:generate": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --output CHANGELOG.md --theme github --exclude-authors \"dependabot[bot],github-actions[bot]\" --exclude-types \"chore\" --max-commits 50",
-    "changelog:json": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --format json --output changelog.json --exclude-types \"chore\" --max-commits 50",
-    "changelog:html": "bun node_modules/@stacksjs/logsmith/dist/bin/cli.js --format html --output changelog.html --exclude-types \"chore\" --max-commits 50",
     "prepublishOnly": "bun run build",
-    "bumpx": "bun node_modules/@stacksjs/bumpx/dist/bin/cli.js ",
-    "release": "bun run bumpx prompt --no-push --yes && bun run changelog:generate && git add CHANGELOG.md && git commit --amend --no-edit",
-    "release:major": "bumpx major --commit --tag --commit-message \"chore(release): bump version to v%s\" --no-push --yes && bun run changelog:generate && git add CHANGELOG.md && git commit --amend --no-edit",
-    "release:minor": "bumpx minor --commit --tag --commit-message \"chore(release): bump version to v%s\" --no-push --yes && bun run changelog:generate && git add CHANGELOG.md && git commit --amend --no-edit",
-    "release:patch": "bumpx patch --commit --tag --commit-message \"chore(release): bump version to v%s\" --no-push --yes && bun run changelog:generate && git add CHANGELOG.md && git commit --amend --no-edit",
+    "lint": "bunx --bun eslint .",
+    "lint:fix": "bunx --bun eslint . --fix",
+    "changelog": "bunx logsmith --verbose",
+    "changelog:generate": "bunx logsmith --output CHANGELOG.md",
+    "release": "bun run changelog:generate && bunx bumpx prompt --recursive",
+    "postinstall": "bunx git-hooks",
     "setup": "bun run scripts/setup.ts",
     "test": "bun test",
     "dev:docs": "bun --bun vitepress dev docs",
@@ -86,14 +80,15 @@
     "typecheck": "bun tsc --noEmit"
   },
   "devDependencies": {
-    "@stacksjs/bumpx": "^0.1.1",
+    "@stacksjs/bumpx": "^0.1.13",
     "@stacksjs/docs": "^0.70.23",
     "@stacksjs/eslint-config": "^4.14.0-beta.3",
     "@stacksjs/gitlint": "^0.1.5",
-    "@stacksjs/logsmith": "^0.1.2",
+    "@stacksjs/logsmith": "^0.1.8",
     "@types/bun": "^1.2.18",
+    "buddy-bot": "^0.8.8",
     "bumpx": "^0.1.1",
-    "bun-git-hooks": "^0.2.17",
+    "bun-git-hooks": "^0.2.19",
     "bun-plugin-dtsx": "^0.21.12",
     "bunfig": "^0.10.1",
     "happy-dom": "^18.0.1",
@@ -108,10 +103,10 @@
   "git-hooks": {
     "pre-commit": {
       "staged-lint": {
-        "*.{js,ts,yaml,yml,md}": "bun lint:staged"
+        "*.{js,ts,json,yaml,yml,md}": "bun lint:staged"
       }
     },
-    "commit-msg": "bunx gitlint .git/COMMIT_EDITMSG"
+    "commit-msg": "bunx gitlint --edit $1"
   },
   "workspaces": [
     "packages/*",
