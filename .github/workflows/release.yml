@@ -22,7 +22,7 @@ jobs:
           bun-version: latest
 
       - name: Use cached node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v4.2.4
         with:
           path: node_modules
           key: node-modules-${{ hashFiles('**/bun.lock') }}
@@ -82,7 +82,7 @@ jobs:
           git push origin HEAD:main
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
+        uses: actions/create-release@v1.1.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
