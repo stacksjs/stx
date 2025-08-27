@@ -4,13 +4,13 @@
     "": {
       "name": "stx",
       "devDependencies": {
-        "@stacksjs/bumpx": "^0.1.13",
+        "@stacksjs/bumpx": "^0.1.17",
         "@stacksjs/docs": "^0.70.23",
         "@stacksjs/eslint-config": "^4.14.0-beta.3",
         "@stacksjs/gitlint": "^0.1.5",
         "@stacksjs/logsmith": "^0.1.8",
         "@types/bun": "^1.2.18",
-        "buddy-bot": "^0.8.8",
+        "buddy-bot": "^0.8.9",
         "bumpx": "^0.1.1",
         "bun-git-hooks": "^0.2.19",
         "bun-plugin-dtsx": "^0.21.12",
@@ -614,7 +614,7 @@
 
     "@sindresorhus/merge-streams": ["@sindresorhus/merge-streams@2.3.0", "", {}, "sha512-LtoMMhxAlorcGhmFYI+LhPgbPZCkgP6ra1YL604EeF6U98pLlQ3iWIGMdWSC+vWmPBWBNgmDBAhnAobLROJmwg=="],
 
-    "@stacksjs/bumpx": ["@stacksjs/bumpx@0.1.13", "", { "dependencies": { "@stacksjs/clapp": "^0.1.16" }, "bin": { "bumpx": "dist/bin/cli.js" } }, "sha512-JhV79yeAPi6stdbHR8HwC/ZzrcoHSbz2f9tHAiIMLIasDeFeod6UvWWZ8FOZTeNPQgP/Z4oInvcxiQLIiFdBQQ=="],
+    "@stacksjs/bumpx": ["@stacksjs/bumpx@0.1.17", "", { "dependencies": { "@stacksjs/clapp": "^0.1.16" }, "bin": { "bumpx": "dist/bin/cli.js" } }, "sha512-Mq3qbipTnieGtDgqNSmQW+DytgV5KTiUWBVIgBJtrm8mdFPHMNHvhg1lAGtVU0ss+XGZtAGjH0lbvTeUswBc+w=="],
 
     "@stacksjs/clapp": ["@stacksjs/clapp@0.1.16", "", { "bin": { "clapp": "dist/bin/cli.js", "@stacksjs/clapp": "dist/bin/cli.js" } }, "sha512-BDmYu9Rk/HHIVc4vQjgQO6MzXNMJvPG6ZGiiEAPQT8EAidx3/6S6O7kyY2UdfJSksiCd5SKFK+WYd1uAs88BrQ=="],
 
@@ -974,7 +974,7 @@
 
     "browserslist": ["browserslist@4.25.1", "", { "dependencies": { "caniuse-lite": "^1.0.30001726", "electron-to-chromium": "^1.5.173", "node-releases": "^2.0.19", "update-browserslist-db": "^1.1.3" }, "bin": { "browserslist": "cli.js" } }, "sha512-KGj0KoOMXLpSNkkEI6Z6mShmQy0bc1I+T7K9N81k4WWMrfz+6fQ6es80B/YLAeRoKvjYE1YSHHOW1qe9xIVzHw=="],
 
-    "buddy-bot": ["buddy-bot@0.8.8", "", { "dependencies": { "@types/prompts": "^2.4.9", "bunfig": "^0.10.1", "cac": "6.7.14", "prompts": "^2.4.2", "ts-pkgx": "0.4.38" }, "bin": { "buddy-bot": "dist/bin/cli.js" } }, "sha512-anRmoD/AUsKlre0wHbpvsxRK7MOFC7R+nKBipNGK31nEC+ZenVOuoZYu6jaII2q3hnOSqzakP6zglZy/0SrHkw=="],
+    "buddy-bot": ["buddy-bot@0.8.9", "", { "dependencies": { "@types/prompts": "^2.4.9", "bunfig": "^0.10.1", "cac": "6.7.14", "prompts": "^2.4.2", "ts-pkgx": "0.4.38" }, "bin": { "buddy-bot": "dist/bin/cli.js" } }, "sha512-X6JmnlBxTUYfmLB/L9HHGDhAc3pSnSopMQ8pv78rpzLyYqhuJmO5tHKin9LaPefGbJAL2A3xZTBJ2+CTLksKoA=="],
 
     "buffer": ["buffer@6.0.3", "", { "dependencies": { "base64-js": "^1.3.1", "ieee754": "^1.2.1" } }, "sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA=="],
 
