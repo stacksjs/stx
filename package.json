@@ -90,7 +90,7 @@
     "bumpx": "^0.1.1",
     "bun-git-hooks": "^0.2.19",
     "bun-plugin-dtsx": "^0.21.12",
-    "bunfig": "^0.10.1",
+    "bunfig": "^0.14.1",
     "happy-dom": "^18.0.1",
     "prettier": "^3.6.2",
     "stylelint": "^16.21.1",
