@@ -73,7 +73,7 @@
     "bun-plugin-stx": "workspace:*",
     "gray-matter": "^4.0.3",
     "marked": "^16.3.0",
-    "shiki": "^3.12.2",
+    "shiki": "^3.13.0",
     "yaml": "^2.8.1"
   },
   "devDependencies": {
