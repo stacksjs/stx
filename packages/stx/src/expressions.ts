@@ -3,6 +3,8 @@
  */
 
 import { createDetailedErrorMessage } from './utils'
+import { safeEvaluate, isExpressionSafe } from './safe-evaluator'
+import { memoize } from './performance-utils'
 
 /**
  * Add basic filter support to expressions
@@ -312,6 +314,33 @@ export function applyFilters(value: any, filterExpression: string, context: Reco
 }
 
 /**
+ * Memoized version of unsafe expression evaluation for performance
+ */
+const memoizedUnsafeEvaluate = memoize((expression: string, contextKeys: string, contextValues: string) => {
+  try {
+    const keys = JSON.parse(contextKeys)
+    const values = JSON.parse(contextValues)
+    const context = Object.fromEntries(keys.map((key: string, i: number) => [key, values[i]]))
+
+    // eslint-disable-next-line no-new-func
+    const exprFn = new Function(...keys, `
+      try {
+        return ${expression};
+      } catch (e) {
+        if (e instanceof ReferenceError || e instanceof TypeError) {
+          return undefined;
+        }
+        throw e;
+      }
+    `)
+
+    return exprFn(...values)
+  } catch {
+    return undefined
+  }
+}, 500)
+
+/**
  * Evaluate an expression within the given context
  * @param {string} expression - The expression to evaluate
  * @param {Record<string, any>} context - The context object containing variables
@@ -358,21 +387,19 @@ export function evaluateExpression(expression: string, context: Record<string, a
       throw new Error(`Reference to undefined variable or method: ${trimmedExpr}`)
     }
 
-    // Create a function that safely evaluates the expression with the given context
-    // eslint-disable-next-line no-new-func
-    const exprFn = new Function(...Object.keys(context), `
-      try {
-        return ${trimmedExpr};
-      } catch (e) {
-        // Handle undefined variables or methods
-        if (e instanceof ReferenceError || e instanceof TypeError) {
-          return undefined;
-        }
-        throw e; // Re-throw other errors
+    // Use safe evaluator for potentially unsafe expressions
+    if (!isExpressionSafe(trimmedExpr)) {
+      if (!silent) {
+        console.warn(`Potentially unsafe expression detected, using safe evaluator: ${trimmedExpr}`)
       }
-    `)
+      return safeEvaluate(trimmedExpr, context)
+    }
 
-    return exprFn(...Object.values(context))
+    // For safe expressions, use memoized evaluation for performance
+    const contextKeys = JSON.stringify(Object.keys(context))
+    const contextValues = JSON.stringify(Object.values(context))
+
+    return memoizedUnsafeEvaluate(trimmedExpr, contextKeys, contextValues)
   }
   catch (error: any) {
     if (!silent) {

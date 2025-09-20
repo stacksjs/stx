@@ -11,6 +11,16 @@ import { createDetailedErrorMessage, fileExists } from './utils'
 // Cache for partials to avoid repeated file reads
 export const partialsCache: Map<string, string> = new Map()
 
+// Global store to track what has been included via @once
+export const onceStore: Set<string> = new Set()
+
+/**
+ * Clear the @once store - useful for testing and resetting state
+ */
+export function clearOnceStore(): void {
+  onceStore.clear()
+}
+
 /**
  * Process @include and @partial directives
  */
@@ -26,6 +36,22 @@ export async function processIncludes(
 
   // First handle partial alias (replace @partial with @include)
   let output = template.replace(/@partial\s*\(['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (_, includePath, varsString) => `@include('${includePath}'${varsString ? `, ${varsString}` : ''})`)
+
+  // Process @once directive - content that should only be included once globally
+  output = output.replace(/@once([\s\S]*?)@endonce/g, (match, content, offset) => {
+    // Create a unique key for this @once block based on content hash
+    const contentHash = content.trim()
+    const onceKey = `${filePath}:${contentHash}`
+
+    if (onceStore.has(onceKey)) {
+      // Already included, return empty string
+      return ''
+    }
+
+    // Mark as included and return the content
+    onceStore.add(onceKey)
+    return content
+  })
 
   // Process special include directives first
   // Process @includeIf directive

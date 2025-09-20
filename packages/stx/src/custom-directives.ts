@@ -1,5 +1,6 @@
 import type { CustomDirective, StxOptions } from './types'
 import { createDetailedErrorMessage } from './utils'
+import { getCachedRegex } from './performance-utils'
 
 /**
  * Process all custom directives registered in the app
@@ -69,7 +70,7 @@ async function processDirectiveWithEndTag(
   // Create a regex pattern that handles optional parameters
   // Matches patterns like @uppercase, @uppercase(param1), @uppercase(param1, param2), etc.
   // Ensure we capture all content between the start and end tags
-  const pattern = new RegExp(`${startTag}(?:\\s*\\(([^)]+)\\))?([\\s\\S]*?)${endTag}`, 'g')
+  const pattern = getCachedRegex(`${startTag}(?:\\s*\\(([^)]+)\\))?([\\s\\S]*?)${endTag}`, 'g')
 
   // Keep track of replacements to handle nested directives properly
   const replacements: Array<{ original: string, processed: string, startIndex: number }> = []
@@ -146,7 +147,7 @@ async function processDirectiveWithoutEndTag(
 
   // Create a pattern that matches directives with parameters
   // e.g., @uppercase(text) or @uppercase('text')
-  const pattern = new RegExp(`@${name}\\s*\\(([^)]+)\\)`, 'g')
+  const pattern = getCachedRegex(`@${name}\\s*\\(([^)]+)\\)`, 'g')
 
   // Keep track of replacements
   const replacements: Array<{ original: string, processed: string, startIndex: number }> = []

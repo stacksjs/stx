@@ -1,5 +1,6 @@
 import * as path from 'node:path'
 import { createDetailedErrorMessage } from './utils'
+import { getCachedRegex } from './performance-utils'
 
 /**
  * Process JavaScript directives in templates
@@ -70,7 +71,7 @@ async function processCodeBlocks(
   endTag: string,
 ): Promise<string> {
   let output = template
-  const regex = new RegExp(`${startTag}([\\s\\S]*?)${endTag}`, 'g')
+  const regex = getCachedRegex(`${startTag}([\\s\\S]*?)${endTag}`, 'g')
 
   // Process code blocks
   const matches: Array<{

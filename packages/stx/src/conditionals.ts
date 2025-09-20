@@ -8,10 +8,169 @@ import { evaluateAuthExpression } from './auth'
 import { createDetailedErrorMessage } from './utils'
 
 /**
+ * Helper function to find balanced @switch/@endswitch pairs
+ */
+function findBalancedSwitch(content: string, startIndex: number): { end: number, switchContent: string } | null {
+  let depth = 1
+  let currentIndex = startIndex
+
+  while (currentIndex < content.length && depth > 0) {
+    const switchMatch = content.substring(currentIndex).match(/@switch\s*\(((?:[^()]*|\([^()]*\))*)\)/)
+    const endSwitchMatch = content.substring(currentIndex).match(/@endswitch/)
+
+    let nextSwitch = switchMatch ? currentIndex + switchMatch.index! : Infinity
+    let nextEnd = endSwitchMatch ? currentIndex + endSwitchMatch.index! : Infinity
+
+    if (nextSwitch < nextEnd) {
+      depth++
+      currentIndex = nextSwitch + switchMatch![0].length
+    } else if (nextEnd < Infinity) {
+      depth--
+      if (depth === 0) {
+        return {
+          end: nextEnd,
+          switchContent: content.substring(startIndex, nextEnd)
+        }
+      }
+      currentIndex = nextEnd + endSwitchMatch![0].length
+    } else {
+      break
+    }
+  }
+
+  return null
+}
+
+/**
+ * Process switch statements (@switch, @case, @default)
+ */
+export function processSwitchStatements(template: string, context: Record<string, any>, filePath: string): string {
+  let output = template
+  let processedAny = true
+
+  // Keep processing until no more switches are found (to handle nested switches)
+  while (processedAny) {
+    processedAny = false
+
+    // Find the first @switch statement - improved regex to handle nested parentheses
+    const switchRegex = /@switch\s*\(((?:[^()]*|\([^()]*\))*)\)/
+    const switchMatch = output.match(switchRegex)
+    if (!switchMatch || switchMatch.index === undefined) {
+      break
+    }
+
+    const expression = switchMatch[1]
+    const switchStart = switchMatch.index
+    const contentStart = switchStart + switchMatch[0].length
+
+    // Find the balanced @endswitch
+    const balanced = findBalancedSwitch(output, contentStart)
+    if (!balanced) {
+      break
+    }
+
+    const switchContent = balanced.switchContent
+    const switchEnd = balanced.end + '@endswitch'.length
+
+    try {
+      // Evaluate the switch expression
+      // eslint-disable-next-line no-new-func
+      const exprFn = new Function(...Object.keys(context), `return ${expression}`)
+      const switchValue = exprFn(...Object.values(context))
+
+      // Parse cases and default
+      const cases: Array<{ value: string, content: string }> = []
+      let defaultContent = ''
+
+      // Find all @case and @default positions in the switch content
+      const caseRegex = /@case\s*\(((?:[^()]*|\([^()]*\))*)\)/g
+      const casePositions: Array<{ pos: number, value: string, directive: string }> = []
+      let caseMatch
+
+      while ((caseMatch = caseRegex.exec(switchContent)) !== null) {
+        casePositions.push({
+          pos: caseMatch.index,
+          value: caseMatch[1],
+          directive: caseMatch[0]
+        })
+      }
+
+      // Find @default position
+      const defaultMatch = switchContent.match(/@default/)
+      if (defaultMatch && defaultMatch.index !== undefined) {
+        casePositions.push({
+          pos: defaultMatch.index,
+          value: '',
+          directive: '@default'
+        })
+      }
+
+      // Sort by position
+      casePositions.sort((a, b) => a.pos - b.pos)
+
+      // Extract content for each case
+      for (let i = 0; i < casePositions.length; i++) {
+        const current = casePositions[i]
+        const next = casePositions[i + 1]
+
+        const startPos = current.pos + current.directive.length
+        const endPos = next ? next.pos : switchContent.length
+        const content = switchContent.substring(startPos, endPos).trim()
+
+        if (current.directive === '@default') {
+          defaultContent = content
+        } else {
+          cases.push({ value: current.value, content })
+        }
+      }
+
+      // Find matching case
+      let result = defaultContent
+      for (const caseItem of cases) {
+        try {
+          // eslint-disable-next-line no-new-func
+          const caseFn = new Function(...Object.keys(context), `return ${caseItem.value}`)
+          const caseValue = caseFn(...Object.values(context))
+
+          if (switchValue === caseValue) {
+            result = caseItem.content
+            break
+          }
+        } catch (error: any) {
+          // If case evaluation fails, skip this case
+          continue
+        }
+      }
+
+      // Replace the entire switch block with the result
+      output = output.substring(0, switchStart) + result + output.substring(switchEnd)
+      processedAny = true
+
+    } catch (error: any) {
+      const errorMessage = createDetailedErrorMessage(
+        'Switch',
+        `Error evaluating @switch expression: ${error.message}`,
+        filePath,
+        template,
+        switchStart,
+        output.substring(switchStart, switchEnd),
+      )
+      output = output.substring(0, switchStart) + errorMessage + output.substring(switchEnd)
+      break
+    }
+  }
+
+  return output
+}
+
+/**
  * Process conditionals (@if, @elseif, @else, @unless)
  */
 export function processConditionals(template: string, context: Record<string, any>, filePath: string): string {
   let output = template
+
+  // Process @switch statements first
+  output = processSwitchStatements(output, context, filePath)
 
   // Process @unless directives (convert to @if negation)
   output = output.replace(/@unless\s*\(([^)]+)\)([\s\S]*?)@endunless/g, (_, condition, content) => {
