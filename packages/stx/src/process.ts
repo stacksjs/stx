@@ -6,6 +6,7 @@ import { processMarkdownFileDirectives } from './assets'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
 import { processCsrfDirectives } from './csrf'
 import { processCustomDirectives } from './custom-directives'
+import { createEnhancedError, devHelpers, errorLogger, errorRecovery, safeExecute, safeExecuteAsync, StxRuntimeError, StxSyntaxError } from './error-handling'
 import { processExpressions } from './expressions'
 import { processErrorDirective, processFormDirectives } from './forms'
 import { processTranslateDirective } from './i18n'
@@ -15,15 +16,51 @@ import { processLoops } from './loops'
 import { processMarkdownDirectives } from './markdown'
 import { processMethodDirectives } from './method-spoofing'
 import { runPostProcessingMiddleware, runPreProcessingMiddleware } from './middleware'
+import { performanceMonitor } from './performance-utils'
 import { processRouteDirectives } from './routes'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
 import { renderComponent, resolveTemplatePath } from './utils'
 import { runComposers } from './view-composers'
 
 /**
- * Process all template directives
+ * Process all template directives with enhanced error handling and performance monitoring
  */
 export async function processDirectives(
+  template: string,
+  context: Record<string, any>,
+  filePath: string,
+  options: StxOptions,
+  dependencies: Set<string>,
+): Promise<string> {
+  try {
+    return await performanceMonitor.timeAsync('template-processing', async () => {
+      return await processDirectivesInternal(template, context, filePath, options, dependencies)
+    })
+  } catch (error: any) {
+    const enhancedError = new StxRuntimeError(
+      `Template processing failed: ${error.message}`,
+      filePath,
+      undefined,
+      undefined,
+      template.substring(0, 200) + (template.length > 200 ? '...' : '')
+    )
+
+    errorLogger.log(enhancedError, { filePath, context })
+    devHelpers.logDetailedError(enhancedError, { filePath, template: template.substring(0, 500) })
+
+    if (options.debug) {
+      throw enhancedError
+    }
+
+    // In production, try to recover
+    return errorRecovery.createFallbackContent('Template Processing', enhancedError)
+  }
+}
+
+/**
+ * Internal template processing function
+ */
+async function processDirectivesInternal(
   template: string,
   context: Record<string, any>,
   filePath: string,
@@ -99,14 +136,45 @@ export async function processDirectives(
         console.log(`Processing layout: ${layoutPath} for file ${filePath}`)
       }
 
-      const layoutFullPath = await resolveTemplatePath(layoutPath, filePath, options, dependencies)
+      const layoutFullPath = await safeExecuteAsync(
+        () => resolveTemplatePath(layoutPath, filePath, options, dependencies),
+        null,
+        (error) => {
+          throw new StxRuntimeError(
+            `Failed to resolve layout path: ${layoutPath}`,
+            filePath,
+            undefined,
+            undefined,
+            `Layout referenced from ${filePath}`
+          )
+        }
+      )
+
       if (!layoutFullPath) {
-        console.warn(`Layout not found: ${layoutPath} (referenced from ${filePath})`)
+        const warning = `Layout not found: ${layoutPath} (referenced from ${filePath})`
+        console.warn(warning)
+
+        if (options.debug) {
+          throw new StxRuntimeError(warning, filePath)
+        }
+
         return output
       }
 
-      // Read the layout content
-      const layoutContent = await Bun.file(layoutFullPath).text()
+      // Read the layout content with error handling
+      const layoutContent = await safeExecuteAsync(
+        () => Bun.file(layoutFullPath).text(),
+        '',
+        (error) => {
+          throw new StxRuntimeError(
+            `Failed to read layout file: ${layoutFullPath}`,
+            filePath,
+            undefined,
+            undefined,
+            `Layout content could not be loaded`
+          )
+        }
+      )
 
       // Check if the layout itself extends another layout
       const nestedLayoutMatch = layoutContent.match(/@extends\(\s*['"]([^'"]+)['"]\s*\)/)
@@ -194,14 +262,30 @@ async function processOtherDirectives(
 ): Promise<string> {
   let output = template
 
-  // Run view composers for the current view
-  await runComposers(filePath, context)
+  // Run view composers for the current view with error handling
+  await safeExecuteAsync(
+    () => runComposers(filePath, context),
+    undefined,
+    (error) => {
+      if (options.debug) {
+        console.warn(`View composer error for ${filePath}:`, error.message)
+      }
+    }
+  )
 
   // Add options to context for component processing
   context.__stx_options = options
 
-  // Run pre-processing middleware
-  output = await runPreProcessingMiddleware(output, context, filePath, options)
+  // Run pre-processing middleware with error handling
+  output = await safeExecuteAsync(
+    () => runPreProcessingMiddleware(output, context, filePath, options),
+    output,
+    (error) => {
+      if (options.debug) {
+        console.warn(`Pre-processing middleware error:`, error.message)
+      }
+    }
+  )
 
   // Process custom directives first
   output = await processCustomDirectives(output, context, filePath, options)

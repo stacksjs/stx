@@ -13,6 +13,9 @@ import { docsCommand } from '../src/docs'
 import { initFile } from '../src/init'
 import { plugin as stxPlugin } from '../src/plugin'
 import { gitHash } from '../src/release'
+import { performanceMonitor } from '../src/performance-utils'
+import { formatStxContent } from '../src/formatter'
+import { analyzeProject, analyzeTemplate } from '../src/analyzer'
 
 // Test command utilities
 interface TestCommandOptions {
@@ -25,11 +28,98 @@ interface TestCommandOptions {
   verbose?: boolean
 }
 
+// CLI validation utilities
+interface ValidationResult {
+  isValid: boolean
+  error?: string
+  suggestion?: string
+}
+
+function validatePort(port: string | number): ValidationResult {
+  const portNum = typeof port === 'string' ? Number.parseInt(port, 10) : port
+
+  if (Number.isNaN(portNum)) {
+    return { isValid: false, error: 'Port must be a valid number', suggestion: 'Try using a number between 1024 and 65535' }
+  }
+
+  if (portNum < 1 || portNum > 65535) {
+    return { isValid: false, error: 'Port must be between 1 and 65535', suggestion: 'Common development ports: 3000, 8080, 8000' }
+  }
+
+  if (portNum < 1024 && process.getuid && process.getuid() !== 0) {
+    return { isValid: false, error: 'Ports below 1024 require root privileges', suggestion: 'Try using a port above 1024 like 3000 or 8080' }
+  }
+
+  return { isValid: true }
+}
+
+function validateFileExists(filePath: string): ValidationResult {
+  try {
+    if (!fs.existsSync(filePath)) {
+      const dir = path.dirname(filePath)
+      const filename = path.basename(filePath)
+
+      // Check if directory exists and suggest similar files
+      if (fs.existsSync(dir)) {
+        const files = fs.readdirSync(dir)
+        const similarFiles = files.filter(f =>
+          f.toLowerCase().includes(filename.toLowerCase().substring(0, 3)) ||
+          f.endsWith('.stx') || f.endsWith('.md')
+        )
+
+        const suggestion = similarFiles.length > 0
+          ? `File not found. Similar files in ${dir}: ${similarFiles.slice(0, 3).join(', ')}`
+          : `File not found. Directory ${dir} exists but doesn't contain the specified file.`
+
+        return { isValid: false, error: `File does not exist: ${filePath}`, suggestion }
+      }
+
+      return { isValid: false, error: `File does not exist: ${filePath}`, suggestion: 'Check the file path and try again' }
+    }
+
+    const stats = fs.statSync(filePath)
+    if (stats.isDirectory()) {
+      return { isValid: false, error: `Expected file but got directory: ${filePath}`, suggestion: 'Specify a .stx or .md file path' }
+    }
+
+    return { isValid: true }
+  } catch (error) {
+    return { isValid: false, error: `Cannot access file: ${filePath}`, suggestion: 'Check file permissions and path' }
+  }
+}
+
+function validateTimeout(timeout: string | number): ValidationResult {
+  const timeoutNum = typeof timeout === 'string' ? Number.parseInt(timeout, 10) : timeout
+
+  if (Number.isNaN(timeoutNum)) {
+    return { isValid: false, error: 'Timeout must be a valid number', suggestion: 'Specify timeout in milliseconds (e.g., 5000 for 5 seconds)' }
+  }
+
+  if (timeoutNum < 100) {
+    return { isValid: false, error: 'Timeout too short (minimum 100ms)', suggestion: 'Use a timeout of at least 100ms' }
+  }
+
+  if (timeoutNum > 300000) { // 5 minutes
+    return { isValid: false, error: 'Timeout too long (maximum 5 minutes)', suggestion: 'Use a timeout of less than 300000ms (5 minutes)' }
+  }
+
+  return { isValid: true }
+}
+
 // Helper to check if an argument is a glob pattern
 const isGlob = (arg: string) => arg.includes('*') || arg.includes('?') || arg.includes('{') || arg.includes('[')
 
 // Helper to check if we support this file type
 const isSupportedFileType = (arg: string) => arg.endsWith('.stx') || arg.endsWith('.md')
+
+// Enhanced error reporting
+function reportValidationError(validation: ValidationResult, exitCode = 1): never {
+  console.error(`❌ ${validation.error}`)
+  if (validation.suggestion) {
+    console.error(`💡 ${validation.suggestion}`)
+  }
+  process.exit(exitCode)
+}
 
 /**
  * Run tests using Bun's test runner with happy-dom for browser environment
@@ -200,7 +290,11 @@ if (isDirectMode) {
   for (let i = 3; i < process.argv.length; i++) {
     const arg = process.argv[i]
     if (arg === '--port' && i + 1 < process.argv.length) {
-      options.port = Number.parseInt(process.argv[++i], 10)
+      const portValidation = validatePort(process.argv[++i])
+      if (!portValidation.isValid) {
+        reportValidationError(portValidation)
+      }
+      options.port = Number.parseInt(process.argv[i], 10)
     }
     else if (arg === '--no-watch') {
       options.watch = false
@@ -321,6 +415,22 @@ else {
     .example('stx dev docs/guide.md --highlight-theme atom-one-dark')
     .action(async (filePattern, options) => {
       try {
+        // Validate port if provided
+        if (options.port) {
+          const portValidation = validatePort(options.port)
+          if (!portValidation.isValid) {
+            reportValidationError(portValidation)
+          }
+        }
+
+        // Validate timeout if provided
+        if (options.timeout) {
+          const timeoutValidation = validateTimeout(options.timeout)
+          if (!timeoutValidation.isValid) {
+            reportValidationError(timeoutValidation)
+          }
+        }
+
         // Set up markdown options from CLI parameters
         const markdownOptions = {
           syntaxHighlighting: {
@@ -335,8 +445,10 @@ else {
         if (isGlob(filePattern)) {
           console.log(`Expanding glob pattern: ${filePattern}`)
 
-          // Use Bun.Glob to find matching files
-          const files = await Array.fromAsync(new Bun.Glob(filePattern).scan({ onlyFiles: true, absolute: true }))
+          // Use performance monitoring for glob expansion
+          const files = await performanceMonitor.timeAsync('glob-expansion', async () => {
+            return Array.fromAsync(new Bun.Glob(filePattern).scan({ onlyFiles: true, absolute: true }))
+          })
 
           // Filter to only include supported file types
           const supportedFiles = filePattern.endsWith('.stx')
@@ -346,7 +458,8 @@ else {
               : files.filter(file => file.endsWith('.stx') || file.endsWith('.md'))
 
           if (supportedFiles.length === 0) {
-            console.error(`Error: No STX or Markdown files found matching pattern: ${filePattern}`)
+            console.error(`❌ No STX or Markdown files found matching pattern: ${filePattern}`)
+            console.error(`💡 Try using patterns like '*.stx' or 'components/**/*.stx'`)
             process.exit(1)
           }
 
@@ -365,6 +478,14 @@ else {
           }
         }
         else {
+          // Validate single file exists (unless it's a glob)
+          if (!isGlob(filePattern)) {
+            const fileValidation = validateFileExists(filePattern)
+            if (!fileValidation.isValid) {
+              reportValidationError(fileValidation)
+            }
+          }
+
           // Single file mode
           const success = await serveStxFile(filePattern, {
             port: options.port,
@@ -1088,6 +1209,14 @@ else {
       try {
         console.log(`\x1B[1mstx test\x1B[0m \x1B[2mv${version} (${gitHash})\x1B[0m`)
 
+        // Validate timeout if provided
+        if (options.timeout) {
+          const timeoutValidation = validateTimeout(options.timeout)
+          if (!timeoutValidation.isValid) {
+            reportValidationError(timeoutValidation)
+          }
+        }
+
         // Convert patterns to array if it's a string
         const patternArray = typeof patterns === 'string' ? [patterns] : patterns || []
 
@@ -1110,7 +1239,9 @@ else {
         }
 
         // Run tests with provided patterns and options
-        const success = await runTests(patternArray, options)
+        const success = await performanceMonitor.timeAsync('test-execution', () =>
+          runTests(patternArray, options)
+        )
 
         // Exit with appropriate code based on test results
         if (!success && !options.watch) {
@@ -1151,6 +1282,582 @@ else {
       }
       catch (error) {
         console.error('Error creating file:', error)
+        process.exit(1)
+      }
+    })
+
+  cli
+    .command('format [patterns...]', 'Format STX files automatically')
+    .option('--check', 'Check if files are formatted (exit with error if not)')
+    .option('--write', 'Write formatted files back to disk (default)')
+    .option('--diff', 'Show diff of changes that would be made')
+    .option('--ignore <patterns>', 'Comma-separated patterns to ignore')
+    .example('stx format')
+    .example('stx format **/*.stx')
+    .example('stx format --check')
+    .example('stx format --diff --ignore node_modules/**')
+    .action(async (patterns: string[], options: {
+      check?: boolean
+      write?: boolean
+      diff?: boolean
+      ignore?: string
+    }) => {
+      try {
+        const patternArray = patterns.length > 0 ? patterns : ['**/*.stx']
+        const ignorePatterns = options.ignore ? options.ignore.split(',').map(p => p.trim()) : []
+
+        let allFiles: string[] = []
+
+        // Expand all patterns
+        for (const pattern of patternArray) {
+          const files = await Array.fromAsync(new Bun.Glob(pattern).scan({ onlyFiles: true, absolute: true }))
+          allFiles.push(...files.filter(f => f.endsWith('.stx')))
+        }
+
+        // Remove ignored files
+        allFiles = allFiles.filter(file => {
+          return !ignorePatterns.some(ignore => file.includes(ignore))
+        })
+
+        if (allFiles.length === 0) {
+          console.log('No STX files found to format.')
+          return
+        }
+
+        console.log(`Formatting ${allFiles.length} STX files...`)
+
+        let formattedCount = 0
+        let errorCount = 0
+
+        for (const file of allFiles) {
+          try {
+            const content = await Bun.file(file).text()
+            const formatted = formatStxContent(content)
+
+            if (content !== formatted) {
+              if (options.check) {
+                console.log(`❌ ${path.relative(process.cwd(), file)} needs formatting`)
+                errorCount++
+              } else if (options.diff) {
+                console.log(`\n📝 ${path.relative(process.cwd(), file)}:`)
+                // Simple diff display (could be enhanced with a proper diff library)
+                console.log('--- Original')
+                console.log('+++ Formatted')
+                // This is a basic diff - in a real implementation you'd use a proper diff library
+                console.log(`@@ Changes in ${path.basename(file)} @@`)
+                console.log('+ Formatted content would be applied')
+              } else {
+                await Bun.write(file, formatted)
+                console.log(`✅ Formatted ${path.relative(process.cwd(), file)}`)
+                formattedCount++
+              }
+            }
+          } catch (error) {
+            console.error(`❌ Error formatting ${path.relative(process.cwd(), file)}:`, error)
+            errorCount++
+          }
+        }
+
+        if (options.check && errorCount > 0) {
+          console.log(`\n${errorCount} files need formatting. Run 'stx format' to fix.`)
+          process.exit(1)
+        } else if (!options.check && !options.diff) {
+          console.log(`✨ Formatted ${formattedCount} files successfully`)
+        }
+      } catch (error) {
+        console.error('Error formatting files:', error)
+        process.exit(1)
+      }
+    })
+
+  cli
+    .command('perf [command...]', 'Show performance statistics for STX operations')
+    .option('--clear', 'Clear performance statistics')
+    .option('--json', 'Output as JSON')
+    .example('stx perf')
+    .example('stx perf --clear')
+    .example('stx perf --json')
+    .action(async (command: string[], options: { clear?: boolean, json?: boolean }) => {
+      try {
+        if (options.clear) {
+          performanceMonitor.clear()
+          console.log('✅ Performance statistics cleared')
+          return
+        }
+
+        const stats = performanceMonitor.getStats()
+
+        if (Object.keys(stats).length === 0) {
+          console.log('No performance data available. Run some STX commands first.')
+          return
+        }
+
+        if (options.json) {
+          console.log(JSON.stringify(stats, null, 2))
+        } else {
+          console.log('\n📊 STX Performance Statistics\n')
+
+          for (const [operation, metrics] of Object.entries(stats)) {
+            console.log(`🔧 ${operation}:`)
+            console.log(`   Count: ${metrics.count}`)
+            console.log(`   Average: ${metrics.avgTime.toFixed(2)}ms`)
+            console.log(`   Total: ${metrics.totalTime.toFixed(2)}ms`)
+            console.log(`   Min: ${metrics.minTime.toFixed(2)}ms`)
+            console.log(`   Max: ${metrics.maxTime.toFixed(2)}ms`)
+            console.log('')
+          }
+        }
+      } catch (error) {
+        console.error('Error showing performance stats:', error)
+        process.exit(1)
+      }
+    })
+
+  cli
+    .command('debug <file>', 'Debug STX template processing step by step')
+    .option('--step', 'Step through processing stages interactively')
+    .option('--verbose', 'Show detailed processing information')
+    .option('--context <data>', 'JSON string of context data to use')
+    .option('--save-report <file>', 'Save debug report to file')
+    .example('stx debug template.stx')
+    .example('stx debug template.stx --step')
+    .example('stx debug template.stx --context \'{"name": "John", "items": [1,2,3]}\'')
+    .action(async (file: string, options: {
+      step?: boolean
+      verbose?: boolean
+      context?: string
+      saveReport?: string
+    }) => {
+      try {
+        // Validate file exists
+        const fileValidation = validateFileExists(file)
+        if (!fileValidation.isValid) {
+          reportValidationError(fileValidation)
+        }
+
+        console.log(`🔍 Debugging STX template: ${file}\n`)
+
+        // Parse context if provided
+        let context: Record<string, any> = {}
+        if (options.context) {
+          try {
+            context = JSON.parse(options.context)
+          } catch (error) {
+            console.error('❌ Invalid JSON in --context option')
+            process.exit(1)
+          }
+        }
+
+        // Read the template
+        const content = await Bun.file(file).text()
+        console.log(`📄 Template Content (${content.length} chars):`)
+        console.log('─'.repeat(50))
+        console.log(content.substring(0, 500) + (content.length > 500 ? '\n...\n' : ''))
+        console.log('─'.repeat(50))
+
+        // Extract script content if any
+        const scriptMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
+        if (scriptMatch) {
+          console.log(`\n📜 Script Section Found:`)
+          console.log('─'.repeat(30))
+          console.log(scriptMatch[1].trim())
+          console.log('─'.repeat(30))
+        }
+
+        // Show initial context
+        console.log(`\n📊 Processing Context:`)
+        console.log(JSON.stringify(context, null, 2))
+
+        if (options.step) {
+          console.log('\n⚠️  Interactive step-through not yet implemented. Use --verbose for detailed output.')
+        }
+
+        if (options.verbose) {
+          console.log('\n🔧 Verbose processing information will be shown during template processing.')
+        }
+
+        // TODO: Implement actual step-by-step debugging
+        // This would require modifying the processDirectives function to support debug callbacks
+
+        console.log('\n✨ Debug analysis complete. Full step-by-step debugging coming soon!')
+
+        if (options.saveReport) {
+          const report = {
+            file,
+            timestamp: new Date().toISOString(),
+            templateLength: content.length,
+            hasScript: !!scriptMatch,
+            context,
+            // TODO: Add processing steps, errors, performance metrics
+          }
+
+          await Bun.write(options.saveReport, JSON.stringify(report, null, 2))
+          console.log(`📋 Debug report saved to: ${options.saveReport}`)
+        }
+
+      } catch (error) {
+        console.error('Error debugging template:', error)
+        process.exit(1)
+      }
+    })
+
+  cli
+    .command('status [directory]', 'Show status of STX project and files')
+    .option('--verbose', 'Show detailed information')
+    .option('--json', 'Output as JSON')
+    .example('stx status')
+    .example('stx status ./src --verbose')
+    .action(async (directory = '.', options: { verbose?: boolean, json?: boolean }) => {
+      try {
+        const projectRoot = path.resolve(directory)
+        const configPath = path.join(projectRoot, 'stx.config.ts')
+        const packageJsonPath = path.join(projectRoot, 'package.json')
+
+        // Scan for STX files
+        const stxFiles = await Array.fromAsync(
+          new Bun.Glob('**/*.stx').scan({
+            cwd: projectRoot,
+            onlyFiles: true,
+            absolute: true
+          })
+        )
+
+        // Scan for markdown files
+        const mdFiles = await Array.fromAsync(
+          new Bun.Glob('**/*.md').scan({
+            cwd: projectRoot,
+            onlyFiles: true,
+            absolute: true
+          })
+        )
+
+        const status: any = {
+          projectRoot,
+          hasConfig: fs.existsSync(configPath),
+          hasPackageJson: fs.existsSync(packageJsonPath),
+          stxFiles: stxFiles.length,
+          markdownFiles: mdFiles.length,
+          totalFiles: stxFiles.length + mdFiles.length,
+        }
+
+        if (options.verbose) {
+          status.stxFileList = stxFiles.map(f => path.relative(projectRoot, f))
+          status.markdownFileList = mdFiles.map(f => path.relative(projectRoot, f))
+        }
+
+        if (options.json) {
+          console.log(JSON.stringify(status, null, 2))
+        } else {
+          console.log('\n📋 STX Project Status\n')
+          console.log(`📁 Project Root: ${projectRoot}`)
+          console.log(`⚙️  Config File: ${status.hasConfig ? '✅ Found' : '❌ Not found'}`)
+          console.log(`📦 Package.json: ${status.hasPackageJson ? '✅ Found' : '❌ Not found'}`)
+          console.log(`📄 STX Files: ${status.stxFiles}`)
+          console.log(`📝 Markdown Files: ${status.markdownFiles}`)
+          console.log(`📊 Total Files: ${status.totalFiles}`)
+
+          if (options.verbose && stxFiles.length > 0) {
+            console.log('\n📄 STX Files:')
+            stxFiles.forEach(file => {
+              console.log(`   ${path.relative(projectRoot, file)}`)
+            })
+          }
+
+          if (options.verbose && mdFiles.length > 0) {
+            console.log('\n📝 Markdown Files:')
+            mdFiles.forEach(file => {
+              console.log(`   ${path.relative(projectRoot, file)}`)
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Error getting project status:', error)
+        process.exit(1)
+      }
+    })
+
+  cli
+    .command('watch [patterns...]', 'Watch STX files for changes and run commands')
+    .option('--command <cmd>', 'Command to run on file changes', { default: 'build' })
+    .option('--ignore <patterns>', 'Comma-separated patterns to ignore')
+    .option('--delay <ms>', 'Delay before running command after change', { default: 300 })
+    .option('--verbose', 'Show detailed file change information')
+    .option('--clear', 'Clear console before running command')
+    .example('stx watch')
+    .example('stx watch **/*.stx --command "stx build"')
+    .example('stx watch --ignore "node_modules/**,dist/**"')
+    .action(async (patterns: string[], options: {
+      command?: string
+      ignore?: string
+      delay?: number
+      verbose?: boolean
+      clear?: boolean
+    }) => {
+      try {
+        const watchPatterns = patterns.length > 0 ? patterns : ['**/*.stx', '**/*.md']
+        const ignorePatterns = options.ignore ? options.ignore.split(',').map(p => p.trim()) : ['node_modules/**', 'dist/**', '.git/**']
+        const delay = options.delay || 300
+
+        console.log(`👀 Watching files: ${watchPatterns.join(', ')}`)
+        console.log(`🚫 Ignoring: ${ignorePatterns.join(', ')}`)
+        console.log(`⏱️  Delay: ${delay}ms`)
+        console.log(`🔧 Command: ${options.command}`)
+        console.log(`\nPress Ctrl+C to stop watching...\n`)
+
+        let timeoutId: NodeJS.Timeout | undefined
+        let isRunning = false
+
+        // Get all directories to watch
+        const watchDirs = new Set<string>()
+
+        // Add current directory
+        watchDirs.add(process.cwd())
+
+        // Add directories from patterns
+        for (const pattern of watchPatterns) {
+          const files = await Array.fromAsync(new Bun.Glob(pattern).scan({ onlyFiles: true, absolute: true }))
+          files.forEach(file => {
+            watchDirs.add(path.dirname(file))
+          })
+        }
+
+        const runCommand = async () => {
+          if (isRunning) return
+          isRunning = true
+
+          if (options.clear) {
+            console.clear()
+          }
+
+          console.log(`🔄 Running: ${options.command}`)
+          const startTime = Date.now()
+
+          try {
+            const [command, ...args] = options.command!.split(' ')
+            const result = spawn(command, args, {
+              stdio: 'inherit',
+              shell: true
+            })
+
+            result.on('close', (code) => {
+              const duration = Date.now() - startTime
+              if (code === 0) {
+                console.log(`✅ Command completed successfully in ${duration}ms`)
+              } else {
+                console.log(`❌ Command failed with exit code ${code} after ${duration}ms`)
+              }
+              isRunning = false
+            })
+          } catch (error) {
+            console.error(`❌ Error running command:`, error)
+            isRunning = false
+          }
+        }
+
+        const handleFileChange = (filename: string | null, eventType: string) => {
+          if (!filename) return
+
+          // Check if file should be ignored
+          const shouldIgnore = ignorePatterns.some(pattern => {
+            if (pattern.includes('*')) {
+              return filename.match(pattern.replace(/\*/g, '.*'))
+            }
+            return filename.includes(pattern)
+          })
+
+          if (shouldIgnore) {
+            if (options.verbose) {
+              console.log(`🚫 Ignoring: ${filename}`)
+            }
+            return
+          }
+
+          // Check if file matches watch patterns
+          const shouldWatch = watchPatterns.some(pattern => {
+            if (pattern.includes('*')) {
+              return filename.match(pattern.replace(/\*/g, '.*'))
+            }
+            return filename.endsWith(pattern)
+          })
+
+          if (!shouldWatch) {
+            if (options.verbose) {
+              console.log(`⏭️  Skipping: ${filename} (doesn't match patterns)`)
+            }
+            return
+          }
+
+          if (options.verbose) {
+            console.log(`📝 ${eventType.toUpperCase()}: ${filename}`)
+          }
+
+          // Debounce the command execution
+          if (timeoutId) {
+            clearTimeout(timeoutId)
+          }
+
+          timeoutId = setTimeout(runCommand, delay)
+        }
+
+        // Watch all directories
+        const watchers: fs.FSWatcher[] = []
+        for (const dir of watchDirs) {
+          try {
+            const watcher = fs.watch(dir, { recursive: true }, handleFileChange)
+            watchers.push(watcher)
+            if (options.verbose) {
+              console.log(`📁 Watching directory: ${dir}`)
+            }
+          } catch (error) {
+            console.warn(`⚠️  Could not watch directory: ${dir}`)
+          }
+        }
+
+        // Handle cleanup on exit
+        process.on('SIGINT', () => {
+          console.log('\n🛑 Stopping file watcher...')
+          watchers.forEach(watcher => watcher.close())
+          process.exit(0)
+        })
+
+      } catch (error) {
+        console.error('Error setting up file watcher:', error)
+        process.exit(1)
+      }
+    })
+
+  cli
+    .command('analyze [patterns...]', 'Analyze STX templates for performance and best practices')
+    .option('--json', 'Output results as JSON')
+    .option('--detailed', 'Show detailed analysis for each file')
+    .option('--only-issues', 'Only show files with issues')
+    .option('--save-report <file>', 'Save analysis report to file')
+    .option('--threshold <level>', 'Only show issues at or above this level (info, warning, error)', { default: 'info' })
+    .example('stx analyze')
+    .example('stx analyze **/*.stx --detailed')
+    .example('stx analyze --only-issues --threshold warning')
+    .action(async (patterns: string[], options: {
+      json?: boolean
+      detailed?: boolean
+      onlyIssues?: boolean
+      saveReport?: string
+      threshold?: 'info' | 'warning' | 'error'
+    }) => {
+      try {
+        const analysisPatterns = patterns.length > 0 ? patterns : ['**/*.stx']
+        const threshold = options.threshold || 'info'
+        const thresholdLevels = { info: 0, warning: 1, error: 2 }
+        const minLevel = thresholdLevels[threshold]
+
+        console.log(`🔍 Analyzing STX templates...`)
+
+        const { results, summary } = await analyzeProject(analysisPatterns)
+
+        if (results.length === 0) {
+          console.log('No STX files found to analyze.')
+          return
+        }
+
+        // Filter results if only-issues is specified
+        const filteredResults = options.onlyIssues
+          ? results.filter(r => r.issues.some(issue => thresholdLevels[issue.type] >= minLevel))
+          : results
+
+        if (options.json) {
+          const jsonOutput = {
+            summary,
+            results: filteredResults,
+            generatedAt: new Date().toISOString()
+          }
+
+          if (options.saveReport) {
+            await Bun.write(options.saveReport, JSON.stringify(jsonOutput, null, 2))
+            console.log(`📋 Analysis report saved to: ${options.saveReport}`)
+          } else {
+            console.log(JSON.stringify(jsonOutput, null, 2))
+          }
+          return
+        }
+
+        // Human-readable output
+        console.log(`\n📊 Analysis Summary`)
+        console.log(`─`.repeat(50))
+        console.log(`📁 Files analyzed: ${summary.totalFiles}`)
+        console.log(`📏 Total lines: ${summary.totalLines.toLocaleString()}`)
+        console.log(`🧮 Average complexity: ${summary.avgComplexity}/10`)
+        console.log(`⚠️  Total issues: ${summary.totalIssues}`)
+        console.log(`🚀 Performance score: ${summary.performanceScore}/10`)
+
+        if (Object.keys(summary.issuesByCategory).length > 0) {
+          console.log(`\n📋 Issues by category:`)
+          for (const [category, count] of Object.entries(summary.issuesByCategory)) {
+            console.log(`   ${category}: ${count}`)
+          }
+        }
+
+        if (summary.recommendations.length > 0) {
+          console.log(`\n💡 Project recommendations:`)
+          summary.recommendations.forEach(rec => {
+            console.log(`   • ${rec}`)
+          })
+        }
+
+        if (options.detailed) {
+          console.log(`\n📄 Detailed File Analysis`)
+          console.log(`═`.repeat(60))
+
+          for (const result of filteredResults) {
+            console.log(`\n📝 ${path.relative(process.cwd(), result.file)}`)
+            console.log(`   Lines: ${result.metrics.lines} | Complexity: ${result.metrics.complexity}/10 | Estimated render: ${result.performance.estimatedRenderTime}ms`)
+
+            if (result.issues.length > 0) {
+              const relevantIssues = result.issues.filter(issue => thresholdLevels[issue.type] >= minLevel)
+              if (relevantIssues.length > 0) {
+                console.log(`   Issues (${relevantIssues.length}):`)
+                relevantIssues.forEach(issue => {
+                  const icon = issue.type === 'error' ? '❌' : issue.type === 'warning' ? '⚠️' : 'ℹ️'
+                  console.log(`     ${icon} ${issue.message}`)
+                  if (issue.suggestion) {
+                    console.log(`        💡 ${issue.suggestion}`)
+                  }
+                })
+              }
+            }
+
+            if (result.suggestions.length > 0) {
+              console.log(`   Suggestions (${result.suggestions.length}):`)
+              result.suggestions.forEach(suggestion => {
+                const icon = suggestion.impact === 'high' ? '🔥' : suggestion.impact === 'medium' ? '⚡' : '💫'
+                console.log(`     ${icon} ${suggestion.message} (${suggestion.impact} impact, ${suggestion.effort} effort)`)
+              })
+            }
+          }
+        } else if (filteredResults.length > 0 && !options.onlyIssues) {
+          console.log(`\n📄 Files with issues:`)
+          filteredResults.forEach(result => {
+            const issueCount = result.issues.filter(issue => thresholdLevels[issue.type] >= minLevel).length
+            if (issueCount > 0) {
+              console.log(`   ${path.relative(process.cwd(), result.file)} (${issueCount} issues)`)
+            }
+          })
+        }
+
+        if (options.saveReport) {
+          const report = {
+            summary,
+            results: filteredResults,
+            generatedAt: new Date().toISOString(),
+            commandOptions: options
+          }
+
+          await Bun.write(options.saveReport, JSON.stringify(report, null, 2))
+          console.log(`\n📋 Analysis report saved to: ${options.saveReport}`)
+        }
+
+        console.log(`\n✨ Analysis complete! Use --detailed for more information.`)
+
+      } catch (error) {
+        console.error('Error analyzing templates:', error)
         process.exit(1)
       }
     })

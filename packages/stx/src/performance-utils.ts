@@ -59,7 +59,9 @@ export class TemplateCache {
     // If cache is full, remove oldest entries
     if (this.cache.size >= this.maxSize) {
       const oldestKey = this.cache.keys().next().value
-      this.cache.delete(oldestKey)
+      if (oldestKey) {
+        this.cache.delete(oldestKey)
+      }
     }
 
     this.cache.set(key, {
@@ -161,7 +163,9 @@ export function memoize<T extends (...args: any[]) => any>(
     // If cache is full, remove oldest entry
     if (cache.size >= maxCacheSize) {
       const firstKey = cache.keys().next().value
-      cache.delete(firstKey)
+      if (firstKey) {
+        cache.delete(firstKey)
+      }
     }
 
     const result = func(...args)
