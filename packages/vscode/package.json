@@ -476,7 +476,7 @@
   },
   "devDependencies": {
     "@types/vscode": "^1.102.0",
-    "@vscode/vsce": "^3.6.1-8",
+    "@vscode/vsce": "^3.6.1-9",
     "typescript": "^5.8.3",
     "vscode-html-languageservice": "^5.5.1",
     "vscode-languageclient": "^9.0.1",
