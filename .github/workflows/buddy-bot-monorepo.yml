@@ -16,7 +16,7 @@ jobs:
     outputs:
       workspaces: ${{ steps.workspaces.outputs.workspaces }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Find workspaces
         id: workspaces
         run: |
@@ -36,7 +36,7 @@ jobs:
         workspace: ${{ fromJson(needs.find-workspaces.outputs.workspaces) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
