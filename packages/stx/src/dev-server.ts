@@ -4,6 +4,8 @@ import { serve } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { loadConfig } from '@unocss/config'
+import { createGenerator } from '@unocss/core'
 import { readMarkdownFile } from './assets'
 import { config } from './config'
 // TODO: import this from `bun-plugin-stx`. Oddly, there seemingly are issues right now
@@ -559,7 +561,22 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
       }
 
       // Read the file content
-      htmlContent = await Bun.file(htmlOutput.path).text()
+      let html = await Bun.file(htmlOutput.path).text()
+
+      // Apply UnoCSS
+      try {
+        const unoConfig = await loadConfig()
+        const generator = await createGenerator(unoConfig.config)
+        const { css } = await generator.generate(html)
+        if (css) {
+          html = html.replace('</head>', `<style>${css}</style>\n</head>`)
+        }
+      }
+      catch (error) {
+        console.warn(`${colors.yellow}UnoCSS processing skipped:${colors.reset}`, error)
+      }
+
+      htmlContent = html
       return true
     }
     catch (error) {

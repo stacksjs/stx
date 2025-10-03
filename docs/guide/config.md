@@ -275,12 +275,14 @@ STX supports plugins for extending functionality:
 
 ```ts
 import { defineConfig } from '@stacksjs/stx'
-import unocss from '@unocss/stx'
 import markdown from '@stacksjs/stx-markdown'
+
+// Note: CSS is generated separately using Headwind
+// Run: bun run build:css to generate utility CSS
+// See headwind.config.ts for CSS configuration
 
 export default defineConfig({
   plugins: [
-    unocss(),
     markdown({
       // Plugin options
     })

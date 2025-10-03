@@ -1,0 +1,36 @@
+<section id="buddy" class="py-16 border-b border-dashed border-gray-800">
+  <div class="max-w-7xl mx-auto px-8">
+    <h2 class="text-3xl font-bold tracking-widest mb-4 flex items-center gap-4">
+      <span class="pulse-arrow">▶</span> MEET BUDDY - YOUR CLI TOOLKIT
+    </h2>
+    <p class="text-gray-400 mb-8">Your all-in-one command-line companion for Stacks development.</p>
+
+    @include('BuddyAscii')
+
+    <div class="border-2 border-white p-8 bg-black relative max-w-4xl mx-auto">
+      <div class="absolute -top-px left-8 bg-black px-4 text-sm">╔═══ TERMINAL ═══╗</div>
+
+      <div class="space-y-2 text-sm">
+        <div class="text-gray-500"># Get started instantly</div>
+        <div><span class="text-gray-500">$</span> curl -Ssf stacksjs.org/install | sh</div>
+        <div><span class="text-gray-500">$</span> bunx buddy new my-project</div>
+        <div><span class="text-gray-500">$</span> cd my-project</div>
+        <br>
+        <div class="text-gray-500"># Development commands</div>
+        <div><span class="text-gray-500">$</span> buddy dev</div>
+        <div><span class="text-gray-500">$</span> buddy dev:api</div>
+        <div><span class="text-gray-500">$</span> buddy dev:desktop</div>
+        <br>
+        <div class="text-gray-500"># Scaffold anything</div>
+        <div><span class="text-gray-500">$</span> buddy make:component HelloWorld</div>
+        <div><span class="text-gray-500">$</span> buddy make:model Car</div>
+        <div><span class="text-gray-500">$</span> buddy make:view HomePage</div>
+        <br>
+        <div class="text-gray-500"># Build & deploy</div>
+        <div><span class="text-gray-500">$</span> buddy build</div>
+        <div><span class="text-gray-500">$</span> buddy test</div>
+        <div><span class="text-gray-500">$</span> buddy deploy</div>
+      </div>
+    </div>
+  </div>
+</section>

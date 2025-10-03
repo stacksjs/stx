@@ -1,0 +1,29 @@
+<footer class="border-t-2 border-white py-12 text-center">
+  <div class="max-w-7xl mx-auto px-8">
+    <h3 class="text-2xl font-bold mb-4">CONVENTION OVER CONFIGURATION</h3>
+    <p class="text-gray-400 italic max-w-3xl mx-auto mb-8">
+      "It is the framework's responsibility to remove patterns that lead to boilerplate code.
+      And Stacks is really good at that." - Chris
+    </p>
+
+    <div class="text-gray-700 text-xs mb-8">▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀</div>
+
+    <div class="flex flex-wrap justify-center gap-8 mb-8">
+      <a href="https://github.com/stacksjs/stacks" class="text-white text-sm hover:text-gray-400 border-b border-transparent hover:border-white transition-all">GITHUB</a>
+      <a href="https://discord.gg/stacksjs" class="text-white text-sm hover:text-gray-400 border-b border-transparent hover:border-white transition-all">DISCORD</a>
+      <a href="https://stacksjs.org/docs" class="text-white text-sm hover:text-gray-400 border-b border-transparent hover:border-white transition-all">DOCUMENTATION</a>
+      <a href="https://github.com/sponsors/chrisbbreuer" class="text-pink-400 text-sm hover:text-pink-300 border-b border-transparent hover:border-pink-400 transition-all">♥ SPONSOR</a>
+      <a href="https://stacksjs.org/dashboard" class="text-white text-sm hover:text-gray-400 border-b border-transparent hover:border-white transition-all">HOBBY ($19/mo)</a>
+      <a href="https://stacksjs.org/pro" class="text-white text-sm hover:text-gray-400 border-b border-transparent hover:border-white transition-all">PRO ($29/mo)</a>
+      <a href="https://github.com/stacksjs/contributing" class="text-white text-sm hover:text-gray-400 border-b border-transparent hover:border-white transition-all">CONTRIBUTING</a>
+    </div>
+
+    <p class="text-sm mb-4">MADE WITH ♥ BY THE STACKS TEAM</p>
+
+    <div class="text-gray-700 text-xs mb-4">▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄</div>
+
+    <p class="text-gray-600 text-sm">
+      © 2025 STACKS.JS • OPEN SOURCE FOREVER <span class="blink">█</span>
+    </p>
+  </div>
+</footer>

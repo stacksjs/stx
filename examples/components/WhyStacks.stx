@@ -1,0 +1,37 @@
+<section id="features" class="py-16 bg-white/5 border-b border-dashed border-gray-800">
+  <div class="max-w-7xl mx-auto px-8">
+    <h2 class="text-3xl font-bold tracking-widest mb-8 flex items-center gap-4">
+      <span class="pulse-arrow">▶</span> WHY DEVELOPERS CHOOSE STACKS
+    </h2>
+
+    <div class="grid md:grid-cols-2 gap-12">
+      <div>
+        <h3 class="text-xl font-bold mb-4">⚡ LIGHTNING FAST DEVELOPMENT</h3>
+        <p class="text-gray-400 leading-relaxed mb-8">
+          Scaffold entire applications in minutes, not days. Our powerful CLI and conventions
+          eliminate boilerplate, letting you focus on what matters—building great products.
+        </p>
+
+        <h3 class="text-xl font-bold mb-4">🎯 TRUE FULL-STACK</h3>
+        <p class="text-gray-400 leading-relaxed">
+          One framework for everything. Frontend, backend, cloud infrastructure, deployments.
+          No more juggling 10+ tools and configurations. Just code.
+        </p>
+      </div>
+
+      <div>
+        <h3 class="text-xl font-bold mb-4">🔐 TYPE-SAFE END-TO-END</h3>
+        <p class="text-gray-400 leading-relaxed mb-8">
+          Catch bugs before they happen. Full TypeScript integration from database to UI
+          means your API contracts are enforced at compile time.
+        </p>
+
+        <h3 class="text-xl font-bold mb-4">🚀 PRODUCTION READY</h3>
+        <p class="text-gray-400 leading-relaxed">
+          Deploy with confidence. Zero-downtime deployments, built-in monitoring, automatic
+          backups, and enterprise-grade security out of the box.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

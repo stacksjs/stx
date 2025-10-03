@@ -1,0 +1,27 @@
+<section class="py-16 bg-white/5">
+  <div class="max-w-4xl mx-auto px-8 text-center">
+    <div class="text-gray-700 text-xs mb-8">▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒</div>
+
+    <h2 class="text-3xl font-bold tracking-widest mb-4 flex items-center justify-center gap-4">
+      <span class="pulse-arrow">▶</span> READY TO BUILD FASTER?
+    </h2>
+    <p class="text-gray-400 text-lg mb-8">
+      Join thousands of developers who are shipping production apps with Stacks.
+    </p>
+
+    <div class="flex gap-4 justify-center flex-wrap mb-8">
+      <a href="https://github.com/stacksjs/stacks" class="bg-white text-black px-12 py-4 font-semibold tracking-wider hover:bg-black hover:text-white border-2 border-white transition-all">
+        > GET STARTED
+      </a>
+      <a href="https://stacksjs.org/dashboard" class="bg-black text-white px-12 py-4 font-semibold tracking-wider border-2 border-white hover:bg-white hover:text-black transition-all">
+        > SUBSCRIBE NOW
+      </a>
+    </div>
+
+    <p class="text-gray-600 text-sm">
+      ⚡ No credit card required • 🎁 MIT License • 📦 Self-hosted
+    </p>
+
+    <div class="text-gray-700 text-xs mt-8">▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒▓▒</div>
+  </div>
+</section>

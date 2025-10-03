@@ -1,0 +1,14 @@
+<script>
+  module.exports = {
+    title: 'Feature',
+    description: 'Description'
+  };
+</script>
+
+<div class="border border-gray-700 p-6 transition-all hover:border-white hover:bg-white/5 hover:translate-x-1 relative group">
+  <div class="absolute top-0 left-0 text-gray-600 text-xs">┌─</div>
+  <div class="absolute bottom-0 right-0 text-gray-600 text-xs">─┘</div>
+
+  <h3 class="font-bold text-lg mb-2 tracking-wider">{{ title }}</h3>
+  <p class="text-gray-400 text-sm leading-relaxed">{{ description }}</p>
+</div>

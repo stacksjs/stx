@@ -1,0 +1,28 @@
+<script>
+  module.exports = {
+    id: '',
+    title: 'Features',
+    description: '',
+    features: []
+  };
+</script>
+
+<section id="{{ id }}" class="py-16 border-b border-dashed border-gray-800">
+  <div class="max-w-7xl mx-auto px-8">
+    <h2 class="text-3xl font-bold tracking-widest mb-4 flex items-center gap-4">
+      <span class="pulse-arrow">▶</span> {{ title }}
+    </h2>
+    <p class="text-gray-400 mb-12">{{ description }}</p>
+
+    <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+      @foreach(features as feature)
+        <div class="border border-gray-700 p-6 transition-all hover:border-white hover:bg-white/5 hover:translate-x-1 relative group">
+          <div class="absolute top-0 left-0 text-gray-600 text-xs">┌─</div>
+          <div class="absolute bottom-0 right-0 text-gray-600 text-xs">─┘</div>
+          <h3 class="font-bold text-lg mb-2 tracking-wider">{{ feature.title }}</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">{{ feature.desc }}</p>
+        </div>
+      @endforeach
+    </div>
+  </div>
+</section>

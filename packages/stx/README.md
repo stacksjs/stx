@@ -615,6 +615,54 @@ The plugin works by:
 bun test
 ```
 
+## CSS Generation with Headwind
+
+STX uses [Headwind](https://headwind.stacksjs.org) for utility-first CSS generation. Headwind is a blazingly fast CSS framework built with Bun that generates only the CSS you need.
+
+### Building CSS
+
+```bash
+# Build CSS from your .stx templates
+bun run build:css
+
+# The CSS will be generated at ./examples/dist/styles.css
+```
+
+### Headwind Configuration
+
+Headwind is configured via `headwind.config.ts`:
+
+```typescript
+import type { HeadwindConfig } from 'headwind'
+import path from 'node:path'
+
+const config: Partial<HeadwindConfig> = {
+  content: [
+    './examples/**/*.stx',
+    './examples/**/*.{html,js,ts,jsx,tsx}',
+  ],
+  output: './examples/dist/styles.css',
+  minify: false,
+}
+
+export default config
+```
+
+### Using Utility Classes
+
+STX templates support all Headwind/Tailwind-compatible utility classes:
+
+```html
+<div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-md hover:shadow-lg">
+  <h1 class="text-2xl font-bold text-gray-900">Hello World</h1>
+  <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">
+    Click Me
+  </button>
+</div>
+```
+
+The build process automatically scans all your `.stx` files and generates only the CSS classes you actually use. For more information, visit the [Headwind documentation](https://headwind.stacksjs.org).
+
 ## Changelog
 
 Please see our [releases](https://github.com/stacksjs/stx/releases) page for more information on what has changed recently.

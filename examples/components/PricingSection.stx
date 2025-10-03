@@ -1,0 +1,87 @@
+<section id="pricing" class="py-16 border-b border-dashed border-gray-800">
+  <div class="max-w-7xl mx-auto px-8">
+    <div class="text-center text-gray-700 text-sm mb-8">╔═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗</div>
+
+    <h2 class="text-3xl font-bold tracking-widest mb-4 flex items-center justify-center gap-4">
+      <span class="pulse-arrow">▶</span> SIMPLE, TRANSPARENT PRICING
+    </h2>
+    <p class="text-gray-400 mb-12 text-center">Start free and open source. Upgrade when you need the dashboard and team features.</p>
+
+    <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      <!-- Open Source Plan -->
+      <div class="border-2 border-gray-700 p-8 transition-all hover:border-gray-400 hover:-translate-y-1 flex flex-col">
+        <div class="font-bold text-xl tracking-widest mb-4 pb-4 border-b border-gray-700">OPEN SOURCE</div>
+        <div class="text-5xl font-bold mb-2 leading-none">FREE</div>
+        <div class="text-sm text-gray-400 mb-8 tracking-wider">FOREVER</div>
+        <ul class="mb-8 flex-grow space-y-4">
+          <li class="text-sm">▸ Full framework access</li>
+          <li class="text-sm">▸ Community support</li>
+          <li class="text-sm">▸ MIT license</li>
+          <li class="text-sm">▸ Self-hosted</li>
+          <li class="text-sm">▸ Unlimited projects</li>
+          <li class="text-sm">▸ CLI toolkit (Buddy)</li>
+          <li class="text-sm">▸ All core features</li>
+        </ul>
+        <a href="https://github.com/stacksjs/stacks" class="block text-center py-4 border-2 border-white font-bold tracking-wider text-sm transition-all bg-black text-white hover:bg-white hover:text-black">GET STARTED</a>
+      </div>
+
+      <!-- Hobby Plan -->
+      <div class="border-2 border-white bg-white/5 scale-105 p-8 transition-all hover:border-gray-400 hover:-translate-y-1 flex flex-col relative">
+        <div class="absolute -top-px left-1/2 -translate-x-1/2 bg-black px-4 text-xs tracking-widest">◆ POPULAR ◆</div>
+        <div class="font-bold text-xl tracking-widest mb-4 pb-4 border-b border-gray-700">HOBBY</div>
+        <div class="text-5xl font-bold mb-2 leading-none">$19</div>
+        <div class="text-sm text-gray-400 mb-8 tracking-wider">PER MONTH</div>
+        <ul class="mb-8 flex-grow space-y-4">
+          <li class="text-sm">▸ Everything in Open Source</li>
+          <li class="text-sm">▸ Admin dashboard app</li>
+          <li class="text-sm">▸ Database management UI</li>
+          <li class="text-sm">▸ API monitoring & logs</li>
+          <li class="text-sm">▸ Real-time analytics</li>
+          <li class="text-sm">▸ Email support</li>
+          <li class="text-sm">▸ Single developer</li>
+        </ul>
+        <a href="https://stacksjs.org/dashboard" class="block text-center py-4 border-2 border-white font-bold tracking-wider text-sm transition-all bg-white text-black hover:bg-black hover:text-white">SUBSCRIBE NOW</a>
+      </div>
+
+      <!-- Pro Plan -->
+      <div class="border-2 border-gray-700 p-8 transition-all hover:border-gray-400 hover:-translate-y-1 flex flex-col">
+        <div class="font-bold text-xl tracking-widest mb-4 pb-4 border-b border-gray-700">PRO</div>
+        <div class="text-5xl font-bold mb-2 leading-none">$29</div>
+        <div class="text-sm text-gray-400 mb-8 tracking-wider">PER MONTH</div>
+        <ul class="mb-8 flex-grow space-y-4">
+          <li class="text-sm">▸ Everything in Hobby</li>
+          <li class="text-sm">▸ Invite team members</li>
+          <li class="text-sm">▸ Team collaboration</li>
+          <li class="text-sm">▸ Priority support</li>
+          <li class="text-sm">▸ Advanced features</li>
+          <li class="text-sm">▸ Early access</li>
+          <li class="text-sm">▸ Dedicated account manager</li>
+        </ul>
+        <a href="https://stacksjs.org/pro" class="block text-center py-4 border-2 border-white font-bold tracking-wider text-sm transition-all bg-black text-white hover:bg-white hover:text-black">SUBSCRIBE NOW</a>
+      </div>
+    </div>
+
+    <div class="text-center text-gray-700 text-sm my-12">╚═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝</div>
+
+    <div class="bg-white/5 border-l-4 border-white p-8 max-w-4xl mx-auto">
+      <h3 class="text-xl font-bold mb-6">▸ WHAT'S THE DIFFERENCE?</h3>
+
+      <div class="grid md:grid-cols-2 gap-8">
+        <div>
+          <div class="font-bold mb-2">HOBBY → PRO</div>
+          <p class="text-gray-400 leading-relaxed">
+            The only difference: <strong class="text-white">Pro lets you invite team members</strong>.
+            Perfect when you need collaboration, shared dashboards, and team-wide monitoring.
+          </p>
+        </div>
+        <div>
+          <div class="font-bold mb-2">OPEN SOURCE → HOBBY</div>
+          <p class="text-gray-400 leading-relaxed">
+            Get the admin dashboard app with database management UI, API monitoring, real-time
+            analytics, and email support. Built for solo devs shipping production apps.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

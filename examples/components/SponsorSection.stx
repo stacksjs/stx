@@ -1,0 +1,24 @@
+<section class="py-16 border-t border-dashed border-gray-800">
+  <div class="max-w-4xl mx-auto px-8 text-center">
+    <h2 class="text-3xl font-bold tracking-widest mb-4 flex items-center justify-center gap-4">
+      <span class="text-pink-400">♥</span> SPONSOR THE PROJECT
+    </h2>
+    <p class="text-gray-400 text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
+      Stacks is MIT-licensed open source software, built with love by developers for developers.
+      Your sponsorship helps us maintain and improve the framework.
+    </p>
+
+    <div class="flex gap-4 justify-center flex-wrap mb-6">
+      <a href="https://github.com/sponsors/chrisbbreuer" target="_blank" rel="noopener" class="bg-pink-500 text-white px-12 py-4 font-semibold tracking-wider hover:bg-pink-600 border-2 border-pink-500 hover:border-pink-600 transition-all">
+        > BECOME A SPONSOR
+      </a>
+      <a href="https://github.com/stacksjs/stacks" target="_blank" rel="noopener" class="bg-transparent text-white px-12 py-4 font-semibold tracking-wider border-2 border-gray-700 hover:border-white transition-all">
+        > STAR ON GITHUB
+      </a>
+    </div>
+
+    <p class="text-gray-600 text-sm">
+      💖 Support open source • 🌟 Help us grow • 🚀 Build the future together
+    </p>
+  </div>
+</section>

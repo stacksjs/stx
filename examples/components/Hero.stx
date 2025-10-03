@@ -1,0 +1,38 @@
+<header class="text-center border-b-2 border-white py-16">
+  <div class="max-w-7xl mx-auto px-8">
+    <pre class="inline-block text-xs md:text-sm text-gray-400 mb-8">
+╔═══════════════════════════════════════════════════════════╗
+║                                                           ║
+║     ███████╗████████╗ █████╗  ██████╗██╗  ██╗███████╗   ║
+║     ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║ ██╔╝██╔════╝   ║
+║     ███████╗   ██║   ███████║██║     █████╔╝ ███████╗   ║
+║     ╚════██║   ██║   ██╔══██║██║     ██╔═██╗ ╚════██║   ║
+║     ███████║   ██║   ██║  ██║╚██████╗██║  ██╗███████║   ║
+║     ╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝   ║
+║                                                           ║
+╚═══════════════════════════════════════════════════════════╝
+    </pre>
+
+    <h2 class="text-xl tracking-[0.3rem] mb-8 text-gray-400">RAPID DEVELOPMENT FRAMEWORK</h2>
+
+    <div class="max-w-3xl mx-auto text-left border-l-4 border-white pl-4 mb-8 text-sm md:text-base leading-relaxed">
+      <p>> An all-in-one TypeScript framework for full-stack development.</p>
+      <p>> Create & maintain frontends, backends, and clouds.</p>
+      <p>> Convention over configuration.</p>
+    </div>
+
+    @include('StatsGrid')
+
+    <div class="flex gap-4 justify-center flex-wrap mt-8">
+      <a href="https://stacksjs.org/dashboard" class="bg-white text-black px-12 py-4 font-semibold tracking-wider hover:bg-black hover:text-white border-2 border-white transition-all hover:-translate-y-1 hover:shadow-lg">
+        > SUBSCRIBE NOW
+      </a>
+      <a href="https://stacksjs.org/docs" class="bg-black text-white px-12 py-4 font-semibold tracking-wider border-2 border-white hover:bg-white hover:text-black transition-all hover:-translate-y-1">
+        > READ DOCS
+      </a>
+      <a href="https://github.com/stacksjs/stacks" class="bg-black text-white px-12 py-4 font-semibold tracking-wider border-2 border-white hover:bg-white hover:text-black transition-all hover:-translate-y-1">
+        > GET STARTED
+      </a>
+    </div>
+  </div>
+</header>

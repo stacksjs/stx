@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STACKS.JS - RAPID DEVELOPMENT FRAMEWORK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/packages/stx/examples/dist/styles.css">
+  <script>
+    module.exports = {
+      packages: [
+        { title: 'AI', emoji: '🤖', desc: 'Deep AI integrations for agentic workflows' },
+        { title: 'API', emoji: '🔌', desc: 'Build scalable REST & GraphQL APIs' },
+        { title: 'Auth', emoji: '🔐', desc: 'Authentication and authorization' },
+        { title: 'Cache', emoji: '⚡', desc: 'Multi-driver caching system' },
+        { title: 'CLI', emoji: '⌨️', desc: 'Beautiful command-line interfaces' },
+        { title: 'Cloud', emoji: '☁️', desc: 'Cloud infrastructure management' },
+        { title: 'Database', emoji: '🗄️', desc: 'Database connections & migrations' },
+        { title: 'ORM', emoji: '🗺️', desc: 'Elegant object-relational mapper' },
+        { title: 'Router', emoji: '🧭', desc: 'Fast & flexible routing' },
+        { title: 'Validation', emoji: '✅', desc: 'Type-safe validation' },
+        { title: 'Queue', emoji: '📬', desc: 'Background job processing' },
+        { title: 'Storage', emoji: '💾', desc: 'File storage abstraction' },
+        { title: 'Email', emoji: '📧', desc: 'Send emails with ease' },
+        { title: 'Events', emoji: '📡', desc: 'Event-driven architecture' },
+        { title: 'Notifications', emoji: '🔔', desc: 'Multi-channel notifications' },
+        { title: 'Testing', emoji: '🧪', desc: 'Testing utilities & helpers' },
+        { title: 'Search Engine', emoji: '🔍', desc: 'Full-text search capabilities' },
+        { title: 'Realtime', emoji: '⚡', desc: 'WebSocket & real-time features' },
+        { title: 'X-Ray', emoji: '🔬', desc: 'Debugging & monitoring tools' },
+        { title: 'Payments', emoji: '💳', desc: 'Payment processing integration' }
+      ],
+      starterKits: [
+        { title: 'SaaS Starter', emoji: '🚀', desc: 'Complete SaaS application boilerplate' },
+        { title: 'E-commerce', emoji: '🛒', desc: 'Online store with cart & checkout' },
+        { title: 'Admin Dashboard', emoji: '📊', desc: 'Full-featured admin panel' },
+        { title: 'Blog', emoji: '📝', desc: 'Content management system' }
+      ],
+      products: [
+        { title: 'Buddy CLI', emoji: '🤖', desc: 'AI-powered development assistant' },
+        { title: 'Stacks Cloud', emoji: '☁️', desc: 'Managed hosting platform' },
+        { title: 'Stacks Desktop', emoji: '🖥️', desc: 'Desktop app builder' }
+      ],
+      backendFeatures: [
+        {
+          id: 'authentication',
+          title: 'Authentication',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">Auth</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/auth'</span>
+
+<span class="text-gray-500">// Login user</span>
+<span class="text-purple-400">const</span> <span class="text-yellow-300">user</span> = <span class="text-purple-400">await</span> <span class="text-yellow-300">Auth</span>.<span class="text-blue-400">attempt</span>({
+  <span class="text-blue-400">email</span>: <span class="text-green-400">'user@example.com'</span>,
+  <span class="text-blue-400">password</span>: <span class="text-green-400">'secret'</span>
+})
+
+<span class="text-gray-500">// Get authenticated user</span>
+<span class="text-purple-400">const</span> <span class="text-yellow-300">current</span> = <span class="text-purple-400">await</span> <span class="text-yellow-300">Auth</span>.<span class="text-blue-400">user</span>()`
+        },
+        {
+          id: 'authorization',
+          title: 'Authorization',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">can</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/auth'</span>
+
+<span class="text-gray-500">// Check permissions</span>
+<span class="text-purple-400">if</span> (<span class="text-purple-400">await</span> <span class="text-blue-400">can</span>(<span class="text-yellow-300">user</span>, <span class="text-green-400">'edit-post'</span>)) {
+  <span class="text-gray-500">// User can edit post</span>
+}
+
+<span class="text-gray-500">// Define policies</span>
+<span class="text-purple-400">export</span> <span class="text-purple-400">const</span> <span class="text-yellow-300">PostPolicy</span> = {
+  <span class="text-blue-400">edit</span>: (<span class="text-yellow-300">user</span>, <span class="text-yellow-300">post</span>) <span class="text-pink-400">=></span> <span class="text-yellow-300">user</span>.<span class="text-blue-400">id</span> === <span class="text-yellow-300">post</span>.<span class="text-blue-400">userId</span>
+}`
+        },
+        {
+          id: 'orm',
+          title: 'Eloquent ORM',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">Model</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/orm'</span>
+
+<span class="text-purple-400">class</span> <span class="text-yellow-300">User</span> <span class="text-purple-400">extends</span> <span class="text-yellow-300">Model</span> {
+  <span class="text-blue-400">posts</span>() {
+    <span class="text-purple-400">return</span> <span class="text-purple-400">this</span>.<span class="text-blue-400">hasMany</span>(<span class="text-yellow-300">Post</span>)
+  }
+}
+
+<span class="text-purple-400">const</span> <span class="text-yellow-300">users</span> = <span class="text-purple-400">await</span> <span class="text-yellow-300">User</span>
+  .<span class="text-blue-400">with</span>(<span class="text-green-400">'posts'</span>)
+  .<span class="text-blue-400">where</span>(<span class="text-green-400">'active'</span>, <span class="text-orange-400">true</span>)
+  .<span class="text-blue-400">get</span>()`
+        },
+        {
+          id: 'migrations',
+          title: 'Database Migrations',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">Schema</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/database'</span>
+
+<span class="text-purple-400">export</span> <span class="text-purple-400">default</span> {
+  <span class="text-purple-400">async</span> <span class="text-blue-400">up</span>() {
+    <span class="text-purple-400">await</span> <span class="text-yellow-300">Schema</span>.<span class="text-blue-400">create</span>(<span class="text-green-400">'users'</span>, (<span class="text-yellow-300">table</span>) <span class="text-pink-400">=></span> {
+      <span class="text-yellow-300">table</span>.<span class="text-blue-400">id</span>()
+      <span class="text-yellow-300">table</span>.<span class="text-blue-400">string</span>(<span class="text-green-400">'name'</span>)
+      <span class="text-yellow-300">table</span>.<span class="text-blue-400">string</span>(<span class="text-green-400">'email'</span>).<span class="text-blue-400">unique</span>()
+      <span class="text-yellow-300">table</span>.<span class="text-blue-400">timestamps</span>()
+    })
+  }
+}`
+        },
+        {
+          id: 'validation',
+          title: 'Validation',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">validate</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/validation'</span>
+
+<span class="text-purple-400">const</span> <span class="text-yellow-300">result</span> = <span class="text-purple-400">await</span> <span class="text-blue-400">validate</span>(<span class="text-yellow-300">data</span>, {
+  <span class="text-blue-400">name</span>: <span class="text-green-400">'required|string|min:3'</span>,
+  <span class="text-blue-400">email</span>: <span class="text-green-400">'required|email|unique:users'</span>,
+  <span class="text-blue-400">age</span>: <span class="text-green-400">'required|number|min:18'</span>
+})
+
+<span class="text-purple-400">if</span> (<span class="text-yellow-300">result</span>.<span class="text-blue-400">fails</span>) {
+  <span class="text-purple-400">return</span> <span class="text-yellow-300">result</span>.<span class="text-blue-400">errors</span>
+}`
+        },
+        {
+          id: 'notifications',
+          title: 'Notifications & Mail',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">Mail</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/email'</span>
+
+<span class="text-purple-400">await</span> <span class="text-yellow-300">Mail</span>.<span class="text-blue-400">to</span>(<span class="text-green-400">'user@example.com'</span>)
+  .<span class="text-blue-400">subject</span>(<span class="text-green-400">'Welcome!'</span>)
+  .<span class="text-blue-400">template</span>(<span class="text-green-400">'welcome'</span>, { <span class="text-blue-400">name</span>: <span class="text-green-400">'John'</span> })
+  .<span class="text-blue-400">send</span>()
+
+<span class="text-gray-500">// Multi-channel notifications</span>
+<span class="text-purple-400">await</span> <span class="text-yellow-300">user</span>.<span class="text-blue-400">notify</span>(<span class="text-purple-400">new</span> <span class="text-yellow-300">OrderShipped</span>(<span class="text-yellow-300">order</span>))`
+        },
+        {
+          id: 'storage',
+          title: 'File Storage',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">Storage</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/storage'</span>
+
+<span class="text-gray-500">// Store file</span>
+<span class="text-purple-400">await</span> <span class="text-yellow-300">Storage</span>.<span class="text-blue-400">put</span>(<span class="text-green-400">'avatar.jpg'</span>, <span class="text-yellow-300">file</span>)
+
+<span class="text-gray-500">// Get file URL</span>
+<span class="text-purple-400">const</span> <span class="text-yellow-300">url</span> = <span class="text-purple-400">await</span> <span class="text-yellow-300">Storage</span>.<span class="text-blue-400">url</span>(<span class="text-green-400">'avatar.jpg'</span>)
+
+<span class="text-gray-500">// Delete file</span>
+<span class="text-purple-400">await</span> <span class="text-yellow-300">Storage</span>.<span class="text-blue-400">delete</span>(<span class="text-green-400">'avatar.jpg'</span>)`
+        },
+        {
+          id: 'queues',
+          title: 'Job Queues',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">Queue</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/queue'</span>
+
+<span class="text-gray-500">// Dispatch job</span>
+<span class="text-purple-400">await</span> <span class="text-yellow-300">Queue</span>.<span class="text-blue-400">dispatch</span>(<span class="text-purple-400">new</span> <span class="text-yellow-300">ProcessVideo</span>(<span class="text-yellow-300">video</span>))
+
+<span class="text-gray-500">// Delayed job</span>
+<span class="text-purple-400">await</span> <span class="text-yellow-300">Queue</span>.<span class="text-blue-400">dispatch</span>(
+  <span class="text-purple-400">new</span> <span class="text-yellow-300">SendEmail</span>(<span class="text-yellow-300">user</span>)
+).<span class="text-blue-400">delay</span>(<span class="text-orange-400">60</span>)`
+        },
+        {
+          id: 'scheduler',
+          title: 'Task Scheduling',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">Schedule</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/scheduler'</span>
+
+<span class="text-yellow-300">Schedule</span>.<span class="text-blue-400">command</span>(<span class="text-green-400">'emails:send'</span>)
+  .<span class="text-blue-400">daily</span>()
+  .<span class="text-blue-400">at</span>(<span class="text-green-400">'09:00'</span>)
+
+<span class="text-yellow-300">Schedule</span>.<span class="text-blue-400">call</span>(<span class="text-yellow-300">cleanupTempFiles</span>)
+  .<span class="text-blue-400">hourly</span>()`
+        },
+        {
+          id: 'testing',
+          title: 'Testing',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">test</span>, <span class="text-yellow-300">expect</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/testing'</span>
+
+<span class="text-blue-400">test</span>(<span class="text-green-400">'user can register'</span>, <span class="text-purple-400">async</span> () <span class="text-pink-400">=></span> {
+  <span class="text-purple-400">const</span> <span class="text-yellow-300">response</span> = <span class="text-purple-400">await</span> <span class="text-blue-400">post</span>(<span class="text-green-400">'/register'</span>, {
+    <span class="text-blue-400">name</span>: <span class="text-green-400">'John Doe'</span>,
+    <span class="text-blue-400">email</span>: <span class="text-green-400">'john@example.com'</span>
+  })
+
+  <span class="text-blue-400">expect</span>(<span class="text-yellow-300">response</span>.<span class="text-blue-400">status</span>).<span class="text-blue-400">toBe</span>(<span class="text-orange-400">201</span>)
+})`
+        },
+        {
+          id: 'events',
+          title: 'Events & WebSockets',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">Event</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/events'</span>
+
+<span class="text-gray-500">// Dispatch event</span>
+<span class="text-purple-400">await</span> <span class="text-yellow-300">Event</span>.<span class="text-blue-400">dispatch</span>(<span class="text-green-400">'user.registered'</span>, <span class="text-yellow-300">user</span>)
+
+<span class="text-gray-500">// Listen to event</span>
+<span class="text-yellow-300">Event</span>.<span class="text-blue-400">listen</span>(<span class="text-green-400">'user.registered'</span>, (<span class="text-yellow-300">user</span>) <span class="text-pink-400">=></span> {
+  <span class="text-gray-500">// Send welcome email</span>
+})`
+        }
+      ],
+      frontendFeatures: [
+        {
+          id: 'components',
+          title: 'Components',
+          code: `<span class="text-gray-500">&lt;</span><span class="text-pink-400">template</span><span class="text-gray-500">&gt;</span>
+  <span class="text-gray-500">&lt;</span><span class="text-pink-400">Card</span> <span class="text-blue-400">title</span>=<span class="text-green-400">"Hello"</span><span class="text-gray-500">&gt;</span>
+    <span class="text-gray-500">&lt;</span><span class="text-pink-400">p</span><span class="text-gray-500">&gt;</span>Reusable components<span class="text-gray-500">&lt;/</span><span class="text-pink-400">p</span><span class="text-gray-500">&gt;</span>
+  <span class="text-gray-500">&lt;/</span><span class="text-pink-400">Card</span><span class="text-gray-500">&gt;</span>
+<span class="text-gray-500">&lt;/</span><span class="text-pink-400">template</span><span class="text-gray-500">&gt;</span>
+
+<span class="text-gray-500">&lt;</span><span class="text-pink-400">script setup</span><span class="text-gray-500">&gt;</span>
+<span class="text-gray-500">// Auto-imported</span>
+<span class="text-gray-500">&lt;/</span><span class="text-pink-400">script</span><span class="text-gray-500">&gt;</span>`
+        },
+        {
+          id: 'ui-kit',
+          title: 'UI Kit',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">Button</span>, <span class="text-yellow-300">Input</span>, <span class="text-yellow-300">Modal</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/ui'</span>
+
+<span class="text-gray-500">&lt;</span><span class="text-pink-400">Modal</span> <span class="text-blue-400">v-model</span>=<span class="text-green-400">"show"</span><span class="text-gray-500">&gt;</span>
+  <span class="text-gray-500">&lt;</span><span class="text-pink-400">Input</span> <span class="text-blue-400">v-model</span>=<span class="text-green-400">"name"</span> <span class="text-blue-400">placeholder</span>=<span class="text-green-400">"Name"</span> <span class="text-gray-500">/&gt;</span>
+  <span class="text-gray-500">&lt;</span><span class="text-pink-400">Button</span> <span class="text-blue-400">@click</span>=<span class="text-green-400">"submit"</span><span class="text-gray-500">&gt;</span>Submit<span class="text-gray-500">&lt;/</span><span class="text-pink-400">Button</span><span class="text-gray-500">&gt;</span>
+<span class="text-gray-500">&lt;/</span><span class="text-pink-400">Modal</span><span class="text-gray-500">&gt;</span>`
+        },
+        {
+          id: 'routing',
+          title: 'Routing',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">router</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/router'</span>
+
+<span class="text-yellow-300">router</span>.<span class="text-blue-400">get</span>(<span class="text-green-400">'/users/:id'</span>, <span class="text-purple-400">async</span> ({ <span class="text-yellow-300">params</span> }) <span class="text-pink-400">=></span> {
+  <span class="text-purple-400">const</span> <span class="text-yellow-300">user</span> = <span class="text-purple-400">await</span> <span class="text-yellow-300">User</span>.<span class="text-blue-400">find</span>(<span class="text-yellow-300">params</span>.<span class="text-blue-400">id</span>)
+  <span class="text-purple-400">return</span> <span class="text-blue-400">view</span>(<span class="text-green-400">'user'</span>, { <span class="text-yellow-300">user</span> })
+})`
+        },
+        {
+          id: 'desktop',
+          title: 'Desktop',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">app</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/desktop'</span>
+
+<span class="text-purple-400">await</span> <span class="text-yellow-300">app</span>.<span class="text-blue-400">start</span>({
+  <span class="text-blue-400">window</span>: {
+    <span class="text-blue-400">title</span>: <span class="text-green-400">'My App'</span>,
+    <span class="text-blue-400">width</span>: <span class="text-orange-400">1200</span>,
+    <span class="text-blue-400">height</span>: <span class="text-orange-400">800</span>
+  }
+})`
+        }
+      ],
+      cloudFeatures: [
+        {
+          id: 'deployment',
+          title: 'Deployment',
+          code: `<span class="text-purple-400">export default</span> {
+  <span class="text-blue-400">provider</span>: <span class="text-green-400">'aws'</span>,
+  <span class="text-blue-400">region</span>: <span class="text-green-400">'us-east-1'</span>,
+
+  <span class="text-blue-400">compute</span>: {
+    <span class="text-blue-400">type</span>: <span class="text-green-400">'serverless'</span>,
+    <span class="text-blue-400">memory</span>: <span class="text-orange-400">1024</span>
+  }
+}`
+        },
+        {
+          id: 'storage',
+          title: 'Storage',
+          code: `<span class="text-purple-400">export default</span> {
+  <span class="text-blue-400">storage</span>: {
+    <span class="text-blue-400">driver</span>: <span class="text-green-400">'s3'</span>,
+    <span class="text-blue-400">bucket</span>: <span class="text-green-400">'my-app-storage'</span>,
+    <span class="text-blue-400">region</span>: <span class="text-green-400">'us-east-1'</span>
+  }
+}`
+        },
+        {
+          id: 'cdn',
+          title: 'CDN',
+          code: `<span class="text-purple-400">export default</span> {
+  <span class="text-blue-400">cdn</span>: {
+    <span class="text-blue-400">enabled</span>: <span class="text-orange-400">true</span>,
+    <span class="text-blue-400">compress</span>: [<span class="text-green-400">'brotli'</span>, <span class="text-green-400">'gzip'</span>],
+    <span class="text-blue-400">cache</span>: {
+      <span class="text-blue-400">ttl</span>: <span class="text-orange-400">3600</span>
+    }
+  }
+}`
+        },
+        {
+          id: 'dns',
+          title: 'DNS',
+          code: `<span class="text-purple-400">export default</span> {
+  <span class="text-blue-400">domains</span>: [
+    <span class="text-green-400">'app.example.com'</span>,
+    <span class="text-green-400">'api.example.com'</span>
+  ],
+  <span class="text-blue-400">ssl</span>: <span class="text-orange-400">true</span>
+}`
+        }
+      ],
+      cicdFeatures: [
+        {
+          id: 'deploy',
+          title: 'Deploy',
+          code: `<span class="text-gray-500">$</span> <span class="text-blue-400">buddy deploy</span>
+
+<span class="text-yellow-300">→</span> <span class="text-gray-300">Building project...</span>
+<span class="text-yellow-300">→</span> <span class="text-gray-300">Running tests...</span>
+<span class="text-green-400">✓</span> <span class="text-green-400">All tests passed</span>
+
+<span class="text-yellow-300">→</span> <span class="text-gray-300">Deploying...</span>
+<span class="text-green-400">✓</span> <span class="text-green-400">Deployed successfully</span>`
+        },
+        {
+          id: 'release',
+          title: 'Release',
+          code: `<span class="text-gray-500">$</span> <span class="text-blue-400">buddy release</span>
+
+<span class="text-yellow-300">→</span> <span class="text-gray-300">Bumping version...</span>
+<span class="text-green-400">✓</span> <span class="text-green-400">v1.2.0</span>
+
+<span class="text-yellow-300">→</span> <span class="text-gray-300">Publishing to npm...</span>
+<span class="text-green-400">✓</span> <span class="text-green-400">Published @stacksjs/core@1.2.0</span>`
+        },
+        {
+          id: 'ci',
+          title: 'CI/CD',
+          code: `<span class="text-purple-400">export default</span> {
+  <span class="text-blue-400">on</span>: [<span class="text-green-400">'push'</span>],
+  <span class="text-blue-400">steps</span>: [
+    <span class="text-green-400">'test'</span>,
+    <span class="text-green-400">'build'</span>,
+    <span class="text-green-400">'deploy'</span>
+  ],
+  <span class="text-blue-400">deploy</span>: {
+    <span class="text-blue-400">strategy</span>: <span class="text-green-400">'zero-downtime'</span>
+  }
+}`
+        }
+      ],
+      dxFeatures: [
+        {
+          id: 'auto-imports',
+          title: 'Auto Imports',
+          code: `<span class="text-gray-500">// No imports needed!</span>
+<span class="text-purple-400">const</span> <span class="text-yellow-300">user</span> = <span class="text-purple-400">await</span> <span class="text-yellow-300">User</span>.<span class="text-blue-400">find</span>(<span class="text-orange-400">1</span>)
+
+<span class="text-gray-500">// All helpers auto-imported</span>
+<span class="text-purple-400">const</span> <span class="text-yellow-300">result</span> = <span class="text-blue-400">collect</span>(<span class="text-yellow-300">users</span>)
+  .<span class="text-blue-400">filter</span>(<span class="text-yellow-300">u</span> <span class="text-pink-400">=></span> <span class="text-yellow-300">u</span>.<span class="text-blue-400">active</span>)
+  .<span class="text-blue-400">toArray</span>()`
+        },
+        {
+          id: 'type-safety',
+          title: 'Type Safety',
+          code: `<span class="text-purple-400">interface</span> <span class="text-yellow-300">User</span> {
+  <span class="text-blue-400">id</span>: <span class="text-purple-400">number</span>
+  <span class="text-blue-400">name</span>: <span class="text-purple-400">string</span>
+  <span class="text-blue-400">email</span>: <span class="text-purple-400">string</span>
+}
+
+<span class="text-gray-500">// Full type inference</span>
+<span class="text-purple-400">const</span> <span class="text-yellow-300">user</span>: <span class="text-yellow-300">User</span> = <span class="text-purple-400">await</span> <span class="text-yellow-300">User</span>.<span class="text-blue-400">find</span>(<span class="text-orange-400">1</span>)`
+        },
+        {
+          id: 'dev-urls',
+          title: 'Dev URLs',
+          code: `<span class="text-gray-500">// Instead of localhost:3000</span>
+<span class="text-blue-400">http://my-app.localhost</span>
+
+<span class="text-gray-500">// API subdomain</span>
+<span class="text-blue-400">http://api.my-app.localhost</span>
+
+<span class="text-gray-500">// Admin panel</span>
+<span class="text-blue-400">http://admin.my-app.localhost</span>`
+        },
+        {
+          id: 'testing',
+          title: 'Testing',
+          code: `<span class="text-purple-400">import</span> { <span class="text-yellow-300">test</span>, <span class="text-yellow-300">expect</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/testing'</span>
+
+<span class="text-blue-400">test</span>(<span class="text-green-400">'creates user'</span>, <span class="text-purple-400">async</span> () <span class="text-pink-400">=></span> {
+  <span class="text-purple-400">const</span> <span class="text-yellow-300">user</span> = <span class="text-purple-400">await</span> <span class="text-yellow-300">User</span>.<span class="text-blue-400">create</span>({
+    <span class="text-blue-400">name</span>: <span class="text-green-400">'John'</span>
+  })
+
+  <span class="text-blue-400">expect</span>(<span class="text-yellow-300">user</span>.<span class="text-blue-400">name</span>).<span class="text-blue-400">toBe</span>(<span class="text-green-400">'John'</span>)
+})`
+        }
+      ],
+      techStack: ['BUN', 'TYPESCRIPT', 'TAURI']
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    .scanline {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, transparent 50%, rgba(255, 255, 255, 0.02) 50%);
+      background-size: 100% 4px;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .blink {
+      animation: blink 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .pulse-arrow {
+      animation: pulse 2s infinite;
+    }
+
+    .lego-block {
+      position: absolute;
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.15;
+      white-space: pre;
+      color: #1a1a1a;
+      pointer-events: none;
+      z-index: 0;
+      filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.15));
+      font-weight: 600;
+      opacity: 0.3;
+    }
+
+    header {
+      position: relative;
+      overflow: hidden;
+    }
+  </style>
+  <script>
+    // DVD-style bouncing LEGO block (constrained to hero section)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('DOMContentLoaded', () => {
+        const block = document.getElementById('lego-block');
+        const hero = document.querySelector('header');
+        if (!block || !hero) return;
+
+        const heroRect = hero.getBoundingClientRect();
+        const blockRect = block.getBoundingClientRect();
+
+        let x = Math.random() * (heroRect.width - blockRect.width);
+        let y = heroRect.top + Math.random() * (heroRect.height - blockRect.height);
+        let vx = 0.8;
+        let vy = 0.8;
+
+        function animate() {
+          const currentHeroRect = hero.getBoundingClientRect();
+          const currentBlockRect = block.getBoundingClientRect();
+
+          x += vx;
+          y += vy;
+
+          // Bounce off hero section edges
+          if (x <= 0 || x + currentBlockRect.width >= currentHeroRect.width) {
+            vx = -vx;
+            x = Math.max(0, Math.min(x, currentHeroRect.width - currentBlockRect.width));
+          }
+          if (y <= currentHeroRect.top || y + currentBlockRect.height >= currentHeroRect.bottom) {
+            vy = -vy;
+            y = Math.max(currentHeroRect.top, Math.min(y, currentHeroRect.bottom - currentBlockRect.height));
+          }
+
+          block.style.left = x + 'px';
+          block.style.top = y + 'px';
+
+          requestAnimationFrame(animate);
+        }
+
+        animate();
+      });
+    }
+  </script>
+</head>
+<body class="bg-black text-white overflow-x-hidden">
+  <div class="scanline"></div>
+
+  <div id="lego-block" class="lego-block">
+   ◉ ◉ ◉ ◉ ◉
+  ┌─────────────┐
+  │█████████████│
+  │██ STACKS ██│
+  │█████████████│
+  │─────────────│
+  │█████████████│
+  │████ JS █████│
+  │█████████████│
+  │─────────────│
+  │▓▓▓▓▓▓▓▓▓▓▓▓▓│
+  └─────────────┘
+  </div>
+
+  @include('Navigation')
+
+  @include('Hero')
+
+  <!-- Ecosystem Section -->
+  <section id="ecosystem" class="py-24 border-b border-dashed border-gray-800">
+    <div class="max-w-7xl mx-auto px-8">
+      <h2 class="text-4xl font-bold mb-4">
+        Ecosystem
+      </h2>
+      <p class="text-xl mb-6 text-gray-300">A TypeScript framework with a robust ecosystem</p>
+      <p class="text-gray-400 mb-12 max-w-3xl text-base leading-relaxed">
+        Out of the box, Stacks has elegant solutions for the common features needed by all modern applications.
+        Our first-party packages offer opinionated solutions for specific problems so you don't need to reinvent the wheel.
+      </p>
+
+      <div class="mb-8 flex gap-4 border-b border-gray-700">
+        <button class="ecosystem-tab px-6 py-3 font-semibold tracking-wide text-sm border-b-2 border-white text-white bg-transparent" data-tab="packages">
+          Packages
+        </button>
+        <button class="ecosystem-tab px-6 py-3 font-semibold tracking-wide text-sm border-b-2 border-transparent text-gray-400 hover:text-white transition-colors bg-transparent" data-tab="starter-kits">
+          Starter Kits
+        </button>
+        <button class="ecosystem-tab px-6 py-3 font-semibold tracking-wide text-sm border-b-2 border-transparent text-gray-400 hover:text-white transition-colors bg-transparent" data-tab="products">
+          Products
+        </button>
+      </div>
+
+      <div id="packages" class="ecosystem-content grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        @foreach(packages as package)
+          <div class="flex gap-3 items-start border border-gray-700 p-4 transition-all hover:border-white hover:bg-white/5 relative">
+            <div class="absolute top-0 left-0 text-gray-600 text-xs">┌─</div>
+            <div class="absolute bottom-0 right-0 text-gray-600 text-xs">─┘</div>
+            <div class="text-2xl flex-shrink-0">{{ package.emoji }}</div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <h3 class="font-bold text-xs tracking-wide">{{ package.title }}</h3>
+                <span class="text-xs text-gray-500">Free</span>
+              </div>
+              <p class="text-gray-400 text-xs leading-relaxed">{{ package.desc }}</p>
+            </div>
+          </div>
+        @endforeach
+      </div>
+
+      <div id="starter-kits" class="ecosystem-content hidden grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        @foreach(starterKits as kit)
+          <div class="flex gap-3 items-start border border-gray-700 p-4 transition-all hover:border-white hover:bg-white/5 relative">
+            <div class="absolute top-0 left-0 text-gray-600 text-xs">┌─</div>
+            <div class="absolute bottom-0 right-0 text-gray-600 text-xs">─┘</div>
+            <div class="text-2xl flex-shrink-0">{{ kit.emoji }}</div>
+            <div class="flex-1">
+              <h3 class="font-bold text-xs tracking-wide mb-1">{{ kit.title }}</h3>
+              <p class="text-gray-400 text-xs leading-relaxed">{{ kit.desc }}</p>
+            </div>
+          </div>
+        @endforeach
+      </div>
+
+      <div id="products" class="ecosystem-content hidden grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        @foreach(products as product)
+          <div class="flex gap-3 items-start border border-gray-700 p-4 transition-all hover:border-white hover:bg-white/5 relative">
+            <div class="absolute top-0 left-0 text-gray-600 text-xs">┌─</div>
+            <div class="absolute bottom-0 right-0 text-gray-600 text-xs">─┘</div>
+            <div class="text-2xl flex-shrink-0">{{ product.emoji }}</div>
+            <div class="flex-1">
+              <h3 class="font-bold text-xs tracking-wide mb-1">{{ product.title }}</h3>
+              <p class="text-gray-400 text-xs leading-relaxed">{{ product.desc }}</p>
+            </div>
+          </div>
+        @endforeach
+      </div>
+    </div>
+  </section>
+
+  <script>
+    if (typeof window !== 'undefined') {
+      window.addEventListener('DOMContentLoaded', () => {
+        const tabs = document.querySelectorAll('.ecosystem-tab');
+        const contents = document.querySelectorAll('.ecosystem-content');
+
+        tabs.forEach(tab => {
+          tab.addEventListener('click', () => {
+            const targetTab = tab.dataset.tab;
+
+            // Update active tab
+            tabs.forEach(t => {
+              t.classList.remove('border-white', 'text-white');
+              t.classList.add('border-transparent', 'text-gray-400');
+            });
+            tab.classList.add('border-white', 'text-white');
+            tab.classList.remove('border-transparent', 'text-gray-400');
+
+            // Show/hide content
+            contents.forEach(content => {
+              if (content.id === targetTab) {
+                content.classList.remove('hidden');
+              } else {
+                content.classList.add('hidden');
+              }
+            });
+          });
+        });
+      });
+    }
+  </script>
+
+  <!-- Backend Section -->
+  <section id="backend" class="py-24 border-b border-dashed border-gray-800">
+    <div class="max-w-7xl mx-auto px-8">
+      <h2 class="text-4xl font-bold mb-4">
+        Backend
+      </h2>
+      <p class="text-xl mb-6 text-gray-300">Code that speaks for itself</p>
+      <p class="text-gray-400 mb-12 max-w-3xl text-base leading-relaxed">
+        Simple, elegant syntax powers amazing functionality. Every feature has been considered to create a thoughtful and cohesive development experience.
+      </p>
+
+      <div class="grid md:grid-cols-2 gap-12">
+        <div class="flex flex-wrap gap-2 content-start">
+          @foreach(backendFeatures as feature)
+            <button
+              class="backend-feature-btn px-4 py-2 text-sm text-gray-300 hover:text-white transition-all border border-gray-700 hover:border-white bg-transparent"
+              data-feature="{{ feature.id }}"
+            >
+              {{ feature.title }}
+            </button>
+          @endforeach
+        </div>
+        <div class="border border-gray-700 bg-black/50 p-6 relative h-fit sticky top-8">
+          <div class="absolute top-0 left-0 text-gray-600 text-xs">┌─</div>
+          <div class="absolute bottom-0 right-0 text-gray-600 text-xs">─┘</div>
+          <div id="backend-code-title" class="text-gray-500 text-xs mb-4 font-mono">Authentication</div>
+          <pre id="backend-code-content" class="text-sm font-mono leading-relaxed"><code><span class="text-purple-400">import</span> { <span class="text-yellow-300">Auth</span> } <span class="text-purple-400">from</span> <span class="text-green-400">'@stacksjs/auth'</span>
+
+<span class="text-gray-500">// Login user</span>
+<span class="text-purple-400">const</span> <span class="text-yellow-300">user</span> = <span class="text-purple-400">await</span> <span class="text-yellow-300">Auth</span>.<span class="text-blue-400">attempt</span>({
+  <span class="text-blue-400">email</span>: <span class="text-green-400">'user@example.com'</span>,
+  <span class="text-blue-400">password</span>: <span class="text-green-400">'secret'</span>
+})
+
+<span class="text-gray-500">// Get authenticated user</span>
+<span class="text-purple-400">const</span> <span class="text-yellow-300">current</span> = <span class="text-purple-400">await</span> <span class="text-yellow-300">Auth</span>.<span class="text-blue-400">user</span>()</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    if (typeof window !== 'undefined') {
+      window.addEventListener('DOMContentLoaded', () => {
+        const featureData = {
+          @foreach(backendFeatures as feature)
+            '{{ feature.id }}': {
+              title: '{{ feature.title }}',
+              code: `{{ feature.code }}`
+            },
+          @endforeach
+        };
+
+        const buttons = document.querySelectorAll('.backend-feature-btn');
+        const codeTitle = document.getElementById('backend-code-title');
+        const codeContent = document.getElementById('backend-code-content');
+
+        // Set first button as active
+        buttons[0]?.classList.add('border-white', 'text-white', 'bg-white/5');
+        buttons[0]?.classList.remove('border-gray-700', 'text-gray-300');
+
+        buttons.forEach(button => {
+          button.addEventListener('click', () => {
+            const featureId = button.dataset.feature;
+            const feature = featureData[featureId];
+
+            if (feature) {
+              codeTitle.textContent = feature.title;
+              codeContent.innerHTML = feature.code;
+
+              // Update active state
+              buttons.forEach(b => {
+                b.classList.remove('border-white', 'text-white', 'bg-white/5');
+                b.classList.add('border-gray-700', 'text-gray-300');
+              });
+              button.classList.add('border-white', 'text-white', 'bg-white/5');
+              button.classList.remove('border-gray-700', 'text-gray-300');
+            }
+          });
+        });
+      });
+    }
+  </script>
+
+  <!-- Frontend Section -->
+  <section id="frontend" class="py-24 border-b border-dashed border-gray-800">
+    <div class="max-w-7xl mx-auto px-8">
+      <h2 class="text-4xl font-bold mb-4">
+        Frontend
+      </h2>
+      <p class="text-xl mb-6 text-gray-300">Develop dynamic UIs with helpers for atomic design, and much more</p>
+      <p class="text-gray-400 mb-12 max-w-3xl text-base leading-relaxed">
+        ⚡️ Powered by Bun, Tauri, Headwind, Vite, VitePress and Vue
+      </p>
+
+      <div class="grid md:grid-cols-2 gap-12">
+        <div class="flex flex-wrap gap-2 content-start">
+          @foreach(frontendFeatures as feature)
+            <button
+              class="frontend-feature-btn px-4 py-2 text-sm text-gray-300 hover:text-white transition-all border border-gray-700 hover:border-white bg-transparent"
+              data-feature="{{ feature.id }}"
+            >
+              {{ feature.title }}
+            </button>
+          @endforeach
+        </div>
+        <div class="border border-gray-700 bg-black/50 p-6 relative h-fit sticky top-8">
+          <div class="absolute top-0 left-0 text-gray-600 text-xs">┌─</div>
+          <div class="absolute bottom-0 right-0 text-gray-600 text-xs">─┘</div>
+          <div id="frontend-code-title" class="text-gray-500 text-xs mb-4 font-mono">Components</div>
+          <pre id="frontend-code-content" class="text-sm font-mono leading-relaxed"><code><span class="text-gray-500">&lt;</span><span class="text-pink-400">template</span><span class="text-gray-500">&gt;</span>
+  <span class="text-gray-500">&lt;</span><span class="text-pink-400">Card</span> <span class="text-blue-400">title</span>=<span class="text-green-400">"Hello"</span><span class="text-gray-500">&gt;</span>
+    <span class="text-gray-500">&lt;</span><span class="text-pink-400">p</span><span class="text-gray-500">&gt;</span>Reusable components<span class="text-gray-500">&lt;/</span><span class="text-pink-400">p</span><span class="text-gray-500">&gt;</span>
+  <span class="text-gray-500">&lt;/</span><span class="text-pink-400">Card</span><span class="text-gray-500">&gt;</span>
+<span class="text-gray-500">&lt;/</span><span class="text-pink-400">template</span><span class="text-gray-500">&gt;</span>
+
+<span class="text-gray-500">&lt;</span><span class="text-pink-400">script setup</span><span class="text-gray-500">&gt;</span>
+<span class="text-gray-500">// Auto-imported</span>
+<span class="text-gray-500">&lt;/</span><span class="text-pink-400">script</span><span class="text-gray-500">&gt;</span></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    if (typeof window !== 'undefined') {
+      window.addEventListener('DOMContentLoaded', () => {
+        const featureData = {
+          @foreach(frontendFeatures as feature)
+            '{{ feature.id }}': {
+              title: '{{ feature.title }}',
+              code: `{{ feature.code }}`
+            },
+          @endforeach
+        };
+
+        const buttons = document.querySelectorAll('.frontend-feature-btn');
+        const codeTitle = document.getElementById('frontend-code-title');
+        const codeContent = document.getElementById('frontend-code-content');
+
+        // Set first button as active
+        buttons[0]?.classList.add('border-white', 'text-white', 'bg-white/5');
+        buttons[0]?.classList.remove('border-gray-700', 'text-gray-300');
+
+        buttons.forEach(button => {
+          button.addEventListener('click', () => {
+            const featureId = button.dataset.feature;
+            const feature = featureData[featureId];
+
+            if (feature) {
+              codeTitle.textContent = feature.title;
+              codeContent.innerHTML = feature.code;
+
+              // Update active state
+              buttons.forEach(b => {
+                b.classList.remove('border-white', 'text-white', 'bg-white/5');
+                b.classList.add('border-gray-700', 'text-gray-300');
+              });
+              button.classList.add('border-white', 'text-white', 'bg-white/5');
+              button.classList.remove('border-gray-700', 'text-gray-300');
+            }
+          });
+        });
+      });
+    }
+  </script>
+
+  <!-- Cloud Section -->
+  <section id="cloud" class="py-24 border-b border-dashed border-gray-800">
+    <div class="max-w-7xl mx-auto px-8">
+      <h2 class="text-4xl font-bold mb-4">
+        Cloud
+      </h2>
+      <p class="text-xl mb-6 text-gray-300">Develop & maintain cloud infrastructure with ease</p>
+      <p class="text-gray-400 mb-12 max-w-3xl text-base leading-relaxed">
+        Imagine Vercel, Vapor and Forge having been unified.
+      </p>
+
+      <div class="grid md:grid-cols-2 gap-12">
+        <div class="flex flex-wrap gap-2 content-start">
+          @foreach(cloudFeatures as feature)
+            <button
+              class="cloud-feature-btn px-4 py-2 text-sm text-gray-300 hover:text-white transition-all border border-gray-700 hover:border-white bg-transparent"
+              data-feature="{{ feature.id }}"
+            >
+              {{ feature.title }}
+            </button>
+          @endforeach
+        </div>
+        <div class="border border-gray-700 bg-black/50 p-6 relative h-fit sticky top-8">
+          <div class="absolute top-0 left-0 text-gray-600 text-xs">┌─</div>
+          <div class="absolute bottom-0 right-0 text-gray-600 text-xs">─┘</div>
+          <div id="cloud-code-title" class="text-gray-500 text-xs mb-4 font-mono">Deployment</div>
+          <pre id="cloud-code-content" class="text-sm font-mono leading-relaxed"><code><span class="text-purple-400">export default</span> {
+  <span class="text-blue-400">provider</span>: <span class="text-green-400">'aws'</span>,
+  <span class="text-blue-400">region</span>: <span class="text-green-400">'us-east-1'</span>,
+
+  <span class="text-blue-400">compute</span>: {
+    <span class="text-blue-400">type</span>: <span class="text-green-400">'serverless'</span>,
+    <span class="text-blue-400">memory</span>: <span class="text-orange-400">1024</span>
+  }
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    if (typeof window !== 'undefined') {
+      window.addEventListener('DOMContentLoaded', () => {
+        const featureData = {
+          @foreach(cloudFeatures as feature)
+            '{{ feature.id }}': {
+              title: '{{ feature.title }}',
+              code: `{{ feature.code }}`
+            },
+          @endforeach
+        };
+
+        const buttons = document.querySelectorAll('.cloud-feature-btn');
+        const codeTitle = document.getElementById('cloud-code-title');
+        const codeContent = document.getElementById('cloud-code-content');
+
+        // Set first button as active
+        buttons[0]?.classList.add('border-white', 'text-white', 'bg-white/5');
+        buttons[0]?.classList.remove('border-gray-700', 'text-gray-300');
+
+        buttons.forEach(button => {
+          button.addEventListener('click', () => {
+            const featureId = button.dataset.feature;
+            const feature = featureData[featureId];
+
+            if (feature) {
+              codeTitle.textContent = feature.title;
+              codeContent.innerHTML = feature.code;
+
+              // Update active state
+              buttons.forEach(b => {
+                b.classList.remove('border-white', 'text-white', 'bg-white/5');
+                b.classList.add('border-gray-700', 'text-gray-300');
+              });
+              button.classList.add('border-white', 'text-white', 'bg-white/5');
+              button.classList.remove('border-gray-700', 'text-gray-300');
+            }
+          });
+        });
+      });
+    }
+  </script>
+
+  <!-- CI/CD Section -->
+  <section id="cicd" class="py-24 border-b border-dashed border-gray-800">
+    <div class="max-w-7xl mx-auto px-8">
+      <h2 class="text-4xl font-bold mb-4">
+        CI/CD
+      </h2>
+      <p class="text-xl mb-6 text-gray-300">Focus on coding, not publishing</p>
+      <p class="text-gray-400 mb-12 max-w-3xl text-base leading-relaxed">
+        Automated deployment and release management built-in.
+      </p>
+
+      <div class="grid md:grid-cols-2 gap-12">
+        <div class="flex flex-wrap gap-2 content-start">
+          @foreach(cicdFeatures as feature)
+            <button
+              class="cicd-feature-btn px-4 py-2 text-sm text-gray-300 hover:text-white transition-all border border-gray-700 hover:border-white bg-transparent"
+              data-feature="{{ feature.id }}"
+            >
+              {{ feature.title }}
+            </button>
+          @endforeach
+        </div>
+        <div class="border border-gray-700 bg-black/50 p-6 relative h-fit sticky top-8">
+          <div class="absolute top-0 left-0 text-gray-600 text-xs">┌─</div>
+          <div class="absolute bottom-0 right-0 text-gray-600 text-xs">─┘</div>
+          <div id="cicd-code-title" class="text-gray-500 text-xs mb-4 font-mono">Deploy</div>
+          <pre id="cicd-code-content" class="text-sm font-mono leading-relaxed"><code><span class="text-gray-500">$</span> <span class="text-blue-400">buddy deploy</span>
+
+<span class="text-yellow-300">→</span> <span class="text-gray-300">Building project...</span>
+<span class="text-yellow-300">→</span> <span class="text-gray-300">Running tests...</span>
+<span class="text-green-400">✓</span> <span class="text-green-400">All tests passed</span>
+
+<span class="text-yellow-300">→</span> <span class="text-gray-300">Deploying...</span>
+<span class="text-green-400">✓</span> <span class="text-green-400">Deployed successfully</span></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    if (typeof window !== 'undefined') {
+      window.addEventListener('DOMContentLoaded', () => {
+        const featureData = {
+          @foreach(cicdFeatures as feature)
+            '{{ feature.id }}': {
+              title: '{{ feature.title }}',
+              code: `{{ feature.code }}`
+            },
+          @endforeach
+        };
+
+        const buttons = document.querySelectorAll('.cicd-feature-btn');
+        const codeTitle = document.getElementById('cicd-code-title');
+        const codeContent = document.getElementById('cicd-code-content');
+
+        // Set first button as active
+        buttons[0]?.classList.add('border-white', 'text-white', 'bg-white/5');
+        buttons[0]?.classList.remove('border-gray-700', 'text-gray-300');
+
+        buttons.forEach(button => {
+          button.addEventListener('click', () => {
+            const featureId = button.dataset.feature;
+            const feature = featureData[featureId];
+
+            if (feature) {
+              codeTitle.textContent = feature.title;
+              codeContent.innerHTML = feature.code;
+
+              // Update active state
+              buttons.forEach(b => {
+                b.classList.remove('border-white', 'text-white', 'bg-white/5');
+                b.classList.add('border-gray-700', 'text-gray-300');
+              });
+              button.classList.add('border-white', 'text-white', 'bg-white/5');
+              button.classList.remove('border-gray-700', 'text-gray-300');
+            }
+          });
+        });
+      });
+    }
+  </script>
+
+  <!-- Developer Experience Section -->
+  <section id="dx" class="py-24 border-b border-dashed border-gray-800">
+    <div class="max-w-7xl mx-auto px-8">
+      <h2 class="text-4xl font-bold mb-4">
+        Developer Experience
+      </h2>
+      <p class="text-xl mb-6 text-gray-300">Convention over configuration, while staying wholly configurable</p>
+      <p class="text-gray-400 mb-12 max-w-3xl text-base leading-relaxed">
+        No more boilerplate. Just ship.
+      </p>
+
+      <div class="grid md:grid-cols-2 gap-12">
+        <div class="flex flex-wrap gap-2 content-start">
+          @foreach(dxFeatures as feature)
+            <button
+              class="dx-feature-btn px-4 py-2 text-sm text-gray-300 hover:text-white transition-all border border-gray-700 hover:border-white bg-transparent"
+              data-feature="{{ feature.id }}"
+            >
+              {{ feature.title }}
+            </button>
+          @endforeach
+        </div>
+        <div class="border border-gray-700 bg-black/50 p-6 relative h-fit sticky top-8">
+          <div class="absolute top-0 left-0 text-gray-600 text-xs">┌─</div>
+          <div class="absolute bottom-0 right-0 text-gray-600 text-xs">─┘</div>
+          <div id="dx-code-title" class="text-gray-500 text-xs mb-4 font-mono">Auto Imports</div>
+          <pre id="dx-code-content" class="text-sm font-mono leading-relaxed"><code><span class="text-gray-500">// No imports needed!</span>
+<span class="text-purple-400">const</span> <span class="text-yellow-300">user</span> = <span class="text-purple-400">await</span> <span class="text-yellow-300">User</span>.<span class="text-blue-400">find</span>(<span class="text-orange-400">1</span>)
+
+<span class="text-gray-500">// All helpers auto-imported</span>
+<span class="text-purple-400">const</span> <span class="text-yellow-300">result</span> = <span class="text-blue-400">collect</span>(<span class="text-yellow-300">users</span>)
+  .<span class="text-blue-400">filter</span>(<span class="text-yellow-300">u</span> <span class="text-pink-400">=></span> <span class="text-yellow-300">u</span>.<span class="text-blue-400">active</span>)
+  .<span class="text-blue-400">toArray</span>()</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    if (typeof window !== 'undefined') {
+      window.addEventListener('DOMContentLoaded', () => {
+        const featureData = {
+          @foreach(dxFeatures as feature)
+            '{{ feature.id }}': {
+              title: '{{ feature.title }}',
+              code: `{{ feature.code }}`
+            },
+          @endforeach
+        };
+
+        const buttons = document.querySelectorAll('.dx-feature-btn');
+        const codeTitle = document.getElementById('dx-code-title');
+        const codeContent = document.getElementById('dx-code-content');
+
+        // Set first button as active
+        buttons[0]?.classList.add('border-white', 'text-white', 'bg-white/5');
+        buttons[0]?.classList.remove('border-gray-700', 'text-gray-300');
+
+        buttons.forEach(button => {
+          button.addEventListener('click', () => {
+            const featureId = button.dataset.feature;
+            const feature = featureData[featureId];
+
+            if (feature) {
+              codeTitle.textContent = feature.title;
+              codeContent.innerHTML = feature.code;
+
+              // Update active state
+              buttons.forEach(b => {
+                b.classList.remove('border-white', 'text-white', 'bg-white/5');
+                b.classList.add('border-gray-700', 'text-gray-300');
+              });
+              button.classList.add('border-white', 'text-white', 'bg-white/5');
+              button.classList.remove('border-gray-700', 'text-gray-300');
+            }
+          });
+        });
+      });
+    }
+  </script>
+
+  @include('BuddySection')
+
+  @include('PricingSection')
+
+  @include('CTASection')
+
+  @include('SponsorSection')
+
+  @include('Footer')
+</body>
+</html>

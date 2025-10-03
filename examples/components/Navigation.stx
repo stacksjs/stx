@@ -1,0 +1,30 @@
+<nav class="sticky top-0 bg-black border-b-2 border-white py-4 z-50 backdrop-blur-sm">
+  <div class="max-w-7xl mx-auto px-8 flex justify-between items-center flex-wrap gap-4">
+    <div class="font-bold text-xl tracking-widest">STACKS.JS</div>
+    <div class="flex gap-8 items-center flex-wrap">
+      <a href="#features" class="text-white no-underline text-sm hover:text-gray-400 transition-colors relative group">
+        FEATURES
+        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-white transition-all group-hover:w-full"></span>
+      </a>
+      <a href="#buddy" class="text-white no-underline text-sm hover:text-gray-400 transition-colors relative group">
+        BUDDY CLI
+        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-white transition-all group-hover:w-full"></span>
+      </a>
+      <a href="#pricing" class="text-white no-underline text-sm hover:text-gray-400 transition-colors relative group">
+        PRICING
+        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-white transition-all group-hover:w-full"></span>
+      </a>
+      <a href="https://stacksjs.org/docs" class="text-white no-underline text-sm hover:text-gray-400 transition-colors relative group">
+        DOCS
+        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-white transition-all group-hover:w-full"></span>
+      </a>
+      <a href="https://github.com/stacksjs/stacks" class="text-white no-underline text-sm hover:text-gray-400 transition-colors relative group">
+        GITHUB
+        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-white transition-all group-hover:w-full"></span>
+      </a>
+      <a href="https://stacksjs.org/dashboard" class="bg-white text-black px-6 py-2 font-semibold text-sm hover:bg-black hover:text-white border-2 border-white transition-all">
+        SUBSCRIBE
+      </a>
+    </div>
+  </div>
+</nav>

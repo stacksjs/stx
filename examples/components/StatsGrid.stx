@@ -1,0 +1,18 @@
+<div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+  <div class="border-2 border-white p-6 text-center">
+    <div class="text-4xl font-bold mb-2">100+</div>
+    <div class="text-xs text-gray-400 tracking-wider">FEATURES</div>
+  </div>
+  <div class="border-2 border-white p-6 text-center">
+    <div class="text-4xl font-bold mb-2">ZERO</div>
+    <div class="text-xs text-gray-400 tracking-wider">CONFIG NEEDED</div>
+  </div>
+  <div class="border-2 border-white p-6 text-center">
+    <div class="text-4xl font-bold mb-2">E2E</div>
+    <div class="text-xs text-gray-400 tracking-wider">TYPE SAFETY</div>
+  </div>
+  <div class="border-2 border-white p-6 text-center">
+    <div class="text-4xl font-bold mb-2">MIT</div>
+    <div class="text-xs text-gray-400 tracking-wider">OPEN SOURCE</div>
+  </div>
+</div>
