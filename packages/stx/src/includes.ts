@@ -31,8 +31,16 @@ export async function processIncludes(
   options: StxOptions,
   dependencies: Set<string>,
 ): Promise<string> {
-  // Get the partials directory
-  const partialsDir = options.partialsDir || path.join(path.dirname(filePath), 'partials')
+  // Get the partials directory and resolve to absolute path if needed
+  let partialsDir = options.partialsDir || path.join(path.dirname(filePath), 'partials')
+
+  // Resolve relative paths to absolute - check if it's already absolute
+  if (partialsDir && !path.isAbsolute(partialsDir)) {
+    // Resolve relative to the directory containing the stx package
+    // This handles cases like '../../examples/components' in stx.config.ts
+    const configDir = path.resolve(__dirname, '..')
+    partialsDir = path.resolve(configDir, partialsDir)
+  }
 
   // First handle partial alias (replace @partial with @include)
   let output = template.replace(/@partial\s*\(['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (_, includePath, varsString) => `@include('${includePath}'${varsString ? `, ${varsString}` : ''})`)

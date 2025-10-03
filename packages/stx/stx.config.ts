@@ -2,8 +2,8 @@ import type { StxOptions } from '@stacksjs/stx'
 
 const config: StxOptions = {
   enabled: true,
-  partialsDir: 'partials',
-  componentsDir: 'components',
+  partialsDir: '../../examples/components',
+  componentsDir: '../../examples/components',
   debug: false,
   cache: true,
   cachePath: '.stx/cache',

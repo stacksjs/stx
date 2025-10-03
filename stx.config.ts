@@ -14,8 +14,8 @@ const config: StxOptions = {
   },
 
   // Component and partial directories
-  componentsDir: './components',
-  partialsDir: './partials',
+  componentsDir: './examples/components',
+  partialsDir: './examples/components',
 
   // Other options
   debug: process.env.NODE_ENV !== 'production',

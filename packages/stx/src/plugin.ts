@@ -2,16 +2,16 @@
 import type { BunPlugin } from 'bun'
 import type { StxOptions } from './'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processDirectives } from './'
+import { buildWebComponents, cacheTemplate, checkCache, config, extractVariables, processDirectives } from './'
 import { devHelpers, errorLogger, safeExecuteAsync, StxFileError, StxRuntimeError } from './error-handling'
 import { performanceMonitor } from './performance-utils'
 
 export const plugin: BunPlugin = {
   name: 'bun-plugin-stx',
   async setup(build) {
-    // Extract options from config or use defaults
+    // Extract options from loaded config or use defaults
     const options: StxOptions = {
-      ...defaultConfig,
+      ...config,
       ...(build.config as any)?.stx,
     }
 

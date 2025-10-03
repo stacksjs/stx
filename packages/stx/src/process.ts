@@ -1,5 +1,6 @@
 /* eslint-disable no-console, regexp/no-super-linear-backtracking */
 import type { StxOptions } from './types'
+import path from 'node:path'
 import { processA11yDirectives } from './a11y'
 import { processAnimationDirectives } from './animation'
 import { processMarkdownFileDirectives } from './assets'
@@ -67,6 +68,17 @@ async function processDirectivesInternal(
   options: StxOptions,
   dependencies: Set<string>,
 ): Promise<string> {
+  // Resolve relative paths in options to absolute paths
+  const resolvedOptions = { ...options }
+  if (resolvedOptions.partialsDir && !path.isAbsolute(resolvedOptions.partialsDir)) {
+    const configDir = path.resolve(__dirname, '..')
+    resolvedOptions.partialsDir = path.resolve(configDir, resolvedOptions.partialsDir)
+  }
+  if (resolvedOptions.componentsDir && !path.isAbsolute(resolvedOptions.componentsDir)) {
+    const configDir = path.resolve(__dirname, '..')
+    resolvedOptions.componentsDir = path.resolve(configDir, resolvedOptions.componentsDir)
+  }
+
   let output = template
 
   // First, remove all comments
@@ -132,12 +144,12 @@ async function processDirectivesInternal(
   // Load and process the layout if one was specified
   if (layoutPath) {
     try {
-      if (options.debug) {
+      if (resolvedOptions.debug) {
         console.log(`Processing layout: ${layoutPath} for file ${filePath}`)
       }
 
       const layoutFullPath = await safeExecuteAsync(
-        () => resolveTemplatePath(layoutPath, filePath, options, dependencies),
+        () => resolveTemplatePath(layoutPath, filePath, resolvedOptions, dependencies),
         null,
         (error) => {
           throw new StxRuntimeError(
@@ -154,7 +166,7 @@ async function processDirectivesInternal(
         const warning = `Layout not found: ${layoutPath} (referenced from ${filePath})`
         console.warn(warning)
 
-        if (options.debug) {
+        if (resolvedOptions.debug) {
           throw new StxRuntimeError(warning, filePath)
         }
 
@@ -179,7 +191,7 @@ async function processDirectivesInternal(
       // Check if the layout itself extends another layout
       const nestedLayoutMatch = layoutContent.match(/@extends\(\s*['"]([^'"]+)['"]\s*\)/)
       if (nestedLayoutMatch) {
-        if (options.debug) {
+        if (resolvedOptions.debug) {
           console.log(`Found nested layout: ${nestedLayoutMatch[1]} in ${layoutFullPath}`)
         }
 
@@ -208,7 +220,7 @@ async function processDirectivesInternal(
         // Process the nested layout by recursively calling processDirectives
         // with the modified template that includes the @extends directive
         const nestedTemplate = `@extends('${nestedLayoutMatch[1]}')${processedLayout}`
-        return await processDirectives(nestedTemplate, nestedContext, layoutFullPath, options, dependencies)
+        return await processDirectives(nestedTemplate, nestedContext, layoutFullPath, resolvedOptions, dependencies)
       }
 
       // This is the final layout (doesn't extend another one)
@@ -239,7 +251,7 @@ async function processDirectivesInternal(
       processedLayout = processStackReplacements(processedLayout, stacks)
 
       // Process the fully combined layout content with all other directives
-      output = await processOtherDirectives(processedLayout, context, layoutFullPath, options, dependencies)
+      output = await processOtherDirectives(processedLayout, context, layoutFullPath, resolvedOptions, dependencies)
       return output
     }
     catch (error) {
@@ -249,7 +261,7 @@ async function processDirectivesInternal(
   }
 
   // If no layout, process all other directives
-  return await processOtherDirectives(output, context, filePath, options, dependencies)
+  return await processOtherDirectives(output, context, filePath, resolvedOptions, dependencies)
 }
 
 // Helper function to process all non-layout directives

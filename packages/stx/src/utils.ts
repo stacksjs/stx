@@ -831,6 +831,20 @@ export function getSourceLineInfo(
  * @param errorPattern A pattern to locate the error (fallback)
  * @returns A formatted error message
  */
+// ANSI color codes for better error formatting
+const colors = {
+  reset: '\x1B[0m',
+  bold: '\x1B[1m',
+  dim: '\x1B[2m',
+  red: '\x1B[31m',
+  yellow: '\x1B[33m',
+  blue: '\x1B[34m',
+  cyan: '\x1B[36m',
+  gray: '\x1B[90m',
+  bgRed: '\x1B[41m',
+  bgYellow: '\x1B[43m',
+}
+
 export function createDetailedErrorMessage(
   errorType: string,
   errorMessage: string,
@@ -840,19 +854,26 @@ export function createDetailedErrorMessage(
   errorPattern?: string,
 ): string {
   const { lineNumber, context } = getSourceLineInfo(template, errorPosition, errorPattern)
+  const fileName = filePath.split('/').pop()
 
-  let detailedMessage = `[${errorType} Error`
+  // Create a beautiful error message with colors
+  let detailedMessage = `\n${colors.bold}${colors.red}╭──────────────────────────────────────────────────────────────╮${colors.reset}\n`
+  detailedMessage += `${colors.bold}${colors.red}│${colors.reset} ${colors.bold}${colors.bgRed} ERROR ${colors.reset} ${colors.red}${errorType} Error${colors.reset}${' '.repeat(Math.max(0, 43 - errorType.length))}${colors.bold}${colors.red}│${colors.reset}\n`
+  detailedMessage += `${colors.bold}${colors.red}╰──────────────────────────────────────────────────────────────╯${colors.reset}\n`
+
+  // File and line information
+  detailedMessage += `\n${colors.cyan}${colors.bold}File:${colors.reset} ${colors.dim}${fileName}${colors.reset}`
 
   if (lineNumber > 0) {
-    detailedMessage += ` at line ${lineNumber}`
+    detailedMessage += ` ${colors.gray}(line ${lineNumber})${colors.reset}`
   }
 
-  detailedMessage += ` in ${filePath.split('/').pop()}]`
-  detailedMessage += `: ${errorMessage}`
+  // Error message
+  detailedMessage += `\n${colors.yellow}${colors.bold}Message:${colors.reset} ${errorMessage}\n`
 
   // Add detailed context for debug mode
   if (context) {
-    detailedMessage += `\n\nContext:\n${context}`
+    detailedMessage += `\n${colors.blue}${colors.bold}Context:${colors.reset}\n${colors.dim}${context}${colors.reset}\n`
   }
 
   return detailedMessage
