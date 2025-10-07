@@ -1,4 +1,3 @@
-/* eslint-disable regexp/no-super-linear-backtracking */
 import type { MarkdownOptions } from './types'
 
 /**
@@ -18,26 +17,26 @@ const defaultOptions: MarkdownOptions = {
 }
 
 // Character codes for fast comparison
-const CHAR_HASH = 35    // #
-const CHAR_STAR = 42    // *
-const CHAR_PLUS = 43    // +
-const CHAR_DASH = 45    // -
+const CHAR_HASH = 35 // #
+const CHAR_STAR = 42 // *
+const CHAR_PLUS = 43 // +
+const CHAR_DASH = 45 // -
 const CHAR_NEWLINE = 10 // \n
-const CHAR_SPACE = 32   // space
-const CHAR_GT = 62      // >
+const CHAR_SPACE = 32 // space
+const CHAR_GT = 62 // >
 const CHAR_BACKTICK = 96 // `
-const CHAR_PIPE = 124   // |
+const CHAR_PIPE = 124 // |
 const CHAR_UNDERSCORE = 95 // _
-const CHAR_LT = 60      // <
-const CHAR_AMP = 38     // &
-const CHAR_QUOT = 34    // "
-const CHAR_APOS = 39    // '
-const CHAR_LBRACKET = 91  // [
-const CHAR_RBRACKET = 93  // ]
-const CHAR_LPAREN = 40    // (
-const CHAR_RPAREN = 41    // )
-const CHAR_EXCLAIM = 33   // !
-const CHAR_TILDE = 126    // ~
+const CHAR_LT = 60 // <
+const CHAR_AMP = 38 // &
+const CHAR_QUOT = 34 // "
+const CHAR_APOS = 39 // '
+const CHAR_LBRACKET = 91 // [
+const CHAR_RBRACKET = 93 // ]
+const CHAR_LPAREN = 40 // (
+const CHAR_RPAREN = 41 // )
+const CHAR_EXCLAIM = 33 // !
+const CHAR_TILDE = 126 // ~
 
 /**
  * Parse markdown to HTML - ultra-fast single-pass version
@@ -192,16 +191,17 @@ function parseCodeBlock(content: string, start: number, len: number, opts: Markd
   // Find closing ```
   const codeStart = i
   while (i < len - 2) {
-    if (content.charCodeAt(i) === CHAR_BACKTICK &&
-        content.charCodeAt(i + 1) === CHAR_BACKTICK &&
-        content.charCodeAt(i + 2) === CHAR_BACKTICK) {
+    if (content.charCodeAt(i) === CHAR_BACKTICK
+      && content.charCodeAt(i + 1) === CHAR_BACKTICK
+      && content.charCodeAt(i + 2) === CHAR_BACKTICK) {
       const code = content.substring(codeStart, i)
       const escaped = opts.highlight && lang
         ? opts.highlight(code, lang)
         : escapeHtml(code)
 
       i += 3 // Skip closing ```
-      if (i < len && content.charCodeAt(i) === CHAR_NEWLINE) i++
+      if (i < len && content.charCodeAt(i) === CHAR_NEWLINE)
+        i++
 
       return {
         html: `<pre><code class="language-${lang}">${escaped}</code></pre>\n`,
@@ -226,7 +226,8 @@ function isHorizontalRule(content: string, start: number, len: number): boolean 
     const c = content.charCodeAt(i)
     if (c === char) {
       count++
-    } else if (c !== CHAR_SPACE && c !== 9) { // not space or tab
+    }
+    else if (c !== CHAR_SPACE && c !== 9) { // not space or tab
       return false
     }
     i++
@@ -256,7 +257,8 @@ function parseBlockquote(content: string, start: number, len: number, opts: Mark
     }
 
     i++ // Skip >
-    if (content.charCodeAt(i) === CHAR_SPACE) i++ // Skip optional space
+    if (content.charCodeAt(i) === CHAR_SPACE)
+      i++ // Skip optional space
 
     const lineStart = i
     while (i < len && content.charCodeAt(i) !== CHAR_NEWLINE) {
@@ -272,7 +274,8 @@ function parseBlockquote(content: string, start: number, len: number, opts: Mark
     }
   }
 
-  if (lines.length === 0) return null
+  if (lines.length === 0)
+    return null
 
   const innerContent = lines.join('\n')
   const innerHtml = parseMarkdown(innerContent, opts)
@@ -304,7 +307,8 @@ function parseList(content: string, start: number, len: number, opts: MarkdownOp
         break
       }
       i = j + 1
-    } else {
+    }
+    else {
       const c = content.charCodeAt(i)
       if (c !== CHAR_STAR && c !== CHAR_PLUS && c !== CHAR_DASH) {
         break
@@ -313,7 +317,8 @@ function parseList(content: string, start: number, len: number, opts: MarkdownOp
     }
 
     // Skip space
-    if (content.charCodeAt(i) === CHAR_SPACE) i++
+    if (content.charCodeAt(i) === CHAR_SPACE)
+      i++
 
     // Get line content
     const lineStart = i
@@ -324,12 +329,13 @@ function parseList(content: string, start: number, len: number, opts: MarkdownOp
     const lineContent = content.substring(lineStart, i)
 
     // Check for task list
-    const taskMatch = lineContent.match(/^\[([ xX])\]\s+(.+)/)
+    const taskMatch = lineContent.match(/^\[([ x])\]\s+(.+)/i)
     if (taskMatch) {
       const checked = taskMatch[1].toLowerCase() === 'x'
       const text = parseInline(taskMatch[2], opts)
       items.push(`<li><input type="checkbox"${checked ? ' checked disabled' : ' disabled'}> ${text}</li>\n`)
-    } else {
+    }
+    else {
       const text = parseInline(lineContent, opts)
       items.push(`<li>${text}</li>\n`)
     }
@@ -337,13 +343,17 @@ function parseList(content: string, start: number, len: number, opts: MarkdownOp
     i++ // Skip newline
 
     // Check if next line is also a list item
-    if (i >= len) break
+    if (i >= len)
+      break
     const nextChar = content.charCodeAt(i)
-    if (ordered && (nextChar < 48 || nextChar > 57)) break
-    if (!ordered && nextChar !== CHAR_STAR && nextChar !== CHAR_PLUS && nextChar !== CHAR_DASH) break
+    if (ordered && (nextChar < 48 || nextChar > 57))
+      break
+    if (!ordered && nextChar !== CHAR_STAR && nextChar !== CHAR_PLUS && nextChar !== CHAR_DASH)
+      break
   }
 
-  if (items.length === 0) return null
+  if (items.length === 0)
+    return null
 
   const tag = ordered ? 'ol' : 'ul'
   return {
@@ -360,36 +370,44 @@ function parseTable(content: string, start: number, len: number, opts: MarkdownO
   let i = start
 
   // Parse header row
-  if (content.charCodeAt(i) !== CHAR_PIPE) return null
+  if (content.charCodeAt(i) !== CHAR_PIPE)
+    return null
 
   const headerStart = i
   while (i < len && content.charCodeAt(i) !== CHAR_NEWLINE) i++
-  if (i >= len) return null
+  if (i >= len)
+    return null
 
   const headerLine = content.substring(headerStart, i)
   i++ // Skip newline
 
   // Parse separator row
   const sepStart = i
-  if (i >= len || content.charCodeAt(i) !== CHAR_PIPE) return null
+  if (i >= len || content.charCodeAt(i) !== CHAR_PIPE)
+    return null
 
   while (i < len && content.charCodeAt(i) !== CHAR_NEWLINE) i++
-  if (i >= len) return null
+  if (i >= len)
+    return null
 
   const sepLine = content.substring(sepStart, i)
 
   // Validate separator
-  if (!/^\|[\s\-:|]+\|$/.test(sepLine)) return null
+  if (!/^\|[\s\-:|]+\|$/.test(sepLine))
+    return null
 
   i++ // Skip newline
 
   // Parse header
   const headers = headerLine.split('|').slice(1, -1).map(h => h.trim()).filter(h => h)
-  const aligns = sepLine.split('|').slice(1, -1).map(cell => {
+  const aligns = sepLine.split('|').slice(1, -1).map((cell) => {
     const trimmed = cell.trim()
-    if (trimmed.startsWith(':') && trimmed.endsWith(':')) return 'center'
-    if (trimmed.endsWith(':')) return 'right'
-    if (trimmed.startsWith(':')) return 'left'
+    if (trimmed.startsWith(':') && trimmed.endsWith(':'))
+      return 'center'
+    if (trimmed.endsWith(':'))
+      return 'right'
+    if (trimmed.startsWith(':'))
+      return 'left'
     return null
   })
 
@@ -481,8 +499,8 @@ function parseInline(text: string, opts: MarkdownOptions): string {
     const char = text.charCodeAt(i)
 
     // Strong emphasis **text** or __text__
-    if ((char === CHAR_STAR && text.charCodeAt(i + 1) === CHAR_STAR) ||
-        (char === CHAR_UNDERSCORE && text.charCodeAt(i + 1) === CHAR_UNDERSCORE)) {
+    if ((char === CHAR_STAR && text.charCodeAt(i + 1) === CHAR_STAR)
+      || (char === CHAR_UNDERSCORE && text.charCodeAt(i + 1) === CHAR_UNDERSCORE)) {
       const marker = char
       const end = findClosingMarker(text, i + 2, len, marker, 2)
       if (end !== -1) {
@@ -570,9 +588,9 @@ function parseInline(text: string, opts: MarkdownOptions): string {
     const textStart = i
     while (i < len) {
       const c = text.charCodeAt(i)
-      if (c === CHAR_STAR || c === CHAR_UNDERSCORE || c === CHAR_BACKTICK ||
-          c === CHAR_LBRACKET || c === CHAR_EXCLAIM || c === CHAR_TILDE ||
-          (opts.breaks && c === CHAR_NEWLINE)) {
+      if (c === CHAR_STAR || c === CHAR_UNDERSCORE || c === CHAR_BACKTICK
+        || c === CHAR_LBRACKET || c === CHAR_EXCLAIM || c === CHAR_TILDE
+        || (opts.breaks && c === CHAR_NEWLINE)) {
         break
       }
       i++
@@ -580,7 +598,8 @@ function parseInline(text: string, opts: MarkdownOptions): string {
 
     if (i > textStart) {
       output.push(escapeHtml(text.substring(textStart, i)))
-    } else {
+    }
+    else {
       // Single character that didn't match anything
       output.push(escapeHtml(text[i]))
       i++

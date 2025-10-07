@@ -1,5 +1,6 @@
+/* eslint-disable no-console */
+import { readFileSync } from 'node:fs'
 import { parseMarkdown } from './src/index'
-import { readFileSync } from 'fs'
 
 const large = readFileSync('../benchmarks/fixtures/large.md', 'utf-8')
 

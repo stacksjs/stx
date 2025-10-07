@@ -1,16 +1,17 @@
-import { Bench } from 'tinybench'
+/* eslint-disable no-console */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-
 // Our implementation
 import { parseMarkdown } from '@stacksjs/markdown'
 
+import MarkdownIt from 'markdown-it'
+
 // Competitors
 import { marked } from 'marked'
-import MarkdownIt from 'markdown-it'
 import { remark } from 'remark'
 import remarkHtml from 'remark-html'
 import { Converter as ShowdownConverter } from 'showdown'
+import { Bench } from 'tinybench'
 
 // Initialize parsers
 const md = new MarkdownIt()
@@ -36,7 +37,7 @@ function formatResult(name: string, bench: any) {
 }
 
 console.log('\n📊 Markdown Parsing Benchmarks\n')
-console.log('=' .repeat(70))
+console.log('='.repeat(70))
 
 // Small document benchmark
 console.log('\n📄 Small Document (< 1KB)\n')
@@ -66,12 +67,12 @@ for (const task of smallBench.tasks) {
 
 // Find fastest
 const smallFastest = smallBench.tasks.reduce((a, b) =>
-  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b
+  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b,
 )
 console.log(`\n🏆 Fastest: ${smallFastest.name}`)
 
 // Medium document benchmark
-console.log('\n' + '='.repeat(70))
+console.log(`\n${'='.repeat(70)}`)
 console.log('\n📄 Medium Document (~2-3KB)\n')
 const mediumBench = new Bench({ time: 1000 })
 
@@ -98,12 +99,12 @@ for (const task of mediumBench.tasks) {
 }
 
 const mediumFastest = mediumBench.tasks.reduce((a, b) =>
-  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b
+  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b,
 )
 console.log(`\n🏆 Fastest: ${mediumFastest.name}`)
 
 // Large document benchmark
-console.log('\n' + '='.repeat(70))
+console.log(`\n${'='.repeat(70)}`)
 console.log('\n📄 Large Document (~50KB, 50 sections)\n')
 const largeBench = new Bench({ time: 1000 })
 
@@ -130,12 +131,12 @@ for (const task of largeBench.tasks) {
 }
 
 const largeFastest = largeBench.tasks.reduce((a, b) =>
-  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b
+  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b,
 )
 console.log(`\n🏆 Fastest: ${largeFastest.name}`)
 
 // Summary
-console.log('\n' + '='.repeat(70))
+console.log(`\n${'='.repeat(70)}`)
 console.log('\n📈 Summary\n')
 
 const allBenches = [
@@ -147,21 +148,23 @@ const allBenches = [
 for (const { name, bench } of allBenches) {
   const stacksjsTask = bench.tasks.find(t => t.name === '@stacksjs/markdown')
   const fastest = bench.tasks.reduce((a, b) =>
-    (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b
+    (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b,
   )
 
   if (stacksjsTask && fastest && stacksjsTask.result && fastest.result) {
     if (stacksjsTask.name === fastest.name) {
       console.log(`${name}: @stacksjs/markdown is the fastest`)
-    } else {
+    }
+    else {
       const speedup = stacksjsTask.result.mean / fastest.result.mean
       if (speedup < 1.05) {
         console.log(`${name}: @stacksjs/markdown is comparable to ${fastest.name}`)
-      } else {
+      }
+      else {
         console.log(`${name}: @stacksjs/markdown is ${speedup.toFixed(2)}x slower than ${fastest.name}`)
       }
     }
   }
 }
 
-console.log('\n' + '='.repeat(70) + '\n')
+console.log(`\n${'='.repeat(70)}\n`)

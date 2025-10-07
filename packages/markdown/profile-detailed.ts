@@ -1,12 +1,13 @@
-import { readFileSync } from 'fs'
+/* eslint-disable no-console */
+import { readFileSync } from 'node:fs'
 
 const large = readFileSync('../benchmarks/fixtures/large.md', 'utf-8')
 
 // Inline the parser here with timing instrumentation
-let tokenizeTime = 0
-let parseInlineTime = 0
-let renderTime = 0
-let parseInlineCalls = 0
+const tokenizeTime = 0
+const parseInlineTime = 0
+const renderTime = 0
+const parseInlineCalls = 0
 
 const start = performance.now()
 
@@ -19,11 +20,16 @@ let blockquotes = 0
 let tables = 0
 
 for (const line of lines) {
-  if (line.match(/^#{1,6}\s/)) headings++
-  if (line.match(/^[*\-+]\s/) || line.match(/^\d+\.\s/)) lists++
-  if (line.match(/^>/)) blockquotes++
-  if (line.match(/^\|/)) tables++
-  if (line.length > 0 && !line.match(/^[#*\-+>\d|`\s]/)) paragraphs++
+  if (line.match(/^#{1,6}\s/))
+    headings++
+  if (line.match(/^[*\-+]\s/) || line.match(/^\d+\.\s/))
+    lists++
+  if (line.match(/^>/))
+    blockquotes++
+  if (line.match(/^\|/))
+    tables++
+  if (line.length > 0 && !line.match(/^[#*\-+>\d|`\s]/))
+    paragraphs++
 }
 
 console.log('Document analysis:')
@@ -39,7 +45,7 @@ const inlineMarkers = {
   bold: (large.match(/\*\*/g) || []).length / 2,
   italic: (large.match(/(?<!\*)\*(?!\*)/g) || []).length / 2,
   code: (large.match(/`/g) || []).length / 2,
-  links: (large.match(/\[.*?\]\(.*?\)/g) || []).length
+  links: (large.match(/\[.*?\]\(.*?\)/g) || []).length,
 }
 
 console.log('\nInline elements:')

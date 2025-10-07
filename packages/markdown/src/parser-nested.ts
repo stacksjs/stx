@@ -142,47 +142,47 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
     if (char === 42 || char === 45 || char === 43 || (char >= 48 && char <= 57)) { // * - + 0-9
       match = content.slice(pos).match(REGEX.list)
       if (match) {
-      const listText = match[0]
-      const ordered = /^\d+\./.test(listText)
-      const items: Token[] = []
+        const listText = match[0]
+        const ordered = /^\d+\./.test(listText)
+        const items: Token[] = []
 
-      const itemRegex = ordered ? REGEX.listItem.ordered : REGEX.listItem.unordered
-      // Reset regex
-      itemRegex.lastIndex = 0
+        const itemRegex = ordered ? REGEX.listItem.ordered : REGEX.listItem.unordered
+        // Reset regex
+        itemRegex.lastIndex = 0
 
-      let itemMatch: RegExpExecArray | null
-      // eslint-disable-next-line no-cond-assign
-      while ((itemMatch = itemRegex.exec(listText))) {
-        const itemText = ordered ? itemMatch[2] : itemMatch[1]
+        let itemMatch: RegExpExecArray | null
+        // eslint-disable-next-line no-cond-assign
+        while ((itemMatch = itemRegex.exec(listText))) {
+          const itemText = ordered ? itemMatch[2] : itemMatch[1]
 
-        // Check for task list
-        const taskMatch = itemText.match(/^\[([ x])\]\s+(.+)/i)
-        if (taskMatch) {
-          items.push({
-            type: 'list_item',
-            task: true,
-            checked: taskMatch[1].toLowerCase() === 'x',
-            text: taskMatch[2],
-            tokens: parseInline(taskMatch[2], options),
-          })
+          // Check for task list
+          const taskMatch = itemText.match(/^\[([ x])\]\s+(.+)/i)
+          if (taskMatch) {
+            items.push({
+              type: 'list_item',
+              task: true,
+              checked: taskMatch[1].toLowerCase() === 'x',
+              text: taskMatch[2],
+              tokens: parseInline(taskMatch[2], options),
+            })
+          }
+          else {
+            items.push({
+              type: 'list_item',
+              text: itemText,
+              tokens: parseInline(itemText, options),
+            })
+          }
         }
-        else {
-          items.push({
-            type: 'list_item',
-            text: itemText,
-            tokens: parseInline(itemText, options),
-          })
-        }
-      }
 
-      tokens.push({
-        type: 'list',
-        ordered,
-        items,
-      })
+        tokens.push({
+          type: 'list',
+          ordered,
+          items,
+        })
 
-      pos += match[0].length
-      continue
+        pos += match[0].length
+        continue
       }
     }
 
@@ -211,7 +211,7 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
 
         // Pre-parse all table cells
         const rows = match[2].trim().split('\n').map((row) => {
-          return row.split('|').slice(1, -1).map(cell => {
+          return row.split('|').slice(1, -1).map((cell) => {
             const trimmed = cell.trim()
             return {
               text: trimmed,
@@ -287,7 +287,8 @@ function parseInline(text: string, options: MarkdownOptions, depth: number = 0):
   // Check cache for exact match (only at depth 0 to avoid issues with nested parsing)
   if (depth === 0 && !options.breaks) {
     const cached = parseInlineCache.get(text)
-    if (cached) return cached
+    if (cached)
+      return cached
   }
   const tokens: Token[] = []
   const len = text.length
@@ -338,7 +339,8 @@ function parseInline(text: string, options: MarkdownOptions, depth: number = 0):
         }
       }
 
-      if (found) continue
+      if (found)
+        continue
 
       // Emphasis (italic) - use indexOf for *text* or _text_
       const searchStr = text.slice(pos + 1)
@@ -480,7 +482,8 @@ function render(tokens: Token[], options: MarkdownOptions): string {
         parts.push(`<h${token.depth}${id}>`)
         if (token.tokens) {
           parts.push(renderInlineTokens(token.tokens, options))
-        } else {
+        }
+        else {
           parts.push(escapeHtml(token.text || ''))
         }
         parts.push(`</h${token.depth}>\n`)
@@ -548,7 +551,8 @@ function render(tokens: Token[], options: MarkdownOptions): string {
             parts.push(`<th${alignAttr}>`)
             if (typeof cell === 'object' && cell.tokens) {
               parts.push(renderInlineTokens(cell.tokens, options))
-            } else {
+            }
+            else {
               parts.push(escapeHtml(String(cell)))
             }
             parts.push('</th>\n')
@@ -568,7 +572,8 @@ function render(tokens: Token[], options: MarkdownOptions): string {
               parts.push(`<td${alignAttr}>`)
               if (typeof cell === 'object' && cell.tokens) {
                 parts.push(renderInlineTokens(cell.tokens, options))
-              } else {
+              }
+              else {
                 parts.push(escapeHtml(String(cell)))
               }
               parts.push('</td>\n')
@@ -622,7 +627,8 @@ function renderInlineTokens(tokens: Token[], options: MarkdownOptions): string {
         parts.push('<strong>')
         if (token.tokens) {
           parts.push(renderInlineTokens(token.tokens, options))
-        } else {
+        }
+        else {
           parts.push(escapeHtml(token.text || ''))
         }
         parts.push('</strong>')
@@ -632,7 +638,8 @@ function renderInlineTokens(tokens: Token[], options: MarkdownOptions): string {
         parts.push('<em>')
         if (token.tokens) {
           parts.push(renderInlineTokens(token.tokens, options))
-        } else {
+        }
+        else {
           parts.push(escapeHtml(token.text || ''))
         }
         parts.push('</em>')
@@ -646,7 +653,8 @@ function renderInlineTokens(tokens: Token[], options: MarkdownOptions): string {
         parts.push('<a href="', escapeHtml(token.href || ''), '">')
         if (token.tokens) {
           parts.push(renderInlineTokens(token.tokens, options))
-        } else {
+        }
+        else {
           parts.push(escapeHtml(token.text || ''))
         }
         parts.push('</a>')
@@ -660,7 +668,8 @@ function renderInlineTokens(tokens: Token[], options: MarkdownOptions): string {
         parts.push('<del>')
         if (token.tokens) {
           parts.push(renderInlineTokens(token.tokens, options))
-        } else {
+        }
+        else {
           parts.push(escapeHtml(token.text || ''))
         }
         parts.push('</del>')
@@ -680,9 +689,9 @@ function renderInlineTokens(tokens: Token[], options: MarkdownOptions): string {
 }
 
 // Character code constants for faster comparison
-const CHAR_AMP = 38  // &
-const CHAR_LT = 60   // <
-const CHAR_GT = 62   // >
+const CHAR_AMP = 38 // &
+const CHAR_LT = 60 // <
+const CHAR_GT = 62 // >
 const CHAR_QUOT = 34 // "
 const CHAR_APOS = 39 // '
 

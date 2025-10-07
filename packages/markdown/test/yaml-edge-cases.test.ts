@@ -48,7 +48,7 @@ mixed: "it's a 'mixed' quote"
 
     expect(result.single).toBe('value with: colon')
     expect(result.double).toBe('value with # hash')
-    expect(result.mixed).toBe("it's a 'mixed' quote")
+    expect(result.mixed).toBe('it\'s a \'mixed\' quote')
   })
 
   it('should handle empty arrays and objects', () => {

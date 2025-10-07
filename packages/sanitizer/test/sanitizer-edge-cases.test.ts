@@ -93,8 +93,16 @@ describe('html sanitizer - edge cases', () => {
 
   it('should handle all event handlers', () => {
     const events = [
-      'onclick', 'onload', 'onerror', 'onmouseover', 'onmouseout',
-      'onfocus', 'onblur', 'onchange', 'onsubmit', 'onkeydown',
+      'onclick',
+      'onload',
+      'onerror',
+      'onmouseover',
+      'onmouseout',
+      'onfocus',
+      'onblur',
+      'onchange',
+      'onsubmit',
+      'onkeydown',
     ]
 
     for (const event of events) {
@@ -218,7 +226,7 @@ describe('html sanitizer - edge cases', () => {
   })
 
   it('should handle very long tag names', () => {
-    const longTag = 'div' + 'x'.repeat(1000)
+    const longTag = `div${'x'.repeat(1000)}`
     const html = `<${longTag}>Content</${longTag}>`
     const result = sanitize(html, 'basic')
 

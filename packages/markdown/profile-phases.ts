@@ -1,6 +1,8 @@
-import { readFileSync } from 'fs'
-const large = readFileSync('../benchmarks/fixtures/large.md', 'utf-8')
+/* eslint-disable no-console */
+import { readFileSync } from 'node:fs'
 import { parse } from './src/index'
+
+const large = readFileSync('../benchmarks/fixtures/large.md', 'utf-8')
 
 const totalStart = performance.now()
 for (let i = 0; i < 100; i++) {

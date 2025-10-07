@@ -1,9 +1,10 @@
-import { readFileSync } from 'fs'
-
-const large = readFileSync('../benchmarks/fixtures/large.md', 'utf-8')
+/* eslint-disable no-console */
+import { readFileSync } from 'node:fs'
 
 // Import parser directly to access internal functions
 import { parse } from './src/index'
+
+const large = readFileSync('../benchmarks/fixtures/large.md', 'utf-8')
 
 console.log('Testing parsing vs rendering phases...\n')
 

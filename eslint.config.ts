@@ -15,6 +15,7 @@ const config: ESLintConfig = stacks({
     'docs/**',
     'fixtures/**',
     '**/*.md',
+    'packages/benchmarks/**',
   ],
 })
 

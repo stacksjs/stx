@@ -1,4 +1,3 @@
-/* eslint-disable regexp/no-super-linear-backtracking */
 import type { MarkdownOptions } from './types'
 
 /**
@@ -13,7 +12,7 @@ import type { MarkdownOptions } from './types'
 interface FlatToken {
   type: string
   tag?: string
-  nesting?: number  // 1 = open, 0 = self-closing, -1 = close
+  nesting?: number // 1 = open, 0 = self-closing, -1 = close
   content?: string
   markup?: string
   level?: number
@@ -52,19 +51,19 @@ const defaultOptions: MarkdownOptions = {
 }
 
 // Character codes for fast comparison
-const CODE_NEWLINE = 10  // \n
-const CODE_HASH = 35     // #
-const CODE_STAR = 42     // *
-const CODE_UNDERSCORE = 95  // _
-const CODE_BACKTICK = 96    // `
-const CODE_LBRACKET = 91    // [
-const CODE_BANG = 33        // !
-const CODE_TILDE = 126      // ~
-const CODE_PIPE = 124       // |
-const CODE_GT = 62          // >
-const CODE_MINUS = 45       // -
-const CODE_PLUS = 43        // +
-const CODE_SPACE = 32       // space
+const CODE_NEWLINE = 10 // \n
+const CODE_HASH = 35 // #
+const CODE_STAR = 42 // *
+const CODE_UNDERSCORE = 95 // _
+const CODE_BACKTICK = 96 // `
+const CODE_LBRACKET = 91 // [
+const CODE_BANG = 33 // !
+const CODE_TILDE = 126 // ~
+const CODE_PIPE = 124 // |
+const CODE_GT = 62 // >
+const CODE_MINUS = 45 // -
+const CODE_PLUS = 43 // +
+const CODE_SPACE = 32 // space
 
 export function parse(markdown: string, options: MarkdownOptions = {}): string {
   const opts = { ...defaultOptions, ...options }
@@ -103,36 +102,43 @@ function parseBlocks(state: ParserState): void {
 
     // Headings
     if (char === CODE_HASH && isStartOfLine(state)) {
-      if (parseHeading(state)) continue
+      if (parseHeading(state))
+        continue
     }
 
     // Code blocks
     if (char === CODE_BACKTICK && lookAhead(state, '```')) {
-      if (parseCodeBlock(state)) continue
+      if (parseCodeBlock(state))
+        continue
     }
 
     // Horizontal rule
     if ((char === CODE_STAR || char === CODE_MINUS || char === CODE_UNDERSCORE) && isStartOfLine(state)) {
-      if (parseHR(state)) continue
+      if (parseHR(state))
+        continue
     }
 
     // Blockquote
     if (char === CODE_GT && isStartOfLine(state)) {
-      if (parseBlockquote(state)) continue
+      if (parseBlockquote(state))
+        continue
     }
 
     // Lists
     if (isListMarker(char) && isStartOfLine(state)) {
-      if (parseList(state)) continue
+      if (parseList(state))
+        continue
     }
 
     // Tables
     if (state.options.gfm && char === CODE_PIPE && isStartOfLine(state)) {
-      if (parseTable(state)) continue
+      if (parseTable(state))
+        continue
     }
 
     // Paragraph
-    if (parseParagraph(state)) continue
+    if (parseParagraph(state))
+      continue
 
     // Fallback: skip character
     state.pos++
@@ -157,7 +163,8 @@ function isListMarker(char: number): boolean {
 }
 
 function pushPending(state: ParserState): void {
-  if (!state.pending) return
+  if (!state.pending)
+    return
 
   state.tokens.push({
     type: 'text',
@@ -170,7 +177,8 @@ function pushPending(state: ParserState): void {
 function pushToken(state: ParserState, type: string, tag: string, nesting: number): FlatToken {
   pushPending(state)
 
-  if (nesting < 0) state.level--
+  if (nesting < 0)
+    state.level--
 
   const token: FlatToken = {
     type,
@@ -179,7 +187,8 @@ function pushToken(state: ParserState, type: string, tag: string, nesting: numbe
     level: state.level,
   }
 
-  if (nesting > 0) state.level++
+  if (nesting > 0)
+    state.level++
 
   state.tokens.push(token)
   return token
@@ -272,10 +281,13 @@ function parseHR(state: ParserState): boolean {
 
   while (state.pos < state.posMax) {
     const char = state.src.charCodeAt(state.pos)
-    if (char === marker) count++
-    else if (char !== CODE_SPACE && char !== CODE_NEWLINE) break
+    if (char === marker)
+      count++
+    else if (char !== CODE_SPACE && char !== CODE_NEWLINE)
+      break
     state.pos++
-    if (char === CODE_NEWLINE) break
+    if (char === CODE_NEWLINE)
+      break
   }
 
   if (count >= 3) {
@@ -293,7 +305,8 @@ function parseBlockquote(state: ParserState): boolean {
 
   while (state.pos < state.posMax && state.src.charCodeAt(state.pos) === CODE_GT) {
     state.pos++ // skip >
-    if (state.src.charCodeAt(state.pos) === CODE_SPACE) state.pos++
+    if (state.src.charCodeAt(state.pos) === CODE_SPACE)
+      state.pos++
 
     const lineStart = state.pos
     let lineEnd = state.pos
@@ -332,14 +345,18 @@ function parseList(state: ParserState): boolean {
         state.pos++
         num++
       }
-      if (num === 0 || state.src.charCodeAt(state.pos) !== 46) break // not a number or missing dot
+      if (num === 0 || state.src.charCodeAt(state.pos) !== 46)
+        break // not a number or missing dot
       state.pos++ // skip dot
-    } else {
-      if (char !== CODE_STAR && char !== CODE_MINUS && char !== CODE_PLUS) break
+    }
+    else {
+      if (char !== CODE_STAR && char !== CODE_MINUS && char !== CODE_PLUS)
+        break
       state.pos++
     }
 
-    if (state.src.charCodeAt(state.pos) !== CODE_SPACE) break
+    if (state.src.charCodeAt(state.pos) !== CODE_SPACE)
+      break
     state.pos++ // skip space
 
     // Get item content
@@ -352,7 +369,7 @@ function parseList(state: ParserState): boolean {
     let content = state.src.slice(itemStart, itemEnd).trim()
 
     // Check for task list item
-    const taskMatch = content.match(/^\[([ xX])\]\s+(.+)/)
+    const taskMatch = content.match(/^\[([ x])\]\s+(.+)/i)
     if (taskMatch) {
       const checked = taskMatch[1].toLowerCase() === 'x'
       content = taskMatch[2]
@@ -362,7 +379,8 @@ function parseList(state: ParserState): boolean {
 
       parseInline(state, content)
       pushToken(state, 'list_item_close', 'li', -1)
-    } else {
+    }
+    else {
       pushToken(state, 'list_item_open', 'li', 1)
       parseInline(state, content)
       pushToken(state, 'list_item_close', 'li', -1)
@@ -372,7 +390,8 @@ function parseList(state: ParserState): boolean {
 
     // Check if next line is also a list item
     const nextChar = state.src.charCodeAt(state.pos)
-    if (!isListMarker(nextChar)) break
+    if (!isListMarker(nextChar))
+      break
   }
 
   pushToken(state, isOrdered ? 'ordered_list_close' : 'bullet_list_close', isOrdered ? 'ol' : 'ul', -1)
@@ -412,11 +431,14 @@ function parseTable(state: ParserState): boolean {
 
   // Parse alignment
   const alignCells = alignLine.split('|').slice(1, -1)
-  const align: Array<string | null> = alignCells.map(cell => {
+  const align: Array<string | null> = alignCells.map((cell) => {
     const trimmed = cell.trim()
-    if (trimmed.startsWith(':') && trimmed.endsWith(':')) return 'center'
-    if (trimmed.endsWith(':')) return 'right'
-    if (trimmed.startsWith(':')) return 'left'
+    if (trimmed.startsWith(':') && trimmed.endsWith(':'))
+      return 'center'
+    if (trimmed.endsWith(':'))
+      return 'right'
+    if (trimmed.startsWith(':'))
+      return 'left'
     return null
   })
 
@@ -536,22 +558,26 @@ function parseInline(state: ParserState, content: string): void {
 
     // Inline code
     if (char === CODE_BACKTICK) {
-      if (scanCode(state)) continue
+      if (scanCode(state))
+        continue
     }
 
     // Links
     if (char === CODE_LBRACKET) {
-      if (scanLink(state)) continue
+      if (scanLink(state))
+        continue
     }
 
     // Images
     if (char === CODE_BANG && state.src.charCodeAt(state.pos + 1) === CODE_LBRACKET) {
-      if (scanImage(state)) continue
+      if (scanImage(state))
+        continue
     }
 
     // Strikethrough (GFM)
     if (state.options.gfm && char === CODE_TILDE && state.src.charCodeAt(state.pos + 1) === CODE_TILDE) {
-      if (scanStrikethrough(state)) continue
+      if (scanStrikethrough(state))
+        continue
     }
 
     // Regular text
@@ -560,7 +586,8 @@ function parseInline(state: ParserState, content: string): void {
   }
 
   // Flush pending
-  if (state.pending) pushPending(state)
+  if (state.pending)
+    pushPending(state)
 
   // Second pass: match delimiters (emphasis/strong)
   processDelimiters(state)
@@ -713,15 +740,19 @@ function processDelimiters(state: ParserState): void {
   for (let i = 0; i < max; i++) {
     const startDelim = delimiters[i]
 
-    if (startDelim.marker !== CODE_STAR && startDelim.marker !== CODE_UNDERSCORE) continue
-    if (startDelim.end !== -1) continue
+    if (startDelim.marker !== CODE_STAR && startDelim.marker !== CODE_UNDERSCORE)
+      continue
+    if (startDelim.end !== -1)
+      continue
 
     // Find closing delimiter
     for (let j = i + 1; j < max; j++) {
       const endDelim = delimiters[j]
 
-      if (endDelim.marker !== startDelim.marker) continue
-      if (!endDelim.can_close) continue
+      if (endDelim.marker !== startDelim.marker)
+        continue
+      if (!endDelim.can_close)
+        continue
 
       // Match delimiters
       startDelim.end = j
@@ -757,7 +788,8 @@ function renderTokens(tokens: FlatToken[], options: MarkdownOptions): string {
       case 'heading_open':
         if (token.markup) {
           html += `<${token.tag} id="${token.markup}">`
-        } else {
+        }
+        else {
           html += `<${token.tag}>`
         }
         break
@@ -774,7 +806,8 @@ function renderTokens(tokens: FlatToken[], options: MarkdownOptions): string {
       case 'code_block':
         if (token.markup) {
           html += `<pre><code class="language-${token.markup}">${escapeHtml(token.content || '')}</code></pre>\n`
-        } else {
+        }
+        else {
           html += `<pre><code>${escapeHtml(token.content || '')}</code></pre>\n`
         }
         break
@@ -806,7 +839,8 @@ function renderTokens(tokens: FlatToken[], options: MarkdownOptions): string {
         html += '<li>'
         if (token.markup === 'checked') {
           html += '<input type="checkbox" checked disabled> '
-        } else if (token.markup === 'unchecked') {
+        }
+        else if (token.markup === 'unchecked') {
           html += '<input type="checkbox" disabled> '
         }
         break
@@ -840,7 +874,8 @@ function renderTokens(tokens: FlatToken[], options: MarkdownOptions): string {
       case 'th_open':
         if (token.markup) {
           html += `<th align="${token.markup}">`
-        } else {
+        }
+        else {
           html += '<th>'
         }
         break
@@ -850,7 +885,8 @@ function renderTokens(tokens: FlatToken[], options: MarkdownOptions): string {
       case 'td_open':
         if (token.markup) {
           html += `<td align="${token.markup}">`
-        } else {
+        }
+        else {
           html += '<td>'
         }
         break
@@ -895,9 +931,9 @@ function renderTokens(tokens: FlatToken[], options: MarkdownOptions): string {
 }
 
 // Character codes for HTML escaping
-const CHAR_AMP = 38  // &
-const CHAR_LT = 60   // <
-const CHAR_GT = 62   // >
+const CHAR_AMP = 38 // &
+const CHAR_LT = 60 // <
+const CHAR_GT = 62 // >
 const CHAR_QUOT = 34 // "
 const CHAR_APOS = 39 // '
 
@@ -915,7 +951,8 @@ function escapeHtml(text: string): string {
     }
   }
 
-  if (!needsEscape) return text
+  if (!needsEscape)
+    return text
 
   const parts: string[] = []
   for (let i = 0; i < len; i++) {

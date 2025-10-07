@@ -1,14 +1,15 @@
-import { Bench } from 'tinybench'
+/* eslint-disable no-console */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { JSDOM } from 'jsdom'
-
 // Our implementation
 import { sanitize } from '@stacksjs/sanitizer'
-
 // Competitors
 import DOMPurify from 'isomorphic-dompurify'
+
+import { JSDOM } from 'jsdom'
+
 import sanitizeHtml from 'sanitize-html'
+import { Bench } from 'tinybench'
 import { filterXSS } from 'xss'
 
 // Setup JSDOM for DOMPurify
@@ -74,12 +75,12 @@ for (const task of safeBench.tasks) {
 }
 
 const safeFastest = safeBench.tasks.reduce((a, b) =>
-  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b
+  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b,
 )
 console.log(`\n🏆 Fastest: ${safeFastest.name}`)
 
 // Dangerous HTML benchmark
-console.log('\n' + '='.repeat(70))
+console.log(`\n${'='.repeat(70)}`)
 console.log('\n📄 Dangerous HTML (with XSS attempts)\n')
 const dangerousBench = new Bench({ time: 1000 })
 
@@ -106,12 +107,12 @@ for (const task of dangerousBench.tasks) {
 }
 
 const dangerousFastest = dangerousBench.tasks.reduce((a, b) =>
-  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b
+  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b,
 )
 console.log(`\n🏆 Fastest: ${dangerousFastest.name}`)
 
 // Large HTML benchmark
-console.log('\n' + '='.repeat(70))
+console.log(`\n${'='.repeat(70)}`)
 console.log('\n📄 Large HTML (100 articles, ~15KB)\n')
 const largeBench = new Bench({ time: 1000 })
 
@@ -138,12 +139,12 @@ for (const task of largeBench.tasks) {
 }
 
 const largeFastest = largeBench.tasks.reduce((a, b) =>
-  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b
+  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b,
 )
 console.log(`\n🏆 Fastest: ${largeFastest.name}`)
 
 // Summary
-console.log('\n' + '='.repeat(70))
+console.log(`\n${'='.repeat(70)}`)
 console.log('\n📈 Summary\n')
 
 const allBenches = [
@@ -155,19 +156,21 @@ const allBenches = [
 for (const { name, bench } of allBenches) {
   const stacksjsTask = bench.tasks.find(t => t.name === '@stacksjs/sanitizer')
   const fastest = bench.tasks.reduce((a, b) =>
-    (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b
+    (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b,
   )
 
   if (stacksjsTask && fastest && stacksjsTask.result && fastest.result) {
     const speedup = fastest.result.mean / stacksjsTask.result.mean
     if (speedup < 1) {
       console.log(`${name}: @stacksjs/sanitizer is ${(1 / speedup).toFixed(2)}x faster than ${fastest.name}`)
-    } else if (speedup > 1.05) {
+    }
+    else if (speedup > 1.05) {
       console.log(`${name}: @stacksjs/sanitizer is ${speedup.toFixed(2)}x slower than ${fastest.name}`)
-    } else {
+    }
+    else {
       console.log(`${name}: @stacksjs/sanitizer is comparable to ${fastest.name}`)
     }
   }
 }
 
-console.log('\n' + '='.repeat(70) + '\n')
+console.log(`\n${'='.repeat(70)}\n`)

@@ -33,9 +33,9 @@ describe('markdown package - performance', () => {
   it('should parse deeply nested YAML efficiently', () => {
     let yaml = 'level0:\n'
     for (let i = 1; i < 20; i++) {
-      yaml += `  `.repeat(i) + `level${i}:\n`
+      yaml += `${`  `.repeat(i)}level${i}:\n`
     }
-    yaml += `  `.repeat(20) + 'value: deep'
+    yaml += `${`  `.repeat(20)}value: deep`
 
     const start = performance.now()
     const result = parseYaml(yaml)
@@ -135,8 +135,7 @@ tags:
     const headers = Array.from({ length: 20 }, (_, i) => `Col${i}`).join(' | ')
     const separator = Array.from({ length: 20 }, () => '---').join('|')
     const rows = Array.from({ length: 100 }, (_, i) =>
-      Array.from({ length: 20 }, (__, j) => `${i}-${j}`).join(' | ')
-    )
+      Array.from({ length: 20 }, (__, j) => `${i}-${j}`).join(' | '))
 
     const md = `| ${headers} |\n|${separator}|\n${rows.map(r => `| ${r} |`).join('\n')}`
 
@@ -150,8 +149,7 @@ tags:
 
   it('should handle many inline elements efficiently', () => {
     const md = Array.from({ length: 100 }, (_, i) =>
-      `**Bold ${i}** *Italic ${i}* \`Code ${i}\` [Link ${i}](url${i})`
-    ).join(' ')
+      `**Bold ${i}** *Italic ${i}* \`Code ${i}\` [Link ${i}](url${i})`).join(' ')
 
     const start = performance.now()
     const result = parseMarkdown(md)

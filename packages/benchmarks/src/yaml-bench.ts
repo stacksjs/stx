@@ -1,12 +1,13 @@
-import { Bench } from 'tinybench'
+/* eslint-disable no-console */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-
 // Our implementation (using Bun's native YAML)
 import { parseYaml, stringifyYaml } from '@stacksjs/markdown'
 
 // Competitor
 import jsYaml from 'js-yaml'
+
+import { Bench } from 'tinybench'
 
 // Load fixture
 const fixturesDir = join(import.meta.dir, '../fixtures')
@@ -58,12 +59,12 @@ for (const task of parseBench.tasks) {
 }
 
 const parseFastest = parseBench.tasks.reduce((a, b) =>
-  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b
+  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b,
 )
 console.log(`\n🏆 Fastest: ${parseFastest.name}`)
 
 // Parse large YAML
-console.log('\n' + '='.repeat(70))
+console.log(`\n${'='.repeat(70)}`)
 console.log('\n📄 Large YAML (500 objects, ~20KB)\n')
 const largeParseBench = new Bench({ time: 1000 })
 
@@ -84,12 +85,12 @@ for (const task of largeParseBench.tasks) {
 }
 
 const largeParseFastest = largeParseBench.tasks.reduce((a, b) =>
-  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b
+  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b,
 )
 console.log(`\n🏆 Fastest: ${largeParseFastest.name}`)
 
 // Stringify benchmark
-console.log('\n' + '='.repeat(70))
+console.log(`\n${'='.repeat(70)}`)
 console.log('\n📄 YAML Stringify (500 objects)\n')
 const stringifyBench = new Bench({ time: 1000 })
 
@@ -110,12 +111,12 @@ for (const task of stringifyBench.tasks) {
 }
 
 const stringifyFastest = stringifyBench.tasks.reduce((a, b) =>
-  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b
+  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b,
 )
 console.log(`\n🏆 Fastest: ${stringifyFastest.name}`)
 
 // Summary
-console.log('\n' + '='.repeat(70))
+console.log(`\n${'='.repeat(70)}`)
 console.log('\n📈 Summary\n')
 
 const allBenches = [
@@ -132,12 +133,14 @@ for (const { name, bench } of allBenches) {
     const speedup = jsYamlTask.result.mean / stacksjsTask.result.mean
     if (speedup > 1.05) {
       console.log(`${name}: Bun native YAML is ${speedup.toFixed(2)}x faster than js-yaml`)
-    } else if (speedup < 0.95) {
+    }
+    else if (speedup < 0.95) {
       console.log(`${name}: Bun native YAML is ${(1 / speedup).toFixed(2)}x slower than js-yaml`)
-    } else {
+    }
+    else {
       console.log(`${name}: Bun native YAML is comparable to js-yaml`)
     }
   }
 }
 
-console.log('\n' + '='.repeat(70) + '\n')
+console.log(`\n${'='.repeat(70)}\n`)

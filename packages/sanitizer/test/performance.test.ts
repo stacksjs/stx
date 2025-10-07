@@ -97,8 +97,7 @@ describe('html sanitizer - performance', () => {
   it('should handle many event handlers efficiently', () => {
     const events = ['onclick', 'onload', 'onerror', 'onmouseover', 'onfocus']
     const html = Array.from({ length: 200 }, (_, i) =>
-      `<div ${events.map(e => `${e}="alert(${i})"`).join(' ')}>Content ${i}</div>`
-    ).join('\n')
+      `<div ${events.map(e => `${e}="alert(${i})"`).join(' ')}>Content ${i}</div>`).join('\n')
 
     const start = performance.now()
     const result = sanitize(html, 'basic')

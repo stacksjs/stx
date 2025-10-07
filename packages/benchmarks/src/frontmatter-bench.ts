@@ -1,12 +1,13 @@
-import { Bench } from 'tinybench'
+/* eslint-disable no-console */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-
 // Our implementation
 import { parseFrontmatter } from '@stacksjs/markdown'
 
 // Competitor
 import grayMatter from 'gray-matter'
+
+import { Bench } from 'tinybench'
 
 // Load fixture
 const fixturesDir = join(import.meta.dir, '../fixtures')
@@ -52,12 +53,12 @@ for (const task of standardBench.tasks) {
 }
 
 const standardFastest = standardBench.tasks.reduce((a, b) =>
-  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b
+  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b,
 )
 console.log(`\n🏆 Fastest: ${standardFastest.name}`)
 
 // Large frontmatter benchmark
-console.log('\n' + '='.repeat(70))
+console.log(`\n${'='.repeat(70)}`)
 console.log('\n📄 Large Frontmatter (100+ fields)\n')
 const largeBench = new Bench({ time: 1000 })
 
@@ -78,12 +79,12 @@ for (const task of largeBench.tasks) {
 }
 
 const largeFastest = largeBench.tasks.reduce((a, b) =>
-  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b
+  (a.result?.mean || Infinity) < (b.result?.mean || Infinity) ? a : b,
 )
 console.log(`\n🏆 Fastest: ${largeFastest.name}`)
 
 // Summary
-console.log('\n' + '='.repeat(70))
+console.log(`\n${'='.repeat(70)}`)
 console.log('\n📈 Summary\n')
 
 const allBenches = [
@@ -99,12 +100,14 @@ for (const { name, bench } of allBenches) {
     const speedup = grayMatterTask.result.mean / stacksjsTask.result.mean
     if (speedup > 1.05) {
       console.log(`${name}: @stacksjs/markdown is ${speedup.toFixed(2)}x faster than gray-matter`)
-    } else if (speedup < 0.95) {
+    }
+    else if (speedup < 0.95) {
       console.log(`${name}: @stacksjs/markdown is ${(1 / speedup).toFixed(2)}x slower than gray-matter`)
-    } else {
+    }
+    else {
       console.log(`${name}: @stacksjs/markdown is comparable to gray-matter`)
     }
   }
 }
 
-console.log('\n' + '='.repeat(70) + '\n')
+console.log(`\n${'='.repeat(70)}\n`)
