@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const loono: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M28.696 16.795a6.95 6.95 0 0 0-3.424-.503\"/><circle cx=\"26.754\" cy=\"18.748\" r=\".437\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15.888 33.057c-4.177 1.72-8.41 3.366-9.458 9.373M28 30.776L24.83 42.4l1.553-.021l3.722-2.598c-1.314-.927-2.739-1.82-2.347-2.526c.96-1.704 2.75-3.032 4.306-4.51c-1.302-.759-2.83-1.892-4.065-1.968\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m19.604 30.775l3.168 11.623l-1.552-.021l-3.722-2.599c1.314-.926 2.739-1.82 2.347-2.526c-.96-1.704-2.75-3.032-4.306-4.509c1.302-.76 2.83-1.893 4.065-1.968m1.259 4.202c1.59.746 3.286 1.247 5.75 0m5.499-1.851c4.177 1.721 8.41 3.366 9.458 9.374M20.112 23.067c.041 3.885 6.553 3.828 6.576 0z\"/><circle cx=\"20.024\" cy=\"18.707\" r=\".437\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M18.202 16.852a6.95 6.95 0 0 1 3.424-.503\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12.174 34.602c.65-1.189 1.256-2.114 1.227-4.197C12.91 25.64 7.37 5.183 25.415 5.504c8.291 1.36 10.093 8.88 9.436 15.31c-.435 4.265-.797 6.365-.736 9.541c.368 2.347.912 2.613 1.295 4.041\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m19.807 30.542l.104-2.353c-2.513-2.451-4.554-4.933-4.462-8.464c.43-4.932 3.258-8.688 12.265-9.408c.99 2.346 1.97 4.648 3.443 9.051c-.327 3.343-1.816 5.893-3.782 8.194l.542 3.108\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19.879 28.157c2.302 2.304 5.699 1.616 7.698-.84\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default loono

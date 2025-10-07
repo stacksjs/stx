@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const filterDismiss16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.257 9a5.5 5.5 0 0 0 1.949 1.5H3.5a.75.75 0 0 1 0-1.5zM5.022 5a5.6 5.6 0 0 0 .069 1.5H1.5a.75.75 0 0 1 0-1.5zm.478 8a.75.75 0 0 0 0 1.5h3a.75.75 0 0 0 0-1.5zm5-3a4.5 4.5 0 1 0 0-9a4.5 4.5 0 0 0 0 9m1.854-6.354a.5.5 0 0 1 0 .708L11.207 5.5l1.147 1.146a.5.5 0 0 1-.708.708L10.5 6.207L9.354 7.354a.5.5 0 1 1-.708-.708L9.793 5.5L8.646 4.354a.5.5 0 1 1 .708-.708L10.5 4.793l1.146-1.147a.5.5 0 0 1 .708 0\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default filterDismiss16Filled

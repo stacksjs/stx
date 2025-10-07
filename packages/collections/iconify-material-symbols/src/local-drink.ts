@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const localDrink: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.975 22q-.775 0-1.337-.513T5 20.226L3 2h18l-2 18.225q-.075.75-.638 1.263T17.026 22zM5.65 8h12.7l.4-4H5.25zM12 19q1.2 0 2.025-.825t.825-2.025q0-1.025-.663-2.225T12 11q-1.525 1.725-2.187 2.925T9.15 16.15q0 1.2.825 2.025T12 19\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default localDrink

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const forkAndKnifeWithPlate: IconData = {
+  "body": "<g fill=\"#D0CFCE\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path d=\"M66.12 26.296C66.12 20.353 61 14.136 61 16s.947 26.632.947 26.632L61 58.83a2 2 0 1 0 4 0l-.529-16.29s1.65-10.3 1.65-16.243m-54.7-9.557s.112 4.158.112 8.106c0 2.96-.9 4.82-2.181 5.565l.028 28.418a2 2 0 1 1-4 0l.811-28.412C4.904 29.676 4 27.813 4 24.846c0-3.948.112-8.106.112-8.106m3.654 0v9.585\"/><circle cx=\"36\" cy=\"35.958\" r=\"19.958\"/><circle cx=\"36.004\" cy=\"36\" r=\"12.149\"/></g><g fill=\"none\" stroke=\"#000\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path d=\"M66.12 26.296C66.12 20.353 61 14.136 61 16s.947 26.632.947 26.632L61 58.83a2 2 0 1 0 4 0l-.529-16.29s1.65-10.3 1.65-16.243z\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M11.421 16.74s.112 4.158.112 8.106c0 2.96-.9 4.82-2.181 5.565h0l.028 28.418a2 2 0 1 1-4 0l.811-28.412h0C4.904 29.676 4 27.813 4 24.846c0-3.948.112-8.106.112-8.106m3.654 0v9.585\"/><circle cx=\"36\" cy=\"35.958\" r=\"19.958\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"36.004\" cy=\"36\" r=\"12.149\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default forkAndKnifeWithPlate

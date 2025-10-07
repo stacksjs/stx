@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const barricadeFill: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M224 64H32a16 16 0 0 0-16 16v72a16 16 0 0 0 16 16h24v32a8 8 0 0 0 16 0v-32h112v32a8 8 0 0 0 16 0v-32h24a16 16 0 0 0 16-16V80a16 16 0 0 0-16-16M32 152V92l60 60Zm192 0h-56.69l-72-72H164l60 60z\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default barricadeFill

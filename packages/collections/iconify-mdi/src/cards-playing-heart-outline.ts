@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const cardsPlayingHeartOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17 2H7c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m0 18H7V4h10zM10.2 9C9 9 8 10 8 11.2c0 1.5 1.4 2.7 3.4 4.6l.6.5l.6-.5c2-1.9 3.4-3.1 3.4-4.6C16 9.9 15 9 13.8 9c-.7 0-1.4.3-1.8.8c-.4-.5-1.1-.8-1.8-.8\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default cardsPlayingHeartOutline

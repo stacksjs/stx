@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const minecraftCommand: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M24 24v21.5m4.965-27.95l2.482-1.433v-5.734L28.965 8.95h-9.93l-2.483 1.433v5.734l2.482 1.433z\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m24 2.5l18.62 10.75v21.5L24 45.5L5.38 34.75v-21.5z\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M5.38 13.25L24 24l18.62-10.75M8.483 31.525v-7.167l6.207-3.583l6.206 10.75v7.167l-1.24.716l-9.931-5.733zm31.033 0v-7.167l-6.207-3.583l-6.206 10.75v7.167l1.241.716l9.93-5.733z\"/><circle cx=\"21.517\" cy=\"11.817\" r=\".75\" fill=\"currentColor\"/><circle cx=\"24\" cy=\"13.25\" r=\".75\" fill=\"currentColor\"/><circle cx=\"26.483\" cy=\"11.817\" r=\".75\" fill=\"currentColor\"/><circle cx=\"26.483\" cy=\"14.683\" r=\".75\" fill=\"currentColor\"/><circle cx=\"21.517\" cy=\"14.683\" r=\".75\" fill=\"currentColor\"/><circle cx=\"14.69\" cy=\"26.508\" r=\".75\" fill=\"currentColor\"/><circle cx=\"12.208\" cy=\"27.942\" r=\".75\" fill=\"currentColor\"/><circle cx=\"14.69\" cy=\"29.375\" r=\".75\" fill=\"currentColor\"/><circle cx=\"17.173\" cy=\"30.808\" r=\".75\" fill=\"currentColor\"/><circle cx=\"17.173\" cy=\"33.675\" r=\".75\" fill=\"currentColor\"/><circle cx=\"14.69\" cy=\"32.242\" r=\".75\" fill=\"currentColor\"/><circle cx=\"12.208\" cy=\"30.808\" r=\".75\" fill=\"currentColor\"/><circle cx=\"30.827\" cy=\"30.808\" r=\".75\" fill=\"currentColor\"/><circle cx=\"33.31\" cy=\"29.375\" r=\".75\" fill=\"currentColor\"/><circle cx=\"33.31\" cy=\"26.508\" r=\".75\" fill=\"currentColor\"/><circle cx=\"35.792\" cy=\"27.942\" r=\".75\" fill=\"currentColor\"/><circle cx=\"35.792\" cy=\"30.808\" r=\".75\" fill=\"currentColor\"/><circle cx=\"33.31\" cy=\"32.242\" r=\".75\" fill=\"currentColor\"/><circle cx=\"30.827\" cy=\"33.675\" r=\".75\" fill=\"currentColor\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default minecraftCommand

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const sharpMailOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M22 4H2.01L2 20h20zm-2 14H4V8l8 5l8-5zm-8-7L4 6h16z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sharpMailOutline

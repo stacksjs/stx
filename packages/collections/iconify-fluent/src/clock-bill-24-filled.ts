@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const clockBill24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16.25 12.5h-4a.75.75 0 0 1-.75-.75v-6a.75.75 0 0 1 1.5 0V11h3.25a.75.75 0 0 1 0 1.5M13 1C7.478 1 3 5.478 3 11v.036Q3.246 11 3.501 11h4a3.5 3.5 0 0 1 3.5 3.5v6q0 .15-.012.298q.976.2 2.011.202c5.522 0 10-4.478 10-10S18.522 1 13 1M1 14.5A2.5 2.5 0 0 1 3.5 12h4a2.5 2.5 0 0 1 2.5 2.5v6A2.5 2.5 0 0 1 7.5 23h-4A2.5 2.5 0 0 1 1 20.5zm6.5-.5h-4a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1m0 3h-4a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1m0 3h-4a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default clockBill24Filled

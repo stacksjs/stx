@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const folderAdd20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 5.5A2.5 2.5 0 0 1 4.5 3h2.482c.464 0 .91.184 1.238.513l1.28 1.28l-2.06 2.06A.5.5 0 0 1 7.085 7H2zM2 8v6.5A2.5 2.5 0 0 0 4.5 17h5.1a5.5 5.5 0 0 1 8.4-6.743V7.5A2.5 2.5 0 0 0 15.5 5h-4.793l-2.56 2.56A1.5 1.5 0 0 1 7.085 8zm17 6.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-4-2a.5.5 0 0 0-1 0V14h-1.5a.5.5 0 0 0 0 1H14v1.5a.5.5 0 0 0 1 0V15h1.5a.5.5 0 0 0 0-1H15z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default folderAdd20Filled

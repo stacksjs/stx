@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const folderBicepOpen: IconData = {
+  "body": "<path fill=\"#fbc02d\" d=\"M28.967 12H9.442a2 2 0 0 0-1.898 1.368L4 24V10h24a2 2 0 0 0-2-2H15.124a2 2 0 0 1-1.28-.464l-1.288-1.072A2 2 0 0 0 11.276 6H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h22l4.805-11.212A2 2 0 0 0 28.967 12\"/><path fill=\"#fff9c4\" d=\"M15 25s1.15-11.115 4-15l4 1l-1 3h-2v7h2c1.9-2.915 5.381-4.255 7.755-3.19c3.134 1.453 2.85 5.831 0 7.769C27.475 27.137 20.699 28.885 15 25\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default folderBicepOpen

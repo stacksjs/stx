@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const bookmarkOutline: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"32\" d=\"M352 48H160a48 48 0 0 0-48 48v368l144-128l144 128V96a48 48 0 0 0-48-48\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default bookmarkOutline

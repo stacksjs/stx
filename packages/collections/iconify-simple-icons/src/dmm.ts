@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const dmm: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9.525.46H0v23.08h11.545C17.284 23.54 24 20.916 24 12S16.026.46 9.525.46m.646 15.073V8.34c1.746 0 4.4.079 4.4 3.582c0 3.58-2.553 3.611-4.4 3.611\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default dmm

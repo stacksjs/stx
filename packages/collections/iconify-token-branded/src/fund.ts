@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const fund: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGGQTgreeh)\" d=\"M5.589 4.671h11.466l2.59 5.18l-5.875 8.392h-3.54L4.358 9.852l2.046-4.095h9.837l2.047 4.094l-5.058 7.306h-2.456l-5.06-7.306l1.505-3.008h8.208L16.93 9.85l-4.244 6.222h-1.372L7.07 9.85l.962-1.922h6.578l.96 1.92L12 15.203L8.43 9.848l.416-.834h4.95l.419.838l-2.228 3.183l-1.833-2.935h2.118v.543h-1.139l.88 1.408l1.572-2.246l-.124-.248H9.182l-.126.252l2.945 4.417l2.944-4.416l-.67-1.339H8.368L7.7 9.807l3.9 5.722h.8l3.9-5.722l-1.21-2.422H7.554l-1.21 2.421l4.713 6.809h1.887l4.713-6.809L15.904 6.3H6.74L4.987 9.805l5.526 7.895h2.975l5.527-7.895l-2.297-4.591H5.926L3.629 9.808L9.7 18.786h4.6l6.073-8.978L18 5.064l.486-.243L21 9.849l-6.412 9.48H9.414L3 9.85z\"/><defs><linearGradient id=\"SVGGQTgreeh\" x1=\"21\" x2=\"4.66\" y1=\"9.252\" y2=\"19.284\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#3F59A1\"/><stop offset=\"1\" stop-color=\"#3B8DCE\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default fund

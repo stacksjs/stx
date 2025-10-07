@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const radiologyScanDoctor: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#66e1ff\" d=\"M13.913 10.565h-1.435a.957.957 0 0 1-.956-.956V1.957A.956.956 0 0 1 12.479 1h9.565a.957.957 0 0 1 .956.957v7.652a.957.957 0 0 1-.956.956z\"/><path fill=\"#c2f3ff\" d=\"M12.479 1a.957.957 0 0 0-.957.957v7.652a.9.9 0 0 0 .155.49L20.775 1z\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M13.913 10.565h-1.435a.957.957 0 0 1-.956-.956V1.957A.956.956 0 0 1 12.479 1h9.565a.957.957 0 0 1 .956.957v7.652a.957.957 0 0 1-.956.956h-3.826m-.958-7.652v5.74\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M17.26 2.913h-1.653c-.415 0-.828.067-1.222.2a1 1 0 0 0-.336.199l-.614.558m3.825 1.913h-.718c-.417 0-.829.067-1.223.2a1 1 0 0 0-.278.15l-.849.653m3.068-3.873h1.655c.415 0 .828.067 1.221.2q.19.064.337.199l.614.558M17.26 5.783h.72c.416 0 .828.067 1.223.2q.151.053.278.15l.848.653m-4.503 1.866h2.87\"/><path fill=\"gray\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M8.652 17.26L8.174 23H3.391l-.478-5.74z\"/><path fill=\"#fff\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10.565 13.913v3.348H1v-3.348a4.783 4.783 0 0 1 9.565 0\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M2.913 17.26v-2.869m5.739 2.869v-2.869M5.783 23v-3.826m0-10.044v4.783\"/><path fill=\"#ffdda1\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M9.13 4.348a3.348 3.348 0 1 1-6.313-1.55a5.73 5.73 0 0 0 6.275 1.043q.041.252.038.507\"/><path fill=\"#c77f67\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M9.092 3.84a5.73 5.73 0 0 1-6.275-1.042a3.348 3.348 0 0 1 6.275 1.043\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m12.478 16.304l3.826-5.739\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default radiologyScanDoctor

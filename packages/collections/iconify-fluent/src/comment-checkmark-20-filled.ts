@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const commentCheckmark20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M19 5.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-2.146-1.854a.5.5 0 0 0-.708 0L13.5 6.293l-.646-.647a.5.5 0 0 0-.708.708l1 1a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0 0-.708M14.5 11c1.33 0 2.55-.472 3.5-1.257v2.533c0 1.418-1.164 2.566-2.6 2.566h-4.59l-4.011 2.961a1.01 1.01 0 0 1-1.4-.199a.98.98 0 0 1-.199-.59v-2.172h-.6c-1.436 0-2.6-1.149-2.6-2.566v-6.71C2 4.149 3.164 3 4.6 3h5a5.5 5.5 0 0 0 4.9 8\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default commentCheckmark20Filled

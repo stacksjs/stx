@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pentagon20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11.761 1.658a2.5 2.5 0 0 0-3.37-.01L2.822 6.7a2.5 2.5 0 0 0-.672 2.702l2.149 5.947a2.5 2.5 0 0 0 2.351 1.65h6.827a2.5 2.5 0 0 0 2.369-1.702L17.87 9.28a2.5 2.5 0 0 0-.68-2.64z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default pentagon20Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const audioDescription: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M472 64H40a24.03 24.03 0 0 0-24 24v336a24.03 24.03 0 0 0 24 24h432a24.03 24.03 0 0 0 24-24V88a24.03 24.03 0 0 0-24-24m-8 352H48V96h416Z\"/><path fill=\"currentColor\" d=\"M134.2 288h59.6l18.667 56H246.2l-58.668-176h-47.064L81.8 344h33.731Zm29.333-88h.936l18.667 56h-38.27ZM424 263.333v-14.666A80.76 80.76 0 0 0 343.333 168H280v176h63.333A80.76 80.76 0 0 0 424 263.333M312 200h31.333A48.72 48.72 0 0 1 392 248.667v14.666A48.72 48.72 0 0 1 343.333 312H312Z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default audioDescription

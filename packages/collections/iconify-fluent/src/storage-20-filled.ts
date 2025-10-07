@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const storage20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 8.5A2.5 2.5 0 0 1 4.5 6h11A2.5 2.5 0 0 1 18 8.5v3a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 2 11.5zM13 9a1 1 0 1 0-2 0a1 1 0 0 0 2 0m3 0a1 1 0 1 0-2 0a1 1 0 0 0 2 0\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default storage20Filled

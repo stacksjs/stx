@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const contractDownLeft48Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M41.634 8.134a1.25 1.25 0 0 0-1.768-1.768L29.5 16.732V7.25a1.25 1.25 0 0 0-2.5 0v12.5c0 .69.56 1.25 1.25 1.25h12.5a1.25 1.25 0 1 0 0-2.5h-9.482zM8.5 12.25a3.75 3.75 0 0 1 3.75-3.75h7.885a1.25 1.25 0 1 0 0-2.5H12.25A6.25 6.25 0 0 0 6 12.25v23.5A6.25 6.25 0 0 0 12.25 42h23.5A6.25 6.25 0 0 0 42 35.75v-7.884a1.25 1.25 0 0 0-2.5 0v7.884a3.75 3.75 0 0 1-3.75 3.75H24V29.25c0-2.9-2.35-5.25-5.25-5.25H8.5zm0 14.25h10.25a2.75 2.75 0 0 1 2.75 2.75V39.5h-9.25a3.75 3.75 0 0 1-3.75-3.75z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default contractDownLeft48Regular

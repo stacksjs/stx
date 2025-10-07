@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const folderTrash: IconData = {
+  "body": "<g fill-rule=\"evenodd\"><path fill=\"#f44336\" d=\"m221.5 120.58l-20.6-17.16A32 32 0 0 0 180.42 96H64c-17.67 0-32 14.33-32 32v256c0 17.67 14.33 32 32 32h384c17.67 0 32-14.33 32-32V160c0-17.67-14.33-32-32-32H241.98a32 32 0 0 1-20.48-7.42\"/><path fill=\"#ffcdd2\" d=\"M320 160v32h-96v32h32v192c0 17.63 14.38 32 32 32h160c17.63 0 32-14.37 32-32V224h32v-32h-96v-32zm0 96v128h32V256zm64 0v128h32V256z\"/></g>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default folderTrash

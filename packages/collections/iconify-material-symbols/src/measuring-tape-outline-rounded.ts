@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const measuringTapeOutlineRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M13.5 20H7q-.825 0-1.412-.587T5 18v-6.5q0-3.55 2.475-6.025T13.5 3t6.025 2.475T22 11.5t-2.475 6.025T13.5 20m0-2q2.7 0 4.6-1.9t1.9-4.6t-1.9-4.6T13.5 5T8.9 6.9T7 11.5V18zm0-3q1.45 0 2.475-1.025T17 11.5t-1.025-2.475T13.5 8t-2.475 1.025T10 11.5t1.025 2.475T13.5 15m0-2q-.625 0-1.063-.437T12 11.5t.438-1.062T13.5 10t1.063.438T15 11.5t-.437 1.063T13.5 13M3 20q-.425 0-.712-.288T2 19v-3q0-.425.288-.712T3 15t.713.288T4 16v3q0 .425-.288.713T3 20m10.5-8.5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default measuringTapeOutlineRounded

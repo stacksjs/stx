@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const slideAdd28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2.004 7.75A3.75 3.75 0 0 1 5.754 4H22.25A3.75 3.75 0 0 1 26 7.75v7.652a7.5 7.5 0 0 0-1.5-1.247V7.75a2.25 2.25 0 0 0-2.25-2.25H5.755a2.25 2.25 0 0 0-2.25 2.25v12.5a2.25 2.25 0 0 0 2.25 2.25h7.516c.145.525.345 1.028.595 1.5H5.754a3.75 3.75 0 0 1-3.75-3.75zM27 20.5a6.5 6.5 0 1 1-13 0a6.5 6.5 0 0 1 13 0m-6-4a.5.5 0 0 0-1 0V20h-3.5a.5.5 0 0 0 0 1H20v3.5a.5.5 0 0 0 1 0V21h3.5a.5.5 0 0 0 0-1H21z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default slideAdd28Regular

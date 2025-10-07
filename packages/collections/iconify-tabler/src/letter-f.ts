@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const letterF: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M17 4H7v16m0-8h8\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default letterF

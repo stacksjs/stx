@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const swap: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGj7Szdrfr)\" d=\"M7.5 9.616v1.034l3.15-2.25L7.5 6.375v.92a4.95 4.95 0 0 0 .45 9.88c1.134 0 2.7-.399 3.6-1.35c1.125-1.299 2.466-4.57 2.466-4.57L9.999 13.86a2.59 2.59 0 0 1-4.165-.403A2.59 2.59 0 0 1 7.5 9.616\"/><path fill=\"url(#SVGXGx05cXI)\" d=\"M16.5 14.384V13.35l-3.15 2.25l3.15 2.025v-.92a4.95 4.95 0 0 0-.45-9.88c-1.134 0-2.7.399-3.6 1.35c-1.125 1.299-2.466 4.57-2.466 4.57L14 10.14a2.587 2.587 0 1 1 2.499 4.243\"/><defs><linearGradient id=\"SVGj7Szdrfr\" x1=\"5.206\" x2=\"10.404\" y1=\"8.25\" y2=\"19.899\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0076EF\"/><stop offset=\".13\" stop-color=\"#007FF6\"/><stop offset=\".258\" stop-color=\"#0084F6\"/><stop offset=\".376\" stop-color=\"#008BF9\"/><stop offset=\".492\" stop-color=\"#009DF9\"/><stop offset=\".612\" stop-color=\"#00AEF9\"/><stop offset=\".731\" stop-color=\"#00B9FA\"/><stop offset=\".829\" stop-color=\"#00C5FB\"/><stop offset=\"1\" stop-color=\"#00CCFC\"/></linearGradient><linearGradient id=\"SVGXGx05cXI\" x1=\"19.866\" x2=\"13.566\" y1=\"15.825\" y2=\"6.825\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0076EF\"/><stop offset=\".13\" stop-color=\"#007FF6\"/><stop offset=\".258\" stop-color=\"#0084F6\"/><stop offset=\".376\" stop-color=\"#008BF9\"/><stop offset=\".492\" stop-color=\"#009DF9\"/><stop offset=\".612\" stop-color=\"#00AEF9\"/><stop offset=\".731\" stop-color=\"#00B9FA\"/><stop offset=\".829\" stop-color=\"#00C5FB\"/><stop offset=\"1\" stop-color=\"#00CCFC\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default swap

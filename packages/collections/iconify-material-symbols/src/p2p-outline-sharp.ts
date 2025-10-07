@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const p2pOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M13 22v-7h2v5h6V6h-6v3h-2V4h10v18zM1 20V2h10v7H9V4H3v14h6v-3h2v5zM18 8.5q.325 0 .538-.213t.212-.537t-.213-.537T18 7t-.537.213t-.213.537t.213.538T18 8.5m-12-2q.325 0 .538-.213t.212-.537t-.213-.537T6 5t-.537.213t-.213.537t.213.538T6 6.5M3 18V4zm18 2V6zM8 13q-.425 0-.712-.288T7 12t.288-.712T8 11t.713.288T9 12t-.288.713T8 13m4 0q-.425 0-.712-.288T11 12t.288-.712T12 11t.713.288T13 12t-.288.713T12 13m4 0q-.425 0-.712-.288T15 12t.288-.712T16 11t.713.288T17 12t-.288.713T16 13\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default p2pOutlineSharp

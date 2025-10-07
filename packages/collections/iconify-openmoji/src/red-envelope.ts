@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const redEnvelope: IconData = {
+  "body": "<path fill=\"#d22f27\" d=\"M17 5h38v62H17z\"/><circle cx=\"36\" cy=\"27\" r=\"10\" fill=\"#f1b31c\"/><g fill=\"none\" stroke=\"#000\"><g stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M31.887 21.413v2.454m-1.963 0h3.85A12 12 0 0 1 29.7 28.85\"/><path d=\"M33.587 28.264a5.2 5.2 0 0 1-1.7-1.452v5.775m2.925-10.439H41.7m-5.72 1.692h4.488v2.01H35.98zm-.61 8.697v-4.922h5.796v4.922m-5.796-2.87h5.796m-5.796 2.049h5.796m-2.937 0v-4.101\"/></g><g stroke-linecap=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><circle cx=\"36\" cy=\"27\" r=\"10\"/><path d=\"M55 18a25.4 25.4 0 0 1-9.289 6.652m-19.422 0A25.4 25.4 0 0 1 17 18\"/></g><path stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M17 5h38v62H17z\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default redEnvelope

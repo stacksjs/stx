@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const nav: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M7.56 4.08a1.2 1.2 0 0 0-2.16.72v6H4.2a1.2 1.2 0 1 0 0 2.4h1.2v6a1.2 1.2 0 1 0 2.4 0v-6h3.6l5.04 6.72a1.199 1.199 0 0 0 2.16-.72v-6h1.2a1.2 1.2 0 0 0 0-2.4h-1.2v-6a1.2 1.2 0 0 0-2.4 0v6h-3.6zm6.84 9.12l1.8 2.4v-2.4zm-4.8-2.4L7.8 8.4v2.4z\" clip-rule=\"evenodd\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default nav

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const channelArrowLeft16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 2.25q-.19 0-.37.04A2 2 0 0 1 3.5 1h5a2 2 0 0 1 2 2v2q-.513 0-1 .09V3a1 1 0 0 0-1-1h-5a1 1 0 0 0-.798.397A1.7 1.7 0 0 0 2 2.25M5.207 9H3.5a1 1 0 0 1-1-1V5.678a1.75 1.75 0 0 1-1 0V8a2 2 0 0 0 2 2h1.522a5.5 5.5 0 0 1 .185-1M4.5 4a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1H6a.5.5 0 0 0 0-1zM2 4.75a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5m13 5.75a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-6.853-.354l-.003.003a.5.5 0 0 0-.144.348v.006a.5.5 0 0 0 .146.35l2 2a.5.5 0 0 0 .708-.707L9.707 11H12.5a.5.5 0 0 0 0-1H9.707l1.147-1.146a.5.5 0 0 0-.708-.708z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default channelArrowLeft16Regular

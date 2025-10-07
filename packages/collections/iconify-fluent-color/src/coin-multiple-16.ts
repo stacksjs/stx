@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const coinMultiple16: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGqQYxZc9d)\" d=\"M13 13.5c0 1.381-2.239 2.5-5 2.5s-5-1.119-5-2.5v-2h10z\"/><path fill=\"url(#SVGpGBIGdCL)\" d=\"M13 11.5c0 1.38-2.239 2.5-5 2.5s-5-1.12-5-2.5S5.239 9 8 9s5 1.12 5 2.5\"/><path fill=\"url(#SVG7yGxbezM)\" d=\"M13 9.5c0 1.381-2.239 2.5-5 2.5s-5-1.119-5-2.5v-2h10z\"/><path fill=\"url(#SVGp0bEGdVl)\" d=\"M13 7.5c0 1.38-2.239 2.5-5 2.5S3 8.88 3 7.5S5.239 5 8 5s5 1.12 5 2.5\"/><path fill=\"url(#SVGWuL1Zd4A)\" d=\"M13 5.5C13 6.881 10.761 8 8 8S3 6.881 3 5.5v-2h10z\"/><path fill=\"url(#SVGdfgCVPRe)\" d=\"M13 3.5C13 4.88 10.761 6 8 6S3 4.88 3 3.5S5.239 1 8 1s5 1.12 5 2.5\"/><defs><linearGradient id=\"SVGqQYxZc9d\" x1=\"5.652\" x2=\"7.302\" y1=\"12.604\" y2=\"16.274\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFA43D\"/><stop offset=\"1\" stop-color=\"#FB5937\"/></linearGradient><linearGradient id=\"SVGpGBIGdCL\" x1=\"13.014\" x2=\"8.702\" y1=\"13.998\" y2=\"6.943\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FF8A69\"/><stop offset=\"1\" stop-color=\"#FFCD0F\"/></linearGradient><linearGradient id=\"SVG7yGxbezM\" x1=\"5.652\" x2=\"7.302\" y1=\"8.604\" y2=\"12.274\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFA43D\"/><stop offset=\"1\" stop-color=\"#FB5937\"/></linearGradient><linearGradient id=\"SVGp0bEGdVl\" x1=\"13.014\" x2=\"8.702\" y1=\"9.998\" y2=\"2.943\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FF8A69\"/><stop offset=\"1\" stop-color=\"#FFCD0F\"/></linearGradient><linearGradient id=\"SVGWuL1Zd4A\" x1=\"5.652\" x2=\"7.302\" y1=\"4.604\" y2=\"8.274\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFA43D\"/><stop offset=\"1\" stop-color=\"#FB5937\"/></linearGradient><linearGradient id=\"SVGdfgCVPRe\" x1=\"13.014\" x2=\"8.702\" y1=\"5.998\" y2=\"-1.057\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FF8A69\"/><stop offset=\"1\" stop-color=\"#FFCD0F\"/></linearGradient></defs></g>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default coinMultiple16

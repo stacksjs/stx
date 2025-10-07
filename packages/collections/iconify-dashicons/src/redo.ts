@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const redo: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 5h5V2l6 4l-6 4V7H8c-2.2 0-4 1.8-4 4s1.8 4 4 4h5v2H8c-3.3 0-6-2.7-6-6s2.7-6 6-6\" class=\"st0\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default redo

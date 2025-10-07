@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const sharpHealing: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m17.74 12.01l4.68-4.68l-5.75-5.75l-4.68 4.68L7.3 1.58L1.55 7.34l4.68 4.69l-4.68 4.68l5.75 5.75l4.68-4.68l4.69 4.69l5.76-5.76zM12 9c.55 0 1 .45 1 1s-.45 1-1 1s-1-.45-1-1s.45-1 1-1m-4.71 1.96L3.66 7.34l3.63-3.63l3.62 3.62zM10 13c-.55 0-1-.45-1-1s.45-1 1-1s1 .45 1 1s-.45 1-1 1m2 2c-.55 0-1-.45-1-1s.45-1 1-1s1 .45 1 1s-.45 1-1 1m2-4c.55 0 1 .45 1 1s-.45 1-1 1s-1-.45-1-1s.45-1 1-1m2.66 9.34l-3.63-3.62l3.63-3.63l3.62 3.62z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sharpHealing

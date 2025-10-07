@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const nightSightAuto: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11 21q-3.35 0-5.675-2.325T3 13t2.325-5.675T11 5q.125 0 .25.012t.25.013q-.725.8-1.112 1.825T10 9q0 2.5 1.75 4.25T16 15q.775 0 1.513-.187t1.387-.563q-.45 2.95-2.7 4.85T11 21m2.8-10L17 2h2l3.2 9h-1.9l-.7-2h-3.2l-.7 2zm3.05-3.35h2.3L18 4z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default nightSightAuto

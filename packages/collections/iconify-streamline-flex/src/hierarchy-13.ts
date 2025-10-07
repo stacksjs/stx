@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const hierarchy13: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M4.5 7.25c1.12 0 1.75-.63 1.75-1.75S5.62 3.75 4.5 3.75s-1.75.63-1.75 1.75s.63 1.75 1.75 1.75m-2 6c1.12 0 1.75-.63 1.75-1.75S3.62 9.75 2.5 9.75S.75 10.38.75 11.5s.63 1.75 1.75 1.75m9-9c1.12 0 1.75-.63 1.75-1.75S12.62.75 11.5.75s-1.75.63-1.75 1.75s.63 1.75 1.75 1.75m-2 6.5c1.12 0 1.75-.63 1.75-1.75s-.63-1.75-1.75-1.75S7.75 7.88 7.75 9s.63 1.75 1.75 1.75M3.573 7.055L2.81 9.767m8.377-5.539l-.903 3.151M6.113 6.292L8.06 7.883\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default hierarchy13

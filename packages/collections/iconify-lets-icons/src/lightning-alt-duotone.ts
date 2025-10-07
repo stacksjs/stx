@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const lightningAltDuotone: IconData = {
+  "body": "<defs><mask id=\"iconify-1EPHVbCd\"><g fill=\"none\"><path fill=\"#fff\" d=\"m10.415 18.923l.465-2.325c.056-.277.083-.415.008-.506S10.672 16 10.39 16H8.883c-.391 0-.587 0-.659-.127s.029-.294.23-.63l2.092-3.486c.201-.335.302-.503.23-.63s-.268-.127-.66-.127H7.723c-.328 0-.492 0-.567-.108c-.074-.107-.017-.26.098-.568l2.625-7c.06-.156.089-.235.153-.28C10.096 3 10.18 3 10.348 3h4.77c.391 0 .587 0 .659.127s-.029.295-.23.63l-2.092 3.486c-.201.335-.302.503-.23.63s.268.127.66.127H15c.436 0 .655 0 .724.138s-.062.313-.324.662l-1.8 2.4c-.262.35-.393.524-.324.662c.07.138.288.138.724.138h1.978c.444 0 .667 0 .735.14c.069.14-.068.316-.34.667L11.3 19.328c-.514.662-.771.992-.951.91s-.098-.493.066-1.315\" /><path stroke=\"silver\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-opacity=\".25\" d=\"M18.5 4L17 6h2l-1.5 2m-11 8L5 18h2l-1.5 2\" /></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h24v24H0z\" mask=\"url(#iconify-1EPHVbCd)\" />",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default lightningAltDuotone

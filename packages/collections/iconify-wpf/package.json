@@ -1,0 +1,41 @@
+{
+  "name": "@stx/iconify-wpf",
+  "version": "0.0.1",
+  "description": "Icons8 Windows 8 Icons icons for stx from Iconify",
+  "author": "Icons8",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": "./dist/*"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun build.ts"
+  },
+  "dependencies": {
+    "@stx/iconify-core": "workspace:*"
+  },
+  "keywords": [
+    "iconify",
+    "icons",
+    "svg",
+    "wpf",
+    "Icons8 Windows 8 Icons",
+    "stx"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stacksjs/stx.git",
+    "directory": "packages/iconify-wpf"
+  },
+  "sideEffects": false
+}

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const contactCard32: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGfHBOPczL)\" d=\"M2 7.25A3.25 3.25 0 0 1 5.25 4h21.5A3.25 3.25 0 0 1 30 7.25v17.5A3.25 3.25 0 0 1 26.75 28H5.25A3.25 3.25 0 0 1 2 24.75z\"/><path fill=\"url(#SVG869dQbqU)\" fill-opacity=\".7\" d=\"M2 7.25A3.25 3.25 0 0 1 5.25 4h21.5A3.25 3.25 0 0 1 30 7.25v17.5A3.25 3.25 0 0 1 26.75 28H5.25A3.25 3.25 0 0 1 2 24.75z\"/><path fill=\"url(#SVG6eiideoz)\" d=\"M18 13a1 1 0 0 1 1-1h6a1 1 0 0 1 0 2h-6a1 1 0 0 1-1-1m1 4a1 1 0 1 0 0 2h6a1 1 0 0 0 0-2z\"/><path fill=\"url(#SVGsQzMfdvw)\" d=\"M7 17.5A1.5 1.5 0 0 1 8.5 16h5a1.5 1.5 0 0 1 1.5 1.5s0 3.5-4 3.5s-4-3.5-4-3.5\"/><path fill=\"url(#SVGyenoGbAo)\" d=\"M13 13a2 2 0 1 1-4 0a2 2 0 0 1 4 0\"/><defs><linearGradient id=\"SVGfHBOPczL\" x1=\"12\" x2=\"20.188\" y1=\"4\" y2=\"27.588\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#B3E0FF\"/><stop offset=\"1\" stop-color=\"#8CD0FF\"/></linearGradient><linearGradient id=\"SVG869dQbqU\" x1=\"20.333\" x2=\"27.349\" y1=\"6.947\" y2=\"41.005\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".447\" stop-color=\"#FF6CE8\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#FF6CE8\"/></linearGradient><linearGradient id=\"SVG6eiideoz\" x1=\"21.273\" x2=\"24.408\" y1=\"11.192\" y2=\"24.805\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0078D4\"/><stop offset=\"1\" stop-color=\"#0067BF\"/></linearGradient><linearGradient id=\"SVGsQzMfdvw\" x1=\"7\" x2=\"9.061\" y1=\"12.965\" y2=\"21.662\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".125\" stop-color=\"#9C6CFE\"/><stop offset=\"1\" stop-color=\"#7A41DC\"/></linearGradient><linearGradient id=\"SVGyenoGbAo\" x1=\"9\" x2=\"11.99\" y1=\"9.667\" y2=\"14.787\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".125\" stop-color=\"#9C6CFE\"/><stop offset=\"1\" stop-color=\"#7A41DC\"/></linearGradient></defs></g>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default contactCard32

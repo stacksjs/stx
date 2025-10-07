@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textColor16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 1c.2 0 .38.12.46.303l3 7a.5.5 0 0 1-.92.394L9.813 7H6.187L5.46 8.697a.5.5 0 1 1-.92-.394l3-7A.5.5 0 0 1 8 1M6.615 6h2.77L8 2.77zM2 11.5A1.5 1.5 0 0 1 3.5 10h9a1.5 1.5 0 0 1 1.5 1.5v2a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 13.5z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default textColor16Filled

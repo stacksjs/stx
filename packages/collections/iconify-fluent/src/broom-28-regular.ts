@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const broom28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M25.78 3.28a.75.75 0 1 0-1.06-1.06l-8.257 8.256a6.75 6.75 0 0 0-8.984.498l-.693.68l-4.427 2.706a.75.75 0 0 0-.14 1.17l10.25 10.25a.75.75 0 0 0 1.171-.139l2.706-4.427l.68-.694a6.75 6.75 0 0 0 .498-8.983zM3.954 15.143l3.183-1.945l7.665 7.665l-1.945 3.183zm12.008 4.32l-.217.221l-7.43-7.429l.217-.212l.005-.005a5.25 5.25 0 1 1 7.425 7.424\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default broom28Regular

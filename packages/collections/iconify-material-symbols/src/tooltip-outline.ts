@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tooltipOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m12 22l-2.675-4H4q-.825 0-1.412-.587T2 16V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18h-5.325zm0-3.6l1.6-2.4H20V4H4v12h6.4zm0-8.4\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default tooltipOutline

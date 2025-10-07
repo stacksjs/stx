@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const alarmClock: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11 10h2a1 1 0 0 1 0 2h-3a1 1 0 0 1-1-1V6a1 1 0 1 1 2 0zm7.63-1.562a9 9 0 1 1-17.26 0a5 5 0 1 1 7.668-6.387a9 9 0 0 1 1.924 0a5 5 0 1 1 7.668 6.387m-.938-2.113a3 3 0 0 0-4.48-3.735a9.03 9.03 0 0 1 4.48 3.735M6.787 2.59a3 3 0 0 0-4.48 3.735a9.03 9.03 0 0 1 4.48-3.735M10 18a7 7 0 1 0 0-14a7 7 0 0 0 0 14\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default alarmClock

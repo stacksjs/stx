@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const videoInputAntenna: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 5a7 7 0 0 0-7 7h2a5 5 0 0 1 5-5a5 5 0 0 1 5 5h2a7 7 0 0 0-7-7m1 9.29c.88-.39 1.5-1.26 1.5-2.29A2.5 2.5 0 0 0 12 9.5A2.5 2.5 0 0 0 9.5 12c0 1 .62 1.9 1.5 2.29v3.3L7.59 21L9 22.41l3-3l3 3L16.41 21L13 17.59zM12 1A11 11 0 0 0 1 12h2a9 9 0 0 1 9-9a9 9 0 0 1 9 9h2A11 11 0 0 0 12 1\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default videoInputAntenna

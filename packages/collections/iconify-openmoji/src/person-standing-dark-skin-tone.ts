@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const personStandingDarkSkinTone: IconData = {
+  "body": "<g fill=\"#6a462f\"><path d=\"M42.533 22.288a4.3 4.3 0 0 0-4.209-4.131h-6a4.3 4.3 0 0 0-4.209 4.131l-.792 19.44a1 1 0 0 1-.12.436l2.933-2.094l-.714 22.133a1.23 1.23 0 0 0 .25.88a.24.24 0 0 0 .152.09c.214 0 .656-.427.735-1.126l2.899-22.503a5 5 0 0 1 .403-1.193l.724-.805h1.625l.984.623a5 5 0 0 1 .352 1.342l2.542 22.534c.079.698.522 1.125.736 1.125a.24.24 0 0 0 .152-.09c.192-.248.49-.585.457-.9L40.5 40.07L44 42.5\"/><circle cx=\"35.404\" cy=\"10.651\" r=\"2.969\"/></g><g fill=\"none\" stroke=\"#000\" stroke-width=\"2\"><circle cx=\"35.404\" cy=\"10.651\" r=\"2.969\" stroke-miterlimit=\"10\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m40.37 23.59l1.9 38c.055 1.1-.575 2-1.4 2a2.076 2.076 0 0 1-1.729-1.988l-2.542-22.03c-.129-1.094-.679-1.988-1.229-1.988s-1.103.894-1.229 1.987l-2.539 22.031a2.076 2.076 0 0 1-1.729 1.987c-.825 0-1.455-.9-1.4-2l1.9-38\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m26.373 41.59l.792-19a5.274 5.274 0 0 1 5.208-5h6\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M38.3 17.589a5.274 5.274 0 0 1 5.208 5l.792 19\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default personStandingDarkSkinTone

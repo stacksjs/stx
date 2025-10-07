@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const oilBarrelSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 21v-2h2v-6H3v-2h2V5H3V3h18v2h-2v6h2v2h-2v6h2v2zm9-5q1.25 0 2.125-.862T15 13.05q0-.975-.562-1.675T12 8.5q-1.875 2.15-2.437 2.863T9 13.05q0 1.225.875 2.088T12 16\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default oilBarrelSharp

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const building: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9.5 7.99V8m5-.02v.01M10.5 20H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4.5m-3 0v-4h3v4m-3 0h3m-4-8.02v.01m5 0V12\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default building

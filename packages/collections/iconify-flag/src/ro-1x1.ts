@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const ro1x1: IconData = {
+  "body": "<g fill-rule=\"evenodd\" stroke-width=\"1pt\"><path fill=\"#00319c\" d=\"M0 0h170.7v512H0z\"/><path fill=\"#ffde00\" d=\"M170.7 0h170.6v512H170.7z\"/><path fill=\"#de2110\" d=\"M341.3 0H512v512H341.3z\"/></g>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default ro1x1

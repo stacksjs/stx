@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const shareCircle: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M1 12C1 5.925 5.925 1 12 1s11 4.925 11 11s-4.925 11-11 11S1 18.075 1 12m11-5a1 1 0 0 1 1.707-.707l4 4a1 1 0 0 1 0 1.414l-4 4A1 1 0 0 1 12 15v-.96c-1.631.132-2.625.584-3.205 1.014a2.5 2.5 0 0 0-.675.71a1 1 0 0 0-.117.255L8 16.027v-.002A1 1 0 0 1 6 16c0-2.706 1.137-4.715 2.573-6.036C9.635 8.987 10.89 8.361 12 8.117zm1 5a1 1 0 0 1 .937.65L15.586 11l-1.65-1.65A1 1 0 0 1 13 10c-.704 0-1.971.422-3.073 1.436a6 6 0 0 0-1.062 1.296C9.903 12.29 11.257 12 13 12\" clip-rule=\"evenodd\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default shareCircle

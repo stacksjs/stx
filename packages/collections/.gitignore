@@ -1,0 +1,13 @@
+# Build outputs
+*/dist/
+*/node_modules/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tripAdvisor: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8.31 10.28a2.5 2.5 0 1 0 2.5 2.49a2.5 2.5 0 0 0-2.5-2.49m0 3.8a1.31 1.31 0 1 1 0-2.61a1.31 1.31 0 1 1 0 2.61m7.38-3.8a2.5 2.5 0 1 0 2.5 2.49a2.5 2.5 0 0 0-2.5-2.49M17 12.77a1.31 1.31 0 1 1-1.31-1.3a1.31 1.31 0 0 1 1.31 1.3\"/><path fill=\"currentColor\" d=\"M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2m7.38 10.77a3.69 3.69 0 0 1-6.2 2.71L12 16.77l-1.18-1.29a3.69 3.69 0 1 1-5-5.44l-1.2-1.3H7.3a8.33 8.33 0 0 1 9.41 0h2.67l-1.2 1.31a3.7 3.7 0 0 1 1.2 2.72\"/><path fill=\"currentColor\" d=\"M14.77 9.05a7.2 7.2 0 0 0-5.54 0A4.06 4.06 0 0 1 12 12.7a4.08 4.08 0 0 1 2.77-3.65\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default tripAdvisor

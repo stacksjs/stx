@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pausePresentationRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10 16q.425 0 .713-.288T11 15V9q0-.425-.288-.712T10 8t-.712.288T9 9v6q0 .425.288.713T10 16m4 0q.425 0 .713-.288T15 15V9q0-.425-.288-.712T14 8t-.712.288T13 9v6q0 .425.288.713T14 16M4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v12q0 .825-.587 1.413T20 20z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default pausePresentationRounded

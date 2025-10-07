@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const newsletter: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 0h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m0 2v10h16V2zm3 6h6a1 1 0 0 1 0 2H5a1 1 0 1 1 0-2m10-5h2v2h-2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default newsletter

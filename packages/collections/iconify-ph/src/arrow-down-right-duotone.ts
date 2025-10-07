@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const arrowDownRightDuotone: IconData = {
+  "body": "<g fill=\"currentColor\"><path d=\"M192 88v104H88Z\" opacity=\".2\"/><path d=\"M195.06 80.61a8 8 0 0 0-8.72 1.73L140 128.69L69.66 58.34a8 8 0 0 0-11.32 11.32L128.69 140l-46.35 46.34A8 8 0 0 0 88 200h104a8 8 0 0 0 8-8V88a8 8 0 0 0-4.94-7.39M184 184h-76.69l38.34-38.34L184 107.31Z\"/></g>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default arrowDownRightDuotone

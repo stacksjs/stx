@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const za: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#F7FCFF\" fill-rule=\"evenodd\" d=\"M0 0h32v24H0z\" clip-rule=\"evenodd\"/><path fill=\"#E31D1C\" fill-rule=\"evenodd\" d=\"M0 0v8h32V0z\" clip-rule=\"evenodd\"/><path fill=\"#3D58DB\" fill-rule=\"evenodd\" d=\"M0 16v8h32v-8z\" clip-rule=\"evenodd\"/><mask id=\"SVGs1wiueDQ\" width=\"36\" height=\"38\" x=\"-2\" y=\"-7\" fill=\"#000\" maskUnits=\"userSpaceOnUse\"><path fill=\"#fff\" d=\"M-2-7h36v38H-2z\"/><path fill-rule=\"evenodd\" d=\"M15.429 10L0-2v28l15.429-12H32v-4z\" clip-rule=\"evenodd\"/></mask><path fill=\"#5EAA22\" fill-rule=\"evenodd\" d=\"M15.429 10L0-2v28l15.429-12H32v-4z\" clip-rule=\"evenodd\"/><path fill=\"#F7FCFF\" d=\"m0-2l1.228-1.579L-2-6.089V-2zm15.429 12L14.2 11.579l.541.421h.687zM0 26h-2v4.09l3.228-2.511zm15.429-12v-2h-.687l-.541.421zM32 14v2h2v-2zm0-4h2V8h-2zM-1.228-.421l15.429 12l2.456-3.158l-15.43-12zM2 26V-2h-4v28zm12.2-13.579l-15.428 12l2.456 3.158l15.429-12zM32 12H15.429v4H32zm-2-2v4h4v-4zm-14.571 2H32V8H15.429z\" mask=\"url(#SVGs1wiueDQ)\"/><path fill=\"#272727\" stroke=\"#FECA00\" stroke-width=\"2\" d=\"M.6 5.2L-1 4v16l1.6-1.2l8-6l1.067-.8l-1.067-.8z\"/></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default za

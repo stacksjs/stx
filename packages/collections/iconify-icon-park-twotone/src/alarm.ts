@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const alarm: IconData = {
+  "body": "<defs><mask id=\"SVGnr1xicRM\"><g fill=\"none\" stroke=\"#fff\" stroke-linejoin=\"round\" stroke-width=\"4\"><path fill=\"#555\" d=\"M14 25c0-5.523 4.477-10 10-10s10 4.477 10 10v16H14z\"/><path stroke-linecap=\"round\" d=\"M24 5v3m11.892 1.328l-1.929 2.298m8.256 8.661l-2.955.521m-33.483-.521l2.955.521m3.373-11.48l1.928 2.298M6 41h37\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGnr1xicRM)\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default alarm

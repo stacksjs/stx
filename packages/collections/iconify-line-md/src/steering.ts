@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const steering: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path fill=\"currentColor\" d=\"M12 12l0 0h0l0 0l0 0c0 0 0 0 0 0c0 0 0 0 0 0Z\"><animate fill=\"freeze\" attributeName=\"d\" dur=\"0.2s\" values=\"M12 12l0 0h0l0 0l0 0c0 0 0 0 0 0c0 0 0 0 0 0Z;M7.5 12l3 -3h3l3 3l-0.5 0c0 2.21 -1.79 4 -4 4c-2.21 0 -4 -1.79 -4 -4Z\"/></path><path stroke-dasharray=\"6\" stroke-dashoffset=\"6\" d=\"M8 12h-5M16 12h5M12 16v5\"><animate fill=\"freeze\" attributeName=\"stroke-dashoffset\" begin=\"0.3s\" dur=\"0.2s\" values=\"6;0\"/></path><path stroke-dasharray=\"64\" stroke-dashoffset=\"64\" d=\"M12 3c4.97 0 9 4.03 9 9c0 4.97 -4.03 9 -9 9c-4.97 0 -9 -4.03 -9 -9c0 -4.97 4.03 -9 9 -9\"><animate fill=\"freeze\" attributeName=\"stroke-dashoffset\" begin=\"0.5s\" dur=\"0.6s\" values=\"64;0\"/></path></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default steering

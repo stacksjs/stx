@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const eggF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 20.565a8 8 0 0 1-8-8c0-4.418 3.582-12 8-12s8 7.582 8 12a8 8 0 0 1-8 8\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default eggF

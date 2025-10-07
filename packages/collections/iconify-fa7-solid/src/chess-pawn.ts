@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const chessPawn: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M192-32c66.3 0 120 53.7 120 120c0 27-8.9 51.9-24 72c17.7 0 32 14.3 32 32s-14.3 32-32 32h-10.7L304 384l56.2 70.3c5 6.3 7.8 14.1 7.8 22.2c0 19.6-15.9 35.5-35.5 35.5h-281C31.9 512 16 496.1 16 476.5c0-8.1 2.7-15.9 7.8-22.2L80 384l26.7-160H96c-17.7 0-32-14.3-32-32s14.3-32 32-32c-15.1-20.1-24-45-24-72c0-66.3 53.7-120 120-120\"/>",
+  "width": 384,
+  "height": 512,
+  "viewBox": "0 0 384 512"
+}
+
+export default chessPawn

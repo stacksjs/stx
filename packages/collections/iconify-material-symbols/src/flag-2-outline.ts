@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const flag2Outline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 22V3h16l-2 5l2 5H7v9zm2-11h11.05l-1.2-3l1.2-3H7zm0 0V5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default flag2Outline

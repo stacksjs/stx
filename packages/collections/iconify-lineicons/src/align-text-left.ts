@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const alignTextLeft: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.023 4.5a.75.75 0 1 0 0 1.5h11a.75.75 0 1 0 0-1.5zm0 4.5a.75.75 0 1 0 0 1.5h16a.75.75 0 1 0 0-1.5zm0 9a.75.75 0 0 0 0 1.5h16a.75.75 0 1 0 0-1.5zm-.75-3.75a.75.75 0 0 1 .75-.75h11a.75.75 0 1 1 0 1.5h-11a.75.75 0 0 1-.75-.75\"/>",
+  "width": 25,
+  "height": 24,
+  "viewBox": "0 0 25 24"
+}
+
+export default alignTextLeft

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const messageSecure02: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path stroke-width=\"1.5\" d=\"M21.999 11.992c.005.5-.008 1.001-.04 1.492c-.273 4.246-3.605 7.628-7.788 7.906a33 33 0 0 1-4.342 0a4.9 4.9 0 0 1-1.485-.34c-.512-.21-.768-.316-.899-.3c-.13.016-.319.155-.696.434c-.666.491-1.505.845-2.75.814c-.629-.015-.943-.023-1.084-.263s.034-.573.385-1.238c.487-.923.795-1.98.328-2.826c-.805-1.209-1.488-2.64-1.588-4.187a20 20 0 0 1 0-2.522c.274-4.246 3.606-7.628 7.79-7.906A32 32 0 0 1 11 3\"/><path stroke-width=\"2\" d=\"M11.995 12.5h.01m3.986 0H16m-8 0h.009\"/><path stroke-width=\"1.5\" d=\"M22 5.5V3c-2 0-3.5-1-3.5-1S17 3 15 3v2.5C15 9 18.5 10 18.5 10S22 9 22 5.5\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default messageSecure02

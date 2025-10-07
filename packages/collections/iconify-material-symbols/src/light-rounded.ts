@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const lightRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 21q-1.65 0-2.825-1.175T8 17H5q-.825 0-1.412-.587T3 15q0-3.5 2.3-6.038T11 6.05V4q0-.425.288-.712T12 3t.713.288T13 4v2.05q3.4.375 5.7 2.913T21 15q0 .825-.587 1.413T19 17h-3q0 1.65-1.175 2.825T12 21m-7-6h14q0-2.9-2.05-4.95T12 8t-4.95 2.05T5 15\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default lightRounded

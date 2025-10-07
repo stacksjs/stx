@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const twotoneRectangle: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 6h16v12H4z\" opacity=\".3\"/><path fill=\"currentColor\" d=\"M2 4v16h20V4zm18 14H4V6h16z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default twotoneRectangle

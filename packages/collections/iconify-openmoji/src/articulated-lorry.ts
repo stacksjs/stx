@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const articulatedLorry: IconData = {
+  "body": "<path fill=\"#d0cfce\" d=\"M10.34 52.88H5.86a1 1 0 0 1-1-.99l-.086-7.277a3 3 0 0 1 .313-1.37c.264-.53.6-1.201.64-1.254a1 1 0 0 0 .136-.248c.168-.457.763-2.189 2.197-7.361c1.45-5.23 10.53-5.92 13.61-6a1 1 0 0 1 1.02 1v22.5c0 .32-.003.745-.003.745\"/><path fill=\"#3f3f3f\" d=\"M44.625 52.19H26.19V28.31c0-.55.45-1 1-1h39.06c.55 0 1 .45 1 1v21.88c0 .55-.81 1.968-1.36 1.968l-7.75.032\"/><circle cx=\"16.333\" cy=\"53.25\" r=\"3\" fill=\"#d0cfce\"/><path fill=\"#3f3f3f\" d=\"m9.833 41l5.875.02l.125-6.895l-3.194.068a1 1 0 0 0-.934.707z\"/><circle cx=\"57.417\" cy=\"53.25\" r=\"3\" fill=\"#d0cfce\"/><circle cx=\"48.417\" cy=\"53.25\" r=\"3\" fill=\"#d0cfce\"/><g fill=\"none\" stroke=\"#000\" stroke-miterlimit=\"10\" stroke-width=\"2\"><circle cx=\"16.333\" cy=\"53.25\" r=\"3\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10.75 41h5.083v-5.917\"/><circle cx=\"57.417\" cy=\"53.25\" r=\"3\"/><circle cx=\"48.417\" cy=\"53.25\" r=\"3\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10.34 51.88H5.86a1 1 0 0 1-1-.99l-.086-6.277a3 3 0 0 1 .313-1.37c.264-.53.6-1.201.64-1.254c.058-.077.899-2.437 2.333-7.609c1.45-5.23 10.53-5.92 13.61-6a1 1 0 0 1 1.02 1v21.5c0 .32-.003.745-.003.745m19.938-.435H26.19V28.31c0-.55.45-1 1-1h39.06c.55 0 1 .45 1 1v21.88c0 .55-.45 1-1 1h-3.11\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default articulatedLorry

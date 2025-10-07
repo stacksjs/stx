@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tagLight: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M241.91 137.42L142.59 38.1a13.94 13.94 0 0 0-9.9-4.1H40a6 6 0 0 0-6 6v92.69a13.94 13.94 0 0 0 4.1 9.9l99.32 99.32a14 14 0 0 0 19.8 0l84.69-84.69a14 14 0 0 0 0-19.8m-8.49 11.31l-84.69 84.69a2 2 0 0 1-2.83 0L46.59 134.1a2 2 0 0 1-.59-1.41V46h86.69a2 2 0 0 1 1.41.59l99.32 99.31a2 2 0 0 1 0 2.83M94 84a10 10 0 1 1-10-10a10 10 0 0 1 10 10\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default tagLight

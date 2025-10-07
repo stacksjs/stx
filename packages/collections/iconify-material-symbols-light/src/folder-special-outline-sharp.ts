@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const folderSpecialOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m13.023 16.104l1.877-1.442l1.877 1.442l-.696-2.331l1.896-1.542h-2.33L14.9 9.95l-.746 2.28h-2.331l1.896 1.543zM3 19V5h6.596l2 2H21v12zm1-1h16V8h-8.806l-2-2H4zm0 0V6z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default folderSpecialOutlineSharp

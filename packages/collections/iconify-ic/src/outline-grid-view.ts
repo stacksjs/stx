@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const outlineGridView: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 3v8h8V3zm6 6H5V5h4zm-6 4v8h8v-8zm6 6H5v-4h4zm4-16v8h8V3zm6 6h-4V5h4zm-6 4v8h8v-8zm6 6h-4v-4h4z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default outlineGridView

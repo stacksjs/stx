@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const contactCard16: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGsbPF00wZ)\" d=\"M1 4.75C1 3.784 1.784 3 2.75 3h10.5c.966 0 1.75.784 1.75 1.75v6.5A1.75 1.75 0 0 1 13.25 13H2.75A1.75 1.75 0 0 1 1 11.25z\"/><path fill=\"url(#SVGNk5FUbLz)\" fill-opacity=\".7\" d=\"M1 4.75C1 3.784 1.784 3 2.75 3h10.5c.966 0 1.75.784 1.75 1.75v6.5A1.75 1.75 0 0 1 13.25 13H2.75A1.75 1.75 0 0 1 1 11.25z\"/><path fill=\"url(#SVGwVckBbQZ)\" d=\"M9.5 6a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1zm0 3a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1z\"/><path fill=\"url(#SVGAVBGobGZ)\" d=\"M3.858 8.392A.86.86 0 0 0 3 9.25a1.67 1.67 0 0 0 1.265 1.62l.053.014c.62.155 1.267.155 1.886 0l.054-.013a1.67 1.67 0 0 0 1.265-1.62a.86.86 0 0 0-.858-.859z\"/><path fill=\"url(#SVGx6qEfcoM)\" d=\"M5.261 7.714a1.357 1.357 0 1 0 0-2.714a1.357 1.357 0 0 0 0 2.714\"/><defs><linearGradient id=\"SVGsbPF00wZ\" x1=\"6\" x2=\"8.939\" y1=\"3\" y2=\"13.162\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#B3E0FF\"/><stop offset=\"1\" stop-color=\"#8CD0FF\"/></linearGradient><linearGradient id=\"SVGNk5FUbLz\" x1=\"10.167\" x2=\"12.633\" y1=\"4.228\" y2=\"18.598\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".447\" stop-color=\"#FF6CE8\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#FF6CE8\"/></linearGradient><linearGradient id=\"SVGwVckBbQZ\" x1=\"10.636\" x2=\"12.653\" y1=\"5.538\" y2=\"13.199\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0078D4\"/><stop offset=\"1\" stop-color=\"#0067BF\"/></linearGradient><linearGradient id=\"SVGAVBGobGZ\" x1=\"3\" x2=\"3.999\" y1=\"6.809\" y2=\"11.382\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".125\" stop-color=\"#9C6CFE\"/><stop offset=\"1\" stop-color=\"#7A41DC\"/></linearGradient><linearGradient id=\"SVGx6qEfcoM\" x1=\"3.905\" x2=\"5.933\" y1=\"4.095\" y2=\"7.569\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".125\" stop-color=\"#9C6CFE\"/><stop offset=\"1\" stop-color=\"#7A41DC\"/></linearGradient></defs></g>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default contactCard16

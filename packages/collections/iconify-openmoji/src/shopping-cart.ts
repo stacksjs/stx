@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const shoppingCart: IconData = {
+  "body": "<g stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path fill=\"#D0CFCE\" d=\"M51.903 18.602v23.755H15.015l-3.666-23.755z\"/><circle cx=\"50.142\" cy=\"58.463\" r=\"2.375\" fill=\"#D0CFCE\"/><circle cx=\"14.035\" cy=\"58.463\" r=\"2.375\" fill=\"#D0CFCE\"/><path fill=\"#9B9B9A\" d=\"M45.664 23.644v.79m0 12.319v.79m-5.376-13.899v.79m0 12.319v.79m-5.376-13.899v.79m0 12.319v.79m-5.375-13.899v.79m0 12.319v.79m-5.376-13.899v.79m0 12.319v.79m-5.376-13.899v.79m0 12.319v.79m26.879-7.544v.79m-5.376-.79v.79m-5.376-.79v.79m-5.375-.79v.79m-5.376-.79v.79m-5.376-.79v.79\"/></g><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path d=\"M51.903 18.602v23.755H15.015l-3.666-23.755zm0 0l3.603-7.523h5.145M14.035 51.861h37.871\"/><circle cx=\"50.142\" cy=\"58.463\" r=\"2.375\"/><circle cx=\"14.035\" cy=\"58.463\" r=\"2.375\"/><path d=\"M51.903 42.357s4.842.355 4.842 4.787c0 5.122-4.583 4.712-4.583 4.712m-6.498-28.212v.79m0 12.319v.79m-5.376-13.899v.79m0 12.319v.79m-5.376-13.899v.79m0 12.319v.79m-5.375-13.899v.79m0 12.319v.79m-5.376-13.899v.79m0 12.319v.79m-5.376-13.899v.79m0 12.319v.79m26.879-7.544v.79m-5.376-.79v.79m-5.376-.79v.79m-5.375-.79v.79m-5.376-.79v.79m-5.376-.79v.79\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default shoppingCart

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textColorStroke16: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m3.5 11.5l4-10l4 10M5 8.5h5\"/><path fill=\"currentColor\" d=\"M2 13h11v3H2z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default textColorStroke16

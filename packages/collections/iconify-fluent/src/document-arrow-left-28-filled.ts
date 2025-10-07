@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const documentArrowLeft28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 2v8a2 2 0 0 0 2 2h8v12a2 2 0 0 1-2 2h-9.4A7.5 7.5 0 0 0 4 13.865V4a2 2 0 0 1 2-2zm1.5.5V10a.5.5 0 0 0 .5.5h7.5zm-1.5 18a6.5 6.5 0 1 1-13 0a6.5 6.5 0 0 1 13 0m-2.5.5a.5.5 0 0 0 0-1H4.707l2.147-2.146a.5.5 0 0 0-.708-.708l-3 3a.5.5 0 0 0-.146.351v.006c0 .127.05.254.146.35l3 3a.5.5 0 0 0 .708-.707L4.707 21z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default documentArrowLeft28Filled

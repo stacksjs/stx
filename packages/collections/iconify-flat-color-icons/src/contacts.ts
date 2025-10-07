@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const contacts: IconData = {
+  "body": "<path fill=\"#FF7043\" d=\"M38 44H12V4h26c2.2 0 4 1.8 4 4v32c0 2.2-1.8 4-4 4\"/><path fill=\"#BF360C\" d=\"M10 4h2v40h-2c-2.2 0-4-1.8-4-4V8c0-2.2 1.8-4 4-4\"/><g fill=\"#AB300B\"><circle cx=\"26\" cy=\"20\" r=\"4\"/><path d=\"M33 30s-1.9-4-7-4s-7 4-7 4v2h14z\"/></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default contacts

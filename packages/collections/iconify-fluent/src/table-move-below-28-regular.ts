@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tableMoveBelow28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M25 24.25a.75.75 0 0 1-.75.75H3.75a.75.75 0 0 1 0-1.5h20.5a.75.75 0 0 1 .75.75m-7.442-6.163a1.7 1.7 0 0 0-.558-.419V11h-6v6.668a1.75 1.75 0 0 0-.832.832H4a1 1 0 0 1-1-1V6.75A3.75 3.75 0 0 1 6.75 3h14.5A3.75 3.75 0 0 1 25 6.75V17.5a1 1 0 0 1-1 1h-6.168a1.8 1.8 0 0 0-.274-.413M18.5 17h5v-6h-5zm0-7.5h5V6.75a2.25 2.25 0 0 0-2.25-2.25H18.5zm-1.5-5h-6v5h6zm-10.25 0A2.25 2.25 0 0 0 4.5 6.75V9.5h5v-5zM4.5 11v6h5v-6zm7.748 7.69l1.002.89V16a.75.75 0 0 1 1.5 0v3.58l1.002-.89a.75.75 0 0 1 .996 1.12l-2.25 2a.75.75 0 0 1-.996 0l-2.25-2a.75.75 0 0 1 .996-1.12\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default tableMoveBelow28Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const layerDiagonalPerson20: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGshTsDmaj)\" d=\"M11.5 3.485a1.5 1.5 0 0 0-2.064-1.39L3.56 4.48A2.5 2.5 0 0 0 2 6.797v5.71a1.5 1.5 0 0 0 2.071 1.387l6.5-2.677A1.5 1.5 0 0 0 11.5 9.83z\"/><path fill=\"url(#SVGWkN5wswq)\" d=\"M14.5 5.485a1.5 1.5 0 0 0-2.064-1.39L6.248 6.607A2 2 0 0 0 5 8.46v6.047a1.5 1.5 0 0 0 2.071 1.387l6.5-2.677a1.5 1.5 0 0 0 .929-1.387z\"/><path fill=\"url(#SVGKdJRhbfv)\" d=\"M18 7.486a1.5 1.5 0 0 0-2.065-1.39l-6 2.437A1.5 1.5 0 0 0 9 9.923v6.591a1.5 1.5 0 0 0 2.065 1.39l6-2.437a1.5 1.5 0 0 0 .935-1.39z\"/><path fill=\"url(#SVGhpkDOrjA)\" d=\"M19 16.5c0 1.245-1 2.5-3.5 2.5S12 17.75 12 16.5a1.5 1.5 0 0 1 1.5-1.5h4a1.5 1.5 0 0 1 1.5 1.5\"/><path fill=\"url(#SVGcDs89cZA)\" d=\"M17.5 12a2 2 0 1 1-4 0a2 2 0 0 1 4 0\"/><defs><linearGradient id=\"SVGshTsDmaj\" x1=\"2.339\" x2=\"10.485\" y1=\"4.238\" y2=\"10.924\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0078D4\"/><stop offset=\"1\" stop-color=\"#1B44B1\"/></linearGradient><linearGradient id=\"SVGWkN5wswq\" x1=\"5.339\" x2=\"13.485\" y1=\"6.238\" y2=\"12.924\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0FAFFF\"/><stop offset=\"1\" stop-color=\"#2764E7\"/></linearGradient><linearGradient id=\"SVGKdJRhbfv\" x1=\"9.321\" x2=\"17.374\" y1=\"8.24\" y2=\"14.498\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#6CE0FF\"/><stop offset=\"1\" stop-color=\"#58AAFE\"/></linearGradient><linearGradient id=\"SVGhpkDOrjA\" x1=\"13.665\" x2=\"15.102\" y1=\"15.532\" y2=\"19.549\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".125\" stop-color=\"#9C6CFE\"/><stop offset=\"1\" stop-color=\"#7A41DC\"/></linearGradient><linearGradient id=\"SVGcDs89cZA\" x1=\"14.451\" x2=\"16.49\" y1=\"10.532\" y2=\"13.787\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".125\" stop-color=\"#9C6CFE\"/><stop offset=\"1\" stop-color=\"#7A41DC\"/></linearGradient></defs></g>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default layerDiagonalPerson20

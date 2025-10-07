@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const documentOnePageLink20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3.05a3.5 3.5 0 0 1-.713-1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8h.5q.255 0 .5.035V4a2 2 0 0 0-2-2m-1.41 4.992A.5.5 0 0 0 12.5 6h-5l-.09.008A.5.5 0 0 0 7.5 7h5zM7.5 10a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zm4 3a2.5 2.5 0 0 0 0 5h.5a.5.5 0 0 0 0-1h-.5a1.5 1.5 0 0 1 0-3h.5a.5.5 0 0 0 0-1zm3.5 0a.5.5 0 0 0 0 1h.5a1.5 1.5 0 0 1 0 3H15a.5.5 0 0 0 0 1h.5a2.5 2.5 0 0 0 0-5zm-4 2.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default documentOnePageLink20Regular

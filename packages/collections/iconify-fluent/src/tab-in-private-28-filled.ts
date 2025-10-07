@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tabInPrivate28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.25 3h15.5A3.25 3.25 0 0 1 25 6.25v15.5A3.25 3.25 0 0 1 21.75 25H6.25A3.25 3.25 0 0 1 3 21.75V6.25A3.25 3.25 0 0 1 6.25 3M5 6.25v.689L6.939 5H6.25C5.56 5 5 5.56 5 6.25m0 2.81v2.879L11.939 5h-2.88zM14.06 5L5 14.06v2.879L16.939 5zm5 0L5 19.06v2.69q0 .09.012.176L21.926 5.012A1 1 0 0 0 21.75 5zm3.928 1.072L6.072 22.988Q6.16 23 6.25 23h2.689L23 8.939V6.25q0-.09-.012-.178M23 11.06L11.06 23h2.879L23 13.939zm0 5L16.06 23h2.879L23 18.939zm0 5L21.06 23h.69c.69 0 1.25-.56 1.25-1.25z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default tabInPrivate28Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const mobileFriendlyOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 23q-.825 0-1.412-.587T4 21V3q0-.825.588-1.412T6 1h10q.825 0 1.413.588T18 3v4h-2V6H6v12h10v-1h2v4q0 .825-.587 1.413T16 23zm0-3v1h10v-1zm8.95-4l-4.25-4.25l1.4-1.4l2.85 2.85l5.65-5.65l1.4 1.4zM6 4h10V3H6zm0 0V3zm0 16v1z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default mobileFriendlyOutline

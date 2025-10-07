@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const gitSolid: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.44.854a1.5 1.5 0 0 1 2.12 0l5.586 5.585a1.5 1.5 0 0 1 0 2.122l-5.585 5.585a1.5 1.5 0 0 1-2.122 0L.854 8.561a1.5 1.5 0 0 1 0-2.122L4.793 2.5l1.353 1.353A1.5 1.5 0 0 0 7 5.914v3.171a1.5 1.5 0 1 0 1 0v-3.17q.076-.027.147-.061l1 1a1.5 1.5 0 1 0 .707-.707l-1-1a1.5 1.5 0 0 0-2-2L5.5 1.792z\"/>",
+  "width": 15,
+  "height": 15,
+  "viewBox": "0 0 15 15"
+}
+
+export default gitSolid

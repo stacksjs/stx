@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const paintPalette: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"3\"><path d=\"M38.306 28.529c4.049-.001 7.065-3.332 6.48-7.338C43.33 11.236 34.652 3 24.005 3C12.403 3 3 12.402 3 24s9.404 21 21.005 21c3.143 0 5.48-.644 5.936-2.511c.457-1.868-.165-2.37-2.283-7.532c-1.083-2.64.094-5.07 1.827-5.935c1.646-.823 5.269-.492 8.821-.493\"/><path d=\"M23 14a5 5 0 1 0 10 0a5 5 0 1 0-10 0m-13 7.5a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0-9 0m5 13a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0\"/></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default paintPalette

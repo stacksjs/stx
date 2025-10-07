@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const stargaze: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#E2BB5E\" d=\"M8.58 9.986a.27.27 0 0 0-.29-.355l-5.055.72a.27.27 0 0 0-.229.325a.27.27 0 0 0 .07.13l3.6 3.716a.266.266 0 0 0 .377.013a.3.3 0 0 0 .072-.119z\"/><path fill=\"url(#SVGRPI9vdhw)\" d=\"M6.744 20.392a.265.265 0 0 0 .376.318l4.727-2.245a.27.27 0 0 1 .222 0l4.939 2.24a.27.27 0 0 0 .365-.334c-.931-2.805-1.773-5.579-2.673-8.38a.265.265 0 0 0-.476-.052l-1.996 3.578a.27.27 0 0 1-.238.138h-.085a.26.26 0 0 1-.233-.143L9.735 11.95a.26.26 0 0 0-.233-.143h-.026a.266.266 0 0 0-.26.19a244 244 0 0 0-2.472 8.395\"/><path fill=\"#DBA527\" d=\"M16.839 14.337a.266.266 0 0 0 .444.106l3.637-3.637a.271.271 0 0 0-.154-.46l-5.028-.704a.27.27 0 0 0-.297.349z\"/><path fill=\"url(#SVGGcDc6b0g)\" d=\"M14.023 9.552a.32.32 0 0 0 0-.25l-.027-.063l-1.784-5.78a.265.265 0 0 0-.513 0l-1.747 5.78l-.026.085a.3.3 0 0 0 .01.201l1.731 3.991a.28.28 0 0 0 .244.16h.063a.27.27 0 0 0 .244-.16l1.8-3.964z\"/><defs><linearGradient id=\"SVGRPI9vdhw\" x1=\"-3.298\" x2=\"27.1\" y1=\"1.488\" y2=\"1.488\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".49\" stop-color=\"#E2BB5E\"/><stop offset=\".5\" stop-color=\"#DBA527\"/></linearGradient><linearGradient id=\"SVGGcDc6b0g\" x1=\"3.002\" x2=\"21\" y1=\"10.901\" y2=\"10.901\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".49\" stop-color=\"#E2BB5E\"/><stop offset=\".5\" stop-color=\"#DBA527\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default stargaze

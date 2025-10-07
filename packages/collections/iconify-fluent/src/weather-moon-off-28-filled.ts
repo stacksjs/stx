@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const weatherMoonOff28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3.28 2.22a.75.75 0 1 0-1.06 1.06l10.397 10.398c-.894 1.346-2.226 2.408-3.727 3.24c-1.77.98-3.72 1.61-5.32 2.004a.75.75 0 0 0-.468 1.105A12 12 0 0 0 13.48 26c3.177 0 6.064-1.234 8.21-3.248l3.03 3.029a.75.75 0 0 0 1.06-1.061zm10.594 8.473l9.74 9.739A11.95 11.95 0 0 0 25.48 14c0-6.3-4.853-11.464-11.024-11.96a.75.75 0 0 0-.788.93c.514 2.05.905 4.92.206 7.723\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default weatherMoonOff28Filled

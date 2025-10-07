@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const folderTypeHaxelib: IconData = {
+  "body": "<path fill=\"#bf8a55\" d=\"M27.5 5.5h-9.3l-2.1 4.2H4.4v16.8h25.2v-21Zm0 4.2h-8.2l1.1-2.1h7.1Z\"/><path fill=\"#f68712\" d=\"M20.5 12.625L12.625 20.5l7.875 7.875l7.875-7.875z\"/><path fill=\"#fab20b\" d=\"m10 10l10.5 2.625l-7.875 7.875z\"/><path fill=\"#f47216\" d=\"m31 10l-2.625 10.5l-7.875-7.875z\"/><path fill=\"#f25c19\" d=\"m31 31l-10.5-2.625l7.875-7.875z\"/><path fill=\"#f89c0e\" d=\"m10 31l2.625-10.5l7.875 7.875z\"/><path fill=\"#fbc707\" d=\"M20.5 12.625L10 10h5.25zm0 0L31 10h-5.25z\"/><path fill=\"#f68712\" d=\"M20.5 28.375L31 31h-5.25z\"/><path fill=\"#f25c19\" d=\"M20.5 28.375L10 31h5.25z\"/><path fill=\"#fff200\" d=\"M12.625 20.5L10 31v-5.25zm0 0L10 10v5.25z\"/><path fill=\"#f1471d\" d=\"M28.375 20.5L31 10v5.25zm0 0L31 31v-5.25z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default folderTypeHaxelib

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tableDeleteColumn16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 1.5a.5.5 0 0 1 .5.5v3.382l-.071.068L8 5.879l-.44-.44q-.03-.03-.06-.057V2a.5.5 0 0 1 .5-.5m.428 9.05q.035.035.072.068V14a.5.5 0 0 1-1 0v-3.382l.06-.057l.44-.44zM2.5 14a.5.5 0 0 1-.5-.5V11h3v.5A2.5 2.5 0 0 1 2.5 14M5 6v4H2V6zm0-1v-.5A2.5 2.5 0 0 0 2.5 2a.5.5 0 0 0-.5.5V5zm8.5-3A2.5 2.5 0 0 0 11 4.5V5h3V2.5a.5.5 0 0 0-.5-.5M11 6h3v4h-3zm3 5h-3v.5a2.5 2.5 0 0 0 2.5 2.5a.5.5 0 0 0 .5-.5zM6.146 6.146a.5.5 0 0 1 .708 0L8 7.293l1.146-1.147a.5.5 0 1 1 .708.708L8.707 8l1.147 1.146a.5.5 0 0 1-.708.708L8 8.707L6.854 9.854a.5.5 0 0 1-.708-.708L7.293 8L6.146 6.854a.5.5 0 0 1 0-.708\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default tableDeleteColumn16Filled

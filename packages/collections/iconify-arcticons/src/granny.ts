@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const granny: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M39.748 18.734h.562M37.356 29.19h1.716M37.28 18.85l.667-.01m1.011.058h.542m-1.248 6.596v3.677m-1.64-10.311l.668-.01l.972 6.644l1.248-6.596m-5.632-.014l.596-.05m-1.192.099l.596-.049l-.033 6.485l-.215 3.887l-1.721-10.487l-.658.037\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m30.742 18.834l.499-.029l.047 10.451h.596m-1.192 0h.596m-3.337-10.372l.595-.05m-1.191.099l.596-.049l-.034 6.484l-.215 3.887l-1.72-10.486l-.66.038\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m24.824 18.835l.498-.029l.049 10.45h.594m-1.191 0h.596m-4.219-.023h.8m-2.381-.091h-.686m1.228-.203l-.542.203c.135-.942.265-1.887.35-2.849m1.754-.008c-.226-2.436-.43-4.877-.503-7.352l-.65.01c-.153 1.493-.285 3.109-.494 4.772c.013.88-.03 1.735-.107 2.578l2.031 2.941h.771zm-6.847 2.734h-1.563m.746-6.213l.016 2.726m0 0l.019 3.507m-.609-9.911c.27-.058-.016-.234.552-.115l.006.896\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15.609 24.064c.56 0 .705-.655.705-1.257V19.51c0-.28-.041-.609-.572-.782c-.316-.102-.805-.106-1.068 0c-.57.232-.683.73-.68 1.182l.016 2.897c-.083.68.32 1.258.874 1.258\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M14.884 24.064h.725c.776.252.657 1.076.657 2.212v2.63c0 .27.354.201.58.219m-7.012-3.804l.8-.076l.01 3.926c-1.895.505-2.108-.02-2.108-1.982c0-.93-.036-1.985-.036-2.859v-4.497c.047-1.407 1.274-1.125 2.25-1.067l-.078 2.669m.764 3.734l-.745.096\"/><rect width=\"37\" height=\"37\" x=\"5.5\" y=\"5.5\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"4\" ry=\"4\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default granny

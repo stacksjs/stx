@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const documentBulletListClock20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4.257a5.5 5.5 0 0 1-.657-1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h4v3.5A1.5 1.5 0 0 0 11.5 8H15v1.022q.516.047 1 .185V7.414a1.5 1.5 0 0 0-.44-1.06l-3.914-3.915A1.5 1.5 0 0 0 10.586 2zm8.793 5H11.5a.5.5 0 0 1-.5-.5V3.207zM9 14.5q0-.252.022-.5H8.5a.5.5 0 0 0 0 1h.522A6 6 0 0 1 9 14.5m.207-1.5q.149-.524.393-1H8.5a.5.5 0 0 0 0 1zm1.05-2c.313-.38.677-.716 1.08-1H8.5a.5.5 0 0 0 0 1zM6.5 10a.5.5 0 1 0 0 1a.5.5 0 0 0 0-1M6 12.5a.5.5 0 1 1 1 0a.5.5 0 0 1-1 0m0 2a.5.5 0 1 1 1 0a.5.5 0 0 1-1 0m13 0a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-4-3a.5.5 0 0 0-1 0v3a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 0-1H15z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default documentBulletListClock20Regular

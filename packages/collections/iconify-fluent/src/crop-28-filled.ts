@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const crop28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 3a1 1 0 0 0-2 0v3H3a1 1 0 0 0 0 2h3v9.75A4.25 4.25 0 0 0 10.25 22H20v3a1 1 0 1 0 2 0v-3h3a1 1 0 1 0 0-2H10.25A2.25 2.25 0 0 1 8 17.75zm12 7.25V19h2v-8.75A4.25 4.25 0 0 0 17.75 6H9v2h8.75A2.25 2.25 0 0 1 20 10.25\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default crop28Filled

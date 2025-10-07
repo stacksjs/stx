@@ -566,7 +566,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
       // Apply UnoCSS
       try {
         const unoConfig = await loadConfig()
-        const generator = await createGenerator(unoConfig.config)
+        const generator = await createGenerator(unoConfig.config as any)
         const { css } = await generator.generate(html)
         if (css) {
           html = html.replace('</head>', `<style>${css}</style>\n</head>`)

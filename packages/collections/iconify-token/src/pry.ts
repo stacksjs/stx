@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pry: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 17.75h18v.5H3zm0-1h18v.5H3zm14.66-7.5a6 6 0 0 0-.275-.5H17V8.2c-.155-.2-.32-.395-.5-.575V9.25z\"/><path fill=\"currentColor\" d=\"M15.501 6.8c.175.12.34.24.5.37v2.58l1.885.006q.096.24.17.495h-2.555z\"/><path fill=\"currentColor\" d=\"M14.49 6.256q.264.114.51.25v4.245h3.186c.035.165.06.33.085.5h-3.78z\"/><path fill=\"currentColor\" d=\"M13.5 5.926q.254.061.5.145v5.68h4.31q.012.25.005.5h-4.816z\"/><path fill=\"currentColor\" d=\"M12.5 5.75c.17.015.336.05.5.075v6.925h5.28q-.022.254-.074.5H12.5zm-1.5.075c.166-.025.33-.06.5-.075v7.5H5.797a4 4 0 0 1-.075-.5H11z\"/><path fill=\"currentColor\" d=\"M10 6.07q.247-.08.5-.144v6.325H5.687a6 6 0 0 1 0-.5H10z\"/><path fill=\"currentColor\" d=\"M9 6.5c.165-.084.335-.17.51-.244v4.995H5.73c.025-.17.05-.335.085-.5H9z\"/><path fill=\"currentColor\" d=\"M8 7.17a6 6 0 0 1 .5-.365v3.445H5.945c.05-.16.1-.32.16-.475H8z\"/><path fill=\"currentColor\" d=\"M7 8.2c.155-.2.32-.395.5-.575V9.25H6.34c.085-.17.175-.34.275-.5H7zm-.925 6.05a6 6 0 0 1-.165-.5h12.18c-.05.17-.1.335-.165.5zm.475 1a5 5 0 0 1-.265-.5h11.43c-.08.17-.17.34-.265.5zm.725 1a7 7 0 0 1-.4-.5h10.25a7 7 0 0 1-.4.5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default pry

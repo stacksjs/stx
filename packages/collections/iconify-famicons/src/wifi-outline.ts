@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const wifiOutline: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"32\" d=\"M332.41 310.59a115 115 0 0 0-152.8 0m213.85-61.05a201.26 201.26 0 0 0-274.92 0\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"32\" d=\"M447.72 182.11a288 288 0 0 0-383.44 0\"/><path fill=\"currentColor\" d=\"M256 416a32 32 0 1 1 32-32a32 32 0 0 1-32 32\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default wifiOutline

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const video36020Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3.97 4.02A1.7 1.7 0 0 0 2 5.697v8.605a1.7 1.7 0 0 0 1.97 1.677q.75-.12 1.5-.211a38 38 0 0 1 10.56.21q.098.017.193.021A1.7 1.7 0 0 0 18 14.302V5.697a1.7 1.7 0 0 0-1.97-1.677a37.9 37.9 0 0 1-12.06 0M16 14.962a39 39 0 0 0-3-.35v-2.613h2a1 1 0 0 1 1 1zm-4-.415a39 39 0 0 0-4 0V12a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1zm-5 .065a39 39 0 0 0-3 .35v-1.963a1 1 0 0 1 1-1h2zM10 10a1 1 0 1 1 0-2a1 1 0 0 1 0 2m-3.5 0a1 1 0 1 1-2 0a1 1 0 0 1 2 0m9 0a1 1 0 1 1-2 0a1 1 0 0 1 2 0\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default video36020Filled

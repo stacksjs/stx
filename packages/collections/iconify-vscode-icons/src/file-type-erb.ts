@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const fileTypeErb: IconData = {
+  "body": "<path fill=\"#921a1e\" d=\"M7.25 24.75h17.5L12.5 12.5l-5.25 5.25ZM2 30h28V2H16L2 16Zm25.375-2.625H4.625v-10.5l12.25-12.25h10.5Z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default fileTypeErb

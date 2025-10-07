@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const megaphone28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M26 7.353a2.75 2.75 0 0 0-3.458-2.657L4.045 9.629a2.75 2.75 0 0 0-2.041 2.657v3.427a2.75 2.75 0 0 0 2.041 2.657L7 19.158v.342a4.5 4.5 0 0 0 8.56 1.942l6.982 1.862A2.75 2.75 0 0 0 26 20.647zm-3.072-1.208A1.25 1.25 0 0 1 24.5 7.353v13.294a1.25 1.25 0 0 1-1.572 1.207L4.432 16.921a1.25 1.25 0 0 1-.928-1.208v-3.427c0-.566.38-1.062.928-1.207zm-8.856 14.9A3 3 0 0 1 8.5 19.559z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default megaphone28Regular

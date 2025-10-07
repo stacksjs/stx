@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const panelRight28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M25.996 7.75A3.75 3.75 0 0 0 22.246 4H5.75A3.75 3.75 0 0 0 2 7.75v11.5A3.75 3.75 0 0 0 5.75 23h16.496a3.75 3.75 0 0 0 3.75-3.75zM5.75 21.5a2.25 2.25 0 0 1-2.25-2.25V7.75A2.25 2.25 0 0 1 5.75 5.5H17.5v16z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default panelRight28Filled

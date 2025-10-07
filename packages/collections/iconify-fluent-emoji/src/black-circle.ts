@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const blackCircle: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#iRK04sc)\" d=\"M29.547 16c0 7.732-6.268 14-14 14s-14-6.268-14-14s6.268-14 14-14s14 6.268 14 14\"/><path fill=\"url(#iP9lurd)\" d=\"M29.547 16c0 7.732-6.268 14-14 14s-14-6.268-14-14s6.268-14 14-14s14 6.268 14 14\"/><path fill=\"url(#isfWXVc)\" d=\"M29.547 16c0 7.732-6.268 14-14 14s-14-6.268-14-14s6.268-14 14-14s14 6.268 14 14\"/><path fill=\"url(#ieNQ2Wc)\" d=\"M29.547 16c0 7.732-6.268 14-14 14s-14-6.268-14-14s6.268-14 14-14s14 6.268 14 14\"/><path fill=\"url(#iJwWKBd)\" d=\"M29.547 16c0 7.732-6.268 14-14 14s-14-6.268-14-14s6.268-14 14-14s14 6.268 14 14\"/><defs><radialGradient id=\"iRK04sc\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"rotate(130.168 9.831 9.886)scale(27.8086)\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#645B70\"/><stop offset=\".662\" stop-color=\"#33293D\"/></radialGradient><radialGradient id=\"isfWXVc\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(-9.47663 8.74999 -8.07914 -8.75007 24.227 10.75)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".113\" stop-color=\"#6A6571\"/><stop offset=\"1\" stop-color=\"#49474C\" stop-opacity=\"0\"/></radialGradient><radialGradient id=\"ieNQ2Wc\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(-19.25 0 0 -20 20.04 16)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".62\" stop-color=\"#434344\" stop-opacity=\"0\"/><stop offset=\".951\" stop-color=\"#8C8B8D\"/></radialGradient><radialGradient id=\"iJwWKBd\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(0 21.8837 -24.3022 0 15.547 9)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".853\" stop-color=\"#352343\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#50405F\"/></radialGradient><linearGradient id=\"iP9lurd\" x1=\"15.547\" x2=\"15.547\" y1=\"2\" y2=\"8.5\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#554A63\"/><stop offset=\"1\" stop-color=\"#554A63\" stop-opacity=\"0\"/></linearGradient></defs></g>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default blackCircle

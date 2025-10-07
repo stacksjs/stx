@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const serverMinusOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 17h8v2H8zM2 5.6v4.8c0 .9.5 1.6 1.2 1.6h17.7c.6 0 1.2-.7 1.2-1.6V5.6C22 4.7 21.5 4 20.8 4H3.2C2.5 4 2 4.7 2 5.6M10 9V7H9v2zM5 9h2V7H5zm15 1H4V6h16z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default serverMinusOutline

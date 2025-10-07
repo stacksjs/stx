@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const buildingFactory16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M1.463 2.442A1.5 1.5 0 0 1 2.963 1h1.075a1.5 1.5 0 0 1 1.499 1.442l.423 11A1.5 1.5 0 0 1 4.46 15H2.54a1.5 1.5 0 0 1-1.5-1.558zM2.963 2a.5.5 0 0 0-.5.48l-.424 11a.5.5 0 0 0 .5.52h1.922a.5.5 0 0 0 .5-.52l-.424-11a.5.5 0 0 0-.5-.48zM13.5 15a1.5 1.5 0 0 0 1.5-1.5v-9a.5.5 0 0 0-.854-.354L11 7.293V4.5a.5.5 0 0 0-.832-.374L6.72 7.191l.05 1.294L10 5.613V8.5a.5.5 0 0 0 .854.354L14 5.707V13.5a.5.5 0 0 1-.5.5H13v-3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3H6.91a2.5 2.5 0 0 1-.45 1zM9 14v-3h3v3z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default buildingFactory16Regular

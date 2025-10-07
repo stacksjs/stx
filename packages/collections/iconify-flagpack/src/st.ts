@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const st: IconData = {
+  "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path fill=\"#FBCD17\" d=\"M0 0v24h32V0z\"/><path fill=\"#73BE4A\" d=\"M0 0v8h32V0zm0 16v8h32v-8z\"/><path fill=\"#C51918\" d=\"M0 0v24l10-12z\"/><path fill=\"#272727\" d=\"M17.002 13.87L15.132 15l.426-2.204L14 11.146l2.11-.088L17.001 9l.892 2.058H20l-1.554 1.738l.468 2.204zm8 0L23.132 15l.426-2.204L22 11.146l2.11-.088L25.001 9l.892 2.058H28l-1.554 1.738l.468 2.204z\"/></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default st

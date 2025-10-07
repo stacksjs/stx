@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const userSquare: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 0h12a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V4a4 4 0 0 1 4-4m0 2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm1.229 16H4a2 2 0 0 1-.813-.172a5.58 5.58 0 0 1 3.347-3.758a1 1 0 1 1 .733 1.86A3.58 3.58 0 0 0 5.229 18m9.512 0a3.66 3.66 0 0 0-2.097-2.066a1 1 0 1 1 .712-1.868a5.66 5.66 0 0 1 3.437 3.77A2 2 0 0 1 16 18zM10 4a4 4 0 0 1 4 4v2a4 4 0 1 1-8 0V8a4 4 0 0 1 4-4m0 2a2 2 0 0 0-2 2v2a2 2 0 1 0 4 0V8a2 2 0 0 0-2-2\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default userSquare

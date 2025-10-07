@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const arrowHookDownRight24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10.5 6H16a1 1 0 1 0 0-2h-5.5a6.5 6.5 0 0 0 0 13h5.14l-1.933 1.933a1 1 0 0 0 1.414 1.414l3.53-3.529a1 1 0 0 0 .21-.308a1 1 0 0 0-.18-1.243l-.028-.029l-3.531-3.53a1 1 0 0 0-1.415 1.413L15.586 15H10.5a4.5 4.5 0 1 1 0-9\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default arrowHookDownRight24Filled

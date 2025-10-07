@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const fm: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#63B3E1\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/><mask id=\"SVGTrazyc7b\" width=\"32\" height=\"24\" x=\"0\" y=\"0\" maskUnits=\"userSpaceOnUse\" style=\"mask-type:luminance\"><path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/></mask><g fill=\"#F7FCFF\" fill-rule=\"evenodd\" clip-rule=\"evenodd\" mask=\"url(#SVGTrazyc7b)\"><path d=\"m16 7.3l-1.763.927l.336-1.963l-1.426-1.391l1.971-.287L16 2.8l.882 1.786l1.971.287l-1.426 1.39l.336 1.964zm0 12l-1.763.927l.336-1.963l-1.426-1.391l1.971-.287L16 14.8l.882 1.787l1.971.286l-1.426 1.39l.336 1.964zm-6.2-5.8l-1.763.927l.336-1.963l-1.426-1.391l1.971-.287L9.8 9l.882 1.787l1.971.286l-1.426 1.39l.336 1.964zm12.2 0l-1.763.927l.336-1.963l-1.426-1.391l1.971-.287L22 9l.882 1.787l1.971.286l-1.426 1.39l.336 1.964z\"/></g></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default fm

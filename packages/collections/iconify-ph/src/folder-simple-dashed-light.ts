@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const folderSimpleDashedLight: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M124.4 84.8L94.53 62.4a2 2 0 0 0-1.2-.4H40a2 2 0 0 0-2 2v16a6 6 0 0 1-12 0V64a14 14 0 0 1 14-14h53.33a14 14 0 0 1 8.4 2.8l29.87 22.4a6 6 0 0 1-7.2 9.6M88 202H39.38a1.4 1.4 0 0 1-1.38-1.38V192a6 6 0 0 0-12 0v8.62A13.39 13.39 0 0 0 39.38 214H88a6 6 0 0 0 0-12m72 0h-32a6 6 0 0 0 0 12h32a6 6 0 0 0 0-12m64-56a6 6 0 0 0-6 6v48.89a1.11 1.11 0 0 1-1.11 1.11H200a6 6 0 0 0 0 12h16.89A13.12 13.12 0 0 0 230 200.89V152a6 6 0 0 0-6-6m-8-72h-48a6 6 0 0 0 0 12h48a2 2 0 0 1 2 2v24a6 6 0 0 0 12 0V88a14 14 0 0 0-14-14M32 158a6 6 0 0 0 6-6v-32a6 6 0 0 0-12 0v32a6 6 0 0 0 6 6\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default folderSimpleDashedLight

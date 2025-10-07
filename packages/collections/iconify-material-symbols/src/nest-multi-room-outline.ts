@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const nestMultiRoomOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 21V9l8-6l8 6v12zm2-2h7v-3H6zm9 0h3v-3h-3zm-9-5h3v-2.975H6zm5 0h7v-2.975h-7zM7.3 9.025h9.4L12 5.5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default nestMultiRoomOutline

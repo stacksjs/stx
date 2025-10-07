@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const baselineLegendToggle: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M20 15H4v-2h16zm0 2H4v2h16zm-5-6l5-3.55V5l-5 3.55L10 5L4 8.66V11l5.92-3.61z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default baselineLegendToggle

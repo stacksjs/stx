@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textAlignJustifyLow24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M13 5.75a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1-.75-.75m-11 13a.75.75 0 0 1 .75-.75h18.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75m11.75-7.25a.75.75 0 0 0 0 1.5h7.5a.75.75 0 0 0 0-1.5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default textAlignJustifyLow24Regular

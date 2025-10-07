@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const documentLandscapeData20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.5 4A2.5 2.5 0 0 0 2 6.5v7A2.5 2.5 0 0 0 4.5 16h11a2.5 2.5 0 0 0 2.5-2.5v-7A2.5 2.5 0 0 0 15.5 4zM3 6.5A1.5 1.5 0 0 1 4.5 5h11A1.5 1.5 0 0 1 17 6.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 13.5zM6 10a1.5 1.5 0 0 0-1.5 1.5v1a1.5 1.5 0 0 0 3 0v-1A1.5 1.5 0 0 0 6 10m-.5 1.5a.5.5 0 0 1 1 0v1a.5.5 0 0 1-1 0zm3-4a1.5 1.5 0 1 1 3 0v5a1.5 1.5 0 0 1-3 0zM10 7a.5.5 0 0 0-.5.5v5a.5.5 0 0 0 1 0v-5A.5.5 0 0 0 10 7m4 1a1.5 1.5 0 0 0-1.5 1.5v3a1.5 1.5 0 0 0 3 0v-3A1.5 1.5 0 0 0 14 8m-.5 1.5a.5.5 0 0 1 1 0v3a.5.5 0 0 1-1 0z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default documentLandscapeData20Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const bookmarkMultiple24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 6.748a2.25 2.25 0 0 1 2.25-2.25h9a2.25 2.25 0 0 1 2.25 2.25V21.25a.75.75 0 0 1-1.127.648l-5.623-3.28l-5.622 3.28A.75.75 0 0 1 4 21.25zM15.25 2A4.75 4.75 0 0 1 20 6.75v11.873a.75.75 0 0 1-1.5 0V6.751a3.25 3.25 0 0 0-3.25-3.25H6.637s.113-.558.797-1.082C8 2 8.602 2 8.602 2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default bookmarkMultiple24Filled

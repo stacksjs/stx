@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const browserLockSolid: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M1.546 3.315v8.934c0 .113.092.205.205.205h10.498a.204.204 0 0 0 .205-.205V3.315zM1.751.046C.809.046.046.81.046 1.751v10.498c0 .942.763 1.705 1.705 1.705h10.498c.942 0 1.705-.763 1.705-1.705V1.751c0-.942-.763-1.705-1.705-1.705zM7 5.75a.875.875 0 0 0-.875.875v.5h1.75v-.5A.875.875 0 0 0 7 5.75m-2.125.875v.72a1 1 0 0 0-.375.78v2a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-.375-.78v-.72a2.125 2.125 0 0 0-4.25 0\" clip-rule=\"evenodd\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default browserLockSolid

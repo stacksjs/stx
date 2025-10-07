@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const swapVertical: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 16h1.5v-6h2v6H17l-2.5 3zM8 8h1.5v6h2V8H13l-2.5-3z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default swapVertical

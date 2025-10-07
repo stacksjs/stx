@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const fileMusic: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><path d=\"M10 44h28a2 2 0 0 0 2-2V14H30V4H10a2 2 0 0 0-2 2v36a2 2 0 0 0 2 2M30 4l10 10\"/><path d=\"m31 20l-6 2.969V33.5\"/><circle cx=\"21\" cy=\"33\" r=\"4\"/></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default fileMusic

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const layoutColumnFourFocusLeft24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.25 3A3.25 3.25 0 0 0 3 6.25v11.5A3.25 3.25 0 0 0 6.25 21h11.5A3.25 3.25 0 0 0 21 17.75V6.25A3.25 3.25 0 0 0 17.75 3zM8 19.5v-15h3v15zm4.5 0v-15H15v15zm4 0v-15h1.25c.966 0 1.75.784 1.75 1.75v11.5a1.75 1.75 0 0 1-1.75 1.75z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default layoutColumnFourFocusLeft24Filled

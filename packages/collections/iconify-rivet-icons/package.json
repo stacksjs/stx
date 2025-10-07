@@ -1,0 +1,41 @@
+{
+  "name": "@stx/iconify-rivet-icons",
+  "version": "0.0.1",
+  "description": "Rivet Icons icons for stx from Iconify",
+  "author": "Indiana University",
+  "license": "BSD-3-Clause",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": "./dist/*"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun build.ts"
+  },
+  "dependencies": {
+    "@stx/iconify-core": "workspace:*"
+  },
+  "keywords": [
+    "iconify",
+    "icons",
+    "svg",
+    "rivet-icons",
+    "Rivet Icons",
+    "stx"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stacksjs/stx.git",
+    "directory": "packages/iconify-rivet-icons"
+  },
+  "sideEffects": false
+}

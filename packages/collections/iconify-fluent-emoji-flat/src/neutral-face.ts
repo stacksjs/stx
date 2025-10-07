@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const neutralFace: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#FFB02E\" d=\"M15.999 29.998c9.334 0 13.999-6.268 13.999-14c0-7.73-4.665-13.998-14-13.998C6.665 2 2 8.268 2 15.999s4.664 13.999 13.999 13.999\"/><path fill=\"#fff\" d=\"M10.42 16.224a4.206 4.206 0 1 0 0-8.411a4.206 4.206 0 0 0 0 8.411m11.148.077a4.244 4.244 0 1 0 0-8.489a4.244 4.244 0 0 0 0 8.49\"/><path fill=\"#402A32\" d=\"M11 15a3 3 0 1 0 0-6a3 3 0 0 0 0 6m10 0a3 3 0 1 0 0-6a3 3 0 0 0 0 6m-11 5a1 1 0 0 1 1-1h10a1 1 0 1 1 0 2H11a1 1 0 0 1-1-1\"/></g>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default neutralFace

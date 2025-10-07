@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const sharpCameraIndoor: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 3L4 9v12h16V9zm4 13.06L14 15v2H8v-6h6v2l2-1.06z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sharpCameraIndoor

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const invoiceFastOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M19.5 19.32L22 21V5H7v16l2.5-1.68L12 21l2.5-1.68L17 21zM20 7v9.57l-3 2.02l-2.5-1.69l-2.5 1.69l-3-2.02V7zM2 8c0-.6.4-1 1-1h2v2H3c-.6 0-1-.4-1-1m0 3c-.6 0-1 .4-1 1s.4 1 1 1h3v-2zm-2 5c0-.6.4-1 1-1h4v2H1c-.6 0-1-.4-1-1\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default invoiceFastOutline

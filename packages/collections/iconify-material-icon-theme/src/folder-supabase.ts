@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const folderSupabase: IconData = {
+  "body": "<path fill=\"#66bb6a\" d=\"m13.844 7.536l-1.288-1.072A2 2 0 0 0 11.276 6H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h24a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2H15.124a2 2 0 0 1-1.28-.464\"/><path fill=\"#c8e6c9\" d=\"M30 18h-6v-6.499a.5.5 0 0 0-.9-.3l-6.3 8.4a1.5 1.5 0 0 0 1.2 2.4h6V28.5a.5.5 0 0 0 .9.3l6.3-8.4A1.5 1.5 0 0 0 30 18\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default folderSupabase

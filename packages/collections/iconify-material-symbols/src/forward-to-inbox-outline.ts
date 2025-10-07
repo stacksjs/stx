@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const forwardToInboxOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 13L4 8v10h9v2H4q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v7h-2V8zm0-2l8-5H4zm7 12l-1.4-1.4l1.575-1.6H15v-2h4.175l-1.6-1.6L19 15l4 4zM4 8v11v-6v.075V6z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default forwardToInboxOutline

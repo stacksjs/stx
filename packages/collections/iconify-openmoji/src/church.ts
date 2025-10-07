@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const church: IconData = {
+  "body": "<path fill=\"#D0CFCE\" d=\"M44 36V20.492l-7.294-5.27a1.24 1.24 0 0 0-1.412 0L28 20.491V36\"/><path fill=\"#FFF\" d=\"M18.947 66L19 42.102l17.045-15.117l16.963 15.128L53 66z\"/><path fill=\"#A57939\" d=\"M41 57.943c0-3.85-3.348-6.126-4.565-6.825a.86.86 0 0 0-.87 0c-1.217.7-4.565 2.974-4.565 6.825v7.09c0 .534.41.967.914.967h8.172c.505 0 .914-.433.914-.968z\"/><circle cx=\"36\" cy=\"42\" r=\"5\" fill=\"#92D3F5\"/><path d=\"m36 28.36l16 14.196V65H20V42.556zM36 26a.93.93 0 0 0-.62.237L18.329 41.365a.98.98 0 0 0-.328.737v23.925a.96.96 0 0 0 .947.973h34.106a.96.96 0 0 0 .947-.973V42.102a.98.98 0 0 0-.328-.737L36.619 26.237A.93.93 0 0 0 36 26\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M43 29v-8.508l-6.382-5.27a.974.974 0 0 0-1.236 0L29 20.491V29\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M36 14V6m-3.5 4h7M41 57.943c0-3.85-3.348-6.126-4.565-6.825a.86.86 0 0 0-.87 0c-1.217.7-4.565 2.974-4.565 6.825v7.09c0 .534.41.967.914.967h8.172c.505 0 .914-.433.914-.968z\"/><circle cx=\"36\" cy=\"42\" r=\"5\" fill=\"none\" stroke=\"#000\" stroke-miterlimit=\"10\" stroke-width=\"2\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default church

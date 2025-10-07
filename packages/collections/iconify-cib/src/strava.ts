@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const strava: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m20.516 23.927l-2.786-5.49h-4.083L20.517 32l6.865-13.563h-4.083zm-6.563-12.953l3.781 7.464h5.563L13.953 0L4.62 18.438h5.557z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default strava

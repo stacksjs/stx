@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const paperAirplane20Solid: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3.105 2.288a.75.75 0 0 0-.826.95l1.414 4.926A1.5 1.5 0 0 0 5.135 9.25h6.115a.75.75 0 0 1 0 1.5H5.135a1.5 1.5 0 0 0-1.442 1.086l-1.414 4.926a.75.75 0 0 0 .826.95a28.9 28.9 0 0 0 15.293-7.155a.75.75 0 0 0 0-1.114A28.9 28.9 0 0 0 3.105 2.288\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default paperAirplane20Solid

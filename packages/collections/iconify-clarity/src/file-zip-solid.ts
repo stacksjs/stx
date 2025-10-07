@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const fileZipSolid: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15 25.6c.9 0 1.6-.7 1.6-1.6v-2.6h-3.2V24c0 .9.7 1.6 1.6 1.6\" class=\"clr-i-solid clr-i-solid-path-1\"/><path fill=\"currentColor\" d=\"M21.9 4H7.8C6.8 4 6 4.9 6 5.9v24.2c0 1 .8 1.9 1.8 1.9h20.3c1 0 1.8-.9 1.8-1.9V11.9zM18 24c0 1.7-1.3 3-3 3s-3-1.3-3-3v-4h6zm-.8-12c.6 0 1 .4 1 1s-.4 1-1 1H15v2h2.2c.6 0 1 .4 1 1s-.4 1-1 1H15v-2h-2.2c-.6 0-1-.4-1-1s.4-1 1-1H15v-2h-2.2c-.6 0-1-.4-1-1s.4-1 1-1H15V8h2.2c.6 0 1 .4 1 1s-.4 1-1 1H15v2zm4.7 0V6.5l5.7 5.5z\" class=\"clr-i-solid clr-i-solid-path-2\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default fileZipSolid

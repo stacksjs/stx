@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const moonWaningGibbousFill: IconData = {
+  "body": "<defs><linearGradient id=\"SVGftBWedBO\" x1=\"12993.6\" x2=\"13126.8\" y1=\"143.9\" y2=\"374.7\" gradientTransform=\"matrix(-1 0 0 1 13312.32 0)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"#86c3db\"/><stop offset=\".5\" stop-color=\"#86c3db\"/><stop offset=\"1\" stop-color=\"#5eafcf\"/></linearGradient></defs><path fill=\"none\" stroke=\"#e5e7eb\" stroke-dasharray=\"16.9 56.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"17.4\" d=\"M384 256a128 128 0 0 0-128-128c-169.8 6.7-169.7 249.3 0 256a128 128 0 0 0 128-128\"/><path fill=\"url(#SVGftBWedBO)\" stroke=\"#72b9d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"6\" d=\"M121.2 214.8a134.1 134.1 0 0 1 155.6-95.1a135.6 135.6 0 0 0-13.8 31.9c-20.7 73.2 22 151 95.4 173.8a145 145 0 0 0 14.9 3.6a134.6 134.6 0 0 1-156.7 59.6a142.6 142.6 0 0 1-95.4-173.8\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default moonWaningGibbousFill

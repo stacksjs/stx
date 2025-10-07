@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const serverMultiple20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.5 5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zM7 12.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m.5 1.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zM5 4.5A2.5 2.5 0 0 1 7.5 2h5A2.5 2.5 0 0 1 15 4.5V5h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-1.05a2.5 2.5 0 0 1-2.45 2h-5a2.5 2.5 0 0 1-2.45-2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1zM15 15h1a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-1zM5 6H4a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h1zm2.5-3A1.5 1.5 0 0 0 6 4.5v11A1.5 1.5 0 0 0 7.5 17h5a1.5 1.5 0 0 0 1.5-1.5v-11A1.5 1.5 0 0 0 12.5 3z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default serverMultiple20Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const commentOff16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m11.293 12l2.853 2.854a.5.5 0 0 0 .708-.708l-13-13a.5.5 0 1 0-.708.708l.739.738A2.5 2.5 0 0 0 1 4.5v5A2.5 2.5 0 0 0 3.5 12H4v1.942a.98.98 0 0 0 1.625.738L8.688 12zm-1-1h-1.98L5 13.898V11H3.5A1.5 1.5 0 0 1 2 9.5v-5c0-.489.234-.923.596-1.197zM14 9.5a1.5 1.5 0 0 1-.974 1.405l.747.747A2.5 2.5 0 0 0 15 9.5v-5A2.5 2.5 0 0 0 12.5 2H4.121l1 1H12.5A1.5 1.5 0 0 1 14 4.5z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default commentOff16Regular

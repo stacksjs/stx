@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const gb: IconData = {
+  "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path fill=\"#F7FCFF\" d=\"M0 0v24h32V0z\"/><path fill=\"#F50302\" d=\"M18 0h-4v10H0v4h14v10h4V14h14v-4H18z\"/></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default gb

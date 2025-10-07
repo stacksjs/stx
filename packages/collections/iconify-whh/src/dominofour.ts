@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const dominofour: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M832.56 960h-704q-53 0-90.5-37.5T.56 832V128q0-53 37.5-90.5T128.56 0h704q53 0 90.5 37.5t37.5 90.5v704q0 53-37.5 90.5t-90.5 37.5m-672-896q-40 0-68 28t-28 68t28 68t68 28t68-28t28-68t-28-68t-68-28m0 640q-40 0-68 28t-28 68t28 68t68 28t68-28t28-68t-28-68t-68-28m640-640q-40 0-68 28t-28 68t28 68t68 28t68-28t28-68t-28-68t-68-28m0 640q-40 0-68 28t-28 68t28 68t68 28t68-28t28-68t-28-68t-68-28\"/>",
+  "width": 961,
+  "height": 960,
+  "viewBox": "0 0 961 960"
+}
+
+export default dominofour

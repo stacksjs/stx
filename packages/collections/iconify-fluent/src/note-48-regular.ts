@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const note48Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12.25 6A6.25 6.25 0 0 0 6 12.25v23.5A6.25 6.25 0 0 0 12.25 42h13.679a6.25 6.25 0 0 0 4.42-1.83l9.82-9.822A6.25 6.25 0 0 0 42 25.928V12.25A6.25 6.25 0 0 0 35.75 6zM8.5 12.25a3.75 3.75 0 0 1 3.75-3.75h23.5a3.75 3.75 0 0 1 3.75 3.75V26h-7.25A6.25 6.25 0 0 0 26 32.25v7.25H12.25a3.75 3.75 0 0 1-3.75-3.75zm20 26.23v-6.23a3.75 3.75 0 0 1 3.75-3.75h6.23l-.078.08l-9.821 9.822z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default note48Regular

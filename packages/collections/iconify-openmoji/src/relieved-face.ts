@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const relievedFace: IconData = {
+  "body": "<circle cx=\"36\" cy=\"36\" r=\"23\" fill=\"#FCEA2B\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><circle cx=\"36\" cy=\"36\" r=\"23\" stroke-linejoin=\"round\"/><path stroke-linejoin=\"round\" d=\"M45.815 44.806c-5.852 4.708-14.1 4.687-19.63 0\"/><path d=\"M40.306 30.595a4.726 4.726 0 0 0 8.638 0m-25.888 0a4.726 4.726 0 0 0 8.638 0\"/><path stroke-linejoin=\"round\" d=\"M21.849 27.145a7.4 7.4 0 0 1 3.98-3.522a7.4 7.4 0 0 1 5.318-.494m20.636 4.016a8.44 8.44 0 0 0-9.285-4.027\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default relievedFace

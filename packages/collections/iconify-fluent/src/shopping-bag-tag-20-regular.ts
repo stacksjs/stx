@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const shoppingBagTag20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10 2.5a2.5 2.5 0 0 0-4 2V6H5a1 1 0 0 0-1 1v8a3 3 0 0 0 3 3h4.53l-.979-1H7a2 2 0 0 1-2-2V7h6v2.052A2.5 2.5 0 0 1 11.51 9H12V7h3v2.077c.366.093.709.268 1 .514V7a1 1 0 0 0-1-1h-1V4.5a2.5 2.5 0 0 0-4-2m-3 2a1.5 1.5 0 1 1 3 0V6H7zm3.667-1.248A1.5 1.5 0 0 1 13 4.5V6h-2V4.5c0-.454-.121-.88-.333-1.248m-.235 12.197A1.5 1.5 0 0 1 10 14.391v-2.88A1.51 1.51 0 0 1 11.51 10h2.873c.403 0 .789.161 1.072.447l3.108 3.14a1.514 1.514 0 0 1-.026 2.154l-2.947 2.837a1.51 1.51 0 0 1-2.124-.031zM12 12.75a.75.75 0 1 0 1.5 0a.75.75 0 0 0-1.5 0\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default shoppingBagTag20Regular

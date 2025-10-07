@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const handWashing: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M10.716 19.217h4.608a2 2 0 0 0 2-2v-.966h-7.017\"/><path d=\"m9.273 16.248l4.416.002a2 2 0 0 0 2-2v-.965H9.064v-.163l1.524-1.383a1.388 1.388 0 0 0 0-2.098l-.641-.64l-5.32 2.868A5 5 0 0 0 2 16.269v5.914h12.055c.903 0 1.635-.732 1.635-1.635v-1.331l-6.538-.004m7.318-14.87L18.815 2l2.343 2.343a3.314 3.314 0 1 1-4.686 0Z\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default handWashing

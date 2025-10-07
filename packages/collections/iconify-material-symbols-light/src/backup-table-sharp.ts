@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const backupTableSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.5 16H13v-5.5H7.5zm0-6.5h12V4h-12zM14 16h5.5v-5.5H14zm-7.5 1V3h14v14zm-3 3V6.616h1V19h12.385v1z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default backupTableSharp

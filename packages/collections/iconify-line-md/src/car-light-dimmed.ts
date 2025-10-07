@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const carLightDimmed: IconData = {
+  "body": "<mask id=\"SVGwmVT7dHu\"><g fill=\"none\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path stroke-dasharray=\"12\" stroke-dashoffset=\"12\" d=\"M12 5.5l-9 2.5\"><animate fill=\"freeze\" attributeName=\"stroke-dashoffset\" begin=\"0.6s\" dur=\"0.2s\" values=\"12;0\"/></path><path stroke-dasharray=\"12\" stroke-dashoffset=\"12\" d=\"M12 10.5l-9 2.5\"><animate fill=\"freeze\" attributeName=\"stroke-dashoffset\" begin=\"0.8s\" dur=\"0.2s\" values=\"12;0\"/></path><path stroke-dasharray=\"12\" stroke-dashoffset=\"12\" d=\"M12 15.5l-9 2.5\"><animate fill=\"freeze\" attributeName=\"stroke-dashoffset\" begin=\"1s\" dur=\"0.2s\" values=\"12;0\"/></path><path stroke=\"#000\" stroke-width=\"6\" d=\"M21 12c0 -3.31 -3.5 -6.25 -8.25 -6.25c-0.5 0 -1.75 2.75 -1.75 6.25c0 3.5 1.25 6.25 1.75 6.25c4.75 0 8.25 -2.94 8.25 -6.25Z\"/><path stroke-dasharray=\"40\" stroke-dashoffset=\"40\" d=\"M21 12c0 -3.31 -3.5 -6.25 -8.25 -6.25c-0.5 0 -1.75 2.75 -1.75 6.25c0 3.5 1.25 6.25 1.75 6.25c4.75 0 8.25 -2.94 8.25 -6.25Z\"><animate fill=\"freeze\" attributeName=\"stroke-dashoffset\" dur=\"0.5s\" values=\"40;0\"/></path></g></mask><rect width=\"24\" height=\"24\" fill=\"currentColor\" mask=\"url(#SVGwmVT7dHu)\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default carLightDimmed

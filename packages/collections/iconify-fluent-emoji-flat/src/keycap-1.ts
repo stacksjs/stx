@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const keycap1: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#00A6ED\" d=\"M2 6a4 4 0 0 1 4-4h20a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z\"/><path fill=\"#fff\" d=\"M17.574 7.875c.665.266 1.1.91 1.1 1.625v13a1.75 1.75 0 1 1-3.5 0v-8.625l-.157.165a1.75 1.75 0 1 1-2.534-2.413l3.174-3.334a1.75 1.75 0 0 1 1.917-.418\"/></g>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default keycap1

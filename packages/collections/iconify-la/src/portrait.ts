@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const portrait: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 5v22h18V5zm2 2h14v18H9zm7 3c-2.2 0-4 1.8-4 4c0 1.113.477 2.117 1.219 2.844A5.04 5.04 0 0 0 11 21h2c0-1.668 1.332-3 3-3s3 1.332 3 3h2a5.04 5.04 0 0 0-2.219-4.156C19.523 16.117 20 15.114 20 14c0-2.2-1.8-4-4-4m0 2c1.117 0 2 .883 2 2s-.883 2-2 2s-2-.883-2-2s.883-2 2-2\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default portrait

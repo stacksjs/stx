@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const mapPinLineLight: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M200 226h-54.78a266 266 0 0 0 27.31-27.06c27.13-31.2 41.47-64 41.47-94.94a86 86 0 0 0-172 0c0 30.91 14.34 63.74 41.47 94.94A266 266 0 0 0 110.78 226H56a6 6 0 0 0 0 12h144a6 6 0 0 0 0-12M54 104a74 74 0 0 1 148 0c0 59.62-59 108.93-74 120.51c-15-11.58-74-60.89-74-120.51m112 0a38 38 0 1 0-38 38a38 38 0 0 0 38-38m-64 0a26 26 0 1 1 26 26a26 26 0 0 1-26-26\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default mapPinLineLight

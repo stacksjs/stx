@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tabDuplicateSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 18V2h16v16zm0 4v-2h2v2zM4 6H2V4h2zm6 16v-2h2v2zm4 0v-2h2v2zM2 22v-2h2v2zm0-4v-2h2v2zm0-4v-2h2v2zm0-4V8h2v2zm16 10h2v2h-2zM13 8h7V4h-7z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default tabDuplicateSharp

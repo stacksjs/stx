@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pauseOff16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m13.147 13.854l1 1a.5.5 0 0 0 .707-.708l-13-13a.5.5 0 1 0-.708.708l1 1A1.5 1.5 0 0 0 2 3.5v9A1.5 1.5 0 0 0 3.5 14h2A1.5 1.5 0 0 0 7 12.5V7.707l2 2V12.5a1.5 1.5 0 0 0 1.5 1.5h2c.232 0 .45-.053.647-.146M12.293 13H10.5a.5.5 0 0 1-.5-.5v-1.793zM6 6.707V12.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5V3.707zM6 3.5v.379l1 1V3.5A1.5 1.5 0 0 0 5.5 2H4.121l1 1H5.5a.5.5 0 0 1 .5.5m3 3.379l1 1V3.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v7.379l1 1V3.5A1.5 1.5 0 0 0 12.5 2h-2A1.5 1.5 0 0 0 9 3.5z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default pauseOff16Regular

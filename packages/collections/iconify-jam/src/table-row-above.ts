@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tableRowAbove: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 8V2h-1a1 1 0 0 1 0-2h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h1a1 1 0 1 1 0 2H2v6zm0 2h-2v2h2zm-4 2v-2H6v2zm-4 0v-2H2v2zm2-9V2a1 1 0 1 1 2 0v1h1a1 1 0 1 1 0 2H8v1a1 1 0 1 1-2 0V5H5a1 1 0 1 1 0-2z\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default tableRowAbove

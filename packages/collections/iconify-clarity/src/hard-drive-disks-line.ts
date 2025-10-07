@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const hardDriveDisksLine: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M26 5.74A1.74 1.74 0 0 0 24.26 4H3.74A1.74 1.74 0 0 0 2 5.74v14.52A1.74 1.74 0 0 0 3.74 22H4V6h22Z\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"currentColor\" d=\"M30 9.74A1.74 1.74 0 0 0 28.26 8H7.74A1.74 1.74 0 0 0 6 9.74v14.52A1.74 1.74 0 0 0 7.74 26H8V10h22Z\" class=\"clr-i-outline clr-i-outline-path-2\"/><path fill=\"currentColor\" d=\"M32.26 12H11.74A1.74 1.74 0 0 0 10 13.74v14.52A1.74 1.74 0 0 0 11.74 30h20.52A1.74 1.74 0 0 0 34 28.26V13.74A1.74 1.74 0 0 0 32.26 12M32 28H12V14h20Z\" class=\"clr-i-outline clr-i-outline-path-3\"/><path fill=\"currentColor\" d=\"M19.94 23.68a2.64 2.64 0 1 0-2.7-2.63a2.67 2.67 0 0 0 2.7 2.63m0-3.87a1.24 1.24 0 1 1-1.29 1.24a1.27 1.27 0 0 1 1.29-1.24\" class=\"clr-i-outline clr-i-outline-path-4\"/><path fill=\"currentColor\" d=\"M19.94 16.22a4.93 4.93 0 0 1 4.95 4.35h-1.18V22h4.41a.7.7 0 0 0 0-1.4h-1.81a6.33 6.33 0 0 0-6.37-5.75a6.6 6.6 0 0 0-1.48.17l.35 1.37a4.7 4.7 0 0 1 1.13-.17\" class=\"clr-i-outline clr-i-outline-path-5\"/><path fill=\"currentColor\" d=\"M19.94 27.27a6.42 6.42 0 0 0 5.67-3.35h-1.68a5 5 0 0 1-4 1.95a4.91 4.91 0 0 1-5-4.82a5 5 0 0 1 .08-.79L13.63 20a7 7 0 0 0-.09 1a6.32 6.32 0 0 0 6.4 6.27\" class=\"clr-i-outline clr-i-outline-path-6\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default hardDriveDisksLine

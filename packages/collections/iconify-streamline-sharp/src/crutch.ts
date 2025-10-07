@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const crutch: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" d=\"M4.5 14.5h7m-5.25 0v4s.25 1 1.75 1s1.75-1 1.75-1v-4M8 19.5V22m-1.399 0H9.5M12 4.5a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0M9.5 12v-.5s1.5-2 5-2s5 2 5 2V17h-2v6\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default crutch

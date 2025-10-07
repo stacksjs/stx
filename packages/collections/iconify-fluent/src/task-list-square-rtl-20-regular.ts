@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const taskListSquareRtl20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14.354 7.104a.5.5 0 1 0-.707-.708l-1.413 1.412l-.397-.362a.5.5 0 0 0-.674.738l.75.685a.5.5 0 0 0 .69-.016zm0 4.292a.5.5 0 0 1 0 .708l-1.75 1.75a.5.5 0 0 1-.691.015l-.75-.685a.5.5 0 0 1 .674-.738l.397.363l1.412-1.413a.5.5 0 0 1 .708 0M6.5 12a.5.5 0 0 0 0 1H9a.5.5 0 0 0 0-1zM6 7.5a.5.5 0 0 1 .5-.5H9a.5.5 0 0 1 0 1H6.5a.5.5 0 0 1-.5-.5M6 3a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zM4 6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default taskListSquareRtl20Regular

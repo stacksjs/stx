@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const shieldYesDuotone: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"currentColor\" d=\"M5.606 5.74L12 3l6.394 2.74a1 1 0 0 1 .606.92v6.858a6 6 0 0 1-3.023 5.21L12 21l-3.977-2.273A6 6 0 0 1 5 13.519V6.66a1 1 0 0 1 .606-.919\" opacity=\".16\"/><path fill=\"currentColor\" d=\"m12 3l.394-.92a1 1 0 0 0-.788 0zm0 18l-.496.868a1 1 0 0 0 .992 0zm6.394-15.26L18 6.66zM8.024 18.727l-.497.869zm3.582-16.646L5.212 4.82L6 6.66l6.394-2.74zM4 6.659v6.86h2v-6.86zm3.527 12.937l3.977 2.272l.992-1.736l-3.977-2.273zm4.97 2.272l3.976-2.272l-.992-1.737l-3.977 2.273zM20 13.518V6.66h-2v6.86zm-1.212-8.697l-6.394-2.74l-.788 1.838L18 6.66zM20 6.66a2 2 0 0 0-1.212-1.838L18 6.66zm-3.527 12.937A7 7 0 0 0 20 13.518h-2a5 5 0 0 1-2.52 4.341zM4 13.518a7 7 0 0 0 3.527 6.078l.992-1.737A5 5 0 0 1 6 13.52zm1.212-8.697A2 2 0 0 0 4 6.66h2z\"/><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m15 10l-4 4l-2-2\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default shieldYesDuotone

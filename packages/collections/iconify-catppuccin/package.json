@@ -1,0 +1,41 @@
+{
+  "name": "@stx/iconify-catppuccin",
+  "version": "0.0.1",
+  "description": "Catppuccin Icons icons for stx from Iconify",
+  "author": "Catppuccin",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": "./dist/*"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun build.ts"
+  },
+  "dependencies": {
+    "@stx/iconify-core": "workspace:*"
+  },
+  "keywords": [
+    "iconify",
+    "icons",
+    "svg",
+    "catppuccin",
+    "Catppuccin Icons",
+    "stx"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stacksjs/stx.git",
+    "directory": "packages/iconify-catppuccin"
+  },
+  "sideEffects": false
+}

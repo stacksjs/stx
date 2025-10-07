@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const flagForStLucia: IconData = {
+  "body": "<circle cx=\"32\" cy=\"32\" r=\"30\" fill=\"#49c3f2\"/><path fill=\"#fff\" d=\"M32 15L17 45h30z\"/><path fill=\"#3e4347\" d=\"M32 21L20 45h24z\"/><path fill=\"#ffce31\" d=\"M32 33L20 45h24z\"/>",
+  "width": 64,
+  "height": 64,
+  "viewBox": "0 0 64 64"
+}
+
+export default flagForStLucia

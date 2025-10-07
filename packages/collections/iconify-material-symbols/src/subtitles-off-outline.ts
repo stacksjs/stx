@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const subtitlesOffOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M20.55 23.35L17.15 20H4q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4l2 2H4v12h11.15l-2-2H6v-2h5.15L.65 3.45l1.4-1.4l19.9 19.9zm1.2-4.45L20 17.15V6H8.85l-2-2H20q.825 0 1.413.588T22 6v11.9q0 .275-.05.525t-.2.475m-6.9-6.9l-2-2H18v2zM6 12v-2h2v2zm3.575.425\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default subtitlesOffOutline

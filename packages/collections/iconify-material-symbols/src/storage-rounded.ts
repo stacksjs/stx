@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const storageRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 20q-.825 0-1.412-.587T3 18t.588-1.412T5 16h14q.825 0 1.413.588T21 18t-.587 1.413T19 20zM5 8q-.825 0-1.412-.587T3 6t.588-1.412T5 4h14q.825 0 1.413.588T21 6t-.587 1.413T19 8zm0 6q-.825 0-1.412-.587T3 12t.588-1.412T5 10h14q.825 0 1.413.588T21 12t-.587 1.413T19 14zm1-7q.425 0 .713-.288T7 6t-.288-.712T6 5t-.712.288T5 6t.288.713T6 7m0 6q.425 0 .713-.288T7 12t-.288-.712T6 11t-.712.288T5 12t.288.713T6 13m0 6q.425 0 .713-.288T7 18t-.288-.712T6 17t-.712.288T5 18t.288.713T6 19\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default storageRounded

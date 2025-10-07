@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tabDesktopLink16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2.035a3.5 3.5 0 0 1 0-1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3v.5A1.5 1.5 0 0 0 8.5 5H13v5h.5q.255 0 .5.035V4a2 2 0 0 0-2-2zm9 2H8.5a.5.5 0 0 1-.5-.5V3h4a1 1 0 0 1 1 1m-3.5 7a2.5 2.5 0 0 0 0 5h.5a.5.5 0 0 0 0-1h-.5a1.5 1.5 0 0 1 0-3h.5a.5.5 0 0 0 0-1zm3.5 0a.5.5 0 0 0 0 1h.5a1.5 1.5 0 0 1 0 3H13a.5.5 0 0 0 0 1h.5a2.5 2.5 0 0 0 0-5zm-4 2.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default tabDesktopLink16Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const deviceTabletFill: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M192 24H64a24 24 0 0 0-24 24v160a24 24 0 0 0 24 24h128a24 24 0 0 0 24-24V48a24 24 0 0 0-24-24M64 40h128a8 8 0 0 1 8 8v8H56v-8a8 8 0 0 1 8-8m128 176H64a8 8 0 0 1-8-8v-8h144v8a8 8 0 0 1-8 8\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default deviceTabletFill

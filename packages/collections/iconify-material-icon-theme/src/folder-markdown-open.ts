@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const folderMarkdownOpen: IconData = {
+  "body": "<path fill=\"#0277bd\" d=\"M28.967 12H9.442a2 2 0 0 0-1.898 1.368L4 24V10h24a2 2 0 0 0-2-2H15.124a2 2 0 0 1-1.28-.464l-1.288-1.072A2 2 0 0 0 11.276 6H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h22l4.805-11.212A2 2 0 0 0 28.967 12\"/><path fill=\"#b3e5fc\" d=\"M22 18v10h-4v-6l-2 2l-2-2v6h-4V18h4l2 2l2-2zm10 6l-4 5l-4-5h2v-6h4v6z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default folderMarkdownOpen

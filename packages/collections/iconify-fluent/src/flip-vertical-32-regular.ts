@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const flipVertical32Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M27.54 2.158A1 1 0 0 1 28 3v11a1 1 0 0 1-1 1H3a1 1 0 0 1-.417-1.91l24-11a1 1 0 0 1 .957.068M7.582 13H26V4.558zM28 29a1 1 0 0 1-1.417.91l-24-11A1 1 0 0 1 3 17h24a1 1 0 0 1 1 1z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default flipVertical32Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const history28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 5a8.96 8.96 0 0 0-5.658 2H10a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1.013V4a1 1 0 0 1 2 0v1.514A10.96 10.96 0 0 1 14 3c6.075 0 11 4.925 11 11s-4.925 11-11 11S3 20.075 3 14q0-.555.054-1.099a1 1 0 1 1 1.99.198Q5 13.543 5 14a9 9 0 1 0 9-9m1 3a1 1 0 1 0-2 0v6a1 1 0 0 0 1 1h4a1 1 0 1 0 0-2h-3z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default history28Filled

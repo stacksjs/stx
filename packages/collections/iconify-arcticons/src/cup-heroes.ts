@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const cupHeroes: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M28.54 18.974v4.054c0 1.215-1.604 2.646-2.82 2.646h-3.564c-2.29 0-5.09.537-6.242-2.262c-1.61-.344-3.383-1.065-3.383-2.383v-1.762c0-1.157.65-1.244 1.374-1.244m12.232-9.144h1.489c.97 0 1.895-.675 2.548-1.465v2.514c0 1.616-1.235 1.684-1.74 1.684\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M27.3 8.767V4.5c-3.178 2.393-5.285 1.025-5.826 3.045h-2.996c-3.187 0-7.475 3.044-7.475 6.034v4.487c0 1.505 1.528 1.2 1.528 1.2\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M20.274 12.912v1.34c0 1.798 3.055 3.815 4.854 3.815h4.892v-2.67c1.762 0 1.502-1.306 1.502-2.58h-1.41M20.41 15.51h-2.67v1.34c0 1.99-2.873 2.602-2.873 2.602m1.524-.447v1.912m10.892 4.414v15.552h1.207V43.5h-5.797v-6.343h-1.118c-1.613 0-3.792 3.99-3.792 6.343h-4.595c0-3.057.514-4.22 1.158-6.153\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15.181 23.593v2.058c-1.938 0-4.369 4.577-4.369 6.942v2.783c0 .926.254 1.849 1.32 1.849h3.145c.896 0 1.192-.944 1.192-1.623v-3.307c0-1.233 1.236-1.317 1.236-2.14v-1.298\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15.28 25.714c0 2.571 6.425 4.704 8.53 5.268l3.378-3.86M16.9 32.751h9.99m-9.99 2.554h9.99m-5.918-2.384v2.046m3.373-2.046v2.046m-10.256 4.135h4.446m4.526 0h4.044m-15.944-5.109h4.935m-4.623-2.554h4.934m15.564 1.073l6.466-6.466c1.044-1.044 1.668-2.628 1.668-4.104v-2.919h-1.362l-5.324 5.325v1.657l-2.475 2.474v1.266l-.87.87m-1.362-1.182l4.651 4.65v1.812h-2.477\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m27.347 30.77l3.343 3.357v1.783c0 .576-.659 1.208-1.234 1.208h-1.537m-16.004-8.844l-1.275-1.275l1.851-1.851l.837.836m-5.433-2.45l2.97 2.968m-1.71-4.165l2.968 2.969\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default cupHeroes

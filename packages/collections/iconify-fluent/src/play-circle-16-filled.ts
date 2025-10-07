@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const playCircle16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 8a6 6 0 1 1 12 0A6 6 0 0 1 2 8m8.5 0a.5.5 0 0 0-.254-.435L7.62 6.077a.75.75 0 0 0-1.12.652v2.542a.75.75 0 0 0 1.12.653l2.626-1.489A.5.5 0 0 0 10.5 8\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default playCircle16Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const plaster: IconData = {
+  "body": "<rect width=\"46.9\" height=\"16.96\" x=\"12.55\" y=\"27.52\" fill=\"#f4aa41\" rx=\"4.326\" ry=\"4.326\"/><rect width=\"46.9\" height=\"16.96\" x=\"12.55\" y=\"27.52\" fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" rx=\"4.005\" ry=\"4.005\"/><path stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M28.52 31.91v8.16m14.25-8.16v8.16\"/><circle cx=\"33.69\" cy=\"34.01\" r=\"1.289\"/><circle cx=\"38.06\" cy=\"34.01\" r=\"1.289\"/><circle cx=\"33.69\" cy=\"37.99\" r=\"1.289\"/><circle cx=\"38.06\" cy=\"37.99\" r=\"1.289\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default plaster

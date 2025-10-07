@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const mv: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#C51918\" fill-rule=\"evenodd\" d=\"M0 0h32v22a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2z\" clip-rule=\"evenodd\"/><path fill=\"#C51918\" fill-rule=\"evenodd\" d=\"M0 0h32v24H0z\" clip-rule=\"evenodd\"/><path fill=\"#579D20\" fill-rule=\"evenodd\" d=\"M6 6h20v12H6z\" clip-rule=\"evenodd\"/><path stroke=\"#B6EB9A\" stroke-opacity=\".238\" stroke-width=\"2\" d=\"M7 7h18v10H7z\"/><mask id=\"SVGtYztqSrh\" width=\"20\" height=\"12\" x=\"6\" y=\"6\" maskUnits=\"userSpaceOnUse\" style=\"mask-type:luminance\"><path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M6 6h20v12H6z\" clip-rule=\"evenodd\"/><path stroke=\"#fff\" stroke-width=\"2\" d=\"M7 7h18v10H7z\"/></mask><g mask=\"url(#SVGtYztqSrh)\"><path fill=\"#F9FAFA\" fill-rule=\"evenodd\" d=\"M16.033 12.463c-.017 3.065 2.396 4.7 2.396 4.7c-2.753.323-4.586-2.174-4.586-4.67c0-2.498 2.498-4.56 4.586-5.492c0 0-2.379 2.396-2.396 5.462\" clip-rule=\"evenodd\"/></g></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default mv

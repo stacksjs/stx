@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const baselineLocalPharmacy: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M21 5h-2.64l1.14-3.14L17.15 1l-1.46 4H3v2l2 6l-2 6v2h18v-2l-2-6l2-6zm-5 9h-3v3h-2v-3H8v-2h3V9h2v3h3z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default baselineLocalPharmacy

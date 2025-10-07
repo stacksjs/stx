@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const peopleEdit24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 8a4 4 0 1 1-8 0a4 4 0 0 1 8 0m8 1a3 3 0 1 1-6 0a3 3 0 0 1 6 0M2 16.25A2.25 2.25 0 0 1 4.25 14h7.5A2.25 2.25 0 0 1 14 16.25v.106l-1.509 1.509a3.7 3.7 0 0 0-.97 1.712l-.197.79C10.499 20.748 9.417 21 8 21c-6 0-6-4.5-6-4.5zm17.1-3.58l-5.903 5.902a2.7 2.7 0 0 0-.706 1.247l-.458 1.831a1.087 1.087 0 0 0 1.319 1.318l1.83-.457a2.7 2.7 0 0 0 1.248-.707l5.902-5.902A2.286 2.286 0 0 0 19.1 12.67\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default peopleEdit24Filled

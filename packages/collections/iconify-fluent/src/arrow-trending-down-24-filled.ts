@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const arrowTrendingDown24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14.003 18.999H21a1 1 0 0 0 .993-.884L22 18v-7a1 1 0 0 0-1.994-.117L20 11l-.001 4.586l-7.292-7.294a1 1 0 0 0-1.32-.083l-.094.083l-2.296 2.292l-5.288-5.29a1 1 0 0 0-1.497 1.32l.083.094l5.994 5.997a1 1 0 0 0 1.32.083l.094-.083l2.296-2.292l6.585 6.586h-4.581a1 1 0 0 0-.993.884l-.007.116a1 1 0 0 0 .883.994z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default arrowTrendingDown24Filled

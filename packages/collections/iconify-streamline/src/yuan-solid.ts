@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const yuanSolid: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M3.8.4a1 1 0 1 0-1.6 1.2l3.917 5.222v.021H3.915a1 1 0 1 0 0 2h2.202v1.246H3.915a1 1 0 1 0 0 2h2.202v.804a1 1 0 1 0 2 0v-.805h2.202a1 1 0 1 0 0-2H8.117V8.843h2.202a1 1 0 1 0 0-2H8.117v-.02L12.033 1.6a1 1 0 1 0-1.6-1.2L7.117 4.822z\" clip-rule=\"evenodd\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default yuanSolid

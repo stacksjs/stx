@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const cloud28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 6.5a5.5 5.5 0 0 0-5.496 5.28a.75.75 0 0 1-.75.72H7.5a4 4 0 0 0 0 8h13a4 4 0 0 0 0-8h-.255a.75.75 0 0 1-.75-.72A5.5 5.5 0 0 0 14 6.5m-6.931 4.517a7.001 7.001 0 0 1 13.862 0A5.5 5.5 0 0 1 20.5 22h-13a5.5 5.5 0 0 1-.431-10.983\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default cloud28Regular

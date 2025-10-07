@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const windBeaufort5Fill: IconData = {
+  "body": "<defs><linearGradient id=\"SVGj6U3ceGK\" x1=\"138.5\" x2=\"224.2\" y1=\"5.1\" y2=\"153.5\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"#d4d7dd\"/><stop offset=\".5\" stop-color=\"#d4d7dd\"/><stop offset=\"1\" stop-color=\"#bec1c6\"/></linearGradient><linearGradient id=\"SVGeAVxmbDm\" x1=\"77.7\" x2=\"169\" y1=\"96.2\" y2=\"254.4\" href=\"#SVGj6U3ceGK\"/><symbol id=\"SVGobGMFb6q\" viewBox=\"0 0 348 240\"><path fill=\"none\" stroke=\"url(#SVGj6U3ceGK)\" stroke-dasharray=\"148\" stroke-linecap=\"round\" stroke-miterlimit=\"10\" stroke-width=\"24\" d=\"M267.2 24.3A40 40 0 1 1 296 92H12\"><animate attributeName=\"stroke-dashoffset\" dur=\"6s\" repeatCount=\"indefinite\" values=\"0; 2664\"/></path><path fill=\"none\" stroke=\"url(#SVGeAVxmbDm)\" stroke-dasharray=\"110\" stroke-linecap=\"round\" stroke-miterlimit=\"10\" stroke-width=\"24\" d=\"M151.2 215.7A40 40 0 1 0 180 148H12\"><animate attributeName=\"stroke-dashoffset\" dur=\"6s\" repeatCount=\"indefinite\" values=\"0; 1320\"/></path></symbol></defs><use width=\"348\" height=\"240\" href=\"#SVGobGMFb6q\" transform=\"translate(82 136)\"/><path fill=\"#374251\" d=\"M383.8 344q-12 0-19.7-5.5t-9-15.7l17.6-1.4a9.9 9.9 0 0 0 3.8 6a12 12 0 0 0 7.2 2.2a11.6 11.6 0 0 0 8.5-3a10.5 10.5 0 0 0 3-8a10.4 10.4 0 0 0-3-7.8a11.6 11.6 0 0 0-8.5-3a12.6 12.6 0 0 0-9.7 4.3l-16.6-1.5l6.4-38.6H408v14.7h-30.9l-2.3 12l.3.2q5.6-4 14.2-4q10.7 0 17 6.2t6.6 17.1q0 11.8-7.8 18.8t-21.3 7Z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default windBeaufort5Fill

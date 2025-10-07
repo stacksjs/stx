@@ -16,6 +16,8 @@ const result = await build(fullConfig)
 console.log(`✅ Built ${result.classes.size} classes in ${result.duration.toFixed(2)}ms`)
 console.log(`📝 Output: ${config.output}`)
 
-const fileSize = Bun.file(config.output)
-const sizeKB = ((await fileSize.size) / 1024).toFixed(2)
-console.log(`📦 File size: ${sizeKB} KB`)
+if (config.output) {
+  const fileSize = Bun.file(config.output)
+  const sizeKB = ((await fileSize.size) / 1024).toFixed(2)
+  console.log(`📦 File size: ${sizeKB} KB`)
+}

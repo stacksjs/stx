@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const documentSplitHint16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 2a1 1 0 0 0-1 1v4.5a.5.5 0 0 1-1 0V3a2 2 0 0 1 2-2h3.586a1.5 1.5 0 0 1 1.06.44l2.915 2.914A1.5 1.5 0 0 1 13 5.414V7.5a.5.5 0 0 1-1 0V6H9.5A1.5 1.5 0 0 1 8 4.5V2zm4 .207V4.5a.5.5 0 0 0 .5.5h2.293zM3.5 9a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0v-1a.5.5 0 0 1 .5-.5m9 0a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0v-1a.5.5 0 0 1 .5-.5m-9 3a.5.5 0 0 1 .5.5v.5a1 1 0 0 0 1 1h.5a.5.5 0 0 1 0 1H5a2 2 0 0 1-2-2v-.5a.5.5 0 0 1 .5-.5m9 0a.5.5 0 0 1 .5.5v.5a2 2 0 0 1-2 2h-.5a.5.5 0 0 1 0-1h.5a1 1 0 0 0 1-1v-.5a.5.5 0 0 1 .5-.5M7 14.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default documentSplitHint16Regular

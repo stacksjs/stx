@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const briefcase16: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGt7eT9qLx)\" d=\"M2 7h12v5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z\"/><path fill=\"url(#SVGL2ZKjett)\" d=\"M2 7h12v5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z\"/><path fill=\"url(#SVGWSB1PbgU)\" fill-rule=\"evenodd\" d=\"M9.5 2A1.5 1.5 0 0 1 11 3.5V5h1c.506 0 .967.19 1.32.5H2.68C3.034 5.19 3.495 5 4 5h1V3.5A1.5 1.5 0 0 1 6.5 2zm-3 1a.5.5 0 0 0-.5.5V5h4V3.5a.5.5 0 0 0-.5-.5z\" clip-rule=\"evenodd\"/><path fill=\"url(#SVGLAeP5biX)\" d=\"M2 7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 8.5z\"/><path fill=\"url(#SVGRksDicbB)\" d=\"M8.5 7.5h-1A.5.5 0 0 0 7 8v2.01a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V8a.5.5 0 0 0-.5-.5\"/><defs><linearGradient id=\"SVGt7eT9qLx\" x1=\"2.429\" x2=\"6.718\" y1=\"8.313\" y2=\"20.848\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0FAFFF\"/><stop offset=\"1\" stop-color=\"#CC23D1\"/></linearGradient><linearGradient id=\"SVGWSB1PbgU\" x1=\"2.198\" x2=\"2.786\" y1=\"2.35\" y2=\"6.386\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0094F0\"/><stop offset=\"1\" stop-color=\"#163697\"/></linearGradient><linearGradient id=\"SVGLAeP5biX\" x1=\"3.2\" x2=\"8.658\" y1=\"5.208\" y2=\"11.834\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#80F1E6\"/><stop offset=\".552\" stop-color=\"#40C4F5\"/><stop offset=\"1\" stop-color=\"#00A2FA\"/></linearGradient><linearGradient id=\"SVGRksDicbB\" x1=\"8\" x2=\"8\" y1=\"7.5\" y2=\"9.5\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#B8F5FF\"/><stop offset=\".844\" stop-color=\"#7CECFF\"/></linearGradient><radialGradient id=\"SVGL2ZKjett\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(0 7 -13.3758 0 8 7)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".337\" stop-color=\"#194694\"/><stop offset=\".747\" stop-color=\"#367AF2\" stop-opacity=\"0\"/></radialGradient></defs></g>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default briefcase16

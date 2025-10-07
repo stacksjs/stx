@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const newFolder: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6.331 1.688a.99.99 0 0 0-.883-.648a27 27 0 0 0-3.456.033a1.004 1.004 0 0 0-.92.893C.735 4.903.623 7.85.975 10.793c.119.998.937 1.724 1.915 1.83c2.762.301 5.485.294 8.247-.007a2.09 2.09 0 0 0 1.845-1.823c.218-1.82.276-3.684.14-5.971a1.906 1.906 0 0 0-1.745-1.788c-1.344-.112-2.279-.118-3.931-.153a1 1 0 0 1-.915-.652z\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default newFolder

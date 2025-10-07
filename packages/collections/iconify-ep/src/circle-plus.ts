@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const circlePlus: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M352 480h320a32 32 0 1 1 0 64H352a32 32 0 0 1 0-64\"/><path fill=\"currentColor\" d=\"M480 672V352a32 32 0 1 1 64 0v320a32 32 0 0 1-64 0\"/><path fill=\"currentColor\" d=\"M512 896a384 384 0 1 0 0-768a384 384 0 0 0 0 768m0 64a448 448 0 1 1 0-896a448 448 0 0 1 0 896\"/>",
+  "width": 1024,
+  "height": 1024,
+  "viewBox": "0 0 1024 1024"
+}
+
+export default circlePlus

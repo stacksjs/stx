@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const workflowExitDoorBold: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M18.62 15.67V10.5a4 4 0 0 0-4-4H9.2a3 3 0 0 0-1.83-1.83V1a1 1 0 0 0-2 0v3.67a3 3 0 0 0 0 5.66V23a1 1 0 0 0 2 0V10.33A3 3 0 0 0 9.2 8.5h5.42a2 2 0 0 1 2 2v5.17a3 3 0 1 0 2 0\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default workflowExitDoorBold

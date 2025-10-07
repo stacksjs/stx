@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const europeanNameBadge: IconData = {
+  "body": "<rect width=\"62.599\" height=\"38.705\" x=\"4.7\" y=\"20.147\" fill=\"#d0cfce\" rx=\"3.409\" ry=\"3.409\"/><rect width=\"9.003\" height=\"15.673\" x=\"31.396\" y=\"10.599\" fill=\"#9b9b9a\" rx=\"1.557\" ry=\"1.557\"/><path fill=\"#9b9b9a\" d=\"M17.403 30.65h37.704a5.747 5.747 0 0 1 5.747 5.748v14.304a2.92 2.92 0 0 1-2.919 2.919H12.783a2.92 2.92 0 0 1-2.918-2.919V38.19a7.54 7.54 0 0 1 7.538-7.538\"/><rect width=\"48\" height=\"19.731\" x=\"11.474\" y=\"31.367\" fill=\"#fff\" rx=\"2.918\" ry=\"2.918\"/><g fill=\"none\" stroke=\"#000\" stroke-width=\"2\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M40.502 20.647H63.89a3.41 3.41 0 0 1 3.41 3.41v31.886a3.41 3.41 0 0 1-3.41 3.41H8.11a3.41 3.41 0 0 1-3.41-3.41V24.057a3.41 3.41 0 0 1 3.41-3.41h23.286\"/><rect width=\"48\" height=\"19.731\" x=\"11.474\" y=\"31.367\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"2.918\" ry=\"2.918\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M52.396 38.141h-4v7h4m-4-3.5h3m-17 3.5l-3-7l-3 7m1-1.676h4m-14 1.676v-7l5 7v-7m20 7v-7l-3 6l-3-6v7\"/><rect width=\"9.003\" height=\"15.673\" x=\"31.499\" y=\"10.237\" stroke-miterlimit=\"10\" rx=\"1.557\" ry=\"1.557\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default europeanNameBadge

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const documentSearch20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 4a2 2 0 0 1 2-2h4.586a1.5 1.5 0 0 1 1.06.44l3.915 3.914A1.5 1.5 0 0 1 16 7.414V16a2 2 0 0 1-2 2h-2.085a1.5 1.5 0 0 0-.354-.56l-.44-.44H14a1 1 0 0 0 1-1V8h-3.5A1.5 1.5 0 0 1 10 6.5V3H6a1 1 0 0 0-1 1v5.027a4.5 4.5 0 0 0-1 .23zm7.5 3h3.293L11 3.207V6.5a.5.5 0 0 0 .5.5m-6 10c.786 0 1.512-.26 2.096-.697l2.55 2.55a.5.5 0 1 0 .708-.707l-2.55-2.55A3.5 3.5 0 1 0 5.5 17m0-1a2.5 2.5 0 1 1 0-5a2.5 2.5 0 0 1 0 5\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default documentSearch20Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const panoramicScreen: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M4.929 10.63V3.375m4.142 0v7.255M2.676 11c.739-.154 1.57-.305 2.253-.37c1.61-.154 2.532-.154 4.142 0c.682.065 1.514.216 2.252.37c.961.2 1.89-.52 1.89-1.503V4.503c0-.982-.929-1.703-1.89-1.503c-.738.154-1.57.305-2.252.37c-1.61.154-2.532.154-4.142 0c-.683-.065-1.514-.216-2.253-.37c-.961-.2-1.89.521-1.89 1.503v4.994c0 .982.929 1.703 1.89 1.503\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default panoramicScreen

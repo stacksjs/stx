@@ -1,0 +1,41 @@
+{
+  "name": "@stx/iconify-academicons",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "Academicons icons for stx from Iconify",
+  "author": "James Walsh",
+  "license": "OFL-1.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stacksjs/stx.git",
+    "directory": "packages/iconify-academicons"
+  },
+  "keywords": [
+    "iconify",
+    "icons",
+    "svg",
+    "academicons",
+    "Academicons",
+    "stx"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": "./dist/*"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun build.ts"
+  },
+  "dependencies": {
+    "@stx/iconify-core": "workspace:*"
+  }
+}

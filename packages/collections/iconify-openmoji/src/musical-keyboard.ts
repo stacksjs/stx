@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const musicalKeyboard: IconData = {
+  "body": "<path fill=\"#FFF\" d=\"M13.63 13.08h45.661v45.662H13.63z\"/><path fill=\"#3F3F3F\" d=\"M32.864 12.262h7.073v30.503h-7.073zm13.199-.063h6.884v30.755h-6.884zm-26.398-.345h7.578v31.353h-7.578z\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path d=\"M12.629 12.08h47.662v47.662H12.629z\"/><path d=\"M19.64 12.07h7.404v30.911H19.64zm13.118 0h7.404v30.911h-7.404zm13.119 0h7.404v30.911h-7.404zM24.545 47.433v12.309M36.46 47.433v12.309m11.916-12.309v12.309\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default musicalKeyboard

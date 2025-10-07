@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const slideLink20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4.837a3.5 3.5 0 0 0-1.5-.337h-4A3.5 3.5 0 0 0 9.627 16H4a2 2 0 0 1-2-2zm10.5 5.5a2.5 2.5 0 0 0 0 5h.5a.5.5 0 0 0 0-1h-.5a1.5 1.5 0 0 1 0-3h.5a.5.5 0 0 0 0-1zm3.5 0a.5.5 0 0 0 0 1h.5a1.5 1.5 0 0 1 0 3H16a.5.5 0 0 0 0 1h.5a2.5 2.5 0 0 0 0-5zM12 14a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default slideLink20Filled

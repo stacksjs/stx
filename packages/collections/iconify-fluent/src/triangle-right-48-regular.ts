@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const triangleRight48Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M39.567 25.758c1.238-.652 1.248-2.422.017-3.088L10.082 6.717A1.75 1.75 0 0 0 7.5 8.256v31.487a1.75 1.75 0 0 0 2.565 1.549zm1.206-5.287c2.99 1.617 2.966 5.916-.041 7.5L11.23 43.503C8.4 44.994 5 42.942 5 39.744V8.255c0-3.22 3.44-5.27 6.272-3.738z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default triangleRight48Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const twotoneReportProblem: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 5.99L4.47 19h15.06zM13 18h-2v-2h2zm-2-4v-4h2v4z\" opacity=\".3\"/><path fill=\"currentColor\" d=\"M12 2L1 21h22zm0 3.99L19.53 19H4.47zM11 16h2v2h-2zm0-6h2v4h-2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default twotoneReportProblem

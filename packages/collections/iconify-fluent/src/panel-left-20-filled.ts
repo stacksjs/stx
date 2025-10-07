@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const panelLeft20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 3a3 3 0 0 0-3 3v7a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zm10 1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H8.5V4z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default panelLeft20Filled

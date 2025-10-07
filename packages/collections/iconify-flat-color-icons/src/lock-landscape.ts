@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const lockLandscape: IconData = {
+  "body": "<path fill=\"#37474F\" d=\"M7 10h34c2.2 0 4 1.8 4 4v20c0 2.2-1.8 4-4 4H7c-2.2 0-4-1.8-4-4V14c0-2.2 1.8-4 4-4\"/><path fill=\"#BBDEFB\" d=\"M42 34V14c0-.6-.4-1-1-1H7c-.6 0-1 .4-1 1v20c0 .6.4 1 1 1h34c.6 0 1-.4 1-1\"/><g fill=\"#3F51B5\"><path d=\"M29 31H19c-.6 0-1-.4-1-1v-6c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v6c0 .6-.4 1-1 1\"/><path d=\"M24 17c-2.2 0-4 1.8-4 4v3h2v-3c0-1.1.9-2 2-2s2 .9 2 2v3h2v-3c0-2.2-1.8-4-4-4\"/></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default lockLandscape

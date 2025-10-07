@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textIndentIncreaseRtl20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 4.75a.75.75 0 0 0-.75-.75h-7.5a.75.75 0 0 0 0 1.5h7.5a.75.75 0 0 0 .75-.75M13.25 9a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5zm0 5a.75.75 0 0 1 0 1.5h-5.5a.75.75 0 0 1 0-1.5zm3.72-6.28a.75.75 0 1 1 1.06 1.06l-.97.97l.97.97a.75.75 0 1 1-1.06 1.06l-1.5-1.5a.75.75 0 0 1 0-1.06z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default textIndentIncreaseRtl20Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const trailLengthShort: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15 17q-1.825 0-3.187-1.137T10.1 13H4v-2h6.1q.125-.575.338-1.075T11 9H6V7h9q2.075 0 3.538 1.463T20 12t-1.463 3.538T15 17m-8 0v-2h3v2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default trailLengthShort

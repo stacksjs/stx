@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tabsOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 21V3h18v18zm2-2h14v-7H5zm0-9h14V5H5zm7-2h6V6h-6zm-7 2V5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default tabsOutlineSharp

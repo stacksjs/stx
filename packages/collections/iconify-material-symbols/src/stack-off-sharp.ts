@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const stackOffSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M22 19.15L10.85 8H22zM14 6V4H6.85l-2-2H16v4zm6.575 17.425L19.15 22H8V10.85l-4-4V14h2v2H2V4.85L.575 3.425L2 2l20 20z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default stackOffSharp

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const gMobiledataBadgeOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 17h8v-6h-4v2h2v2h-4V9h6V7H8zm-5 4V3h18v18zm2-2h14V5H5zM5 5v14z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default gMobiledataBadgeOutlineSharp

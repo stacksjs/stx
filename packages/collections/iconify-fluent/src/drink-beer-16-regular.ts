@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const drinkBeer16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10 6.5a.5.5 0 0 0-1 0v5a.5.5 0 0 0 1 0zM7.5 6a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0v-5a.5.5 0 0 1 .5-.5M6 6.5a.5.5 0 0 0-1 0v5a.5.5 0 0 0 1 0zM5.25 1A2.25 2.25 0 0 0 3 3.25V13.5A1.5 1.5 0 0 0 4.5 15h6a1.5 1.5 0 0 0 1.5-1.5V12h.75A2.25 2.25 0 0 0 15 9.75v-3.5A2.25 2.25 0 0 0 12.75 4H12v-.75A2.25 2.25 0 0 0 9.75 1zM12 5h.75c.69 0 1.25.56 1.25 1.25v3.5c0 .69-.56 1.25-1.25 1.25H12zM4 3.25C4 2.56 4.56 2 5.25 2h4.5c.69 0 1.25.56 1.25 1.25V4H4zM4 5h7v8.5a.5.5 0 0 1-.5.5h-6a.5.5 0 0 1-.5-.5z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default drinkBeer16Regular

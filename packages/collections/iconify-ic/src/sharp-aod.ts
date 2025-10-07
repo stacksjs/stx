@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const sharpAod: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M19 1H5v22h14zm-2 17H7V6h10zm-9-8h8v1.5H8zm1 3h6v1.5H9z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sharpAod

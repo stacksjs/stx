@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const sweepOutlineRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11 18q-.425 0-.712-.288T10 17t.288-.712T11 16h4q.425 0 .713.288T16 17t-.288.713T15 18zm-4.95-2.85L14.5 6.7q.3-.3.7-.3t.7.3t.3.712t-.3.713L6.75 17.3q-.3.3-.7.3t-.7-.3l-4.275-4.275q-.3-.3-.287-.712T1.1 11.6t.713-.3t.712.3zM15 14q-.425 0-.712-.288T14 13t.288-.712T15 12h4q.425 0 .713.288T20 13t-.288.713T19 14zm4-4q-.425 0-.712-.288T18 9t.288-.712T19 8h4q.425 0 .713.288T24 9t-.288.713T23 10z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sweepOutlineRounded

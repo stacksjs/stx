@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const printerF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16 4h1a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-1V9H4v7H3a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h1v2h12zM6 20v-9h8v9zM6 4V0h8v4z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default printerF

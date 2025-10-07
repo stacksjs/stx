@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const polypad: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGKDCjZdCn)\" d=\"M19.94 16.495v-9L12 3L4.059 7.495v9l2.647 1.487V8.998L12 5.981l5.294 3.017v6.004L12 18.009V21z\"/><path fill=\"url(#SVG5wQu3cPK)\" d=\"M15.706 9.918L12 7.838l-3.706 2.08v9l2.117 1.143v-8.984L12 10.151l1.588.926v1.843L12 13.846v2.303l3.706-2.07z\"/><path fill=\"#fff\" d=\"M19.94 7.495L12 3L4.059 7.495l2.636 1.503L12 5.981l5.304 3.017z\"/><path fill=\"#fff\" d=\"M11.999 7.837L8.325 9.918l2.043 1.16l1.63-.932l1.632.926l2.075-1.154z\"/><defs><linearGradient id=\"SVGKDCjZdCn\" x1=\"15.97\" x2=\"8.252\" y1=\"5.25\" y2=\"18.872\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#4E4AFF\"/><stop offset=\"1\" stop-color=\"#A873FF\"/></linearGradient><linearGradient id=\"SVG5wQu3cPK\" x1=\"15.925\" x2=\"9.381\" y1=\"4.534\" y2=\"21.346\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#4E4AFF\"/><stop offset=\"1\" stop-color=\"#A873FF\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default polypad

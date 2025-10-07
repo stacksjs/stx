@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const speaker1: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M1.344 1.343a2 2 0 0 1 2.828 0l.242.242A6 6 0 0 1 7 1c.927 0 1.804.21 2.587.585l.242-.242a2 2 0 0 1 2.828 2.829l-.241.241C12.79 5.196 13 6.073 13 7c0 .926-.21 1.804-.585 2.587l.241.241a2 2 0 1 1-2.828 2.829l-.242-.242A6 6 0 0 1 7 13a6 6 0 0 1-2.586-.585l-.242.242a2 2 0 1 1-2.828-2.829l.241-.241A6 6 0 0 1 1 7c0-.926.21-1.804.585-2.587l-.241-.241a2 2 0 0 1 0-2.829\"/><path d=\"M7 6.75a.25.25 0 0 1 0 .5m0-.5a.25.25 0 0 0 0 .5\"/><path d=\"M7 10c1.92 0 3-1.08 3-3S8.92 4 7 4S4 5.08 4 7s1.08 3 3 3\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default speaker1

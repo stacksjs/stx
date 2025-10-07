@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const sprayCan: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11.002 2h-4a1 1 0 0 0-1 1v3.812a6 6 0 0 0-3 5.188v.988L3 13l.002.072V21a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9a6 6 0 0 0-3-5.188V3a1 1 0 0 0-1-1m-3 4V4h2v2zm5.001 14h-8v-6h8zm-8.001-8c0-2.206 1.794-4 4-4s4 1.794 4 4zm8.001-9h2v2h-2zM16 3h2v2h-2zm0 3h2v2h-2zm3-3h2v2h-2zm0 3h2v2h-2zm0 3h2v2h-2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sprayCan

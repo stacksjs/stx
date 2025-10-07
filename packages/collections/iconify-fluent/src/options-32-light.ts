@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const options32Light: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2.5 10h13.528a4.5 4.5 0 0 0 8.945 0H29.5a.5.5 0 0 0 0-1h-4.527a4.5 4.5 0 0 0-8.945 0H2.5a.5.5 0 0 0 0 1m18-4a3.5 3.5 0 1 1 0 7a3.5 3.5 0 0 1 0-7m-4.527 17a4.5 4.5 0 0 1-8.946 0H2.5a.5.5 0 0 1 0-1h4.527a4.5 4.5 0 0 1 8.946 0H29.5a.5.5 0 0 1 0 1zM8 22.5a3.5 3.5 0 1 0 7 0a3.5 3.5 0 0 0-7 0\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default options32Light

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const sweepOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10 18v-2h6v2zm-3.95 0L.375 12.325L1.8 10.9l4.25 4.25L15.2 6l1.425 1.425zM14 14v-2h6v2zm4-4V8h6v2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sweepOutline

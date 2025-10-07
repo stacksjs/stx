@@ -1,0 +1,41 @@
+{
+  "name": "@stx/iconify-file-icons",
+  "version": "0.0.1",
+  "description": "File Icons icons for stx from Iconify",
+  "author": "John Gardner",
+  "license": "ISC",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": "./dist/*"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun build.ts"
+  },
+  "dependencies": {
+    "@stx/iconify-core": "workspace:*"
+  },
+  "keywords": [
+    "iconify",
+    "icons",
+    "svg",
+    "file-icons",
+    "File Icons",
+    "stx"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stacksjs/stx.git",
+    "directory": "packages/iconify-file-icons"
+  },
+  "sideEffects": false
+}

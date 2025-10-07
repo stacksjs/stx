@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pushChevronLeftO: IconData = {
+  "body": "<g fill=\"currentColor\"><path d=\"M10 16H8V8h2zm5.297-8.243l1.415 1.415L13.883 12l2.829 2.828l-1.415 1.415L11.055 12z\"/><path fill-rule=\"evenodd\" d=\"M1 12c0 6.075 4.925 11 11 11s11-4.925 11-11S18.075 1 12 1S1 5.925 1 12m2 0a9 9 0 1 0 18 0a9 9 0 0 0-18 0\" clip-rule=\"evenodd\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default pushChevronLeftO

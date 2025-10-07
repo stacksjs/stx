@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const dashStroke12: IconData = {
+  "body": "<path fill=\"currentColor\" stroke=\"currentColor\" stroke-linecap=\"round\" d=\"M3 6.5h6\"/>",
+  "width": 12,
+  "height": 12,
+  "viewBox": "0 0 12 12"
+}
+
+export default dashStroke12

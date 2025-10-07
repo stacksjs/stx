@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const meterElectricOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M21 11a9 9 0 0 0-18 0c0 3.92 2.5 7.24 6 8.5V22h2v-2.06c.33.06.66.06 1 .06s.67 0 1-.06V22h2v-2.5c3.5-1.26 6-4.58 6-8.5m-9 7c-3.86 0-7-3.14-7-7s3.14-7 7-7s7 3.14 7 7s-3.14 7-7 7M8 7h8v2H8zm4.75 3l-3 3L11 14.25L9.75 15.5l1.5 1.5l3-3L13 12.75l1.25-1.25z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default meterElectricOutline

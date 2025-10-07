@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const calendar1: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#e3e3e3\" d=\"M21.374 3.563H2.626a.937.937 0 0 0-.938.938v16.873c0 .518.42.937.938.937h18.748c.517 0 .937-.42.937-.937V4.5a.937.937 0 0 0-.937-.938\"/><path fill=\"#fff\" d=\"M22.311 7.312H1.688V4.5c0-.518.42-.937.938-.937h18.748c.517 0 .937.42.937.937z\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M21.374 3.563H2.626a.937.937 0 0 0-.938.938v16.873c0 .518.42.937.938.937h18.748c.517 0 .937-.42.937-.937V4.5a.937.937 0 0 0-.937-.938M4.501 1.689V4.5M8.25 1.689V4.5M12 1.689V4.5m3.75-2.811V4.5m3.749-2.811V4.5\"/><path fill=\"#78eb7b\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12.937 8.25h2.813V12H12V9.186c0-.518.42-.938.937-.938\"/><path fill=\"#ff808c\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15.75 8.25h2.812c.517 0 .937.42.937.937v2.812h-3.75z\"/><path fill=\"#78eb7b\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15.75 12H12v3.75h3.75z\"/><path fill=\"#ff808c\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19.5 12h-3.75v3.75h3.75z\"/><path fill=\"#78eb7b\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15.75 15.75H12v3.75h3.75z\"/><path fill=\"#ff808c\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15.75 15.749h3.75v2.812c0 .518-.42.937-.938.937h-2.813z\"/><path fill=\"#78eb7b\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M5.438 12h2.813v3.749H4.5v-2.813c0-.517.42-.937.937-.937\"/><path fill=\"#78eb7b\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 12H8.25v3.75H12z\"/><path fill=\"#78eb7b\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M4.501 15.749h3.75v3.75H5.438a.937.937 0 0 1-.937-.938z\"/><path fill=\"#78eb7b\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 15.75H8.25v3.75H12z\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default calendar1

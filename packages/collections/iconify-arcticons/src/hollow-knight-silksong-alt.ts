@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const hollowKnightSilksongAlt: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M25.489 9.203c.042-.135-.145-.215-.222-.096c-3.94 6.05-4.105 9.346-4.105 12.095c0 4.235 1.661 6.399 3.476 6.399s5.077-2.604 5.077-9.838c0-5.23-.949-7.876-1.474-8.94c-.09-.18-.358-.115-.367.086c-.317 7.026-2.006 10.967-3.07 10.967c-1.476 0-.328-7.465.685-10.673\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M24.29 27.6c.547.714-.306 1.116.15 2.05c.377.768.972 1.061 1.855 1.175\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M25.132 27.542c.924.97.394 4.457 3.145 4.551\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M25.784 27.31c1.98.861 2.203 6.706 3.98 5.612c.637-.392.95-.873 1.088-1.329m-2.677-4.416c1.618.968 2.261 5.207 4.506 5.435c1.669.169 1.883-1.425 1.883-2.254c0-.226.207-.401.425-.347c1.89.472 3.26-.343 3.229-1.706c-.034-1.47-2.028-3.828-6.654-3.327\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M28.873 23.334c1.746 1.029 6.895-2.412 9.003-.463c1.406 1.299.452 2.59-.707 3.462\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M29.28 21.938c2.01-.697 7.126-5.003 7.326.363\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M29.586 20.14c.782-.96 2.913-1.924 4.24-.355m-4.111 6.845c2.294.832 3.946 2.53 3.946 2.53m1.041.914c1.505 1.301 3.83 4.218 5.812 9.208m-16.11-9.72s-1.3.424-2.12.925c2.221.638 4.672 3.144 4.672 3.144m-3.769-9.266l.648 1.221m2.029-.09l.947-1.351m-5.649-3.172L4.5 24.466l16.778-1.44m22.161-4.713c-.195-.547-.797-.99-1.344-.99s-.833.443-.639.99s.797.992 1.344.992s.834-.444.639-.992m-1.903.178l-6.368 1.195\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default hollowKnightSilksongAlt

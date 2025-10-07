@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const upDownArrow: IconData = {
+  "body": "<path fill=\"#3B88C3\" d=\"M36 32a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V4a4 4 0 0 1 4-4h28a4 4 0 0 1 4 4z\"/><path fill=\"#FFF\" d=\"M27 13L18 3L9 13zm-9 20l9-10H9z\"/><path fill=\"#FFF\" d=\"M14 12h8v12h-8z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default upDownArrow

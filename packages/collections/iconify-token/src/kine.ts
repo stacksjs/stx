@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const kine: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M4.2 3h5.4v5.4H4.2zm0 12.6h5.4V21H4.2zM9 12l6-9h4.8l-5.7 9l5.7 9H15z\" clip-rule=\"evenodd\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default kine

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const presenceAway10Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 10A5 5 0 1 0 5 0a5 5 0 0 0 0 10m0-6.996v1.79l1.354 1.353a.5.5 0 1 1-.708.707l-1.5-1.5A.5.5 0 0 1 4 5V3.004a.5.5 0 0 1 1 0\"/>",
+  "width": 10,
+  "height": 10,
+  "viewBox": "0 0 10 10"
+}
+
+export default presenceAway10Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const boardSplit48Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 11.25C6 8.35 8.35 6 11.25 6h25.5C39.65 6 42 8.35 42 11.25v25.5c0 2.9-2.35 5.25-5.25 5.25h-25.5A5.25 5.25 0 0 1 6 36.75zM39.5 29v-9.5h-10V29zm-10 2.5v8h7.25a2.75 2.75 0 0 0 2.75-2.75V31.5zm-2.5-6H8.5v11.25a2.75 2.75 0 0 0 2.75 2.75H27zm0-2.5V8.5H11.25a2.75 2.75 0 0 0-2.75 2.75V23zm12.5-6v-5.75a2.75 2.75 0 0 0-2.75-2.75H29.5V17z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default boardSplit48Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const changeBackgroundTransparent: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"3\" d=\"m38 30l8-8m-4 14l4-4m-6-14l6-6m0-10l-9 9m-1-9l-4 4M9 29l-7 7m5-15l-5 5M26 2l-3 3m-7-3L2 16M6 2L2 6m26.756 24.827A11 11 0 0 0 34.81 21c0-6.075-4.925-11-11-11s-11 4.925-11 11a11 11 0 0 0 6.053 9.827c-5.017 1.736-8.818 6.038-9.803 11.318c-.318 1.706.675 3.101 2.396 3.324c2.096.271 5.811.531 12.354.531s10.258-.26 12.353-.53c1.721-.223 2.715-1.619 2.397-3.325c-.985-5.28-4.786-9.582-9.803-11.318\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default changeBackgroundTransparent

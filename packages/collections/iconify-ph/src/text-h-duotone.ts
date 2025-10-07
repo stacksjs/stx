@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textHDuotone: IconData = {
+  "body": "<g fill=\"currentColor\"><path d=\"M200 56v144H56V56Z\" opacity=\".2\"/><path d=\"M208 56v144a8 8 0 0 1-16 0v-64H64v64a8 8 0 0 1-16 0V56a8 8 0 0 1 16 0v64h128V56a8 8 0 0 1 16 0\"/></g>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default textHDuotone

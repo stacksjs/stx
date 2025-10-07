@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const caretDoubleLeftDuotone: IconData = {
+  "body": "<g fill=\"currentColor\"><path d=\"M200 48v160l-80-80Z\" opacity=\".2\"/><path d=\"M203.06 40.61a8 8 0 0 0-8.72 1.73l-80 80a8 8 0 0 0 0 11.32l80 80A8 8 0 0 0 208 208V48a8 8 0 0 0-4.94-7.39M192 188.69L131.31 128L192 67.31Zm-66.34 13.65a8 8 0 0 1-11.32 11.32l-80-80a8 8 0 0 1 0-11.32l80-80a8 8 0 0 1 11.32 11.32L51.31 128Z\"/></g>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default caretDoubleLeftDuotone

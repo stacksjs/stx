@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const videoCloseCaptioning: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.739 10.548C1.845 10.464 1.094 9.81.97 8.922a22.7 22.7 0 0 1 .01-6.4c.12-.83.798-1.457 1.632-1.544A42 42 0 0 1 7 .75c1.501 0 2.948.085 4.358.23a1.854 1.854 0 0 1 1.659 1.572c.148 1.042.233 2.126.233 3.231c0 1.096-.093 2.161-.239 3.196a1.886 1.886 0 0 1-1.686 1.605a43 43 0 0 1-4.432.232c-1.049 1.206-1.853 1.803-3.258 2.434v-2.62l-.68-.062z\"/><path d=\"M5.967 4.371a1 1 0 0 0-.942-.666H4.36a1 1 0 0 0-1 .999V6.7a1 1 0 0 0 1 1h.665a1 1 0 0 0 .942-.667m4.673-2.662a1 1 0 0 0-.943-.666h-.666a1 1 0 0 0-.998.999V6.7a1 1 0 0 0 .998 1h.666a1 1 0 0 0 .942-.667\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default videoCloseCaptioning

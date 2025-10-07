@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const gem: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M408.563 48H103.438L16 179.156v24.786L199.421 480h113.158L496 203.942v-24.786Zm-17.125 32l63.407 95.111H347.739L317.808 80Zm-163.7 0h56.524l29.93 95.111H197.808Zm-107.175 0h73.629l-29.931 95.111H57.155Zm96.016 368L56.525 207.111h106.793L219.813 448Zm36.1 0l-56.492-240.889h119.626L259.318 448Zm42.739 0h-3.234l56.5-240.889h106.791Z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default gem

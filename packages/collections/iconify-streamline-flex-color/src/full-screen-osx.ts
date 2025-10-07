@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const fullScreenOsx: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#d7e0ff\" d=\"M7 13.25c4 0 6.25-2.25 6.25-6.25S11 .75 7 .75S.75 3 .75 7S3 13.25 7 13.25\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M7 13.25c4 0 6.25-2.25 6.25-6.25S11 .75 7 .75S.75 3 .75 7S3 13.25 7 13.25\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M9.298 7.53c.097-.98.11-1.577.039-2.424a.485.485 0 0 0-.443-.443c-.847-.071-1.444-.059-2.424.039M4.702 6.47c-.097.98-.11 1.577-.039 2.424c.02.236.207.423.443.443c.847.071 1.444.059 2.424-.039\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default fullScreenOsx

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const navigationLocationTarget20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2.5 5a.5.5 0 0 0 0 1h15a.5.5 0 0 0 0-1zm0 5a.5.5 0 0 0 0 1h10.195a4.5 4.5 0 0 1 1.323-.732a1.5 1.5 0 0 1 .068-.268zm7.86 5.475a1.5 1.5 0 0 1-.274-.475H2.5a.5.5 0 0 0 0 1h8.775l-.007-.018a1.5 1.5 0 0 1-.908-.507m5.14.025a1 1 0 1 0 0-2a1 1 0 0 0 0 2m4-1.5h-.551A3.49 3.49 0 0 0 16 11.051V10.5a.5.5 0 0 0-1 0v.551A3.49 3.49 0 0 0 12.051 14H11.5a.5.5 0 0 0 0 1h.551A3.49 3.49 0 0 0 15 17.949v.551a.5.5 0 0 0 1 0v-.551A3.49 3.49 0 0 0 18.949 15h.551a.5.5 0 0 0 0-1m-2.232 2.268a2.5 2.5 0 1 1-3.536-3.535a2.5 2.5 0 0 1 3.536 3.535\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default navigationLocationTarget20Regular

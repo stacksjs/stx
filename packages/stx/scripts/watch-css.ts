@@ -39,7 +39,7 @@ await buildCSS()
 
 // Watch for changes
 const watchDirs = new Set<string>()
-for (const pattern of config.content) {
+for (const pattern of config.content || []) {
   const dir = path.dirname(pattern.replace('/**/*', ''))
   watchDirs.add(dir)
 }

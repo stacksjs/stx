@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const trendingFlat: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m17.5 16.5l-1.425-1.4l2.1-2.1H3v-2h15.175L16.1 8.9l1.425-1.4L22 12z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default trendingFlat

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const outlineVolumeMute: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 8.83v6.34L11.83 13H9v-2h2.83zM16 4l-5 5H7v6h4l5 5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default outlineVolumeMute

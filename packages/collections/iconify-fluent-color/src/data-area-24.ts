@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const dataArea24: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVG2JkTVcuS)\" d=\"M19.5 6.75a.75.75 0 0 0-1.2-.6l-5.6 4.2l-3.82-2.246a.75.75 0 0 0-.715-.025L4.5 9.9v9.6h15z\"/><path fill=\"url(#SVG6XLYYcfQ)\" fill-opacity=\".3\" d=\"M19.5 6.75a.75.75 0 0 0-1.2-.6l-5.6 4.2l-3.82-2.246a.75.75 0 0 0-.715-.025L4.5 9.9v9.6h15z\"/><path fill=\"url(#SVGwOHVe6yh)\" fill-opacity=\".3\" d=\"M19.5 6.75a.75.75 0 0 0-1.2-.6l-5.6 4.2l-3.82-2.246a.75.75 0 0 0-.715-.025L4.5 9.9v9.6h15z\"/><path fill=\"url(#SVG7K9d9dwM)\" fill-opacity=\".3\" d=\"M19.5 6.75a.75.75 0 0 0-1.2-.6l-5.6 4.2l-3.82-2.246a.75.75 0 0 0-.715-.025L4.5 9.9v9.6h15z\"/><path fill=\"url(#SVG4Gu0beTS)\" d=\"M5 4a1 1 0 0 0-2 0v13.5A3.5 3.5 0 0 0 6.5 21H20a1 1 0 1 0 0-2H6.5A1.5 1.5 0 0 1 5 17.5z\"/><defs><linearGradient id=\"SVG2JkTVcuS\" x1=\"-.692\" x2=\"23.794\" y1=\"7.688\" y2=\"22.289\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".164\" stop-color=\"#3BD5FF\"/><stop offset=\".537\" stop-color=\"#9C6CFE\"/><stop offset=\".908\" stop-color=\"#E656EB\"/></linearGradient><linearGradient id=\"SVGwOHVe6yh\" x1=\"12\" x2=\"12\" y1=\"17.25\" y2=\"19.5\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#163697\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#163697\"/></linearGradient><linearGradient id=\"SVG7K9d9dwM\" x1=\"6.808\" x2=\"4.5\" y1=\"15.563\" y2=\"15.563\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#163697\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#163697\"/></linearGradient><linearGradient id=\"SVG4Gu0beTS\" x1=\"19.313\" x2=\"3.56\" y1=\"4.125\" y2=\"27.58\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#70777D\"/><stop offset=\"1\" stop-color=\"#B9C0C7\"/></linearGradient><radialGradient id=\"SVG6XLYYcfQ\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"rotate(138.733 7.043 7.362)scale(15.351 15.4828)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".636\" stop-color=\"#0FAFFF\" stop-opacity=\"0\"/><stop offset=\".962\" stop-color=\"#0067BF\"/></radialGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default dataArea24

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const stackFront: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path fill=\"currentColor\" d=\"M12 4L4 8l8 4l8-4z\"/><path d=\"m8 14l-4 2l8 4l8-4l-4-2\"/><path d=\"m8 10l-4 2l8 4l8-4l-4-2\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default stackFront

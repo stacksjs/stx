@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const doubleSwipeUp24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M18.207 2.293a1 1 0 0 0-1.414 0l-3 3a1 1 0 0 0 1.414 1.414L16.5 5.414V17a1 1 0 1 0 2 0V5.414l1.293 1.293a1 1 0 1 0 1.414-1.414zM12.5 17a5 5 0 0 1 3-4.584v2.348a3 3 0 1 0 4 0v-2.348a5.001 5.001 0 0 1-2 9.584a5 5 0 0 1-5-5m-8-4.584A5.001 5.001 0 0 0 6.5 22a5 5 0 0 0 2-9.584v2.348a3 3 0 1 1-4 0zM7.207 2.293a1 1 0 0 0-1.414 0l-3 3a1 1 0 0 0 1.414 1.414L5.5 5.414V17a1 1 0 1 0 2 0V5.414l1.293 1.293a1 1 0 0 0 1.414-1.414z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default doubleSwipeUp24Filled

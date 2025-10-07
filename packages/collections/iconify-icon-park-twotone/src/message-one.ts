@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const messageOne: IconData = {
+  "body": "<defs><mask id=\"SVGnEyzbdTC\"><g fill=\"none\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-width=\"4\"><path fill=\"#555\" stroke-linejoin=\"round\" d=\"M4 6h40v30H29l-5 5l-5-5H4z\"/><path d=\"M23 21h2.003m7.998 0H35m-21.999 0H15\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGnEyzbdTC)\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default messageOne

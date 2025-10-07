@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const guardian24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10.5 5a3 3 0 1 1-6 0a3 3 0 0 1 6 0m6 5a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5m-3.104.75q.103.358.104.75v3q0 .26-.063.5A2 2 0 0 1 11 16.437V20a2 2 0 0 1-3.25 1.561A2 2 0 0 1 4.5 20v-3.563q-.24.062-.5.063a2 2 0 0 1-2-2v-3a2.75 2.75 0 0 1 2.75-2.75h6a2.75 2.75 0 0 1 2.646 2m1.029 0h5.325a2.75 2.75 0 0 1 2.75 2.75v1.75a2 2 0 0 1-2.5 1.937V20a2 2 0 0 1-3.25 1.561A2 2 0 0 1 13.5 20v-3.264c.614-.55 1-1.348 1-2.236v-3q0-.386-.075-.75\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default guardian24Filled

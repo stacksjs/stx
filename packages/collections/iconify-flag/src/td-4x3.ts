@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const td4x3: IconData = {
+  "body": "<g fill-rule=\"evenodd\"><path fill=\"#002664\" d=\"M0 0h214v480H0z\"/><path fill=\"#c60c30\" d=\"M426 0h214v480H426z\"/><path fill=\"#fecb00\" d=\"M214 0h212v480H214z\"/></g>",
+  "width": 640,
+  "height": 480,
+  "viewBox": "0 0 640 480"
+}
+
+export default td4x3

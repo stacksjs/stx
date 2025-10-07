@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const videoPlus: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default videoPlus

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const personMail24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11 15.5c0-.563.186-1.082.5-1.5H5.253a2.25 2.25 0 0 0-2.25 2.25v.919c0 .572.18 1.13.511 1.596C5.056 20.929 7.58 22 11 22h.05a2.5 2.5 0 0 1-.05-.5zm0-13.495a5 5 0 1 1 0 10a5 5 0 0 1 0-10m6.51 16.922l-5.49-3.203A2 2 0 0 1 14 14h7a2 2 0 0 1 2 1.97zm.227 1.014l5.264-2.834V21a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2v-4.13l5.248 3.062a.5.5 0 0 0 .489.009\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default personMail24Filled

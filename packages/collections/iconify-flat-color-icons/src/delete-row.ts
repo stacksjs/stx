@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const deleteRow: IconData = {
+  "body": "<path fill=\"#90CAF9\" d=\"M43 30V18c0-2.2-1.8-4-4-4H9c-2.2 0-4 1.8-4 4v12c0 2.2 1.8 4 4 4h30c2.2 0 4-1.8 4-4M9 18h30v12H9z\"/><circle cx=\"38\" cy=\"38\" r=\"10\" fill=\"#F44336\"/><g fill=\"#fff\"><path d=\"m43.31 41.181l-2.12 2.122l-8.485-8.484l2.121-2.122z\"/><path d=\"m34.819 43.31l-2.122-2.12l8.484-8.485l2.122 2.121z\"/></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default deleteRow

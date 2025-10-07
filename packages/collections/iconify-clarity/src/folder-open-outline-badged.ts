@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const folderOpenOutlineBadged: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M35.32 13.74a1.71 1.71 0 0 0-1.45-.74h-22.7a2.59 2.59 0 0 0-2.25 1.52a1 1 0 0 0 0 .14L6 25V7h6.49l2.61 3.59a1 1 0 0 0 .81.41h8.52a7.5 7.5 0 0 1-1.29-2h-6.72l-2.31-3.18A2 2 0 0 0 12.49 5H6a2 2 0 0 0-2 2v22.69A1.37 1.37 0 0 0 5.41 31h24.93a1 1 0 0 0 1-.72l4.19-15.1a1.64 1.64 0 0 0-.21-1.44M29.55 29H6.9l3.88-13.81a.66.66 0 0 1 .38-.24h22.33Z\" class=\"clr-i-outline--badged clr-i-outline-path-1--badged\"/><circle cx=\"30\" cy=\"6\" r=\"5\" fill=\"currentColor\" class=\"clr-i-outline--badged clr-i-outline-path-2--badged clr-i-badge\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default folderOpenOutlineBadged

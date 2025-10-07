@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const leo: IconData = {
+  "body": "<path fill=\"#b399c8\" d=\"M11.88 12.21h48v47.83h-48z\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path stroke-width=\"2\" d=\"M12.12 11.96h48v48h-48z\"/><path stroke-width=\"3\" d=\"M34.44 37.72a69.3 69.3 0 0 1-1.186-11.86c0-5.93 9.487-8.301 11.86-2.372c1.888 7.085-11.79 27.93-2.372 28.46c4.744 0 3.988-5.356 3.988-5.356\"/><circle cx=\"29.13\" cy=\"39.22\" r=\"5.5\" stroke-width=\"3\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default leo

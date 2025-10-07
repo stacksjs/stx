@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const brightnessLow32Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16 4a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0V5a1 1 0 0 1 1-1m0 19a7 7 0 1 0 0-14a7 7 0 0 0 0 14m0-2a5 5 0 1 1 0-10a5 5 0 0 1 0 10m11-4a1 1 0 0 0 0-2h-2a1 1 0 1 0 0 2zm-11 7a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0v-2a1 1 0 0 1 1-1m-9-7a1 1 0 1 0 0-2H5a1 1 0 1 0 0 2zm.293-9.707a1 1 0 0 1 1.414 0l1 1a1 1 0 1 1-1.414 1.414l-1-1a1 1 0 0 1 0-1.414m1.414 17.414a1 1 0 0 1-1.414-1.414l1-1a1 1 0 0 1 1.414 1.414zm16-17.414a1 1 0 0 0-1.414 0l-1 1a1 1 0 0 0 1.414 1.414l1-1a1 1 0 0 0 0-1.414m-2.414 16.414l1 1a1 1 0 0 0 1.414-1.414l-1-1a1 1 0 0 0-1.414 1.414\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default brightnessLow32Regular

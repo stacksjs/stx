@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const receiptPlay20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v7h3v2a3 3 0 0 1-3 3h-4.6q.244-.476.393-1H14V5a1 1 0 0 0-1-1H6a1 1 0 0 0-1 1v4.022a5.5 5.5 0 0 0-1 .185zm7.5 5H8.663a5.5 5.5 0 0 0-1.584-.77A.5.5 0 0 1 7.5 9h4a.5.5 0 0 1 0 1m3.5 6a2 2 0 0 0 2-2v-1h-2zM7 6.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5m3 8a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-6 1.495a.5.5 0 0 0 .757.429l2.5-1.497a.5.5 0 0 0 0-.858l-2.5-1.497A.5.5 0 0 0 4 13z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default receiptPlay20Regular

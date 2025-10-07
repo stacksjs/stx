@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const desktopDeleteFlat: IconData = {
+  "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path fill=\"#2859c5\" d=\"M5.635 10.577a.5.5 0 0 1 .47-.332h1.79a.5.5 0 0 1 .47.332l.687 1.918H10a.75.75 0 1 1 0 1.5H4a.75.75 0 0 1 0-1.5h.948zM13.78 1.28A.75.75 0 0 0 12.72.22L11 1.94L9.28.22a.75.75 0 1 0-1.06 1.06L9.94 3L8.22 4.72a.75.75 0 0 0 1.06 1.06L11 4.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L12.06 3z\"/><path fill=\"#8fbffa\" d=\"M6.766.5h-5.31C.653.5 0 1.152 0 1.957v7.586C0 10.348.652 11 1.457 11h11.086C13.348 11 14 10.348 14 9.543V7.105a2 2 0 0 1-2.164-.44L11 5.827l-.836.836a2 2 0 1 1-2.828-2.828L8.172 3l-.836-.836A2 2 0 0 1 6.766.5\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default desktopDeleteFlat

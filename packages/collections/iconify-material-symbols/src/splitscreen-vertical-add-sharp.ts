@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const splitscreenVerticalAddSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 21V3h8v18zm10 0V3h8v12.1q-.25-.05-.5-.075T20 15q-2.075 0-3.537 1.45T15 19.975q0 .275.025.525t.075.5zm6 2v-2h-2v-2h2v-2h2v2h2v2h-2v2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default splitscreenVerticalAddSharp

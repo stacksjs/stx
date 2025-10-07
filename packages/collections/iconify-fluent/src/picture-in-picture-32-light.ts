@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pictureInPicture32Light: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.5 3A4.5 4.5 0 0 0 2 7.5v15A4.5 4.5 0 0 0 6.5 27h8.229q-.152-.481-.204-1H6.5A3.5 3.5 0 0 1 3 22.5v-15A3.5 3.5 0 0 1 6.5 4h19A3.5 3.5 0 0 1 29 7.5v8.229q.53.167 1 .44V7.5A4.5 4.5 0 0 0 25.5 3zM16 20.5a3.5 3.5 0 0 1 3.5-3.5h8a3.5 3.5 0 0 1 3.5 3.5v5a3.5 3.5 0 0 1-3.5 3.5h-8a3.5 3.5 0 0 1-3.5-3.5z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default pictureInPicture32Light

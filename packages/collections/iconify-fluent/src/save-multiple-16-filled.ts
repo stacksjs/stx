@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const saveMultiple16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 7.12V10a4.003 4.003 0 0 1-4 4H6a1.94 1.94 0 0 1-1-.27a2.04 2.04 0 0 1-.73-.73H10a3.01 3.01 0 0 0 3-3V5.3l.41.41c.192.182.342.404.44.65c.1.241.151.499.15.76M8 2H6v2h2zM5 12h4V8H5zm0-5h4c.552 0 1 .449 1 1v4a2 2 0 0 0 2-2V5.121a2.02 2.02 0 0 0-.586-1.414l-1.121-1.121A2 2 0 0 0 9 2.012V4c0 .551-.448 1-1 1H6c-.552 0-1-.449-1-1V2H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2V8c0-.551.448-1 1-1\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default saveMultiple16Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const ghostFill: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M128 24a96.11 96.11 0 0 0-96 96v96a8 8 0 0 0 13.07 6.19l24.26-19.85l24.27 19.85a8 8 0 0 0 10.13 0L128 202.34l24.27 19.85a8 8 0 0 0 10.13 0l24.27-19.85l24.26 19.85A8 8 0 0 0 224 216v-96a96.11 96.11 0 0 0-96-96m-28 104a12 12 0 1 1 12-12a12 12 0 0 1-12 12m56 0a12 12 0 1 1 12-12a12 12 0 0 1-12 12\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default ghostFill

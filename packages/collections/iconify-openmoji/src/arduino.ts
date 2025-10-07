@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const arduino: IconData = {
+  "body": "<path fill=\"#5C9E31\" d=\"M8 56h55v-5l4-4.096V28l-4-4v-8H8z\"/><path fill=\"#5C9E31\" d=\"M63 56v-5l4-4.096V28l-4-4v-8h-6.833\"/><path fill=\"#B1CC33\" d=\"M31.333 56H8V16h48.167zM6 22h2v9H6z\"/><path fill=\"#B1CC33\" d=\"M29 46h28v4H29zm-5-24h33v4H24z\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path d=\"M8 22v-6h55v8l4 4v18.904L63 51v5H8V31\"/><path d=\"M29 46h28v4H29zm-5-24h33v4H24zm-6 8v-8H5v9h6.125M14 50h4v-4h-4\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default arduino

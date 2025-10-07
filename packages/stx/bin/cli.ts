@@ -400,6 +400,63 @@ else {
     })
 
   cli
+    .command('iconify <command>', 'Generate Iconify icon packages')
+    .option('--output <dir>', 'Output directory for generated packages', { default: 'packages' })
+    .option('--icons <icons>', 'Comma-separated list of specific icons to generate')
+    .example('stx iconify list')
+    .example('stx iconify generate mdi')
+    .example('stx iconify generate lucide --icons home,settings,user')
+    .action(async (command: string, options: { output?: string, icons?: string }) => {
+      try {
+        // Dynamically import the generator to avoid bundle size issues
+        const { fetchCollections, generatePackage } = await import('../../../iconify-generator/src/index.js')
+
+        if (command === 'list') {
+          console.log('\n📚 Fetching available icon collections...\n')
+          const collections = await fetchCollections()
+
+          const sortedCollections = Object.entries(collections)
+            .sort((a, b) => b[1].total - a[1].total)
+
+          console.log('Available collections:\n')
+          for (const [prefix, info] of sortedCollections) {
+            console.log(`  ${prefix.padEnd(30)} ${info.name} (${info.total} icons)`)
+          }
+          console.log(`\nTotal: ${sortedCollections.length} collections`)
+        }
+        else if (command.startsWith('generate')) {
+          // Extract the prefix from the command or next arg
+          const prefix = command === 'generate' ? '' : command.replace('generate:', '').replace('generate-', '').replace('generate', '').trim()
+
+          if (!prefix) {
+            console.error('Error: Please specify a collection prefix')
+            console.error('Usage: stx iconify generate <prefix> [--icons icon1,icon2,...]')
+            process.exit(1)
+          }
+
+          const outputDir = options.output || path.join(process.cwd(), 'packages/collections')
+          const icons = options.icons ? options.icons.split(',').map(i => i.trim()) : undefined
+
+          await generatePackage(prefix, outputDir, icons)
+          console.log('\n✓ Package generated successfully!')
+          console.log(`\nTo use the package:`)
+          console.log(`  1. cd packages/collections/iconify-${prefix}`)
+          console.log(`  2. bun install`)
+          console.log(`  3. bun run build`)
+        }
+        else {
+          console.error(`Unknown iconify command: ${command}`)
+          console.error('Available commands: list, generate')
+          process.exit(1)
+        }
+      }
+      catch (error) {
+        console.error('Error:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
+
+  cli
     .command('dev <file>', 'Start a development server for an STX file')
     .option('--port <port>', 'Port to use for the dev server', { default: 3000 })
     .option('--no-watch', 'Disable file watching and auto-reload')
@@ -1654,7 +1711,7 @@ else {
           }
         }
 
-        const handleFileChange = (filename: string | null, eventType: string) => {
+        const handleFileChange = (eventType: string, filename: string | null) => {
           if (!filename) return
 
           // Check if file should be ignored

@@ -58,7 +58,7 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
         partialsDir: 'custom-partials',
         componentsDir: 'custom-components',
       },
-    })
+    } as any)
 
     expect(result.success).toBe(true)
     expect(result.outputs.length).toBeGreaterThanOrEqual(1)
@@ -98,7 +98,7 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
           ],
         },
       },
-    })
+    } as any)
 
     expect(result.success).toBe(true)
   })
@@ -121,8 +121,8 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
       stx: {
         // Intentionally invalid config for testing - should not cause errors
         invalidOption: 'invalid',
-      } as any,
-    })
+      },
+    } as any)
 
     expect(result.success).toBe(true)
   })

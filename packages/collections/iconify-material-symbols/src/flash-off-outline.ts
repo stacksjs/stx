@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const flashOffOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 2h10l-2 7h4l-2.925 4.225L14.65 11.8l.55-.8h-1.35l-1.175-1.175L14.35 4H9v2.15l-2-2zm3 20v-8H7V9.85L1.375 4.225L2.8 2.8l18.4 18.4l-1.425 1.425L13.75 16.6zm1.825-13.025\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default flashOffOutline

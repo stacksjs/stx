@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const alienMonster: IconData = {
+  "body": "<path fill=\"#8967AA\" d=\"M10 21v14h3v3h3v7h6v6h6v-6h16v6h6v-6h6v-7h3v-3h3V20h-6v5h-7v-5h-4v-6h-6v6h-7v-6h-6v6h-4v5h-6v-5h-6zm6 30h6v6h-6zm34 0h6v6h-6z\"/><g stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M25.175 31h3.6v6h-3.6z\"/><path fill=\"none\" d=\"M22 45h-6v-6m6.583-14v-5H26m22.708 5v-5h-3.416M13 35h-3V20h6v15m40 0V20h6v15h-3M26 20v-6h6v6m7 0v-6h6v6M16 35h3v3h-6v-3m46 0v3h-6v-3h3M16 51h6v6h-6zm34 0h6v6h-6zm-22-6v6h-6v-6m28 0h6v-6m-12 6v6h6v-6\"/><path d=\"M43.425 31h3.6v6h-3.6z\"/><path fill=\"none\" d=\"M28 45h16M32 20h7m-23 5h6m27 0h7\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default alienMonster

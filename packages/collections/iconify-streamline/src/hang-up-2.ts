@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const hangUp2: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M2.58 3.486A2.55 2.55 0 0 0 .57 5.994l-.006.502a.86.86 0 0 0 .853.853l2.146-.011a.855.855 0 0 0 .847-.847a.86.86 0 0 1 .852-.853h3.389a.847.847 0 0 1 .852.853a.855.855 0 0 0 .847.847h2.146a.863.863 0 0 0 .853-.853l-.006-.503a2.55 2.55 0 0 0-2.01-2.507a23.1 23.1 0 0 0-8.753.011M7 7.938v4.718m-1.872-1.872L7 12.656l1.872-1.872\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default hangUp2

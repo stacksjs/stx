@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textFieldsAlt: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 21v-2h20v2zm17-4V3h1.5v14zM4 17L9.25 3h2.5L17 17h-2.4l-1.25-3.6H7.7L6.4 17zm4.4-5.6h4.2l-2.05-5.8h-.1z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default textFieldsAlt

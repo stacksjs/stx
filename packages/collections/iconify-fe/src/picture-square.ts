@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pictureSquare: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 5v14h14V5zm0-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2m3.5 7a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3M7 14l2-2l2 2l3-3l3 3v3H7z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default pictureSquare

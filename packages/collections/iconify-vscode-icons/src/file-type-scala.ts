@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const fileTypeScala: IconData = {
+  "body": "<defs><linearGradient id=\"SVGbVVCAbDX\" x1=\"-134.907\" x2=\"-134.896\" y1=\"204.572\" y2=\"204.572\" gradientTransform=\"matrix(1538 0 0 -961.25 207495 196661)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"#e62d2a\"/><stop offset=\".6\" stop-color=\"#df3f3d\"/><stop offset=\".8\" stop-color=\"#df3f3d\"/><stop offset=\"1\" stop-color=\"#e62d2a\"/></linearGradient><linearGradient id=\"SVGupGyZcRR\" x1=\"-134.907\" x2=\"-134.896\" y1=\"203.781\" y2=\"203.781\" gradientTransform=\"matrix(1538 0 0 -961.25 207495 195892)\" href=\"#SVGbVVCAbDX\"/><linearGradient id=\"SVGcXoEweGn\" x1=\"-134.907\" x2=\"-134.896\" y1=\"205.363\" y2=\"205.363\" gradientTransform=\"matrix(1538 0 0 -961.25 207495 197430)\" href=\"#SVGbVVCAbDX\"/></defs><path fill=\"#7f0c1d\" d=\"M7.384 19.231v2.154c0 .363 7.833.971 12.937 2.154c2.465-.571 4.295-1.277 4.295-2.154v-2.154c0-.877-1.83-1.582-4.295-2.154c-5.1 1.183-12.937 1.791-12.937 2.154m0-8.616v2.154c0 .363 7.833.971 12.937 2.154c2.465-.571 4.295-1.277 4.295-2.154v-2.154c0-.877-1.83-1.582-4.295-2.154c-5.1 1.183-12.937 1.791-12.937 2.154\"/><path fill=\"url(#SVGbVVCAbDX)\" d=\"M7.384 14.923v6.462c0-.538 17.232-1.615 17.232-4.308v-6.462c0 2.692-17.232 3.769-17.232 4.308\"/><path fill=\"url(#SVGupGyZcRR)\" d=\"M7.384 6.308v6.462c0-.538 17.232-1.615 17.232-4.308V2c0 2.692-17.232 3.769-17.232 4.308\"/><path fill=\"url(#SVGcXoEweGn)\" d=\"M7.384 23.538V30c0-.538 17.232-1.615 17.232-4.308v-6.461c0 2.692-17.232 3.769-17.232 4.308\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default fileTypeScala

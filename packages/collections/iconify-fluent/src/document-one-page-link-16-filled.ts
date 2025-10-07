@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const documentOnePageLink16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 3a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v6.5q-.042 0-.083.003h-2.834L10 9.5h-.5A3 3 0 0 0 7.841 15H5a2 2 0 0 1-2-2zm6.59 1.992A.5.5 0 0 0 9.5 4h-3l-.09.008A.5.5 0 0 0 6.5 5h3zM10 8a.5.5 0 0 0-.5-.5h-3l-.09.008a.5.5 0 0 0 .09.992h3l.09-.008A.5.5 0 0 0 10 8m-3 4.5A2.5 2.5 0 0 1 9.5 10h.5a.5.5 0 0 1 0 1h-.5a1.5 1.5 0 0 0 0 3h.5a.5.5 0 0 1 0 1h-.5A2.5 2.5 0 0 1 7 12.5m5.5-2a.5.5 0 0 1 .5-.5h.5a2.5 2.5 0 0 1 0 5H13a.5.5 0 0 1 0-1h.5a1.5 1.5 0 0 0 0-3H13a.5.5 0 0 1-.5-.5m-3.5 2a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default documentOnePageLink16Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const speechBubbleTypingFill16: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M1 0h14c.55 0 1 .45 1 1v9.96c0 .55-.45 1-1 1H7.54l-3.69 3.69c-.31.32-.85.1-.85-.35v-3.34H1c-.55 0-1-.45-1-1V1c0-.55.45-1 1-1m3 7a1 1 0 1 0 0-2a1 1 0 0 0 0 2m4 0a1 1 0 1 0 0-2a1 1 0 0 0 0 2m5-1a1 1 0 1 0-2 0a1 1 0 0 0 2 0\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default speechBubbleTypingFill16

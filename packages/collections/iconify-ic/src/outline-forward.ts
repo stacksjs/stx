@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const outlineForward: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 8.83L17.17 12L14 15.17V14H6v-4h8zM12 4v4H4v8h8v4l8-8z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default outlineForward

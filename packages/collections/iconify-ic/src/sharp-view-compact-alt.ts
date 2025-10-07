@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const sharpViewCompactAlt: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M22 4H2v16h20zM11.5 16.5h-4v-4h4zm0-5h-4v-4h4zm5 5h-4v-4h4zm0-5h-4v-4h4z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sharpViewCompactAlt

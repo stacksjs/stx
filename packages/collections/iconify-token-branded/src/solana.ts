@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const solana: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVG2U4gXbte)\" d=\"M18.413 7.902a.62.62 0 0 1-.411.163H3.58c-.512 0-.77-.585-.416-.928l2.369-2.284a.6.6 0 0 1 .41-.169H20.42c.517 0 .77.59.41.935z\"/><path fill=\"url(#SVGI2MACeGG)\" d=\"M18.413 19.158a.62.62 0 0 1-.411.158H3.58c-.512 0-.77-.58-.416-.923l2.369-2.29a.6.6 0 0 1 .41-.163H20.42c.517 0 .77.586.41.928z\"/><path fill=\"url(#SVGat6JtpdI)\" d=\"M18.413 10.473a.62.62 0 0 0-.411-.158H3.58c-.512 0-.77.58-.416.923l2.369 2.29c.111.103.257.16.41.163H20.42c.517 0 .77-.586.41-.928z\"/><defs><linearGradient id=\"SVG2U4gXbte\" x1=\"3.001\" x2=\"21.459\" y1=\"55.041\" y2=\"54.871\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#599DB0\"/><stop offset=\"1\" stop-color=\"#47F8C3\"/></linearGradient><linearGradient id=\"SVGI2MACeGG\" x1=\"3.001\" x2=\"21.341\" y1=\"9.168\" y2=\"9.027\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#C44FE2\"/><stop offset=\"1\" stop-color=\"#73B0D0\"/></linearGradient><linearGradient id=\"SVGat6JtpdI\" x1=\"4.036\" x2=\"20.303\" y1=\"12.003\" y2=\"12.003\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#778CBF\"/><stop offset=\"1\" stop-color=\"#5DCDC9\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default solana

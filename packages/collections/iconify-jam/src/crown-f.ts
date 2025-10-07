@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const crownF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2.049 1.802L5.854 5.15L9.244.976a1 1 0 0 1 1.565.017l3.235 4.156l3.928-3.396a1 1 0 0 1 1.643.9L18.115 13H1.922L.399 2.7a1 1 0 0 1 1.65-.898M2 14h16v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default crownF

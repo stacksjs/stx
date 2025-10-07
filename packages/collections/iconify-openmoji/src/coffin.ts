@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const coffin: IconData = {
+  "body": "<g stroke-miterlimit=\"10\"><path fill=\"#A57939\" stroke=\"#A57939\" stroke-width=\"2\" d=\"M31.632 67.6h9.064a3 3 0 0 0 2.858-2.088l12.352-38.705a3 3 0 0 0-.329-2.526L43.772 5.786A3 3 0 0 0 41.243 4.4H31.085a3 3 0 0 0-2.53 1.386L16.752 24.28a3 3 0 0 0-.33 2.526l12.353 38.705a3 3 0 0 0 2.858 2.088z\"/><path fill=\"#f4aa41\" d=\"M36.334 22v16m-4.8-11.367h9.6\"/><path fill=\"#6A462F\" stroke=\"#6A462F\" stroke-linejoin=\"round\" d=\"m39.25 4.4l8.25 22.1l-8.25 41.1l2.25-.1L56 25.382L41.5 4.5z\"/></g><path fill=\"none\" stroke=\"#000\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M31.632 67.6h9.064a3 3 0 0 0 2.858-2.088l12.352-38.705a3 3 0 0 0-.329-2.526L43.772 5.786A3 3 0 0 0 41.243 4.4H31.085a3 3 0 0 0-2.53 1.386L16.752 24.28a3 3 0 0 0-.33 2.526l12.353 38.705a3 3 0 0 0 2.858 2.088z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default coffin

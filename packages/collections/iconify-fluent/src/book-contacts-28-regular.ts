@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const bookContacts28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8.75 2A3.75 3.75 0 0 0 5 5.75v16.5A3.75 3.75 0 0 0 8.75 26h13.5a.75.75 0 0 0 0-1.5H8.75a2.25 2.25 0 0 1-2.236-2H21.5A1.5 1.5 0 0 0 23 21V5.75A3.75 3.75 0 0 0 19.25 2zM21.5 5.75V21h-15V5.75A2.25 2.25 0 0 1 8.75 3.5h10.5a2.25 2.25 0 0 1 2.25 2.25m-5 3.75a2.5 2.5 0 1 1-5 0a2.5 2.5 0 0 1 5 0m2 5.375C18.5 16.431 17.214 18 14 18s-4.5-1.563-4.5-3.125v-.103c0-.98.794-1.772 1.773-1.772h5.454c.98 0 1.773.793 1.773 1.772z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default bookContacts28Regular

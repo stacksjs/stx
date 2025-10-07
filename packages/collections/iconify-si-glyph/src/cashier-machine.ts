@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const cashierMachine: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M13.641 4.012h-1.656V2.957h1.352c.346 0 .625-.346.625-.771V.772c0-.427-.279-.771-.625-.771H9.646c-.346 0-.624.345-.624.771v1.414c0 .426.278.771.624.771h1.378v1.055H4.353c-.37 0-.67.3-.67.668l-1.67 8.631V16h13.998v-2.689L14.312 4.68a.67.67 0 0 0-.671-.668m-7.625 8.004H4.985v-1.047h1.031zm-1.032-2V8.969h1.031v1.047zm3.032 2.015H6.985v-1.062h1.031zm0-2.031H6.969V8.984h1.047zm2 2.029H8.969v-1.061h1.047zM8.969 10V8.969h1.047V10zm1.047-2H4.985V6h5.031zM13 8h-2.018V6.98H13z\"/>",
+  "width": 17,
+  "height": 17,
+  "viewBox": "0 0 17 17"
+}
+
+export default cashierMachine

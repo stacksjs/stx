@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const flashOnOutlineRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m12 15.6l3.2-4.6h-2.85l2-7H9v8h3zm5.375-4.25l-6 8.675q-.15.225-.387.3t-.463 0t-.375-.262T10 19.6V14H9q-.825 0-1.412-.587T7 12V4q0-.825.588-1.412T9 2h5.85q.8 0 1.288.625T16.425 4L15 9h1.125q.9 0 1.338.8t-.088 1.55M12 12H9z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default flashOnOutlineRounded

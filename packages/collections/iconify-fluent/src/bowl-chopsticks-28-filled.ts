@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const bowlChopsticks28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.351 2.115a.75.75 0 0 1 1.034.236l6.687 10.65H16.3l-6.186-9.852a.75.75 0 0 1 1.27-.798l6.687 10.65h7.267a.66.66 0 0 1 .661.66v.34c0 1.035-.131 2.04-.378 3H2.378A12 12 0 0 1 2 14v-.34a.66.66 0 0 1 .661-.66h8.64L5.115 3.148a.75.75 0 0 1 .236-1.034M2.872 18.5C4.652 22.898 8.964 26 14 26s9.348-3.102 11.128-7.5z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default bowlChopsticks28Filled

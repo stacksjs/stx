@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const diamond20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.877 2.879a3 3 0 0 1 4.242 0l4.998 4.998a3 3 0 0 1 0 4.242l-4.998 4.998a3 3 0 0 1-4.242 0L2.879 12.12a3 3 0 0 1 0-4.242zm3.535.707a2 2 0 0 0-2.828 0L3.586 8.584a2 2 0 0 0 0 2.828l4.998 4.998a2 2 0 0 0 2.828 0l4.998-4.998a2 2 0 0 0 0-2.828z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default diamond20Regular

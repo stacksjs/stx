@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const chatMail20Filled: IconData = {
+  "body": "<g fill=\"currentColor\"><path d=\"M2 7a6 6 0 1 1 2.996 5.195l-2.338.78a.5.5 0 0 1-.639-.612l.712-2.491A6 6 0 0 1 2 7m4.5-1.5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1zm2 2h-2a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1\"/><path d=\"m12.276 14.947l-2.402-1.2q.662-.185 1.263-.488l1.363.682l4.5-2.25V11a1 1 0 0 0-1-1h-1.674q.23-.481.384-1H16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-2.07q.49.07 1 .07v2a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-3.191l-4.276 2.138a.5.5 0 0 1-.448 0\"/></g>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default chatMail20Filled

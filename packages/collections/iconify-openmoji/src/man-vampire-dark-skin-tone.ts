@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const manVampireDarkSkinTone: IconData = {
+  "body": "<path d=\"M26 38.057c-3 0-4-7-4-14c0-6 5-12 14-12s14 6 14 12c0 7-1 14-4 14\"/><path fill=\"#6a462f\" d=\"M24.969 31.057c-.101 8 4.937 14 11 14c5.937 0 11.064-6 11.064-14c0-5-3-11-3-11c-8 0-10 3-16 1c0 0-3 5-3.064 10\"/><path fill=\"#D22F27\" d=\"M35.65 45.1c-3.4-.1-8.6-5.7-8.6-5.7h-13.6a83 83 0 0 1 4.3 8.4a48.6 48.6 0 0 1 2.8 9.9h30.9a48.6 48.6 0 0 1 2.8-9.9a83 83 0 0 1 4.3-8.4h-13.9c.1 0-5.5 5.7-9 5.7\"/><path fill=\"#3F3F3F\" d=\"M17 61v-3.8c0-5 5-9 10-9q9 7.5 18 0c5 0 10 4 10 9V61z\"/><path d=\"M31.45 61h9c3.6-2.9 5.6-13.5 5.6-13.5c-5.767 5-14.333 5-20.1 0c0-.1 2 10.5 5.5 13.5\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M26 38.057c-3 0-4-7-4-14c0-6 5-12 14-12s14 6 14 12c0 7-1 14-4 14\"/><path fill=\"none\" stroke=\"#000\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M24.969 31.057c-.101 8 4.937 14 11 14c5.937 0 11.064-6 11.064-14c0-5-3-11-3-11c-8 0-10 3-16 1c0 0-3 5-3.064 10z\"/><path fill=\"none\" stroke=\"#000\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M26.5 39.4H13.4a55.5 55.5 0 0 1 4.3 8.4q.761 1.862 1.3 3.8m34-.2c.4-1.2.8-2.4 1.3-3.6a51 51 0 0 1 4.3-8.4H44.7\"/><path d=\"M42 30.1a2 2 0 1 1-4 0a2 2 0 0 1 4 0m-8 0a2 2 0 1 1-4 0a2 2 0 0 1 4 0\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M33 39c1.875-1 4.125-1 6 0\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M38 38.5q.361.123.7.3\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M17 60v-3c0-5 5-9 10-9q9 7.5 18 0c5 0 10 4 10 9v3\"/><path stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m34 38.7l.3 2.4l.8-2.3l-.1-.1zm3.9 0l-.2 2.4l-.8-2.3l-.1-.1z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default manVampireDarkSkinTone

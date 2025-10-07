@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const chevronSquareRightF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m11.828 10l-3.535 3.536a1 1 0 0 0 1.414 1.414l4.243-4.243a1 1 0 0 0 0-1.414L9.707 5.05a1 1 0 0 0-1.414 1.414zM4 0h12a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V4a4 4 0 0 1 4-4\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default chevronSquareRightF

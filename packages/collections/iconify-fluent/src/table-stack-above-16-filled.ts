@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tableStackAbove16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2.5 2a.5.5 0 0 0 0 1h11a.5.5 0 0 0 0-1zM11 6h2.5a.5.5 0 0 1 .5.5V10h-3zm-1 0H6v4h4zm-8 4V6.5a.5.5 0 0 1 .5-.5H5v4zm3 1H2v.5A2.5 2.5 0 0 0 4.5 14H5zm1 3h4v-3H6zm5.5 0H11v-3h3v.5a2.5 2.5 0 0 1-2.5 2.5\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default tableStackAbove16Filled

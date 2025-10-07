@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const scanOutlineRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 22q-.825 0-1.412-.587T4 20v-2q0-.425.288-.712T5 17t.713.288T6 18v2h12v-2q0-.425.288-.712T19 17t.713.288T20 18v2q0 .825-.587 1.413T18 22zM4 4q0-.825.588-1.412T6 2h7.175q.4 0 .763.15t.637.425l4.85 4.85q.275.275.425.638t.15.762V10q0 .425-.288.713T19 11t-.712-.288T18 10V9h-4q-.425 0-.712-.288T13 8V4H6v6q0 .425-.288.713T5 11t-.712-.288T4 10zm18 11H2q-.425 0-.712-.288T1 14t.288-.712T2 13h20q.425 0 .713.288T23 14t-.288.713T22 15m-10 2\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default scanOutlineRounded

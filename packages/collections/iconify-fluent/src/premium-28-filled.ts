@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const premium28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M20.75 3a1 1 0 0 1 .78.375l.075.106l4.25 7a1 1 0 0 1-.015 1.063l-.077.102l-11 13a1 1 0 0 1-1.442.088l-.084-.088l-11-13a1 1 0 0 1-.15-1.052l.058-.113l4.25-7a1 1 0 0 1 .725-.473L7.25 3zm-3.235 9h-7.031l3.515 8.672zm5.329 0h-3.171l-2.917 7.195zM8.326 12H5.155l6.087 7.193zm1.348-7H7.811l-3.036 5h3.47zm6.572 0h-4.493l-1.429 5h7.351zm3.942 0h-1.863l1.429 5h3.47z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default premium28Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const multiply: IconData = {
+  "body": "<path fill=\"#785DC8\" d=\"M7.223 2.893a3.07 3.07 0 0 0-4.33 0a3.084 3.084 0 0 0 0 4.34l8.747 8.744l-8.737 8.746a3.07 3.07 0 0 0 0 4.33a3.07 3.07 0 0 0 4.33 0l8.74-8.745l8.74 8.735a3.07 3.07 0 0 0 4.33 0a3.07 3.07 0 0 0 0-4.33l-8.738-8.738l8.747-8.752a3.07 3.07 0 0 0 0-4.33c-1.2-1.19-3.15-1.19-4.34 0l-8.74 8.749z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default multiply

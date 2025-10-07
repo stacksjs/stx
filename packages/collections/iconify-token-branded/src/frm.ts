@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const frm: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGpSsAGeED)\" d=\"m4.323 16.24l.794.461l.794-.466v-3.44L17.76 6.202l-1.588-1.07l-10.26 5.522V8.432l8.671-4.363L12.995 3L4.323 7.394z\"/><path fill=\"url(#SVGd3Mg3b4B)\" d=\"m16.5 8.198l-9 5.082v2.41l9-5.348z\"/><path fill=\"#CCA362\" d=\"m8.56 18.899l-1.589-1.07l9.53-5.882v2.145l-7.942 4.817z\"/><path fill=\"#CCA362\" d=\"m18.882 7.13l.794.508v8.587L11.63 21l-1.588-1.07l8.047-4.775V7.66l.794-.535z\"/><defs><linearGradient id=\"SVGpSsAGeED\" x1=\"3.537\" x2=\"18.864\" y1=\"16.055\" y2=\"7.509\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".05\" stop-color=\"#C5C3C5\"/><stop offset=\".3\" stop-color=\"#F2F2F2\"/><stop offset=\".9\" stop-color=\"#BEBBBE\"/></linearGradient><linearGradient id=\"SVGd3Mg3b4B\" x1=\"2.029\" x2=\"25.758\" y1=\"18.379\" y2=\"10.902\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".2\" stop-color=\"#CAA467\"/><stop offset=\".62\" stop-color=\"#ECC77C\"/><stop offset=\".92\" stop-color=\"#CCA362\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default frm

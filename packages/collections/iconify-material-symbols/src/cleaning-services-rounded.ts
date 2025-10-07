@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const cleaningServicesRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 23q-.825 0-1.412-.587T3 21v-5q0-2.075 1.463-3.537T8 11h1V3q0-.825.588-1.412T11 1h2q.825 0 1.413.588T15 3v8h1q2.075 0 3.538 1.463T21 16v5q0 .825-.587 1.413T19 23zm0-2h2v-3q0-.425.288-.712T8 17t.713.288T9 18v3h2v-3q0-.425.288-.712T12 17t.713.288T13 18v3h2v-3q0-.425.288-.712T16 17t.713.288T17 18v3h2v-5q0-1.25-.875-2.125T16 13H8q-1.25 0-2.125.875T5 16z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default cleaningServicesRounded

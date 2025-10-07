@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const calendarReply16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11.5 2A2.5 2.5 0 0 1 14 4.5v2.1a5.5 5.5 0 0 0-1-.393V6H3v5.5A1.5 1.5 0 0 0 4.5 13h1.707q.149.524.393 1H4.5A2.5 2.5 0 0 1 2 11.5v-7A2.5 2.5 0 0 1 4.5 2zm0 1h-7A1.5 1.5 0 0 0 3 4.5V5h10v-.5A1.5 1.5 0 0 0 11.5 3m0 13a4.5 4.5 0 1 0 0-9a4.5 4.5 0 0 0 0 9m-.896-6.396l-.897.896h1.543A2.75 2.75 0 0 1 14 13.25v.25a.5.5 0 0 1-1 0v-.25a1.75 1.75 0 0 0-1.75-1.75H9.707l.897.896a.5.5 0 0 1-.708.708L8.144 11.35a.5.5 0 0 1 .002-.705l1.75-1.75a.5.5 0 0 1 .708.708\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default calendarReply16Regular

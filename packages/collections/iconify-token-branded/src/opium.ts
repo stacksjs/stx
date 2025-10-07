@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const opium: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGbsdrgdAK)\" fill-rule=\"evenodd\" d=\"M3 12.25c.01-2.17 1.25-6.5 6.18-6.5c.62.03 2.125.325 3.18 1.26c1.325 1.165 1.53 1.25 2.205 1.25c.54 0 1.165-.235 1.41-.35c.225-.1.825-.3 1.41-.3c.735 0 3.615.68 3.615 4.365S18.165 16.4 17.475 16.4a4.1 4.1 0 0 1-1.635-.33c-.3-.13-.75-.325-1.3-.325c-.49 0-1.415.675-1.82 1.01c-.51.5-1.98 1.495-3.755 1.495c-2.215 0-5.965-1.66-5.965-6m4 .1C6.955 11.235 7.445 9 9.765 9h.02c.145 0 .865-.02 1.865.625l.095.06c.99.64 1.49.96 2.62.96c.935 0 1.675-.385 1.93-.575c.293-.187.628-.3.975-.33c.45 0 1.73.44 1.73 2.25s-1.33 2.305-1.73 2.305c-.32 0-.785-.23-.975-.35a3.9 3.9 0 0 0-1.93-.57a3.8 3.8 0 0 0-1.9.57c-.46.35-1.62 1.055-2.6 1.055c-1.215 0-2.86-1.23-2.86-2.65z\" clip-rule=\"evenodd\"/><defs><linearGradient id=\"SVGbsdrgdAK\" x1=\"3.175\" x2=\"20.765\" y1=\"12.355\" y2=\"12.355\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#4FEF8F\"/><stop offset=\".23\" stop-color=\"#FFED03\"/><stop offset=\".34\" stop-color=\"#FD9D37\"/><stop offset=\".46\" stop-color=\"#F62A81\"/><stop offset=\".59\" stop-color=\"#9736B6\"/><stop offset=\".7\" stop-color=\"#6453C5\"/><stop offset=\".83\" stop-color=\"#1A7BD9\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default opium

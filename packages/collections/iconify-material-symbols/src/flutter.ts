@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const flutter: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.9 15.375L2.5 12l11-11h6.775zM13.5 23l-5.925-5.925L13.5 11.15h6.775l-5.925 5.925L20.275 23z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default flutter

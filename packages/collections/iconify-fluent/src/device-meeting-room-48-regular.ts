@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const deviceMeetingRoom48Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14.707 6a5.94 5.94 0 0 0-5.736 4.403L4.215 28.172C3.158 32.122 6.135 36 10.224 36h27.552c4.09 0 7.066-3.878 6.01-7.828l-4.757-17.77A5.94 5.94 0 0 0 33.293 6zm-3.321 5.049a3.44 3.44 0 0 1 3.32-2.549h18.587a3.44 3.44 0 0 1 3.321 2.549l4.756 17.77a3.72 3.72 0 0 1-3.594 4.681H10.224a3.72 3.72 0 0 1-3.594-4.682zM13.249 38a1.25 1.25 0 1 0 0 2.5H34.75a1.25 1.25 0 1 0 0-2.5z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default deviceMeetingRoom48Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pawth: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8.824 13.769v3.87L12 19.098v-3.875z\"/><path fill=\"currentColor\" d=\"M15.176 17.638L11.999 19.1v-3.875l3.177-1.455zm-6.353-3.87l-3.028 5.326l3.028-1.456z\"/><path fill=\"currentColor\" d=\"M8.824 20.998L12 19.093l-3.176-1.456zm-3.029-1.904L8.823 21v-3.362L5.795 19.1zm9.38-5.325v3.87l3.029 1.46z\"/><path fill=\"currentColor\" d=\"m15.176 20.999l3.028-1.906l-3.028-1.45zM12 19.093l3.176 1.905v-3.361L12 19.097zm0-7.225l-3.176 1.906L12 15.235zm3.176 1.899L12 11.861v3.362zM5.647 8.452v3.097l2.647 1.165zm0 0L3 12.72l2.647-1.165z\"/><path fill=\"currentColor\" d=\"m5.647 14.24l2.647-1.525l-2.647-1.164z\"/><path fill=\"currentColor\" d=\"m3 12.72l2.647 1.52v-2.69L3 12.716zm2.647 2.007v2.107l2.652-3.62l-2.647 1.513z\"/><path fill=\"currentColor\" d=\"M5.647 16.833v-2.107L3 13.207zm12.706-8.381v3.097l2.642 1.165z\"/><path fill=\"currentColor\" d=\"M18.353 8.452L15.71 12.72l2.647-1.165V8.452z\"/><path fill=\"currentColor\" d=\"M18.353 14.24L21 12.715l-2.647-1.164z\"/><path fill=\"currentColor\" d=\"m15.71 12.72l2.648 1.52v-2.69l-2.647 1.165zm2.642 2.007v2.107L21 13.214z\"/><path fill=\"currentColor\" d=\"M18.353 16.833v-2.107l-2.642-1.519l2.647 3.626zM8.824 3v3.097l2.482 1.165z\"/><path fill=\"currentColor\" d=\"M8.824 3L6.34 7.267l2.488-1.165V3z\"/><path fill=\"currentColor\" d=\"m8.824 8.786l2.482-1.525l-2.482-1.164z\"/><path fill=\"currentColor\" d=\"m6.34 7.267l2.49 1.519v-2.69L6.34 7.262zm2.484 2.006v2.107l2.488-3.626z\"/><path fill=\"currentColor\" d=\"M8.824 11.38V9.271L6.34 7.752l2.488 3.627zM15.176 3v3.097l2.488 1.165z\"/><path fill=\"currentColor\" d=\"M15.176 3L12.7 7.267l2.477-1.165z\"/><path fill=\"currentColor\" d=\"m15.176 8.786l2.488-1.525l-2.488-1.164z\"/><path fill=\"currentColor\" d=\"m12.694 7.267l2.488 1.519v-2.69l-2.488 1.165zm2.483 2.006v2.107l2.488-3.626zm-.001 2.107V9.271L12.7 7.752z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default pawth

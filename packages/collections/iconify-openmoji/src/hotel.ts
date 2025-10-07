@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const hotel: IconData = {
+  "body": "<path fill=\"#D0CFCE\" d=\"M17 17h38v38H17zm38 3h11.5v35H55z\"/><path fill=\"none\" stroke=\"#92D3F5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M60 25h2v5h-2zm0 10h2v5h-2zm0 10h2v5h-2z\"/><path fill=\"#D0CFCE\" d=\"M5 20h12.5v35H5z\"/><path fill=\"none\" stroke=\"#92D3F5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M10 25h2v5h-2zm0 10h2v5h-2zm0 10h2v5h-2zm21-23h2v5h-2zm8 0h2v5h-2zm8 0h2v5h-2zm-24 0h2v5h-2z\"/><path fill=\"#9B9B9A\" d=\"M23 41h26v14H23z\"/><path fill=\"#FCEA2B\" d=\"M21.5 32h29v9h-29z\"/><path fill=\"#92D3F5\" d=\"M31.5 45h9v10h-9z\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\"><path stroke-width=\"2\" d=\"M17 17h38v38H17zm38 3h11.5v35H55zM5 20h11.5v35H5z\"/><path stroke-width=\"2\" d=\"M23 41h26v14H23zm-1.5-9h29v9h-29zM27 55V41m18 14V41\"/><path stroke-width=\"2\" d=\"M31.5 45h9v10h-9zM36 55V45m13-18h-2v-5m-6 5h-2v-5m-6 5h-2v-5m-6 5h-2v-5m-11 8h-2v-5m2 15h-2v-5m52 5h-2v-5m2-5h-2v-5m2 25h-2v-5m-48 5h-2v-5\"/><path d=\"M42.045 34.499h-2.26v3.955h2.26m-2.26-1.978h1.695m-15.821-1.977v3.955m2.26-3.955v3.955m0-1.985h-2.26m18.646-1.97v3.955H46m-14.312 0c-.78 0-1.412-.632-1.412-1.413v-1.13c0-.78.632-1.412 1.412-1.412h0c.78 0 1.413.632 1.413 1.412v1.13c0 .78-.633 1.413-1.413 1.413m3.673-3.938h2.26m-1.13 0v3.955\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default hotel

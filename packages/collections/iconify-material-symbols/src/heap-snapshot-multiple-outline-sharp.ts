@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const heapSnapshotMultipleOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11.25 11.5q.525 0 .888-.363t.362-.887t-.363-.888T11.25 9t-.888.363t-.362.887t.363.888t.887.362m.175 4.5L17 10.425L15.575 9L10 14.575zm4.325 0q.525 0 .888-.363T17 14.75t-.363-.888t-.887-.362t-.888.363t-.362.887t.363.888t.887.362M6 19V1h9l6 6v12zm8-11V3H8v14h11V8zM2 23V7h2v14h11v2zM8 3v5zv14z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default heapSnapshotMultipleOutlineSharp

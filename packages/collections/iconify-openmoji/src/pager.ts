@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pager: IconData = {
+  "body": "<path fill=\"#d0cfce\" d=\"M11 22h50v28H11z\"/><path fill=\"#9b9b9a\" d=\"M61 50H50.685L36.512 22H61z\"/><path fill=\"#b1cc33\" d=\"M16 27h33v11.2H16z\"/><path fill=\"#5c9e31\" d=\"M49 38.2h-7.488L35.843 27H49z\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M11 50V22m50 28H11m50-28v28M11 22h50\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.8\" d=\"M16 38.2V27m33 11.2H16M49 27v11.2M16 27h33\"/><circle cx=\"20.638\" cy=\"44.1\" r=\"2\"/><circle cx=\"28.638\" cy=\"44.1\" r=\"2\"/><circle cx=\"36.638\" cy=\"44.1\" r=\"2\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default pager

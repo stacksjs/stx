@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const time: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16 30a14 14 0 1 1 14-14a14 14 0 0 1-14 14m0-26a12 12 0 1 0 12 12A12 12 0 0 0 16 4\"/><path fill=\"currentColor\" d=\"M20.59 22L15 16.41V7h2v8.58l5 5.01z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default time

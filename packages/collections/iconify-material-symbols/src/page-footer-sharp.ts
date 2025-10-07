@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pageFooterSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 21v-2h18v2zm0-4V3h18v14z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default pageFooterSharp

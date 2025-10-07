@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const micOff32Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10 11.415V16a6 6 0 0 0 9.477 4.89l1.429 1.43A8 8 0 0 1 8 16a1 1 0 1 0-2 0c0 5.186 3.948 9.45 9.002 9.95L15 26v3a1 1 0 1 0 2 0v-3.05a9.95 9.95 0 0 0 5.329-2.207l5.964 5.964a1 1 0 0 0 1.414-1.414l-26-26a1 1 0 0 0-1.414 1.414zm13.143 8.193l1.473 1.472A9.95 9.95 0 0 0 26 16a1 1 0 1 0-2 0a8 8 0 0 1-.857 3.608M10.159 6.624l11.467 11.467A6 6 0 0 0 22 16V8a6 6 0 0 0-11.84-1.376\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default micOff32Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const adjustmentsHorizontal16Solid: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.5 2.25a.75.75 0 0 0-1.5 0v3a.75.75 0 0 0 1.5 0V4.5h6.75a.75.75 0 0 0 0-1.5H6.5zM11 6.5a.75.75 0 0 0-1.5 0v3a.75.75 0 0 0 1.5 0v-.75h2.25a.75.75 0 0 0 0-1.5H11zM5.75 10a.75.75 0 0 1 .75.75v.75h6.75a.75.75 0 0 1 0 1.5H6.5v.75a.75.75 0 0 1-1.5 0v-3a.75.75 0 0 1 .75-.75m-3-2.75H8.5v1.5H2.75a.75.75 0 0 1 0-1.5M4 3H2.75a.75.75 0 0 0 0 1.5H4zm-1.25 8.5H4V13H2.75a.75.75 0 0 1 0-1.5\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default adjustmentsHorizontal16Solid

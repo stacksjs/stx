@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const arrowFit24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.762 7.452a.75.75 0 0 1 .036 1.06L4.476 11h5.774a.75.75 0 0 1 0 1.5H4.476l2.322 2.488a.75.75 0 1 1-1.096 1.024l-3.5-3.75a.75.75 0 0 1 0-1.024l3.5-3.75a.75.75 0 0 1 1.06-.036m10.476 0a.75.75 0 0 0-.036 1.06L19.524 11H13.75a.75.75 0 0 0 0 1.5h5.774l-2.322 2.488a.75.75 0 1 0 1.096 1.024l3.5-3.75a.75.75 0 0 0 0-1.024l-3.5-3.75a.75.75 0 0 0-1.06-.036\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default arrowFit24Regular

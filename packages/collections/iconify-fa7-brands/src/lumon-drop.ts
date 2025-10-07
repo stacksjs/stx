@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const lumonDrop: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M480 32c53 0 96 43 96 96v224c0 53-43 96-96 96H96c-53 0-96-43-96-96V128c0-53 43-96 96-96zm-177.6 82.7c-9.8-16.4-20.5-16.4-29.6 0l-68.9 114c-10.7 15.6-16.4 32.8-16.4 52.5c0 50.9 44.3 94.3 100.1 94.3c55 0 100.9-43.5 100.9-94.3c0-19.7-6.6-37.8-17.2-52.5z\"/>",
+  "width": 576,
+  "height": 512,
+  "viewBox": "0 0 576 512"
+}
+
+export default lumonDrop

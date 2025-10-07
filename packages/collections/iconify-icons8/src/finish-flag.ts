@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const finishFlag: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 4v24h2v-8h20V4zm2 2h3v3h3V6h3v3h3V6h3v3h3v3h-3v3h3v3h-3v-3h-3v3h-3v-3h-3v3h-3v-3H7v-3h3V9H7zm3 6v3h3v-3zm3 0h3V9h-3zm3 0v3h3v-3zm3 0h3V9h-3z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default finishFlag

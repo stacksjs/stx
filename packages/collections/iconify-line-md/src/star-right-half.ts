@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const starRightHalf: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-dasharray=\"36\" stroke-dashoffset=\"36\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 3l2.35 5.76l6.21 0.46l-4.76 4.02l1.49 6.04l-5.29 -3.28\"><animate fill=\"freeze\" attributeName=\"stroke-dashoffset\" dur=\"0.5s\" values=\"36;0\"/></path>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default starRightHalf

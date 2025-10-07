@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const mouseLinear: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M5 9a7 7 0 0 1 14 0v6a7 7 0 1 1-14 0z\"/><path d=\"M10.5 8.5a1.5 1.5 0 0 1 3 0v2a1.5 1.5 0 0 1-3 0z\"/><path stroke-linecap=\"round\" d=\"M12 2v5\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default mouseLinear

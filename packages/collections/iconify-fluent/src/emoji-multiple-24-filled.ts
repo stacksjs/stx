@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const emojiMultiple24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 8.5a6.5 6.5 0 0 0 4.943 6.312a8 8 0 0 1 1.716-4.806a2 2 0 0 0-1.68.694a.75.75 0 0 1-1.14-.975a3.5 3.5 0 0 1 4.023-.95a8 8 0 0 1 4.95-1.832A6.5 6.5 0 0 0 2 8.5m5.5-2a1 1 0 1 1-2 0a1 1 0 0 1 2 0m4 0a1 1 0 1 1-2 0a1 1 0 0 1 2 0M22 15a7 7 0 1 1-14 0a7 7 0 0 1 14 0m-8.5-1.5a1 1 0 1 0-2 0a1 1 0 0 0 2 0m4.471 3.218a.625.625 0 0 0-.88.07a2.75 2.75 0 0 1-4.178.003a.625.625 0 1 0-.948.814a3.998 3.998 0 0 0 6.075-.006a.625.625 0 0 0-.069-.88M17.5 14.5a1 1 0 1 0 0-2a1 1 0 0 0 0 2\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default emojiMultiple24Filled

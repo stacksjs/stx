@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const canaryIslandsFlag: IconData = {
+  "body": "<path fill=\"#61b2e4\" d=\"M5 17h62v38H5z\"/><path fill=\"#fff\" d=\"M5 17h21v38H5z\"/><path fill=\"#fcea2b\" d=\"M46 17h21v38H46z\"/><path fill=\"#61b2e4\" d=\"M32.68 34.57h6.631l-.314 5.85l-.551 1.495l-.958.592l-3.168-.093l-.68-.493l-.698-2.049z\"/><path fill=\"none\" stroke=\"#9b9b9a\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.378\" d=\"M31.27 30.46c3.347-2.65 6.41-2.055 9.358-.13\"/><path fill=\"none\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.378\" d=\"M33.74 33.62c1.572-.971 3.066-.813 4.514 0\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\".689\" d=\"M32.68 34.57h6.631c0 8.137-.736 8.017-3.315 8.017c-2.413-.035-3.314.08-3.314-8.017z\"/><path fill=\"none\" stroke=\"#a57939\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.378\" d=\"m40.35 33.98l3.066 6.84l.044 2.504\"/><path fill=\"none\" stroke=\"#a57939\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.033\" d=\"m40.49 42.55l2.574-2.487l2.417-.571\"/><path fill=\"none\" stroke=\"#a57939\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.378\" d=\"m31.65 33.98l-3.066 6.84l-.044 2.504\"/><path fill=\"none\" stroke=\"#a57939\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.033\" d=\"m31.51 42.55l-2.574-2.487l-2.417-.571\"/><path fill=\"#fff\" d=\"M33.57 36.39h1.881l-.94-1.035zm2.94 0h1.881l-.94-1.035zm-2.92 1.79h1.881l-.94-1.035zm2.95 0h1.881l-.94-1.035zm-2.95 1.79h1.881l-.94-1.035zm2.95 0h1.881l-.94-1.035zm-1.48 1.79h1.881l-.94-1.035z\"/><path fill=\"none\" stroke=\"#d0cfce\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.378\" d=\"M33.74 32.28c1.572-.971 3.066-.813 4.514 0\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 17h62v38H5z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default canaryIslandsFlag

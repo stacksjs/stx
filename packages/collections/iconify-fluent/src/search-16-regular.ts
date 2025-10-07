@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const search16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10.02 10.727a5.5 5.5 0 1 1 .707-.707l3.127 3.126a.5.5 0 0 1-.708.708zM11 6.5a4.5 4.5 0 1 0-9 0a4.5 4.5 0 0 0 9 0\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default search16Regular

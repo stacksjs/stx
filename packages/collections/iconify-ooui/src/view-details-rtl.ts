@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const viewDetailsRtl: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 8V6h9v2zm9-3H1V3h11zm1-2h6v6h-6zm-1 13H3v-2h9zm0-3H1v-2h11zm1-2h6v6h-6z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default viewDetailsRtl

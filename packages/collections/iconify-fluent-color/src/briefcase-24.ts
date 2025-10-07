@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const briefcase24: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGyUDsOdER)\" fill-rule=\"evenodd\" d=\"M13.75 2A2.25 2.25 0 0 1 16 4.25V6l-4 2.31L8 6V4.25A2.25 2.25 0 0 1 10.25 2zm-3.5 1.5a.75.75 0 0 0-.75.75V6h5V4.25a.75.75 0 0 0-.75-.75z\" clip-rule=\"evenodd\"/><path fill=\"url(#SVG09ZVqeCR)\" d=\"M3 11h18v5.75A3.25 3.25 0 0 1 17.75 20H6.25A3.25 3.25 0 0 1 3 16.75z\"/><path fill=\"url(#SVGvTGwgebn)\" d=\"M3 11h18v5.75A3.25 3.25 0 0 1 17.75 20H6.25A3.25 3.25 0 0 1 3 16.75z\"/><path fill=\"url(#SVGuSVAAecP)\" d=\"M3 9.25A3.25 3.25 0 0 1 6.25 6h11.5A3.25 3.25 0 0 1 21 9.25v3A1.75 1.75 0 0 1 19.25 14H4.75A1.75 1.75 0 0 1 3 12.25z\"/><path fill=\"url(#SVG9Ssqbdij)\" d=\"M13 11h-2a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1\"/><defs><linearGradient id=\"SVGyUDsOdER\" x1=\"7.637\" x2=\"9.95\" y1=\"2.631\" y2=\"9.253\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0094F0\"/><stop offset=\"1\" stop-color=\"#163697\"/></linearGradient><linearGradient id=\"SVG09ZVqeCR\" x1=\"3.643\" x2=\"8.505\" y1=\"12.688\" y2=\"29.266\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0FAFFF\"/><stop offset=\"1\" stop-color=\"#CC23D1\"/></linearGradient><linearGradient id=\"SVGuSVAAecP\" x1=\"4.8\" x2=\"13.623\" y1=\"6.332\" y2=\"16.375\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#80F1E6\"/><stop offset=\".552\" stop-color=\"#40C4F5\"/><stop offset=\"1\" stop-color=\"#00A2FA\"/></linearGradient><linearGradient id=\"SVG9Ssqbdij\" x1=\"12\" x2=\"12\" y1=\"11\" y2=\"15\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#B8F5FF\"/><stop offset=\".844\" stop-color=\"#7CECFF\"/></linearGradient><radialGradient id=\"SVGvTGwgebn\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(0 9 -20.0637 0 12 11)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".337\" stop-color=\"#194694\"/><stop offset=\".747\" stop-color=\"#367AF2\" stop-opacity=\"0\"/></radialGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default briefcase24

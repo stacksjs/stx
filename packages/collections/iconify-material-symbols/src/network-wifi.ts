@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const networkWifi: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 21L0 9q2.375-2.425 5.488-3.713T12 4q3.425 0 6.525 1.275T24 9zM4.35 10.5q1.675-1.2 3.625-1.85T12 8t4.025.65t3.625 1.85l1.45-1.45q-1.975-1.5-4.3-2.275T12 6t-4.8.775T2.9 9.05z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default networkWifi

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const windowApps32Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.5 3A4.5 4.5 0 0 0 3 7.5v17A4.5 4.5 0 0 0 7.5 29h4.111a4.5 4.5 0 0 1-.111-1v-1h-4A2.5 2.5 0 0 1 5 24.5V11h22v.5h1q.517.002 1 .111V7.5A4.5 4.5 0 0 0 24.5 3zM5 7.5A2.5 2.5 0 0 1 7.5 5h17A2.5 2.5 0 0 1 27 7.5V9H5zM24 13a3 3 0 0 0-3 3v5h-5a3 3 0 0 0-3 3v4a3 3 0 0 0 3 3h10.5a4.5 4.5 0 0 0 4.5-4.5V16a3 3 0 0 0-3-3zm-1 3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5h-6zm-7 7h5v6h-5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1m10.5 6H23v-6h6v3.5a2.5 2.5 0 0 1-2.5 2.5\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default windowApps32Regular

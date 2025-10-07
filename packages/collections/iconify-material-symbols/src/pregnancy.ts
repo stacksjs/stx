@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pregnancy: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10 22v-5H8v-7q0-1.25.875-2.125T11 7t2.125.875T14 10q.9.375 1.45 1.2T16 13v4h-3v5zm1-16q-.825 0-1.412-.587T9 4t.588-1.412T11 2t1.413.588T13 4t-.587 1.413T11 6\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default pregnancy

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const editOff16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m9.5 10.207l4.646 4.647a.5.5 0 0 0 .708-.708l-13-13a.5.5 0 1 0-.708.708L5.793 6.5L2.657 9.635a2.96 2.96 0 0 0-.772 1.355l-.87 3.386a.5.5 0 0 0 .61.608l3.385-.869a2.95 2.95 0 0 0 1.354-.772zm3.25-3.25l-1.836 1.836l-3.707-3.707L9.043 3.25zm-2.221-5.193a2.621 2.621 0 1 1 3.707 3.707l-.779.779L9.75 2.543z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default editOff16Filled

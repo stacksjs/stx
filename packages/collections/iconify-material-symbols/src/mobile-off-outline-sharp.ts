@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const mobileOffOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M20.5 23.3L.7 3.5l1.4-1.4l19.8 19.8zM19 16.2l-2-2V3H5V1h14v5.1h1v4.8h-1zM12 6q.425 0 .713-.288T13 5t-.288-.712T12 4t-.712.288T11 5t.288.713T12 6M5 23V5l2 2v14h10v-4l2 2v4zm8.9-11.7\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default mobileOffOutlineSharp

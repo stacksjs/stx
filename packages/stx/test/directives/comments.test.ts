@@ -162,7 +162,7 @@ describe('stx Comments', () => {
       stx: {
         debug: false,
       },
-    })
+    } as any)
 
     const outputHtml = await getHtmlOutput(result)
 

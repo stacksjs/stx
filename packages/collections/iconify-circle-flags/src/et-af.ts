@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const etAf: IconData = {
+  "body": "<mask id=\"SVGuywqVbel\"><circle cx=\"256\" cy=\"256\" r=\"256\" fill=\"#fff\"/></mask><g mask=\"url(#SVGuywqVbel)\"><path fill=\"#eee\" d=\"m0 160l256-32l256 32v192l-256 32L0 352Z\"/><path fill=\"#0052b4\" d=\"M0 0h512v160H0Z\"/><path fill=\"#496e2d\" d=\"M0 352h512v160H0Z\"/><path fill=\"#d80027\" d=\"M0 0v512l256-256z\"/><path fill=\"#ff9811\" d=\"m345 229l-12 11l40 40l-40 40l11 11l40-40l40 40l11-11l-40-40l40-40l-11-11l-40 40z\"/><path fill=\"#d80027\" d=\"m384 181l21 62l-54-38h66l-53 39z\"/></g>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default etAf

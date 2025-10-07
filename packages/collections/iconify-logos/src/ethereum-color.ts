@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const ethereumColor: IconData = {
+  "body": "<path fill=\"#5A9DED\" d=\"M256 241.65L128 426.8V322.457zm-67.84 65.08l-41.09 25.858v33.473z\"/><path fill=\"#53D3E0\" d=\"M0 241.65L128 426.8V322.457zm67.84 65.08l41.09 25.858v33.473z\"/><path fill=\"#D995D1\" d=\"m144.238 156.998l84.775 47.215l3.005 9.187l-10.094 8.812l-77.686-43.358z\"/><path fill=\"#A6E276\" d=\"m111.818 156.998l-84.775 47.215l-3.005 9.187l10.094 8.812l77.686-43.358z\"/><path fill=\"#FF9C92\" d=\"m128 0l128 219.203l-128 80.608zm18.904 70.317V266.03l83.622-52.631z\"/><path fill=\"#FFE94D\" d=\"M128 0L0 219.203l128 80.608zm-18.904 70.317V266.03L25.474 213.4z\"/>",
+  "width": 256,
+  "height": 427,
+  "viewBox": "0 0 256 427"
+}
+
+export default ethereumColor

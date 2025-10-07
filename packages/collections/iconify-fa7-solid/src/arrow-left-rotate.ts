@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const arrowLeftRotate: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M256 64c-56.8 0-107.9 24.7-143.1 64H160c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32V32C0 14.3 14.3 0 32 0s32 14.3 32 32v54.7C110.9 33.6 179.5 0 256 0c141.4 0 256 114.6 256 256S397.4 512 256 512c-87 0-163.9-43.4-210.1-109.7c-10.1-14.5-6.6-34.4 7.9-44.6s34.4-6.6 44.6 7.9c34.8 49.8 92.4 82.3 157.6 82.3c106 0 192-86 192-192S362 64 256 64\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default arrowLeftRotate

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const diskPen: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"m307.499 85.333l22.499 22.5l-52.665 52.664V128H192v64.021h53.808l-32.475 32.476v10.169h-64V128h-42.666v256h42.666V277.333h64v42.666L192 320v64.021h85.333V320h31.504L320 308.836V384h42.667l-.001-117.83l42.667-42.667v203.164H64V85.333zM388 80l65.333 65.333L300 298.667h-65.333v-65.334zm-41.362 86.599l-79.971 79.972v20.096h20.053l79.993-79.994zm41.351-41.351l-18.723 18.723l20.074 20.075l18.724-18.723z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default diskPen

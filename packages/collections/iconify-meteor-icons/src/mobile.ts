@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const mobile: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><rect width=\"16\" height=\"22\" x=\"4\" y=\"1\" rx=\"3\"/><path d=\"M10 19h4\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default mobile

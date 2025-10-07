@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const videoAdd20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 3a3 3 0 0 0-3 3v4.257A5.5 5.5 0 0 1 3 9.6V6a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v6a2 2 0 0 1-1.05 1.76a5.6 5.6 0 0 1 .04 1.073A3 3 0 0 0 13 12v-.321l3.037 2.097a1.25 1.25 0 0 0 1.96-1.029V5.252a1.25 1.25 0 0 0-1.96-1.028L13 6.32V6a3 3 0 0 0-3-3zm8 4.536l3.605-2.49a.25.25 0 0 1 .392.206v7.495a.25.25 0 0 1-.392.206L13 10.463zM10 14.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-4-2a.5.5 0 0 0-1 0V14H3.5a.5.5 0 0 0 0 1H5v1.5a.5.5 0 0 0 1 0V15h1.5a.5.5 0 0 0 0-1H6z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default videoAdd20Regular

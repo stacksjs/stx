@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textSelectEnd: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11 5V3h2v2zm0 16v-2h2v2zM7 5V3h2v2zm0 16v-2h2v2zM3 5V3h2v2zm0 4V7h2v2zm0 4v-2h2v2zm0 4v-2h2v2zm0 4v-2h2v2zm12 0v-2h2V5h-2V3h6v2h-2v14h2v2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default textSelectEnd

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const keyboardCapslockBadgeSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.712 16h8.577v-1H7.711zm.688-3.02L12 9.4l3.6 3.58l.689-.688L12 7.985l-4.288 4.307zM4 20V4h16v16z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default keyboardCapslockBadgeSharp

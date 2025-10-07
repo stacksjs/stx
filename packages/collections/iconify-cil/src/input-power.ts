@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const inputPower: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M152 16v104H88v191.005l104 96v89h128v-89l104-96V120h-64V16h-32v104H184V16Zm240 136v145l-104 96v71h-64v-71l-104-96V152Z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default inputPower

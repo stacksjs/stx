@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const header: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M0 0v1h.5c.28 0 .5.22.5.5v4c0 .28-.22.5-.5.5H0v1h3V6h-.5c-.28 0-.5-.22-.5-.5V4h3v1.5c0 .28-.22.5-.5.5H4v1h3V6h-.5c-.28 0-.5-.22-.5-.5v-4c0-.28.22-.5.5-.5H7V0H4v1h.5c.28 0 .5.22.5.5V3H2V1.5c0-.28.22-.5.5-.5H3V0z\"/>",
+  "width": 8,
+  "height": 8,
+  "viewBox": "0 0 8 8"
+}
+
+export default header

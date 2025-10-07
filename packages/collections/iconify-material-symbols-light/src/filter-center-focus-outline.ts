@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const filterCenterFocusOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 14q-.846 0-1.423-.577T10 12t.577-1.423T12 10t1.423.577T14 12t-.577 1.423T12 14m0-1q.425 0 .713-.288T13 12t-.288-.712T12 11t-.712.288T11 12t.288.713T12 13m-6.384 7q-.691 0-1.153-.462T4 18.384V15h1v3.385q0 .23.192.423t.423.192H9v1zM15 20v-1h3.385q.23 0 .423-.192t.192-.424V15h1v3.385q0 .69-.462 1.152T18.384 20zM4 9V5.616q0-.691.463-1.153T5.616 4H9v1H5.616q-.231 0-.424.192T5 5.616V9zm15 0V5.616q0-.231-.192-.424T18.384 5H15V4h3.385q.69 0 1.152.463T20 5.616V9z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default filterCenterFocusOutline

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const switchAccount: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 11q1.25 0 2.125-.875T17 8t-.875-2.125T14 5t-2.125.875T11 8t.875 2.125T14 11m-6 7q-.825 0-1.412-.587T6 16V4q0-.825.588-1.412T8 2h12q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-4 4q-.825 0-1.412-.587T2 20V6h2v14h14v2zm4-6h12q-1.05-1.425-2.637-2.212T14 13t-3.363.788T8 16\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default switchAccount

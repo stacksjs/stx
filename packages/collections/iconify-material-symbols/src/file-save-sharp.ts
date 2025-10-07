@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const fileSaveSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 24v-2h8v2zm4-3l-4-4l1.4-1.4l1.6 1.6v-4.175h2V17.2l1.6-1.6L22 17zM4 20V2h9l6 6v3.025h-7V20zm8-11h5l-5-5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default fileSaveSharp

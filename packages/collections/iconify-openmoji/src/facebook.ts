@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const facebook: IconData = {
+  "body": "<path fill=\"#61b2e4\" d=\"M57 12H15a4 4 0 0 0-4 4v42a4 4 0 0 0 4 4h42a4 4 0 0 0 4-4V16a4 4 0 0 0-4-4\"/><path fill=\"none\" stroke=\"#fff\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M36.935 62.009h9.5\"/><path fill=\"#fff\" d=\"M48.5 26.844h4.688v-7.031c-3.126 0-15.626-3.125-15.626 10.156v4.687h-6.25v7.813h6.25v18.564l7.813-.014V42.47h7.031l.781-7.813h-7.812V29.97c0-3.125 2.344-3.125 3.125-3.125\"/><g fill=\"none\" stroke=\"#000\" stroke-width=\"2\"><path stroke-miterlimit=\"10\" d=\"M45.619 62h12.155A3.226 3.226 0 0 0 61 58.774V15.226A3.226 3.226 0 0 0 57.774 12H14.226A3.226 3.226 0 0 0 11 15.226v43.548A3.226 3.226 0 0 0 14.226 62h23.476\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M45.618 62V42.208h7.125l.792-7.917h-7.917v-4.75c0-3.167 2.375-3.167 3.167-3.167h4.75V19.25c-3.2-.324-15.834-3.166-15.834 10.292v4.75h-6.333v7.917h6.333V62\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default facebook

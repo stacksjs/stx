@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const lightbulbPerson16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 2a4.5 4.5 0 0 0-3.155 7.708a.65.65 0 0 1 .18.287l.14.51A4.48 4.48 0 0 1 8 9.5c1.075 0 2.061.377 2.835 1.005l.14-.51a.65.65 0 0 1 .18-.287A4.5 4.5 0 0 0 8 2M5.573 12l-.112-.41A3.5 3.5 0 0 1 8 10.5c1 0 1.901.419 2.539 1.09l-.112.41zm.277 1c.21.595.774 1 1.414 1h1.472a1.5 1.5 0 0 0 1.414-1zM7 6.5a1 1 0 1 1 2 0a1 1 0 0 1-2 0m1-2a2 2 0 1 1 0 4a2 2 0 0 1 0-4\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default lightbulbPerson16Filled

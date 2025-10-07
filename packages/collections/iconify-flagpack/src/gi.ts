@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const gi: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#F7FCFF\" d=\"M0 0h32v24H0z\"/><path fill=\"#C51918\" fill-rule=\"evenodd\" d=\"M0 16h32v8H0z\" clip-rule=\"evenodd\"/><path fill=\"#DB000B\" fill-rule=\"evenodd\" d=\"M17.389 5H13.61v4.615h-.944V6.846H8.889v2.77H7v.923h.944v4.615H7v.923h17v-.923h-.944v-4.615H24v-.924h-1.889V6.846h-3.778v2.77h-.944z\" clip-rule=\"evenodd\"/><path fill=\"#272727\" d=\"M9.833 8.59a.82.82 0 0 1 1.64 0V9.8h-1.64zm9.445 0a.82.82 0 0 1 1.64 0V9.8h-1.64z\"/><path fill=\"#272727\" fill-rule=\"evenodd\" d=\"M9.567 13.47a1.086 1.086 0 0 1 2.173 0v1.868H9.567z\" clip-rule=\"evenodd\"/><path fill=\"#272727\" d=\"M19.012 13.47a1.086 1.086 0 0 1 2.172 0v1.868h-2.172z\"/><path fill=\"#272727\" fill-rule=\"evenodd\" d=\"M13.895 13.64a1.392 1.392 0 0 1 2.783 0v2.67h-2.783z\" clip-rule=\"evenodd\"/><path fill=\"#272727\" d=\"M14.556 7.666a.82.82 0 1 1 1.64 0V9.8h-1.64z\"/><path fill=\"#DE1A23\" d=\"M7 8.692h.944v.923H7z\"/><path fill=\"#DE1A23\" fill-rule=\"evenodd\" d=\"M8.5 6h1v1h-1zm3.818 0h1v1h-1zm-.568 0h-1.5v1h1.5zm6.34 0h1v1h-1zm3.728 0h1v1h-1zm-.614 0h-1.5v1h1.5zM13.8 4.023h-1v1h1zm1.5 0h-1v1h1zm.5 0h1v1h-1zm2.5 0h-1v1h1z\" clip-rule=\"evenodd\"/><path fill=\"#DE1A23\" d=\"M22.999 8.775h1v.839h-1z\"/><path fill=\"#E8AA00\" fill-rule=\"evenodd\" d=\"m15.44 18.453l2.712-1.774l-2.894-1.353l-2.894 1.663zm-1.06-1.611l.888-.595l.937.51l-.843.552zm-.904 4.165h1.473v1.107v-.374h-.915v.374h-.558z\" clip-rule=\"evenodd\"/><path fill=\"#E8AA00\" fill-rule=\"evenodd\" d=\"M14.816 18.114h1.25v4h-1.25z\" clip-rule=\"evenodd\"/></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default gi

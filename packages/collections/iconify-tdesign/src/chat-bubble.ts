@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const chatBubble: IconData = {
+  "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path d=\"M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2S2 6.477 2 12a9.97 9.97 0 0 0 2.737 6.874L3 22z\"/><path stroke=\"currentColor\" stroke-linecap=\"square\" stroke-width=\"2\" d=\"M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2S2 6.477 2 12a9.97 9.97 0 0 0 2.737 6.874L3 22z\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default chatBubble

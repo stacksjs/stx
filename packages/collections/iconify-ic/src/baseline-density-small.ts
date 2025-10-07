@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const baselineDensitySmall: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 2h18v2H3zm0 18h18v2H3zm0-6h18v2H3zm0-6h18v2H3z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default baselineDensitySmall

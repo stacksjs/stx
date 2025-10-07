@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const mobilePhone: IconData = {
+  "body": "<path fill=\"#006ca2\" d=\"M88.46 6.33C84.22 4.43 71.85 3.22 64 3.22c-7.84 0-20.23 1.21-24.46 3.11c-4.15 1.86-5.82 5.54-5.82 8.99v97.35c0 3.46 1.67 7.13 5.82 8.99c4.23 1.9 16.62 3.11 24.46 3.11c7.85 0 20.22-1.21 24.46-3.11c4.15-1.86 5.82-5.54 5.82-8.99V15.33c0-3.46-1.67-7.13-5.82-9\"/><path fill=\"#fff\" d=\"M69.57 10.75H58.44a1.04 1.04 0 1 1 0-2.08h11.13c.58 0 1.04.46 1.04 1.04c0 .57-.46 1.04-1.04 1.04\"/><circle cx=\"83.89\" cy=\"10.49\" r=\"1.99\" fill=\"#fff\"/><linearGradient id=\"SVGSWdwDczA\" x1=\"64\" x2=\"64\" y1=\"104.767\" y2=\"22.714\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"#fff\"/><stop offset=\"1\" stop-color=\"#00a0d6\"/></linearGradient><path fill=\"url(#SVGSWdwDczA)\" d=\"M39.21 22.71h49.57v82.05H39.21z\"/><g fill=\"#fff\"><path d=\"M48.37 108.93v.7l-1.53-1.11l1.53-1.12v.7h.88c1.72 0 2.83.51 2.83 1.99c0 1.49-1.11 2-2.83 2h-1.98v-.83h1.98c1.46 0 2-.32 2-1.17c0-.84-.53-1.16-2-1.16zm18.54 2.88h-5.73v-2.89l2.87-1.21l2.87 1.21v2.89zm-4.9-.84h4.07v-1.51l-2.03-.86l-2.04.86zm18.54.84h-4.8v-3.04h4.8zm-3.96-.84h3.14v-1.37h-3.14z\"/><path d=\"M81.91 110.1h-.83v-1.8h-3.55v-.83h4.38z\"/></g>",
+  "width": 128,
+  "height": 128,
+  "viewBox": "0 0 128 128"
+}
+
+export default mobilePhone

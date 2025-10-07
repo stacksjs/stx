@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const cookies20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 9a1 1 0 1 0 0-2a1 1 0 0 0 0 2m4 2a1 1 0 1 0 0-2a1 1 0 0 0 0 2m3 3a1 1 0 1 1-2 0a1 1 0 0 1 2 0m-6 0a1 1 0 1 0 0-2a1 1 0 0 0 0 2m3-12a8 8 0 1 0 7.87 6.56a.5.5 0 0 0-.867-.24A2 2 0 0 1 13.5 7a.56.56 0 0 0-.44-.548a2 2 0 0 1-.954-3.386a.5.5 0 0 0-.232-.845A8 8 0 0 0 10 2m-7 8a7 7 0 0 1 7.871-6.946a3 3 0 0 0 1.647 4.282a3 3 0 0 0 4.471 2.269q.01.195.011.395a7 7 0 1 1-14 0\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default cookies20Regular

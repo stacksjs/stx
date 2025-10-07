@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const coinShareFlat: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#2859c5\" d=\"M9.75 8.25a4 4 0 1 0 0-8a4 4 0 0 0 0 8\"/><path fill=\"#8fbffa\" fill-rule=\"evenodd\" d=\"M9.75 2.625c.345 0 .625.28.625.625v2a.625.625 0 1 1-1.25 0v-2c0-.345.28-.625.625-.625\" clip-rule=\"evenodd\"/><path fill=\"#8fbffa\" d=\"M1.96 6.85H.117v4l1.828 1.828a4 4 0 0 0 2.829 1.172h5.843a1.5 1.5 0 0 0 0-3h-3L4.788 8.022A4 4 0 0 0 1.96 6.85\"/><path fill=\"#2859c5\" fill-rule=\"evenodd\" d=\"M6.372 9.605a.86.86 0 0 1-1.326 1.082l-1.45-1.45a.625.625 0 0 0-.884.883l1.45 1.45a2.11 2.11 0 0 0 3.456-.72h-.001z\" clip-rule=\"evenodd\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default coinShareFlat

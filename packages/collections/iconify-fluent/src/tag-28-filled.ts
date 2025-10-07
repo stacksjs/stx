@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tag28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12.987 3.952A3.25 3.25 0 0 1 15.285 3h6.965A2.75 2.75 0 0 1 25 5.75v6.964a3.25 3.25 0 0 1-.952 2.299l-9.25 9.25a3.25 3.25 0 0 1-4.597 0l-6.464-6.465a3.25 3.25 0 0 1 0-4.596zM19.5 10a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default tag28Filled

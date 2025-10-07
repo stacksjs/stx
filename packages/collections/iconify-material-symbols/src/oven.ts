@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const oven: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 9V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v4zm2 12q-.825 0-1.412-.587T3 19v-9h18v9q0 .825-.587 1.413T19 21zM8 7q.425 0 .713-.288T9 6t-.288-.712T8 5t-.712.288T7 6t.288.713T8 7m2 7h4v-2h-4zm2-7q.425 0 .713-.288T13 6t-.288-.712T12 5t-.712.288T11 6t.288.713T12 7m4 0q.425 0 .713-.288T17 6t-.288-.712T16 5t-.712.288T15 6t.288.713T16 7\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default oven

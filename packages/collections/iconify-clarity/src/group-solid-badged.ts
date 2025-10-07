@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const groupSolidBadged: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 16.14h-.87a8.67 8.67 0 0 0-6.43 2.52l-.24.28v8.28h4.08v-4.7l.55-.62l.25-.29a11 11 0 0 1 4.71-2.86A6.6 6.6 0 0 1 12 16.14\" class=\"clr-i-solid--badged clr-i-solid-path-1--badged\"/><path fill=\"currentColor\" d=\"M31.34 18.63a8.67 8.67 0 0 0-6.43-2.52a11 11 0 0 0-1.09.06a6.6 6.6 0 0 1-2 2.45a10.9 10.9 0 0 1 5 3l.25.28l.54.62v4.71h3.94v-8.32Z\" class=\"clr-i-solid--badged clr-i-solid-path-2--badged\"/><path fill=\"currentColor\" d=\"M11.1 14.19h.31a6.45 6.45 0 0 1 3.11-6.29a4.09 4.09 0 1 0-3.42 6.33Z\" class=\"clr-i-solid--badged clr-i-solid-path-3--badged\"/><circle cx=\"17.87\" cy=\"13.45\" r=\"4.47\" fill=\"currentColor\" class=\"clr-i-solid--badged clr-i-solid-path-4--badged\"/><path fill=\"currentColor\" d=\"M18.11 20.3A9.7 9.7 0 0 0 11 23l-.25.28v6.33a1.57 1.57 0 0 0 1.6 1.54h11.49a1.57 1.57 0 0 0 1.6-1.54V23.3l-.24-.3a9.58 9.58 0 0 0-7.09-2.7\" class=\"clr-i-solid--badged clr-i-solid-path-5--badged\"/><path fill=\"currentColor\" d=\"M24.43 13.44a7 7 0 0 1 0 .69a4 4 0 0 0 .58.05h.19a4.05 4.05 0 0 0 2.52-1a7.5 7.5 0 0 1-5.14-6.32A4.1 4.1 0 0 0 21.47 8a6.53 6.53 0 0 1 2.96 5.44\" class=\"clr-i-solid--badged clr-i-solid-path-6--badged\"/><circle cx=\"30\" cy=\"6\" r=\"5\" fill=\"currentColor\" class=\"clr-i-solid--badged clr-i-solid-path-7--badged clr-i-badge\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default groupSolidBadged

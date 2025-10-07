@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const num: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9 4.8v8.4l6 6v-8.4zm12 0h-6v6l4.2 4.182L15 19.2h6zm-12 0H3v14.4h6v-6L4.8 9z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default num

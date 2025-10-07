@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const splitSceneLeftRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16 20q-.425 0-.712-.288T15 19V5q0-.425.288-.712T16 4h3q.825 0 1.413.588T21 6v12q0 .825-.587 1.413T19 20zm-4 2q-.425 0-.712-.288T11 21v-1H5q-.825 0-1.412-.587T3 18V6q0-.825.588-1.412T5 4h6V3q0-.425.288-.712T12 2t.713.288T13 3v18q0 .425-.288.713T12 22\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default splitSceneLeftRounded

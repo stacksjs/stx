@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const outlineUpload: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9 16h6v-6h4l-7-7l-7 7h4zm3-10.17L14.17 8H13v6h-2V8H9.83zM5 18h14v2H5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default outlineUpload

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const circleMultipleHintCheckmark16: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGV5Z5YiFh)\" d=\"M3.217 9.573a.5.5 0 0 1 .687-.165l.118.07a6 6 0 0 0 .007 1.117a5 5 0 0 1-.647-.334a.5.5 0 0 1-.165-.688M1.506 6.56a.5.5 0 0 1 .602.37c.105.437.283.855.526 1.233a.5.5 0 1 1-.842.54a5 5 0 0 1-.656-1.54a.5.5 0 0 1 .37-.603M6 3c.987 0 1.86.479 2.407 1.215a6.01 6.01 0 0 0-4.192 4.192A3 3 0 0 1 3 6a3 3 0 0 1 3-3m-4.262.382a.5.5 0 0 1 .853.522A4 4 0 0 0 2.09 5.15a.5.5 0 1 1-.977-.213a5 5 0 0 1 .625-1.554m7.778-.236a.5.5 0 0 1 .69.15q.225.352.389.733a6 6 0 0 0-1.118-.007a4 4 0 0 0-.113-.185a.5.5 0 0 1 .152-.691m-4.68-2.01a.501.501 0 0 1 .234.972a4 4 0 0 0-1.233.526a.5.5 0 1 1-.54-.842a5 5 0 0 1 1.54-.656m2.227-.023a5 5 0 0 1 1.554.625a.5.5 0 0 1-.522.853A4 4 0 0 0 6.85 2.09a.5.5 0 1 1 .213-.977\"/><circle cx=\"10\" cy=\"10\" r=\"5\" fill=\"url(#SVGw5tHw9Uv)\"/><path fill=\"url(#SVGUPR3fQAe)\" fill-opacity=\".95\" d=\"M12.354 9.354a.5.5 0 0 0-.708-.708L9.5 10.793L8.354 9.646a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0z\"/><defs><linearGradient id=\"SVGV5Z5YiFh\" x1=\"2.377\" x2=\"10.341\" y1=\"4.415\" y2=\"8.231\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#8B52F4\"/><stop offset=\".395\" stop-color=\"#6D37CD\"/><stop offset=\".862\" stop-color=\"#4B20A0\"/></linearGradient><linearGradient id=\"SVGUPR3fQAe\" x1=\"10.46\" x2=\"7.567\" y1=\"13.641\" y2=\"9.212\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".024\" stop-color=\"#FFC8D7\"/><stop offset=\".807\" stop-color=\"#fff\"/></linearGradient><radialGradient id=\"SVGw5tHw9Uv\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(10.00002 8.50614 -7.13806 8.39167 5 5.372)\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFC470\"/><stop offset=\".251\" stop-color=\"#FF835C\"/><stop offset=\".584\" stop-color=\"#F24A9D\"/><stop offset=\".871\" stop-color=\"#B339F0\"/><stop offset=\"1\" stop-color=\"#C354FF\"/></radialGradient></defs></g>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default circleMultipleHintCheckmark16

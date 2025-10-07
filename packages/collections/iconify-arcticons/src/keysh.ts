@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const keysh: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M4.5 30.493h39v-3.118h-6.25v-9.868H11.23v9.868H4.5z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default keysh

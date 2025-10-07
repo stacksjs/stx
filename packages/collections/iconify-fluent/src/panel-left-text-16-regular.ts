@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const panelLeftText16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5M4 8a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1A.5.5 0 0 1 4 8m.5 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0-7A2.5 2.5 0 0 0 2 5.5v5A2.5 2.5 0 0 0 4.5 13h7a2.5 2.5 0 0 0 2.5-2.5v-5A2.5 2.5 0 0 0 11.5 3zM3 5.5A1.5 1.5 0 0 1 4.5 4H7v8H4.5A1.5 1.5 0 0 1 3 10.5zM8 12V4h3.5A1.5 1.5 0 0 1 13 5.5v5a1.5 1.5 0 0 1-1.5 1.5z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default panelLeftText16Regular

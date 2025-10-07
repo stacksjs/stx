@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tableArrowUp20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17 7h-4V3h1.5A2.5 2.5 0 0 1 17 5.5zM7 8v4H3V8zm5 1.6A5.52 5.52 0 0 0 9.6 12H8V8h4zm5 0a5.5 5.5 0 0 0-2.5-.6a5.5 5.5 0 0 0-1.5.207V8h4zM9.207 13A5.5 5.5 0 0 0 9 14.5c0 .9.216 1.75.6 2.5H8v-4zM3 13h4v4H5.5A2.5 2.5 0 0 1 3 14.5zm9-10v4H8V3zM7 7V3H5.5A2.5 2.5 0 0 0 3 5.5V7zm12 7.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-2.146.354a.5.5 0 0 0 0-.707l-2-2l-.003-.003a.5.5 0 0 0-.348-.144h-.006a.5.5 0 0 0-.35.146l-2 2a.5.5 0 0 0 .707.708L14 13.707V16.5a.5.5 0 1 0 1 0v-2.793l1.146 1.147a.5.5 0 0 0 .707 0\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default tableArrowUp20Filled

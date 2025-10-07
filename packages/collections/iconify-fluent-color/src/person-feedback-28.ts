@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const personFeedback28: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVG7ROWGd5Y)\" d=\"M3.471 23.92C4.781 25.3 6.811 26 9.501 26s4.72-.7 6.03-2.08c1.522-1.61 1.473-3.553 1.47-3.684v-.006c0-1.23-1-2.23-2.23-2.23H4.231c-1.23 0-2.23 1-2.23 2.19v.013c-.004.19-.042 2.117 1.47 3.717\"/><path fill=\"url(#SVG4KovPbVx)\" d=\"M3.471 23.92C4.781 25.3 6.811 26 9.501 26s4.72-.7 6.03-2.08c1.522-1.61 1.473-3.553 1.47-3.684v-.006c0-1.23-1-2.23-2.23-2.23H4.231c-1.23 0-2.23 1-2.23 2.19v.013c-.004.19-.042 2.117 1.47 3.717\"/><path fill=\"url(#SVGV88kDcTI)\" d=\"M9.5 16.5a4.26 4.26 0 0 1-4.25-4.25A4.26 4.26 0 0 1 9.5 8a4.26 4.26 0 0 1 4.25 4.25A4.26 4.26 0 0 1 9.5 16.5\"/><path fill=\"url(#SVG3ccYheFp)\" d=\"M17.75 14c-.13 0-.27-.02-.4-.06a1.25 1.25 0 0 1-.85-1.19v-1.76c-1.4-.13-2.5-1.31-2.5-2.74v-3.5C14 3.23 15.23 2 16.75 2h6.5C24.77 2 26 3.23 26 4.75v3.5C26 9.77 24.77 11 23.25 11h-2.62l-1.88 2.5c-.24.32-.61.5-1 .5\"/><defs><linearGradient id=\"SVG7ROWGd5Y\" x1=\"5.568\" x2=\"8.291\" y1=\"19.064\" y2=\"27.218\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".125\" stop-color=\"#9C6CFE\"/><stop offset=\"1\" stop-color=\"#7A41DC\"/></linearGradient><linearGradient id=\"SVG4KovPbVx\" x1=\"9.501\" x2=\"13.326\" y1=\"17.048\" y2=\"30.448\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#885EDB\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#E362F8\"/></linearGradient><linearGradient id=\"SVGV88kDcTI\" x1=\"7.271\" x2=\"11.603\" y1=\"9.13\" y2=\"16.047\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".125\" stop-color=\"#9C6CFE\"/><stop offset=\"1\" stop-color=\"#7A41DC\"/></linearGradient><radialGradient id=\"SVG3ccYheFp\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"rotate(49.565 7.448 11.316)scale(22.1933 39.9777)\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FAB500\"/><stop offset=\".535\" stop-color=\"#FE8401\"/><stop offset=\"1\" stop-color=\"#FB5937\"/></radialGradient></defs></g>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default personFeedback28

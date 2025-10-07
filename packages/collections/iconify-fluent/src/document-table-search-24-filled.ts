@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const documentTableSearch24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10.475 19.5h4.775A1.75 1.75 0 0 0 17 17.75v-4A1.75 1.75 0 0 0 15.25 12h-6.5c-.24 0-.47.049-.68.137A5.5 5.5 0 0 0 5.5 11.5a5.5 5.5 0 0 0-1.5.207V4.5a2 2 0 0 1 2-2h6v6a2 2 0 0 0 2 2h6v10a2 2 0 0 1-2 2h-5.018a1.74 1.74 0 0 0-.495-.987zm5.025-3v1.25a.25.25 0 0 1-.25.25H11.5v-1.5zm-4-1.5v-1.5h3.75a.25.25 0 0 1 .25.25V15zm2-12v5.5a.5.5 0 0 0 .5.5h5.5zM9.168 19.607a4.5 4.5 0 1 0-1.06 1.06l2.612 2.613a.75.75 0 1 0 1.06-1.06zM8.5 17a3 3 0 1 1-6 0a3 3 0 0 1 6 0\"/>",
+  "width": 24,
+  "height": 25,
+  "viewBox": "0 0 24 25"
+}
+
+export default documentTableSearch24Filled

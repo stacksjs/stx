@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const wonLine: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M33 18h-4.25l.5-2H33a1 1 0 0 0 0-2h-3.26l2.17-8.76A1 1 0 0 0 30 4.76L27.68 14h-6.37L19 4.76a1 1 0 0 0-1.94 0L14.79 14H8.42L6.13 4.76a1 1 0 0 0-1.94.48L6.36 14H3a1 1 0 0 0 0 2h3.85l.5 2H3a1 1 0 0 0 0 2h4.84l2.79 11.24a1 1 0 0 0 1.94 0L15.36 20h5.38l2.79 11.24a1 1 0 0 0 1.94 0L28.25 20H33a1 1 0 0 0 0-2m-5.82-2l-.5 2H22.3l-.5-2ZM18 9.16L19.25 14h-2.4ZM8.91 16h5.38l-.5 2H9.41Zm2.69 10.84L9.91 20h3.39ZM15.85 18l.5-2h3.39l.5 2Zm8.64 8.84L22.8 20h3.39Z\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default wonLine

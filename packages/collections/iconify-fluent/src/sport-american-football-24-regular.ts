@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const sportAmericanFootball24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M13.72 9.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06zM17.75 2A4.25 4.25 0 0 1 22 6.25v1C22 15.396 15.396 22 7.25 22h-1A4.25 4.25 0 0 1 2 17.75v-1C2 8.604 8.604 2 16.75 2zm2.75 4.25a2.75 2.75 0 0 0-2.75-2.75h-1q-.605 0-1.196.053l4.893 4.893q.053-.591.053-1.196zm-.347 4.024l-6.427-6.427a13.27 13.27 0 0 0-9.902 9.977l6.352 6.352a13.27 13.27 0 0 0 9.977-9.902m-16.61 5.391q-.043.537-.043 1.085v1a2.75 2.75 0 0 0 2.75 2.75h1q.548 0 1.085-.044z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sportAmericanFootball24Regular

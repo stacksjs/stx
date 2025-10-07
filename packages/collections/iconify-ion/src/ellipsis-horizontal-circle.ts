@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const ellipsisHorizontalCircle: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M256 48C141.13 48 48 141.13 48 256s93.13 208 208 208s208-93.13 208-208S370.87 48 256 48m-90 234a26 26 0 1 1 26-26a26 26 0 0 1-26 26m90 0a26 26 0 1 1 26-26a26 26 0 0 1-26 26m90 0a26 26 0 1 1 26-26a26 26 0 0 1-26 26\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default ellipsisHorizontalCircle

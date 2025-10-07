@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const speakerPause: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12.28 19.81c-.41.11-.83.19-1.28.19c-2.76 0-5-2.24-5-5s2.24-5 5-5c1.89 0 3.5 1.06 4.37 2.61c.79-.38 1.69-.61 2.63-.61V4a2 2 0 0 0-2-2H6c-1.11 0-2 .89-2 2v16c0 1.11.89 2 2 2h7.54c-.54-.63-1-1.37-1.26-2.19M11 4c1.11 0 2 .89 2 2s-.89 2-2 2a2 2 0 0 1-2-2c0-1.11.89-2 2-2m2.74 9.78A6 6 0 0 0 12 17.81c-.31.12-.64.19-1 .19c-1.66 0-3-1.34-3-3s1.34-3 3-3c1.22 0 2.27.73 2.74 1.78M19 15h2v6h-2m-4-6h2v6h-2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default speakerPause

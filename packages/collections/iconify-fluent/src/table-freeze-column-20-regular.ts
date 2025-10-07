@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tableFreezeColumn20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.5 17A2.5 2.5 0 0 1 3 14.5v-9A2.5 2.5 0 0 1 5.5 3h9A2.5 2.5 0 0 1 17 5.5v9a2.5 2.5 0 0 1-2.5 2.5zM12 4H8v3h4zM7 4H5.5a1.5 1.5 0 0 0-1.493 1.356L4 5.5V7h3zm1 4v4h4V8zm-4 4h3V8H4zm4 1v3h4v-3zm-2.5 3H7v-3H4v1.5a1.5 1.5 0 0 0 1.356 1.493zm9-12H13v12h1.5a1.5 1.5 0 0 0 1.493-1.355L16 14.5v-9a1.5 1.5 0 0 0-1.355-1.493z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default tableFreezeColumn20Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const inkingTool32Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.018 2a2 2 0 0 0-2 2v.812Q2 4.904 2 5v2a3 3 0 0 0 3 3h.504l.003.005h20.986l.003-.005H27a3 3 0 0 0 3-3V4a2 2 0 0 0-2-2zm9 24c.021.82.216 1.716.622 2.454c.429.78 1.195 1.535 2.344 1.55h.032c1.148-.015 1.915-.77 2.344-1.55c.406-.738.6-1.634.622-2.454zm6.942-3.096l5.52-10.899H6.52l5.515 10.898A2 2 0 0 0 13.818 24h4.358a2 2 0 0 0 1.784-1.096\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default inkingTool32Filled

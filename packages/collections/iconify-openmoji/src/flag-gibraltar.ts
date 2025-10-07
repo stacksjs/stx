@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const flagGibraltar: IconData = {
+  "body": "<path fill=\"#fff\" d=\"M5 17h62v38H5z\"/><path fill=\"#d22f27\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M27 32h18v9H27zm7-10h4v9h-4z\"/><path fill=\"#d22f27\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M43 25h2v10h-2zm-16 0h2v10h-2z\"/><path fill=\"#d22f27\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"M30 37v5m6-5v5m6-5v5\"/><path fill=\"#d22f27\" d=\"M5 45h62v10H5z\"/><path fill=\"none\" stroke=\"#fcea2b\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M36 45v6\"/><path fill=\"#fff\" d=\"M4.5 42h62v3h-62z\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 17h62v38H5z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default flagGibraltar

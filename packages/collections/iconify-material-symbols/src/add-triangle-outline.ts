@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const addTriangleOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M1 21L12 2l11 19zm3.475-2h15.05L12 6zM11 18h2v-2h2v-2h-2v-2h-2v2H9v2h2zm1-3\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default addTriangleOutline

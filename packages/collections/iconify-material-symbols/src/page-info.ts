@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pageInfo: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17.75 20.25q-1.575 0-2.662-1.088T14 16.5t1.088-2.662t2.662-1.088t2.663 1.088T21.5 16.5t-1.088 2.663t-2.662 1.087M4 17.5v-2h8v2zm2.25-6.25q-1.575 0-2.662-1.088T2.5 7.5t1.088-2.662T6.25 3.75t2.663 1.088T10 7.5t-1.088 2.663T6.25 11.25M12 8.5v-2h8v2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default pageInfo

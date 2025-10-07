@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const edaSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 23v-7h5.45l3.4 4.525l6.175-6.175l2.35-1.425l2.65 1.975l-8.1 8.1zm4-11V2h2v10h2V1h2v11h2V3h2v9.575l-4.95 4.9L9.45 14H3V4h2v8z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default edaSharp

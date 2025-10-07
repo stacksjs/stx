@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const autoRickshaw: IconData = {
+  "body": "<path fill=\"#fff\" d=\"M21.128 18.91s1.354 23.99 7.48 25.408l34.759-1.29l.064-22.183s-.258-1.548-1.805-1.805s-40.498-.13-40.498-.13\"/><path fill=\"#6a462f\" d=\"M20.3 19s-1.163 18.51 9.292 25.563H19S11.903 37.408 20.3 19M44 38h20.22v5.514H43V38z\"/><circle cx=\"17.082\" cy=\"49.563\" r=\"5\" fill=\"#d0cfce\"/><circle cx=\"54.609\" cy=\"49.563\" r=\"5\" fill=\"#d0cfce\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M23.718 37h3.87l.801-7.425\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2.087\" d=\"M64.22 44.563H19L17.402 41.6A11.7 11.7 0 0 1 16 36.046v-.765c-.046-1.517.156-3.03.6-4.481L19 22c0-1.471 1.529-4 3-4l39.556.39a2.664 2.664 0 0 1 2.664 2.663z\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M45.798 48.471h-20.58\"/><circle cx=\"17.082\" cy=\"49.563\" r=\"5\" fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"/><circle cx=\"54.609\" cy=\"49.563\" r=\"5\" fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2.087\" d=\"M43 19v25m1-9h20.219M44 38h20.22v5.514H43V38zm17-1l1-5\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M20.3 19s-1.163 18.51 9.292 25.563M25.642 37v2.785\"/><path d=\"M60.072 44.563c0-.58.47-1.05 1.05-1.05h4.196a1.05 1.05 0 1 1 0 2.098H61.12a1.047 1.047 0 0 1-1.049-1.048\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M18 42.532c-2.482-1.901-4.851.369-5 .468\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default autoRickshaw

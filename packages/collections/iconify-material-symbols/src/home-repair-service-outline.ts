@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const homeRepairServiceOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 20V10q0-.825.588-1.412T4 8h3V6q0-.825.588-1.412T9 4h6q.825 0 1.413.588T17 6v2h3q.825 0 1.413.588T22 10v10zm6-5v1H6v-1H4v3h16v-3h-2v1h-2v-1zm-4-5v3h2v-1h2v1h8v-1h2v1h2v-3zm5-2h6V6H9z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default homeRepairServiceOutline

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const buildingGovernment32: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#70777D\" d=\"M15 5h2v3h-2z\"/><path fill=\"#F83F54\" d=\"M15 3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z\"/><path fill=\"url(#SVGSMleo8yE)\" d=\"M7 16a9 9 0 1 1 18 0v1H7z\"/><path fill=\"url(#SVGfDnT3cNr)\" d=\"M7 16a9 9 0 1 1 18 0v1H7z\"/><path fill=\"url(#SVGeKZrMeFU)\" d=\"M2 19a3 3 0 0 1 3-3h22a3 3 0 0 1 3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z\"/><path fill=\"url(#SVGU5Tyqc2N)\" fill-opacity=\".6\" d=\"M2 19a3 3 0 0 1 3-3h22a3 3 0 0 1 3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z\"/><path fill=\"#55595E\" d=\"M13 23a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6h-6z\"/><path fill=\"#63686E\" d=\"M8 20a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1m17 1a1 1 0 1 0-2 0v3a1 1 0 0 0 2 0z\"/><path fill=\"#CA6407\" d=\"M21 12a1 1 0 1 0-2 0v2a1 1 0 1 0 2 0zm-5-1a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0v-2a1 1 0 0 1 1-1m-3 1a1 1 0 1 0-2 0v2a1 1 0 1 0 2 0z\"/><defs><radialGradient id=\"SVGfDnT3cNr\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(0 5.38462 -9.60611 0 22.3 8.538)\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFD638\"/><stop offset=\"1\" stop-color=\"#FFD638\" stop-opacity=\"0\"/></radialGradient><radialGradient id=\"SVGU5Tyqc2N\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(-.875 7.42858 -15.7514 -1.85533 28.25 16)\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFB357\"/><stop offset=\"1\" stop-color=\"#FFB357\" stop-opacity=\"0\"/></radialGradient><linearGradient id=\"SVGSMleo8yE\" x1=\"16\" x2=\"16\" y1=\"7\" y2=\"17\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFC205\"/><stop offset=\".735\" stop-color=\"#FFA43D\"/><stop offset=\"1\" stop-color=\"#E67505\"/></linearGradient><linearGradient id=\"SVGeKZrMeFU\" x1=\"12.938\" x2=\"26.418\" y1=\"16\" y2=\"29.36\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#AAB3BD\"/><stop offset=\"1\" stop-color=\"#889096\"/></linearGradient></defs></g>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default buildingGovernment32

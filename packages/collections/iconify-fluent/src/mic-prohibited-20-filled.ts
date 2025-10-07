@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const micProhibited20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9.21 12.993A5.5 5.5 0 0 1 12 9.6V5a3 3 0 1 0-6 0v5a3 3 0 0 0 3.21 2.993M9.5 17.5v-.706A5.5 5.5 0 0 1 9 14.5A4.5 4.5 0 0 1 4.5 10a.5.5 0 0 0-1 0a5.5 5.5 0 0 0 5 5.478V17.5a.5.5 0 0 0 1 0m5 1.5a4.5 4.5 0 1 1 0-9a4.5 4.5 0 0 1 0 9m0-8a3.5 3.5 0 0 0-2.803 5.596l4.9-4.9A3.5 3.5 0 0 0 14.5 11m-2.096 6.303a3.5 3.5 0 0 0 4.9-4.9z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default micProhibited20Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const gamepadSquareOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M21 6H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2m0 10H3V8h18M6 15h2v-2h2v-2H8V9H6v2H4v2h2m8.5-1a1.5 1.5 0 0 1 1.5 1.5a1.5 1.5 0 0 1-1.5 1.5a1.5 1.5 0 0 1-1.5-1.5a1.5 1.5 0 0 1 1.5-1.5m4-3a1.5 1.5 0 0 1 1.5 1.5a1.5 1.5 0 0 1-1.5 1.5a1.5 1.5 0 0 1-1.5-1.5A1.5 1.5 0 0 1 18.5 9\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default gamepadSquareOutline

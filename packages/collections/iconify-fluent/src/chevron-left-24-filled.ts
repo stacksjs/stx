@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const chevronLeft24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15.707 4.293a1 1 0 0 1 0 1.414L9.414 12l6.293 6.293a1 1 0 0 1-1.414 1.414l-7-7a1 1 0 0 1 0-1.414l7-7a1 1 0 0 1 1.414 0\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default chevronLeft24Filled

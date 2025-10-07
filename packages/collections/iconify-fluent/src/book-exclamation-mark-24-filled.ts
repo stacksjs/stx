@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const bookExclamationMark24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 4.5v15A2.5 2.5 0 0 0 6.5 22h13.25a.75.75 0 0 0 0-1.5H6.5a1 1 0 0 1-1-1h14.25a.75.75 0 0 0 .75-.75V4.5A2.5 2.5 0 0 0 18 2H6.5A2.5 2.5 0 0 0 4 4.5m7.5 7.25v-5a.75.75 0 0 1 1.5 0v5a.75.75 0 0 1-1.5 0m1.75 2.75a1 1 0 1 1-2 0a1 1 0 0 1 2 0\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default bookExclamationMark24Filled

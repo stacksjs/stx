@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const exclamationCircle: IconData = {
+  "body": "<g fill=\"currentColor\"><path fill-rule=\"evenodd\" d=\"M13 5a2 2 0 0 1 2 2v7a2 2 0 1 1-4 0V7a2 2 0 0 1 2-2\" clip-rule=\"evenodd\"/><path d=\"M15 19a2 2 0 1 1-4 0a2 2 0 0 1 4 0\"/><path fill-rule=\"evenodd\" d=\"M13 24c6.075 0 11-4.925 11-11S19.075 2 13 2S2 6.925 2 13s4.925 11 11 11m0 2c7.18 0 13-5.82 13-13S20.18 0 13 0S0 5.82 0 13s5.82 13 13 13\" clip-rule=\"evenodd\"/></g>",
+  "width": 26,
+  "height": 26,
+  "viewBox": "0 0 26 26"
+}
+
+export default exclamationCircle

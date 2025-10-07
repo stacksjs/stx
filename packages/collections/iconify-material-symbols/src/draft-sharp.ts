@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const draftSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 22V2h10l6 6v14zm9-13h5l-5-5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default draftSharp

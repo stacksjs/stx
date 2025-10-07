@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const circleHalfTiltDuotone: IconData = {
+  "body": "<g fill=\"currentColor\"><path d=\"M195.88 195.88a96 96 0 0 1-135.76 0L195.88 60.12a96 96 0 0 1 0 135.76\" opacity=\".2\"/><path d=\"M201.54 54.46A104 104 0 0 0 54.46 201.54A104 104 0 0 0 201.54 54.46M65.78 65.77a88.08 88.08 0 0 1 118.52-5.38L60.38 184.31a88 88 0 0 1 5.4-118.54m124.44 124.46a88.1 88.1 0 0 1-118.52 5.38L195.62 71.69a88 88 0 0 1-5.4 118.54\"/></g>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default circleHalfTiltDuotone

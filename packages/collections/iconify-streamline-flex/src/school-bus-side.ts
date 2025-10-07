@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const schoolBusSide: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3.01 12H1.75a1 1 0 0 1-1-1V4.5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2.323a1 1 0 0 0 .629.928l1.242.498a1 1 0 0 1 .629.928V11a1 1 0 0 1-1 1h-.754m-5.979 0H8.99\"/><path d=\"M.75 4.5V7h10.016a1 1 0 0 1-.016-.177V4.5a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2m3-2V7m3.5-4.5V7m-2.994 6.25c.803 0 1.255-.452 1.255-1.256c0-.803-.452-1.255-1.255-1.255c-.804 0-1.256.452-1.256 1.255c0 .804.452 1.256 1.256 1.256m5.988.011c.804 0 1.256-.452 1.256-1.255c0-.804-.452-1.256-1.256-1.256c-.803 0-1.255.452-1.255 1.256c0 .803.452 1.255 1.255 1.255\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default schoolBusSide

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const sitrox: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M212.4 0H448v128H64C64 57.6 141.8.5 212.4 0m24.8 192c69.9.5 146.7 57.6 146.7 128H210.7C140.9 319.6 64 262.4 64 192h173.3zm-1.7 320c70.7-.5 148.4-57.6 148.4-128H-.1v128z\"/>",
+  "width": 448,
+  "height": 512,
+  "viewBox": "0 0 448 512"
+}
+
+export default sitrox

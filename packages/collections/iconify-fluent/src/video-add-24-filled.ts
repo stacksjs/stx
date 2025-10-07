@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const videoAdd24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 7.25A3.25 3.25 0 0 1 5.25 4h6.5A3.25 3.25 0 0 1 15 7.25v7.5a3.25 3.25 0 0 1-2.005 3.003Q13 17.627 13 17.5a6.5 6.5 0 0 0-11-4.69zm17.257 9.438L16 14.44V7.562l3.257-2.25c1.161-.8 2.745.03 2.745 1.441v8.495c0 1.41-1.584 2.242-2.745 1.44M12 17.5a5.5 5.5 0 1 0-11 0a5.5 5.5 0 0 0 11 0M7 18l.001 2.503a.5.5 0 1 1-1 0V18H3.496a.5.5 0 0 1 0-1H6v-2.5a.5.5 0 1 1 1 0V17h2.497a.5.5 0 0 1 0 1z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default videoAdd24Filled

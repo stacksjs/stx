@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const dismissCircle16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 8a6 6 0 1 1 12 0A6 6 0 0 1 2 8m6-7a7 7 0 1 0 0 14A7 7 0 0 0 8 1M6.354 5.646a.5.5 0 1 0-.708.708L7.293 8L5.646 9.646a.5.5 0 0 0 .708.708L8 8.707l1.646 1.647a.5.5 0 0 0 .708-.708L8.707 8l1.647-1.646a.5.5 0 0 0-.708-.708L8 7.293z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default dismissCircle16Regular

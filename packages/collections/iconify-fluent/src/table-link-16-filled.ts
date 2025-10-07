@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tableLink16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.5 2A2.5 2.5 0 0 0 2 4.5V5h3V2zM6 2v3h4V2zM5 6H2v4h3zm1 4V6h4v3H8.5c-.954 0-1.818.381-2.45 1zm6.5-1c.537 0 1.045.12 1.5.337V6h-3v3zM5 11v3h-.5A2.5 2.5 0 0 1 2 11.5V11zm9-6v-.5A2.5 2.5 0 0 0 11.5 2H11v3zm-5.5 5a2.5 2.5 0 0 0 0 5H9a.5.5 0 0 0 0-1h-.5a1.5 1.5 0 0 1 0-3H9a.5.5 0 0 0 0-1zm3.5 0a.5.5 0 0 0 0 1h.5a1.5 1.5 0 0 1 0 3H12a.5.5 0 0 0 0 1h.5a2.5 2.5 0 0 0 0-5zm-4 2.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default tableLink16Filled

@@ -1,0 +1,41 @@
+{
+  "name": "@stx/iconify-icon-park-solid",
+  "version": "0.0.1",
+  "description": "IconPark Solid icons for stx from Iconify",
+  "author": "ByteDance",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": "./dist/*"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun build.ts"
+  },
+  "dependencies": {
+    "@stx/iconify-core": "workspace:*"
+  },
+  "keywords": [
+    "iconify",
+    "icons",
+    "svg",
+    "icon-park-solid",
+    "IconPark Solid",
+    "stx"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stacksjs/stx.git",
+    "directory": "packages/iconify-icon-park-solid"
+  },
+  "sideEffects": false
+}

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const layoutRowFour24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 8v3.25h18V8zm18-1.5v-.25A3.25 3.25 0 0 0 17.75 3H6.25A3.25 3.25 0 0 0 3 6.25v.25zM3 16v-3.25h18V16zm0 1.5v.25A3.25 3.25 0 0 0 6.25 21h11.5A3.25 3.25 0 0 0 21 17.75v-.25z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default layoutRowFour24Filled

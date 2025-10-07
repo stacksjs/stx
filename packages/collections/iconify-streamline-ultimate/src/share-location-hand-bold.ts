@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const shareLocationHandBold: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16.71 16.5a1.05 1.05 0 0 0 .81-.37c.21-.25 5.23-6.13 5.23-10.13a6 6 0 1 0-12.07 0c0 3.92 5 9.84 5.23 10.09a1 1 0 0 0 .8.41M14.5 6a2.22 2.22 0 1 1 2.21 2.21A2.21 2.21 0 0 1 14.5 6m2.25 13.5H7.62a.63.63 0 0 1 0-1.25h2.53a1 1 0 0 0 .92-1.39A2.23 2.23 0 0 0 9 15.5H4.75a.5.5 0 0 0-.5.5v6.5a.5.5 0 0 0 .5.5h10.76a2.24 2.24 0 0 0 2.24-2.24v-.26a1 1 0 0 0-1-1m-14.5-4.75a1 1 0 0 0-1 1V23a1 1 0 0 0 2 0v-7.25a1 1 0 0 0-1-1\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default shareLocationHandBold

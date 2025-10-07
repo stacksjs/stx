@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const penNibStraightLight: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M220.54 124.77a2 2 0 0 0-.15-.28L190 70.42V32a14 14 0 0 0-14-14H80a14 14 0 0 0-14 14v38.44l-30.4 54.05a2 2 0 0 0-.15.28a14 14 0 0 0 1.27 14.5a1 1 0 0 1 .08.11l86.44 112.28a6 6 0 0 0 9.51 0l86.43-112.28a1 1 0 0 1 .08-.11a14 14 0 0 0 1.28-14.5M80 30h96a2 2 0 0 1 2 2v34H78V32a2 2 0 0 1 2-2m48 116a14 14 0 1 1 14-14a14 14 0 0 1-14 14m81.63-13.88L134 230.38v-73.09a26 26 0 1 0-12 0v73.07l-75.63-98.24a2 2 0 0 1-.2-1.93L75.52 78h105l29.34 52.19a2 2 0 0 1-.23 1.93\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default penNibStraightLight

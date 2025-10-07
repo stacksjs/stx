@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pageviewSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11.5 14q-1.05 0-1.775-.725T9 11.5t.725-1.775T11.5 9t1.775.725T14 11.5t-.725 1.775T11.5 14M2 20V4h20v16h-.6l-6.1-6.1q.35-.525.525-1.125T16 11.5q0-1.875-1.312-3.187T11.5 7T8.313 8.313T7 11.5t1.313 3.188T11.5 16q.65 0 1.263-.175T13.9 15.3l4.7 4.7z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default pageviewSharp

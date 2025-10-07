@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textboxAlignBottomRotate9020Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.5 6a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 1 0v-7a.5.5 0 0 0-.5-.5m2.5.5a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0zm-6 8A2.5 2.5 0 0 0 5.5 17h9a2.5 2.5 0 0 0 2.5-2.5v-9A2.5 2.5 0 0 0 14.5 3h-9A2.5 2.5 0 0 0 3 5.5zm1 0v-9A1.5 1.5 0 0 1 5.5 4h9A1.5 1.5 0 0 1 16 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 4 14.5\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default textboxAlignBottomRotate9020Regular

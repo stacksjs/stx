@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const notificationsSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 19v-2h2v-7q0-2.075 1.25-3.687T10.5 4.2V2h3v2.2q2 .5 3.25 2.113T18 10v7h2v2zm8 3q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default notificationsSharp

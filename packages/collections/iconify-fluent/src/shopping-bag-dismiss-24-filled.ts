@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const shoppingBagDismiss24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 7V5a3 3 0 0 1 5-2.236A3 3 0 0 1 17 5v2h1.5A1.5 1.5 0 0 1 20 8.5v2.998A6.5 6.5 0 0 0 17.5 11a6.5 6.5 0 0 0-3 .732V7h1V5a1.5 1.5 0 0 0-2.656-.956c.101.3.156.622.156.956v7.81a6.48 6.48 0 0 0-2 4.69c0 1.747.689 3.332 1.81 4.5H8a4 4 0 0 1-4-4V8.5A1.5 1.5 0 0 1 5.5 7zm1.5-2v2h3V5a1.5 1.5 0 0 0-3 0M23 17.5a5.5 5.5 0 1 1-11 0a5.5 5.5 0 0 1 11 0m-7.146-2.354a.5.5 0 0 0-.708.708l1.647 1.646l-1.647 1.646a.5.5 0 0 0 .708.708l1.646-1.647l1.646 1.647a.5.5 0 0 0 .708-.708L18.207 17.5l1.647-1.646a.5.5 0 0 0-.708-.708L17.5 16.793z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default shoppingBagDismiss24Filled

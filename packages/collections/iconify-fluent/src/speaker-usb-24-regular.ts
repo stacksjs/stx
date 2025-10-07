@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const speakerUsb24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15 4.248a1.25 1.25 0 0 0-2.057-.954L7.975 7.498H4.25A2.25 2.25 0 0 0 2 9.748v4.5a2.25 2.25 0 0 0 2.25 2.25h3.725l4.967 4.206A1.25 1.25 0 0 0 15 19.75zm-6.475 4.75l4.975-4.21V19.21l-4.975-4.212H4.25a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 1 .75-.75zm7.638 4.957l1.337 2.044v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2l1.333-2.005A1 1 0 0 0 23 13.44V10a1 1 0 0 0-1-1V7a1 1 0 0 0-1-1h-3a1 1 0 0 0-1 1v2a1 1 0 0 0-1 1v3.408a1 1 0 0 0 .163.547M18.5 7.5h2V9h-2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default speakerUsb24Regular

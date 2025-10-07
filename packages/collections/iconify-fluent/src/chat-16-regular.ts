@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const chat16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 7a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3A.5.5 0 0 1 6 7m.5 1.5a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1zM2 8a6 6 0 1 1 2.996 5.195l-2.338.78a.5.5 0 0 1-.639-.612l.712-2.491A6 6 0 0 1 2 8m6-5a5 5 0 0 0-4.3 7.552a.5.5 0 0 1 .05.393l-.509 1.78l1.658-.552a.5.5 0 0 1 .426.052A5 5 0 1 0 8 3\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default chat16Regular

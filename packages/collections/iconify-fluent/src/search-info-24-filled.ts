@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const searchInfo24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15.102 16.162a8 8 0 1 1 1.06-1.06l4.618 4.618a.75.75 0 1 1-1.06 1.06zM10 9a.75.75 0 0 0-.75.75v3.5a.75.75 0 0 0 1.5 0v-3.5A.75.75 0 0 0 10 9m0-1.5a1 1 0 1 0 0-2a1 1 0 0 0 0 2\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default searchInfo24Filled

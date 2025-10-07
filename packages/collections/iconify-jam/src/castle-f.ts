@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const castleF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M18 8v11h-3v-4a2 2 0 1 0-4 0v4H0v-8a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1h2V8a2 2 0 0 1-2-2V1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1h2V1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5a2 2 0 0 1-2 2m-6 1a1 1 0 0 0 0 2h2a1 1 0 0 0 0-2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default castleF

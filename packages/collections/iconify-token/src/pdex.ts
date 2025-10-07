@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pdex: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M21 18.755v-2.54l-4.219-4.212H14.25zM3 5.64v2.47l4.291 4.537H9.75zM5.25 3h2.46l4.254 4.203L16.18 3h2.57L12 9.776zm0 18h2.46l4.253-4.202L16.18 21h2.571L12 14.266zM12 13.29a1.286 1.286 0 1 0 0-2.572a1.286 1.286 0 0 0 0 2.572\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default pdex

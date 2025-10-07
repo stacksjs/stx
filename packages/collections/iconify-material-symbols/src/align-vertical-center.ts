@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const alignVerticalCenter: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 21v-8H2v-2h5V3h3v8h4V6h3v5h5v2h-5v5h-3v-5h-4v8z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default alignVerticalCenter

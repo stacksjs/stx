@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const bi: IconData = {
+  "body": "<g fill=\"none\"><rect width=\"32\" height=\"24\" fill=\"#5EAA22\" rx=\"2\"/><mask id=\"SVGkkJhGdlc\" width=\"48\" height=\"30\" x=\"-8\" y=\"-3\" fill=\"#000\" maskUnits=\"userSpaceOnUse\"><path fill=\"#fff\" d=\"M-8-3h48v30H-8z\"/><path fill-rule=\"evenodd\" d=\"M16 12L32 0H0zm0 0L0 24h32z\" clip-rule=\"evenodd\"/></mask><path fill=\"#DD2C2B\" fill-rule=\"evenodd\" d=\"M16 12L32 0H0zm0 0L0 24h32z\" clip-rule=\"evenodd\"/><path fill=\"#fff\" d=\"m32 0l1.5 2l6-4.5H32zM0 0v-2.5h-7.5l6 4.5zm0 24l-1.5-2l-6 4.5H0zm32 0v2.5h7.5l-6-4.5zM30.5-2l-16 12l3 4l16-12zM0 2.5h32v-5H0zM17.5 10L1.5-2l-3 4l16 12zm-3 0l-16 12l3 4l16-12zM0 26.5h32v-5H0zM33.5 22l-16-12l-3 4l16 12z\" mask=\"url(#SVGkkJhGdlc)\"/><path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M16 18a6 6 0 1 0 0-12a6 6 0 0 0 0 12\" clip-rule=\"evenodd\"/><path fill=\"#DD2C2B\" fill-rule=\"evenodd\" stroke=\"#5EAA22\" stroke-width=\".25\" d=\"m15.43 10.387l-1.162.013l.592-1l-.592-1l1.162.013L16 7.4l.57 1.013l1.162-.013l-.592 1l.592 1l-1.162-.013L16 11.4zm-2.5 4.1l-1.162.013l.592-1l-.592-1l1.162.013l.57-1.013l.57 1.013l1.162-.013l-.592 1l.592 1l-1.162-.013l-.57 1.013zm5 0l-1.162.013l.592-1l-.592-1l1.162.013l.57-1.013l.57 1.013l1.162-.013l-.592 1l.592 1l-1.162-.013l-.57 1.013z\" clip-rule=\"evenodd\"/></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default bi

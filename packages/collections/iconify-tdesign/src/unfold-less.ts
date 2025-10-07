@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const unfoldLess: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"square\" stroke-width=\"2\" d=\"m16 19l-4-4l-4 4m8-14l-4 4l-4-4\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default unfoldLess

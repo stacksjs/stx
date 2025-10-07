@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const flash28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8.406 2.852A1.33 1.33 0 0 1 9.65 2h8.516c.927 0 1.57.922 1.252 1.792L17.324 9.5h4.837c1.178 0 1.777 1.416.957 2.262L9.784 25.503c-1.14 1.175-3.106.117-2.753-1.482l1.66-7.521H5.917a1.917 1.917 0 0 1-1.787-2.61z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default flash28Filled

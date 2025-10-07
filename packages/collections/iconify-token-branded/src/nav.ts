@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const nav: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGCNd1sbjB)\" fill-rule=\"evenodd\" d=\"M7.56 4.08a1.2 1.2 0 0 0-2.16.72v6H4.2a1.2 1.2 0 1 0 0 2.4h1.2v6a1.2 1.2 0 1 0 2.4 0v-6h3.6l5.04 6.72a1.199 1.199 0 0 0 2.16-.72v-6h1.2a1.2 1.2 0 1 0 0-2.4h-1.2v-6a1.2 1.2 0 0 0-2.4 0v6h-3.6zm6.84 9.12l1.8 2.4v-2.4zm-4.8-2.4L7.8 8.4v2.4z\" clip-rule=\"evenodd\"/><defs><linearGradient id=\"SVGCNd1sbjB\" x1=\"21\" x2=\"4.08\" y1=\"3.6\" y2=\"21.568\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0B88F6\"/><stop offset=\".456\" stop-color=\"#7152D7\"/><stop offset=\"1\" stop-color=\"#DD1EBA\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default nav

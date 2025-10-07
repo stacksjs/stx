@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const cursorHoverOff16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m12.293 13l1.853 1.854a.5.5 0 0 0 .708-.708l-2-1.999l-11-11a.5.5 0 1 0-.708.707l1.242 1.241A2 2 0 0 0 1 5v5a2 2 0 0 0 2 2h4v-1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h.293L8 8.707V14.5a.5.5 0 0 0 .9.3l1.35-1.8zm-1-1H10a.5.5 0 0 0-.4.2L9 13V9.707zm1.822-1.007A1 1 0 0 0 14 10V5a1 1 0 0 0-1-1H6.121l-1-1H13a2 2 0 0 1 2 2v5a2 2 0 0 1-1.095 1.784z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default cursorHoverOff16Regular

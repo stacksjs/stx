@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const sharpSignalCellularNull: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M20 6.83V20H6.83zM22 2L2 22h20z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sharpSignalCellularNull

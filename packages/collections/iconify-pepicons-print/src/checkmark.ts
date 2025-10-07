@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const checkmark: IconData = {
+  "body": "<g fill=\"currentColor\"><path fill-rule=\"evenodd\" d=\"m12.87 17.123l4.941-8.895c.971-1.748-1.65-3.205-2.622-1.456L11.05 14.22l-3.614-2.891C5.874 10.079 4 12.422 5.562 13.671l4.906 3.925q.083.075.176.137c.387.277.789.342 1.15.263c.364-.064.711-.276.964-.68q.063-.092.11-.193\" clip-rule=\"evenodd\" opacity=\".2\"/><path d=\"m14.937 5.743l-5 9c-.324.583-1.198.097-.874-.486l5-9c.324-.583 1.198-.097.874.486\"/><path d=\"m4.812 10.11l5 4c.52.416-.104 1.197-.624.78l-5-4c-.52-.416.104-1.197.624-.78\"/></g>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default checkmark

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const slideEraser24Filled: IconData = {
+  "body": "<g fill=\"currentColor\"><path d=\"M4.75 4A2.75 2.75 0 0 0 2 6.75v10.5A2.75 2.75 0 0 0 4.75 20h7.826a2.5 2.5 0 0 1 .17-3.348l4.917-4.917a2.5 2.5 0 0 1 3.536 0l.801.8V6.75A2.75 2.75 0 0 0 19.25 4z\"/><path d=\"M20.492 12.442a1.5 1.5 0 0 0-2.121 0l-3.111 3.11l4.207 4.208l3.11-3.111a1.5 1.5 0 0 0 0-2.122zm-7.039 4.918l1.1-1.1l4.207 4.207l-1.1 1.1a1.5 1.5 0 0 1-2.121 0l-2.086-2.086a1.5 1.5 0 0 1 0-2.122\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default slideEraser24Filled

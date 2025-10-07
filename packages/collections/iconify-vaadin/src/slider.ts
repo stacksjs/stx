@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const slider: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16 6h-3.6c-.7-1.2-2-2-3.4-2s-2.8.8-3.4 2H0v4h5.6c.7 1.2 2 2 3.4 2s2.8-.8 3.4-2H16zM1 9V7h4.1c0 .3-.1.7-.1 1s.1.7.1 1zm8 2c-1.7 0-3-1.3-3-3s1.3-3 3-3s3 1.3 3 3s-1.3 3-3 3\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default slider

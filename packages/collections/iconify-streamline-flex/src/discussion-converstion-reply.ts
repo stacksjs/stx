@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const discussionConverstionReply: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12.14 5.633q.026.568.026 1.116c0 1.228-.109 2.576-.242 3.8a1.816 1.816 0 0 1-1.601 1.61c-2.391.268-3.81.297-6.204.051l-2.792.665l.647-2.977q-.03-.305-.056-.614m10.056-5.86l-.05-.47a1.82 1.82 0 0 0-1.601-1.612c-2.555-.29-4.125-.29-6.68 0a1.82 1.82 0 0 0-1.602 1.611c-.133 1.222-.243 2.567-.243 3.796q0 .294.008.598\"/><path d=\"M.526 6.082c.26.518.778 1.037 1.297 1.297A3.13 3.13 0 0 0 3.12 6.082m7.75.812a3.13 3.13 0 0 1 1.296-1.297a3.13 3.13 0 0 1 1.297 1.297\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default discussionConverstionReply

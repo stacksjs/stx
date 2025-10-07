@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const videoClipOff20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2.854 2.146a.5.5 0 1 0-.708.708l.739.738A2.5 2.5 0 0 0 2 5.5v9A2.5 2.5 0 0 0 4.5 17h11q.362-.001.695-.098l.951.952a.5.5 0 0 0 .708-.708zM15.293 16H4.5A1.5 1.5 0 0 1 3 14.5v-9c0-.489.234-.923.596-1.197L8 8.707v3.943a.5.5 0 0 0 .776.417l2.156-1.428zM9.918 7.797l2.716 2.716l.142-.095a.5.5 0 0 0-.01-.84zM17 14.5q0 .175-.039.34l.777.776A2.5 2.5 0 0 0 18 14.5v-9A2.5 2.5 0 0 0 15.5 3H5.121l1 1H15.5A1.5 1.5 0 0 1 17 5.5z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default videoClipOff20Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const travelTrain: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 18H8l-2 2H3l2-2a2 2 0 0 1-2-2V2c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2l2 2h-3zM5 5v6h10V5zm1.5 11a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3m7 0a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3M8 2v1h4V2z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default travelTrain

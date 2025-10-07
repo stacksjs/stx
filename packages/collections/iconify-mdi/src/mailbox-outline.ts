@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const mailboxOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17 4H7a5 5 0 0 0-5 5v11h18a2 2 0 0 0 2-2V9a5 5 0 0 0-5-5m-7 14H4V9a3 3 0 0 1 3-3a3 3 0 0 1 3 3zm10 0h-8V9c0-1.08-.35-2.14-1-3h6a3 3 0 0 1 3 3zm-7-7v2h4v2h2v-4zm-4 0H5V9h4z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default mailboxOutline

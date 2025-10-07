@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const mobileAlt: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16.75 2h-10c-1.103 0-2 .897-2 2v16c0 1.103.897 2 2 2h10c1.103 0 2-.897 2-2V4c0-1.103-.897-2-2-2m-10 18V4h10l.002 16z\"/><circle cx=\"11.75\" cy=\"18\" r=\"1\" fill=\"currentColor\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default mobileAlt

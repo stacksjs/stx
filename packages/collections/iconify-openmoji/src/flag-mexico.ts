@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const flagMexico: IconData = {
+  "body": "<path fill=\"#fff\" d=\"M5 17h62v38H5z\"/><path fill=\"#5c9e31\" d=\"M5 17h21v38H5z\"/><path fill=\"#d22f27\" d=\"M46 17h21v38H46z\"/><circle cx=\"36\" cy=\"35\" r=\"3.5\" fill=\"#a57939\" stroke=\"#a57939\" stroke-miterlimit=\"10\" stroke-width=\"2\"/><path fill=\"none\" stroke=\"#5c9e31\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M30 39.486a7.48 7.48 0 0 0 12 0\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 17h62v38H5z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default flagMexico

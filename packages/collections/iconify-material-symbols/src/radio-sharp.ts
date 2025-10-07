@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const radioSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 22V6.65L15.9 1l.65 1.65L8.3 6H22v16zm6-3q1.05 0 1.775-.725T10.5 16.5t-.725-1.775T8 14t-1.775.725T5.5 16.5t.725 1.775T8 19m-4-8h12V9h2v2h2V8H4z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default radioSharp

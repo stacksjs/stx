@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const vc: IconData = {
+  "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path fill=\"#FFDC17\" d=\"M8 0h16v24H8z\"/><path fill=\"#5FBF2B\" d=\"M24 0h8v24h-8z\"/><path fill=\"#2E42A5\" d=\"M0 0h8v24H0z\"/><path fill=\"#5FBF2B\" d=\"m19.726 5.6l-3.04 4.463l3.04 4.305l3.04-4.305zm-7.449.079L9 10.063l3.04 4.226l3.04-4.226zm.566 9.31l3.277-4.384l2.803 4.384L16.12 19.5z\"/></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default vc

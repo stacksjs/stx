@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const clockArrowDownload24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.5 11a8.5 8.5 0 1 1 8.188 8.494a6.5 6.5 0 0 1-.68 1.457q.49.05.992.049c5.523 0 10-4.477 10-10S18.523 1 13 1S3 5.477 3 11q0 .501.048.991a6.5 6.5 0 0 1 1.458-.68A9 9 0 0 1 4.5 11m8.493-5.352a.75.75 0 0 0-1.493.102v6l.007.102a.75.75 0 0 0 .743.648h4l.102-.007A.75.75 0 0 0 16.25 11H13V5.75zM1 17.5a5.5 5.5 0 0 1 5-5.477v5.77l-1.646-1.647a.5.5 0 0 0-.708.708l2.5 2.5a.5.5 0 0 0 .708 0l2.5-2.5a.5.5 0 0 0-.708-.708L7 17.793v-5.77A5.5 5.5 0 1 1 1 17.5m8.5 3A.5.5 0 0 0 9 20H4a.5.5 0 0 0 0 1h5a.5.5 0 0 0 .5-.5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default clockArrowDownload24Regular

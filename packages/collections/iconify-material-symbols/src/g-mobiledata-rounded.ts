@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const gMobiledataRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9 17q-.825 0-1.412-.587T7 15V9q0-.825.588-1.412T9 7h6q.425 0 .713.288T16 8t-.288.713T15 9H9v6h5v-2h-1q-.425 0-.712-.288T12 12t.288-.712T13 11h2q.425 0 .713.288T16 12v3q0 .825-.587 1.413T14 17z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default gMobiledataRounded

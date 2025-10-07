@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const calendarDataBar24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17.75 3A3.25 3.25 0 0 1 21 6.25v6.8a2.5 2.5 0 0 0-1 .45c0-.563-.186-1.082-.5-1.5V8.5h-15v9.25c0 .966.784 1.75 1.75 1.75H11V21H6.25A3.25 3.25 0 0 1 3 17.75V6.25A3.25 3.25 0 0 1 6.25 3zm0 1.5H6.25A1.75 1.75 0 0 0 4.5 6.25V7h15v-.75a1.75 1.75 0 0 0-1.75-1.75M17.5 12a1.5 1.5 0 0 0-1.5 1.5v8a1.5 1.5 0 0 0 3 0v-8a1.5 1.5 0 0 0-1.5-1.5m-4 4a1.5 1.5 0 0 0-1.5 1.5v4a1.5 1.5 0 0 0 3 0v-4a1.5 1.5 0 0 0-1.5-1.5m6.5-.5a1.5 1.5 0 0 1 3 0v6a1.5 1.5 0 0 1-3 0z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default calendarDataBar24Regular

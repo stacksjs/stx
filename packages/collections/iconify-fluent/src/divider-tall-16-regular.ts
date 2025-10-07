@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const dividerTall16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.5 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0v-13a.5.5 0 0 1 .5-.5\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default dividerTall16Regular

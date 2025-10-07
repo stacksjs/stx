@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const interfaceArrowsMoveRightDownExpandResizeBiggerCornerSmallSmallerSizeArrowArrowsBig: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m11.5.5l2 2l-2 2\"/><path d=\"M2.5 13.5v-10a1 1 0 0 1 1-1h10\"/><path d=\"m4.5 11.5l-2 2l-2-2\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default interfaceArrowsMoveRightDownExpandResizeBiggerCornerSmallSmallerSizeArrowArrowsBig

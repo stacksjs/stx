@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const baggageClaim: IconData = {
+  "body": "<path fill=\"#61b2e4\" d=\"M43 21h18v33H43z\"/><path fill=\"#92d3f5\" d=\"M11 21h32v33H11z\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M17 21.552h-5.657v31.761H17m.194-31.761h37.612v31.761H17.194zm37.944-.035l5.66.051l-.283 31.76l-5.66-.051\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M45 21.552h9.657v31.761H45\"/><circle cx=\"15.522\" cy=\"58.328\" r=\"1.672\"/><circle cx=\"9.672\" cy=\"58.328\" r=\"1.672\"/><circle cx=\"62.328\" cy=\"58.328\" r=\"1.672\"/><circle cx=\"56.478\" cy=\"58.328\" r=\"1.672\"/><circle cx=\"50.627\" cy=\"58.328\" r=\"1.672\"/><circle cx=\"44.776\" cy=\"58.328\" r=\"1.672\"/><circle cx=\"38.925\" cy=\"58.328\" r=\"1.672\"/><circle cx=\"33.075\" cy=\"58.328\" r=\"1.672\"/><circle cx=\"27.224\" cy=\"58.328\" r=\"1.672\"/><circle cx=\"21.373\" cy=\"58.328\" r=\"1.672\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M28 21v-4s0-4 4.714-4H39\"/><path d=\"M44 21v-4s0-4-4.714-4H33\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default baggageClaim

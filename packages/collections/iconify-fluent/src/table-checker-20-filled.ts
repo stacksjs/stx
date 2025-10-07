@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tableChecker20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 3v4H3V5.5A2.5 2.5 0 0 1 5.5 3zm5 5H8v4h4zm1 5h4v1.5a2.5 2.5 0 0 1-2.5 2.5H13zM8 4h6.5A1.5 1.5 0 0 1 16 5.5V12h1V5.5A2.5 2.5 0 0 0 14.5 3H8zM5.5 16H12v1H5.5A2.5 2.5 0 0 1 3 14.5V8h1v6.5A1.5 1.5 0 0 0 5.5 16\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default tableChecker20Filled

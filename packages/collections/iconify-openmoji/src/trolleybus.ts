@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const trolleybus: IconData = {
+  "body": "<path fill=\"#3f3f3f\" d=\"M31 21h14v3H31z\"/><path fill=\"#d0cfce\" d=\"M18 48h-.085A2.923 2.923 0 0 1 15 45.085v-18.17A2.923 2.923 0 0 1 17.915 24h40.17A2.923 2.923 0 0 1 61 26.915v18.17A2.923 2.923 0 0 1 58.085 48H58\"/><path fill=\"#61b2e4\" d=\"M15 38h45v9H15z\"/><path fill=\"#92d3f5\" d=\"M17 27h8v9h-8zm13 0h7v7h-7zm10 0h7v7h-7zm10 0h7v7h-7z\"/><path fill=\"#fff\" d=\"M16 38h5v3h-5z\"/><circle cx=\"54\" cy=\"48\" r=\"4\" fill=\"#d0cfce\"/><circle cx=\"22\" cy=\"48\" r=\"4\" fill=\"#d0cfce\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M50 48H26.121m4.788-24v-3H46v3m-7.545-3L47 11\"/><circle cx=\"22\" cy=\"48\" r=\"4\"/><circle cx=\"54\" cy=\"48\" r=\"4\"/><path d=\"M18 36h7v-8.1m5.875 6.1H37v-6.125M40.875 34H47v-6.125M50.875 34H57v-6.125\"/><path d=\"M18 48h-.085A2.923 2.923 0 0 1 15 45.085v-18.17A2.923 2.923 0 0 1 17.915 24h40.17A2.923 2.923 0 0 1 61 26.915v18.17A2.923 2.923 0 0 1 58.085 48H58\"/><path d=\"M17 41h4v-2\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default trolleybus

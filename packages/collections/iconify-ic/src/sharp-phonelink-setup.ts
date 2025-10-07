@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const sharpPhonelinkSetup: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 1v5h2V4h10v16H9v-2H7v5h14V1zm2.5 14.5c.29-.12.55-.29.8-.48l-.02.03l1.41.55l1.27-2.2l-1.18-.95l-.02.03c.02-.16.05-.32.05-.48s-.03-.32-.05-.48l.02.03l1.18-.95l-1.26-2.2l-1.41.55l.02.03c-.26-.19-.52-.36-.81-.48L9.27 7H6.73L6.5 8.5c-.29.12-.55.29-.8.48l.02-.03L4.3 8.4l-1.27 2.2l1.18.95l.02-.03c-.01.16-.04.32-.04.48s.03.32.05.48l-.02-.03l-1.18.95l1.27 2.2l1.41-.55l-.02-.03c.25.19.51.36.8.48l.23 1.5h2.54zM6 12c0-1.1.9-2 2-2s2 .9 2 2s-.9 2-2 2s-2-.9-2-2\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sharpPhonelinkSetup

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const starLineHorizontal316Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8.808 2.101a.9.9 0 0 0-1.614 0L5.673 5.183l-3.401.495a.9.9 0 0 0-.5 1.535l2.462 2.399l-.581 3.387a.9.9 0 0 0 1.306.949L8 12.348l.482.254A1.5 1.5 0 0 1 9.5 10a1.5 1.5 0 1 1 0-3a1.5 1.5 0 1 1 0-3h.245zM9.5 5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zm0 3a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zm0 3a.5.5 0 0 0 0 1h5a.5.5 0 1 0 0-1z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default starLineHorizontal316Filled

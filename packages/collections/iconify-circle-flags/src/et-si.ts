@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const etSi: IconData = {
+  "body": "<mask id=\"SVGuywqVbel\"><circle cx=\"256\" cy=\"256\" r=\"256\" fill=\"#fff\"/></mask><g mask=\"url(#SVGuywqVbel)\"><path fill=\"#496e2d\" d=\"M0 0h512v149H0Z\"/><path fill=\"#eee\" d=\"M0 149h512v32H0z\"/><path fill=\"#d80027\" d=\"M0 363h512v149H0Z\"/><path fill=\"#eee\" d=\"M0 331h512v32H0z\"/><path fill=\"#0052b4\" d=\"M0 181h512v150H0Z\"/><path fill=\"#eee\" d=\"m312 317l104-75H288l104 75l-40-122zm-203-32l49-36H98l49 36l-19-58zm64 32l49-36h-60l49 36l-19-58Zm0-64l49-36h-60l49 36l-19-58Z\"/></g>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default etSi

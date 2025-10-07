@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const gameboy: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M4 2h16v20H4z\"/><path d=\"M7 5h10v7H7zm2 10v4m2-2H7m10.5-1H16m-.5 2H14\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default gameboy

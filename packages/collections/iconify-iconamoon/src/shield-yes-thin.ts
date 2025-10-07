@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const shieldYesThin: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"currentColor\" d=\"m12 3l.197-.46a.5.5 0 0 0-.394 0zm0 18l-.248.434a.5.5 0 0 0 .496 0zm6.394-15.26l-.197.46zM8.024 18.727l-.249.435zM11.802 2.54L5.409 5.28l.394.92l6.394-2.74zM4.5 6.66v6.858h1V6.66zm3.275 12.502l3.977 2.272l.496-.868l-3.977-2.273zm4.473 2.272l3.977-2.272l-.496-.869l-3.977 2.273zm7.252-7.916V6.66h-1v6.86zm-.91-8.237l-6.393-2.74l-.394.919l6.394 2.74zm.91 1.378a1.5 1.5 0 0 0-.91-1.378l-.393.919a.5.5 0 0 1 .303.46zm-3.275 12.503a6.5 6.5 0 0 0 3.275-5.644h-1a5.5 5.5 0 0 1-2.771 4.775zM4.5 13.518a6.5 6.5 0 0 0 3.275 5.644l.496-.869A5.5 5.5 0 0 1 5.5 13.518zm.91-8.237a1.5 1.5 0 0 0-.91 1.378h1c0-.2.12-.38.303-.46z\"/><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m15 10l-4 4l-2-2\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default shieldYesThin

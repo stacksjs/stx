@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const numeric8BoxMultiple: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M13 11h2v2h-2zm0-4h2v2h-2zM3 5v16h16v2H3a2 2 0 0 1-2-2V5zm10 10h2a2 2 0 0 0 2-2v-1.5a1.5 1.5 0 0 0-1.5-1.5A1.5 1.5 0 0 0 17 8.5V7a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v1.5a1.5 1.5 0 0 0 1.5 1.5a1.5 1.5 0 0 0-1.5 1.5V13a2 2 0 0 0 2 2m8-14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default numeric8BoxMultiple

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const twotoneFactCheck: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 19h16V5H4zm9.41-8.25l1.41 1.42L17.99 9l1.42 1.42L14.82 15L12 12.16zM5 7h5v2H5zm0 4h5v2H5zm0 4h5v2H5z\" opacity=\".3\"/><path fill=\"currentColor\" d=\"M20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m0 16H4V5h16z\"/><path fill=\"currentColor\" d=\"M19.41 10.42L17.99 9l-3.17 3.17l-1.41-1.42L12 12.16L14.82 15zM5 7h5v2H5zm0 4h5v2H5zm0 4h5v2H5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default twotoneFactCheck

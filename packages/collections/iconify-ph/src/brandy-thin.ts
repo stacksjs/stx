@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const brandyThin: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M220 88a91.67 91.67 0 0 0-14.88-50.18a4 4 0 0 0-3.35-1.82H54.23a4 4 0 0 0-3.35 1.82A91.67 91.67 0 0 0 36 88a92.11 92.11 0 0 0 88 91.91V220H88a4 4 0 0 0 0 8h80a4 4 0 0 0 0-8h-36v-40.09A92.11 92.11 0 0 0 220 88M56.43 44h143.14a83.5 83.5 0 0 1 12.32 40H44.11a83.5 83.5 0 0 1 12.32-40M128 172a84.1 84.1 0 0 1-83.9-80h167.8a84.1 84.1 0 0 1-83.9 80\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default brandyThin

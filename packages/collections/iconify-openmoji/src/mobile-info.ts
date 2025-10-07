@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const mobileInfo: IconData = {
+  "body": "<rect width=\"34.043\" height=\"55.942\" x=\"14.182\" y=\"7.979\" fill=\"#9b9b9a\" rx=\"3.68\" ry=\"3.68\"/><path fill=\"#3f3f3f\" d=\"M44.393 54.996h-26.38a.975.975 0 0 1-.972-.973V15.117a.975.975 0 0 1 .973-.973h26.379a.975.975 0 0 1 .973.973v38.906a.92.92 0 0 1-.973.973\"/><path fill=\"#fcea2b\" d=\"M46.285 7.675a13.032 13.032 0 0 0-9.263 22.203l-2.673 8.581l7.173-5.624a13.032 13.032 0 1 0 4.763-25.16\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M45.366 37.468v16.555a.92.92 0 0 1-.973.973h-26.38a.975.975 0 0 1-.972-.973V15.117a.975.975 0 0 1 .973-.973h13.558\"/><circle cx=\"31.203\" cy=\"59.252\" r=\"1.945\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M33.334 11.226H26.34m21.885 25.635v23.38a3.69 3.69 0 0 1-3.68 3.68H17.862a3.69 3.69 0 0 1-3.68-3.68V11.659a3.69 3.69 0 0 1 3.68-3.68H36.97\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2.5\" d=\"M46.892 26.339v-5.745h-2.903m5.663 5.745h-5.729\"/><circle cx=\"46.589\" cy=\"15.602\" r=\"1.909\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M46.285 7.675A13.026 13.026 0 0 0 37.256 30.1l-2.604 8.36l7.077-5.548a13.03 13.03 0 1 0 4.556-25.236Z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default mobileInfo

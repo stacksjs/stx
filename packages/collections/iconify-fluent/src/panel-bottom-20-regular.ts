@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const panelBottom20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 3a3 3 0 0 0-3 3v7a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zM3 6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v5H3zm0 6h14v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default panelBottom20Regular

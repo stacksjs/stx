@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pr: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#EF0000\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/><mask id=\"SVGTrazyc7b\" width=\"32\" height=\"24\" x=\"0\" y=\"0\" maskUnits=\"userSpaceOnUse\" style=\"mask-type:luminance\"><path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/></mask><g mask=\"url(#SVGTrazyc7b)\"><path fill=\"#EF0000\" stroke=\"#F7FCFF\" stroke-width=\"4\" d=\"M0 8h-2v8h36V8z\"/></g><path fill=\"#3D58DB\" fill-rule=\"evenodd\" d=\"M0 0v24l18-12z\" clip-rule=\"evenodd\"/><mask id=\"SVGjmfFmE2g\" width=\"18\" height=\"24\" x=\"0\" y=\"0\" maskUnits=\"userSpaceOnUse\" style=\"mask-type:luminance\"><path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M0 0v24l18-12z\" clip-rule=\"evenodd\"/></mask><g mask=\"url(#SVGjmfFmE2g)\"><path fill=\"#F7FCFF\" fill-rule=\"evenodd\" d=\"m6.688 14.217l-3.672 1.938l1.787-3.894l-2.277-2.08l2.812-.104l1.35-3.52l1.03 3.52h2.807l-1.87 2.184l1.488 3.894z\" clip-rule=\"evenodd\"/></g></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default pr

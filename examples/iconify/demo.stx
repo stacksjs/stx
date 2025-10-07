@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iconify Integration Demo</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 1rem;
+    }
+    .icon-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    .icon-card {
+      padding: 1.5rem;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    .icon-card:hover {
+      border-color: #4a90e2;
+      box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
+    }
+    .icon-wrapper {
+      font-size: 48px;
+      margin-bottom: 0.5rem;
+      color: #4a90e2;
+    }
+    .icon-name {
+      font-size: 14px;
+      color: #666;
+      font-weight: 500;
+    }
+    .code-example {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-top: 2rem;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎨 Iconify Integration Demo</h1>
+    <p>This demo showcases the Iconify icon integration in stx templates.</p>
+
+    <div class="icon-grid">
+      <div class="icon-card">
+        <div class="icon-wrapper">
+          @js
+            import { house } from '@stx/iconify-lucide'
+            import { renderIcon } from '@stx/iconify-core'
+            global.houseIcon = renderIcon(house, { size: 48 })
+          @endjs
+          {!! houseIcon !!}
+        </div>
+        <div class="icon-name">house</div>
+      </div>
+
+      <div class="icon-card">
+        <div class="icon-wrapper">
+          @js
+            import { settings } from '@stx/iconify-lucide'
+            import { renderIcon } from '@stx/iconify-core'
+            global.settingsIcon = renderIcon(settings, { size: 48, color: '#4a90e2' })
+          @endjs
+          {!! settingsIcon !!}
+        </div>
+        <div class="icon-name">settings</div>
+      </div>
+
+      <div class="icon-card">
+        <div class="icon-wrapper">
+          @js
+            import { user } from '@stx/iconify-lucide'
+            import { renderIcon } from '@stx/iconify-core'
+            global.userIcon = renderIcon(user, { size: 48, rotate: 90 })
+          @endjs
+          {!! userIcon !!}
+        </div>
+        <div class="icon-name">user (rotated)</div>
+      </div>
+    </div>
+
+    <div class="code-example">
+      <h3>Usage Example:</h3>
+      <pre><code>@js
+  import { house } from '@stx/iconify-lucide'
+  import { renderIcon } from '@stx/iconify-core'
+
+  global.houseIcon = renderIcon(house, {
+    size: 48,
+    color: 'currentColor'
+  })
+@endjs
+
+{!! houseIcon !!}</code></pre>
+    </div>
+  </div>
+</body>
+</html>

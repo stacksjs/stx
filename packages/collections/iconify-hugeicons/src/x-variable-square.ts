@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const xVariableSquare: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"1.5\"><path d=\"M2.5 12c0-4.478 0-6.718 1.391-8.109S7.521 2.5 12 2.5c4.478 0 6.718 0 8.109 1.391S21.5 7.521 21.5 12c0 4.478 0 6.718-1.391 8.109S16.479 21.5 12 21.5c-4.478 0-6.718 0-8.109-1.391S2.5 16.479 2.5 12Z\"/><path stroke-linecap=\"round\" d=\"M16 9c-3.184 0-4.816 6.02-8 6.02\"/><path stroke-linecap=\"round\" d=\"M15.54 15.02c-.808 0-1.252 0-1.593-.12a1.8 1.8 0 0 1-.52-.284c-.265-.21-.41-.509-.7-1.108l-1.452-2.995c-.29-.6-.435-.9-.7-1.108a1.8 1.8 0 0 0-.52-.284C9.715 9 9.27 9 8.461 9\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default xVariableSquare

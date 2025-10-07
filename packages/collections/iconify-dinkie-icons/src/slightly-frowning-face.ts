@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const slightlyFrowningFace: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10 10H9v1h1Zm0 0h1V3h-1Zm-9 1h1v-1H1Zm1 1h7v-1H2Zm-2-2h1V3H0Zm3 0h1V9H3Zm1-1h3V8H4Zm3 1h1V9H7ZM3 6h1V4H3ZM1 3h1V2H1Zm6 3h1V4H7ZM2 2h7V1H2Zm7 1h1V2H9Zm0 0\"/>",
+  "width": 12,
+  "height": 12,
+  "viewBox": "0 0 12 12"
+}
+
+export default slightlyFrowningFace

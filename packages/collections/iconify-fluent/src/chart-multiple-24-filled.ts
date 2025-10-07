@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const chartMultiple24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M20 9.455v-.053A7.43 7.43 0 0 0 12.463 2a.476.476 0 0 0-.463.484V9.5a.5.5 0 0 0 .5.5h7.015c.261 0 .48-.201.484-.463zM10.5 4.5a.476.476 0 0 0-.5-.484a7.5 7.5 0 1 0 1.054 14.964A2.5 2.5 0 0 1 15 17.5v-1a2.5 2.5 0 0 1 2.573-2.499a7.5 7.5 0 0 0 .41-2a.476.476 0 0 0-.483-.501h-6a1 1 0 0 1-1-1zm9.5 9a1.5 1.5 0 0 1 3 0v8a1.5 1.5 0 0 1-3 0zM17.5 15a1.5 1.5 0 0 0-1.5 1.5v5a1.5 1.5 0 0 0 3 0v-5a1.5 1.5 0 0 0-1.5-1.5m-4 3a1.5 1.5 0 0 0-1.5 1.5v2a1.5 1.5 0 0 0 3 0v-2a1.5 1.5 0 0 0-1.5-1.5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default chartMultiple24Filled

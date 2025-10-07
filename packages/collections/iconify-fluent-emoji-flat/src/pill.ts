@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pill: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#FCD53F\" d=\"m21.415 21.405l-6.39 6.39a7.63 7.63 0 0 1-10.79 0a7.63 7.63 0 0 1 0-10.79l6.39-6.39l8.642 2.585z\"/><path fill=\"#F8312F\" d=\"m10.635 10.625l6.39-6.39a7.63 7.63 0 0 1 10.79 0a7.63 7.63 0 0 1 0 10.79l-6.39 6.39z\"/><path fill=\"#F4F4F4\" d=\"M26 12a2 2 0 1 0 0-4a2 2 0 0 0 0 4\"/></g>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default pill

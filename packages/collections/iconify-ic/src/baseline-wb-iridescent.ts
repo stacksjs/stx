@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const baselineWbIridescent: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 14.5h14v-6H5zM11 .55V3.5h2V.55zm8.04 2.5l-1.79 1.79l1.41 1.41l1.8-1.79zM13 22.45V19.5h-2v2.95zm7.45-3.91l-1.8-1.79l-1.41 1.41l1.79 1.8zM3.55 4.46l1.79 1.79l1.41-1.41l-1.79-1.79zm1.41 15.49l1.79-1.8l-1.41-1.41l-1.79 1.79z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default baselineWbIridescent

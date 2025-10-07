@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const terraformLight: IconData = {
+  "body": "<g fill=\"none\"><rect width=\"256\" height=\"256\" fill=\"#F4F2ED\" rx=\"60\"/><path fill=\"#5C4EE5\" fill-rule=\"evenodd\" d=\"M153.497 228v-63.119l-51.429-31.572v63.118zm0-70.017l-51.429-31.572V63.267l51.429 31.572z\" clip-rule=\"evenodd\"/><path fill=\"#4040B2\" fill-rule=\"evenodd\" d=\"M210.613 126.385V63.241L159.16 94.813v63.144z\" clip-rule=\"evenodd\"/><path fill=\"#5C4EE5\" fill-rule=\"evenodd\" d=\"M96.43 122.717V59.572L45 28v63.144z\" clip-rule=\"evenodd\"/></g>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default terraformLight

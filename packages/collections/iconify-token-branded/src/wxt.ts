@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const wxt: IconData = {
+  "body": "<path fill=\"#C9FFC6\" d=\"m18.573 6.79l-1.99 7.104l-1.941-7.105h-3.425l-1.914 7.105L7.3 6.79H4.874l.668 2.368H3v1.895h3.092l.454 1.421H3v1.895h4.106l.814 2.842h2.897l2.129-8.053l2.105 8.053h2.898L21 6.79z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default wxt

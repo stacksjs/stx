@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const mapSolidAlerted: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M33.68 15.4H22.23a3.68 3.68 0 0 1-3.18-5.51l.72-1.25L14 5.68V9h-2V5.27l-9.67 4a.52.52 0 0 0-.33.48v20.7a.54.54 0 0 0 .74.49L12 27.12V23h2v4.53l9 4.61V28h2v3.79l8.63-2.7a.54.54 0 0 0 .37-.51v-13.2ZM14 21h-2v-4h2Zm0-6h-2v-4h2Zm11 11h-2v-4h2Zm0-6h-2v-4h2Z\"/><path fill=\"currentColor\" d=\"m26.85 1.14l-5.72 9.91a1.27 1.27 0 0 0 1.1 1.95h11.45a1.27 1.27 0 0 0 1.1-1.91l-5.72-9.95a1.28 1.28 0 0 0-2.21 0\" class=\"clr-i-alert\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default mapSolidAlerted

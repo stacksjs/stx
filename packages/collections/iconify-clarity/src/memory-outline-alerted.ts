@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const memoryOutlineAlerted: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 12h4v8H8z\" class=\"clr-i-outline--alerted clr-i-outline-path-1--alerted\"/><path fill=\"currentColor\" d=\"M15 27H4V17H2v10a2 2 0 0 0 2 2h12.61v-3.45h2.26V24H15Z\" class=\"clr-i-outline--alerted clr-i-outline-path-2--alerted\"/><path fill=\"currentColor\" d=\"M32 17v10H19v2h13a2 2 0 0 0 2-2V17Z\" class=\"clr-i-outline--alerted clr-i-outline-path-3--alerted\"/><path fill=\"currentColor\" d=\"M19 13.56a3.66 3.66 0 0 1-.43-1.56H16v8h4v-5.36a3.7 3.7 0 0 1-1-1.08\" class=\"clr-i-outline--alerted clr-i-outline-path-4--alerted\"/><path fill=\"currentColor\" d=\"M24 15.4h4V20h-4z\" class=\"clr-i-outline--alerted clr-i-outline-path-5--alerted\"/><path fill=\"currentColor\" d=\"M4 9h15.56l1.15-2H4a2 2 0 0 0-2 2v4h2Z\" class=\"clr-i-outline--alerted clr-i-outline-path-6--alerted\"/><path fill=\"currentColor\" d=\"M26.85 1.14L21.13 11a1.28 1.28 0 0 0 1.1 2h11.45a1.28 1.28 0 0 0 1.1-2l-5.72-9.86a1.28 1.28 0 0 0-2.21 0\" class=\"clr-i-outline--alerted clr-i-outline-path-7--alerted clr-i-alert\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default memoryOutlineAlerted

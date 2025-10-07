@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const chevronCircleLeft24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12s4.477 10 10 10s10-4.477 10-10m-1.5 0a8.5 8.5 0 1 1-17 0a8.5 8.5 0 0 1 17 0m-6.47 4.53a.75.75 0 0 0 0-1.06L10.56 12l3.47-3.47a.75.75 0 0 0-1.06-1.06l-4 4a.75.75 0 0 0 0 1.06l4 4a.75.75 0 0 0 1.06 0\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default chevronCircleLeft24Regular

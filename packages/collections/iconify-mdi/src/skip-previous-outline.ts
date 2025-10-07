@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const skipPreviousOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 6h2v12H6m3.5-6l8.5 6V6m-2 8.14L12.97 12L16 9.86z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default skipPreviousOutline

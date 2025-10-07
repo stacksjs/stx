@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textBulletListRtl20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16.75 6a1.25 1.25 0 1 1 0-2.5a1.25 1.25 0 0 1 0 2.5M13 4.75a.75.75 0 0 0-.75-.75h-9.5a.75.75 0 0 0 0 1.5h9.5a.75.75 0 0 0 .75-.75M12.25 9a.75.75 0 0 1 0 1.5h-9.5a.75.75 0 0 1 0-1.5zm0 5a.75.75 0 0 1 0 1.5h-9.5a.75.75 0 0 1 0-1.5zm3.25-4.25a1.25 1.25 0 1 0 2.5 0a1.25 1.25 0 0 0-2.5 0M16.75 16a1.25 1.25 0 1 1 0-2.5a1.25 1.25 0 0 1 0 2.5\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default textBulletListRtl20Filled

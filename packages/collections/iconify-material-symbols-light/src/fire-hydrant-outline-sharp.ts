@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const fireHydrantOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.077 21v-1H7v-3.904H4.577v-4.192H7V8H5.077V7h2.042q.356-1.73 1.71-2.866Q10.185 3 12 3t3.17 1.135T16.88 7h2.043v1H17v3.904h2.423v4.192H17V20h1.923v1zM8.16 7h7.68q-.313-1.304-1.37-2.152T12 4t-2.47.848T8.16 7M8 20h8v-4.904h2.423v-2.192H16V8H8v4.904H5.577v2.192H8zm4-2.961q1.258 0 2.148-.89t.89-2.148t-.89-2.149t-2.147-.89t-2.149.89t-.89 2.147t.89 2.149t2.147.89m-.004-1q-.85 0-1.442-.596q-.592-.595-.592-1.447t.596-1.442q.596-.592 1.447-.592t1.443.596t.592 1.447t-.596 1.443t-1.447.592M12 8\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default fireHydrantOutlineSharp

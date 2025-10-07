@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const windowMultiple16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.5 2A2.5 2.5 0 0 0 2 4.5v5A2.5 2.5 0 0 0 4.5 12h5A2.5 2.5 0 0 0 12 9.5v-5A2.5 2.5 0 0 0 9.5 2zM3 5h8v4.5A1.5 1.5 0 0 1 9.5 11h-5A1.5 1.5 0 0 1 3 9.5zm3.5 9a2.5 2.5 0 0 1-2-1H10a3 3 0 0 0 3-3V4.5c.607.456 1 1.182 1 2V10a4 4 0 0 1-4 4z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default windowMultiple16Filled

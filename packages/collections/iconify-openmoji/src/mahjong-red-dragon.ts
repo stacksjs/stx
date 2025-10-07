@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const mahjongRedDragon: IconData = {
+  "body": "<path fill=\"#fff\" d=\"M17 8h38v56H17z\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M17 8h38v56H17zm19 8v40\"/><path d=\"M24 24h24v12H24z\"/></g><path fill=\"none\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M36 16v40M24 24h24v12H24z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default mahjongRedDragon

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const pluginSolidAlerted: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M29.81 16H29v-.6h-6.77A3.68 3.68 0 0 1 19 9.89l2-3.3A5.12 5.12 0 0 0 16.51 2A5 5 0 0 0 11 6.83H4a2 2 0 0 0-2 2V17h2.81A3.13 3.13 0 0 1 8 19.69A3 3 0 0 1 7.22 22A3 3 0 0 1 5 23H2v8.83a2 2 0 0 0 2 2h23a2 2 0 0 0 2-2V26h1a5 5 0 0 0 5-5.51A5.15 5.15 0 0 0 29.81 16\" class=\"clr-i-solid--alerted clr-i-solid-path-1--alerted\"/><path fill=\"currentColor\" d=\"M26.85 1.14L21.13 11a1.28 1.28 0 0 0 1.1 2h11.45a1.28 1.28 0 0 0 1.1-2l-5.72-9.86a1.28 1.28 0 0 0-2.21 0\" class=\"clr-i-solid--alerted clr-i-solid-path-2--alerted clr-i-alert\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default pluginSolidAlerted

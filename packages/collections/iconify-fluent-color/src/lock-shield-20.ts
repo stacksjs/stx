@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const lockShield20: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGoGtZFetI)\" fill-rule=\"evenodd\" d=\"M10 3a2 2 0 0 0-2 2v1.734H6.5V5a3.5 3.5 0 1 1 7 0v1.734H12V5a2 2 0 0 0-2-2\" clip-rule=\"evenodd\"/><path fill=\"url(#SVGoNynqcvo)\" d=\"M6 6a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V9a3 3 0 0 0-3-3z\"/><path fill=\"url(#SVGFYxNKdOK)\" d=\"M10 13a1 1 0 1 0 0-2a1 1 0 0 0 0 2\"/><path fill=\"url(#SVGV4e64djx)\" d=\"M6 6a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V9a3 3 0 0 0-3-3z\"/><path fill=\"url(#SVGbdZWxIYF)\" d=\"M14 18.524c-1.175-.603-2.97-1.945-3-4.524v-2.562c0-.277.225-.497.499-.536c1.37-.193 2.485-1.134 3.066-1.725A.6.6 0 0 1 15 9c.16 0 .32.059.435.177c.58.591 1.696 1.532 3.066 1.725c.274.039.499.26.499.536V14c-.03 2.579-1.825 3.921-3 4.524a6.5 6.5 0 0 1-.87.372a.4.4 0 0 1-.26 0a6.5 6.5 0 0 1-.87-.372\"/><defs><linearGradient id=\"SVGoGtZFetI\" x1=\"8\" x2=\"14.039\" y1=\".5\" y2=\"9.669\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFC205\"/><stop offset=\"1\" stop-color=\"#FB5937\"/></linearGradient><linearGradient id=\"SVGoNynqcvo\" x1=\"18\" x2=\"5.469\" y1=\"18.75\" y2=\"6.838\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FF6F47\"/><stop offset=\"1\" stop-color=\"#FFCD0F\"/></linearGradient><linearGradient id=\"SVGbdZWxIYF\" x1=\"12.5\" x2=\"20.018\" y1=\"9\" y2=\"17.701\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#62BE55\"/><stop offset=\"1\" stop-color=\"#1E794A\"/></linearGradient><radialGradient id=\"SVGFYxNKdOK\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(-.99997 -3.5 4.85626 -1.38747 10.5 13)\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#944600\"/><stop offset=\"1\" stop-color=\"#CD8E02\"/></radialGradient><radialGradient id=\"SVGV4e64djx\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"rotate(157.38 5.7 9.2)scale(6.5 7.02)\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#EB4824\"/><stop offset=\".99\" stop-color=\"#EB4824\" stop-opacity=\"0\"/></radialGradient></defs></g>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default lockShield20

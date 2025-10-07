@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const outlineStarRate: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m12 8.89l.94 3.11h2.82l-2.27 1.62l.93 3.01L12 14.79l-2.42 1.84l.93-3.01L8.24 12h2.82zM12 2l-2.42 8H2l6.17 4.41L5.83 22L12 17.31L18.18 22l-2.35-7.59L22 10h-7.58z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default outlineStarRate

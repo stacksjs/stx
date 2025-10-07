@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const flagWales: IconData = {
+  "body": "<path fill=\"#5c9e31\" d=\"M5 17h62v38H5z\"/><path fill=\"#fff\" d=\"M5 17h62v19H5z\"/><path fill=\"#d22f27\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M59 27.5V23l-2.769 3.462z\"/><ellipse cx=\"53\" cy=\"31\" fill=\"none\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" rx=\"1.5\" ry=\"1\"/><path fill=\"none\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M58 26c-1.283 3.724-2.744 6-5 6m0 18l-2-1h-3l-3 1.5m3-1.5l-2-1m5 1l-3-9M38 50l-2-1h-3l-3 1.5m3-1.5l-2-1m-8 2l-2-1h-3l-3 1.5m3-1.5l-2-1m5 1l6-6m-6 6l3-6m-10-5l1-2v-3l-1.5-3m1.5 3l1-2m-1 5l6 5m-9-18a4 4 0 0 0 4 4m0 0h2\"/><path fill=\"#d22f27\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m42 21l-6.586 6.586A5.57 5.57 0 0 0 34 31v1a3 3 0 0 1-3 3h-4V23h-5l-4 4h6c0 4.403-3 4.543-3 10v6h13l3.385 2.539L36 49l5-5c-2.5-1.619-1.118-4.5 1-5c2.338 2.447 6 3 9 3v-1.5L46 38h7v-2c-3.857 0-5.143-1-9-1a4 4 0 0 1 4-4c-2.796-2.327-.266-6.872 3-9c-3 2-4.5 3-6.5 3c-1.745 0-2.5-1.297-2.5-4\"/><path fill=\"none\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m41 44l2 1m8 4v-8.5m0 0l3 1.5m-1-6c2.591 0 4.327-2.553 3.366-4.162\"/><path fill=\"none\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M53 30a4 4 0 0 1 0 8M27 23l1-1m6 21H21a2.2 2.2 0 0 1-1.581-.814L15 36\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 17h62v38H5z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default flagWales

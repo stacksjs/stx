@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const squareArrowForward48Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 11.25C6 8.35 8.35 6 11.25 6h25.5C39.65 6 42 8.35 42 11.25v12.794c-.78-.5-1.618-.919-2.5-1.244V11.25a2.75 2.75 0 0 0-2.75-2.75h-25.5a2.75 2.75 0 0 0-2.75 2.75v25.5a2.75 2.75 0 0 0 2.75 2.75H22.8c.325.882.744 1.72 1.244 2.5H11.25A5.25 5.25 0 0 1 6 36.75zM24 35c0 6.075 4.925 11 11 11s11-4.925 11-11s-4.925-11-11-11s-11 4.925-11 11m14.293-3.293a1 1 0 0 1 1.414-1.414l3 3a1 1 0 0 1 0 1.414l-3 3a1 1 0 0 1-1.414-1.414L39.586 35H34a4 4 0 0 0-4 4a1 1 0 1 1-2 0a6 6 0 0 1 6-6h5.586z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default squareArrowForward48Regular

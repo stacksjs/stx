@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textColor24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17.75 14.5A2.25 2.25 0 0 1 20 16.75v3A2.25 2.25 0 0 1 17.75 22H5.25A2.25 2.25 0 0 1 3 19.75v-3a2.25 2.25 0 0 1 2.25-2.25zM7.053 11.97l3.753-9.496a.75.75 0 0 1 1.345-.104l.05.105l3.747 9.5a.75.75 0 0 1-1.352.643l-.044-.092L13.556 10H9.443l-.996 2.52a.75.75 0 0 1-.876.454l-.097-.031a.75.75 0 0 1-.453-.876zl3.753-9.495zm4.45-7.178L10.036 8.5h2.928z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default textColor24Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const cellularData520Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.5 12a.5.5 0 0 1 .492.41L5 12.5v3a.5.5 0 0 1-.992.09L4 15.5v-3a.5.5 0 0 1 .5-.5\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default cellularData520Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const jinja: IconData = {
+  "body": "<path fill=\"none\" stroke=\"#ed8796\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M1.5 1.5c3.78 1.03 8.02 1.54 13 0L13 5c-3.5.75-6.5.75-10 0zm0 6.09C6 8.75 10 8.75 14.5 7.5m-9-1.52v8.52m-3 0h4m3 0h4m-3-8.52v8.52M3.5 8v6.5m9-6.5v6.5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default jinja

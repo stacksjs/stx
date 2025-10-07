@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const vinylRecordFill: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24M72 128a8 8 0 0 1-16 0a72.08 72.08 0 0 1 72-72a8 8 0 0 1 0 16a56.06 56.06 0 0 0-56 56m32 0a24 24 0 1 1 24 24a24 24 0 0 1-24-24m24 72a8 8 0 0 1 0-16a56.06 56.06 0 0 0 56-56a8 8 0 0 1 16 0a72.08 72.08 0 0 1-72 72\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default vinylRecordFill

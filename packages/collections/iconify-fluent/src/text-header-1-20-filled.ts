@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textHeader120Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9.25 4a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-1.5 0V10.5h-5v4.75a.75.75 0 0 1-1.5 0V4.75a.75.75 0 0 1 1.5 0V9h5V4.75A.75.75 0 0 1 9.25 4m7.111.008a.75.75 0 0 1 .64.742v10.5a.75.75 0 0 1-1.5 0V7.463a9.5 9.5 0 0 1-1.813 1.65l-.066.041a.75.75 0 0 1-.794-1.27l.388-.288a7.7 7.7 0 0 0 1.786-1.985c.205-.33.341-.611.425-.805q.061-.145.088-.217l.02-.059a.75.75 0 0 1 .826-.522\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default textHeader120Filled

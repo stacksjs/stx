@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const wifi420Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10.963 13.787a1.298 1.298 0 1 1-1.836 1.836a1.298 1.298 0 0 1 1.836-1.836\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default wifi420Regular

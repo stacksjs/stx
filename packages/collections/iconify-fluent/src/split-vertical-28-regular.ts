@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const splitVertical28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12.998 25.25a.75.75 0 0 0 1.5 0V2.75a.75.75 0 0 0-1.5 0zM4.75 4A2.75 2.75 0 0 0 2 6.75v14.5A2.75 2.75 0 0 0 4.75 24h7.248v-1.5H4.75a1.25 1.25 0 0 1-1.25-1.25V6.75c0-.69.559-1.25 1.25-1.25h7.247V4zm18 18.5h-7.252V24h7.252a2.75 2.75 0 0 0 2.75-2.75V6.75A2.75 2.75 0 0 0 22.75 4h-7.252v1.5h7.252c.69 0 1.25.56 1.25 1.25v14.5c0 .69-.56 1.25-1.25 1.25\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default splitVertical28Regular

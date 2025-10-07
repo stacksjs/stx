@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const mobileChatOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 21V3zm10 0v-2zm-2-6h5v-3h-5zm-2 4v-8q0-.425.288-.712T14 10h7q.425 0 .713.288T22 11v5q0 .425-.288.713T21 17h-6zm-6 4q-.825 0-1.412-.587T5 21V3q0-.825.588-1.412T7 1h10q.825 0 1.413.588T19 3v5h-2V3H7v18h10v-2h2v2q0 .825-.587 1.413T17 23zm5-17q.425 0 .713-.288T13 5t-.288-.712T12 4t-.712.288T11 5t.288.713T12 6m3 9v-3z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default mobileChatOutline

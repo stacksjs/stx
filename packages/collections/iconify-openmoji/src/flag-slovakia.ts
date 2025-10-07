@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const flagSlovakia: IconData = {
+  "body": "<path fill=\"#d22f27\" d=\"M5 17h62v38H5z\"/><path fill=\"#fff\" d=\"M5 17h62v13H5z\"/><path fill=\"#1e50a0\" d=\"M5 30h62v12H5z\"/><path fill=\"#d22f27\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M23.833 45s6.75-2.25 6.75-9v-9h-13.5v9c0 6.75 6.75 9 6.75 9\"/><path fill=\"none\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M23.833 29.5v12m-2-10h4m-5.5 3h7\"/><circle cx=\"23.833\" cy=\"41.5\" r=\"3.167\" fill=\"#1e50a0\"/><path fill=\"#1e50a0\" d=\"M19.25 39.333a2.15 2.15 0 0 0-1.326.465a9.6 9.6 0 0 0 2.702 3.363a2.158 2.158 0 0 0-1.376-3.828m9.167 0a2.158 2.158 0 0 0-1.376 3.828a9.6 9.6 0 0 0 2.702-3.363a2.15 2.15 0 0 0-1.326-.465\"/><path fill=\"none\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M23.833 45s6.75-2.25 6.75-9v-9h-13.5v9c0 6.75 6.75 9 6.75 9\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 17h62v38H5z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default flagSlovakia

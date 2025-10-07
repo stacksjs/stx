@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const credi: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGWVnQcARs)\" d=\"m9.582 12.638l3.26 3.274a.974.974 0 0 1 0 1.39L11.1 19.006c-.39.39-1.021.39-1.415 0l-6.392-6.323a.974.974 0 0 1 0-1.392l6.406-6.299a1.007 1.007 0 0 1 1.41 0l1.733 1.703a.973.973 0 0 1 0 1.396l-3.26 3.288a.88.88 0 0 0-.257.623c0 .228.087.457.257.637m6.791-2.505a.97.97 0 0 0 0-1.391l-.661-.652a1.004 1.004 0 0 0-1.416 0l-3.22 3.21a.974.974 0 0 0 0 1.396l3.22 3.201a1 1 0 0 0 1.41 0l.667-.652a.97.97 0 0 0 0-1.391l-1.518-1.44a.6.6 0 0 1-.18-.413a.6.6 0 0 1 .18-.428zm1.372.083L16.43 11.32a.97.97 0 0 0 0 1.39l1.314 1.086c.194.194.569.292.822.292c.258 0 .632-.098.827-.292l1.313-1.085a.98.98 0 0 0 .217-1.073a1 1 0 0 0-.217-.318l-1.313-1.104a1.27 1.27 0 0 0-.827-.302c-.253 0-.633.102-.827.302z\"/><defs><linearGradient id=\"SVGWVnQcARs\" x1=\"3.011\" x2=\"20.97\" y1=\"12.001\" y2=\"12.001\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".03\" stop-color=\"#1D398C\"/><stop offset=\".21\" stop-color=\"#1E3D8F\"/><stop offset=\".38\" stop-color=\"#214997\"/><stop offset=\".55\" stop-color=\"#255CA4\"/><stop offset=\".72\" stop-color=\"#2C78B7\"/><stop offset=\".89\" stop-color=\"#349BCE\"/><stop offset=\"1\" stop-color=\"#3BB7E1\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default credi

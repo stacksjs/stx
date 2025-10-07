@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const eraserMedium24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12.651 2.638a2.25 2.25 0 0 1 3.19.023l4.91 5.008a2.25 2.25 0 0 1-.007 3.158l-.687.695a6.5 6.5 0 0 0-9.043 5.552l-5.377-5.376l-1.529 1.514a.75.75 0 0 0 .003 1.068l5.099 5.008a.75.75 0 0 0 1.058-.008l.804-.812a6.4 6.4 0 0 0 .477 1.65l-.214.217a2.25 2.25 0 0 1-3.176.023l-5.1-5.008a2.25 2.25 0 0 1-.006-3.204zM17.5 12a5.495 5.495 0 0 1 5.5 5.5a5.5 5.5 0 1 1-5.5-5.5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default eraserMedium24Filled

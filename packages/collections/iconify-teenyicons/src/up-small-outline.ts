@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const upSmallOutline: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"square\" d=\"m10.5 8.5l-3-3l-3 3\"/>",
+  "width": 15,
+  "height": 15,
+  "viewBox": "0 0 15 15"
+}
+
+export default upSmallOutline

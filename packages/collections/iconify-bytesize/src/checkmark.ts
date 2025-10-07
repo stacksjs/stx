@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const checkmark: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m2 20l10 8L30 4\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default checkmark

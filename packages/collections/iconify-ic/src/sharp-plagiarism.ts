@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const sharpPlagiarism: IconData = {
+  "body": "<circle cx=\"11.5\" cy=\"14.5\" r=\"1.5\" fill=\"currentColor\"/><path fill=\"currentColor\" d=\"M14 2H4v20h16V8zm1.04 17.45l-1.88-1.88c-1.33.71-3.01.53-4.13-.59a3.495 3.495 0 0 1 0-4.95a3.495 3.495 0 0 1 4.95 0a3.48 3.48 0 0 1 .59 4.13l1.88 1.88zM13 9V3.5L18.5 9z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sharpPlagiarism

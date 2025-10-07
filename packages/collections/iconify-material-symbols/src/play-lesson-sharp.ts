@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const playLessonSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 22V2h16v9.1q-.45-.05-1-.05t-1 .05q-2.725.4-4.362 2.4T11 18q0 1.1.338 2.088T12.25 22zm15 1q-2.075 0-3.537-1.463T13 18t1.463-3.537T18 13t3.538 1.463T23 18t-1.463 3.538T18 23m-1.25-2.5l4-2.5l-4-2.5zM7 11l2.5-1.5L12 11V4H7z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default playLessonSharp

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const documentRibbon16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 1v3.5A1.5 1.5 0 0 0 9.5 6H13v7.5a1.5 1.5 0 0 1-1.5 1.5H6.976Q7 14.88 7 14.75v-3.105a4 4 0 0 0-4-6.52V2.5A1.5 1.5 0 0 1 4.5 1zm1 .25V4.5a.5.5 0 0 0 .5.5h3.25zM7 9a3 3 0 1 1-6 0a3 3 0 0 1 6 0m-1 3.464A4 4 0 0 1 4 13a4 4 0 0 1-2-.535v2.286a.25.25 0 0 0 .378.214L4 14l1.622.965A.25.25 0 0 0 6 14.75z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default documentRibbon16Filled

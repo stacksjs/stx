@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const nats: IconData = {
+  "body": "<path fill=\"#34a574\" d=\"M63.998 0h61.82v50.12h-61.82z\"/><path fill=\"#27aae1\" d=\"M2.182 0h61.816v50.12H2.182Z\"/><path fill=\"#8dc63f\" d=\"M63.998 50.164h61.82v50.113h-61.82z\"/><path fill=\"#375c93\" d=\"M2.182 50.164h61.816v50.113H2.182Z\"/><path fill=\"#8dc63f\" d=\"M54.914 100.004L85.16 128v-27.996z\"/><path fill=\"#375c93\" d=\"m63.998 100.004l.322 8.812l-9.685-9.042z\"/><path fill=\"#fff\" d=\"M89.608 64.802V23.315h14.779v53.651H81.993l-45.21-42.223v42.269H21.958V23.316h23.177l44.472 41.486z\"/>",
+  "width": 128,
+  "height": 128,
+  "viewBox": "0 0 128 128"
+}
+
+export default nats

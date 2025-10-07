@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const desktopTowerMonitor: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M22 18h-5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1m0-10h-5v1h5zm0 2h-5v1h5zM9 15v2h1v1H5v-1h1v-2H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1zm3-7H3v5h9z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default desktopTowerMonitor

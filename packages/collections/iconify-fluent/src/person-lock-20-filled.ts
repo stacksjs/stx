@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const personLock20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 6a4 4 0 1 1 8 0a4 4 0 0 1-8 0m-3 7c0-1.113.903-2 2.009-2h8.662c-.11.313-.171.65-.171 1v.063A2 2 0 0 0 11 14v3.838c-.638.109-1.31.162-2 .162c-1.855 0-3.583-.386-4.865-1.203C2.833 15.967 2 14.69 2 13m11.5 0v-1a2 2 0 1 1 4 0v1h.5a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1zm1-1v1h2v-1a1 1 0 1 0-2 0m1.75 4a.75.75 0 1 0-1.5 0a.75.75 0 0 0 1.5 0\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default personLock20Filled

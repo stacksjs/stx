@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const notebookLightning20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.5 5a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5v-2a.5.5 0 0 0-.5-.5zM6 7V6h6v1zM3 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6.86l1.072-1H13a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v5.119a1.5 1.5 0 0 0-.8.804l-.2.48zm13 2h.5a.5.5 0 0 1 .5.5V8a.5.5 0 0 1-.5.5H16zm.5 3.5H16V12h.5a.5.5 0 0 0 .5-.5V10a.5.5 0 0 0-.5-.5M16 13h.5a.5.5 0 0 1 .5.5V15a.5.5 0 0 1-.5.5H16zM2.502 16h1.75l-.59 2.36c-.12.482.463.826.827.486l4.872-4.548A.75.75 0 0 0 8.85 13H7.752l.781-2.342A.5.5 0 0 0 8.06 10H4.586a.5.5 0 0 0-.462.308l-2.083 5a.5.5 0 0 0 .461.692\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default notebookLightning20Regular

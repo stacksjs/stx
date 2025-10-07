@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textLineSpacing20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17.78 4.22a.75.75 0 0 1-1.06 1.06L16 4.56v3.69a.75.75 0 0 1-1.5 0V4.56l-.72.72a.75.75 0 1 1-1.06-1.06l2-2a.75.75 0 0 1 1.06 0zM3 4.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 0 1.5h-5.5A.75.75 0 0 1 3 4.25M15.25 11a.75.75 0 0 1 .75.75v3.69l.72-.72a.75.75 0 1 1 1.06 1.06l-2 2a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 1 1 1.06-1.06l.72.72v-3.69a.75.75 0 0 1 .75-.75M3 9.25a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 3 9.25m.75 4.25a.75.75 0 0 0 0 1.5h5.5a.75.75 0 0 0 0-1.5z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default textLineSpacing20Filled

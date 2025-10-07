@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const printerPosCheck: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17 9H7V4h10zm2 4c-3.31 0-6 2.69-6 6H4v-7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1.09c-.33-.05-.66-.09-1-.09m-9-1H6v2h4zm11.34 3.84l-3.59 3.59l-1.59-1.59L15 19l2.75 3l4.75-4.75z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default printerPosCheck

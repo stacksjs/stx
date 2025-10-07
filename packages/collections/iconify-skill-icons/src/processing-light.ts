@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const processingLight: IconData = {
+  "body": "<g fill=\"none\"><rect width=\"256\" height=\"256\" fill=\"#F4F4ED\" rx=\"60\"/><path stroke=\"#0468FF\" stroke-width=\"42.286\" d=\"M138.572 170.762c84.571 0 84.571-112.762 0-112.762\"/><path stroke=\"#1F34AB\" stroke-width=\"42.286\" d=\"M138.571 86.19L54 198.952\"/><path stroke=\"#85AEFF\" stroke-width=\"42.286\" d=\"m54 114.381l28.19 56.381\"/></g>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default processingLight

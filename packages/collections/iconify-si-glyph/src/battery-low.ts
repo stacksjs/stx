@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const batteryLow: IconData = {
+  "body": "<g fill=\"currentColor\" fill-rule=\"evenodd\"><path d=\"M7.062 13.508c0 .248.21.451.467.451h3.912c.255 0 .559-.203.559-.451v-2.407l-4.938 2.056z\"/><path d=\"M12.252 1H11V.016H8.023V1H6.715c-.936 0-1.694.658-1.694 1.583v11.742c0 .924.759 1.675 1.694 1.675h5.536c.936 0 1.694-.751 1.694-1.675V2.583C13.946 1.658 13.188 1 12.252 1M13 14c0 .516-.484 1-1 1H7c-.515 0-1.064-.484-1.064-1V3c0-.514.55-1.051 1.064-1.051h5c.516 0 1 .536 1 1.051z\"/></g>",
+  "width": 17,
+  "height": 24,
+  "viewBox": "0 0 17 24"
+}
+
+export default batteryLow

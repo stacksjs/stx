@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const arrowForwardDownLightning20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M13.611 4.319L16.294 7H12l-.262-.005C8.808 6.906 7 5.274 7 3a.5.5 0 0 0-1 0l.005.208C6.115 6.025 8.479 8 12 8l4.293.001l-2.683 2.682l-.058.069a.5.5 0 0 0 .765.638l3.55-3.551l.055-.072l.04-.075l.02-.063l.016-.086v-.067L18 7.5a.5.5 0 0 0-.012-.104l-.005-.021l-.022-.068l-.028-.056l-.05-.07l-3.565-3.57l-.07-.057a.5.5 0 0 0-.638.765M2.502 16h1.75l-.59 2.36c-.12.482.463.826.827.486l4.872-4.548A.75.75 0 0 0 8.85 13H7.752l.781-2.342A.5.5 0 0 0 8.06 10H4.586a.5.5 0 0 0-.462.308l-2.083 5a.5.5 0 0 0 .461.692\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default arrowForwardDownLightning20Regular

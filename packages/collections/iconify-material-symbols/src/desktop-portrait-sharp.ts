@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const desktopPortraitSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11 18h5V9h-5zm-3-3h1.5V7.5H13V6H8zm12 7H4V2h16z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default desktopPortraitSharp

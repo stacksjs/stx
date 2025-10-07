@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const outlineAssistantPhoto: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m12.36 6l.08.39l.32 1.61H18v6h-3.36l-.08-.39l-.32-1.61H7V6zM14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default outlineAssistantPhoto

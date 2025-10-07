@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const cityscapeAtDusk: IconData = {
+  "body": "<path fill=\"#e27022\" d=\"M4 3.898h64V68H4z\"/><path fill=\"#9b9b9a\" d=\"M9.923 46V29h10v17m14-13h13v35h-13z\"/><path fill=\"#d0cfce\" d=\"M50.923 68V37h16v31m-62 0V46h34v22\"/><path fill=\"#fcea2b\" d=\"M8.923 49.004h2.991v5.997H8.923zm6 0h2.991v5.997h-2.991zm12 0h2.991v5.997h-2.991zm6 0h2.991v5.997h-2.991zm22-9h2.991v5.997h-2.991zm6 10h2.991v5.997h-2.991zm0 10h2.991v5.997h-2.991zm-6 0h2.991v5.997h-2.991zm-22-1h2.991v5.997h-2.991zm-12 0h2.991v5.997h-2.991zm-12 0h2.991v5.997H8.923z\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M50.924 66.629v-30h16v30m-62 0v-21h34v21\"/><path d=\"M34.924 42.629v-10h12v34m-36-24v-14h8v14m38 3h-2v-5m8 15h-2v-5m-32 4h-2v-5m8 5h-2v-5m2 15h-2v-5m-16-5h-2v-5m-4 5h-2v-5m2 15h-2v-5m14 5h-2v-5m36 6h-2v-5m8 5h-2v-5m-46-29v11m24-7v7m4-7v31\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default cityscapeAtDusk

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const bithumb: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#D53127\" d=\"M6.007 7.287h2.562L6.577 12.16s-1.042-.017-1.36-.927a1.44 1.44 0 0 1-.022-.835z\"/><path fill=\"#F47320\" d=\"m15.944 7.391l-3.258-.057l.733-2.418A1.483 1.483 0 0 0 12.005 3H9.03l-3.4 12.21s-1.218 5.222 3.4 5.695c0 0 7.3 1.492 9.643-7.329c0 0 1.236-5.335-2.73-6.185m-2.227 6.056s-.13 2.253-1.83 2.648a1.1 1.1 0 0 1-.75-.077c-.266-.136-.54-.418-.534-1.01q.006-.256.082-.504l.627-2.344h1.714s.776.252.691 1.287\"/><path fill=\"url(#SVGr8pogdHE)\" d=\"M18.83 11.117c-.312-3.584-2.886-3.726-2.886-3.726l-3.258-.057l-1.4 4.854h1.71c.313.017.885.535.7 1.452\"/><defs><linearGradient id=\"SVGr8pogdHE\" x1=\"18.231\" x2=\"13.097\" y1=\"15.912\" y2=\"8.033\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".41\" stop-color=\"#F47320\"/><stop offset=\".5\" stop-color=\"#F16D21\"/><stop offset=\".62\" stop-color=\"#E95C22\"/><stop offset=\".75\" stop-color=\"#DC4125\"/><stop offset=\".81\" stop-color=\"#D53127\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default bithumb

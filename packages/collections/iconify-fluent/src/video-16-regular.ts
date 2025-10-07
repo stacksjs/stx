@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const video16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3.5 3A2.5 2.5 0 0 0 1 5.5v5A2.5 2.5 0 0 0 3.5 13h5a2.5 2.5 0 0 0 2.5-2.5v-.127l2.035 1.405a1.25 1.25 0 0 0 1.96-1.028V5.252a1.25 1.25 0 0 0-1.96-1.028L11 5.629V5.5A2.5 2.5 0 0 0 8.5 3zM11 6.844l2.604-1.798a.25.25 0 0 1 .392.206v5.498a.25.25 0 0 1-.392.205L11 9.158zM2 5.5A1.5 1.5 0 0 1 3.5 4h5A1.5 1.5 0 0 1 10 5.5v5A1.5 1.5 0 0 1 8.5 12h-5A1.5 1.5 0 0 1 2 10.5z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default video16Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const paintBrushSubtract28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17 6.25a.75.75 0 0 1-1.5 0V2H6.75a.75.75 0 0 0-.75.75V13h16V2.75a.75.75 0 0 0-.75-.75H20v6.25a.75.75 0 0 1-1.5 0V2H17zM13 20.5a7.49 7.49 0 0 1 3-6H6v1.75A2.75 2.75 0 0 0 8.75 19H11v4a3 3 0 0 0 4.16 2.767A7.48 7.48 0 0 1 13 20.5m7.5 6.5a6.5 6.5 0 1 0 0-13a6.5 6.5 0 0 0 0 13M16 20.5a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 0 1h-8a.5.5 0 0 1-.5-.5\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default paintBrushSubtract28Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const inprivateAccount28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M21 16c1.306 0 2.418.835 2.83 2H14v-.5H7a1.5 1.5 0 0 0-1.493 1.355L5.5 19v.715c0 2.674 3.389 4.785 8.5 4.785V24h7.471c-1.79 1.243-4.41 2-7.471 2c-5.79 0-10-2.567-10-6.285V19a3 3 0 0 1 3-3zm3 3v.715q0 .4-.07.785H14V19zm-.371 2.5H14V23h8.634c.427-.461.763-.964.995-1.5M19.954 7.25a6 6 0 0 1 0 1.5H14v-1.5zm-.213-1a6 6 0 0 0-.697-1.5H14v1.5zM14 2c1.653 0 3.15.669 4.235 1.75H14V3.5a4.5 4.5 0 1 0 0 9v-.25h4.235A6 6 0 1 1 14 2m5.044 9.25H14v-1.5h5.74a6 6 0 0 1-.696 1.5\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default inprivateAccount28Regular

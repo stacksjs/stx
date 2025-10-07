@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const boltSlash16Solid: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9.58 1.077a.75.75 0 0 1 .405.82L9.165 6h4.085a.75.75 0 0 1 .567 1.241l-1.904 2.197L6.385 3.91l2.298-2.65a.75.75 0 0 1 .897-.182M4.087 6.562l5.528 5.528l-2.298 2.651a.75.75 0 0 1-1.302-.638L6.835 10H2.75a.75.75 0 0 1-.567-1.241zM2.22 2.22a.75.75 0 0 1 1.06 0l10.5 10.5a.75.75 0 1 1-1.06 1.06L2.22 3.28a.75.75 0 0 1 0-1.06\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default boltSlash16Solid

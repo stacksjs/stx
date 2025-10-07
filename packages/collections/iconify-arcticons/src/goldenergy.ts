@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const goldenergy: IconData = {
+  "body": "<rect width=\"37\" height=\"37\" x=\"5.5\" y=\"5.5\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"4\" ry=\"4\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19.153 30.967a1.45 1.45 0 0 1-1.26.732h0a1.45 1.45 0 0 1-1.451-1.45v-.943c0-.801.65-1.45 1.45-1.45h0c.801 0 1.45.649 1.45 1.45v.471h-2.9M27.805 30.9c-.25.438-.723.733-1.264.733h0a1.454 1.454 0 0 1-1.454-1.454v-.945c0-.803.651-1.454 1.454-1.454h0c.803 0 1.454.651 1.454 1.454v.473h-2.908m-1.437 2.022v-2.433c0-.815-.66-1.475-1.474-1.475h0c-.814 0-1.475.66-1.475 1.475m0 2.433v-3.908m8.692 1.429c0-.801.65-1.45 1.451-1.45h0m-1.451-.001v3.847m5.435-3.87v4.354c0 .801-.65 1.451-1.452 1.451h0c-.4 0-.763-.162-1.026-.425\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M33.376 31.622c-.801 0-1.451-.65-1.451-1.452v-.943c0-.802.65-1.451 1.451-1.451h0c.802 0 1.452.65 1.452 1.45v.944c0 .802-.65 1.452-1.452 1.452m6.124-1.395v1.954c0 .8-.648 1.448-1.448 1.448h0c-.4 0-.761-.162-1.023-.424\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M39.5 27.839v2.388c0 .8-.648 1.448-1.448 1.448h0c-.8 0-1.447-.648-1.447-1.448V27.84m-22.893-9.686v7.818a2.606 2.606 0 0 1-2.606 2.606h0a2.6 2.6 0 0 1-1.843-.763\"/><rect width=\"5.212\" height=\"6.906\" x=\"8.5\" y=\"18.154\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"2.606\" ry=\"2.606\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M16.442 21.125a2.803 2.803 0 1 1 5.606 0v1.821a2.803 2.803 0 1 1-5.606 0zm8.544-6.521v9.786c0 .772.626 1.398 1.398 1.398h.42m8.018-4.718a2.85 2.85 0 0 0-2.851-2.85h0a2.85 2.85 0 0 0-2.85 2.85v1.853a2.85 2.85 0 0 0 2.85 2.85h0a2.85 2.85 0 0 0 2.85-2.85m.001 2.85V14.371\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default goldenergy

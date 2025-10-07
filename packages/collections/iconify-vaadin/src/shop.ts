@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const shop: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M0 15h16v1H0zM0 0v6c.005.732.401 1.37.991 1.715L1 14h9V9h3v5h2V7.72c.599-.35.995-.988 1-1.719V0zm4 2h2v4a1 1 0 0 1-2 0zM2 7a1 1 0 0 1-1-1V2h2v4a1 1 0 0 1-1 1m6 5H3V9h5zm1-6a1 1 0 0 1-2 0V2h2zm3 0a1 1 0 0 1-2 0V2h2zm3 0a1 1 0 0 1-2 0V2h2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default shop

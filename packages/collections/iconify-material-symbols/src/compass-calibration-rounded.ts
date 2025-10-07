@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const compassCalibrationRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 22q-2.075 0-3.537-1.463T7 17t1.463-3.537T12 12t3.538 1.463T17 17t-1.463 3.538T12 22m0-12q-1.2 0-2.312.388T7.7 11.55q-.3.275-.687.25t-.663-.3L2.775 7.925q-.3-.3-.3-.75t.35-.725Q4.775 4.8 7.113 3.9T12 3t4.888.9t4.287 2.55q.35.275.35.725t-.3.75L17.65 11.5q-.275.275-.662.3t-.688-.25q-.875-.775-1.987-1.162T12 10\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default compassCalibrationRounded

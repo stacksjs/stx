@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tvRemoteSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 15q1.25 0 2.125-.875T15 12t-.875-2.125T12 9t-2.125.875T9 12t.875 2.125T12 15m-5 8V1h10v22zm5-9.5q-.625 0-1.062-.437T10.5 12t.438-1.062T12 10.5t1.063.438T13.5 12t-.437 1.063T12 13.5M12 6q.425 0 .713-.288T13 5t-.288-.712T12 4t-.712.288T11 5t.288.713T12 6\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default tvRemoteSharp

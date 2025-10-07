@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const ignoreConversation: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M256 512h1792v640h-128V760l-768 384l-768-384v776h640v128H256zm175 128l721 360l721-360zm1361-384v128H128v1024H0V256zm-192 896q93 0 174 35t143 96t96 142t35 175q0 93-35 174t-96 143t-142 96t-175 35q-93 0-174-35t-143-96t-96-142t-35-175q0-93 35-174t96-143t142-96t175-35m-320 448q0 66 25 124t68 102t102 69t125 25q47 0 92-13t84-40l-443-443q-26 39-39 84t-14 92m587 176q26-39 39-84t14-92q0-66-25-124t-69-101t-102-69t-124-26q-47 0-92 13t-84 40z\"/>",
+  "width": 2048,
+  "height": 2048,
+  "viewBox": "0 0 2048 2048"
+}
+
+export default ignoreConversation

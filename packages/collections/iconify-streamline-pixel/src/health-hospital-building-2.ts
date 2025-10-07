@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const healthHospitalBuilding2: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M28.96 15.24v-1.52h1.52v-1.53H32V7.62h-1.52V6.1h-1.52V4.57h-4.57V6.1h-1.53v1.52h-1.52V4.57h1.52V0H0v4.57h1.53V32h1.52V4.57h16.76V32h1.53V18.29h9.14V32H32V16.77H21.34v-4.58h1.52v1.53h1.53v1.52ZM1.53 3.05V1.53h19.81v1.52Zm22.86 6.1h1.52V7.62h1.52v1.53h1.53v1.52h-1.53v1.52h-1.52v-1.52h-1.52Z\"/><path fill=\"currentColor\" d=\"M22.86 19.81v10.67h6.1V19.81Zm4.57 9.15h-3.04v-3.05h3.04Zm0-4.58h-3.04v-3.04h3.04Zm-22.85 6.1V32h13.71v-1.52h-1.52v-7.62h1.52v-4.57H4.58v4.57H6.1v7.62Zm6.09-1.52H7.62v-6.1h3.05Zm4.57 0H12.2v-6.1h3.04ZM6.1 19.81h10.67v1.53H6.1Zm7.62-3.04h4.57v-4.58h-4.57Zm1.52-3.05h1.53v1.52h-1.53Zm3.05-7.62h-4.57v4.57h4.57Zm-1.52 3.05h-1.53V7.62h1.53Zm-6.1 3.04h1.53v4.58h-1.53Zm0-6.09h1.53v4.57h-1.53Zm-1.52 0H4.58v4.57h4.57ZM7.62 9.15H6.1V7.62h1.52Zm-3.04 7.62h4.57v-4.58H4.58Zm1.52-3.05h1.52v1.52H6.1Z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default healthHospitalBuilding2

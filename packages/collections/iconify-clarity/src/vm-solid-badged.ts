@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const vmSolidBadged: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M13.59 12a3.6 3.6 0 0 1 3.6-3.6h5.71a7.45 7.45 0 0 1 .23-5.4H11a2 2 0 0 0-2 2v8.4h4.59Z\" class=\"clr-i-solid--badged clr-i-solid-path-1--badged\"/><path fill=\"currentColor\" d=\"M30 13.5a7.49 7.49 0 0 1-6.34-3.5h-6.47a2 2 0 0 0-2 2v1.4H20a3.6 3.6 0 0 1 3.6 3.6v8H22v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1.4h-4.81a3.6 3.6 0 0 1-3.6-3.6v-6h1.6v6a2 2 0 0 0 2 2H30a2 2 0 0 0 2-2V13.22a7.5 7.5 0 0 1-2 .28\" class=\"clr-i-solid--badged clr-i-solid-path-2--badged\"/><circle cx=\"30\" cy=\"6\" r=\"5\" fill=\"currentColor\" class=\"clr-i-solid--badged clr-i-solid-path-3--badged clr-i-badge\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default vmSolidBadged

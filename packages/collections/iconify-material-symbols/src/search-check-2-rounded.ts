@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const searchCheck2Rounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8.95 10.7L7.525 9.3q-.3-.3-.7-.3t-.7.3t-.312.7t.287.7l2.125 2.125q.3.3.713.3t.712-.3L13.9 8.6q.3-.3.3-.713t-.3-.712t-.712-.3t-.713.3zM10 18q-3.35 0-5.675-2.325T2 10t2.325-5.675T10 2t5.675 2.325T18 10q0 1.4-.437 2.638T16.325 14.9l4.975 4.975q.3.3.3.713t-.3.712t-.712.3t-.713-.3L14.9 16.325q-1.025.8-2.262 1.238T10 18\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default searchCheck2Rounded

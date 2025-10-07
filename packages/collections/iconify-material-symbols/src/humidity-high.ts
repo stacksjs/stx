@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const humidityHigh: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 21.5q-3.325 0-5.663-2.3T4 13.6q0-1.575.613-3.012T6.35 8.05l4.25-4.175q.3-.275.663-.425T12 3.3t.738.15t.662.425l4.25 4.175q1.125 1.1 1.738 2.538T20 13.6q0 3.3-2.337 5.6T12 21.5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default humidityHigh

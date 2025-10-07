@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const transmissionTowerExport: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m5.18 5.45l-1.78-.9L4.66 2h8.47l1.27 2.55l-1.78.89L11.9 4h-6zM15.5 8H11l-.8-3H7.6l-.79 3H2.28L1 10.55l1.79.89L3.5 10h10.78l.72 1.45l1.79-.89zm-.83 14H12.6l-.24-.9l-3.46-5.2l-3.47 5.2l-.23.9H3.13L6 11h2.09l-.36 1.35L8.9 14.1l1.16-1.75L9.71 11h2.07zM8.3 15l-.9-1.35l-1.18 4.48zm3.28 3.12l-1.18-4.48L9.5 15zM23 16l-4-4v3h-4v2h4v3z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default transmissionTowerExport

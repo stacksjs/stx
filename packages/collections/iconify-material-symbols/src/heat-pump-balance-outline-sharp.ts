@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const heatPumpBalanceOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 6.6h2v10h2v-10h6v10h2v-11h4.175L19 4.425L20.4 3L24 6.6l-3.6 3.575L19 8.75l1.175-1.15H18v11h-6v-10h-2v10H4zm-3 15v-10h22v10zm2-2h18v-6H3zm18-6H3z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default heatPumpBalanceOutlineSharp

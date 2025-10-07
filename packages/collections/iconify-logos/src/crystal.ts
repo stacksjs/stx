@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const crystal: IconData = {
+  "body": "<path d=\"M93.365 0L0 93.741l34.258 128.376L163.011 256L256 161.882L222.117 35.388zM6.776 95.247l124.988-32.754l-34.258 124.612z\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default crystal

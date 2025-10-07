@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const recentChangesLtr: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M1 3h16v2H1zm0 6h11v2H1zm0 6h7v2H1zm17.8-3.1l1-1.1a.6.6 0 0 0 0-.8L18 8.2a.6.6 0 0 0-.8 0l-1 1zm-3.3-2L10 15.3V18h2.6l5.6-5.5l-2.7-2.7Z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default recentChangesLtr

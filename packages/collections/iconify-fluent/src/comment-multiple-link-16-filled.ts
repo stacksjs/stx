@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const commentMultipleLink16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m4.588 14.807l1.317-.958A3.5 3.5 0 0 1 8.5 8h4q.255 0 .5.035V6a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2v.998a1 1 0 0 0 1.588.809M14 6v2.337c.374.178.713.42 1 .713V6a4 4 0 0 0-4-4H5a2 2 0 0 0-1.732 1H11a3 3 0 0 1 3 3M8.5 9a2.5 2.5 0 0 0 0 5H9a.5.5 0 0 0 0-1h-.5a1.5 1.5 0 0 1 0-3H9a.5.5 0 0 0 0-1zM12 9a.5.5 0 0 0 0 1h.5a1.5 1.5 0 0 1 0 3H12a.5.5 0 0 0 0 1h.5a2.5 2.5 0 0 0 0-5zm-4 2.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default commentMultipleLink16Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const receipt28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 5.75A2.75 2.75 0 0 1 5.75 3h11.5A2.75 2.75 0 0 1 20 5.75V17h5v4.25A3.75 3.75 0 0 1 21.25 25H6.75A3.75 3.75 0 0 1 3 21.25zM20 23.5h1.25a2.25 2.25 0 0 0 2.25-2.25V18.5H20zM7 8.75c0 .414.336.75.75.75h7.5a.75.75 0 0 0 0-1.5h-7.5a.75.75 0 0 0-.75.75M7.75 13a.75.75 0 0 0 0 1.5h7.5a.75.75 0 0 0 0-1.5zM7 18.75c0 .414.336.75.75.75h3.5a.75.75 0 0 0 0-1.5h-3.5a.75.75 0 0 0-.75.75\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default receipt28Filled

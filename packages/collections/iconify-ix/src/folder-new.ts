@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const folderNew: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M469.334 128v298.667H42.667V85.334H220.75L274.709 128zm-42.667 42.667H259.875L205.917 128H85.334v256h341.333zM341.334 256v-42.667h-42.667V256H256v42.667h42.667v42.666h42.667v-42.666H384V256z\" clip-rule=\"evenodd\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default folderNew

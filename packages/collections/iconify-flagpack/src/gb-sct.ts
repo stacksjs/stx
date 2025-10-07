@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const gbSct: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#265AAD\" d=\"M0 0h32v24H0z\"/><path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M16 14.5L1.2 25.6l-2.4-3.2L12.667 12L-1.2 1.6l2.4-3.2L16 9.5L30.8-1.6l2.4 3.2L19.333 12L33.2 22.4l-2.4 3.2z\" clip-rule=\"evenodd\"/></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default gbSct

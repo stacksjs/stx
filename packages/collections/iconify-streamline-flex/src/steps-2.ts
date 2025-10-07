@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const steps2: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M7 8.846c1.181 0 1.846-.664 1.846-1.846S8.181 5.154 7 5.154S5.153 5.818 5.153 7S5.818 8.846 7 8.846M3.308 7h1.846m3.692 0h1.846m1.154 1.154C12.585 8.154 13 7.739 13 7s-.415-1.154-1.154-1.154s-1.154.416-1.154 1.154c0 .739.416 1.154 1.154 1.154m-9.692 0c.738 0 1.154-.415 1.154-1.154s-.416-1.154-1.154-1.154C1.415 5.846 1 6.262 1 7c0 .739.415 1.154 1.154 1.154\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default steps2

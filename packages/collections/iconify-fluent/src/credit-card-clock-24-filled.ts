@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const creditCardClock24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.25 5A3.25 3.25 0 0 0 2 8.25V9.5h20V8.25A3.25 3.25 0 0 0 18.75 5zm0 14h5.924a6.5 6.5 0 0 1 6.326-8H2v4.75A3.25 3.25 0 0 0 5.25 19M23 17.5a5.5 5.5 0 1 0-11 0a5.5 5.5 0 0 0 11 0M17.5 14a.5.5 0 0 1 .5.5V17h2a.5.5 0 0 1 0 1h-2.5a.5.5 0 0 1-.5-.5v-3a.5.5 0 0 1 .5-.5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default creditCardClock24Filled

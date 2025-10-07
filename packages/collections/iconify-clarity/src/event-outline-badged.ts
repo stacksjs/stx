@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const eventOutlineBadged: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m10.81 20.5l5.36 5.36l10.05-10.05a1 1 0 0 0-1.41-1.41L16.17 23l-3.94-3.94a1 1 0 0 0-1.41 1.41Z\" class=\"clr-i-outline--badged clr-i-outline-path-1--badged\"/><path fill=\"currentColor\" d=\"M10 10a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v6a1 1 0 0 0 1 1\" class=\"clr-i-outline--badged clr-i-outline-path-2--badged\"/><path fill=\"currentColor\" d=\"M32 13.22V30H4V8h3V6H3.75A1.78 1.78 0 0 0 2 7.81v22.38A1.78 1.78 0 0 0 3.75 32h28.5A1.78 1.78 0 0 0 34 30.19V12.34a7.5 7.5 0 0 1-2 .88\" class=\"clr-i-outline--badged clr-i-outline-path-3--badged\"/><path fill=\"currentColor\" d=\"M22.5 6H13v2h9.78a7.5 7.5 0 0 1-.28-2\" class=\"clr-i-outline--badged clr-i-outline-path-4--badged\"/><circle cx=\"30\" cy=\"6\" r=\"5\" fill=\"currentColor\" class=\"clr-i-outline--badged clr-i-outline-path-5--badged clr-i-badge\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default eventOutlineBadged

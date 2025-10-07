@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const plugF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 7.565h8a2 2 0 0 1 2 2v3.5a5.5 5.5 0 0 1-4.155 5.334A1.5 1.5 0 0 1 6.5 20.565h-1a1.5 1.5 0 0 1-1.345-2.166A5.5 5.5 0 0 1 0 13.065v-3.5a2 2 0 0 1 2-2m2-1H2v-5a1 1 0 1 1 2 0zm6 0H8v-5a1 1 0 1 1 2 0z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default plugF

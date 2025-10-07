@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const backward: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M204.3 43.1c11.6-11.1 28.7-14.2 43.4-7.9S272 56 272 72v136.3L444.3 43.2c11.6-11.2 28.7-14.3 43.4-8S512 56 512 72v368c0 16-9.6 30.5-24.3 36.8s-31.8 3.2-43.4-7.9L272 303.7V440c0 16-9.6 30.5-24.3 36.8s-31.8 3.2-43.4-7.9l-192-184C4.5 277.3 0 266.9 0 256s4.5-21.3 12.3-28.9z\"/>",
+  "width": 576,
+  "height": 512,
+  "viewBox": "0 0 576 512"
+}
+
+export default backward

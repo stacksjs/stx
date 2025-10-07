@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const elevator32Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17 28h8.5a4.5 4.5 0 0 0 4.5-4.5v-15A4.5 4.5 0 0 0 25.5 4H17zm7.5-16v6.086l1.293-1.293a1 1 0 0 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414l1.293 1.293V12a1 1 0 1 1 2 0M15 4H6.5A4.5 4.5 0 0 0 2 8.5v15A4.5 4.5 0 0 0 6.5 28H15zM8.5 21.5a1 1 0 0 1-1-1v-6.086l-1.293 1.293a1 1 0 0 1-1.414-1.414l3-3a1 1 0 0 1 1.414 0l3 3a1 1 0 0 1-1.414 1.414L9.5 14.414V20.5a1 1 0 0 1-1 1\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default elevator32Filled

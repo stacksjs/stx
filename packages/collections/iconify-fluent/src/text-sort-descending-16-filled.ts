@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textSortDescending16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 1.75A.75.75 0 0 1 2.75 1h3.5a.75.75 0 0 1 .592 1.21L4.284 5.5H6.25a.75.75 0 1 1 0 1.5h-3.5a.75.75 0 0 1-.592-1.21L4.717 2.5H2.75A.75.75 0 0 1 2 1.75m3.205 6.744a.75.75 0 0 0-1.41 0l-2 5.5a.75.75 0 1 0 1.41.512L3.39 14h2.222l.184.506a.75.75 0 1 0 1.41-.513zM3.935 12.5l.565-1.556l.566 1.556zM12.25 1a.75.75 0 0 1 .75.75v10.69l.72-.72a.75.75 0 1 1 1.06 1.06l-2 2a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 1 1 1.06-1.06l.72.72V1.75a.75.75 0 0 1 .75-.75\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default textSortDescending16Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const clock16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14M8 4.5V8h2.5a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5v-4a.5.5 0 0 1 1 0\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default clock16Filled

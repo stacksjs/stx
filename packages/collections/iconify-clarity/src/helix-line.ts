@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const helixLine: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8.88 13.07a.9.9 0 0 1-.49-1.66l8.93-5.73a.9.9 0 1 1 1 1.52l-8.95 5.72a.9.9 0 0 1-.49.15\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"currentColor\" d=\"M13.25 15.11a.9.9 0 0 1-.49-1.66L18 10.08a.9.9 0 1 1 1 1.52L13.74 15a.9.9 0 0 1-.49.11\" class=\"clr-i-outline clr-i-outline-path-2\"/><path fill=\"currentColor\" d=\"M19.72 30.23a.9.9 0 0 1-.49-1.66l8.93-5.73a.9.9 0 0 1 1 1.52l-8.96 5.73a.9.9 0 0 1-.48.14\" class=\"clr-i-outline clr-i-outline-path-3\"/><path fill=\"currentColor\" d=\"M18.92 25.94a.9.9 0 0 1-.49-1.66l5.25-3.37a.9.9 0 1 1 1 1.51L19.4 25.8a.9.9 0 0 1-.48.14\" class=\"clr-i-outline clr-i-outline-path-4\"/><path fill=\"currentColor\" d=\"M21.56 5.69a3.59 3.59 0 0 1 .15 3.53L18.83 15h2.25l2.43-4.87a5.61 5.61 0 0 0-5-8.14h-5.25l-1 2h6.22a3.61 3.61 0 0 1 3.08 1.7\" class=\"clr-i-outline clr-i-outline-path-5\"/><path fill=\"currentColor\" d=\"M32.91 20.78A5.53 5.53 0 0 0 27.66 17H9.31a3.54 3.54 0 0 1-3.56-3.67a3.6 3.6 0 0 1 .42-1.54l4.26-8.49a1 1 0 1 0-1.79-.9L4.4 10.84a5.67 5.67 0 0 0-.4 4.38A5.53 5.53 0 0 0 9.28 19h7.6l-3.44 6.87a5.64 5.64 0 0 0 1.5 6.92A5.38 5.38 0 0 0 18.41 34h5.25l1-2h-6.23a3.58 3.58 0 0 1-3.22-5.21l3.9-7.79h8.54a3.42 3.42 0 0 1 2.15.71a3.57 3.57 0 0 1 1 4.43l-4.12 8.22a1 1 0 1 0 1.79.9l4.06-8.1a5.67 5.67 0 0 0 .38-4.38\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default helixLine

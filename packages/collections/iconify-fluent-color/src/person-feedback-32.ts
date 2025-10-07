@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const personFeedback32: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGSOOn3dzE)\" d=\"M10.5 29.99c-2.9 0-5.12-.8-6.62-2.368c-1.931-2.015-1.886-4.585-1.881-4.838v-.017C2 21.26 3.26 20 4.82 20h11.36c1.55 0 2.82 1.259 2.82 2.817v.01c.004.182.06 2.77-1.88 4.805C15.62 29.201 13.4 30 10.5 30z\"/><path fill=\"url(#SVGOrKHDd3o)\" d=\"M10.5 29.99c-2.9 0-5.12-.8-6.62-2.368c-1.931-2.015-1.886-4.585-1.881-4.838v-.017C2 21.26 3.26 20 4.82 20h11.36c1.55 0 2.82 1.259 2.82 2.817v.01c.004.182.06 2.77-1.88 4.805C15.62 29.201 13.4 30 10.5 30z\"/><path fill=\"url(#SVG3ut2uegv)\" d=\"M10.5 18c-2.76 0-5-2.24-5-5s2.24-5 5-5s5 2.24 5 5s-2.24 5-5 5\"/><path fill=\"url(#SVGIZSFrcQz)\" d=\"M19.95 15.89c.18.08.37.11.55.11c.41 0 .81-.17 1.1-.48L23.94 13H27c1.65 0 3-1.35 3-3V5c0-1.65-1.35-3-3-3h-8c-1.65 0-3 1.35-3 3v4.99c0 1.65 1.35 3 3 3v1.5c0 .63.37 1.17.95 1.4\"/><defs><linearGradient id=\"SVGSOOn3dzE\" x1=\"6.041\" x2=\"9.716\" y1=\"21.329\" y2=\"31.305\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".125\" stop-color=\"#9C6CFE\"/><stop offset=\"1\" stop-color=\"#7A41DC\"/></linearGradient><linearGradient id=\"SVGOrKHDd3o\" x1=\"10.499\" x2=\"15.688\" y1=\"18.809\" y2=\"35.292\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#885EDB\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#E362F8\"/></linearGradient><linearGradient id=\"SVG3ut2uegv\" x1=\"7.878\" x2=\"12.974\" y1=\"9.329\" y2=\"17.467\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".125\" stop-color=\"#9C6CFE\"/><stop offset=\"1\" stop-color=\"#7A41DC\"/></linearGradient><radialGradient id=\"SVGIZSFrcQz\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"rotate(49.565 8.884 12.675)scale(25.8922 46.6406)\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FAB500\"/><stop offset=\".535\" stop-color=\"#FE8401\"/><stop offset=\"1\" stop-color=\"#FB5937\"/></radialGradient></defs></g>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default personFeedback32

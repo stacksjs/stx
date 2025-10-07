@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const microphoneStageLight: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M168 18a69.94 69.94 0 0 0-69.26 80l-70 95.46a13.92 13.92 0 0 0 1.39 18.17l14.3 14.3a13.93 13.93 0 0 0 18.17 1.39l95.46-70A70 70 0 1 0 168 18m58 70a57.65 57.65 0 0 1-13 36.52L131.49 43A57.95 57.95 0 0 1 226 88M55.5 217.59a2 2 0 0 1-2.6-.2L38.61 203.1a2 2 0 0 1-.2-2.6l64.22-87.56a70.32 70.32 0 0 0 40.44 40.43ZM110 88a57.73 57.73 0 0 1 13-36.52L204.53 133A58 58 0 0 1 110 88m-1.75 59.75a6 6 0 0 1 0 8.49l-8 8a6 6 0 1 1-8.49-8.49l8-8a6 6 0 0 1 8.5-.01Z\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default microphoneStageLight

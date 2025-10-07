@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const intersection: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 14A7 7 0 1 1 10 .674a7 7 0 1 1 0 12.653A7 7 0 0 1 7 14M7 2a5 5 0 1 0 1 9.9A6.98 6.98 0 0 1 6 7a6.98 6.98 0 0 1 2-4.9A5 5 0 0 0 7 2m7 5a6.98 6.98 0 0 1-2 4.9a5 5 0 1 0 0-9.8A6.98 6.98 0 0 1 14 7\"/>",
+  "width": 20,
+  "height": 14,
+  "viewBox": "0 0 20 14"
+}
+
+export default intersection

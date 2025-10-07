@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const phoneUpdateCheckmark20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 16a1 1 0 0 0 1 1h2.6q.276.538.657 1H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v5.022a5.6 5.6 0 0 0-1 0V4a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3.5-3.794a5.5 5.5 0 0 1 1-1.48v-3.52l1.146 1.147a.5.5 0 0 0 .708-.708l-2-2a.5.5 0 0 0-.708 0l-2 2a.5.5 0 1 0 .708.708L9.5 7.207zM19 14.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-2.146-1.854a.5.5 0 0 0-.708 0L13.5 15.293l-.646-.647a.5.5 0 0 0-.708.708l1 1a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0 0-.708\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default phoneUpdateCheckmark20Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const documentTextClock24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 2a2 2 0 0 0-2 2v7.498a6.5 6.5 0 0 1 1.5-.422V4a.5.5 0 0 1 .5-.5h6V8a2 2 0 0 0 2 2h4.5v10a.5.5 0 0 1-.5.5h-5.732A6.5 6.5 0 0 1 11.19 22H18a2 2 0 0 0 2-2V9.828a2 2 0 0 0-.586-1.414l-5.828-5.828A2 2 0 0 0 12.172 2zm11.38 6.5H14a.5.5 0 0 1-.5-.5V4.62zM11.19 13a6.5 6.5 0 0 0-2.186-1.5h6.246a.75.75 0 0 1 0 1.5zm.94 1.25c.27.466.484.97.632 1.5h2.488a.75.75 0 0 0 0-1.5zM13 17.5q0 .51-.076 1h2.326a.75.75 0 0 0 0-1.5h-2.269q.02.248.019.5M6.5 12a5.5 5.5 0 1 1 0 11a5.5 5.5 0 0 1 0-11m.5 2.5a.5.5 0 0 0-1 0v3a.5.5 0 0 0 .5.5H9a.5.5 0 0 0 0-1H7z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default documentTextClock24Regular

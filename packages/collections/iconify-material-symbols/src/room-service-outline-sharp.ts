@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const roomServiceOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 19v-2h20v2zm1-3v-1q0-3.2 1.963-5.65T10 6.25V4h4v2.25q3.1.65 5.05 3.1T21 15v1zm2.05-2h13.9q-.35-2.6-2.325-4.3T12 8T7.388 9.7T5.05 14M12 14\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default roomServiceOutlineSharp

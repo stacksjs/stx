@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const savings16: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGf7duHbpP)\" d=\"M15 8.268c0 1.552-.548 2.64-1.11 3.34a4.6 4.6 0 0 1-.89.85V13.5a1.5 1.5 0 0 1-1.5 1.5H11a1 1 0 0 1-1-1H8a1 1 0 0 1-1 1h-.5A1.5 1.5 0 0 1 5 13.5v-.214c-1.363-.433-2.312-1.534-2.78-2.858a.43.43 0 0 0-.269-.281A1.31 1.31 0 0 1 1 8.89v-.794c0-.576.382-1.082.935-1.24c.104-.03.216-.13.271-.297c.346-1.046 1.069-1.81 2-2.37q.145-.088.26-.15V2.163a.76.76 0 0 1 .481-.704a.77.77 0 0 1 .826.15c.253.24.585.525.94.758c.365.238.707.39.986.418h.005C11.077 2.784 15 4.471 15 8.268\"/><path fill=\"url(#SVGxRKUXb2M)\" d=\"M5.5 6.75a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0\"/><path fill=\"#9F1459\" d=\"M6.942 4.727a.835.835 0 0 1 1.09-.453l5.56 2.295a.835.835 0 0 1-.637 1.544l-5.56-2.296a.835.835 0 0 1-.453-1.09\"/><path fill=\"url(#SVGjZDStehe)\" d=\"M12.14 7.776a3 3 0 1 0-3.906-1.613z\"/><path fill=\"url(#SVGQZ1ebchh)\" fill-opacity=\".8\" d=\"M12.14 7.776a3 3 0 1 0-3.906-1.613z\"/><defs><radialGradient id=\"SVGf7duHbpP\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(3.63124 12.79178 -13.17677 3.74053 5.287 2.736)\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#F08AF4\"/><stop offset=\".581\" stop-color=\"#E869CE\"/><stop offset=\"1\" stop-color=\"#D7257D\"/></radialGradient><radialGradient id=\"SVGxRKUXb2M\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"rotate(59.532 -3.375 7.091)scale(1.27093)\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#B91D6B\"/><stop offset=\"1\" stop-color=\"#670938\"/></radialGradient><linearGradient id=\"SVGjZDStehe\" x1=\"12.968\" x2=\"8.03\" y1=\"7.63\" y2=\"3.794\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FF8A69\"/><stop offset=\"1\" stop-color=\"#FFCD0F\"/></linearGradient><linearGradient id=\"SVGQZ1ebchh\" x1=\"11.795\" x2=\"9.488\" y1=\"2.361\" y2=\"7.421\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".67\" stop-color=\"#FB5937\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#CD3E1D\"/></linearGradient></defs></g>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default savings16

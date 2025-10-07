@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const flameSolid: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M31.3 16.32c-1.19-2.09-7.94-14.15-7.94-14.15a1 1 0 0 0-1.75 0l-6 10.64l-3-5.28a1 1 0 0 0-1.75 0s-5.46 9.9-6.44 11.62A9.3 9.3 0 0 0 3 24.26c0 5.11 3.88 9.65 8.67 9.74h10.81C28.28 34 33 28.62 33 22.44a11.13 11.13 0 0 0-1.7-6.12M21.48 32h-6.94A4.68 4.68 0 0 1 10 27.41a3.9 3.9 0 0 1 .75-2.34l3.35-5.21a.5.5 0 0 1 .84 0l1.78 2.77v-.08c.63-1.11 4.23-7.48 4.23-7.48a.5.5 0 0 1 .87 0s3.6 6.38 4.23 7.48a5.83 5.83 0 0 1 .95 3.21C27 32 22.1 32 21.48 32\" class=\"clr-i-solid clr-i-solid-path-1\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default flameSolid

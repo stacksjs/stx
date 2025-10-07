@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const labsSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 22q-2.075 0-3.537-1.463T7 17V8H5V2h14v6h-2v9q0 2.075-1.463 3.538T12 22m0-2q1.25 0 2.125-.875T15 17h-3v-2h3v-2h-3v-2h3V8H9v9q0 1.25.875 2.125T12 20\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default labsSharp

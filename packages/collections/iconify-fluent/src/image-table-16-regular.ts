@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const imageTable16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 7a1 1 0 1 1 2 0a1 1 0 0 1-2 0M2 4.5A2.5 2.5 0 0 1 4.5 2h7A2.5 2.5 0 0 1 14 4.5v7a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 2 11.5zM3 5v6h1V5zm2-1h6V3H5zm-1-.915A1.5 1.5 0 0 0 3.085 4H4zm8 0V4h.915A1.5 1.5 0 0 0 12 3.085M13 5h-1v6h1zm-.085 7H12v.915c.426-.151.764-.489.915-.915M11 13v-1H5v1zm-7-.085V12h-.915c.151.426.489.764.915.915M5 5v6h.296l1.502-1.502a1.7 1.7 0 0 1 2.404 0L10.704 11H11V5zm4.29 6l-.795-.795a.7.7 0 0 0-.99 0L6.71 11z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default imageTable16Regular

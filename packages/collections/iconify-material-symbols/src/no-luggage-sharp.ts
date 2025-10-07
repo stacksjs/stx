@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const noLuggageSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 22v-1H5V7.825L.675 3.5L2.1 2.075l19.8 19.8l-1.425 1.425l-2.525-2.525V21H17v1h-2v-1H9v1zm2-4h2v-4.175l-2-2zm4 0h2v-.175l-2-2zm6-1.875l-4-4V9h-2v1.125l-4-4V2h6v4h4zM11 6h2V4h-2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default noLuggageSharp

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const android: IconData = {
+  "body": "<path fill=\"#1C3C50\" d=\"M10 0h34c6.014 0 10 4.035 10 10v80c0 5.926-4.004 10-10 10H10c-5.974 0-10-3.996-10-10V10C0 4.104 3.95 0 10 0\"/><path fill=\"#23475F\" d=\"M4 10h46v79H4zm18.5 82h9a2.499 2.499 0 1 1 0 5h-9a2.5 2.5 0 1 1 0-5\"/>",
+  "width": 54,
+  "height": 100,
+  "viewBox": "0 0 54 100"
+}
+
+export default android

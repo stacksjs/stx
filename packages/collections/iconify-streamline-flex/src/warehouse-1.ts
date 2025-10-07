@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const warehouse1: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M1.417 4.058C.799 6.505.819 9.957.94 11.97a.95.95 0 0 0 .832.887c1.13.147 3.309.393 5.227.393c1.917 0 4.095-.246 5.226-.393a.95.95 0 0 0 .832-.887c.122-2.013.142-5.465-.476-7.912a.9.9 0 0 0-.334-.503c-.934-.7-2.862-1.948-4.934-2.696a.93.93 0 0 0-.63 0c-2.07.748-3.999 1.996-4.933 2.696a.9.9 0 0 0-.334.503Z\"/><path d=\"M5.25 8.5V7a1 1 0 0 1 1-1h1.5a1 1 0 0 1 1 1v1.5a1 1 0 0 1-1 1h-1.5a1 1 0 0 1-1-1M3.5 12v-1.5a1 1 0 0 1 1-1H6a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1M7 12v-1.5a1 1 0 0 1 1-1h1.5a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default warehouse1

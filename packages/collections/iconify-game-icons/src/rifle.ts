@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const rifle: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M256 16S136 76 136 226v120c0 30 0 30 30 30h180c30 0 30 0 30-30V226C376 76 256 16 256 16m0 75s60 30 60 135v60H196v-60c0-105 60-135 60-135M148.63 420.998A12.63 12.63 0 0 0 136 433.63v49.737a12.63 12.63 0 0 0 12.63 12.63h214.74a12.63 12.63 0 0 0 12.63-12.63V433.63A12.63 12.63 0 0 0 363.37 421H148.63z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default rifle

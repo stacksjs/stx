@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const asana: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M25.042 16.87a6.962 6.962 0 1 0 0 13.922a6.96 6.96 0 0 0 0-13.922m-18.084 0a6.962 6.962 0 0 0 0 13.922a6.967 6.967 0 0 0 6.964-6.964a6.96 6.96 0 0 0-6.964-6.958m16-8.698a6.958 6.958 0 1 1-13.916 0c0-3.844 3.115-6.964 6.958-6.964s6.958 3.12 6.958 6.964\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default asana

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const receiptTextMinusOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15 18v2h8v-2zm-1.74 2.74L12 22l-1.5-1.5L9 22l-1.5-1.5L6 22l-1.5-1.5L3 22V2l1.5 1.5L6 2l1.5 1.5L9 2l1.5 1.5L12 2l1.5 1.5L15 2l1.5 1.5L18 2l1.5 1.5L21 2v11.35c-.63-.22-1.3-.35-2-.35V5H5v14h8c0 .57.1 1.22.26 1.74M14.54 15c-.54.58-.93 1.25-1.19 2H6v-2zM6 11h12v2H6zm0-4h12v2H6z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default receiptTextMinusOutline

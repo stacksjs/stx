@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const foodTakeoutBox: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.26 11h13.48l-.67 9H5.93zM9 4h5.97L19 7.38l1.59-1.59L22 7.21L19.21 10H4.79L2 7.21L3.41 5.8L5 7.38z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default foodTakeoutBox

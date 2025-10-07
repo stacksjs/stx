@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const subGrid20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 3a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zM4 14v-3.5h2v2A1.5 1.5 0 0 0 7.5 14h2v2H6a2 2 0 0 1-2-2m6.5 0h2a1.5 1.5 0 0 0 1.5-1.5v-2h2V14a2 2 0 0 1-2 2h-3.5zm2.5-3.5v2a.5.5 0 0 1-.5.5h-2v-2.5zm1-1v-2A1.5 1.5 0 0 0 12.5 6h-2V4H14a2 2 0 0 1 2 2v3.5zM10.5 7h2a.5.5 0 0 1 .5.5v2h-2.5zm-1-1h-2A1.5 1.5 0 0 0 6 7.5v2H4V6a2 2 0 0 1 2-2h3.5zM7 9.5v-2a.5.5 0 0 1 .5-.5h2v2.5zm0 1h2.5V13h-2a.5.5 0 0 1-.5-.5z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default subGrid20Regular

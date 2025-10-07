@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const keyboardHideOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m12 23l-4-4h8zM2 17V3h20v14zm2-2h16V5H4zm4-1h8v-2H8zm-3-3h2V9H5zm3 0h2V9H8zm3 0h2V9h-2zm3 0h2V9h-2zm3 0h2V9h-2zM5 8h2V6H5zm3 0h2V6H8zm3 0h2V6h-2zm3 0h2V6h-2zm3 0h2V6h-2zM4 15V5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default keyboardHideOutlineSharp

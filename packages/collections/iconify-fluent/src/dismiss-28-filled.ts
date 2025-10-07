@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const dismiss28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M22.293 4.293a1 1 0 1 1 1.414 1.414L15.414 14l8.293 8.293a1 1 0 0 1-1.414 1.414L14 15.414l-8.293 8.293a1 1 0 0 1-1.414-1.414L12.586 14L4.293 5.707a1 1 0 0 1 1.414-1.414L14 12.586z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default dismiss28Filled

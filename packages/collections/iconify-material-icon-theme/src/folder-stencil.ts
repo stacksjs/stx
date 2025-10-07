@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const folderStencil: IconData = {
+  "body": "<path fill=\"#448aff\" d=\"m13.844 7.536l-1.288-1.072A2 2 0 0 0 11.276 6H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h24a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2H15.124a2 2 0 0 1-1.28-.464\"/><path fill=\"#bbdefb\" d=\"m32 18l-4 4H12l4-4zm-4-6l-4 4h-6l4-4zm-2 12l-4 4h-6l4-4z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default folderStencil

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const indianTrainStatusMinits: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6.814 26.754s8.102 2.78 17.933-17.553h1.983V6.226h11.124v3.28h1.112s1.693-.782 3.327 8.663v10.89s-.136 4.854-2.702 5.206s-32.503 0-32.503 0s-2.595-3.022-.274-7.511\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M21.362 21.03c-.744 0-1.347.672-1.347 1.5h0v3.329c0 .828.603 1.499 1.347 1.499s1.347-.671 1.347-1.499h0v-3.33c0-.827-.603-1.498-1.347-1.498m-4.16 3.581c-.64 0-1.158.578-1.159 1.29v2.41c.006.712.53 1.284 1.17 1.278c.631-.007 1.142-.575 1.148-1.278v-2.41c0-.712-.519-1.29-1.159-1.29q0 0 0 0m-3.793 2.382c-.546 0-.989.492-.989 1.1h0v1.619c-.005.607.433 1.105.98 1.11c.545.006.992-.481.998-1.09v-1.64c0-.607-.443-1.1-.99-1.1Zm-3.608 1.435c-.439 0-.794.396-.794.884h0v1.346c.004.488.364.88.803.874c.432-.005.782-.393.786-.874v-1.346c0-.488-.356-.884-.795-.884\"/><ellipse cx=\"38.218\" cy=\"26.072\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"2.232\" ry=\"2.484\"/><ellipse cx=\"28.67\" cy=\"26.072\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"2.232\" ry=\"2.484\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M29.555 12.67c-1.664-.011-3.02 1.481-3.03 3.332s1.332 3.36 2.996 3.371h.034\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M36.508 12.67c1.663-.011 3.02 1.481 3.03 3.332c.008 1.852-1.333 3.36-2.996 3.371h-6.988m.001-6.703h6.953M6.538 36.557c-.513-.064-.975.347-1.032.918a1 1 0 0 0 0 .23c0 1.265.437 1.12.437 1.12h1.12c11.948 0 17.112 2.949 17.112 2.949H42.5v-2.35h-1.917v-2.555h-5.158v2.45h-7.566v-2.763z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default indianTrainStatusMinits

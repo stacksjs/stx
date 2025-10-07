@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const alignJustifyFlexEndRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M21 22q-.425 0-.712-.288T20 21V3q0-.425.288-.712T21 2t.713.288T22 3v18q0 .425-.288.713T21 22m-6-5q-.425 0-.712-.288T14 16V8q0-.425.288-.712T15 7h1q.425 0 .713.288T17 8v8q0 .425-.288.713T16 17zm-6 0q-.425 0-.712-.288T8 16V8q0-.425.288-.712T9 7h1q.425 0 .713.288T11 8v8q0 .425-.288.713T10 17z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default alignJustifyFlexEndRounded

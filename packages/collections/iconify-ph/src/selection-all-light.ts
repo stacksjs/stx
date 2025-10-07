@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const selectionAllLight: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M106 40a6 6 0 0 1 6-6h32a6 6 0 0 1 0 12h-32a6 6 0 0 1-6-6m38 170h-32a6 6 0 0 0 0 12h32a6 6 0 0 0 0-12m64-176h-24a6 6 0 0 0 0 12h24a2 2 0 0 1 2 2v24a6 6 0 0 0 12 0V48a14 14 0 0 0-14-14m8 72a6 6 0 0 0-6 6v32a6 6 0 0 0 12 0v-32a6 6 0 0 0-6-6m0 72a6 6 0 0 0-6 6v24a2 2 0 0 1-2 2h-24a6 6 0 0 0 0 12h24a14 14 0 0 0 14-14v-24a6 6 0 0 0-6-6M40 150a6 6 0 0 0 6-6v-32a6 6 0 0 0-12 0v32a6 6 0 0 0 6 6m32 60H48a2 2 0 0 1-2-2v-24a6 6 0 0 0-12 0v24a14 14 0 0 0 14 14h24a6 6 0 0 0 0-12M40 78a6 6 0 0 0 6-6V48a2 2 0 0 1 2-2h24a6 6 0 0 0 0-12H48a14 14 0 0 0-14 14v24a6 6 0 0 0 6 6m136 104H80a6 6 0 0 1-6-6V80a6 6 0 0 1 6-6h96a6 6 0 0 1 6 6v96a6 6 0 0 1-6 6m-6-96H86v84h84Z\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default selectionAllLight

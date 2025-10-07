@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const personLightning16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.086 13c.152.425.493.775.939.924A7 7 0 0 1 7 14c-3.14 0-5-2.029-5-4v-.5A1.5 1.5 0 0 1 3.5 8h5.252l-.417 1H3.5a.5.5 0 0 0-.5.5v.5c0 1.438 1.432 3 4 3zM7 1.5A2.75 2.75 0 1 1 7 7a2.75 2.75 0 0 1 0-5.5m0 1A1.75 1.75 0 1 0 7 6a1.75 1.75 0 0 0 0-3.5M8.502 13h1.75l-.59 2.36c-.12.482.463.826.827.486l4.872-4.548A.75.75 0 0 0 14.85 10h-1.098l.781-2.342A.5.5 0 0 0 14.06 7h-3.473a.5.5 0 0 0-.462.308l-2.083 5a.5.5 0 0 0 .461.692\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default personLightning16Regular

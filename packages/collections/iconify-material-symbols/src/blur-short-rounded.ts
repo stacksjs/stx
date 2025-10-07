@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const blurShortRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15 15q1.25 0 2.125-.875T18 12t-.875-2.125T15 9t-2.125.875T12 12t.875 2.125T15 15m0 2q-1.8 0-3.175-1.125T10.1 13H7q-.425 0-.712-.288T6 12t.288-.712T7 11h3.1q.125-.55.338-1.062T11 9H5q-.425 0-.712-.288T4 8t.288-.712T5 7h10q2.075 0 3.538 1.463T20 12t-1.463 3.538T15 17\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default blurShortRounded

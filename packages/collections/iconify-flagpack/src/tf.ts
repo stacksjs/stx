@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tf: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#2E42A5\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/><mask id=\"SVGTrazyc7b\" width=\"32\" height=\"24\" x=\"0\" y=\"0\" maskUnits=\"userSpaceOnUse\" style=\"mask-type:luminance\"><path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/></mask><g fill-rule=\"evenodd\" clip-rule=\"evenodd\" mask=\"url(#SVGTrazyc7b)\"><path fill=\"#F7FCFF\" d=\"M18.789 6.2h8.048l-.784 1.504h-2.442v.808h1.872l-.762 1.4h-1.11v2.797L25.44 9.83l2.364 4.095h-.966l-.337-.449h-2.14l-1.506 2.781v.154l-.041-.077l-.042.077v-.154l-1.504-2.78h-2.14l-.338.448h-.966l2.364-4.095l1.828 2.88V7.703h-2.442zm6.697 5.31l-.526.807h.995zm-5.346 0l.526.807h-.995zm-3.826-.897l.83-.612l.832.612l-.293-1.026l.806-.648l-1.012-.022l-.332-1.014l-.333 1.014l-1.012.022l.807.648zm12.141-.612l-.83.612l.293-1.026l-.807-.648l1.012-.022l.332-1.014l.333 1.014l1.012.022l-.807.648l.293 1.026zm-3.375 7.802l.83-.612l.831.612l-.293-1.026l.807-.648l-1.012-.022l-.332-1.013l-.333 1.013l-1.012.022l.807.648zm-5.39-.612l-.831.612l.293-1.026l-.807-.648l1.012-.022l.333-1.013l.332 1.013l1.012.022l-.806.648l.293 1.026zm2.279 3.009l.831-.613l.831.613l-.293-1.027l.807-.648l-1.012-.022l-.333-1.013l-.332 1.013l-1.013.022l.807.648z\"/><path fill=\"#F50100\" d=\"M8 0h4v10H8z\"/><path fill=\"#2E42A5\" d=\"M0 0h4v10H0z\"/><path fill=\"#F7FCFF\" d=\"M4 0h4v10H4z\"/></g></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default tf

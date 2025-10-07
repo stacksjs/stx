@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const chart50Fill: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 1.75A10.25 10.25 0 1 0 22.25 12A10.26 10.26 0 0 0 12 1.75m.75 19V3.29a8.74 8.74 0 0 1 0 17.42z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default chart50Fill

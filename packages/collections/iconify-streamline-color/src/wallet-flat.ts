@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const walletFlat: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#8fbffa\" d=\"M3.5.855a3.5 3.5 0 0 0-3.5 3.5V12.5A1.5 1.5 0 0 0 1.5 14h9.712a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5h-.214l-.058.003H3.355a.625.625 0 0 1 0-1.25H10.5V1.355a.5.5 0 0 0-.5-.5z\"/><path fill=\"#2859c5\" d=\"M13.263 7.666h-3.5c-.276 0-.5.2-.5.445v1.778c0 .246.224.445.5.445h3.5c.276 0 .5-.2.5-.445V8.111c0-.246-.224-.445-.5-.445\"/><path fill=\"#2859c5\" fill-rule=\"evenodd\" d=\"M10.5 4.003v-1.25H3.355a.625.625 0 1 0 0 1.25z\" clip-rule=\"evenodd\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default walletFlat

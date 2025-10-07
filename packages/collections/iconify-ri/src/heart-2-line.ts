@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const heart2Line: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M20.243 4.757a6 6 0 0 1 .236 8.236l-8.48 8.492l-8.478-8.492a6 6 0 0 1 8.48-8.464a6 6 0 0 1 8.242.228M5.172 6.172a4 4 0 0 0-.192 5.451L12 18.654l7.02-7.03a4 4 0 0 0-5.646-5.64l-4.202 4.203l-1.415-1.414l2.825-2.827l-.082-.069a4 4 0 0 0-5.328.295\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default heart2Line

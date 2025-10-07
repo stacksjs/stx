@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const flagSerbia: IconData = {
+  "body": "<path fill=\"#fff\" d=\"M5 17h62v38H5z\"/><path fill=\"#d22f27\" d=\"M5 17h62v13H5z\"/><path fill=\"#1e50a0\" d=\"M5 30h62v12H5z\"/><circle cx=\"27\" cy=\"40\" r=\"7\" fill=\"#fff\" stroke=\"#d22f27\" stroke-miterlimit=\"10\" stroke-width=\"2\"/><path fill=\"#fff\" stroke=\"#d22f27\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M34 40V29H20v11\"/><path fill=\"none\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"m22 44l12-14m-2 14L20 30\"/><path fill=\"none\" stroke=\"#fff\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M27 33v10m-5-5h10\"/><path fill=\"none\" stroke=\"#fcea2b\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M27 23c-3.126.623-5 1.6-4 4h8c1-2.4-.874-3.377-4-4m0-1.951V23\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 17h62v38H5z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default flagSerbia

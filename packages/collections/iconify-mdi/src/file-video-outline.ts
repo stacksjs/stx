@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const fileVideoOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m14 2l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm4 18V9h-5V4H6v16zm-2-2l-2.5-1.7V18H8v-5h5.5v1.7L16 13z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default fileVideoOutline

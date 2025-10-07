@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const homeSoundOutOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2.404 7.012C2.474 4.395 4.454 2.416 7 2.416V1C3.535.931.848 3.618.99 7.011zM7 5.385V3.971c-1.768.07-3.04 1.344-3.04 3.04h1.414A1.95 1.95 0 0 1 7 5.386m10-2.97c2.546 0 4.526 1.98 4.596 4.597h1.414C23.152 3.618 20.465.93 17 1.002zm0 1.556v1.414a1.95 1.95 0 0 1 1.626 1.627h1.415c0-1.697-1.273-2.97-3.041-3.04M19 20v-8h3L12 3L2 12h3v8zM12 5.7l5 4.5V18H7v-7.8z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default homeSoundOutOutline

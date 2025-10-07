@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const arrowOutlineUpRight48Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M43.969 9.851c.383-3.36-2.464-6.2-5.823-5.81L14.76 6.763c-3.528.41-5.026 4.712-2.515 7.226l2.749 2.751l-9.452 9.452a5.25 5.25 0 0 0-.004 7.421l8.833 8.85a5.25 5.25 0 0 0 7.428.003l9.464-9.46l2.843 2.787c2.526 2.478 6.797.962 7.198-2.553z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default arrowOutlineUpRight48Filled

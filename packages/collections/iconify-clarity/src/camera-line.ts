@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const cameraLine: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M32 8h-7.3l-1.06-2.72A2 2 0 0 0 21.78 4h-7.56a2 2 0 0 0-1.87 1.28L11.3 8H4a2 2 0 0 0-2 2v20a2 2 0 0 0 2 2h28a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2m0 22H4V10h8.67l1.55-4h7.56l1.55 4H32Z\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"currentColor\" d=\"M9 19a9 9 0 1 0 9-9a9 9 0 0 0-9 9m16.4 0a7.4 7.4 0 1 1-7.4-7.4a7.41 7.41 0 0 1 7.4 7.4\" class=\"clr-i-outline clr-i-outline-path-2\"/><path fill=\"currentColor\" d=\"M9.37 12.83a.8.8 0 0 0-.8-.8h-2.4a.8.8 0 0 0 0 1.6h2.4a.8.8 0 0 0 .8-.8\" class=\"clr-i-outline clr-i-outline-path-3\"/><path fill=\"currentColor\" d=\"M12.34 19a5.57 5.57 0 0 0 3.24 5l.85-1.37a4 4 0 1 1 4.11-6.61l.86-1.38A5.56 5.56 0 0 0 12.34 19\" class=\"clr-i-outline clr-i-outline-path-4\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default cameraLine

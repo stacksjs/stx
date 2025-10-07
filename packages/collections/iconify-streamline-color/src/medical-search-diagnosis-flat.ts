@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const medicalSearchDiagnosisFlat: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#8fbffa\" d=\"M1.5 6.25a4.75 4.75 0 1 1 9.5 0a4.75 4.75 0 0 1-9.5 0\"/><path fill=\"#2859c5\" fill-rule=\"evenodd\" d=\"M1.5 6.25a4.75 4.75 0 1 1 9.5 0a4.75 4.75 0 0 1-9.5 0M6.25 0a6.25 6.25 0 1 0 3.656 11.32l2.387 2.387a1 1 0 0 0 1.414-1.414L11.32 9.906A6.25 6.25 0 0 0 6.25 0\" clip-rule=\"evenodd\"/><path fill=\"#2859c5\" d=\"M5.438 3.031a.5.5 0 0 0-.5.5v1.406H3.531a.5.5 0 0 0-.5.5v1.625a.5.5 0 0 0 .5.5h1.406V8.97a.5.5 0 0 0 .5.5h1.625a.5.5 0 0 0 .5-.5V7.562H8.97a.5.5 0 0 0 .5-.5V5.437a.5.5 0 0 0-.5-.5H7.564V3.531a.5.5 0 0 0-.5-.5z\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default medicalSearchDiagnosisFlat

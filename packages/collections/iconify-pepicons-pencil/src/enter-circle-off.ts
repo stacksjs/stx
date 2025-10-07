@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const enterCircleOff: IconData = {
+  "body": "<g fill=\"currentColor\"><path fill-rule=\"evenodd\" d=\"M11.547 10.116a.5.5 0 0 1 .704.064l2.083 2.5a.5.5 0 0 1-.768.64l-2.083-2.5a.5.5 0 0 1 .064-.704\" clip-rule=\"evenodd\"/><path fill-rule=\"evenodd\" d=\"M11.547 15.884a.5.5 0 0 1-.065-.704l2.084-2.5a.5.5 0 1 1 .768.64l-2.083 2.5a.5.5 0 0 1-.704.064\" clip-rule=\"evenodd\"/><path fill-rule=\"evenodd\" d=\"M14 13a.5.5 0 0 1-.5.5H6a.5.5 0 0 1 0-1h7.5a.5.5 0 0 1 .5.5m5 7a.5.5 0 0 1-.5.5H9.3a.5.5 0 0 1 0-1h9.2a.5.5 0 0 1 .5.5m0-14a.5.5 0 0 1-.5.5H9.326a.5.5 0 1 1 0-1H18.5a.5.5 0 0 1 .5.5\" clip-rule=\"evenodd\"/><path fill-rule=\"evenodd\" d=\"M9.25 20.5a.5.5 0 0 1-.5-.5v-4a.5.5 0 0 1 1 0v4a.5.5 0 0 1-.5.5m0-10a.5.5 0 0 1-.5-.5V6a.5.5 0 0 1 1 0v4a.5.5 0 0 1-.5.5m9.35 10a.5.5 0 0 1-.5-.5V6a.5.5 0 0 1 1 0v14a.5.5 0 0 1-.5.5\" clip-rule=\"evenodd\"/><path d=\"M4.15 4.878a.514.514 0 0 1 .728-.727l16.971 16.971a.514.514 0 0 1-.727.727z\"/><path fill-rule=\"evenodd\" d=\"M13 24.5c6.351 0 11.5-5.149 11.5-11.5S19.351 1.5 13 1.5S1.5 6.649 1.5 13S6.649 24.5 13 24.5m0 1c6.904 0 12.5-5.596 12.5-12.5S19.904.5 13 .5S.5 6.096.5 13S6.096 25.5 13 25.5\" clip-rule=\"evenodd\"/></g>",
+  "width": 26,
+  "height": 26,
+  "viewBox": "0 0 26 26"
+}
+
+export default enterCircleOff

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const localMallSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 22V6h4q0-2.075 1.463-3.537T12 1t3.538 1.463T17 6h4v16zm9-8q2.075 0 3.538-1.463T17 9h-2q0 1.25-.875 2.125T12 12t-2.125-.875T9 9H7q0 2.075 1.463 3.538T12 14M9 6h6q0-1.25-.875-2.125T12 3t-2.125.875T9 6\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default localMallSharp

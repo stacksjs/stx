@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const serialPort16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M1.078 7.47A2 2 0 0 1 3.022 5h9.97a2 2 0 0 1 1.944 2.47l-.726 3A2 2 0 0 1 12.266 12h-8.52a2 2 0 0 1-1.943-1.53zM5 8a.5.5 0 1 0 0-1a.5.5 0 0 0 0 1m1.5 1.5a.5.5 0 1 0-1 0a.5.5 0 0 0 1 0M8 10a.5.5 0 1 0 0-1a.5.5 0 0 0 0 1m2.5-.5a.5.5 0 1 0-1 0a.5.5 0 0 0 1 0M7 8a.5.5 0 1 0 0-1a.5.5 0 0 0 0 1m2.5-.5a.5.5 0 1 0-1 0a.5.5 0 0 0 1 0M11 8a.5.5 0 1 0 0-1a.5.5 0 0 0 0 1\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default serialPort16Filled

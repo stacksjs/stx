@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tenOclock: IconData = {
+  "body": "<circle cx=\"32\" cy=\"32\" r=\"30\" fill=\"#62727a\"/><g fill=\"#fff\"><path d=\"M30 6h4v32h-4z\"/><path d=\"M38 33.4L36.1 37L16 24.6l1.9-3.6z\"/><circle cx=\"32\" cy=\"32\" r=\"4\"/></g><circle cx=\"32\" cy=\"32\" r=\"3\" fill=\"#62727a\"/>",
+  "width": 64,
+  "height": 64,
+  "viewBox": "0 0 64 64"
+}
+
+export default tenOclock

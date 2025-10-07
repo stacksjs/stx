@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const simOff: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m20.84 22.73l-1.38-1.38c-.36.4-.88.65-1.46.65H6c-1.11 0-2-.89-2-2V8l1.06-1.05L1.11 3l1.28-1.27l19.72 19.73zM20 4a2 2 0 0 0-2-2h-8L7.6 4.4L20 16.8z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default simOff

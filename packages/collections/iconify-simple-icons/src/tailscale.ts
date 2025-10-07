@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const tailscale: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M24 12a3 3 0 1 1-6 0a3 3 0 0 1 6 0m-9 9a3 3 0 1 1-6 0a3 3 0 0 1 6 0m0-9a3 3 0 1 1-6 0a3 3 0 0 1 6 0m6-6a3 3 0 1 1 0-6a3 3 0 0 1 0 6m0-.5a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5M3 24a3 3 0 1 1 0-6a3 3 0 0 1 0 6m0-.5a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5m18 .5a3 3 0 1 1 0-6a3 3 0 0 1 0 6m0-.5a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5M6 12a3 3 0 1 1-6 0a3 3 0 0 1 6 0m9-9a3 3 0 1 1-6 0a3 3 0 0 1 6 0m-3 2.5a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5M6 3a3 3 0 1 1-6 0a3 3 0 0 1 6 0M3 5.5a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default tailscale

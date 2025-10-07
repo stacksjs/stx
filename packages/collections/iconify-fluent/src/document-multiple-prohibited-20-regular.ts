@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const documentMultipleProhibited20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 2a2 2 0 0 0-2 2v5.022q.516.047 1 .185V4a1 1 0 0 1 1-1h3v3.5A1.5 1.5 0 0 0 12.5 8H16v6a1 1 0 0 1-1 1h-4.022a5.5 5.5 0 0 1-.185 1H15a2 2 0 0 0 2-2V7.414a1.5 1.5 0 0 0-.44-1.06l-3.914-3.915A1.5 1.5 0 0 0 11.586 2zm4 4.5V3.207L15.793 7H12.5a.5.5 0 0 1-.5-.5M5 9.022V4a1 1 0 0 0-1 1v4.207a5.5 5.5 0 0 1 1-.185M9.743 18q.381-.462.657-1H15a1 1 0 0 1-1 1zM1 14.5a4.5 4.5 0 1 0 9 0a4.5 4.5 0 0 0-9 0m2.404 2.803l4.9-4.9a3.5 3.5 0 0 1-4.9 4.9m-.707-.707a3.5 3.5 0 0 1 4.9-4.9z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default documentMultipleProhibited20Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const speed12x: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 17v-2h2v2zm3 0v-4q0-.825.588-1.412T11 11h1.5V9H9V7h3.5q.825 0 1.413.588T14.5 9v2q0 .825-.587 1.413T12.5 13H11v2h3.5v2zm-6 0V9H1V7h4v10zm12.5 0l3-5l-3-5h2l2 3.325L21.5 7h2l-3 5l3 5h-2l-2-3.325l-2 3.325z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default speed12x

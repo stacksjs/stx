@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const flagIran: IconData = {
+  "body": "<path fill=\"#d22f27\" d=\"M5 17h62v38H5z\"/><path fill=\"#5c9e31\" d=\"M5 17h62v13H5z\"/><path fill=\"#fff\" d=\"M5 30h62v12H5z\"/><path fill=\"none\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M36 32v8m2-8a4 4 0 0 1 0 8\"/><path fill=\"none\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M36 40a4 4 0 0 0 1.229-6.768M36 40a4 4 0 0 1-1.228-6.768\"/><path fill=\"none\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M34 32a4 4 0 0 0 0 8\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 17h62v38H5z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default flagIran

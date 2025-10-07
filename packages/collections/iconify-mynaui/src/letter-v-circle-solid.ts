@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const letterVCircleSolid: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75s-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12m7.452-4.013a.75.75 0 0 0-1.404.526l3 8a.75.75 0 0 0 1.404 0l3-8a.75.75 0 0 0-1.404-.526L12 14.114z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default letterVCircleSolid

@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const cardsBold: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M180 72H36a20 20 0 0 0-20 20v112a20 20 0 0 0 20 20h144a20 20 0 0 0 20-20V92a20 20 0 0 0-20-20m-4 128H40V96h136Zm64-148v124a12 12 0 0 1-24 0V56H64a12 12 0 0 1 0-24h156a20 20 0 0 1 20 20\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default cardsBold

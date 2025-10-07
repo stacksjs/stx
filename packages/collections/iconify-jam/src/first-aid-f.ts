@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const firstAidF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 4.858v-1a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1h2a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3v-8a3 3 0 0 1 3-3zm6 6v-2H9v2H7v2h2v2h2v-2h2v-2zm-4-6h6v-1a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default firstAidF

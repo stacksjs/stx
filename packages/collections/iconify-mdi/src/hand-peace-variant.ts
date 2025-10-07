@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const handPeaceVariant: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 19h8v3H7zm9.94-18c-.54-.09-1.07.25-1.18.8l-1.01 5.77c-.22-.03-.46-.07-.75-.1l-.43.03l-1.16-5.7c-.1-.54-.63-.89-1.17-.8c-.54.13-.89.66-.79 1.2l1.2 5.91l-3.8 1.69c-.5.2-.85.73-.85 1.34v4.36c0 .8.73 1.5 1.5 1.5H15c.39 0 .74-.16 1-.43l.5-.41s.5-.38.5-.8V13s0-1.14-.87-1.7l1.58-9.1c.12-.54-.21-1.07-.77-1.2\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default handPeaceVariant

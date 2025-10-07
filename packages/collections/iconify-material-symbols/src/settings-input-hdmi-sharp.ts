@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const settingsInputHdmiSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 22v-3l-3-6V7h1V2h12v5h1v6l-3 6v3zM8 7h2V5h1v2h2V5h1v2h2V4H8z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default settingsInputHdmiSharp

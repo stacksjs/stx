@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textboxMore20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14.5 3A2.5 2.5 0 0 1 17 5.5v9q0 .126-.012.25A2.25 2.25 0 0 0 15 15.968a2.25 2.25 0 0 0-4 0A2.25 2.25 0 0 0 6.75 17H5.5A2.5 2.5 0 0 1 3 14.5v-9A2.5 2.5 0 0 1 5.5 3zM9 18.25a1.25 1.25 0 1 0 0-2.5a1.25 1.25 0 0 0 0 2.5M14.25 17a1.25 1.25 0 1 1-2.5 0a1.25 1.25 0 0 1 2.5 0m4 0a1.25 1.25 0 1 1-2.5 0a1.25 1.25 0 0 1 2.5 0M6.5 6a.5.5 0 0 0 0 1h7a.5.5 0 0 0 0-1zm0 3a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1zm0 3a.5.5 0 0 0 0 1h7a.5.5 0 0 0 0-1z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default textboxMore20Filled

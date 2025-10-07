@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const textDescription32Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 6a1 1 0 0 0 0 2h26a1 1 0 1 0 0-2zm0 6a1 1 0 1 0 0 2h26a1 1 0 1 0 0-2zm-1 7a1 1 0 0 0 1 1h26a1 1 0 1 0 0-2H3a1 1 0 0 0-1 1m1 5a1 1 0 1 0 0 2h17a1 1 0 1 0 0-2z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default textDescription32Regular

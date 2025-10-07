@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const haskellDark: IconData = {
+  "body": "<g fill=\"none\"><rect width=\"256\" height=\"256\" fill=\"#242938\" rx=\"60\"/><path fill=\"#666\" d=\"m28 198.176l47.06-70.588L28 57h35.294l47.06 70.588l-47.06 70.588z\"/><path fill=\"#999\" d=\"m75.06 198.176l47.059-70.588L75.059 57h35.295l94.117 141.176h-35.295l-29.41-44.117l-29.413 44.117z\"/><path fill=\"#666\" d=\"m188.785 157l-15.686-23.532l54.901-.002v23.531h-39.216zm-23.529-35.294l-15.687-23.532L228 98.172v23.53h-62.749z\"/></g>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default haskellDark

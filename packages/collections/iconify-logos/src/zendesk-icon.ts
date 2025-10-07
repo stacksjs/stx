@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const zendeskIcon: IconData = {
+  "body": "<path fill=\"#03363D\" d=\"M118.25 51.233v142.773H0zm0-51.233c0 32.644-26.481 59.125-59.125 59.125S0 32.645 0 0zm19.5 194.006c0-32.677 26.449-59.125 59.125-59.125S256 161.361 256 194.006zm0-51.266V0H256z\"/>",
+  "width": 256,
+  "height": 195,
+  "viewBox": "0 0 256 195"
+}
+
+export default zendeskIcon

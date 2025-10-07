@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const baselineSignalWifi4Bar: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12.01 21.49L23.64 7c-.45-.34-4.93-4-11.64-4C5.28 3 .81 6.66.36 7l11.63 14.49l.01.01z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default baselineSignalWifi4Bar

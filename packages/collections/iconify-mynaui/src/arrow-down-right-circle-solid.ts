@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const arrowDownRightCircleSolid: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75s-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12m6.038-3.712a.75.75 0 0 0 0 1.06l5.083 5.084h-3.139a.75.75 0 0 0 0 1.5h4.95a.75.75 0 0 0 .75-.75v-4.95a.75.75 0 0 0-1.5 0v3.14L9.348 8.287a.75.75 0 0 0-1.06 0\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default arrowDownRightCircleSolid

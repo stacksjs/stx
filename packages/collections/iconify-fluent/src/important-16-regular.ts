@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const important16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8.201 8.833a.205.205 0 0 1-.402 0l-.855-4.56a1.075 1.075 0 1 1 2.112 0zM8 2C6.7 2 5.721 3.18 5.96 4.457l.856 4.56a1.205 1.205 0 0 0 2.368 0l.855-4.56A2.075 2.075 0 0 0 8 2m0 11a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1m0 1a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default important16Regular

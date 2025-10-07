@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const buildingSkyscraper24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8.75 2.002a.75.75 0 0 0-.75.75V4h3V2.75a.75.75 0 0 0-.75-.749zM11 5H6.75a.75.75 0 0 0-.75.75V7h7V5.75a.75.75 0 0 0-.75-.75zm6 11a1 1 0 1 0 0-2a1 1 0 0 0 0 2m1 2a1 1 0 1 1-2 0a1 1 0 0 1 2 0M4 10a2 2 0 0 1 1.965-2h7.07A2 2 0 0 1 15 10v.005a5.75 5.75 0 0 1 5.5 5.744v5a.75.75 0 0 1-.75.75h-8.5v-3a.5.5 0 0 0-.5-.5h-2.5a.5.5 0 0 0-.5.5v3h-3a.75.75 0 0 1-.75-.75zm15 5.75a4.25 4.25 0 0 0-4-4.243V20h4zM12.25 11a1 1 0 1 0-2 0a1 1 0 0 0 2 0m-1 4.25a1 1 0 1 0 0-2a1 1 0 0 0 0 2M8.75 11a1 1 0 1 0-2 0a1 1 0 0 0 2 0m-1 4.25a1 1 0 1 0 0-2a1 1 0 0 0 0 2\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default buildingSkyscraper24Filled

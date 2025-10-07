@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const calendarMonth28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M21.75 3A3.25 3.25 0 0 1 25 6.25v15.5A3.25 3.25 0 0 1 21.75 25H6.25A3.25 3.25 0 0 1 3 21.75V6.25A3.25 3.25 0 0 1 6.25 3zM8.5 15.5a1.5 1.5 0 1 0 0 3a1.5 1.5 0 0 0 0-3m5.5 0a1.5 1.5 0 1 0 0 3a1.5 1.5 0 0 0 0-3m-5.5-6a1.5 1.5 0 1 0 0 3a1.5 1.5 0 0 0 0-3m5.5 0a1.5 1.5 0 1 0 0 3a1.5 1.5 0 0 0 0-3m5.5 0a1.5 1.5 0 1 0 0 3a1.5 1.5 0 0 0 0-3\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default calendarMonth28Filled

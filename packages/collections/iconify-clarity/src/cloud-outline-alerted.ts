@@ -1,0 +1,10 @@
+import type { IconData } from '@stx/iconify-core'
+
+export const cloudOutlineAlerted: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M29 16.66a10 10 0 0 0 .2-1.3h-2a8.3 8.3 0 0 1-.37 1.72l-.39 1.13l1.18.18a6.31 6.31 0 0 1 5.37 6.26C32.95 28 30.16 31 27.09 31H10.57c-3.84 0-7.62-3.91-7.62-7.9a7.94 7.94 0 0 1 7-7.89l.86-.1v-.87A8.16 8.16 0 0 1 21 6.47l1-1.8a10.19 10.19 0 0 0-13.09 8.69a10 10 0 0 0-8 9.75c0 5.09 4.67 9.9 9.62 9.9h16.56c4.19 0 7.86-3.9 7.86-8.35a8.29 8.29 0 0 0-5.95-8\" class=\"clr-i-outline--alerted clr-i-outline-path-1--alerted\"/><path fill=\"currentColor\" d=\"M26.85 1.14L21.13 11a1.28 1.28 0 0 0 1.1 2h11.45a1.28 1.28 0 0 0 1.1-2l-5.72-9.86a1.28 1.28 0 0 0-2.21 0\" class=\"clr-i-outline--alerted clr-i-outline-path-2--alerted clr-i-alert\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default cloudOutlineAlerted
