@@ -320,15 +320,6 @@ function parseList(state: ParserState): boolean {
   const firstChar = state.src.charCodeAt(state.pos)
   const isOrdered = firstChar >= 48 && firstChar <= 57
 
-  // For bullet lists, make sure there's only one marker character
-  if (!isOrdered) {
-    const nextChar = state.src.charCodeAt(state.pos + 1)
-    // If followed by same character or not followed by space, it's not a list
-    if (nextChar === firstChar || nextChar !== CODE_SPACE) {
-      return false
-    }
-  }
-
   pushToken(state, isOrdered ? 'ordered_list_open' : 'bullet_list_open', isOrdered ? 'ol' : 'ul', 1)
 
   while (state.pos < state.posMax) {
@@ -345,8 +336,6 @@ function parseList(state: ParserState): boolean {
       state.pos++ // skip dot
     } else {
       if (char !== CODE_STAR && char !== CODE_MINUS && char !== CODE_PLUS) break
-      // Make sure next char isn't the same (would be **, --, etc)
-      if (state.src.charCodeAt(state.pos + 1) === char) break
       state.pos++
     }
 
@@ -523,27 +512,26 @@ function parseParagraph(state: ParserState): boolean {
   return true
 }
 
-// Inline parsing with direct matching (simpler and more reliable)
+// Inline parsing with delimiter-based matching (like markdown-it)
 function parseInline(state: ParserState, content: string): void {
   const savedSrc = state.src
   const savedPos = state.pos
   const savedPosMax = state.posMax
+  const savedDelimiters = state.delimiters
 
   state.src = content
   state.pos = 0
   state.posMax = content.length
+  state.delimiters = []
 
+  // First pass: tokenize and collect delimiters
   while (state.pos < state.posMax) {
     const char = state.src.charCodeAt(state.pos)
 
-    // Strong (bold) - check for ** or __
-    if ((char === CODE_STAR || char === CODE_UNDERSCORE) && state.src.charCodeAt(state.pos + 1) === char) {
-      if (scanStrong(state, char)) continue
-    }
-
-    // Emphasis (italic) - check for * or _
+    // Bold/italic markers
     if (char === CODE_STAR || char === CODE_UNDERSCORE) {
-      if (scanEmphasisDirect(state, char)) continue
+      scanEmphasis(state)
+      continue
     }
 
     // Inline code
@@ -566,14 +554,6 @@ function parseInline(state: ParserState, content: string): void {
       if (scanStrikethrough(state)) continue
     }
 
-    // Line breaks
-    if (state.options.breaks && char === CODE_NEWLINE) {
-      pushPending(state)
-      pushToken(state, 'br', 'br', 0)
-      state.pos++
-      continue
-    }
-
     // Regular text
     state.pending += state.src[state.pos]
     state.pos++
@@ -582,69 +562,41 @@ function parseInline(state: ParserState, content: string): void {
   // Flush pending
   if (state.pending) pushPending(state)
 
+  // Second pass: match delimiters (emphasis/strong)
+  processDelimiters(state)
+
   // Restore state
   state.src = savedSrc
   state.pos = savedPos
   state.posMax = savedPosMax
+  state.delimiters = savedDelimiters
 }
 
-function scanStrong(state: ParserState, marker: number): boolean {
-  const start = state.pos
-  const markerStr = String.fromCharCode(marker)
-  const searchStart = start + 2
+function scanEmphasis(state: ParserState): void {
+  const marker = state.src.charCodeAt(state.pos)
+  const startPos = state.pos
+  let count = 0
 
-  // Find closing marker
-  const closePos = state.src.indexOf(markerStr + markerStr, searchStart)
-  if (closePos === -1) {
-    return false
+  while (state.pos < state.posMax && state.src.charCodeAt(state.pos) === marker) {
+    count++
+    state.pos++
+  }
+
+  // Push as text tokens and record delimiters
+  for (let i = 0; i < count; i++) {
+    state.pending += String.fromCharCode(marker)
   }
 
   pushPending(state)
 
-  // Get text between markers
-  const text = state.src.substring(searchStart, closePos)
-
-  pushToken(state, 'strong_open', 'strong', 1)
-  // Recursively parse nested inline elements
-  parseInline(state, text)
-  pushToken(state, 'strong_close', 'strong', -1)
-
-  state.pos = closePos + 2
-  return true
-}
-
-function scanEmphasisDirect(state: ParserState, marker: number): boolean {
-  const start = state.pos
-  const markerStr = String.fromCharCode(marker)
-  const searchStart = start + 1
-
-  // Find closing marker (make sure it's not a double marker)
-  let closePos = state.src.indexOf(markerStr, searchStart)
-  while (closePos !== -1) {
-    // Make sure it's not a double marker
-    if (state.src.charCodeAt(closePos + 1) === marker) {
-      closePos = state.src.indexOf(markerStr, closePos + 2)
-      continue
-    }
-    break
-  }
-
-  if (closePos === -1 || closePos === searchStart) {
-    return false
-  }
-
-  pushPending(state)
-
-  // Get text between markers
-  const text = state.src.substring(searchStart, closePos)
-
-  pushToken(state, 'em_open', 'em', 1)
-  // Recursively parse nested inline elements
-  parseInline(state, text)
-  pushToken(state, 'em_close', 'em', -1)
-
-  state.pos = closePos + 1
-  return true
+  state.delimiters.push({
+    marker,
+    length: count,
+    token: state.tokens.length - 1,
+    end: -1,
+    can_open: true,
+    can_close: true,
+  })
 }
 
 function scanCode(state: ParserState): boolean {
@@ -688,14 +640,12 @@ function scanLink(state: ParserState): boolean {
     return false
   }
 
-  pushPending(state)
-
   const text = state.src.slice(textStart, textEnd)
   const url = state.src.slice(urlStart, urlEnd)
 
   pushToken(state, 'link_open', 'a', 1).markup = url
-  // Recursively parse link text
-  parseInline(state, text)
+  state.pending += text
+  pushPending(state)
   pushToken(state, 'link_close', 'a', -1)
 
   state.pos = urlEnd + 1
@@ -745,19 +695,59 @@ function scanStrikethrough(state: ParserState): boolean {
     return false
   }
 
-  pushPending(state)
-
   const text = state.src.slice(textStart, closeIdx)
 
   pushToken(state, 'del_open', 'del', 1)
-  // Recursively parse nested inline elements
-  parseInline(state, text)
+  state.pending += text
+  pushPending(state)
   pushToken(state, 'del_close', 'del', -1)
 
   state.pos = closeIdx + 2
   return true
 }
 
+function processDelimiters(state: ParserState): void {
+  const delimiters = state.delimiters
+  const max = delimiters.length
+
+  for (let i = 0; i < max; i++) {
+    const startDelim = delimiters[i]
+
+    if (startDelim.marker !== CODE_STAR && startDelim.marker !== CODE_UNDERSCORE) continue
+    if (startDelim.end !== -1) continue
+
+    // Find closing delimiter
+    for (let j = i + 1; j < max; j++) {
+      const endDelim = delimiters[j]
+
+      if (endDelim.marker !== startDelim.marker) continue
+      if (!endDelim.can_close) continue
+
+      // Match delimiters
+      startDelim.end = j
+      endDelim.end = i
+
+      // Check if strong (** or __)
+      const isStrong = startDelim.length >= 2 && endDelim.length >= 2
+      const ch = String.fromCharCode(startDelim.marker)
+
+      // Update tokens
+      const openToken = state.tokens[startDelim.token]
+      openToken.type = isStrong ? 'strong_open' : 'em_open'
+      openToken.tag = isStrong ? 'strong' : 'em'
+      openToken.nesting = 1
+      openToken.content = ''
+
+      const closeToken = state.tokens[endDelim.token]
+      closeToken.type = isStrong ? 'strong_close' : 'em_close'
+      closeToken.tag = isStrong ? 'strong' : 'em'
+      closeToken.nesting = -1
+      closeToken.content = ''
+
+      break
+    }
+  }
+}
 
 function renderTokens(tokens: FlatToken[], options: MarkdownOptions): string {
   let html = ''
@@ -782,20 +772,10 @@ function renderTokens(tokens: FlatToken[], options: MarkdownOptions): string {
         break
       case 'fence':
       case 'code_block':
-        let code = token.content || ''
-        const lang = token.markup || ''
-
-        // Apply syntax highlighting if provided
-        if (options.highlight && lang) {
-          code = options.highlight(code, lang)
+        if (token.markup) {
+          html += `<pre><code class="language-${token.markup}">${escapeHtml(token.content || '')}</code></pre>\n`
         } else {
-          code = escapeHtml(code)
-        }
-
-        if (lang) {
-          html += `<pre><code class="language-${lang}">${code}</code></pre>\n`
-        } else {
-          html += `<pre><code>${code}</code></pre>\n`
+          html += `<pre><code>${escapeHtml(token.content || '')}</code></pre>\n`
         }
         break
       case 'code_inline':
@@ -894,9 +874,6 @@ function renderTokens(tokens: FlatToken[], options: MarkdownOptions): string {
         break
       case 'del_close':
         html += '</del>'
-        break
-      case 'br':
-        html += '<br>'
         break
       case 'link_open':
         html += `<a href="${escapeHtml(token.markup || '')}">`
