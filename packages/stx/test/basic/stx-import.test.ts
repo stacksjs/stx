@@ -10,7 +10,7 @@ const TEST_DIR = import.meta.dir
 const TEMPLATE_DIR = path.join(TEST_DIR, 'templates')
 const OUTPUT_DIR = path.join(TEST_DIR, 'out')
 
-// Create a simple server setup to test STX like Bun.serve's routes
+// Create a simple server setup to test stx like Bun.serve's routes
 function createTestServer(routes: Record<string, string>) {
   return {
     routes,
@@ -37,7 +37,7 @@ function createTestServer(routes: Record<string, string>) {
   }
 }
 
-describe('STX Server Import Tests', () => {
+describe('stx Server Import Tests', () => {
   // Set up test files before running tests
   beforeAll(async () => {
     // Create test directories
@@ -49,10 +49,10 @@ describe('STX Server Import Tests', () => {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>STX Home</title>
+        <title>stx Home</title>
         <script>
           module.exports = {
-            title: "Welcome to STX",
+            title: "Welcome to stx",
             showFeature: true,
             features: ["Templates", "Directives", "Components"]
           };
@@ -82,7 +82,7 @@ describe('STX Server Import Tests', () => {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>STX Dashboard</title>
+        <title>stx Dashboard</title>
         <script>
           module.exports = {
             user: {
@@ -130,7 +130,7 @@ describe('STX Server Import Tests', () => {
     }
   })
 
-  test('should import and render STX templates like HTML files', async () => {
+  test('should import and render stx templates like HTML files', async () => {
     // Set up routes similar to how Bun.serve would do it
     const homePath = path.join(TEMPLATE_DIR, 'home.stx')
     const dashboardPath = path.join(TEMPLATE_DIR, 'dashboard.stx')
@@ -145,7 +145,7 @@ describe('STX Server Import Tests', () => {
     expect(homeHtml).toBeDefined()
 
     // Verify homepage content
-    expect(homeHtml).toContain('<h1>Welcome to STX</h1>')
+    expect(homeHtml).toContain('<h1>Welcome to stx</h1>')
     expect(homeHtml).toContain('<h2>Key Features:</h2>')
     expect(homeHtml).toContain('<li>Templates</li>')
     expect(homeHtml).toContain('<li>Directives</li>')
@@ -178,7 +178,7 @@ describe('STX Server Import Tests', () => {
 
     // Test DOM manipulation
     const h1 = document.querySelector('h1')
-    expect(h1?.textContent).toBe('Welcome to STX')
+    expect(h1?.textContent).toBe('Welcome to stx')
 
     // Modify button text
     const button = document.querySelector('#btn-primary')

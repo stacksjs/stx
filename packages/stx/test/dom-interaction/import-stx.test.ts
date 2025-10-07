@@ -8,7 +8,7 @@ const TEST_DIR = import.meta.dir
 const TEMPLATE_DIR = path.join(TEST_DIR, 'templates')
 const OUTPUT_DIR = path.join(TEST_DIR, 'out')
 
-// Interface for STX module content
+// Interface for stx module content
 interface StxModuleContent {
   title: string
   placeholders: Record<string, string>
@@ -17,13 +17,13 @@ interface StxModuleContent {
   html?: string
 }
 
-// Helper function to process STX templates
+// Helper function to process stx templates
 async function processTemplate(templatePath: string): Promise<{ html: string, data: StxModuleContent }> {
   // Create a temporary output directory
   const outputDir = path.join(path.dirname(templatePath), 'out')
   await fs.promises.mkdir(outputDir, { recursive: true })
 
-  // Build the template using the STX plugin
+  // Build the template using the stx plugin
   const result = await Bun.build({
     entrypoints: [templatePath],
     outdir: outputDir,
@@ -60,14 +60,14 @@ async function processTemplate(templatePath: string): Promise<{ html: string, da
   return { html: filteredHtml, data }
 }
 
-describe('STX Import Testing', () => {
+describe('stx Import Testing', () => {
   // Set up test environment
   beforeAll(async () => {
     // Create necessary directories
     await fs.promises.mkdir(TEMPLATE_DIR, { recursive: true })
     await fs.promises.mkdir(OUTPUT_DIR, { recursive: true })
 
-    // Create a test STX template
+    // Create a test stx template
     await Bun.write(path.join(TEMPLATE_DIR, 'profile.stx'), `
 <!DOCTYPE html>
 <html lang="en">
@@ -131,8 +131,8 @@ describe('STX Import Testing', () => {
     }
   })
 
-  test('should process STX file and test its content', async () => {
-    // Process the STX file
+  test('should process stx file and test its content', async () => {
+    // Process the stx file
     const stxFilePath = path.join(TEMPLATE_DIR, 'profile.stx')
     const { html, data } = await processTemplate(stxFilePath)
 
@@ -165,7 +165,7 @@ describe('STX Import Testing', () => {
   })
 
   test('should support DOM interaction with processed template', async () => {
-    // Process the STX file
+    // Process the stx file
     const stxFilePath = path.join(TEMPLATE_DIR, 'profile.stx')
     const { html, data: _data } = await processTemplate(stxFilePath)
 

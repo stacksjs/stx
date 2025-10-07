@@ -41,7 +41,7 @@ async function runCommand(args: string[]): Promise<{ stdout: string, stderr: str
   })
 }
 
-describe('STX CLI end-to-end tests', () => {
+describe('stx CLI end-to-end tests', () => {
   // Set up and clean up test directories
   beforeEach(() => {
     // Create test directory if it doesn't exist
@@ -101,7 +101,7 @@ describe('STX CLI end-to-end tests', () => {
     // Check the content of the file
     const content = fs.readFileSync(path.join(TEST_DIR, 'e2e-file.stx'), 'utf-8')
     expect(content).toContain('<!DOCTYPE html>')
-    expect(content).toContain('export const title = "My STX Page"')
+    expect(content).toContain('export const title = "My stx Page"')
   })
 
   test('should use a template with stx init command', async () => {

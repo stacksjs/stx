@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import stxPlugin from 'bun-plugin-stx'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
 
-describe('STX Edge Cases', () => {
+describe('stx Edge Cases', () => {
   beforeAll(setupTestDirs)
   afterAll(cleanupTestDirs)
 
@@ -335,16 +335,16 @@ describe('STX Edge Cases', () => {
 
         <!-- HTML comment - should be preserved -->
 
-        {{-- STX comment - should be removed --}}
+        {{-- stx comment - should be removed --}}
 
         {{--
-          Multiline STX comment
+          Multiline stx comment
           This should all be removed
         --}}
 
         <!-- HTML comment with {{ title }} - should keep braces -->
 
-        {{-- STX comment with @if (true) - should remove directive --}}
+        {{-- stx comment with @if (true) - should remove directive --}}
 
         <p>After comments</p>
       </body>
@@ -365,9 +365,9 @@ describe('STX Edge Cases', () => {
     // HTML comments should be preserved
     expect(outputHtml).toContain('<!-- HTML comment - should be preserved -->')
 
-    // STX comments should be removed
-    expect(outputHtml).not.toContain('STX comment - should be removed')
-    expect(outputHtml).not.toContain('Multiline STX comment')
+    // stx comments should be removed
+    expect(outputHtml).not.toContain('stx comment - should be removed')
+    expect(outputHtml).not.toContain('Multiline stx comment')
 
     // Paragraph after comments should be there
     expect(outputHtml).toContain('<p>After comments</p>')

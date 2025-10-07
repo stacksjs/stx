@@ -6,7 +6,7 @@ import { analyzeProject, analyzeTemplate } from '../../src/analyzer'
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp-analyzer')
 
-describe('STX Analyzer', () => {
+describe('stx Analyzer', () => {
   beforeAll(async () => {
     await fs.promises.mkdir(TEMP_DIR, { recursive: true })
 

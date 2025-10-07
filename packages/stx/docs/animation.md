@@ -1,6 +1,6 @@
 # Animation System
 
-The STX Animation System provides a set of powerful directives to create beautiful, accessible animations in your templates. The system automatically respects users' motion preferences and makes it easy to coordinate complex animations.
+The stx Animation System provides a set of powerful directives to create beautiful, accessible animations in your templates. The system automatically respects users' motion preferences and makes it easy to coordinate complex animations.
 
 ## Features
 

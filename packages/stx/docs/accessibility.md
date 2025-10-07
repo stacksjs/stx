@@ -1,6 +1,6 @@
-# STX Accessibility Features
+# stx Accessibility Features
 
-STX includes a comprehensive set of accessibility features to help you build more inclusive web applications. These features include accessibility-focused directives, automatic scanning for accessibility issues, and tools to ensure your templates meet accessibility standards.
+stx includes a comprehensive set of accessibility features to help you build more inclusive web applications. These features include accessibility-focused directives, automatic scanning for accessibility issues, and tools to ensure your templates meet accessibility standards.
 
 ## Accessibility Directives
 
@@ -74,7 +74,7 @@ You'll need to manually add the `aria-describedby` attribute to the element, or 
 
 ## Automatic Accessibility Checking
 
-STX includes built-in accessibility checking that can identify common accessibility issues in your templates.
+stx includes built-in accessibility checking that can identify common accessibility issues in your templates.
 
 ### Using the CLI
 
@@ -132,7 +132,7 @@ ignoreChecks = [] # Array of check types to ignore
 
 ## Screen Reader Only Style
 
-STX provides a built-in screen reader only style that you can include in your stylesheets:
+stx provides a built-in screen reader only style that you can include in your stylesheets:
 
 ```typescript
 import { getScreenReaderOnlyStyle } from 'stx'
@@ -159,7 +159,7 @@ Or you can use your own CSS:
 
 ## Accessibility Issues Detected
 
-The STX accessibility checker can detect these common issues:
+The stx accessibility checker can detect these common issues:
 
 1. **Missing alt text** - Images without alternative text
 2. **Missing accessible names** - Interactive elements without accessible labels
@@ -168,6 +168,7 @@ The STX accessibility checker can detect these common issues:
 5. **Missing language attribute** - HTML without a language specification
 
 Each issue includes:
+
 - Type of violation
 - Impact level (critical, serious, moderate, minor)
 - The problematic HTML element

@@ -249,7 +249,7 @@ describe('Property-Based Security Tests', () => {
   describe('Template Injection - Fuzz Testing', () => {
     it('should never evaluate user-provided templates', async () => {
       for (let i = 0; i < 20; i++) {
-        // Generate a string that looks like an STX template
+        // Generate a string that looks like an stx template
         const fakeTemplate = `
         @if(true)
           ${generateXssVector()}

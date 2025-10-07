@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import stxPlugin from 'bun-plugin-stx'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
 
-describe('STX Basic Variable Rendering', () => {
+describe('stx Basic Variable Rendering', () => {
   beforeAll(setupTestDirs)
   afterAll(cleanupTestDirs)
 
@@ -16,7 +16,7 @@ describe('STX Basic Variable Rendering', () => {
         <script>
           module.exports = {
             title: "Hello World",
-            subtitle: "Welcome to STX",
+            subtitle: "Welcome to stx",
             version: 1.0,
             isEnabled: true
           };
@@ -40,7 +40,7 @@ describe('STX Basic Variable Rendering', () => {
     const outputHtml = await getHtmlOutput(result)
 
     expect(outputHtml).toContain('<h1>Hello World</h1>')
-    expect(outputHtml).toContain('<h2>Welcome to STX</h2>')
+    expect(outputHtml).toContain('<h2>Welcome to stx</h2>')
     expect(outputHtml).toContain('<p>Version: 1</p>')
     expect(outputHtml).toContain('<p>Enabled: true</p>')
   })

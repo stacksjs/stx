@@ -5,7 +5,7 @@ import stxPlugin from 'bun-plugin-stx'
 import { processJsonDirective, processOnceDirective } from '../../src/process'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
 
-describe('STX Special Directives', () => {
+describe('stx Special Directives', () => {
   beforeAll(async () => {
     await setupTestDirs()
   })

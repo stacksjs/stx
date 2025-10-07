@@ -4,7 +4,7 @@ import path from 'node:path'
 import stxPlugin from 'bun-plugin-stx'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
 
-describe('STX Template Caching', () => {
+describe('stx Template Caching', () => {
   const CACHE_DIR = path.join(TEMP_DIR, '.stx/cache')
 
   beforeAll(async () => {

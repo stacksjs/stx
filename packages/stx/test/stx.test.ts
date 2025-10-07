@@ -36,7 +36,7 @@ describe('bun-plugin-stx', () => {
         <script>
           module.exports = {
             title: "Hello World",
-            subtitle: "Welcome to STX"
+            subtitle: "Welcome to stx"
           };
         </script>
       </head>
@@ -56,7 +56,7 @@ describe('bun-plugin-stx', () => {
     const outputHtml = await getHtmlOutput(result)
 
     expect(outputHtml).toContain('<h1>Hello World</h1>')
-    expect(outputHtml).toContain('<h2>Welcome to STX</h2>')
+    expect(outputHtml).toContain('<h2>Welcome to stx</h2>')
   })
 
   // Test conditional rendering with if
@@ -625,10 +625,10 @@ describe('bun-plugin-stx', () => {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>STX Plugin Test</title>
+    <title>stx Plugin Test</title>
     <script>
         module.exports = {
-            title: "STX Template Demo",
+            title: "stx Template Demo",
             showMessage: true,
             items: ["Item 1", "Item 2", "Item 3"],
             user: {
@@ -643,7 +643,7 @@ describe('bun-plugin-stx', () => {
         <h1>{{ title }}</h1>
 
         @if (showMessage)
-            <div class="message">Welcome to the STX plugin demo!</div>
+            <div class="message">Welcome to the stx plugin demo!</div>
         @endif
 
         @if (user.isAdmin)
@@ -679,8 +679,8 @@ describe('bun-plugin-stx', () => {
 
     const outputHtml = await getHtmlOutput(result)
 
-    expect(outputHtml).toContain('<h1>STX Template Demo</h1>')
-    expect(outputHtml).toContain('<div class="message">Welcome to the STX plugin demo!</div>')
+    expect(outputHtml).toContain('<h1>stx Template Demo</h1>')
+    expect(outputHtml).toContain('<div class="message">Welcome to the stx plugin demo!</div>')
     expect(outputHtml).toContain('<div class="admin-panel">')
     expect(outputHtml).toContain('<p>Hello, John! You have admin access.</p>')
     expect(outputHtml).toContain('<li>Item 1</li>')
@@ -1026,7 +1026,7 @@ describe('bun-plugin-stx', () => {
     // Create German translations in YAML format
     const deTranslations = path.join(translationsDir, 'de.yaml')
     await Bun.write(deTranslations, `
-welcome: Willkommen bei STX
+welcome: Willkommen bei stx
 greeting: Hallo, :name!
 nav:
   home: Startseite
@@ -1050,7 +1050,7 @@ nav:
     const outputHtml = await getHtmlOutput(result)
 
     // Check German translations
-    expect(outputHtml).toContain('<p id="welcome">Willkommen bei STX</p>')
+    expect(outputHtml).toContain('<p id="welcome">Willkommen bei stx</p>')
     expect(outputHtml).toContain('<p id="greeting">Hallo, Hans!</p>')
     expect(outputHtml).toContain('<p id="nav-home">Startseite</p>')
   })
@@ -1099,7 +1099,7 @@ nav:
     // Create English translations in YAML format
     const enTranslations = path.join(translationsDir, 'en.yaml')
     await Bun.write(enTranslations, `
-welcome: Welcome to STX
+welcome: Welcome to stx
 greeting: Hello, :name!
 nav:
   home: Home
@@ -1125,14 +1125,14 @@ nav:
     // Only check the translations that appear in the actual output
     // The template sections with direct @translate directives appear to be removed
     // in the current implementation
-    expect(outputHtml).toContain('<p id="basic">Welcome to STX</p>')
+    expect(outputHtml).toContain('<p id="basic">Welcome to stx</p>')
 
     // Check filter translations
-    expect(outputHtml).toContain('<p id="filter">Welcome to STX</p>')
+    expect(outputHtml).toContain('<p id="filter">Welcome to stx</p>')
     expect(outputHtml).toContain('<p id="filter-params">Hello, Alice!</p>')
 
     // Check alias translations
-    expect(outputHtml).toContain('<p id="alias">Welcome to STX</p>')
+    expect(outputHtml).toContain('<p id="alias">Welcome to stx</p>')
     expect(outputHtml).toContain('<p id="alias-params">Hello, Bob!</p>')
   })
 

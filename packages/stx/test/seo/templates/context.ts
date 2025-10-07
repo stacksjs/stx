@@ -34,7 +34,7 @@ interface ProductContext {
  */
 export const productContext: ProductContext = {
   // Page metadata
-  pageTitle: 'Premium Ergonomic Chair | STX Demo Store',
+  pageTitle: 'Premium Ergonomic Chair | stx Demo Store',
   pageDescription: 'Experience ultimate comfort with our premium ergonomic office chair. Designed for long work sessions with lumbar support and adjustable features.',
   pageUrl: 'https://example.com/products/ergonomic-chair',
 
@@ -53,7 +53,7 @@ export const productContext: ProductContext = {
 
   // OpenGraph specific overrides
   openGraph: {
-    title: 'Premium Ergonomic Chair - Best Seller | STX Demo Store',
+    title: 'Premium Ergonomic Chair - Best Seller | stx Demo Store',
   },
 
   // Current year for footer

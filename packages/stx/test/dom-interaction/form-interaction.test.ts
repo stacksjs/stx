@@ -8,13 +8,13 @@ interface ProcessedTemplate {
   html: string
 }
 
-// Helper function to process STX templates
+// Helper function to process stx templates
 async function processTemplate(templatePath: string): Promise<ProcessedTemplate> {
   // Create a temporary output directory
   const outputDir = path.join(path.dirname(templatePath), 'out')
   await fs.promises.mkdir(outputDir, { recursive: true })
 
-  // Build the template using the STX plugin
+  // Build the template using the stx plugin
   const result = await Bun.build({
     entrypoints: [templatePath],
     outdir: outputDir,
@@ -41,7 +41,7 @@ const TEMPLATE_DIR = path.join(TEST_DIR, 'templates')
 
 // DOM environment is provided by happy-dom registration
 
-describe('STX Form Interaction Tests', () => {
+describe('stx Form Interaction Tests', () => {
   // Set up test environment
   beforeAll(async () => {
     // Create necessary directories
@@ -53,7 +53,7 @@ describe('STX Form Interaction Tests', () => {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>STX Form Test</title>
+  <title>stx Form Test</title>
   <script>
     module.exports = {
       title: "User Registration",
@@ -157,8 +157,8 @@ describe('STX Form Interaction Tests', () => {
     }
   })
 
-  test('should handle form validation and submission with STX template', async () => {
-    // Process the STX file
+  test('should handle form validation and submission with stx template', async () => {
+    // Process the stx file
     const templatePath = path.join(TEMPLATE_DIR, 'form-template.stx')
     const { html } = await processTemplate(templatePath)
 

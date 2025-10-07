@@ -247,7 +247,7 @@ describe('SEO features', () => {
         },
       }
       const result = injectSeoTags(html, context, options)
-      expect(result).toContain('<!-- STX SEO Tags -->')
+      expect(result).toContain('<!-- stx SEO Tags -->')
       expect(result).toContain('<title>Test Page</title>')
       expect(result).toContain('<meta name="title" content="Test Page">')
       expect(result).toContain('<meta name="description" content="Default description">')
@@ -262,7 +262,7 @@ describe('SEO features', () => {
         },
       }
       const result = injectSeoTags(html, context, options)
-      expect(result).not.toContain('<!-- STX SEO Tags -->')
+      expect(result).not.toContain('<!-- stx SEO Tags -->')
     })
 
     test('should not inject SEO tags when no <head> tag exists', () => {
@@ -277,11 +277,11 @@ describe('SEO features', () => {
         },
       }
       const result = injectSeoTags(html, context, options)
-      expect(result).not.toContain('<!-- STX SEO Tags -->')
+      expect(result).not.toContain('<!-- stx SEO Tags -->')
     })
 
     test('should not inject SEO tags when already injected', () => {
-      const html = '<html><head><!-- STX SEO Tags --></head><body>Test</body></html>'
+      const html = '<html><head><!-- stx SEO Tags --></head><body>Test</body></html>'
       const context = { title: 'Test Page' }
       const options: StxOptions = {
         seo: {
@@ -293,7 +293,7 @@ describe('SEO features', () => {
       }
       const result = injectSeoTags(html, context, options)
       // Count occurrences of the comment
-      const count = (result.match(/<!-- STX SEO Tags -->/g) || []).length
+      const count = (result.match(/<!-- stx SEO Tags -->/g) || []).length
       expect(count).toBe(1) // Should still have only one instance
     })
 
@@ -409,7 +409,7 @@ describe('SEO features', () => {
             canonical: "https://example.com/test",
             openGraph: {
               image: "https://example.com/image.jpg",
-              siteName: "STX Test Site"
+              siteName: "stx Test Site"
             },
             twitter: {
               card: "summary_large_image",
@@ -465,7 +465,7 @@ describe('SEO features', () => {
       expect(finalOutput).toContain('<meta property="og:title" content="Test Page">')
       expect(finalOutput).toContain('<meta property="og:description" content="This is a test page with SEO">')
       expect(finalOutput).toContain('<meta property="og:image" content="https://example.com/image.jpg">')
-      expect(finalOutput).toContain('<meta property="og:site_name" content="STX Test Site">')
+      expect(finalOutput).toContain('<meta property="og:site_name" content="stx Test Site">')
 
       // Check Twitter Card tags
       expect(finalOutput).toContain('<meta name="twitter:card" content="summary_large_image">')

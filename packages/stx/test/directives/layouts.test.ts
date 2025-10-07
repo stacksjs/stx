@@ -4,7 +4,7 @@ import path from 'node:path'
 import stxPlugin from 'bun-plugin-stx'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
 
-describe('STX Layout Directives', () => {
+describe('stx Layout Directives', () => {
   const LAYOUTS_DIR = path.join(TEMP_DIR, 'layouts')
   const PARTIALS_DIR = path.join(TEMP_DIR, 'partials')
 

@@ -1,15 +1,15 @@
 ---
-title: Getting Started with STX Markdown
-author: STX Team
+title: Getting Started with stx Markdown
+author: stx Team
 date: 2023-09-15
-description: Learn how to use Markdown files with frontmatter in STX
+description: Learn how to use Markdown files with frontmatter in stx
 tags: [markdown, stx, frontmatter, tutorial]
 featured: true
 ---
 
-# Getting Started with STX Markdown
+# Getting Started with stx Markdown
 
-STX now includes first-class support for Markdown files with frontmatter. This powerful feature allows you to:
+stx now includes first-class support for Markdown files with frontmatter. This powerful feature allows you to:
 
 - Separate content from presentation
 - Use Markdown for content-heavy pages
@@ -18,7 +18,7 @@ STX now includes first-class support for Markdown files with frontmatter. This p
 
 ## How It Works
 
-When you use a Markdown file in STX, the system:
+When you use a Markdown file in stx, the system:
 
 1. Parses the frontmatter using `gray-matter`
 2. Converts the Markdown content to HTML using `marked`
@@ -26,7 +26,7 @@ When you use a Markdown file in STX, the system:
 
 ## Code Example
 
-Here's an example of how you might use a Markdown file in your STX template:
+Here's an example of how you might use a Markdown file in your stx template:
 
 ```html
 <div class="article">

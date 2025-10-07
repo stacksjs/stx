@@ -11,21 +11,21 @@ const TEMPLATES_DIR = path.join(TEST_DIR, 'templates')
 // Create main app file with Bun.serve integration
 const APP_FILE = path.join(TEST_DIR, 'app.ts')
 
-describe('STX with Bun.serve direct imports', () => {
+describe('stx with Bun.serve direct imports', () => {
   // Set up test files
   beforeAll(async () => {
     // Create templates directory
     await fs.promises.mkdir(TEMPLATES_DIR, { recursive: true })
 
-    // Create STX template files
+    // Create stx template files
     await Bun.write(path.join(TEMPLATES_DIR, 'index.stx'), `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>STX Home</title>
+        <title>stx Home</title>
         <script>
           module.exports = {
-            title: "Welcome to STX",
+            title: "Welcome to stx",
             description: "A powerful templating engine for Bun",
           };
         </script>
@@ -76,7 +76,7 @@ describe('STX with Bun.serve direct imports', () => {
       import stxPlugin from "bun-plugin-stx";
       import path from "path";
 
-      // Create HTML files from STX templates
+      // Create HTML files from stx templates
       const TEMPLATES_DIR = path.join(import.meta.dir, "templates");
 
       // Process templates with the plugin
@@ -157,9 +157,9 @@ describe('STX with Bun.serve direct imports', () => {
     }
   })
 
-  // Test that STX imports work in Bun.serve
-  test('should properly import and use STX templates in Bun.serve routes', async () => {
-    // Import the app module that uses STX templates
+  // Test that stx imports work in Bun.serve
+  test('should properly import and use stx templates in Bun.serve routes', async () => {
+    // Import the app module that uses stx templates
     const { handleRequest } = await import(APP_FILE)
 
     // Test each route by directly calling the fetch handler
@@ -169,7 +169,7 @@ describe('STX with Bun.serve direct imports', () => {
     const homeResponse = await handleRequest(homeRequest)
     expect(homeResponse.status).toBe(200)
     const homeHtml = await homeResponse.text()
-    expect(homeHtml).toContain('<h1>Welcome to STX</h1>')
+    expect(homeHtml).toContain('<h1>Welcome to stx</h1>')
 
     // Test dashboard route
     const dashboardRequest = new Request('http://localhost:3123/dashboard')

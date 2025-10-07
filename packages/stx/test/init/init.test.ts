@@ -70,7 +70,7 @@ describe('initFile function', () => {
       // Check the content of the file
       const content = fs.readFileSync('index.stx', 'utf-8')
       expect(content).toContain('<!DOCTYPE html>')
-      expect(content).toContain('export const title = "My STX Page"')
+      expect(content).toContain('export const title = "My stx Page"')
     }
     finally {
       // Restore the original working directory
@@ -100,7 +100,7 @@ describe('initFile function', () => {
       // Check the content of the file
       const content = fs.readFileSync(fileName, 'utf-8')
       expect(content).toContain('<!DOCTYPE html>')
-      expect(content).toContain('export const title = "My STX Page"')
+      expect(content).toContain('export const title = "My stx Page"')
     }
     finally {
       // Restore the original working directory

@@ -10,7 +10,7 @@ const OUTPUT_DIR = path.join(TEST_DIR, 'out')
 
 // DOM globals are provided by happy-dom registration
 
-describe('STX DOM Interaction Tests', () => {
+describe('stx DOM Interaction Tests', () => {
   // Set up test environment
   beforeAll(async () => {
     await fs.promises.mkdir(TEMPLATE_DIR, { recursive: true })
@@ -21,7 +21,7 @@ describe('STX DOM Interaction Tests', () => {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Interactive STX Demo</title>
+        <title>Interactive stx Demo</title>
         <script>
           module.exports = {
             buttonText: "Click Me",
@@ -70,7 +70,7 @@ describe('STX DOM Interaction Tests', () => {
     }
   })
 
-  test('should render form elements correctly with STX variables', async () => {
+  test('should render form elements correctly with stx variables', async () => {
     const template = path.join(TEMPLATE_DIR, 'interactive.stx')
 
     // Build the template

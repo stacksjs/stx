@@ -315,7 +315,7 @@ describe('Performance Tests', () => {
         pageTitle: 'Complex App',
         pageType: 'dashboard',
         isDevelopment: false,
-        siteName: 'STX Demo',
+        siteName: 'stx Demo',
         currentYear: 2024,
         navigation: [
           { title: 'Home', url: '/', active: false },
@@ -644,7 +644,7 @@ describe('Performance Tests', () => {
       `
 
       const context = {
-        store: { name: 'STX Store' },
+        store: { name: 'stx Store' },
         category: { id: 1, name: 'Electronics', description: 'Latest electronics', slug: 'electronics' },
         categories: [
           { id: 1, name: 'Electronics', slug: 'electronics' },

@@ -96,7 +96,7 @@ export const plugin: BunPlugin = {
           // Add some useful globals
           __filename: filePath,
           __dirname: path.dirname(filePath),
-          // Add STX config info
+          // Add stx config info
           __stx: {
             webComponentsPath,
             builtComponents,
@@ -129,9 +129,9 @@ export const plugin: BunPlugin = {
         }
       }
       catch (error: any) {
-        console.error('STX Plugin Error:', error)
+        console.error('stx Plugin Error:', error)
         return {
-          contents: `<!DOCTYPE html><html><body><h1>STX Rendering Error</h1><pre>${error.message || String(error)}</pre></body></html>`,
+          contents: `<!DOCTYPE html><html><body><h1>stx Rendering Error</h1><pre>${error.message || String(error)}</pre></body></html>`,
           loader: 'html',
         }
       }

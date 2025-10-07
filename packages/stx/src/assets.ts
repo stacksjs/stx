@@ -16,7 +16,7 @@ export const markdownCache: Map<string, {
 /**
  * Read and parse a markdown file with frontmatter
  * @param filePath Path to the markdown file
- * @param options STX options
+ * @param options stx options
  * @returns Object containing parsed content and frontmatter data
  */
 export async function readMarkdownFile(

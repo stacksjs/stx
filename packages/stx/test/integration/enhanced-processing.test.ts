@@ -200,7 +200,7 @@ describe('Enhanced Template Processing Integration', () => {
       expect(result.success).toBe(true)
 
       const outputHtml = await getHtmlOutput(result)
-      expect(outputHtml).toContain('STX Template Error')
+      expect(outputHtml).toContain('stx Template Error')
     })
 
     it('should log errors for monitoring', async () => {
@@ -262,7 +262,7 @@ describe('Enhanced Template Processing Integration', () => {
       const outputHtml = await getHtmlOutput(result)
 
       // Check for enhanced error page elements
-      expect(outputHtml).toContain('STX Template Error')
+      expect(outputHtml).toContain('stx Template Error')
       expect(outputHtml).toContain('Error Details')
       expect(outputHtml).toContain('Troubleshooting Tips')
       expect(outputHtml).toContain('stx debug')

@@ -23,7 +23,7 @@ const SECTION_PATTERN = /<!-- @section:([\w-]+) -->([\s\S]*?)<!-- @endsection:\1
  * Stream a template with data
  * @param templatePath Path to the template
  * @param data Data to render with the template
- * @param options STX options
+ * @param options stx options
  */
 export async function streamTemplate(
   templatePath: string,
@@ -81,7 +81,7 @@ export async function streamTemplate(
 /**
  * Create a stream renderer for progressive loading
  * @param templatePath Path to the template
- * @param options STX options
+ * @param options stx options
  */
 export async function createStreamRenderer(
   templatePath: string,
@@ -246,7 +246,7 @@ export function registerStreamingDirectives(options: StxOptions = {}): CustomDir
  * @param content Template content
  * @param context Data context
  * @param filePath Template file path
- * @param _options STX options
+ * @param _options stx options
  */
 export async function processSectionDirectives(
   content: string,

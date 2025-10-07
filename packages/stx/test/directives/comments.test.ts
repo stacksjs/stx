@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import stxPlugin from 'bun-plugin-stx'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
 
-describe('STX Comments', () => {
+describe('stx Comments', () => {
   beforeAll(setupTestDirs)
   afterAll(cleanupTestDirs)
 

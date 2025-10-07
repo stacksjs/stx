@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { formatStxContent } from '../../src/formatter'
 
-describe('STX Formatter', () => {
+describe('stx Formatter', () => {
   describe('Basic Formatting', () => {
     it('should format a simple template', () => {
       const input = `
@@ -104,7 +104,7 @@ describe('STX Formatter', () => {
     })
   })
 
-  describe('STX Directives Formatting', () => {
+  describe('stx Directives Formatting', () => {
     it('should format @if directives', () => {
       const input = `<div>@if(condition)<p>Content</p>@endif</div>`
       const expected = `<div>
@@ -259,7 +259,7 @@ items: [1, 2, 3]
   })
 
   describe('Complex Templates', () => {
-    it('should format a complete STX template', () => {
+    it('should format a complete stx template', () => {
       const input = `<!DOCTYPE html>
 <html><head><title>{{ title }}</title></head><body><div class="container">@if(user)<h1>Welcome {{ user.name }}</h1>@if(user.isAdmin)<div class="admin">Admin Panel</div>@endif@endif<ul>@foreach(items as item)<li>{{ item.name }} - {{ item.price }}</li>@endforeach</ul></div></body></html>`
 

@@ -93,7 +93,7 @@ describe('CLI Validation', () => {
     })
 
     it('should suggest similar files when file not found', async () => {
-      // Create some STX files
+      // Create some stx files
       await Bun.write(path.join(TEMP_DIR, 'template.stx'), '<h1>Test</h1>')
       await Bun.write(path.join(TEMP_DIR, 'component.stx'), '<div>Component</div>')
 
@@ -165,7 +165,7 @@ describe('CLI Validation', () => {
       const result = await runCLI(['format', '--help'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Format STX files automatically')
+      expect(result.stdout).toContain('Format stx files automatically')
       expect(result.stdout).toContain('--check')
       expect(result.stdout).toContain('--diff')
       expect(result.stdout).toContain('--ignore')
@@ -175,7 +175,7 @@ describe('CLI Validation', () => {
       const result = await runCLI(['analyze', '--help'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Analyze STX templates')
+      expect(result.stdout).toContain('Analyze stx templates')
       expect(result.stdout).toContain('--detailed')
       expect(result.stdout).toContain('--only-issues')
       expect(result.stdout).toContain('--threshold')

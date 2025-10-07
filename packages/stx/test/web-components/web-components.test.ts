@@ -4,7 +4,7 @@ import path from 'node:path'
 import { buildWebComponents } from '../../src/web-components'
 import { OUTPUT_DIR, setupTestDirs, TEMP_DIR } from '../utils'
 
-describe('STX Web Components', () => {
+describe('stx Web Components', () => {
   const COMPONENTS_DIR = path.join(TEMP_DIR, 'components')
   const WEB_COMPONENTS_DIR = path.join(OUTPUT_DIR, 'web-components')
 

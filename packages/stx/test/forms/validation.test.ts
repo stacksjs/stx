@@ -15,7 +15,7 @@ async function processTemplate(template: string, context: Record<string, any> = 
   return processDirectives(template, context, filePath, options, dependencies)
 }
 
-describe('STX Form Validation Tests', () => {
+describe('stx Form Validation Tests', () => {
   beforeAll(setupTestDirs)
   afterAll(cleanupTestDirs)
 

@@ -9,7 +9,7 @@ interface InitOptions {
 }
 
 /**
- * Initialize a new STX file with the specified name
+ * Initialize a new stx file with the specified name
  */
 export async function initFile(fileName: string = 'index.stx', options: InitOptions = {}): Promise<boolean> {
   try {
@@ -60,7 +60,7 @@ export async function initFile(fileName: string = 'index.stx', options: InitOpti
     // Write the file
     fs.writeFileSync(filePath, templateContent)
 
-    console.warn(`Created new STX file: ${fileName}`)
+    console.warn(`Created new stx file: ${fileName}`)
     return true
   }
   catch (error) {
@@ -70,7 +70,7 @@ export async function initFile(fileName: string = 'index.stx', options: InitOpti
 }
 
 /**
- * Get the default template content for a new STX file
+ * Get the default template content for a new stx file
  */
 function getDefaultTemplate(): string {
   return `<!DOCTYPE html>
@@ -80,8 +80,8 @@ function getDefaultTemplate(): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ title }}</title>
   <script>
-    export const title = "My STX Page";
-    export const description = "A page built with STX";
+    export const title = "My stx Page";
+    export const description = "A page built with stx";
     export const items = [
       "Templates with TypeScript support",
       "Powerful directives",

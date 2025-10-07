@@ -1,5 +1,5 @@
 /**
- * View Composers functionality for STX templating
+ * View Composers functionality for stx templating
  * Similar to Laravel's View Composers, this allows registering
  * callbacks that should run whenever a specific view is rendered.
  */

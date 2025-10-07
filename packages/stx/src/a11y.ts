@@ -259,7 +259,7 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
 }
 
 /**
- * Scan a directory of STX files for accessibility issues
+ * Scan a directory of stx files for accessibility issues
  */
 export async function scanA11yIssues(
   directory: string,

@@ -16,7 +16,7 @@ describe('DOM User Interaction Tests', () => {
     await fs.promises.mkdir(TEMPLATE_DIR, { recursive: true })
     await fs.promises.mkdir(OUTPUT_DIR, { recursive: true })
 
-    // Create a test STX template with interactive form elements - without script src that causes URL errors
+    // Create a test stx template with interactive form elements - without script src that causes URL errors
     await Bun.write(path.join(TEMPLATE_DIR, 'user-form.stx'), `
 <!DOCTYPE html>
 <html lang="en">
@@ -174,7 +174,7 @@ describe('DOM User Interaction Tests', () => {
     }
   })
 
-  test('should correctly render STX template with form elements', async () => {
+  test('should correctly render stx template with form elements', async () => {
     const _template = path.join(TEMPLATE_DIR, 'user-form.stx')
 
     // Instead of building with Bun.build, directly set HTML to avoid URL errors

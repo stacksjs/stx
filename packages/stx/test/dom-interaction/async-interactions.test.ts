@@ -8,13 +8,13 @@ interface ProcessedTemplate {
   html: string
 }
 
-// Helper function to process STX templates
+// Helper function to process stx templates
 async function _processTemplate(templatePath: string): Promise<ProcessedTemplate> {
   // Create a temporary output directory
   const outputDir = path.join(path.dirname(templatePath), 'out')
   await fs.promises.mkdir(outputDir, { recursive: true })
 
-  // Build the template using the STX plugin
+  // Build the template using the stx plugin
   const result = await Bun.build({
     entrypoints: [templatePath],
     outdir: outputDir,

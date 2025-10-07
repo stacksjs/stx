@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import stxPlugin from 'bun-plugin-stx'
 import { cleanupTestDirs, createPartialFile, createTestFile, getHtmlOutput, OUTPUT_DIR, PARTIALS_DIR, setupTestDirs } from '../utils'
 
-describe('STX Include Directives', () => {
+describe('stx Include Directives', () => {
   beforeAll(setupTestDirs)
   afterAll(cleanupTestDirs)
 

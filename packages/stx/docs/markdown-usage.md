@@ -1,6 +1,6 @@
-# Using Markdown Files in STX
+# Using Markdown Files in stx
 
-STX now supports Markdown files with frontmatter! This document explains how to use this feature.
+stx now supports Markdown files with frontmatter! This document explains how to use this feature.
 
 ## Frontmatter Support
 
@@ -20,9 +20,9 @@ draft: false
 This is the content of my document.
 ```
 
-## Ways to Use Markdown in STX
+## Ways to Use Markdown in stx
 
-There are two primary ways to use Markdown in your STX templates:
+There are two primary ways to use Markdown in your stx templates:
 
 ### 1. Direct Imports
 
@@ -39,7 +39,7 @@ console.log(data.tags) // ["markdown", "stx", "documentation"]
 
 ### 2. Using the @markdown-file Directive
 
-You can include Markdown files directly in your STX templates using the `@markdown-file` directive:
+You can include Markdown files directly in your stx templates using the `@markdown-file` directive:
 
 ```html
 <div class="article">
@@ -77,7 +77,7 @@ When using the `@markdown-file` directive, frontmatter data becomes available in
 
 ## Variable Interpolation
 
-You can use variables from your STX context within your Markdown content. These will be replaced when the Markdown is rendered:
+You can use variables from your stx context within your Markdown content. These will be replaced when the Markdown is rendered:
 
 ```markdown
 ---
@@ -92,13 +92,13 @@ This is a site about {{ topic }}.
 ## Best Practices
 
 1. Use Markdown for content-heavy pages where rich formatting is needed
-2. Keep presentation logic in your STX templates
+2. Keep presentation logic in your stx templates
 3. Use frontmatter for metadata about the content
 4. Consider organizing Markdown files in a `content` directory
 
 ## TypeScript Support
 
-STX includes TypeScript type definitions for Markdown files. Your IDE will provide autocompletion and type checking when importing Markdown files:
+stx includes TypeScript type definitions for Markdown files. Your IDE will provide autocompletion and type checking when importing Markdown files:
 
 ```typescript
 import content, { data } from './my-document.md'

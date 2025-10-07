@@ -81,7 +81,7 @@ async function getNestedComponentOutput(testFile: string) {
   return modifiedHtml
 }
 
-describe('STX Components', () => {
+describe('stx Components', () => {
   const COMPONENTS_DIR = path.join(TEMP_DIR, 'components')
 
   beforeAll(async () => {

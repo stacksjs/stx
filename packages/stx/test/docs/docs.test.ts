@@ -12,7 +12,7 @@ import {
 } from '../../src/docs'
 import { cleanupTestDirs, setupTestDirs, TEMP_DIR } from '../utils'
 
-describe('STX Documentation Generator', () => {
+describe('stx Documentation Generator', () => {
   const DOCS_DIR = path.join(TEMP_DIR, 'docs')
   const COMPONENTS_DIR = path.join(TEMP_DIR, 'components')
   const TEMPLATES_DIR = path.join(TEMP_DIR, 'templates')
@@ -155,7 +155,7 @@ describe('STX Documentation Generator', () => {
 
     const markdown = formatDocsAsMarkdown([componentDoc], [], [], 'This is extra content')
 
-    expect(markdown).toContain('# STX Documentation')
+    expect(markdown).toContain('# stx Documentation')
     expect(markdown).toContain('This is extra content')
     expect(markdown).toContain('## Components')
     expect(markdown).toContain('### alert')
@@ -170,7 +170,7 @@ describe('STX Documentation Generator', () => {
     const html = formatDocsAsHtml([componentDoc], [], [], 'This is extra content')
 
     expect(html).toContain('<!DOCTYPE html>')
-    expect(html).toContain('<title>STX Documentation</title>')
+    expect(html).toContain('<title>stx Documentation</title>')
     expect(html).toContain('<div>This is extra content</div>')
     expect(html).toContain('<h2>Components</h2>')
     expect(html).toContain('<h3>alert</h3>')
@@ -212,7 +212,7 @@ describe('STX Documentation Generator', () => {
     expect(await Bun.file(docsPath).exists()).toBe(true)
 
     const content = await Bun.file(docsPath).text()
-    expect(content).toContain('# STX Documentation')
+    expect(content).toContain('# stx Documentation')
 
     // Validate that the sections exist - the order doesn't matter
     // We may not have every section in every test due to how the test environment is set up

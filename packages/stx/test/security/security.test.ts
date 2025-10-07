@@ -15,7 +15,7 @@ async function processTemplate(template: string, context: Record<string, any> = 
   return processDirectives(template, context, filePath, options, dependencies)
 }
 
-describe('STX Security Tests', () => {
+describe('stx Security Tests', () => {
   beforeAll(setupTestDirs)
   afterAll(cleanupTestDirs)
 
@@ -226,7 +226,7 @@ describe('STX Security Tests', () => {
 
   describe('Template Injection', () => {
     it('should not compile user-provided template strings', async () => {
-      // A template that contains STX directive syntax provided by a user
+      // A template that contains stx directive syntax provided by a user
       const userProvidedTemplate = '@if(true)<script>alert("Injected!")</script>@endif'
 
       const template = `

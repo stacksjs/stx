@@ -362,7 +362,7 @@ describe('HTML Output Validation', () => {
 
       const context = {
         title: 'Tëst Pågé 🎉',
-        heading: 'Wélcome tö STX',
+        heading: 'Wélcome tö stx',
         description: 'This contains émojis: 🚀 💡 ⭐',
       }
 
@@ -453,7 +453,7 @@ describe('HTML Output Validation', () => {
         pageType: 'blog',
         isDevelopment: false,
         currentUrl: '/blog',
-        siteName: 'STX Demo',
+        siteName: 'stx Demo',
         currentYear: new Date().getFullYear(),
         navigation: [
           { title: 'Home', url: '/' },

@@ -40,7 +40,7 @@ async function getTsTestOutput(testFile: string) {
   return modifiedHtml
 }
 
-describe('STX JavaScript and TypeScript Directives', () => {
+describe('stx JavaScript and TypeScript Directives', () => {
   beforeAll(async () => {
     await setupTestDirs()
   })

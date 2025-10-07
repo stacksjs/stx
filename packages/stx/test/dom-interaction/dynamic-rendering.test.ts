@@ -8,13 +8,13 @@ interface ProcessedTemplate {
   html: string
 }
 
-// Helper function to process STX templates
+// Helper function to process stx templates
 async function _processTemplate(templatePath: string): Promise<ProcessedTemplate> {
   // Create a temporary output directory
   const outputDir = path.join(path.dirname(templatePath), 'out')
   await fs.promises.mkdir(outputDir, { recursive: true })
 
-  // Build the template using the STX plugin
+  // Build the template using the stx plugin
   const result = await Bun.build({
     entrypoints: [templatePath],
     outdir: outputDir,
@@ -58,7 +58,7 @@ describe('Dynamic Rendering and Event Delegation Tests', () => {
     module.exports = {
       appTitle: "Todo Application",
       todos: [
-        { id: 1, text: "Learn STX", completed: true },
+        { id: 1, text: "Learn stx", completed: true },
         { id: 2, text: "Build a project", completed: false },
         { id: 3, text: "Write tests", completed: false }
       ],
@@ -279,7 +279,7 @@ describe('Dynamic Rendering and Event Delegation Tests', () => {
         <div class="todo-list">
           <div class="todo-item completed" data-id="1">
             <input type="checkbox" class="todo-checkbox" checked>
-            <span class="todo-text">Learn STX</span>
+            <span class="todo-text">Learn stx</span>
             <button class="delete-todo-btn">Delete</button>
           </div>
           <div class="todo-item" data-id="2">

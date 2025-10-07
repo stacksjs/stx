@@ -1,7 +1,7 @@
 /* eslint-disable no-new-func */
 
 /**
- * Laravel-like named routes system for STX
+ * Laravel-like named routes system for stx
  *
  * This provides the ability to define routes with names and generate URLs for them,
  * similar to Laravel's route naming and the route() helper.
@@ -98,7 +98,7 @@ export function route(
 }
 
 /**
- * Create a route URL directive processor for STX templates
+ * Create a route URL directive processor for stx templates
  */
 export function processRouteDirectives(template: string): string {
   return template.replace(/@route\(\s*(['"])([^'"]+)\1(?:\s*,\s*(\{[^}]+\}))?\s*(?:,\s*(true|false)\s*)?\)/g, (_, quote, routeName, paramsJson, absolute) => {

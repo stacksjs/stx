@@ -8,13 +8,13 @@ interface ProcessedTemplate {
   html: string
 }
 
-// Helper function to process STX templates
+// Helper function to process stx templates
 async function _processTemplate(templatePath: string): Promise<ProcessedTemplate> {
   // Create a temporary output directory
   const outputDir = path.join(path.dirname(templatePath), 'out')
   await fs.promises.mkdir(outputDir, { recursive: true })
 
-  // Build the template using the STX plugin
+  // Build the template using the stx plugin
   const result = await Bun.build({
     entrypoints: [templatePath],
     outdir: outputDir,
@@ -101,7 +101,7 @@ describe('Component Composition Tests', () => {
     module.exports = {
       appTitle: "Todo Application",
       currentYear: new Date().getFullYear(),
-      companyName: "STX Example",
+      companyName: "stx Example",
 
       // Navigation data
       showNav: true,
@@ -114,7 +114,7 @@ describe('Component Composition Tests', () => {
 
       // Todo data
       todos: [
-        { id: 1, text: "Learn STX Components", completed: true },
+        { id: 1, text: "Learn stx Components", completed: true },
         { id: 2, text: "Create reusable components", completed: false },
         { id: 3, text: "Test component composition", completed: false }
       ],
@@ -283,7 +283,7 @@ describe('Component Composition Tests', () => {
           <div class="todo-list">
             <div class="todo-item completed" data-id="1">
               <input type="checkbox" class="todo-checkbox" checked>
-              <span class="todo-text">Learn STX Components</span>
+              <span class="todo-text">Learn stx Components</span>
               <div class="todo-actions">
                 <button class="edit-btn">Edit</button>
                 <button class="delete-btn">Delete</button>
@@ -316,7 +316,7 @@ describe('Component Composition Tests', () => {
         <div class="footer-wrapper">
           <footer class="app-footer">
             <div class="footer-content">
-              <p>&copy; 2023 STX Example</p>
+              <p>&copy; 2023 stx Example</p>
               <div class="social-links">
                 <a href="https://twitter.com/example" class="social-link">Twitter</a>
                 <a href="https://github.com/example" class="social-link">GitHub</a>
@@ -349,13 +349,13 @@ describe('Component Composition Tests', () => {
     // Check the first todo
     const firstTodo = todoItems[0]
     expect(firstTodo.getAttribute('data-id')).toBe('1')
-    expect(firstTodo.querySelector('.todo-text')?.textContent).toBe('Learn STX Components')
+    expect(firstTodo.querySelector('.todo-text')?.textContent).toBe('Learn stx Components')
     expect(firstTodo.classList.contains('completed')).toBe(true)
 
     // Test footer component
     const footer = document.querySelector('.app-footer')
     expect(footer).not.toBeNull()
-    expect(footer?.textContent).toContain('STX Example')
+    expect(footer?.textContent).toContain('stx Example')
 
     // Test social links
     const socialLinks = document.querySelectorAll('.social-link')
@@ -387,7 +387,7 @@ describe('Component Composition Tests', () => {
           <div class="todo-list">
             <div class="todo-item completed" data-id="1">
               <input type="checkbox" class="todo-checkbox" checked>
-              <span class="todo-text">Learn STX Components</span>
+              <span class="todo-text">Learn stx Components</span>
               <div class="todo-actions">
                 <button class="edit-btn">Edit</button>
                 <button class="delete-btn">Delete</button>
@@ -420,7 +420,7 @@ describe('Component Composition Tests', () => {
         <div class="footer-wrapper">
           <footer class="app-footer">
             <div class="footer-content">
-              <p>&copy; 2023 STX Example</p>
+              <p>&copy; 2023 stx Example</p>
               <div class="social-links">
                 <a href="https://twitter.com/example" class="social-link">Twitter</a>
                 <a href="https://github.com/example" class="social-link">GitHub</a>
@@ -551,7 +551,7 @@ describe('Component Composition Tests', () => {
         <div id="footer-test">
           <footer class="app-footer">
             <div class="footer-content">
-              <p>&copy; 2023 STX Example</p>
+              <p>&copy; 2023 stx Example</p>
               <!-- No social links since showSocial is false -->
             </div>
           </footer>
@@ -572,7 +572,7 @@ describe('Component Composition Tests', () => {
 
     // Test that social links are not rendered when showSocial is false
     const footerSection = document.querySelector('#footer-test')
-    expect(footerSection?.textContent).toContain('STX Example')
+    expect(footerSection?.textContent).toContain('stx Example')
     expect(footerSection?.querySelector('.social-links')).toBeNull()
 
     // Now let's dynamically add the nav

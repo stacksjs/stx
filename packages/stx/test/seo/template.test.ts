@@ -45,7 +45,7 @@ describe('SEO template integration', () => {
     // Verify basic meta tags
     expect(finalOutput).toContain('<meta name="description" content="A detailed description of this product page">')
     expect(finalOutput).toContain('<meta name="keywords" content="product, stx, seo, web">')
-    expect(finalOutput).toContain('<meta name="author" content="STX Team">')
+    expect(finalOutput).toContain('<meta name="author" content="stx Team">')
 
     // Verify metaTag directive output
     expect(finalOutput).toContain('<meta name="robots" content="index, follow">')
@@ -68,7 +68,7 @@ describe('SEO template integration', () => {
     expect(finalOutput).toContain(`<meta property="og:description" content="${productContext.pageDescription}">`)
     expect(finalOutput).toContain(`<meta property="og:image" content="${productContext.productImage}">`)
     expect(finalOutput).toContain(`<meta property="og:image:alt" content="${productContext.productImageAlt}">`)
-    expect(finalOutput).toContain('<meta property="og:site_name" content="STX Demo Store">')
+    expect(finalOutput).toContain('<meta property="og:site_name" content="stx Demo Store">')
 
     // Verify Twitter Card tags
     expect(finalOutput).toContain('<meta name="twitter:card" content="summary_large_image">')

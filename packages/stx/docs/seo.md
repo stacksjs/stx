@@ -1,6 +1,6 @@
-# STX SEO Features
+# stx SEO Features
 
-STX includes comprehensive SEO capabilities that make it easy to optimize your web pages for search engines and social media sharing. This document covers how to use the SEO directives, configuration options, and best practices.
+stx includes comprehensive SEO capabilities that make it easy to optimize your web pages for search engines and social media sharing. This document covers how to use the SEO directives, configuration options, and best practices.
 
 ## Available SEO Directives
 
@@ -11,7 +11,7 @@ The `@meta` directive allows you to add meta tags to your HTML document.
 ```html
 @meta("description", "This is a description of my page")
 @meta("keywords", "stx, templating, seo")
-@meta("author", "STX Team")
+@meta("author", "stx Team")
 ```
 
 You can also use the shorthand format for Open Graph properties:
@@ -50,7 +50,7 @@ The `@seo` directive provides a comprehensive way to define all your SEO metadat
     imageAlt: "Description of the image",
     imageWidth: 1200,
     imageHeight: 630,
-    siteName: "My STX Website"
+    siteName: "My stx Website"
   },
   twitter: {
     card: "summary_large_image",
@@ -98,7 +98,7 @@ You can also use variables from the context:
 
 ## Automatic SEO Tags
 
-STX can automatically inject SEO tags into your pages based on configuration. Set this up in your STX configuration:
+stx can automatically inject SEO tags into your pages based on configuration. Set this up in your stx configuration:
 
 ```javascript
 // stx.config.ts
@@ -109,14 +109,14 @@ export default {
     socialPreview: true,
     defaultImage: "https://example.com/default-og-image.jpg",
     defaultConfig: {
-      title: "My STX Website",
-      description: "A site built with the STX templating engine"
+      title: "My stx Website",
+      description: "A site built with the stx templating engine"
     }
   }
 }
 ```
 
-With this configuration, STX will:
+With this configuration, stx will:
 
 1. Automatically add title, description and other meta tags if not already present
 2. Generate Open Graph and Twitter Card tags for social sharing
@@ -124,7 +124,7 @@ With this configuration, STX will:
 
 ## Using SEO Features with Page Context
 
-The most powerful way to use STX SEO features is by providing a rich context object:
+The most powerful way to use stx SEO features is by providing a rich context object:
 
 ```javascript
 const context = {
@@ -199,7 +199,7 @@ Then in your template:
 
 ## Types
 
-STX provides TypeScript types for SEO configuration:
+stx provides TypeScript types for SEO configuration:
 
 ```typescript
 // SeoConfig for the @seo directive
@@ -237,7 +237,7 @@ interface TwitterConfig {
   creator?: string;
 }
 
-// STX config for SEO features
+// stx config for SEO features
 interface SeoFeatureConfig {
   enabled: boolean;
   defaultConfig?: SeoConfig;

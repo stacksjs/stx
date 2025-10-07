@@ -1,4 +1,4 @@
-// Client-side example demonstrating partial hydration with STX
+// Client-side example demonstrating partial hydration with stx
 import { initIslands } from 'bun-plugin-stx/client'
 
 // Define the island component types

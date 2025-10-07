@@ -34,13 +34,13 @@ class MockServer {
     }
   }
 
-  // Process static routes (STX files)
+  // Process static routes (stx files)
   async processStaticRoute(route: string) {
     const template = this.routes[route]
     if (!template)
       return null
 
-    // Simulate what Bun.serve would do with an STX file
+    // Simulate what Bun.serve would do with an stx file
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
@@ -84,7 +84,7 @@ class MockServer {
   }
 }
 
-describe('STX with Bun.serve Routes', () => {
+describe('stx with Bun.serve Routes', () => {
   // Set up test files before running tests
   beforeAll(async () => {
     // Create test directories
@@ -97,10 +97,10 @@ describe('STX with Bun.serve Routes', () => {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>STX Home</title>
+        <title>stx Home</title>
         <script>
           module.exports = {
-            title: "Welcome to STX",
+            title: "Welcome to stx",
             showFeature: true,
             features: ["Templates", "Directives", "Components"]
           };
@@ -160,7 +160,7 @@ describe('STX with Bun.serve Routes', () => {
     }
   })
 
-  test('should serve STX templates as routes and handle API requests', async () => {
+  test('should serve stx templates as routes and handle API requests', async () => {
     // Import API handlers
     const usersApi = await import(path.join(API_ROUTES, 'users.ts')).then(m => m.default)
 
@@ -173,10 +173,10 @@ describe('STX with Bun.serve Routes', () => {
       development: true,
     })
 
-    // Test homepage route (STX template)
+    // Test homepage route (stx template)
     const homeHtml = await server.processStaticRoute('/')
     expect(homeHtml).toBeDefined()
-    expect(homeHtml).toContain('<h1>Welcome to STX</h1>')
+    expect(homeHtml).toContain('<h1>Welcome to stx</h1>')
     expect(homeHtml).toContain('<h2>Key Features:</h2>')
 
     // Test API GET endpoint
@@ -201,7 +201,7 @@ describe('STX with Bun.serve Routes', () => {
     expect(result.data.name).toBe('Alice Brown')
   })
 
-  test('should support DOM interaction with rendered STX templates', async () => {
+  test('should support DOM interaction with rendered stx templates', async () => {
     const server = new MockServer({
       routes: {
         '/': path.join(TEMPLATE_DIR, 'home.stx'),
@@ -216,7 +216,7 @@ describe('STX with Bun.serve Routes', () => {
 
     // Test DOM querying
     const title = document.querySelector('h1')
-    expect(title?.textContent).toBe('Welcome to STX')
+    expect(title?.textContent).toBe('Welcome to stx')
 
     // Test DOM manipulation
     const button = document.querySelector('#btn-primary')

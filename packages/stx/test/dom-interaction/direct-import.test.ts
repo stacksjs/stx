@@ -8,13 +8,13 @@ interface ProcessedTemplate {
   html: string
 }
 
-// Helper function to process STX templates
+// Helper function to process stx templates
 async function processTemplate(templatePath: string): Promise<ProcessedTemplate> {
   // Create a temporary output directory
   const outputDir = path.join(path.dirname(templatePath), 'out')
   await fs.promises.mkdir(outputDir, { recursive: true })
 
-  // Build the template using the STX plugin
+  // Build the template using the stx plugin
   const result = await Bun.build({
     entrypoints: [templatePath],
     outdir: outputDir,
@@ -41,13 +41,13 @@ const TEMPLATE_DIR = path.join(TEST_DIR, 'templates')
 
 // DOM environment is provided by happy-dom registration
 
-describe('Direct STX Import Tests', () => {
+describe('Direct stx Import Tests', () => {
   // Set up test environment
   beforeAll(async () => {
     // Create necessary directories
     await fs.promises.mkdir(TEMPLATE_DIR, { recursive: true })
 
-    // Create a simple STX template for direct import testing
+    // Create a simple stx template for direct import testing
     await Bun.write(path.join(TEMPLATE_DIR, 'direct-template.stx'), `
 <!DOCTYPE html>
 <html lang="en">
@@ -56,7 +56,7 @@ describe('Direct STX Import Tests', () => {
   <title>Direct Import Test</title>
   <script>
     module.exports = {
-      title: "STX Direct Import",
+      title: "stx Direct Import",
       count: 3,
       items: ["One", "Two", "Three"],
       user: {
@@ -98,7 +98,7 @@ describe('Direct STX Import Tests', () => {
   <script>
     // Export both data and functions
     module.exports = {
-      title: "STX Data Export",
+      title: "stx Data Export",
       items: ["Apple", "Banana", "Cherry"],
       config: {
         theme: "light",
@@ -140,7 +140,7 @@ describe('Direct STX Import Tests', () => {
     }
   })
 
-  test('should process and render an STX template', async () => {
+  test('should process and render an stx template', async () => {
     const templatePath = path.join(TEMPLATE_DIR, 'direct-template.stx')
     const { html } = await processTemplate(templatePath)
 
@@ -149,7 +149,7 @@ describe('Direct STX Import Tests', () => {
 
     // Test that the template rendered with the correct data
     const title = document.querySelector('h1')
-    expect(title?.textContent).toBe('STX Direct Import')
+    expect(title?.textContent).toBe('stx Direct Import')
 
     const userInfo = document.querySelector('.user-info p')
     expect(userInfo?.textContent).toBe('Welcome, Test User (Developer)')
@@ -198,7 +198,7 @@ describe('Direct STX Import Tests', () => {
   })
 
   test('should render and interact with data exports template', async () => {
-    // Process the STX file with data exports
+    // Process the stx file with data exports
     const templatePath = path.join(TEMPLATE_DIR, 'data-export.stx')
     const { html } = await processTemplate(templatePath)
 
@@ -207,7 +207,7 @@ describe('Direct STX Import Tests', () => {
 
     // Test that the rendered HTML is correct
     const title = document.querySelector('h1')
-    expect(title?.textContent).toBe('STX Data Export')
+    expect(title?.textContent).toBe('stx Data Export')
 
     // Verify theme attribute
     const themeDiv = document.querySelector('div[data-theme]')

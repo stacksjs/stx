@@ -170,7 +170,7 @@ function generateMotionPreferencesScript(): string {
  * Checks if the template contains any animation directives
  */
 function hasAnimationDirectives(template: string): boolean {
-  // More specific patterns that indicate actual STX animation usage
+  // More specific patterns that indicate actual stx animation usage
   const animationDirectives = [
     /@animate\b/, // @animate directive
     /@transition\b/, // @transition directive
@@ -179,8 +179,8 @@ function hasAnimationDirectives(template: string): boolean {
     /@sequence\b/, // @sequence directive
     /@motion\b/, // @motion directive
     /@animationGroup\b/, // @animationGroup directive
-    /\bstx-transition\b/, // STX transition class
-    /\bstx-(?:fade|scale|flip|rotate|slide|from-|observe)\b/, // STX animation classes
+    /\bstx-transition\b/, // stx transition class
+    /\bstx-(?:fade|scale|flip|rotate|slide|from-|observe)\b/, // stx animation classes
     /data-animate=['"](?:auto|true|false)['"]/, // Animation data attribute
   ]
 

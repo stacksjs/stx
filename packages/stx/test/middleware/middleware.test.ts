@@ -4,7 +4,7 @@ import path from 'node:path'
 import stxPlugin from 'bun-plugin-stx'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
 
-describe('STX Middleware', () => {
+describe('stx Middleware', () => {
   beforeAll(async () => {
     await setupTestDirs()
   })

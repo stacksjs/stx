@@ -46,7 +46,7 @@ describe('CLI Commands', () => {
   beforeAll(async () => {
     await fs.promises.mkdir(TEMP_DIR, { recursive: true })
 
-    // Create sample STX files for testing
+    // Create sample stx files for testing
     await Bun.write(path.join(TEMP_DIR, 'simple.stx'), `
 <!DOCTYPE html>
 <html>
@@ -144,8 +144,8 @@ describe('CLI Commands', () => {
       const result = await runCLI(['status'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('STX Project Status')
-      expect(result.stdout).toContain('STX Files:')
+      expect(result.stdout).toContain('stx Project Status')
+      expect(result.stdout).toContain('stx Files:')
       expect(result.stdout).toContain('Markdown Files:')
       expect(result.stdout).toContain('Total Files:')
     })
@@ -154,7 +154,7 @@ describe('CLI Commands', () => {
       const result = await runCLI(['status', '--verbose'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('STX Project Status')
+      expect(result.stdout).toContain('stx Project Status')
       expect(result.stdout).toContain('simple.stx')
       expect(result.stdout).toContain('complex.stx')
       expect(result.stdout).toContain('malformed.stx')
@@ -175,11 +175,11 @@ describe('CLI Commands', () => {
   })
 
   describe('Debug Command', () => {
-    it('should analyze a simple STX file', async () => {
+    it('should analyze a simple stx file', async () => {
       const result = await runCLI(['debug', 'simple.stx'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Debugging STX template: simple.stx')
+      expect(result.stdout).toContain('Debugging stx template: simple.stx')
       expect(result.stdout).toContain('Template Content')
       expect(result.stdout).toContain('Script Section Found')
       expect(result.stdout).toContain('Processing Context')
@@ -273,11 +273,11 @@ describe('CLI Commands', () => {
   })
 
   describe('Analyze Command', () => {
-    it('should analyze STX templates', async () => {
+    it('should analyze stx templates', async () => {
       const result = await runCLI(['analyze'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Analyzing STX templates')
+      expect(result.stdout).toContain('Analyzing stx templates')
       expect(result.stdout).toContain('Analysis Summary')
       expect(result.stdout).toContain('Files analyzed:')
       expect(result.stdout).toContain('Average complexity:')

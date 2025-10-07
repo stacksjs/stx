@@ -1,4 +1,4 @@
-// Example server demonstrating STX streaming functionality
+// Example server demonstrating stx streaming functionality
 
 import { createStreamRenderer } from '../../src/streaming'
 
@@ -145,7 +145,7 @@ async function startServer(): Promise<void> {
   })
 
   /* eslint-disable no-console */
-  console.log(`STX streaming example server running at ${server.url}`)
+  console.log(`stx streaming example server running at ${server.url}`)
 }
 
 // Start the server

@@ -19,28 +19,28 @@ export class StxError extends Error {
 
 export class StxSyntaxError extends StxError {
   constructor(message: string, filePath?: string, line?: number, column?: number, context?: string) {
-    super(message, 'STX_SYNTAX_ERROR', filePath, line, column, context)
+    super(message, 'stx_SYNTAX_ERROR', filePath, line, column, context)
     this.name = 'StxSyntaxError'
   }
 }
 
 export class StxRuntimeError extends StxError {
   constructor(message: string, filePath?: string, line?: number, column?: number, context?: string) {
-    super(message, 'STX_RUNTIME_ERROR', filePath, line, column, context)
+    super(message, 'stx_RUNTIME_ERROR', filePath, line, column, context)
     this.name = 'StxRuntimeError'
   }
 }
 
 export class StxSecurityError extends StxError {
   constructor(message: string, filePath?: string, line?: number, column?: number, context?: string) {
-    super(message, 'STX_SECURITY_ERROR', filePath, line, column, context)
+    super(message, 'stx_SECURITY_ERROR', filePath, line, column, context)
     this.name = 'StxSecurityError'
   }
 }
 
 export class StxFileError extends StxError {
   constructor(message: string, filePath?: string, line?: number, column?: number, context?: string) {
-    super(message, 'STX_FILE_ERROR', filePath, line, column, context)
+    super(message, 'stx_FILE_ERROR', filePath, line, column, context)
     this.name = 'StxFileError'
   }
 }
@@ -291,7 +291,7 @@ export const devHelpers = {
    * Check if we're in development mode
    */
   isDevelopment(): boolean {
-    return process.env.NODE_ENV === 'development' || process.env.STX_DEBUG === 'true'
+    return process.env.NODE_ENV === 'development' || process.env.stx_DEBUG === 'true'
   },
 
   /**
@@ -301,7 +301,7 @@ export const devHelpers = {
     if (!this.isDevelopment())
       return
 
-    console.error('=== STX Detailed Error ===')
+    console.error('=== stx Detailed Error ===')
     console.error('Error:', error.message)
     console.error('Stack:', error.stack)
     if (context) {
@@ -315,7 +315,7 @@ export const devHelpers = {
    */
   createErrorReport(error: Error, context?: any): string {
     const report = [
-      '=== STX Error Report ===',
+      '=== stx Error Report ===',
       `Time: ${new Date().toISOString()}`,
       `Error: ${error.message}`,
       `Type: ${error.constructor.name}`,

@@ -8,21 +8,21 @@ const TEST_DIR = import.meta.dir
 const TEMPLATE_DIR = path.join(TEST_DIR, 'templates')
 const OUTPUT_DIR = path.join(TEST_DIR, 'out')
 
-describe('STX Template Integration Tests', () => {
+describe('stx Template Integration Tests', () => {
   // Set up test environment
   beforeAll(async () => {
     await fs.promises.mkdir(TEMPLATE_DIR, { recursive: true })
     await fs.promises.mkdir(OUTPUT_DIR, { recursive: true })
 
-    // Create test STX template
+    // Create test stx template
     await Bun.write(path.join(TEMPLATE_DIR, 'home.stx'), `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>STX Test</title>
+        <title>stx Test</title>
         <script>
           module.exports = {
-            title: "Welcome to STX",
+            title: "Welcome to stx",
             items: ["One", "Two", "Three"],
             user: {
               name: "Test User",
@@ -61,7 +61,7 @@ describe('STX Template Integration Tests', () => {
     }
   })
 
-  test('should build STX template using plugin', async () => {
+  test('should build stx template using plugin', async () => {
     const template = path.join(TEMPLATE_DIR, 'home.stx')
 
     // Simulate what happens when Bun.serve imports a .stx file
@@ -82,7 +82,7 @@ describe('STX Template Integration Tests', () => {
     const content = await Bun.file(htmlOutput!.path).text()
 
     // Verify template was processed correctly
-    expect(content).toContain('<h1>Welcome to STX</h1>')
+    expect(content).toContain('<h1>Welcome to stx</h1>')
     expect(content).toContain('<p>Hello, Test User!</p>')
     expect(content).not.toContain('Please log in')
     expect(content).toContain('<li>One</li>')
@@ -90,7 +90,7 @@ describe('STX Template Integration Tests', () => {
     expect(content).toContain('<li>Three</li>')
   })
 
-  test('should handle STX template modifications', async () => {
+  test('should handle stx template modifications', async () => {
     const template = path.join(TEMPLATE_DIR, 'home.stx')
 
     // Update template to change content
@@ -98,10 +98,10 @@ describe('STX Template Integration Tests', () => {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Updated STX Test</title>
+        <title>Updated stx Test</title>
         <script>
           module.exports = {
-            title: "Updated STX Title",
+            title: "Updated stx Title",
             items: ["Apple", "Banana", "Cherry"],
             user: {
               name: "New User",
@@ -143,7 +143,7 @@ describe('STX Template Integration Tests', () => {
     const content = await Bun.file(htmlOutput!.path).text()
 
     // Verify updated content was processed correctly
-    expect(content).toContain('<h1>Updated STX Title</h1>')
+    expect(content).toContain('<h1>Updated stx Title</h1>')
     expect(content).toContain('<p>Please log in</p>')
     expect(content).not.toContain('Hello, New User!')
     expect(content).toContain('<ul id="fruit-list">')

@@ -6,7 +6,7 @@ import { processBasicFormDirectives, processErrorDirective, processFormInputDire
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp')
 
-describe('STX Form Directives', () => {
+describe('stx Form Directives', () => {
   // Create temp directory for testing
   beforeAll(async () => {
     await fs.promises.mkdir(TEMP_DIR, { recursive: true })
@@ -286,7 +286,7 @@ describe('STX Form Directives', () => {
   })
 })
 
-describe('STX Markdown Support', () => {
+describe('stx Markdown Support', () => {
   it('should process @markdown directive with simple content', async () => {
     const template = `<div>@markdown
 # Heading

@@ -6,7 +6,7 @@ import { createStreamRenderer, islandDirective, registerStreamingDirectives, str
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp')
 
-describe('STX Streaming', () => {
+describe('stx Streaming', () => {
   // Create temp directories for testing
   beforeAll(async () => {
     await fs.promises.mkdir(TEMP_DIR, { recursive: true })
@@ -28,7 +28,7 @@ describe('STX Streaming', () => {
         <script>
           module.exports = {
             title: "Hello Streaming",
-            subtitle: "Streaming STX"
+            subtitle: "Streaming stx"
           };
         </script>
       </head>
@@ -62,7 +62,7 @@ describe('STX Streaming', () => {
 
     // Check content
     expect(output).toContain('<h1>Hello Streaming</h1>')
-    expect(output).toContain('<h2>Streaming STX</h2>')
+    expect(output).toContain('<h2>Streaming stx</h2>')
   })
 
   // Test stream renderer with sections
@@ -449,7 +449,7 @@ describe('STX Streaming', () => {
 })
 
 // Tests for partial hydration features
-describe('STX Partial Hydration', () => {
+describe('stx Partial Hydration', () => {
   beforeAll(async () => {
     await fs.promises.mkdir(TEMP_DIR, { recursive: true })
   })

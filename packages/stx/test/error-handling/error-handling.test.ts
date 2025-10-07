@@ -51,19 +51,19 @@ describe('Error Handling', () => {
     it('should create specific error types', () => {
       const syntaxError = new StxSyntaxError('Syntax error', '/path/file.stx', 5, 10, 'context')
       expect(syntaxError.name).toBe('StxSyntaxError')
-      expect(syntaxError.code).toBe('STX_SYNTAX_ERROR')
+      expect(syntaxError.code).toBe('stx_SYNTAX_ERROR')
 
       const runtimeError = new StxRuntimeError('Runtime error', '/path/file.stx')
       expect(runtimeError.name).toBe('StxRuntimeError')
-      expect(runtimeError.code).toBe('STX_RUNTIME_ERROR')
+      expect(runtimeError.code).toBe('stx_RUNTIME_ERROR')
 
       const securityError = new StxSecurityError('Security error', '/path/file.stx')
       expect(securityError.name).toBe('StxSecurityError')
-      expect(securityError.code).toBe('STX_SECURITY_ERROR')
+      expect(securityError.code).toBe('stx_SECURITY_ERROR')
 
       const fileError = new StxFileError('File error', '/path/file.stx')
       expect(fileError.name).toBe('StxFileError')
-      expect(fileError.code).toBe('STX_FILE_ERROR')
+      expect(fileError.code).toBe('stx_FILE_ERROR')
     })
   })
 
@@ -336,18 +336,18 @@ line 5`
     describe('isDevelopment', () => {
       it('should detect development mode', () => {
         const originalEnv = process.env.NODE_ENV
-        const originalDebug = process.env.STX_DEBUG
+        const originalDebug = process.env.stx_DEBUG
 
         // Test development detection
         process.env.NODE_ENV = 'development'
         expect(devHelpers.isDevelopment()).toBe(true)
 
         process.env.NODE_ENV = 'production'
-        process.env.STX_DEBUG = 'true'
+        process.env.stx_DEBUG = 'true'
         expect(devHelpers.isDevelopment()).toBe(true)
 
         process.env.NODE_ENV = 'production'
-        process.env.STX_DEBUG = 'false'
+        process.env.stx_DEBUG = 'false'
         expect(devHelpers.isDevelopment()).toBe(false)
 
         // Restore original values
@@ -355,8 +355,8 @@ line 5`
           process.env.NODE_ENV = originalEnv
         else delete process.env.NODE_ENV
         if (originalDebug)
-          process.env.STX_DEBUG = originalDebug
-        else delete process.env.STX_DEBUG
+          process.env.stx_DEBUG = originalDebug
+        else delete process.env.stx_DEBUG
       })
     })
 
@@ -367,7 +367,7 @@ line 5`
 
         const report = devHelpers.createErrorReport(error, context)
 
-        expect(report).toContain('=== STX Error Report ===')
+        expect(report).toContain('=== stx Error Report ===')
         expect(report).toContain('Error: Test error')
         expect(report).toContain('Type: StxRuntimeError')
         expect(report).toContain('Context:')
@@ -469,7 +469,7 @@ line 3`
 
       // In a real scenario, we might chain errors
       expect(stxError.message).toContain('Failed to load template')
-      expect(stxError.code).toBe('STX_FILE_ERROR')
+      expect(stxError.code).toBe('stx_FILE_ERROR')
       expect(stxError.filePath).toBe('/remote/template.stx')
     })
 

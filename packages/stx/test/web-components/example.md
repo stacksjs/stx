@@ -10,7 +10,7 @@ This example demonstrates how to use the web components integration in bun-plugi
 bun add bun-plugin-stx
 ```
 
-2. Create your STX components
+2. Create your stx components
 
 ```html
 <!-- components/button.stx -->

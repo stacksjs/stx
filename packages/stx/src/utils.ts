@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 
 /**
- * Utility functions for the STX compiler
+ * Utility functions for the stx compiler
  */
 import type { StxOptions } from './types'
 import fs from 'node:fs'

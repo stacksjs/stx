@@ -1,6 +1,6 @@
 /* eslint-disable regexp/no-super-linear-backtracking */
 /**
- * STX Documentation Generator
+ * stx Documentation Generator
  * Generate documentation for components, templates, and directives
  */
 import type { ComponentDoc, ComponentPropDoc, DirectiveDoc, DocFormat, DocGeneratorConfig, TemplateDoc } from './types'
@@ -417,7 +417,7 @@ export function formatDocsAsMarkdown(
   directiveDocs: DirectiveDoc[] = [],
   extraContent?: string,
 ): string {
-  let markdown = `# STX Documentation\n\n`
+  let markdown = `# stx Documentation\n\n`
 
   if (extraContent) {
     markdown += `${extraContent}\n\n`
@@ -523,7 +523,7 @@ export function formatDocsAsHtml(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STX Documentation</title>
+  <title>stx Documentation</title>
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -560,7 +560,7 @@ export function formatDocsAsHtml(
   </style>
 </head>
 <body>
-  <h1>STX Documentation</h1>
+  <h1>stx Documentation</h1>
   `
 
   if (extraContent) {

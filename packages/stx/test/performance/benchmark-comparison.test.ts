@@ -32,8 +32,8 @@ function benchmarkNativeJS(data: any, iterations: number = 1000) {
   return { avgTime, totalTime, opsPerSecond }
 }
 
-// Benchmark STX processing
-async function benchmarkSTX(template: string, context: any, iterations: number = 1000) {
+// Benchmark stx processing
+async function benchmarkstx(template: string, context: any, iterations: number = 1000) {
   const dependencies = new Set<string>()
 
   // Warm up
@@ -55,7 +55,7 @@ async function benchmarkSTX(template: string, context: any, iterations: number =
   return { avgTime, totalTime, opsPerSecond }
 }
 
-describe('STX vs Native Performance Comparison', () => {
+describe('stx vs Native Performance Comparison', () => {
   test('should compete well with native template literals for simple cases', async () => {
     const data = {
       title: 'Performance Test',
@@ -76,22 +76,22 @@ describe('STX vs Native Performance Comparison', () => {
     `
 
     const nativeResult = benchmarkNativeJS(data, 5000)
-    const stxResult = await benchmarkSTX(stxTemplate, data, 5000)
+    const stxResult = await benchmarkstx(stxTemplate, data, 5000)
 
-    // STX should be within reasonable performance range of native JS
-    // Native JS will always be faster, but STX should be within 200x for complex features
+    // stx should be within reasonable performance range of native JS
+    // Native JS will always be faster, but stx should be within 200x for complex features
     const performanceRatio = stxResult.avgTime / nativeResult.avgTime
 
-    expect(performanceRatio).toBeLessThan(200) // STX should be less than 200x slower than native (due to rich features)
+    expect(performanceRatio).toBeLessThan(200) // stx should be less than 200x slower than native (due to rich features)
     expect(stxResult.opsPerSecond).toBeGreaterThan(1000) // Should still be very fast
 
     console.log(`Native JS: ${nativeResult.opsPerSecond.toFixed(0)} ops/sec, ${nativeResult.avgTime.toFixed(4)}ms avg`)
-    console.log(`STX: ${stxResult.opsPerSecond.toFixed(0)} ops/sec, ${stxResult.avgTime.toFixed(4)}ms avg`)
+    console.log(`stx: ${stxResult.opsPerSecond.toFixed(0)} ops/sec, ${stxResult.avgTime.toFixed(4)}ms avg`)
     console.log(`Performance ratio: ${performanceRatio.toFixed(2)}x slower than native`)
   })
 
-  test('should show STX advantages with complex logic', async () => {
-    // This test shows where STX shines - complex templating logic
+  test('should show stx advantages with complex logic', async () => {
+    // This test shows where stx shines - complex templating logic
     const data = {
       users: Array.from({ length: 500 }, (_, i) => ({
         id: i,
@@ -223,13 +223,13 @@ describe('STX vs Native Performance Comparison', () => {
     const nativeEnd = performance.now()
     const nativeTime = (nativeEnd - nativeStart) / 100
 
-    // Benchmark STX
-    const stxResult = await benchmarkSTX(stxTemplate, data, 100)
+    // Benchmark stx
+    const stxResult = await benchmarkstx(stxTemplate, data, 100)
 
     console.log(`Complex template - Native JS: ${(1000 / nativeTime).toFixed(0)} ops/sec, ${nativeTime.toFixed(4)}ms avg`)
-    console.log(`Complex template - STX: ${stxResult.opsPerSecond.toFixed(0)} ops/sec, ${stxResult.avgTime.toFixed(4)}ms avg`)
+    console.log(`Complex template - stx: ${stxResult.opsPerSecond.toFixed(0)} ops/sec, ${stxResult.avgTime.toFixed(4)}ms avg`)
 
-    // For complex templates, STX should be competitive and much more maintainable
+    // For complex templates, stx should be competitive and much more maintainable
     expect(stxResult.avgTime).toBeLessThan(50) // Should complete in under 50ms
     expect(stxResult.opsPerSecond).toBeGreaterThan(20) // At least 20 ops/sec for complex templates
   })
@@ -261,7 +261,7 @@ describe('STX vs Native Performance Comparison', () => {
         })),
       }
 
-      const result = await benchmarkSTX(baseTemplate, context, 50)
+      const result = await benchmarkstx(baseTemplate, context, 50)
       results.push({ size, avgTime: result.avgTime, opsPerSecond: result.opsPerSecond })
 
       console.log(`Size ${size}: ${result.opsPerSecond.toFixed(0)} ops/sec, ${result.avgTime.toFixed(3)}ms avg`)

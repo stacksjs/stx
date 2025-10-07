@@ -41,7 +41,7 @@ function runCli(args: string[]): Promise<{ stdout: string, stderr: string, exitC
   })
 }
 
-describe('STX CLI init command', () => {
+describe('stx CLI init command', () => {
   // Set up and clean up test directories
   beforeEach(() => {
     // Create test directory if it doesn't exist
@@ -106,7 +106,7 @@ describe('STX CLI init command', () => {
     // Check the content of the file
     const content = fs.readFileSync(path.join(TEST_DIR, 'index.stx'), 'utf-8')
     expect(content).toContain('<!DOCTYPE html>')
-    expect(content).toContain('export const title = "My STX Page"')
+    expect(content).toContain('export const title = "My stx Page"')
   })
 
   test('init command should create a file with custom name', async () => {
@@ -127,7 +127,7 @@ describe('STX CLI init command', () => {
     // Check the content of the file
     const content = fs.readFileSync(path.join(TEST_DIR, fileName), 'utf-8')
     expect(content).toContain('<!DOCTYPE html>')
-    expect(content).toContain('export const title = "My STX Page"')
+    expect(content).toContain('export const title = "My stx Page"')
   })
 
   test('new alias should work the same as init', async () => {
