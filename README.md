@@ -113,9 +113,9 @@ export default {
 };
 ```
 
-## STX Template Syntax
+## stx Template Syntax
 
-STX templates use a syntax inspired by Laravel Blade. Templates can contain HTML with special directives for rendering dynamic content.
+`stx` templates use a syntax inspired by Laravel Blade. Templates can contain HTML with special directives for rendering dynamic content.
 
 ### Basic Example
 
@@ -123,7 +123,7 @@ STX templates use a syntax inspired by Laravel Blade. Templates can contain HTML
 <!DOCTYPE html>
 <html>
   <head>
-    <title>STX Example</title>
+    <title>stx Example</title>
     <script>
       // Define your data as an ESM export
       export const title = "Hello World";
@@ -149,7 +149,7 @@ STX templates use a syntax inspired by Laravel Blade. Templates can contain HTML
 
 ### Data Export Options
 
-There are two ways to expose data in your STX templates:
+There are two ways to expose data in your `stx` templates:
 
 #### 1. ESM exports (recommended)
 
@@ -189,7 +189,7 @@ There are two ways to expose data in your STX templates:
 
 #### Custom Directives
 
-STX supports defining your own custom directives for template processing:
+`stx` supports defining your own custom directives for template processing:
 
 ```ts
 import type { CustomDirective } from "bun-plugin-stx";
@@ -299,7 +299,7 @@ Output unescaped HTML content:
 
 #### Server-Side JavaScript and TypeScript
 
-STX allows you to execute JavaScript or TypeScript code directly on the server during template processing. This code runs only on the server and is removed from the final HTML output.
+`stx` allows you to execute JavaScript or TypeScript code directly on the server during template processing. This code runs only on the server and is removed from the final HTML output.
 
 ##### JavaScript (@js)
 
@@ -354,7 +354,7 @@ in the context global.processedUsers = processUsers(users); @endts
 
 #### Markdown Support
 
-STX supports rendering Markdown content directly in your templates using the `@markdown` directive:
+`stx` supports rendering Markdown content directly in your templates using the `@markdown` directive:
 
 ````html
 <div class="content">
@@ -381,7 +381,7 @@ You can also pass options to the markdown renderer:
 
 ### Internationalization (i18n)
 
-STX supports internationalization to help you build multilingual applications. Translation files are stored in YAML format (JSON also supported) and support nested keys and parameter replacements.
+`stx` supports internationalization to help you build multilingual applications. Translation files are stored in YAML format (JSON also supported) and support nested keys and parameter replacements.
 
 #### Configuration
 
@@ -413,7 +413,7 @@ Create translation files in your translationsDir:
 
 ```yaml
 # translations/en.yaml
-welcome: Welcome to STX
+welcome: Welcome to `stx`
 greeting: Hello, :name!
 nav:
   home: Home
@@ -423,7 +423,7 @@ nav:
 
 ```yaml
 # translations/de.yaml
-welcome: Willkommen bei STX
+welcome: Willkommen bei `stx`
 greeting: Hallo, :name!
 nav:
   home: Startseite
@@ -433,7 +433,7 @@ nav:
 
 #### Using Translations
 
-STX provides multiple ways to use translations in your templates:
+`stx` provides multiple ways to use translations in your templates:
 
 1. **@translate Directive**
 
@@ -480,7 +480,7 @@ Then in your template:
 
 ### Web Components Integration
 
-STX now provides seamless integration with Web Components, allowing you to automatically build and use custom elements from your STX components.
+`stx` now provides seamless integration with Web Components, allowing you to automatically build and use custom elements from your `stx` components.
 
 #### Configuration
 
@@ -503,7 +503,7 @@ await build({
           {
             name: "MyButton", // Class name for the component
             tag: "my-button", // HTML tag name (must contain a hyphen)
-            file: "components/button.stx", // Path to the STX component
+            file: "components/button.stx", // Path to the stx component
             attributes: ["type", "text", "disabled"], // Observed attributes
           },
           {
@@ -548,9 +548,9 @@ Include web components in your templates with the `@webcomponent` directive:
 </html>
 ```
 
-#### Source STX Components
+#### Source `stx` Components
 
-The original STX components can be simple:
+The original `stx` components can be simple:
 
 ```html
 <!-- components/button.stx -->
@@ -580,7 +580,7 @@ Web components support several configuration options:
 
 ## TypeScript Support
 
-STX includes TypeScript declarations for importing .stx files. Make sure your `tsconfig.json` includes the necessary configuration:
+`stx` includes TypeScript declarations for importing .stx files. Make sure your `tsconfig.json` includes the necessary configuration:
 
 ```jsonc
 {
@@ -602,7 +602,7 @@ declare module "*.stx";
 
 ## Example Server
 
-Run a development server with your STX templates:
+Run a development server with your `stx` templates:
 
 ```ts
 // serve.ts
@@ -652,7 +652,7 @@ The plugin works by:
 
 ## Documentation Generation
 
-STX can automatically generate documentation for your components, templates, and directives. This helps developers understand your UI components and how to use them.
+`stx` can automatically generate documentation for your components, templates, and directives. This helps developers understand your UI components and how to use them.
 
 ### Command Line
 
@@ -702,7 +702,7 @@ export default {
 
 ### Component Documentation
 
-STX can extract component metadata from JSDoc comments in your component files:
+`stx` can extract component metadata from JSDoc comments in your component files:
 
 ```html
 <!--
@@ -748,7 +748,7 @@ This component will be documented with all its properties, types, default values
 
 ### Web Component Documentation
 
-STX will automatically document web components defined in your configuration:
+`stx` will automatically document web components defined in your configuration:
 
 ```ts
 export default {
@@ -780,7 +780,7 @@ This makes it easy for developers to understand how to use your web components i
 
 ## Other Familiar Features
 
-STX includes several convenient features inspired by Laravel's Blade templating engine:
+`stx` includes several convenient features inspired by Laravel's Blade templating engine:
 
 ### View Composers
 
@@ -926,5 +926,3 @@ Made with 💙
 
 <!-- [codecov-src]: https://img.shields.io/codecov/c/gh/stacksjs/stx/main?style=flat-square
 [codecov-href]: https://codecov.io/gh/stacksjs/stx -->
-
-

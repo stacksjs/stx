@@ -4,8 +4,8 @@ import process from 'node:process'
 const config: StxOptions = {
   // Customize SEO options
   skipDefaultSeoTags: false, // Set to true to disable auto-injection of SEO tags
-  defaultTitle: 'STX Project',
-  defaultDescription: 'A website built with STX templating engine',
+  defaultTitle: 'stx Project',
+  defaultDescription: 'A website built with the stx templating engine',
 
   // Animation options
   animation: {

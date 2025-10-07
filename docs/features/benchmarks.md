@@ -182,6 +182,6 @@ Performance isn't just about speed—it's about:
 ## Related Resources
 
 - [Performance Guide](/features/performance) - Comprehensive performance optimization guide
-- [Markdown API](/api/markdown) - Markdown parser API documentation
-- [Sanitizer API](/api/sanitizer) - HTML sanitizer API documentation
-- [GitHub Benchmarks](https://github.com/stacksjs/stx/tree/main/packages/benchmarks) - Benchmark source code
+- [Markdown Package](https://github.com/stacksjs/stx/tree/main/packages/markdown) - Markdown parser documentation
+- [Sanitizer Package](https://github.com/stacksjs/stx/tree/main/packages/sanitizer) - HTML sanitizer documentation
+- [Benchmark Source Code](https://github.com/stacksjs/stx/tree/main/packages/benchmarks) - Benchmark implementation

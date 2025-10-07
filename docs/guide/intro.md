@@ -1,171 +1,68 @@
-<p align="center"><img src="https://github.com/stacksjs/rpx/blob/main/.github/art/cover.jpg?raw=true" alt="Social Card of this repo"></p>
-
-# A Better Developer Experience
-
-> A TypeScript Starter Kit that will help you bootstrap your next project without minimal opinion.
-
-# bun-ts-starter
-
-This is an opinionated TypeScript Starter kit to help kick-start development of your next Bun package.
-
-## Get Started
-
-It's rather simple to get your package development started:
-
-```bash
-# you may use this GitHub template or the following command:
-bunx degit stacksjs/ts-starter my-pkg
-cd my-pkg
-
- # if you don't have pnpm installed, run `npm i -g pnpm`
-bun i # install all deps
-bun run build # builds the library for production-ready use
-
-# after you have successfully committed, you may create a "release"
-bun run release # automates git commits, versioning, and changelog generations
-```
-
-_Check out the package.json scripts for more commands._
-
-### Developer Experience (DX)
-
-This Starter Kit comes pre-configured with the following:
-
-- [Powerful Build Process](https://github.com/oven-sh/bun) - via Bun
-- [Fully Typed APIs](https://www.typescriptlang.org/) - via TypeScript
-- [Documentation-ready](https://vitepress.dev/) - via VitePress
-- [CLI & Binary](https://www.npmjs.com/package/bunx) - via Bun & CAC
-- [Be a Good Commitizen](https://www.npmjs.com/package/git-cz) - pre-configured Commitizen & git-cz setup to simplify semantic git commits, versioning, and changelog generations
-- [Built With Testing In Mind](https://bun.sh/docs/cli/test) - pre-configured unit-testing powered by [Bun](https://bun.sh/docs/cli/test)
-- [Renovate](https://renovatebot.com/) - optimized & automated PR dependency updates
-- [ESLint](https://eslint.org/) - for code linting _(and formatting)_
-- [GitHub Actions](https://github.com/features/actions) - runs your CI _(fixes code style issues, tags releases & creates its changelogs, runs the test suite, etc.)_
-
-## Changelog
-
-Please see our [releases](https://github.com/stacksjs/stacks/releases) page for more information on what has changed recently.
-
-## Stargazers
-
-[![Stargazers](https://starchart.cc/stacksjs/ts-starter.svg?variant=adaptive)](https://starchart.cc/stacksjs/ts-starter)
-
-## Contributing
-
-Please review the [Contributing Guide](https://github.com/stacksjs/contributing) for details.
-
-## Community
-
-For help, discussion about best practices, or any other conversation that would benefit from being searchable:
-
-[Discussions on GitHub](https://github.com/stacksjs/stacks/discussions)
-
-For casual chit-chat with others using this package:
-
-[Join the Stacks Discord Server](https://discord.gg/stacksjs)
-
-## Postcardware
-
-Two things are true: Stacks OSS will always stay open-source, and we do love to receive postcards from wherever Stacks is used! 🌍 _We also publish them on our website. And thank you, Spatie_
-
-Our address: Stacks.js, 12665 Village Ln #2306, Playa Vista, CA 90094
-
-## Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Stacks development. If you are interested in becoming a sponsor, please reach out to us.
-
-- [JetBrains](https://www.jetbrains.com/)
-- [The Solana Foundation](https://solana.com/)
-
-## Credits
-
-- [Chris Breuer](https://github.com/chrisbbreuer)
-- [All Contributors](https://github.com/stacksjs/rpx/graphs/contributors)
-
-## License
-
-The MIT License (MIT). Please see [LICENSE](https://github.com/stacksjs/ts-starter/tree/main/LICENSE.md) for more information.
-
-Made with 💙
-
-<!-- Badges -->
-
-<!-- [codecov-src]: https://img.shields.io/codecov/c/gh/stacksjs/rpx/main?style=flat-square
-[codecov-href]: https://codecov.io/gh/stacksjs/rpx -->
-
 # Introduction to STX
 
-STX is a modern UI engine that combines the elegance of Laravel Blade with the power of Bun. It's designed to make building user interfaces both enjoyable and efficient, with first-class TypeScript support and powerful features out of the box.
+STX is a modern UI engine that combines the elegance of Laravel Blade with the power of Bun. Built for performance and developer experience, STX delivers exceptional speed while maintaining familiar, intuitive syntax.
 
 ## What is STX?
 
-STX is a UI engine that allows you to:
-- Write templates with a clean, familiar syntax
-- Use TypeScript directly in your templates
+STX is a high-performance UI engine that allows you to:
+
+- Write templates with clean, Blade-inspired syntax
+- Use TypeScript directly in your templates with full type safety
 - Create reusable components with props and slots
-- Leverage streaming rendering for better performance
-- Build type-safe applications with full IDE support
+- Leverage streaming rendering for optimal performance
+- Build type-safe applications with comprehensive IDE support
 
-## Key Features
+## Why STX?
 
-### 🚀 Performance First
-Built on Bun, STX delivers exceptional performance:
-- Lightning-fast template compilation
-- Minimal runtime overhead
-- Efficient component rendering
-- Smart caching and build optimization
+### ⚡ Blazing Fast Performance
 
-### 💪 Type Safety
-First-class TypeScript support:
+STX packages consistently outperform industry-standard alternatives:
+
+**Markdown Parser:**
+- **2.89x faster** than markdown-it on small documents
+- **1.96x faster** than markdown-it on medium documents
+- **1.45x faster** than markdown-it on large documents
+
+**HTML Sanitizer:**
+- **1.7-72.4x faster** than competitors on safe HTML
+- **1.95-145.6x faster** on XSS attack vectors
+- **1.88-37.2x faster** on large documents
+
+[View detailed benchmarks](/features/benchmarks)
+
+### 💪 First-Class TypeScript Support
+
+Type safety without compromise:
 - Full type checking in templates
 - Type-safe props and events
-- IDE autocompletion
-- Error detection at build time
+- IDE autocompletion everywhere
+- Catch errors at build time, not runtime
 
-### 🧩 Component System
-Build reusable UI components:
-- Props validation
+### 🧩 Powerful Component System
+
+Build reusable UI with confidence:
+- Props validation with TypeScript
 - Slots and named slots
 - Component lifecycle hooks
 - Scoped styles
 
-### 🔄 Directives
-Powerful template directives:
-```stx
-@if(user.isAdmin)
-  <admin-panel />
-@else
-  <user-panel />
-@endif
+### 🎯 Developer Experience
 
-@foreach(items as item)
-  <list-item :data="item" />
-@endforeach
-```
-
-### 🎨 Styling
-Multiple ways to style your components:
-```stx
-<style>
-  .button {
-    @apply bg-blue-500 text-white px-4 py-2 rounded;
-  }
-</style>
-```
-
-### 🛠 Developer Tools
-Comprehensive tooling support:
-- VSCode extension with syntax highlighting and IntelliSense
-- DevTools for debugging and performance monitoring
-- CLI for project scaffolding and build management
+Built with DX in mind:
+- Familiar Blade-like syntax
+- Hot module replacement
+- VSCode extension with IntelliSense
+- DevTools for debugging
+- Comprehensive error messages
 
 ## Quick Example
 
-Here's a simple STX component:
+Here's what a simple STX component looks like:
 
 ```stx
 @ts
 interface ButtonProps {
-  type?: 'primary' | 'secondary'
+  variant?: 'primary' | 'secondary'
   size?: 'sm' | 'md' | 'lg'
   disabled?: boolean
 }
@@ -173,13 +70,13 @@ interface ButtonProps {
 
 @component('Button', {
   props: {
-    type: 'primary',
+    variant: 'primary',
     size: 'md',
     disabled: false
   }
 })
-  <button 
-    class="btn btn-{{ type }} btn-{{ size }}"
+  <button
+    class="btn btn-{{ variant }} btn-{{ size }}"
     :disabled="disabled"
   >
     <slot></slot>
@@ -187,39 +84,149 @@ interface ButtonProps {
 
   <style>
     .btn {
-      @apply rounded font-medium;
+      @apply rounded font-medium transition-colors;
     }
     .btn-primary {
-      @apply bg-blue-500 text-white;
+      @apply bg-blue-500 hover:bg-blue-600 text-white;
     }
     .btn-secondary {
-      @apply bg-gray-500 text-white;
+      @apply bg-gray-500 hover:bg-gray-600 text-white;
     }
   </style>
 @endcomponent
 ```
 
-## Why STX?
+## Powerful Directives
 
-- **Modern**: Built with modern web development practices in mind
-- **Type-Safe**: First-class TypeScript support for better developer experience
-- **Fast**: Powered by Bun for exceptional performance
-- **Familiar**: Blade-inspired syntax that's easy to learn
-- **Tooling**: Great IDE support and developer tools
-- **Flexible**: Works with any backend technology
+STX provides intuitive directives for common patterns:
+
+```stx
+@if(user.isAdmin)
+  <admin-panel />
+@elseif(user.isModerator)
+  <moderator-panel />
+@else
+  <user-panel />
+@endif
+
+@foreach(items as item)
+  <list-item :data="item" :key="item.id" />
+@endforeach
+
+@auth
+  <user-menu :user="currentUser" />
+@endauth
+```
+
+## Core Features
+
+### Template Compilation
+
+STX compiles templates to highly optimized JavaScript:
+
+```typescript
+// Your template
+@foreach(items as item)
+  <div>{{ item.name }}</div>
+@endforeach
+
+// Compiles to optimized code
+function render(context) {
+  let html = ''
+  for (const item of context.items) {
+    html += `<div>${escape(item.name)}</div>`
+  }
+  return html
+}
+```
+
+### Type-Safe Props
+
+Define and validate props with TypeScript:
+
+```stx
+@ts
+interface UserCardProps {
+  user: {
+    name: string
+    email: string
+    avatar?: string
+  }
+  showEmail?: boolean
+}
+@endts
+
+@component('UserCard', {
+  props: {
+    user: { required: true },
+    showEmail: false
+  }
+})
+  <div class="card">
+    <img src="{{ user.avatar ?? '/default.jpg' }}" alt="{{ user.name }}">
+    <h3>{{ user.name }}</h3>
+    @if(showEmail)
+      <p>{{ user.email }}</p>
+    @endif
+  </div>
+@endcomponent
+```
+
+### Scoped Styling
+
+Keep styles isolated to components:
+
+```stx
+<style scoped>
+  .card {
+    @apply border rounded-lg p-4;
+  }
+
+  .card:hover {
+    @apply shadow-lg;
+  }
+</style>
+```
+
+## Architecture Highlights
+
+STX achieves exceptional performance through:
+
+- **Flat token stream**: Avoids nested object allocations for better cache locality
+- **Position-based parsing**: Minimizes string allocations
+- **Optimized escaping**: Fast-path for strings without special characters
+- **Direct inline matching**: Efficient template expression parsing
+- **Bun-native optimizations**: Takes full advantage of Bun's runtime
 
 ## Getting Started
 
-Ready to start building with STX? Follow these steps:
+Ready to build with STX?
 
-1. [Installation Guide](/guide/install) - Set up STX in your project
-2. [Quick Start](/guide/usage) - Learn the basics in 5 minutes
-3. [Examples](/examples) - Explore example components and patterns
-4. [API Reference](/api/reference) - Complete API documentation
+1. **[Installation](/guide/install)** - Set up STX in minutes
+2. **[Quick Start](/guide/usage)** - Learn the basics
+3. **[Components](/guide/components)** - Build reusable UI
+4. **[Examples](/examples)** - See STX in action
 
-## Need Help?
+## Community & Support
 
-- Join our [Discord Community](https://discord.gg/stacksjs)
-- Check out the [GitHub Repository](https://github.com/stacksjs/stx)
-- Follow us on [Twitter](https://twitter.com/stacksjs)
-- Read our [Best Practices Guide](/guide/best-practices)
+Join the STX community:
+
+- [Discord Server](https://discord.gg/stacksjs) - Get help and share ideas
+- [GitHub](https://github.com/stacksjs/stx) - Report issues and contribute
+- [Twitter](https://twitter.com/stacksjs) - Stay updated
+- [Best Practices](/guide/best-practices) - Learn from the community
+
+## Open Source
+
+STX is MIT licensed and built by contributors from around the world. We welcome contributions of all kinds.
+
+**Sponsors:**
+- [JetBrains](https://www.jetbrains.com/)
+- [The Solana Foundation](https://solana.com/)
+
+## Next Steps
+
+- Explore [Performance benchmarks](/features/benchmarks)
+- Learn about [Type Safety](/guide/typescript)
+- Understand [Security features](/guide/security)
+- Check out the [API Reference](/api/reference)
