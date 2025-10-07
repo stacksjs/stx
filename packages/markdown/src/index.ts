@@ -22,7 +22,7 @@ export { parse as parseYaml, stringify as stringifyYaml } from './yaml'
 /**
  * Parse markdown file with frontmatter in one go
  */
-export async function parseMarkdownWithFrontmatter<T = Record<string, any>>(
+export function parseMarkdownWithFrontmatter<T = Record<string, any>>(
   content: string,
   options?: { gfm?: boolean, breaks?: boolean },
 ) {

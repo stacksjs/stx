@@ -1,8 +1,8 @@
 import type { YamlOptions } from './types'
 
 /**
- * Fast, native YAML parser optimized for Bun
- * Replaces the 'yaml' package with a performance-focused implementation
+ * Fast, native YAML parser powered by Bun's first-class YAML support
+ * Uses Bun.YAML.parse and Bun.YAML.stringify for optimal performance and conformance
  */
 
 /**
@@ -16,6 +16,39 @@ export function parse<T = any>(input: string, options: YamlOptions = {}): T {
     const content = input.replace(/^\uFEFF/, '')
 
     // Handle empty input
+    if (!content.trim()) {
+      return {} as T
+    }
+
+    // Use Bun's native YAML parser for optimal performance
+    const result = Bun.YAML.parse(content)
+
+    // Bun.YAML.parse returns an array for multi-document YAML
+    // If it's a single document, return the first element
+    if (Array.isArray(result) && result.length === 1) {
+      return result[0] as T
+    }
+
+    return result as T
+  }
+  catch (error) {
+    if (strict) {
+      throw new Error(`YAML parsing failed: ${error}`)
+    }
+    return {} as T
+  }
+}
+
+/**
+ * Fallback parser for edge cases (kept for compatibility)
+ * @internal
+ */
+function parseFallback<T = any>(input: string, options: YamlOptions = {}): T {
+  const strict = options.strict ?? false
+
+  try {
+    const content = input.replace(/^\uFEFF/, '')
+
     if (!content.trim()) {
       return {} as T
     }
@@ -232,7 +265,22 @@ function parseValue(value: string): any {
  * Stringify JavaScript object to YAML
  */
 export function stringify(obj: any, options: YamlOptions = {}): string {
-  return stringifyValue(obj, 0)
+  try {
+    // Use Bun's native YAML stringify with block-style formatting (2 spaces)
+    return Bun.YAML.stringify(obj, null, 2)
+  }
+  catch (error) {
+    // Fallback to custom implementation if needed
+    return stringifyFallback(obj, 0)
+  }
+}
+
+/**
+ * Fallback stringify for edge cases
+ * @internal
+ */
+function stringifyFallback(obj: any, indent: number): string {
+  return stringifyValue(obj, indent)
 }
 
 /**

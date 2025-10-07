@@ -45,7 +45,7 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
 
   while (content) {
     // Headers
-    let match = content.match(/^(#{1,6})\s+(.+?)(?:\s+#+)?\s*$/m)
+    let match = content.match(/^(#{1,6})\s+(.+?)(?:\s+#+)?\s*(?:\n|$)/)
     if (match) {
       tokens.push({
         type: 'heading',
@@ -53,12 +53,12 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
         text: match[2],
         raw: match[0],
       })
-      content = content.substring(match[0].length + 1)
+      content = content.substring(match[0].length)
       continue
     }
 
     // Fenced code blocks
-    match = content.match(/^```(\w+)?\n([\s\S]*?)```/m)
+    match = content.match(/^```(\w+)?\n([\s\S]*?)```/)
     if (match) {
       tokens.push({
         type: 'code',
@@ -71,18 +71,18 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
     }
 
     // Horizontal rules
-    match = content.match(/^(?:(?:\*\s*){3,}|(?:-\s*){3,}|(?:_\s*){3,})$/m)
+    match = content.match(/^(?:(?:\*\s*){3,}|(?:-\s*){3,}|(?:_\s*){3,})(?:\n|$)/)
     if (match) {
       tokens.push({
         type: 'hr',
         raw: match[0],
       })
-      content = content.substring(match[0].length + 1)
+      content = content.substring(match[0].length)
       continue
     }
 
     // Blockquotes
-    match = content.match(/^(?:>\s+(.*)(?:\n|$))+/m)
+    match = content.match(/^(?:>\s+(.*)(?:\n|$))+/)
     if (match) {
       const quoteContent = match[0].replace(/^>\s?/gm, '')
       tokens.push({
@@ -96,7 +96,7 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
     }
 
     // Lists
-    match = content.match(/^(?:(?:[*\-+]|\d+\.)\s+(?:\S.*|[\t\v\f \xA0\u1680\u2000-\u200A\u202F\u205F\u3000\uFEFF])(?:\n|$))+/m)
+    match = content.match(/^(?:(?:[*\-+]|\d+\.)\s+(?:\S.*|[\t\v\f \xA0\u1680\u2000-\u200A\u202F\u205F\u3000\uFEFF])(?:\n|$))+/)
     if (match) {
       const listText = match[0]
       const ordered = /^\d+\./.test(listText)
@@ -105,7 +105,7 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
       const itemRegex = ordered ? /^(\d+)\.\s+(.+)(?=\n\d+\.|\n*$)/gm : /^[*\-+]\s+(.+)(?=\n[*\-+]|\n*$)/gm
 
       let itemMatch
-      // biome-ignore lint/suspicious/noAssignInExpressions: needed for regex matching
+      // eslint-disable-next-line no-cond-assign
       while ((itemMatch = itemRegex.exec(listText))) {
         const itemText = ordered ? itemMatch[2] : itemMatch[1]
 
@@ -144,7 +144,7 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
 
     // Tables (GFM)
     if (options.gfm) {
-      match = content.match(/^\|(.+)\|\n\|(?:\s*:?-+:?\s*\|)+\n((?:\|.+\|\n?)+)/m)
+      match = content.match(/^\|(.+)\|\n\|(?:\s*:?-+:?\s*\|)+\n((?:\|.+\|\n?)+)/)
       if (match) {
         const header = match[1].split('|').map(h => h.trim()).filter(h => h)
         const alignLine = match[0].split('\n')[1]
@@ -176,6 +176,12 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
       }
     }
 
+    // Skip newlines
+    if (content.startsWith('\n')) {
+      content = content.substring(1)
+      continue
+    }
+
     // Paragraphs and text
     match = content.match(/^(.+?)(?:\n\n|\n(?=#)|$)/s)
     if (match) {
@@ -189,12 +195,6 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
         })
       }
       content = content.substring(match[0].length)
-      continue
-    }
-
-    // Skip newlines
-    if (content.startsWith('\n')) {
-      content = content.substring(1)
       continue
     }
 
