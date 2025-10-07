@@ -37,7 +37,7 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
     expect(result.outputs.length).toBeGreaterThanOrEqual(1)
   })
 
-  test('should initialize plugin with custom STX options', async () => {
+  test('should initialize plugin with custom stx options', async () => {
     const testFile = path.join(TEMP_DIR, 'test.stx')
     await Bun.write(testFile, `
       <!DOCTYPE html>
@@ -132,7 +132,7 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
     expect(result.success).toBe(true)
   })
 
-  test('should initialize with default STX options when no config provided', async () => {
+  test('should initialize with default stx options when no config provided', async () => {
     const testFile = path.join(TEMP_DIR, 'simple.stx')
     await Bun.write(testFile, `
       <h1>Simple Template</h1>

@@ -7,7 +7,7 @@ const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp-stx-processing')
 const OUTPUT_DIR = path.join(TEMP_DIR, 'dist')
 
-describe('BUN-PLUGIN: STX File Processing', () => {
+describe('BUN-PLUGIN: stx File Processing', () => {
   beforeEach(async () => {
     await fs.promises.mkdir(TEMP_DIR, { recursive: true })
     await fs.promises.mkdir(OUTPUT_DIR, { recursive: true })
@@ -17,7 +17,7 @@ describe('BUN-PLUGIN: STX File Processing', () => {
     await fs.promises.rm(TEMP_DIR, { recursive: true, force: true })
   })
 
-  test('should load and parse basic STX files', async () => {
+  test('should load and parse basic stx files', async () => {
     const testFile = path.join(TEMP_DIR, 'basic.stx')
     await Bun.write(testFile, `<!DOCTYPE html>
 <html>
@@ -26,7 +26,7 @@ describe('BUN-PLUGIN: STX File Processing', () => {
 </head>
 <body>
   <h1>Hello World</h1>
-  <p>This is a basic STX template.</p>
+  <p>This is a basic stx template.</p>
 </body>
 </html>`)
 
@@ -42,10 +42,10 @@ describe('BUN-PLUGIN: STX File Processing', () => {
     const htmlOutput = result.outputs.find(o => o.path.endsWith('.html')) || result.outputs[0]
     const content = await Bun.file(htmlOutput.path).text()
     expect(content).toContain('<h1>Hello World</h1>')
-    expect(content).toContain('<p>This is a basic STX template.</p>')
+    expect(content).toContain('<p>This is a basic stx template.</p>')
   })
 
-  test('should extract script content from STX files', async () => {
+  test('should extract script content from stx files', async () => {
     const testFile = path.join(TEMP_DIR, 'with-script.stx')
     await Bun.write(testFile, `<!DOCTYPE html>
 <html>
@@ -123,13 +123,13 @@ describe('BUN-PLUGIN: STX File Processing', () => {
     age: 30,
     isActive: true
   };
-  
+
   const items = ["apple", "banana", "cherry"];
-  
+
   function getGreeting(name) {
     return \`Hello, \${name}!\`;
   }
-  
+
   module.exports = { user, items, getGreeting };
 </script>
 
@@ -137,7 +137,7 @@ describe('BUN-PLUGIN: STX File Processing', () => {
   <h1>{{ getGreeting(user.name) }}</h1>
   <p>Age: {{ user.age }}</p>
   <p>Status: {{ user.isActive ? 'Active' : 'Inactive' }}</p>
-  
+
   <ul>
     @foreach (items as item)
       <li>{{ item }}</li>
@@ -172,7 +172,7 @@ describe('BUN-PLUGIN: STX File Processing', () => {
     { id: 1, message: "Welcome!", type: "success" },
     { id: 2, message: "Update available", type: "info" }
   ];
-  
+
   module.exports = { showHeader, user, notifications };
 </script>
 
@@ -185,7 +185,7 @@ describe('BUN-PLUGIN: STX File Processing', () => {
       @endif
     </header>
   @endif
-  
+
   <main>
     @if (notifications.length > 0)
       <div class="notifications">
@@ -221,7 +221,7 @@ describe('BUN-PLUGIN: STX File Processing', () => {
     expect(content).toContain('Update available')
   })
 
-  test('should handle error handling for malformed STX files', async () => {
+  test('should handle error handling for malformed stx files', async () => {
     const testFile = path.join(TEMP_DIR, 'malformed.stx')
     await Bun.write(testFile, `<script>
   // Invalid JavaScript syntax
@@ -229,7 +229,7 @@ describe('BUN-PLUGIN: STX File Processing', () => {
     name: "Test"
     age: 30  // Missing comma
   };
-  
+
   module.exports = { user };
 </script>
 
@@ -335,19 +335,19 @@ describe('BUN-PLUGIN: STX File Processing', () => {
       keywords: ["stx", "template", "complex"]
     }
   };
-  
+
   const navigation = [
     { label: "Home", url: "/", active: true },
     { label: "About", url: "/about", active: false },
     { label: "Contact", url: "/contact", active: false }
   ];
-  
+
   const posts = [
     { title: "Post 1", excerpt: "First post excerpt", published: true },
     { title: "Post 2", excerpt: "Second post excerpt", published: false },
     { title: "Post 3", excerpt: "Third post excerpt", published: true }
   ];
-  
+
   module.exports = { page, navigation, posts };
 </script>
 
@@ -368,10 +368,10 @@ describe('BUN-PLUGIN: STX File Processing', () => {
       @endforeach
     </ul>
   </nav>
-  
+
   <main>
     <h1>{{ page.title }}</h1>
-    
+
     <section class="posts">
       @foreach (posts as post)
         @if (post.published)

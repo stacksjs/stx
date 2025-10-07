@@ -1,5 +1,5 @@
-// STX DevTools
-// A powerful dev tools UI for STX templating engine
+// stx DevTools
+// A powerful dev tools UI for stx templating engine
 
 import type { StxConfig } from '../../stx/src/types'
 
@@ -12,7 +12,7 @@ export { default as ConfigView } from './views/config.stx'
 export { default as DashboardView } from './views/dashboard.stx'
 export { default as HelloWorldView } from './views/hello-world.stx'
 
-// NOTE: These imports will resolve at build time with the STX plugin
+// NOTE: These imports will resolve at build time with the stx plugin
 // Views
 export { default as IndexView } from './views/index.stx'
 export { default as PerformanceView } from './views/performance.stx'
@@ -31,7 +31,7 @@ export default {
 
   // Method to initialize the devtools with a config
   init: (_config?: Partial<StxConfig>): { start: (port?: number) => number } => {
-    // Initialize STX DevTools with config
+    // Initialize stx DevTools with config
     return {
       start: (port = 3000): number => {
         // Start dev server on specified port

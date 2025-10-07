@@ -1,23 +1,23 @@
-# STX DevTools
+# stx DevTools
 
-A powerful development UI for the STX templating engine.
+A powerful development UI for the stx templating engine.
 
 ## Features
 
 - Dashboard with project overview and quick actions
 - Template explorer to browse and analyze templates
 - Performance monitoring and optimization suggestions
-- Configuration management for STX
+- Configuration management for stx
 - Component explorer
 
 ## Getting Started
 
 ### Installation
 
-The STX DevTools are included as part of the STX package. If you're using STX in your project, you already have access to the DevTools.
+The stx DevTools are included as part of the stx package. If you're using stx in your project, you already have access to the DevTools.
 
 ```bash
-# If you haven't installed STX yet
+# If you haven't installed stx yet
 npm install stx
 # or with bun
 bun add stx
@@ -55,12 +55,12 @@ If you want to modify or extend the DevTools:
 
 ## Technical Details
 
-The STX DevTools are built using:
+The stx DevTools are built using:
 
-- STX Templating Engine (dogfooding our own technology)
+- stx Templating Engine (dogfooding our own technology)
 - UnoCSS for styling
 - Bun for building and serving
 
 ## License
 
-Same as STX
+Same as stx

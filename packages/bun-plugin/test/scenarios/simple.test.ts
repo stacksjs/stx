@@ -21,12 +21,12 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     const testFile = path.join(TEMP_DIR, 'variables.stx')
     await Bun.write(testFile, `<script>
   const title = "Hello World";
-  const description = "Welcome to STX templating";
+  const description = "Welcome to stx templating";
         const author = {
     name: "John Doe",
     email: "john@example.com"
   };
-  
+
   module.exports = { title, description, author };
 </script>
 
@@ -56,9 +56,9 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     const content = await Bun.file(htmlOutput.path).text()
 
     expect(content).toContain('<title>Hello World</title>')
-    expect(content).toContain('content="Welcome to STX templating"')
+    expect(content).toContain('content="Welcome to stx templating"')
     expect(content).toContain('<h1>Hello World</h1>')
-    expect(content).toContain('<p>Welcome to STX templating</p>')
+    expect(content).toContain('<p>Welcome to stx templating</p>')
     expect(content).toContain('<p>Created by John Doe (john@example.com)</p>')
   })
 
@@ -72,7 +72,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     hasNotifications: true,
     notificationCount: 3
   };
-  
+
   const showWelcome = true;
 </script>
 
@@ -86,7 +86,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
   @if (user.isLoggedIn)
     <div class="user-info">
       <h2>Hello, {{ user.name }}!</h2>
-      
+
       @if (user.role === 'admin')
         <span class="badge admin">Administrator</span>
       @elseif (user.role === 'moderator')
@@ -94,7 +94,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
       @else
         <span class="badge user">User</span>
       @endif
-      
+
       @if (user.hasNotifications)
         <div class="notifications">
           <p>You have {{ user.notificationCount }} new notifications</p>
@@ -136,15 +136,15 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     { id: 3, name: "Keyboard", price: "79.99", inStock: false },
     { id: 4, name: "Monitor", price: "299.99", inStock: true }
   ];
-  
+
   const categories = ["Electronics", "Accessories", "Software"];
-  
+
   const numbers = [1, 2, 3, 4, 5];
 </script>
 
 <div class="catalog">
   <h1>Product Catalog</h1>
-  
+
   <section class="categories">
     <h2>Categories</h2>
     <ul>
@@ -153,7 +153,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
       @endforeach
     </ul>
   </section>
-  
+
   <section class="products">
     <h2>Products</h2>
     <div class="product-grid">
@@ -170,7 +170,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
       @endforeach
     </div>
   </section>
-  
+
   <section class="numbers">
     <h2>Numbers</h2>
     <ol>
@@ -230,7 +230,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
       support: 40
     }
   };
-  
+
   export const config = {
     theme: {
       primary: "#007bff",
@@ -248,7 +248,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     <h1>{{ company.name }}</h1>
     <p>Founded in {{ company.founded }}</p>
   </header>
-  
+
   <section class="address">
     <h2>Address</h2>
     <address>
@@ -256,7 +256,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
       {{ company.address.city }}, {{ company.address.state }} {{ company.address.zip }}
     </address>
   </section>
-  
+
   <section class="employees">
     <h2>Team Size</h2>
     <p>Total Employees: {{ company.employees.total }}</p>
@@ -266,7 +266,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
       <li>Support: {{ company.employees.support }}</li>
     </ul>
   </section>
-  
+
   <section class="config">
     <h2>Configuration</h2>
     <p>Primary Color: {{ config.theme.primary }}</p>
@@ -304,19 +304,19 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     { firstName: "Jane", lastName: "Smith", age: 25 },
     { firstName: "Bob", lastName: "Johnson", age: 35 }
   ];
-  
+
   export function getFullName(firstName, lastName) {
     return firstName + " " + lastName;
   }
-  
+
   export function formatAge(age) {
     return age + " years old";
   }
-  
+
   export function isAdult(age) {
     return age >= 18;
   }
-  
+
   export function getInitials(firstName, lastName) {
     return firstName.charAt(0) + "." + lastName.charAt(0) + ".";
   }
@@ -324,7 +324,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
 
 <div class="user-directory">
   <h1>User Directory</h1>
-  
+
   <div class="user-list">
     @foreach (users as user)
       <div class="user-card">
@@ -332,7 +332,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
           <h2>{{ getFullName(user.firstName, user.lastName) }}</h2>
           <span class="initials">{{ getInitials(user.firstName, user.lastName) }}</span>
         </div>
-        
+
         <div class="user-details">
           <p>Age: {{ formatAge(user.age) }}</p>
           <p>Status: {{ isAdult(user.age) ? 'Adult' : 'Minor' }}</p>

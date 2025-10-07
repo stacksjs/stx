@@ -55,7 +55,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
     expect(packageJson.scripts.test).toBeDefined()
   })
 
-  test('should have valid STX configuration', async () => {
+  test('should have valid stx configuration', async () => {
     const configPath = path.join(PACKAGE_ROOT, 'src/stx.config.ts')
     const exists = await Bun.file(configPath).exists()
     expect(exists).toBe(true)
@@ -140,7 +140,7 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
     expect(content).toContain('export')
   })
 
-  test('should validate STX type definitions', async () => {
+  test('should validate stx type definitions', async () => {
     const stxTypesPath = path.join(PACKAGE_ROOT, 'src/stx.d.ts')
     const exists = await Bun.file(stxTypesPath).exists()
     expect(exists).toBe(true)
@@ -183,9 +183,9 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
     const dashboardPath = path.join(PACKAGE_ROOT, 'src/views/dashboard.stx')
     const content = await Bun.file(dashboardPath).text()
 
-    // Check for STX template features
+    // Check for stx template features
     expect(content).toMatch(/@extends|@include|@foreach|\{\{/)
-    // Should have some kind of STX directive or placeholder
+    // Should have some kind of stx directive or placeholder
     expect(content).toMatch(/@\w+|\{\{.*\}\}/)
   })
 })

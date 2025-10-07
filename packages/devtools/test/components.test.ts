@@ -6,7 +6,7 @@ const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp-components')
 const PACKAGE_ROOT = path.resolve(TEST_DIR, '..')
 
-describe('DEVTOOLS: STX Components Tests', () => {
+describe('DEVTOOLS: stx Components Tests', () => {
   beforeEach(async () => {
     await fs.promises.mkdir(TEMP_DIR, { recursive: true })
   })
@@ -45,11 +45,11 @@ describe('DEVTOOLS: STX Components Tests', () => {
     expect(content.length).toBeGreaterThan(0)
   })
 
-  test('should have valid STX syntax in Card component', async () => {
+  test('should have valid stx syntax in Card component', async () => {
     const cardPath = path.join(PACKAGE_ROOT, 'src/components/Card.stx')
     const content = await Bun.file(cardPath).text()
 
-    // Check for STX directives
+    // Check for stx directives
     expect(content).toMatch(/@if|@foreach|@endif|@endforeach|\{\{|\}\}/)
 
     // Check for proper HTML structure
@@ -57,22 +57,22 @@ describe('DEVTOOLS: STX Components Tests', () => {
     expect(content).toMatch(/<\/div>/)
   })
 
-  test('should have valid STX syntax in PerformanceChart component', async () => {
+  test('should have valid stx syntax in PerformanceChart component', async () => {
     const chartPath = path.join(PACKAGE_ROOT, 'src/components/PerformanceChart.stx')
     const content = await Bun.file(chartPath).text()
 
-    // Check for STX directives (performance charts likely use loops for data)
+    // Check for stx directives (performance charts likely use loops for data)
     expect(content).toMatch(/@if|@foreach|@endif|@endforeach|\{\{|\}\}/)
 
     // Check for chart-related elements
     expect(content).toMatch(/<div[^>]*>|<canvas[^>]*>|<svg[^>]*>/)
   })
 
-  test('should have valid STX syntax in TemplateDetails component', async () => {
+  test('should have valid stx syntax in TemplateDetails component', async () => {
     const templatePath = path.join(PACKAGE_ROOT, 'src/components/TemplateDetails.stx')
     const content = await Bun.file(templatePath).text()
 
-    // Check for STX directives
+    // Check for stx directives
     expect(content).toMatch(/@if|@foreach|@endif|@endforeach|\{\{|\}\}/)
 
     // Check for details-related elements
@@ -93,7 +93,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
     expect(content).toContain('<body>')
     expect(content).toContain('</html>')
 
-    // Should have STX content placeholders
+    // Should have stx content placeholders
     expect(content).toMatch(/@yield|@include|\{\{|\}\}/)
   })
 
@@ -125,7 +125,7 @@ describe('DEVTOOLS: STX Components Tests', () => {
     for (const componentPath of componentPaths) {
       const content = await Bun.file(componentPath).text()
 
-      // Check for balanced STX directives
+      // Check for balanced stx directives
       const ifCount = (content.match(/@if\b/g) || []).length
       const endifCount = (content.match(/@endif\b/g) || []).length
       expect(ifCount).toBe(endifCount)

@@ -1,4 +1,4 @@
-// Type definitions for STX template files
+// Type definitions for stx template files
 declare module '*.stx' {
   const content: any
   export default content

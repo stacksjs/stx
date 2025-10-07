@@ -14,9 +14,9 @@ if (!fs.existsSync(PUBLIC_DIR)) {
   fs.mkdirSync(PUBLIC_DIR, { recursive: true })
 }
 
-// Build STX templates to the public directory
+// Build stx templates to the public directory
 async function buildTemplates() {
-  console.log('Building STX templates...')
+  console.log('Building stx templates...')
 
   try {
     const result = await Bun.build({
@@ -143,7 +143,7 @@ body {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STX DevTools</title>
+  <title>stx DevTools</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@unocss/reset/tailwind.min.css">
   <style>
@@ -199,7 +199,7 @@ body {
 await buildTemplates()
 
 // Start the server
-console.log(`Starting STX DevTools server on http://localhost:${PORT}`)
+console.log(`Starting stx DevTools server on http://localhost:${PORT}`)
 const server = serve({
   port: PORT,
   async fetch(req) {
