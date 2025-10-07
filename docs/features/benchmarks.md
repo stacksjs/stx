@@ -5,6 +5,7 @@ STX packages are built for performance. This page documents comprehensive benchm
 ## Overview
 
 We benchmark two core packages:
+
 - **@stacksjs/markdown** - High-performance markdown parser
 - **@stacksjs/sanitizer** - Fast HTML sanitizer
 
@@ -12,20 +13,21 @@ All benchmarks are run on Bun runtime using [tinybench](https://github.com/tinyl
 
 ## Markdown Parser Benchmarks
 
-### Test Methodology
+### Markdown Test Methodology
 
 The markdown parser is tested against three document sizes:
+
 - **Small documents** (< 1KB): Quick parsing, common in chat applications
 - **Medium documents** (~2-3KB): Typical blog posts and documentation
 - **Large documents** (~50KB): Complex documentation with many sections
 
-### Competitors
+### Markdown Competitors
 
 - [markdown-it](https://github.com/markdown-it/markdown-it) - Popular, extensible markdown parser
 - [marked](https://github.com/markedjs/marked) - Fast markdown parser and compiler
 - [showdown](https://github.com/showdownjs/showdown) - Bidirectional markdown converter
 
-### Results
+### Markdown Results
 
 #### Small Documents (< 1KB)
 
@@ -54,7 +56,7 @@ The markdown parser is tested against three document sizes:
 | showdown | 135M ops/sec | 13.4x slower |
 | marked | 16M ops/sec | 113x slower |
 
-### Performance Summary
+### Markdown Performance Summary
 
 @stacksjs/markdown consistently outperforms all competitors:
 
@@ -66,20 +68,21 @@ The performance advantage comes from our flat token stream architecture combined
 
 ## HTML Sanitizer Benchmarks
 
-### Test Methodology
+### Sanitizer Test Methodology
 
 The sanitizer is tested against three scenarios:
+
 - **Safe HTML**: Clean HTML with no XSS attempts
 - **Dangerous HTML**: HTML with XSS attack vectors
 - **Large HTML**: ~15KB document with 100 articles
 
-### Competitors
+### Sanitizer Competitors
 
 - [DOMPurify](https://github.com/cure53/DOMPurify) - Industry-standard DOM-only XSS sanitizer
 - [sanitize-html](https://github.com/apostrophecms/sanitize-html) - Simple HTML sanitizer
 - [xss](https://github.com/leizongmin/js-xss) - Whitelist-based HTML sanitizer
 
-### Results
+### Sanitizer Results
 
 #### Safe HTML (No XSS)
 
@@ -108,7 +111,7 @@ The sanitizer is tested against three scenarios:
 | xss | 1.08B ops/sec | 1.96x slower |
 | DOMPurify | 57M ops/sec | 37.2x slower |
 
-### Performance Summary
+### Sanitizer Performance Summary
 
 @stacksjs/sanitizer dominates all scenarios:
 
@@ -142,6 +145,7 @@ bun run bench:sanitizer
 ## Benchmark Environment
 
 All benchmarks are run on:
+
 - **Runtime**: Bun v1.2.24+
 - **Warmup**: 100 iterations per benchmark
 - **Duration**: 1000ms per benchmark
