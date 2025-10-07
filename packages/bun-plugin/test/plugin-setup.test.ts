@@ -1,3 +1,4 @@
+/// <reference path="../global.d.ts" />
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -51,13 +52,11 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
       plugins: [plugin],
-      config: {
-        stx: {
-          debug: true,
-          cache: false,
-          partialsDir: 'custom-partials',
-          componentsDir: 'custom-components',
-        },
+      stx: {
+        debug: true,
+        cache: false,
+        partialsDir: 'custom-partials',
+        componentsDir: 'custom-components',
       },
     })
 
@@ -85,20 +84,18 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
       plugins: [plugin],
-      config: {
-        stx: {
-          webComponents: {
-            enabled: true,
-            outputDir: 'web-components',
-            components: [
-              {
-                name: 'TestButton',
-                tag: 'test-button',
-                file: 'button.stx',
-                attributes: ['type', 'text'],
-              },
-            ],
-          },
+      stx: {
+        webComponents: {
+          enabled: true,
+          outputDir: 'web-components',
+          components: [
+            {
+              name: 'TestButton',
+              tag: 'test-button',
+              file: 'button.stx',
+              attributes: ['type', 'text'],
+            },
+          ],
         },
       },
     })
@@ -121,12 +118,10 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
       plugins: [plugin],
-      config: {
-        stx: {
-          // @ts-expect-error - intentionally invalid config for testing
-          invalidOption: 'invalid',
-        },
-      },
+      stx: {
+        // Intentionally invalid config for testing - should not cause errors
+        invalidOption: 'invalid',
+      } as any,
     })
 
     expect(result.success).toBe(true)

@@ -137,10 +137,10 @@ mixed: mixed whitespace`
     expect(parse('')).toEqual({})
     // Bun's YAML parser returns null for only whitespace/comments
     const result = parse('   \n\n   ')
-    expect(result === null || result === {} || Object.keys(result as object).length === 0).toBe(true)
+    expect(result === null || (typeof result === 'object' && Object.keys(result as object).length === 0)).toBe(true)
 
     const commentResult = parse('# Only comments\n# More comments')
-    expect(commentResult === null || commentResult === {} || Object.keys(commentResult as object).length === 0).toBe(true)
+    expect(commentResult === null || (typeof commentResult === 'object' && Object.keys(commentResult as object).length === 0)).toBe(true)
   })
 
   it('should handle UTF-8 BOM', () => {

@@ -100,7 +100,6 @@ async function parseYaml(content: string): Promise<Record<string, any>> {
     try {
       // Try using Bun's native parsing via .toJSON() if available
       if (typeof Bun !== 'undefined') {
-        // @ts-expect-error - Bun may have YAML parsing capability not in types
         return (Bun.YAML?.parse?.(content)) || {}
       }
       throw new Error('No YAML parser available')

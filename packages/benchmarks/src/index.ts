@@ -12,4 +12,5 @@
  *   bun run bench:sanitizer    - Run HTML sanitization benchmarks
  */
 
-export { default as runAllBenchmarks } from './all-bench'
+// Note: all-bench.ts is a CLI script, not meant to be imported
+// Use: bun run bench:all

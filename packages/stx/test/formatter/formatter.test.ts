@@ -447,7 +447,8 @@ module.exports = data;
   and spacing
 </textarea>`
 
-      const result = formatStxContent(input, { preserveWhitespace: ['pre', 'code', 'textarea'] })
+      // normalizeWhitespace: false preserves whitespace in the content
+      const result = formatStxContent(input, { normalizeWhitespace: false })
 
       expect(result).toContain('<pre><code>function example() {')
       expect(result).toContain('  return "code should preserve formatting";')
@@ -594,7 +595,7 @@ module.exports = data;
 
     it('should handle deeply nested structures', () => {
       const deepNesting = Array.from({ length: 20 }).fill(0).reduce((content, _, i) =>
-        `<div class="level-${i}">${content}</div>`, '<span>Deep content</span>')
+        `<div class="level-${i}">${content}</div>`, '<span>Deep content</span>' as string) as string
 
       const result = formatStxContent(deepNesting)
 

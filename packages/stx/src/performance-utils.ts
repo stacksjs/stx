@@ -131,16 +131,18 @@ export function debounce<T extends (...args: any[]) => any>(
 export function throttle<T extends (...args: any[]) => any>(
   func: T,
   delay: number,
-): (...args: Parameters<T>) => void {
+): (...args: Parameters<T>) => ReturnType<T> | undefined {
   let lastExecution = 0
+  let lastResult: ReturnType<T> | undefined
 
-  return (...args: Parameters<T>) => {
+  return (...args: Parameters<T>): ReturnType<T> | undefined => {
     const now = Date.now()
 
     if (now - lastExecution >= delay) {
       lastExecution = now
-      func(...args)
+      lastResult = func(...args)
     }
+    return lastResult
   }
 }
 

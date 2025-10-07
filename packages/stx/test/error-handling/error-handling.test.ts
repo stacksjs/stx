@@ -387,8 +387,8 @@ line 5`
       const recent = logger.getRecentErrors(1)
       expect(recent).toHaveLength(1)
       expect(recent[0].error).toBe(error)
-      expect(recent[0].metadata?.template).toBe('test content')
-      expect(recent[0].metadata?.operation).toBe('parsing')
+      expect(recent[0].context?.template).toBe('test content')
+      expect(recent[0].context?.operation).toBe('parsing')
     })
 
     it('should provide error context for debugging', async () => {

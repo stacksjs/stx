@@ -176,7 +176,7 @@ describe('stx Analyzer', () => {
       expect(result.metrics.directives.conditionals).toBeGreaterThan(0)
       expect(result.metrics.directives.loops).toBeGreaterThan(0)
       expect(result.metrics.expressions).toBeGreaterThan(1)
-      expect(result.complexity).toBeGreaterThan(3)
+      expect(result.metrics.complexity).toBeGreaterThan(3)
 
       // Check for specific issues
       const hasRawOutputWarning = result.issues.some(issue =>
@@ -525,11 +525,9 @@ describe('stx Analyzer', () => {
       const filePath = path.join(TEMP_DIR, 'seo-optimized.stx')
       const result = await analyzeTemplate(filePath)
 
-      // Should detect good SEO practices
-      const seoIssues = result.issues.filter(issue => issue.category === 'seo')
-
-      // Should have fewer SEO issues due to good practices
-      expect(seoIssues.length).toBeLessThanOrEqual(2)
+      // SEO-related issues would be under 'maintainability' or 'accessibility' categories
+      // This template has good SEO practices, so should have low issue count overall
+      expect(result.issues.length).toBeLessThanOrEqual(5)
 
       // Check for presence of SEO elements in analysis
       expect(result.metrics.lines).toBeGreaterThan(10)
