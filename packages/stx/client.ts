@@ -1,5 +1,5 @@
 /**
- * Client-side functionality for STX
+ * Client-side functionality for stx
  */
 
 // Re-export hydration functions

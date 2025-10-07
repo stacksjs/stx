@@ -4,13 +4,13 @@ import * as vscode from 'vscode'
 import { TransitionEase, TransitionType } from '../interfaces/animation-types'
 
 export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProvider {
-  // Track all STX documents that have been opened
+  // Track all stx documents that have been opened
   private stxDocuments = new Map<string, vscode.TextDocument>()
 
   // Track derived TS content to avoid unnecessary updates
   private derivedTsContent = new Map<string, string>()
 
-  // Track position mappings between STX and TypeScript files
+  // Track position mappings between stx and TypeScript files
   private positionMappings = new Map<string, PositionMapping[]>()
 
   // Track JSDoc comments for each document
@@ -22,7 +22,7 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
 
   provideTextDocumentContent(uri: vscode.Uri): string {
     // Virtual TS document path: stx-ts:/path/to/file.stx.ts
-    // Original STX path: file:/path/to/file.stx
+    // Original stx path: file:/path/to/file.stx
     const originalPath = uri.path.replace(/\.ts$/, '')
     const documentUri = vscode.Uri.file(originalPath)
     const key = documentUri.toString()
@@ -32,7 +32,7 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
       return this.derivedTsContent.get(key) || ''
     }
 
-    // Extract TypeScript from STX file
+    // Extract TypeScript from stx file
     const document = this.stxDocuments.get(key)
       || vscode.workspace.textDocuments.find(doc => doc.uri.toString() === key)
 
@@ -313,7 +313,7 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
       return { content: tsContent, mappings, jsDocComments }
     }
     catch (error) {
-      console.error('Error extracting TypeScript from STX:', error)
+      console.error('Error extracting TypeScript from stx:', error)
       return { content: '// Error extracting TypeScript content', mappings: [], jsDocComments: [] }
     }
   }
@@ -742,7 +742,7 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
     resultLineCounter += 7
 
     // Add documentation comments for each animation type
-    resultContent += `/**\n * Available transition types for STX animations\n * @see https://stx.stacksjs.org/docs/animation\n */\n`
+    resultContent += `/**\n * Available transition types for stx animations\n * @see https://stx.stacksjs.org/docs/animation\n */\n`
     resultContent += `const transitionTypes = {\n`
     resultContent += `  /** Smooth opacity transitions */\n  fade: 'fade',\n`
     resultContent += `  /** Elegant sliding movements */\n  slide: 'slide',\n`
@@ -753,7 +753,7 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
     resultLineCounter += 11
 
     // Add documentation for easing functions
-    resultContent += `/**\n * Available easing functions for STX animations\n */\n`
+    resultContent += `/**\n * Available easing functions for stx animations\n */\n`
     resultContent += `const transitionEasings = {\n`
     resultContent += `  /** Linear timing function (constant speed) */\n  linear: 'linear',\n`
     resultContent += `  /** Default easing function (slight acceleration and deceleration) */\n  ease: 'ease',\n`
@@ -913,7 +913,7 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
     }
   }
 
-  // Get TypeScript position from STX position
+  // Get TypeScript position from stx position
   getTsPositionFromStx(stxUri: vscode.Uri, stxPosition: vscode.Position): vscode.Position | undefined {
     const key = stxUri.toString()
     const mappings = this.positionMappings.get(key)
@@ -935,7 +935,7 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
     return undefined
   }
 
-  // Get STX position from TypeScript position
+  // Get stx position from TypeScript position
   getStxPositionFromTs(stxUri: vscode.Uri, tsPosition: vscode.Position): vscode.Position | undefined {
     const key = stxUri.toString()
     const mappings = this.positionMappings.get(key)
@@ -1120,7 +1120,7 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
     return directMatch?.comment
   }
 
-  // Track STX document changes
+  // Track stx document changes
   trackDocument(document: vscode.TextDocument): void {
     if (document.languageId === 'stx') {
       const key = document.uri.toString()
@@ -1131,7 +1131,7 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
     }
   }
 
-  // Update virtual TS document when STX document changes
+  // Update virtual TS document when stx document changes
   updateVirtualTsDocument(document: vscode.TextDocument): void {
     const stxUri = document.uri
     const virtualUri = stxUri.with({

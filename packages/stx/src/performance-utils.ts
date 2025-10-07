@@ -1,5 +1,5 @@
 /**
- * Performance optimization utilities for STX
+ * Performance optimization utilities for stx
  */
 
 /**

@@ -1,5 +1,5 @@
 /**
- * STX Template Analyzer - Analyze templates for performance, best practices, and potential issues
+ * stx Template Analyzer - Analyze templates for performance, best practices, and potential issues
  */
 
 export interface AnalysisResult {
@@ -53,7 +53,7 @@ export interface PerformanceMetrics {
 }
 
 /**
- * Analyze an STX template file
+ * Analyze an stx template file
  */
 export async function analyzeTemplate(filePath: string): Promise<AnalysisResult> {
   try {
@@ -346,7 +346,7 @@ export async function analyzeProject(patterns: string[] = ['**/*.stx']): Promise
 }> {
   const results: AnalysisResult[] = []
 
-  // Find all STX files
+  // Find all stx files
   const allFiles: string[] = []
   for (const pattern of patterns) {
     const files = await Array.fromAsync(new Bun.Glob(pattern).scan({ onlyFiles: true, absolute: true }))

@@ -574,8 +574,8 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
         }
       }
 
-      // STX DIRECTIVES
-      // Handle STX directives with detailed tooltips
+      // stx DIRECTIVES
+      // Handle stx directives with detailed tooltips
 
       // First check if this could be a directive - either with @ prefix or after @
       const atPosition = line.indexOf('@')
@@ -600,7 +600,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
           return null
         }
 
-        // List of valid STX directives
+        // List of valid stx directives
         const validDirectives = [
           'if',
           'else',
@@ -1190,7 +1190,7 @@ errors.notFound: "Page not found"`, 'yaml')
 
             return new vscode.Hover(hover)
           case 'raw':
-            description = 'Displays content exactly as is, without processing any STX expressions or directives.'
+            description = 'Displays content exactly as is, without processing any stx expressions or directives.'
             syntax = '@raw\n    Content to display verbatim\n@endraw'
             example = '@raw\n    <div>\n        Using {{ curly braces }} that should not be processed\n        @if (true) This is not a directive @endif\n    </div>\n@endraw'
 
@@ -1207,7 +1207,7 @@ errors.notFound: "Page not found"`, 'yaml')
             }
 
             hover.appendMarkdown('\n\n**Use Cases**\n')
-            hover.appendMarkdown('- Displaying syntax examples that use STX syntax\n')
+            hover.appendMarkdown('- Displaying syntax examples that use stx syntax\n')
             hover.appendMarkdown('- Including content that contains curly braces or @ symbols\n')
             hover.appendMarkdown('- Showing code snippets that should not be processed')
 
@@ -1225,7 +1225,7 @@ errors.notFound: "Page not found"`, 'yaml')
 
             return new vscode.Hover(hover)
           default:
-            description = `STX directive: @${directiveName}`
+            description = `stx directive: @${directiveName}`
 
             hover.appendMarkdown(description)
             return new vscode.Hover(hover)

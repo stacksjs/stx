@@ -1,6 +1,6 @@
 # Build
 
-This guide covers the build process and configuration options for STX applications.
+This guide covers the build process and configuration options for stx applications.
 
 ## Build Configuration
 
@@ -15,19 +15,19 @@ export default defineConfig({
   build: {
     // Output directory
     outDir: 'dist',
-    
+
     // Base public path
     base: '/',
-    
+
     // Enable/disable minification
     minify: true,
-    
+
     // Generate source maps
     sourcemap: true,
-    
+
     // Target environment
     target: 'esnext',
-    
+
     // Bundle configuration
     rollupOptions: {
       external: ['some-external-dependency'],
@@ -80,13 +80,13 @@ export default defineConfig({
   build: {
     // Directory for static assets
     assetsDir: 'assets',
-    
+
     // Inline small files as base64
     assetsInlineLimit: 4096,
-    
+
     // Custom asset naming
     assetsPattern: 'assets/[name].[hash].[ext]',
-    
+
     // Asset types to process
     assetsInclude: ['**/*.{png,jpg,gif,svg,woff,woff2}']
   }
@@ -108,7 +108,7 @@ export default defineConfig({
         progressive: true
       }
     },
-    
+
     // SVG optimization
     svgo: {
       enabled: true,
@@ -135,10 +135,10 @@ export default defineConfig({
   css: {
     // Enable/disable CSS code splitting
     codeSplit: true,
-    
+
     // Enable/disable CSS source maps
     sourcemap: true,
-    
+
     // PostCSS configuration
     postcss: {
       plugins: [
@@ -146,7 +146,7 @@ export default defineConfig({
         cssnano({ preset: 'default' })
       ]
     },
-    
+
     // CSS modules configuration
     modules: {
       scopeBehaviour: 'local',
@@ -196,7 +196,7 @@ export default defineConfig({
           'ui': ['./src/components/'],
           'utils': ['./src/utils/']
         },
-        
+
         // Custom chunk naming
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
@@ -216,7 +216,7 @@ export default defineConfig({
   build: {
     // Enable tree shaking
     treeShaking: true,
-    
+
     // Configure tree shaking
     rollupOptions: {
       treeshake: {
@@ -239,22 +239,22 @@ Create build plugins:
 function myBuildPlugin() {
   return {
     name: 'my-build-plugin',
-    
+
     // Before build starts
     buildStart() {
       console.log('Build starting...')
     },
-    
+
     // After build completes
     buildEnd() {
       console.log('Build complete!')
     },
-    
+
     // Transform code
     transform(code, id) {
       if (id.endsWith('.stx')) {
         return {
-          code: transformSTXCode(code),
+          code: transformstxCode(code),
           map: null
         }
       }
@@ -280,11 +280,11 @@ export default defineConfig({
       onStart() {
         console.log('Build starting...')
       },
-      
+
       onEnd(result) {
         console.log('Build complete:', result)
       },
-      
+
       onError(error) {
         console.error('Build failed:', error)
       }
@@ -355,4 +355,4 @@ export default defineConfig({
 - Learn about [Deployment](/features/deployment)
 - Explore [Performance](/features/performance)
 - Check out [Testing](/features/testing)
-- Review [Security](/features/security) 
+- Review [Security](/features/security)

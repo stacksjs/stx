@@ -1,12 +1,13 @@
 # Components
 
-STX components are reusable UI elements that encapsulate template, logic, and styling. This guide covers everything you need to know about creating and using components.
+stx components are reusable UI elements that encapsulate template, logic, and styling. This guide covers everything you need to know about creating and using components.
 
 ## Component Basics
 
 ### Component Structure
 
 A basic component consists of:
+
 1. TypeScript interfaces (optional)
 2. Component definition
 3. Template
@@ -28,7 +29,7 @@ interface ButtonProps {
     disabled: false
   }
 })
-  <button 
+  <button
     class="btn btn-{{ type }} btn-{{ size }}"
     :disabled="disabled"
   >
@@ -57,8 +58,8 @@ Import and use components in your templates:
 @import { Button } from '../components/Button'
 
 <div class="actions">
-  <Button 
-    type="primary" 
+  <Button
+    type="primary"
     size="lg"
     @click="handleClick"
   >
@@ -103,7 +104,7 @@ interface CardProps {
       @if(image)
         <img :src="image" :alt="title" />
       @endif
-      
+
       <div class="card-content">
         <h2>{{ title }}</h2>
         @if(subtitle)
@@ -162,8 +163,8 @@ Emit and handle component events:
   }
 })
   <div class="search">
-    <input 
-      type="text" 
+    <input
+      type="text"
       :placeholder="placeholder"
       @input="handleInput"
     />
@@ -183,7 +184,7 @@ Emit and handle component events:
 @endcomponent
 
 <!-- Usage -->
-<SearchInput 
+<SearchInput
   @search="onSearch"
   @clear="onClear"
 />
@@ -242,19 +243,19 @@ Manage component state:
 @component('Counter')
   @ts
   let count = 0
-  
+
   // Computed property
   const isEven = computed(() => count % 2 === 0)
-  
+
   // Methods
   function increment() {
     count++
   }
-  
+
   function decrement() {
     count--
   }
-  
+
   // Watch for changes
   watch(count, (newValue, oldValue) => {
     console.log(`Count changed from ${oldValue} to ${newValue}`)
@@ -385,4 +386,4 @@ components/
 - Learn about [Template Syntax](/features/templates)
 - Explore [Directives](/features/directives)
 - Understand [TypeScript Integration](/features/typescript)
-- Check out [Component Testing](/advanced/testing) 
+- Check out [Component Testing](/advanced/testing)

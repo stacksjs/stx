@@ -1,6 +1,6 @@
 # VSCode Extension
 
-The STX VSCode extension provides comprehensive support for STX development with syntax highlighting, IntelliSense, debugging, and productivity features.
+The stx VSCode extension provides comprehensive support for stx development with syntax highlighting, IntelliSense, debugging, and productivity features.
 
 ## Installation
 
@@ -8,7 +8,7 @@ The STX VSCode extension provides comprehensive support for STX development with
 
 1. Open VSCode
 2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "STX Language Support"
+3. Search for "stx Language Support"
 4. Click Install
 
 ### From Command Line
@@ -21,7 +21,7 @@ code --install-extension stx.stx-vscode
 
 ### Syntax Highlighting
 
-The extension provides rich syntax highlighting for STX templates:
+The extension provides rich syntax highlighting for stx templates:
 
 ```stx
 @component('UserCard', {
@@ -41,7 +41,8 @@ The extension provides rich syntax highlighting for STX templates:
 ```
 
 Features:
-- STX directive highlighting
+
+- stx directive highlighting
 - Template interpolation
 - Component syntax
 - TypeScript code blocks
@@ -79,7 +80,7 @@ The extension provides real-time error detection:
 
 ### Code Actions
 
-Right-click in STX files for quick actions:
+Right-click in stx files for quick actions:
 
 - Extract Component
 - Wrap in Conditional
@@ -100,18 +101,18 @@ Configure the extension in VSCode settings:
   "stx.validation.enabled": true,
   "stx.formatting.enabled": true,
   "stx.inlayHints.enabled": true,
-  
+
   // Tailwind CSS support
   "stx.tailwind.enabled": true,
   "stx.tailwind.configPath": "./tailwind.config.js",
-  
+
   // Component discovery
   "stx.components.autoImport": true,
   "stx.components.paths": [
     "./src/components/**/*.stx",
     "./components/**/*.stx"
   ],
-  
+
   // Formatting options
   "stx.format.indentSize": 2,
   "stx.format.maxLineLength": 80,
@@ -121,7 +122,7 @@ Configure the extension in VSCode settings:
 
 ### File Associations
 
-Ensure `.stx` files are associated with the STX language:
+Ensure `.stx` files are associated with the stx language:
 
 ```json
 {
@@ -133,7 +134,7 @@ Ensure `.stx` files are associated with the STX language:
 
 ### Emmet Support
 
-Enable Emmet for STX files:
+Enable Emmet for stx files:
 
 ```json
 {
@@ -173,6 +174,7 @@ interface UserCardProps {
 ```
 
 Features:
+
 - Type checking in templates
 - Prop validation
 - Autocomplete based on types
@@ -206,7 +208,7 @@ View component structure in the Explorer:
 
 #### Template Debugging
 
-Set breakpoints in STX templates:
+Set breakpoints in stx templates:
 
 1. Click in the gutter next to template code
 2. Run your application in debug mode
@@ -224,7 +226,7 @@ While debugging, inspect template variables:
 
 ### Code Folding
 
-Fold sections of your STX files:
+Fold sections of your stx files:
 
 - Component definitions
 - Large template blocks
@@ -268,7 +270,7 @@ Create custom live templates for common patterns:
 
 ```json
 {
-  "STX Component": {
+  "stx Component": {
     "prefix": "stx-comp",
     "body": [
       "@component('$1', {",
@@ -279,7 +281,7 @@ Create custom live templates for common patterns:
       "  $3",
       "@endcomponent"
     ],
-    "description": "Create STX component"
+    "description": "Create stx component"
   }
 }
 ```
@@ -290,10 +292,10 @@ Create custom live templates for common patterns:
 
 #### Extension Not Working
 
-1. Check if STX files are properly associated
+1. Check if stx files are properly associated
 2. Restart VSCode after installation
 3. Check the Output panel for errors
-4. Ensure workspace has STX project structure
+4. Ensure workspace has stx project structure
 
 #### IntelliSense Not Working
 
@@ -319,13 +321,13 @@ Enable debug logging:
 }
 ```
 
-View logs in Output panel → STX Language Server
+View logs in Output panel → stx Language Server
 
 ## Community
 
 ### Contributing
 
-The STX VSCode extension is open source:
+The stx VSCode extension is open source:
 
 - [GitHub Repository](https://github.com/stacksjs/stx-vscode)
 - [Issue Tracker](https://github.com/stacksjs/stx-vscode/issues)
@@ -342,7 +344,7 @@ Help improve the extension:
 
 ## Related Resources
 
-- [STX Language Reference](/api/template-syntax) - Complete syntax guide
+- [stx Language Reference](/api/template-syntax) - Complete syntax guide
 - [Component Development](/guide/components) - Building components
 - [TypeScript Guide](/guide/typescript) - TypeScript integration
-- [Build Guide](/guide/build) - Build tools and configuration 
+- [Build Guide](/guide/build) - Build tools and configuration

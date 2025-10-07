@@ -3,29 +3,29 @@ import * as vscode from 'vscode'
 import { TransitionDirection, TransitionEase, TransitionType } from '../interfaces/animation-types'
 
 /**
- * Creates a completion provider for STX animation directives
+ * Creates a completion provider for stx animation directives
  */
 export function createCompletionProvider(): vscode.CompletionItemProvider {
   return {
     provideCompletionItems(document, position, token, context) {
-      // Check if this is an STX file by extension, even if language ID isn't set
+      // Check if this is an stx file by extension, even if language ID isn't set
       const isStxFile = document.fileName.endsWith('.stx')
       if (!isStxFile && document.languageId !== 'stx') {
-        console.log(`STX Completion - Skipping non-STX file: ${document.fileName} (language: ${document.languageId})`)
+        console.log(`stx Completion - Skipping non-stx file: ${document.fileName} (language: ${document.languageId})`)
         return undefined
       }
 
-      console.log(`STX Completion - Processing document: ${document.fileName} (language: ${document.languageId})`)
+      console.log(`stx Completion - Processing document: ${document.fileName} (language: ${document.languageId})`)
 
       const line = document.lineAt(position.line).text
       const linePrefix = line.substring(0, position.character)
 
-      console.log(`STX Completion - Processing line prefix: "${linePrefix}"`)
-      console.log(`STX Completion - Trigger character: "${context?.triggerCharacter || 'none'}"`)
+      console.log(`stx Completion - Processing line prefix: "${linePrefix}"`)
+      console.log(`stx Completion - Trigger character: "${context?.triggerCharacter || 'none'}"`)
 
       // When triggered by @ character, show all directives
       if (context?.triggerCharacter === '@') {
-        console.log(`STX Completion - Triggered by @ character, showing all directives`)
+        console.log(`stx Completion - Triggered by @ character, showing all directives`)
         return getAllDirectiveCompletions()
       }
 
@@ -34,19 +34,19 @@ export function createCompletionProvider(): vscode.CompletionItemProvider {
       const directiveMatch = linePrefix.match(/@([a-z]*)$/i)
       if (directiveMatch) {
         const prefix = directiveMatch[1].toLowerCase()
-        console.log(`STX Completion - Found directive prefix: "${prefix}"`)
+        console.log(`stx Completion - Found directive prefix: "${prefix}"`)
         return getFilteredDirectiveCompletions(prefix)
       }
 
       // If we're at a position with @ character (no trigger, but @ is there)
       if (linePrefix.endsWith('@')) {
-        console.log(`STX Completion - Line ends with @, showing all directives`)
+        console.log(`stx Completion - Line ends with @, showing all directives`)
         return getAllDirectiveCompletions()
       }
 
       // Check for parameters in directives
       if (linePrefix.includes('@transition(')) {
-        console.log(`STX Completion - Detected @transition parameters context`)
+        console.log(`stx Completion - Detected @transition parameters context`)
 
         // Very basic parameter position detection
         const params = linePrefix.substring(linePrefix.indexOf('(') + 1).split(',')
@@ -68,7 +68,7 @@ export function createCompletionProvider(): vscode.CompletionItemProvider {
       }
 
       if (linePrefix.includes('@motion(')) {
-        console.log(`STX Completion - Detected @motion parameters context`)
+        console.log(`stx Completion - Detected @motion parameters context`)
         return createBooleanCompletions()
       }
 
@@ -78,14 +78,14 @@ export function createCompletionProvider(): vscode.CompletionItemProvider {
 }
 
 /**
- * Get all STX directives without filtering
+ * Get all stx directives without filtering
  */
 function getAllDirectiveCompletions(): vscode.CompletionItem[] {
   return createDirectiveItems(getAllDirectives())
 }
 
 /**
- * Get STX directives filtered by prefix
+ * Get stx directives filtered by prefix
  */
 function getFilteredDirectiveCompletions(prefix: string): vscode.CompletionItem[] {
   const allDirectives = getAllDirectives()
@@ -93,12 +93,12 @@ function getFilteredDirectiveCompletions(prefix: string): vscode.CompletionItem[
     d.name.toLowerCase().includes(prefix.toLowerCase()),
   )
 
-  console.log(`STX Completion - Filtered directives: ${filteredDirectives.map(d => d.name).join(', ')}`)
+  console.log(`stx Completion - Filtered directives: ${filteredDirectives.map(d => d.name).join(', ')}`)
   return createDirectiveItems(filteredDirectives)
 }
 
 /**
- * Get all available STX directives
+ * Get all available stx directives
  */
 function getAllDirectives(): Array<{ name: string, description: string }> {
   return [
@@ -143,7 +143,7 @@ function createDirectiveItems(directives: Array<{ name: string, description: str
       vscode.CompletionItemKind.Snippet,
     )
 
-    item.detail = `STX ${directive.name} directive`
+    item.detail = `stx ${directive.name} directive`
     item.documentation = new vscode.MarkdownString(directive.description)
 
     // Set snippets for directives

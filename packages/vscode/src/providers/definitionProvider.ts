@@ -102,7 +102,7 @@ export function createDefinitionProvider(virtualTsDocumentProvider: VirtualTsDoc
               || line.includes(`function ${word}`)
 
           if (isDeclaration) {
-            // Convert TS position back to STX position
+            // Convert TS position back to stx position
             const tsPosition = new vscode.Position(i, line.indexOf(word))
             const stxPosition = virtualTsDocumentProvider.getStxPositionFromTs(document.uri, tsPosition)
 

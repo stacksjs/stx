@@ -85,8 +85,8 @@ export const defaultConfig: StxConfig = {
     enabled: true,
     socialPreview: true,
     defaultConfig: {
-      title: 'STX Project',
-      description: 'A website built with STX templating engine',
+      title: 'stx Project',
+      description: 'A website built with stx templating engine',
     },
   },
   animation: {
@@ -123,7 +123,7 @@ export const config: StxConfig = await loadConfig({
 })
 
 /**
- * Helper function to define STX configuration
+ * Helper function to define stx configuration
  */
 export function defineStxConfig(config: StxOptions): StxOptions {
   return config

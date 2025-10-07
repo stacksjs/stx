@@ -1,7 +1,7 @@
 import type { Rule } from '@unocss/core'
 
 export const rules: Rule[] = [
-  // Custom rules for STX components
+  // Custom rules for stx components
   ['stx-component', { display: 'block' }],
   ['stx-island', { display: 'block', isolation: 'isolate' }],
   ['stx-section', { display: 'block', margin: '1rem 0' }],

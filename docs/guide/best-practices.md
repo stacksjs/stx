@@ -1,10 +1,11 @@
 # Best Practices
 
-This guide outlines the recommended practices for building applications with STX.
+This guide outlines the recommended practices for building applications with stx.
 
 ## Project Structure
 
 ### Directory Organization
+
 Follow this recommended project structure:
 
 ```
@@ -22,13 +23,15 @@ my-stx-app/
 │   └── main.ts           # Application entry
 ├── public/               # Static assets
 ├── tests/                # Test files
-├── stx.config.ts         # STX configuration
+├── stx.config.ts         # stx configuration
 ├── tsconfig.json         # TypeScript configuration
 └── package.json          # Project dependencies
 ```
 
 ### Naming Conventions
+
 Follow these naming conventions:
+
 - Components: PascalCase (`UserProfile.stx`)
 - Files: kebab-case (`user-profile.ts`)
 - Directories: kebab-case (`feature-name/`)
@@ -38,6 +41,7 @@ Follow these naming conventions:
 ## Component Design
 
 ### Single Responsibility
+
 Keep components focused on a single responsibility:
 
 ```stx
@@ -63,6 +67,7 @@ Keep components focused on a single responsibility:
 ```
 
 ### Props Design
+
 Design props with TypeScript for better type safety:
 
 ```stx
@@ -71,10 +76,10 @@ interface ButtonProps {
   // Use specific types
   variant: 'primary' | 'secondary' | 'danger'
   size: 'sm' | 'md' | 'lg'
-  
+
   // Provide meaningful defaults
   disabled?: boolean
-  
+
   // Use descriptive names
   onActionComplete?: () => void
 }
@@ -85,7 +90,7 @@ interface ButtonProps {
     variant: {
       type: String,
       required: true,
-      validator: (value: string) => 
+      validator: (value: string) =>
         ['primary', 'secondary', 'danger'].includes(value)
     },
     size: {
@@ -99,6 +104,7 @@ interface ButtonProps {
 ```
 
 ### Component Communication
+
 Use proper patterns for component communication:
 
 ```stx
@@ -132,6 +138,7 @@ const useSharedStore = createStore({
 ## State Management
 
 ### Store Organization
+
 Organize stores by feature:
 
 ```typescript
@@ -163,22 +170,23 @@ export const useCartStore = createStore({
 ```
 
 ### State Access Patterns
+
 Use computed properties for derived state:
 
 ```stx
 @component('CartSummary', {
   setup() {
     const cartStore = useCartStore()
-    
+
     // Computed properties for derived state
-    const subtotal = computed(() => 
-      cartStore.items.reduce((sum, item) => 
+    const subtotal = computed(() =>
+      cartStore.items.reduce((sum, item) =>
         sum + item.price * item.quantity, 0)
     )
-    
+
     const tax = computed(() => subtotal.value * 0.1)
     const total = computed(() => subtotal.value + tax.value)
-    
+
     return { subtotal, tax, total }
   }
 })
@@ -187,6 +195,7 @@ Use computed properties for derived state:
 ## Performance Optimization
 
 ### Lazy Loading
+
 Implement lazy loading for better initial load times:
 
 ```typescript
@@ -203,28 +212,30 @@ const HeavyComponent = () => import('./components/HeavyComponent.stx')
 ```
 
 ### Computed Properties
+
 Use computed properties for expensive calculations:
 
 ```stx
 @component('ProductList', {
   setup() {
     const products = ref([])
-    
+
     // Bad: Recalculating on every render
-    const filteredProducts = () => 
+    const filteredProducts = () =>
       products.value.filter(p => p.price > 100)
-    
+
     // Good: Cached until dependencies change
-    const filteredProducts = computed(() => 
+    const filteredProducts = computed(() =>
       products.value.filter(p => p.price > 100)
     )
-    
+
     return { filteredProducts }
   }
 })
 ```
 
 ### Event Handling
+
 Use debounce/throttle for frequent events:
 
 ```typescript
@@ -233,16 +244,16 @@ import { debounce } from '@stx/utils'
 @component('SearchInput', {
   setup() {
     const searchTerm = ref('')
-    
+
     const debouncedSearch = debounce((term: string) => {
       // Perform search
     }, 300)
-    
+
     const handleInput = (e: Event) => {
       searchTerm.value = (e.target as HTMLInputElement).value
       debouncedSearch(searchTerm.value)
     }
-    
+
     return { searchTerm, handleInput }
   }
 })
@@ -251,6 +262,7 @@ import { debounce } from '@stx/utils'
 ## TypeScript Integration
 
 ### Type Safety
+
 Leverage TypeScript for better type safety:
 
 ```typescript
@@ -274,6 +286,7 @@ interface ListProps<T> {
 ```
 
 ### Type Guards
+
 Use type guards for runtime type checking:
 
 ```typescript
@@ -290,18 +303,18 @@ function isUser(value: any): value is User {
 @component('UserProfile', {
   setup() {
     const data = ref<unknown>(null)
-    
+
     const loadUser = async (id: number) => {
       const response = await fetch(`/api/users/${id}`)
       const userData = await response.json()
-      
+
       if (isUser(userData)) {
         data.value = userData
       } else {
         throw new Error('Invalid user data')
       }
     }
-    
+
     return { data, loadUser }
   }
 })
@@ -310,6 +323,7 @@ function isUser(value: any): value is User {
 ## Testing
 
 ### Component Testing
+
 Write comprehensive component tests:
 
 ```typescript
@@ -324,11 +338,11 @@ describe('Button', () => {
         size: 'md'
       }
     })
-    
+
     expect(wrapper.classes()).toContain('btn-primary')
     expect(wrapper.classes()).toContain('btn-md')
   })
-  
+
   it('emits click event', async () => {
     const wrapper = mount(Button)
     await wrapper.trigger('click')
@@ -338,6 +352,7 @@ describe('Button', () => {
 ```
 
 ### Store Testing
+
 Test store functionality:
 
 ```typescript
@@ -356,11 +371,11 @@ const useCounterStore = createStore({
 
 describe('Counter Store', () => {
   let store: ReturnType<typeof useCounterStore>
-  
+
   beforeEach(() => {
     store = useCounterStore()
   })
-  
+
   it('increments count', () => {
     expect(store.count).toBe(0)
     store.increment()
@@ -372,6 +387,7 @@ describe('Counter Store', () => {
 ## Error Handling
 
 ### Component Error Boundaries
+
 Implement error boundaries:
 
 ```stx
@@ -379,13 +395,13 @@ Implement error boundaries:
   setup() {
     const hasError = ref(false)
     const error = ref<Error | null>(null)
-    
+
     onErrorCaptured((err) => {
       hasError.value = true
       error.value = err
       return false // Prevent error propagation
     })
-    
+
     return { hasError, error }
   }
 })
@@ -404,6 +420,7 @@ Implement error boundaries:
 ```
 
 ### API Error Handling
+
 Handle API errors consistently:
 
 ```typescript
@@ -420,7 +437,7 @@ class APIError extends Error {
 async function fetchData<T>(url: string): Promise<T> {
   try {
     const response = await fetch(url)
-    
+
     if (!response.ok) {
       throw new APIError(
         response.statusText,
@@ -428,7 +445,7 @@ async function fetchData<T>(url: string): Promise<T> {
         'API_ERROR'
       )
     }
-    
+
     return await response.json()
   } catch (error) {
     if (error instanceof APIError) {
@@ -446,6 +463,7 @@ async function fetchData<T>(url: string): Promise<T> {
 ## Security
 
 ### XSS Prevention
+
 Prevent XSS attacks:
 
 ```stx
@@ -461,7 +479,7 @@ Prevent XSS attacks:
     content: String
   },
   setup(props) {
-    const sanitizedContent = computed(() => 
+    const sanitizedContent = computed(() =>
       sanitizeHTML(props.content)
     )
     return { sanitizedContent }
@@ -472,6 +490,7 @@ Prevent XSS attacks:
 ```
 
 ### Form Validation
+
 Implement proper form validation:
 
 ```stx
@@ -481,7 +500,7 @@ Implement proper form validation:
       email: '',
       password: ''
     })
-    
+
     const rules = {
       email: [
         v => !!v || 'Email is required',
@@ -492,21 +511,21 @@ Implement proper form validation:
         v => v.length >= 8 || 'Password must be at least 8 characters'
       ]
     }
-    
+
     const validate = () => {
       return Object.entries(rules).every(([field, validators]) =>
-        validators.every(validator => 
+        validators.every(validator =>
           validator(form.value[field]) === true
         )
       )
     }
-    
+
     const handleSubmit = async () => {
       if (validate()) {
         // Process form
       }
     }
-    
+
     return { form, handleSubmit }
   }
 })
@@ -515,6 +534,7 @@ Implement proper form validation:
 ## Accessibility
 
 ### ARIA Attributes
+
 Use proper ARIA attributes:
 
 ```stx
@@ -543,6 +563,7 @@ Use proper ARIA attributes:
 ```
 
 ### Keyboard Navigation
+
 Support keyboard navigation:
 
 ```stx
@@ -550,7 +571,7 @@ Support keyboard navigation:
   setup() {
     const tabs = ref([])
     const activeIndex = ref(0)
-    
+
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
         case 'ArrowRight':
@@ -567,7 +588,7 @@ Support keyboard navigation:
           break
       }
     }
-    
+
     return { tabs, activeIndex, handleKeyDown }
   }
 })
@@ -591,12 +612,13 @@ Support keyboard navigation:
 ## Documentation
 
 ### Component Documentation
+
 Document components thoroughly:
 
 ```typescript
 /**
  * Button component with various styles and sizes.
- * 
+ *
  * @component
  * @example
  * ```stx
@@ -619,7 +641,7 @@ Document components thoroughly:
       type: String,
       required: true
     },
-    
+
     /**
      * The button size
      * @values 'sm' | 'md' | 'lg'
@@ -634,6 +656,7 @@ Document components thoroughly:
 ```
 
 ### Code Comments
+
 Write meaningful comments:
 
 ```typescript
@@ -653,6 +676,7 @@ const user = await fetchUser(id)
 ## Deployment
 
 ### Build Optimization
+
 Optimize builds for production:
 
 ```typescript
@@ -661,7 +685,7 @@ export default defineConfig({
   build: {
     // Enable minification
     minify: true,
-    
+
     // Split vendor chunks
     rollupOptions: {
       output: {
@@ -670,7 +694,7 @@ export default defineConfig({
         }
       }
     },
-    
+
     // Generate source maps
     sourcemap: true
   }
@@ -678,6 +702,7 @@ export default defineConfig({
 ```
 
 ### Environment Configuration
+
 Handle environment variables properly:
 
 ```typescript
@@ -697,4 +722,4 @@ export const config = {
 @component('App')
   <h1>{{ config.appTitle }}</h1>
 @endcomponent
-``` 
+```

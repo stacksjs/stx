@@ -1,12 +1,13 @@
 # Directives
 
-STX directives are special template attributes that provide powerful functionality for your templates. This guide covers all available directives and their usage.
+stx directives are special template attributes that provide powerful functionality for your templates. This guide covers all available directives and their usage.
 
 ## Core Directives
 
 ### Conditional Rendering
 
 #### @if / @else / @elseif
+
 ```stx
 @if(user.isAdmin)
   <admin-panel />
@@ -18,7 +19,9 @@ STX directives are special template attributes that provide powerful functionali
 ```
 
 #### @unless
+
 The opposite of `@if`:
+
 ```stx
 @unless(user.isVerified)
   <verify-email-banner />
@@ -26,7 +29,9 @@ The opposite of `@if`:
 ```
 
 #### @show / @hide
+
 Shorthand for visibility control:
+
 ```stx
 <div @show="isVisible">Visible content</div>
 <div @hide="isHidden">Hidden when true</div>
@@ -35,7 +40,9 @@ Shorthand for visibility control:
 ### Loops and Iteration
 
 #### @foreach
+
 Iterate over arrays and objects:
+
 ```stx
 <ul>
   @foreach(users as user)
@@ -59,7 +66,9 @@ Iterate over arrays and objects:
 ```
 
 #### @for
+
 Traditional for loop:
+
 ```stx
 @for(let i = 0; i < 5; i++)
   <span>Item {{ i + 1 }}</span>
@@ -67,7 +76,9 @@ Traditional for loop:
 ```
 
 #### @while
+
 While loop:
+
 ```stx
 @while(condition)
   <keep-trying />
@@ -77,13 +88,17 @@ While loop:
 ### Layout Control
 
 #### @extends
+
 Inherit from a layout:
+
 ```stx
 @extends('layouts/main')
 ```
 
 #### @section / @yield
+
 Define and render content sections:
+
 ```stx
 <!-- Layout -->
 <title>@yield('title')</title>
@@ -97,7 +112,9 @@ Define and render content sections:
 ```
 
 #### @include
+
 Include other templates:
+
 ```stx
 @include('partials/header')
 @include('components/card', { title: 'My Card' })
@@ -108,7 +125,9 @@ Include other templates:
 ### Component Directives
 
 #### @component
+
 Define a component:
+
 ```stx
 @ts
 interface ButtonProps {
@@ -130,7 +149,9 @@ interface ButtonProps {
 ```
 
 #### @slot
+
 Define named slots:
+
 ```stx
 @component('Card')
   <slot name="header"></slot>
@@ -155,14 +176,18 @@ Define named slots:
 ### Event Handling
 
 #### @click
+
 Handle click events:
+
 ```stx
 <button @click="handleClick">Click Me</button>
 <button @click="count++">Increment</button>
 ```
 
 #### @submit
+
 Handle form submissions:
+
 ```stx
 <form @submit.prevent="handleSubmit">
   <!-- form fields -->
@@ -170,7 +195,9 @@ Handle form submissions:
 ```
 
 #### Event Modifiers
+
 Add event modifiers with dots:
+
 ```stx
 <button @click.stop="handleClick">Stop Propagation</button>
 <button @click.prevent="handleClick">Prevent Default</button>
@@ -182,7 +209,9 @@ Add event modifiers with dots:
 ### Data Binding
 
 #### @bind
+
 Two-way data binding:
+
 ```stx
 <input @bind="username" />
 <select @bind="selectedOption">
@@ -192,7 +221,9 @@ Two-way data binding:
 ```
 
 #### @model
+
 Form input binding:
+
 ```stx
 <input type="text" @model="user.name" />
 <input type="checkbox" @model="isChecked" />
@@ -204,7 +235,9 @@ Form input binding:
 ### Advanced Directives
 
 #### @memo
+
 Memoize expensive computations:
+
 ```stx
 @memo(expensiveValue)
   <heavy-component :value="expensiveValue" />
@@ -212,7 +245,9 @@ Memoize expensive computations:
 ```
 
 #### @watch
+
 Watch for changes:
+
 ```stx
 @watch(user.status)
   <status-indicator :status="user.status" />
@@ -220,7 +255,9 @@ Watch for changes:
 ```
 
 #### @error
+
 Error handling:
+
 ```stx
 @error
   <div class="error-message">
@@ -277,4 +314,4 @@ export const tooltip = defineDirective({
 - Learn about [Components](/features/components)
 - Explore [Template Syntax](/features/templates)
 - Understand [TypeScript Integration](/features/typescript)
-- Check out [Custom Directives](/advanced/custom-directives) 
+- Check out [Custom Directives](/advanced/custom-directives)

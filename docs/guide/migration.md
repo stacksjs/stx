@@ -1,13 +1,14 @@
 # Migration Guides
 
-This section provides detailed guides for migrating from other frameworks to STX, as well as upgrading between STX versions.
+This section provides detailed guides for migrating from other frameworks to stx, as well as upgrading between stx versions.
 
 ## Migrating from Other Frameworks
 
 ### From Vue.js
 
 #### Template Syntax Changes
-Vue.js templates to STX templates:
+
+Vue.js templates to stx templates:
 
 ```vue
 <!-- Vue.js -->
@@ -25,7 +26,7 @@ Vue.js templates to STX templates:
 ```
 
 ```stx
-<!-- STX -->
+<!-- stx -->
 <div>
   <h1>{{ title }}</h1>
   @if(showContent)
@@ -38,7 +39,8 @@ Vue.js templates to STX templates:
 ```
 
 #### Component Definition
-Vue.js component to STX component:
+
+Vue.js component to stx component:
 
 ```vue
 <!-- Vue.js -->
@@ -59,7 +61,7 @@ const increment = () => count.value++
 ```
 
 ```stx
-<!-- STX -->
+<!-- stx -->
 @ts
 interface Props {
   title: string
@@ -81,16 +83,17 @@ interface Props {
   setup(props) {
     const count = ref(0)
     const doubleCount = computed(() => count.value * 2)
-    
+
     const increment = () => count.value++
-    
+
     return { count, doubleCount, increment }
   }
 })
 ```
 
 #### State Management
-Vue.js Pinia store to STX store:
+
+Vue.js Pinia store to stx store:
 
 ```typescript
 // Vue.js (Pinia)
@@ -112,7 +115,7 @@ export const useCounterStore = defineStore('counter', {
 ```
 
 ```typescript
-// STX
+// stx
 import { createStore } from '@stx/store'
 
 export const useCounterStore = createStore({
@@ -134,14 +137,15 @@ export const useCounterStore = createStore({
 
 ### From React
 
-#### JSX to STX Templates
-React JSX to STX templates:
+#### JSX to stx Templates
+
+React JSX to stx templates:
 
 ```jsx
 // React
 function MyComponent({ title, items }) {
   const [count, setCount] = useState(0)
-  
+
   return (
     <div>
       <h1>{title}</h1>
@@ -160,7 +164,7 @@ function MyComponent({ title, items }) {
 ```
 
 ```stx
-<!-- STX -->
+<!-- stx -->
 @component('MyComponent', {
   props: {
     title: String,
@@ -187,38 +191,40 @@ function MyComponent({ title, items }) {
 ```
 
 #### Hooks to Setup
-React hooks to STX setup:
+
+React hooks to stx setup:
 
 ```jsx
 // React
 function useCounter(initialValue = 0) {
   const [count, setCount] = useState(initialValue)
   const increment = () => setCount(count + 1)
-  
+
   useEffect(() => {
     console.log('Count changed:', count)
   }, [count])
-  
+
   return { count, increment }
 }
 ```
 
 ```typescript
-// STX
+// stx
 function useCounter(initialValue = 0) {
   const count = ref(initialValue)
   const increment = () => count.value++
-  
+
   watch(count, (newValue) => {
     console.log('Count changed:', newValue)
   })
-  
+
   return { count, increment }
 }
 ```
 
 #### Context to Stores
-React context to STX stores:
+
+React context to stx stores:
 
 ```jsx
 // React
@@ -226,7 +232,7 @@ const ThemeContext = createContext('light')
 
 function ThemeProvider({ children }) {
   const [theme, setTheme] = useState('light')
-  
+
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
       {children}
@@ -236,7 +242,7 @@ function ThemeProvider({ children }) {
 ```
 
 ```typescript
-// STX
+// stx
 const useThemeStore = createStore({
   state: {
     theme: 'light'
@@ -252,7 +258,8 @@ const useThemeStore = createStore({
 ### From Laravel Blade
 
 #### Blade Directives
-Blade directives to STX directives:
+
+Blade directives to stx directives:
 
 ```blade
 {{-- Blade --}}
@@ -270,7 +277,7 @@ Blade directives to STX directives:
 ```
 
 ```stx
-<!-- STX -->
+<!-- stx -->
 @if(user.isAdmin)
   <admin-panel />
 @else
@@ -285,7 +292,8 @@ Blade directives to STX directives:
 ```
 
 #### Components
-Blade components to STX components:
+
+Blade components to stx components:
 
 ```blade
 {{-- Blade --}}
@@ -303,7 +311,7 @@ Blade components to STX components:
 ```
 
 ```stx
-<!-- STX -->
+<!-- stx -->
 @ts
 interface Props {
   type?: 'primary' | 'secondary'
@@ -335,11 +343,12 @@ interface Props {
 
 ## Version Migration
 
-### Upgrading to STX 2.0
+### Upgrading to stx 2.0
 
 #### Breaking Changes
 
 1. Template Syntax Updates
+
 ```stx
 // Before (1.x)
 @foreach($items as $item)
@@ -353,6 +362,7 @@ interface Props {
 ```
 
 2. Component Definition
+
 ```stx
 // Before (1.x)
 @component('MyComponent')
@@ -370,13 +380,14 @@ interface Props {
 ```
 
 3. TypeScript Integration
+
 ```stx
 // Before (1.x)
 @component('MyComponent')
   interface Props {
     title: string
   }
-  
+
   export default {
     props: {} as Props
   }
@@ -397,8 +408,9 @@ interface Props {
 #### Migration Steps
 
 1. Update Dependencies
+
 ```bash
-# Update STX core
+# Update stx core
 bun install @stx/core@latest
 
 # Update optional packages
@@ -406,6 +418,7 @@ bun install @stx/store@latest @stx/router@latest
 ```
 
 2. Update Configuration
+
 ```typescript
 // stx.config.ts
 import { defineConfig } from '@stx/core'
@@ -422,6 +435,7 @@ export default defineConfig({
 ```
 
 3. Update Component Imports
+
 ```typescript
 // Before (1.x)
 import { createComponent } from '@stx/core'
@@ -431,6 +445,7 @@ import { component } from '@stx/core'
 ```
 
 4. Update Store Usage
+
 ```typescript
 // Before (1.x)
 import { createStore } from '@stx/store'
@@ -463,7 +478,7 @@ const store = createStore({
 
 ### Automated Migration Tool
 
-STX provides a migration tool to help automate these changes:
+stx provides a migration tool to help automate these changes:
 
 ```bash
 # Install migration tool
@@ -477,10 +492,11 @@ git diff
 
 # Apply changes
 git add .
-git commit -m "chore: migrate to STX 2.0"
+git commit -m "chore: migrate to stx 2.0"
 ```
 
 The migration tool handles:
+
 - Template syntax updates
 - Component definition changes
 - TypeScript integration
@@ -490,6 +506,7 @@ The migration tool handles:
 ### Post-Migration Checklist
 
 1. Verify Dependencies
+
 ```bash
 # Check for outdated packages
 bun outdated
@@ -499,24 +516,28 @@ bun install
 ```
 
 2. Test Components
+
 - Run unit tests
 - Check component rendering
 - Verify component props
 - Test component events
 
 3. Update Documentation
+
 - Update component examples
 - Update API references
 - Update type definitions
 
 4. Performance Check
+
 - Run build process
 - Check bundle size
 - Test application performance
 - Monitor memory usage
 
 5. Clean Up
+
 - Remove deprecated code
 - Update import statements
 - Remove unused dependencies
-- Update type definitions 
+- Update type definitions

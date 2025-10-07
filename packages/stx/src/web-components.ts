@@ -6,7 +6,7 @@ import process from 'node:process'
 import { fileExists, resolveTemplatePath } from './utils'
 
 /**
- * Builds web components from STX components
+ * Builds web components from stx components
  */
 export async function buildWebComponents(
   options: StxOptions,
@@ -150,7 +150,7 @@ function generateWebComponentCode(options: WebComponentCodeOptions): string {
   // Generate web component class
   return `/**
  * ${name} Web Component
- * Auto-generated from STX component
+ * Auto-generated from stx component
  */
 class ${name.replace(/\W/g, '')} extends ${baseElement} {
   constructor() {

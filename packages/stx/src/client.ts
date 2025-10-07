@@ -1,5 +1,5 @@
 /**
- * Client-side hydration functionality for STX templates
+ * Client-side hydration functionality for stx templates
  * This file is meant to be used in the browser only
  */
 

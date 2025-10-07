@@ -1,4 +1,4 @@
-// Interface for mapping positions between STX and TypeScript
+// Interface for mapping positions between stx and TypeScript
 export interface PositionMapping {
   stxLine: number
   stxChar: number
@@ -28,9 +28,9 @@ export interface JSDocInfo {
 export * from './animation-types'
 
 /**
- * STX Component interface
+ * stx Component interface
  */
-export interface STXComponent {
+export interface stxComponent {
   /** Component name */
   name: string
   /** Component props */
@@ -44,9 +44,9 @@ export interface STXComponent {
 }
 
 /**
- * STX Directive interface
+ * stx Directive interface
  */
-export interface STXDirective {
+export interface stxDirective {
   /** Directive name */
   name: string
   /** Directive parameters */
@@ -56,17 +56,17 @@ export interface STXDirective {
 }
 
 /**
- * STX Template interface
+ * stx Template interface
  */
-export interface STXTemplate {
+export interface stxTemplate {
   /** Template content */
   content: string
   /** Template data */
   data?: Record<string, any>
   /** Template components */
-  components?: Record<string, STXComponent>
+  components?: Record<string, stxComponent>
   /** Template directives */
-  directives?: Record<string, STXDirective>
+  directives?: Record<string, stxDirective>
   /** Template styles */
   styles?: string[]
   /** Template scripts */
@@ -74,10 +74,10 @@ export interface STXTemplate {
 }
 
 /**
- * STX Language Configuration
+ * stx Language Configuration
  */
-export interface STXLanguageConfig {
-  /** File extensions to associate with STX */
+export interface stxLanguageConfig {
+  /** File extensions to associate with stx */
   extensions: string[]
   /** Language aliases */
   aliases: string[]
@@ -96,9 +96,9 @@ export interface STXLanguageConfig {
 }
 
 /**
- * STX Snippet Definition
+ * stx Snippet Definition
  */
-export interface STXSnippet {
+export interface stxSnippet {
   /** Snippet prefix (trigger) */
   prefix: string
   /** Snippet body */
@@ -108,13 +108,13 @@ export interface STXSnippet {
 }
 
 /**
- * STX Extension Configuration
+ * stx Extension Configuration
  */
-export interface STXExtensionConfig {
+export interface stxExtensionConfig {
   /** Enable/disable the extension */
   enabled: boolean
   /** Language configuration */
-  language: STXLanguageConfig
+  language: stxLanguageConfig
   /** Formatting options */
   format: {
     /** Enable/disable auto formatting */

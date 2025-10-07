@@ -1,6 +1,6 @@
 # TypeScript Integration
 
-STX provides first-class TypeScript support out of the box. This guide covers how to use TypeScript effectively in your STX applications.
+stx provides first-class TypeScript support out of the box. This guide covers how to use TypeScript effectively in your stx applications.
 
 ## Setup
 
@@ -37,7 +37,7 @@ Create a `tsconfig.json` in your project root:
 
 ### Type Declarations
 
-STX provides built-in type declarations. Install the types:
+stx provides built-in type declarations. Install the types:
 
 ```bash
 bun add -D @stacksjs/stx
@@ -97,7 +97,7 @@ interface ButtonProps {
     onClick: undefined
   } as ButtonProps
 })
-  <button 
+  <button
     class="btn btn-{{ type }} btn-{{ size }}"
     :disabled="disabled"
     @click="onClick"
@@ -122,12 +122,12 @@ function handleSubmit(event: SubmitEvent) {
   event.preventDefault()
   const form = event.target as HTMLFormElement
   const formData = new FormData(form)
-  
+
   const data: FormData = {
     username: formData.get('username') as string,
     password: formData.get('password') as string
   }
-  
+
   // Handle form submission
 }
 @endts
@@ -179,7 +179,7 @@ const users: User[] = [
 ]
 @endts
 
-<List 
+<List
   :items="users"
   :renderItem="(user) => user.name"
 />
@@ -225,7 +225,7 @@ function isSuccess(response: Response): response is SuccessResponse {
 
 ### Utility Types
 
-STX provides useful utility types:
+stx provides useful utility types:
 
 ```stx
 @ts
@@ -251,7 +251,7 @@ type CardSlots = ComponentSlots<{
 
 ### Module Augmentation
 
-Extend STX's types:
+Extend stx's types:
 
 ```ts
 // types/stx.d.ts

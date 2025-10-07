@@ -1,30 +1,30 @@
-# STX Language Support for VS Code
+# stx Language Support for VS Code
 
-This extension adds language support for STX (Stacks) templates, a templating language for TypeScript similar to Laravel Blade but designed for TypeScript instead of PHP.
+This extension adds language support for stx (Stacks) templates, a templating language for TypeScript similar to Laravel Blade but designed for TypeScript instead of PHP.
 
 ## Features
 
-- Syntax highlighting for STX files (.stx)
-- Snippets for common STX directives
-- Auto-closing pairs for brackets, quotes, and STX tags
-- Code folding for STX blocks
-- IntelliSense completion for STX directives
+- Syntax highlighting for stx files (.stx)
+- Snippets for common stx directives
+- Auto-closing pairs for brackets, quotes, and stx tags
+- Code folding for stx blocks
+- IntelliSense completion for stx directives
 - Hover information for directives
 
-## What is STX?
+## What is stx?
 
-STX is a templating language that allows you to use TypeScript directly in your HTML templates. It has a similar syntax to Laravel's Blade but is powered by TypeScript instead of PHP.
+stx is a templating language that allows you to use TypeScript directly in your HTML templates. It has a similar syntax to Laravel's Blade but is powered by TypeScript instead of PHP.
 
 ## Available Directives
 
-STX supports a variety of directives, including:
+stx supports a variety of directives, including:
 
 - `@if`, `@else`, `@elseif`, `@endif`: Conditional statements
 - `@for`, `@endfor`: Loop through items with JavaScript-style iteration
 - `@foreach`, `@endforeach`: Loop through items with PHP-style iteration
 - `@ts`, `@endts`: Embed TypeScript code
 - `@js`, `@endjs`: Embed JavaScript code
-- `@raw`, `@endraw`: Display content without processing STX expressions
+- `@raw`, `@endraw`: Display content without processing stx expressions
 - `@markdown`, `@endmarkdown`: Render markdown content as HTML
 - `@component`, `@endcomponent`: Include reusable components
 - `@include`: Include other templates
@@ -36,15 +36,15 @@ STX supports a variety of directives, including:
 2. Create a new file with the `.stx` extension
 3. Start typing to see syntax highlighting and auto-completion
 
-You can also use the command `Set Language Mode to STX` from the Command Palette (Ctrl+Shift+P or Cmd+Shift+P) to manually set the language for a file.
+You can also use the command `Set Language Mode to stx` from the Command Palette (Ctrl+Shift+P or Cmd+Shift+P) to manually set the language for a file.
 
 ## Examples
 
-See the `examples` directory for sample STX files that demonstrate the language features.
+See the `examples` directory for sample stx files that demonstrate the language features.
 
 ## Variable Syntax
 
-STX uses double curly braces to output variables:
+stx uses double curly braces to output variables:
 
 ```html
 <p>Hello, {{ name }}</p>
@@ -83,7 +83,7 @@ Use the `@ts` directive to embed TypeScript code directly in your templates:
 
 ## Syntax Highlighting
 
-The extension provides robust syntax highlighting for STX templates, including special support for:
+The extension provides robust syntax highlighting for stx templates, including special support for:
 
 - TypeScript code blocks between `@ts` and `@endts` tags
 - JavaScript code blocks between `@js` and `@endjs` tags
@@ -100,18 +100,18 @@ The syntax highlighting works by combining an HTML-based grammar with specific i
 
 ### Syntax Highlighting Issues
 
-If you're experiencing issues with syntax highlighting for STX files:
+If you're experiencing issues with syntax highlighting for stx files:
 
 1. Make sure the extension is correctly installed
-2. Try running the command `Set Language Mode to STX` from the Command Palette (Ctrl+Shift+P or Cmd+Shift+P)
+2. Try running the command `Set Language Mode to stx` from the Command Palette (Ctrl+Shift+P or Cmd+Shift+P)
 3. If that doesn't work, try manually setting the language mode:
    - Click on the language indicator in the bottom right of the editor
    - Select "Configure File Association for '.stx'..."
-   - Choose "STX" from the list of languages
+   - Choose "stx" from the list of languages
 
-### HTML Inside STX
+### HTML Inside stx
 
-For HTML content inside STX templates, normal HTML syntax highlighting and IntelliSense should work. If you're having issues, you might need to:
+For HTML content inside stx templates, normal HTML syntax highlighting and IntelliSense should work. If you're having issues, you might need to:
 
 1. Restart VS Code
 2. Check for any extension conflicts

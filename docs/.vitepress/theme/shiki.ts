@@ -8,7 +8,7 @@ export async function initHighlighter() {
     themes: ['github-dark', 'github-light'],
     langs: ['html', 'typescript', 'javascript'],
     langAlias: {
-      stx: 'html' // Use HTML as base for STX
+      stx: 'html' // Use HTML as base for stx
     }
   })
 
@@ -20,4 +20,4 @@ export function highlight(code: string, lang = 'stx', theme = 'github-dark') {
     throw new Error('Highlighter not initialized')
   }
   return highlighter.codeToHtml(code, { lang, theme })
-} 
+}

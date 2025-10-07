@@ -1,5 +1,5 @@
 /**
- * STX Config
+ * stx Config
  */
 
 /**
@@ -76,7 +76,7 @@ export interface WebComponent {
   name: string
   /** HTML tag to register (must include a hyphen) */
   tag: string
-  /** Path to the STX component file to convert */
+  /** Path to the stx component file to convert */
   file: string
   /** Optional element to extend (default: HTMLElement) */
   extends?: string
@@ -430,7 +430,7 @@ export interface MarkdownConfig {
 }
 
 /**
- * STX configuration options
+ * stx configuration options
  */
 export interface StxConfig {
   /**
@@ -469,7 +469,7 @@ export interface StxConfig {
   cacheVersion?: string
 
   /**
-   * Enable STX features
+   * Enable stx features
    */
   enabled: boolean
   /** Path to partials directory, defaults to 'partials' in the same directory as the template */

@@ -10,9 +10,9 @@ import { createHoverProvider } from './providers/hoverProvider'
 import { VirtualTsDocumentProvider } from './providers/virtualTsDocumentProvider'
 
 export function activate(context: vscode.ExtensionContext) {
-  // Create virtual TypeScript files for each STX and MD file to support language features
+  // Create virtual TypeScript files for each stx and MD file to support language features
   const virtualTsDocumentProvider = new VirtualTsDocumentProvider()
-  console.log('STX Extension - Activating')
+  console.log('stx Extension - Activating')
 
   // Verify snippets file exists
   const snippetsPath = path.join(context.extensionPath, 'src', 'snippets', 'stx.json')
@@ -20,17 +20,17 @@ export function activate(context: vscode.ExtensionContext) {
     try {
       const snippetsContent = fs.readFileSync(snippetsPath, 'utf-8')
       const snippets = JSON.parse(snippetsContent)
-      console.log(`STX Extension - Loaded ${Object.keys(snippets).length} snippets from ${snippetsPath}`)
+      console.log(`stx Extension - Loaded ${Object.keys(snippets).length} snippets from ${snippetsPath}`)
     }
     catch (error) {
-      console.error(`STX Extension - Error loading snippets: ${error}`)
+      console.error(`stx Extension - Error loading snippets: ${error}`)
     }
   }
   else {
-    console.error(`STX Extension - Snippets file not found: ${snippetsPath}`)
+    console.error(`stx Extension - Snippets file not found: ${snippetsPath}`)
   }
 
-  // Ensure STX files are recognized
+  // Ensure stx files are recognized
   // The language should be registered in the package.json
   // but we'll force language association here for any .stx files
   vscode.workspace.textDocuments.forEach((document) => {
@@ -92,7 +92,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Track document opens
   const documentOpenListener = vscode.workspace.onDidOpenTextDocument((document) => {
-    // Handle STX files
+    // Handle stx files
     if (document.languageId === 'stx' || document.fileName.endsWith('.stx')) {
       virtualTsDocumentProvider.trackDocument(document)
 
@@ -102,7 +102,7 @@ export function activate(context: vscode.ExtensionContext) {
           .then(() => console.log(`Set language ID for ${document.fileName} to stx`))
       }
 
-      // Open a virtual TypeScript document for this STX file
+      // Open a virtual TypeScript document for this stx file
       const virtualUri = document.uri.with({
         scheme: 'stx-ts',
         path: `${document.uri.path}.ts`,
@@ -171,9 +171,9 @@ export function activate(context: vscode.ExtensionContext) {
     parameterCompletionProvider,
   )
 
-  console.log('STX language support activated (with Markdown frontmatter support)')
+  console.log('stx language support activated (with Markdown frontmatter support)')
 }
 
 export function deactivate() {
-  console.log('STX language support deactivated')
+  console.log('stx language support deactivated')
 }

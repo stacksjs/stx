@@ -92,7 +92,7 @@ describe('VSCODE: Extension Tests', () => {
     expect(packageJson.version).toBeDefined()
   })
 
-  test('should register STX language configuration', async () => {
+  test('should register stx language configuration', async () => {
     const packagePath = path.join(PACKAGE_ROOT, 'package.json')
     const content = await Bun.file(packagePath).text()
     const packageJson = JSON.parse(content)
@@ -167,7 +167,7 @@ describe('VSCODE: Extension Tests', () => {
     expect(content).toContain('provideDocumentLinks')
   })
 
-  test('should have TypeScript STX plugin', async () => {
+  test('should have TypeScript stx plugin', async () => {
     const tsPluginPath = path.join(PACKAGE_ROOT, 'src/typescript-stx-plugin.ts')
     const exists = await Bun.file(tsPluginPath).exists()
     expect(exists).toBe(true)
@@ -227,7 +227,7 @@ describe('VSCODE: Extension Tests', () => {
     expect(Object.values(snippets).some(s => s.description?.toLowerCase().includes('directive'))).toBe(true)
   })
 
-  test('should have example STX files', async () => {
+  test('should have example stx files', async () => {
     const examplePaths = [
       'examples/hello-world.stx',
       'examples/components/component-example.stx',

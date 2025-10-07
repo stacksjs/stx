@@ -1,13 +1,13 @@
-# STX Language Usage Guide
+# stx Language Usage Guide
 
-This guide provides detailed information on how to use the STX templating language with the VS Code extension.
+This guide provides detailed information on how to use the stx templating language with the VS Code extension.
 
 ## Installation
 
-1. Install the extension from the VS Code marketplace or by searching for "STX Language Support" in the Extensions view (Ctrl+Shift+X or Cmd+Shift+X).
+1. Install the extension from the VS Code marketplace or by searching for "stx Language Support" in the Extensions view (Ctrl+Shift+X or Cmd+Shift+X).
 2. Once installed, the extension will automatically activate for files with the `.stx` extension.
 
-## Creating Your First STX Template
+## Creating Your First stx Template
 
 1. Create a new file with the `.stx` extension (e.g., `hello.stx`).
 2. Start by adding a basic HTML structure:
@@ -18,7 +18,7 @@ This guide provides detailed information on how to use the STX templating langua
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My First STX Template</title>
+    <title>My First stx Template</title>
 </head>
 <body>
     <h1>Hello, World!</h1>
@@ -26,7 +26,7 @@ This guide provides detailed information on how to use the STX templating langua
 </html>
 ```
 
-3. Now, let's add some STX syntax:
+3. Now, let's add some stx syntax:
 
 ```html
 <!DOCTYPE html>
@@ -34,7 +34,7 @@ This guide provides detailed information on how to use the STX templating langua
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My First STX Template</title>
+    <title>My First stx Template</title>
 </head>
 <body>
     @ts
@@ -53,11 +53,11 @@ This guide provides detailed information on how to use the STX templating langua
 </html>
 ```
 
-## STX Syntax Reference
+## stx Syntax Reference
 
 ### Comments
 
-STX comments are wrapped in `{{--` and `--}}`:
+stx comments are wrapped in `{{--` and `--}}`:
 
 ```html
 {{-- This is a comment that won't be rendered in the output --}}
@@ -112,7 +112,7 @@ For plain JavaScript, use the `@js` directive:
 
 ### Conditionals
 
-STX supports if-else conditionals:
+stx supports if-else conditionals:
 
 ```html
 @if(user.isAdmin)
@@ -209,15 +209,15 @@ You can render markdown content:
 
 ## Troubleshooting
 
-If you encounter any issues with the STX language support:
+If you encounter any issues with the stx language support:
 
-1. **Syntax Highlighting Not Working**: Try manually setting the language mode to STX using the Command Palette (Ctrl+Shift+P or Cmd+Shift+P) and selecting "Set Language Mode to STX".
+1. **Syntax Highlighting Not Working**: Try manually setting the language mode to stx using the Command Palette (Ctrl+Shift+P or Cmd+Shift+P) and selecting "Set Language Mode to stx".
 
-2. **IntelliSense Not Working**: Make sure the file has the `.stx` extension and the language mode is set to STX.
+2. **IntelliSense Not Working**: Make sure the file has the `.stx` extension and the language mode is set to stx.
 
-3. **Extension Not Activating**: Check the Output panel (View > Output) and select "STX Language Support" from the dropdown to see any activation errors.
+3. **Extension Not Activating**: Check the Output panel (View > Output) and select "stx Language Support" from the dropdown to see any activation errors.
 
 ## Resources
 
-- [STX Repository](https://github.com/stacksjs/stx)
+- [stx Repository](https://github.com/stacksjs/stx)
 - [VS Code Marketplace Extension](https://marketplace.visualstudio.com/items?itemName=Stacks.vscode-stacks)

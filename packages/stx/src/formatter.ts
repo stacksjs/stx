@@ -1,6 +1,6 @@
 /* eslint-disable regexp/no-super-linear-backtracking */
 /**
- * STX file formatter for automatically formatting .stx files
+ * stx file formatter for automatically formatting .stx files
  */
 
 export interface FormatterOptions {
@@ -28,7 +28,7 @@ const DEFAULT_OPTIONS: Required<FormatterOptions> = {
 }
 
 /**
- * Format STX file content
+ * Format stx file content
  */
 export function formatStxContent(content: string, options: FormatterOptions = {}): string {
   const opts = { ...DEFAULT_OPTIONS, ...options }
@@ -46,7 +46,7 @@ export function formatStxContent(content: string, options: FormatterOptions = {}
   // Format HTML structure
   formatted = formatHtml(formatted, opts)
 
-  // Format STX directives
+  // Format stx directives
   formatted = formatStxDirectives(formatted, opts)
 
   // Normalize line endings and ensure file ends with newline
@@ -59,7 +59,7 @@ export function formatStxContent(content: string, options: FormatterOptions = {}
 }
 
 /**
- * Format script tags within STX files
+ * Format script tags within stx files
  */
 function formatScriptTags(content: string, options: Required<FormatterOptions>): string {
   return content.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, (match, scriptContent) => {
@@ -127,7 +127,7 @@ function formatHtml(content: string, options: Required<FormatterOptions>): strin
       }
     }
 
-    // Handle STX directives that open blocks
+    // Handle stx directives that open blocks
     if (line.startsWith('@') && isOpeningDirective(line)) {
       indentLevel++
     }
@@ -137,7 +137,7 @@ function formatHtml(content: string, options: Required<FormatterOptions>): strin
 }
 
 /**
- * Format STX directives for better readability
+ * Format stx directives for better readability
  */
 function formatStxDirectives(content: string, options: Required<FormatterOptions>): string {
   // Format @if, @foreach, @for etc. directives

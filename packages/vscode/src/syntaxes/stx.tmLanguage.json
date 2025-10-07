@@ -1,6 +1,6 @@
 {
   "scopeName": "text.html.ts.stx",
-  "name": "STX",
+  "name": "stx",
   "fileTypes": ["stx"],
   "patterns": [
     {

@@ -10,7 +10,7 @@ import { resolve } from 'node:path'
 import process from 'node:process'
 
 const preCommitHook = `#!/bin/sh
-# Pre-commit hook for STX
+# Pre-commit hook for stx
 # This hook runs staged-lint checks on only the files being committed
 
 echo "🔍 Running pre-commit checks..."
@@ -46,7 +46,7 @@ echo "✅ Pre-commit staged-lint checks passed!"
 `
 
 const postCommitHook = `#!/bin/sh
-# Post-commit hook for STX
+# Post-commit hook for stx
 # This hook runs auto-versioning after each commit
 
 echo "🚀 Running post-commit auto-versioning..."
@@ -54,14 +54,14 @@ bun run scripts/auto-version.ts
 `
 
 const commitMsgHook = `#!/bin/sh
-# GitLint commit-msg hook for STX
+# GitLint commit-msg hook for stx
 # Uses locally installed gitlint (works offline)
 
 bun node_modules/@stacksjs/gitlint/dist/bin/cli.js --edit "$1"
 `
 
 function setup(): void {
-  console.log('🚀 Setting up STX development environment...')
+  console.log('🚀 Setting up stx development environment...')
 
   try {
     // Create commit-msg hook

@@ -1,6 +1,6 @@
 # State Management
 
-STX provides powerful state management capabilities to help you manage application data effectively. This guide covers both local component state and global application state.
+stx provides powerful state management capabilities to help you manage application data effectively. This guide covers both local component state and global application state.
 
 ## Component State
 
@@ -12,11 +12,11 @@ Use reactive state in components:
 @component('Counter')
   @ts
   let count = 0
-  
+
   function increment() {
     count++
   }
-  
+
   function decrement() {
     count--
   }
@@ -44,12 +44,12 @@ Create derived state:
   }
 
   const todos = ref<Todo[]>([])
-  
-  const completedTodos = computed(() => 
+
+  const completedTodos = computed(() =>
     todos.value.filter(todo => todo.completed)
   )
-  
-  const incompleteTodos = computed(() => 
+
+  const incompleteTodos = computed(() =>
     todos.value.filter(todo => !todo.completed)
   )
   @endts
@@ -57,7 +57,7 @@ Create derived state:
   <div class="todo-list">
     <h3>Completed ({{ completedTodos.length }})</h3>
     <todo-items :items="completedTodos" />
-    
+
     <h3>Incomplete ({{ incompleteTodos.length }})</h3>
     <todo-items :items="incompleteTodos" />
   </div>
@@ -78,7 +78,7 @@ React to state changes:
   }
 
   const user = ref<User | null>(null)
-  
+
   watch(() => user.value?.preferences, (newPrefs, oldPrefs) => {
     if (newPrefs !== oldPrefs) {
       savePreferences(newPrefs)
@@ -122,16 +122,16 @@ export const store = createStore<State, Actions>({
     theme: 'light',
     notifications: []
   },
-  
+
   actions: {
     setUser(state, user) {
       state.user = user
     },
-    
+
     toggleTheme(state) {
       state.theme = state.theme === 'light' ? 'dark' : 'light'
     },
-    
+
     addNotification(state, notification) {
       state.notifications.push(notification)
     }
@@ -147,7 +147,7 @@ Access store state in components:
 @component('AppHeader')
   @ts
   import { store } from '@/store'
-  
+
   const { user, theme } = store.state
   const { toggleTheme } = store.actions
   @endts
@@ -158,7 +158,7 @@ Access store state in components:
     @else
       <login-button />
     @endif
-    
+
     <button @click="toggleTheme">
       Toggle Theme
     </button>
@@ -177,14 +177,14 @@ export const auth = {
     user: null,
     token: null
   },
-  
+
   actions: {
     async login(state, credentials) {
       const response = await api.login(credentials)
       state.user = response.user
       state.token = response.token
     },
-    
+
     logout(state) {
       state.user = null
       state.token = null
@@ -216,7 +216,7 @@ export const store = createPersistedStore({
     theme: 'light',
     settings: {}
   },
-  
+
   persistence: {
     key: 'app-state',
     paths: ['theme', 'settings'],
@@ -235,7 +235,7 @@ const customStorage = {
     const value = await api.getState(key)
     return JSON.parse(value)
   },
-  
+
   async set(key: string, value: any) {
     await api.setState(key, JSON.stringify(value))
   }
@@ -274,7 +274,7 @@ Share state between components:
   const props = defineProps<{
     state: { value: number }
   }>()
-  
+
   function increment() {
     props.state.value++
   }
@@ -294,7 +294,7 @@ Compose multiple state sources:
 function useUserState() {
   const user = ref(null)
   const loading = ref(false)
-  
+
   async function fetchUser(id: number) {
     loading.value = true
     try {
@@ -303,7 +303,7 @@ function useUserState() {
       loading.value = false
     }
   }
-  
+
   return {
     user,
     loading,
@@ -315,7 +315,7 @@ function usePermissions(user) {
   const can = (action: string) => {
     return user.value?.permissions.includes(action)
   }
-  
+
   return { can }
 }
 
@@ -369,4 +369,4 @@ function usePermissions(user) {
 - Learn about [Testing](/features/testing)
 - Explore [Performance](/features/performance)
 - Check out [Security](/features/security)
-- Review [Deployment](/features/deployment) 
+- Review [Deployment](/features/deployment)

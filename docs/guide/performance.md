@@ -1,12 +1,12 @@
 # Performance Optimization
 
-STX is built with performance in mind, but there are several techniques and best practices you can use to further optimize your application. This guide covers various performance optimization strategies.
+stx is built with performance in mind, but there are several techniques and best practices you can use to further optimize your application. This guide covers various performance optimization strategies.
 
 ## Build Optimization
 
 ### Tree Shaking
 
-STX automatically performs tree shaking to eliminate unused code:
+stx automatically performs tree shaking to eliminate unused code:
 
 ```ts
 // config/build.ts
@@ -19,13 +19,13 @@ export default defineConfig({
       moduleSideEffects: false,
       propertyReadSideEffects: false
     },
-    
+
     // Minify output
     minify: true,
-    
+
     // Generate sourcemaps
     sourcemap: false,
-    
+
     // Optimize dependencies
     optimizeDeps: {
       include: [
@@ -130,7 +130,7 @@ Lazy load components and routes:
   // Lazy load heavy components
   const HeavyChart = lazy(() => import('./components/HeavyChart.stx'))
   const DataGrid = lazy(() => import('./components/DataGrid.stx'))
-  
+
   let showChart = false
   @endts
 
@@ -185,7 +185,7 @@ Handle large lists efficiently:
   }
   @endts
 
-  <div 
+  <div
     class="virtual-list"
     ref="containerRef"
     @scroll="handleScroll"
@@ -212,7 +212,7 @@ Handle large lists efficiently:
 @endcomponent
 
 <!-- Usage -->
-<VirtualList 
+<VirtualList
   :items="largeDataset"
   :itemHeight="50"
   :visibleItems="10"
@@ -240,7 +240,7 @@ Optimize state updates:
 
   // Use shallowRef for large objects
   const todos = shallowRef<Todo[]>([])
-  
+
   // Batch updates
   function updateMultipleTodos(updates: Partial<Todo>[]) {
     batch(() => {
@@ -256,7 +256,7 @@ Optimize state updates:
 
   <div class="todo-list">
     @foreach(todos as todo)
-      <todo-item 
+      <todo-item
         :key="todo.id"
         :todo="todo"
       />
@@ -280,7 +280,7 @@ Cache expensive component renders:
   }
 
   // Cache key generator
-  const cacheKey = computed(() => 
+  const cacheKey = computed(() =>
     `${id}-${JSON.stringify(data)}`
   )
   @endts

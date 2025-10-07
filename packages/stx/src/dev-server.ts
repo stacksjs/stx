@@ -463,7 +463,7 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
 
   // Print Bun-style output header
   console.clear()
-  console.log(`\n${colors.blue}STX${colors.reset}  ${colors.green}${process.env.STX_VERSION || 'v0.0.10'}${colors.reset}  ${colors.dim}ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms${colors.reset}`)
+  console.log(`\n${colors.blue}stx${colors.reset}  ${colors.green}${process.env.stx_VERSION || 'v0.0.10'}${colors.reset}  ${colors.dim}ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms${colors.reset}`)
   console.log(`\n${colors.bright}→  ${colors.cyan}http://localhost:${port}/${colors.reset}`)
 
   // Print the route in Bun-like format
@@ -505,7 +505,7 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
   return true
 }
 
-// Build and serve a specific STX file
+// Build and serve a specific stx file
 export async function serveStxFile(filePath: string, options: DevServerOptions = {}): Promise<boolean> {
   // Default options
   const port = options.port || 3000
@@ -535,7 +535,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   console.log(`${colors.blue}Building ${colors.bright}${filePath}${colors.reset}...`)
   let htmlContent: string | null = null
 
-  // Function to build the STX file
+  // Function to build the stx file
   const buildFile = async (): Promise<boolean> => {
     try {
       const result = await Bun.build({
@@ -580,7 +580,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
       return true
     }
     catch (error) {
-      console.error(`${colors.red}Error building STX file:${colors.reset}`, error)
+      console.error(`${colors.red}Error building stx file:${colors.reset}`, error)
       return false
     }
   }
@@ -659,7 +659,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
 
   // Print Bun-style output header
   console.clear()
-  console.log(`\n${colors.blue}STX${colors.reset}  ${colors.green}${process.env.STX_VERSION || 'v0.0.10'}${colors.reset}  ${colors.dim}ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms${colors.reset}`)
+  console.log(`\n${colors.blue}stx${colors.reset}  ${colors.green}${process.env.stx_VERSION || 'v0.0.10'}${colors.reset}  ${colors.dim}ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms${colors.reset}`)
   console.log(`\n${colors.bright}→  ${colors.cyan}http://localhost:${port}/${colors.reset}`)
 
   // Print the route in Bun-like format
@@ -701,7 +701,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   return true
 }
 
-// Interface for mapping routes to built STX file content
+// Interface for mapping routes to built stx file content
 interface RouteMapping {
   [routePath: string]: {
     filePath: string
@@ -710,7 +710,7 @@ interface RouteMapping {
   }
 }
 
-// Build and serve multiple files (STX and Markdown)
+// Build and serve multiple files (stx and Markdown)
 export async function serveMultipleStxFiles(filePaths: string[], options: DevServerOptions = {}): Promise<boolean> {
   // Default options
   const port = options.port || 3000
@@ -1043,7 +1043,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
           }
         }
         else {
-          // Build STX file
+          // Build stx file
           const result = await Bun.build({
             entrypoints: [absolutePath],
             outdir: outputDir,
@@ -1184,7 +1184,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
 
   // Print Bun-style output header
   console.clear()
-  console.log(`\n${colors.blue}STX${colors.reset}  ${colors.green}${process.env.STX_VERSION || 'v0.0.10'}${colors.reset}  ${colors.dim}ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms${colors.reset}`)
+  console.log(`\n${colors.blue}stx${colors.reset}  ${colors.green}${process.env.stx_VERSION || 'v0.0.10'}${colors.reset}  ${colors.dim}ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms${colors.reset}`)
   console.log(`\n${colors.bright}→  ${colors.cyan}http://localhost:${port}/${colors.reset}`)
 
   // Print the routes in Bun-like format

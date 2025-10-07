@@ -1,6 +1,6 @@
 # Security
 
-This guide covers essential security practices and features in STX to help you build secure applications.
+This guide covers essential security practices and features in stx to help you build secure applications.
 
 ## Security Headers
 
@@ -89,7 +89,7 @@ app.use((req, res, next) => {
 
 ### Template Security
 
-STX automatically escapes variables in templates:
+stx automatically escapes variables in templates:
 
 ```stx
 <!-- Safe: Content is automatically escaped -->
@@ -288,4 +288,4 @@ const decrypted = await decrypt(encrypted, {
 - Learn about [Testing](/features/testing)
 - Explore [Deployment](/features/deployment)
 - Check out [Performance](/features/performance)
-- Review [Monitoring](/features/monitoring) 
+- Review [Monitoring](/features/monitoring)

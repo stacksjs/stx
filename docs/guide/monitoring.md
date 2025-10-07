@@ -1,6 +1,6 @@
 # Monitoring
 
-This guide covers monitoring and observability features in STX to help you track performance, errors, and user behavior.
+This guide covers monitoring and observability features in stx to help you track performance, errors, and user behavior.
 
 ## Performance Monitoring
 
@@ -98,7 +98,7 @@ class ErrorTracker {
 
   track(error: Error, context?: any) {
     this.errors.push(error)
-    
+
     // Send to monitoring service
     metrics.track('error', {
       message: error.message,
@@ -254,14 +254,14 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => {
     const duration = Date.now() - response.config.metadata.startTime
-    
+
     metrics.track('api_request', {
       endpoint: response.config.url,
       method: response.config.method,
       duration,
       status: response.status
     })
-    
+
     return response
   },
   (error) => {
@@ -271,7 +271,7 @@ api.interceptors.response.use(
       status: error.response?.status,
       error: error.message
     })
-    
+
     return Promise.reject(error)
   }
 )
@@ -356,4 +356,4 @@ Create a metrics dashboard:
 - Learn about [Testing](/features/testing)
 - Explore [Deployment](/features/deployment)
 - Check out [Performance](/features/performance)
-- Review [Security](/features/security) 
+- Review [Security](/features/security)

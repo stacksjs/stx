@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 
 /**
- * CSRF Protection for STX templates
+ * CSRF Protection for stx templates
  *
  * Similar to Laravel's CSRF protection, this module provides:
  * - CSRF token generation

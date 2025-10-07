@@ -1,6 +1,6 @@
 # Basic Usage
 
-This guide will help you get started with STX by walking through the basics of creating templates and components.
+This guide will help you get started with stx by walking through the basics of creating templates and components.
 
 ## Creating Your First Template
 
@@ -10,14 +10,14 @@ Create a new file `pages/hello.stx`:
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Hello STX</title>
+  <title>Hello stx</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
   @ts
     const greeting = 'Hello, World!'
-    const items = ['STX', 'is', 'awesome']
+    const items = ['stx', 'is', 'awesome']
     const isLoggedIn = true
   @endts
 
@@ -75,7 +75,7 @@ Use the `@ts` directive for TypeScript code:
 <div class="profile">
   <h1>Welcome, {{ user.name }}</h1>
   <p>{{ user.email }}</p>
-  
+
   @if(user.isAdmin)
     <admin-badge>Admin User</admin-badge>
   @endif
@@ -84,7 +84,7 @@ Use the `@ts` directive for TypeScript code:
 
 ### Conditionals
 
-STX provides powerful conditional directives:
+stx provides powerful conditional directives:
 
 ```stx
 @if(user.isAdmin)
@@ -119,7 +119,7 @@ STX provides powerful conditional directives:
 
 ### Loops
 
-STX offers various looping constructs:
+stx offers various looping constructs:
 
 ```stx
 <ul class="user-list">
@@ -179,7 +179,7 @@ Components help you create reusable UI elements. Create a new file `components/B
     onClick: () => {}
   }
 })
-  <button 
+  <button
     class="button {{ variants[type] }} {{ sizes[size] }} rounded-md font-medium transition-colors"
     :disabled="disabled"
     @click="onClick"
@@ -212,25 +212,25 @@ Import and use components in your templates:
 @import { Button } from '../components/Button'
 
 <div class="actions">
-  <Button 
-    type="primary" 
-    size="lg" 
+  <Button
+    type="primary"
+    size="lg"
     @click="handleSubmit"
   >
     Submit Form
   </Button>
 
-  <Button 
-    type="secondary" 
-    size="md" 
+  <Button
+    type="secondary"
+    size="md"
     @click="handleCancel"
   >
     Cancel
   </Button>
 
-  <Button 
-    type="danger" 
-    size="md" 
+  <Button
+    type="danger"
+    size="md"
     :disabled="isLoading"
   >
     {{ isLoading ? 'Loading...' : 'Delete' }}
@@ -243,6 +243,7 @@ Import and use components in your templates:
 Create reusable layouts with `@extends` and `@section`:
 
 1. Create a layout (`layouts/main.stx`):
+
 ```stx
 <!DOCTYPE html>
 <html lang="en">
@@ -250,7 +251,7 @@ Create reusable layouts with `@extends` and `@section`:
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>@yield('title') - My App</title>
-  
+
   @section('head')
     <link rel="stylesheet" href="/css/main.css">
   @endsection
@@ -278,6 +279,7 @@ Create reusable layouts with `@extends` and `@section`:
 ```
 
 2. Use the layout in a page:
+
 ```stx
 @extends('layouts/main')
 
@@ -291,7 +293,7 @@ Create reusable layouts with `@extends` and `@section`:
 @section('content')
   <div class="dashboard">
     <h1 class="text-3xl font-bold mb-8">Welcome to Dashboard</h1>
-    
+
     <div class="grid grid-cols-3 gap-6">
       @foreach(widgets as widget)
         <dashboard-widget :data="widget" />
@@ -303,7 +305,7 @@ Create reusable layouts with `@extends` and `@section`:
 
 ## TypeScript Integration
 
-STX provides first-class TypeScript support:
+stx provides first-class TypeScript support:
 
 ```stx
 @ts
@@ -316,17 +318,17 @@ STX provides first-class TypeScript support:
   }
 
   const users: User[] = [
-    { 
-      id: 1, 
-      name: 'John Doe', 
-      email: 'john@example.com', 
+    {
+      id: 1,
+      name: 'John Doe',
+      email: 'john@example.com',
       role: 'admin',
       lastActive: new Date()
     },
-    { 
-      id: 2, 
-      name: 'Jane Smith', 
-      email: 'jane@example.com', 
+    {
+      id: 2,
+      name: 'Jane Smith',
+      email: 'jane@example.com',
       role: 'moderator',
       lastActive: new Date()
     }
@@ -346,7 +348,7 @@ STX provides first-class TypeScript support:
           {{ user.role }}
         </span>
       </div>
-      
+
       <div class="card-body">
         <p class="text-gray-600">{{ user.email }}</p>
         <p class="text-sm text-gray-500">
@@ -367,16 +369,19 @@ STX provides first-class TypeScript support:
 ## Development Workflow
 
 1. Start the development server:
+
 ```bash
 bun run dev
 ```
 
 2. Build for production:
+
 ```bash
 bun run build
 ```
 
 3. Preview production build:
+
 ```bash
 bun run preview
 ```

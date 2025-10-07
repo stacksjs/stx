@@ -1,6 +1,6 @@
 # Testing
 
-STX provides comprehensive testing utilities to ensure your application's reliability. This guide covers unit testing, component testing, and integration testing approaches.
+stx provides comprehensive testing utilities to ensure your application's reliability. This guide covers unit testing, component testing, and integration testing approaches.
 
 ## Setup
 
@@ -22,7 +22,7 @@ export default {
 
 ### Test Utils
 
-STX provides test utilities for component testing:
+stx provides test utilities for component testing:
 
 ```ts
 import { mount, shallowMount } from '@stacksjs/stx/test-utils'
@@ -72,7 +72,7 @@ import { expect, test } from 'bun:test'
 test('isAdmin correctly identifies admin users', () => {
   const admin = { id: 1, name: 'Admin', role: 'admin' }
   const user = { id: 2, name: 'User', role: 'user' }
-  
+
   expect(isAdmin(admin)).toBe(true)
   expect(isAdmin(user)).toBe(false)
 })
@@ -92,7 +92,7 @@ test('isAdmin correctly identifies admin users', () => {
   }
   @endts
 
-  <button 
+  <button
     class="btn btn-{{ type }}"
     :disabled="disabled"
   >
@@ -137,7 +137,7 @@ test('Button handles disabled state', () => {
 @component('Counter')
   @ts
   let count = 0
-  
+
   function increment() {
     count++
     emit('change', count)
@@ -158,9 +158,9 @@ import Counter from './Counter.stx'
 test('Counter emits change event on increment', async () => {
   const wrapper = mount(Counter)
   const button = wrapper.find('button')
-  
+
   await button.trigger('click')
-  
+
   expect(wrapper.emitted().change).toBeTruthy()
   expect(wrapper.emitted().change[0]).toEqual([1])
 })
@@ -177,14 +177,14 @@ import UserDashboard from '../pages/UserDashboard.stx'
 
 test('UserDashboard integrates components correctly', async () => {
   const wrapper = mount(UserDashboard)
-  
+
   // Test navigation component
   expect(wrapper.find('nav').exists()).toBe(true)
-  
+
   // Test user profile component
   const profile = wrapper.findComponent({ name: 'UserProfile' })
   expect(profile.exists()).toBe(true)
-  
+
   // Test interaction between components
   await wrapper.find('[data-test="edit-profile"]').trigger('click')
   expect(wrapper.findComponent({ name: 'ProfileEditor' }).exists()).toBe(true)
@@ -250,4 +250,4 @@ test('routing works correctly', async () => {
 - Explore [Deployment](/features/deployment)
 - Learn about [State Management](/features/state)
 - Check out [Performance Optimization](/features/performance)
-- Review [Security Guidelines](/features/security) 
+- Review [Security Guidelines](/features/security)

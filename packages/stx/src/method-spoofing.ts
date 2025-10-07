@@ -1,5 +1,5 @@
 /**
- * Form Method Spoofing for STX templates
+ * Form Method Spoofing for stx templates
  *
  * Similar to Laravel's @method directive, this allows specifying
  * HTTP methods like PUT, PATCH, DELETE in HTML forms which only

@@ -66,7 +66,7 @@ _Then run:_
 
 To learn more, head over to the [documentation](https://reverse-proxy.sh/).
 
-STX can be configured using a `stx.config.ts` file in your project root. This guide covers all available configuration options and their usage.
+stx can be configured using a `stx.config.ts` file in your project root. This guide covers all available configuration options and their usage.
 
 ## Basic Configuration
 
@@ -158,8 +158,8 @@ export default defineConfig({
     // Global template data
     data: {
       site: {
-        title: 'My STX App',
-        description: 'Built with STX'
+        title: 'My stx App',
+        description: 'Built with stx'
       }
     }
   },
@@ -237,20 +237,20 @@ export default defineConfig({
 
 ## Environment Variables
 
-STX also supports environment variables for configuration. Create a `.env` file in your project root:
+stx also supports environment variables for configuration. Create a `.env` file in your project root:
 
 ```bash
 # .env
-STX_PORT=3000
-STX_HOST=localhost
-STX_PUBLIC_DIR=public
+stx_PORT=3000
+stx_HOST=localhost
+stx_PUBLIC_DIR=public
 ```
 
 Environment variables take precedence over configuration file values.
 
 ## TypeScript Configuration
 
-STX works best with TypeScript. Here's a recommended `tsconfig.json`:
+stx works best with TypeScript. Here's a recommended `tsconfig.json`:
 
 ```json
 {
@@ -271,7 +271,7 @@ STX works best with TypeScript. Here's a recommended `tsconfig.json`:
 
 ## Plugin System
 
-STX supports plugins for extending functionality:
+stx supports plugins for extending functionality:
 
 ```ts
 import { defineConfig } from '@stacksjs/stx'

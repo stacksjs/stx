@@ -7,12 +7,12 @@ function init(_modules: { typescript: typeof ts }): ts.server.PluginModule {
       const languageService = info.languageService
 
       // Return the original language service with minimal changes
-      // Just register STX files with the language service
+      // Just register stx files with the language service
       return languageService
     },
 
     getExternalFiles(project: ts.server.Project): string[] {
-      // Add STX and MD files to the project
+      // Add stx and MD files to the project
       return project.getFileNames().filter(file =>
         file.endsWith('.stx')
         || file.endsWith('.md'),

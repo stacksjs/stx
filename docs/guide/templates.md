@@ -1,10 +1,10 @@
 # Templates
 
-STX provides a powerful and flexible templating system that combines the elegance of Laravel Blade with modern TypeScript features. This guide covers everything you need to know about working with STX templates.
+stx provides a powerful and flexible templating system that combines the elegance of Laravel Blade with modern TypeScript features. This guide covers everything you need to know about working with stx templates.
 
 ## Basic Template Structure
 
-A basic STX template looks like this:
+A basic stx template looks like this:
 
 ```stx
 <!DOCTYPE html>
@@ -14,7 +14,7 @@ A basic STX template looks like this:
 </head>
 <body>
   @ts
-  const greeting = 'Welcome to STX!'
+  const greeting = 'Welcome to stx!'
   @endts
 
   <h1>{{ greeting }}</h1>
@@ -69,7 +69,7 @@ const user: User = {
 
 ### Directives
 
-STX provides several built-in directives for common tasks:
+stx provides several built-in directives for common tasks:
 
 #### Conditionals
 
@@ -105,9 +105,10 @@ STX provides several built-in directives for common tasks:
 
 ### Template Inheritance
 
-STX supports template inheritance through layouts:
+stx supports template inheritance through layouts:
 
 1. Define a layout (`layouts/main.stx`):
+
 ```stx
 <!DOCTYPE html>
 <html>
@@ -134,6 +135,7 @@ STX supports template inheritance through layouts:
 ```
 
 2. Extend the layout in your template:
+
 ```stx
 @extends('layouts/main')
 
@@ -172,7 +174,7 @@ Use components for reusable UI elements:
 @component('Card', { title: 'Welcome', theme: 'dark' })
   <h2>{{ title }}</h2>
   <slot></slot>
-  
+
   @slot('footer')
     <button>Read More</button>
   @endslot
@@ -209,6 +211,7 @@ Handle errors gracefully in templates:
 ## Performance Tips
 
 1. Use `@once` for content that doesn't need to be re-rendered:
+
 ```stx
 @once
   <heavy-component />
@@ -216,6 +219,7 @@ Handle errors gracefully in templates:
 ```
 
 2. Leverage caching when possible:
+
 ```stx
 @cache('key')
   <expensive-component />
@@ -223,6 +227,7 @@ Handle errors gracefully in templates:
 ```
 
 3. Use lazy loading for heavy components:
+
 ```stx
 @lazy
   <heavy-feature />
@@ -261,7 +266,7 @@ const store = useStore()
 
 ### Streaming Support
 
-STX supports streaming for improved performance:
+stx supports streaming for improved performance:
 
 ```stx
 @stream
@@ -279,4 +284,4 @@ Enable debug mode during development:
 @enddebug
 ```
 
-This will output additional debugging information in the browser console. 
+This will output additional debugging information in the browser console.

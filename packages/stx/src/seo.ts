@@ -283,7 +283,7 @@ export function injectSeoTags(
   }
 
   // If the HTML already has meta tags or if auto-injection is disabled, return unchanged
-  if (html.includes('<!-- STX SEO Tags -->')
+  if (html.includes('<!-- stx SEO Tags -->')
     || options.skipDefaultSeoTags === true) {
     return html
   }
@@ -308,7 +308,7 @@ export function injectSeoTags(
     title = options.seo.defaultConfig.title
   }
   else {
-    title = options.defaultTitle || 'STX Project'
+    title = options.defaultTitle || 'stx Project'
   }
 
   // Get the description from context or fallback
@@ -323,7 +323,7 @@ export function injectSeoTags(
     description = options.seo.defaultConfig.description
   }
   else {
-    description = options.defaultDescription || 'A website built with STX templating engine'
+    description = options.defaultDescription || 'A website built with stx templating engine'
   }
 
   // Get image from context or options
@@ -346,7 +346,7 @@ export function injectSeoTags(
 
   // Build basic SEO tags
   let seoTagsMinimal = `
-<!-- STX SEO Tags -->
+<!-- stx SEO Tags -->
 <meta name="title" content="${escapeHtml(title)}">
 <meta name="description" content="${escapeHtml(description)}">
 <meta property="og:title" content="${escapeHtml(title)}">

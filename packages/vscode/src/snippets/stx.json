@@ -1,6 +1,6 @@
 {
   "stx-comment": {
-    "description": "STX comment block",
+    "description": "stx comment block",
     "prefix": "{{--",
     "body": [
       "{{-- $1 --}}$0"
@@ -342,7 +342,7 @@
     ]
   },
   "stx-layout": {
-    "description": "Basic HTML layout with STX structure",
+    "description": "Basic HTML layout with stx structure",
     "prefix": "stx-layout",
     "body": [
       "<!DOCTYPE html>",
@@ -407,7 +407,7 @@
       "@endguest"
     ]
   },
-  "STX Template": {
+  "stx Template": {
     "prefix": "stx",
     "body": [
       "<template>",
@@ -429,9 +429,9 @@
       "}",
       "</script>"
     ],
-    "description": "Create a new STX template"
+    "description": "Create a new stx template"
   },
-  "STX Component": {
+  "stx Component": {
     "prefix": "stxc",
     "body": [
       "<template>",
@@ -449,9 +449,9 @@
       "}",
       "</script>"
     ],
-    "description": "Create a new STX component"
+    "description": "Create a new stx component"
   },
-  "STX Layout": {
+  "stx Layout": {
     "prefix": "stxl",
     "body": [
       "<template>",
@@ -474,6 +474,6 @@
       "}",
       "</script>"
     ],
-    "description": "Create a new STX layout"
+    "description": "Create a new stx layout"
   }
 }

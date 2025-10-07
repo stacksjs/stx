@@ -26,5 +26,5 @@ export * from './types'
 export * from './utils'
 export * from './web-components'
 
-// Default export for the STX module
+// Default export for the stx module
 export default {}

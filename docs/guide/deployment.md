@@ -1,6 +1,6 @@
 # Deployment
 
-This guide covers everything you need to know about deploying your STX application to production.
+This guide covers everything you need to know about deploying your stx application to production.
 
 ## Build Process
 
@@ -17,6 +17,7 @@ bun run preview
 ```
 
 The build process:
+
 1. Compiles templates and components
 2. Bundles assets and dependencies
 3. Optimizes for production
@@ -33,13 +34,13 @@ export default defineConfig({
   build: {
     // Output directory
     outDir: 'dist',
-    
+
     // Enable minification
     minify: true,
-    
+
     // Generate sourcemaps
     sourcemap: false,
-    
+
     // Custom rollup options
     rollupOptions: {
       external: ['some-external-dependency'],
@@ -50,11 +51,11 @@ export default defineConfig({
         }
       }
     },
-    
+
     // Asset handling
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
-    
+
     // CSS options
     cssCodeSplit: true,
     cssMinify: true
@@ -69,6 +70,7 @@ export default defineConfig({
 Deploy to static hosting platforms:
 
 1. **Vercel**
+
 ```bash
 # Install Vercel CLI
 npm i -g vercel
@@ -78,6 +80,7 @@ vercel
 ```
 
 2. **Netlify**
+
 ```bash
 # Install Netlify CLI
 npm i -g netlify-cli
@@ -88,6 +91,7 @@ netlify deploy
 
 3. **GitHub Pages**
 Create `.github/workflows/deploy.yml`:
+
 ```yaml
 name: Deploy to GitHub Pages
 
@@ -117,6 +121,7 @@ jobs:
 For server-side rendering or API integration:
 
 1. **Docker**
+
 ```dockerfile
 FROM oven/bun:latest
 
@@ -132,6 +137,7 @@ CMD ["bun", "run", "start"]
 ```
 
 2. **PM2**
+
 ```bash
 # Install PM2
 npm install -g pm2
@@ -154,6 +160,7 @@ Create environment-specific files:
 ```
 
 Example `.env.production`:
+
 ```bash
 NODE_ENV=production
 API_URL=https://api.example.com
@@ -161,6 +168,7 @@ CACHE_ENABLED=true
 ```
 
 Access in code:
+
 ```ts
 const apiUrl = process.env.API_URL
 ```
@@ -285,6 +293,7 @@ deploy:
 ### Production Optimizations
 
 1. **Enable Compression**
+
 ```ts
 // server.ts
 import compression from 'compression'
@@ -293,6 +302,7 @@ app.use(compression())
 ```
 
 2. **Cache Control**
+
 ```ts
 app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=31536000')
@@ -301,6 +311,7 @@ app.use((req, res, next) => {
 ```
 
 3. **Preload Critical Assets**
+
 ```stx
 <link rel="preload" href="/assets/main.js" as="script">
 <link rel="preload" href="/assets/main.css" as="style">
@@ -309,6 +320,7 @@ app.use((req, res, next) => {
 ### Monitoring
 
 1. **Error Tracking**
+
 ```ts
 import * as Sentry from '@sentry/node'
 
@@ -319,6 +331,7 @@ Sentry.init({
 ```
 
 2. **Performance Monitoring**
+
 ```ts
 import { metrics } from '@stacksjs/stx/monitoring'
 
@@ -330,6 +343,7 @@ metrics.track('page_load', {
 ## Security Considerations
 
 1. **Headers**
+
 ```ts
 import helmet from 'helmet'
 
@@ -337,6 +351,7 @@ app.use(helmet())
 ```
 
 2. **CORS**
+
 ```ts
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS?.split(','),
@@ -346,6 +361,7 @@ app.use(cors({
 ```
 
 3. **Content Security Policy**
+
 ```ts
 app.use(helmet.contentSecurityPolicy({
   directives: {
@@ -362,4 +378,4 @@ app.use(helmet.contentSecurityPolicy({
 - Learn about [Testing](/features/testing)
 - Explore [State Management](/features/state)
 - Check out [Security](/features/security)
-- Review [Monitoring](/features/monitoring) 
+- Review [Monitoring](/features/monitoring)

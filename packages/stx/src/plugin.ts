@@ -63,7 +63,7 @@ export const plugin: BunPlugin = {
           '',
           (error) => {
             throw new StxFileError(
-              `Failed to read STX file: ${filePath}`,
+              `Failed to read stx file: ${filePath}`,
               filePath,
               undefined,
               undefined,
@@ -73,7 +73,7 @@ export const plugin: BunPlugin = {
         )
 
         if (!content) {
-          throw new StxFileError(`STX file is empty: ${filePath}`, filePath)
+          throw new StxFileError(`stx file is empty: ${filePath}`, filePath)
         }
 
         // Extract script and template sections with performance monitoring
@@ -89,7 +89,7 @@ export const plugin: BunPlugin = {
           // Add some useful globals
           __filename: filePath,
           __dirname: path.dirname(filePath),
-          // Add STX config info
+          // Add stx config info
           __stx: {
             webComponentsPath,
             builtComponents,
@@ -147,10 +147,10 @@ export const plugin: BunPlugin = {
         devHelpers.logDetailedError(enhancedError, { filePath, plugin: 'bun-plugin-stx' })
 
         if (options.debug) {
-          console.error('STX Plugin Error:', enhancedError)
+          console.error('stx Plugin Error:', enhancedError)
         }
 
-        // Check if error has STX-specific properties
+        // Check if error has stx-specific properties
         const stxError = enhancedError as any
         const errorLine = stxError.line || null
         const errorContext = stxError.context || null
@@ -161,7 +161,7 @@ export const plugin: BunPlugin = {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STX Rendering Error</title>
+  <title>stx Rendering Error</title>
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
     .error-header { color: #dc3545; border-left: 4px solid #dc3545; padding-left: 16px; margin-bottom: 24px; }
@@ -173,8 +173,8 @@ export const plugin: BunPlugin = {
 </head>
 <body>
   <div class="error-header">
-    <h1>STX Template Error</h1>
-    <p>An error occurred while processing your STX template.</p>
+    <h1>stx Template Error</h1>
+    <p>An error occurred while processing your stx template.</p>
   </div>
 
   <div class="error-details">
@@ -196,11 +196,11 @@ export const plugin: BunPlugin = {
   <div class="help-section">
     <h3>💡 Troubleshooting Tips</h3>
     <ul>
-      <li>Check the syntax of your STX directives (e.g., @if, @foreach)</li>
+      <li>Check the syntax of your stx directives (e.g., @if, @foreach)</li>
       <li>Verify that all variables used in the template are properly defined</li>
       <li>Ensure script tags have valid JavaScript/TypeScript syntax</li>
       <li>Run <code>stx debug ${path.basename(filePath)}</code> for detailed analysis</li>
-      <li>Enable debug mode in your STX config for more detailed error messages</li>
+      <li>Enable debug mode in your stx config for more detailed error messages</li>
     </ul>
   </div>
 </body>

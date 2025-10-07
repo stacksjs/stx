@@ -67,7 +67,7 @@
     "commands": [
       {
         "command": "stx.setLanguageMode",
-        "title": "Set Language Mode to STX"
+        "title": "Set Language Mode to stx"
       }
     ],
     "grammars": [
@@ -464,7 +464,7 @@
         "stxTypescriptPlugin.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable TypeScript language features in STX files"
+          "description": "Enable TypeScript language features in stx files"
         }
       }
     },

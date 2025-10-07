@@ -1,5 +1,5 @@
 /**
- * Types for STX Animation System
+ * Types for stx Animation System
  */
 
 /**
@@ -88,7 +88,7 @@ export enum TransitionEase {
 }
 
 /**
- * Animation types and configurations for STX
+ * Animation types and configurations for stx
  */
 
 export type AnimationType = 'fade' | 'slide' | 'scale' | 'flip' | 'rotate' | 'custom'
