@@ -113,6 +113,24 @@ export default defineConfig({
           ]
         }
       ],
+      '/features/': [
+        {
+          text: '⚡ Features',
+          items: [
+            { text: 'Performance', link: '/features/performance' },
+            { text: 'Benchmarks', link: '/features/benchmarks' },
+            { text: 'Components', link: '/features/components' },
+            { text: 'Directives', link: '/features/directives' },
+            { text: 'Templates', link: '/features/templates' },
+            { text: 'State Management', link: '/features/state' },
+            { text: 'TypeScript', link: '/features/typescript' },
+            { text: 'Security', link: '/features/security' },
+            { text: 'Testing', link: '/features/testing' },
+            { text: 'Monitoring', link: '/features/monitoring' },
+            { text: 'Deployment', link: '/features/deployment' },
+          ]
+        }
+      ],
       '/community/': [
         {
           text: '👥 Community',

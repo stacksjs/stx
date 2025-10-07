@@ -66,6 +66,13 @@ const CODE_MINUS = 45       // -
 const CODE_PLUS = 43        // +
 const CODE_SPACE = 32       // space
 
+// Helper to check if a character code is alphanumeric
+function isAlphanumeric(code: number): boolean {
+  return (code >= 48 && code <= 57) ||  // 0-9
+         (code >= 65 && code <= 90) ||  // A-Z
+         (code >= 97 && code <= 122)    // a-z
+}
+
 export function parse(markdown: string, options: MarkdownOptions = {}): string {
   const opts = { ...defaultOptions, ...options }
   const state: ParserState = {
@@ -249,6 +256,16 @@ function parseCodeBlock(state: ParserState): boolean {
 
   // Find closing ```
   const codeStart = state.pos
+
+  // Check if closing ``` is immediately at current position (empty code block)
+  if (state.src.slice(state.pos, state.pos + 3) === '```') {
+    const token = pushToken(state, 'fence', 'code', 0)
+    token.content = ''
+    token.markup = lang
+    state.pos += 3
+    return true
+  }
+
   const closing = state.src.indexOf('\n```', state.pos)
   if (closing === -1) {
     state.pos = start
@@ -390,6 +407,55 @@ function parseList(state: ParserState): boolean {
   return true
 }
 
+// Helper to split table row by pipes while respecting inline code
+function splitTableCells(line: string): string[] {
+  const cells: string[] = []
+  let current = ''
+  let inCode = false
+  let escaped = false
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i]
+
+    // Handle escape sequences
+    if (escaped) {
+      current += char
+      escaped = false
+      continue
+    }
+
+    if (char === '\\') {
+      current += char
+      escaped = true
+      continue
+    }
+
+    // Toggle code mode on backtick
+    if (char === '`') {
+      inCode = !inCode
+      current += char
+      continue
+    }
+
+    // Split on pipe only if not in code
+    if (char === '|' && !inCode) {
+      cells.push(current.trim())
+      current = ''
+      continue
+    }
+
+    current += char
+  }
+
+  // Add final cell
+  if (current || cells.length > 0) {
+    cells.push(current.trim())
+  }
+
+  // Remove first and last empty cells (from leading/trailing pipes)
+  return cells.slice(1, -1)
+}
+
 function parseTable(state: ParserState): boolean {
   const start = state.pos
 
@@ -435,7 +501,7 @@ function parseTable(state: ParserState): boolean {
   state.pos = lineEnd + 1
 
   // Parse header cells
-  const headerCells = headerLine.split('|').slice(1, -1).map(c => c.trim())
+  const headerCells = splitTableCells(headerLine)
 
   // Start table
   pushToken(state, 'table_open', 'table', 1)
@@ -471,7 +537,7 @@ function parseTable(state: ParserState): boolean {
       break
     }
 
-    const cells = rowLine.split('|').slice(1, -1).map(c => c.trim())
+    const cells = splitTableCells(rowLine)
 
     pushToken(state, 'tr_open', 'tr', 1)
 
@@ -593,10 +659,28 @@ function scanStrong(state: ParserState, marker: number): boolean {
   const markerStr = String.fromCharCode(marker)
   const searchStart = start + 2
 
+  // For underscores, check word boundaries (GFM rule)
+  if (marker === 95) { // underscore
+    const prevChar = start > 0 ? state.src.charCodeAt(start - 1) : 0
+    // If preceded by alphanumeric or underscore, not emphasis
+    if (isAlphanumeric(prevChar) || prevChar === 95) {
+      return false
+    }
+  }
+
   // Find closing marker
-  const closePos = state.src.indexOf(markerStr + markerStr, searchStart)
+  let closePos = state.src.indexOf(markerStr + markerStr, searchStart)
   if (closePos === -1) {
     return false
+  }
+
+  // For underscores, check word boundaries after closing marker
+  if (marker === 95) { // underscore
+    const nextChar = closePos + 2 < state.posMax ? state.src.charCodeAt(closePos + 2) : 0
+    // If followed by alphanumeric or underscore, not emphasis
+    if (isAlphanumeric(nextChar) || nextChar === 95) {
+      return false
+    }
   }
 
   pushPending(state)
@@ -618,6 +702,15 @@ function scanEmphasisDirect(state: ParserState, marker: number): boolean {
   const markerStr = String.fromCharCode(marker)
   const searchStart = start + 1
 
+  // For underscores, check word boundaries (GFM rule)
+  if (marker === 95) { // underscore
+    const prevChar = start > 0 ? state.src.charCodeAt(start - 1) : 0
+    // If preceded by alphanumeric or underscore, not emphasis
+    if (isAlphanumeric(prevChar) || prevChar === 95) {
+      return false
+    }
+  }
+
   // Find closing marker (make sure it's not a double marker)
   let closePos = state.src.indexOf(markerStr, searchStart)
   while (closePos !== -1) {
@@ -626,6 +719,17 @@ function scanEmphasisDirect(state: ParserState, marker: number): boolean {
       closePos = state.src.indexOf(markerStr, closePos + 2)
       continue
     }
+
+    // For underscores, check word boundaries after closing marker
+    if (marker === 95) { // underscore
+      const nextChar = closePos + 1 < state.posMax ? state.src.charCodeAt(closePos + 1) : 0
+      // If followed by alphanumeric or underscore, keep searching
+      if (isAlphanumeric(nextChar) || nextChar === 95) {
+        closePos = state.src.indexOf(markerStr, closePos + 1)
+        continue
+      }
+    }
+
     break
   }
 
@@ -691,9 +795,23 @@ function scanLink(state: ParserState): boolean {
   pushPending(state)
 
   const text = state.src.slice(textStart, textEnd)
-  const url = state.src.slice(urlStart, urlEnd)
+  let urlPart = state.src.slice(urlStart, urlEnd)
 
-  pushToken(state, 'link_open', 'a', 1).markup = url
+  // Parse out title if present: url "title" or url 'title'
+  let url = urlPart
+  let title = ''
+  const titleMatch = urlPart.match(/^(.*?)\s+["'](.*)["']$/)
+  if (titleMatch) {
+    url = titleMatch[1]
+    title = titleMatch[2]
+  }
+
+  const token = pushToken(state, 'link_open', 'a', 1)
+  token.markup = url
+  if (title) {
+    token.content = title
+  }
+
   // Recursively parse link text
   parseInline(state, text)
   pushToken(state, 'link_close', 'a', -1)
@@ -726,9 +844,18 @@ function scanImage(state: ParserState): boolean {
   }
 
   const alt = state.src.slice(altStart, altEnd)
-  const url = state.src.slice(urlStart, urlEnd)
+  let urlPart = state.src.slice(urlStart, urlEnd)
 
-  pushToken(state, 'image', 'img', 0).markup = `${alt}|${url}`
+  // Parse out title if present: url "title" or url 'title'
+  let url = urlPart
+  let title = ''
+  const titleMatch = urlPart.match(/^(.*?)\s+["'](.*)["']$/)
+  if (titleMatch) {
+    url = titleMatch[1]
+    title = titleMatch[2]
+  }
+
+  pushToken(state, 'image', 'img', 0).markup = `${alt}|${url}|${title}`
 
   state.pos = urlEnd + 1
   return true
@@ -899,14 +1026,22 @@ function renderTokens(tokens: FlatToken[], options: MarkdownOptions): string {
         html += '<br>'
         break
       case 'link_open':
-        html += `<a href="${escapeHtml(token.markup || '')}">`
+        if (token.content) {
+          html += `<a href="${escapeHtml(token.markup || '')}" title="${escapeHtml(token.content)}">`
+        } else {
+          html += `<a href="${escapeHtml(token.markup || '')}">`
+        }
         break
       case 'link_close':
         html += '</a>'
         break
       case 'image':
-        const [alt, url] = (token.markup || '|').split('|')
-        html += `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}">`
+        const [alt, url, imageTitle] = (token.markup || '||').split('|')
+        if (imageTitle) {
+          html += `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" title="${escapeHtml(imageTitle)}">`
+        } else {
+          html += `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}">`
+        }
         break
       case 'text':
         html += escapeHtml(token.content || '')
