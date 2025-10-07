@@ -80,63 +80,73 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
   let pos = 0
 
   while (pos < len) {
-    // Use substring to avoid creating new strings until necessary
     const remaining = content.substring(pos)
+    const char = content.charCodeAt(pos)
 
-    // Headers
-    match = remaining.match(REGEX.heading)
-    if (match) {
-      tokens.push({
-        type: 'heading',
-        depth: match[1].length,
-        text: match[2],
-        raw: match[0],
-      })
-      pos += match[0].length
-      continue
+    // Headers - check for # first
+    if (char === 35) { // #
+      match = remaining.match(REGEX.heading)
+      if (match) {
+        tokens.push({
+          type: 'heading',
+          depth: match[1].length,
+          text: match[2],
+          raw: match[0],
+          tokens: parseInline(match[2], options),
+        })
+        pos += match[0].length
+        continue
+      }
     }
 
-    // Fenced code blocks
-    match = remaining.match(REGEX.code)
-    if (match) {
-      tokens.push({
-        type: 'code',
-        lang: match[1] || '',
-        text: match[2],
-        raw: match[0],
-      })
-      pos += match[0].length
-      continue
+    // Fenced code blocks - check for ` first
+    if (char === 96 && content.charCodeAt(pos + 1) === 96 && content.charCodeAt(pos + 2) === 96) { // ```
+      match = remaining.match(REGEX.code)
+      if (match) {
+        tokens.push({
+          type: 'code',
+          lang: match[1] || '',
+          text: match[2],
+          raw: match[0],
+        })
+        pos += match[0].length
+        continue
+      }
     }
 
-    // Horizontal rules
-    match = remaining.match(REGEX.hr)
-    if (match) {
-      tokens.push({
-        type: 'hr',
-        raw: match[0],
-      })
-      pos += match[0].length
-      continue
+    // Horizontal rules - check for *, -, _ first
+    if (char === 42 || char === 45 || char === 95) { // * - _
+      match = remaining.match(REGEX.hr)
+      if (match) {
+        tokens.push({
+          type: 'hr',
+          raw: match[0],
+        })
+        pos += match[0].length
+        continue
+      }
     }
 
-    // Blockquotes - optimized to avoid recursion for simple cases
-    match = remaining.match(REGEX.blockquote)
-    if (match) {
-      const quoteContent = match[0].replace(REGEX.blockquotePrefix, '')
-      tokens.push({
-        type: 'blockquote',
-        text: quoteContent,
-        raw: match[0],
-        tokens: tokenize(quoteContent, options),
-      })
-      pos += match[0].length
-      continue
+    // Blockquotes - check for > first
+    if (char === 62) { // >
+      match = remaining.match(REGEX.blockquote)
+      if (match) {
+        const quoteContent = match[0].replace(REGEX.blockquotePrefix, '')
+        tokens.push({
+          type: 'blockquote',
+          text: quoteContent,
+          raw: match[0],
+          tokens: tokenize(quoteContent, options),
+        })
+        pos += match[0].length
+        continue
+      }
     }
 
-    // Lists
-    match = remaining.match(REGEX.list)
-    if (match) {
+    // Lists - check for *, -, +, or digits
+    if (char === 42 || char === 45 || char === 43 || (char >= 48 && char <= 57)) { // * - + 0-9
+      match = remaining.match(REGEX.list)
+      if (match) {
       const listText = match[0]
       const ordered = /^\d+\./.test(listText)
       const items: Token[] = []
@@ -181,10 +191,11 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
 
       pos += match[0].length
       continue
+      }
     }
 
-    // Tables (GFM)
-    if (options.gfm) {
+    // Tables (GFM) - check for | first
+    if (options.gfm && char === 124) { // |
       match = remaining.match(REGEX.table)
       if (match) {
         const header = match[1].split('|').map(h => h.trim()).filter(h => h)
@@ -261,91 +272,105 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
 
 /**
  * Parse inline elements - optimized version with nested token support
+ * Uses depth limiting to prevent excessive recursion on large documents
  */
-function parseInline(text: string, options: MarkdownOptions): Token[] {
+function parseInline(text: string, options: MarkdownOptions, depth: number = 0): Token[] {
   const tokens: Token[] = []
   const len = text.length
   let pos = 0
   let match: RegExpMatchArray | null
 
+  // Limit recursion depth to prevent stack overflow and improve performance
+  const maxDepth = 3
+  const allowNesting = depth < maxDepth
+
   while (pos < len) {
     const remaining = text.substring(pos)
+    const char = text.charCodeAt(pos)
 
-    // Strong emphasis (bold) - parse nested content
-    match = remaining.match(REGEX.strong)
-    if (match) {
-      tokens.push({
-        type: 'strong',
-        text: match[2],
-        raw: match[0],
-        tokens: parseInline(match[2], options), // Add nested tokens
-      })
-      pos += match[0].length
-      continue
+    // Strong emphasis (bold) - check first char before regex
+    if (char === 42 || char === 95) { // * or _
+      match = remaining.match(REGEX.strong)
+      if (match) {
+        tokens.push({
+          type: 'strong',
+          text: match[2],
+          raw: match[0],
+          tokens: allowNesting ? parseInline(match[2], options, depth + 1) : undefined,
+        })
+        pos += match[0].length
+        continue
+      }
+
+      // Emphasis (italic) - already checked first char
+      match = remaining.match(REGEX.em)
+      if (match) {
+        tokens.push({
+          type: 'em',
+          text: match[2],
+          raw: match[0],
+          tokens: allowNesting ? parseInline(match[2], options, depth + 1) : undefined,
+        })
+        pos += match[0].length
+        continue
+      }
     }
 
-    // Emphasis (italic) - parse nested content
-    match = remaining.match(REGEX.em)
-    if (match) {
-      tokens.push({
-        type: 'em',
-        text: match[2],
-        raw: match[0],
-        tokens: parseInline(match[2], options), // Add nested tokens
-      })
-      pos += match[0].length
-      continue
+    // Code - check for backtick
+    if (char === 96) { // `
+      match = remaining.match(REGEX.code_inline)
+      if (match) {
+        tokens.push({
+          type: 'codespan',
+          text: match[1],
+          raw: match[0],
+        })
+        pos += match[0].length
+        continue
+      }
     }
 
-    // Code
-    match = remaining.match(REGEX.code_inline)
-    if (match) {
-      tokens.push({
-        type: 'codespan',
-        text: match[1],
-        raw: match[0],
-      })
-      pos += match[0].length
-      continue
+    // Links - check for [
+    if (char === 91) { // [
+      match = remaining.match(REGEX.link)
+      if (match) {
+        tokens.push({
+          type: 'link',
+          text: match[1],
+          href: match[2],
+          raw: match[0],
+          tokens: allowNesting ? parseInline(match[1], options, depth + 1) : undefined,
+        })
+        pos += match[0].length
+        continue
+      }
     }
 
-    // Links - parse nested content
-    match = remaining.match(REGEX.link)
-    if (match) {
-      tokens.push({
-        type: 'link',
-        text: match[1],
-        href: match[2],
-        raw: match[0],
-        tokens: parseInline(match[1], options), // Add nested tokens
-      })
-      pos += match[0].length
-      continue
+    // Images - check for !
+    if (char === 33) { // !
+      match = remaining.match(REGEX.image)
+      if (match) {
+        tokens.push({
+          type: 'image',
+          text: match[1],
+          href: match[2],
+          title: match[1],
+          raw: match[0],
+        })
+        pos += match[0].length
+        continue
+      }
     }
 
-    // Images
-    match = remaining.match(REGEX.image)
-    if (match) {
-      tokens.push({
-        type: 'image',
-        text: match[1],
-        href: match[2],
-        title: match[1],
-        raw: match[0],
-      })
-      pos += match[0].length
-      continue
-    }
-
-    // Strikethrough (GFM) - parse nested content
-    if (options.gfm) {
+    // Strikethrough (GFM) - check for ~
+    if (options.gfm && char === 126) { // ~
       match = remaining.match(REGEX.del)
       if (match) {
         tokens.push({
           type: 'del',
           text: match[1],
           raw: match[0],
-          tokens: parseInline(match[1], options), // Add nested tokens
+          tokens: allowNesting ? parseInline(match[1], options, depth + 1) : undefined,
         })
         pos += match[0].length
         continue
@@ -398,7 +423,13 @@ function render(tokens: Token[], options: MarkdownOptions): string {
     switch (token.type) {
       case 'heading': {
         const id = options.headerIds ? ` id="${options.headerPrefix}${slugify(token.text || '')}"` : ''
-        parts.push(`<h${token.depth}${id}>`, renderInline(token.text || '', options), `</h${token.depth}>\n`)
+        parts.push(`<h${token.depth}${id}>`)
+        if (token.tokens) {
+          parts.push(renderInlineTokens(token.tokens, options))
+        } else {
+          parts.push(escapeHtml(token.text || ''))
+        }
+        parts.push(`</h${token.depth}>\n`)
         break
       }
 
