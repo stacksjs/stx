@@ -2,7 +2,7 @@
   "name": "@stx/devtools",
   "version": "1.0.0",
   "private": true,
-  "description": "Development tools for STX templating engine",
+  "description": "Development tools for stx templating engine",
   "main": "src/index.ts",
   "scripts": {
     "dev": "bun run devtools-server.ts",
