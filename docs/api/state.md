@@ -1,6 +1,6 @@
 # State Management API Reference
 
-This document covers STX's state management system, including store creation, state mutations, actions, and plugins.
+This document covers stx's state management system, including store creation, state mutations, actions, and plugins.
 
 ## Store Setup
 
@@ -16,13 +16,13 @@ const store = createStore({
     user: null,
     todos: []
   },
-  
+
   // Computed state
   getters: {
     doubleCount: state => state.count * 2,
     completedTodos: state => state.todos.filter(todo => todo.completed)
   },
-  
+
   // Synchronous state changes
   mutations: {
     increment(state) {
@@ -32,7 +32,7 @@ const store = createStore({
       state.user = user
     }
   },
-  
+
   // Asynchronous operations
   actions: {
     async fetchUser({ commit }, id) {
@@ -49,25 +49,25 @@ const store = createStore({
 interface StoreOptions {
   // State object/function
   state?: State | (() => State)
-  
+
   // Getters object
   getters?: GetterTree
-  
+
   // Mutations object
   mutations?: MutationTree
-  
+
   // Actions object
   actions?: ActionTree
-  
+
   // Modules object
   modules?: ModuleTree
-  
+
   // Plugin array
   plugins?: Plugin[]
-  
+
   // Strict mode
   strict?: boolean
-  
+
   // Dev tools
   devtools?: boolean
 }
@@ -89,10 +89,10 @@ const MyComponent = defineComponent({
   setup() {
     // Access state
     const count = computed(() => store.state.count)
-    
+
     // Access getters
     const doubleCount = computed(() => store.getters.doubleCount)
-    
+
     return {
       count,
       doubleCount
@@ -119,7 +119,7 @@ const MyComponent = defineComponent({
   setup() {
     const increment = () => store.commit('increment')
     const setUser = user => store.commit('setUser', user)
-    
+
     return {
       increment,
       setUser
@@ -156,7 +156,7 @@ async function loadUser(id) {
 const MyComponent = defineComponent({
   setup() {
     const loadUser = id => store.dispatch('fetchUser', id)
-    
+
     return {
       loadUser
     }
@@ -173,7 +173,7 @@ const store = createStore({
     increment({ commit }) {
       commit('increment')
     },
-    
+
     // Async action
     async fetchUser({ commit }, id) {
       try {
@@ -185,7 +185,7 @@ const store = createStore({
         throw error
       }
     },
-    
+
     // Action with multiple mutations
     async updateUser({ commit, state }, userData) {
       commit('setLoading', true)
@@ -210,22 +210,22 @@ const store = createStore({
 ```ts
 const userModule = {
   namespaced: true,
-  
+
   state: () => ({
     user: null,
     profile: null
   }),
-  
+
   getters: {
     isAdmin: state => state.user?.role === 'admin'
   },
-  
+
   mutations: {
     setUser(state, user) {
       state.user = user
     }
   },
-  
+
   actions: {
     async login({ commit }, credentials) {
       const user = await api.login(credentials)
@@ -265,10 +265,10 @@ const MyComponent = defineComponent({
     // Access module state/getters
     const user = computed(() => store.state.user.user)
     const isAdmin = computed(() => store.getters['user/isAdmin'])
-    
+
     // Module actions
     const login = credentials => store.dispatch('user/login', credentials)
-    
+
     return {
       user,
       isAdmin,
@@ -299,7 +299,7 @@ function persistencePlugin(store) {
   if (savedState) {
     store.replaceState(JSON.parse(savedState))
   }
-  
+
   // Save state changes
   store.subscribe((mutation, state) => {
     localStorage.setItem('vuex', JSON.stringify(state))
@@ -346,7 +346,7 @@ function dynamicModulePlugin(store) {
   store.registerModule('dynamic', {
     state: () => ({ /* ... */ })
   })
-  
+
   // Unregister on cleanup
   return () => {
     store.unregisterModule('dynamic')
@@ -364,12 +364,12 @@ import { createStore, useStore } from '@stacksjs/stx/store'
 // Create store with composition API
 export function useCounter() {
   const store = useStore()
-  
+
   return {
     // State as refs
     count: computed(() => store.state.count),
     double: computed(() => store.getters.doubleCount),
-    
+
     // Actions as methods
     increment: () => store.commit('increment'),
     async fetch: () => store.dispatch('fetchCount')
@@ -380,7 +380,7 @@ export function useCounter() {
 const MyComponent = defineComponent({
   setup() {
     const { count, double, increment, fetch } = useCounter()
-    
+
     return {
       count,
       double,
@@ -403,18 +403,18 @@ const MyComponent = defineComponent({
     ...mapState({
       myCount: state => state.count
     }),
-    
+
     // Map getters
     ...mapGetters(['doubleCount', 'isAdmin'])
   },
-  
+
   methods: {
     // Map mutations to methods
     ...mapMutations(['increment', 'setUser']),
     ...mapMutations({
       add: 'increment'
     }),
-    
+
     // Map actions
     ...mapActions(['fetchUser', 'login'])
   }
@@ -426,4 +426,4 @@ const MyComponent = defineComponent({
 - Explore [Core API](/api/core)
 - Check out [Component API](/api/components)
 - Learn about [Helper Functions](/api/helpers)
-- Review [Router API](/api/router) 
+- Review [Router API](/api/router)

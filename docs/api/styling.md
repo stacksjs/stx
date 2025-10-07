@@ -1,6 +1,6 @@
 # Styling API
 
-STX provides a powerful and flexible styling system that combines the best of modern CSS approaches. This guide covers all styling capabilities available in STX.
+stx provides a powerful and flexible styling system that combines the best of modern CSS approaches. This guide covers all styling capabilities available in stx.
 
 ## Basic Styling
 
@@ -44,7 +44,7 @@ declare module '*.module.css' {
 
 ## Utility Classes
 
-STX includes a comprehensive set of utility classes for rapid styling:
+stx includes a comprehensive set of utility classes for rapid styling:
 
 ```html
 <div class="flex items-center justify-between p-4 bg-white shadow-md">

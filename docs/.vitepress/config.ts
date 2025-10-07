@@ -1,22 +1,22 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: 'STX',
+  title: 'stx',
   description: 'A modern UI engine powered by Bun',
-  
+
   markdown: {
     theme: {
       light: 'github-light',
       dark: 'github-dark'
     },
     config: (md) => {
-      // Use custom STX syntax highlighting
+      // Use custom stx syntax highlighting
       const fence = md.renderer.rules.fence!
       md.renderer.rules.fence = (...args) => {
         const [tokens, idx] = args
         const token = tokens[idx]
         if (token.info === 'stx') {
-          // Use HTML highlighting for STX
+          // Use HTML highlighting for stx
           token.info = 'html'
           const rawResult = fence(...args)
           return rawResult.replace(
@@ -28,9 +28,9 @@ export default defineConfig({
       }
     }
   },
-  
+
   themeConfig: {
-    siteTitle: 'STX',
+    siteTitle: 'stx',
     logo: '/logo.svg',
 
     nav: [
@@ -167,7 +167,7 @@ export default defineConfig({
 
     footer: {
       message: 'Released under the MIT License.',
-      copyright: 'Copyright © 2024 STX Contributors'
+      copyright: 'Copyright © 2025 stx Contributors'
     },
 
     search: {
@@ -184,4 +184,4 @@ export default defineConfig({
       next: 'Next page'
     }
   }
-}) 
+})

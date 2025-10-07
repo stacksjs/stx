@@ -1,5 +1,5 @@
 {
-  "name": "STX",
+  "name": "stx",
   "scopeName": "source.stx",
   "fileTypes": ["stx"],
   "patterns": [
@@ -47,4 +47,4 @@
       ]
     }
   }
-} 
+}

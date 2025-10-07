@@ -1,6 +1,6 @@
 # Helper Functions API Reference
 
-This document covers STX's built-in helper functions for common tasks and utilities.
+This document covers stx's built-in helper functions for common tasks and utilities.
 
 ## String Helpers
 
@@ -324,4 +324,4 @@ if (result.isValid) {
 - Explore [Core API](/api/core)
 - Check out [Component API](/api/components)
 - Learn about [Router API](/api/router)
-- Review [State Management](/api/state) 
+- Review [State Management](/api/state)

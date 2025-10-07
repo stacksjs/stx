@@ -1,6 +1,6 @@
 # Template Syntax
 
-STX uses an intuitive template syntax that extends HTML with additional features. This guide covers all the template syntax features available in STX.
+stx uses an intuitive template syntax that extends HTML with additional features. This guide covers all the template syntax features available in stx.
 
 ## Basic Syntax
 
@@ -91,7 +91,7 @@ Use `&#123;&#123;&#123; &#125;&#125;&#125;` for raw HTML interpolation (use with
 
 ## TypeScript Support
 
-STX templates fully support TypeScript, providing type checking for:
+stx templates fully support TypeScript, providing type checking for:
 
 - Component props
 - Event handlers

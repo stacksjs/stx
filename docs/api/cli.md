@@ -1,6 +1,6 @@
 # CLI API Reference
 
-This document covers STX's command-line interface (CLI) API, including project scaffolding, development, building, and deployment commands.
+This document covers stx's command-line interface (CLI) API, including project scaffolding, development, building, and deployment commands.
 
 ## Project Commands
 
@@ -401,24 +401,24 @@ export default {
       'd': 'dev',
       'b': 'build'
     },
-    
+
     // Default options
     defaults: {
       port: 3000,
       host: 'localhost'
     },
-    
+
     // Command hooks
     hooks: {
       beforeCommand(command) {
         console.log(`Running ${command}`)
       },
-      
+
       afterCommand(command) {
         console.log(`Completed ${command}`)
       }
     },
-    
+
     // Custom commands
     commands: {
       custom: {
@@ -437,4 +437,4 @@ export default {
 - Explore [Core API](/api/core)
 - Check out [Component API](/api/components)
 - Learn about [Helper Functions](/api/helpers)
-- Review [Plugin Development](/api/plugins) 
+- Review [Plugin Development](/api/plugins)

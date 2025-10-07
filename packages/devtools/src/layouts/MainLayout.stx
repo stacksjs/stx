@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ title || 'STX DevTools' }}</title>
+  <title>{{ title || 'stx DevTools' }}</title>
 
   <!-- Using the @js directive for scripts -->
   @js
-    export const title = "STX DevTools";
+    export const title = "stx DevTools";
     export const version = "1.0.0";
 
     // Navigation items with icons

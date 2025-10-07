@@ -1,6 +1,6 @@
 # Testing API Reference
 
-This document covers STX's testing utilities and APIs for unit testing, component testing, and integration testing.
+This document covers stx's testing utilities and APIs for unit testing, component testing, and integration testing.
 
 ## Test Setup
 
@@ -44,11 +44,11 @@ const env = new TestEnvironment({
   window: true,
   document: true,
   localStorage: true,
-  
-  // Mock STX features
+
+  // Mock stx features
   router: true,
   store: true,
-  
+
   // Custom mocks
   mocks: {
     // Add custom mock implementations
@@ -118,7 +118,7 @@ test('component renders correctly', () => {
       title: 'Test'
     }
   })
-  
+
   expect(wrapper.text()).toContain('Test')
   expect(wrapper.find('.title')).toBeTruthy()
 })
@@ -130,7 +130,7 @@ test('component with slots', () => {
       header: '<h1>Header</h1>'
     }
   })
-  
+
   expect(wrapper.find('h1').text()).toBe('Header')
 })
 ```
@@ -140,10 +140,10 @@ test('component with slots', () => {
 ```ts
 test('component emits events', async () => {
   const wrapper = mount(MyComponent)
-  
+
   // Trigger event
   await wrapper.find('button').trigger('click')
-  
+
   // Check emitted events
   expect(wrapper.emitted().click).toBeTruthy()
   expect(wrapper.emitted().click[0]).toEqual(['clicked'])
@@ -151,10 +151,10 @@ test('component emits events', async () => {
 
 test('component handles user input', async () => {
   const wrapper = mount(MyComponent)
-  
+
   // Set input value
   await wrapper.find('input').setValue('test')
-  
+
   // Check model update
   expect(wrapper.vm.inputValue).toBe('test')
 })
@@ -169,10 +169,10 @@ test('component reactivity', async () => {
       count: 0
     }
   })
-  
+
   // Update props
   await wrapper.setProps({ count: 1 })
-  
+
   // Check updates
   expect(wrapper.text()).toContain('1')
   expect(wrapper.vm.doubleCount).toBe(2)
@@ -180,13 +180,13 @@ test('component reactivity', async () => {
 
 test('component lifecycle', async () => {
   const wrapper = mount(MyComponent)
-  
+
   // Check mounted state
   expect(wrapper.vm.isReady).toBe(true)
-  
+
   // Trigger update
   await wrapper.vm.$nextTick()
-  
+
   // Unmount
   wrapper.unmount()
   expect(wrapper.vm.isDestroyed).toBe(true)
@@ -211,17 +211,17 @@ test('router navigation', async () => {
       component: About
     }
   ])
-  
+
   // Navigate
   await router.push('/about')
   expect(router.currentRoute.value.path).toBe('/about')
-  
+
   // Check guards
   const guardResult = await router.beforeEach((to, from) => {
     if (to.path === '/admin') return false
     return true
   })
-  
+
   expect(guardResult).toBe(true)
 })
 ```
@@ -242,7 +242,7 @@ test('store mutations', () => {
       }
     }
   })
-  
+
   store.commit('increment')
   expect(store.state.count).toBe(1)
 })
@@ -256,7 +256,7 @@ test('store actions', async () => {
       }
     }
   })
-  
+
   await store.dispatch('fetchData')
   expect(store.state.data).toBeTruthy()
 })
@@ -273,16 +273,16 @@ test('mocking functions', () => {
   // Create mock
   const mockFn = vi.fn()
   mockFn.mockReturnValue('mocked')
-  
+
   // Use mock
   expect(mockFn()).toBe('mocked')
   expect(mockFn).toHaveBeenCalled()
-  
+
   // Mock implementation
   mockFn.mockImplementation((arg) => {
     return `processed ${arg}`
   })
-  
+
   expect(mockFn('input')).toBe('processed input')
 })
 ```
@@ -298,13 +298,13 @@ test('mocking API calls', async () => {
     ok: true,
     json: async () => ({ data: 'mocked' })
   })
-  
+
   const response = await api.getData()
   expect(response.data).toBe('mocked')
-  
+
   // Mock error
   global.fetch = vi.fn().mockRejectedValue(new Error('API error'))
-  
+
   try {
     await api.getData()
   } catch (error) {
@@ -325,7 +325,7 @@ test('mocking child components', () => {
     props: ['value'],
     template: '<div>{{ value }}</div>'
   })
-  
+
   // Mount with mock
   const wrapper = mount(ParentComponent, {
     global: {
@@ -334,7 +334,7 @@ test('mocking child components', () => {
       }
     }
   })
-  
+
   expect(wrapper.findComponent(ChildComponent).props('value'))
     .toBe('test')
 })
@@ -349,19 +349,19 @@ import { expect } from '@stacksjs/stx/testing'
 
 test('DOM assertions', () => {
   const wrapper = mount(MyComponent)
-  
+
   // Element existence
   expect(wrapper.find('.title')).toExist()
   expect(wrapper.find('.missing')).not.toExist()
-  
+
   // Content checks
   expect(wrapper.text()).toContain('Hello')
   expect(wrapper.html()).toContain('<div>')
-  
+
   // Attributes
   expect(wrapper.attributes('class')).toBe('component')
   expect(wrapper.classes()).toContain('active')
-  
+
   // State
   expect(wrapper).toBeVisible()
   expect(wrapper).not.toBeDisabled()
@@ -379,10 +379,10 @@ test('component snapshot', () => {
       title: 'Test'
     }
   })
-  
+
   // Match snapshot
   expect(wrapper.html()).toMatchSnapshot()
-  
+
   // Inline snapshot
   expect(wrapper.html()).toMatchInlineSnapshot(`
     <div class="component">
@@ -419,4 +419,4 @@ test('component snapshot', () => {
 - Explore [Core API](/api/core)
 - Check out [Component API](/api/components)
 - Learn about [Helper Functions](/api/helpers)
-- Review [Plugin Development](/api/plugins) 
+- Review [Plugin Development](/api/plugins)

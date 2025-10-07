@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STX Demo</title>
+  <title>stx Demo</title>
   <script>
     module.exports = {
-      title: "STX Interactive Demo",
+      title: "stx Interactive Demo",
       description: "A powerful templating engine for Bun",
       features: [
         { name: "Templates", description: "Write HTML with powerful templating syntax" },

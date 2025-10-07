@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STX Test Template</title>
+    <title>stx Test Template</title>
 </head>
 <body>
-    <h1>STX Syntax Example</h1>
+    <h1>stx Syntax Example</h1>
 
-    {{-- This is an STX comment that won't be rendered --}}
+    {{-- This is an stx comment that won't be rendered --}}
 
     <div class="container">
         <!-- TypeScript code block -->
@@ -95,7 +95,7 @@
     </div>
 
     <footer>
-        &copy; {{ new Date().getFullYear() }} STX Example
+        &copy; {{ new Date().getFullYear() }} stx Example
     </footer>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # Performance
 
-STX is built for speed and provides comprehensive performance optimization features. This page covers all performance capabilities and optimization strategies available in the STX ecosystem.
+stx is built for speed and provides comprehensive performance optimization features. This page covers all performance capabilities and optimization strategies available in the stx ecosystem.
 
 ## Markdown Parser Performance
 
@@ -41,7 +41,7 @@ The parser supports GitHub Flavored Markdown (GFM) including tables, task lists,
 
 ### Fast Template Compilation
 
-STX compiles templates to highly optimized JavaScript:
+stx compiles templates to highly optimized JavaScript:
 
 ```typescript
 // Compile-time optimization
@@ -130,7 +130,7 @@ bun run build:analyze
 ```typescript
 // Image optimization
 const optimizedImage = `
-  <img 
+  <img
     src="{{ image.src }}"
     srcset="{{ image.srcset }}"
     sizes="(max-width: 768px) 100vw, 50vw"
@@ -179,7 +179,7 @@ const MemoizedCard = memo(Card, {
 })
 
 // Cache by props
-@cache({ 
+@cache({
   key: (props) => `user-${props.userId}`,
   ttl: 300 // 5 minutes
 })
@@ -303,12 +303,12 @@ performanceMonitor.track({
   onLCP: (metric) => {
     analytics.track('LCP', { value: metric.value })
   },
-  
+
   // First Input Delay
   onFID: (metric) => {
     analytics.track('FID', { value: metric.value })
   },
-  
+
   // Cumulative Layout Shift
   onCLS: (metric) => {
     analytics.track('CLS', { value: metric.value })
@@ -401,7 +401,7 @@ self.addEventListener('fetch', (event) => {
             })
             return response
           }
-          
+
           // Fetch and cache
           return fetch(event.request).then(fetchResponse => {
             cache.put(event.request, fetchResponse.clone())
@@ -475,4 +475,4 @@ const objectPool = {
 - [Performance Guide](/guide/performance) - Comprehensive performance guide
 - [Build Guide](/guide/build) - Build optimization strategies
 - [Monitoring Guide](/guide/monitoring) - Performance monitoring setup
-- [Deployment Guide](/guide/deployment) - Production performance optimization 
+- [Deployment Guide](/guide/deployment) - Production performance optimization

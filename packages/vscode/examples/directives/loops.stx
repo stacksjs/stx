@@ -1,9 +1,9 @@
-<!-- STX Loop Directives Example -->
+<!-- stx Loop Directives Example -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>STX Loops</title>
+    <title>stx Loops</title>
     <style>
         .card {
             border: 1px solid #ddd;
@@ -26,7 +26,7 @@
     </style>
 </head>
 <body>
-    <h1>STX Loop Directives</h1>
+    <h1>stx Loop Directives</h1>
 
     @ts
         interface Product {

@@ -1,12 +1,12 @@
-<!-- STX Conditional Directives Example -->
+<!-- stx Conditional Directives Example -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>STX Conditionals</title>
+    <title>stx Conditionals</title>
 </head>
 <body>
-    <h1>STX Conditional Directives</h1>
+    <h1>stx Conditional Directives</h1>
 
     @ts
         interface User {

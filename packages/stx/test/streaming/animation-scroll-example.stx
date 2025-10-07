@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STX Scroll Animation Demo</title>
+  <title>stx Scroll Animation Demo</title>
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -259,7 +259,7 @@
 
       @scrollAnimate('fade', 500, 'ease-out')
         <footer>
-          <p>Built with STX Animation System</p>
+          <p>Built with stx Animation System</p>
         </footer>
       @endscrollAnimate
     </div>

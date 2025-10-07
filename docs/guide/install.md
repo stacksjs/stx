@@ -1,169 +1,298 @@
 # Installation
 
-Getting started with STX is quick and easy. Built on Bun for exceptional performance, STX can be installed using any package manager.
+Getting started with stx is quick and easy. STX is a Blade-like template engine for Bustxhat delivers exceptional performance.
 
 ## Prerequisites
 
-Before installing STX, ensure you have:
+Before installing stx, ensure you have:
 
-- **[Bun](https://bun.sh)** v1.0+ (recommended for best performance)
-- **Node.js** v18.0+ (if using npm/pnpm/yarn)
+- **[Bun](https://bun.sh)** v1.0+ (required)
 
 ::: tip Performance Note
-STX is optimized for Bun and delivers the best performance when run on Bun's runtime. Our benchmarks show 2-145x performance improvements over alternatives.
-:::
+STX is optimized for Bun's runtime. Our benchmarks show significant performance improvements: markdown parsing is 1.45-2.89x faster than markdown-it, and HTML sanitization is 1.7-145.6x faster than competitors.
+stx
 
-## Quick Start
+## Installation
 
-Choose your preferred package manager:
+Install the STX plugin:
 
 ::: code-group
 
-```sh [bun (recommended)]
-# Create a new STX project
-bunx create-stx my-project
-
-# Or add STX to an existing project
-bun add @stacksjs/stx
-```
+```sh [bun]
+bun add bun-plugin-stx
+```stx
 
 ```sh [npm]
-# Create a new STX project
-npx create-stx my-project
-
-# Or add STX to an existing project
-npm install @stacksjs/stx
+npm instastxbun-plugin-stx
 ```
 
 ```sh [pnpm]
-# Create a new STX project
-pnpm create stx my-project
-
-# Or add STX to an existing project
-pnpm add @stacksjs/stx
-```
+pnpm add bun-plugin-stx
+```stx
 
 ```sh [yarn]
-# Create a new STX project
-yarn create stx my-project
-
-# Or add STX to an existing project
-yarn add @stacksjs/stx
+yarn add stx-plugin-stx
 ```
 
 :::
 
-## Individual Packages
+## Individual Pstxages
 
-STX is modular. Install only what you need:
+STX packages are modular. Install only what you need:
+stx
 
 ```sh
 # Markdown parser (2.89x faster than markdown-it)
 bun add @stacksjs/markdown
 
-# HTML sanitizer (1.7-72.4x faster than competitors)
+# HTML sanitizestx1.7-72.4x faster than competitors)
 bun add @stacksjs/sanitizer
 
-# Full UI engine
-bun add @stacksjs/stx
+# Full testxate engine with Blade-like syntax
+bun add bun-plugin-stx
 ```
 
 [View performance benchmarks](/features/benchmarks)
 
-## Project Structure
+## Setup
 
-After creating a new project, you'll have:
+stx Option 1: Bun Configuration
 
-```bash
-my-project/
-├── components/          # Reusable UI components
-│   └── Button.stx
-├── pages/              # Page templates
-│   └── index.stx
-├── public/             # Static assets
-│   └── favicon.ico
-├── stx.config.ts       # STX configuration
-├── tsconfig.json       # TypeScript config
-├── package.json
-└── README.md
+Add the plugin to your `bunfig.toml`:
+
+```toml
+preload = ["bun-plugin-stx"]
 ```
 
-## Verify Installation
+### Option 2: Build Script
 
-Test your installation:
+Register the plugin in your build script:
+
+```ts
+// build.ts
+import { build } from 'bun'
+import stxPlugin from 'bun-plugin-stx'
+
+await build({
+  entrypoints: ['./src/index.ts', './templates/home.stx'],
+  outdir: './dist',
+  plugins: [stxPlugin],
+})
+```
+
+## Creating Your First Template
+
+Use the CLI to create a new STX template:
+stx
 
 ```sh
-# Navigate to your project
-cd my-project
+# Install the CLI globally
+bun add -g @stacksjs/stx
 
-# Run the development server
-bun run dev
+# Create a new template file
+stx init home.stx
+
+# Or create in a specific directory
+stx init pages/about.stx
 ```
 
-You should see:
+## Basic STX Template
 
-```
-✓ STX development server running
-➜ Local:   http://localhost:3000
-➜ Ready in 45ms
-```
+Here's a simple STX template example:
 
-::: tip
-STX's fast startup time is powered by Bun. Traditional frameworks can take 2-5 seconds to start.
-:::
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>STX Example</title>
+  stxript>
+    // Export data for the template
+    export const title = "Hello World"
+    export const items = ["Apple", "Banana", "Cherry"]
+    export const showFooter = true
+  </script>
+stxead>
+<body>
+  <h1>{{ title }}</h1>
+
+  <ul>
+    @foreastx(items as item)
+      <li>{{ item }}</li>
+    @endforeach
+  </ul>
+
+  @if (showFooter)
+    <footer>Copyright 2024</footer>
+  @endif
+</body>
+</html>
+```
 
 ## Configuration
 
-Configure STX via `stx.config.ts`:
+Create `stx.config.ts` in your project root:
 
 ```ts
 // stx.config.ts
-import { defineConfig } from '@stacksjs/stx'
+import { defineStxConfig } from '@stacksjs/stx'
 
-export default defineConfig({
-  // Project root directory
-  root: '.',
+export default defineStxConfig({
+  // Enable/disable features
+  enabled: true,
 
-  // Build output directory
-  outDir: 'dist',
+  // Directories
+  partialsDir: 'partials',
+  componentsDir: 'components',
 
-  // Component directories
-  components: ['./components'],
+  // Development
+  debug: false,
 
-  // Enable performance features
-  features: {
-    typescript: true,      // Full TypeScript support
-    streaming: true,       // Streaming SSR
-    components: true,      // Component system
-    hotReload: true,       // HMR in development
+  // Caching
+  cache: true,
+  cachePath: '.stx/cache',
+
+  // Internationalization
+  i18n: {
+    defaultLocale: 'en',
+    locale: 'en',
+    translationsDir: 'translations',
+    format: 'yaml',
+    fallbackToKey: true,
+    cache: true,stx
   },
 
-  // Performance optimizations
-  performance: {
-    minify: true,          // Minify output
-    treeshake: true,       // Remove unused code
-    compress: true,        // Compress assets
+  // Web Components
+  webComponents: stx
+    enabled: false,
+    outputDir: 'dist/web-components',
+    components: [],
   },
 
-  // Plugin configurations
-  plugins: [
-    // Add your plugins here
-  ],
+  // Streaming
+  streaming: {
+    enabled: true,
+    bufferSize: 1024 * 16, // 16KB chunks
+    strategy: 'auto',
+    timeout: 30000,
+  },
+
+  // Accessibility
+  a11y: {
+    enabled: true,
+    level: 'AA',
+    autoFix: false,
+  },
+
+  // SEO
+  seo: {
+  stxnabled: true,
+    socialPreview: true,
+    defaultConfig: {
+      title: 'My STX Project',
+      description: 'Built with STX templating engine',
+    },
+  },
+stx
+  // Markdown
+  markdown: {
+    enabled: true,
+    syntaxHighlighting: {
+      enabled: true,
+      serverSide: true,
+      defaultTheme: 'github-light',
+    },
+  },
+
+  // Animation
+  animation: {
+    enabled: true,
+    defaultDuration: 300,
+    defaultEase: 'ease',
+    respectMotionPreferences: true,
+  },
+})
+```
+
+## CLI Commands
+
+STX provides a comprehensive CLI:
+
+```sh
+# Create new templates
+stx init page.stx
+stx init components/button.stx
+
+# Start development server
+stx dev home.stx --port 3000
+
+# Build/bundle templates
+stx build templates/**/*.stx
+
+stxormat templates
+stx format templates/**/*.stx
+
+# Analyze templates for performance
+stx analyze templates/**/*.stx
+
+# Check accessibility
+stx a11y templates/
+
+# Generate documentation
+stx docs
+
+# Debug template processing
+stx debug home.stx
+
+# Watch for changes
+stx watch templates/**/*.stx
+
+# Run tests
+stx test
+
+# Show performance statistics
+stx perf
+
+# Show project status
+stx status
+```
+
+## Development Server
+
+Start a development server for your template:
+
+```sh
+# Serve a single file
+stx dev home.stx
+
+# Specify port
+stx dev home.stx --port 8080
+
+# Enable hot reload
+stx dev home.stx --hot
+```
+
+Or create a server programmatically:
+
+```ts
+// server.ts
+import { serve } from 'bun'
+import homeTemplate from './home.stx'
+
+serve({
+  port: 3000,
+  fetch(req) {
+    return new Response(homeTemplate, {
+      headers: { 'Content-Type': 'text/html' }
+    })
+  }
 })
 ```
 
 ## IDE Setup
 
-### VSCode (Recommended)
+### VSCode
 
-1. **Install the STX extension:**
-
-   - Open VSCode
-   - Press `Cmd+Shift+X` (Mac) or `Ctrl+Shift+X` (Windows/Linux)
-   - Search for "STX"
-   - Click Install
-
-   Or install from [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=stacksjs.stx)
+1. **Install the STX extension** from the [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=stacksjs.stx)
 
 2. **Configure file associations:**
 
@@ -173,129 +302,59 @@ export default defineConfig({
      "files.associations": {
        "*.stx": "stx"
      },
-     "editor.formatOnSave": true,
      "[stx]": {
        "editor.defaultFormatter": "stacksjs.stx"
      }
    }
    ```
 
-### Other IDEs
+### TypeScript Support
 
-For JetBrains IDEs (WebStorm, IntelliJ IDEA):
-- STX files are recognized as HTML with template syntax
-- TypeScript support works out of the box
-
-## Development Tools
-
-### 1. VSCode Extension Features
-
-- **Syntax Highlighting**: Full STX syntax support
-- **IntelliSense**: Autocomplete for components, directives, and props
-- **Type Checking**: Real-time TypeScript validation
-- **Error Detection**: Catch issues before running
-- **Component Preview**: See component output inline
-- **Snippets**: Quick templates for common patterns
-
-### 2. DevTools
-
-Install the browser DevTools extension:
-
-```sh
-bun add -D @stacksjs/devtools
-```
-
-Then enable in your config:
+Create a type declaration file:
 
 ```ts
-// stx.config.ts
-export default defineConfig({
-  plugins: [
-    devtools({
-      enabled: process.env.NODE_ENV === 'development'
-    })
-  ]
-})
-```
-
-Features:
-- Component tree inspector
-- Props and state viewer
-- Performance profiler
-- Network request monitor
-
-### 3. CLI Commands
-
-STX provides a powerful CLI:
-
-```sh
-# Create new components
-bun stx create component Button
-bun stx create page dashboard
-
-# Build for production
-bun stx build
-
-# Start development server
-bun stx dev
-
-# Type check
-bun stx check
-
-# Run tests
-bun stx test
-
-# Analyze bundle
-bun stx analyze
-```
-
-## TypeScript Setup
-
-STX includes first-class TypeScript support:
-
-```json
-// tsconfig.json
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "jsx": "preserve",
-    "types": ["@stacksjs/stx/types"]
-  },
-  "include": ["**/*.ts", "**/*.stx"],
-  "exclude": ["node_modules", "dist"]
+// src/stx.d.ts
+declare module '*.stx' {
+  const content: string
+  export default content
 }
 ```
 
-## Testing Setup
+Update your `tsconfig.json`:
 
-Set up testing with Bun's built-in test runner:
-
-```ts
-// component.test.ts
-import { describe, expect, test } from 'bun:test'
-import { render } from '@stacksjs/stx'
-import Button from './Button.stx'
-
-describe('Button', () => {
-  test('renders with text', () => {
-    const html = render(Button, { text: 'Click me' })
-    expect(html).toContain('Click me')
-  })
-
-  test('applies variant class', () => {
-    const html = render(Button, { variant: 'primary' })
-    expect(html).toContain('btn-primary')
-  })
-})
+```json
+{
+  "compilerOptions": {
+    "types": ["bun"]
+  },
+  "include": ["**/*.ts", "**/*.stx"]
+}
 ```
 
-Run tests:
+## Using with Frameworks
 
-```sh
-bun test
+### Bun Serve
+
+```ts
+import aboutPage from './pages/about.stx'
+import homePage from './pages/home.stx'
+
+export default {
+  port: 3000,
+  fetch(req) {
+    const url = new URL(req.url)
+
+    if (url.pathname === '/') return new Response(homePage, {
+      headers: { 'Content-Type': 'text/html' }
+    })
+
+    if (url.pathname === '/about') return new Response(aboutPage, {
+      headers: { 'Content-Type': 'text/html' }
+    })
+
+    return new Response('Not Found', { status: 404 })
+  }
+}
 ```
 
 ## Troubleshooting
@@ -314,28 +373,26 @@ bun --version
 
 ### Module Resolution Issues
 
-If imports aren't resolving:
+1. Ensure `bun-plugin-stx` is installed
+2. Check that the plugin is registered in `bunfig.toml` or build script
+3. Verify file paths are correct
 
-1. Check `tsconfig.json` has correct `moduleResolution`
-2. Ensure `@stacksjs/stx` is in dependencies
-3. Restart your IDE/editor
+### Template Not Processing
 
-### Performance Issues
+If your `.stx` files aren't being processed:
 
-If experiencing slow builds:
-
-1. Disable unused features in `stx.config.ts`
-2. Check for large dependencies
-3. Use `bun run build --analyze` to identify bottlenecks
+1. Check that the plugin is registered
+2. Verify the file extension is `.stx`
+3. Run with `--debug` flag: `stx dev home.stx --debug`
 
 ## Next Steps
 
 Now that you're set up:
 
-1. **[Quick Start Guide](/guide/usage)** - Build your first component
-2. **[Component System](/guide/components)** - Learn about components
-3. **[TypeScript Support](/guide/typescript)** - Master type safety
-4. **[Performance Guide](/features/performance)** - Optimize your app
+1. **[Quick Start Guide](/guide/usage)** - Learn template syntax
+2. **[Template Directives](/guide/directives)** - Master STX directives
+3. **[Markdown Support](/features/performance#markdown-parser-performance)** - Use markdown in templates
+4. **[Performance Guide](/features/benchmarks)** - Optimize your templates
 5. **[Examples](/examples)** - See real-world patterns
 
 ## Getting Help

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STX Animation System Demo</title>
+  <title>stx Animation System Demo</title>
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -233,7 +233,7 @@
   </style>
   <script>
     module.exports = {
-      title: "STX Animation System",
+      title: "stx Animation System",
       subtitle: "Powerful, accessible animations for your web apps",
       transitions: [
         { name: "fade", description: "Smooth opacity transitions" },
@@ -262,7 +262,7 @@
         <div class="demo-section" id="intro">
           <h2>Introduction</h2>
           <p>
-            The STX Animation System provides a set of powerful directives to create beautiful,
+            The stx Animation System provides a set of powerful directives to create beautiful,
             accessible animations in your templates. The system automatically respects users'
             motion preferences and makes it easy to coordinate complex animations.
           </p>
@@ -324,7 +324,7 @@
 
       @transition('fade', 400, 'ease-out', 400)
         <footer id="page-footer">
-          <p>Built with STX Animation System</p>
+          <p>Built with stx Animation System</p>
         </footer>
       @endtransition
     </div>

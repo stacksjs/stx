@@ -1,6 +1,6 @@
 # Plugin Development
 
-STX provides a comprehensive plugin system that allows you to extend the framework's functionality. This guide covers how to create, distribute, and maintain STX plugins.
+stx provides a comprehensive plugin system that allows you to extend the framework's functionality. This guide covers how to create, distribute, and maintain stx plugins.
 
 ## Plugin Architecture
 
@@ -15,17 +15,17 @@ export interface MyPluginOptions {
 
 export class MyPlugin {
   constructor(private options: MyPluginOptions = {}) {}
-  
-  install(app: STXApp) {
+
+  install(app: stxApp) {
     // Plugin initialization logic
     app.provide('myPlugin', this)
     app.config.globalProperties.$myPlugin = this
   }
-  
+
   async initialize() {
     // Setup logic
   }
-  
+
   destroy() {
     // Cleanup logic
   }
@@ -71,8 +71,8 @@ export function createTransformerPlugin(options: TransformerOptions) {
 ```typescript
 export class StateManagerPlugin {
   private store = new Map()
-  
-  install(app: STXApp) {
+
+  install(app: stxApp) {
     app.provide('state', {
       get: (key: string) => this.store.get(key),
       set: (key: string, value: any) => this.store.set(key, value),
@@ -107,7 +107,7 @@ declare module '@stx/core' {
   interface ComponentCustomProperties {
     $myPlugin: MyPlugin
   }
-  
+
   interface GlobalComponents {
     MyComponent: typeof MyComponent
   }
@@ -125,11 +125,11 @@ import MyPlugin from '../src'
 
 test('plugin installs correctly', () => {
   const app = createApp()
-  
+
   expect(() => {
     app.use(MyPlugin, { enabled: true })
   }).not.toThrow()
-  
+
   expect(app.config.globalProperties.$myPlugin).toBeDefined()
 })
 ```
@@ -152,11 +152,11 @@ Guidelines for community plugin development:
 2. Include comprehensive tests
 3. Provide TypeScript definitions
 4. Document API and usage examples
-5. Follow STX coding standards
+5. Follow stx coding standards
 
 ## Related Resources
 
 - [Plugin API Reference](/api/plugins) - Complete plugin API documentation
 - [Component Development](/guide/components) - Building components for plugins
-- [State Management](/guide/state) - Integrating with STX state
-- [Configuration Guide](/guide/config) - Plugin configuration patterns 
+- [State Management](/guide/state) - Integrating with stx state
+- [Configuration Guide](/guide/config) - Plugin configuration patterns

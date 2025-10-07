@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STX Component Demo</title>
+  <title>stx Component Demo</title>
   <script>
     module.exports = {
-      title: "STX Component Demo",
+      title: "stx Component Demo",
       card1: {
         title: "Getting Started",
-        subtitle: "Your first steps with STX",
-        content: "STX is a powerful templating engine for Bun.",
+        subtitle: "Your first steps with stx",
+        content: "stx is a powerful templating engine for Bun.",
         variant: "primary"
       },
       card2: {
         title: "Components",
-        content: "Components in STX are reusable templates.",
+        content: "Components in stx are reusable templates.",
         variant: "info"
       }
     };
@@ -44,7 +44,7 @@
 <body>
   <header>
     <h1>{{ title }}</h1>
-    <p>This demo shows how to use components in STX</p>
+    <p>This demo shows how to use components in stx</p>
   </header>
 
   <h2>Card Components</h2>
@@ -80,7 +80,7 @@
   </div>
 
   <footer>
-    <p>&copy; 2023 STX Components Demo</p>
+    <p>&copy; 2023 stx Components Demo</p>
   </footer>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # Monitoring
 
-STX provides comprehensive monitoring capabilities to help you observe, debug, and optimize your applications in production. This page covers all monitoring features and integrations available in the STX ecosystem.
+stx provides comprehensive monitoring capabilities to help you observe, debug, and optimize your applications in production. This page covers all monitoring features and integrations available in the stx ecosystem.
 
 ## Application Monitoring
 
@@ -162,7 +162,7 @@ app.get('/health', (req, res) => {
       external_api: await checkExternalAPI()
     }
   }
-  
+
   const isHealthy = Object.values(health.checks).every(check => check.status === 'ok')
   res.status(isHealthy ? 200 : 503).json(health)
 })
@@ -220,7 +220,7 @@ app.use(tracer.middleware({
 async function processOrder(orderId: string) {
   const span = tracer.startSpan('process-order')
   span.setTag('order.id', orderId)
-  
+
   try {
     await validateOrder(orderId)
     await chargePayment(orderId)
@@ -311,7 +311,7 @@ app.get('/metrics', (req, res) => {
 ```json
 {
   "dashboard": {
-    "title": "STX Application Metrics",
+    "title": "stx Application Metrics",
     "panels": [
       {
         "title": "Request Rate",
@@ -349,7 +349,7 @@ import { newrelic } from '@stx/monitoring'
 
 newrelic.configure({
   license_key: process.env.NEW_RELIC_LICENSE_KEY,
-  app_name: 'STX Application'
+  app_name: 'stx Application'
 })
 ```
 
@@ -387,4 +387,4 @@ metrics.gauge('bundle_size_bytes').set(bundleMetrics.totalSize)
 - [Performance Guide](/guide/performance) - Performance optimization strategies
 - [Build Guide](/guide/build) - Development tools and debugging
 - [Deployment Guide](/guide/deployment) - Production monitoring setup
-- [Security Guide](/guide/security) - Security monitoring and alerts 
+- [Security Guide](/guide/security) - Security monitoring and alerts

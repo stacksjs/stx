@@ -1,9 +1,9 @@
-<!-- STX JSDoc Examples -->
+<!-- stx JSDoc Examples -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>STX with JSDoc Support</title>
+    <title>stx with JSDoc Support</title>
     <style>
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -63,7 +63,7 @@
     </style>
 </head>
 <body>
-    <h1>JSDoc Support in STX Templates</h1>
+    <h1>JSDoc Support in stx Templates</h1>
 
     <div class="note">
         <p>Hover over highlighted TypeScript symbols throughout this example to see JSDoc tooltips in action!</p>
@@ -255,7 +255,7 @@
             </ul>
 
             <h3>How It Works</h3>
-            <p>The STX extension extracts JSDoc comments from TypeScript blocks and makes them available as tooltips when you hover over related symbols.</p>
+            <p>The stx extension extracts JSDoc comments from TypeScript blocks and makes them available as tooltips when you hover over related symbols.</p>
             <p>Try hovering over <code>Product</code>, <code>User</code>, <code>calculateTotal</code>, and other symbols in this example.</p>
         </div>
     </section>

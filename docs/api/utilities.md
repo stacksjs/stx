@@ -1,6 +1,6 @@
 # Utilities
 
-STX provides a comprehensive set of utility functions to help you build applications more efficiently. This guide covers all built-in utilities and their usage.
+stx provides a comprehensive set of utility functions to help you build applications more efficiently. This guide covers all built-in utilities and their usage.
 
 ## Core Utilities
 

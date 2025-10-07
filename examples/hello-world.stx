@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STX Demo - Hello World</title>
+  <title>stx Demo - Hello World</title>
   <style>
     body {
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -94,7 +94,7 @@
 <h1>Hello, {{ name }}!</h1>
 
 <div class="card">
-  <p>Welcome to the STX dev server. This page is rendered using STX templating engine.</p>
+  <p>Welcome to the stx dev server. This page is rendered using stx templating engine.</p>
   <p>Try modifying the <code>examples/hello-world.stx</code> file to see changes automatically reload.</p>
 
   <div class="time">

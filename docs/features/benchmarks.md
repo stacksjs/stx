@@ -1,6 +1,6 @@
 # Benchmarks
 
-STX packages are built for performance. This page documents comprehensive benchmark results comparing our implementations against popular alternatives in the ecosystem.
+stx packages are built for performance. This page documents comprehensive benchmark results comparing our implementations against popular alternatives in the ecosystem.
 
 ## Overview
 

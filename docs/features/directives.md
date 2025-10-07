@@ -1,6 +1,6 @@
 # Directives
 
-STX provides a powerful directive system for extending template functionality. This page covers all built-in directives and how to create custom directives in the STX ecosystem.
+stx provides a powerful directive system for extending template functionality. This page covers all built-in directives and how to create custom directives in the stx ecosystem.
 
 ## Built-in Directives
 
@@ -10,7 +10,7 @@ STX provides a powerful directive system for extending template functionality. T
 <!-- Basic conditionals -->
 @if(user.isAuthenticated)
   <dashboard />
-@elseif(user.isGuest)  
+@elseif(user.isGuest)
   <welcome-message />
 @else
   <login-form />
@@ -137,7 +137,7 @@ STX provides a powerful directive system for extending template functionality. T
 <button @[eventName]="handler">Dynamic Event</button>
 
 <!-- Multiple events -->
-<input 
+<input
   @input="handleInput"
   @focus="handleFocus"
   @blur="handleBlur"
@@ -155,7 +155,7 @@ STX provides a powerful directive system for extending template functionality. T
 <input :[attributeName]="attributeValue">
 
 <!-- Class binding -->
-<div :class="{ 
+<div :class="{
   'active': isActive,
   'disabled': isDisabled,
   'large': size === 'large'
@@ -183,7 +183,7 @@ export const focus = {
       el.focus()
     }
   },
-  
+
   updated(el: HTMLElement, binding: any) {
     if (binding.value) {
       el.focus()
@@ -196,6 +196,7 @@ app.directive('focus', focus)
 ```
 
 Usage:
+
 ```stx
 <input @focus="shouldFocus" type="text">
 ```
@@ -211,36 +212,36 @@ export const lazyLoad = {
       rootMargin: '50px',
       ...binding.value?.options
     }
-    
+
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           const img = entry.target as HTMLImageElement
-          
+
           // Load the image
           if (binding.value?.src) {
             img.src = binding.value.src
           }
-          
+
           // Add loaded class
           img.classList.add('loaded')
-          
+
           // Execute callback
           if (binding.value?.onLoad) {
             binding.value.onLoad(img)
           }
-          
+
           observer.unobserve(img)
         }
       })
     }, options)
-    
+
     observer.observe(el)
-    
+
     // Store observer for cleanup
     el._lazyObserver = observer
   },
-  
+
   beforeUnmount(el: HTMLElement) {
     if (el._lazyObserver) {
       el._lazyObserver.disconnect()
@@ -250,8 +251,9 @@ export const lazyLoad = {
 ```
 
 Usage:
+
 ```stx
-<img 
+<img
   @lazy-load="{
     src: '/images/large-image.jpg',
     onLoad: handleImageLoad,
@@ -273,11 +275,11 @@ export const clickOutside = {
         binding.value(event)
       }
     }
-    
+
     document.addEventListener('click', handler)
     el._clickOutsideHandler = handler
   },
-  
+
   beforeUnmount(el: HTMLElement) {
     if (el._clickOutsideHandler) {
       document.removeEventListener('click', el._clickOutsideHandler)
@@ -287,6 +289,7 @@ export const clickOutside = {
 ```
 
 Usage:
+
 ```stx
 <div @click-outside="closeMenu" class="dropdown">
   <!-- Dropdown content -->
@@ -304,31 +307,31 @@ export const tooltip = {
     tooltip.textContent = binding.value
     tooltip.style.display = 'none'
     document.body.appendChild(tooltip)
-    
+
     const showTooltip = (event: MouseEvent) => {
       tooltip.style.display = 'block'
       tooltip.style.left = event.pageX + 10 + 'px'
       tooltip.style.top = event.pageY + 10 + 'px'
     }
-    
+
     const hideTooltip = () => {
       tooltip.style.display = 'none'
     }
-    
+
     el.addEventListener('mouseenter', showTooltip)
     el.addEventListener('mouseleave', hideTooltip)
-    
+
     el._tooltip = tooltip
     el._showTooltip = showTooltip
     el._hideTooltip = hideTooltip
   },
-  
+
   updated(el: HTMLElement, binding: any) {
     if (el._tooltip) {
       el._tooltip.textContent = binding.value
     }
   },
-  
+
   beforeUnmount(el: HTMLElement) {
     if (el._tooltip) {
       document.body.removeChild(el._tooltip)
@@ -344,6 +347,7 @@ export const tooltip = {
 ```
 
 Usage:
+
 ```stx
 <button @tooltip="'This is a helpful tooltip'">
   Hover me
@@ -355,7 +359,7 @@ Usage:
 ### Multiple Directives
 
 ```stx
-<input 
+<input
   @model="searchQuery"
   @focus="true"
   @click-outside="closeSearchResults"
@@ -436,17 +440,17 @@ const emailValidation = {
 export const asyncLoad = {
   async mounted(el: HTMLElement, binding: any) {
     el.classList.add('loading')
-    
+
     try {
       const data = await binding.value()
-      
+
       // Update element with loaded data
       if (typeof data === 'string') {
         el.textContent = data
       } else if (data.html) {
         el.innerHTML = data.html
       }
-      
+
       el.classList.remove('loading')
       el.classList.add('loaded')
     } catch (error) {
@@ -459,6 +463,7 @@ export const asyncLoad = {
 ```
 
 Usage:
+
 ```stx
 <div @async-load="loadUserData">Loading...</div>
 ```
@@ -477,14 +482,14 @@ describe('Tooltip Directive', () => {
       template: '<button @tooltip="\'Test tooltip\'">Hover</button>',
       directives: { tooltip }
     })
-    
+
     const button = wrapper.find('button')
     await button.trigger('mouseenter')
-    
+
     const tooltipEl = document.querySelector('.tooltip')
     expect(tooltipEl).toBeTruthy()
     expect(tooltipEl.textContent).toBe('Test tooltip')
-    
+
     await button.trigger('mouseleave')
     expect(tooltipEl.style.display).toBe('none')
   })
@@ -499,7 +504,7 @@ describe('Form with Custom Directives', () => {
     const wrapper = mount({
       template: `
         <form>
-          <input 
+          <input
             @model="email"
             @focus="true"
             @validate="validateEmail"
@@ -511,10 +516,10 @@ describe('Form with Custom Directives', () => {
         email: ''
       }
     })
-    
+
     const input = wrapper.find('input')
     expect(document.activeElement).toBe(input.element)
-    
+
     await input.setValue('invalid-email')
     // Test validation behavior
   })
@@ -534,13 +539,13 @@ export const optimizedDirective = {
       handler: createHandler(binding.value)
     }
   },
-  
+
   updated(el: HTMLElement, binding: any) {
     // Only update if value changed
     if (binding.value !== el._directiveData.previousValue) {
       // Cleanup previous
       cleanup(el._directiveData.handler)
-      
+
       // Setup new
       el._directiveData = {
         previousValue: binding.value,
@@ -557,15 +562,15 @@ export const optimizedDirective = {
 export const memoryEfficientDirective = {
   mounted(el: HTMLElement, binding: any) {
     const controller = new AbortController()
-    
+
     el.addEventListener('click', handler, {
       signal: controller.signal
     })
-    
+
     // Store for cleanup
     el._abortController = controller
   },
-  
+
   beforeUnmount(el: HTMLElement) {
     // Automatic cleanup of all listeners
     el._abortController?.abort()
@@ -578,4 +583,4 @@ export const memoryEfficientDirective = {
 - [Directive Guide](/guide/directives) - Comprehensive directive development guide
 - [Template System](/features/templates) - Template syntax and directives
 - [Custom Directives](/advanced/custom-directives) - Advanced directive patterns
-- [Component System](/features/components) - Using directives with components 
+- [Component System](/features/components) - Using directives with components

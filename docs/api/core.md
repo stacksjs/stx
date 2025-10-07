@@ -1,6 +1,6 @@
 # Core API Reference
 
-This document provides detailed information about STX's core APIs, including template syntax, directives, and runtime functions.
+This document provides detailed information about stx's core APIs, including template syntax, directives, and runtime functions.
 
 ## Template Syntax
 
@@ -73,11 +73,11 @@ This document provides detailed information about STX's core APIs, including tem
   @if(item.hidden)
     @continue
   @endif
-  
+
   @if(item.last)
     @break
   @endif
-  
+
   <div>{{ item.name }}</div>
 @endfor
 ```
@@ -119,6 +119,7 @@ function defineComponent(options: ComponentOptions): Component
 ```
 
 Example:
+
 ```ts
 const MyComponent = defineComponent({
   name: 'MyComponent',
@@ -220,12 +221,12 @@ const MyPlugin: Plugin = {
     app.config.globalProperties.$myPlugin = {
       // Plugin methods
     }
-    
+
     // Add global directive
     app.directive('my-directive', {
       // Directive hooks
     })
-    
+
     // Register global component
     app.component('MyComponent', MyComponent)
   }
@@ -245,7 +246,7 @@ const myDirective = {
     // Access argument: binding.arg
     // Access modifiers: binding.modifiers
   },
-  
+
   updated(el, binding) {
     // Handle updates
   }
@@ -321,16 +322,16 @@ const store = createStore({
     count: 0,
     user: null
   },
-  
+
   getters: {
     doubleCount: state => state.count * 2
   },
-  
+
   actions: {
     increment(state) {
       state.count++
     },
-    
+
     async fetchUser(state, id) {
       state.user = await api.getUser(id)
     }
@@ -360,4 +361,4 @@ await actions.fetchUser(1)
 - Check out [Component API](/api/components)
 - Learn about [Helper Functions](/api/helpers)
 - Explore [Configuration API](/api/config)
-- Review [Plugin Development](/api/plugins) 
+- Review [Plugin Development](/api/plugins)

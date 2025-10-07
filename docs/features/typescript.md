@@ -1,6 +1,6 @@
 # TypeScript
 
-STX provides first-class TypeScript support with comprehensive type checking, IDE integration, and development tools. This page covers all TypeScript features and capabilities in the STX ecosystem.
+stx provides first-class TypeScript support with comprehensive type checking, IDE integration, and development tools. This page covers all TypeScript features and capabilities in the stx ecosystem.
 
 ## TypeScript Integration
 
@@ -30,7 +30,7 @@ interface ButtonSlots {
     loading: { type: Boolean, default: false }
   }
 })
-  <button 
+  <button
     class="btn btn--&#123;&#123; variant &#125;&#125; btn--&#123;&#123; size &#125;&#125;"
     :disabled="disabled || loading"
     @click="$emit('click', $event)"
@@ -73,8 +73,8 @@ interface UserListProps {
 })
   <div class="user-list">
     @foreach(users as user)
-      <div 
-        class="user-item" 
+      <div
+        class="user-item"
         @click="$emit('userClick', user)"
         :key="user.id"
       >
@@ -120,34 +120,34 @@ interface CounterMethods {
     history: [],
     isAnimating: false
   })
-  
+
   @computed({
     canUndo: (): boolean => history.length > 0,
     lastValue: (): number => history[history.length - 1] || 0
   })
-  
+
   @method increment(): void {
     history.push(count)
     count += step
     triggerAnimation()
   }
-  
+
   @method decrement(): void {
     history.push(count)
     count -= step
     triggerAnimation()
   }
-  
+
   @method reset(): void {
     history.push(count)
     count = 0
   }
-  
+
   <div class="counter">
     <button @click="decrement">-</button>
     <span class="counter__value">&#123;&#123; count &#125;&#125;</span>
     <button @click="increment">+</button>
-    
+
     @if(canUndo)
       <button @click="undo">Undo</button>
     @endif
@@ -198,18 +198,18 @@ const store = createStore<AppState>({
       loading: {}
     }
   },
-  
+
   getters: {
     currentUser(state): User | null {
       return state.auth.user
     },
-    
+
     hasPermission(state): (permission: string) => boolean {
-      return (permission: string) => 
+      return (permission: string) =>
         state.auth.permissions.some(p => p.name === permission)
     }
   },
-  
+
   actions: {
     async login(credentials: LoginCredentials): Promise<void> {
       const response = await authAPI.login(credentials)
@@ -263,12 +263,12 @@ class UserAPI {
     })
     return response.json()
   }
-  
+
   async getById(id: number): Promise<ApiResponse<User>> {
     const response = await fetch(`/api/users/${id}`)
     return response.json()
   }
-  
+
   async create(userData: CreateUserData): Promise<ApiResponse<User>> {
     const response = await fetch('/api/users', {
       method: 'POST',
@@ -317,31 +317,31 @@ interface LoginFormMethods {
     errors: {},
     isSubmitting: false
   })
-  
+
   @method validate(): boolean {
     errors = {}
-    
+
     if (!form.email) {
       errors.email = 'Email is required'
     } else if (!isValidEmail(form.email)) {
       errors.email = 'Invalid email format'
     }
-    
+
     if (!form.password) {
       errors.password = 'Password is required'
     } else if (form.password.length < 6) {
       errors.password = 'Password must be at least 6 characters'
     }
-    
+
     return Object.keys(errors).length === 0
   }
-  
+
   @method async submit(): Promise<void> {
     if (!validate()) return
-    
+
     isSubmitting = true
     errors = {}
-    
+
     try {
       await authAPI.login(form)
       router.push('/dashboard')
@@ -351,11 +351,11 @@ interface LoginFormMethods {
       isSubmitting = false
     }
   }
-  
+
   <form @submit.prevent="submit" class="login-form">
     <div class="field">
       <label for="email">Email</label>
-      <input 
+      <input
         id="email"
         @model="form.email"
         type="email"
@@ -365,10 +365,10 @@ interface LoginFormMethods {
         <span class="error-message">&#123;&#123; errors.email &#125;&#125;</span>
       @endif
     </div>
-    
+
     <div class="field">
       <label for="password">Password</label>
-      <input 
+      <input
         id="password"
         @model="form.password"
         type="password"
@@ -378,18 +378,18 @@ interface LoginFormMethods {
         <span class="error-message">&#123;&#123; errors.password &#125;&#125;</span>
       @endif
     </div>
-    
+
     <div class="field">
       <label>
         <input @model="form.rememberMe" type="checkbox">
         Remember me
       </label>
     </div>
-    
+
     @if(errors.general)
       <div class="error-message">&#123;&#123; errors.general &#125;&#125;</div>
     @endif
-    
+
     <button type="submit" :disabled="isSubmitting">
       &#123;&#123; isSubmitting ? 'Logging in...' : 'Login' &#125;&#125;
     </button>
@@ -431,11 +431,11 @@ interface DataTableProps<T> {
     <thead>
       <tr>
         @foreach(columns as column)
-          <th 
+          <th
             @click="column.sortable && $emit('sort', column.key)"
-            :class="{ 
+            :class="{
               'sortable': column.sortable,
-              'sorted': sortBy === column.key 
+              'sorted': sortBy === column.key
             }"
           >
             &#123;&#123; column.title &#125;&#125;
@@ -453,9 +453,9 @@ interface DataTableProps<T> {
         <tr>
           @foreach(columns as column)
             <td>
-              <slot 
-                :name="column.key" 
-                :item="item" 
+              <slot
+                :name="column.key"
+                :item="item"
                 :value="item[column.key]"
                 :index="index"
               >
@@ -491,7 +491,7 @@ export function assertIsNumber(value: unknown): asserts value is number {
 }
 
 export function isArrayOf<T>(
-  array: unknown[], 
+  array: unknown[],
   guard: (item: unknown) => item is T
 ): array is T[] {
   return array.every(guard)
@@ -502,16 +502,16 @@ export function isArrayOf<T>(
   @method filterValidUsers(users: (User | null)[]): User[] {
     return users.filter(isNotNull)
   }
-  
+
   @method processUserData(data: unknown): User[] {
     if (!Array.isArray(data)) {
       throw new Error('Expected array')
     }
-    
+
     if (!isArrayOf(data, isUser)) {
       throw new Error('Invalid user data')
     }
-    
+
     return data
   }
 @endcomponent
@@ -564,14 +564,14 @@ export default {
     strict: true,
     checkTemplates: true,
     typeCheckTimeout: 30000,
-    
+
     // Custom type definitions
     globalTypes: {
       $auth: 'AuthService',
       $router: 'Router',
       $i18n: 'I18nService'
     },
-    
+
     // Template type checking options
     templateOptions: {
       strictAttributeTypes: true,
@@ -593,11 +593,11 @@ export default {
   "typescript.updateImportsOnFileMove.enabled": "always",
   "stx.typescript.enabled": true,
   "stx.typescript.strictMode": true,
-  
+
   "files.associations": {
     "*.stx": "stx"
   },
-  
+
   "emmet.includeLanguages": {
     "stx": "html"
   }
@@ -610,7 +610,7 @@ export default {
 // types/global.d.ts
 declare global {
   interface Window {
-    __STX_APP__: STXApp
+    __stx_APP__: stxApp
   }
 }
 
@@ -671,11 +671,11 @@ test('UserCard displays user information correctly', () => {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
-  
+
   const wrapper = mount(UserCard, {
     props: { user, showEmail: true }
   })
-  
+
   expect(wrapper.find('.user-card__name').text()).toBe('John Doe')
   expect(wrapper.find('.user-card__email').text()).toBe('john@example.com')
   expect(wrapper.find('.user-role').text()).toBe('user')
@@ -684,9 +684,9 @@ test('UserCard displays user information correctly', () => {
 test('UserCard emits userClick event with correct payload', async () => {
   const user: User = createMockUser()
   const wrapper = mount(UserCard, { props: { user } })
-  
+
   await wrapper.find('.user-item').trigger('click')
-  
+
   const emitted = wrapper.emitted<{ userClick: [User] }>()
   expect(emitted.userClick).toBeTruthy()
   expect(emitted.userClick[0][0]).toEqual(user)
@@ -712,7 +712,7 @@ import { formatDate } from '@/utils'
 
 ```typescript
 // Lazy load heavy type definitions
-const LazyUserAdmin = lazy(() => 
+const LazyUserAdmin = lazy(() =>
   import('@/components/UserAdmin.stx').then(module => ({
     default: module.default as ComponentOptions<UserAdminProps>
   }))
@@ -724,4 +724,4 @@ const LazyUserAdmin = lazy(() =>
 - [TypeScript Guide](/guide/typescript) - Comprehensive TypeScript development guide
 - [Component Testing](/advanced/testing) - Testing TypeScript components
 - [State Management](/advanced/state) - Typed state management patterns
-- [Build Configuration](/advanced/build) - TypeScript build setup 
+- [Build Configuration](/advanced/build) - TypeScript build setup

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ title }}</title>
   <script>
-    export const title = "My STX Page";
-    export const description = "A page built with STX";
+    export const title = "My stx Page";
+    export const description = "A page built with stx";
     export const items = [
       "Templates with TypeScript support",
       "Powerful directives",

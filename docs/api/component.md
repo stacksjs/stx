@@ -1,6 +1,6 @@
 # Component API
 
-The Component API is the core building block of STX applications. This guide covers all aspects of component creation and lifecycle management.
+The Component API is the core building block of stx applications. This guide covers all aspects of component creation and lifecycle management.
 
 ## Component Definition
 

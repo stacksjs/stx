@@ -1,12 +1,12 @@
 # Templates
 
-STX provides a powerful templating system with an intuitive syntax that makes building UIs both productive and enjoyable. This page covers all template features and capabilities available in the STX ecosystem.
+stx provides a powerful templating system with an intuitive syntax that makes building UIs both productive and enjoyable. This page covers all template features and capabilities available in the stx ecosystem.
 
 ## Template Syntax
 
 ### Text Interpolation
 
-STX uses double curly braces for safe text interpolation:
+stx uses double curly braces for safe text interpolation:
 
 ```stx
 <div>&#123;&#123; message &#125;&#125;</div>
@@ -143,15 +143,15 @@ Bind dynamic values to attributes:
   <header>
     @include('partials.navigation')
   </header>
-  
+
   <main>
     @yield('content')
   </main>
-  
+
   <footer>
     @include('partials.footer')
   </footer>
-  
+
   @stack('scripts')
 </body>
 </html>
@@ -235,7 +235,7 @@ Bind dynamic values to attributes:
 
 ### Template Compilation
 
-STX compiles templates to optimized JavaScript:
+stx compiles templates to optimized JavaScript:
 
 ```typescript
 // Original template
@@ -265,7 +265,7 @@ const templateConfig = {
     ttl: 3600, // 1 hour
     invalidateOnChange: true
   },
-  
+
   // Precompile templates
   precompile: [
     'layouts/**/*.stx',
@@ -293,7 +293,7 @@ const templateConfig = {
 
 ### Automatic Escaping
 
-STX automatically escapes output to prevent XSS:
+stx automatically escapes output to prevent XSS:
 
 ```stx
 <!-- Safe: automatically escaped -->
@@ -329,11 +329,11 @@ const cspConfig = {
   <header class="modal__header">
     <slot name="header">Default Header</slot>
   </header>
-  
+
   <main class="modal__body">
     <slot>Default content</slot>
   </main>
-  
+
   <footer class="modal__footer">
     <slot name="footer">
       <button @click="close">Close</button>
@@ -346,9 +346,9 @@ const cspConfig = {
   <template #header>
     <h2>Custom Header</h2>
   </template>
-  
+
   <p>Modal content goes here</p>
-  
+
   <template #footer>
     <button @click="save">Save</button>
     <button @click="cancel">Cancel</button>
@@ -386,7 +386,7 @@ const cspConfig = {
 ```stx
 <!-- Define reusable template macros -->
 @macro('button', { type = 'button', size = 'medium', variant = 'primary' })
-  <button 
+  <button
     type="&#123;&#123; type &#125;&#125;"
     class="btn btn--&#123;&#123; variant &#125;&#125; btn--&#123;&#123; size &#125;&#125;"
     {{ $attributes }}
@@ -414,16 +414,16 @@ test('user list template', () => {
       <div class="user">&#123;&#123; user.name &#125;&#125;</div>
     @endforeach
   `
-  
+
   const context = {
     users: [
       { name: 'John Doe' },
       { name: 'Jane Smith' }
     ]
   }
-  
+
   const html = renderTemplate(template, context)
-  
+
   expect(html).toContain('<div class="user">John Doe</div>')
   expect(html).toContain('<div class="user">Jane Smith</div>')
 })
@@ -436,7 +436,7 @@ test('component template snapshot', () => {
   const component = renderComponent('UserCard', {
     user: { name: 'John', email: 'john@example.com' }
   })
-  
+
   expect(component.html()).toMatchSnapshot()
 })
 ```
@@ -446,4 +446,4 @@ test('component template snapshot', () => {
 - [Template Syntax Guide](/guide/templates) - Comprehensive template syntax guide
 - [Component System](/features/components) - Building reusable components
 - [Directives](/features/directives) - Custom template directives
-- [Performance](/features/performance) - Template performance optimization 
+- [Performance](/features/performance) - Template performance optimization

@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STX Animation Test</title>
+  <title>stx Animation Test</title>
   <script>
     module.exports = {
-      title: "STX Animation Test",
+      title: "stx Animation Test",
       items: ["Fade", "Slide", "Scale", "Flip", "Rotate"]
     };
   </script>
@@ -61,7 +61,7 @@
   <div class="stx-transition stx-scale">
     <div class="card">
       <h2>Manual Class Usage</h2>
-      <p>This element uses STX animation classes directly.</p>
+      <p>This element uses stx animation classes directly.</p>
     </div>
   </div>
 

@@ -7,7 +7,7 @@
   <!-- Basic meta tags using @meta directive -->
   @meta("description", "A detailed description of this product page")
   @meta("keywords", "product, stx, seo, web")
-  @meta("author", "STX Team")
+  @meta("author", "stx Team")
 
   <!-- Meta tags using @metaTag directive with expanded options -->
   @metaTag({ name: "robots", content: "index, follow" })
@@ -29,7 +29,7 @@
       description: pageDescription,
       image: productImage,
       imageAlt: productImageAlt,
-      siteName: "STX Demo Store"
+      siteName: "stx Demo Store"
     },
     twitter: {
       card: "summary_large_image",
@@ -93,7 +93,7 @@
   </main>
 
   <footer>
-    <p>&copy; {{ currentYear }} STX Demo Store. All rights reserved.</p>
+    <p>&copy; {{ currentYear }} stx Demo Store. All rights reserved.</p>
   </footer>
 </body>
 </html>

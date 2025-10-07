@@ -1,6 +1,6 @@
 # Plugin Development API Reference
 
-This document covers STX's plugin system API, including plugin creation, hooks, and integration points.
+This document covers stx's plugin system API, including plugin creation, hooks, and integration points.
 
 ## Plugin Basics
 
@@ -9,16 +9,16 @@ This document covers STX's plugin system API, including plugin creation, hooks, 
 ```ts
 import { Plugin } from '@stacksjs/stx'
 
-interface STXPlugin {
+interface stxPlugin {
   // Required plugin name
   name: string
-  
+
   // Plugin installation
   install: (app: App, options?: any) => void
-  
+
   // Optional plugin configuration
   config?: PluginConfig
-  
+
   // Optional plugin hooks
   hooks?: PluginHooks
 }
@@ -26,7 +26,7 @@ interface STXPlugin {
 // Basic plugin example
 const MyPlugin: Plugin = {
   name: 'my-plugin',
-  
+
   install(app, options) {
     // Plugin initialization code
   }
@@ -75,12 +75,12 @@ const MyPlugin: Plugin = {
       formatDate(date: Date) {
         return date.toLocaleDateString()
       },
-      
+
       capitalize(str: string) {
         return str.charAt(0).toUpperCase() + str.slice(1)
       }
     }
-    
+
     // Add global methods
     app.config.globalProperties.$notify = (message: string) => {
       // Show notification
@@ -107,15 +107,15 @@ const MyPlugin: Plugin = {
     app.directive('my-directive', {
       mounted(el, binding) {
         const { value, arg, modifiers } = binding
-        
+
         // Directive logic
         el.style.color = value
-        
+
         if (modifiers.bold) {
           el.style.fontWeight = 'bold'
         }
       },
-      
+
       updated(el, binding) {
         // Update logic
       }
@@ -138,14 +138,14 @@ const MyPlugin: Plugin = {
     app.component('MyComponent', {
       // Component definition
     })
-    
+
     // Register multiple components
     const components = {
       Button: { /* ... */ },
       Card: { /* ... */ },
       Modal: { /* ... */ }
     }
-    
+
     Object.entries(components).forEach(([name, component]) => {
       app.component(name, component)
     })
@@ -164,17 +164,17 @@ const MyPlugin: Plugin = {
     app.beforeMount(() => {
       console.log('App mounting...')
     })
-    
+
     // After app mount
     app.mounted(() => {
       console.log('App mounted')
     })
-    
+
     // Before app unmount
     app.beforeUnmount(() => {
       console.log('App unmounting...')
     })
-    
+
     // After app unmount
     app.unmounted(() => {
       console.log('App unmounted')
@@ -192,16 +192,16 @@ const MyPlugin: Plugin = {
       beforeRoute: new Set<Function>(),
       afterRoute: new Set<Function>()
     }
-    
+
     // Add hook methods
     app.config.globalProperties.$addHook = (name: string, fn: Function) => {
       hooks[name]?.add(fn)
     }
-    
+
     app.config.globalProperties.$removeHook = (name: string, fn: Function) => {
       hooks[name]?.delete(fn)
     }
-    
+
     // Execute hooks
     app.config.globalProperties.$executeHook = async (name: string, ...args: any[]) => {
       for (const fn of hooks[name] || []) {
@@ -229,41 +229,41 @@ const MyComponent = defineComponent({
 interface PluginConfig {
   // Plugin options
   options?: Record<string, any>
-  
+
   // Default configuration
   defaults?: Record<string, any>
-  
+
   // Validation rules
   rules?: Record<string, (value: any) => boolean>
 }
 
 const MyPlugin: Plugin = {
   name: 'my-plugin',
-  
+
   config: {
     options: {
       theme: 'light',
       language: 'en'
     },
-    
+
     defaults: {
       theme: 'light',
       language: 'en'
     },
-    
+
     rules: {
       theme: value => ['light', 'dark'].includes(value),
       language: value => typeof value === 'string'
     }
   },
-  
+
   install(app, options) {
     // Merge options with defaults
     const config = {
       ...this.config.defaults,
       ...options
     }
-    
+
     // Validate configuration
     Object.entries(config).forEach(([key, value]) => {
       const validator = this.config.rules[key]
@@ -271,7 +271,7 @@ const MyPlugin: Plugin = {
         throw new Error(`Invalid ${key} value: ${value}`)
       }
     })
-    
+
     // Use configuration
     app.config.globalProperties.$pluginConfig = config
   }
@@ -284,18 +284,18 @@ const MyPlugin: Plugin = {
 const MyPlugin: Plugin = {
   install(app, initialOptions) {
     let config = { ...initialOptions }
-    
+
     // Add configuration methods
     app.config.globalProperties.$setPluginConfig = (options: Record<string, any>) => {
       config = {
         ...config,
         ...options
       }
-      
+
       // Update plugin behavior
       updatePlugin(config)
     }
-    
+
     app.config.globalProperties.$getPluginConfig = () => {
       return { ...config }
     }
@@ -307,7 +307,7 @@ const MyComponent = defineComponent({
   setup() {
     // Get config
     const config = this.$getPluginConfig()
-    
+
     // Update config
     this.$setPluginConfig({
       theme: 'dark'
@@ -328,13 +328,13 @@ const MyPlugin: Plugin = {
       state: {
         pluginData: null
       },
-      
+
       mutations: {
         setPluginData(state, data) {
           state.pluginData = data
         }
       },
-      
+
       actions: {
         async fetchPluginData({ commit }) {
           const data = await api.getData()
@@ -342,7 +342,7 @@ const MyPlugin: Plugin = {
         }
       }
     }
-    
+
     // Register store module
     app.store.registerModule('myPlugin', store)
   }
@@ -358,13 +358,13 @@ const MyPlugin: Plugin = {
     app.router.beforeEach((to, from) => {
       // Route guard logic
     })
-    
+
     // Add routes
     app.router.addRoute({
       path: '/plugin',
       component: PluginView
     })
-    
+
     // Add route metadata
     app.router.beforeResolve((to) => {
       to.meta.pluginData = {
@@ -382,7 +382,7 @@ const MyPlugin: Plugin = {
   install(app) {
     // Create event bus
     const events = new Map()
-    
+
     // Add event methods
     app.config.globalProperties.$on = (event: string, handler: Function) => {
       if (!events.has(event)) {
@@ -390,13 +390,13 @@ const MyPlugin: Plugin = {
       }
       events.get(event).add(handler)
     }
-    
+
     app.config.globalProperties.$emit = (event: string, ...args: any[]) => {
       if (events.has(event)) {
         events.get(event).forEach(handler => handler(...args))
       }
     }
-    
+
     app.config.globalProperties.$off = (event: string, handler: Function) => {
       if (events.has(event)) {
         events.get(event).delete(handler)
@@ -412,7 +412,7 @@ const MyComponent = defineComponent({
       // Handle event
     })
   },
-  
+
   methods: {
     triggerEvent() {
       this.$emit('pluginEvent', { /* data */ })

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STX Syntax Showcase</title>
+  <title>stx Syntax Showcase</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -33,7 +33,7 @@
 </head>
 <body>
   <!-- ========== BASIC SYNTAX EXAMPLES ========== -->
-  <h1>STX Syntax Showcase</h1>
+  <h1>stx Syntax Showcase</h1>
 
   <!-- Comments -->
   <div class="example">
@@ -100,7 +100,7 @@
 
   <!-- Raw Content Block -->
   @raw
-    This content will be rendered as is, without processing STX {{ expressions }} or @directives
+    This content will be rendered as is, without processing stx {{ expressions }} or @directives
   @endraw
 
   <!-- Markdown Block -->
@@ -118,7 +118,7 @@
   <!-- Verbatim Block -->
   @verbatim
     <div>
-      This content will be rendered as is, without processing STX {{ expressions }} or @directives
+      This content will be rendered as is, without processing stx {{ expressions }} or @directives
       Special characters like < > & " ' will work as expected in verbatim mode
     </div>
   @endverbatim
@@ -282,7 +282,7 @@
     <div class="error">{{ $message }}</div>
   @enderror
 
-  <!-- HTML Attributes with STX Expressions -->
+  <!-- HTML Attributes with stx Expressions -->
   <div :title="{{ dynamicTitle }}">Hover over me</div>
   <button :disabled="{{ isDisabled }}">Submit</button>
   <input :value="{{ inputValue }}" />

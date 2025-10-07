@@ -1,10 +1,11 @@
 # Examples & Tutorials
 
-This section provides practical examples and step-by-step tutorials to help you master STX.
+This section provides practical examples and step-by-step tutorials to help you master `stx`.
 
 ## Basic Examples
 
 ### Counter Component
+
 A simple counter component demonstrating state management and events:
 
 ```stx
@@ -23,10 +24,10 @@ interface Props {
   },
   setup(props) {
     const count = ref(props.initialCount)
-    
+
     const increment = () => count.value++
     const decrement = () => count.value--
-    
+
     return { count, increment, decrement }
   }
 })
@@ -51,6 +52,7 @@ interface Props {
 ```
 
 ### Todo List
+
 A complete todo list application showing component composition and state management:
 
 ```stx
@@ -79,7 +81,7 @@ interface TodoListProps {
 
     const addTodo = () => {
       if (!newTodo.value.trim()) return
-      
+
       todos.value.push({
         id: Date.now(),
         text: newTodo.value,
@@ -108,10 +110,10 @@ interface TodoListProps {
 })
   <div class="todo-list">
     <h2>{{ title }}</h2>
-    
+
     <div class="add-todo">
-      <input 
-        type="text" 
+      <input
+        type="text"
         v-model="newTodo"
         @keyup.enter="addTodo"
         placeholder="Add new todo"
@@ -165,7 +167,8 @@ interface TodoListProps {
 ### Building a Blog
 
 #### 1. Project Setup
-First, create a new STX project:
+
+First, create a new `stx` project:
 
 ```bash
 # Create new project
@@ -177,6 +180,7 @@ bun install
 ```
 
 #### 2. Create Post Component
+
 Create a reusable post component (`components/Post.stx`):
 
 ```stx
@@ -231,6 +235,7 @@ interface Props {
 ```
 
 #### 3. Create Blog Layout
+
 Create a layout component (`layouts/Blog.stx`):
 
 ```stx
@@ -274,6 +279,7 @@ Create a layout component (`layouts/Blog.stx`):
 ```
 
 #### 4. Create Blog Home Page
+
 Create the home page (`pages/index.stx`):
 
 ```stx
@@ -315,6 +321,7 @@ interface Props {
 ```
 
 #### 5. Add State Management
+
 Create a store for blog posts (`stores/posts.ts`):
 
 ```typescript
@@ -325,14 +332,14 @@ export const usePostStore = createStore({
   state: {
     posts: [] as Post[]
   },
-  
+
   actions: {
     async fetchPosts() {
       // Simulate API call
       const response = await fetch('/api/posts')
       this.posts = await response.json()
     },
-    
+
     async addPost(post: Omit<Post, 'id'>) {
       // Simulate API call
       const response = await fetch('/api/posts', {
@@ -349,6 +356,7 @@ export const usePostStore = createStore({
 ### Advanced Patterns
 
 #### Form Handling
+
 Create a reusable form component with validation:
 
 ```stx
@@ -386,33 +394,33 @@ interface Props {
 
     const validate = () => {
       errors.value = {}
-      
+
       props.fields.forEach(field => {
         const value = formData.value[field.name]
-        
+
         if (field.required && !value) {
           errors.value[field.name] = `${field.label} is required`
         }
-        
+
         if (field.pattern && value && !new RegExp(field.pattern).test(value)) {
           errors.value[field.name] = `${field.label} is invalid`
         }
-        
+
         if (field.minLength && value && value.length < field.minLength) {
           errors.value[field.name] = `${field.label} must be at least ${field.minLength} characters`
         }
-        
+
         if (field.maxLength && value && value.length > field.maxLength) {
           errors.value[field.name] = `${field.label} must be at most ${field.maxLength} characters`
         }
       })
-      
+
       return Object.keys(errors.value).length === 0
     }
 
     const handleSubmit = (e: Event) => {
       e.preventDefault()
-      
+
       if (validate()) {
         props.onSubmit(formData.value)
       }
@@ -472,6 +480,7 @@ interface Props {
 ```
 
 #### Dynamic Components
+
 Create a component that loads other components dynamically:
 
 ```stx
@@ -495,7 +504,7 @@ interface Props {
   },
   async setup(props) {
     const component = ref(null)
-    
+
     onMounted(async () => {
       try {
         component.value = await import(`../components/${props.componentName}.stx`)
@@ -503,7 +512,7 @@ interface Props {
         console.error(`Failed to load component: ${props.componentName}`, error)
       }
     })
-    
+
     return { component }
   }
 })
@@ -524,9 +533,11 @@ interface Props {
 ## Best Practices
 
 ### Component Organization
+
 Follow these best practices for organizing components:
 
 1. Use a clear directory structure:
+
 ```
 components/
   ├── common/        # Shared components
@@ -540,26 +551,31 @@ components/
 4. Document component usage with comments
 
 ### Performance Optimization
-Tips for optimizing STX applications:
+
+Tips for optimizing stx applications:
 
 1. Use lazy loading for large components:
+
 ```typescript
 const MyLargeComponent = () => import('./MyLargeComponent.stx')
 ```
 
 2. Implement proper caching strategies:
+
 ```typescript
 const cachedData = useMemo(() => expensiveComputation(), [deps])
 ```
 
 3. Optimize renders with proper dependency tracking:
+
 ```typescript
 const derivedValue = computed(() => source.value * 2)
 ```
 
 4. Use efficient list rendering:
+
 ```stx
 @foreach(items as item)
   <component :key="item.id" :item="item" />
 @endforeach
-``` 
+```

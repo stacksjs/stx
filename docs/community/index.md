@@ -1,6 +1,6 @@
 # Community Guidelines
 
-Welcome to the STX community! This guide outlines how to participate in and contribute to the STX ecosystem.
+Welcome to the stx community! This guide outlines how to participate in and contribute to the stx ecosystem.
 
 ## Code of Conduct
 
@@ -31,6 +31,7 @@ Examples of unacceptable behavior:
 ### Getting Started
 
 1. Fork the Repository
+
 ```bash
 # Clone your fork
 git clone https://github.com/your-username/stx.git
@@ -44,6 +45,7 @@ git checkout -b feature/amazing-feature
 ```
 
 2. Set Up Development Environment
+
 ```bash
 # Start development server
 bun run dev
@@ -58,27 +60,32 @@ bun run docs:dev
 ### Pull Request Process
 
 1. Update Documentation
+
 - Add/update documentation for new features
 - Include code examples where appropriate
 - Update type definitions if necessary
 
 2. Write Tests
+
 - Add unit tests for new functionality
 - Ensure all tests pass
 - Add integration tests if needed
 
 3. Follow Code Style
+
 - Use TypeScript
 - Follow existing code formatting
 - Add appropriate comments
 
 4. Create Pull Request
+
 - Use a clear and descriptive title
 - Reference any related issues
 - Provide a detailed description
 - Include screenshots for UI changes
 
 Example PR template:
+
 ```markdown
 ## Description
 Brief description of the changes
@@ -105,11 +112,13 @@ Describe the tests you ran
 ### Issue Guidelines
 
 #### Bug Reports
+
 When filing a bug report, include:
 
 1. Environment Information
+
 ```markdown
-- STX Version:
+- stx Version:
 - Node Version:
 - Bun Version:
 - Operating System:
@@ -117,6 +126,7 @@ When filing a bug report, include:
 ```
 
 2. Bug Description
+
 ```markdown
 ## Expected Behavior
 What should happen
@@ -135,6 +145,7 @@ What happens instead
   <!-- Code that demonstrates the issue -->
 @endcomponent
 ```
+
 ```
 
 #### Feature Requests
@@ -191,18 +202,20 @@ Clear, specific question
 - Relevant code examples
 
 ## Environment
-- STX version
+- stx version
 - Other relevant details
 ```
 
 #### Providing Answers
 
 1. Be Helpful
+
 - Explain the why, not just the how
 - Include code examples
 - Link to relevant documentation
 
 2. Be Respectful
+
 - Not everyone has the same experience level
 - Guide rather than criticize
 - Suggest improvements constructively
@@ -212,13 +225,15 @@ Clear, specific question
 ### Community Events
 
 1. Online Meetups
+
 - Monthly community calls
 - Technical presentations
 - Q&A sessions
 - Lightning talks
 
 2. Workshops
-- Getting started with STX
+
+- Getting started with stx
 - Advanced topics
 - Best practices
 - Case studies
@@ -226,6 +241,7 @@ Clear, specific question
 ### Mentorship Program
 
 1. Becoming a Mentor
+
 - Requirements
   - Active community member
   - Strong technical knowledge
@@ -237,6 +253,7 @@ Clear, specific question
   - Share knowledge
 
 2. Finding a Mentor
+
 - Join the Discord server
 - Introduce yourself
 - Share your goals
@@ -247,12 +264,14 @@ Clear, specific question
 ### Contributor Recognition
 
 1. Hall of Fame
+
 - Outstanding contributors
 - Consistent participation
 - Significant impact
 - Community leadership
 
 2. Badges and Roles
+
 - Issue solver
 - Documentation writer
 - Feature contributor
@@ -261,12 +280,14 @@ Clear, specific question
 ### Rewards Program
 
 1. Points System
+
 - Bug fixes: 5 points
 - Documentation: 3 points
 - Feature implementation: 10 points
 - Code review: 2 points
 
 2. Benefits
+
 - Custom Discord roles
 - Priority support
 - Early access to features
@@ -277,12 +298,14 @@ Clear, specific question
 ### Learning Resources
 
 1. Official Resources
+
 - Documentation
 - Tutorials
 - Video guides
 - Example projects
 
 2. Community Resources
+
 - Blog posts
 - Video tutorials
 - Code snippets
@@ -291,12 +314,14 @@ Clear, specific question
 ### Support
 
 1. Commercial Support
+
 - Enterprise support
 - Custom development
 - Training
 - Consulting
 
 2. Community Support
+
 - GitHub issues
 - Discord channels
 - Stack Overflow
@@ -307,12 +332,14 @@ Clear, specific question
 ### Logo Usage
 
 1. Official Logo
+
 - Download formats
 - Color variations
 - Size requirements
 - Clear space rules
 
 2. Usage Guidelines
+
 - Permitted uses
 - Prohibited modifications
 - Placement rules
@@ -321,12 +348,14 @@ Clear, specific question
 ### Content Guidelines
 
 1. Writing Style
+
 - Clear and concise
 - Technical accuracy
 - Inclusive language
 - Consistent terminology
 
 2. Code Examples
+
 - Follow best practices
 - Include comments
 - Use TypeScript
@@ -334,15 +363,17 @@ Clear, specific question
 
 ## Sponsorship
 
-### Sponsoring STX
+### Sponsoring stx
 
 1. GitHub Sponsors
+
 - Monthly contributions
 - One-time donations
 - Custom amounts
 - Special recognition
 
 2. Benefits
+
 - Logo on website
 - Priority support
 - Early access
@@ -351,12 +382,14 @@ Clear, specific question
 ### Becoming a Partner
 
 1. Requirements
-- Active usage of STX
+
+- Active usage of stx
 - Contribution to ecosystem
 - Community engagement
 - Technical expertise
 
 2. Process
+
 - Submit application
 - Initial discussion
 - Partnership agreement
@@ -367,12 +400,14 @@ Clear, specific question
 ### Data Privacy
 
 1. User Data
+
 - Minimal collection
 - Secure storage
 - Clear purpose
 - User control
 
 2. Analytics
+
 - Anonymous data
 - Opt-out options
 - Transparent usage
@@ -381,12 +416,14 @@ Clear, specific question
 ### Sustainability
 
 1. Environmental Impact
+
 - Efficient code
 - Minimal dependencies
 - Optimized builds
 - Green hosting
 
 2. Social Impact
+
 - Accessible design
 - Inclusive features
 - Global consideration

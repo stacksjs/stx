@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ title }}</title>
   <script>
-    export const title = "My STX Project";
-    export const description = "A new project built with STX";
+    export const title = "My stx Project";
+    export const description = "A new project built with stx";
     export const features = [
       { name: "Templates", description: "Write HTML with powerful templating syntax" },
       { name: "Components", description: "Build reusable components" },
@@ -90,7 +90,7 @@
     <main>
       <section>
         <h2>Get Started</h2>
-        <p>This is a basic STX project template. You can modify this file or create new STX templates to build your site.</p>
+        <p>This is a basic stx project template. You can modify this file or create new stx templates to build your site.</p>
         <p>To run the development server:</p>
         <pre><code>stx dev index.stx</code></pre>
       </section>
@@ -109,7 +109,7 @@
     </main>
 
     <footer>
-      <p>Built with <a href="https://github.com/stacksjs/stx">STX</a></p>
+      <p>Built with <a href="https://github.com/stacksjs/stx">stx</a></p>
     </footer>
   </div>
 </body>

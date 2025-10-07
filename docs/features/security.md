@@ -1,12 +1,12 @@
 # Security
 
-STX provides comprehensive security features to help you build secure applications by default. This page covers all security capabilities and best practices in the STX ecosystem.
+stx provides comprehensive security features to help you build secure applications by default. This page covers all security capabilities and best practices in the stx ecosystem.
 
 ## Built-in Security Features
 
 ### Cross-Site Scripting (XSS) Prevention
 
-STX automatically escapes output by default:
+stx automatically escapes output by default:
 
 ```stx
 <!-- Safe: automatically escaped -->
@@ -146,20 +146,20 @@ app.post('/upload', upload({
 app.use(helmet({
   // XSS Protection
   xssFilter: true,
-  
+
   // Content Type Options
   noSniff: true,
-  
+
   // Frame Options
   frameguard: { action: 'deny' },
-  
+
   // HSTS
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
     preload: true
   },
-  
+
   // Referrer Policy
   referrerPolicy: 'strict-origin-when-cross-origin'
 }))
@@ -303,7 +303,7 @@ securityTest('CSRF protection', async () => {
   const response = await request(app)
     .post('/api/users')
     .send({ name: 'Test' })
-    
+
   expect(response.status).toBe(403) // CSRF token missing
 })
 ```
@@ -312,7 +312,7 @@ securityTest('CSRF protection', async () => {
 
 ### OWASP Top 10 Protection
 
-STX addresses the OWASP Top 10 security risks:
+stx addresses the OWASP Top 10 security risks:
 
 1. **Injection**: Parameterized queries and input validation
 2. **Broken Authentication**: Secure session management
@@ -346,4 +346,4 @@ const exportData = gdpr.exportUserData(userId)
 - [Security Guide](/guide/security) - Comprehensive security guide
 - [Component API](/api/component) - Component authentication patterns
 - [Deployment Guide](/guide/deployment) - Secure deployment practices
-- [Testing Guide](/guide/testing) - Security testing strategies 
+- [Testing Guide](/guide/testing) - Security testing strategies

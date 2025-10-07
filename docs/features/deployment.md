@@ -1,12 +1,12 @@
 # Deployment
 
-STX provides multiple deployment options and strategies to help you ship your applications to production efficiently and reliably.
+stx provides multiple deployment options and strategies to help you ship your applications to production efficiently and reliably.
 
 ## Deployment Targets
 
 ### Static Site Generation
 
-Deploy STX applications as static sites:
+Deploy stx applications as static sites:
 
 ```bash
 # Build for static deployment
@@ -214,4 +214,4 @@ app.use(helmet({
 - [Build Guide](/guide/build) - Build system configuration
 - [Performance Guide](/guide/performance) - Performance optimization
 - [Security Guide](/guide/security) - Security best practices
-- [Monitoring Guide](/guide/monitoring) - Application monitoring 
+- [Monitoring Guide](/guide/monitoring) - Application monitoring

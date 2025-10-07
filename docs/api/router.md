@@ -1,6 +1,6 @@
 # Router API Reference
 
-This document details STX's routing system API, including route configuration, navigation guards, and route management.
+This document details stx's routing system API, including route configuration, navigation guards, and route management.
 
 ## Router Setup
 
@@ -12,7 +12,7 @@ import { createRouter } from '@stacksjs/stx/router'
 const router = createRouter({
   // Base URL for all routes
   base: '/',
-  
+
   // Route definitions
   routes: [
     {
@@ -29,7 +29,7 @@ const router = createRouter({
       props: true
     }
   ],
-  
+
   // Scroll behavior
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) {
@@ -46,31 +46,31 @@ const router = createRouter({
 interface RouteConfig {
   // Route path
   path: string
-  
+
   // Route name (optional)
   name?: string
-  
+
   // Component to render
   component: Component
-  
+
   // Pass route params as props
   props?: boolean | Object | Function
-  
+
   // Nested routes
   children?: RouteConfig[]
-  
+
   // Route metadata
   meta?: Record<string, any>
-  
+
   // Route alias
   alias?: string | string[]
-  
+
   // Redirect configuration
   redirect?: string | Location | Function
-  
+
   // Route-specific navigation guards
   beforeEnter?: NavigationGuard
-  
+
   // Lazy loading
   component: () => import('./UserProfile.vue')
 }
@@ -87,25 +87,25 @@ const routes = [
     path: '/',
     component: Home
   },
-  
+
   // Dynamic segments
   {
     path: '/users/:id',
     component: UserProfile
   },
-  
+
   // Optional parameters
   {
     path: '/posts/:id?',
     component: PostView
   },
-  
+
   // Multiple dynamic segments
   {
     path: '/orgs/:orgId/repos/:repoId',
     component: RepoView
   },
-  
+
   // Catch all / 404
   {
     path: '/:pathMatch(.*)*',
@@ -209,12 +209,12 @@ const AdminDashboard = defineComponent({
     onBeforeRouteEnter((to, from) => {
       // No access to 'this'
     })
-    
+
     // Called before route changes
     onBeforeRouteUpdate((to, from) => {
       // Can access component instance
     })
-    
+
     // Called before leaving route
     onBeforeRouteLeave((to, from) => {
       // Prevent accidental navigation
@@ -336,11 +336,11 @@ router.beforeEach((to, from) => {
   if (to.meta.requiresAuth) {
     // Auth check
   }
-  
+
   if (to.meta.roles) {
     // Role check
   }
-  
+
   // Update page title
   document.title = to.meta.title
 })
@@ -364,13 +364,13 @@ const routes = [
     path: '/user-:id(\\d+)',
     component: UserById
   },
-  
+
   // Optional parameters
   {
     path: '/optional/:id?',
     component: OptionalId
   },
-  
+
   // Custom regex
   {
     path: '/:id(\\d+)',
@@ -387,7 +387,7 @@ router.push('/path').catch(failure => {
   if (failure.type === NavigationFailureType.aborted) {
     // Navigation aborted
   }
-  
+
   if (failure.type === NavigationFailureType.cancelled) {
     // Navigation cancelled
   }
@@ -405,4 +405,4 @@ if (navigation.aborted) {
 - Explore [Core API](/api/core)
 - Check out [Component API](/api/components)
 - Learn about [Helper Functions](/api/helpers)
-- Review [State Management](/api/state) 
+- Review [State Management](/api/state)

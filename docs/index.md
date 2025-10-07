@@ -3,7 +3,7 @@
 layout: home
 
 hero:
-  name: "STX"
+  name: "stx"
   text: "Fast & Powerful UI Engine"
   tagline: "A modern templating engine inspired by Laravel Blade, powered by Bun"
   image: /images/logo-white.png

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Simple STX Component Test</title>
+  <title>Simple stx Component Test</title>
   <script>
     module.exports = {
-      message: "Hello from STX"
+      message: "Hello from stx"
     };
   </script>
   <style>

@@ -1,6 +1,6 @@
 # TypeScript Integration
 
-STX is built with TypeScript and provides first-class TypeScript support. This guide covers TypeScript integration features and best practices.
+stx is built with TypeScript and provides first-class TypeScript support. This guide covers TypeScript integration features and best practices.
 
 ## Setup
 
@@ -154,8 +154,8 @@ type PropType<T> = T | null | undefined
 
 ```typescript
 function isUser(value: any): value is User {
-  return value && 
-    typeof value === 'object' && 
+  return value &&
+    typeof value === 'object' &&
     'id' in value &&
     'name' in value
 }

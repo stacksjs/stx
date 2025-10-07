@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STX Dynamic Colors</title>
+  <title>stx Dynamic Colors</title>
   <script>
     // Generate a random set of harmonious colors
     function generatePalette() {
@@ -73,7 +73,7 @@
     }
 
     module.exports = {
-      paletteTitle: 'STX Color Palette Generator',
+      paletteTitle: 'stx Color Palette Generator',
       colorPalette: generatePalette(),
       timestamp: new Date().toLocaleTimeString()
     };
@@ -185,7 +185,7 @@
 </div>
 
 <div class="footer">
-  <p>Created with STX Templating Engine</p>
+  <p>Created with stx Templating Engine</p>
   <p>Try modifying this file at <code>examples/colors.stx</code></p>
 </div>
 

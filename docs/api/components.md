@@ -1,6 +1,6 @@
 # Component API Reference
 
-This document details STX's component system API, including component creation, lifecycle, props, events, and more.
+This document details stx's component system API, including component creation, lifecycle, props, events, and more.
 
 ## Component Definition
 
@@ -26,27 +26,27 @@ const SimpleComponent = defineComponent({
 interface ComponentOptions {
   // Component name (optional but recommended)
   name?: string
-  
+
   // Component props
   props?: {
     [key: string]: PropOptions | Constructor
   }
-  
+
   // Emitted events
   emits?: string[] | Record<string, EmitValidator>
-  
+
   // Component setup function
   setup?: (
     props: Record<string, any>,
     context: SetupContext
   ) => RenderFunction | Record<string, any>
-  
+
   // Component template (alternative to setup)
   template?: string
-  
+
   // Component styles
   styles?: string | string[]
-  
+
   // Component custom options
   [key: string]: any
 }
@@ -78,13 +78,13 @@ props: {
     type: String,
     required: true
   },
-  
+
   // Prop with default
   withDefault: {
     type: Number,
     default: 0
   },
-  
+
   // Object/Array default
   complex: {
     type: Object,
@@ -92,7 +92,7 @@ props: {
       key: 'value'
     })
   },
-  
+
   // Custom validator
   validated: {
     type: Number,
@@ -110,15 +110,15 @@ class MyComponent {
   // Basic prop
   @Prop()
   message!: string
-  
+
   // Required prop
   @Prop({ required: true })
   title!: string
-  
+
   // Prop with default
   @Prop({ default: 0 })
   count!: number
-  
+
   // Prop with validator
   @Prop({
     validator: (value: string) => ['a', 'b', 'c'].includes(value)
@@ -153,12 +153,12 @@ const MyComponent = defineComponent({
     const handleClick = () => {
       emit('change', 'new value')
     }
-    
+
     // Emit with multiple arguments
     const handleUpdate = () => {
       emit('update', 1, 'updated value')
     }
-    
+
     return {
       handleClick,
       handleUpdate
@@ -186,32 +186,32 @@ const MyComponent = defineComponent({
     onBeforeMount(() => {
       console.log('Before mount')
     })
-    
+
     // After component is mounted
     onMounted(() => {
       console.log('Mounted')
     })
-    
+
     // Before component updates
     onBeforeUpdate(() => {
       console.log('Before update')
     })
-    
+
     // After component updates
     onUpdated(() => {
       console.log('Updated')
     })
-    
+
     // Before component is unmounted
     onBeforeUnmount(() => {
       console.log('Before unmount')
     })
-    
+
     // After component is unmounted
     onUnmounted(() => {
       console.log('Unmounted')
     })
-    
+
     // When component errors
     onErrorCaptured((err, instance, info) => {
       console.error('Error:', err)
@@ -229,15 +229,15 @@ const MyComponent = defineComponent({
 // Define composable
 function useCounter(initialValue = 0) {
   const count = ref(initialValue)
-  
+
   const increment = () => {
     count.value++
   }
-  
+
   const decrement = () => {
     count.value--
   }
-  
+
   return {
     count,
     increment,
@@ -249,7 +249,7 @@ function useCounter(initialValue = 0) {
 const MyComponent = defineComponent({
   setup() {
     const { count, increment, decrement } = useCounter(10)
-    
+
     return {
       count,
       increment,
@@ -296,7 +296,7 @@ const MyComponent = defineComponent({
 const MyComponent = defineComponent({
   setup() {
     const items = ['A', 'B', 'C']
-    
+
     return () => (
       <ul>
         {items.map(item => (
@@ -351,19 +351,19 @@ const MyComponent = defineComponent({
   setup() {
     const color = ref('blue')
     const fontSize = ref('16px')
-    
+
     // Dynamic inline styles
     const style = computed(() => ({
       color: color.value,
       fontSize: fontSize.value
     }))
-    
+
     // Dynamic classes
     const classes = computed(() => ({
       active: isActive.value,
       disabled: !isEnabled.value
     }))
-    
+
     return {
       style,
       classes

@@ -1,6 +1,6 @@
 # State Management
 
-STX provides powerful state management capabilities for building complex applications. This page covers all state management features and patterns available in the STX ecosystem.
+stx provides powerful state management capabilities for building complex applications. This page covers all state management features and patterns available in the stx ecosystem.
 
 ## Local Component State
 
@@ -12,7 +12,7 @@ STX provides powerful state management capabilities for building complex applica
     count: 0,
     isLoading: false
   })
-  
+
   <div class="counter">
     <button @click="count--" :disabled="isLoading">-</button>
     <span>{{ count }}</span>
@@ -30,13 +30,13 @@ STX provides powerful state management capabilities for building complex applica
     lastName: 'Doe',
     age: 25
   })
-  
+
   @computed({
     fullName: () => `${firstName} ${lastName}`,
     isAdult: () => age >= 18,
     displayName: () => isAdult ? fullName : firstName
   })
-  
+
   <div class="profile">
     <h1>{{ displayName }}</h1>
     <p>Age: {{ age }} ({{ isAdult ? 'Adult' : 'Minor' }})</p>
@@ -53,7 +53,7 @@ STX provides powerful state management capabilities for building complex applica
     results: [],
     isSearching: false
   })
-  
+
   @watch('query', async (newQuery, oldQuery) => {
     if (newQuery !== oldQuery && newQuery.length > 2) {
       isSearching = true
@@ -61,7 +61,7 @@ STX provides powerful state management capabilities for building complex applica
       isSearching = false
     }
   })
-  
+
   <div class="search">
     <input @model="query" placeholder="Search...">
     @if(isSearching)
@@ -93,22 +93,22 @@ const store = createStore<AppState>({
     theme: 'light',
     notifications: []
   },
-  
+
   getters: {
     isAuthenticated: (state) => state.user !== null,
     unreadCount: (state) => state.notifications.filter(n => !n.read).length
   },
-  
+
   actions: {
     async login(email: string, password: string) {
       const user = await authAPI.login(email, password)
       this.state.user = user
     },
-    
+
     toggleTheme() {
       this.state.theme = this.state.theme === 'light' ? 'dark' : 'light'
     },
-    
+
     addNotification(notification: Notification) {
       this.state.notifications.push(notification)
     }
@@ -121,7 +121,7 @@ const store = createStore<AppState>({
 ```stx
 @component('UserHeader')
   @connect(store, ['user', 'theme'])
-  
+
   <header class="header" :class="theme">
     @if(user)
       <div class="user-info">
@@ -146,21 +146,21 @@ export const authModule = {
     token: null,
     permissions: []
   },
-  
+
   actions: {
     async login({ commit }, credentials) {
       const response = await authAPI.login(credentials)
       commit('setUser', response.user)
       commit('setToken', response.token)
     },
-    
+
     logout({ commit }) {
       commit('setUser', null)
       commit('setToken', null)
       localStorage.removeItem('auth_token')
     }
   },
-  
+
   mutations: {
     setUser(state, user) {
       state.user = user
@@ -209,16 +209,16 @@ const store = createPersistedStore({
 ```typescript
 const store = createStore({
   state: initialState,
-  
+
   plugins: [
     persistence({
       key: 'app-state',
       paths: ['user', 'preferences'],
-      
+
       // Custom serializer
       serialize: (state) => JSON.stringify(state),
       deserialize: (data) => JSON.parse(data),
-      
+
       // Custom storage
       storage: {
         getItem: (key) => database.get(key),
@@ -241,11 +241,11 @@ const store = createStore({
     loading: false,
     error: null
   })
-  
+
   @async fetchUsers() {
     loading = true
     error = null
-    
+
     try {
       users = await userAPI.getAll()
     } catch (err) {
@@ -254,11 +254,11 @@ const store = createStore({
       loading = false
     }
   }
-  
+
   @mounted(() => {
     fetchUsers()
   })
-  
+
   <div class="user-list">
     @if(loading)
       <loading-spinner />
@@ -298,14 +298,14 @@ const store = createStore({
   state: {
     posts: []
   },
-  
+
   actions: {
     async createPost(post) {
       // Optimistic update
       const tempId = generateTempId()
       const optimisticPost = { ...post, id: tempId, pending: true }
       this.state.posts.unshift(optimisticPost)
-      
+
       try {
         const createdPost = await postAPI.create(post)
         // Replace optimistic post with real one
@@ -329,15 +329,15 @@ const store = createStore({
 // composables/useAuth.ts
 export function useAuth() {
   const { user, isAuthenticated } = useStore(['user'])
-  
+
   const login = async (credentials) => {
     await store.dispatch('auth/login', credentials)
   }
-  
+
   const logout = () => {
     store.dispatch('auth/logout')
   }
-  
+
   return {
     user: readonly(user),
     isAuthenticated: readonly(isAuthenticated),
@@ -352,7 +352,7 @@ export function useAuth() {
     const { user, login, logout } = useAuth()
     return { user, login, logout }
   })
-  
+
   <!-- Component template -->
 @endcomponent
 ```
@@ -365,7 +365,7 @@ export function useAuth() {
     theme: 'light',
     colors: lightColors
   },
-  
+
   actions: {
     setTheme(newTheme) {
       this.theme = newTheme
@@ -394,11 +394,11 @@ export function useAuth() {
 ```typescript
 const store = createStore({
   state: initialState,
-  
+
   plugins: [
     devtools({
       enabled: process.env.NODE_ENV === 'development',
-      name: 'STX App Store',
+      name: 'stx App Store',
       trace: true,
       logActions: true,
       logMutations: true
@@ -413,7 +413,7 @@ const store = createStore({
 // Enable history tracking
 const store = createStore({
   state: initialState,
-  
+
   plugins: [
     history({
       maxHistoryLength: 50,
@@ -436,7 +436,7 @@ store.history.jumpTo(10) // Jump to specific point
 @component('UserProfile')
   <!-- Only subscribes to user.profile, not entire user object -->
   @connect(store, ['user.profile.name', 'user.profile.email'])
-  
+
   <div class="profile">
     <h1>{{ user.profile.name }}</h1>
     <p>{{ user.profile.email }}</p>
@@ -452,11 +452,11 @@ const store = createStore({
     users: [],
     filters: { status: 'active', role: 'user' }
   },
-  
+
   getters: {
     // Memoized getter - only recalculates when dependencies change
     filteredUsers: memoize((state) => {
-      return state.users.filter(user => 
+      return state.users.filter(user =>
         user.status === state.filters.status &&
         user.role === state.filters.role
       )
@@ -474,27 +474,27 @@ import { createTestStore } from '@stx/testing'
 
 describe('User Store', () => {
   let store
-  
+
   beforeEach(() => {
     store = createTestStore({
       modules: { auth: authModule }
     })
   })
-  
+
   test('login action', async () => {
     const credentials = { email: 'user@example.com', password: 'password' }
-    
+
     await store.dispatch('auth/login', credentials)
-    
+
     expect(store.state.auth.user).toBeTruthy()
     expect(store.getters['auth/isAuthenticated']).toBe(true)
   })
-  
+
   test('logout action', () => {
     store.commit('auth/setUser', mockUser)
-    
+
     store.dispatch('auth/logout')
-    
+
     expect(store.state.auth.user).toBeNull()
   })
 })
@@ -505,4 +505,4 @@ describe('User Store', () => {
 - [State Guide](/guide/state) - Comprehensive state management guide
 - [Component API](/api/component) - Component state management
 - [Performance Guide](/guide/performance) - State performance optimization
-- [Testing Guide](/guide/testing) - State testing strategies 
+- [Testing Guide](/guide/testing) - State testing strategies

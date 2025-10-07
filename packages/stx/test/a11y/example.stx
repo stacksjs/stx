@@ -70,8 +70,8 @@
   </script>
 </head>
 <body>
-  <h1>STX Accessibility Features</h1>
-  <p>This page demonstrates the accessibility features available in STX.</p>
+  <h1>stx Accessibility Features</h1>
+  <p>This page demonstrates the accessibility features available in stx.</p>
   <p>Today's date: {{ getDate() }}</p>
 
   <div class="container">
@@ -145,12 +145,12 @@
       </ul>
     </div>
 
-    <p>Accessibility directives can be used with other STX directives like <code>@foreach</code>.</p>
+    <p>Accessibility directives can be used with other stx directives like <code>@foreach</code>.</p>
   </div>
 
   <div class="container">
     <h2>A11y Command</h2>
-    <p>You can run the STX a11y command to scan your templates for accessibility issues:</p>
+    <p>You can run the stx a11y command to scan your templates for accessibility issues:</p>
     <pre><code>stx a11y ./templates</code></pre>
     <p>Or generate an HTML report:</p>
     <pre><code>stx a11y ./templates --output a11y-report.html</code></pre>

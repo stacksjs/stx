@@ -7,8 +7,8 @@ interface PageData {
 }
 
 const pageData: PageData = {
-  title: 'STX Template Demo',
-  description: 'A demonstration of STX template features',
+  title: 'stx Template Demo',
+  description: 'A demonstration of stx template features',
   navigation: [
     { text: 'Home', href: '#' },
     { text: 'About', href: '#about' },
@@ -51,7 +51,7 @@ const pageData: PageData = {
 
 @section('footer')
   <footer>
-    <p>&copy; {{ new Date().getFullYear() }} STX Demo</p>
+    <p>&copy; {{ new Date().getFullYear() }} stx Demo</p>
   </footer>
 @endsection
 

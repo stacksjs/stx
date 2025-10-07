@@ -4,7 +4,7 @@ import content, { data as articleData } from '../docs/examples/markdown-example.
 
 // Example context data
 const site = {
-  name: 'STX Documentation',
+  name: 'stx Documentation',
   theme: 'light',
   baseUrl: 'https://stx-docs.example.com'
 }
@@ -12,7 +12,7 @@ const site = {
 // Combine imported frontmatter with local data
 const context = {
   site,
-  seriesName: 'Advanced STX Features',
+  seriesName: 'Advanced stx Features',
   ...articleData
 }
 </script>
@@ -87,7 +87,7 @@ const context = {
     @endif
 
     <!-- Method 2: Use the @markdown-file directive (preferred) -->
-    @markdown-file('../docs/examples/markdown-example.md', { seriesName: 'Advanced STX Features' })
+    @markdown-file('../docs/examples/markdown-example.md', { seriesName: 'Advanced stx Features' })
   </div>
 
   <footer>

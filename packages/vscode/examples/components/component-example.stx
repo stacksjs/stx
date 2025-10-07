@@ -1,9 +1,9 @@
-<!-- STX Components and Layouts Example -->
+<!-- stx Components and Layouts Example -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>STX Components and Layouts</title>
+    <title>stx Components and Layouts</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -88,7 +88,7 @@
     </style>
 </head>
 <body>
-    <h1>STX Components and Layouts</h1>
+    <h1>stx Components and Layouts</h1>
 
     <!-- Example of extending a layout -->
     @extends('layouts.main')
@@ -353,7 +353,7 @@
         onClick: () => console.log('Button clicked!')
       }
     })
-      <button 
+      <button
         class="btn btn-{{ type }} btn-{{ size }}"
         @click="onClick"
         :disabled="disabled"
@@ -401,15 +401,15 @@
     <!-- Usage Example -->
     <div class="button-demo">
       <h2>Button Component Demo</h2>
-      
+
       <Button type="primary" size="medium">
         Primary Button
       </Button>
-      
+
       <Button type="secondary" size="small">
         Secondary Button
       </Button>
-      
+
       <Button type="danger" size="large" disabled="true">
         Danger Button (Disabled)
       </Button>
