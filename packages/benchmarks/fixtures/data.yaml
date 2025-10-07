@@ -1,0 +1,43 @@
+name: John Doe
+age: 30
+email: john@example.com
+active: true
+roles:
+  - admin
+  - developer
+  - reviewer
+settings:
+  theme: dark
+  notifications:
+    email: true
+    push: false
+    sms: true
+  privacy:
+    profile_public: false
+    show_email: false
+projects:
+  - name: Project Alpha
+    status: active
+    team_size: 5
+    technologies:
+      - TypeScript
+      - React
+      - Node.js
+  - name: Project Beta
+    status: pending
+    team_size: 3
+    technologies:
+      - Python
+      - Django
+      - PostgreSQL
+  - name: Project Gamma
+    status: completed
+    team_size: 8
+    technologies:
+      - Go
+      - gRPC
+      - Kubernetes
+metadata:
+  created_at: 2024-01-01T00:00:00Z
+  updated_at: 2024-01-15T12:30:00Z
+  version: 1.0.0

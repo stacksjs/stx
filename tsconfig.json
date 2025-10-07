@@ -9,6 +9,8 @@
     "paths": {
       "stx": ["./packages/stx/src/index.ts"],
       "@stacksjs/stx": ["./packages/stx/src/index.ts"],
+      "@stacksjs/markdown": ["./packages/markdown/src/index.ts"],
+      "@stacksjs/sanitizer": ["./packages/sanitizer/src/index.ts"],
       "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"],
       "bun-plugin-stx/client": ["./packages/bun-plugin/src/client.ts"]
     },

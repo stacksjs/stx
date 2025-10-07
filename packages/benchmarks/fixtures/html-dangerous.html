@@ -1,0 +1,13 @@
+<div class="content">
+  <h1>Potentially Dangerous Content</h1>
+  <p onclick="alert('XSS')">Click me</p>
+  <script>alert('XSS')</script>
+  <img src="x" onerror="alert('XSS')">
+  <a href="javascript:alert('XSS')">Click</a>
+  <iframe src="https://evil.com"></iframe>
+  <object data="https://evil.com"></object>
+  <embed src="https://evil.com">
+  <form action="https://evil.com"><input name="data"></form>
+  <div style="background: url(javascript:alert('XSS'))">Test</div>
+  <p>Normal text with <strong>bold</strong></p>
+</div>

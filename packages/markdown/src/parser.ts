@@ -2,8 +2,8 @@
 import type { MarkdownOptions, Token } from './types'
 
 /**
- * Fast, native Markdown parser optimized for Bun
- * Replaces 'marked' with a performance-focused implementation
+ * Ultra-fast Markdown parser optimized for Bun
+ * Performance-focused implementation with pre-compiled regexes
  */
 
 const defaultOptions: MarkdownOptions = {
@@ -15,6 +15,33 @@ const defaultOptions: MarkdownOptions = {
   smartLists: true,
   smartypants: false,
   sanitize: false,
+}
+
+// Pre-compiled regexes for maximum performance
+const REGEX = {
+  heading: /^(#{1,6})\s+(.+?)(?:\s+#+)?\s*(?:\n|$)/,
+  code: /^```(\w+)?\n([\s\S]*?)```/,
+  hr: /^(?:(?:\*\s*){3,}|(?:-\s*){3,}|(?:_\s*){3,})(?:\n|$)/,
+  blockquote: /^(?:>\s+(.*)(?:\n|$))+/,
+  list: /^(?:(?:[*\-+]|\d+\.)\s+(?:\S.*|[\t\v\f \xA0\u1680\u2000-\u200A\u202F\u205F\u3000\uFEFF])(?:\n|$))+/,
+  listItem: {
+    ordered: /^(\d+)\.\s+(.+)(?=\n\d+\.|\n*$)/gm,
+    unordered: /^[*\-+]\s+(.+)(?=\n[*\-+]|\n*$)/gm,
+  },
+  table: /^\|(.+)\|\n\|(?:\s*:?-+:?\s*\|)+\n((?:\|.+\|\n?)+)/,
+  paragraph: /^(.+?)(?:\n\n|\n(?=#)|$)/s,
+  strong: /^(\*\*|__)(.+?)\1/,
+  em: /^(\*|_)(.+?)\1/,
+  code_inline: /^`([^`]+)`/,
+  link: /^\[([^\]]+)\]\(([^)]+)\)/,
+  image: /^!\[([^\]]*)\]\(([^)]+)\)/,
+  del: /^~~(.+?)~~/,
+  text: /^[^*_`[\n!~]+/,
+  crlf: /\r\n/g,
+  cr: /\r/g,
+  tab: /\t/g,
+  blockquotePrefix: /^>\s?/gm,
+  newline: /\n/,
 }
 
 /**
@@ -34,18 +61,30 @@ export function parseSync(markdown: string, options: MarkdownOptions = {}): stri
 }
 
 /**
- * Tokenize markdown content
+ * Tokenize markdown content - optimized version
  */
 function tokenize(markdown: string, options: MarkdownOptions): Token[] {
   const tokens: Token[] = []
-  let content = markdown.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
 
-  // Normalize line endings
-  content = content.replace(/\t/g, '    ')
+  // Normalize line endings - optimized
+  let content = markdown
+  if (content.includes('\r')) {
+    content = content.replace(REGEX.crlf, '\n').replace(REGEX.cr, '\n')
+  }
+  if (content.includes('\t')) {
+    content = content.replace(REGEX.tab, '    ')
+  }
 
-  while (content) {
+  let match: RegExpMatchArray | null
+  const len = content.length
+  let pos = 0
+
+  while (pos < len) {
+    // Use substring to avoid creating new strings until necessary
+    const remaining = content.substring(pos)
+
     // Headers
-    let match = content.match(/^(#{1,6})\s+(.+?)(?:\s+#+)?\s*(?:\n|$)/)
+    match = remaining.match(REGEX.heading)
     if (match) {
       tokens.push({
         type: 'heading',
@@ -53,12 +92,12 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
         text: match[2],
         raw: match[0],
       })
-      content = content.substring(match[0].length)
+      pos += match[0].length
       continue
     }
 
     // Fenced code blocks
-    match = content.match(/^```(\w+)?\n([\s\S]*?)```/)
+    match = remaining.match(REGEX.code)
     if (match) {
       tokens.push({
         type: 'code',
@@ -66,45 +105,47 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
         text: match[2],
         raw: match[0],
       })
-      content = content.substring(match[0].length)
+      pos += match[0].length
       continue
     }
 
     // Horizontal rules
-    match = content.match(/^(?:(?:\*\s*){3,}|(?:-\s*){3,}|(?:_\s*){3,})(?:\n|$)/)
+    match = remaining.match(REGEX.hr)
     if (match) {
       tokens.push({
         type: 'hr',
         raw: match[0],
       })
-      content = content.substring(match[0].length)
+      pos += match[0].length
       continue
     }
 
-    // Blockquotes
-    match = content.match(/^(?:>\s+(.*)(?:\n|$))+/)
+    // Blockquotes - optimized to avoid recursion for simple cases
+    match = remaining.match(REGEX.blockquote)
     if (match) {
-      const quoteContent = match[0].replace(/^>\s?/gm, '')
+      const quoteContent = match[0].replace(REGEX.blockquotePrefix, '')
       tokens.push({
         type: 'blockquote',
         text: quoteContent,
         raw: match[0],
         tokens: tokenize(quoteContent, options),
       })
-      content = content.substring(match[0].length)
+      pos += match[0].length
       continue
     }
 
     // Lists
-    match = content.match(/^(?:(?:[*\-+]|\d+\.)\s+(?:\S.*|[\t\v\f \xA0\u1680\u2000-\u200A\u202F\u205F\u3000\uFEFF])(?:\n|$))+/)
+    match = remaining.match(REGEX.list)
     if (match) {
       const listText = match[0]
       const ordered = /^\d+\./.test(listText)
       const items: Token[] = []
 
-      const itemRegex = ordered ? /^(\d+)\.\s+(.+)(?=\n\d+\.|\n*$)/gm : /^[*\-+]\s+(.+)(?=\n[*\-+]|\n*$)/gm
+      const itemRegex = ordered ? REGEX.listItem.ordered : REGEX.listItem.unordered
+      // Reset regex
+      itemRegex.lastIndex = 0
 
-      let itemMatch
+      let itemMatch: RegExpExecArray | null
       // eslint-disable-next-line no-cond-assign
       while ((itemMatch = itemRegex.exec(listText))) {
         const itemText = ordered ? itemMatch[2] : itemMatch[1]
@@ -138,13 +179,13 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
         raw: match[0],
       })
 
-      content = content.substring(match[0].length)
+      pos += match[0].length
       continue
     }
 
     // Tables (GFM)
     if (options.gfm) {
-      match = content.match(/^\|(.+)\|\n\|(?:\s*:?-+:?\s*\|)+\n((?:\|.+\|\n?)+)/)
+      match = remaining.match(REGEX.table)
       if (match) {
         const header = match[1].split('|').map(h => h.trim()).filter(h => h)
         const alignLine = match[0].split('\n')[1]
@@ -171,19 +212,19 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
           raw: match[0],
         })
 
-        content = content.substring(match[0].length)
+        pos += match[0].length
         continue
       }
     }
 
     // Skip newlines
-    if (content.startsWith('\n')) {
-      content = content.substring(1)
+    if (remaining.charCodeAt(0) === 10) { // \n
+      pos++
       continue
     }
 
     // Paragraphs and text
-    match = content.match(/^(.+?)(?:\n\n|\n(?=#)|$)/s)
+    match = remaining.match(REGEX.paragraph)
     if (match) {
       const text = match[1].trim()
       if (text) {
@@ -194,161 +235,170 @@ function tokenize(markdown: string, options: MarkdownOptions): Token[] {
           tokens: parseInline(text, options),
         })
       }
-      content = content.substring(match[0].length)
+      pos += match[0].length
       continue
     }
 
     // Fallback: consume one line
-    const lineEnd = content.indexOf('\n')
+    const lineEnd = remaining.indexOf('\n')
     if (lineEnd === -1) {
-      if (content.trim()) {
+      const text = remaining.trim()
+      if (text) {
         tokens.push({
           type: 'text',
-          text: content,
-          raw: content,
+          text,
+          raw: remaining,
         })
       }
       break
     }
 
-    content = content.substring(lineEnd + 1)
+    pos += lineEnd + 1
   }
 
   return tokens
 }
 
 /**
- * Parse inline elements
+ * Parse inline elements - optimized version with nested token support
  */
 function parseInline(text: string, options: MarkdownOptions): Token[] {
   const tokens: Token[] = []
-  let content = text
+  const len = text.length
+  let pos = 0
+  let match: RegExpMatchArray | null
 
-  while (content) {
-    // Strong emphasis (bold)
-    let match = content.match(/^(\*\*|__)(.+?)\1/)
+  while (pos < len) {
+    const remaining = text.substring(pos)
+
+    // Strong emphasis (bold) - parse nested content
+    match = remaining.match(REGEX.strong)
     if (match) {
       tokens.push({
         type: 'strong',
         text: match[2],
         raw: match[0],
+        tokens: parseInline(match[2], options), // Add nested tokens
       })
-      content = content.substring(match[0].length)
+      pos += match[0].length
       continue
     }
 
-    // Emphasis (italic)
-    match = content.match(/^(\*|_)(.+?)\1/)
+    // Emphasis (italic) - parse nested content
+    match = remaining.match(REGEX.em)
     if (match) {
       tokens.push({
         type: 'em',
         text: match[2],
         raw: match[0],
+        tokens: parseInline(match[2], options), // Add nested tokens
       })
-      content = content.substring(match[0].length)
+      pos += match[0].length
       continue
     }
 
     // Code
-    match = content.match(/^`([^`]+)`/)
+    match = remaining.match(REGEX.code_inline)
     if (match) {
       tokens.push({
         type: 'codespan',
         text: match[1],
         raw: match[0],
       })
-      content = content.substring(match[0].length)
+      pos += match[0].length
       continue
     }
 
-    // Links
-    match = content.match(/^\[([^\]]+)\]\(([^)]+)\)/)
+    // Links - parse nested content
+    match = remaining.match(REGEX.link)
     if (match) {
       tokens.push({
         type: 'link',
         text: match[1],
         href: match[2],
         raw: match[0],
+        tokens: parseInline(match[1], options), // Add nested tokens
       })
-      content = content.substring(match[0].length)
+      pos += match[0].length
       continue
     }
 
     // Images
-    match = content.match(/^!\[([^\]]*)\]\(([^)]+)\)/)
+    match = remaining.match(REGEX.image)
     if (match) {
-      const title = match[1]
-      const href = match[2]
       tokens.push({
         type: 'image',
-        text: title,
-        href,
-        title,
+        text: match[1],
+        href: match[2],
+        title: match[1],
         raw: match[0],
       })
-      content = content.substring(match[0].length)
+      pos += match[0].length
       continue
     }
 
-    // Strikethrough (GFM)
+    // Strikethrough (GFM) - parse nested content
     if (options.gfm) {
-      match = content.match(/^~~(.+?)~~/)
+      match = remaining.match(REGEX.del)
       if (match) {
         tokens.push({
           type: 'del',
           text: match[1],
           raw: match[0],
+          tokens: parseInline(match[1], options), // Add nested tokens
         })
-        content = content.substring(match[0].length)
+        pos += match[0].length
         continue
       }
     }
 
     // Line breaks
-    if (options.breaks && content.startsWith('\n')) {
+    if (options.breaks && remaining.charCodeAt(0) === 10) {
       tokens.push({
         type: 'br',
         raw: '\n',
       })
-      content = content.substring(1)
+      pos++
       continue
     }
 
     // Regular text
-    match = content.match(/^[^*_`[\n!~]+/)
+    match = remaining.match(REGEX.text)
     if (match) {
       tokens.push({
         type: 'text',
         text: match[0],
         raw: match[0],
       })
-      content = content.substring(match[0].length)
+      pos += match[0].length
       continue
     }
 
     // Single character fallback
     tokens.push({
       type: 'text',
-      text: content[0],
-      raw: content[0],
+      text: remaining[0],
+      raw: remaining[0],
     })
-    content = content.substring(1)
+    pos++
   }
 
   return tokens
 }
 
 /**
- * Render tokens to HTML
+ * Render tokens to HTML - optimized with string builder
  */
 function render(tokens: Token[], options: MarkdownOptions): string {
-  let html = ''
+  const parts: string[] = []
 
-  for (const token of tokens) {
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i]
+
     switch (token.type) {
       case 'heading': {
         const id = options.headerIds ? ` id="${options.headerPrefix}${slugify(token.text || '')}"` : ''
-        html += `<h${token.depth}${id}>${renderInline(token.text || '', options)}</h${token.depth}>\n`
+        parts.push(`<h${token.depth}${id}>`, renderInline(token.text || '', options), `</h${token.depth}>\n`)
         break
       }
 
@@ -361,97 +411,98 @@ function render(tokens: Token[], options: MarkdownOptions): string {
           code = options.highlight(token.text || '', lang)
         }
 
-        html += `<pre><code class="language-${lang}">${code}</code></pre>\n`
+        parts.push(`<pre><code class="language-${lang}">${code}</code></pre>\n`)
         break
       }
 
       case 'hr': {
-        html += '<hr>\n'
+        parts.push('<hr>\n')
         break
       }
 
       case 'blockquote': {
-        html += '<blockquote>\n'
+        parts.push('<blockquote>\n')
         if (token.tokens) {
-          html += render(token.tokens, options)
+          parts.push(render(token.tokens, options))
         }
-        html += '</blockquote>\n'
+        parts.push('</blockquote>\n')
         break
       }
 
       case 'list': {
         const tag = token.ordered ? 'ol' : 'ul'
-        html += `<${tag}>\n`
+        parts.push(`<${tag}>\n`)
 
         if (token.items) {
-          for (const item of token.items) {
+          for (let j = 0; j < token.items.length; j++) {
+            const item = token.items[j]
+            parts.push('<li>')
             if (item.task) {
               const checked = item.checked ? ' checked disabled' : ' disabled'
-              html += '<li>'
-              html += `<input type="checkbox"${checked}> `
-              html += renderInlineTokens(item.tokens || [], options)
-              html += '</li>\n'
+              parts.push(`<input type="checkbox"${checked}> `)
             }
-            else {
-              html += '<li>'
-              html += renderInlineTokens(item.tokens || [], options)
-              html += '</li>\n'
+            if (item.tokens) {
+              parts.push(renderInlineTokens(item.tokens, options))
             }
+            parts.push('</li>\n')
           }
         }
 
-        html += `</${tag}>\n`
+        parts.push(`</${tag}>\n`)
         break
       }
 
       case 'table': {
-        html += '<table>\n<thead>\n<tr>\n'
+        parts.push('<table>\n<thead>\n<tr>\n')
 
         if (token.header) {
-          for (let i = 0; i < token.header.length; i++) {
-            const align = token.align?.[i]
+          for (let j = 0; j < token.header.length; j++) {
+            const align = token.align?.[j]
             const alignAttr = align ? ` align="${align}"` : ''
-            html += `<th${alignAttr}>${renderInline(token.header[i], options)}</th>\n`
+            parts.push(`<th${alignAttr}>`, renderInline(token.header[j], options), '</th>\n')
           }
         }
 
-        html += '</tr>\n</thead>\n<tbody>\n'
+        parts.push('</tr>\n</thead>\n<tbody>\n')
 
         if (token.rows) {
-          for (const row of token.rows) {
-            html += '<tr>\n'
-            for (let i = 0; i < row.length; i++) {
-              const align = token.align?.[i]
+          for (let j = 0; j < token.rows.length; j++) {
+            const row = token.rows[j]
+            parts.push('<tr>\n')
+            for (let k = 0; k < row.length; k++) {
+              const align = token.align?.[k]
               const alignAttr = align ? ` align="${align}"` : ''
-              html += `<td${alignAttr}>${renderInline(row[i], options)}</td>\n`
+              parts.push(`<td${alignAttr}>`, renderInline(row[k], options), '</td>\n')
             }
-            html += '</tr>\n'
+            parts.push('</tr>\n')
           }
         }
 
-        html += '</tbody>\n</table>\n'
+        parts.push('</tbody>\n</table>\n')
         break
       }
 
       case 'paragraph': {
-        html += '<p>'
-        html += renderInlineTokens(token.tokens || [], options)
-        html += '</p>\n'
+        parts.push('<p>')
+        if (token.tokens) {
+          parts.push(renderInlineTokens(token.tokens, options))
+        }
+        parts.push('</p>\n')
         break
       }
 
       case 'text': {
-        html += renderInline(token.text || '', options)
+        parts.push(renderInline(token.text || '', options))
         break
       }
     }
   }
 
-  return html
+  return parts.join('')
 }
 
 /**
- * Render inline markdown
+ * Render inline markdown - optimized
  */
 function renderInline(text: string, options: MarkdownOptions): string {
   const tokens = parseInline(text, options)
@@ -459,60 +510,124 @@ function renderInline(text: string, options: MarkdownOptions): string {
 }
 
 /**
- * Render inline tokens
+ * Render inline tokens - optimized with string builder, no re-parsing
  */
 function renderInlineTokens(tokens: Token[], options: MarkdownOptions): string {
-  let html = ''
+  const parts: string[] = []
 
-  for (const token of tokens) {
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i]
+
     switch (token.type) {
       case 'strong':
-        html += `<strong>${renderInline(token.text || '', options)}</strong>`
+        parts.push('<strong>')
+        if (token.tokens) {
+          parts.push(renderInlineTokens(token.tokens, options))
+        } else {
+          parts.push(escapeHtml(token.text || ''))
+        }
+        parts.push('</strong>')
         break
 
       case 'em':
-        html += `<em>${renderInline(token.text || '', options)}</em>`
+        parts.push('<em>')
+        if (token.tokens) {
+          parts.push(renderInlineTokens(token.tokens, options))
+        } else {
+          parts.push(escapeHtml(token.text || ''))
+        }
+        parts.push('</em>')
         break
 
       case 'codespan':
-        html += `<code>${escapeHtml(token.text || '')}</code>`
+        parts.push('<code>', escapeHtml(token.text || ''), '</code>')
         break
 
       case 'link':
-        html += `<a href="${escapeHtml(token.href || '')}">${renderInline(token.text || '', options)}</a>`
+        parts.push('<a href="', escapeHtml(token.href || ''), '">')
+        if (token.tokens) {
+          parts.push(renderInlineTokens(token.tokens, options))
+        } else {
+          parts.push(escapeHtml(token.text || ''))
+        }
+        parts.push('</a>')
         break
 
       case 'image':
-        html += `<img src="${escapeHtml(token.href || '')}" alt="${escapeHtml(token.text || '')}">`
+        parts.push('<img src="', escapeHtml(token.href || ''), '" alt="', escapeHtml(token.text || ''), '">')
         break
 
       case 'del':
-        html += `<del>${renderInline(token.text || '', options)}</del>`
+        parts.push('<del>')
+        if (token.tokens) {
+          parts.push(renderInlineTokens(token.tokens, options))
+        } else {
+          parts.push(escapeHtml(token.text || ''))
+        }
+        parts.push('</del>')
         break
 
       case 'br':
-        html += '<br>'
+        parts.push('<br>')
         break
 
       case 'text':
-        html += escapeHtml(token.text || '')
+        parts.push(escapeHtml(token.text || ''))
         break
     }
   }
 
-  return html
+  return parts.join('')
 }
 
+// Character code constants for faster comparison
+const CHAR_AMP = 38  // &
+const CHAR_LT = 60   // <
+const CHAR_GT = 62   // >
+const CHAR_QUOT = 34 // "
+const CHAR_APOS = 39 // '
+
 /**
- * Escape HTML special characters
+ * Escape HTML special characters - optimized version
  */
 function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
+  const len = text.length
+  let escaped = ''
+  let lastPos = 0
+
+  for (let i = 0; i < len; i++) {
+    const code = text.charCodeAt(i)
+    let replacement: string | null = null
+
+    switch (code) {
+      case CHAR_AMP:
+        replacement = '&amp;'
+        break
+      case CHAR_LT:
+        replacement = '&lt;'
+        break
+      case CHAR_GT:
+        replacement = '&gt;'
+        break
+      case CHAR_QUOT:
+        replacement = '&quot;'
+        break
+      case CHAR_APOS:
+        replacement = '&#39;'
+        break
+    }
+
+    if (replacement) {
+      escaped += text.substring(lastPos, i) + replacement
+      lastPos = i + 1
+    }
+  }
+
+  if (lastPos === 0) {
+    return text
+  }
+
+  return escaped + text.substring(lastPos)
 }
 
 /**
