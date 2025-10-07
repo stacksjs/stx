@@ -56,7 +56,7 @@ describe('html sanitizer - performance', () => {
     const html = `<div ${attrs}>Content</div>`.repeat(100)
 
     const start = performance.now()
-    const result = sanitize(html, {
+    sanitize(html, {
       allowedTags: ['div'],
       allowDataAttributes: true,
     })

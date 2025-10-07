@@ -324,6 +324,7 @@ describe('stx Analyzer', () => {
       const result = await analyzeTemplate(filePath)
 
       expect(result.metrics.directives.conditionals).toBeGreaterThan(2) // Multiple @if statements
+      // eslint-disable-next-line command/command
       expect(result.metrics.directives.loops).toBeGreaterThan(0) // @foreach
       expect(result.metrics.directives.total).toBeGreaterThan(2)
     })
@@ -380,7 +381,7 @@ describe('stx Analyzer', () => {
       const filePath = path.join(TEMP_DIR, 'performance-heavy.stx')
       const result = await analyzeTemplate(filePath)
 
-      const performanceIssues = result.issues.filter(issue => issue.category === 'performance')
+      result.issues.filter(issue => issue.category === 'performance')
 
       // May or may not have explicit performance issues depending on template structure
       // But should have high complexity

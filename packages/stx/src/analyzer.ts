@@ -130,7 +130,7 @@ function calculateMetrics(content: string): TemplateMetrics {
 /**
  * Find potential issues in the template
  */
-function findIssues(content: string, filePath: string): Issue[] {
+function findIssues(content: string, _filePath: string): Issue[] {
   const issues: Issue[] = []
 
   // Check for syntax issues

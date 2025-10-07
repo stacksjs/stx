@@ -152,7 +152,7 @@ async function processDirectivesInternal(
       const layoutFullPath = await safeExecuteAsync(
         () => resolveTemplatePath(layoutPath, filePath, resolvedOptions, dependencies),
         null,
-        (error) => {
+        () => {
           throw new StxRuntimeError(
             `Failed to resolve layout path: ${layoutPath}`,
             filePath,
@@ -178,7 +178,7 @@ async function processDirectivesInternal(
       const layoutContent = await safeExecuteAsync(
         () => Bun.file(layoutFullPath).text(),
         '',
-        (error) => {
+        () => {
           throw new StxRuntimeError(
             `Failed to read layout file: ${layoutFullPath}`,
             filePath,

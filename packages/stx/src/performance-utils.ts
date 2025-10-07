@@ -195,10 +195,10 @@ export function optimizedReplace(
  * Pool of worker contexts to avoid creating new Function instances
  */
 class ExpressionEvaluatorPool {
-  private pool: Array<{ func: Function, context: string[] }> = []
+  private pool: Array<{ func: (...args: any[]) => any, context: string[] }> = []
   private maxPoolSize = 10
 
-  getEvaluator(contextKeys: string[]): Function {
+  getEvaluator(contextKeys: string[]): (...args: any[]) => any {
     const contextSignature = contextKeys.sort().join(',')
 
     // Try to find a reusable evaluator
@@ -208,6 +208,7 @@ class ExpressionEvaluatorPool {
     }
 
     // Create new evaluator
+    // eslint-disable-next-line no-new-func
     const evaluator = new Function(...contextKeys, `
       'use strict';
       return function(expr) {
@@ -220,7 +221,7 @@ class ExpressionEvaluatorPool {
           throw e;
         }
       }
-    `)
+    `) as (...args: any[]) => any
 
     // Add to pool if not full
     if (this.pool.length < this.maxPoolSize) {

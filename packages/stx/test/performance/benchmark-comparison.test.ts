@@ -13,7 +13,7 @@ function benchmarkNativeJS(data: any, iterations: number = 1000) {
   const startTime = performance.now()
 
   for (let i = 0; i < iterations; i++) {
-    const html = `
+    void `
       <div>
         <h1>${data.title}</h1>
         <p>${data.content}</p>

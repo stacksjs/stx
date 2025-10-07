@@ -46,7 +46,7 @@ export async function processIncludes(
   let output = template.replace(/@partial\s*\(['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (_, includePath, varsString) => `@include('${includePath}'${varsString ? `, ${varsString}` : ''})`)
 
   // Process @once directive - content that should only be included once globally
-  output = output.replace(/@once([\s\S]*?)@endonce/g, (match, content, offset) => {
+  output = output.replace(/@once([\s\S]*?)@endonce/g, (match, content, _offset) => {
     // Create a unique key for this @once block based on content hash
     const contentHash = content.trim()
     const onceKey = `${filePath}:${contentHash}`

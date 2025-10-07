@@ -5,7 +5,7 @@
 /**
  * List of allowed global functions and methods for expression evaluation
  */
-const ALLOWED_GLOBALS = new Set([
+const _ALLOWED_GLOBALS = new Set([
   // Math functions
   'Math',
   'parseInt',
@@ -143,6 +143,7 @@ export function safeEvaluate(expression: string, context: Record<string, any>): 
     const safeContext = createSafeContext(context)
 
     // Create function with safe context
+    // eslint-disable-next-line no-new-func
     const func = new Function(...Object.keys(safeContext), `
       'use strict';
       try {
@@ -157,7 +158,7 @@ export function safeEvaluate(expression: string, context: Record<string, any>): 
 
     return func(...Object.values(safeContext))
   }
-  catch (error: any) {
+  catch {
     // Return undefined for evaluation errors instead of throwing
     return undefined
   }

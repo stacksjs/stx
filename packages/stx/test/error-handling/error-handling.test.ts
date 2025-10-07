@@ -464,7 +464,7 @@ line 3`
     })
 
     it('should handle error chaining and causality', () => {
-      const rootCause = new Error('Network timeout')
+      const _rootCause = new Error('Network timeout')
       const stxError = new StxFileError('Failed to load template', '/remote/template.stx')
 
       // In a real scenario, we might chain errors

@@ -347,7 +347,6 @@ function parseBlockquote(state: ParserState): boolean {
 }
 
 function parseList(state: ParserState): boolean {
-  const start = state.pos
   const firstChar = state.src.charCodeAt(state.pos)
   const isOrdered = firstChar >= 48 && firstChar <= 57
 
@@ -536,7 +535,7 @@ function parseTable(state: ParserState): boolean {
   for (let i = 0; i < headerCells.length; i++) {
     const token = pushToken(state, 'th_open', 'th', 1)
     if (align[i]) {
-      token.markup = align[i]
+      token.markup = align[i] ?? undefined
     }
     parseInline(state, headerCells[i])
     pushToken(state, 'th_close', 'th', -1)
@@ -568,7 +567,7 @@ function parseTable(state: ParserState): boolean {
     for (let i = 0; i < cells.length; i++) {
       const token = pushToken(state, 'td_open', 'td', 1)
       if (align[i]) {
-        token.markup = align[i]
+        token.markup = align[i] ?? undefined
       }
       parseInline(state, cells[i])
       pushToken(state, 'td_close', 'td', -1)
@@ -939,7 +938,7 @@ function renderTokens(tokens: FlatToken[], options: MarkdownOptions): string {
         html += '</p>\n'
         break
       case 'fence':
-      case 'code_block':
+      case 'code_block': {
         let code = token.content || ''
         const lang = token.markup || ''
 
@@ -958,6 +957,7 @@ function renderTokens(tokens: FlatToken[], options: MarkdownOptions): string {
           html += `<pre><code>${code}</code></pre>\n`
         }
         break
+      }
       case 'code_inline':
         html += `<code>${escapeHtml(token.content || '')}</code>`
         break
@@ -1072,7 +1072,7 @@ function renderTokens(tokens: FlatToken[], options: MarkdownOptions): string {
       case 'link_close':
         html += '</a>'
         break
-      case 'image':
+      case 'image': {
         const [alt, url, imageTitle] = (token.markup || '||').split('|')
         if (imageTitle) {
           html += `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" title="${escapeHtml(imageTitle)}">`
@@ -1081,6 +1081,7 @@ function renderTokens(tokens: FlatToken[], options: MarkdownOptions): string {
           html += `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}">`
         }
         break
+      }
       case 'text':
         html += escapeHtml(token.content || '')
         break

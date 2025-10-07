@@ -43,8 +43,8 @@ export function parse<T = any>(input: string, options: YamlOptions = {}): T {
  * Fallback parser for edge cases (kept for compatibility)
  * @internal
  */
-function parseFallback<T = any>(input: string, options: YamlOptions = {}): T {
-  const strict = options.strict ?? false
+function _parseFallback<T = any>(input: string, _options: YamlOptions = {}): T {
+  const strict = _options.strict ?? false
 
   try {
     const content = input.replace(/^\uFEFF/, '')
@@ -58,7 +58,7 @@ function parseFallback<T = any>(input: string, options: YamlOptions = {}): T {
     const result: any = {}
     const stack: Array<{ obj: any, indent: number, key?: string }> = [{ obj: result, indent: -1 }]
 
-    const currentIndent = 0
+    const _currentIndent = 0
     let inMultiline = false
     let multilineKey = ''
     let multilineValue: string[] = []
@@ -264,12 +264,12 @@ function parseValue(value: string): any {
 /**
  * Stringify JavaScript object to YAML
  */
-export function stringify(obj: any, options: YamlOptions = {}): string {
+export function stringify(obj: any, _options: YamlOptions = {}): string {
   try {
     // Use Bun's native YAML stringify with block-style formatting (2 spaces)
     return Bun.YAML.stringify(obj, null, 2)
   }
-  catch (error) {
+  catch {
     // Fallback to custom implementation if needed
     return stringifyFallback(obj, 0)
   }

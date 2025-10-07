@@ -320,7 +320,6 @@ const memoizedUnsafeEvaluate = memoize((expression: string, contextKeys: string,
   try {
     const keys = JSON.parse(contextKeys)
     const values = JSON.parse(contextValues)
-    const context = Object.fromEntries(keys.map((key: string, i: number) => [key, values[i]]))
 
     // eslint-disable-next-line no-new-func
     const exprFn = new Function(...keys, `

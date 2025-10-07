@@ -8,7 +8,7 @@ const TEMP_DIR = path.join(TEST_DIR, 'temp-cli')
 const CLI_PATH = path.join(TEST_DIR, '../../bin/cli.ts')
 
 // Helper to run CLI commands
-async function runCLI(args: string[], options: { expectError?: boolean } = {}): Promise<{
+async function runCLI(args: string[], _options: { expectError?: boolean } = {}): Promise<{
   stdout: string
   stderr: string
   exitCode: number

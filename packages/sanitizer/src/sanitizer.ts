@@ -85,7 +85,8 @@ export function sanitizeWithInfo(
   }
 
   // Parse and sanitize tags
-  const tagRegex = /<(\/?)([\w-]+)([^>]*)>/g
+  // eslint-disable-next-line regexp/no-super-linear-backtracking, regexp/use-ignore-case
+  const tagRegex = /<(\/?)([a-zA-Z][\w-]*)([^>]*)>/g
   result = result.replace(tagRegex, (match, closing, tagName, attributesStr) => {
     const lowerTag = tagName.toLowerCase()
 
@@ -267,6 +268,7 @@ function isUrlSafe(url: string, options: SanitizerOptions): boolean {
   const trimmed = url.trim().toLowerCase()
 
   // Remove common whitespace/encoding tricks
+  // eslint-disable-next-line no-control-regex
   const cleaned = trimmed.replace(/[\s\x00-\x1F]/g, '')
 
   // Dangerous protocols

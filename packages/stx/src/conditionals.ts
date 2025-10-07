@@ -89,6 +89,8 @@ export function processSwitchStatements(template: string, context: Record<string
       const casePositions: Array<{ pos: number, value: string, directive: string }> = []
       let caseMatch
 
+      // biome-ignore lint/suspicious/noAssignInExpressions: needed for regex matching
+      // eslint-disable-next-line no-cond-assign
       while ((caseMatch = caseRegex.exec(switchContent)) !== null) {
         casePositions.push({
           pos: caseMatch.index,

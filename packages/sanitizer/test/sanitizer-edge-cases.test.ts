@@ -189,8 +189,7 @@ describe('html sanitizer - edge cases', () => {
   it('should handle comments when allowed', () => {
     const html = '<!-- Comment --><p>Content</p>'
 
-    const withComments = sanitize(html, {
-      ...sanitize,
+    sanitize(html, {
       allowedTags: ['p'],
       allowComments: true,
     })
