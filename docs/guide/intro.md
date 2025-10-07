@@ -1,10 +1,10 @@
-# Introduction to STX
+# Introduction to `stx`
 
-STX is a modern UI engine that combines the elegance of Laravel Blade with the power of Bun. Built for performance and developer experience, STX delivers exceptional speed while maintaining familiar, intuitive syntax.
+`stx` is a modern UI engine that combines the elegance of Laravel Blade with the power of Bun. Built for performance and developer experience, `stx` delivers exceptional speed while maintaining familiar, intuitive syntax.
 
-## What is STX?
+## What is `stx`?
 
-STX is a high-performance UI engine that allows you to:
+`stx` is a high-performance UI engine that allows you to:
 
 - Write templates with clean, Blade-inspired syntax
 - Use TypeScript directly in your templates with full type safety
@@ -12,18 +12,20 @@ STX is a high-performance UI engine that allows you to:
 - Leverage streaming rendering for optimal performance
 - Build type-safe applications with comprehensive IDE support
 
-## Why STX?
+## Why `stx`?
 
-### ⚡ Blazing Fast Performance
+### ⚡ Performance-Optimized
 
-STX packages consistently outperform industry-standard alternatives:
+`stx` packages consistently outperform industry-standard alternatives:
 
 **Markdown Parser:**
-- **2.89x faster** than markdown-it on small documents
-- **1.96x faster** than markdown-it on medium documents
-- **1.45x faster** than markdown-it on large documents
+
+- **2.89x faster** than `markdown-it` on small documents
+- **1.96x faster** than `markdown-it` on medium documents
+- **1.45x faster** than `markdown-it` on large documents
 
 **HTML Sanitizer:**
+
 - **1.7-72.4x faster** than competitors on safe HTML
 - **1.95-145.6x faster** on XSS attack vectors
 - **1.88-37.2x faster** on large documents
@@ -33,6 +35,7 @@ STX packages consistently outperform industry-standard alternatives:
 ### 💪 First-Class TypeScript Support
 
 Type safety without compromise:
+
 - Full type checking in templates
 - Type-safe props and events
 - IDE autocompletion everywhere
@@ -41,6 +44,7 @@ Type safety without compromise:
 ### 🧩 Powerful Component System
 
 Build reusable UI with confidence:
+
 - Props validation with TypeScript
 - Slots and named slots
 - Component lifecycle hooks
@@ -49,6 +53,7 @@ Build reusable UI with confidence:
 ### 🎯 Developer Experience
 
 Built with DX in mind:
+
 - Familiar Blade-like syntax
 - Hot module replacement
 - VSCode extension with IntelliSense
@@ -122,7 +127,7 @@ STX provides intuitive directives for common patterns:
 
 ### Template Compilation
 
-STX compiles templates to highly optimized JavaScript:
+`stx` compiles templates to highly optimized JavaScript:
 
 ```typescript
 // Your template
@@ -190,7 +195,7 @@ Keep styles isolated to components:
 
 ## Architecture Highlights
 
-STX achieves exceptional performance through:
+`stx` achieves exceptional performance through:
 
 - **Flat token stream**: Avoids nested object allocations for better cache locality
 - **Position-based parsing**: Minimizes string allocations
@@ -218,9 +223,10 @@ Join the STX community:
 
 ## Open Source
 
-STX is MIT licensed and built by contributors from around the world. We welcome contributions of all kinds.
+`stx` is MIT licensed and built by contributors from around the world. We welcome contributions of all kinds.
 
 **Sponsors:**
+
 - [JetBrains](https://www.jetbrains.com/)
 - [The Solana Foundation](https://solana.com/)
 
