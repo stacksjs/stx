@@ -1,6 +1,4 @@
-/**
- * Enhanced error handling utilities for STX
- */
+import process from 'node:process'
 
 /**
  * Custom error types for better error classification
@@ -12,7 +10,7 @@ export class StxError extends Error {
     public filePath?: string,
     public line?: number,
     public column?: number,
-    public context?: string
+    public context?: string,
   ) {
     super(message)
     this.name = 'StxError'
@@ -63,7 +61,7 @@ export interface ErrorContext {
 export function createEnhancedError(
   type: string,
   message: string,
-  context: ErrorContext
+  context: ErrorContext,
 ): string {
   const lines = context.template.split('\n')
   const position = getLineAndColumn(context.template, context.offset)
@@ -100,7 +98,7 @@ function getLineAndColumn(text: string, offset: number): { line: number, column:
 
   return {
     line: lines.length,
-    column: lines[lines.length - 1].length
+    column: lines[lines.length - 1].length,
   }
 }
 
@@ -110,11 +108,12 @@ function getLineAndColumn(text: string, offset: number): { line: number, column:
 export function safeExecute<T>(
   operation: () => T,
   fallback: T,
-  errorHandler?: (error: Error) => void
+  errorHandler?: (error: Error) => void,
 ): T {
   try {
     return operation()
-  } catch (error) {
+  }
+  catch (error) {
     if (errorHandler && error instanceof Error) {
       errorHandler(error)
     }
@@ -128,11 +127,12 @@ export function safeExecute<T>(
 export async function safeExecuteAsync<T>(
   operation: () => Promise<T>,
   fallback: T,
-  errorHandler?: (error: Error) => void
+  errorHandler?: (error: Error) => void,
 ): Promise<T> {
   try {
     return await operation()
-  } catch (error) {
+  }
+  catch (error) {
     if (errorHandler && error instanceof Error) {
       errorHandler(error)
     }
@@ -166,7 +166,7 @@ export const validators = {
    */
   isValidVariableName(name: string): boolean {
     // Must be valid JavaScript identifier
-    return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)
+    return /^[a-z_$][\w$]*$/i.test(name)
   },
 
   /**
@@ -174,7 +174,7 @@ export const validators = {
    */
   isValidDirectiveName(name: string): boolean {
     // Must be alphanumeric with optional hyphens/underscores
-    return /^[a-zA-Z][a-zA-Z0-9_-]*$/.test(name)
+    return /^[a-z][\w-]*$/i.test(name)
   },
 
   /**
@@ -190,7 +190,7 @@ export const validators = {
     ]
 
     return !dangerousPatterns.some(pattern => pattern.test(content))
-  }
+  },
 }
 
 /**
@@ -230,7 +230,7 @@ export const errorRecovery = {
    */
   createFallbackContent(sectionType: string, error: Error): string {
     return `<!-- ${sectionType} failed: ${error.message} -->`
-  }
+  },
 }
 
 /**
@@ -244,7 +244,7 @@ export class ErrorLogger {
     this.errors.push({
       timestamp: new Date(),
       error,
-      context
+      context,
     })
 
     // Keep only recent errors
@@ -275,7 +275,7 @@ export class ErrorLogger {
 
     return {
       total: this.errors.length,
-      byType
+      byType,
     }
   }
 }
@@ -298,7 +298,8 @@ export const devHelpers = {
    * Log detailed error information in development
    */
   logDetailedError(error: Error, context?: any): void {
-    if (!this.isDevelopment()) return
+    if (!this.isDevelopment())
+      return
 
     console.error('=== STX Detailed Error ===')
     console.error('Error:', error.message)
@@ -327,5 +328,5 @@ export const devHelpers = {
 
     report.push('========================')
     return report.join('\n')
-  }
+  },
 }

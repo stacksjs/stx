@@ -1,14 +1,14 @@
-import { describe, expect, it, beforeEach } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import {
-  getCachedRegex,
-  TemplateCache,
   debounce,
-  throttle,
+  expressionEvaluatorPool,
+  getCachedRegex,
   memoize,
   optimizedReplace,
-  expressionEvaluatorPool,
   PerformanceMonitor,
-  performanceMonitor
+  performanceMonitor,
+  TemplateCache,
+  throttle,
 } from '../../src/performance-utils'
 
 describe('Performance Utils', () => {
@@ -260,7 +260,7 @@ describe('Performance Utils', () => {
 
     it('should work with function replacements', () => {
       const text = 'hello world'
-      const result = optimizedReplace(text, 'hello', (match) => match.toUpperCase())
+      const result = optimizedReplace(text, 'hello', match => match.toUpperCase())
 
       expect(result).toBe('HELLO world')
     })
@@ -416,7 +416,7 @@ describe('Performance Utils', () => {
         promises.push(
           Promise.resolve().then(() => {
             cache.set(`key-${i}`, `result-${i}`, new Set([`dep-${i}`]))
-          })
+          }),
         )
       }
 
@@ -638,7 +638,7 @@ describe('Performance Utils', () => {
       expect(result2).toBe('greetings world, greetings universe, greetings everyone')
 
       // Test with function replacement
-      const result3 = optimizedReplace(text, /hello/gi, (match) => match.toUpperCase())
+      const result3 = optimizedReplace(text, /hello/gi, match => match.toUpperCase())
       expect(result3).toBe('HELLO world, HELLO universe, HELLO everyone')
     })
   })

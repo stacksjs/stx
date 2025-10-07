@@ -1,6 +1,6 @@
 import * as path from 'node:path'
-import { createDetailedErrorMessage } from './utils'
 import { getCachedRegex } from './performance-utils'
+import { createDetailedErrorMessage } from './utils'
 
 /**
  * Process JavaScript directives in templates

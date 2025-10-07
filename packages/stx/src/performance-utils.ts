@@ -67,7 +67,7 @@ export class TemplateCache {
     this.cache.set(key, {
       result,
       timestamp: Date.now(),
-      dependencies
+      dependencies,
     })
   }
 
@@ -100,7 +100,7 @@ export class TemplateCache {
   getStats(): { size: number, maxSize: number, hitRate?: number } {
     return {
       size: this.cache.size,
-      maxSize: this.maxSize
+      maxSize: this.maxSize,
     }
   }
 }
@@ -110,7 +110,7 @@ export class TemplateCache {
  */
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
-  delay: number
+  delay: number,
 ): (...args: Parameters<T>) => void {
   let timeoutId: NodeJS.Timeout | undefined
 
@@ -130,7 +130,7 @@ export function debounce<T extends (...args: any[]) => any>(
  */
 export function throttle<T extends (...args: any[]) => any>(
   func: T,
-  delay: number
+  delay: number,
 ): (...args: Parameters<T>) => void {
   let lastExecution = 0
 
@@ -149,7 +149,7 @@ export function throttle<T extends (...args: any[]) => any>(
  */
 export function memoize<T extends (...args: any[]) => any>(
   func: T,
-  maxCacheSize = 100
+  maxCacheSize = 100,
 ): T {
   const cache = new Map<string, ReturnType<T>>()
 
@@ -181,7 +181,7 @@ export function optimizedReplace(
   text: string,
   pattern: string | RegExp,
   replacement: string | ((match: string, ...args: any[]) => string),
-  flags?: string
+  flags?: string,
 ): string {
   if (typeof pattern === 'string') {
     const regex = getCachedRegex(pattern, flags)
@@ -226,7 +226,7 @@ class ExpressionEvaluatorPool {
     if (this.pool.length < this.maxPoolSize) {
       this.pool.push({
         func: evaluator,
-        context: contextKeys.slice()
+        context: contextKeys.slice(),
       })
     }
 
@@ -282,12 +282,13 @@ export class PerformanceMonitor {
       existing.totalTime += duration
       existing.maxTime = Math.max(existing.maxTime, duration)
       existing.minTime = Math.min(existing.minTime, duration)
-    } else {
+    }
+    else {
       this.metrics.set(label, {
         count: 1,
         totalTime: duration,
         maxTime: duration,
-        minTime: duration
+        minTime: duration,
       })
     }
   }
@@ -298,14 +299,15 @@ export class PerformanceMonitor {
   getStats(label?: string): Record<string, any> {
     if (label) {
       const metric = this.metrics.get(label)
-      if (!metric) return {}
+      if (!metric)
+        return {}
 
       return {
         count: metric.count,
         avgTime: metric.totalTime / metric.count,
         totalTime: metric.totalTime,
         maxTime: metric.maxTime,
-        minTime: metric.minTime
+        minTime: metric.minTime,
       }
     }
 
@@ -316,7 +318,7 @@ export class PerformanceMonitor {
         avgTime: metric.totalTime / metric.count,
         totalTime: metric.totalTime,
         maxTime: metric.maxTime,
-        minTime: metric.minTime
+        minTime: metric.minTime,
       }
     }
 

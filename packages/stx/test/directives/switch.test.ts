@@ -1,6 +1,6 @@
+import type { StxOptions } from '../../src/types'
 import { describe, expect, test } from 'bun:test'
 import { processDirectives } from '../../src/process'
-import type { StxOptions } from '../../src/types'
 
 const defaultOptions: StxOptions = {
   debug: false,
@@ -97,8 +97,8 @@ describe('Switch Directive', () => {
     const context = {
       user: {
         name: 'John Doe',
-        type: 'ADMIN'
-      }
+        type: 'ADMIN',
+      },
     }
 
     const result = await processTemplate(template, context)
@@ -150,8 +150,8 @@ describe('Switch Directive', () => {
     const context = {
       user: {
         role: 'admin',
-        level: 2
-      }
+        level: 2,
+      },
     }
 
     const result = await processTemplate(template, context)
@@ -259,9 +259,9 @@ describe('Switch Directive', () => {
       product: {
         name: 'iPhone 15',
         category: {
-          name: 'smartphones'
-        }
-      }
+          name: 'smartphones',
+        },
+      },
     }
 
     const result = await processTemplate(template, context)

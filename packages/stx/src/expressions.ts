@@ -2,9 +2,9 @@
  * Module for processing template expressions and filters
  */
 
-import { createDetailedErrorMessage } from './utils'
-import { safeEvaluate, isExpressionSafe } from './safe-evaluator'
 import { memoize } from './performance-utils'
+import { isExpressionSafe, safeEvaluate } from './safe-evaluator'
+import { createDetailedErrorMessage } from './utils'
 
 /**
  * Add basic filter support to expressions
@@ -335,7 +335,8 @@ const memoizedUnsafeEvaluate = memoize((expression: string, contextKeys: string,
     `)
 
     return exprFn(...values)
-  } catch {
+  }
+  catch {
     return undefined
   }
 }, 500)

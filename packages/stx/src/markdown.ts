@@ -1,4 +1,4 @@
-import { marked } from 'marked'
+import { parseMarkdown } from '@stacksjs/markdown'
 import { createDetailedErrorMessage } from './utils'
 
 /**
@@ -48,15 +48,14 @@ export async function processMarkdownDirectives(
         })
       }
 
-      // Configure marked with the provided options
-      const markedOptions = {
+      // Configure markdown parser with the provided options
+      const parserOptions = {
         gfm: optionsObj.gfm ?? true, // GitHub Flavored Markdown
         breaks: optionsObj.breaks ?? false, // Convert line breaks to <br>
-        silent: true,
       }
 
       // Render the markdown to HTML
-      const html = await marked.parse(content.trim(), markedOptions)
+      const html = parseMarkdown(content.trim(), parserOptions)
       output = output.replace(fullMatch, html)
     }
     catch (error) {
@@ -86,11 +85,10 @@ export async function markdownDirectiveHandler(
   _context: Record<string, any>,
   _filePath: string,
 ): Promise<string> {
-  // Configure marked with the provided options
+  // Configure parser with the provided options
   const options = {
     gfm: true,
     breaks: false,
-    silent: true,
   }
 
   // Parse options from parameters
@@ -103,5 +101,5 @@ export async function markdownDirectiveHandler(
   })
 
   // Render the markdown to HTML
-  return await marked.parse(content.trim(), options)
+  return parseMarkdown(content.trim(), options)
 }

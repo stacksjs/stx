@@ -1,3 +1,4 @@
+/* eslint-disable regexp/no-super-linear-backtracking */
 /**
  * STX file formatter for automatically formatting .stx files
  */
@@ -23,7 +24,7 @@ const DEFAULT_OPTIONS: Required<FormatterOptions> = {
   maxLineLength: 120,
   normalizeWhitespace: true,
   sortAttributes: true,
-  trimTrailingWhitespace: true
+  trimTrailingWhitespace: true,
 }
 
 /**
@@ -65,23 +66,27 @@ function formatScriptTags(content: string, options: Required<FormatterOptions>):
     // Basic script formatting - normalize indentation
     const lines = scriptContent.split('\n')
     const formattedLines = lines.map((line: string, index: number) => {
-      if (index === 0 && line.trim() === '') return '' // Empty first line
-      if (index === lines.length - 1 && line.trim() === '') return '' // Empty last line
+      if (index === 0 && line.trim() === '')
+        return '' // Empty first line
+      if (index === lines.length - 1 && line.trim() === '')
+        return '' // Empty last line
 
       // Add consistent indentation
       const trimmed = line.trim()
-      if (trimmed === '') return ''
+      if (trimmed === '')
+        return ''
 
       const indent = options.useTabs ? '\t' : ' '.repeat(options.indentSize)
       return `${indent}${trimmed}`
     }).filter((line: string, index: number, arr: string[]) => {
       // Remove empty lines at start and end
-      if (index === 0 || index === arr.length - 1) return line !== ''
+      if (index === 0 || index === arr.length - 1)
+        return line !== ''
       return true
     })
 
     const formattedScript = formattedLines.length > 0
-      ? '\n' + formattedLines.join('\n') + '\n'
+      ? `\n${formattedLines.join('\n')}\n`
       : ''
 
     return match.replace(scriptContent, formattedScript)
@@ -170,7 +175,8 @@ function formatStxDirectives(content: string, options: Required<FormatterOptions
 function isSelfClosingTag(line: string): boolean {
   const selfClosingTags = ['br', 'hr', 'img', 'input', 'meta', 'link', 'area', 'base', 'col', 'embed', 'source', 'track', 'wbr']
 
-  if (line.includes('/>')) return true
+  if (line.includes('/>'))
+    return true
 
   const tagMatch = line.match(/<(\w+)/)
   if (tagMatch) {
@@ -200,10 +206,12 @@ function isOpeningDirective(line: string): boolean {
  * Format attributes in HTML tags
  */
 function formatAttributes(content: string, options: Required<FormatterOptions>): string {
-  if (!options.sortAttributes) return content
+  if (!options.sortAttributes)
+    return content
 
   return content.replace(/<(\w+)([^>]*)>/g, (match, tagName, attributes) => {
-    if (!attributes.trim()) return match
+    if (!attributes.trim())
+      return match
 
     // Parse attributes
     const attrRegex = /(\w+)(?:=("[^"]*"|'[^']*'|[^\s>]+))?/g
@@ -213,16 +221,20 @@ function formatAttributes(content: string, options: Required<FormatterOptions>):
     while ((attrMatch = attrRegex.exec(attributes)) !== null) {
       attrs.push({
         name: attrMatch[1],
-        value: attrMatch[2]
+        value: attrMatch[2],
       })
     }
 
     // Sort attributes (class and id first, then alphabetically)
     attrs.sort((a, b) => {
-      if (a.name === 'id') return -1
-      if (b.name === 'id') return 1
-      if (a.name === 'class') return -1
-      if (b.name === 'class') return 1
+      if (a.name === 'id')
+        return -1
+      if (b.name === 'id')
+        return 1
+      if (a.name === 'class')
+        return -1
+      if (b.name === 'class')
+        return 1
       return a.name.localeCompare(b.name)
     })
 
@@ -231,6 +243,6 @@ function formatAttributes(content: string, options: Required<FormatterOptions>):
       .map(attr => attr.value ? `${attr.name}=${attr.value}` : attr.name)
       .join(' ')
 
-    return `<${tagName}${formattedAttrs ? ' ' + formattedAttrs : ''}>`
+    return `<${tagName}${formattedAttrs ? ` ${formattedAttrs}` : ''}>`
   })
 }

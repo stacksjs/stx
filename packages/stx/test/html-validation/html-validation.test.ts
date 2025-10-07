@@ -1,9 +1,9 @@
+import type { StxOptions } from '../../src/types'
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import { processDirectives } from '../../src/process'
-import type { StxOptions } from '../../src/types'
 import { clearOnceStore } from '../../src/includes'
+import { processDirectives } from '../../src/process'
 
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp')
@@ -30,10 +30,11 @@ function validateHTMLStructure(html: string): { isValid: boolean, errors: string
   }
 
   // Check for balanced tags
-  const tagPattern = /<\/?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g
+  const tagPattern = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi
   const tags: string[] = []
   let match
 
+  // eslint-disable-next-line no-cond-assign
   while ((match = tagPattern.exec(html)) !== null) {
     const tagName = match[1].toLowerCase()
     const isClosing = match[0].startsWith('</')
@@ -44,7 +45,8 @@ function validateHTMLStructure(html: string): { isValid: boolean, errors: string
       if (lastTag !== tagName) {
         errors.push(`Unmatched closing tag: ${tagName}`)
       }
-    } else if (!isSelfClosing) {
+    }
+    else if (!isSelfClosing) {
       tags.push(tagName)
     }
   }
@@ -68,7 +70,7 @@ function validateHTMLStructure(html: string): { isValid: boolean, errors: string
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   }
 }
 
@@ -99,7 +101,8 @@ describe('HTML Output Validation', () => {
   afterAll(async () => {
     try {
       await fs.promises.rm(TEMP_DIR, { recursive: true, force: true })
-    } catch (error) {
+    }
+    catch {
       // Ignore cleanup errors
     }
   })
@@ -124,7 +127,7 @@ describe('HTML Output Validation', () => {
       const context = {
         title: 'Test Page',
         heading: 'Welcome',
-        content: 'This is a test page'
+        content: 'This is a test page',
       }
 
       const result = await processTemplate(template, context)
@@ -168,7 +171,7 @@ describe('HTML Output Validation', () => {
         title: 'Article Title',
         author: 'John Doe',
         content: '<p>This is the article content with <strong>bold text</strong>.</p>',
-        date: '2023-12-01'
+        date: '2023-12-01',
       }
 
       const result = await processTemplate(template, context)
@@ -218,7 +221,7 @@ describe('HTML Output Validation', () => {
         showHeader: true,
         showNavigation: false,
         title: 'Test Site',
-        items: ['Home', 'About', 'Contact']
+        items: ['Home', 'About', 'Contact'],
       }
 
       const result = await processTemplate(template, context)
@@ -300,8 +303,8 @@ describe('HTML Output Validation', () => {
       const context = {
         navItems: [
           { title: 'Home', url: '/' },
-          { title: 'About', url: '/about' }
-        ]
+          { title: 'About', url: '/about' },
+        ],
       }
       const result = await processTemplate(template, context)
       const validation = validateHTMLStructure(result)
@@ -331,7 +334,7 @@ describe('HTML Output Validation', () => {
 
       const context = {
         userInput: '<script>alert("xss")</script>',
-        rawHtml: '<em>This should not be escaped</em>'
+        rawHtml: '<em>This should not be escaped</em>',
       }
 
       const result = await processTemplate(template, context)
@@ -360,7 +363,7 @@ describe('HTML Output Validation', () => {
       const context = {
         title: 'Tëst Pågé 🎉',
         heading: 'Wélcome tö STX',
-        description: 'This contains émojis: 🚀 💡 ⭐'
+        description: 'This contains émojis: 🚀 💡 ⭐',
       }
 
       const result = await processTemplate(template, context)
@@ -455,20 +458,20 @@ describe('HTML Output Validation', () => {
         navigation: [
           { title: 'Home', url: '/' },
           { title: 'Blog', url: '/blog' },
-          { title: 'About', url: '/about' }
+          { title: 'About', url: '/about' },
         ],
         posts: [
           {
             title: 'First Post',
             excerpt: 'This is the first blog post.',
-            date: '2023-12-01'
+            date: '2023-12-01',
           },
           {
             title: 'Second Post',
             excerpt: 'This is another post.',
-            date: '2023-12-02'
-          }
-        ]
+            date: '2023-12-02',
+          },
+        ],
       }
 
       const result = await processTemplate(template, context)

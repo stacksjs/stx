@@ -7,7 +7,7 @@ import { processMarkdownFileDirectives } from './assets'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
 import { processCsrfDirectives } from './csrf'
 import { processCustomDirectives } from './custom-directives'
-import { createEnhancedError, devHelpers, errorLogger, errorRecovery, safeExecute, safeExecuteAsync, StxRuntimeError, StxSyntaxError } from './error-handling'
+import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeError } from './error-handling'
 import { processExpressions } from './expressions'
 import { processErrorDirective, processFormDirectives } from './forms'
 import { processTranslateDirective } from './i18n'
@@ -37,13 +37,14 @@ export async function processDirectives(
     return await performanceMonitor.timeAsync('template-processing', async () => {
       return await processDirectivesInternal(template, context, filePath, options, dependencies)
     })
-  } catch (error: any) {
+  }
+  catch (error: any) {
     const enhancedError = new StxRuntimeError(
       `Template processing failed: ${error.message}`,
       filePath,
       undefined,
       undefined,
-      template.substring(0, 200) + (template.length > 200 ? '...' : '')
+      template.substring(0, 200) + (template.length > 200 ? '...' : ''),
     )
 
     errorLogger.log(enhancedError, { filePath, context })
@@ -157,9 +158,9 @@ async function processDirectivesInternal(
             filePath,
             undefined,
             undefined,
-            `Layout referenced from ${filePath}`
+            `Layout referenced from ${filePath}`,
           )
-        }
+        },
       )
 
       if (!layoutFullPath) {
@@ -183,9 +184,9 @@ async function processDirectivesInternal(
             filePath,
             undefined,
             undefined,
-            `Layout content could not be loaded`
+            `Layout content could not be loaded`,
           )
-        }
+        },
       )
 
       // Check if the layout itself extends another layout
@@ -282,7 +283,7 @@ async function processOtherDirectives(
       if (options.debug) {
         console.warn(`View composer error for ${filePath}:`, error.message)
       }
-    }
+    },
   )
 
   // Add options to context for component processing
@@ -296,7 +297,7 @@ async function processOtherDirectives(
       if (options.debug) {
         console.warn(`Pre-processing middleware error:`, error.message)
       }
-    }
+    },
   )
 
   // Process custom directives first

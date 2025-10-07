@@ -1,10 +1,10 @@
-import { describe, expect, it, beforeAll, afterAll } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from 'bun-plugin-stx'
-import { processDirectives } from '../../src/process'
-import { performanceMonitor } from '../../src/performance-utils'
 import { errorLogger } from '../../src/error-handling'
+import { performanceMonitor } from '../../src/performance-utils'
+import { processDirectives } from '../../src/process'
 
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp-integration')
@@ -560,8 +560,8 @@ describe('Enhanced Template Processing Integration', () => {
 </div>`
 
       const context = {
-        title: "Direct Processing Test",
-        items: ["Item 1", "Item 2", "Item 3"]
+        title: 'Direct Processing Test',
+        items: ['Item 1', 'Item 2', 'Item 3'],
       }
 
       const options = {
@@ -569,7 +569,7 @@ describe('Enhanced Template Processing Integration', () => {
         partialsDir: TEMP_DIR,
         componentsDir: TEMP_DIR,
         debug: false,
-        cachePath: path.join(TEMP_DIR, '.cache')
+        cachePath: path.join(TEMP_DIR, '.cache'),
       }
 
       const dependencies = new Set<string>()
@@ -597,7 +597,7 @@ describe('Enhanced Template Processing Integration', () => {
         partialsDir: TEMP_DIR,
         componentsDir: TEMP_DIR,
         debug: false,
-        cachePath: path.join(TEMP_DIR, '.cache')
+        cachePath: path.join(TEMP_DIR, '.cache'),
       }
 
       const dependencies = new Set<string>()

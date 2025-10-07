@@ -72,14 +72,10 @@
     "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {
+    "@stacksjs/headwind": "^0.1.1",
+    "@stacksjs/markdown": "workspace:*",
+    "@stacksjs/sanitizer": "workspace:*",
     "bun-plugin-stx": "workspace:*",
-    "gray-matter": "^4.0.3",
-    "headwind": "link:headwind",
-    "marked": "^16.0.0",
-    "shiki": "^3.8.0",
-    "yaml": "^2.8.0"
-  },
-  "devDependencies": {
-    "@types/marked": "^6.0.0"
+    "shiki": "^3.8.0"
   }
 }

@@ -7,9 +7,15 @@
  */
 const ALLOWED_GLOBALS = new Set([
   // Math functions
-  'Math', 'parseInt', 'parseFloat', 'isNaN', 'isFinite',
+  'Math',
+  'parseInt',
+  'parseFloat',
+  'isNaN',
+  'isFinite',
   // String functions
-  'String', 'encodeURIComponent', 'decodeURIComponent',
+  'String',
+  'encodeURIComponent',
+  'decodeURIComponent',
   // Array functions
   'Array',
   // Date functions
@@ -19,7 +25,7 @@ const ALLOWED_GLOBALS = new Set([
   // Number
   'Number',
   // Boolean
-  'Boolean'
+  'Boolean',
 ])
 
 /**
@@ -30,8 +36,8 @@ const DANGEROUS_PATTERNS = [
   /\b(process|require|import|exports|module)\b/,
   /\b(window|document|global|globalThis)\b/,
   /\b(constructor|prototype|__proto__)\b/,
-  /__\w+__/,  // Dunder methods
-  /\[\s*['"]/,  // Bracket notation with strings (potential injection)
+  /__\w+__/, // Dunder methods
+  /\[\s*['"]/, // Bracket notation with strings (potential injection)
 ]
 
 /**
@@ -64,10 +70,10 @@ export function createSafeContext(context: Record<string, any>): Record<string, 
   safeContext.Number = Number
   safeContext.Boolean = Boolean
   safeContext.Array = Array
-  safeContext.parseInt = parseInt
-  safeContext.parseFloat = parseFloat
-  safeContext.isNaN = isNaN
-  safeContext.isFinite = isFinite
+  safeContext.parseInt = Number.parseInt
+  safeContext.parseFloat = Number.parseFloat
+  safeContext.isNaN = Number.isNaN
+  safeContext.isFinite = Number.isFinite
   safeContext.encodeURIComponent = encodeURIComponent
   safeContext.decodeURIComponent = decodeURIComponent
 
@@ -81,7 +87,8 @@ export function createSafeContext(context: Record<string, any>): Record<string, 
     // For objects, create a safe copy
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       safeContext[key] = sanitizeObject(value)
-    } else {
+    }
+    else {
       safeContext[key] = value
     }
   }
@@ -109,16 +116,17 @@ function sanitizeObject(obj: any, depth = 0): any {
   const sanitized: any = {}
   for (const [key, value] of Object.entries(obj)) {
     // Skip dangerous keys
-    if (key.startsWith('_') ||
-        key === 'constructor' ||
-        key === 'prototype' ||
-        key === '__proto__') {
+    if (key.startsWith('_')
+      || key === 'constructor'
+      || key === 'prototype'
+      || key === '__proto__') {
       continue
     }
 
     if (value && typeof value === 'object') {
       sanitized[key] = sanitizeObject(value, depth + 1)
-    } else {
+    }
+    else {
       sanitized[key] = value
     }
   }
@@ -148,7 +156,8 @@ export function safeEvaluate(expression: string, context: Record<string, any>): 
     `)
 
     return func(...Object.values(safeContext))
-  } catch (error: any) {
+  }
+  catch (error: any) {
     // Return undefined for evaluation errors instead of throwing
     return undefined
   }
@@ -161,7 +170,8 @@ export function isExpressionSafe(expression: string): boolean {
   try {
     sanitizeExpression(expression)
     return true
-  } catch {
+  }
+  catch {
     return false
   }
 }

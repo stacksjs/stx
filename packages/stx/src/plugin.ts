@@ -67,9 +67,9 @@ export const plugin: BunPlugin = {
               filePath,
               undefined,
               undefined,
-              `File read error: ${error.message}`
+              `File read error: ${error.message}`,
             )
-          }
+          },
         )
 
         if (!content) {
@@ -106,7 +106,7 @@ export const plugin: BunPlugin = {
               filePath,
               undefined,
               undefined,
-              scriptContent.substring(0, 100)
+              scriptContent.substring(0, 100),
             )
             errorLogger.log(scriptError, { filePath, scriptContent })
 
@@ -114,11 +114,11 @@ export const plugin: BunPlugin = {
               throw scriptError
             }
             // In production, continue with empty context
-          }
+          },
         )
 
         // Process template directives with performance monitoring
-        let output = await performanceMonitor.timeAsync('directive-processing', async () => {
+        const output = await performanceMonitor.timeAsync('directive-processing', async () => {
           return await processDirectives(templateContent, context, filePath, options, dependencies)
         })
 
@@ -185,11 +185,13 @@ export const plugin: BunPlugin = {
     ${errorContext ? `<p><strong>Context:</strong> ${errorContext}</p>` : ''}
   </div>
 
-  ${enhancedError.stack ? `
+  ${enhancedError.stack
+    ? `
   <div class="error-details">
     <h3>Stack Trace</h3>
     <pre class="error-code">${enhancedError.stack}</pre>
-  </div>` : ''}
+  </div>`
+    : ''}
 
   <div class="help-section">
     <h3>💡 Troubleshooting Tips</h3>

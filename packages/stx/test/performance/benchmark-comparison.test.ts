@@ -1,6 +1,7 @@
+/* eslint-disable no-console */
+import type { StxOptions } from '../../src/types'
 import { describe, expect, test } from 'bun:test'
 import { processDirectives } from '../../src/process'
-import type { StxOptions } from '../../src/types'
 
 const defaultOptions: StxOptions = {
   debug: false,
@@ -59,7 +60,7 @@ describe('STX vs Native Performance Comparison', () => {
     const data = {
       title: 'Performance Test',
       content: 'This is a performance comparison test',
-      items: Array.from({ length: 100 }, (_, i) => ({ name: `Item ${i}`, value: i * 2 }))
+      items: Array.from({ length: 100 }, (_, i) => ({ name: `Item ${i}`, value: i * 2 })),
     }
 
     const stxTemplate = `
@@ -99,9 +100,9 @@ describe('STX vs Native Performance Comparison', () => {
         active: i % 4 !== 0,
         posts: Array.from({ length: Math.floor(Math.random() * 10) }, (_, j) => ({
           title: `Post ${j} by User ${i}`,
-          published: j % 2 === 0
-        }))
-      }))
+          published: j % 2 === 0,
+        })),
+      })),
     }
 
     const stxTemplate = `
@@ -168,13 +169,15 @@ describe('STX vs Native Performance Comparison', () => {
               <button>Manage Users</button>
               <button>System Settings</button>
             </div>`
-        } else if (user.role === 'editor') {
+        }
+        else if (user.role === 'editor') {
           html += `<span class="badge editor">Editor</span>
             <div class="editor-controls">
               <button>Create Post</button>
               <button>Moderate</button>
             </div>`
-        } else {
+        }
+        else {
           html += `<span class="badge user">User</span>`
         }
 
@@ -189,16 +192,19 @@ describe('STX vs Native Performance Comparison', () => {
             for (const post of user.posts) {
               if (post.published) {
                 html += `<li class="published">${post.title}</li>`
-              } else {
+              }
+              else {
                 html += `<li class="draft">${post.title} (Draft)</li>`
               }
             }
 
             html += `</ul></div>`
-          } else {
+          }
+          else {
             html += `<p class="no-posts">No posts yet</p>`
           }
-        } else {
+        }
+        else {
           html += `<div class="status inactive">Inactive</div>`
         }
 
@@ -251,8 +257,8 @@ describe('STX vs Native Performance Comparison', () => {
         items: Array.from({ length: size }, (_, i) => ({
           title: `Item ${i}`,
           description: `Description for item ${i}`,
-          featured: i % 10 === 0
-        }))
+          featured: i % 10 === 0,
+        })),
       }
 
       const result = await benchmarkSTX(baseTemplate, context, 50)
@@ -289,7 +295,7 @@ describe('STX vs Native Performance Comparison', () => {
       title: `Card ${i}`,
       content: `Content for card ${i}`,
       showButton: i % 2 === 0,
-      buttonText: 'Click me'
+      buttonText: 'Click me',
     }))
 
     const startTime = performance.now()

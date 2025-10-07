@@ -1,9 +1,10 @@
+/* eslint-disable no-console */
+import type { StxOptions } from '../../src/types'
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import { processDirectives } from '../../src/process'
-import type { StxOptions } from '../../src/types'
 import { clearOnceStore } from '../../src/includes'
+import { processDirectives } from '../../src/process'
 
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'perf-temp')
@@ -51,7 +52,7 @@ function generateLargeDataset(size: number) {
       created: new Date().toISOString(),
       updated: new Date().toISOString(),
       version: Math.floor(Math.random() * 100),
-    }
+    },
   }))
 }
 
@@ -97,7 +98,8 @@ describe('Performance Tests', () => {
   afterAll(async () => {
     try {
       await fs.promises.rm(TEMP_DIR, { recursive: true, force: true })
-    } catch (error) {
+    }
+    catch {
       // Ignore cleanup errors
     }
   })
@@ -115,7 +117,7 @@ describe('Performance Tests', () => {
       const context = {
         title: 'Performance Test',
         content: 'This is a performance test',
-        count: 42
+        count: 42,
       }
 
       const result = await benchmarkTemplate(template, context, 10000)
@@ -147,7 +149,7 @@ describe('Performance Tests', () => {
         hideFooter: false,
         title: 'Performance Test',
         content: 'Content here',
-        footerText: 'Footer text'
+        footerText: 'Footer text',
       }
 
       const result = await benchmarkTemplate(template, context, 5000)
@@ -194,7 +196,7 @@ describe('Performance Tests', () => {
       `
 
       const context = {
-        items: Array.from({ length: 100 }, (_, i) => ({ name: `Item ${i}`, value: i * 2 }))
+        items: Array.from({ length: 100 }, (_, i) => ({ name: `Item ${i}`, value: i * 2 })),
       }
 
       const result = await benchmarkTemplate(template, context, 1000)
@@ -226,8 +228,8 @@ describe('Performance Tests', () => {
           name: `Product ${i}`,
           description: `Description for product ${i}`,
           featured: i % 10 === 0,
-          price: (Math.random() * 100).toFixed(2)
-        }))
+          price: (Math.random() * 100).toFixed(2),
+        })),
       }
 
       const result = await benchmarkTemplate(template, context, 100)
@@ -318,13 +320,13 @@ describe('Performance Tests', () => {
         navigation: [
           { title: 'Home', url: '/', active: false },
           { title: 'Dashboard', url: '/dashboard', active: true },
-          { title: 'Profile', url: '/profile', active: false }
+          { title: 'Profile', url: '/profile', active: false },
         ],
         widgets: [
           {
             type: 'chart',
             title: 'Analytics',
-            data: JSON.stringify({ views: 1000, clicks: 50 })
+            data: JSON.stringify({ views: 1000, clicks: 50 }),
           },
           {
             type: 'list',
@@ -332,22 +334,22 @@ describe('Performance Tests', () => {
             items: [
               { text: 'Item 1', count: 5 },
               { text: 'Item 2', count: 3 },
-              { text: 'Item 3' }
-            ]
+              { text: 'Item 3' },
+            ],
           },
           {
             type: 'text',
             title: 'Status',
-            content: 'All systems operational'
-          }
+            content: 'All systems operational',
+          },
         ],
         user: {
           name: 'John Doe',
           email: 'john@example.com',
           role: 'admin',
-          avatar: '/avatar.jpg'
+          avatar: '/avatar.jpg',
         },
-        content: 'Welcome to the app'
+        content: 'Welcome to the app',
       }
 
       const result = await benchmarkTemplate(template, context, 100)
@@ -410,7 +412,7 @@ describe('Performance Tests', () => {
 
       const context = {
         items: extremeDataset,
-        totalItems: extremeDataset.length
+        totalItems: extremeDataset.length,
       }
 
       const startTime = performance.now()
@@ -470,8 +472,8 @@ describe('Performance Tests', () => {
         items: Array.from({ length: 1000 }, (_, i) => ({
           text: `Item ${i}`,
           visible: i % 2 === 0,
-          type: i % 3 === 0 ? 'important' : i % 2 === 0 ? 'normal' : 'other'
-        }))
+          type: i % 3 === 0 ? 'important' : i % 2 === 0 ? 'normal' : 'other',
+        })),
       }
 
       const result = await benchmarkTemplate(template, context, 100)
@@ -500,15 +502,15 @@ describe('Performance Tests', () => {
         const context = {
           items: Array.from({ length: 100 }, (_, j) => ({
             id: i * 100 + j,
-            text: `Item ${i}-${j}`
-          }))
+            text: `Item ${i}-${j}`,
+          })),
         }
         const dependencies = new Set<string>()
         await processDirectives(template, context, path.join(TEMP_DIR, 'memory.stx'), defaultOptions, dependencies)
 
         // Force garbage collection periodically
-        if (i % 100 === 0 && global.gc) {
-          global.gc()
+        if (i % 100 === 0 && globalThis.gc) {
+          globalThis.gc()
         }
       }
 
@@ -647,7 +649,7 @@ describe('Performance Tests', () => {
         categories: [
           { id: 1, name: 'Electronics', slug: 'electronics' },
           { id: 2, name: 'Clothing', slug: 'clothing' },
-          { id: 3, name: 'Books', slug: 'books' }
+          { id: 3, name: 'Books', slug: 'books' },
         ],
         filters: [
           {
@@ -655,17 +657,17 @@ describe('Performance Tests', () => {
             options: [
               { value: '0-50', label: 'Under $50', count: 120 },
               { value: '50-100', label: '$50-$100', count: 80 },
-              { value: '100+', label: 'Over $100', count: 45 }
-            ]
+              { value: '100+', label: 'Over $100', count: 45 },
+            ],
           },
           {
             name: 'Brand',
             options: [
               { value: 'apple', label: 'Apple', count: 25 },
               { value: 'samsung', label: 'Samsung', count: 30 },
-              { value: 'sony', label: 'Sony', count: 15 }
-            ]
-          }
+              { value: 'sony', label: 'Sony', count: 15 },
+            ],
+          },
         ],
         products: Array.from({ length: 50 }, (_, i) => ({
           id: i + 1,
@@ -676,7 +678,7 @@ describe('Performance Tests', () => {
           salePrice: i % 3 === 0 ? (Math.random() * 150 + 30).toFixed(2) : null,
           originalPrice: i % 3 === 0 ? (Math.random() * 200 + 50).toFixed(2) : null,
           rating: Math.floor(Math.random() * 5) + 1,
-          reviewCount: Math.floor(Math.random() * 100) + 1
+          reviewCount: Math.floor(Math.random() * 100) + 1,
         })),
         pagination: {
           hasPages: true,
@@ -687,9 +689,9 @@ describe('Performance Tests', () => {
           pages: [
             { number: 1, isCurrent: false },
             { number: 2, isCurrent: true },
-            { number: 3, isCurrent: false }
-          ]
-        }
+            { number: 3, isCurrent: false },
+          ],
+        },
       }
 
       const result = await benchmarkTemplate(template, context, 50)

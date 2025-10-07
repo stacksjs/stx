@@ -69,9 +69,10 @@ export async function analyzeTemplate(filePath: string): Promise<AnalysisResult>
       metrics,
       issues,
       suggestions,
-      performance
+      performance,
     }
-  } catch (error) {
+  }
+  catch (error) {
     throw new Error(`Failed to analyze template ${filePath}: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
@@ -93,7 +94,7 @@ function calculateMetrics(content: string): TemplateMetrics {
     loops: (content.match(/@(foreach|for|endforeach|endfor|while|endwhile)\b/g) || []).length,
     includes: (content.match(/@(include|component|extends|section|yield)\b/g) || []).length,
     custom: 0, // Would need to check against registered custom directives
-    total: 0
+    total: 0,
   }
   directives.total = directives.conditionals + directives.loops + directives.includes + directives.custom
 
@@ -101,17 +102,17 @@ function calculateMetrics(content: string): TemplateMetrics {
   const expressions = (content.match(/\{\{[\s\S]*?\}\}/g) || []).length
 
   // Count components (custom elements)
-  const components = (content.match(/<[A-Z][a-zA-Z0-9]*[^>]*>/g) || []).length
+  const components = (content.match(/<[A-Z][^>]*>/g) || []).length
 
   // Count layouts
   const layouts = (content.match(/@extends\(/g) || []).length
 
   // Calculate complexity score
   const complexity = Math.min(10, Math.ceil(
-    directives.total * 0.5 +
-    expressions * 0.1 +
-    components * 0.3 +
-    (scriptLines > 10 ? scriptLines * 0.05 : 0)
+    directives.total * 0.5
+    + expressions * 0.1
+    + components * 0.3
+    + (scriptLines > 10 ? scriptLines * 0.05 : 0),
   ))
 
   return {
@@ -122,7 +123,7 @@ function calculateMetrics(content: string): TemplateMetrics {
     components,
     layouts,
     scriptLines,
-    complexity
+    complexity,
   }
 }
 
@@ -139,7 +140,7 @@ function findIssues(content: string, filePath: string): Issue[] {
       type: 'error',
       category: 'syntax',
       message: `Found ${unmatchedIfs} unmatched @if directive(s)`,
-      suggestion: 'Ensure every @if has a corresponding @endif'
+      suggestion: 'Ensure every @if has a corresponding @endif',
     })
   }
 
@@ -149,7 +150,7 @@ function findIssues(content: string, filePath: string): Issue[] {
       type: 'error',
       category: 'syntax',
       message: `Found ${unmatchedForeachs} unmatched @foreach directive(s)`,
-      suggestion: 'Ensure every @foreach has a corresponding @endforeach'
+      suggestion: 'Ensure every @foreach has a corresponding @endforeach',
     })
   }
 
@@ -160,7 +161,7 @@ function findIssues(content: string, filePath: string): Issue[] {
       type: 'warning',
       category: 'performance',
       message: 'Nested loops detected which may impact performance',
-      suggestion: 'Consider preprocessing data or using more efficient data structures'
+      suggestion: 'Consider preprocessing data or using more efficient data structures',
     })
   }
 
@@ -171,7 +172,7 @@ function findIssues(content: string, filePath: string): Issue[] {
       type: 'warning',
       category: 'security',
       message: `Found ${rawOutputs} raw output expression(s) {!! !!}`,
-      suggestion: 'Ensure raw outputs are properly sanitized to prevent XSS'
+      suggestion: 'Ensure raw outputs are properly sanitized to prevent XSS',
     })
   }
 
@@ -184,7 +185,7 @@ function findIssues(content: string, filePath: string): Issue[] {
         type: 'warning',
         category: 'accessibility',
         message: `Found ${imagesWithoutAlt.length} image(s) without alt attributes`,
-        suggestion: 'Add alt attributes to all images for screen reader accessibility'
+        suggestion: 'Add alt attributes to all images for screen reader accessibility',
       })
     }
   }
@@ -196,7 +197,7 @@ function findIssues(content: string, filePath: string): Issue[] {
       type: 'info',
       category: 'maintainability',
       message: `Found ${longLines.length} line(s) longer than 120 characters`,
-      suggestion: 'Consider breaking long lines for better readability'
+      suggestion: 'Consider breaking long lines for better readability',
     })
   }
 
@@ -207,7 +208,7 @@ function findIssues(content: string, filePath: string): Issue[] {
       type: 'info',
       category: 'maintainability',
       message: `Found ${inlineStyles} inline style attributes`,
-      suggestion: 'Consider moving styles to CSS classes for better maintainability'
+      suggestion: 'Consider moving styles to CSS classes for better maintainability',
     })
   }
 
@@ -226,7 +227,7 @@ function generateSuggestions(content: string, metrics: TemplateMetrics): Suggest
       type: 'refactor',
       message: 'Template complexity is high. Consider breaking into smaller components.',
       impact: 'high',
-      effort: 'medium'
+      effort: 'medium',
     })
   }
 
@@ -236,7 +237,7 @@ function generateSuggestions(content: string, metrics: TemplateMetrics): Suggest
       type: 'refactor',
       message: 'Large template with no components. Consider extracting reusable parts into components.',
       impact: 'medium',
-      effort: 'medium'
+      effort: 'medium',
     })
   }
 
@@ -246,7 +247,7 @@ function generateSuggestions(content: string, metrics: TemplateMetrics): Suggest
       type: 'optimization',
       message: 'Many template expressions detected. Consider preprocessing some data in the script section.',
       impact: 'medium',
-      effort: 'low'
+      effort: 'low',
     })
   }
 
@@ -256,7 +257,7 @@ function generateSuggestions(content: string, metrics: TemplateMetrics): Suggest
       type: 'optimization',
       message: 'Template appears static. Consider enabling aggressive caching.',
       impact: 'high',
-      effort: 'low'
+      effort: 'low',
     })
   }
 
@@ -266,7 +267,7 @@ function generateSuggestions(content: string, metrics: TemplateMetrics): Suggest
       type: 'refactor',
       message: 'Large script section. Consider moving complex logic to external modules.',
       impact: 'medium',
-      effort: 'medium'
+      effort: 'medium',
     })
   }
 
@@ -296,9 +297,11 @@ function analyzePerformance(content: string, metrics: TemplateMetrics): Performa
   let cacheability: 'high' | 'medium' | 'low'
   if (metrics.expressions === 0 && metrics.directives.total === 0) {
     cacheability = 'high'
-  } else if (metrics.expressions < 5 && metrics.directives.total < 3) {
+  }
+  else if (metrics.expressions < 5 && metrics.directives.total < 3) {
     cacheability = 'medium'
-  } else {
+  }
+  else {
     cacheability = 'low'
   }
 
@@ -321,7 +324,7 @@ function analyzePerformance(content: string, metrics: TemplateMetrics): Performa
     estimatedRenderTime: Math.round(estimatedRenderTime * 100) / 100,
     complexityScore: metrics.complexity,
     cacheability,
-    recommendations
+    recommendations,
   }
 }
 
@@ -355,7 +358,8 @@ export async function analyzeProject(patterns: string[] = ['**/*.stx']): Promise
     try {
       const result = await analyzeTemplate(file)
       results.push(result)
-    } catch (error) {
+    }
+    catch (error) {
       console.warn(`Failed to analyze ${file}:`, error)
     }
   }
@@ -383,8 +387,8 @@ function generateProjectSummary(results: AnalysisResult[]): ProjectSummary {
   const totalIssues = results.reduce((sum, r) => sum + r.issues.length, 0)
 
   const issuesByCategory: Record<string, number> = {}
-  results.forEach(r => {
-    r.issues.forEach(issue => {
+  results.forEach((r) => {
+    r.issues.forEach((issue) => {
       issuesByCategory[issue.category] = (issuesByCategory[issue.category] || 0) + 1
     })
   })
@@ -414,6 +418,6 @@ function generateProjectSummary(results: AnalysisResult[]): ProjectSummary {
     totalIssues,
     issuesByCategory,
     performanceScore,
-    recommendations
+    recommendations,
   }
 }

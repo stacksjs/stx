@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 import { watch } from 'node:fs'
-import { build } from '/Users/chrisbreuer/Code/headwind/packages/headwind/src/index.ts'
-import { defaultConfig } from '/Users/chrisbreuer/Code/headwind/packages/headwind/src/config.ts'
-import config from '../headwind.config.ts'
 import path from 'node:path'
+import config from '../headwind.config.ts'
+import { defaultConfig } from '/Users/chrisbreuer/Code/headwind/packages/headwind/src/config.ts'
+import { build } from '/Users/chrisbreuer/Code/headwind/packages/headwind/src/index.ts'
 
 console.log('🚀 Starting Headwind in watch mode...')
 console.log('👀 Watching for changes in:', config.content)
@@ -28,7 +28,8 @@ async function buildCSS() {
     const sizeKB = ((await fileSize.size) / 1024).toFixed(2)
     console.log(`📦 File size: ${sizeKB} KB`)
     console.log('')
-  } catch (error) {
+  }
+  catch (error) {
     console.error('❌ Build failed:', error)
   }
 }

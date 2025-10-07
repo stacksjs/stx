@@ -1,8 +1,7 @@
 import type { StxOptions, SyntaxHighlightTheme } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
-import matter from 'gray-matter'
-import { marked } from 'marked'
+import { parseFrontmatter, parseMarkdown } from '@stacksjs/markdown'
 import { createHighlighter } from 'shiki'
 import { config } from './config'
 import { createDetailedErrorMessage, fileExists } from './utils'
@@ -51,7 +50,7 @@ export async function readMarkdownFile(
     const fileContent = await fs.promises.readFile(filePath, 'utf-8')
 
     // Parse the content and frontmatter
-    const matterResult = matter(fileContent)
+    const { data, content: markdownContent } = parseFrontmatter(fileContent)
 
     // Get the markdown configuration
     const markdownConfig = options.markdown || config.markdown || {
@@ -65,7 +64,7 @@ export async function readMarkdownFile(
     }
 
     // Parse the markdown content to HTML
-    const parsedContent = await Promise.resolve(marked.parse(matterResult.content))
+    const parsedContent = parseMarkdown(markdownContent, { gfm: true })
     let htmlContent = parsedContent
 
     // Apply syntax highlighting to code blocks if enabled
@@ -81,7 +80,7 @@ export async function readMarkdownFile(
     // Prepare the result
     const parsedResult = {
       content: htmlContent,
-      data: matterResult.data || {},
+      data: data || {},
     }
 
     // Cache the result if caching is enabled

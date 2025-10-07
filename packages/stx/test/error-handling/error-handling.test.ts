@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeAll, afterAll } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import {
@@ -9,11 +9,11 @@ import {
   safeExecute,
   safeExecuteAsync,
   StxError,
-  StxRuntimeError,
-  StxSyntaxError,
-  StxSecurityError,
   StxFileError,
-  validators
+  StxRuntimeError,
+  StxSecurityError,
+  StxSyntaxError,
+  validators,
 } from '../../src/error-handling'
 
 const TEST_DIR = import.meta.dir
@@ -36,7 +36,7 @@ describe('Error Handling', () => {
         '/path/to/file.stx',
         10,
         5,
-        'Error context'
+        'Error context',
       )
 
       expect(error.message).toBe('Test error')
@@ -79,7 +79,7 @@ line 5`
         filePath: '/test/file.stx',
         template,
         offset: template.indexOf('with error'),
-        match: 'with error'
+        match: 'with error',
       }
 
       const enhancedError = createEnhancedError('Syntax', 'Test error message', context)
@@ -96,7 +96,7 @@ line 5`
         filePath: '/test/file.stx',
         template,
         offset: 0,
-        match: 'single'
+        match: 'single',
       }
 
       const enhancedError = createEnhancedError('Test', 'Error at start', context)
@@ -109,7 +109,7 @@ line 5`
     it('should execute function safely and return result', () => {
       const result = safeExecute(
         () => 'success',
-        'fallback'
+        'fallback',
       )
 
       expect(result).toBe('success')
@@ -124,7 +124,7 @@ line 5`
         (error) => {
           errorHandled = true
           expect(error.message).toBe('Test error')
-        }
+        },
       )
 
       expect(result).toBe('fallback')
@@ -134,7 +134,7 @@ line 5`
     it('should execute async function safely', async () => {
       const result = await safeExecuteAsync(
         async () => 'async success',
-        'fallback'
+        'fallback',
       )
 
       expect(result).toBe('async success')
@@ -149,7 +149,7 @@ line 5`
         (error) => {
           errorHandled = true
           expect(error.message).toBe('Async error')
-        }
+        },
       )
 
       expect(result).toBe('async fallback')
@@ -351,9 +351,11 @@ line 5`
         expect(devHelpers.isDevelopment()).toBe(false)
 
         // Restore original values
-        if (originalEnv) process.env.NODE_ENV = originalEnv
+        if (originalEnv)
+          process.env.NODE_ENV = originalEnv
         else delete process.env.NODE_ENV
-        if (originalDebug) process.env.STX_DEBUG = originalDebug
+        if (originalDebug)
+          process.env.STX_DEBUG = originalDebug
         else delete process.env.STX_DEBUG
       })
     })
@@ -398,7 +400,7 @@ line 3`
         filePath: '/test/debug.stx',
         template,
         offset: template.indexOf('{{ error'),
-        match: '{{ error'
+        match: '{{ error',
       }
 
       const enhancedError = createEnhancedError('Expression', 'Unclosed expression', context)
@@ -450,7 +452,7 @@ line 3`
         '/test/file.stx',
         10,
         5,
-        '@if (condition)\n  content\n// missing @endif'
+        '@if (condition)\n  content\n// missing @endif',
       )
 
       // Error should contain helpful information

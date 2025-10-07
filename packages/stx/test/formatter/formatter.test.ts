@@ -573,8 +573,8 @@ module.exports = data;
 
   describe('Performance and Edge Cases', () => {
     it('should handle very large templates efficiently', () => {
-      const largeContent = Array(1000).fill(0).map((_, i) =>
-        `<div class="item-${i}">{{ items[${i}].name }}</div>`
+      const largeContent = Array.from({ length: 1000 }).fill(0).map((_, i) =>
+        `<div class="item-${i}">{{ items[${i}].name }}</div>`,
       ).join('')
 
       const input = `<div class="container">${largeContent}</div>`
@@ -593,9 +593,8 @@ module.exports = data;
     })
 
     it('should handle deeply nested structures', () => {
-      const deepNesting = Array(20).fill(0).reduce((content, _, i) =>
-        `<div class="level-${i}">${content}</div>`, '<span>Deep content</span>'
-      )
+      const deepNesting = Array.from({ length: 20 }).fill(0).reduce((content, _, i) =>
+        `<div class="level-${i}">${content}</div>`, '<span>Deep content</span>')
 
       const result = formatStxContent(deepNesting)
 

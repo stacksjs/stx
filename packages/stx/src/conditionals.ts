@@ -15,25 +15,27 @@ function findBalancedSwitch(content: string, startIndex: number): { end: number,
   let currentIndex = startIndex
 
   while (currentIndex < content.length && depth > 0) {
-    const switchMatch = content.substring(currentIndex).match(/@switch\s*\(((?:[^()]*|\([^()]*\))*)\)/)
+    const switchMatch = content.substring(currentIndex).match(/@switch\s*\(((?:[^()]|\([^()]*\))*)\)/)
     const endSwitchMatch = content.substring(currentIndex).match(/@endswitch/)
 
-    let nextSwitch = switchMatch ? currentIndex + switchMatch.index! : Infinity
-    let nextEnd = endSwitchMatch ? currentIndex + endSwitchMatch.index! : Infinity
+    const nextSwitch = switchMatch ? currentIndex + switchMatch.index! : Infinity
+    const nextEnd = endSwitchMatch ? currentIndex + endSwitchMatch.index! : Infinity
 
     if (nextSwitch < nextEnd) {
       depth++
       currentIndex = nextSwitch + switchMatch![0].length
-    } else if (nextEnd < Infinity) {
+    }
+    else if (nextEnd < Infinity) {
       depth--
       if (depth === 0) {
         return {
           end: nextEnd,
-          switchContent: content.substring(startIndex, nextEnd)
+          switchContent: content.substring(startIndex, nextEnd),
         }
       }
       currentIndex = nextEnd + endSwitchMatch![0].length
-    } else {
+    }
+    else {
       break
     }
   }
@@ -53,7 +55,7 @@ export function processSwitchStatements(template: string, context: Record<string
     processedAny = false
 
     // Find the first @switch statement - improved regex to handle nested parentheses
-    const switchRegex = /@switch\s*\(((?:[^()]*|\([^()]*\))*)\)/
+    const switchRegex = /@switch\s*\(((?:[^()]|\([^()]*\))*)\)/
     const switchMatch = output.match(switchRegex)
     if (!switchMatch || switchMatch.index === undefined) {
       break
@@ -83,7 +85,7 @@ export function processSwitchStatements(template: string, context: Record<string
       let defaultContent = ''
 
       // Find all @case and @default positions in the switch content
-      const caseRegex = /@case\s*\(((?:[^()]*|\([^()]*\))*)\)/g
+      const caseRegex = /@case\s*\(((?:[^()]|\([^()]*\))*)\)/g
       const casePositions: Array<{ pos: number, value: string, directive: string }> = []
       let caseMatch
 
@@ -91,7 +93,7 @@ export function processSwitchStatements(template: string, context: Record<string
         casePositions.push({
           pos: caseMatch.index,
           value: caseMatch[1],
-          directive: caseMatch[0]
+          directive: caseMatch[0],
         })
       }
 
@@ -101,7 +103,7 @@ export function processSwitchStatements(template: string, context: Record<string
         casePositions.push({
           pos: defaultMatch.index,
           value: '',
-          directive: '@default'
+          directive: '@default',
         })
       }
 
@@ -119,7 +121,8 @@ export function processSwitchStatements(template: string, context: Record<string
 
         if (current.directive === '@default') {
           defaultContent = content
-        } else {
+        }
+        else {
           cases.push({ value: current.value, content })
         }
       }
@@ -136,7 +139,8 @@ export function processSwitchStatements(template: string, context: Record<string
             result = caseItem.content
             break
           }
-        } catch (error: any) {
+        }
+        catch {
           // If case evaluation fails, skip this case
           continue
         }
@@ -145,8 +149,8 @@ export function processSwitchStatements(template: string, context: Record<string
       // Replace the entire switch block with the result
       output = output.substring(0, switchStart) + result + output.substring(switchEnd)
       processedAny = true
-
-    } catch (error: any) {
+    }
+    catch (error: any) {
       const errorMessage = createDetailedErrorMessage(
         'Switch',
         `Error evaluating @switch expression: ${error.message}`,

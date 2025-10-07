@@ -1,6 +1,7 @@
+/* eslint-disable no-console */
+import type { StxOptions } from '../../src/types'
 import { describe, expect, test } from 'bun:test'
 import { processDirectives } from '../../src/process'
-import type { StxOptions } from '../../src/types'
 
 const defaultOptions: StxOptions = {
   debug: false,
@@ -9,8 +10,8 @@ const defaultOptions: StxOptions = {
 
 // Helper to measure memory usage
 function measureMemoryUsage() {
-  if (global.gc) {
-    global.gc()
+  if (globalThis.gc) {
+    globalThis.gc()
   }
   return process.memoryUsage()
 }
@@ -24,7 +25,7 @@ function generateMassiveDataset(size: number) {
       name: `Category ${i}`,
       slug: `category-${i}`,
       description: `This is category ${i} with a longer description that adds more text content to test string processing performance.`,
-      itemCount: Math.floor(size / 50)
+      itemCount: Math.floor(size / 50),
     })),
     items: Array.from({ length: size }, (_, i) => ({
       id: i,
@@ -46,17 +47,17 @@ function generateMassiveDataset(size: number) {
         dimensions: {
           length: Math.round(Math.random() * 100),
           width: Math.round(Math.random() * 100),
-          height: Math.round(Math.random() * 100)
-        }
+          height: Math.round(Math.random() * 100),
+        },
       },
       metadata: {
         created: new Date(2020 + (i % 4), (i % 12), (i % 28) + 1).toISOString(),
         updated: new Date(2023, (i % 12), (i % 28) + 1).toISOString(),
         views: Math.floor(Math.random() * 10000),
         likes: Math.floor(Math.random() * 1000),
-        shares: Math.floor(Math.random() * 100)
-      }
-    }))
+        shares: Math.floor(Math.random() * 100),
+      },
+    })),
   }
 }
 
@@ -228,34 +229,46 @@ describe('Extreme Stress Tests', () => {
         id: i,
         title: `Level 1 Item ${i}`,
         hasChildren: i % 3 === 0,
-        children: i % 3 === 0 ? Array.from({ length: 20 }, (_, j) => ({
-          id: j,
-          title: `Level 2 Item ${i}-${j}`,
-          type: ['container', 'list', 'simple'][j % 3],
-          content: `Simple content for ${i}-${j}`,
-          items: j % 3 === 0 ? Array.from({ length: 10 }, (_, k) => ({
-            title: `Level 3 Item ${i}-${j}-${k}`,
-            hasDetails: k % 4 === 0,
-            details: k % 4 === 0 ? Array.from({ length: 5 }, (_, l) => ({
-              name: `Detail ${i}-${j}-${k}-${l}`,
-              description: `Description for detail ${l}`,
-              hasSubItems: l % 2 === 0,
-              subItems: l % 2 === 0 ? Array.from({ length: 3 }, (_, m) => ({
-                label: `Label ${m}`,
-                value: `Value ${m}`,
-                hasNested: m === 1,
-                nested: m === 1 ? Array.from({ length: 2 }, (_, n) => ({
-                  key: `Key ${n}`,
-                  val: `Val ${n}`
-                })) : []
-              })) : []
-            })) : []
-          })) : [],
-          listItems: j % 3 === 1 ? Array.from({ length: 15 }, (_, k) => ({
-            text: `List item ${i}-${j}-${k}`
-          })) : []
-        })) : []
-      }))
+        children: i % 3 === 0
+          ? Array.from({ length: 20 }, (_, j) => ({
+              id: j,
+              title: `Level 2 Item ${i}-${j}`,
+              type: ['container', 'list', 'simple'][j % 3],
+              content: `Simple content for ${i}-${j}`,
+              items: j % 3 === 0
+                ? Array.from({ length: 10 }, (_, k) => ({
+                    title: `Level 3 Item ${i}-${j}-${k}`,
+                    hasDetails: k % 4 === 0,
+                    details: k % 4 === 0
+                      ? Array.from({ length: 5 }, (_, l) => ({
+                          name: `Detail ${i}-${j}-${k}-${l}`,
+                          description: `Description for detail ${l}`,
+                          hasSubItems: l % 2 === 0,
+                          subItems: l % 2 === 0
+                            ? Array.from({ length: 3 }, (_, m) => ({
+                                label: `Label ${m}`,
+                                value: `Value ${m}`,
+                                hasNested: m === 1,
+                                nested: m === 1
+                                  ? Array.from({ length: 2 }, (_, n) => ({
+                                      key: `Key ${n}`,
+                                      val: `Val ${n}`,
+                                    }))
+                                  : [],
+                              }))
+                            : [],
+                        }))
+                      : [],
+                  }))
+                : [],
+              listItems: j % 3 === 1
+                ? Array.from({ length: 15 }, (_, k) => ({
+                    text: `List item ${i}-${j}-${k}`,
+                  }))
+                : [],
+            }))
+          : [],
+      })),
     }
 
     const startTime = performance.now()
@@ -334,10 +347,27 @@ describe('Extreme Stress Tests', () => {
     `
 
     const statuses = [
-      'draft', 'pending_review', 'in_review', 'approved', 'published', 'featured',
-      'archived', 'deleted', 'suspended', 'flagged', 'spam', 'blocked',
-      'scheduled', 'expired', 'private', 'premium', 'beta', 'maintenance',
-      'migrating', 'processing', 'unknown_status'
+      'draft',
+      'pending_review',
+      'in_review',
+      'approved',
+      'published',
+      'featured',
+      'archived',
+      'deleted',
+      'suspended',
+      'flagged',
+      'spam',
+      'blocked',
+      'scheduled',
+      'expired',
+      'private',
+      'premium',
+      'beta',
+      'maintenance',
+      'migrating',
+      'processing',
+      'unknown_status',
     ]
 
     const massiveSwitchData = {
@@ -346,8 +376,8 @@ describe('Extreme Stress Tests', () => {
         name: `Item ${i}`,
         status: statuses[i % statuses.length],
         publishDate: '2024-01-01',
-        lastModified: new Date().toISOString()
-      }))
+        lastModified: new Date().toISOString(),
+      })),
     }
 
     const startTime = performance.now()
@@ -393,8 +423,8 @@ describe('Extreme Stress Tests', () => {
       items: Array.from({ length: 1000 }, (_, i) => ({
         title: `Item ${i}`,
         description: mediumString,
-        details: shortString
-      }))
+        details: shortString,
+      })),
     }
 
     const memoryBefore = measureMemoryUsage()
@@ -439,8 +469,8 @@ describe('Extreme Stress Tests', () => {
       data: Array.from({ length: 1000 }, (_, j) => ({
         id: j,
         name: `Item ${i}-${j}`,
-        process: (i + j) % 3 === 0
-      }))
+        process: (i + j) % 3 === 0,
+      })),
     }))
 
     const startTime = performance.now()
@@ -450,7 +480,7 @@ describe('Extreme Stress Tests', () => {
       concurrentRequests.map(async (request) => {
         const dependencies = new Set<string>()
         return processDirectives(template, request, `concurrent-${request.requestId}.stx`, defaultOptions, dependencies)
-      })
+      }),
     )
 
     const endTime = performance.now()
@@ -485,8 +515,8 @@ describe('Extreme Stress Tests', () => {
     const testData = {
       items: Array.from({ length: 5000 }, (_, i) => ({
         name: `Item ${i}`,
-        category: ['A', 'B', 'C', 'D'][i % 4]
-      }))
+        category: ['A', 'B', 'C', 'D'][i % 4],
+      })),
     }
 
     const iterations = 100

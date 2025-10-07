@@ -1,7 +1,7 @@
-import { describe, expect, it, beforeAll, afterAll } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import { analyzeTemplate, analyzeProject } from '../../src/analyzer'
+import { analyzeProject, analyzeTemplate } from '../../src/analyzer'
 
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp-analyzer')
@@ -180,12 +180,12 @@ describe('STX Analyzer', () => {
 
       // Check for specific issues
       const hasRawOutputWarning = result.issues.some(issue =>
-        issue.category === 'security' && issue.message.includes('raw output')
+        issue.category === 'security' && issue.message.includes('raw output'),
       )
       expect(hasRawOutputWarning).toBe(true)
 
       const hasAccessibilityIssue = result.issues.some(issue =>
-        issue.category === 'accessibility' && issue.message.includes('alt attributes')
+        issue.category === 'accessibility' && issue.message.includes('alt attributes'),
       )
       expect(hasAccessibilityIssue).toBe(true)
 
@@ -202,10 +202,10 @@ describe('STX Analyzer', () => {
       expect(syntaxErrors.length).toBeGreaterThan(0)
 
       const hasUnmatchedIf = syntaxErrors.some(issue =>
-        issue.message.includes('unmatched @if')
+        issue.message.includes('unmatched @if'),
       )
       const hasUnmatchedForeach = syntaxErrors.some(issue =>
-        issue.message.includes('unmatched @foreach')
+        issue.message.includes('unmatched @foreach'),
       )
 
       expect(hasUnmatchedIf || hasUnmatchedForeach).toBe(true)
@@ -237,7 +237,7 @@ describe('STX Analyzer', () => {
       expect(suggestionTypes).toContain('optimization')
 
       // Check that suggestions have required properties
-      result.suggestions.forEach(suggestion => {
+      result.suggestions.forEach((suggestion) => {
         expect(suggestion).toHaveProperty('message')
         expect(suggestion).toHaveProperty('impact')
         expect(suggestion).toHaveProperty('effort')
@@ -286,10 +286,10 @@ describe('STX Analyzer', () => {
 
       // Check for common recommendations
       const hasComplexityRecommendation = summary.recommendations.some(rec =>
-        rec.includes('complexity') || rec.includes('refactor')
+        rec.includes('complexity') || rec.includes('refactor'),
       )
       const hasSecurityRecommendation = summary.recommendations.some(rec =>
-        rec.includes('security') || rec.includes('raw output')
+        rec.includes('security') || rec.includes('raw output'),
       )
 
       expect(hasComplexityRecommendation || hasSecurityRecommendation).toBe(true)
@@ -357,7 +357,7 @@ describe('STX Analyzer', () => {
       expect(securityIssues.length).toBeGreaterThan(0)
 
       const rawOutputIssue = securityIssues.find(issue =>
-        issue.message.includes('raw output')
+        issue.message.includes('raw output'),
       )
       expect(rawOutputIssue).toBeDefined()
       expect(rawOutputIssue?.suggestion).toContain('sanitized')
@@ -371,7 +371,7 @@ describe('STX Analyzer', () => {
       expect(a11yIssues.length).toBeGreaterThan(0)
 
       const altTextIssue = a11yIssues.find(issue =>
-        issue.message.includes('alt attributes')
+        issue.message.includes('alt attributes'),
       )
       expect(altTextIssue).toBeDefined()
     })
@@ -429,7 +429,7 @@ describe('STX Analyzer', () => {
       expect(result.performance.recommendations.length).toBeGreaterThan(0)
 
       const hasOptimizationRec = result.performance.recommendations.some(rec =>
-        rec.includes('optimiz') || rec.includes('complex') || rec.includes('component')
+        rec.includes('optimiz') || rec.includes('complex') || rec.includes('component'),
       )
       expect(hasOptimizationRec).toBe(true)
     })
@@ -544,10 +544,10 @@ describe('STX Analyzer', () => {
 
       // Should detect common accessibility issues
       const hasImageAltIssue = a11yIssues.some(issue =>
-        issue.message.includes('alt') || issue.message.includes('image')
+        issue.message.includes('alt') || issue.message.includes('image'),
       )
       const hasClickableElementIssue = a11yIssues.some(issue =>
-        issue.message.includes('clickable') || issue.message.includes('interactive')
+        issue.message.includes('clickable') || issue.message.includes('interactive'),
       )
 
       expect(hasImageAltIssue || hasClickableElementIssue).toBe(true)
@@ -562,9 +562,9 @@ describe('STX Analyzer', () => {
 
       // Should detect XSS risks
       const hasXSSIssue = securityIssues.some(issue =>
-        issue.message.includes('raw output') ||
-        issue.message.includes('XSS') ||
-        issue.message.includes('sanitiz')
+        issue.message.includes('raw output')
+        || issue.message.includes('XSS')
+        || issue.message.includes('sanitiz'),
       )
       expect(hasXSSIssue).toBe(true)
     })
@@ -592,7 +592,7 @@ describe('STX Analyzer', () => {
       expect(optimizationSuggestions.length).toBeGreaterThan(0)
 
       // Should provide actionable suggestions
-      optimizationSuggestions.forEach(suggestion => {
+      optimizationSuggestions.forEach((suggestion) => {
         expect(suggestion.message).toBeDefined()
         expect(suggestion.impact).toMatch(/^(low|medium|high)$/)
         expect(suggestion.effort).toMatch(/^(low|medium|high)$/)
@@ -607,12 +607,12 @@ describe('STX Analyzer', () => {
       expect(result.metrics.complexity).toBeGreaterThan(1)
 
       const maintainabilityIssues = result.issues.filter(issue =>
-        issue.category === 'maintainability'
+        issue.category === 'maintainability',
       )
 
       // Complex templates may have maintainability concerns
       if (maintainabilityIssues.length > 0) {
-        maintainabilityIssues.forEach(issue => {
+        maintainabilityIssues.forEach((issue) => {
           expect(issue.suggestion).toBeDefined()
           expect(issue.line).toBeGreaterThan(0)
         })
@@ -670,9 +670,9 @@ describe('STX Analyzer', () => {
 
       // Should suggest refactoring
       const refactoringSuggestions = result.suggestions.filter(s =>
-        s.message.includes('refactor') ||
-        s.message.includes('simplify') ||
-        s.message.includes('complex')
+        s.message.includes('refactor')
+        || s.message.includes('simplify')
+        || s.message.includes('complex'),
       )
       expect(refactoringSuggestions.length).toBeGreaterThan(0)
     })
@@ -705,10 +705,10 @@ describe('STX Analyzer', () => {
 
       // Should provide actionable project-level recommendations
       const hasComplexityRec = summary.recommendations.some(rec =>
-        rec.includes('complexity') || rec.includes('simplify')
+        rec.includes('complexity') || rec.includes('simplify'),
       )
       const hasSecurityRec = summary.recommendations.some(rec =>
-        rec.includes('security') || rec.includes('sanitiz')
+        rec.includes('security') || rec.includes('sanitiz'),
       )
 
       expect(hasComplexityRec || hasSecurityRec).toBe(true)
@@ -725,7 +725,7 @@ describe('STX Analyzer', () => {
 
       // Performance-heavy template should be among the most complex
       const performanceHeavyFile = sortedByComplexity.find(r =>
-        r.file.includes('performance-heavy.stx')
+        r.file.includes('performance-heavy.stx'),
       )
       expect(performanceHeavyFile).toBeDefined()
       expect(performanceHeavyFile!.metrics.complexity).toBeGreaterThan(5)

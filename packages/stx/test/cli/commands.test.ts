@@ -1,7 +1,7 @@
-import { describe, expect, it, beforeAll, afterAll } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import { spawn } from 'node:child_process'
 
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp-commands')
@@ -16,7 +16,7 @@ async function runCLI(args: string[], options: { timeout?: number } = {}): Promi
   return new Promise((resolve) => {
     const child = spawn('bun', [CLI_PATH, ...args], {
       cwd: TEMP_DIR,
-      stdio: 'pipe'
+      stdio: 'pipe',
     })
 
     let stdout = ''

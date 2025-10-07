@@ -1,6 +1,6 @@
 import type { CustomDirective, StxOptions } from './types'
-import { createDetailedErrorMessage } from './utils'
 import { getCachedRegex } from './performance-utils'
+import { createDetailedErrorMessage } from './utils'
 
 /**
  * Process all custom directives registered in the app
