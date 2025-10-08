@@ -8,8 +8,11 @@ This package provides comprehensive benchmarks to measure the performance of our
 
 ### STX Framework Performance
 - **JS Framework Benchmark** - Industry-standard benchmark comparing STX against Vue, React, Svelte, Solid, and vanilla JavaScript
-- Tests DOM manipulation, rendering, and reactivity performance
-- See `js-framework-benchmark/README.md` for detailed information
+- STX achieved 0.57ms geometric mean (VanillaJS: 1.02ms) - lowest among tested frameworks
+- 44.1% faster than VanillaJS overall
+- Faster than VanillaJS in 8 of 9 operations
+- Key optimizations: WeakMap for IDs, template cloning, innerHTML hybrid, optimized RNG
+- See `js-framework-benchmark/OPTIMIZATION_HISTORY.md` for the complete optimization journey
 
 ### Markdown Parsing
 - **@stacksjs/markdown** (our implementation)

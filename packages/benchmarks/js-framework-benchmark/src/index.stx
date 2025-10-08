@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STX Framework Benchmark (Ultra-Optimized)</title>
+  <title>STX Framework Benchmark</title>
   <style>
     * {
       box-sizing: border-box;
@@ -145,8 +145,8 @@
 <body>
   <div class="container">
     <div class="jumbotron">
-      <h1>STX Framework Benchmark (Ultra-Optimized)</h1>
-      <p>Maximum performance with template cloning and optimized DOM</p>
+      <h1>STX Framework Benchmark</h1>
+      <p>JS Framework Benchmark Implementation</p>
     </div>
 
     <div class="button-group">
@@ -187,20 +187,22 @@
     const colours = ["red", "yellow", "blue", "green", "pink", "brown", "purple", "brown", "white", "black", "orange"];
     const nouns = ["table", "chair", "house", "bbq", "desk", "car", "pony", "cookie", "sandwich", "burger", "pizza", "mouse", "keyboard"];
 
-    // Cache lengths for faster access
+    // Cache lengths
     const adjLen = adjectives.length;
     const colLen = colours.length;
     const nounLen = nouns.length;
 
+    // Faster random number generation
     function _random(max) {
-      return Math.round(Math.random() * 1000) % max;
+      return (Math.random() * max) | 0;
     }
 
     function buildData(count) {
       const arr = new Array(count);
       for (let i = 0; i < count; i++) {
+        const id = idCounter++;
         arr[i] = {
-          id: idCounter++,
+          id: id,
           label: adjectives[_random(adjLen)] + ' ' + colours[_random(colLen)] + ' ' + nouns[_random(nounLen)]
         };
       }
@@ -227,7 +229,11 @@
       return duration;
     }
 
-    // Create template row once for cloning - ULTRA FAST
+    // Use WeakMap instead of dataset for faster lookups
+    const rowIdMap = new WeakMap();
+    const idRowMap = new Map();
+
+    // Template for cloning
     const templateRow = document.createElement('tr');
     const td1 = document.createElement('td');
     td1.className = 'col-md-1';
@@ -248,34 +254,72 @@
     templateRow.appendChild(td2);
     templateRow.appendChild(td3);
 
-    // ULTRA-OPTIMIZED: Clone template instead of creating from scratch
+    // Create row with WeakMap instead of dataset
     function createRow(item) {
       const tr = templateRow.cloneNode(true);
-      tr.dataset.id = item.id;
+      const id = item.id;
+
+      // Use WeakMap instead of dataset
+      rowIdMap.set(tr, id);
+      idRowMap.set(id, tr);
 
       const tds = tr.children;
-      tds[0].textContent = item.id;
+      tds[0].textContent = id;
       tds[1].firstChild.textContent = item.label;
-      tds[2].firstChild.dataset.id = item.id;
 
-      if (item.id === selectedId) {
+      const removeBtn = tds[2].firstChild;
+      rowIdMap.set(removeBtn, id);
+
+      if (id === selectedId) {
         tr.className = 'selected';
       }
 
       return tr;
     }
 
-    // ULTRA-OPTIMIZED: Batch rendering with minimal operations
+    // For large renders, use innerHTML (fastest for bulk)
+    function renderHTML(count) {
+      const html = new Array(count);
+      for (let i = 0; i < count; i++) {
+        const item = data[i];
+        const selected = item.id === selectedId ? ' class="selected"' : '';
+        html[i] = '<tr' + selected + '><td class="col-md-1">' + item.id +
+                  '</td><td class="col-md-4"><a class="label">' + item.label +
+                  '</a></td><td class="col-md-1-remove"><button class="remove"><span>❌</span></button></td></tr>';
+      }
+      tbody.innerHTML = html.join('');
+
+      // Build maps after innerHTML render
+      const rows = tbody.children;
+      idRowMap.clear();
+      for (let i = 0; i < count; i++) {
+        const row = rows[i];
+        const id = data[i].id;
+        rowIdMap.set(row, id);
+        idRowMap.set(id, row);
+        rowIdMap.set(row.children[2].firstChild, id);
+      }
+    }
+
+    // Use innerHTML for 10k+, cloneNode for smaller
     function render() {
-      const fragment = document.createDocumentFragment();
       const len = data.length;
 
-      for (let i = 0; i < len; i++) {
-        fragment.appendChild(createRow(data[i]));
-      }
+      if (len >= 5000) {
+        // Use innerHTML for large datasets (faster)
+        renderHTML(len);
+      } else {
+        // Use cloneNode for smaller datasets (more consistent)
+        const fragment = document.createDocumentFragment();
+        idRowMap.clear();
 
-      tbody.textContent = '';
-      tbody.appendChild(fragment);
+        for (let i = 0; i < len; i++) {
+          fragment.appendChild(createRow(data[i]));
+        }
+
+        tbody.textContent = '';
+        tbody.appendChild(fragment);
+      }
     }
 
     function run() {
@@ -292,7 +336,7 @@
       });
     }
 
-    // OPTIMIZED: Only append new rows, don't touch existing ones
+    // Only append new rows
     function add() {
       measure('Append 1,000 rows', () => {
         const newData = buildData(1000);
@@ -308,7 +352,7 @@
       });
     }
 
-    // OPTIMIZED: Only update text of every 10th row, don't re-render
+    // Direct element access
     function update() {
       measure('Update every 10th row', () => {
         const rows = tbody.children;
@@ -316,7 +360,6 @@
 
         for (let i = 0; i < len; i += 10) {
           data[i].label += ' !!!';
-          // Direct access to label element (cached from row structure)
           rows[i].children[1].firstChild.textContent = data[i].label;
         }
       });
@@ -325,32 +368,29 @@
     function clear() {
       measure('Clear all rows', () => {
         data = [];
+        idRowMap.clear();
         tbody.textContent = '';
       });
     }
 
-    // OPTIMIZED: Only swap 2 DOM elements, don't re-render everything
     function swapRows() {
       measure('Swap 2 rows', () => {
         if (data.length > 998) {
-          // Swap in data array
           const tmp = data[1];
           data[1] = data[998];
           data[998] = tmp;
 
-          // Swap in DOM - direct element swap
           const rows = tbody.children;
           const row1 = rows[1];
           const row998 = rows[998];
 
-          // Fastest swap method
           tbody.insertBefore(row998, row1);
           tbody.insertBefore(row1, rows[999]);
         }
       });
     }
 
-    // Cache for selected element
+    // Cache selected element
     let selectedRow = null;
 
     function select(id) {
@@ -360,44 +400,49 @@
         }
 
         selectedId = id;
-        selectedRow = tbody.querySelector(`tr[data-id="${id}"]`);
+        selectedRow = idRowMap.get(id);
         if (selectedRow) {
           selectedRow.className = 'selected';
         }
       });
     }
 
-    // OPTIMIZED: Remove single row without re-rendering
     function remove(id) {
       measure('Remove row', () => {
         const idx = data.findIndex(d => d.id === id);
         if (idx > -1) {
           data.splice(idx, 1);
 
-          // Remove from DOM - direct element removal
           const row = tbody.children[idx];
           if (row) {
+            idRowMap.delete(id);
             tbody.removeChild(row);
           }
         }
       });
     }
 
-    // Event delegation - single listener for all rows
+    // Event delegation
     tbody.addEventListener('click', (e) => {
       const target = e.target;
 
       // Handle remove button
       const btn = target.closest('.remove');
       if (btn) {
-        remove(parseInt(btn.dataset.id));
+        const id = rowIdMap.get(btn);
+        if (id) {
+          remove(id);
+        }
         return;
       }
 
       // Handle row selection
       const tr = target.closest('tr');
       if (tr) {
-        select(parseInt(tr.dataset.id));
+        const id = rowIdMap.get(tr);
+        if (id) {
+          select(id);
+        }
       }
     });
 

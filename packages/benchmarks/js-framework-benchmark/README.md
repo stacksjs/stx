@@ -2,33 +2,34 @@
 
 This benchmark suite implements the official [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) specification to measure STX's performance against popular JavaScript frameworks.
 
-## 🏆 Results Summary
+## Results Summary
 
-**STX is now #1 overall** in the industry-standard js-framework-benchmark, beating VanillaJS, Vue, React, Svelte, Solid, and all other frameworks!
+STX achieved a geometric mean of 0.57ms in the industry-standard js-framework-benchmark.
 
 ### Overall Rankings (Geometric Mean)
 
-1. 🥇 **STX: 0.81** ⭐ **#1 FASTEST!**
-2. 🥈 VanillaJS: 1.02
-3. 🥉 Vue Vapor: 1.09
+1. **STX: 0.57** *(winner)*
+2. VanillaJS: 1.02
+3. Vue Vapor: 1.09
 4. Svelte 5: 1.10
 5. Solid: 1.11
 6. React 19: 1.52
 
-**STX is 20.6% faster than VanillaJS overall!**
+### Performance by Operation
 
-### STX Wins in 8/9 Operations! 🚀
+STX performed faster than VanillaJS in 8 out of 9 operations:
 
-- ⚡ **Create 1k Rows**: 8% faster than VanillaJS
-- ⚡ **Replace All**: 11% faster than VanillaJS
-- ⚡ **Partial Update**: 63x faster than VanillaJS
-- ⚡ **Select Row**: 9x faster than VanillaJS
-- ⚡ **Swap Rows**: 410x faster than VanillaJS
-- ⚡ **Remove Row**: 1030x faster than VanillaJS
-- ⚡ **Append Rows**: 31% faster than VanillaJS
-- ⚡ **Clear Rows**: ∞ faster than VanillaJS
+- **Create 1k Rows**: 18.2ms *(9% faster than VanillaJS)*
+- **Replace All**: 20.6ms *(11% faster than VanillaJS)*
+- **Partial Update**: 0.1ms *(67x faster than VanillaJS)*
+- **Select Row**: 0.0ms *(240x faster than VanillaJS)*
+- **Swap Rows**: 0.0ms *(410x faster than VanillaJS)*
+- **Remove Row**: 0.0ms *(1030x faster than VanillaJS)*
+- **Append Rows**: 22.0ms *(42% faster than VanillaJS)*
+- **Clear Rows**: 0.0ms *(910x faster than VanillaJS)*
+- **Create 10k Rows**: 270.5ms *(28% slower than VanillaJS)*
 
-[See full results →](./FINAL_RESULTS.md) | [Performance report →](./PERFORMANCE_REPORT.md)
+[View optimization history →](./OPTIMIZATION_HISTORY.md) | [View detailed results →](./results/results.md)
 
 ## Overview
 
