@@ -11,6 +11,33 @@ import { config } from './config'
 // TODO: import this from `bun-plugin-stx`. Oddly, there seemingly are issues right now
 import { plugin as stxPlugin } from './plugin'
 
+/**
+ * Find an available port starting from the given port
+ */
+async function findAvailablePort(startPort: number, maxAttempts = 10): Promise<number> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const port = startPort + i
+    try {
+      // Try to create a temporary server to check if port is available
+      const testServer = serve({
+        port,
+        fetch: () => new Response('test'),
+      })
+      testServer.stop()
+      return port
+    }
+    catch (error: any) {
+      // Port is in use, try next one
+      if (error.code === 'EADDRINUSE') {
+        continue
+      }
+      // Other error, rethrow
+      throw error
+    }
+  }
+  throw new Error(`Could not find an available port between ${startPort} and ${startPort + maxAttempts - 1}`)
+}
+
 // ANSI color codes for terminal output
 const colors = {
   reset: '\x1B[0m',
@@ -433,10 +460,23 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
     return false
   }
 
+  // Find an available port (with fallback)
+  let actualPort = port
+  try {
+    actualPort = await findAvailablePort(port)
+    if (actualPort !== port) {
+      console.log(`${colors.yellow}Port ${port} is busy, using port ${actualPort} instead${colors.reset}`)
+    }
+  }
+  catch (error) {
+    console.error(`${colors.red}Could not find an available port${colors.reset}`)
+    return false
+  }
+
   // Start a server
-  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${port}/${colors.reset}...`)
+  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${actualPort}/${colors.reset}...`)
   const server = serve({
-    port,
+    port: actualPort,
     fetch(request) {
       const url = new URL(request.url)
 
@@ -591,10 +631,23 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     return false
   }
 
+  // Find an available port (with fallback)
+  let actualPort = port
+  try {
+    actualPort = await findAvailablePort(port)
+    if (actualPort !== port) {
+      console.log(`${colors.yellow}Port ${port} is busy, using port ${actualPort} instead${colors.reset}`)
+    }
+  }
+  catch (error) {
+    console.error(`${colors.red}Could not find an available port${colors.reset}`)
+    return false
+  }
+
   // Start a server
-  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${port}/${colors.reset}...`)
+  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${actualPort}/${colors.reset}...`)
   const server = serve({
-    port,
+    port: actualPort,
     fetch(request) {
       const url = new URL(request.url)
 
@@ -1103,10 +1156,23 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
     return false
   }
 
+  // Find an available port (with fallback)
+  let actualPort = port
+  try {
+    actualPort = await findAvailablePort(port)
+    if (actualPort !== port) {
+      console.log(`${colors.yellow}Port ${port} is busy, using port ${actualPort} instead${colors.reset}`)
+    }
+  }
+  catch (error) {
+    console.error(`${colors.red}Could not find an available port${colors.reset}`)
+    return false
+  }
+
   // Start a server
-  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${port}/${colors.reset}...`)
+  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${actualPort}/${colors.reset}...`)
   const server = serve({
-    port,
+    port: actualPort,
     fetch(request) {
       const url = new URL(request.url)
 

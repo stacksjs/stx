@@ -3,7 +3,7 @@ title: "Hello World - stx Markdown Demo"
 description: "A simple hello world example using stx markdown templating"
 author: "stx"
 date: 2025-10-08
-themeColor: "#FFFFFF"
+themeColor: "#2563eb"
 ---
 
 # Hello, World

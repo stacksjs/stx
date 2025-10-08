@@ -101,7 +101,7 @@ export const defaultConfig: StxConfig = {
     syntaxHighlighting: {
       enabled: true,
       serverSide: true,
-      defaultTheme: 'github-light',
+      defaultTheme: 'github-dark',
       highlightUnknownLanguages: true,
       additionalThemes: [
         'light-plus',
