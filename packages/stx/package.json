@@ -76,6 +76,6 @@
     "@stacksjs/markdown": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",
     "bun-plugin-stx": "workspace:*",
-    "shiki": "^3.8.0"
+    "shiki": "^3.13.0"
   }
 }
