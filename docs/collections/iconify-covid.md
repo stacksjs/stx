@@ -463,8 +463,9 @@ const myIcon: IconData = covid19Virus4
 
 ## Related Packages
 
-- [`@stacksjs/iconify-core`](../iconify-core) - Core rendering functions
-- [Main Iconify Documentation](../../docs/iconify.md) - Complete iconify integration guide
+- [`@stacksjs/iconify-core`](../iconify#installation) - Core rendering functions and utilities
+- [Iconify Integration Guide](../iconify) - Complete guide to using Iconify with stx
+- [stx Documentation](../) - Main stx documentation
 
 ## License
 
