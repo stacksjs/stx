@@ -21,79 +21,416 @@ bun add @stacksjs/iconify-humbleicons
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { ActivityIcon, AdjustmentsIcon, AiIcon } from '@stacksjs/iconify-humbleicons'
+
+// Basic usage
+const icon = ActivityIcon()
+
+// With size
+const sizedIcon = ActivityIcon({ size: 24 })
+
+// With color
+const coloredIcon = AdjustmentsIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = AiIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { activity, adjustments, ai } from '@stacksjs/iconify-humbleicons'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { ActivityIcon, AdjustmentsIcon, AiIcon } from '@stacksjs/iconify-humbleicons'
 
   global.icons = {
-    activity: renderIcon(activity, { size: 24 }),
-    adjustments: renderIcon(adjustments, { size: 24, color: '#4a90e2' }),
-    ai: renderIcon(ai, { size: 32 })
+    home: ActivityIcon({ size: 24 }),
+    user: AdjustmentsIcon({ size: 24, color: '#4a90e2' }),
+    settings: AiIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.activity !!}
-  {!! icons.adjustments !!}
-  {!! icons.ai !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { activity, adjustments, ai } from '@stacksjs/iconify-humbleicons'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(activity, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(adjustments, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(ai, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = ActivityIcon({ color: 'red' })
+const blueIcon = ActivityIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = ActivityIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = ActivityIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = ActivityIcon({ size: 24 })
+const icon1em = ActivityIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = ActivityIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = ActivityIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = ActivityIcon({ class: 'icon-small' })
+const largeIcon = ActivityIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **269** icons. Here are some examples:
+This package contains **269** icons:
 
 - `activity`
 - `adjustments`
 - `ai`
 - `aid`
 - `alignObjectsBottom`
-
-...and 259 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/humbleicons/).
+- `alignObjectsCenter`
+- `alignObjectsLeft`
+- `alignObjectsMiddle`
+- `alignObjectsRight`
+- `alignObjectsTop`
+- `alignTextCenter`
+- `alignTextJustify`
+- `alignTextLeft`
+- `alignTextRight`
+- `archive`
+- `arrowDown`
+- `arrowGoBack`
+- `arrowGoForward`
+- `arrowJoin`
+- `arrowLeft`
+- `arrowLeftDown`
+- `arrowLeftUp`
+- `arrowMainSplitSide`
+- `arrowRight`
+- `arrowRightDown`
+- `arrowRightUp`
+- `arrowSideJoinMain`
+- `arrowSplit`
+- `arrowUp`
+- `arrows`
+- `arrowsHorizontal`
+- `arrowsRightLeft`
+- `arrowsUpDown`
+- `arrowsVertical`
+- `asteriskSimple`
+- `atSymbol`
+- `ban`
+- `bandage`
+- `bars`
+- `basket`
+- `battery`
+- `batteryCharging`
+- `batteryFull`
+- `batteryHalf`
+- `bell`
+- `bellOff`
+- `bike`
+- `bold`
+- `book`
+- `bookOpen`
+- `bookmark`
+- `box`
+- `brandAndroid`
+- `brandApple`
+- `brandFacebook`
+- `brandGithub`
+- `brandHomeAssistant`
+- `brandInstagram`
+- `brandPhp`
+- `brandTwitter`
+- `brandX`
+- `briefcase`
+- `brushBig`
+- `building`
+- `bulb`
+- `bulbOff`
+- `calendar`
+- `camera`
+- `cameraOff`
+- `cameraVideo`
+- `cameraVideoOff`
+- `car`
+- `cart`
+- `certificate`
+- `certificateCheck`
+- `certificateOff`
+- `chart`
+- `chat`
+- `chats`
+- `check`
+- `checkCircle`
+- `chevronDown`
+- `chevronLeft`
+- `chevronRight`
+- `chevronUp`
+- `circle`
+- `clipboard`
+- `clock`
+- `cloud`
+- `cloudSun`
+- `club`
+- `code`
+- `coffee`
+- `cog`
+- `cog2`
+- `coins`
+- `columnsOneTwoThirds`
+- `columnsThreeThirds`
+- `columnsTwoHalfs`
+- `cornerDownLeft`
+- `cornerDownRight`
+- `cornerLeftDown`
+- `cornerLeftUp`
+- `cornerRightDown`
+- `cornerRightUp`
+- `cornerTopLeft`
+- `cornerUpRight`
+- `cpu`
+- `creativeCommons`
+- `creativeCommonsBy`
+- `creativeCommonsNd`
+- `creativeCommonsSa`
+- `creditCard`
+- `crop`
+- `crown`
+- `currencyDollarCircle`
+- `currencyEuroCircle`
+- `currencyPoundCircle`
+- `cursor`
+- `dashboard`
+- `database`
+- `desktop`
+- `document`
+- `documentAdd`
+- `documentRemove`
+- `documents`
+- `dotsHorizontal`
+- `dotsVertical`
+- `download`
+- `downloadAlt`
+- `droplet`
+- `duplicate`
+- `exchangeHorizontal`
+- `exchangeVertical`
+- `exclamation`
+- `exclamationTriangle`
+- `expand`
+- `externalLink`
+- `eye`
+- `eyeClose`
+- `eyeOff`
+- `fastForward`
+- `fingerprint`
+- `flag`
+- `flash`
+- `flask`
+- `folder`
+- `folderAdd`
+- `folderOpen`
+- `folderRemove`
+- `forkKnife`
+- `funnel`
+- `gift`
+- `git`
+- `globe`
+- `heading`
+- `heart`
+- `home`
+- `humbleicon`
+- `image`
+- `images`
+- `incognito`
+- `incognito2`
+- `info`
+- `infoCircle`
+- `injection`
+- `italic`
+- `key`
+- `layers`
+- `link`
+- `location`
+- `lock`
+- `lockOpen`
+- `logout`
+- `mail`
+- `mailMulti`
+- `mailOpen`
+- `map`
+- `maximize`
+- `microphone`
+- `microphoneOff`
+- `minus`
+- `minusCircle`
+- `mobile`
+- `money`
+- `moon`
+- `moustache`
+- `musicNote`
+- `navigation`
+- `package`
+- `pause`
+- `pencil`
+- `phone`
+- `phoneCall`
+- `phoneForward`
+- `phoneIncoming`
+- `phoneMissed`
+- `phoneOff`
+- `phoneOutgoing`
+- `pieChart`
+- `plane`
+- `play`
+- `plus`
+- `plusCircle`
+- `power`
+- `print`
+- `prompt`
+- `pulse`
+- `radio`
+- `rain`
+- `refresh`
+- `remote`
+- `restart`
+- `rewind`
+- `rocket`
+- `rss`
+- `save`
+- `scissors`
+- `search`
+- `share`
+- `shareAlt`
+- `shield`
+- `shieldCheck`
+- `shieldOff`
+- `ship`
+- `skipBackward`
+- `skipForward`
+- `snow`
+- `spade`
+- `spinnerDots`
+- `spinnerEarring`
+- `spinnerPlanet`
+- `square`
+- `star`
+- `storm`
+- `sun`
+- `support`
+- `switchOff`
+- `switchOn`
+- `tag`
+- `tags`
+- `text`
+- `times`
+- `timesCircle`
+- `trash`
+- `trendingDown`
+- `trendingUp`
+- `triangle`
+- `truck`
+- `underline`
+- `upload`
+- `url`
+- `user`
+- `userAdd`
+- `userAsking`
+- `userRemove`
+- `users`
+- `verified`
+- `viewGrid`
+- `viewList`
+- `volume`
+- `volume1`
+- `volume2`
+- `volumeOff`
+- `wifi`
+- `wifiOff`
+- `wind`
+- `zoomIn`
+- `zoomOut`
 
 ## Usage Examples
 
@@ -101,77 +438,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { activity, adjustments, ai, aid } from '@stacksjs/iconify-humbleicons'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { ActivityIcon, AdjustmentsIcon, AiIcon, AidIcon } from '@stacksjs/iconify-humbleicons'
 
   global.navIcons = {
-    activity: renderIcon(activity, { size: 20, class: 'nav-icon' }),
-    adjustments: renderIcon(adjustments, { size: 20, class: 'nav-icon' }),
-    ai: renderIcon(ai, { size: 20, class: 'nav-icon' }),
-    aid: renderIcon(aid, { size: 20, class: 'nav-icon' })
+    home: ActivityIcon({ size: 20, class: 'nav-icon' }),
+    about: AdjustmentsIcon({ size: 20, class: 'nav-icon' }),
+    contact: AiIcon({ size: 20, class: 'nav-icon' }),
+    settings: AidIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.activity !!} Home</a>
-  <a href="/about">{!! navIcons.adjustments !!} About</a>
-  <a href="/contact">{!! navIcons.ai !!} Contact</a>
-  <a href="/settings">{!! navIcons.aid !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { activity } from '@stacksjs/iconify-humbleicons'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { ActivityIcon } from '@stacksjs/iconify-humbleicons'
 
-const icon = renderIcon(activity, {
+const icon = ActivityIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-humbleicons'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { ActivityIcon, AdjustmentsIcon, AiIcon } from '@stacksjs/iconify-humbleicons'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = ActivityIcon({ size: 16, color: '#22c55e' })
+const warningIcon = AdjustmentsIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = AiIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { activity, adjustments } from '@stacksjs/iconify-humbleicons'
+   // Recommended
+   import { ActivityIcon, AdjustmentsIcon } from '@stacksjs/iconify-humbleicons'
+   const icon = ActivityIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { activity, adjustments } from '@stacksjs/iconify-humbleicons'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(activity, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { ActivityIcon, AdjustmentsIcon } from '@stacksjs/iconify-humbleicons'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-humbleicons'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { activity } from '@stacksjs/iconify-humbleicons'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(activity, { size: 24 })
+     import { ActivityIcon } from '@stacksjs/iconify-humbleicons'
+     global.icon = ActivityIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +524,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = ActivityIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

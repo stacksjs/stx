@@ -21,79 +21,430 @@ bun add @stacksjs/iconify-foundation
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AddressBookIcon, AlertIcon, AlignCenterIcon } from '@stacksjs/iconify-foundation'
+
+// Basic usage
+const icon = AddressBookIcon()
+
+// With size
+const sizedIcon = AddressBookIcon({ size: 24 })
+
+// With color
+const coloredIcon = AlertIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = AlignCenterIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { addressBook, alert, alignCenter } from '@stacksjs/iconify-foundation'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AddressBookIcon, AlertIcon, AlignCenterIcon } from '@stacksjs/iconify-foundation'
 
   global.icons = {
-    addressBook: renderIcon(addressBook, { size: 24 }),
-    alert: renderIcon(alert, { size: 24, color: '#4a90e2' }),
-    alignCenter: renderIcon(alignCenter, { size: 32 })
+    home: AddressBookIcon({ size: 24 }),
+    user: AlertIcon({ size: 24, color: '#4a90e2' }),
+    settings: AlignCenterIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.addressBook !!}
-  {!! icons.alert !!}
-  {!! icons.alignCenter !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { addressBook, alert, alignCenter } from '@stacksjs/iconify-foundation'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(addressBook, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(alert, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(alignCenter, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = AddressBookIcon({ color: 'red' })
+const blueIcon = AddressBookIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AddressBookIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AddressBookIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AddressBookIcon({ size: 24 })
+const icon1em = AddressBookIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AddressBookIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AddressBookIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AddressBookIcon({ class: 'icon-small' })
+const largeIcon = AddressBookIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **283** icons. Here are some examples:
+This package contains **283** icons:
 
 - `addressBook`
 - `alert`
 - `alignCenter`
 - `alignJustify`
 - `alignLeft`
-
-...and 273 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/foundation/).
+- `alignRight`
+- `anchor`
+- `annotate`
+- `archive`
+- `arrowDown`
+- `arrowLeft`
+- `arrowRight`
+- `arrowUp`
+- `arrowsCompress`
+- `arrowsExpand`
+- `arrowsIn`
+- `arrowsOut`
+- `asl`
+- `asterisk`
+- `atSign`
+- `backgroundColor`
+- `batteryEmpty`
+- `batteryFull`
+- `batteryHalf`
+- `bitcoin`
+- `bitcoinCircle`
+- `blind`
+- `bluetooth`
+- `bold`
+- `book`
+- `bookBookmark`
+- `bookmark`
+- `braille`
+- `burst`
+- `burstNew`
+- `burstSale`
+- `calendar`
+- `camera`
+- `check`
+- `checkbox`
+- `clipboard`
+- `clipboardNotes`
+- `clipboardPencil`
+- `clock`
+- `closedCaption`
+- `cloud`
+- `comment`
+- `commentMinus`
+- `commentQuotes`
+- `commentVideo`
+- `comments`
+- `compass`
+- `contrast`
+- `creditCard`
+- `crop`
+- `crown`
+- `css3`
+- `database`
+- `dieFive`
+- `dieFour`
+- `dieOne`
+- `dieSix`
+- `dieThree`
+- `dieTwo`
+- `dislike`
+- `dollar`
+- `dollarBill`
+- `download`
+- `eject`
+- `elevator`
+- `euro`
+- `eye`
+- `fastForward`
+- `female`
+- `femaleSymbol`
+- `filter`
+- `firstAid`
+- `flag`
+- `folder`
+- `folderAdd`
+- `folderLock`
+- `foot`
+- `foundation`
+- `graphBar`
+- `graphHorizontal`
+- `graphPie`
+- `graphTrend`
+- `guideDog`
+- `hearingAid`
+- `heart`
+- `home`
+- `html5`
+- `indentLess`
+- `indentMore`
+- `info`
+- `italic`
+- `key`
+- `laptop`
+- `layout`
+- `lightbulb`
+- `like`
+- `link`
+- `list`
+- `listBullet`
+- `listNumber`
+- `listThumbnails`
+- `lock`
+- `loop`
+- `magnifyingGlass`
+- `mail`
+- `male`
+- `maleFemale`
+- `maleSymbol`
+- `map`
+- `marker`
+- `megaphone`
+- `microphone`
+- `minus`
+- `minusCircle`
+- `mobile`
+- `mobileSignal`
+- `monitor`
+- `mountains`
+- `music`
+- `next`
+- `noDogs`
+- `noSmoking`
+- `page`
+- `pageAdd`
+- `pageCopy`
+- `pageCsv`
+- `pageDelete`
+- `pageDoc`
+- `pageEdit`
+- `pageExport`
+- `pageExportCsv`
+- `pageExportDoc`
+- `pageExportPdf`
+- `pageFilled`
+- `pageMultiple`
+- `pagePdf`
+- `pageRemove`
+- `pageSearch`
+- `paintBucket`
+- `paperclip`
+- `pause`
+- `paw`
+- `paypal`
+- `pencil`
+- `photo`
+- `play`
+- `playCircle`
+- `playVideo`
+- `plus`
+- `pound`
+- `power`
+- `previous`
+- `priceTag`
+- `pricetagMultiple`
+- `print`
+- `prohibited`
+- `projectionScreen`
+- `puzzle`
+- `quote`
+- `record`
+- `refresh`
+- `results`
+- `resultsDemographics`
+- `rewind`
+- `rewindTen`
+- `rss`
+- `safetyCone`
+- `save`
+- `share`
+- `sheriffBadge`
+- `shield`
+- `shoppingBag`
+- `shoppingCart`
+- `shuffle`
+- `skull`
+- `social500px`
+- `socialAdobe`
+- `socialAmazon`
+- `socialAndroid`
+- `socialApple`
+- `socialBehance`
+- `socialBing`
+- `socialBlogger`
+- `socialDelicious`
+- `socialDesignerNews`
+- `socialDeviantArt`
+- `socialDigg`
+- `socialDribbble`
+- `socialDrive`
+- `socialDropbox`
+- `socialEvernote`
+- `socialFacebook`
+- `socialFlickr`
+- `socialForrst`
+- `socialFoursquare`
+- `socialGameCenter`
+- `socialGithub`
+- `socialGooglePlus`
+- `socialHackerNews`
+- `socialHi5`
+- `socialInstagram`
+- `socialJoomla`
+- `socialLastfm`
+- `socialLinkedin`
+- `socialMedium`
+- `socialMyspace`
+- `socialOrkut`
+- `socialPath`
+- `socialPicasa`
+- `socialPinterest`
+- `socialRdio`
+- `socialReddit`
+- `socialSkillshare`
+- `socialSkype`
+- `socialSmashingMag`
+- `socialSnapchat`
+- `socialSpotify`
+- `socialSquidoo`
+- `socialStackOverflow`
+- `socialSteam`
+- `socialStumbleupon`
+- `socialTreehouse`
+- `socialTumblr`
+- `socialTwitter`
+- `socialVimeo`
+- `socialWindows`
+- `socialXbox`
+- `socialYahoo`
+- `socialYelp`
+- `socialYoutube`
+- `socialZerply`
+- `socialZurb`
+- `sound`
+- `star`
+- `stop`
+- `strikethrough`
+- `subscript`
+- `superscript`
+- `tabletLandscape`
+- `tabletPortrait`
+- `target`
+- `targetTwo`
+- `telephone`
+- `telephoneAccessible`
+- `textColor`
+- `thumbnails`
+- `ticket`
+- `torso`
+- `torsoBusiness`
+- `torsoFemale`
+- `torsos`
+- `torsosAll`
+- `torsosAllFemale`
+- `torsosFemaleMale`
+- `torsosMaleFemale`
+- `trash`
+- `trees`
+- `trophy`
+- `underline`
+- `universalAccess`
+- `unlink`
+- `unlock`
+- `upload`
+- `uploadCloud`
+- `usb`
+- `video`
+- `volume`
+- `volumeNone`
+- `volumeStrike`
+- `web`
+- `wheelchair`
+- `widget`
+- `wrench`
+- `x`
+- `xCircle`
+- `yen`
+- `zoomIn`
+- `zoomOut`
 
 ## Usage Examples
 
@@ -101,77 +452,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { addressBook, alert, alignCenter, alignJustify } from '@stacksjs/iconify-foundation'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AddressBookIcon, AlertIcon, AlignCenterIcon, AlignJustifyIcon } from '@stacksjs/iconify-foundation'
 
   global.navIcons = {
-    addressBook: renderIcon(addressBook, { size: 20, class: 'nav-icon' }),
-    alert: renderIcon(alert, { size: 20, class: 'nav-icon' }),
-    alignCenter: renderIcon(alignCenter, { size: 20, class: 'nav-icon' }),
-    alignJustify: renderIcon(alignJustify, { size: 20, class: 'nav-icon' })
+    home: AddressBookIcon({ size: 20, class: 'nav-icon' }),
+    about: AlertIcon({ size: 20, class: 'nav-icon' }),
+    contact: AlignCenterIcon({ size: 20, class: 'nav-icon' }),
+    settings: AlignJustifyIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.addressBook !!} Home</a>
-  <a href="/about">{!! navIcons.alert !!} About</a>
-  <a href="/contact">{!! navIcons.alignCenter !!} Contact</a>
-  <a href="/settings">{!! navIcons.alignJustify !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { addressBook } from '@stacksjs/iconify-foundation'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AddressBookIcon } from '@stacksjs/iconify-foundation'
 
-const icon = renderIcon(addressBook, {
+const icon = AddressBookIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-foundation'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AddressBookIcon, AlertIcon, AlignCenterIcon } from '@stacksjs/iconify-foundation'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AddressBookIcon({ size: 16, color: '#22c55e' })
+const warningIcon = AlertIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = AlignCenterIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { addressBook, alert } from '@stacksjs/iconify-foundation'
+   // Recommended
+   import { AddressBookIcon, AlertIcon } from '@stacksjs/iconify-foundation'
+   const icon = AddressBookIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { addressBook, alert } from '@stacksjs/iconify-foundation'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(addressBook, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AddressBookIcon, AlertIcon } from '@stacksjs/iconify-foundation'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-foundation'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { addressBook } from '@stacksjs/iconify-foundation'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(addressBook, { size: 24 })
+     import { AddressBookIcon } from '@stacksjs/iconify-foundation'
+     global.icon = AddressBookIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +538,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AddressBookIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

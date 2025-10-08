@@ -21,79 +21,225 @@ bun add @stacksjs/iconify-codex
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AddBackgroundIcon, AddBorderIcon, AlignCenterIcon } from '@stacksjs/iconify-codex'
+
+// Basic usage
+const icon = AddBackgroundIcon()
+
+// With size
+const sizedIcon = AddBackgroundIcon({ size: 24 })
+
+// With color
+const coloredIcon = AddBorderIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = AlignCenterIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { addBackground, addBorder, alignCenter } from '@stacksjs/iconify-codex'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AddBackgroundIcon, AddBorderIcon, AlignCenterIcon } from '@stacksjs/iconify-codex'
 
   global.icons = {
-    addBackground: renderIcon(addBackground, { size: 24 }),
-    addBorder: renderIcon(addBorder, { size: 24, color: '#4a90e2' }),
-    alignCenter: renderIcon(alignCenter, { size: 32 })
+    home: AddBackgroundIcon({ size: 24 }),
+    user: AddBorderIcon({ size: 24, color: '#4a90e2' }),
+    settings: AlignCenterIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.addBackground !!}
-  {!! icons.addBorder !!}
-  {!! icons.alignCenter !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { addBackground, addBorder, alignCenter } from '@stacksjs/iconify-codex'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(addBackground, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(addBorder, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(alignCenter, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = AddBackgroundIcon({ color: 'red' })
+const blueIcon = AddBackgroundIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AddBackgroundIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AddBackgroundIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AddBackgroundIcon({ size: 24 })
+const icon1em = AddBackgroundIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AddBackgroundIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AddBackgroundIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AddBackgroundIcon({ class: 'icon-small' })
+const largeIcon = AddBackgroundIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **78** icons. Here are some examples:
+This package contains **78** icons:
 
 - `addBackground`
 - `addBorder`
 - `alignCenter`
 - `alignJustify`
 - `alignLeft`
-
-...and 68 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/codex/).
+- `alignRight`
+- `bold`
+- `brackets`
+- `bracketsVertical`
+- `check`
+- `checklist`
+- `chevronDown`
+- `chevronLeft`
+- `chevronRight`
+- `chevronUp`
+- `clipboard`
+- `collapse`
+- `color`
+- `copy`
+- `cross`
+- `curlyBrackets`
+- `delimiter`
+- `directionDownRight`
+- `directionLeftDown`
+- `directionRightDown`
+- `directionUpRight`
+- `dotCircle`
+- `etcHorisontal`
+- `etcVertical`
+- `file`
+- `gift`
+- `globe`
+- `h1`
+- `h2`
+- `h3`
+- `h4`
+- `h5`
+- `h6`
+- `heading`
+- `heart`
+- `hidden`
+- `html`
+- `instagram`
+- `italic`
+- `link`
+- `linkedin`
+- `listBulleted`
+- `listNumbered`
+- `loader`
+- `marker`
+- `menu`
+- `menuSmall`
+- `picture`
+- `play`
+- `plus`
+- `question`
+- `quote`
+- `redo`
+- `removeBackground`
+- `replace`
+- `save`
+- `search`
+- `star`
+- `stretch`
+- `strikethrough`
+- `table`
+- `tableWithHeadings`
+- `tableWithoutHeadings`
+- `text`
+- `translate`
+- `trash`
+- `twitter`
+- `underline`
+- `undo`
+- `unlink`
+- `user`
+- `usersGroup`
+- `warning`
 
 ## Usage Examples
 
@@ -101,77 +247,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { addBackground, addBorder, alignCenter, alignJustify } from '@stacksjs/iconify-codex'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AddBackgroundIcon, AddBorderIcon, AlignCenterIcon, AlignJustifyIcon } from '@stacksjs/iconify-codex'
 
   global.navIcons = {
-    addBackground: renderIcon(addBackground, { size: 20, class: 'nav-icon' }),
-    addBorder: renderIcon(addBorder, { size: 20, class: 'nav-icon' }),
-    alignCenter: renderIcon(alignCenter, { size: 20, class: 'nav-icon' }),
-    alignJustify: renderIcon(alignJustify, { size: 20, class: 'nav-icon' })
+    home: AddBackgroundIcon({ size: 20, class: 'nav-icon' }),
+    about: AddBorderIcon({ size: 20, class: 'nav-icon' }),
+    contact: AlignCenterIcon({ size: 20, class: 'nav-icon' }),
+    settings: AlignJustifyIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.addBackground !!} Home</a>
-  <a href="/about">{!! navIcons.addBorder !!} About</a>
-  <a href="/contact">{!! navIcons.alignCenter !!} Contact</a>
-  <a href="/settings">{!! navIcons.alignJustify !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { addBackground } from '@stacksjs/iconify-codex'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AddBackgroundIcon } from '@stacksjs/iconify-codex'
 
-const icon = renderIcon(addBackground, {
+const icon = AddBackgroundIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-codex'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AddBackgroundIcon, AddBorderIcon, AlignCenterIcon } from '@stacksjs/iconify-codex'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AddBackgroundIcon({ size: 16, color: '#22c55e' })
+const warningIcon = AddBorderIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = AlignCenterIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { addBackground, addBorder } from '@stacksjs/iconify-codex'
+   // Recommended
+   import { AddBackgroundIcon, AddBorderIcon } from '@stacksjs/iconify-codex'
+   const icon = AddBackgroundIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { addBackground, addBorder } from '@stacksjs/iconify-codex'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(addBackground, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AddBackgroundIcon, AddBorderIcon } from '@stacksjs/iconify-codex'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-codex'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { addBackground } from '@stacksjs/iconify-codex'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(addBackground, { size: 24 })
+     import { AddBackgroundIcon } from '@stacksjs/iconify-codex'
+     global.icon = AddBackgroundIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +333,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AddBackgroundIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

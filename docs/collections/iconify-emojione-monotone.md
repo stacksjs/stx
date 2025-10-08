@@ -21,79 +21,1550 @@ bun add @stacksjs/iconify-emojione-monotone
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { 1stPlaceMedalIcon, 2ndPlaceMedalIcon, 3rdPlaceMedalIcon } from '@stacksjs/iconify-emojione-monotone'
+
+// Basic usage
+const icon = 1stPlaceMedalIcon()
+
+// With size
+const sizedIcon = 1stPlaceMedalIcon({ size: 24 })
+
+// With color
+const coloredIcon = 2ndPlaceMedalIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = 3rdPlaceMedalIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { 1stPlaceMedal, 2ndPlaceMedal, 3rdPlaceMedal } from '@stacksjs/iconify-emojione-monotone'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 1stPlaceMedalIcon, 2ndPlaceMedalIcon, 3rdPlaceMedalIcon } from '@stacksjs/iconify-emojione-monotone'
 
   global.icons = {
-    1stPlaceMedal: renderIcon(1stPlaceMedal, { size: 24 }),
-    2ndPlaceMedal: renderIcon(2ndPlaceMedal, { size: 24, color: '#4a90e2' }),
-    3rdPlaceMedal: renderIcon(3rdPlaceMedal, { size: 32 })
+    home: 1stPlaceMedalIcon({ size: 24 }),
+    user: 2ndPlaceMedalIcon({ size: 24, color: '#4a90e2' }),
+    settings: 3rdPlaceMedalIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.1stPlaceMedal !!}
-  {!! icons.2ndPlaceMedal !!}
-  {!! icons.3rdPlaceMedal !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { 1stPlaceMedal, 2ndPlaceMedal, 3rdPlaceMedal } from '@stacksjs/iconify-emojione-monotone'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(1stPlaceMedal, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(2ndPlaceMedal, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(3rdPlaceMedal, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = 1stPlaceMedalIcon({ color: 'red' })
+const blueIcon = 1stPlaceMedalIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = 1stPlaceMedalIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = 1stPlaceMedalIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = 1stPlaceMedalIcon({ size: 24 })
+const icon1em = 1stPlaceMedalIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = 1stPlaceMedalIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = 1stPlaceMedalIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = 1stPlaceMedalIcon({ class: 'icon-small' })
+const largeIcon = 1stPlaceMedalIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **1403** icons. Here are some examples:
+This package contains **1403** icons:
 
 - `1stPlaceMedal`
 - `2ndPlaceMedal`
 - `3rdPlaceMedal`
 - `aButton`
 - `abButton`
-
-...and 1393 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/emojione-monotone/).
+- `admissionTickets`
+- `aerialTramway`
+- `airplane`
+- `airplaneArrival`
+- `airplaneDeparture`
+- `alarmClock`
+- `alembic`
+- `alien`
+- `alienMonster`
+- `ambulance`
+- `americanFootball`
+- `amphora`
+- `anchor`
+- `angerSymbol`
+- `angryFace`
+- `angryFaceWithHorns`
+- `anguishedFace`
+- `ant`
+- `antennaBars`
+- `anxiousFaceWithSweat`
+- `aquarius`
+- `aries`
+- `articulatedLorry`
+- `artistPalette`
+- `asterisk`
+- `astonishedFace`
+- `atmSign`
+- `atomSymbol`
+- `automobile`
+- `avocado`
+- `bButton`
+- `baby`
+- `babyAngel`
+- `babyBottle`
+- `babyChick`
+- `babySymbol`
+- `backArrow`
+- `backhandIndexPointingDown`
+- `backhandIndexPointingLeft`
+- `backhandIndexPointingRight`
+- `backhandIndexPointingUp`
+- `backpack`
+- `bacon`
+- `badminton`
+- `baggageClaim`
+- `baguetteBread`
+- `balanceScale`
+- `balloon`
+- `ballotBoxWithBallot`
+- `ballotBoxWithCheck`
+- `banana`
+- `bank`
+- `barChart`
+- `barberPole`
+- `baseball`
+- `basketball`
+- `bat`
+- `bathtub`
+- `battery`
+- `beachWithUmbrella`
+- `beamingFaceWithSmilingEyes`
+- `bearFace`
+- `beatingHeart`
+- `bed`
+- `beerMug`
+- `bell`
+- `bellWithSlash`
+- `bellhopBell`
+- `bentoBox`
+- `bicycle`
+- `bikini`
+- `biohazard`
+- `bird`
+- `birthdayCake`
+- `blackCircle`
+- `blackHeart`
+- `blackLargeSquare`
+- `blackMediumSmallSquare`
+- `blackMediumSquare`
+- `blackNib`
+- `blackSmallSquare`
+- `blackSquareButton`
+- `blondHairedPerson`
+- `blossom`
+- `blowfish`
+- `blueBook`
+- `blueCircle`
+- `blueHeart`
+- `boar`
+- `bomb`
+- `bookmark`
+- `bookmarkTabs`
+- `books`
+- `bottleWithPoppingCork`
+- `bouquet`
+- `bowAndArrow`
+- `bowling`
+- `boxingGlove`
+- `boy`
+- `bread`
+- `brideWithVeil`
+- `bridgeAtNight`
+- `briefcase`
+- `brightButton`
+- `brokenHeart`
+- `bug`
+- `buildingConstruction`
+- `bulletTrain`
+- `burrito`
+- `bus`
+- `busStop`
+- `bustInSilhouette`
+- `bustsInSilhouette`
+- `butterfly`
+- `cactus`
+- `calendar`
+- `callMeHand`
+- `camel`
+- `camera`
+- `cameraWithFlash`
+- `camping`
+- `cancer`
+- `candle`
+- `candy`
+- `canoe`
+- `capricorn`
+- `cardFileBox`
+- `cardIndex`
+- `cardIndexDividers`
+- `carouselHorse`
+- `carpStreamer`
+- `carrot`
+- `castle`
+- `cat`
+- `catFace`
+- `catFaceWithTearsOfJoy`
+- `catFaceWithWrySmile`
+- `chains`
+- `chartDecreasing`
+- `chartIncreasing`
+- `chartIncreasingWithYen`
+- `cheeseWedge`
+- `cherries`
+- `cherryBlossom`
+- `chestnut`
+- `chicken`
+- `childrenCrossing`
+- `chipmunk`
+- `chocolateBar`
+- `christmasTree`
+- `church`
+- `cigarette`
+- `cinema`
+- `circledM`
+- `circusTent`
+- `cityscape`
+- `cityscapeAtDusk`
+- `clButton`
+- `clamp`
+- `clapperBoard`
+- `clappingHands`
+- `classicalBuilding`
+- `clinkingBeerMugs`
+- `clinkingGlasses`
+- `clipboard`
+- `clockwiseVerticalArrows`
+- `closedBook`
+- `closedMailboxWithLoweredFlag`
+- `closedMailboxWithRaisedFlag`
+- `closedUmbrella`
+- `cloud`
+- `cloudWithLightning`
+- `cloudWithLightningAndRain`
+- `cloudWithRain`
+- `cloudWithSnow`
+- `clownFace`
+- `clubSuit`
+- `clutchBag`
+- `cocktailGlass`
+- `coffin`
+- `collision`
+- `comet`
+- `computerDisk`
+- `computerMouse`
+- `confettiBall`
+- `confoundedFace`
+- `confusedFace`
+- `construction`
+- `constructionWorker`
+- `controlKnobs`
+- `convenienceStore`
+- `cookedRice`
+- `cookie`
+- `cooking`
+- `coolButton`
+- `copyright`
+- `couchAndLamp`
+- `counterclockwiseArrowsButton`
+- `coupleWithHeart`
+- `coupleWithHeartManMan`
+- `coupleWithHeartWomanWoman`
+- `cow`
+- `cowFace`
+- `cowboyHatFace`
+- `crab`
+- `crayon`
+- `creditCard`
+- `crescentMoon`
+- `cricketGame`
+- `crocodile`
+- `croissant`
+- `crossMark`
+- `crossMarkButton`
+- `crossedFingers`
+- `crossedSwords`
+- `crown`
+- `cryingCatFace`
+- `cryingFace`
+- `crystalBall`
+- `cucumber`
+- `curlyLoop`
+- `currencyExchange`
+- `curryRice`
+- `custard`
+- `customs`
+- `cyclone`
+- `dagger`
+- `dango`
+- `dashingAway`
+- `deciduousTree`
+- `deer`
+- `deliveryTruck`
+- `departmentStore`
+- `derelictHouse`
+- `desert`
+- `desertIsland`
+- `desktopComputer`
+- `detective`
+- `diamondSuit`
+- `diamondWithADot`
+- `digitEight`
+- `digitFive`
+- `digitFour`
+- `digitNine`
+- `digitOne`
+- `digitSeven`
+- `digitSix`
+- `digitThree`
+- `digitTwo`
+- `digitZero`
+- `dimButton`
+- `directHit`
+- `disappointedFace`
+- `dizzy`
+- `dizzyFace`
+- `dog`
+- `dogFace`
+- `dollarBanknote`
+- `dolphin`
+- `door`
+- `dottedSixPointedStar`
+- `doubleCurlyLoop`
+- `doubleExclamationMark`
+- `doughnut`
+- `dove`
+- `downArrow`
+- `downLeftArrow`
+- `downRightArrow`
+- `downcastFaceWithSweat`
+- `downwardsButton`
+- `dragon`
+- `dragonFace`
+- `dress`
+- `droolingFace`
+- `droplet`
+- `drum`
+- `duck`
+- `dvd`
+- `eMail`
+- `eagle`
+- `ear`
+- `earOfCorn`
+- `egg`
+- `eggplant`
+- `eightOclock`
+- `eightPointedStar`
+- `eightSpokedAsterisk`
+- `eightThirty`
+- `ejectButton`
+- `electricPlug`
+- `elephant`
+- `elevenOclock`
+- `elevenThirty`
+- `endArrow`
+- `envelope`
+- `envelopeWithArrow`
+- `euroBanknote`
+- `evergreenTree`
+- `ewe`
+- `exclamationMark`
+- `exclamationQuestionMark`
+- `expressionlessFace`
+- `eye`
+- `eyeInSpeechBubble`
+- `eyes`
+- `faceBlowingAKiss`
+- `faceSavoringFood`
+- `faceScreamingInFear`
+- `faceWithHeadBandage`
+- `faceWithMedicalMask`
+- `faceWithOpenMouth`
+- `faceWithRollingEyes`
+- `faceWithSteamFromNose`
+- `faceWithTearsOfJoy`
+- `faceWithThermometer`
+- `faceWithTongue`
+- `faceWithoutMouth`
+- `factory`
+- `fallenLeaf`
+- `family`
+- `familyManManBoy`
+- `familyManManBoyBoy`
+- `familyManManGirl`
+- `familyManManGirlBoy`
+- `familyManManGirlGirl`
+- `familyManWomanBoyBoy`
+- `familyManWomanGirl`
+- `familyManWomanGirlBoy`
+- `familyManWomanGirlGirl`
+- `familyWomanWomanBoy`
+- `familyWomanWomanBoyBoy`
+- `familyWomanWomanGirl`
+- `familyWomanWomanGirlBoy`
+- `familyWomanWomanGirlGirl`
+- `fastDownButton`
+- `fastForwardButton`
+- `fastReverseButton`
+- `fastUpButton`
+- `faxMachine`
+- `fearfulFace`
+- `ferrisWheel`
+- `ferry`
+- `fieldHockey`
+- `fileCabinet`
+- `fileFolder`
+- `filmFrames`
+- `filmProjector`
+- `fire`
+- `fireEngine`
+- `fireworks`
+- `firstQuarterMoon`
+- `firstQuarterMoonFace`
+- `fish`
+- `fishCakeWithSwirl`
+- `fishingPole`
+- `fiveOclock`
+- `fiveThirty`
+- `flagForAfghanistan`
+- `flagForAlandIslands`
+- `flagForAlbania`
+- `flagForAlgeria`
+- `flagForAmericanSamoa`
+- `flagForAndorra`
+- `flagForAngola`
+- `flagForAnguilla`
+- `flagForAntarctica`
+- `flagForAntiguaAndBarbuda`
+- `flagForArgentina`
+- `flagForArmenia`
+- `flagForAruba`
+- `flagForAscensionIsland`
+- `flagForAustralia`
+- `flagForAustria`
+- `flagForAzerbaijan`
+- `flagForBahamas`
+- `flagForBahrain`
+- `flagForBangladesh`
+- `flagForBarbados`
+- `flagForBelarus`
+- `flagForBelgium`
+- `flagForBelize`
+- `flagForBenin`
+- `flagForBermuda`
+- `flagForBhutan`
+- `flagForBlackFlag`
+- `flagForBolivia`
+- `flagForBosniaAndHerzegovina`
+- `flagForBotswana`
+- `flagForBouvetIsland`
+- `flagForBrazil`
+- `flagForBritishIndianOceanTerritory`
+- `flagForBritishVirginIslands`
+- `flagForBrunei`
+- `flagForBulgaria`
+- `flagForBurkinaFaso`
+- `flagForBurundi`
+- `flagForCambodia`
+- `flagForCameroon`
+- `flagForCanada`
+- `flagForCanaryIslands`
+- `flagForCapeVerde`
+- `flagForCaribbeanNetherlands`
+- `flagForCaymanIslands`
+- `flagForCentralAfricanRepublic`
+- `flagForCeutaAndMelilla`
+- `flagForChad`
+- `flagForChequeredFlag`
+- `flagForChile`
+- `flagForChina`
+- `flagForChristmasIsland`
+- `flagForClippertonIsland`
+- `flagForCocosIslands`
+- `flagForColombia`
+- `flagForComoros`
+- `flagForCongoBrazzaville`
+- `flagForCongoKinshasa`
+- `flagForCookIslands`
+- `flagForCostaRica`
+- `flagForCoteDivoire`
+- `flagForCroatia`
+- `flagForCrossedFlags`
+- `flagForCuba`
+- `flagForCuracao`
+- `flagForCyprus`
+- `flagForCzechia`
+- `flagForDenmark`
+- `flagForDiegoGarcia`
+- `flagForDjibouti`
+- `flagForDominica`
+- `flagForDominicanRepublic`
+- `flagForEcuador`
+- `flagForEgypt`
+- `flagForElSalvador`
+- `flagForEquatorialGuinea`
+- `flagForEritrea`
+- `flagForEstonia`
+- `flagForEthiopia`
+- `flagForEuropeanUnion`
+- `flagForFalklandIslands`
+- `flagForFaroeIslands`
+- `flagForFiji`
+- `flagForFinland`
+- `flagForFrance`
+- `flagForFrenchGuiana`
+- `flagForFrenchPolynesia`
+- `flagForFrenchSouthernTerritories`
+- `flagForGabon`
+- `flagForGambia`
+- `flagForGeorgia`
+- `flagForGermany`
+- `flagForGhana`
+- `flagForGibraltar`
+- `flagForGreece`
+- `flagForGreenland`
+- `flagForGrenada`
+- `flagForGuadeloupe`
+- `flagForGuam`
+- `flagForGuatemala`
+- `flagForGuernsey`
+- `flagForGuinea`
+- `flagForGuineaBissau`
+- `flagForGuyana`
+- `flagForHaiti`
+- `flagForHeardAndMcdonaldIslands`
+- `flagForHonduras`
+- `flagForHongKongSarChina`
+- `flagForHungary`
+- `flagForIceland`
+- `flagForIndia`
+- `flagForIndonesia`
+- `flagForIran`
+- `flagForIraq`
+- `flagForIreland`
+- `flagForIsleOfMan`
+- `flagForIsrael`
+- `flagForItaly`
+- `flagForJamaica`
+- `flagForJapan`
+- `flagForJersey`
+- `flagForJordan`
+- `flagForKazakhstan`
+- `flagForKenya`
+- `flagForKiribati`
+- `flagForKosovo`
+- `flagForKuwait`
+- `flagForKyrgyzstan`
+- `flagForLaos`
+- `flagForLatvia`
+- `flagForLebanon`
+- `flagForLesotho`
+- `flagForLiberia`
+- `flagForLibya`
+- `flagForLiechtenstein`
+- `flagForLithuania`
+- `flagForLuxembourg`
+- `flagForMacauSarChina`
+- `flagForMacedonia`
+- `flagForMadagascar`
+- `flagForMalawi`
+- `flagForMalaysia`
+- `flagForMaldives`
+- `flagForMali`
+- `flagForMalta`
+- `flagForMarshallIslands`
+- `flagForMartinique`
+- `flagForMauritania`
+- `flagForMauritius`
+- `flagForMayotte`
+- `flagForMexico`
+- `flagForMicronesia`
+- `flagForMoldova`
+- `flagForMonaco`
+- `flagForMongolia`
+- `flagForMontenegro`
+- `flagForMontserrat`
+- `flagForMorocco`
+- `flagForMozambique`
+- `flagForMyanmar`
+- `flagForNamibia`
+- `flagForNauru`
+- `flagForNepal`
+- `flagForNetherlands`
+- `flagForNewCaledonia`
+- `flagForNewZealand`
+- `flagForNicaragua`
+- `flagForNiger`
+- `flagForNigeria`
+- `flagForNiue`
+- `flagForNorfolkIsland`
+- `flagForNorthKorea`
+- `flagForNorthernMarianaIslands`
+- `flagForNorway`
+- `flagForOman`
+- `flagForPakistan`
+- `flagForPalau`
+- `flagForPalestinianTerritories`
+- `flagForPanama`
+- `flagForPapuaNewGuinea`
+- `flagForParaguay`
+- `flagForPeru`
+- `flagForPhilippines`
+- `flagForPitcairnIslands`
+- `flagForPoland`
+- `flagForPortugal`
+- `flagForPuertoRico`
+- `flagForQatar`
+- `flagForReunion`
+- `flagForRomania`
+- `flagForRussia`
+- `flagForRwanda`
+- `flagForSamoa`
+- `flagForSanMarino`
+- `flagForSaoTomeAndPrincipe`
+- `flagForSaudiArabia`
+- `flagForSenegal`
+- `flagForSerbia`
+- `flagForSeychelles`
+- `flagForSierraLeone`
+- `flagForSingapore`
+- `flagForSintMaarten`
+- `flagForSlovakia`
+- `flagForSlovenia`
+- `flagForSolomonIslands`
+- `flagForSomalia`
+- `flagForSouthAfrica`
+- `flagForSouthGeorgiaAndSouthSandwichIslands`
+- `flagForSouthKorea`
+- `flagForSouthSudan`
+- `flagForSpain`
+- `flagForSriLanka`
+- `flagForStBarthelemy`
+- `flagForStHelena`
+- `flagForStKittsAndNevis`
+- `flagForStLucia`
+- `flagForStMartin`
+- `flagForStPierreAndMiquelon`
+- `flagForStVincentAndGrenadines`
+- `flagForSudan`
+- `flagForSuriname`
+- `flagForSvalbardAndJanMayen`
+- `flagForSwaziland`
+- `flagForSweden`
+- `flagForSwitzerland`
+- `flagForSyria`
+- `flagForTaiwan`
+- `flagForTajikistan`
+- `flagForTanzania`
+- `flagForThailand`
+- `flagForTimorLeste`
+- `flagForTogo`
+- `flagForTokelau`
+- `flagForTonga`
+- `flagForTriangularFlag`
+- `flagForTrinidadAndTobago`
+- `flagForTristanDaCunha`
+- `flagForTunisia`
+- `flagForTurkey`
+- `flagForTurkmenistan`
+- `flagForTurksAndCaicosIslands`
+- `flagForTuvalu`
+- `flagForUganda`
+- `flagForUkraine`
+- `flagForUnitedArabEmirates`
+- `flagForUnitedKingdom`
+- `flagForUnitedStates`
+- `flagForUruguay`
+- `flagForUsOutlyingIslands`
+- `flagForUsVirginIslands`
+- `flagForUzbekistan`
+- `flagForVanuatu`
+- `flagForVaticanCity`
+- `flagForVenezuela`
+- `flagForVietnam`
+- `flagForWallisAndFutuna`
+- `flagForWesternSahara`
+- `flagForWhiteFlag`
+- `flagForYemen`
+- `flagForZambia`
+- `flagForZimbabwe`
+- `flagInHole`
+- `flashlight`
+- `fleurDeLis`
+- `flexedBiceps`
+- `floppyDisk`
+- `flowerPlayingCards`
+- `flushedFace`
+- `fog`
+- `foggy`
+- `foldedHands`
+- `footprints`
+- `forkAndKnife`
+- `forkAndKnifeWithPlate`
+- `fountain`
+- `fountainPen`
+- `fourLeafClover`
+- `fourOclock`
+- `fourThirty`
+- `fox`
+- `framedPicture`
+- `freeButton`
+- `frenchFries`
+- `friedShrimp`
+- `frogFace`
+- `frontFacingBabyChick`
+- `frowningFace`
+- `frowningFaceWithOpenMouth`
+- `fuelPump`
+- `fullMoon`
+- `fullMoonFace`
+- `funeralUrn`
+- `gameDie`
+- `gear`
+- `gemStone`
+- `gemini`
+- `ghost`
+- `girl`
+- `glassOfMilk`
+- `glasses`
+- `globeShowingAmericas`
+- `globeShowingAsiaAustralia`
+- `globeShowingEuropeAfrica`
+- `globeWithMeridians`
+- `glowingStar`
+- `goalNet`
+- `goat`
+- `goblin`
+- `gorilla`
+- `graduationCap`
+- `grapes`
+- `greenApple`
+- `greenBook`
+- `greenHeart`
+- `greenSalad`
+- `grimacingFace`
+- `grinningCatFace`
+- `grinningCatFaceWithSmilingEyes`
+- `grinningFace`
+- `grinningFaceWithBigEyes`
+- `grinningFaceWithSmilingEyes`
+- `grinningFaceWithSweat`
+- `grinningSquintingFace`
+- `growingHeart`
+- `guard`
+- `guitar`
+- `hamburger`
+- `hammer`
+- `hammerAndPick`
+- `hammerAndWrench`
+- `hamsterFace`
+- `handWithFingersSplayed`
+- `handbag`
+- `handshake`
+- `hatchingChick`
+- `headphone`
+- `hearNoEvilMonkey`
+- `heartDecoration`
+- `heartSuit`
+- `heartWithArrow`
+- `heartWithRibbon`
+- `heavyCheckMark`
+- `heavyDivisionSign`
+- `heavyDollarSign`
+- `heavyHeartExclamation`
+- `heavyLargeCircle`
+- `heavyMinusSign`
+- `heavyMultiplicationX`
+- `heavyPlusSign`
+- `helicopter`
+- `herb`
+- `hibiscus`
+- `highHeeledShoe`
+- `highSpeedTrain`
+- `highVoltage`
+- `hole`
+- `honeyPot`
+- `honeybee`
+- `horizontalTrafficLight`
+- `horse`
+- `horseFace`
+- `horseRacing`
+- `hospital`
+- `hotBeverage`
+- `hotDog`
+- `hotPepper`
+- `hotSprings`
+- `hotel`
+- `hourglassDone`
+- `hourglassNotDone`
+- `house`
+- `houseWithGarden`
+- `houses`
+- `huggingFace`
+- `hundredPoints`
+- `hushedFace`
+- `iceCream`
+- `iceHockey`
+- `iceSkate`
+- `idButton`
+- `inboxTray`
+- `incomingEnvelope`
+- `indexPointingUp`
+- `information`
+- `inputLatinLetters`
+- `inputLatinLowercase`
+- `inputLatinUppercase`
+- `inputNumbers`
+- `inputSymbols`
+- `jackOLantern`
+- `japaneseAcceptableButton`
+- `japaneseApplicationButton`
+- `japaneseBargainButton`
+- `japaneseCastle`
+- `japaneseCongratulationsButton`
+- `japaneseDiscountButton`
+- `japaneseDolls`
+- `japaneseFreeOfChargeButton`
+- `japaneseHereButton`
+- `japaneseMonthlyAmountButton`
+- `japaneseNoVacancyButton`
+- `japaneseNotFreeOfChargeButton`
+- `japaneseOpenForBusinessButton`
+- `japanesePassingGradeButton`
+- `japanesePostOffice`
+- `japaneseProhibitedButton`
+- `japaneseReservedButton`
+- `japaneseSecretButton`
+- `japaneseServiceChargeButton`
+- `japaneseSymbolForBeginner`
+- `japaneseVacancyButton`
+- `jeans`
+- `joker`
+- `joystick`
+- `kaaba`
+- `key`
+- `keyboard`
+- `keycap0`
+- `keycap1`
+- `keycap10`
+- `keycap2`
+- `keycap3`
+- `keycap4`
+- `keycap5`
+- `keycap6`
+- `keycap7`
+- `keycap8`
+- `keycap9`
+- `keycapAsterisk`
+- `keycapPound`
+- `kickScooter`
+- `kimono`
+- `kiss`
+- `kissManMan`
+- `kissMark`
+- `kissWomanWoman`
+- `kissingCatFace`
+- `kissingFace`
+- `kissingFaceWithClosedEyes`
+- `kissingFaceWithSmilingEyes`
+- `kitchenKnife`
+- `kiwiFruit`
+- `koala`
+- `label`
+- `ladyBeetle`
+- `laptopComputer`
+- `largeBlueDiamond`
+- `largeOrangeDiamond`
+- `lastQuarterMoon`
+- `lastQuarterMoonFace`
+- `lastTrackButton`
+- `latinCross`
+- `leafFlutteringInWind`
+- `ledger`
+- `leftArrow`
+- `leftArrowCurvingRight`
+- `leftFacingFist`
+- `leftLuggage`
+- `leftRightArrow`
+- `leftSpeechBubble`
+- `lemon`
+- `leo`
+- `leopard`
+- `letterA`
+- `letterB`
+- `letterC`
+- `letterD`
+- `letterE`
+- `letterF`
+- `letterG`
+- `letterH`
+- `letterI`
+- `letterJ`
+- `letterK`
+- `letterL`
+- `letterM`
+- `letterN`
+- `letterO`
+- `letterP`
+- `letterQ`
+- `letterR`
+- `letterS`
+- `letterT`
+- `letterU`
+- `letterV`
+- `letterW`
+- `letterX`
+- `letterY`
+- `letterZ`
+- `levelSlider`
+- `libra`
+- `lightBulb`
+- `lightRail`
+- `link`
+- `linkedPaperclips`
+- `lionFace`
+- `lipstick`
+- `litterInBinSign`
+- `lizard`
+- `locked`
+- `lockedWithKey`
+- `lockedWithPen`
+- `locomotive`
+- `lollipop`
+- `loudlyCryingFace`
+- `loudspeaker`
+- `loveHotel`
+- `loveLetter`
+- `lyingFace`
+- `magnifyingGlassTiltedLeft`
+- `magnifyingGlassTiltedRight`
+- `mahjongRedDragon`
+- `man`
+- `manAndWomanHoldingHands`
+- `manDancing`
+- `manInSuitLevitating`
+- `manInTuxedo`
+- `manWithChineseCap`
+- `mansShoe`
+- `mantelpieceClock`
+- `mapOfJapan`
+- `mapleLeaf`
+- `martialArtsUniform`
+- `meatOnBone`
+- `megaphone`
+- `melon`
+- `memo`
+- `menorah`
+- `mensRoom`
+- `metro`
+- `microphone`
+- `microscope`
+- `middleFinger`
+- `militaryMedal`
+- `milkyWay`
+- `minibus`
+- `moai`
+- `mobilePhone`
+- `mobilePhoneOff`
+- `mobilePhoneWithArrow`
+- `moneyBag`
+- `moneyMouthFace`
+- `moneyWithWings`
+- `monkey`
+- `monkeyFace`
+- `monorail`
+- `moonViewingCeremony`
+- `mosque`
+- `motorBoat`
+- `motorScooter`
+- `motorcycle`
+- `motorway`
+- `mountFuji`
+- `mountain`
+- `mountainCableway`
+- `mountainRailway`
+- `mouse`
+- `mouseFace`
+- `mouth`
+- `movieCamera`
+- `mrsClaus`
+- `mushroom`
+- `musicalKeyboard`
+- `musicalNote`
+- `musicalNotes`
+- `musicalScore`
+- `mutedSpeaker`
+- `nailPolish`
+- `nameBadge`
+- `nationalPark`
+- `nauseatedFace`
+- `necktie`
+- `nerdFace`
+- `neutralFace`
+- `newButton`
+- `newMoon`
+- `newMoonFace`
+- `newspaper`
+- `nextTrackButton`
+- `ngButton`
+- `nightWithStars`
+- `nineOclock`
+- `nineThirty`
+- `noBicycles`
+- `noEntry`
+- `noLittering`
+- `noMobilePhones`
+- `noOneUnderEighteen`
+- `noPedestrians`
+- `noSmoking`
+- `nonPotableWater`
+- `nose`
+- `notebook`
+- `notebookWithDecorativeCover`
+- `nutAndBolt`
+- `oButton`
+- `octopus`
+- `oden`
+- `officeBuilding`
+- `ogre`
+- `oilDrum`
+- `okButton`
+- `okHand`
+- `oldKey`
+- `oldMan`
+- `oldWoman`
+- `om`
+- `onArrow`
+- `oncomingAutomobile`
+- `oncomingBus`
+- `oncomingFist`
+- `oncomingPoliceCar`
+- `oncomingTaxi`
+- `oneOclock`
+- `oneThirty`
+- `openBook`
+- `openFileFolder`
+- `openHands`
+- `openMailboxWithLoweredFlag`
+- `openMailboxWithRaisedFlag`
+- `ophiuchus`
+- `opticalDisk`
+- `orangeBook`
+- `orthodoxCross`
+- `outboxTray`
+- `owl`
+- `ox`
+- `pButton`
+- `package`
+- `pageFacingUp`
+- `pageWithCurl`
+- `pager`
+- `paintbrush`
+- `palmTree`
+- `pancakes`
+- `pandaFace`
+- `paperclip`
+- `partAlternationMark`
+- `partyPopper`
+- `passengerShip`
+- `passportControl`
+- `pauseButton`
+- `pawPrints`
+- `peaceSymbol`
+- `peach`
+- `peanuts`
+- `pear`
+- `pen`
+- `pencil`
+- `penguin`
+- `pensiveFace`
+- `peopleWithBunnyEars`
+- `performingArts`
+- `perseveringFace`
+- `personBiking`
+- `personBouncingBall`
+- `personBowing`
+- `personCartwheeling`
+- `personFacepalming`
+- `personFrowning`
+- `personGesturingNo`
+- `personGesturingOk`
+- `personGettingHaircut`
+- `personGettingMassage`
+- `personGolfing`
+- `personInBed`
+- `personJuggling`
+- `personLiftingWeights`
+- `personMountainBiking`
+- `personPlayingWaterPolo`
+- `personPouting`
+- `personRaisingHand`
+- `personRowingBoat`
+- `personRunning`
+- `personShrugging`
+- `personSurfing`
+- `personSwimming`
+- `personTakingBath`
+- `personTippingHand`
+- `personWalking`
+- `personWearingTurban`
+- `pick`
+- `pig`
+- `pigFace`
+- `pigNose`
+- `pileOfPoo`
+- `pill`
+- `pineDecoration`
+- `pineapple`
+- `pingPong`
+- `pisces`
+- `pistol`
+- `pizza`
+- `placeOfWorship`
+- `playButton`
+- `playOrPauseButton`
+- `policeCar`
+- `policeCarLight`
+- `policeOfficer`
+- `poodle`
+- `pool8Ball`
+- `popcorn`
+- `postOffice`
+- `postalHorn`
+- `postbox`
+- `potOfFood`
+- `potableWater`
+- `potato`
+- `poultryLeg`
+- `poundBanknote`
+- `poundSymbol`
+- `poutingCatFace`
+- `poutingFace`
+- `prayerBeads`
+- `pregnantWoman`
+- `prince`
+- `princess`
+- `printer`
+- `prohibited`
+- `purpleHeart`
+- `purse`
+- `pushpin`
+- `questionMark`
+- `rabbit`
+- `rabbitFace`
+- `racingCar`
+- `radio`
+- `radioButton`
+- `radioactive`
+- `railwayCar`
+- `railwayTrack`
+- `rainbow`
+- `raisedBackOfHand`
+- `raisedFist`
+- `raisedHand`
+- `raisingHands`
+- `ram`
+- `rat`
+- `recordButton`
+- `recyclingSymbol`
+- `redApple`
+- `redCircle`
+- `redHeart`
+- `redPaperLantern`
+- `redTrianglePointedDown`
+- `redTrianglePointedUp`
+- `registered`
+- `relievedFace`
+- `reminderRibbon`
+- `repeatButton`
+- `repeatSingleButton`
+- `rescueWorkersHelmet`
+- `restroom`
+- `reverseButton`
+- `revolvingHearts`
+- `rhinoceros`
+- `ribbon`
+- `riceBall`
+- `riceCracker`
+- `rightAngerBubble`
+- `rightArrow`
+- `rightArrowCurvingDown`
+- `rightArrowCurvingLeft`
+- `rightArrowCurvingUp`
+- `rightFacingFist`
+- `ring`
+- `roastedSweetPotato`
+- `robotFace`
+- `rocket`
+- `rolledUpNewspaper`
+- `rollerCoaster`
+- `rollingOnTheFloorLaughing`
+- `rooster`
+- `rose`
+- `rosette`
+- `roundPushpin`
+- `rugbyFootball`
+- `runningShirt`
+- `runningShoe`
+- `sadButRelievedFace`
+- `sagittarius`
+- `sailboat`
+- `sake`
+- `santaClaus`
+- `satellite`
+- `satelliteAntenna`
+- `saxophone`
+- `school`
+- `scissors`
+- `scorpio`
+- `scorpion`
+- `scroll`
+- `seat`
+- `seeNoEvilMonkey`
+- `seedling`
+- `selfie`
+- `sevenOclock`
+- `sevenThirty`
+- `shallowPanOfFood`
+- `shamrock`
+- `shark`
+- `shavedIce`
+- `sheafOfRice`
+- `shield`
+- `shintoShrine`
+- `ship`
+- `shootingStar`
+- `shoppingBags`
+- `shoppingCart`
+- `shortcake`
+- `shower`
+- `shrimp`
+- `shuffleTracksButton`
+- `signOfTheHorns`
+- `sixOclock`
+- `sixThirty`
+- `skier`
+- `skis`
+- `skull`
+- `skullAndCrossbones`
+- `sleepingFace`
+- `sleepyFace`
+- `slightlyFrowningFace`
+- `slightlySmilingFace`
+- `slotMachine`
+- `smallAirplane`
+- `smallBlueDiamond`
+- `smallOrangeDiamond`
+- `smilingCatFaceWithHeartEyes`
+- `smilingFace`
+- `smilingFaceWithHalo`
+- `smilingFaceWithHeartEyes`
+- `smilingFaceWithHorns`
+- `smilingFaceWithSmilingEyes`
+- `smilingFaceWithSunglasses`
+- `smirkingFace`
+- `snail`
+- `snake`
+- `sneezingFace`
+- `snowCappedMountain`
+- `snowboarder`
+- `snowflake`
+- `snowman`
+- `snowmanWithoutSnow`
+- `soccerBall`
+- `softIceCream`
+- `soonArrow`
+- `sosButton`
+- `spadeSuit`
+- `spaghetti`
+- `sparkle`
+- `sparkler`
+- `sparkles`
+- `sparklingHeart`
+- `speakNoEvilMonkey`
+- `speakerHighVolume`
+- `speakerLowVolume`
+- `speakerMediumVolume`
+- `speakingHead`
+- `speechBalloon`
+- `speedboat`
+- `spider`
+- `spiderWeb`
+- `spiralCalendar`
+- `spiralNotepad`
+- `spiralShell`
+- `spoon`
+- `sportUtilityVehicle`
+- `sportsMedal`
+- `spoutingWhale`
+- `squid`
+- `squintingFaceWithTongue`
+- `stadium`
+- `star`
+- `starAndCrescent`
+- `starOfDavid`
+- `station`
+- `statueOfLiberty`
+- `steamingBowl`
+- `stopButton`
+- `stopSign`
+- `stopwatch`
+- `straightRuler`
+- `strawberry`
+- `studioMicrophone`
+- `stuffedFlatbread`
+- `sun`
+- `sunBehindCloud`
+- `sunBehindLargeCloud`
+- `sunBehindRainCloud`
+- `sunBehindSmallCloud`
+- `sunWithFace`
+- `sunflower`
+- `sunglasses`
+- `sunrise`
+- `sunriseOverMountains`
+- `sunset`
+- `sushi`
+- `suspensionRailway`
+- `sweatDroplets`
+- `synagogue`
+- `syringe`
+- `tShirt`
+- `taco`
+- `tanabataTree`
+- `tangerine`
+- `taurus`
+- `taxi`
+- `teacupWithoutHandle`
+- `tearOffCalendar`
+- `telephone`
+- `telephoneReceiver`
+- `telescope`
+- `television`
+- `tenOclock`
+- `tenThirty`
+- `tennis`
+- `tent`
+- `thermometer`
+- `thinkingFace`
+- `thoughtBalloon`
+- `threeOclock`
+- `threeThirty`
+- `thumbsDown`
+- `thumbsUp`
+- `ticket`
+- `tiger`
+- `tigerFace`
+- `timerClock`
+- `tiredFace`
+- `toilet`
+- `tokyoTower`
+- `tomato`
+- `tongue`
+- `topArrow`
+- `topHat`
+- `tornado`
+- `trackball`
+- `tractor`
+- `tradeMark`
+- `train`
+- `tram`
+- `tramCar`
+- `triangularRuler`
+- `tridentEmblem`
+- `trolleybus`
+- `trophy`
+- `tropicalDrink`
+- `tropicalFish`
+- `trumpet`
+- `tulip`
+- `tumblerGlass`
+- `turkey`
+- `turtle`
+- `twelveOclock`
+- `twelveThirty`
+- `twoHearts`
+- `twoHumpCamel`
+- `twoMenHoldingHands`
+- `twoOclock`
+- `twoThirty`
+- `twoWomenHoldingHands`
+- `umbrella`
+- `umbrellaOnGround`
+- `umbrellaWithRainDrops`
+- `unamusedFace`
+- `unicornFace`
+- `unlocked`
+- `upArrow`
+- `upDownArrow`
+- `upLeftArrow`
+- `upRightArrow`
+- `upTextButton`
+- `upsideDownFace`
+- `upwardsButton`
+- `verticalTrafficLight`
+- `vibrationMode`
+- `victoryHand`
+- `videoCamera`
+- `videoGame`
+- `videocassette`
+- `violin`
+- `virgo`
+- `volcano`
+- `volleyball`
+- `vsButton`
+- `vulcanSalute`
+- `waningCrescentMoon`
+- `waningGibbousMoon`
+- `warning`
+- `wastebasket`
+- `watch`
+- `waterBuffalo`
+- `waterCloset`
+- `waterWave`
+- `watermelon`
+- `wavingHand`
+- `wavyDash`
+- `waxingCrescentMoon`
+- `waxingGibbousMoon`
+- `wearyCatFace`
+- `wearyFace`
+- `wedding`
+- `whale`
+- `wheelOfDharma`
+- `wheelchairSymbol`
+- `whiteCircle`
+- `whiteExclamationMark`
+- `whiteFlower`
+- `whiteHeavyCheckMark`
+- `whiteLargeSquare`
+- `whiteMediumSmallSquare`
+- `whiteMediumSquare`
+- `whiteQuestionMark`
+- `whiteSmallSquare`
+- `whiteSquareButton`
+- `wiltedFlower`
+- `windChime`
+- `windFace`
+- `wineGlass`
+- `winkingFace`
+- `winkingFaceWithTongue`
+- `wolf`
+- `woman`
+- `womanDancing`
+- `womansBoot`
+- `womansClothes`
+- `womansHat`
+- `womansSandal`
+- `womensRoom`
+- `worldMap`
+- `worriedFace`
+- `wrappedGift`
+- `wrench`
+- `writingHand`
+- `yellowHeart`
+- `yenBanknote`
+- `yinYang`
+- `zipperMouthFace`
+- `zzz`
 
 ## Usage Examples
 
@@ -101,77 +1572,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { 1stPlaceMedal, 2ndPlaceMedal, 3rdPlaceMedal, aButton } from '@stacksjs/iconify-emojione-monotone'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 1stPlaceMedalIcon, 2ndPlaceMedalIcon, 3rdPlaceMedalIcon, AButtonIcon } from '@stacksjs/iconify-emojione-monotone'
 
   global.navIcons = {
-    1stPlaceMedal: renderIcon(1stPlaceMedal, { size: 20, class: 'nav-icon' }),
-    2ndPlaceMedal: renderIcon(2ndPlaceMedal, { size: 20, class: 'nav-icon' }),
-    3rdPlaceMedal: renderIcon(3rdPlaceMedal, { size: 20, class: 'nav-icon' }),
-    aButton: renderIcon(aButton, { size: 20, class: 'nav-icon' })
+    home: 1stPlaceMedalIcon({ size: 20, class: 'nav-icon' }),
+    about: 2ndPlaceMedalIcon({ size: 20, class: 'nav-icon' }),
+    contact: 3rdPlaceMedalIcon({ size: 20, class: 'nav-icon' }),
+    settings: AButtonIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.1stPlaceMedal !!} Home</a>
-  <a href="/about">{!! navIcons.2ndPlaceMedal !!} About</a>
-  <a href="/contact">{!! navIcons.3rdPlaceMedal !!} Contact</a>
-  <a href="/settings">{!! navIcons.aButton !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { 1stPlaceMedal } from '@stacksjs/iconify-emojione-monotone'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 1stPlaceMedalIcon } from '@stacksjs/iconify-emojione-monotone'
 
-const icon = renderIcon(1stPlaceMedal, {
+const icon = 1stPlaceMedalIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-emojione-monotone'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 1stPlaceMedalIcon, 2ndPlaceMedalIcon, 3rdPlaceMedalIcon } from '@stacksjs/iconify-emojione-monotone'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = 1stPlaceMedalIcon({ size: 16, color: '#22c55e' })
+const warningIcon = 2ndPlaceMedalIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = 3rdPlaceMedalIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { 1stPlaceMedal, 2ndPlaceMedal } from '@stacksjs/iconify-emojione-monotone'
+   // Recommended
+   import { 1stPlaceMedalIcon, 2ndPlaceMedalIcon } from '@stacksjs/iconify-emojione-monotone'
+   const icon = 1stPlaceMedalIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { 1stPlaceMedal, 2ndPlaceMedal } from '@stacksjs/iconify-emojione-monotone'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(1stPlaceMedal, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { 1stPlaceMedalIcon, 2ndPlaceMedalIcon } from '@stacksjs/iconify-emojione-monotone'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-emojione-monotone'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { 1stPlaceMedal } from '@stacksjs/iconify-emojione-monotone'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(1stPlaceMedal, { size: 24 })
+     import { 1stPlaceMedalIcon } from '@stacksjs/iconify-emojione-monotone'
+     global.icon = 1stPlaceMedalIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +1658,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = 1stPlaceMedalIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

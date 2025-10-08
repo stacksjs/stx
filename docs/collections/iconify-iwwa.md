@@ -21,79 +21,252 @@ bun add @stacksjs/iconify-iwwa
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AddIcon, Add15mIcon, Add1dIcon } from '@stacksjs/iconify-iwwa'
+
+// Basic usage
+const icon = AddIcon()
+
+// With size
+const sizedIcon = AddIcon({ size: 24 })
+
+// With color
+const coloredIcon = Add15mIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = Add1dIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { add, add15m, add1d } from '@stacksjs/iconify-iwwa'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AddIcon, Add15mIcon, Add1dIcon } from '@stacksjs/iconify-iwwa'
 
   global.icons = {
-    add: renderIcon(add, { size: 24 }),
-    add15m: renderIcon(add15m, { size: 24, color: '#4a90e2' }),
-    add1d: renderIcon(add1d, { size: 32 })
+    home: AddIcon({ size: 24 }),
+    user: Add15mIcon({ size: 24, color: '#4a90e2' }),
+    settings: Add1dIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.add !!}
-  {!! icons.add15m !!}
-  {!! icons.add1d !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { add, add15m, add1d } from '@stacksjs/iconify-iwwa'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(add, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(add15m, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(add1d, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = AddIcon({ color: 'red' })
+const blueIcon = AddIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AddIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AddIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AddIcon({ size: 24 })
+const icon1em = AddIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AddIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AddIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AddIcon({ class: 'icon-small' })
+const largeIcon = AddIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **105** icons. Here are some examples:
+This package contains **105** icons:
 
 - `add`
 - `add15m`
 - `add1d`
 - `add1m`
 - `add1w`
-
-...and 95 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/iwwa/).
+- `add1y`
+- `alarm`
+- `alarmO`
+- `alert`
+- `angleLeft`
+- `arrowDown`
+- `arrowLeft`
+- `arrowRight`
+- `arrowUp`
+- `assign`
+- `bad`
+- `badO`
+- `box`
+- `calendar`
+- `chart`
+- `chartStyle1`
+- `chartStyle2`
+- `chartStyle3`
+- `chartStyle4`
+- `circumflex`
+- `clone`
+- `close`
+- `closeBraket`
+- `co2`
+- `confront`
+- `connectionO`
+- `consumptionO`
+- `csv`
+- `danger`
+- `dashboard`
+- `delete`
+- `delta`
+- `divide`
+- `dragDrop`
+- `duplicate`
+- `edit`
+- `expand`
+- `export`
+- `fileCsv`
+- `filePdf`
+- `filePng`
+- `fileXsl`
+- `filter`
+- `flag`
+- `gauge`
+- `good`
+- `goodO`
+- `help`
+- `history`
+- `humidity`
+- `info`
+- `information`
+- `innowatioLogo`
+- `lightbulb`
+- `listFavourite`
+- `lock`
+- `logout`
+- `map`
+- `menu`
+- `merge`
+- `middleO`
+- `middling`
+- `minus`
+- `monitoring`
+- `month`
+- `multiply`
+- `numberAsc`
+- `numberDesc`
+- `openBraket`
+- `option`
+- `optionHorizontal`
+- `pause`
+- `percentage`
+- `pinch`
+- `png`
+- `power`
+- `remoteControlO`
+- `remove15m`
+- `remove1d`
+- `remove1m`
+- `remove1w`
+- `remove1y`
+- `reset`
+- `search`
+- `settings`
+- `sortBy`
+- `squareRoot`
+- `star`
+- `starO`
+- `swipe`
+- `tag`
+- `textAsc`
+- `textDesc`
+- `thermometer`
+- `trash`
+- `upload`
+- `user`
+- `userFunctions`
+- `week`
+- `year`
 
 ## Usage Examples
 
@@ -101,77 +274,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { add, add15m, add1d, add1m } from '@stacksjs/iconify-iwwa'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AddIcon, Add15mIcon, Add1dIcon, Add1mIcon } from '@stacksjs/iconify-iwwa'
 
   global.navIcons = {
-    add: renderIcon(add, { size: 20, class: 'nav-icon' }),
-    add15m: renderIcon(add15m, { size: 20, class: 'nav-icon' }),
-    add1d: renderIcon(add1d, { size: 20, class: 'nav-icon' }),
-    add1m: renderIcon(add1m, { size: 20, class: 'nav-icon' })
+    home: AddIcon({ size: 20, class: 'nav-icon' }),
+    about: Add15mIcon({ size: 20, class: 'nav-icon' }),
+    contact: Add1dIcon({ size: 20, class: 'nav-icon' }),
+    settings: Add1mIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.add !!} Home</a>
-  <a href="/about">{!! navIcons.add15m !!} About</a>
-  <a href="/contact">{!! navIcons.add1d !!} Contact</a>
-  <a href="/settings">{!! navIcons.add1m !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { add } from '@stacksjs/iconify-iwwa'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AddIcon } from '@stacksjs/iconify-iwwa'
 
-const icon = renderIcon(add, {
+const icon = AddIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-iwwa'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AddIcon, Add15mIcon, Add1dIcon } from '@stacksjs/iconify-iwwa'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AddIcon({ size: 16, color: '#22c55e' })
+const warningIcon = Add15mIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = Add1dIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { add, add15m } from '@stacksjs/iconify-iwwa'
+   // Recommended
+   import { AddIcon, Add15mIcon } from '@stacksjs/iconify-iwwa'
+   const icon = AddIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { add, add15m } from '@stacksjs/iconify-iwwa'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(add, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AddIcon, Add15mIcon } from '@stacksjs/iconify-iwwa'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-iwwa'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { add } from '@stacksjs/iconify-iwwa'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(add, { size: 24 })
+     import { AddIcon } from '@stacksjs/iconify-iwwa'
+     global.icon = AddIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +360,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AddIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

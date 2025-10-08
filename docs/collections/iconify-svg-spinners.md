@@ -21,79 +21,193 @@ bun add @stacksjs/iconify-svg-spinners
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { 12DotsScaleRotateIcon, 180RingIcon, 180RingWithBgIcon } from '@stacksjs/iconify-svg-spinners'
+
+// Basic usage
+const icon = 12DotsScaleRotateIcon()
+
+// With size
+const sizedIcon = 12DotsScaleRotateIcon({ size: 24 })
+
+// With color
+const coloredIcon = 180RingIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = 180RingWithBgIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { 12DotsScaleRotate, 180Ring, 180RingWithBg } from '@stacksjs/iconify-svg-spinners'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 12DotsScaleRotateIcon, 180RingIcon, 180RingWithBgIcon } from '@stacksjs/iconify-svg-spinners'
 
   global.icons = {
-    12DotsScaleRotate: renderIcon(12DotsScaleRotate, { size: 24 }),
-    180Ring: renderIcon(180Ring, { size: 24, color: '#4a90e2' }),
-    180RingWithBg: renderIcon(180RingWithBg, { size: 32 })
+    home: 12DotsScaleRotateIcon({ size: 24 }),
+    user: 180RingIcon({ size: 24, color: '#4a90e2' }),
+    settings: 180RingWithBgIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.12DotsScaleRotate !!}
-  {!! icons.180Ring !!}
-  {!! icons.180RingWithBg !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { 12DotsScaleRotate, 180Ring, 180RingWithBg } from '@stacksjs/iconify-svg-spinners'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(12DotsScaleRotate, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(180Ring, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(180RingWithBg, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = 12DotsScaleRotateIcon({ color: 'red' })
+const blueIcon = 12DotsScaleRotateIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = 12DotsScaleRotateIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = 12DotsScaleRotateIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = 12DotsScaleRotateIcon({ size: 24 })
+const icon1em = 12DotsScaleRotateIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = 12DotsScaleRotateIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = 12DotsScaleRotateIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = 12DotsScaleRotateIcon({ class: 'icon-small' })
+const largeIcon = 12DotsScaleRotateIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **46** icons. Here are some examples:
+This package contains **46** icons:
 
 - `12DotsScaleRotate`
 - `180Ring`
 - `180RingWithBg`
 - `270Ring`
 - `270RingWithBg`
-
-...and 36 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/svg-spinners/).
+- `3DotsBounce`
+- `3DotsFade`
+- `3DotsMove`
+- `3DotsRotate`
+- `3DotsScale`
+- `3DotsScaleMiddle`
+- `6DotsRotate`
+- `6DotsScale`
+- `6DotsScaleMiddle`
+- `8DotsRotate`
+- `90Ring`
+- `90RingWithBg`
+- `barsFade`
+- `barsRotateFade`
+- `barsScale`
+- `barsScaleFade`
+- `barsScaleMiddle`
+- `blocksScale`
+- `blocksShuffle2`
+- `blocksShuffle3`
+- `blocksWave`
+- `bouncingBall`
+- `clock`
+- `dotRevolve`
+- `eclipse`
+- `eclipseHalf`
+- `gooeyBalls1`
+- `gooeyBalls2`
+- `pulse`
+- `pulse2`
+- `pulse3`
+- `pulseMultiple`
+- `pulseRing`
+- `pulseRings2`
+- `pulseRings3`
+- `pulseRingsMultiple`
+- `ringResize`
+- `tadpole`
+- `wifi`
+- `wifiFade`
+- `windToy`
 
 ## Usage Examples
 
@@ -101,77 +215,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { 12DotsScaleRotate, 180Ring, 180RingWithBg, 270Ring } from '@stacksjs/iconify-svg-spinners'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 12DotsScaleRotateIcon, 180RingIcon, 180RingWithBgIcon, 270RingIcon } from '@stacksjs/iconify-svg-spinners'
 
   global.navIcons = {
-    12DotsScaleRotate: renderIcon(12DotsScaleRotate, { size: 20, class: 'nav-icon' }),
-    180Ring: renderIcon(180Ring, { size: 20, class: 'nav-icon' }),
-    180RingWithBg: renderIcon(180RingWithBg, { size: 20, class: 'nav-icon' }),
-    270Ring: renderIcon(270Ring, { size: 20, class: 'nav-icon' })
+    home: 12DotsScaleRotateIcon({ size: 20, class: 'nav-icon' }),
+    about: 180RingIcon({ size: 20, class: 'nav-icon' }),
+    contact: 180RingWithBgIcon({ size: 20, class: 'nav-icon' }),
+    settings: 270RingIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.12DotsScaleRotate !!} Home</a>
-  <a href="/about">{!! navIcons.180Ring !!} About</a>
-  <a href="/contact">{!! navIcons.180RingWithBg !!} Contact</a>
-  <a href="/settings">{!! navIcons.270Ring !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { 12DotsScaleRotate } from '@stacksjs/iconify-svg-spinners'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 12DotsScaleRotateIcon } from '@stacksjs/iconify-svg-spinners'
 
-const icon = renderIcon(12DotsScaleRotate, {
+const icon = 12DotsScaleRotateIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-svg-spinners'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 12DotsScaleRotateIcon, 180RingIcon, 180RingWithBgIcon } from '@stacksjs/iconify-svg-spinners'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = 12DotsScaleRotateIcon({ size: 16, color: '#22c55e' })
+const warningIcon = 180RingIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = 180RingWithBgIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { 12DotsScaleRotate, 180Ring } from '@stacksjs/iconify-svg-spinners'
+   // Recommended
+   import { 12DotsScaleRotateIcon, 180RingIcon } from '@stacksjs/iconify-svg-spinners'
+   const icon = 12DotsScaleRotateIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { 12DotsScaleRotate, 180Ring } from '@stacksjs/iconify-svg-spinners'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(12DotsScaleRotate, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { 12DotsScaleRotateIcon, 180RingIcon } from '@stacksjs/iconify-svg-spinners'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-svg-spinners'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { 12DotsScaleRotate } from '@stacksjs/iconify-svg-spinners'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(12DotsScaleRotate, { size: 24 })
+     import { 12DotsScaleRotateIcon } from '@stacksjs/iconify-svg-spinners'
+     global.icon = 12DotsScaleRotateIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +301,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = 12DotsScaleRotateIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

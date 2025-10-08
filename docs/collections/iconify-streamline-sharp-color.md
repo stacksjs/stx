@@ -21,79 +21,1138 @@ bun add @stacksjs/iconify-streamline-sharp-color
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { 3dMoveIcon, 3dMoveFlatIcon, 3dRotateYAxisIcon } from '@stacksjs/iconify-streamline-sharp-color'
+
+// Basic usage
+const icon = 3dMoveIcon()
+
+// With size
+const sizedIcon = 3dMoveIcon({ size: 24 })
+
+// With color
+const coloredIcon = 3dMoveFlatIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = 3dRotateYAxisIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { 3dMove, 3dMoveFlat, 3dRotateYAxis } from '@stacksjs/iconify-streamline-sharp-color'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 3dMoveIcon, 3dMoveFlatIcon, 3dRotateYAxisIcon } from '@stacksjs/iconify-streamline-sharp-color'
 
   global.icons = {
-    3dMove: renderIcon(3dMove, { size: 24 }),
-    3dMoveFlat: renderIcon(3dMoveFlat, { size: 24, color: '#4a90e2' }),
-    3dRotateYAxis: renderIcon(3dRotateYAxis, { size: 32 })
+    home: 3dMoveIcon({ size: 24 }),
+    user: 3dMoveFlatIcon({ size: 24, color: '#4a90e2' }),
+    settings: 3dRotateYAxisIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.3dMove !!}
-  {!! icons.3dMoveFlat !!}
-  {!! icons.3dRotateYAxis !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { 3dMove, 3dMoveFlat, 3dRotateYAxis } from '@stacksjs/iconify-streamline-sharp-color'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(3dMove, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(3dMoveFlat, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(3dRotateYAxis, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Color Icons
+
+This collection contains color icons. While you can still set a color property, it may override the original colors.
+
+```typescript
+// Via color property
+const redIcon = 3dMoveIcon({ color: 'red' })
+const blueIcon = 3dMoveIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = 3dMoveIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = 3dMoveIcon({ class: 'text-primary' })
+```
+
+
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = 3dMoveIcon({ size: 24 })
+const icon1em = 3dMoveIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = 3dMoveIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = 3dMoveIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = 3dMoveIcon({ class: 'icon-small' })
+const largeIcon = 3dMoveIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **1000** icons. Here are some examples:
+This package contains **1000** icons:
 
 - `3dMove`
 - `3dMoveFlat`
 - `3dRotateYAxis`
 - `3dRotateYAxisFlat`
 - `3dScale`
-
-...and 990 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/streamline-sharp-color/).
+- `3dScaleFlat`
+- `addPdf`
+- `addPdfFlat`
+- `aiEditRobot`
+- `aiEditRobotFlat`
+- `aiFolderRobot`
+- `aiFolderRobotFlat`
+- `aiGamingRobot`
+- `aiGamingRobotFlat`
+- `aiGenerateVoiceSpark2`
+- `aiGenerateVoiceSpark2Flat`
+- `aiScienceSpark`
+- `aiScienceSparkFlat`
+- `aiUpscaleSpark`
+- `aiUpscaleSparkFlat`
+- `aiVehicleRobot1`
+- `aiVehicleRobot1Flat`
+- `airplaneDisabled`
+- `airplaneDisabledFlat`
+- `alien`
+- `alienFlat`
+- `alignBack2`
+- `alignBack2Flat`
+- `alignLeft1`
+- `alignLeft1Flat`
+- `alignObjectBottom`
+- `alignObjectBottomFlat`
+- `alignTextCenter`
+- `alignTextCenterFlat`
+- `allergensFish`
+- `allergensFishFlat`
+- `allergensPeanut`
+- `allergensPeanutFlat`
+- `apple`
+- `appleFlat`
+- `applicationAdd`
+- `applicationAddFlat`
+- `archiveBox`
+- `archiveBoxFlat`
+- `arrowCursor1`
+- `arrowCursor1Flat`
+- `arrowCursorMove`
+- `arrowCursorMoveFlat`
+- `arrowDiagonal2`
+- `arrowDiagonal2Flat`
+- `arrowExpand`
+- `arrowExpandFlat`
+- `arrowReloadHorizontal2`
+- `arrowReloadHorizontal2Flat`
+- `arrowTransferHorizontalLarge1`
+- `arrowTransferHorizontalLarge1Flat`
+- `arrowTriangleLoop`
+- `arrowTriangleLoopFlat`
+- `arrowTurnDownLarge`
+- `arrowTurnDownLargeFlat`
+- `arrowUpDashedSquare`
+- `arrowUpDashedSquareFlat`
+- `arrowUpLarge2`
+- `arrowUpLarge2Flat`
+- `artificialIntelligenceBrainChip`
+- `artificialIntelligenceBrainChipFlat`
+- `asteriskSquare`
+- `asteriskSquareFlat`
+- `attribution`
+- `attributionFlat`
+- `bagDollar`
+- `bagDollarFlat`
+- `bagSuitcaseAddPlus`
+- `bagSuitcaseAddPlusFlat`
+- `baggage`
+- `baggageFlat`
+- `ball`
+- `ballFlat`
+- `batteryEmpty2`
+- `batteryEmpty2Flat`
+- `batteryMedium3`
+- `batteryMedium3Flat`
+- `bellNotification`
+- `bellNotificationFlat`
+- `bellSetTimer`
+- `bellSetTimerFlat`
+- `bill4`
+- `bill4Flat`
+- `billDollar1`
+- `billDollar1Flat`
+- `bloodBagDonation`
+- `bloodBagDonationFlat`
+- `bluetooth`
+- `bluetoothFlat`
+- `board`
+- `boardFlat`
+- `borderBottom`
+- `borderBottomFlat`
+- `boxWaterproof`
+- `boxWaterproofFlat`
+- `brightness1`
+- `brightness1Flat`
+- `browserBuild`
+- `browserBuildFlat`
+- `browserCode2`
+- `browserCode2Flat`
+- `browserError`
+- `browserError404`
+- `browserError404Flat`
+- `browserErrorFlat`
+- `browserKey`
+- `browserKeyFlat`
+- `bug`
+- `bugFlat`
+- `bugVirusBrowser`
+- `bugVirusBrowserFlat`
+- `bulletList`
+- `bulletListFlat`
+- `businessIdeaMoney`
+- `businessIdeaMoneyFlat`
+- `buttonFastForward2`
+- `buttonFastForward2Flat`
+- `buttonPowerCircle1`
+- `buttonPowerCircle1Flat`
+- `buttonsAll`
+- `buttonsAllFlat`
+- `cake`
+- `cakeFlat`
+- `calendarAdd`
+- `calendarAddFlat`
+- `calendarMark`
+- `calendarMarkFlat`
+- `calendarWarning`
+- `calendarWarningFlat`
+- `cameraFlip1`
+- `cameraFlip1Flat`
+- `cameraSettingPin`
+- `cameraSettingPinFlat`
+- `cameraVideo`
+- `cameraVideoFlat`
+- `candle`
+- `candleFlat`
+- `car2`
+- `car2Flat`
+- `cardGameDiamond`
+- `cardGameDiamondFlat`
+- `cashierMachine2`
+- `cashierMachine2Flat`
+- `cellularNetwork5g`
+- `cellularNetwork5gFlat`
+- `chair2`
+- `chair2Flat`
+- `chatBubbleCrackSquare`
+- `chatBubbleCrackSquareFlat`
+- `chatBubbleDisableOval`
+- `chatBubbleDisableOvalFlat`
+- `chatBubbleSquareBlock`
+- `chatBubbleSquareBlockFlat`
+- `chatBubbleSquareWrite`
+- `chatBubbleSquareWriteFlat`
+- `chatBubbleTypingOval`
+- `chatBubbleTypingOvalFlat`
+- `chatTwoBubblesOval`
+- `chatTwoBubblesOvalFlat`
+- `check`
+- `checkFlat`
+- `chefToqueHat`
+- `chefToqueHatFlat`
+- `chessKnight`
+- `chessKnightFlat`
+- `chickenGrilledStream`
+- `chickenGrilledStreamFlat`
+- `circusTent`
+- `circusTentFlat`
+- `cleanBroomWipe`
+- `cleanBroomWipeFlat`
+- `cleaningRoomWoman`
+- `cleaningRoomWomanFlat`
+- `closedUmbrella`
+- `closedUmbrellaFlat`
+- `cloudDataTransfer`
+- `cloudDataTransferFlat`
+- `cloudOff`
+- `cloudOffFlat`
+- `cloudWifi`
+- `cloudWifiFlat`
+- `cog`
+- `cogFlat`
+- `colorSwatches`
+- `colorSwatchesFlat`
+- `computerChip1`
+- `computerChip1Flat`
+- `consellation`
+- `consellationFlat`
+- `contactBook`
+- `contactBookFlat`
+- `controllerWireless`
+- `controllerWirelessFlat`
+- `copyLink`
+- `copyLinkFlat`
+- `creditCard2`
+- `creditCard2Flat`
+- `creditCardDisable`
+- `creditCardDisableFlat`
+- `criticalThinking2`
+- `criticalThinking2Flat`
+- `crutch`
+- `crutchFlat`
+- `cupcake`
+- `cupcakeFlat`
+- `cursorClick`
+- `cursorClickFlat`
+- `curvesLevelsGraph`
+- `curvesLevelsGraphFlat`
+- `customFeedsLikeFavorite`
+- `customFeedsLikeFavoriteFlat`
+- `customerSupport1`
+- `customerSupport1Flat`
+- `customerSupportSetting`
+- `customerSupportSettingFlat`
+- `cut`
+- `cutFlat`
+- `cutter`
+- `cutterFlat`
+- `cyborg`
+- `cyborgFlat`
+- `darkDisplayMode`
+- `darkDisplayModeFlat`
+- `dashboard1`
+- `dashboard1Flat`
+- `dashboardCircle`
+- `dashboardCircleFlat`
+- `dashboardGauge2`
+- `dashboardGauge2Flat`
+- `database`
+- `databaseFlat`
+- `databaseServer2`
+- `databaseServer2Flat`
+- `decentWorkAndEconomicGrowth`
+- `decentWorkAndEconomicGrowthFlat`
+- `deepfakeTechnology2`
+- `deepfakeTechnology2Flat`
+- `definitionSearchBook`
+- `definitionSearchBookFlat`
+- `delete2`
+- `delete2Flat`
+- `deleteBookmark`
+- `deleteBookmarkFlat`
+- `deletePdf`
+- `deletePdfFlat`
+- `deleteTag`
+- `deleteTagFlat`
+- `desktopChat`
+- `desktopChatFlat`
+- `desktopScreensaverSleep`
+- `desktopScreensaverSleepFlat`
+- `deviceDatabaseEncryption1`
+- `deviceDatabaseEncryption1Flat`
+- `diagonalScroll1`
+- `diagonalScroll1Flat`
+- `dialPadFinger2`
+- `dialPadFinger2Flat`
+- `discountPercentFire`
+- `discountPercentFireFlat`
+- `divisionCircle`
+- `divisionCircleFlat`
+- `dna`
+- `dnaFlat`
+- `dollarIncrease`
+- `dollarIncreaseFlat`
+- `doubleBookmark`
+- `doubleBookmarkFlat`
+- `doubleHeart`
+- `doubleHeartFlat`
+- `downloadBox1`
+- `downloadBox1Flat`
+- `downloadSquare`
+- `downloadSquareFlat`
+- `downloadStack`
+- `downloadStackFlat`
+- `drawingCompass`
+- `drawingCompassFlat`
+- `drone`
+- `droneFlat`
+- `dropDownMenu`
+- `dropDownMenuFlat`
+- `drumStick`
+- `drumStickFlat`
+- `earth2`
+- `earth2Flat`
+- `ecoHouse`
+- `ecoHouseFlat`
+- `editPdf`
+- `editPdfFlat`
+- `ejectSquare`
+- `ejectSquareFlat`
+- `electricCord3`
+- `electricCord3Flat`
+- `elipseFrame`
+- `elipseFrameFlat`
+- `emailAttachmentImage`
+- `emailAttachmentImageFlat`
+- `emergencyCall`
+- `emergencyCallFlat`
+- `emptyClipboard`
+- `emptyClipboardFlat`
+- `emptyRecycleBin1`
+- `emptyRecycleBin1Flat`
+- `endPointArrow`
+- `endPointArrowFlat`
+- `facebook1`
+- `facebook1Flat`
+- `featherPen`
+- `featherPenFlat`
+- `fileBookmark`
+- `fileBookmarkFlat`
+- `filter2`
+- `filter2Flat`
+- `fingerprint2`
+- `fingerprint2Flat`
+- `fireAlarm1`
+- `fireAlarm1Flat`
+- `fireWall`
+- `fireWallFlat`
+- `flashTimer`
+- `flashTimerFlat`
+- `flashlight`
+- `flashlightFlat`
+- `flipVerticalArrow2`
+- `flipVerticalArrow2Flat`
+- `flipVerticalSquare1`
+- `flipVerticalSquare1Flat`
+- `floppyDisk`
+- `floppyDiskFlat`
+- `fluMask`
+- `fluMaskFlat`
+- `folderBlock`
+- `folderBlockFlat`
+- `following`
+- `followingFlat`
+- `forkPlate`
+- `forkPlateFlat`
+- `fortuneTellingSphere`
+- `fortuneTellingSphereFlat`
+- `forwardEmail`
+- `forwardEmailFlat`
+- `fragile`
+- `fragileFlat`
+- `gameboy`
+- `gameboyFlat`
+- `gasStationFuelPetroleum`
+- `gasStationFuelPetroleumFlat`
+- `genderLesbian2`
+- `genderLesbian2Flat`
+- `gift2`
+- `gift2Flat`
+- `giveGift`
+- `giveGiftFlat`
+- `glasses`
+- `glassesFlat`
+- `globalLearning`
+- `globalLearningFlat`
+- `gold`
+- `goldFlat`
+- `googleDrive`
+- `googleDriveFlat`
+- `graduationCap`
+- `graduationCapFlat`
+- `graphArrowUserIncrease`
+- `graphArrowUserIncreaseFlat`
+- `graphDot`
+- `graphDotFlat`
+- `graphicTemplateWebsiteUi`
+- `graphicTemplateWebsiteUiFlat`
+- `handHeldTabletDrawing`
+- `handHeldTabletDrawingFlat`
+- `handWashing`
+- `handWashingFlat`
+- `hanger`
+- `hangerFlat`
+- `happyFace`
+- `happyFaceFlat`
+- `healthCare2`
+- `healthCare2Flat`
+- `hearingDeaf1`
+- `hearingDeaf1Flat`
+- `heartRateClipboard`
+- `heartRateClipboardFlat`
+- `helpChat2`
+- `helpChat2Flat`
+- `hideLayer`
+- `hideLayerFlat`
+- `hierarchy16`
+- `hierarchy16Flat`
+- `hierarchy2`
+- `hierarchy2Flat`
+- `hierarchy8`
+- `hierarchy8Flat`
+- `hierarchyLine1`
+- `hierarchyLine1Flat`
+- `home1`
+- `home1Flat`
+- `horizontalMenuSquare`
+- `horizontalMenuSquareFlat`
+- `horizontalSlider2`
+- `horizontalSlider2Flat`
+- `horizontalToggleButton`
+- `horizontalToggleButtonFlat`
+- `hotAirBalloon`
+- `hotAirBalloonFlat`
+- `hotSpring`
+- `hotSpringFlat`
+- `hotelBed2`
+- `hotelBed2Flat`
+- `hotelThreeStar`
+- `hotelThreeStarFlat`
+- `hourglass`
+- `hourglassFlat`
+- `iceCream1`
+- `iceCream1Flat`
+- `imageHighlights`
+- `imageHighlightsFlat`
+- `inbox`
+- `inboxFavorite`
+- `inboxFavoriteFlat`
+- `inboxFlat`
+- `inboxPost`
+- `inboxPostFlat`
+- `incognitoMode`
+- `incognitoModeFlat`
+- `informationCircle`
+- `informationCircleFlat`
+- `inputBox`
+- `inputBoxFlat`
+- `insertCloudLink`
+- `insertCloudLinkFlat`
+- `insertRow`
+- `insertRowFlat`
+- `insertTopLeft`
+- `insertTopLeftFlat`
+- `insuranceHands`
+- `insuranceHandsFlat`
+- `investingAndBanking`
+- `investingAndBankingFlat`
+- `invisible2`
+- `invisible2Flat`
+- `irisScan`
+- `irisScanFlat`
+- `justiceScale2`
+- `justiceScale2Flat`
+- `keyboard`
+- `keyboardFlat`
+- `labelFolderTag`
+- `labelFolderTagFlat`
+- `landing`
+- `landingFlat`
+- `landscape2`
+- `landscape2Flat`
+- `laptopCamera`
+- `laptopCameraFlat`
+- `laptopProjectScreen`
+- `laptopProjectScreenFlat`
+- `lassoTool`
+- `lassoToolFlat`
+- `layers1`
+- `layers1Flat`
+- `layoutRightSidebar`
+- `layoutRightSidebarFlat`
+- `layoutWindow2`
+- `layoutWindow2Flat`
+- `layoutWindow25`
+- `layoutWindow25Flat`
+- `leaf`
+- `leafFlat`
+- `lens`
+- `lensFlat`
+- `lift`
+- `liftFlat`
+- `lightDarkMode`
+- `lightDarkModeFlat`
+- `like1`
+- `like1Flat`
+- `linkChain`
+- `linkChainFlat`
+- `linkShare2`
+- `linkShare2Flat`
+- `locationCompass2`
+- `locationCompass2Flat`
+- `locationOffice`
+- `locationOfficeFlat`
+- `locationPin3`
+- `locationPin3Flat`
+- `locationPinStore`
+- `locationPinStoreFlat`
+- `login2`
+- `login2Flat`
+- `logout2`
+- `logout2Flat`
+- `loop1`
+- `loop1Flat`
+- `magicWand2`
+- `magicWand2Flat`
+- `magnifyingGlass`
+- `magnifyingGlassFlat`
+- `mailLoading`
+- `mailLoadingFlat`
+- `mailSendEmailMessage`
+- `mailSendEmailMessageFlat`
+- `mailSendEnvelope`
+- `mailSendEnvelopeFlat`
+- `mapSearch`
+- `mapSearchFlat`
+- `medicalFolder`
+- `medicalFolderFlat`
+- `medicalRibbon1`
+- `medicalRibbon1Flat`
+- `medicalSearchDiagnosis`
+- `medicalSearchDiagnosisFlat`
+- `megaphone2`
+- `megaphone2Flat`
+- `memesCommentReply`
+- `memesCommentReplyFlat`
+- `microscopeObservationSciene`
+- `microscopeObservationScieneFlat`
+- `middleClick`
+- `middleClickFlat`
+- `milk`
+- `milkFlat`
+- `mineCart2`
+- `mineCart2Flat`
+- `mirrorHorizontally`
+- `mirrorHorizontallyFlat`
+- `missedCall`
+- `missedCallFlat`
+- `module`
+- `moduleFlat`
+- `modulePuzzle2`
+- `modulePuzzle2Flat`
+- `moonCloud`
+- `moonCloudFlat`
+- `moustache`
+- `moustacheFlat`
+- `moveFile`
+- `moveFileFlat`
+- `musicNote1`
+- `musicNote1Flat`
+- `musicNoteTrebbleClef`
+- `musicNoteTrebbleClefFlat`
+- `necktie`
+- `necktieFlat`
+- `newFile`
+- `newFileFlat`
+- `newFolder`
+- `newFolderFlat`
+- `newStickyNote`
+- `newStickyNoteFlat`
+- `newsPaper`
+- `newsPaperFlat`
+- `noPhotoTakingZone`
+- `noPhotoTakingZoneFlat`
+- `noWordWrap`
+- `noWordWrapFlat`
+- `nonCommercialDollars`
+- `nonCommercialDollarsFlat`
+- `noseSmell`
+- `noseSmellFlat`
+- `notebook`
+- `notebookFlat`
+- `notificationAlarm2`
+- `notificationAlarm2Flat`
+- `notificationAlarmSnooze`
+- `notificationAlarmSnoozeFlat`
+- `octagramShape`
+- `octagramShapeFlat`
+- `officeBuilding2`
+- `officeBuilding2Flat`
+- `officeWorker`
+- `officeWorkerFlat`
+- `oneFingerShortTap`
+- `oneFingerShortTapFlat`
+- `oneHandedHoldingTabletHandheld`
+- `oneHandedHoldingTabletHandheldFlat`
+- `padlockShield`
+- `padlockShieldFlat`
+- `padlockSquare1`
+- `padlockSquare1Flat`
+- `padlockSquare2`
+- `padlockSquare2Flat`
+- `pageBreak`
+- `pageBreakFlat`
+- `pageSetting`
+- `pageSettingFlat`
+- `panoramicScreen`
+- `panoramicScreenFlat`
+- `paperclip2`
+- `paperclip2Flat`
+- `paragraphArticle`
+- `paragraphArticleFlat`
+- `paragraphRightToLeft`
+- `paragraphRightToLeftFlat`
+- `partyPopper`
+- `partyPopperFlat`
+- `passportGlobe`
+- `passportGlobeFlat`
+- `passwordBlock`
+- `passwordBlockFlat`
+- `pathfinderOutline`
+- `pathfinderOutlineFlat`
+- `peaceSymbol`
+- `peaceSymbolFlat`
+- `pen1`
+- `pen1Flat`
+- `penDraw`
+- `penDrawFlat`
+- `penTool`
+- `penToolFlat`
+- `penTypes`
+- `penTypesFlat`
+- `pentagon`
+- `pentagonFlat`
+- `petFriendlyHotel`
+- `petFriendlyHotelFlat`
+- `petriDishLabEquipment`
+- `petriDishLabEquipmentFlat`
+- `petsAllowed`
+- `petsAllowedFlat`
+- `phoneCircleOff`
+- `phoneCircleOffFlat`
+- `phoneMessage`
+- `phoneMessageFlat`
+- `phonePen2`
+- `phonePen2Flat`
+- `phonePersonalHotspot`
+- `phonePersonalHotspotFlat`
+- `phoneRinging1`
+- `phoneRinging1Flat`
+- `phoneSetting`
+- `phoneSettingFlat`
+- `phoneVibrate`
+- `phoneVibrateFlat`
+- `picturesFolderMemories`
+- `picturesFolderMemoriesFlat`
+- `pieChart`
+- `pieChartFlat`
+- `pin1`
+- `pin1Flat`
+- `pinwheel`
+- `pinwheelFlat`
+- `planeFlightBoard`
+- `planeFlightBoardFlat`
+- `playList1`
+- `playList1Flat`
+- `playList8`
+- `playList8Flat`
+- `polaroid`
+- `polaroidFlat`
+- `politicsVote2`
+- `politicsVote2Flat`
+- `prescriptionPillsDrugsHealthcare`
+- `prescriptionPillsDrugsHealthcareFlat`
+- `presentation`
+- `presentationFlat`
+- `projectorScreen`
+- `projectorScreenFlat`
+- `pyramidShape`
+- `pyramidShapeFlat`
+- `qrCode`
+- `qrCodeFlat`
+- `rabbit`
+- `rabbitFlat`
+- `radio`
+- `radioFlat`
+- `radioactive1`
+- `radioactive1Flat`
+- `rateStretchTool`
+- `rateStretchToolFlat`
+- `receiptAdd`
+- `receiptAddFlat`
+- `recordPlayer`
+- `recordPlayerFlat`
+- `recordingTape2`
+- `recordingTape2Flat`
+- `recycle1`
+- `recycle1Flat`
+- `recycleBin2`
+- `recycleBin2Flat`
+- `refrigerator`
+- `refrigeratorFlat`
+- `removeAlertClock`
+- `removeAlertClockFlat`
+- `removeFavoriteHighlight`
+- `removeFavoriteHighlightFlat`
+- `repeatSingle`
+- `repeatSingleFlat`
+- `resetClock`
+- `resetClockFlat`
+- `ribbon`
+- `ribbonFlat`
+- `ring`
+- `ringFlat`
+- `rockAndRollHand`
+- `rockAndRollHandFlat`
+- `roller`
+- `rollerFlat`
+- `rollerPaintbrush`
+- `rollerPaintbrushFlat`
+- `rotateRight`
+- `rotateRightFlat`
+- `roundAnchorPoint`
+- `roundAnchorPointFlat`
+- `routerWifiNetwork`
+- `routerWifiNetworkFlat`
+- `rssSymbol`
+- `rssSymbolFlat`
+- `ruler`
+- `rulerFlat`
+- `safari`
+- `safariFlat`
+- `safeVault`
+- `safeVaultFlat`
+- `satelliteDish`
+- `satelliteDishFlat`
+- `scanner`
+- `scannerFlat`
+- `schoolBusSide`
+- `schoolBusSideFlat`
+- `screenTv`
+- `screenTvFlat`
+- `screwdriverWrench`
+- `screwdriverWrenchFlat`
+- `script1`
+- `script1Flat`
+- `searchBar`
+- `searchBarFlat`
+- `searchHistoryBrowser`
+- `searchHistoryBrowserFlat`
+- `selectAll`
+- `selectAllFlat`
+- `selectCircleArea2`
+- `selectCircleArea2Flat`
+- `shareCode`
+- `shareCodeFlat`
+- `shareLink`
+- `shareLinkFlat`
+- `shareTime`
+- `shareTimeFlat`
+- `sharingData`
+- `sharingDataFlat`
+- `shield2`
+- `shield2Flat`
+- `shinto`
+- `shintoFlat`
+- `ship`
+- `shipFlat`
+- `shipmentCheck`
+- `shipmentCheckFlat`
+- `shippingBox1`
+- `shippingBox1Flat`
+- `shirt`
+- `shirtFlat`
+- `shoppingBagHandBagPriceTag`
+- `shoppingBagHandBagPriceTagFlat`
+- `shoppingBasket2`
+- `shoppingBasket2Flat`
+- `shoppingBasketRemove`
+- `shoppingBasketRemoveFlat`
+- `shoppingCartAdd`
+- `shoppingCartAddFlat`
+- `shovelRake`
+- `shovelRakeFlat`
+- `shredder`
+- `shredderFlat`
+- `shrinkWindowOsx`
+- `shrinkWindowOsxFlat`
+- `signHashtag`
+- `signHashtagFlat`
+- `signage3`
+- `signage3Flat`
+- `signalFull`
+- `signalFullFlat`
+- `signature`
+- `signatureFlat`
+- `sizing`
+- `sizingFlat`
+- `skull2`
+- `skull2Flat`
+- `skype`
+- `skypeFlat`
+- `slideShowPlay`
+- `slideShowPlayFlat`
+- `smartKey`
+- `smartKeyFlat`
+- `smileyShocked`
+- `smileyShockedFlat`
+- `snooze`
+- `snoozeClock`
+- `snoozeClockFlat`
+- `snoozeFlat`
+- `snowFlake`
+- `snowFlakeFlat`
+- `songRecommendation`
+- `songRecommendationFlat`
+- `soundRecognitionSearch`
+- `soundRecognitionSearchFlat`
+- `spa`
+- `spaFlat`
+- `speaker1`
+- `speaker1Flat`
+- `sphereShape`
+- `sphereShapeFlat`
+- `spiralShape`
+- `spiralShapeFlat`
+- `stamp`
+- `stampFlat`
+- `star2`
+- `star2Flat`
+- `starBadge`
+- `starBadgeFlat`
+- `starCircle`
+- `starCircleFlat`
+- `startup`
+- `startupFlat`
+- `stepsNumber`
+- `stepsNumberFlat`
+- `stock`
+- `stockFlat`
+- `stopwatch`
+- `stopwatchFlat`
+- `store2`
+- `store2Flat`
+- `storeFactory`
+- `storeFactoryFlat`
+- `storyPost`
+- `storyPostFlat`
+- `strategyTasks`
+- `strategyTasksFlat`
+- `streetSign`
+- `streetSignFlat`
+- `summit`
+- `summitFlat`
+- `sun`
+- `sunFlat`
+- `surveillanceCamera`
+- `surveillanceCameraFlat`
+- `swordAttack`
+- `swordAttackFlat`
+- `symmetryMirror1`
+- `symmetryMirror1Flat`
+- `synchronizeDisable`
+- `synchronizeDisableFlat`
+- `syringe`
+- `syringeFlat`
+- `tableLamp2`
+- `tableLamp2Flat`
+- `tagFreeCircle`
+- `tagFreeCircleFlat`
+- `target3`
+- `target3Flat`
+- `teaCup`
+- `teaCupFlat`
+- `testTube`
+- `testTubeFlat`
+- `textBar`
+- `textBarFlat`
+- `textFlowRows`
+- `textFlowRowsFlat`
+- `textStyle`
+- `textStyleFlat`
+- `textTracking`
+- `textTrackingFlat`
+- `theaterMask`
+- `theaterMaskFlat`
+- `thermometerPositive`
+- `thermometerPositiveFlat`
+- `threatUsb`
+- `threatUsbFlat`
+- `ticketStar`
+- `ticketStarFlat`
+- `timeLapse`
+- `timeLapseFlat`
+- `timerZero`
+- `timerZeroFlat`
+- `toiletPaper`
+- `toiletPaperFlat`
+- `toolBox`
+- `toolBoxFlat`
+- `tooth`
+- `toothFlat`
+- `trafficLight`
+- `trafficLightFlat`
+- `transferCart`
+- `transferCartFlat`
+- `transferTruckTime`
+- `transferTruckTimeFlat`
+- `translateText`
+- `translateTextFlat`
+- `transparent`
+- `transparentFlat`
+- `tree3`
+- `tree3Flat`
+- `triangleFlag`
+- `triangleFlagFlat`
+- `trophy`
+- `trophyFlat`
+- `tuneAdjustVolume`
+- `tuneAdjustVolumeFlat`
+- `twoFingerTap`
+- `twoFingerTapFlat`
+- `typeArea`
+- `typeAreaFlat`
+- `typewriter`
+- `typewriterFlat`
+- `uploadComputer`
+- `uploadComputerFlat`
+- `uploadSquare`
+- `uploadSquareFlat`
+- `userAddPlus`
+- `userAddPlusFlat`
+- `userArrowsAccountSwitch`
+- `userArrowsAccountSwitchFlat`
+- `userCollaborateGroup`
+- `userCollaborateGroupFlat`
+- `userFeedbackHeart`
+- `userFeedbackHeartFlat`
+- `userHeadFocus`
+- `userHeadFocusFlat`
+- `userIdentifierCard`
+- `userIdentifierCardFlat`
+- `userMultipleCircle`
+- `userMultipleCircleFlat`
+- `userProtection1`
+- `userProtection1Flat`
+- `userSingleNeutralFemale`
+- `userSingleNeutralFemaleFlat`
+- `userSingleNeutralMale`
+- `userSingleNeutralMaleFlat`
+- `userStickerSquare`
+- `userStickerSquareFlat`
+- `userWorkLaptopWifi`
+- `userWorkLaptopWifiFlat`
+- `verticalSlider2`
+- `verticalSlider2Flat`
+- `videoSubtitles`
+- `videoSubtitlesFlat`
+- `viewDocumentFiles`
+- `viewDocumentFilesFlat`
+- `virtualReality`
+- `virtualRealityFlat`
+- `virusAntivirus`
+- `virusAntivirusFlat`
+- `visible`
+- `visibleFlat`
+- `voiceMail`
+- `voiceMailFlat`
+- `voiceScan1`
+- `voiceScan1Flat`
+- `voiceTypingWordConvert`
+- `voiceTypingWordConvertFlat`
+- `volumeLevelHigh`
+- `volumeLevelHighFlat`
+- `volumeSleep`
+- `volumeSleepFlat`
+- `walletPurse`
+- `walletPurseFlat`
+- `warehouse1`
+- `warehouse1Flat`
+- `warningShield`
+- `warningShieldFlat`
+- `warpFish`
+- `warpFishFlat`
+- `watchCircleBluetooth`
+- `watchCircleBluetoothFlat`
+- `watchCircleDisable`
+- `watchCircleDisableFlat`
+- `watchSquareDisable`
+- `watchSquareDisableFlat`
+- `watchSquareTime`
+- `watchSquareTimeFlat`
+- `waterDrop`
+- `waterDrop1`
+- `waterDrop1Flat`
+- `waterDropFlat`
+- `waveSignal`
+- `waveSignalFlat`
+- `wavingHand`
+- `wavingHandFlat`
+- `webcamVideo`
+- `webcamVideoFlat`
+- `wine`
+- `wineFlat`
+- `workspaceDesk`
+- `workspaceDeskFlat`
+- `wrapArch`
+- `wrapArchFlat`
+- `wrench`
+- `wrenchFlat`
+- `zipFile`
+- `zipFileFlat`
+- `zoomDocument`
+- `zoomDocumentFlat`
 
 ## Usage Examples
 
@@ -101,77 +1160,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { 3dMove, 3dMoveFlat, 3dRotateYAxis, 3dRotateYAxisFlat } from '@stacksjs/iconify-streamline-sharp-color'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 3dMoveIcon, 3dMoveFlatIcon, 3dRotateYAxisIcon, 3dRotateYAxisFlatIcon } from '@stacksjs/iconify-streamline-sharp-color'
 
   global.navIcons = {
-    3dMove: renderIcon(3dMove, { size: 20, class: 'nav-icon' }),
-    3dMoveFlat: renderIcon(3dMoveFlat, { size: 20, class: 'nav-icon' }),
-    3dRotateYAxis: renderIcon(3dRotateYAxis, { size: 20, class: 'nav-icon' }),
-    3dRotateYAxisFlat: renderIcon(3dRotateYAxisFlat, { size: 20, class: 'nav-icon' })
+    home: 3dMoveIcon({ size: 20, class: 'nav-icon' }),
+    about: 3dMoveFlatIcon({ size: 20, class: 'nav-icon' }),
+    contact: 3dRotateYAxisIcon({ size: 20, class: 'nav-icon' }),
+    settings: 3dRotateYAxisFlatIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.3dMove !!} Home</a>
-  <a href="/about">{!! navIcons.3dMoveFlat !!} About</a>
-  <a href="/contact">{!! navIcons.3dRotateYAxis !!} Contact</a>
-  <a href="/settings">{!! navIcons.3dRotateYAxisFlat !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { 3dMove } from '@stacksjs/iconify-streamline-sharp-color'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 3dMoveIcon } from '@stacksjs/iconify-streamline-sharp-color'
 
-const icon = renderIcon(3dMove, {
+const icon = 3dMoveIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-streamline-sharp-color'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 3dMoveIcon, 3dMoveFlatIcon, 3dRotateYAxisIcon } from '@stacksjs/iconify-streamline-sharp-color'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = 3dMoveIcon({ size: 16, color: '#22c55e' })
+const warningIcon = 3dMoveFlatIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = 3dRotateYAxisIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { 3dMove, 3dMoveFlat } from '@stacksjs/iconify-streamline-sharp-color'
+   // Recommended
+   import { 3dMoveIcon, 3dMoveFlatIcon } from '@stacksjs/iconify-streamline-sharp-color'
+   const icon = 3dMoveIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { 3dMove, 3dMoveFlat } from '@stacksjs/iconify-streamline-sharp-color'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(3dMove, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { 3dMoveIcon, 3dMoveFlatIcon } from '@stacksjs/iconify-streamline-sharp-color'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-streamline-sharp-color'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { 3dMove } from '@stacksjs/iconify-streamline-sharp-color'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(3dMove, { size: 24 })
+     import { 3dMoveIcon } from '@stacksjs/iconify-streamline-sharp-color'
+     global.icon = 3dMoveIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +1246,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = 3dMoveIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

@@ -21,79 +21,2709 @@ bun add @stacksjs/iconify-mynaui
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AArrowDownIcon, AArrowDownSolidIcon, AArrowUpIcon } from '@stacksjs/iconify-mynaui'
+
+// Basic usage
+const icon = AArrowDownIcon()
+
+// With size
+const sizedIcon = AArrowDownIcon({ size: 24 })
+
+// With color
+const coloredIcon = AArrowDownSolidIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = AArrowUpIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { aArrowDown, aArrowDownSolid, aArrowUp } from '@stacksjs/iconify-mynaui'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AArrowDownIcon, AArrowDownSolidIcon, AArrowUpIcon } from '@stacksjs/iconify-mynaui'
 
   global.icons = {
-    aArrowDown: renderIcon(aArrowDown, { size: 24 }),
-    aArrowDownSolid: renderIcon(aArrowDownSolid, { size: 24, color: '#4a90e2' }),
-    aArrowUp: renderIcon(aArrowUp, { size: 32 })
+    home: AArrowDownIcon({ size: 24 }),
+    user: AArrowDownSolidIcon({ size: 24, color: '#4a90e2' }),
+    settings: AArrowUpIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.aArrowDown !!}
-  {!! icons.aArrowDownSolid !!}
-  {!! icons.aArrowUp !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { aArrowDown, aArrowDownSolid, aArrowUp } from '@stacksjs/iconify-mynaui'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(aArrowDown, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(aArrowDownSolid, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(aArrowUp, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = AArrowDownIcon({ color: 'red' })
+const blueIcon = AArrowDownIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AArrowDownIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AArrowDownIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AArrowDownIcon({ size: 24 })
+const icon1em = AArrowDownIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AArrowDownIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AArrowDownIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AArrowDownIcon({ class: 'icon-small' })
+const largeIcon = AArrowDownIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **2562** icons. Here are some examples:
+This package contains **2562** icons:
 
 - `aArrowDown`
 - `aArrowDownSolid`
 - `aArrowUp`
 - `aArrowUpSolid`
 - `academicHat`
-
-...and 2552 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/mynaui/).
+- `academicHatSolid`
+- `accessibility`
+- `accessibilitySolid`
+- `activity`
+- `activitySolid`
+- `activitySquare`
+- `activitySquareSolid`
+- `addQueue`
+- `addQueueSolid`
+- `aeroplane`
+- `aeroplaneSolid`
+- `airConditioner`
+- `airConditionerSolid`
+- `airplay`
+- `airplaySolid`
+- `airpods`
+- `airpodsSolid`
+- `alarm`
+- `alarmCheck`
+- `alarmCheckSolid`
+- `alarmMinus`
+- `alarmMinusSolid`
+- `alarmPlus`
+- `alarmPlusSolid`
+- `alarmSmoke`
+- `alarmSmokeSolid`
+- `alarmSnooze`
+- `alarmSnoozeSolid`
+- `alarmSolid`
+- `alarmX`
+- `alarmXSolid`
+- `album`
+- `albumSolid`
+- `alignBottom`
+- `alignBottomSolid`
+- `alignHorizontal`
+- `alignHorizontalSolid`
+- `alignLeft`
+- `alignLeftSolid`
+- `alignRight`
+- `alignRightSolid`
+- `alignTop`
+- `alignTopSolid`
+- `alignVertical`
+- `alignVerticalSolid`
+- `alt`
+- `altSolid`
+- `ambulance`
+- `ambulanceSolid`
+- `ampersand`
+- `ampersandSolid`
+- `ampersandSquare`
+- `ampersandSquareSolid`
+- `ampersands`
+- `ampersandsSolid`
+- `anchor`
+- `anchorSolid`
+- `angryCircle`
+- `angryCircleSolid`
+- `angryGhost`
+- `angryGhostSolid`
+- `angrySquare`
+- `angrySquareSolid`
+- `annoyedCircle`
+- `annoyedCircleSolid`
+- `annoyedGhost`
+- `annoyedGhostSolid`
+- `annoyedSquare`
+- `annoyedSquareSolid`
+- `aperture`
+- `apertureSolid`
+- `api`
+- `apiSolid`
+- `ar`
+- `arSolid`
+- `archive`
+- `archiveSolid`
+- `arrowDiagonalOne`
+- `arrowDiagonalOneSolid`
+- `arrowDiagonalTwo`
+- `arrowDiagonalTwoSolid`
+- `arrowDown`
+- `arrowDownCircle`
+- `arrowDownCircleSolid`
+- `arrowDownLeft`
+- `arrowDownLeftCircle`
+- `arrowDownLeftCircleSolid`
+- `arrowDownLeftSolid`
+- `arrowDownLeftSquare`
+- `arrowDownLeftSquareSolid`
+- `arrowDownLeftWaves`
+- `arrowDownLeftWavesSolid`
+- `arrowDownRight`
+- `arrowDownRightCircle`
+- `arrowDownRightCircleSolid`
+- `arrowDownRightSolid`
+- `arrowDownRightSquare`
+- `arrowDownRightSquareSolid`
+- `arrowDownRightWaves`
+- `arrowDownRightWavesSolid`
+- `arrowDownSolid`
+- `arrowDownSquare`
+- `arrowDownSquareSolid`
+- `arrowDownWaves`
+- `arrowDownWavesSolid`
+- `arrowLeft`
+- `arrowLeftCircle`
+- `arrowLeftCircleSolid`
+- `arrowLeftRight`
+- `arrowLeftRightSolid`
+- `arrowLeftSolid`
+- `arrowLeftSquare`
+- `arrowLeftSquareSolid`
+- `arrowLeftWaves`
+- `arrowLeftWavesSolid`
+- `arrowLongDown`
+- `arrowLongDownLeft`
+- `arrowLongDownLeftSolid`
+- `arrowLongDownRight`
+- `arrowLongDownRightSolid`
+- `arrowLongDownSolid`
+- `arrowLongLeft`
+- `arrowLongLeftSolid`
+- `arrowLongRight`
+- `arrowLongRightSolid`
+- `arrowLongUp`
+- `arrowLongUpLeft`
+- `arrowLongUpLeftSolid`
+- `arrowLongUpRight`
+- `arrowLongUpRightSolid`
+- `arrowLongUpSolid`
+- `arrowRight`
+- `arrowRightCircle`
+- `arrowRightCircleSolid`
+- `arrowRightSolid`
+- `arrowRightSquare`
+- `arrowRightSquareSolid`
+- `arrowRightWaves`
+- `arrowRightWavesSolid`
+- `arrowUp`
+- `arrowUpCircle`
+- `arrowUpCircleSolid`
+- `arrowUpDown`
+- `arrowUpDownSolid`
+- `arrowUpLeft`
+- `arrowUpLeftCircle`
+- `arrowUpLeftCircleSolid`
+- `arrowUpLeftSolid`
+- `arrowUpLeftSquare`
+- `arrowUpLeftSquareSolid`
+- `arrowUpLeftWaves`
+- `arrowUpLeftWavesSolid`
+- `arrowUpRight`
+- `arrowUpRightCircle`
+- `arrowUpRightCircleSolid`
+- `arrowUpRightSolid`
+- `arrowUpRightSquare`
+- `arrowUpRightSquareSolid`
+- `arrowUpRightWaves`
+- `arrowUpRightWavesSolid`
+- `arrowUpSolid`
+- `arrowUpSquare`
+- `arrowUpSquareSolid`
+- `arrowUpWaves`
+- `arrowUpWavesSolid`
+- `asteriskCircle`
+- `asteriskCircleSolid`
+- `asteriskDiamond`
+- `asteriskDiamondSolid`
+- `asteriskHexagon`
+- `asteriskHexagonSolid`
+- `asteriskOctagon`
+- `asteriskOctagonSolid`
+- `asteriskSquare`
+- `asteriskSquareSolid`
+- `asteriskWaves`
+- `asteriskWavesSolid`
+- `at`
+- `atSolid`
+- `atom`
+- `atomSolid`
+- `baby`
+- `babySolid`
+- `backpack`
+- `backpackSolid`
+- `badge`
+- `badgeSolid`
+- `baggageClaim`
+- `baggageClaimSolid`
+- `ban`
+- `banSolid`
+- `bank`
+- `bankSolid`
+- `baseball`
+- `baseballSolid`
+- `bath`
+- `bathSolid`
+- `batteryCharging`
+- `batteryChargingFour`
+- `batteryChargingFourSolid`
+- `batteryChargingOne`
+- `batteryChargingOneSolid`
+- `batteryChargingSolid`
+- `batteryChargingThree`
+- `batteryChargingThreeSolid`
+- `batteryChargingTwo`
+- `batteryChargingTwoSolid`
+- `batteryCheck`
+- `batteryCheckSolid`
+- `batteryEmpty`
+- `batteryEmptySolid`
+- `batteryFull`
+- `batteryFullSolid`
+- `batteryMinus`
+- `batteryMinusSolid`
+- `batteryPlus`
+- `batteryPlusSolid`
+- `batteryX`
+- `batteryXSolid`
+- `bell`
+- `bellCheck`
+- `bellCheckSolid`
+- `bellHome`
+- `bellHomeSolid`
+- `bellMinus`
+- `bellMinusSolid`
+- `bellOn`
+- `bellOnSolid`
+- `bellPlus`
+- `bellPlusSolid`
+- `bellSlash`
+- `bellSlashSolid`
+- `bellSnooze`
+- `bellSnoozeSolid`
+- `bellSolid`
+- `bellUser`
+- `bellUserSolid`
+- `bellX`
+- `bellXSolid`
+- `binoculars`
+- `binocularsSolid`
+- `bitcoin`
+- `bitcoinCircle`
+- `bitcoinCircleSolid`
+- `bitcoinDiamond`
+- `bitcoinDiamondSolid`
+- `bitcoinHexagon`
+- `bitcoinHexagonSolid`
+- `bitcoinOctagon`
+- `bitcoinOctagonSolid`
+- `bitcoinSolid`
+- `bitcoinSquare`
+- `bitcoinSquareSolid`
+- `bitcoinWaves`
+- `bitcoinWavesSolid`
+- `bluetooth`
+- `bluetoothSolid`
+- `boat`
+- `boatSolid`
+- `book`
+- `bookCheck`
+- `bookCheckSolid`
+- `bookDot`
+- `bookDotSolid`
+- `bookHome`
+- `bookHomeSolid`
+- `bookImage`
+- `bookImageSolid`
+- `bookMinus`
+- `bookMinusSolid`
+- `bookOpen`
+- `bookOpenSolid`
+- `bookPlus`
+- `bookPlusSolid`
+- `bookSlash`
+- `bookSlashSolid`
+- `bookSnooze`
+- `bookSnoozeSolid`
+- `bookSolid`
+- `bookUser`
+- `bookUserSolid`
+- `bookX`
+- `bookXSolid`
+- `bookmark`
+- `bookmarkCheck`
+- `bookmarkCheckSolid`
+- `bookmarkDot`
+- `bookmarkDotSolid`
+- `bookmarkHome`
+- `bookmarkHomeSolid`
+- `bookmarkMinus`
+- `bookmarkMinusSolid`
+- `bookmarkPlus`
+- `bookmarkPlusSolid`
+- `bookmarkSlash`
+- `bookmarkSlashSolid`
+- `bookmarkSnooze`
+- `bookmarkSnoozeSolid`
+- `bookmarkSolid`
+- `bookmarkUser`
+- `bookmarkUserSolid`
+- `bookmarkX`
+- `bookmarkXSolid`
+- `boundingBox`
+- `boundingBoxSolid`
+- `bowl`
+- `bowlSolid`
+- `box`
+- `boxSolid`
+- `brandChrome`
+- `brandChromeSolid`
+- `brandCodepen`
+- `brandCodepenSolid`
+- `brandCodesandbox`
+- `brandCodesandboxSolid`
+- `brandDribbble`
+- `brandDribbbleSolid`
+- `brandFacebook`
+- `brandFacebookSolid`
+- `brandFigma`
+- `brandFigmaSolid`
+- `brandFramer`
+- `brandFramerSolid`
+- `brandGithub`
+- `brandGithubSolid`
+- `brandGitlab`
+- `brandGitlabSolid`
+- `brandGoogle`
+- `brandGoogleSolid`
+- `brandInstagram`
+- `brandInstagramSolid`
+- `brandLinkedin`
+- `brandLinkedinSolid`
+- `brandPinterest`
+- `brandPinterestSolid`
+- `brandPocket`
+- `brandPocketSolid`
+- `brandSlack`
+- `brandSlackSolid`
+- `brandSpotify`
+- `brandSpotifySolid`
+- `brandTelegram`
+- `brandTelegramSolid`
+- `brandThreads`
+- `brandThreadsSolid`
+- `brandTrello`
+- `brandTrelloSolid`
+- `brandTwitch`
+- `brandTwitchSolid`
+- `brandTwitter`
+- `brandTwitterSolid`
+- `brandX`
+- `brandXSolid`
+- `brandYoutube`
+- `brandYoutubeSolid`
+- `briefcase`
+- `briefcaseConveyorBelt`
+- `briefcaseConveyorBeltSolid`
+- `briefcaseSolid`
+- `brightnessHigh`
+- `brightnessHighSolid`
+- `brightnessLow`
+- `brightnessLowSolid`
+- `bubbles`
+- `bubblesSolid`
+- `building`
+- `buildingOne`
+- `buildingOneSolid`
+- `buildingSolid`
+- `cableCar`
+- `cableCarSolid`
+- `cake`
+- `cakeSolid`
+- `calendar`
+- `calendarCheck`
+- `calendarCheckSolid`
+- `calendarDown`
+- `calendarDownSolid`
+- `calendarMinus`
+- `calendarMinusSolid`
+- `calendarPlus`
+- `calendarPlusSolid`
+- `calendarSlash`
+- `calendarSlashSolid`
+- `calendarSolid`
+- `calendarUp`
+- `calendarUpSolid`
+- `calendarX`
+- `calendarXSolid`
+- `camera`
+- `cameraSlash`
+- `cameraSlashSolid`
+- `cameraSolid`
+- `campfire`
+- `campfireSolid`
+- `cannabis`
+- `cannabisSolid`
+- `caravan`
+- `caravanSolid`
+- `cart`
+- `cartCheck`
+- `cartCheckSolid`
+- `cartMinus`
+- `cartMinusSolid`
+- `cartPlus`
+- `cartPlusSolid`
+- `cartSolid`
+- `cartX`
+- `cartXSolid`
+- `castScreen`
+- `castScreenSolid`
+- `centerFocus`
+- `centerFocusSolid`
+- `chartArea`
+- `chartAreaSolid`
+- `chartBar`
+- `chartBarBig`
+- `chartBarBigSolid`
+- `chartBarDecreasing`
+- `chartBarDecreasingSolid`
+- `chartBarIncreasing`
+- `chartBarIncreasingSolid`
+- `chartBarOne`
+- `chartBarOneSolid`
+- `chartBarSolid`
+- `chartBarStacked`
+- `chartBarStackedSolid`
+- `chartBubble`
+- `chartBubbleSolid`
+- `chartCandlestick`
+- `chartCandlestickSolid`
+- `chartColumn`
+- `chartColumnBig`
+- `chartColumnBigSolid`
+- `chartColumnDecreasing`
+- `chartColumnDecreasingSolid`
+- `chartColumnIncreasing`
+- `chartColumnIncreasingSolid`
+- `chartColumnSolid`
+- `chartColumnStacked`
+- `chartColumnStackedSolid`
+- `chartGantt`
+- `chartGanttSolid`
+- `chartGraph`
+- `chartGraphSolid`
+- `chartLine`
+- `chartLineSolid`
+- `chartNetwork`
+- `chartNetworkSolid`
+- `chartNoAxesColumn`
+- `chartNoAxesColumnDecreasing`
+- `chartNoAxesColumnDecreasingSolid`
+- `chartNoAxesColumnIncreasing`
+- `chartNoAxesColumnIncreasingSolid`
+- `chartNoAxesColumnSolid`
+- `chartNoAxesCombined`
+- `chartNoAxesCombinedSolid`
+- `chartNoAxesGantt`
+- `chartNoAxesGanttSolid`
+- `chartPie`
+- `chartPieOne`
+- `chartPieOneSolid`
+- `chartPieSolid`
+- `chartPieTwo`
+- `chartPieTwoSolid`
+- `chartScatter`
+- `chartScatterSolid`
+- `chartSpline`
+- `chartSplineSolid`
+- `chat`
+- `chatCheck`
+- `chatCheckSolid`
+- `chatDots`
+- `chatDotsSolid`
+- `chatMessages`
+- `chatMessagesSolid`
+- `chatMinus`
+- `chatMinusSolid`
+- `chatPlus`
+- `chatPlusSolid`
+- `chatSolid`
+- `chatX`
+- `chatXSolid`
+- `check`
+- `checkCircle`
+- `checkCircleOne`
+- `checkCircleOneSolid`
+- `checkCircleSolid`
+- `checkDiamond`
+- `checkDiamondSolid`
+- `checkHexagon`
+- `checkHexagonSolid`
+- `checkOctagon`
+- `checkOctagonSolid`
+- `checkSolid`
+- `checkSquare`
+- `checkSquareOne`
+- `checkSquareOneSolid`
+- `checkSquareSolid`
+- `checkWaves`
+- `checkWavesSolid`
+- `chevronDoubleDown`
+- `chevronDoubleDownLeft`
+- `chevronDoubleDownLeftSolid`
+- `chevronDoubleDownRight`
+- `chevronDoubleDownRightSolid`
+- `chevronDoubleDownSolid`
+- `chevronDoubleLeft`
+- `chevronDoubleLeftSolid`
+- `chevronDoubleRight`
+- `chevronDoubleRightSolid`
+- `chevronDoubleUp`
+- `chevronDoubleUpLeft`
+- `chevronDoubleUpLeftSolid`
+- `chevronDoubleUpRight`
+- `chevronDoubleUpRightSolid`
+- `chevronDoubleUpSolid`
+- `chevronDown`
+- `chevronDownCircle`
+- `chevronDownCircleSolid`
+- `chevronDownLeft`
+- `chevronDownLeftCircle`
+- `chevronDownLeftCircleSolid`
+- `chevronDownLeftSolid`
+- `chevronDownLeftSquare`
+- `chevronDownLeftSquareSolid`
+- `chevronDownLeftWaves`
+- `chevronDownLeftWavesSolid`
+- `chevronDownRight`
+- `chevronDownRightCircle`
+- `chevronDownRightCircleSolid`
+- `chevronDownRightSolid`
+- `chevronDownRightSquare`
+- `chevronDownRightSquareSolid`
+- `chevronDownRightWaves`
+- `chevronDownRightWavesSolid`
+- `chevronDownSolid`
+- `chevronDownSquare`
+- `chevronDownSquareSolid`
+- `chevronDownWaves`
+- `chevronDownWavesSolid`
+- `chevronLeft`
+- `chevronLeftCircle`
+- `chevronLeftCircleSolid`
+- `chevronLeftSolid`
+- `chevronLeftSquare`
+- `chevronLeftSquareSolid`
+- `chevronLeftWaves`
+- `chevronLeftWavesSolid`
+- `chevronRight`
+- `chevronRightCircle`
+- `chevronRightCircleSolid`
+- `chevronRightSolid`
+- `chevronRightSquare`
+- `chevronRightSquareSolid`
+- `chevronRightWaves`
+- `chevronRightWavesSolid`
+- `chevronUp`
+- `chevronUpCircle`
+- `chevronUpCircleSolid`
+- `chevronUpDown`
+- `chevronUpDownSolid`
+- `chevronUpLeft`
+- `chevronUpLeftCircle`
+- `chevronUpLeftCircleSolid`
+- `chevronUpLeftSolid`
+- `chevronUpLeftSquare`
+- `chevronUpLeftSquareSolid`
+- `chevronUpLeftWaves`
+- `chevronUpLeftWavesSolid`
+- `chevronUpRight`
+- `chevronUpRightCircle`
+- `chevronUpRightCircleSolid`
+- `chevronUpRightSolid`
+- `chevronUpRightSquare`
+- `chevronUpRightSquareSolid`
+- `chevronUpRightWaves`
+- `chevronUpRightWavesSolid`
+- `chevronUpSolid`
+- `chevronUpSquare`
+- `chevronUpSquareSolid`
+- `chevronUpWaves`
+- `chevronUpWavesSolid`
+- `chip`
+- `chipSolid`
+- `cigarette`
+- `cigaretteOff`
+- `cigaretteOffSolid`
+- `cigaretteSolid`
+- `circle`
+- `circleDashed`
+- `circleDashedSolid`
+- `circleHalf`
+- `circleHalfCircle`
+- `circleHalfCircleSolid`
+- `circleHalfSolid`
+- `circleNotch`
+- `circleNotchSolid`
+- `circleSolid`
+- `click`
+- `clickSolid`
+- `clipboard`
+- `clipboardSolid`
+- `clockCircle`
+- `clockCircleSolid`
+- `clockDiamond`
+- `clockDiamondSolid`
+- `clockEight`
+- `clockEightSolid`
+- `clockEleven`
+- `clockElevenSolid`
+- `clockFive`
+- `clockFiveSolid`
+- `clockFour`
+- `clockFourSolid`
+- `clockHand`
+- `clockHandSolid`
+- `clockHexagon`
+- `clockHexagonSolid`
+- `clockNine`
+- `clockNineSolid`
+- `clockOctagon`
+- `clockOctagonSolid`
+- `clockOne`
+- `clockOneSolid`
+- `clockSeven`
+- `clockSevenSolid`
+- `clockSix`
+- `clockSixSolid`
+- `clockSquare`
+- `clockSquareSolid`
+- `clockTen`
+- `clockTenSolid`
+- `clockThree`
+- `clockThreeSolid`
+- `clockTwelve`
+- `clockTwelveSolid`
+- `clockTwo`
+- `clockTwoSolid`
+- `clockWaves`
+- `clockWavesSolid`
+- `cloud`
+- `cloudDownload`
+- `cloudDownloadSolid`
+- `cloudDrizzle`
+- `cloudDrizzleSolid`
+- `cloudFog`
+- `cloudFogSolid`
+- `cloudHail`
+- `cloudHailSolid`
+- `cloudLightning`
+- `cloudLightningSolid`
+- `cloudMoon`
+- `cloudMoonRain`
+- `cloudMoonRainSolid`
+- `cloudMoonSolid`
+- `cloudOff`
+- `cloudOffSolid`
+- `cloudRain`
+- `cloudRainSolid`
+- `cloudRainWind`
+- `cloudRainWindSolid`
+- `cloudSlashSolid`
+- `cloudSnow`
+- `cloudSnowSolid`
+- `cloudSolid`
+- `cloudSun`
+- `cloudSunRain`
+- `cloudSunRainSolid`
+- `cloudSunSolid`
+- `cloudUpload`
+- `cloudUploadSolid`
+- `cloudy`
+- `cloudySolid`
+- `cocktail`
+- `cocktailSolid`
+- `code`
+- `codeCircle`
+- `codeCircleSolid`
+- `codeDiamond`
+- `codeDiamondSolid`
+- `codeHexagon`
+- `codeHexagonSolid`
+- `codeOctagon`
+- `codeOctagonSolid`
+- `codeSolid`
+- `codeSquare`
+- `codeSquareSolid`
+- `codeWaves`
+- `codeWavesSolid`
+- `coffee`
+- `coffeeSolid`
+- `cog`
+- `cogFour`
+- `cogFourSolid`
+- `cogOne`
+- `cogOneSolid`
+- `cogSolid`
+- `cogThree`
+- `cogThreeSolid`
+- `cogTwo`
+- `cogTwoSolid`
+- `columns`
+- `columnsSolid`
+- `command`
+- `commandSolid`
+- `compass`
+- `compassSolid`
+- `components`
+- `componentsSolid`
+- `confetti`
+- `confettiSolid`
+- `config`
+- `configSolid`
+- `configVertical`
+- `configVerticalSolid`
+- `contactless`
+- `contactlessCircle`
+- `contactlessCircleSolid`
+- `contactlessSolid`
+- `controller`
+- `controllerSolid`
+- `cookie`
+- `cookieSolid`
+- `copy`
+- `copySolid`
+- `copyleft`
+- `copyleftSolid`
+- `copyright`
+- `copyrightSlash`
+- `copyrightSlashSolid`
+- `copyrightSolid`
+- `cornerDownLeft`
+- `cornerDownLeftSolid`
+- `cornerDownRight`
+- `cornerDownRightSolid`
+- `cornerLeftDown`
+- `cornerLeftDownSolid`
+- `cornerLeftUp`
+- `cornerLeftUpSolid`
+- `cornerRightDown`
+- `cornerRightDownSolid`
+- `cornerRightUp`
+- `cornerRightUpSolid`
+- `cornerUpLeft`
+- `cornerUpLeftSolid`
+- `cornerUpRight`
+- `cornerUpRightSolid`
+- `creditCard`
+- `creditCardCheck`
+- `creditCardCheckSolid`
+- `creditCardMinus`
+- `creditCardMinusSolid`
+- `creditCardPlus`
+- `creditCardPlusSolid`
+- `creditCardSolid`
+- `creditCardX`
+- `creditCardXSolid`
+- `croissant`
+- `croissantSolid`
+- `crop`
+- `cropSolid`
+- `crosshair`
+- `crosshairSolid`
+- `cupcake`
+- `cupcakeSolid`
+- `danger`
+- `dangerCircle`
+- `dangerCircleSolid`
+- `dangerDiamond`
+- `dangerDiamondSolid`
+- `dangerHexagon`
+- `dangerHexagonSolid`
+- `dangerOctagon`
+- `dangerOctagonSolid`
+- `dangerSolid`
+- `dangerSquare`
+- `dangerSquareSolid`
+- `dangerTriangle`
+- `dangerTriangleSolid`
+- `dangerWaves`
+- `dangerWavesSolid`
+- `database`
+- `databaseSolid`
+- `dazeCircle`
+- `dazeCircleSolid`
+- `dazeGhost`
+- `dazeGhostSolid`
+- `dazeSquare`
+- `dazeSquareSolid`
+- `delete`
+- `deleteSolid`
+- `desktop`
+- `desktopSolid`
+- `diamond`
+- `diamondSolid`
+- `diceFive`
+- `diceFiveSolid`
+- `diceFour`
+- `diceFourSolid`
+- `diceOne`
+- `diceOneSolid`
+- `diceSix`
+- `diceSixSolid`
+- `diceThree`
+- `diceThreeSolid`
+- `diceTwo`
+- `diceTwoSolid`
+- `dislike`
+- `dislikeSolid`
+- `divide`
+- `divideSolid`
+- `dollar`
+- `dollarCircle`
+- `dollarCircleSolid`
+- `dollarDiamond`
+- `dollarDiamondSolid`
+- `dollarHexagon`
+- `dollarHexagonSolid`
+- `dollarOctagon`
+- `dollarOctagonSolid`
+- `dollarSolid`
+- `dollarSquare`
+- `dollarSquareSolid`
+- `dollarWaves`
+- `dollarWavesSolid`
+- `doorClosed`
+- `doorClosedLocked`
+- `doorClosedLockedSolid`
+- `doorClosedSolid`
+- `doorOpen`
+- `doorOpenSolid`
+- `dots`
+- `dotsCircle`
+- `dotsCircleSolid`
+- `dotsDiamond`
+- `dotsDiamondSolid`
+- `dotsHexagon`
+- `dotsHexagonSolid`
+- `dotsOctagon`
+- `dotsOctagonSolid`
+- `dotsSolid`
+- `dotsSquare`
+- `dotsSquareSolid`
+- `dotsVertical`
+- `dotsVerticalCircle`
+- `dotsVerticalCircleSolid`
+- `dotsVerticalDiamond`
+- `dotsVerticalDiamondSolid`
+- `dotsVerticalHexagon`
+- `dotsVerticalHexagonSolid`
+- `dotsVerticalOctagon`
+- `dotsVerticalOctagonSolid`
+- `dotsVerticalSolid`
+- `dotsVerticalSquare`
+- `dotsVerticalSquareSolid`
+- `dotsVerticalWaves`
+- `dotsVerticalWavesSolid`
+- `dotsWaves`
+- `dotsWavesSolid`
+- `download`
+- `downloadSolid`
+- `drop`
+- `dropSolid`
+- `droplet`
+- `dropletOff`
+- `dropletOffSolid`
+- `dropletSolid`
+- `droplets`
+- `dropletsSolid`
+- `ear`
+- `earSlash`
+- `earSlashSolid`
+- `earSolid`
+- `earth`
+- `earthSolid`
+- `eclipse`
+- `eclipseSolid`
+- `edit`
+- `editOne`
+- `editOneSolid`
+- `editSolid`
+- `egg`
+- `eggSolid`
+- `eight`
+- `eightCircle`
+- `eightCircleSolid`
+- `eightDiamond`
+- `eightDiamondSolid`
+- `eightHexagon`
+- `eightHexagonSolid`
+- `eightOctagon`
+- `eightOctagonSolid`
+- `eightSolid`
+- `eightSquare`
+- `eightSquareSolid`
+- `eightWaves`
+- `eightWavesSolid`
+- `elevator`
+- `elevatorSolid`
+- `envelope`
+- `envelopeOpen`
+- `envelopeOpenSolid`
+- `envelopeSolid`
+- `euro`
+- `euroCircle`
+- `euroCircleSolid`
+- `euroDiamond`
+- `euroDiamondSolid`
+- `euroHexagon`
+- `euroHexagonSolid`
+- `euroOctagon`
+- `euroOctagonSolid`
+- `euroSolid`
+- `euroSquare`
+- `euroSquareSolid`
+- `euroWaves`
+- `euroWavesSolid`
+- `exclude`
+- `excludeSolid`
+- `externalLink`
+- `externalLinkSolid`
+- `eye`
+- `eyeSlash`
+- `eyeSlashSolid`
+- `eyeSolid`
+- `faceId`
+- `faceIdSolid`
+- `fatArrowDown`
+- `fatArrowDownLeft`
+- `fatArrowDownLeftSolid`
+- `fatArrowDownRight`
+- `fatArrowDownRightSolid`
+- `fatArrowDownSolid`
+- `fatArrowLeft`
+- `fatArrowLeftSolid`
+- `fatArrowRight`
+- `fatArrowRightSolid`
+- `fatArrowUp`
+- `fatArrowUpLeft`
+- `fatArrowUpLeftSolid`
+- `fatArrowUpRight`
+- `fatArrowUpRightSolid`
+- `fatArrowUpSolid`
+- `fatCornerDownLeft`
+- `fatCornerDownLeftSolid`
+- `fatCornerDownRight`
+- `fatCornerDownRightSolid`
+- `fatCornerLeftDown`
+- `fatCornerLeftDownSolid`
+- `fatCornerLeftUp`
+- `fatCornerLeftUpSolid`
+- `fatCornerRightDown`
+- `fatCornerRightDownSolid`
+- `fatCornerRightUp`
+- `fatCornerRightUpSolid`
+- `fatCornerUpLeft`
+- `fatCornerUpLeftSolid`
+- `fatCornerUpRight`
+- `fatCornerUpRightSolid`
+- `female`
+- `femaleSolid`
+- `file`
+- `fileCheck`
+- `fileCheckSolid`
+- `fileMinus`
+- `fileMinusSolid`
+- `filePlus`
+- `filePlusSolid`
+- `fileSolid`
+- `fileText`
+- `fileTextSolid`
+- `fileX`
+- `fileXSolid`
+- `film`
+- `filmSolid`
+- `filter`
+- `filterOne`
+- `filterOneSolid`
+- `filterSolid`
+- `fineTune`
+- `fineTuneSolid`
+- `fire`
+- `fireSolid`
+- `five`
+- `fiveCircle`
+- `fiveCircleSolid`
+- `fiveDiamond`
+- `fiveDiamondSolid`
+- `fiveHexagon`
+- `fiveHexagonSolid`
+- `fiveOctagon`
+- `fiveOctagonSolid`
+- `fiveSolid`
+- `fiveSquare`
+- `fiveSquareSolid`
+- `fiveWaves`
+- `fiveWavesSolid`
+- `flag`
+- `flagOne`
+- `flagOneSolid`
+- `flagSolid`
+- `flame`
+- `flameKindling`
+- `flameKindlingSolid`
+- `flameSolid`
+- `flask`
+- `flaskSolid`
+- `flower`
+- `flower2`
+- `flower2Solid`
+- `flowerSolid`
+- `folder`
+- `folderCheck`
+- `folderCheckSolid`
+- `folderHeart`
+- `folderHeartSolid`
+- `folderKanban`
+- `folderKanbanSolid`
+- `folderMinus`
+- `folderMinusSolid`
+- `folderOne`
+- `folderOneSolid`
+- `folderPlus`
+- `folderPlusSolid`
+- `folderSlash`
+- `folderSlashSolid`
+- `folderSolid`
+- `folderTwo`
+- `folderTwoSolid`
+- `folderX`
+- `folderXSolid`
+- `forward`
+- `forwardCircle`
+- `forwardCircleSolid`
+- `forwardDiamond`
+- `forwardDiamondSolid`
+- `forwardHexagon`
+- `forwardHexagonSolid`
+- `forwardOctagon`
+- `forwardOctagonSolid`
+- `forwardSolid`
+- `forwardSquare`
+- `forwardSquareSolid`
+- `forwardWaves`
+- `forwardWavesSolid`
+- `four`
+- `fourCircle`
+- `fourCircleSolid`
+- `fourDiamond`
+- `fourDiamondSolid`
+- `fourHexagon`
+- `fourHexagonSolid`
+- `fourOctagon`
+- `fourOctagonSolid`
+- `fourSolid`
+- `fourSquare`
+- `fourSquareSolid`
+- `fourWaves`
+- `fourWavesSolid`
+- `frame`
+- `frameSolid`
+- `funnyCircle`
+- `funnyCircleSolid`
+- `funnyGhost`
+- `funnyGhostSolid`
+- `funnySquare`
+- `funnySquareSolid`
+- `ghostDaze`
+- `ghostFunny`
+- `ghostIndifferent`
+- `ghostSad`
+- `ghostSmile`
+- `gift`
+- `giftSolid`
+- `gitBranch`
+- `gitBranchSolid`
+- `gitCircle`
+- `gitCircleSolid`
+- `gitCommit`
+- `gitCommitSolid`
+- `gitDiamond`
+- `gitDiamondSolid`
+- `gitDiff`
+- `gitDiffSolid`
+- `gitHexagon`
+- `gitHexagonSolid`
+- `gitMerge`
+- `gitMergeSolid`
+- `gitOctagon`
+- `gitOctagonSolid`
+- `gitPullRequest`
+- `gitPullRequestSolid`
+- `gitSquare`
+- `gitSquareSolid`
+- `gitWaves`
+- `gitWavesSolid`
+- `glasses`
+- `glassesSolid`
+- `globe`
+- `globeSolid`
+- `grid`
+- `gridOne`
+- `gridOneSolid`
+- `gridSolid`
+- `hand`
+- `handSolid`
+- `hardDrive`
+- `hardDriveSolid`
+- `hash`
+- `hashCircle`
+- `hashCircleSolid`
+- `hashDiamond`
+- `hashDiamondSolid`
+- `hashHexagon`
+- `hashHexagonSolid`
+- `hashOctagon`
+- `hashOctagonSolid`
+- `hashSolid`
+- `hashSquare`
+- `hashSquareSolid`
+- `hashWaves`
+- `hashWavesSolid`
+- `haze`
+- `hazeSolid`
+- `heading`
+- `headingFive`
+- `headingFiveSolid`
+- `headingFour`
+- `headingFourSolid`
+- `headingOne`
+- `headingOneSolid`
+- `headingSix`
+- `headingSixSolid`
+- `headingSolid`
+- `headingThree`
+- `headingThreeSolid`
+- `headingTwo`
+- `headingTwoSolid`
+- `headphones`
+- `headphonesSolid`
+- `heart`
+- `heartBroken`
+- `heartBrokenSolid`
+- `heartCheck`
+- `heartCheckSolid`
+- `heartCircle`
+- `heartCircleSolid`
+- `heartDiamond`
+- `heartDiamondSolid`
+- `heartDot`
+- `heartDotSolid`
+- `heartHexagon`
+- `heartHexagonSolid`
+- `heartHome`
+- `heartHomeSolid`
+- `heartMinus`
+- `heartMinusSolid`
+- `heartOctagon`
+- `heartOctagonSolid`
+- `heartPlus`
+- `heartPlusSolid`
+- `heartSlash`
+- `heartSlashSolid`
+- `heartSnooze`
+- `heartSnoozeSolid`
+- `heartSolid`
+- `heartSquare`
+- `heartSquareSolid`
+- `heartUser`
+- `heartUserSolid`
+- `heartWaves`
+- `heartWavesSolid`
+- `heartX`
+- `heartXSolid`
+- `hexagon`
+- `hexagonSolid`
+- `home`
+- `homeCheck`
+- `homeCheckSolid`
+- `homeMinus`
+- `homeMinusSolid`
+- `homePlus`
+- `homePlusSolid`
+- `homeSmile`
+- `homeSmileSolid`
+- `homeSolid`
+- `homeX`
+- `homeXSolid`
+- `image`
+- `imageCircle`
+- `imageCircleSolid`
+- `imageRectangle`
+- `imageRectangleSolid`
+- `imageSolid`
+- `inbox`
+- `inboxArchive`
+- `inboxArchiveSolid`
+- `inboxCheck`
+- `inboxCheckSolid`
+- `inboxDown`
+- `inboxDownSolid`
+- `inboxMinus`
+- `inboxMinusSolid`
+- `inboxPlus`
+- `inboxPlusSolid`
+- `inboxSolid`
+- `inboxUp`
+- `inboxUpSolid`
+- `inboxX`
+- `inboxXSolid`
+- `incognito`
+- `incognitoSolid`
+- `indifferentCircle`
+- `indifferentCircleSolid`
+- `indifferentGhost`
+- `indifferentGhostSolid`
+- `indifferentSquare`
+- `indifferentSquareSolid`
+- `infinity`
+- `infinitySolid`
+- `info`
+- `infoCircle`
+- `infoCircleSolid`
+- `infoDiamond`
+- `infoDiamondSolid`
+- `infoHexagon`
+- `infoHexagonSolid`
+- `infoOctagon`
+- `infoOctagonSolid`
+- `infoSolid`
+- `infoSquare`
+- `infoSquareSolid`
+- `infoTriangle`
+- `infoTriangleSolid`
+- `infoWaves`
+- `infoWavesSolid`
+- `intersect`
+- `intersectSolid`
+- `kanban`
+- `kanbanSolid`
+- `key`
+- `keySolid`
+- `keyboard`
+- `keyboardBrightnessHigh`
+- `keyboardBrightnessHighSolid`
+- `keyboardBrightnessLow`
+- `keyboardBrightnessLowSolid`
+- `keyboardSolid`
+- `label`
+- `labelSolid`
+- `lamp`
+- `lampSolid`
+- `layersOne`
+- `layersOneSolid`
+- `layersThree`
+- `layersThreeSolid`
+- `layersTwo`
+- `layersTwoSolid`
+- `layout`
+- `layoutSolid`
+- `leaf`
+- `leafSolid`
+- `leaves`
+- `leavesSolid`
+- `letterA`
+- `letterACircle`
+- `letterACircleSolid`
+- `letterADiamond`
+- `letterADiamondSolid`
+- `letterAHexagon`
+- `letterAHexagonSolid`
+- `letterAOctagon`
+- `letterAOctagonSolid`
+- `letterASolid`
+- `letterASquare`
+- `letterASquareSolid`
+- `letterAWaves`
+- `letterAWavesSolid`
+- `letterB`
+- `letterBCircle`
+- `letterBCircleSolid`
+- `letterBDiamond`
+- `letterBDiamondSolid`
+- `letterBHexagon`
+- `letterBHexagonSolid`
+- `letterBOctagon`
+- `letterBOctagonSolid`
+- `letterBSolid`
+- `letterBSquare`
+- `letterBSquareSolid`
+- `letterBWaves`
+- `letterBWavesSolid`
+- `letterC`
+- `letterCCircle`
+- `letterCCircleSolid`
+- `letterCDiamond`
+- `letterCDiamondSolid`
+- `letterCHexagon`
+- `letterCHexagonSolid`
+- `letterCOctagon`
+- `letterCOctagonSolid`
+- `letterCSolid`
+- `letterCSquare`
+- `letterCSquareSolid`
+- `letterCWaves`
+- `letterCWavesSolid`
+- `letterD`
+- `letterDCircle`
+- `letterDCircleSolid`
+- `letterDDiamond`
+- `letterDDiamondSolid`
+- `letterDHexagon`
+- `letterDHexagonSolid`
+- `letterDOctagon`
+- `letterDOctagonSolid`
+- `letterDSolid`
+- `letterDSquare`
+- `letterDSquareSolid`
+- `letterDWaves`
+- `letterDWavesSolid`
+- `letterE`
+- `letterECircle`
+- `letterECircleSolid`
+- `letterEDiamond`
+- `letterEDiamondSolid`
+- `letterEHexagon`
+- `letterEHexagonSolid`
+- `letterEOctagon`
+- `letterEOctagonSolid`
+- `letterESolid`
+- `letterESquare`
+- `letterESquareSolid`
+- `letterEWaves`
+- `letterEWavesSolid`
+- `letterF`
+- `letterFCircle`
+- `letterFCircleSolid`
+- `letterFDiamond`
+- `letterFDiamondSolid`
+- `letterFHexagon`
+- `letterFHexagonSolid`
+- `letterFOctagon`
+- `letterFOctagonSolid`
+- `letterFSolid`
+- `letterFSquare`
+- `letterFSquareSolid`
+- `letterFWaves`
+- `letterFWavesSolid`
+- `letterG`
+- `letterGCircle`
+- `letterGCircleSolid`
+- `letterGDiamond`
+- `letterGDiamondSolid`
+- `letterGHexagon`
+- `letterGHexagonSolid`
+- `letterGOctagon`
+- `letterGOctagonSolid`
+- `letterGSolid`
+- `letterGSquare`
+- `letterGSquareSolid`
+- `letterGWaves`
+- `letterGWavesSolid`
+- `letterH`
+- `letterHCircle`
+- `letterHCircleSolid`
+- `letterHDiamond`
+- `letterHDiamondSolid`
+- `letterHHexagon`
+- `letterHHexagonSolid`
+- `letterHOctagon`
+- `letterHOctagonSolid`
+- `letterHSolid`
+- `letterHSquare`
+- `letterHSquareSolid`
+- `letterHWaves`
+- `letterHWavesSolid`
+- `letterI`
+- `letterICircle`
+- `letterICircleSolid`
+- `letterIDiamond`
+- `letterIDiamondSolid`
+- `letterIHexagon`
+- `letterIHexagonSolid`
+- `letterIOctagon`
+- `letterIOctagonSolid`
+- `letterISolid`
+- `letterISquare`
+- `letterISquareSolid`
+- `letterIWaves`
+- `letterIWavesSolid`
+- `letterJ`
+- `letterJCircle`
+- `letterJCircleSolid`
+- `letterJDiamond`
+- `letterJDiamondSolid`
+- `letterJHexagon`
+- `letterJHexagonSolid`
+- `letterJOctagon`
+- `letterJOctagonSolid`
+- `letterJSolid`
+- `letterJSquare`
+- `letterJSquareSolid`
+- `letterJWaves`
+- `letterJWavesSolid`
+- `letterK`
+- `letterKCircle`
+- `letterKCircleSolid`
+- `letterKDiamond`
+- `letterKDiamondSolid`
+- `letterKHexagon`
+- `letterKHexagonSolid`
+- `letterKOctagon`
+- `letterKOctagonSolid`
+- `letterKSolid`
+- `letterKSquare`
+- `letterKSquareSolid`
+- `letterKWaves`
+- `letterKWavesSolid`
+- `letterL`
+- `letterLCircle`
+- `letterLCircleSolid`
+- `letterLDiamond`
+- `letterLDiamondSolid`
+- `letterLHexagon`
+- `letterLHexagonSolid`
+- `letterLOctagon`
+- `letterLOctagonSolid`
+- `letterLSolid`
+- `letterLSquare`
+- `letterLSquareSolid`
+- `letterLWaves`
+- `letterLWavesSolid`
+- `letterM`
+- `letterMCircle`
+- `letterMCircleSolid`
+- `letterMDiamond`
+- `letterMDiamondSolid`
+- `letterMHexagon`
+- `letterMHexagonSolid`
+- `letterMOctagon`
+- `letterMOctagonSolid`
+- `letterMSolid`
+- `letterMSquare`
+- `letterMSquareSolid`
+- `letterMWaves`
+- `letterMWavesSolid`
+- `letterN`
+- `letterNCircle`
+- `letterNCircleSolid`
+- `letterNDiamond`
+- `letterNDiamondSolid`
+- `letterNHexagon`
+- `letterNHexagonSolid`
+- `letterNOctagon`
+- `letterNOctagonSolid`
+- `letterNSolid`
+- `letterNSquare`
+- `letterNSquareSolid`
+- `letterNWaves`
+- `letterNWavesSolid`
+- `letterO`
+- `letterOCircle`
+- `letterOCircleSolid`
+- `letterODiamond`
+- `letterODiamondSolid`
+- `letterOHexagon`
+- `letterOHexagonSolid`
+- `letterOOctagon`
+- `letterOOctagonSolid`
+- `letterOSolid`
+- `letterOSquare`
+- `letterOSquareSolid`
+- `letterOWaves`
+- `letterOWavesSolid`
+- `letterP`
+- `letterPCircle`
+- `letterPCircleSolid`
+- `letterPDiamond`
+- `letterPDiamondSolid`
+- `letterPHexagon`
+- `letterPHexagonSolid`
+- `letterPOctagon`
+- `letterPOctagonSolid`
+- `letterPSolid`
+- `letterPSquare`
+- `letterPSquareSolid`
+- `letterPWaves`
+- `letterPWavesSolid`
+- `letterQ`
+- `letterQCircle`
+- `letterQCircleSolid`
+- `letterQDiamond`
+- `letterQDiamondSolid`
+- `letterQHexagon`
+- `letterQHexagonSolid`
+- `letterQOctagon`
+- `letterQOctagonSolid`
+- `letterQSolid`
+- `letterQSquare`
+- `letterQSquareSolid`
+- `letterQWaves`
+- `letterQWavesSolid`
+- `letterR`
+- `letterRCircle`
+- `letterRCircleSolid`
+- `letterRDiamond`
+- `letterRDiamondSolid`
+- `letterRHexagon`
+- `letterRHexagonSolid`
+- `letterROctagon`
+- `letterROctagonSolid`
+- `letterRSolid`
+- `letterRSquare`
+- `letterRSquareSolid`
+- `letterRWaves`
+- `letterRWavesSolid`
+- `letterS`
+- `letterSCircle`
+- `letterSCircleSolid`
+- `letterSDiamond`
+- `letterSDiamondSolid`
+- `letterSHexagon`
+- `letterSHexagonSolid`
+- `letterSOctagon`
+- `letterSOctagonSolid`
+- `letterSSolid`
+- `letterSSquare`
+- `letterSSquareSolid`
+- `letterSWaves`
+- `letterSWavesSolid`
+- `letterT`
+- `letterTCircle`
+- `letterTCircleSolid`
+- `letterTDiamond`
+- `letterTDiamondSolid`
+- `letterTHexagon`
+- `letterTHexagonSolid`
+- `letterTOctagon`
+- `letterTOctagonSolid`
+- `letterTSolid`
+- `letterTSquare`
+- `letterTSquareSolid`
+- `letterTWaves`
+- `letterTWavesSolid`
+- `letterU`
+- `letterUCircle`
+- `letterUCircleSolid`
+- `letterUDiamond`
+- `letterUDiamondSolid`
+- `letterUHexagon`
+- `letterUHexagonSolid`
+- `letterUOctagon`
+- `letterUOctagonSolid`
+- `letterUSolid`
+- `letterUSquare`
+- `letterUSquareSolid`
+- `letterUWaves`
+- `letterUWavesSolid`
+- `letterV`
+- `letterVCircle`
+- `letterVCircleSolid`
+- `letterVDiamond`
+- `letterVDiamondSolid`
+- `letterVHexagon`
+- `letterVHexagonSolid`
+- `letterVOctagon`
+- `letterVOctagonSolid`
+- `letterVSolid`
+- `letterVSquare`
+- `letterVSquareSolid`
+- `letterVWaves`
+- `letterVWavesSolid`
+- `letterW`
+- `letterWCircle`
+- `letterWCircleSolid`
+- `letterWDiamond`
+- `letterWDiamondSolid`
+- `letterWHexagon`
+- `letterWHexagonSolid`
+- `letterWOctagon`
+- `letterWOctagonSolid`
+- `letterWSolid`
+- `letterWSquare`
+- `letterWSquareSolid`
+- `letterWWaves`
+- `letterWWavesSolid`
+- `letterX`
+- `letterXCircle`
+- `letterXCircleSolid`
+- `letterXDiamond`
+- `letterXDiamondSolid`
+- `letterXHexagon`
+- `letterXHexagonSolid`
+- `letterXOctagon`
+- `letterXOctagonSolid`
+- `letterXSolid`
+- `letterXSquare`
+- `letterXSquareSolid`
+- `letterXWaves`
+- `letterXWavesSolid`
+- `letterY`
+- `letterYCircle`
+- `letterYCircleSolid`
+- `letterYDiamond`
+- `letterYDiamondSolid`
+- `letterYHexagon`
+- `letterYHexagonSolid`
+- `letterYOctagon`
+- `letterYOctagonSolid`
+- `letterYSolid`
+- `letterYSquare`
+- `letterYSquareSolid`
+- `letterYWaves`
+- `letterYWavesSolid`
+- `letterZ`
+- `letterZCircle`
+- `letterZCircleSolid`
+- `letterZDiamond`
+- `letterZDiamondSolid`
+- `letterZHexagon`
+- `letterZHexagonSolid`
+- `letterZOctagon`
+- `letterZOctagonSolid`
+- `letterZSolid`
+- `letterZSquare`
+- `letterZSquareSolid`
+- `letterZWaves`
+- `letterZWavesSolid`
+- `lightning`
+- `lightningOff`
+- `lightningOffSolid`
+- `lightningSolid`
+- `like`
+- `likeSolid`
+- `lineChartCircle`
+- `lineChartCircleSolid`
+- `lineChartDiamond`
+- `lineChartDiamondSolid`
+- `lineChartHexagon`
+- `lineChartHexagonSolid`
+- `lineChartOctagon`
+- `lineChartOctagonSolid`
+- `lineChartSquare`
+- `lineChartSquareSolid`
+- `lineChartWaves`
+- `lineChartWavesSolid`
+- `link`
+- `linkOne`
+- `linkOneSolid`
+- `linkSolid`
+- `linkTwo`
+- `linkTwoSolid`
+- `list`
+- `listCheck`
+- `listCheckSolid`
+- `listNumber`
+- `listNumberSolid`
+- `listSolid`
+- `location`
+- `locationCheck`
+- `locationCheckSolid`
+- `locationHome`
+- `locationHomeSolid`
+- `locationMinus`
+- `locationMinusSolid`
+- `locationPlus`
+- `locationPlusSolid`
+- `locationSelected`
+- `locationSelectedSolid`
+- `locationSlash`
+- `locationSlashSolid`
+- `locationSnooze`
+- `locationSnoozeSolid`
+- `locationSolid`
+- `locationUser`
+- `locationUserSolid`
+- `locationX`
+- `locationXSolid`
+- `lock`
+- `lockCircle`
+- `lockCircleSolid`
+- `lockDiamond`
+- `lockDiamondSolid`
+- `lockHexagon`
+- `lockHexagonSolid`
+- `lockKeyhole`
+- `lockKeyholeSolid`
+- `lockOctagon`
+- `lockOctagonSolid`
+- `lockOpen`
+- `lockOpenKeyhole`
+- `lockOpenKeyholeSolid`
+- `lockOpenPassword`
+- `lockOpenPasswordSolid`
+- `lockOpenSolid`
+- `lockPassword`
+- `lockPasswordSolid`
+- `lockSolid`
+- `lockSquare`
+- `lockSquareSolid`
+- `lockWaves`
+- `lockWavesSolid`
+- `login`
+- `loginSolid`
+- `logout`
+- `logoutSolid`
+- `magnet`
+- `magnetSolid`
+- `male`
+- `maleSolid`
+- `map`
+- `mapSolid`
+- `mask`
+- `maskSolid`
+- `math`
+- `mathSolid`
+- `mathSquare`
+- `mathSquareSolid`
+- `maximize`
+- `maximizeOne`
+- `maximizeOneSolid`
+- `maximizeSolid`
+- `menu`
+- `menuSolid`
+- `message`
+- `messageCheck`
+- `messageCheckSolid`
+- `messageDots`
+- `messageDotsSolid`
+- `messageMinus`
+- `messageMinusSolid`
+- `messagePlus`
+- `messagePlusSolid`
+- `messageReply`
+- `messageReplySolid`
+- `messageSolid`
+- `messageX`
+- `messageXSolid`
+- `microphone`
+- `microphoneSlash`
+- `microphoneSlashSolid`
+- `microphoneSolid`
+- `minimize`
+- `minimizeOne`
+- `minimizeOneSolid`
+- `minimizeSolid`
+- `minus`
+- `minusCircle`
+- `minusCircleSolid`
+- `minusDiamond`
+- `minusDiamondSolid`
+- `minusHexagon`
+- `minusHexagonSolid`
+- `minusOctagon`
+- `minusOctagonSolid`
+- `minusSolid`
+- `minusSquare`
+- `minusSquareSolid`
+- `minusWaves`
+- `minusWavesSolid`
+- `mobile`
+- `mobileSignalFive`
+- `mobileSignalFiveSolid`
+- `mobileSignalFour`
+- `mobileSignalFourSolid`
+- `mobileSignalOne`
+- `mobileSignalOneSolid`
+- `mobileSignalThree`
+- `mobileSignalThreeSolid`
+- `mobileSignalTwo`
+- `mobileSignalTwoSolid`
+- `mobileSolid`
+- `moon`
+- `moonSolid`
+- `moonStar`
+- `moonStarSolid`
+- `mountain`
+- `mountainSnow`
+- `mountainSnowSolid`
+- `mountainSolid`
+- `mousePointer`
+- `mousePointerSolid`
+- `move`
+- `moveDiagonal`
+- `moveDiagonalOne`
+- `moveDiagonalOneSolid`
+- `moveDiagonalSolid`
+- `moveHorizontal`
+- `moveHorizontalSolid`
+- `moveSolid`
+- `moveVertical`
+- `moveVerticalSolid`
+- `music`
+- `musicCircle`
+- `musicCircleSolid`
+- `musicDiamond`
+- `musicDiamondSolid`
+- `musicHexagon`
+- `musicHexagonSolid`
+- `musicOctagon`
+- `musicOctagonSolid`
+- `musicSolid`
+- `musicSquare`
+- `musicSquareSolid`
+- `musicWaves`
+- `musicWavesSolid`
+- `myna`
+- `mynaSolid`
+- `navigation`
+- `navigationOne`
+- `navigationOneSolid`
+- `navigationSolid`
+- `nine`
+- `nineCircle`
+- `nineCircleSolid`
+- `nineDiamond`
+- `nineDiamondSolid`
+- `nineHexagon`
+- `nineHexagonSolid`
+- `nineOctagon`
+- `nineOctagonSolid`
+- `nineSolid`
+- `nineSquare`
+- `nineSquareSolid`
+- `nineWaves`
+- `nineWavesSolid`
+- `notification`
+- `notificationSolid`
+- `octagon`
+- `octagonCheck`
+- `octagonDanger`
+- `octagonInfo`
+- `octagonMinus`
+- `octagonPlus`
+- `octagonSlash`
+- `octagonSolid`
+- `octagonX`
+- `one`
+- `oneCircle`
+- `oneCircleSolid`
+- `oneDiamond`
+- `oneDiamondSolid`
+- `oneHexagon`
+- `oneHexagonSolid`
+- `oneOctagon`
+- `oneOctagonSolid`
+- `oneSolid`
+- `oneSquare`
+- `oneSquareSolid`
+- `oneWaves`
+- `oneWavesSolid`
+- `option`
+- `optionSolid`
+- `package`
+- `packageSolid`
+- `paint`
+- `paintSolid`
+- `panelBottom`
+- `panelBottomClose`
+- `panelBottomCloseSolid`
+- `panelBottomInactive`
+- `panelBottomInactiveSolid`
+- `panelBottomOpen`
+- `panelBottomOpenSolid`
+- `panelBottomSolid`
+- `panelLeft`
+- `panelLeftClose`
+- `panelLeftCloseSolid`
+- `panelLeftInactive`
+- `panelLeftInactiveSolid`
+- `panelLeftOpen`
+- `panelLeftOpenSolid`
+- `panelLeftSolid`
+- `panelRight`
+- `panelRightClose`
+- `panelRightCloseSolid`
+- `panelRightInactive`
+- `panelRightInactiveSolid`
+- `panelRightOpen`
+- `panelRightOpenSolid`
+- `panelRightSolid`
+- `panelTop`
+- `panelTopClose`
+- `panelTopCloseSolid`
+- `panelTopInactive`
+- `panelTopInactiveSolid`
+- `panelTopOpen`
+- `panelTopOpenSolid`
+- `panelTopSolid`
+- `paperclip`
+- `paperclipSolid`
+- `parking`
+- `parkingSolid`
+- `password`
+- `passwordSolid`
+- `path`
+- `pathSolid`
+- `pause`
+- `pauseCircle`
+- `pauseCircleSolid`
+- `pauseDiamond`
+- `pauseDiamondSolid`
+- `pauseHexagon`
+- `pauseHexagonSolid`
+- `pauseOctagon`
+- `pauseOctagonSolid`
+- `pauseSolid`
+- `pauseSquare`
+- `pauseSquareSolid`
+- `pauseWaves`
+- `pauseWavesSolid`
+- `pen`
+- `penSolid`
+- `pencil`
+- `pencilSolid`
+- `percentage`
+- `percentageCircle`
+- `percentageCircleSolid`
+- `percentageDiamond`
+- `percentageDiamondSolid`
+- `percentageHexagon`
+- `percentageHexagonSolid`
+- `percentageOctagon`
+- `percentageOctagonSolid`
+- `percentageSolid`
+- `percentageSquare`
+- `percentageSquareSolid`
+- `percentageWaves`
+- `percentageWavesSolid`
+- `pin`
+- `pinSolid`
+- `pizza`
+- `pizzaSolid`
+- `planet`
+- `planetSolid`
+- `play`
+- `playCircle`
+- `playCircleSolid`
+- `playDiamond`
+- `playDiamondSolid`
+- `playHexagon`
+- `playHexagonSolid`
+- `playOctagon`
+- `playOctagonSolid`
+- `playSolid`
+- `playSquare`
+- `playSquareSolid`
+- `playWaves`
+- `playWavesSolid`
+- `plus`
+- `plusCircle`
+- `plusCircleSolid`
+- `plusDiamond`
+- `plusDiamondSolid`
+- `plusHexagon`
+- `plusHexagonSolid`
+- `plusOctagon`
+- `plusOctagonSolid`
+- `plusSolid`
+- `plusSquare`
+- `plusSquareSolid`
+- `plusWaves`
+- `plusWavesSolid`
+- `pokeball`
+- `pokeballSolid`
+- `power`
+- `powerSolid`
+- `presentation`
+- `presentationSolid`
+- `printer`
+- `printerSolid`
+- `puzzle`
+- `puzzleSolid`
+- `question`
+- `questionCircle`
+- `questionCircleSolid`
+- `questionDiamond`
+- `questionDiamondSolid`
+- `questionHexagon`
+- `questionHexagonSolid`
+- `questionOctagon`
+- `questionOctagonSolid`
+- `questionSolid`
+- `questionSquare`
+- `questionSquareSolid`
+- `questionWaves`
+- `questionWavesSolid`
+- `radio`
+- `radioSolid`
+- `rainbow`
+- `rainbowSolid`
+- `receptionBell`
+- `receptionBellSolid`
+- `record`
+- `recordSolid`
+- `rectangle`
+- `rectangleSolid`
+- `rectangleVertical`
+- `rectangleVerticalSolid`
+- `redo`
+- `redoSolid`
+- `refresh`
+- `refreshAlt`
+- `refreshAltSolid`
+- `refreshSolid`
+- `repeat`
+- `repeatSolid`
+- `rewind`
+- `rewindCircle`
+- `rewindCircleSolid`
+- `rewindDiamond`
+- `rewindDiamondSolid`
+- `rewindHexagon`
+- `rewindHexagonSolid`
+- `rewindOctagon`
+- `rewindOctagonSolid`
+- `rewindSolid`
+- `rewindSquare`
+- `rewindSquareSolid`
+- `rewindWaves`
+- `rewindWavesSolid`
+- `rhombus`
+- `rhombusSolid`
+- `ribbon`
+- `ribbonSolid`
+- `rocket`
+- `rocketSolid`
+- `roomService`
+- `roomServiceSolid`
+- `rows`
+- `rowsSolid`
+- `rss`
+- `rssSolid`
+- `ruler`
+- `rulerSolid`
+- `rupee`
+- `rupeeCircle`
+- `rupeeCircleSolid`
+- `rupeeDiamond`
+- `rupeeDiamondSolid`
+- `rupeeHexagon`
+- `rupeeHexagonSolid`
+- `rupeeOctagon`
+- `rupeeOctagonSolid`
+- `rupeeSolid`
+- `rupeeSquare`
+- `rupeeSquareSolid`
+- `rupeeWaves`
+- `rupeeWavesSolid`
+- `sadCircle`
+- `sadCircleSolid`
+- `sadGhost`
+- `sadGhostSolid`
+- `sadSquare`
+- `sadSquareSolid`
+- `save`
+- `saveSolid`
+- `scan`
+- `scanSolid`
+- `scissors`
+- `scissorsSolid`
+- `seaWaves`
+- `seaWavesSolid`
+- `search`
+- `searchCheck`
+- `searchCheckSolid`
+- `searchCircle`
+- `searchCircleSolid`
+- `searchDiamond`
+- `searchDiamondSolid`
+- `searchDot`
+- `searchDotSolid`
+- `searchHexagon`
+- `searchHexagonSolid`
+- `searchHome`
+- `searchHomeSolid`
+- `searchMinus`
+- `searchMinusSolid`
+- `searchOctagon`
+- `searchOctagonSolid`
+- `searchPlus`
+- `searchPlusSolid`
+- `searchSlash`
+- `searchSlashSolid`
+- `searchSnooze`
+- `searchSnoozeSolid`
+- `searchSolid`
+- `searchSquare`
+- `searchSquareSolid`
+- `searchUser`
+- `searchUserSolid`
+- `searchWaves`
+- `searchWavesSolid`
+- `searchX`
+- `searchXSolid`
+- `selectMultiple`
+- `selectMultipleSolid`
+- `send`
+- `sendSolid`
+- `servers`
+- `serversSolid`
+- `seven`
+- `sevenCircle`
+- `sevenCircleSolid`
+- `sevenDiamond`
+- `sevenDiamondSolid`
+- `sevenHexagon`
+- `sevenHexagonSolid`
+- `sevenOctagon`
+- `sevenOctagonSolid`
+- `sevenSolid`
+- `sevenSquare`
+- `sevenSquareSolid`
+- `sevenWaves`
+- `sevenWavesSolid`
+- `share`
+- `shareSolid`
+- `shell`
+- `shellSolid`
+- `shield`
+- `shieldCheck`
+- `shieldCheckSolid`
+- `shieldCrossed`
+- `shieldCrossedSolid`
+- `shieldMinus`
+- `shieldMinusSolid`
+- `shieldOne`
+- `shieldOneSolid`
+- `shieldPlus`
+- `shieldPlusSolid`
+- `shieldSlash`
+- `shieldSlashSolid`
+- `shieldSolid`
+- `shieldTwo`
+- `shieldTwoSolid`
+- `shieldX`
+- `shieldXSolid`
+- `shootingStar`
+- `shootingStarSolid`
+- `shoppingBag`
+- `shoppingBagSolid`
+- `shovel`
+- `shovelSolid`
+- `shrub`
+- `shrubSolid`
+- `shuffle`
+- `shuffleAlt`
+- `shuffleAltSolid`
+- `shuffleSolid`
+- `sidebar`
+- `sidebarAlt`
+- `sidebarAltSolid`
+- `sidebarSolid`
+- `signal`
+- `signalCircle`
+- `signalCircleSolid`
+- `signalDiamond`
+- `signalDiamondSolid`
+- `signalHexagon`
+- `signalHexagonSolid`
+- `signalOctagon`
+- `signalOctagonSolid`
+- `signalSolid`
+- `signalSquare`
+- `signalSquareSolid`
+- `signalWaves`
+- `signalWavesSolid`
+- `six`
+- `sixCircle`
+- `sixCircleSolid`
+- `sixDiamond`
+- `sixDiamondSolid`
+- `sixHexagon`
+- `sixHexagonSolid`
+- `sixOctagon`
+- `sixOctagonSolid`
+- `sixSolid`
+- `sixSquare`
+- `sixSquareSolid`
+- `sixWaves`
+- `sixWavesSolid`
+- `skipBack`
+- `skipBackSolid`
+- `skipForward`
+- `skipForwardSolid`
+- `slash`
+- `slashCircle`
+- `slashCircleSolid`
+- `slashDiamond`
+- `slashDiamondSolid`
+- `slashHexagon`
+- `slashHexagonSolid`
+- `slashOctagon`
+- `slashOctagonSolid`
+- `slashSquare`
+- `slashSquareSolid`
+- `slashWaves`
+- `slashWavesSolid`
+- `smileCircle`
+- `smileCircleSolid`
+- `smileGhost`
+- `smileGhostSolid`
+- `smileSquare`
+- `smileSquareSolid`
+- `smokeDetector`
+- `smokeDetectorSolid`
+- `snow`
+- `snowSolid`
+- `snowflake`
+- `snowflakeSolid`
+- `sofa`
+- `sofaSolid`
+- `sort`
+- `sortSolid`
+- `sparkles`
+- `sparklesSolid`
+- `speaker`
+- `speakerSolid`
+- `spinner`
+- `spinnerOne`
+- `spinnerOneSolid`
+- `spinnerSolid`
+- `sprout`
+- `sproutSolid`
+- `square`
+- `squareChartGantt`
+- `squareChartGanttSolid`
+- `squareDashed`
+- `squareDashedKanban`
+- `squareDashedKanbanSolid`
+- `squareDashedSolid`
+- `squareHalf`
+- `squareHalfSolid`
+- `squareKanban`
+- `squareKanbanSolid`
+- `squareSolid`
+- `star`
+- `starSolid`
+- `stop`
+- `stopCircle`
+- `stopCircleSolid`
+- `stopDiamond`
+- `stopDiamondSolid`
+- `stopHexagon`
+- `stopHexagonSolid`
+- `stopOctagon`
+- `stopOctagonSolid`
+- `stopSolid`
+- `stopSquare`
+- `stopSquareSolid`
+- `stopWaves`
+- `stopWavesSolid`
+- `store`
+- `storeSolid`
+- `subtract`
+- `subtractSolid`
+- `sun`
+- `sunDim`
+- `sunDimSolid`
+- `sunMedium`
+- `sunMediumSolid`
+- `sunSnow`
+- `sunSnowSolid`
+- `sunSolid`
+- `sunrise`
+- `sunriseSolid`
+- `sunset`
+- `sunsetSolid`
+- `support`
+- `supportSolid`
+- `swatches`
+- `swatchesSolid`
+- `table`
+- `tableSolid`
+- `tablet`
+- `tabletSolid`
+- `tag`
+- `tagPlus`
+- `tagPlusSolid`
+- `tagSolid`
+- `tallyFive`
+- `tallyFiveSolid`
+- `tallyFour`
+- `tallyFourSolid`
+- `tallyOne`
+- `tallyOneSolid`
+- `tallyThree`
+- `tallyThreeSolid`
+- `tallyTwo`
+- `tallyTwoSolid`
+- `target`
+- `targetSolid`
+- `telephone`
+- `telephoneCall`
+- `telephoneCallSolid`
+- `telephoneForward`
+- `telephoneForwardSolid`
+- `telephoneIn`
+- `telephoneInSolid`
+- `telephoneMissed`
+- `telephoneMissedSolid`
+- `telephoneOut`
+- `telephoneOutSolid`
+- `telephoneSlash`
+- `telephoneSlashSolid`
+- `telephoneSolid`
+- `tent`
+- `tentSolid`
+- `tentTree`
+- `tentTreeSolid`
+- `terminal`
+- `terminalSolid`
+- `textAlignCenter`
+- `textAlignCenterSolid`
+- `textAlignLeft`
+- `textAlignLeftSolid`
+- `textAlignRight`
+- `textAlignRightSolid`
+- `textJustify`
+- `textJustifySolid`
+- `thermometer`
+- `thermometerSnowflake`
+- `thermometerSnowflakeSolid`
+- `thermometerSolid`
+- `thermometerSun`
+- `thermometerSunSolid`
+- `three`
+- `threeCircle`
+- `threeCircleSolid`
+- `threeDiamond`
+- `threeDiamondSolid`
+- `threeHexagon`
+- `threeHexagonSolid`
+- `threeOctagon`
+- `threeOctagonSolid`
+- `threeSolid`
+- `threeSquare`
+- `threeSquareSolid`
+- `threeWaves`
+- `threeWavesSolid`
+- `ticket`
+- `ticketSlash`
+- `ticketSlashSolid`
+- `ticketSolid`
+- `toggleLeft`
+- `toggleLeftSolid`
+- `toggleRight`
+- `toggleRightSolid`
+- `tool`
+- `toolSolid`
+- `tornado`
+- `tornadoSolid`
+- `train`
+- `trainSolid`
+- `trash`
+- `trashOne`
+- `trashOneSolid`
+- `trashSolid`
+- `trashTwo`
+- `trashTwoSolid`
+- `tree`
+- `treeDeciduous`
+- `treeDeciduousSolid`
+- `treePalm`
+- `treePalmSolid`
+- `treePine`
+- `treePineSolid`
+- `treeSolid`
+- `trees`
+- `treesSolid`
+- `trendingDown`
+- `trendingDownSolid`
+- `trendingUp`
+- `trendingUpDown`
+- `trendingUpDownSolid`
+- `trendingUpSolid`
+- `triangle`
+- `triangleDanger`
+- `triangleInfo`
+- `triangleSolid`
+- `truck`
+- `truckSolid`
+- `tv`
+- `tvSolid`
+- `two`
+- `twoCircle`
+- `twoCircleSolid`
+- `twoDiamond`
+- `twoDiamondSolid`
+- `twoHexagon`
+- `twoHexagonSolid`
+- `twoOctagon`
+- `twoOctagonSolid`
+- `twoSolid`
+- `twoSquare`
+- `twoSquareSolid`
+- `twoWaves`
+- `twoWavesSolid`
+- `typeBold`
+- `typeBoldSolid`
+- `typeItalic`
+- `typeItalicSolid`
+- `typeText`
+- `typeTextSolid`
+- `typeUnderline`
+- `typeUnderlineSolid`
+- `umbrella`
+- `umbrellaOff`
+- `umbrellaOffSolid`
+- `umbrellaSolid`
+- `undo`
+- `undoSolid`
+- `union`
+- `unionSolid`
+- `unlink`
+- `unlinkSolid`
+- `upload`
+- `uploadSolid`
+- `user`
+- `userCheck`
+- `userCheckSolid`
+- `userCircle`
+- `userCircleSolid`
+- `userDiamond`
+- `userDiamondSolid`
+- `userHexagon`
+- `userHexagonSolid`
+- `userMinus`
+- `userMinusSolid`
+- `userOctagon`
+- `userOctagonSolid`
+- `userPlus`
+- `userPlusSolid`
+- `userSettings`
+- `userSettingsSolid`
+- `userSolid`
+- `userSquare`
+- `userSquareSolid`
+- `userWaves`
+- `userWavesSolid`
+- `userX`
+- `userXSolid`
+- `users`
+- `usersGroup`
+- `usersGroupSolid`
+- `usersSolid`
+- `video`
+- `videoSlash`
+- `videoSlashSolid`
+- `videoSolid`
+- `volumeCheck`
+- `volumeCheckSolid`
+- `volumeHigh`
+- `volumeHighSolid`
+- `volumeLow`
+- `volumeLowSolid`
+- `volumeMinus`
+- `volumeMinusSolid`
+- `volumeNone`
+- `volumeNoneSolid`
+- `volumePlus`
+- `volumePlusSolid`
+- `volumeSlash`
+- `volumeSlashSolid`
+- `volumeX`
+- `volumeXSolid`
+- `watch`
+- `watchSolid`
+- `waves`
+- `wavesSolid`
+- `webcam`
+- `webcamSolid`
+- `wheel`
+- `wheelSolid`
+- `wheelchair`
+- `wheelchairSolid`
+- `wifi`
+- `wifiCheck`
+- `wifiCheckSolid`
+- `wifiLow`
+- `wifiLowSolid`
+- `wifiMedium`
+- `wifiMediumSolid`
+- `wifiMinus`
+- `wifiMinusSolid`
+- `wifiPlus`
+- `wifiPlusSolid`
+- `wifiSlash`
+- `wifiSlashSolid`
+- `wifiSolid`
+- `wifiX`
+- `wifiXSolid`
+- `wind`
+- `windArrowDown`
+- `windArrowDownSolid`
+- `windSolid`
+- `winds`
+- `windsSolid`
+- `wine`
+- `wineSolid`
+- `winkCircle`
+- `winkCircleSolid`
+- `winkGhost`
+- `winkGhostSolid`
+- `winkSquare`
+- `winkSquareSolid`
+- `wrench`
+- `wrenchSolid`
+- `x`
+- `xCircle`
+- `xCircleSolid`
+- `xDiamond`
+- `xDiamondSolid`
+- `xHexagon`
+- `xHexagonSolid`
+- `xOctagon`
+- `xOctagonSolid`
+- `xSolid`
+- `xSquare`
+- `xSquareSolid`
+- `xTriangle`
+- `xTriangleSolid`
+- `xWaves`
+- `xWavesSolid`
+- `yen`
+- `yenCircle`
+- `yenCircleSolid`
+- `yenDiamond`
+- `yenDiamondSolid`
+- `yenHexagon`
+- `yenHexagonSolid`
+- `yenOctagon`
+- `yenOctagonSolid`
+- `yenSolid`
+- `yenSquare`
+- `yenSquareSolid`
+- `yenWaves`
+- `yenWavesSolid`
+- `zap`
+- `zapOff`
+- `zapOffSolid`
+- `zapSolid`
+- `zero`
+- `zeroCircle`
+- `zeroCircleSolid`
+- `zeroDiamond`
+- `zeroDiamondSolid`
+- `zeroHexagon`
+- `zeroHexagonSolid`
+- `zeroOctagon`
+- `zeroOctagonSolid`
+- `zeroSolid`
+- `zeroSquare`
+- `zeroSquareSolid`
+- `zeroWaves`
+- `zeroWavesSolid`
 
 ## Usage Examples
 
@@ -101,77 +2731,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { aArrowDown, aArrowDownSolid, aArrowUp, aArrowUpSolid } from '@stacksjs/iconify-mynaui'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AArrowDownIcon, AArrowDownSolidIcon, AArrowUpIcon, AArrowUpSolidIcon } from '@stacksjs/iconify-mynaui'
 
   global.navIcons = {
-    aArrowDown: renderIcon(aArrowDown, { size: 20, class: 'nav-icon' }),
-    aArrowDownSolid: renderIcon(aArrowDownSolid, { size: 20, class: 'nav-icon' }),
-    aArrowUp: renderIcon(aArrowUp, { size: 20, class: 'nav-icon' }),
-    aArrowUpSolid: renderIcon(aArrowUpSolid, { size: 20, class: 'nav-icon' })
+    home: AArrowDownIcon({ size: 20, class: 'nav-icon' }),
+    about: AArrowDownSolidIcon({ size: 20, class: 'nav-icon' }),
+    contact: AArrowUpIcon({ size: 20, class: 'nav-icon' }),
+    settings: AArrowUpSolidIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.aArrowDown !!} Home</a>
-  <a href="/about">{!! navIcons.aArrowDownSolid !!} About</a>
-  <a href="/contact">{!! navIcons.aArrowUp !!} Contact</a>
-  <a href="/settings">{!! navIcons.aArrowUpSolid !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { aArrowDown } from '@stacksjs/iconify-mynaui'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AArrowDownIcon } from '@stacksjs/iconify-mynaui'
 
-const icon = renderIcon(aArrowDown, {
+const icon = AArrowDownIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-mynaui'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AArrowDownIcon, AArrowDownSolidIcon, AArrowUpIcon } from '@stacksjs/iconify-mynaui'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AArrowDownIcon({ size: 16, color: '#22c55e' })
+const warningIcon = AArrowDownSolidIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = AArrowUpIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { aArrowDown, aArrowDownSolid } from '@stacksjs/iconify-mynaui'
+   // Recommended
+   import { AArrowDownIcon, AArrowDownSolidIcon } from '@stacksjs/iconify-mynaui'
+   const icon = AArrowDownIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { aArrowDown, aArrowDownSolid } from '@stacksjs/iconify-mynaui'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(aArrowDown, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AArrowDownIcon, AArrowDownSolidIcon } from '@stacksjs/iconify-mynaui'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-mynaui'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { aArrowDown } from '@stacksjs/iconify-mynaui'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(aArrowDown, { size: 24 })
+     import { AArrowDownIcon } from '@stacksjs/iconify-mynaui'
+     global.icon = AArrowDownIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +2817,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AArrowDownIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

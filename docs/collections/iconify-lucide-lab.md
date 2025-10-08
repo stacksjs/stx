@@ -21,79 +21,520 @@ bun add @stacksjs/iconify-lucide-lab
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AmpersandSquareIcon, AppleCoreIcon, ArrowsUpDownSquareIcon } from '@stacksjs/iconify-lucide-lab'
+
+// Basic usage
+const icon = AmpersandSquareIcon()
+
+// With size
+const sizedIcon = AmpersandSquareIcon({ size: 24 })
+
+// With color
+const coloredIcon = AppleCoreIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = ArrowsUpDownSquareIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { ampersandSquare, appleCore, arrowsUpDownSquare } from '@stacksjs/iconify-lucide-lab'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AmpersandSquareIcon, AppleCoreIcon, ArrowsUpDownSquareIcon } from '@stacksjs/iconify-lucide-lab'
 
   global.icons = {
-    ampersandSquare: renderIcon(ampersandSquare, { size: 24 }),
-    appleCore: renderIcon(appleCore, { size: 24, color: '#4a90e2' }),
-    arrowsUpDownSquare: renderIcon(arrowsUpDownSquare, { size: 32 })
+    home: AmpersandSquareIcon({ size: 24 }),
+    user: AppleCoreIcon({ size: 24, color: '#4a90e2' }),
+    settings: ArrowsUpDownSquareIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.ampersandSquare !!}
-  {!! icons.appleCore !!}
-  {!! icons.arrowsUpDownSquare !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { ampersandSquare, appleCore, arrowsUpDownSquare } from '@stacksjs/iconify-lucide-lab'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(ampersandSquare, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(appleCore, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(arrowsUpDownSquare, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = AmpersandSquareIcon({ color: 'red' })
+const blueIcon = AmpersandSquareIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AmpersandSquareIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AmpersandSquareIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AmpersandSquareIcon({ size: 24 })
+const icon1em = AmpersandSquareIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AmpersandSquareIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AmpersandSquareIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AmpersandSquareIcon({ class: 'icon-small' })
+const largeIcon = AmpersandSquareIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **373** icons. Here are some examples:
+This package contains **373** icons:
 
 - `ampersandSquare`
 - `appleCore`
 - `arrowsUpDownSquare`
 - `astronautHelmet`
 - `atSignCircle`
-
-...and 363 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/lucide-lab/).
+- `atSignSquare`
+- `avocado`
+- `babyPacifier`
+- `bacon`
+- `bagHand`
+- `barbecue`
+- `barberPole`
+- `barn`
+- `baseball`
+- `baselineSquare`
+- `basketball`
+- `batBall`
+- `bathBubble`
+- `beachBall`
+- `bearFace`
+- `bedBunk`
+- `bee`
+- `beeHive`
+- `beetleScarab`
+- `bellConcierge`
+- `bellConciergeDot`
+- `bellConciergeOff`
+- `belt`
+- `boldSquare`
+- `bottleBaby`
+- `bottleChampagne`
+- `bottleDispenser`
+- `bottlePerfume`
+- `bottlePlastic`
+- `bottleSpray`
+- `bottleToothbrushComb`
+- `bowlChopsticks`
+- `bowlOverflow`
+- `bowling`
+- `braSports`
+- `briefcasePlus`
+- `broom`
+- `bucket`
+- `bullHead`
+- `burger`
+- `butterfly`
+- `cabin`
+- `cabinetFiling`
+- `cactus`
+- `candleHolder`
+- `candleHolderLit`
+- `candleTealight`
+- `candleTealightLit`
+- `candlestick`
+- `candlestickBig`
+- `candlestickBigLit`
+- `candlestickLit`
+- `cardCredit`
+- `cardSd`
+- `cardSim`
+- `carton`
+- `cartonOff`
+- `caseCamel`
+- `caseKebab`
+- `caseSnake`
+- `caseSnakeUpper`
+- `catBig`
+- `cauldron`
+- `cent`
+- `centCircle`
+- `centSquare`
+- `chairsTableParasol`
+- `chairsTablePlatter`
+- `chameleon`
+- `cheese`
+- `chest`
+- `chevronsLeftRightSquare`
+- `chevronsUpDownSquare`
+- `cloth`
+- `coatHanger`
+- `cocktail`
+- `coconut`
+- `coffeeBean`
+- `coffeemaker`
+- `coinsExchange`
+- `coinsStack`
+- `copyCode`
+- `copyDown`
+- `copyFilePath`
+- `copyImage`
+- `copyText`
+- `copyType`
+- `cowHead`
+- `cowUdderDroplets`
+- `crab`
+- `cricketBall`
+- `cricketWicket`
+- `crossSquare`
+- `crosshair2`
+- `crosshair2Dot`
+- `crosshairPlus`
+- `crosshairPlusDot`
+- `crosshairSquare`
+- `cupSaucer`
+- `cupToGo`
+- `currencySquare`
+- `deskLamp`
+- `diaper`
+- `dishwasher`
+- `dollarSignCircle`
+- `dollarSignSquare`
+- `doorbellIntercom`
+- `dress`
+- `eggCup`
+- `elephant`
+- `elephantFace`
+- `escalatorArrowDownLeft`
+- `escalatorArrowUpRight`
+- `euroCircle`
+- `euroSquare`
+- `faceAlien`
+- `fanHandheld`
+- `farm`
+- `faucet`
+- `featherPlus`
+- `featherSquare`
+- `featherText`
+- `flippers`
+- `floorPlan`
+- `floppyDisk`
+- `floppyDisk2`
+- `floppyDiskRear`
+- `floppyDisks`
+- `floppyDisks2`
+- `floppyDisksRear`
+- `flowerLotus`
+- `flowerPot`
+- `flowerRose`
+- `flowerRoseSingle`
+- `flowerStem`
+- `flowerTulip`
+- `football`
+- `footballGoal`
+- `footballHelmet`
+- `forkKnife`
+- `forkKnifeCrossed`
+- `foxFaceTail`
+- `frogFace`
+- `fruit`
+- `garlic`
+- `gearbox`
+- `gearboxSquare`
+- `gemRing`
+- `glassesSquare`
+- `glassesSun`
+- `goalNet`
+- `goblet`
+- `gobletCrack`
+- `golfDriver`
+- `grapes`
+- `gridLines`
+- `gridLinesOffset`
+- `hairdryer`
+- `hatBaseball`
+- `hatBeanie`
+- `hatBowler`
+- `hatChef`
+- `hatHard`
+- `hatTop`
+- `headingCircle`
+- `headingSquare`
+- `hedgehog`
+- `helmetDiving`
+- `hexagons3`
+- `hexagons7`
+- `highHeel`
+- `hockey`
+- `hockeyMask`
+- `horseHead`
+- `hotDog`
+- `house`
+- `houseManor`
+- `houseOff`
+- `houseRoof`
+- `houseRoofOff`
+- `houses`
+- `iceHockey`
+- `iceSkate`
+- `igloo`
+- `indianRupeeCircle`
+- `indianRupeeSquare`
+- `intercom`
+- `iron`
+- `ironOff`
+- `ironingBoard`
+- `italicSquare`
+- `jacket`
+- `jacketSports`
+- `japaneseYenCircle`
+- `japaneseYenSquare`
+- `jar`
+- `jug`
+- `kebab`
+- `kettle`
+- `kettleElectric`
+- `kiwi`
+- `layoutGridMoveHorizontal`
+- `layoutGridMoveVertical`
+- `layoutGridPlus`
+- `layoutListMove`
+- `lemon`
+- `lifeJacket`
+- `ligatureSquare`
+- `lightSwitch`
+- `lingerie`
+- `locateSquare`
+- `luggageCabin`
+- `lunchBox`
+- `mailboxFlag`
+- `maskSnorkel`
+- `mealBox`
+- `mortarPestle`
+- `motorRacingHelmet`
+- `mug`
+- `mugTeabag`
+- `mustache`
+- `olive`
+- `onion`
+- `owl`
+- `pacMan`
+- `pacManGhost`
+- `palmtreeIslandSun`
+- `pancakes`
+- `peace`
+- `peach`
+- `pear`
+- `penguin`
+- `pepperChilli`
+- `pie`
+- `pig`
+- `pigHead`
+- `pillow`
+- `pinSafety`
+- `pinSafetyOpen`
+- `pineappleRing`
+- `planet`
+- `pond`
+- `poundSterlingCircle`
+- `poundSterlingSquare`
+- `pram`
+- `pretzel`
+- `pumpkin`
+- `razor`
+- `razorBlade`
+- `reelThread`
+- `refrigeratorFreezer`
+- `removeFormattingSquare`
+- `rugby`
+- `russianRubleCircle`
+- `russianRubleSquare`
+- `sausage`
+- `scarf`
+- `scissorsHairComb`
+- `shark`
+- `shaveFace`
+- `shirtFoldedButtons`
+- `shirtLongSleeve`
+- `shirtT`
+- `shirtTRuler`
+- `shirtTVNeck`
+- `shorts`
+- `shortsBoxer`
+- `shovelDig`
+- `shower`
+- `skirt`
+- `skis`
+- `slotCard`
+- `slotCardCredit`
+- `slotDisc`
+- `sneaker`
+- `snowboard`
+- `snowman`
+- `soapBar`
+- `soccerBall`
+- `soccerPitch`
+- `socketEu`
+- `socketUk`
+- `socketUsa`
+- `socks`
+- `spider`
+- `spiderWeb`
+- `stairs`
+- `stairsArch`
+- `stairsArrowDownLeft`
+- `stairsArrowUpRight`
+- `starNorth`
+- `steeringWheel`
+- `strawberry`
+- `strikethroughSquare`
+- `stroller`
+- `sunloungerParasolSun`
+- `sunloungerParasolSunPalmtree`
+- `sunloungerParasolTable`
+- `surfboard`
+- `sushi`
+- `sushi2`
+- `sushi3`
+- `sushiChopsticks`
+- `sweater`
+- `swissFrancCircle`
+- `swissFrancSquare`
+- `tab`
+- `tabArrowDown`
+- `tabArrowUpRight`
+- `tabCheck`
+- `tabDot`
+- `tabPlus`
+- `tabSlash`
+- `tabText`
+- `tabX`
+- `targetArrow`
+- `tennisBall`
+- `tennisRacket`
+- `textSquare`
+- `tie`
+- `tieBow`
+- `tieBowRibbon`
+- `tire`
+- `toast`
+- `toaster`
+- `toiletRoll`
+- `toolbox`
+- `toolbox2`
+- `topCrop`
+- `towelFolded`
+- `towelRack`
+- `treesForest`
+- `triangleStripes`
+- `trousers`
+- `tuxedo`
+- `typeSquare`
+- `ufo`
+- `underlineSquare`
+- `unicornHead`
+- `venn`
+- `vest`
+- `volleyball`
+- `waffle`
+- `wardrobe`
+- `watchActivity`
+- `watchAlarm`
+- `watchBars`
+- `watchCharging`
+- `watchCheck`
+- `watchLoader`
+- `watchMusic`
+- `watchSquare`
+- `watchSquareAlarm`
+- `watchText`
+- `watermelon`
+- `waveCircle`
+- `wavesBirds`
+- `wavesSharkFin`
+- `whale`
+- `whaleNarwhal`
+- `wheel`
+- `whisk`
+- `whiskForkKnife`
+- `whisks`
+- `windmill`
+- `wineGlassBottle`
+- `yarnBall`
+- `yinYang`
 
 ## Usage Examples
 
@@ -101,77 +542,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { ampersandSquare, appleCore, arrowsUpDownSquare, astronautHelmet } from '@stacksjs/iconify-lucide-lab'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AmpersandSquareIcon, AppleCoreIcon, ArrowsUpDownSquareIcon, AstronautHelmetIcon } from '@stacksjs/iconify-lucide-lab'
 
   global.navIcons = {
-    ampersandSquare: renderIcon(ampersandSquare, { size: 20, class: 'nav-icon' }),
-    appleCore: renderIcon(appleCore, { size: 20, class: 'nav-icon' }),
-    arrowsUpDownSquare: renderIcon(arrowsUpDownSquare, { size: 20, class: 'nav-icon' }),
-    astronautHelmet: renderIcon(astronautHelmet, { size: 20, class: 'nav-icon' })
+    home: AmpersandSquareIcon({ size: 20, class: 'nav-icon' }),
+    about: AppleCoreIcon({ size: 20, class: 'nav-icon' }),
+    contact: ArrowsUpDownSquareIcon({ size: 20, class: 'nav-icon' }),
+    settings: AstronautHelmetIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.ampersandSquare !!} Home</a>
-  <a href="/about">{!! navIcons.appleCore !!} About</a>
-  <a href="/contact">{!! navIcons.arrowsUpDownSquare !!} Contact</a>
-  <a href="/settings">{!! navIcons.astronautHelmet !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { ampersandSquare } from '@stacksjs/iconify-lucide-lab'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AmpersandSquareIcon } from '@stacksjs/iconify-lucide-lab'
 
-const icon = renderIcon(ampersandSquare, {
+const icon = AmpersandSquareIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-lucide-lab'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AmpersandSquareIcon, AppleCoreIcon, ArrowsUpDownSquareIcon } from '@stacksjs/iconify-lucide-lab'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AmpersandSquareIcon({ size: 16, color: '#22c55e' })
+const warningIcon = AppleCoreIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = ArrowsUpDownSquareIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { ampersandSquare, appleCore } from '@stacksjs/iconify-lucide-lab'
+   // Recommended
+   import { AmpersandSquareIcon, AppleCoreIcon } from '@stacksjs/iconify-lucide-lab'
+   const icon = AmpersandSquareIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { ampersandSquare, appleCore } from '@stacksjs/iconify-lucide-lab'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(ampersandSquare, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AmpersandSquareIcon, AppleCoreIcon } from '@stacksjs/iconify-lucide-lab'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-lucide-lab'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { ampersandSquare } from '@stacksjs/iconify-lucide-lab'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(ampersandSquare, { size: 24 })
+     import { AmpersandSquareIcon } from '@stacksjs/iconify-lucide-lab'
+     global.icon = AmpersandSquareIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +628,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AmpersandSquareIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

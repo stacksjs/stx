@@ -21,79 +21,695 @@ bun add @stacksjs/iconify-fa7-brands
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { 11tyIcon, 42GroupIcon, 500pxIcon } from '@stacksjs/iconify-fa7-brands'
+
+// Basic usage
+const icon = 11tyIcon()
+
+// With size
+const sizedIcon = 11tyIcon({ size: 24 })
+
+// With color
+const coloredIcon = 42GroupIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = 500pxIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { 11ty, 42Group, 500px } from '@stacksjs/iconify-fa7-brands'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 11tyIcon, 42GroupIcon, 500pxIcon } from '@stacksjs/iconify-fa7-brands'
 
   global.icons = {
-    11ty: renderIcon(11ty, { size: 24 }),
-    42Group: renderIcon(42Group, { size: 24, color: '#4a90e2' }),
-    500px: renderIcon(500px, { size: 32 })
+    home: 11tyIcon({ size: 24 }),
+    user: 42GroupIcon({ size: 24, color: '#4a90e2' }),
+    settings: 500pxIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.11ty !!}
-  {!! icons.42Group !!}
-  {!! icons.500px !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { 11ty, 42Group, 500px } from '@stacksjs/iconify-fa7-brands'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(11ty, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(42Group, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(500px, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = 11tyIcon({ color: 'red' })
+const blueIcon = 11tyIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = 11tyIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = 11tyIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = 11tyIcon({ size: 24 })
+const icon1em = 11tyIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = 11tyIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = 11tyIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = 11tyIcon({ class: 'icon-small' })
+const largeIcon = 11tyIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **548** icons. Here are some examples:
+This package contains **548** icons:
 
 - `11ty`
 - `42Group`
 - `500px`
 - `accessibleIcon`
 - `accusoft`
-
-...and 538 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/fa7-brands/).
+- `adn`
+- `adversal`
+- `affiliatetheme`
+- `airbnb`
+- `algolia`
+- `alipay`
+- `amazon`
+- `amazonPay`
+- `amilia`
+- `android`
+- `angellist`
+- `angrycreative`
+- `angular`
+- `appStore`
+- `appStoreIos`
+- `apper`
+- `apple`
+- `applePay`
+- `artstation`
+- `asymmetrik`
+- `atlassian`
+- `audible`
+- `autoprefixer`
+- `avianex`
+- `aviato`
+- `aws`
+- `bandcamp`
+- `battleNet`
+- `behance`
+- `behanceSquare`
+- `bilibili`
+- `bimobject`
+- `bitbucket`
+- `bitcoin`
+- `bity`
+- `blackTie`
+- `blackberry`
+- `blogger`
+- `bloggerB`
+- `bluesky`
+- `bluetooth`
+- `bluetoothB`
+- `bootstrap`
+- `bots`
+- `brave`
+- `braveReverse`
+- `btc`
+- `buffer`
+- `buromobelexperte`
+- `buyNLarge`
+- `buysellads`
+- `canadianMapleLeaf`
+- `cashApp`
+- `ccAmazonPay`
+- `ccAmex`
+- `ccApplePay`
+- `ccDinersClub`
+- `ccDiscover`
+- `ccJcb`
+- `ccMastercard`
+- `ccPaypal`
+- `ccStripe`
+- `ccVisa`
+- `centercode`
+- `centos`
+- `chrome`
+- `chromecast`
+- `cloudflare`
+- `cloudscale`
+- `cloudsmith`
+- `cloudversify`
+- `cmplid`
+- `codepen`
+- `codiepie`
+- `confluence`
+- `connectdevelop`
+- `contao`
+- `cottonBureau`
+- `cpanel`
+- `creativeCommons`
+- `creativeCommonsBy`
+- `creativeCommonsNc`
+- `creativeCommonsNcEu`
+- `creativeCommonsNcJp`
+- `creativeCommonsNd`
+- `creativeCommonsPd`
+- `creativeCommonsPdAlt`
+- `creativeCommonsRemix`
+- `creativeCommonsSa`
+- `creativeCommonsSampling`
+- `creativeCommonsSamplingPlus`
+- `creativeCommonsShare`
+- `creativeCommonsZero`
+- `criticalRole`
+- `css`
+- `css3`
+- `css3Alt`
+- `cuttlefish`
+- `dAndD`
+- `dAndDBeyond`
+- `dailymotion`
+- `dartLang`
+- `dashcube`
+- `debian`
+- `deezer`
+- `delicious`
+- `deploydog`
+- `deskpro`
+- `dev`
+- `deviantart`
+- `dhl`
+- `diaspora`
+- `digg`
+- `digitalOcean`
+- `discord`
+- `discourse`
+- `disqus`
+- `dochub`
+- `docker`
+- `draft2digital`
+- `dribbble`
+- `dribbbleSquare`
+- `dropbox`
+- `drupal`
+- `duolingo`
+- `dyalog`
+- `earlybirds`
+- `ebay`
+- `edge`
+- `edgeLegacy`
+- `elementor`
+- `eleventy`
+- `ello`
+- `ember`
+- `empire`
+- `envira`
+- `erlang`
+- `ethereum`
+- `etsy`
+- `evernote`
+- `expeditedssl`
+- `facebook`
+- `facebookF`
+- `facebookMessenger`
+- `facebookSquare`
+- `fantasyFlightGames`
+- `fedex`
+- `fedora`
+- `figma`
+- `filesPinwheel`
+- `firefox`
+- `firefoxBrowser`
+- `firstOrder`
+- `firstOrderAlt`
+- `firstdraft`
+- `flickr`
+- `flipboard`
+- `flutter`
+- `fly`
+- `fontAwesome`
+- `fontAwesomeAlt`
+- `fontAwesomeFlag`
+- `fonticons`
+- `fonticonsFi`
+- `fortAwesome`
+- `fortAwesomeAlt`
+- `forumbee`
+- `foursquare`
+- `freeCodeCamp`
+- `freebsd`
+- `fulcrum`
+- `galacticRepublic`
+- `galacticSenate`
+- `getPocket`
+- `gg`
+- `ggCircle`
+- `git`
+- `gitAlt`
+- `gitSquare`
+- `github`
+- `githubAlt`
+- `githubSquare`
+- `gitkraken`
+- `gitlab`
+- `gitlabSquare`
+- `gitter`
+- `glide`
+- `glideG`
+- `gofore`
+- `golang`
+- `goodreads`
+- `goodreadsG`
+- `google`
+- `googleDrive`
+- `googlePay`
+- `googlePlay`
+- `googlePlus`
+- `googlePlusG`
+- `googlePlusSquare`
+- `googleScholar`
+- `googleWallet`
+- `gratipay`
+- `grav`
+- `gripfire`
+- `grunt`
+- `guilded`
+- `gulp`
+- `hackerNews`
+- `hackerNewsSquare`
+- `hackerrank`
+- `hashnode`
+- `hips`
+- `hireAHelper`
+- `hive`
+- `hooli`
+- `hornbill`
+- `hotjar`
+- `houzz`
+- `html5`
+- `hubspot`
+- `ideal`
+- `imdb`
+- `innosoft`
+- `instagram`
+- `instagramSquare`
+- `instalod`
+- `intercom`
+- `internetExplorer`
+- `invision`
+- `ioxhost`
+- `itchIo`
+- `itunes`
+- `itunesNote`
+- `java`
+- `jediOrder`
+- `jenkins`
+- `jira`
+- `joget`
+- `joomla`
+- `js`
+- `jsSquare`
+- `jsfiddle`
+- `jxl`
+- `kaggle`
+- `kakaoTalk`
+- `keybase`
+- `keycdn`
+- `kickstarter`
+- `kickstarterK`
+- `korvue`
+- `laravel`
+- `lastfm`
+- `lastfmSquare`
+- `leanpub`
+- `less`
+- `letterboxd`
+- `line`
+- `linkedin`
+- `linkedinIn`
+- `linktree`
+- `linode`
+- `linux`
+- `lumon`
+- `lumonDrop`
+- `lyft`
+- `magento`
+- `mailchimp`
+- `mandalorian`
+- `markdown`
+- `mastodon`
+- `maxcdn`
+- `mdb`
+- `medapps`
+- `medium`
+- `mediumM`
+- `medrt`
+- `meetup`
+- `megaport`
+- `mendeley`
+- `meta`
+- `microblog`
+- `microsoft`
+- `mintbit`
+- `mix`
+- `mixcloud`
+- `mixer`
+- `mizuni`
+- `modx`
+- `monero`
+- `napster`
+- `neos`
+- `nfcDirectional`
+- `nfcSymbol`
+- `nimblr`
+- `node`
+- `nodeJs`
+- `notion`
+- `npm`
+- `ns8`
+- `nutritionix`
+- `octopusDeploy`
+- `odnoklassniki`
+- `odnoklassnikiSquare`
+- `odysee`
+- `oldRepublic`
+- `openai`
+- `opencart`
+- `openid`
+- `opensuse`
+- `opera`
+- `optinMonster`
+- `orcid`
+- `osi`
+- `padlet`
+- `page4`
+- `pagelines`
+- `palfed`
+- `pandora`
+- `patreon`
+- `paypal`
+- `perbyte`
+- `periscope`
+- `phabricator`
+- `phoenixFramework`
+- `phoenixSquadron`
+- `php`
+- `piedPiper`
+- `piedPiperAlt`
+- `piedPiperHat`
+- `piedPiperPp`
+- `piedPiperSquare`
+- `pinterest`
+- `pinterestP`
+- `pinterestSquare`
+- `pix`
+- `pixelfed`
+- `pixiv`
+- `playstation`
+- `productHunt`
+- `pushed`
+- `python`
+- `qq`
+- `quinscape`
+- `quora`
+- `rProject`
+- `raspberryPi`
+- `ravelry`
+- `react`
+- `reacteurope`
+- `readme`
+- `rebel`
+- `redRiver`
+- `reddit`
+- `redditAlien`
+- `redditSquare`
+- `redhat`
+- `rendact`
+- `renren`
+- `replyd`
+- `researchgate`
+- `resolving`
+- `rev`
+- `rocketchat`
+- `rockrms`
+- `rust`
+- `safari`
+- `salesforce`
+- `sass`
+- `schlix`
+- `screenpal`
+- `scribd`
+- `searchengin`
+- `sellcast`
+- `sellsy`
+- `servicestack`
+- `shirtsinbulk`
+- `shoelace`
+- `shopify`
+- `shopware`
+- `signalMessenger`
+- `simplybuilt`
+- `sistrix`
+- `sith`
+- `sitrox`
+- `sketch`
+- `skyatlas`
+- `skype`
+- `slack`
+- `slackHash`
+- `slideshare`
+- `snapchat`
+- `snapchatGhost`
+- `snapchatSquare`
+- `soundcloud`
+- `sourcetree`
+- `spaceAwesome`
+- `speakap`
+- `speakerDeck`
+- `spotify`
+- `squareBehance`
+- `squareBluesky`
+- `squareDribbble`
+- `squareFacebook`
+- `squareFigma`
+- `squareFontAwesome`
+- `squareFontAwesomeStroke`
+- `squareGit`
+- `squareGithub`
+- `squareGitlab`
+- `squareGooglePlus`
+- `squareHackerNews`
+- `squareInstagram`
+- `squareJs`
+- `squareKickstarter`
+- `squareLastfm`
+- `squareLetterboxd`
+- `squareLinkedin`
+- `squareOdnoklassniki`
+- `squarePiedPiper`
+- `squarePinterest`
+- `squareReddit`
+- `squareSnapchat`
+- `squareSteam`
+- `squareThreads`
+- `squareTumblr`
+- `squareTwitter`
+- `squareUpwork`
+- `squareViadeo`
+- `squareVimeo`
+- `squareWebAwesome`
+- `squareWebAwesomeStroke`
+- `squareWhatsapp`
+- `squareXTwitter`
+- `squareXing`
+- `squareYoutube`
+- `squarespace`
+- `stackExchange`
+- `stackOverflow`
+- `stackpath`
+- `staylinked`
+- `steam`
+- `steamSquare`
+- `steamSymbol`
+- `stickerMule`
+- `strava`
+- `stripe`
+- `stripeS`
+- `stubber`
+- `studiovinari`
+- `stumbleupon`
+- `stumbleuponCircle`
+- `superpowers`
+- `supple`
+- `suse`
+- `swift`
+- `symfony`
+- `teamspeak`
+- `telegram`
+- `telegramPlane`
+- `tencentWeibo`
+- `tex`
+- `theRedYeti`
+- `themeco`
+- `themeisle`
+- `thinkPeaks`
+- `threads`
+- `tidal`
+- `tiktok`
+- `tradeFederation`
+- `trello`
+- `tumblr`
+- `tumblrSquare`
+- `twitch`
+- `twitter`
+- `twitterSquare`
+- `typo3`
+- `uber`
+- `ubuntu`
+- `uikit`
+- `umbraco`
+- `uncharted`
+- `uniregistry`
+- `unity`
+- `unsplash`
+- `untappd`
+- `ups`
+- `upwork`
+- `usb`
+- `usps`
+- `ussunnah`
+- `vaadin`
+- `viacoin`
+- `viadeo`
+- `viadeoSquare`
+- `viber`
+- `vimeo`
+- `vimeoSquare`
+- `vimeoV`
+- `vine`
+- `vk`
+- `vnv`
+- `vsco`
+- `vuejs`
+- `w3c`
+- `watchmanMonitoring`
+- `waze`
+- `webAwesome`
+- `webflow`
+- `weebly`
+- `weibo`
+- `weixin`
+- `whatsapp`
+- `whatsappSquare`
+- `whmcs`
+- `wikipediaW`
+- `windows`
+- `wirsindhandwerk`
+- `wix`
+- `wizardsOfTheCoast`
+- `wodu`
+- `wolfPackBattalion`
+- `wordpress`
+- `wordpressSimple`
+- `wpbeginner`
+- `wpexplorer`
+- `wpforms`
+- `wpressr`
+- `wsh`
+- `xTwitter`
+- `xbox`
+- `xing`
+- `xingSquare`
+- `yCombinator`
+- `yahoo`
+- `yammer`
+- `yandex`
+- `yandexInternational`
+- `yarn`
+- `yelp`
+- `yoast`
+- `youtube`
+- `youtubeSquare`
+- `zhihu`
 
 ## Usage Examples
 
@@ -101,77 +717,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { 11ty, 42Group, 500px, accessibleIcon } from '@stacksjs/iconify-fa7-brands'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 11tyIcon, 42GroupIcon, 500pxIcon, AccessibleIconIcon } from '@stacksjs/iconify-fa7-brands'
 
   global.navIcons = {
-    11ty: renderIcon(11ty, { size: 20, class: 'nav-icon' }),
-    42Group: renderIcon(42Group, { size: 20, class: 'nav-icon' }),
-    500px: renderIcon(500px, { size: 20, class: 'nav-icon' }),
-    accessibleIcon: renderIcon(accessibleIcon, { size: 20, class: 'nav-icon' })
+    home: 11tyIcon({ size: 20, class: 'nav-icon' }),
+    about: 42GroupIcon({ size: 20, class: 'nav-icon' }),
+    contact: 500pxIcon({ size: 20, class: 'nav-icon' }),
+    settings: AccessibleIconIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.11ty !!} Home</a>
-  <a href="/about">{!! navIcons.42Group !!} About</a>
-  <a href="/contact">{!! navIcons.500px !!} Contact</a>
-  <a href="/settings">{!! navIcons.accessibleIcon !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { 11ty } from '@stacksjs/iconify-fa7-brands'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 11tyIcon } from '@stacksjs/iconify-fa7-brands'
 
-const icon = renderIcon(11ty, {
+const icon = 11tyIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-fa7-brands'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 11tyIcon, 42GroupIcon, 500pxIcon } from '@stacksjs/iconify-fa7-brands'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = 11tyIcon({ size: 16, color: '#22c55e' })
+const warningIcon = 42GroupIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = 500pxIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { 11ty, 42Group } from '@stacksjs/iconify-fa7-brands'
+   // Recommended
+   import { 11tyIcon, 42GroupIcon } from '@stacksjs/iconify-fa7-brands'
+   const icon = 11tyIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { 11ty, 42Group } from '@stacksjs/iconify-fa7-brands'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(11ty, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { 11tyIcon, 42GroupIcon } from '@stacksjs/iconify-fa7-brands'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-fa7-brands'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { 11ty } from '@stacksjs/iconify-fa7-brands'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(11ty, { size: 24 })
+     import { 11tyIcon } from '@stacksjs/iconify-fa7-brands'
+     global.icon = 11tyIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +803,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = 11tyIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

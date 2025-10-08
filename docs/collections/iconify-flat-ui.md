@@ -21,79 +21,238 @@ bun add @stacksjs/iconify-flat-ui
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AndroidIcon, Android1Icon, AppStoreIcon } from '@stacksjs/iconify-flat-ui'
+
+// Basic usage
+const icon = AndroidIcon()
+
+// With size
+const sizedIcon = AndroidIcon({ size: 24 })
+
+// With color
+const coloredIcon = Android1Icon({ color: 'red' })
+
+// With multiple props
+const customIcon = AppStoreIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { android, android1, appStore } from '@stacksjs/iconify-flat-ui'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AndroidIcon, Android1Icon, AppStoreIcon } from '@stacksjs/iconify-flat-ui'
 
   global.icons = {
-    android: renderIcon(android, { size: 24 }),
-    android1: renderIcon(android1, { size: 24, color: '#4a90e2' }),
-    appStore: renderIcon(appStore, { size: 32 })
+    home: AndroidIcon({ size: 24 }),
+    user: Android1Icon({ size: 24, color: '#4a90e2' }),
+    settings: AppStoreIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.android !!}
-  {!! icons.android1 !!}
-  {!! icons.appStore !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { android, android1, appStore } from '@stacksjs/iconify-flat-ui'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(android, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(android1, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(appStore, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Color Icons
+
+This collection contains color icons. While you can still set a color property, it may override the original colors.
+
+```typescript
+// Via color property
+const redIcon = AndroidIcon({ color: 'red' })
+const blueIcon = AndroidIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AndroidIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AndroidIcon({ class: 'text-primary' })
+```
+
+
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AndroidIcon({ size: 24 })
+const icon1em = AndroidIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AndroidIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AndroidIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AndroidIcon({ class: 'icon-small' })
+const largeIcon = AndroidIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **100** icons. Here are some examples:
+This package contains **100** icons:
 
 - `android`
 - `android1`
 - `appStore`
 - `arrow`
 - `art`
-
-...and 90 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/flat-ui/).
+- `bag`
+- `basket`
+- `book`
+- `bowling`
+- `box`
+- `brush`
+- `building`
+- `bulb`
+- `button`
+- `calculator`
+- `calendar`
+- `camera`
+- `car`
+- `card`
+- `chair`
+- `chat`
+- `clipboard`
+- `clocks`
+- `compas`
+- `converse`
+- `cup`
+- `dj`
+- `donut`
+- `dude`
+- `dynamite`
+- `earth`
+- `egg`
+- `eye`
+- `file`
+- `fit`
+- `flag`
+- `flask`
+- `flower`
+- `games`
+- `giftBox`
+- `girl`
+- `goal`
+- `google`
+- `graph`
+- `icecream`
+- `imac`
+- `ipad`
+- `iphone`
+- `key`
+- `lettersymbol`
+- `lock`
+- `loop`
+- `macbook`
+- `magic`
+- `magicmouse`
+- `mail`
+- `map`
+- `medal`
+- `mic`
+- `money`
+- `mortarboard`
+- `mountain`
+- `news`
+- `paperBag`
+- `pc`
+- `pencil`
+- `pencils`
+- `picture`
+- `pig`
+- `pills`
+- `play`
+- `printer`
+- `responsive`
+- `retina`
+- `ring`
+- `rocket`
+- `rss`
+- `safe`
+- `save`
+- `search`
+- `settings`
+- `shield`
+- `shirt`
+- `skateboard`
+- `spray`
+- `storage`
+- `support`
+- `ticket`
+- `toiletPaper`
+- `touch`
+- `trash`
+- `tripBag`
+- `trunk`
+- `ubmrella`
+- `userInterface`
+- `video`
+- `weather`
+- `wiFi`
+- `wine`
+- `yinyang`
 
 ## Usage Examples
 
@@ -101,77 +260,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { android, android1, appStore, arrow } from '@stacksjs/iconify-flat-ui'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AndroidIcon, Android1Icon, AppStoreIcon, ArrowIcon } from '@stacksjs/iconify-flat-ui'
 
   global.navIcons = {
-    android: renderIcon(android, { size: 20, class: 'nav-icon' }),
-    android1: renderIcon(android1, { size: 20, class: 'nav-icon' }),
-    appStore: renderIcon(appStore, { size: 20, class: 'nav-icon' }),
-    arrow: renderIcon(arrow, { size: 20, class: 'nav-icon' })
+    home: AndroidIcon({ size: 20, class: 'nav-icon' }),
+    about: Android1Icon({ size: 20, class: 'nav-icon' }),
+    contact: AppStoreIcon({ size: 20, class: 'nav-icon' }),
+    settings: ArrowIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.android !!} Home</a>
-  <a href="/about">{!! navIcons.android1 !!} About</a>
-  <a href="/contact">{!! navIcons.appStore !!} Contact</a>
-  <a href="/settings">{!! navIcons.arrow !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { android } from '@stacksjs/iconify-flat-ui'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AndroidIcon } from '@stacksjs/iconify-flat-ui'
 
-const icon = renderIcon(android, {
+const icon = AndroidIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-flat-ui'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AndroidIcon, Android1Icon, AppStoreIcon } from '@stacksjs/iconify-flat-ui'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AndroidIcon({ size: 16, color: '#22c55e' })
+const warningIcon = Android1Icon({ size: 16, color: '#f59e0b' })
+const errorIcon = AppStoreIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { android, android1 } from '@stacksjs/iconify-flat-ui'
+   // Recommended
+   import { AndroidIcon, Android1Icon } from '@stacksjs/iconify-flat-ui'
+   const icon = AndroidIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { android, android1 } from '@stacksjs/iconify-flat-ui'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(android, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AndroidIcon, Android1Icon } from '@stacksjs/iconify-flat-ui'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-flat-ui'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { android } from '@stacksjs/iconify-flat-ui'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(android, { size: 24 })
+     import { AndroidIcon } from '@stacksjs/iconify-flat-ui'
+     global.icon = AndroidIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +346,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AndroidIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

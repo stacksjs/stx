@@ -21,79 +21,435 @@ bun add @stacksjs/iconify-circum
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AirportSign1Icon, AlarmOffIcon, AlarmOnIcon } from '@stacksjs/iconify-circum'
+
+// Basic usage
+const icon = AirportSign1Icon()
+
+// With size
+const sizedIcon = AirportSign1Icon({ size: 24 })
+
+// With color
+const coloredIcon = AlarmOffIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = AlarmOnIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { airportSign1, alarmOff, alarmOn } from '@stacksjs/iconify-circum'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AirportSign1Icon, AlarmOffIcon, AlarmOnIcon } from '@stacksjs/iconify-circum'
 
   global.icons = {
-    airportSign1: renderIcon(airportSign1, { size: 24 }),
-    alarmOff: renderIcon(alarmOff, { size: 24, color: '#4a90e2' }),
-    alarmOn: renderIcon(alarmOn, { size: 32 })
+    home: AirportSign1Icon({ size: 24 }),
+    user: AlarmOffIcon({ size: 24, color: '#4a90e2' }),
+    settings: AlarmOnIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.airportSign1 !!}
-  {!! icons.alarmOff !!}
-  {!! icons.alarmOn !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { airportSign1, alarmOff, alarmOn } from '@stacksjs/iconify-circum'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(airportSign1, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(alarmOff, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(alarmOn, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = AirportSign1Icon({ color: 'red' })
+const blueIcon = AirportSign1Icon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AirportSign1Icon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AirportSign1Icon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AirportSign1Icon({ size: 24 })
+const icon1em = AirportSign1Icon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AirportSign1Icon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AirportSign1Icon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AirportSign1Icon({ class: 'icon-small' })
+const largeIcon = AirportSign1Icon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **288** icons. Here are some examples:
+This package contains **288** icons:
 
 - `airportSign1`
 - `alarmOff`
 - `alarmOn`
 - `alignBottom`
 - `alignCenterH`
-
-...and 278 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/circum/).
+- `alignCenterV`
+- `alignLeft`
+- `alignRight`
+- `alignTop`
+- `apple`
+- `at`
+- `avocado`
+- `bacon`
+- `badgeDollar`
+- `bag1`
+- `bandage`
+- `bank`
+- `barcode`
+- `baseball`
+- `basketball`
+- `batteryCharging`
+- `batteryEmpty`
+- `batteryFull`
+- `beaker1`
+- `beerMugFull`
+- `bellOff`
+- `bellOn`
+- `bezier`
+- `bitcoin`
+- `bluetooth`
+- `bookmark`
+- `bookmarkCheck`
+- `bookmarkMinus`
+- `bookmarkPlus`
+- `bookmarkRemove`
+- `bowlNoodles`
+- `boxList`
+- `boxes`
+- `brightnessDown`
+- `brightnessUp`
+- `bullhorn`
+- `burger`
+- `calculator1`
+- `calculator2`
+- `calendar`
+- `calendarDate`
+- `camera`
+- `chat1`
+- `chat2`
+- `circleAlert`
+- `circleCheck`
+- `circleChevDown`
+- `circleChevLeft`
+- `circleChevRight`
+- `circleChevUp`
+- `circleInfo`
+- `circleList`
+- `circleMinus`
+- `circleMore`
+- `circlePlus`
+- `circleQuestion`
+- `circleRemove`
+- `clock1`
+- `clock2`
+- `cloud`
+- `cloudDrizzle`
+- `cloudMoon`
+- `cloudOff`
+- `cloudOn`
+- `cloudRainbow`
+- `cloudSun`
+- `coffeeBean`
+- `coffeeCup`
+- `coinInsert`
+- `coins1`
+- `compass1`
+- `creditCard1`
+- `creditCard2`
+- `creditCardOff`
+- `crop`
+- `dark`
+- `database`
+- `deliveryTruck`
+- `desktop`
+- `desktopMouse1`
+- `desktopMouse2`
+- `discount1`
+- `dollar`
+- `droplet`
+- `dumbbell`
+- `edit`
+- `eraser`
+- `export`
+- `faceFrown`
+- `faceMeh`
+- `faceSmile`
+- `facebook`
+- `fileOff`
+- `fileOn`
+- `filter`
+- `flag1`
+- `floppyDisk`
+- `folderOff`
+- `folderOn`
+- `football`
+- `forkKnife`
+- `fries`
+- `gift`
+- `glass`
+- `globe`
+- `gps`
+- `grid2H`
+- `grid2V`
+- `grid31`
+- `grid32`
+- `grid41`
+- `grid42`
+- `hardDrive`
+- `hashtag`
+- `headphones`
+- `heart`
+- `home`
+- `hospital1`
+- `hotdog`
+- `iceCream`
+- `imageOff`
+- `imageOn`
+- `import`
+- `inboxIn`
+- `inboxOut`
+- `indent`
+- `instagram`
+- `keyboard`
+- `laptop`
+- `lemon`
+- `light`
+- `lineHeight`
+- `link`
+- `linkedin`
+- `locationArrow1`
+- `locationOff`
+- `locationOn`
+- `lock`
+- `login`
+- `logout`
+- `lollipop`
+- `mail`
+- `map`
+- `mapPin`
+- `maximize1`
+- `maximize2`
+- `medal`
+- `medicalCase`
+- `medicalClipboard`
+- `medicalCross`
+- `medicalMask`
+- `memoPad`
+- `menuBurger`
+- `menuFries`
+- `menuKebab`
+- `microchip`
+- `microphoneOff`
+- `microphoneOn`
+- `minimize1`
+- `minimize2`
+- `mobile1`
+- `mobile2`
+- `mobile3`
+- `mobile4`
+- `moneyBill`
+- `moneyCheck1`
+- `monitor`
+- `mountain1`
+- `mug1`
+- `musicNote1`
+- `noWaitingSign`
+- `palette`
+- `paperplane`
+- `parking1`
+- `passport1`
+- `pause1`
+- `pen`
+- `penpot`
+- `percent`
+- `phone`
+- `pickerEmpty`
+- `pickerHalf`
+- `pill`
+- `pillsBottle1`
+- `pizza`
+- `plane`
+- `play1`
+- `plug1`
+- `power`
+- `rainbow`
+- `read`
+- `receipt`
+- `redo`
+- `repeat`
+- `rollingSuitcase`
+- `route`
+- `router`
+- `ruler`
+- `satellite1`
+- `saveDown1`
+- `saveDown2`
+- `saveUp1`
+- `saveUp2`
+- `search`
+- `server`
+- `settings`
+- `share1`
+- `share2`
+- `shirt`
+- `shop`
+- `shoppingBasket`
+- `shoppingCart`
+- `shoppingTag`
+- `shuffle`
+- `signpostDuo1`
+- `signpostL1`
+- `signpostR1`
+- `sliderHorizontal`
+- `sliderVertical`
+- `speaker`
+- `squareAlert`
+- `squareCheck`
+- `squareChevDown`
+- `squareChevLeft`
+- `squareChevRight`
+- `squareChevUp`
+- `squareInfo`
+- `squareMinus`
+- `squareMore`
+- `squarePlus`
+- `squareQuestion`
+- `squareRemove`
+- `star`
+- `stethoscope`
+- `stickyNote`
+- `stop1`
+- `stopSign1`
+- `stopwatch`
+- `streamOff`
+- `streamOn`
+- `sun`
+- `tablets1`
+- `tempHigh`
+- `text`
+- `textAlignCenter`
+- `textAlignJustify`
+- `textAlignLeft`
+- `textAlignRight`
+- `timer`
+- `trash`
+- `trophy`
+- `turnL1`
+- `turnR1`
+- `twitter`
+- `umbrella`
+- `undo`
+- `unlock`
+- `unread`
+- `usb`
+- `user`
+- `vault`
+- `vial`
+- `videoOff`
+- `videoOn`
+- `viewBoard`
+- `viewColumn`
+- `viewList`
+- `viewTable`
+- `viewTimeline`
+- `virus`
+- `voicemail`
+- `volume`
+- `volumeHigh`
+- `volumeMute`
+- `wallet`
+- `warning`
+- `wavePulse1`
+- `wheat`
+- `wifiOff`
+- `wifiOn`
+- `youtube`
+- `zoomIn`
+- `zoomOut`
 
 ## Usage Examples
 
@@ -101,77 +457,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { airportSign1, alarmOff, alarmOn, alignBottom } from '@stacksjs/iconify-circum'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AirportSign1Icon, AlarmOffIcon, AlarmOnIcon, AlignBottomIcon } from '@stacksjs/iconify-circum'
 
   global.navIcons = {
-    airportSign1: renderIcon(airportSign1, { size: 20, class: 'nav-icon' }),
-    alarmOff: renderIcon(alarmOff, { size: 20, class: 'nav-icon' }),
-    alarmOn: renderIcon(alarmOn, { size: 20, class: 'nav-icon' }),
-    alignBottom: renderIcon(alignBottom, { size: 20, class: 'nav-icon' })
+    home: AirportSign1Icon({ size: 20, class: 'nav-icon' }),
+    about: AlarmOffIcon({ size: 20, class: 'nav-icon' }),
+    contact: AlarmOnIcon({ size: 20, class: 'nav-icon' }),
+    settings: AlignBottomIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.airportSign1 !!} Home</a>
-  <a href="/about">{!! navIcons.alarmOff !!} About</a>
-  <a href="/contact">{!! navIcons.alarmOn !!} Contact</a>
-  <a href="/settings">{!! navIcons.alignBottom !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { airportSign1 } from '@stacksjs/iconify-circum'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AirportSign1Icon } from '@stacksjs/iconify-circum'
 
-const icon = renderIcon(airportSign1, {
+const icon = AirportSign1Icon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-circum'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AirportSign1Icon, AlarmOffIcon, AlarmOnIcon } from '@stacksjs/iconify-circum'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AirportSign1Icon({ size: 16, color: '#22c55e' })
+const warningIcon = AlarmOffIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = AlarmOnIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { airportSign1, alarmOff } from '@stacksjs/iconify-circum'
+   // Recommended
+   import { AirportSign1Icon, AlarmOffIcon } from '@stacksjs/iconify-circum'
+   const icon = AirportSign1Icon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { airportSign1, alarmOff } from '@stacksjs/iconify-circum'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(airportSign1, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AirportSign1Icon, AlarmOffIcon } from '@stacksjs/iconify-circum'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-circum'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { airportSign1 } from '@stacksjs/iconify-circum'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(airportSign1, { size: 24 })
+     import { AirportSign1Icon } from '@stacksjs/iconify-circum'
+     global.icon = AirportSign1Icon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +543,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AirportSign1Icon({ class: 'icon' })
    ```
 
 ## TypeScript Support

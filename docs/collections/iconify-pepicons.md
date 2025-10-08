@@ -21,79 +21,575 @@ bun add @stacksjs/iconify-pepicons
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AirplaneIcon, AirplanePrintIcon, AlarmIcon } from '@stacksjs/iconify-pepicons'
+
+// Basic usage
+const icon = AirplaneIcon()
+
+// With size
+const sizedIcon = AirplaneIcon({ size: 24 })
+
+// With color
+const coloredIcon = AirplanePrintIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = AlarmIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { airplane, airplanePrint, alarm } from '@stacksjs/iconify-pepicons'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AirplaneIcon, AirplanePrintIcon, AlarmIcon } from '@stacksjs/iconify-pepicons'
 
   global.icons = {
-    airplane: renderIcon(airplane, { size: 24 }),
-    airplanePrint: renderIcon(airplanePrint, { size: 24, color: '#4a90e2' }),
-    alarm: renderIcon(alarm, { size: 32 })
+    home: AirplaneIcon({ size: 24 }),
+    user: AirplanePrintIcon({ size: 24, color: '#4a90e2' }),
+    settings: AlarmIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.airplane !!}
-  {!! icons.airplanePrint !!}
-  {!! icons.alarm !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { airplane, airplanePrint, alarm } from '@stacksjs/iconify-pepicons'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(airplane, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(airplanePrint, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(alarm, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = AirplaneIcon({ color: 'red' })
+const blueIcon = AirplaneIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AirplaneIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AirplaneIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AirplaneIcon({ size: 24 })
+const icon1em = AirplaneIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AirplaneIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AirplaneIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AirplaneIcon({ class: 'icon-small' })
+const largeIcon = AirplaneIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **428** icons. Here are some examples:
+This package contains **428** icons:
 
 - `airplane`
 - `airplanePrint`
 - `alarm`
 - `alarmPrint`
 - `angleDown`
-
-...and 418 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/pepicons/).
+- `angleDownPrint`
+- `angleLeft`
+- `angleLeftPrint`
+- `angleRight`
+- `angleRightPrint`
+- `angleUp`
+- `angleUpPrint`
+- `arrowDown`
+- `arrowDownLeft`
+- `arrowDownLeftPrint`
+- `arrowDownPrint`
+- `arrowDownRight`
+- `arrowDownRightPrint`
+- `arrowLeft`
+- `arrowLeftPrint`
+- `arrowRight`
+- `arrowRightPrint`
+- `arrowUp`
+- `arrowUpLeft`
+- `arrowUpLeftPrint`
+- `arrowUpPrint`
+- `arrowUpRight`
+- `arrowUpRightPrint`
+- `bank`
+- `bankPrint`
+- `battery`
+- `batteryPrint`
+- `bell`
+- `bellOff`
+- `bellOffPrint`
+- `bellPrint`
+- `bicycle`
+- `bicyclePrint`
+- `bluetooth`
+- `bluetoothPrint`
+- `book`
+- `bookPrint`
+- `bookmark`
+- `bookmarkFilled`
+- `bookmarkPrint`
+- `briefcase`
+- `briefcasePrint`
+- `building`
+- `buildingPrint`
+- `calculator`
+- `calculatorPrint`
+- `calendar`
+- `calendarPrint`
+- `camera`
+- `cameraPrint`
+- `can`
+- `canPrint`
+- `car`
+- `carPrint`
+- `cart`
+- `cartPrint`
+- `cellphoneEye`
+- `cellphoneEyePrint`
+- `cellphoneLoop`
+- `cellphoneLoopPrint`
+- `chain`
+- `chainPrint`
+- `checkmark`
+- `checkmarkPrint`
+- `circle`
+- `circleFilled`
+- `circlePrint`
+- `clapperboard`
+- `clapperboardPrint`
+- `clipboard`
+- `clipboardCheck`
+- `clipboardCheckCircle`
+- `clipboardCheckCirclePrint`
+- `clipboardCheckPrint`
+- `clipboardPrint`
+- `clock`
+- `clockPrint`
+- `cloud`
+- `cloudDown`
+- `cloudDownFilled`
+- `cloudDownPrint`
+- `cloudFilled`
+- `cloudPrint`
+- `cloudUp`
+- `cloudUpFilled`
+- `cloudUpPrint`
+- `coctail`
+- `coctailPrint`
+- `code`
+- `codePrint`
+- `colorPicker`
+- `colorPickerPrint`
+- `contract`
+- `contractPrint`
+- `controller`
+- `controllerPrint`
+- `countdown`
+- `countdownPrint`
+- `creditCard`
+- `creditCardPrint`
+- `crown`
+- `crownPrint`
+- `cup`
+- `cupPrint`
+- `cv`
+- `cvPrint`
+- `division`
+- `divisionPrint`
+- `dotsX`
+- `dotsXPrint`
+- `dotsY`
+- `dotsYPrint`
+- `dress`
+- `dressPrint`
+- `duplicate`
+- `duplicatePrint`
+- `electricity`
+- `electricityPrint`
+- `enter`
+- `enterPrint`
+- `exclamation`
+- `exclamationCircle`
+- `exclamationCirclePrint`
+- `exclamationFilled`
+- `exclamationPrint`
+- `expand`
+- `expandPrint`
+- `eye`
+- `eyeClosed`
+- `eyeClosedPrint`
+- `eyeFrame`
+- `eyeFramePrint`
+- `eyeOff`
+- `eyeOffPrint`
+- `eyePrint`
+- `fastForward`
+- `fastForwardPrint`
+- `file`
+- `fileLoop`
+- `fileLoopPrint`
+- `filePrint`
+- `filmFrame`
+- `filmFramePrint`
+- `fire`
+- `firePrint`
+- `flag`
+- `flagPrint`
+- `flagStraight`
+- `flagStraightPrint`
+- `flower`
+- `flowerBud`
+- `flowerBudPrint`
+- `flowerPrint`
+- `folder`
+- `folderPrint`
+- `foldingStool`
+- `foldingStoolPrint`
+- `gear`
+- `gearFilled`
+- `gearPrint`
+- `gift`
+- `giftPrint`
+- `grab`
+- `grabPrint`
+- `grid`
+- `gridPrint`
+- `hamburger`
+- `hamburgerPrint`
+- `handGrab`
+- `handGrabPrint`
+- `handOpen`
+- `handOpenPrint`
+- `handPoint`
+- `handPointOpen`
+- `handPointOpenPrint`
+- `handPointPrint`
+- `handshake`
+- `handshakePrint`
+- `hash`
+- `hashPrint`
+- `headphone`
+- `headphonePrint`
+- `heart`
+- `heartPrint`
+- `hourglass`
+- `hourglassPrint`
+- `house`
+- `housePrint`
+- `identification`
+- `identificationPrint`
+- `info`
+- `infoCircle`
+- `infoCirclePrint`
+- `infoFilled`
+- `infoPrint`
+- `internet`
+- `internetPrint`
+- `key`
+- `keyPrint`
+- `kniveFork`
+- `kniveForkPrint`
+- `label`
+- `labelPrint`
+- `leave`
+- `leavePrint`
+- `letter`
+- `letterOpen`
+- `letterOpenPrint`
+- `letterPrint`
+- `list`
+- `listPrint`
+- `lockClosed`
+- `lockClosedPrint`
+- `lockOpen`
+- `lockOpenPrint`
+- `loop`
+- `loopMinus`
+- `loopMinusPrint`
+- `loopPlus`
+- `loopPlusPrint`
+- `loopPrint`
+- `magnet`
+- `magnetPrint`
+- `map`
+- `mapPrint`
+- `megaphone`
+- `megaphonePrint`
+- `menu`
+- `menuPrint`
+- `microphone`
+- `microphonePrint`
+- `microphone2`
+- `microphone2Print`
+- `minus`
+- `minusPrint`
+- `monitor`
+- `monitorEye`
+- `monitorEyePrint`
+- `monitorLoop`
+- `monitorLoopPrint`
+- `monitorPrint`
+- `monitor2`
+- `monitor2Print`
+- `moon`
+- `moonFilled`
+- `moonPrint`
+- `motorcycle`
+- `motorcyclePrint`
+- `moveX`
+- `moveXPrint`
+- `moveY`
+- `moveYPrint`
+- `musicNoteDouble`
+- `musicNoteDoublePrint`
+- `musicNoteSingle`
+- `musicNoteSinglePrint`
+- `nextTrack`
+- `nextTrackPrint`
+- `noEntry`
+- `noEntryPrint`
+- `open`
+- `openPrint`
+- `paintPallet`
+- `paintPalletPrint`
+- `pause`
+- `pausePrint`
+- `pen`
+- `penPrint`
+- `people`
+- `peoplePrint`
+- `person`
+- `personCheckmark`
+- `personCheckmarkPrint`
+- `personFilled`
+- `personPlus`
+- `personPlusPrint`
+- `personPrint`
+- `persons`
+- `personsPrint`
+- `phone`
+- `phonePrint`
+- `photo`
+- `photoCamera`
+- `photoCameraPrint`
+- `photoPrint`
+- `photoStudio`
+- `photoStudioPrint`
+- `pill`
+- `pillPrint`
+- `pin`
+- `pinPrint`
+- `pinpoint`
+- `pinpointFilled`
+- `pinpointOff`
+- `pinpointOffFilled`
+- `pinpointOffPrint`
+- `pinpointPrint`
+- `play`
+- `playPrint`
+- `plus`
+- `plusPrint`
+- `power`
+- `powerPrint`
+- `previousTrack`
+- `previousTrackPrint`
+- `printer`
+- `printerPrint`
+- `qrCode`
+- `qrCodePrint`
+- `question`
+- `questionCircle`
+- `questionCirclePrint`
+- `questionFilled`
+- `questionPrint`
+- `radio`
+- `radioPrint`
+- `refresh`
+- `refreshPrint`
+- `reload`
+- `reloadPrint`
+- `repeat`
+- `repeatPrint`
+- `rewind`
+- `rewindPrint`
+- `rewindTime`
+- `rewindTimePrint`
+- `scissors`
+- `scissorsPrint`
+- `send`
+- `sendPrint`
+- `shareAndroid`
+- `shareAndroidPrint`
+- `shareIos`
+- `shareIosPrint`
+- `shuffle`
+- `shufflePrint`
+- `sliders`
+- `slidersPrint`
+- `smartphone`
+- `smartphoneCutout`
+- `smartphoneCutoutPrint`
+- `smartphoneNotch`
+- `smartphoneNotchPrint`
+- `smartphonePrint`
+- `smartphone2`
+- `smartphone2Print`
+- `softDrink`
+- `softDrinkPrint`
+- `sort`
+- `sortPrint`
+- `speakerHigh`
+- `speakerHighPrint`
+- `speakerLow`
+- `speakerLowPrint`
+- `speakerOff`
+- `speakerOffPrint`
+- `square`
+- `squareFilled`
+- `squarePrint`
+- `star`
+- `starFilled`
+- `starPrint`
+- `stars`
+- `starsPrint`
+- `stopwatch`
+- `stopwatchPrint`
+- `studioBackdrop`
+- `studioBackdropPrint`
+- `studioLightFront`
+- `studioLightFrontPrint`
+- `studioLightSide`
+- `studioLightSidePrint`
+- `sun`
+- `sunFilled`
+- `sunPrint`
+- `syringe`
+- `syringePrint`
+- `tShirt`
+- `tShirtPrint`
+- `taxi`
+- `taxiPrint`
+- `television`
+- `televisionPrint`
+- `textBubble`
+- `textBubblePrint`
+- `textBubbles`
+- `textBubblesPrint`
+- `thumbsDown`
+- `thumbsDownPrint`
+- `thumbsUp`
+- `thumbsUpPrint`
+- `times`
+- `timesPrint`
+- `tool`
+- `toolPrint`
+- `train`
+- `trainPrint`
+- `trash`
+- `trashPrint`
+- `triangleDown`
+- `triangleDownFilled`
+- `triangleDownPrint`
+- `triangleLeft`
+- `triangleLeftFilled`
+- `triangleLeftPrint`
+- `triangleRight`
+- `triangleRightFilled`
+- `triangleRightPrint`
+- `triangleUp`
+- `triangleUpFilled`
+- `triangleUpPrint`
+- `trophy`
+- `trophyPrint`
+- `truck`
+- `truckPrint`
+- `umbrella`
+- `umbrellaPrint`
+- `watch`
+- `watchPrint`
+- `waterDrop`
+- `waterDropPrint`
+- `wifi`
+- `wifiPrint`
 
 ## Usage Examples
 
@@ -101,77 +597,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { airplane, airplanePrint, alarm, alarmPrint } from '@stacksjs/iconify-pepicons'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AirplaneIcon, AirplanePrintIcon, AlarmIcon, AlarmPrintIcon } from '@stacksjs/iconify-pepicons'
 
   global.navIcons = {
-    airplane: renderIcon(airplane, { size: 20, class: 'nav-icon' }),
-    airplanePrint: renderIcon(airplanePrint, { size: 20, class: 'nav-icon' }),
-    alarm: renderIcon(alarm, { size: 20, class: 'nav-icon' }),
-    alarmPrint: renderIcon(alarmPrint, { size: 20, class: 'nav-icon' })
+    home: AirplaneIcon({ size: 20, class: 'nav-icon' }),
+    about: AirplanePrintIcon({ size: 20, class: 'nav-icon' }),
+    contact: AlarmIcon({ size: 20, class: 'nav-icon' }),
+    settings: AlarmPrintIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.airplane !!} Home</a>
-  <a href="/about">{!! navIcons.airplanePrint !!} About</a>
-  <a href="/contact">{!! navIcons.alarm !!} Contact</a>
-  <a href="/settings">{!! navIcons.alarmPrint !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { airplane } from '@stacksjs/iconify-pepicons'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AirplaneIcon } from '@stacksjs/iconify-pepicons'
 
-const icon = renderIcon(airplane, {
+const icon = AirplaneIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-pepicons'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AirplaneIcon, AirplanePrintIcon, AlarmIcon } from '@stacksjs/iconify-pepicons'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AirplaneIcon({ size: 16, color: '#22c55e' })
+const warningIcon = AirplanePrintIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = AlarmIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { airplane, airplanePrint } from '@stacksjs/iconify-pepicons'
+   // Recommended
+   import { AirplaneIcon, AirplanePrintIcon } from '@stacksjs/iconify-pepicons'
+   const icon = AirplaneIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { airplane, airplanePrint } from '@stacksjs/iconify-pepicons'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(airplane, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AirplaneIcon, AirplanePrintIcon } from '@stacksjs/iconify-pepicons'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-pepicons'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { airplane } from '@stacksjs/iconify-pepicons'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(airplane, { size: 24 })
+     import { AirplaneIcon } from '@stacksjs/iconify-pepicons'
+     global.icon = AirplaneIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +683,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AirplaneIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

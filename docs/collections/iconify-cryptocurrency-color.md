@@ -21,79 +21,621 @@ bun add @stacksjs/iconify-cryptocurrency-color
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { 0xbtcIcon, 1inchIcon, 2giveIcon } from '@stacksjs/iconify-cryptocurrency-color'
+
+// Basic usage
+const icon = 0xbtcIcon()
+
+// With size
+const sizedIcon = 0xbtcIcon({ size: 24 })
+
+// With color
+const coloredIcon = 1inchIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = 2giveIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { 0xbtc, 1inch, 2give } from '@stacksjs/iconify-cryptocurrency-color'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 0xbtcIcon, 1inchIcon, 2giveIcon } from '@stacksjs/iconify-cryptocurrency-color'
 
   global.icons = {
-    0xbtc: renderIcon(0xbtc, { size: 24 }),
-    1inch: renderIcon(1inch, { size: 24, color: '#4a90e2' }),
-    2give: renderIcon(2give, { size: 32 })
+    home: 0xbtcIcon({ size: 24 }),
+    user: 1inchIcon({ size: 24, color: '#4a90e2' }),
+    settings: 2giveIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.0xbtc !!}
-  {!! icons.1inch !!}
-  {!! icons.2give !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { 0xbtc, 1inch, 2give } from '@stacksjs/iconify-cryptocurrency-color'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(0xbtc, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(1inch, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(2give, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Color Icons
+
+This collection contains color icons. While you can still set a color property, it may override the original colors.
+
+```typescript
+// Via color property
+const redIcon = 0xbtcIcon({ color: 'red' })
+const blueIcon = 0xbtcIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = 0xbtcIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = 0xbtcIcon({ class: 'text-primary' })
+```
+
+
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = 0xbtcIcon({ size: 24 })
+const icon1em = 0xbtcIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = 0xbtcIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = 0xbtcIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = 0xbtcIcon({ class: 'icon-small' })
+const largeIcon = 0xbtcIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **483** icons. Here are some examples:
+This package contains **483** icons:
 
 - `0xbtc`
 - `1inch`
 - `2give`
 - `aave`
 - `abt`
-
-...and 473 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/cryptocurrency-color/).
+- `act`
+- `actn`
+- `ada`
+- `add`
+- `adx`
+- `ae`
+- `aeon`
+- `aeur`
+- `agi`
+- `agrs`
+- `aion`
+- `algo`
+- `amb`
+- `amp`
+- `ampl`
+- `ankr`
+- `ant`
+- `ape`
+- `apex`
+- `appc`
+- `ardr`
+- `arg`
+- `ark`
+- `arn`
+- `arnx`
+- `ary`
+- `ast`
+- `atlas`
+- `atm`
+- `atom`
+- `audr`
+- `aury`
+- `auto`
+- `avax`
+- `aywa`
+- `bab`
+- `bal`
+- `band`
+- `bat`
+- `bay`
+- `bcbc`
+- `bcc`
+- `bcd`
+- `bch`
+- `bcio`
+- `bcn`
+- `bco`
+- `bcpt`
+- `bdl`
+- `beam`
+- `bela`
+- `bix`
+- `blcn`
+- `blk`
+- `block`
+- `blz`
+- `bnb`
+- `bnt`
+- `bnty`
+- `booty`
+- `bos`
+- `bpt`
+- `bq`
+- `brd`
+- `bsd`
+- `bsv`
+- `btc`
+- `btcd`
+- `btch`
+- `btcp`
+- `btcz`
+- `btdx`
+- `btg`
+- `btm`
+- `bts`
+- `btt`
+- `btx`
+- `burst`
+- `bze`
+- `call`
+- `cc`
+- `cdn`
+- `cdt`
+- `cenz`
+- `chain`
+- `chat`
+- `chips`
+- `chsb`
+- `chz`
+- `cix`
+- `clam`
+- `cloak`
+- `cmm`
+- `cmt`
+- `cnd`
+- `cnx`
+- `cny`
+- `cob`
+- `colx`
+- `comp`
+- `coqui`
+- `cred`
+- `crpt`
+- `crv`
+- `crw`
+- `cs`
+- `ctr`
+- `ctxc`
+- `cvc`
+- `d`
+- `dai`
+- `dash`
+- `dat`
+- `data`
+- `dbc`
+- `dcn`
+- `dcr`
+- `deez`
+- `dent`
+- `dew`
+- `dgb`
+- `dgd`
+- `dlt`
+- `dnt`
+- `dock`
+- `doge`
+- `dot`
+- `drgn`
+- `drop`
+- `dta`
+- `dth`
+- `dtr`
+- `ebst`
+- `eca`
+- `edg`
+- `edo`
+- `edoge`
+- `ela`
+- `elec`
+- `elf`
+- `elix`
+- `ella`
+- `emb`
+- `emc`
+- `emc2`
+- `eng`
+- `enj`
+- `entrp`
+- `eon`
+- `eop`
+- `eos`
+- `eqli`
+- `equa`
+- `etc`
+- `eth`
+- `ethos`
+- `etn`
+- `etp`
+- `eur`
+- `evx`
+- `exmo`
+- `exp`
+- `fair`
+- `fct`
+- `fida`
+- `fil`
+- `fjc`
+- `fldc`
+- `flo`
+- `flux`
+- `fsn`
+- `ftc`
+- `fuel`
+- `fun`
+- `game`
+- `gas`
+- `gbp`
+- `gbx`
+- `gbyte`
+- `generic`
+- `gin`
+- `glxt`
+- `gmr`
+- `gmt`
+- `gno`
+- `gnt`
+- `gold`
+- `grc`
+- `grin`
+- `grs`
+- `grt`
+- `gsc`
+- `gto`
+- `gup`
+- `gusd`
+- `gvt`
+- `gxs`
+- `gzr`
+- `hight`
+- `hns`
+- `hodl`
+- `hot`
+- `hpb`
+- `hsr`
+- `ht`
+- `html`
+- `huc`
+- `husd`
+- `hush`
+- `icn`
+- `icp`
+- `icx`
+- `ignis`
+- `ilk`
+- `ink`
+- `ins`
+- `ion`
+- `iop`
+- `iost`
+- `iotx`
+- `iq`
+- `itc`
+- `jnt`
+- `jpy`
+- `kcs`
+- `kin`
+- `klown`
+- `kmd`
+- `knc`
+- `krb`
+- `ksm`
+- `lbc`
+- `lend`
+- `leo`
+- `link`
+- `lkk`
+- `loom`
+- `lpt`
+- `lrc`
+- `lsk`
+- `ltc`
+- `lun`
+- `maid`
+- `mana`
+- `matic`
+- `max`
+- `mcap`
+- `mco`
+- `mda`
+- `mds`
+- `med`
+- `meetone`
+- `mft`
+- `miota`
+- `mith`
+- `mkr`
+- `mln`
+- `mnx`
+- `mnz`
+- `moac`
+- `mod`
+- `mona`
+- `msr`
+- `mth`
+- `mtl`
+- `music`
+- `mzc`
+- `nano`
+- `nas`
+- `nav`
+- `ncash`
+- `ndz`
+- `nebl`
+- `neo`
+- `neos`
+- `neu`
+- `nexo`
+- `ngc`
+- `nio`
+- `nkn`
+- `nlc2`
+- `nlg`
+- `nmc`
+- `nmr`
+- `npxs`
+- `ntbc`
+- `nuls`
+- `nxs`
+- `nxt`
+- `oax`
+- `ok`
+- `omg`
+- `omni`
+- `one`
+- `ong`
+- `ont`
+- `oot`
+- `ost`
+- `ox`
+- `oxt`
+- `oxy`
+- `pac`
+- `part`
+- `pasc`
+- `pasl`
+- `pax`
+- `paxg`
+- `pay`
+- `payx`
+- `pink`
+- `pirl`
+- `pivx`
+- `plr`
+- `poa`
+- `poe`
+- `polis`
+- `poly`
+- `pot`
+- `powr`
+- `ppc`
+- `ppp`
+- `ppt`
+- `pre`
+- `prl`
+- `pungo`
+- `pura`
+- `qash`
+- `qiwi`
+- `qlc`
+- `qnt`
+- `qrl`
+- `qsp`
+- `qtum`
+- `r`
+- `rads`
+- `rap`
+- `ray`
+- `rcn`
+- `rdd`
+- `rdn`
+- `ren`
+- `rep`
+- `repv2`
+- `req`
+- `rhoc`
+- `ric`
+- `rise`
+- `rlc`
+- `rpx`
+- `rub`
+- `rvn`
+- `ryo`
+- `safe`
+- `safemoon`
+- `sai`
+- `salt`
+- `san`
+- `sand`
+- `sbd`
+- `sberbank`
+- `sc`
+- `ser`
+- `shift`
+- `sib`
+- `sin`
+- `skl`
+- `sky`
+- `slr`
+- `sls`
+- `smart`
+- `sngls`
+- `snm`
+- `snt`
+- `snx`
+- `soc`
+- `sol`
+- `spacehbit`
+- `spank`
+- `sphtx`
+- `srn`
+- `stak`
+- `start`
+- `steem`
+- `storj`
+- `storm`
+- `stox`
+- `stq`
+- `strat`
+- `stx`
+- `sub`
+- `sumo`
+- `sushi`
+- `sys`
+- `taas`
+- `tau`
+- `tbx`
+- `tel`
+- `ten`
+- `tern`
+- `tgch`
+- `theta`
+- `tix`
+- `tkn`
+- `tks`
+- `tnb`
+- `tnc`
+- `tnt`
+- `tomo`
+- `tpay`
+- `trig`
+- `trtl`
+- `trx`
+- `tusd`
+- `tzc`
+- `ubq`
+- `uma`
+- `uni`
+- `unity`
+- `usd`
+- `usdc`
+- `usdt`
+- `utk`
+- `veri`
+- `vet`
+- `via`
+- `vib`
+- `vibe`
+- `vivo`
+- `vrc`
+- `vrsc`
+- `vtc`
+- `vtho`
+- `wabi`
+- `wan`
+- `waves`
+- `wax`
+- `wbtc`
+- `wgr`
+- `wicc`
+- `wings`
+- `wpr`
+- `wtc`
+- `x`
+- `xas`
+- `xbc`
+- `xbp`
+- `xby`
+- `xcp`
+- `xdn`
+- `xem`
+- `xin`
+- `xlm`
+- `xmcc`
+- `xmg`
+- `xmo`
+- `xmr`
+- `xmy`
+- `xp`
+- `xpa`
+- `xpm`
+- `xpr`
+- `xrp`
+- `xsg`
+- `xtz`
+- `xuc`
+- `xvc`
+- `xvg`
+- `xzc`
+- `yfi`
+- `yoyow`
+- `zcl`
+- `zec`
+- `zel`
+- `zen`
+- `zest`
+- `zil`
+- `zilla`
+- `zrx`
 
 ## Usage Examples
 
@@ -101,77 +643,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { 0xbtc, 1inch, 2give, aave } from '@stacksjs/iconify-cryptocurrency-color'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 0xbtcIcon, 1inchIcon, 2giveIcon, AaveIcon } from '@stacksjs/iconify-cryptocurrency-color'
 
   global.navIcons = {
-    0xbtc: renderIcon(0xbtc, { size: 20, class: 'nav-icon' }),
-    1inch: renderIcon(1inch, { size: 20, class: 'nav-icon' }),
-    2give: renderIcon(2give, { size: 20, class: 'nav-icon' }),
-    aave: renderIcon(aave, { size: 20, class: 'nav-icon' })
+    home: 0xbtcIcon({ size: 20, class: 'nav-icon' }),
+    about: 1inchIcon({ size: 20, class: 'nav-icon' }),
+    contact: 2giveIcon({ size: 20, class: 'nav-icon' }),
+    settings: AaveIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.0xbtc !!} Home</a>
-  <a href="/about">{!! navIcons.1inch !!} About</a>
-  <a href="/contact">{!! navIcons.2give !!} Contact</a>
-  <a href="/settings">{!! navIcons.aave !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { 0xbtc } from '@stacksjs/iconify-cryptocurrency-color'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 0xbtcIcon } from '@stacksjs/iconify-cryptocurrency-color'
 
-const icon = renderIcon(0xbtc, {
+const icon = 0xbtcIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-cryptocurrency-color'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 0xbtcIcon, 1inchIcon, 2giveIcon } from '@stacksjs/iconify-cryptocurrency-color'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = 0xbtcIcon({ size: 16, color: '#22c55e' })
+const warningIcon = 1inchIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = 2giveIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { 0xbtc, 1inch } from '@stacksjs/iconify-cryptocurrency-color'
+   // Recommended
+   import { 0xbtcIcon, 1inchIcon } from '@stacksjs/iconify-cryptocurrency-color'
+   const icon = 0xbtcIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { 0xbtc, 1inch } from '@stacksjs/iconify-cryptocurrency-color'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(0xbtc, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { 0xbtcIcon, 1inchIcon } from '@stacksjs/iconify-cryptocurrency-color'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-cryptocurrency-color'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { 0xbtc } from '@stacksjs/iconify-cryptocurrency-color'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(0xbtc, { size: 24 })
+     import { 0xbtcIcon } from '@stacksjs/iconify-cryptocurrency-color'
+     global.icon = 0xbtcIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +729,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = 0xbtcIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

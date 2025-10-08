@@ -21,79 +21,626 @@ bun add @stacksjs/iconify-ps
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { 3080Icon, 40105Icon, 50120Icon } from '@stacksjs/iconify-ps'
+
+// Basic usage
+const icon = 3080Icon()
+
+// With size
+const sizedIcon = 3080Icon({ size: 24 })
+
+// With color
+const coloredIcon = 40105Icon({ color: 'red' })
+
+// With multiple props
+const customIcon = 50120Icon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { 3080, 40105, 50120 } from '@stacksjs/iconify-ps'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 3080Icon, 40105Icon, 50120Icon } from '@stacksjs/iconify-ps'
 
   global.icons = {
-    3080: renderIcon(3080, { size: 24 }),
-    40105: renderIcon(40105, { size: 24, color: '#4a90e2' }),
-    50120: renderIcon(50120, { size: 32 })
+    home: 3080Icon({ size: 24 }),
+    user: 40105Icon({ size: 24, color: '#4a90e2' }),
+    settings: 50120Icon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.3080 !!}
-  {!! icons.40105 !!}
-  {!! icons.50120 !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { 3080, 40105, 50120 } from '@stacksjs/iconify-ps'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(3080, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(40105, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(50120, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = 3080Icon({ color: 'red' })
+const blueIcon = 3080Icon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = 3080Icon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = 3080Icon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = 3080Icon({ size: 24 })
+const icon1em = 3080Icon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = 3080Icon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = 3080Icon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = 3080Icon({ class: 'icon-small' })
+const largeIcon = 3080Icon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **479** icons. Here are some examples:
+This package contains **479** icons:
 
 - `3080`
 - `40105`
 - `50120`
 - `60140`
 - `70160`
-
-...and 469 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/ps/).
+- `95200`
+- `aim`
+- `aimAlt`
+- `airplane`
+- `alignCentered`
+- `alignJustified`
+- `alignLeft`
+- `alignRight`
+- `amazon`
+- `ambulance`
+- `anchor`
+- `anySolvent`
+- `anySolventWithoutTetrachlorethylene`
+- `appStore`
+- `apple`
+- `apps`
+- `archive`
+- `arrowBox`
+- `arrowDown`
+- `arrowLeft`
+- `arrowRight`
+- `arrowUp`
+- `arto`
+- `asterisk`
+- `attachment`
+- `aws`
+- `backpack`
+- `baidu`
+- `bankSafe`
+- `barCode`
+- `barrel`
+- `basecamp`
+- `battery`
+- `batteryCharge`
+- `bebo`
+- `beer`
+- `behance`
+- `bell`
+- `bike`
+- `bing`
+- `birthday`
+- `blaster`
+- `blip`
+- `blogger`
+- `bnter`
+- `board`
+- `boiledEgg`
+- `boiledEggFinger`
+- `bonnet`
+- `book`
+- `bookTag`
+- `branch`
+- `brightkite`
+- `brokenLink`
+- `browser`
+- `bubble`
+- `bug`
+- `building`
+- `bullLeft`
+- `bullRight`
+- `burger`
+- `busLondon`
+- `calendar`
+- `calendarGrid`
+- `camera`
+- `car`
+- `cart`
+- `cartSupermarket`
+- `chat`
+- `chatAlt`
+- `check`
+- `checkBox`
+- `checkBoxEmpty`
+- `checked`
+- `cinch`
+- `clock`
+- `clothesWater`
+- `cloud`
+- `cloudapp`
+- `clubsCard`
+- `cocktail`
+- `code`
+- `coffee`
+- `coffeeHot`
+- `coin`
+- `coins`
+- `compass`
+- `contact`
+- `contrast`
+- `cookie`
+- `copy`
+- `coroflot`
+- `couple`
+- `cpu`
+- `creativeCommons`
+- `creditCard`
+- `crop`
+- `crown`
+- `cutlery`
+- `daftPunk`
+- `dailybooth`
+- `dashboard`
+- `dataBoard`
+- `delete`
+- `delicious`
+- `designbump`
+- `designfloat`
+- `designmoo`
+- `deviantart`
+- `diamondsCard`
+- `digg`
+- `diggAlt`
+- `diigo`
+- `disabled`
+- `doNotBleach`
+- `doNotDry`
+- `doNotIron`
+- `doNotWash`
+- `doNotWring`
+- `dollarBill`
+- `dollars`
+- `doubleArrow`
+- `down`
+- `downArrowCircle`
+- `download`
+- `downloadFromCloud`
+- `dribbble`
+- `dripDry`
+- `drop`
+- `dropbox`
+- `drupal`
+- `dry`
+- `dryFlat`
+- `dryInTheShade`
+- `dryNormalHightHeat`
+- `dryNormalLowHeat`
+- `dryNormalNoHeat`
+- `dzone`
+- `ebay`
+- `egg`
+- `eject`
+- `ember`
+- `enlarge`
+- `etsy`
+- `euroBill`
+- `evernote`
+- `extinguisher`
+- `eye`
+- `facebook`
+- `facebookAlt`
+- `facebookPlaces`
+- `facto`
+- `feedburner`
+- `file`
+- `film`
+- `filter`
+- `fire`
+- `fish`
+- `flag`
+- `flagCorner`
+- `flagScout`
+- `flickr`
+- `folder`
+- `folkd`
+- `forbidden`
+- `formspring`
+- `forrst`
+- `forward`
+- `foursquare`
+- `friedEgg`
+- `friendfeed`
+- `friendster`
+- `fuck`
+- `fullScreen`
+- `gamepad`
+- `gdgt`
+- `gift`
+- `girl`
+- `girl2`
+- `girlAngel`
+- `girlAngry`
+- `girlBigSmile`
+- `girlConfused`
+- `girlCry`
+- `girlFlushed`
+- `girlOMouth`
+- `girlOpenMouth`
+- `girlSad`
+- `girlSadHunappy`
+- `girlSleep`
+- `girlSmile`
+- `girlUser`
+- `github`
+- `githubAlt`
+- `globe`
+- `goodreads`
+- `google`
+- `googleBuzz`
+- `googleTalk`
+- `gowalla`
+- `gowallaAlt`
+- `grooveshark`
+- `gun`
+- `guy`
+- `guyAngel`
+- `guyAngry`
+- `guyBigSmile`
+- `guyConfused`
+- `guyCry`
+- `guyFlushed`
+- `guyHappy`
+- `guyOMouth`
+- `guyOpenMouth`
+- `guySad`
+- `guySleep`
+- `guySmile`
+- `guyUser`
+- `guyWrong`
+- `hackerNews`
+- `hand`
+- `handPointerLeft`
+- `handPointerRight`
+- `handPointerTop`
+- `handWash`
+- `hangToDry`
+- `hardDrive`
+- `headphones`
+- `headset`
+- `heartsCard`
+- `heat`
+- `helm`
+- `hi5`
+- `home`
+- `hotdog`
+- `hourglass`
+- `hungry`
+- `hypeMachine`
+- `hyves`
+- `icq`
+- `identi`
+- `image`
+- `important`
+- `instapaper`
+- `ipad`
+- `iphone`
+- `ipod`
+- `ironAnyTemp`
+- `itunes`
+- `iwatch`
+- `justice`
+- `keyboard`
+- `kik`
+- `krop`
+- `lab`
+- `label`
+- `labelHogwarts`
+- `laptop`
+- `last`
+- `leaf`
+- `left`
+- `leftArrowCircle`
+- `lego`
+- `lightning`
+- `link`
+- `linkedin`
+- `linkedinAlt`
+- `liquor`
+- `livejournal`
+- `lovedsgn`
+- `mac`
+- `machineWash`
+- `machineWashGentleOrDelicate`
+- `machineWashPermanentPress`
+- `magnifyingGlass`
+- `mail`
+- `mailBack`
+- `mailBill`
+- `mailStamp`
+- `mailbox`
+- `man`
+- `maximumTemp110230`
+- `maximumTemp150300`
+- `maximumTemp200390`
+- `mayoHotdog`
+- `meetup`
+- `megaphone`
+- `metacafe`
+- `mic`
+- `micOff`
+- `milkshake`
+- `ming`
+- `minus`
+- `minusBox`
+- `minusCircle`
+- `minusCircle1`
+- `misterWong`
+- `mixx`
+- `mixxAlt`
+- `mobileme`
+- `moon`
+- `mouse`
+- `msnMessenger`
+- `music`
+- `musicScore`
+- `myspace`
+- `myspaceAlt`
+- `newsvine`
+- `next`
+- `noEye`
+- `nonChlorineBleachIfNeeded`
+- `official`
+- `openPadlock`
+- `openid`
+- `organisation`
+- `orkut`
+- `padlock`
+- `pandora`
+- `pant`
+- `paperTablet`
+- `path`
+- `paypal`
+- `pc`
+- `pdiddy`
+- `pen`
+- `penknife`
+- `peopleTeam`
+- `petroleumSolventSteam`
+- `phone`
+- `photobucket`
+- `piano`
+- `picasa`
+- `picassa`
+- `piggyBank`
+- `piggyBankCoins`
+- `pin`
+- `pinMap`
+- `pinboard`
+- `ping`
+- `pingchat`
+- `pizza`
+- `plane`
+- `play`
+- `playstation`
+- `plixi`
+- `plurk`
+- `plus`
+- `plusBox`
+- `plusCircle`
+- `podcast`
+- `posterous`
+- `power`
+- `preston`
+- `previous`
+- `printer`
+- `prisonSchoolBus`
+- `promo`
+- `pull`
+- `puzzle`
+- `qik`
+- `quik`
+- `quora`
+- `quote`
+- `radio`
+- `radioEmpty`
+- `ram`
+- `random`
+- `rdio`
+- `readernaut`
+- `reddit`
+- `resize`
+- `retweet`
+- `retweet1`
+- `rewind`
+- `right`
+- `rightArrowCircle`
+- `road`
+- `robo`
+- `rowSetting`
+- `rss`
+- `rssIcon`
+- `safe`
+- `saleTag`
+- `save`
+- `scissors`
+- `scribd`
+- `sharethis`
+- `shield`
+- `shoe`
+- `shoppingCart`
+- `sign`
+- `simplenote`
+- `skype`
+- `slashdot`
+- `slideshare`
+- `smugmug`
+- `sound`
+- `soundDown`
+- `soundLevelOne`
+- `soundLevelTwo`
+- `soundPlus`
+- `soundcloud`
+- `spadesCard`
+- `spotify`
+- `squarespace`
+- `squidoo`
+- `sreenshot`
+- `stats`
+- `steam`
+- `stethoscope`
+- `store`
+- `stumbleupon`
+- `suitcase`
+- `sun`
+- `switch`
+- `tacos`
+- `tag`
+- `target`
+- `technorati`
+- `threewords`
+- `ticket`
+- `token`
+- `triangle`
+- `tribe`
+- `tripit`
+- `trophy`
+- `truck`
+- `truck1`
+- `tumbleDry`
+- `tumblr`
+- `twitter`
+- `twitterAlt`
+- `ufo`
+- `up`
+- `upArrowCircle`
+- `upload`
+- `uploadToCloud`
+- `user`
+- `vcard`
+- `viddler`
+- `videoCamera`
+- `vimeo`
+- `virb`
+- `w3`
+- `wallet`
+- `wand`
+- `warning`
+- `watch`
+- `waterTemperature30`
+- `waterTemperature40`
+- `waterTemperature50`
+- `waterTemperature60`
+- `waterTemperature70`
+- `waterTemperature95`
+- `whatsapp`
+- `wikipedia`
+- `windows`
+- `wists`
+- `woman`
+- `wordpress`
+- `wordpressAlt`
+- `workCase`
+- `world`
+- `xing`
+- `yahoo`
+- `yahooBuzz`
+- `yahooMessenger`
+- `yelp`
+- `youtube`
+- `youtubeAlt`
+- `zerply`
+- `zoomIn`
+- `zoomOut`
+- `zootool`
+- `zynga`
 
 ## Usage Examples
 
@@ -101,77 +648,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { 3080, 40105, 50120, 60140 } from '@stacksjs/iconify-ps'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 3080Icon, 40105Icon, 50120Icon, 60140Icon } from '@stacksjs/iconify-ps'
 
   global.navIcons = {
-    3080: renderIcon(3080, { size: 20, class: 'nav-icon' }),
-    40105: renderIcon(40105, { size: 20, class: 'nav-icon' }),
-    50120: renderIcon(50120, { size: 20, class: 'nav-icon' }),
-    60140: renderIcon(60140, { size: 20, class: 'nav-icon' })
+    home: 3080Icon({ size: 20, class: 'nav-icon' }),
+    about: 40105Icon({ size: 20, class: 'nav-icon' }),
+    contact: 50120Icon({ size: 20, class: 'nav-icon' }),
+    settings: 60140Icon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.3080 !!} Home</a>
-  <a href="/about">{!! navIcons.40105 !!} About</a>
-  <a href="/contact">{!! navIcons.50120 !!} Contact</a>
-  <a href="/settings">{!! navIcons.60140 !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { 3080 } from '@stacksjs/iconify-ps'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 3080Icon } from '@stacksjs/iconify-ps'
 
-const icon = renderIcon(3080, {
+const icon = 3080Icon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-ps'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 3080Icon, 40105Icon, 50120Icon } from '@stacksjs/iconify-ps'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = 3080Icon({ size: 16, color: '#22c55e' })
+const warningIcon = 40105Icon({ size: 16, color: '#f59e0b' })
+const errorIcon = 50120Icon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { 3080, 40105 } from '@stacksjs/iconify-ps'
+   // Recommended
+   import { 3080Icon, 40105Icon } from '@stacksjs/iconify-ps'
+   const icon = 3080Icon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { 3080, 40105 } from '@stacksjs/iconify-ps'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(3080, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { 3080Icon, 40105Icon } from '@stacksjs/iconify-ps'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-ps'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { 3080 } from '@stacksjs/iconify-ps'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(3080, { size: 24 })
+     import { 3080Icon } from '@stacksjs/iconify-ps'
+     global.icon = 3080Icon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +734,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = 3080Icon({ class: 'icon' })
    ```
 
 ## TypeScript Support

@@ -21,79 +21,289 @@ bun add @stacksjs/iconify-covid
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { Covid19Virus4Icon, Covid19VirusPandemic1Icon, Covid19VirusPandemic2Icon } from '@stacksjs/iconify-covid'
+
+// Basic usage
+const icon = Covid19Virus4Icon()
+
+// With size
+const sizedIcon = Covid19Virus4Icon({ size: 24 })
+
+// With color
+const coloredIcon = Covid19VirusPandemic1Icon({ color: 'red' })
+
+// With multiple props
+const customIcon = Covid19VirusPandemic2Icon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { covid19Virus4, covid19VirusPandemic1, covid19VirusPandemic2 } from '@stacksjs/iconify-covid'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { Covid19Virus4Icon, Covid19VirusPandemic1Icon, Covid19VirusPandemic2Icon } from '@stacksjs/iconify-covid'
 
   global.icons = {
-    covid19Virus4: renderIcon(covid19Virus4, { size: 24 }),
-    covid19VirusPandemic1: renderIcon(covid19VirusPandemic1, { size: 24, color: '#4a90e2' }),
-    covid19VirusPandemic2: renderIcon(covid19VirusPandemic2, { size: 32 })
+    home: Covid19Virus4Icon({ size: 24 }),
+    user: Covid19VirusPandemic1Icon({ size: 24, color: '#4a90e2' }),
+    settings: Covid19VirusPandemic2Icon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.covid19Virus4 !!}
-  {!! icons.covid19VirusPandemic1 !!}
-  {!! icons.covid19VirusPandemic2 !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { covid19Virus4, covid19VirusPandemic1, covid19VirusPandemic2 } from '@stacksjs/iconify-covid'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(covid19Virus4, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(covid19VirusPandemic1, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(covid19VirusPandemic2, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = Covid19Virus4Icon({ color: 'red' })
+const blueIcon = Covid19Virus4Icon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = Covid19Virus4Icon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = Covid19Virus4Icon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = Covid19Virus4Icon({ size: 24 })
+const icon1em = Covid19Virus4Icon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = Covid19Virus4Icon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = Covid19Virus4Icon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = Covid19Virus4Icon({ class: 'icon-small' })
+const largeIcon = Covid19Virus4Icon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **142** icons. Here are some examples:
+This package contains **142** icons:
 
 - `covid19Virus4`
 - `covid19VirusPandemic1`
 - `covid19VirusPandemic2`
 - `covid19VirusPandemic3`
 - `covidCarrierBlood1`
-
-...and 132 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/covid/).
+- `covidCarrierBlood2`
+- `covidCarrierHuman`
+- `covidCarrierPackages`
+- `covid19Virus1`
+- `covid19Virus2`
+- `covid19Virus3`
+- `covid19VirusBat`
+- `covid19VirusHeal1`
+- `covid19VirusHeal2`
+- `covid19VirusLifelong1`
+- `covid19VirusLifelong2`
+- `covid19VirusPatient1`
+- `covid19VirusPatient2`
+- `covid19VirusReinfected`
+- `covid19VirusWarning1`
+- `covid19VirusWarning2`
+- `covid19VirusWarning3`
+- `graphCuredDecreasing`
+- `graphCuredIncreasing`
+- `graphCuredStable`
+- `graphDeathRateDecreasing`
+- `graphDeathRateIncreasing`
+- `graphDeathRateStable`
+- `graphDocumentInfectedReport`
+- `graphInfectedDecreasing`
+- `graphInfectedIncreasing`
+- `graphInfectedStable`
+- `mutation1`
+- `mutation2`
+- `mutationStronger`
+- `mutationTemperatureChange`
+- `personalHygieneCleanBottleShield`
+- `personalHygieneCleanBottleVirus`
+- `personalHygieneCleanBottleVirusBlock`
+- `personalHygieneCleanGel`
+- `personalHygieneCleanToothpaste`
+- `personalHygieneHandLiquidSoap`
+- `personalHygieneHandSanitizerLiquid1`
+- `personalHygieneHandSanitizerLiquid2`
+- `personalHygieneHandSanitizerLiquid3`
+- `personalHygieneHandSanitizerLiquidDrop`
+- `personalHygieneHandSanitizerLiquidVirusBlock`
+- `personalHygieneHandSanitizerSpray`
+- `personalHygieneHandSanitizerSprayVirusBlock`
+- `personalHygieneHandSanitizerVirusBlock`
+- `personalHygieneHandSanitizerVirusShield`
+- `personalHygieneHandSoap1`
+- `personalHygieneHandSoap2`
+- `personalHygieneHandWash`
+- `personalHygieneHandWipePaper1`
+- `personalHygieneHandWipePaper2`
+- `personalHygieneHandWipePaper3`
+- `personalHygieneHandWipePaper4`
+- `quarantinePlaceBed`
+- `quarantinePlaceHospital`
+- `quarantinePlaceHouse1`
+- `quarantinePlaceHouse2`
+- `quarantinePlaceHouseShield`
+- `quarantinePlaceSelfLockdown1`
+- `quarantinePlaceSelfLockdown2`
+- `quarantinePlaceTimeCalendar1`
+- `quarantinePlaceTimeCalendar2`
+- `quarantinePlaceTimeCalendarDay`
+- `quarantinePlaceTimeDateDay`
+- `socialDistancing1`
+- `socialDistancing2`
+- `socialDistancingAttention`
+- `socialDistancingCorrect1`
+- `socialDistancingCorrect2`
+- `socialDistancingCorrect3`
+- `socialDistancingCorrect4`
+- `socialDistancingCorrect5`
+- `socialDistancingCorrect6`
+- `socialDistancingDoNotClose1`
+- `socialDistancingDoNotClose2`
+- `socialDistancingDoNotClose3`
+- `socialDistancingDoNotClose4`
+- `socialDistancingDoNotTouch`
+- `socialDistancingMan`
+- `socialDistancingNotAllowedSpaceMan`
+- `socialDistancingNotAllowedSpaceWoman`
+- `socialDistancingProtectShield1`
+- `socialDistancingProtectShield2`
+- `socialDistancingVirus`
+- `socialDistancingWoman`
+- `symptomsColdFever`
+- `symptomsFever`
+- `symptomsNausea`
+- `symptomsVirusDiarrhea1`
+- `symptomsVirusDiarrhea2`
+- `symptomsVirusHeadache1`
+- `symptomsVirusHeadache2`
+- `symptomsVirusLossSmell1`
+- `symptomsVirusLossSmell2`
+- `symptomsVirusLungDamage`
+- `symptomsVirusStomach`
+- `transmissionVirusAirplaneFlight`
+- `transmissionVirusBriefcase`
+- `transmissionVirusCough`
+- `transmissionVirusCrowd`
+- `transmissionVirusExpand`
+- `transmissionVirusFloatWind`
+- `transmissionVirusHandshake`
+- `transmissionVirusHumanInfected`
+- `transmissionVirusHumanTransmit1`
+- `transmissionVirusHumanTransmit2`
+- `transmissionVirusIncreaseRate`
+- `transmissionVirusInhale`
+- `transmissionVirusMobileApplication`
+- `transmissionVirusRatMouse`
+- `transmissionVirusTouchFinger`
+- `transmissionVirusTouchHand1`
+- `transmissionVirusTouchHand2`
+- `transmissionVirusTransmit`
+- `transmissionVirusTransportation`
+- `transmissionVirusTrashBin`
+- `transmissionVirusVisible`
+- `transmissionVirusWindBreath`
+- `vaccineProtectionFaceMask1`
+- `vaccineProtectionFaceMask2`
+- `vaccineProtectionFaceMask3`
+- `vaccineProtectionFaceShield1`
+- `vaccineProtectionFaceShield2`
+- `vaccineProtectionInfraredThermometerGun`
+- `vaccineProtectionMedicinePill`
+- `vaccineProtectionPeopleShield`
+- `vaccineProtectionSanitizerSpray`
+- `vaccineProtectionShield`
+- `vaccineProtectionSyringe`
+- `vaccineProtectionVirus`
+- `vaccineProtectionWashHands`
+- `virusLabResearchMagnifier1`
+- `virusLabResearchMagnifier2`
+- `virusLabResearchMedicinePill`
+- `virusLabResearchMicroscope`
+- `virusLabResearchSyringe`
+- `virusLabResearchTestTube`
 
 ## Usage Examples
 
@@ -101,77 +311,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { covid19Virus4, covid19VirusPandemic1, covid19VirusPandemic2, covid19VirusPandemic3 } from '@stacksjs/iconify-covid'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { Covid19Virus4Icon, Covid19VirusPandemic1Icon, Covid19VirusPandemic2Icon, Covid19VirusPandemic3Icon } from '@stacksjs/iconify-covid'
 
   global.navIcons = {
-    covid19Virus4: renderIcon(covid19Virus4, { size: 20, class: 'nav-icon' }),
-    covid19VirusPandemic1: renderIcon(covid19VirusPandemic1, { size: 20, class: 'nav-icon' }),
-    covid19VirusPandemic2: renderIcon(covid19VirusPandemic2, { size: 20, class: 'nav-icon' }),
-    covid19VirusPandemic3: renderIcon(covid19VirusPandemic3, { size: 20, class: 'nav-icon' })
+    home: Covid19Virus4Icon({ size: 20, class: 'nav-icon' }),
+    about: Covid19VirusPandemic1Icon({ size: 20, class: 'nav-icon' }),
+    contact: Covid19VirusPandemic2Icon({ size: 20, class: 'nav-icon' }),
+    settings: Covid19VirusPandemic3Icon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.covid19Virus4 !!} Home</a>
-  <a href="/about">{!! navIcons.covid19VirusPandemic1 !!} About</a>
-  <a href="/contact">{!! navIcons.covid19VirusPandemic2 !!} Contact</a>
-  <a href="/settings">{!! navIcons.covid19VirusPandemic3 !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { covid19Virus4 } from '@stacksjs/iconify-covid'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { Covid19Virus4Icon } from '@stacksjs/iconify-covid'
 
-const icon = renderIcon(covid19Virus4, {
+const icon = Covid19Virus4Icon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-covid'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { Covid19Virus4Icon, Covid19VirusPandemic1Icon, Covid19VirusPandemic2Icon } from '@stacksjs/iconify-covid'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = Covid19Virus4Icon({ size: 16, color: '#22c55e' })
+const warningIcon = Covid19VirusPandemic1Icon({ size: 16, color: '#f59e0b' })
+const errorIcon = Covid19VirusPandemic2Icon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { covid19Virus4, covid19VirusPandemic1 } from '@stacksjs/iconify-covid'
+   // Recommended
+   import { Covid19Virus4Icon, Covid19VirusPandemic1Icon } from '@stacksjs/iconify-covid'
+   const icon = Covid19Virus4Icon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { covid19Virus4, covid19VirusPandemic1 } from '@stacksjs/iconify-covid'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(covid19Virus4, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { Covid19Virus4Icon, Covid19VirusPandemic1Icon } from '@stacksjs/iconify-covid'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-covid'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { covid19Virus4 } from '@stacksjs/iconify-covid'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(covid19Virus4, { size: 24 })
+     import { Covid19Virus4Icon } from '@stacksjs/iconify-covid'
+     global.icon = Covid19Virus4Icon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +397,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = Covid19Virus4Icon({ class: 'icon' })
    ```
 
 ## TypeScript Support

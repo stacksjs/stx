@@ -21,79 +21,514 @@ bun add @stacksjs/iconify-gis
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { 360Icon, 3dtilesFileIcon, 3dtilesWebIcon } from '@stacksjs/iconify-gis'
+
+// Basic usage
+const icon = 360Icon()
+
+// With size
+const sizedIcon = 360Icon({ size: 24 })
+
+// With color
+const coloredIcon = 3dtilesFileIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = 3dtilesWebIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { 360, 3dtilesFile, 3dtilesWeb } from '@stacksjs/iconify-gis'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 360Icon, 3dtilesFileIcon, 3dtilesWebIcon } from '@stacksjs/iconify-gis'
 
   global.icons = {
-    360: renderIcon(360, { size: 24 }),
-    3dtilesFile: renderIcon(3dtilesFile, { size: 24, color: '#4a90e2' }),
-    3dtilesWeb: renderIcon(3dtilesWeb, { size: 32 })
+    home: 360Icon({ size: 24 }),
+    user: 3dtilesFileIcon({ size: 24, color: '#4a90e2' }),
+    settings: 3dtilesWebIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.360 !!}
-  {!! icons.3dtilesFile !!}
-  {!! icons.3dtilesWeb !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { 360, 3dtilesFile, 3dtilesWeb } from '@stacksjs/iconify-gis'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(360, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(3dtilesFile, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(3dtilesWeb, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = 360Icon({ color: 'red' })
+const blueIcon = 360Icon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = 360Icon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = 360Icon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = 360Icon({ size: 24 })
+const icon1em = 360Icon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = 360Icon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = 360Icon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = 360Icon({ class: 'icon-small' })
+const largeIcon = 360Icon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **367** icons. Here are some examples:
+This package contains **367** icons:
 
 - `360`
 - `3dtilesFile`
 - `3dtilesWeb`
 - `arrow`
 - `arrowO`
-
-...and 357 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/gis/).
+- `azimuth`
+- `bbox`
+- `bboxAlt`
+- `bicycle`
+- `bookmarkPoi`
+- `bookmarkPoiB`
+- `buffer`
+- `busMap`
+- `cadastreMap`
+- `car`
+- `circle`
+- `circleO`
+- `color`
+- `compareMap`
+- `compass`
+- `compassAlt`
+- `compassAltO`
+- `compassNeedle`
+- `compassRose`
+- `compassRoseN`
+- `contourMap`
+- `convexHull`
+- `coordGrid`
+- `coordSystem`
+- `coordSystem3d`
+- `coordSystem3dAlt`
+- `coordSystemAlt`
+- `copyLine`
+- `copyPoint`
+- `copyPoly`
+- `csw`
+- `cube3d`
+- `difference`
+- `dilatation`
+- `direct`
+- `direction`
+- `directions`
+- `drone`
+- `earth`
+- `earthAmerica`
+- `earthAmericaO`
+- `earthAsia`
+- `earthAsiaO`
+- `earthAtlantic`
+- `earthAtlanticO`
+- `earthAustralia`
+- `earthAustraliaO`
+- `earthEuroAfrica`
+- `earthEuroAfricaO`
+- `earthGear`
+- `earthNet`
+- `earthNetO`
+- `earthNetwork`
+- `earthNetworkO`
+- `earthNorth`
+- `earthNorthO`
+- `earthO`
+- `earthPacific`
+- `earthPacificO`
+- `earthSouth`
+- `earthSouthO`
+- `erosion`
+- `esriJsonFile`
+- `extent`
+- `extentAlt`
+- `finish`
+- `flabBO`
+- `flag`
+- `flagB`
+- `flagFinish`
+- `flagFinishBO`
+- `flagO`
+- `flagStart`
+- `flagStartB`
+- `flagStartBO`
+- `flagStartO`
+- `flipH`
+- `flipV`
+- `flowMap`
+- `folderGlobe`
+- `folderGlobeO`
+- `folderMap`
+- `folderMaps`
+- `folderPoi`
+- `folderPoiO`
+- `folderPois`
+- `fullScreen`
+- `geojsonFile`
+- `globe`
+- `globeAlt`
+- `globeAltO`
+- `globeEarth`
+- `globeEarthAlt`
+- `globeFavorite`
+- `globeGear`
+- `globeO`
+- `globeOptions`
+- `globePoi`
+- `globeShare`
+- `globeShield`
+- `globeSmiley`
+- `globeStar`
+- `globeUser`
+- `globeUsers`
+- `gnss`
+- `gnssAntenna`
+- `gpxFile`
+- `grid`
+- `heightMap`
+- `helpLarrow`
+- `helpRarrow`
+- `hexMap`
+- `hiker`
+- `home`
+- `hydroMap`
+- `i3sFile`
+- `i3sWeb`
+- `intersection`
+- `kmlFile`
+- `landcoverMap`
+- `layer`
+- `layer2AddO`
+- `layer2RmO`
+- `layerAdd`
+- `layerAddO`
+- `layerAlt`
+- `layerAltAddO`
+- `layerAltEdit`
+- `layerAltO`
+- `layerAltPoi`
+- `layerAltRmO`
+- `layerAltXO`
+- `layerContour`
+- `layerDown`
+- `layerDownload`
+- `layerEdit`
+- `layerHeight`
+- `layerHydro`
+- `layerLandcover`
+- `layerO`
+- `layerPoi`
+- `layerRm`
+- `layerRmO`
+- `layerRoad`
+- `layerStack`
+- `layerStackO`
+- `layerStat`
+- `layerStatAlt`
+- `layerUp`
+- `layerUpload`
+- `layers`
+- `layersO`
+- `layersPoi`
+- `location`
+- `locationArrow`
+- `locationArrowO`
+- `locationMan`
+- `locationManAlt`
+- `locationOn`
+- `locationPoi`
+- `locationPoiO`
+- `magnifyMap`
+- `map`
+- `mapAdd`
+- `mapBook`
+- `mapBookmark`
+- `mapControl`
+- `mapEdit`
+- `mapExtent`
+- `mapFavorite`
+- `mapLegend`
+- `mapLegendO`
+- `mapLock`
+- `mapO`
+- `mapOptions`
+- `mapOptionsAlt`
+- `mapPlay`
+- `mapPoi`
+- `mapPrint`
+- `mapRm`
+- `mapRoute`
+- `mapSearch`
+- `mapSend`
+- `mapShare`
+- `mapShareAlt`
+- `mapSmiley`
+- `mapStar`
+- `mapStat`
+- `mapTag`
+- `mapTags`
+- `mapTime`
+- `mapUnlock`
+- `mapUser`
+- `mapUsers`
+- `measure`
+- `measureArea`
+- `measureAreaAlt`
+- `measureLine`
+- `modifyLine`
+- `modifyPoly`
+- `modifyPolyO`
+- `mosaic`
+- `move`
+- `moveAlt`
+- `multipoint`
+- `mvt`
+- `network`
+- `networkO`
+- `northArrow`
+- `northArrowN`
+- `offset`
+- `openls`
+- `pedestrian`
+- `phoneMap`
+- `phoneRoute`
+- `phoneRouteAlt`
+- `phoneRouteAltR`
+- `photogrammetry`
+- `pin`
+- `pinEarth`
+- `pirateMap`
+- `piratePoi`
+- `poi`
+- `poiAlt`
+- `poiAltO`
+- `poiEarth`
+- `poiFavorite`
+- `poiFavoriteO`
+- `poiHome`
+- `poiHomeO`
+- `poiInfo`
+- `poiInfoO`
+- `poiMap`
+- `poiMapO`
+- `poiO`
+- `poiSlash`
+- `poiSlashO`
+- `point`
+- `pois`
+- `poisO`
+- `polygon`
+- `polygonHole`
+- `polygonHoleO`
+- `polygonHolePt`
+- `polygonO`
+- `polygonODash`
+- `polygonPt`
+- `polyline`
+- `polylineDash`
+- `polylinePt`
+- `position`
+- `positionMan`
+- `positionO`
+- `profile`
+- `profileO`
+- `projConic`
+- `projGeo`
+- `projPoint`
+- `projSquare`
+- `projStereo`
+- `projUtm`
+- `pushpin`
+- `pyramid`
+- `rectangle`
+- `rectangleO`
+- `rectanglePt`
+- `regularShape`
+- `regularShapeO`
+- `regularShapePt`
+- `revers`
+- `roadMap`
+- `rotate`
+- `route`
+- `routeEnd`
+- `routeStart`
+- `satellite`
+- `satelliteEarth`
+- `scale`
+- `scalePoly`
+- `screenDub`
+- `screenDubO`
+- `screenDub1`
+- `screenDub2`
+- `screenMag`
+- `screenMagAlt`
+- `screenMagO`
+- `screenSplitH`
+- `screenSplitV`
+- `searchAddress`
+- `searchAttribtues`
+- `searchCoord`
+- `searchCountry`
+- `searchData`
+- `searchFeature`
+- `searchGlobe`
+- `searchGlobeAlt`
+- `searchHome`
+- `searchLayer`
+- `searchMap`
+- `searchPoi`
+- `searchPropertie`
+- `selectExtent`
+- `shapeFile`
+- `signpost`
+- `simplify`
+- `skeletonize`
+- `sld`
+- `snap`
+- `snapOrtho`
+- `sos`
+- `split`
+- `splitLine`
+- `splitPolygon`
+- `sps`
+- `square`
+- `squareO`
+- `squarePt`
+- `start`
+- `startO`
+- `statisticMap`
+- `step`
+- `stepO`
+- `storyMap`
+- `storyMapO`
+- `storyMaps`
+- `swipeMapH`
+- `swipeMapV`
+- `symDifference`
+- `tacheometer`
+- `tag`
+- `tagO`
+- `tags`
+- `tagsO`
+- `theodolite`
+- `timeMap`
+- `timer`
+- `tjs`
+- `topography`
+- `topojsonFile`
+- `translate`
+- `translateX`
+- `translateY`
+- `triangleMap`
+- `union`
+- `voronoiMap`
+- `wcps`
+- `wcs`
+- `weatherMap`
+- `wfs`
+- `wfsT`
+- `wmc`
+- `wms`
+- `wmts`
+- `worldFolder`
+- `worldFolderO`
+- `worldMap`
+- `worldMapAlt`
+- `worldMapAltO`
+- `wps`
+- `xyz`
+- `zoomIn`
+- `zoomOut`
 
 ## Usage Examples
 
@@ -101,77 +536,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { 360, 3dtilesFile, 3dtilesWeb, arrow } from '@stacksjs/iconify-gis'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 360Icon, 3dtilesFileIcon, 3dtilesWebIcon, ArrowIcon } from '@stacksjs/iconify-gis'
 
   global.navIcons = {
-    360: renderIcon(360, { size: 20, class: 'nav-icon' }),
-    3dtilesFile: renderIcon(3dtilesFile, { size: 20, class: 'nav-icon' }),
-    3dtilesWeb: renderIcon(3dtilesWeb, { size: 20, class: 'nav-icon' }),
-    arrow: renderIcon(arrow, { size: 20, class: 'nav-icon' })
+    home: 360Icon({ size: 20, class: 'nav-icon' }),
+    about: 3dtilesFileIcon({ size: 20, class: 'nav-icon' }),
+    contact: 3dtilesWebIcon({ size: 20, class: 'nav-icon' }),
+    settings: ArrowIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.360 !!} Home</a>
-  <a href="/about">{!! navIcons.3dtilesFile !!} About</a>
-  <a href="/contact">{!! navIcons.3dtilesWeb !!} Contact</a>
-  <a href="/settings">{!! navIcons.arrow !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { 360 } from '@stacksjs/iconify-gis'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 360Icon } from '@stacksjs/iconify-gis'
 
-const icon = renderIcon(360, {
+const icon = 360Icon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-gis'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 360Icon, 3dtilesFileIcon, 3dtilesWebIcon } from '@stacksjs/iconify-gis'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = 360Icon({ size: 16, color: '#22c55e' })
+const warningIcon = 3dtilesFileIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = 3dtilesWebIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { 360, 3dtilesFile } from '@stacksjs/iconify-gis'
+   // Recommended
+   import { 360Icon, 3dtilesFileIcon } from '@stacksjs/iconify-gis'
+   const icon = 360Icon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { 360, 3dtilesFile } from '@stacksjs/iconify-gis'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(360, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { 360Icon, 3dtilesFileIcon } from '@stacksjs/iconify-gis'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-gis'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { 360 } from '@stacksjs/iconify-gis'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(360, { size: 24 })
+     import { 360Icon } from '@stacksjs/iconify-gis'
+     global.icon = 360Icon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +622,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = 360Icon({ class: 'icon' })
    ```
 
 ## TypeScript Support

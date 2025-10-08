@@ -21,79 +21,314 @@ bun add @stacksjs/iconify-map
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AbseilingIcon, AccountingIcon, AirportIcon } from '@stacksjs/iconify-map'
+
+// Basic usage
+const icon = AbseilingIcon()
+
+// With size
+const sizedIcon = AbseilingIcon({ size: 24 })
+
+// With color
+const coloredIcon = AccountingIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = AirportIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { abseiling, accounting, airport } from '@stacksjs/iconify-map'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AbseilingIcon, AccountingIcon, AirportIcon } from '@stacksjs/iconify-map'
 
   global.icons = {
-    abseiling: renderIcon(abseiling, { size: 24 }),
-    accounting: renderIcon(accounting, { size: 24, color: '#4a90e2' }),
-    airport: renderIcon(airport, { size: 32 })
+    home: AbseilingIcon({ size: 24 }),
+    user: AccountingIcon({ size: 24, color: '#4a90e2' }),
+    settings: AirportIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.abseiling !!}
-  {!! icons.accounting !!}
-  {!! icons.airport !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { abseiling, accounting, airport } from '@stacksjs/iconify-map'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(abseiling, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(accounting, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(airport, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = AbseilingIcon({ color: 'red' })
+const blueIcon = AbseilingIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AbseilingIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AbseilingIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AbseilingIcon({ size: 24 })
+const icon1em = AbseilingIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AbseilingIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AbseilingIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AbseilingIcon({ class: 'icon-small' })
+const largeIcon = AbseilingIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **167** icons. Here are some examples:
+This package contains **167** icons:
 
 - `abseiling`
 - `accounting`
 - `airport`
 - `amusementPark`
 - `aquarium`
-
-...and 157 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/map/).
+- `archery`
+- `artGallery`
+- `assistiveListeningSystem`
+- `atm`
+- `audioDescription`
+- `bakery`
+- `bank`
+- `bar`
+- `baseball`
+- `beautySalon`
+- `bicycleStore`
+- `boatRamp`
+- `boatTour`
+- `boating`
+- `bookStore`
+- `bowlingAlley`
+- `braille`
+- `busStation`
+- `cafe`
+- `campground`
+- `canoe`
+- `carDealer`
+- `carRental`
+- `carRepair`
+- `carWash`
+- `casino`
+- `cemetery`
+- `chairlift`
+- `church`
+- `circle`
+- `cityHall`
+- `climbing`
+- `closedCaptioning`
+- `clothingStore`
+- `compass`
+- `convenienceStore`
+- `courthouse`
+- `crossCountrySkiing`
+- `crosshairs`
+- `dentist`
+- `departmentStore`
+- `diving`
+- `doctor`
+- `electrician`
+- `electronicsStore`
+- `embassy`
+- `expand`
+- `female`
+- `finance`
+- `fireStation`
+- `fishCleaning`
+- `fishingPier`
+- `florist`
+- `food`
+- `fullscreen`
+- `funeralHome`
+- `furnitureStore`
+- `gasStation`
+- `generalContractor`
+- `groceryOrSupermarket`
+- `gym`
+- `hairCare`
+- `hangGliding`
+- `hardwareStore`
+- `health`
+- `hinduTemple`
+- `hospital`
+- `iceFishing`
+- `iceSkating`
+- `inlineSkating`
+- `insuranceAgency`
+- `jetSkiing`
+- `jewelryStore`
+- `kayaking`
+- `laundry`
+- `lawyer`
+- `library`
+- `liquorStore`
+- `localGovernment`
+- `locationArrow`
+- `locksmith`
+- `lodging`
+- `lowVisionAccess`
+- `male`
+- `mapPin`
+- `marina`
+- `mosque`
+- `movieRental`
+- `movieTheater`
+- `movingCompany`
+- `museum`
+- `naturalFeature`
+- `nightClub`
+- `openCaptioning`
+- `painter`
+- `park`
+- `parking`
+- `petStore`
+- `pharmacy`
+- `physiotherapist`
+- `placeOfWorship`
+- `playground`
+- `plumber`
+- `pointOfInterest`
+- `police`
+- `political`
+- `postBox`
+- `postOffice`
+- `postalCode`
+- `postalCodePrefix`
+- `rafting`
+- `realEstateAgency`
+- `restaurant`
+- `roofingContractor`
+- `route`
+- `routePin`
+- `rvPark`
+- `sailing`
+- `school`
+- `scubaDiving`
+- `search`
+- `sheild`
+- `shoppingMall`
+- `signLanguage`
+- `skateboarding`
+- `skiJumping`
+- `skiing`
+- `sledding`
+- `snow`
+- `snowShoeing`
+- `snowboarding`
+- `snowmobile`
+- `spa`
+- `square`
+- `squarePin`
+- `squareRounded`
+- `stadium`
+- `storage`
+- `store`
+- `subwayStation`
+- `surfing`
+- `swimming`
+- `synagogue`
+- `taxiStand`
+- `tennis`
+- `toilet`
+- `trainStation`
+- `transitStation`
+- `travelAgency`
+- `unisex`
+- `university`
+- `veterinaryCare`
+- `volumeControlTelephone`
+- `waterskiing`
+- `whaleWatching`
+- `wheelchair`
+- `windSurfing`
+- `zoo`
+- `zoomIn`
+- `zoomInAlt`
+- `zoomOut`
+- `zoomOutAlt`
 
 ## Usage Examples
 
@@ -101,77 +336,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { abseiling, accounting, airport, amusementPark } from '@stacksjs/iconify-map'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AbseilingIcon, AccountingIcon, AirportIcon, AmusementParkIcon } from '@stacksjs/iconify-map'
 
   global.navIcons = {
-    abseiling: renderIcon(abseiling, { size: 20, class: 'nav-icon' }),
-    accounting: renderIcon(accounting, { size: 20, class: 'nav-icon' }),
-    airport: renderIcon(airport, { size: 20, class: 'nav-icon' }),
-    amusementPark: renderIcon(amusementPark, { size: 20, class: 'nav-icon' })
+    home: AbseilingIcon({ size: 20, class: 'nav-icon' }),
+    about: AccountingIcon({ size: 20, class: 'nav-icon' }),
+    contact: AirportIcon({ size: 20, class: 'nav-icon' }),
+    settings: AmusementParkIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.abseiling !!} Home</a>
-  <a href="/about">{!! navIcons.accounting !!} About</a>
-  <a href="/contact">{!! navIcons.airport !!} Contact</a>
-  <a href="/settings">{!! navIcons.amusementPark !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { abseiling } from '@stacksjs/iconify-map'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AbseilingIcon } from '@stacksjs/iconify-map'
 
-const icon = renderIcon(abseiling, {
+const icon = AbseilingIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-map'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AbseilingIcon, AccountingIcon, AirportIcon } from '@stacksjs/iconify-map'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AbseilingIcon({ size: 16, color: '#22c55e' })
+const warningIcon = AccountingIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = AirportIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { abseiling, accounting } from '@stacksjs/iconify-map'
+   // Recommended
+   import { AbseilingIcon, AccountingIcon } from '@stacksjs/iconify-map'
+   const icon = AbseilingIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { abseiling, accounting } from '@stacksjs/iconify-map'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(abseiling, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AbseilingIcon, AccountingIcon } from '@stacksjs/iconify-map'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-map'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { abseiling } from '@stacksjs/iconify-map'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(abseiling, { size: 24 })
+     import { AbseilingIcon } from '@stacksjs/iconify-map'
+     global.icon = AbseilingIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +422,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AbseilingIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

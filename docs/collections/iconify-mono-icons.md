@@ -21,79 +21,327 @@ bun add @stacksjs/iconify-mono-icons
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AddIcon, ArchiveIcon, ArrowDownIcon } from '@stacksjs/iconify-mono-icons'
+
+// Basic usage
+const icon = AddIcon()
+
+// With size
+const sizedIcon = AddIcon({ size: 24 })
+
+// With color
+const coloredIcon = ArchiveIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = ArrowDownIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { add, archive, arrowDown } from '@stacksjs/iconify-mono-icons'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AddIcon, ArchiveIcon, ArrowDownIcon } from '@stacksjs/iconify-mono-icons'
 
   global.icons = {
-    add: renderIcon(add, { size: 24 }),
-    archive: renderIcon(archive, { size: 24, color: '#4a90e2' }),
-    arrowDown: renderIcon(arrowDown, { size: 32 })
+    home: AddIcon({ size: 24 }),
+    user: ArchiveIcon({ size: 24, color: '#4a90e2' }),
+    settings: ArrowDownIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.add !!}
-  {!! icons.archive !!}
-  {!! icons.arrowDown !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { add, archive, arrowDown } from '@stacksjs/iconify-mono-icons'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(add, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(archive, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(arrowDown, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = AddIcon({ color: 'red' })
+const blueIcon = AddIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AddIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AddIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AddIcon({ size: 24 })
+const icon1em = AddIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AddIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AddIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AddIcon({ class: 'icon-small' })
+const largeIcon = AddIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **180** icons. Here are some examples:
+This package contains **180** icons:
 
 - `add`
 - `archive`
 - `arrowDown`
 - `arrowLeft`
 - `arrowLeftDown`
-
-...and 170 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/mono-icons/).
+- `arrowLeftUp`
+- `arrowRight`
+- `arrowRightDown`
+- `arrowRightUp`
+- `arrowUp`
+- `attachment`
+- `backspace`
+- `ban`
+- `barChart`
+- `barChartAlt`
+- `board`
+- `bold`
+- `book`
+- `bookmark`
+- `calendar`
+- `call`
+- `camera`
+- `caretDown`
+- `caretLeft`
+- `caretRight`
+- `caretUp`
+- `check`
+- `chevronDoubleDown`
+- `chevronDoubleLeft`
+- `chevronDoubleRight`
+- `chevronDoubleUp`
+- `chevronDown`
+- `chevronLeft`
+- `chevronRight`
+- `chevronUp`
+- `circle`
+- `circleAdd`
+- `circleArrowDown`
+- `circleArrowLeft`
+- `circleArrowRight`
+- `circleArrowUp`
+- `circleCheck`
+- `circleError`
+- `circleHelp`
+- `circleInformation`
+- `circleRemove`
+- `circleWarning`
+- `clipboard`
+- `clipboardCheck`
+- `clipboardList`
+- `clock`
+- `close`
+- `cloud`
+- `cloudDownload`
+- `cloudUpload`
+- `cloudy`
+- `comment`
+- `compass`
+- `computer`
+- `copy`
+- `creditCard`
+- `database`
+- `delete`
+- `deleteAlt`
+- `document`
+- `documentAdd`
+- `documentCheck`
+- `documentDownload`
+- `documentEmpty`
+- `documentRemove`
+- `download`
+- `drag`
+- `drop`
+- `edit`
+- `editAlt`
+- `email`
+- `enter`
+- `expand`
+- `export`
+- `externalLink`
+- `eye`
+- `eyeOff`
+- `favorite`
+- `filter`
+- `filter1`
+- `filterAlt`
+- `flag`
+- `fog`
+- `folder`
+- `folderAdd`
+- `folderCheck`
+- `folderDownload`
+- `folderRemove`
+- `grid`
+- `heart`
+- `home`
+- `image`
+- `inbox`
+- `italic`
+- `laptop`
+- `layers`
+- `layout`
+- `link`
+- `linkAlt`
+- `list`
+- `location`
+- `lock`
+- `logIn`
+- `logOut`
+- `map`
+- `megaphone`
+- `menu`
+- `message`
+- `messageAlt`
+- `minimize`
+- `mobile`
+- `moon`
+- `next`
+- `notification`
+- `notificationOff`
+- `optionsHorizontal`
+- `optionsVertical`
+- `pause`
+- `pen`
+- `percentage`
+- `pin`
+- `play`
+- `previous`
+- `print`
+- `rain`
+- `refresh`
+- `remove`
+- `reorder`
+- `reorderAlt`
+- `repeat`
+- `save`
+- `search`
+- `select`
+- `send`
+- `settings`
+- `share`
+- `shoppingCart`
+- `shoppingCartAdd`
+- `shuffle`
+- `snow`
+- `snowflake`
+- `sort`
+- `speakers`
+- `stop`
+- `storm`
+- `strikethrough`
+- `sun`
+- `sunrise`
+- `sunriseAlt`
+- `sunset`
+- `switch`
+- `table`
+- `tablet`
+- `tag`
+- `temperature`
+- `text`
+- `threeRows`
+- `twoColumns`
+- `twoRows`
+- `underline`
+- `undo`
+- `unlock`
+- `user`
+- `userAdd`
+- `userCheck`
+- `userRemove`
+- `users`
+- `volumeOff`
+- `volumeUp`
+- `warning`
+- `webcam`
+- `wind`
+- `window`
+- `zoomIn`
+- `zoomOut`
 
 ## Usage Examples
 
@@ -101,77 +349,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { add, archive, arrowDown, arrowLeft } from '@stacksjs/iconify-mono-icons'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AddIcon, ArchiveIcon, ArrowDownIcon, ArrowLeftIcon } from '@stacksjs/iconify-mono-icons'
 
   global.navIcons = {
-    add: renderIcon(add, { size: 20, class: 'nav-icon' }),
-    archive: renderIcon(archive, { size: 20, class: 'nav-icon' }),
-    arrowDown: renderIcon(arrowDown, { size: 20, class: 'nav-icon' }),
-    arrowLeft: renderIcon(arrowLeft, { size: 20, class: 'nav-icon' })
+    home: AddIcon({ size: 20, class: 'nav-icon' }),
+    about: ArchiveIcon({ size: 20, class: 'nav-icon' }),
+    contact: ArrowDownIcon({ size: 20, class: 'nav-icon' }),
+    settings: ArrowLeftIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.add !!} Home</a>
-  <a href="/about">{!! navIcons.archive !!} About</a>
-  <a href="/contact">{!! navIcons.arrowDown !!} Contact</a>
-  <a href="/settings">{!! navIcons.arrowLeft !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { add } from '@stacksjs/iconify-mono-icons'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AddIcon } from '@stacksjs/iconify-mono-icons'
 
-const icon = renderIcon(add, {
+const icon = AddIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-mono-icons'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AddIcon, ArchiveIcon, ArrowDownIcon } from '@stacksjs/iconify-mono-icons'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AddIcon({ size: 16, color: '#22c55e' })
+const warningIcon = ArchiveIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = ArrowDownIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { add, archive } from '@stacksjs/iconify-mono-icons'
+   // Recommended
+   import { AddIcon, ArchiveIcon } from '@stacksjs/iconify-mono-icons'
+   const icon = AddIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { add, archive } from '@stacksjs/iconify-mono-icons'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(add, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AddIcon, ArchiveIcon } from '@stacksjs/iconify-mono-icons'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-mono-icons'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { add } from '@stacksjs/iconify-mono-icons'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(add, { size: 24 })
+     import { AddIcon } from '@stacksjs/iconify-mono-icons'
+     global.icon = AddIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +435,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AddIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

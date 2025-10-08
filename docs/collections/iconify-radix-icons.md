@@ -21,79 +21,489 @@ bun add @stacksjs/iconify-radix-icons
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AccessibilityIcon, ActivityLogIcon, AlignBaselineIcon } from '@stacksjs/iconify-radix-icons'
+
+// Basic usage
+const icon = AccessibilityIcon()
+
+// With size
+const sizedIcon = AccessibilityIcon({ size: 24 })
+
+// With color
+const coloredIcon = ActivityLogIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = AlignBaselineIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { accessibility, activityLog, alignBaseline } from '@stacksjs/iconify-radix-icons'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AccessibilityIcon, ActivityLogIcon, AlignBaselineIcon } from '@stacksjs/iconify-radix-icons'
 
   global.icons = {
-    accessibility: renderIcon(accessibility, { size: 24 }),
-    activityLog: renderIcon(activityLog, { size: 24, color: '#4a90e2' }),
-    alignBaseline: renderIcon(alignBaseline, { size: 32 })
+    home: AccessibilityIcon({ size: 24 }),
+    user: ActivityLogIcon({ size: 24, color: '#4a90e2' }),
+    settings: AlignBaselineIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.accessibility !!}
-  {!! icons.activityLog !!}
-  {!! icons.alignBaseline !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { accessibility, activityLog, alignBaseline } from '@stacksjs/iconify-radix-icons'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(accessibility, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(activityLog, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(alignBaseline, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = AccessibilityIcon({ color: 'red' })
+const blueIcon = AccessibilityIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AccessibilityIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AccessibilityIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AccessibilityIcon({ size: 24 })
+const icon1em = AccessibilityIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AccessibilityIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AccessibilityIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AccessibilityIcon({ class: 'icon-small' })
+const largeIcon = AccessibilityIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **342** icons. Here are some examples:
+This package contains **342** icons:
 
 - `accessibility`
 - `activityLog`
 - `alignBaseline`
 - `alignBottom`
 - `alignCenter`
-
-...and 332 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/radix-icons/).
+- `alignCenterHorizontally`
+- `alignCenterVertically`
+- `alignEnd`
+- `alignHorizontalCenters`
+- `alignLeft`
+- `alignRight`
+- `alignStart`
+- `alignStretch`
+- `alignTop`
+- `alignVerticalCenters`
+- `allSides`
+- `angle`
+- `archive`
+- `arrowBottomLeft`
+- `arrowBottomRight`
+- `arrowDown`
+- `arrowLeft`
+- `arrowRight`
+- `arrowTopLeft`
+- `arrowTopRight`
+- `arrowUp`
+- `aspectRatio`
+- `avatar`
+- `backpack`
+- `badge`
+- `barChart`
+- `bell`
+- `blendingMode`
+- `bookmark`
+- `bookmarkFilled`
+- `borderAll`
+- `borderBottom`
+- `borderDashed`
+- `borderDotted`
+- `borderLeft`
+- `borderNone`
+- `borderRight`
+- `borderSolid`
+- `borderSplit`
+- `borderStyle`
+- `borderTop`
+- `borderWidth`
+- `box`
+- `boxModel`
+- `button`
+- `calendar`
+- `camera`
+- `cardStack`
+- `cardStackMinus`
+- `cardStackPlus`
+- `caretDown`
+- `caretLeft`
+- `caretRight`
+- `caretSort`
+- `caretUp`
+- `chatBubble`
+- `check`
+- `checkCircled`
+- `checkbox`
+- `chevronDown`
+- `chevronLeft`
+- `chevronRight`
+- `chevronUp`
+- `circle`
+- `circleBackslash`
+- `clipboard`
+- `clipboardCopy`
+- `clock`
+- `code`
+- `codesandboxLogo`
+- `colorWheel`
+- `columnSpacing`
+- `columns`
+- `commit`
+- `component1`
+- `component2`
+- `componentBoolean`
+- `componentInstance`
+- `componentNone`
+- `componentPlaceholder`
+- `container`
+- `cookie`
+- `copy`
+- `cornerBottomLeft`
+- `cornerBottomRight`
+- `cornerTopLeft`
+- `cornerTopRight`
+- `corners`
+- `countdownTimer`
+- `counterClockwiseClock`
+- `crop`
+- `cross1`
+- `cross2`
+- `crossCircled`
+- `crosshair1`
+- `crosshair2`
+- `crumpledPaper`
+- `cube`
+- `cursorArrow`
+- `cursorText`
+- `dash`
+- `dashboard`
+- `database`
+- `desktop`
+- `dimensions`
+- `disc`
+- `discordLogo`
+- `dividerHorizontal`
+- `dividerVertical`
+- `dot`
+- `dotFilled`
+- `dotsHorizontal`
+- `dotsVertical`
+- `doubleArrowDown`
+- `doubleArrowLeft`
+- `doubleArrowRight`
+- `doubleArrowUp`
+- `download`
+- `dragHandleDots1`
+- `dragHandleDots2`
+- `dragHandleHorizontal`
+- `dragHandleVertical`
+- `drawingPin`
+- `drawingPinFilled`
+- `dropdownMenu`
+- `enter`
+- `enterFullScreen`
+- `envelopeClosed`
+- `envelopeOpen`
+- `eraser`
+- `exclamationCircled`
+- `exclamationMark`
+- `exclamationTriangle`
+- `exit`
+- `exitFullScreen`
+- `externalLink`
+- `eyeClosed`
+- `eyeNone`
+- `eyeOpen`
+- `face`
+- `figmaLogo`
+- `file`
+- `fileMinus`
+- `filePlus`
+- `fileText`
+- `filter`
+- `fontBold`
+- `fontFamily`
+- `fontItalic`
+- `fontRoman`
+- `fontSize`
+- `fontStyle`
+- `frame`
+- `framerLogo`
+- `gear`
+- `githubLogo`
+- `globe`
+- `globe2`
+- `grid`
+- `group`
+- `half1`
+- `half2`
+- `hamburgerMenu`
+- `hand`
+- `heading`
+- `heart`
+- `heartFilled`
+- `height`
+- `hobbyKnife`
+- `home`
+- `iconjarLogo`
+- `idCard`
+- `image`
+- `infoCircled`
+- `input`
+- `instagramLogo`
+- `justifyCenter`
+- `justifyEnd`
+- `justifyStart`
+- `justifyStretch`
+- `keyboard`
+- `lapTimer`
+- `laptop`
+- `layers`
+- `layout`
+- `letterCaseCapitalize`
+- `letterCaseLowercase`
+- `letterCaseToggle`
+- `letterCaseUppercase`
+- `letterSpacing`
+- `lightningBolt`
+- `lineHeight`
+- `link1`
+- `link2`
+- `linkBreak1`
+- `linkBreak2`
+- `linkNone1`
+- `linkNone2`
+- `linkedinLogo`
+- `listBullet`
+- `lockClosed`
+- `lockOpen1`
+- `lockOpen2`
+- `loop`
+- `magicWand`
+- `magnifyingGlass`
+- `margin`
+- `maskOff`
+- `maskOn`
+- `minimize`
+- `minus`
+- `minusCircled`
+- `mix`
+- `mixerHorizontal`
+- `mixerVertical`
+- `mobile`
+- `modulzLogo`
+- `moon`
+- `move`
+- `notionLogo`
+- `opacity`
+- `openInNewWindow`
+- `overline`
+- `padding`
+- `panelBottom`
+- `panelBottomMinimized`
+- `panelLeft`
+- `panelLeftMinimized`
+- `panelRight`
+- `panelRightMinimized`
+- `paperPlane`
+- `pause`
+- `pencil1`
+- `pencil2`
+- `people`
+- `person`
+- `pieChart`
+- `pilcrow`
+- `pinBottom`
+- `pinLeft`
+- `pinRight`
+- `pinTop`
+- `play`
+- `plus`
+- `plusCircled`
+- `questionMark`
+- `questionMarkCircled`
+- `quote`
+- `radiobutton`
+- `reader`
+- `reload`
+- `reset`
+- `resume`
+- `rocket`
+- `rotateCounterClockwise`
+- `rowSpacing`
+- `rows`
+- `rulerHorizontal`
+- `rulerSquare`
+- `scissors`
+- `section`
+- `server`
+- `sewingPin`
+- `sewingPinFilled`
+- `shadow`
+- `shadowInner`
+- `shadowNone`
+- `shadowOuter`
+- `share1`
+- `share2`
+- `shuffle`
+- `size`
+- `sketchLogo`
+- `slash`
+- `slider`
+- `spaceBetweenHorizontally`
+- `spaceBetweenVertically`
+- `spaceEvenlyHorizontally`
+- `spaceEvenlyVertically`
+- `speakerLoud`
+- `speakerModerate`
+- `speakerOff`
+- `speakerQuiet`
+- `square`
+- `stack`
+- `star`
+- `starFilled`
+- `stitchesLogo`
+- `stop`
+- `stopwatch`
+- `stretchHorizontally`
+- `stretchVertically`
+- `strikethrough`
+- `sun`
+- `switch`
+- `symbol`
+- `table`
+- `target`
+- `text`
+- `textAlignBottom`
+- `textAlignCenter`
+- `textAlignJustify`
+- `textAlignLeft`
+- `textAlignMiddle`
+- `textAlignRight`
+- `textAlignTop`
+- `textNone`
+- `thickArrowDown`
+- `thickArrowLeft`
+- `thickArrowRight`
+- `thickArrowUp`
+- `timer`
+- `tokens`
+- `trackNext`
+- `trackPrevious`
+- `transform`
+- `transparencyGrid`
+- `trash`
+- `triangleDown`
+- `triangleLeft`
+- `triangleRight`
+- `triangleUp`
+- `twitterLogo`
+- `underline`
+- `update`
+- `upload`
+- `value`
+- `valueNone`
+- `vercelLogo`
+- `video`
+- `viewGrid`
+- `viewHorizontal`
+- `viewNone`
+- `viewVertical`
+- `width`
+- `zoomIn`
+- `zoomOut`
 
 ## Usage Examples
 
@@ -101,77 +511,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { accessibility, activityLog, alignBaseline, alignBottom } from '@stacksjs/iconify-radix-icons'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AccessibilityIcon, ActivityLogIcon, AlignBaselineIcon, AlignBottomIcon } from '@stacksjs/iconify-radix-icons'
 
   global.navIcons = {
-    accessibility: renderIcon(accessibility, { size: 20, class: 'nav-icon' }),
-    activityLog: renderIcon(activityLog, { size: 20, class: 'nav-icon' }),
-    alignBaseline: renderIcon(alignBaseline, { size: 20, class: 'nav-icon' }),
-    alignBottom: renderIcon(alignBottom, { size: 20, class: 'nav-icon' })
+    home: AccessibilityIcon({ size: 20, class: 'nav-icon' }),
+    about: ActivityLogIcon({ size: 20, class: 'nav-icon' }),
+    contact: AlignBaselineIcon({ size: 20, class: 'nav-icon' }),
+    settings: AlignBottomIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.accessibility !!} Home</a>
-  <a href="/about">{!! navIcons.activityLog !!} About</a>
-  <a href="/contact">{!! navIcons.alignBaseline !!} Contact</a>
-  <a href="/settings">{!! navIcons.alignBottom !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { accessibility } from '@stacksjs/iconify-radix-icons'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AccessibilityIcon } from '@stacksjs/iconify-radix-icons'
 
-const icon = renderIcon(accessibility, {
+const icon = AccessibilityIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-radix-icons'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AccessibilityIcon, ActivityLogIcon, AlignBaselineIcon } from '@stacksjs/iconify-radix-icons'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AccessibilityIcon({ size: 16, color: '#22c55e' })
+const warningIcon = ActivityLogIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = AlignBaselineIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { accessibility, activityLog } from '@stacksjs/iconify-radix-icons'
+   // Recommended
+   import { AccessibilityIcon, ActivityLogIcon } from '@stacksjs/iconify-radix-icons'
+   const icon = AccessibilityIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { accessibility, activityLog } from '@stacksjs/iconify-radix-icons'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(accessibility, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AccessibilityIcon, ActivityLogIcon } from '@stacksjs/iconify-radix-icons'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-radix-icons'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { accessibility } from '@stacksjs/iconify-radix-icons'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(accessibility, { size: 24 })
+     import { AccessibilityIcon } from '@stacksjs/iconify-radix-icons'
+     global.icon = AccessibilityIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +597,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AccessibilityIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

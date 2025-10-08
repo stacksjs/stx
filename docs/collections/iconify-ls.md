@@ -21,79 +21,495 @@ bun add @stacksjs/iconify-ls
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { 0Icon, 1Icon, 2Icon } from '@stacksjs/iconify-ls'
+
+// Basic usage
+const icon = 0Icon()
+
+// With size
+const sizedIcon = 0Icon({ size: 24 })
+
+// With color
+const coloredIcon = 1Icon({ color: 'red' })
+
+// With multiple props
+const customIcon = 2Icon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { 0, 1, 2 } from '@stacksjs/iconify-ls'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 0Icon, 1Icon, 2Icon } from '@stacksjs/iconify-ls'
 
   global.icons = {
-    0: renderIcon(0, { size: 24 }),
-    1: renderIcon(1, { size: 24, color: '#4a90e2' }),
-    2: renderIcon(2, { size: 32 })
+    home: 0Icon({ size: 24 }),
+    user: 1Icon({ size: 24, color: '#4a90e2' }),
+    settings: 2Icon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.0 !!}
-  {!! icons.1 !!}
-  {!! icons.2 !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { 0, 1, 2 } from '@stacksjs/iconify-ls'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(0, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(1, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(2, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = 0Icon({ color: 'red' })
+const blueIcon = 0Icon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = 0Icon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = 0Icon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = 0Icon({ size: 24 })
+const icon1em = 0Icon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = 0Icon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = 0Icon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = 0Icon({ class: 'icon-small' })
+const largeIcon = 0Icon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **348** icons. Here are some examples:
+This package contains **348** icons:
 
 - `0`
 - `1`
 - `2`
 - `3`
 - `4`
-
-...and 338 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/ls/).
+- `5`
+- `6`
+- `7`
+- `8`
+- `9`
+- `a`
+- `aUpperCase`
+- `addstar`
+- `adjust`
+- `aim`
+- `album`
+- `alignadjust`
+- `aligncenter`
+- `alignleft`
+- `alignright`
+- `amazon`
+- `ampersand`
+- `android`
+- `app`
+- `apple`
+- `arrowdown`
+- `arrowleft`
+- `arrowright`
+- `arrowup`
+- `asciicircum`
+- `asciitilde`
+- `asterisk`
+- `at`
+- `b`
+- `bUpperCase`
+- `back`
+- `backslash`
+- `backspace`
+- `bad`
+- `bag`
+- `ban`
+- `bar`
+- `barcode`
+- `bell`
+- `bicycle`
+- `bing`
+- `blogger`
+- `bold`
+- `book`
+- `bookmark`
+- `braceleft`
+- `braceright`
+- `bracketleft`
+- `bracketright`
+- `brush`
+- `buffalo`
+- `building`
+- `bus`
+- `c`
+- `cUpperCase`
+- `calendar`
+- `camera`
+- `car`
+- `category`
+- `check`
+- `checkbox`
+- `checkboxempty`
+- `chrome`
+- `cinnamon`
+- `circle`
+- `clear`
+- `clip`
+- `cloud`
+- `code`
+- `coffee`
+- `college`
+- `colon`
+- `comma`
+- `comment`
+- `comments`
+- `compass`
+- `cookpad`
+- `copy`
+- `crop`
+- `crown`
+- `cursor`
+- `cut`
+- `d`
+- `dUpperCase`
+- `dailycalendar`
+- `dark`
+- `dashboard`
+- `delicious`
+- `digg`
+- `dollar`
+- `down`
+- `download`
+- `dribbble`
+- `dropbox`
+- `dropdown`
+- `e`
+- `eUpperCase`
+- `edit`
+- `eject`
+- `emdash`
+- `emphasis`
+- `endash`
+- `equal`
+- `eraser`
+- `etc`
+- `evernote`
+- `exchange`
+- `exclam`
+- `external`
+- `f`
+- `fUpperCase`
+- `facebook`
+- `female`
+- `file`
+- `firefox`
+- `flag`
+- `flickr`
+- `folder`
+- `forward`
+- `foursquare`
+- `friend`
+- `frustrate`
+- `full`
+- `g`
+- `gUpperCase`
+- `game`
+- `gear`
+- `geo`
+- `github`
+- `globe`
+- `good`
+- `google`
+- `grab`
+- `graph`
+- `grayscale`
+- `gree`
+- `group`
+- `guillemotleft`
+- `guillemotright`
+- `guilsinglleft`
+- `guilsinglright`
+- `gumroad`
+- `h`
+- `hUpperCase`
+- `hatena`
+- `hatenabookmark`
+- `heart`
+- `heartempty`
+- `help`
+- `heteml`
+- `home`
+- `horizontal`
+- `hot`
+- `hyphen`
+- `i`
+- `iUpperCase`
+- `image`
+- `info`
+- `ink`
+- `instagram`
+- `instapaper`
+- `internetexplorer`
+- `invert`
+- `iphone`
+- `italic`
+- `j`
+- `jUpperCase`
+- `jpa`
+- `k`
+- `kUpperCase`
+- `key`
+- `keyboard`
+- `kudakurage`
+- `l`
+- `lUpperCase`
+- `laugh`
+- `left`
+- `light`
+- `line`
+- `link`
+- `linkedin`
+- `list`
+- `location`
+- `lock`
+- `login`
+- `logout`
+- `ltthon`
+- `m`
+- `mUpperCase`
+- `magic`
+- `mail`
+- `male`
+- `map`
+- `meal`
+- `memo`
+- `menu`
+- `minus`
+- `mixi`
+- `mobage`
+- `move`
+- `music`
+- `myspace`
+- `n`
+- `nUpperCase`
+- `next`
+- `notify`
+- `numbersign`
+- `o`
+- `oUpperCase`
+- `off`
+- `opera`
+- `ordble`
+- `p`
+- `pUpperCase`
+- `paint`
+- `palette`
+- `paperboy`
+- `paramater`
+- `parenleft`
+- `parenright`
+- `pause`
+- `pc`
+- `pencil`
+- `percent`
+- `period`
+- `periodcentered`
+- `phone`
+- `photo`
+- `picasa`
+- `pin`
+- `pinterest`
+- `plane`
+- `play`
+- `playmedia`
+- `plus`
+- `pointer`
+- `present`
+- `print`
+- `q`
+- `qUpperCase`
+- `question`
+- `quote`
+- `quotedbl`
+- `quotesingle`
+- `r`
+- `rUpperCase`
+- `readability`
+- `record`
+- `refresh`
+- `refreshbutton`
+- `remove`
+- `repeat`
+- `reply`
+- `right`
+- `rss`
+- `s`
+- `sUpperCase`
+- `safari`
+- `save`
+- `search`
+- `semicolon`
+- `sepia`
+- `server`
+- `share`
+- `shopping`
+- `shuffle`
+- `sitemap`
+- `skype`
+- `slash`
+- `sleipnir`
+- `slideshare`
+- `small`
+- `smile`
+- `sns`
+- `sort`
+- `soundcloud`
+- `spa`
+- `sqale`
+- `star`
+- `starempty`
+- `stop`
+- `strike`
+- `surprise`
+- `sync`
+- `t`
+- `tUpperCase`
+- `tabezou`
+- `table`
+- `tabs`
+- `tag`
+- `terminal`
+- `tile`
+- `tilemenu`
+- `time`
+- `trash`
+- `trouble`
+- `tumblr`
+- `twitter`
+- `u`
+- `uUpperCase`
+- `ubuntu`
+- `umbrella`
+- `underline`
+- `underscore`
+- `undo`
+- `unlock`
+- `up`
+- `upload`
+- `user`
+- `ustream`
+- `v`
+- `vUpperCase`
+- `vertical`
+- `video`
+- `view`
+- `vimeo`
+- `vk`
+- `volume`
+- `volumedown`
+- `volumeup`
+- `w`
+- `wUpperCase`
+- `walking`
+- `web`
+- `wifi`
+- `windows`
+- `wink`
+- `wordpress`
+- `wrench`
+- `x`
+- `xUpperCase`
+- `y`
+- `yUpperCase`
+- `yahoo`
+- `yapcasia`
+- `yapcasialogo`
+- `yapcasialogomark`
+- `yelp`
+- `youtube`
+- `z`
+- `zUpperCase`
+- `zoomin`
+- `zoomout`
 
 ## Usage Examples
 
@@ -101,77 +517,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { 0, 1, 2, 3 } from '@stacksjs/iconify-ls'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 0Icon, 1Icon, 2Icon, 3Icon } from '@stacksjs/iconify-ls'
 
   global.navIcons = {
-    0: renderIcon(0, { size: 20, class: 'nav-icon' }),
-    1: renderIcon(1, { size: 20, class: 'nav-icon' }),
-    2: renderIcon(2, { size: 20, class: 'nav-icon' }),
-    3: renderIcon(3, { size: 20, class: 'nav-icon' })
+    home: 0Icon({ size: 20, class: 'nav-icon' }),
+    about: 1Icon({ size: 20, class: 'nav-icon' }),
+    contact: 2Icon({ size: 20, class: 'nav-icon' }),
+    settings: 3Icon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.0 !!} Home</a>
-  <a href="/about">{!! navIcons.1 !!} About</a>
-  <a href="/contact">{!! navIcons.2 !!} Contact</a>
-  <a href="/settings">{!! navIcons.3 !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { 0 } from '@stacksjs/iconify-ls'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 0Icon } from '@stacksjs/iconify-ls'
 
-const icon = renderIcon(0, {
+const icon = 0Icon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-ls'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 0Icon, 1Icon, 2Icon } from '@stacksjs/iconify-ls'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = 0Icon({ size: 16, color: '#22c55e' })
+const warningIcon = 1Icon({ size: 16, color: '#f59e0b' })
+const errorIcon = 2Icon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { 0, 1 } from '@stacksjs/iconify-ls'
+   // Recommended
+   import { 0Icon, 1Icon } from '@stacksjs/iconify-ls'
+   const icon = 0Icon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { 0, 1 } from '@stacksjs/iconify-ls'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(0, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { 0Icon, 1Icon } from '@stacksjs/iconify-ls'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-ls'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { 0 } from '@stacksjs/iconify-ls'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(0, { size: 24 })
+     import { 0Icon } from '@stacksjs/iconify-ls'
+     global.icon = 0Icon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +603,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = 0Icon({ class: 'icon' })
    ```
 
 ## TypeScript Support

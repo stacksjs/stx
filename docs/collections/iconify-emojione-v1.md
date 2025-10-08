@@ -21,79 +21,1400 @@ bun add @stacksjs/iconify-emojione-v1
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AButtonIcon, AbButtonIcon, AdmissionTicketsIcon } from '@stacksjs/iconify-emojione-v1'
+
+// Basic usage
+const icon = AButtonIcon()
+
+// With size
+const sizedIcon = AButtonIcon({ size: 24 })
+
+// With color
+const coloredIcon = AbButtonIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = AdmissionTicketsIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { aButton, abButton, admissionTickets } from '@stacksjs/iconify-emojione-v1'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AButtonIcon, AbButtonIcon, AdmissionTicketsIcon } from '@stacksjs/iconify-emojione-v1'
 
   global.icons = {
-    aButton: renderIcon(aButton, { size: 24 }),
-    abButton: renderIcon(abButton, { size: 24, color: '#4a90e2' }),
-    admissionTickets: renderIcon(admissionTickets, { size: 32 })
+    home: AButtonIcon({ size: 24 }),
+    user: AbButtonIcon({ size: 24, color: '#4a90e2' }),
+    settings: AdmissionTicketsIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.aButton !!}
-  {!! icons.abButton !!}
-  {!! icons.admissionTickets !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { aButton, abButton, admissionTickets } from '@stacksjs/iconify-emojione-v1'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(aButton, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(abButton, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(admissionTickets, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Color Icons
+
+This collection contains color icons. While you can still set a color property, it may override the original colors.
+
+```typescript
+// Via color property
+const redIcon = AButtonIcon({ color: 'red' })
+const blueIcon = AButtonIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AButtonIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AButtonIcon({ class: 'text-primary' })
+```
+
+
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AButtonIcon({ size: 24 })
+const icon1em = AButtonIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AButtonIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AButtonIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AButtonIcon({ class: 'icon-small' })
+const largeIcon = AButtonIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **1262** icons. Here are some examples:
+This package contains **1262** icons:
 
 - `aButton`
 - `abButton`
 - `admissionTickets`
 - `aerialTramway`
 - `airplane`
-
-...and 1252 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/emojione-v1/).
+- `airplaneArrival`
+- `airplaneDeparture`
+- `alarmClock`
+- `alien`
+- `alienMonster`
+- `ambulance`
+- `americanFootball`
+- `anchor`
+- `angerSymbol`
+- `angryFace`
+- `angryFaceWithHorns`
+- `anguishedFace`
+- `ant`
+- `antennaBars`
+- `anxiousFaceWithSweat`
+- `aquarius`
+- `aries`
+- `articulatedLorry`
+- `artistPalette`
+- `astonishedFace`
+- `atmSign`
+- `automobile`
+- `bButton`
+- `baby`
+- `babyAngel`
+- `babyBottle`
+- `babyChick`
+- `babySymbol`
+- `backArrow`
+- `backOfEnvelope`
+- `backhandIndexPointingDown`
+- `backhandIndexPointingLeft`
+- `backhandIndexPointingRight`
+- `backhandIndexPointingUp`
+- `backpack`
+- `baggageClaim`
+- `balloon`
+- `ballotBoxBoldCheck`
+- `ballotBoxWithBallot`
+- `ballotBoxWithCheck`
+- `ballotBoxWithScriptX`
+- `ballotScriptX`
+- `banana`
+- `bank`
+- `barChart`
+- `barberPole`
+- `baseball`
+- `basketball`
+- `bathtub`
+- `battery`
+- `beachWithUmbrella`
+- `beamingFaceWithSmilingEyes`
+- `bearFace`
+- `beatingHeart`
+- `bed`
+- `beerMug`
+- `bell`
+- `bellWithSlash`
+- `bellhopBell`
+- `bentoBox`
+- `bicycle`
+- `bikini`
+- `bird`
+- `birthdayCake`
+- `blackCircle`
+- `blackHardShellFloppy`
+- `blackLargeSquare`
+- `blackMediumSmallSquare`
+- `blackMediumSquare`
+- `blackNib`
+- `blackPennant`
+- `blackPushPin`
+- `blackRosette`
+- `blackSkullCrossBones`
+- `blackSmallSquare`
+- `blackSquareButton`
+- `blackTouchToneTelephone`
+- `blondHairedPerson`
+- `blossom`
+- `blowfish`
+- `blueBook`
+- `blueCircle`
+- `blueHeart`
+- `boar`
+- `bomb`
+- `book2`
+- `bookmark`
+- `bookmarkTabs`
+- `books`
+- `bouquet`
+- `bouquetOfFlowers`
+- `bowling`
+- `boy`
+- `boysSymbol`
+- `bread`
+- `brideWithVeil`
+- `bridgeAtNight`
+- `briefcase`
+- `brightButton`
+- `brokenHeart`
+- `bug`
+- `buildingConstruction`
+- `bullHorn`
+- `bullHornWithSoundWaves`
+- `bulletTrain`
+- `bus`
+- `busStop`
+- `bustInSilhouette`
+- `bustsInSilhouette`
+- `cactus`
+- `calendar`
+- `camel`
+- `camera`
+- `cameraWithFlash`
+- `camping`
+- `cancellationX`
+- `cancer`
+- `candle`
+- `candy`
+- `capricorn`
+- `cardFileBox`
+- `cardIndex`
+- `cardIndexDividers`
+- `carouselHorse`
+- `carpStreamer`
+- `castle`
+- `cat`
+- `catFace`
+- `catFaceWithTearsOfJoy`
+- `catFaceWithWrySmile`
+- `celticCross`
+- `chartDecreasing`
+- `chartIncreasing`
+- `chartIncreasingWithYen`
+- `cherries`
+- `cherryBlossom`
+- `chestnut`
+- `chicken`
+- `childrenCrossing`
+- `chipmunk`
+- `chocolateBar`
+- `christmasTree`
+- `church`
+- `cigarette`
+- `cinema`
+- `circledInformationSource`
+- `circledM`
+- `circusTent`
+- `cityscape`
+- `cityscapeAtDusk`
+- `clButton`
+- `clamShellMobile`
+- `clamp`
+- `clapperBoard`
+- `clappingHands`
+- `classicalBuilding`
+- `clinkingBeerMugs`
+- `clipboard`
+- `clockwiseLeftRightArrows`
+- `clockwiseVerticalArrows`
+- `closedBook`
+- `closedMailboxWithLoweredFlag`
+- `closedMailboxWithRaisedFlag`
+- `closedUmbrella`
+- `cloud`
+- `cloudWithLightning`
+- `cloudWithRain`
+- `cloudWithSnow`
+- `clubSuit`
+- `clutchBag`
+- `cocktailGlass`
+- `collision`
+- `computerDisk`
+- `confettiBall`
+- `confoundedFace`
+- `confusedFace`
+- `construction`
+- `constructionWorker`
+- `controlKnobs`
+- `convenienceStore`
+- `cookedRice`
+- `cookie`
+- `cooking`
+- `coolButton`
+- `copyright`
+- `couchAndLamp`
+- `counterclockwiseArrowsButton`
+- `coupleWithHeart`
+- `coupleWithHeartManMan`
+- `coupleWithHeartWomanWoman`
+- `cow`
+- `cowFace`
+- `crayon`
+- `creditCard`
+- `crescentMoon`
+- `crocodile`
+- `crossMark`
+- `crossMarkButton`
+- `crown`
+- `cryingCatFace`
+- `cryingFace`
+- `crystalBall`
+- `curlyLoop`
+- `currencyExchange`
+- `curryRice`
+- `custard`
+- `customs`
+- `cyclone`
+- `dagger`
+- `dango`
+- `dashingAway`
+- `deciduousTree`
+- `deliveryTruck`
+- `departmentStore`
+- `derelictHouse`
+- `desert`
+- `desertIsland`
+- `desktopComputer`
+- `detective`
+- `diamondSuit`
+- `diamondWithADot`
+- `dieselLocomotive`
+- `dimButton`
+- `directHit`
+- `disappointedFace`
+- `dizzy`
+- `dizzyFace`
+- `document`
+- `documentWithText`
+- `dog`
+- `dogFace`
+- `dollarBanknote`
+- `dolphin`
+- `door`
+- `dottedSixPointedStar`
+- `doubleCurlyLoop`
+- `doubleExclamationMark`
+- `doughnut`
+- `dove`
+- `downArrow`
+- `downLeftArrow`
+- `downRightArrow`
+- `downcastFaceWithSweat`
+- `downwardsButton`
+- `dragon`
+- `dragonFace`
+- `dress`
+- `droplet`
+- `dvd`
+- `eMail`
+- `ear`
+- `earOfCorn`
+- `eggplant`
+- `eightOclock`
+- `eightPointedStar`
+- `eightSpokedAsterisk`
+- `eightThirty`
+- `electricPlug`
+- `elephant`
+- `elevenOclock`
+- `elevenThirty`
+- `emptyNotePad`
+- `emptyNotePage`
+- `endArrow`
+- `envelope`
+- `envelopeWithArrow`
+- `euroBanknote`
+- `evergreenTree`
+- `ewe`
+- `exclamationMark`
+- `exclamationQuestionMark`
+- `expressionlessFace`
+- `eye`
+- `eyes`
+- `faceBlowingAKiss`
+- `faceSavoringFood`
+- `faceScreamingInFear`
+- `faceWithMedicalMask`
+- `faceWithOpenMouth`
+- `faceWithSteamFromNose`
+- `faceWithTearsOfJoy`
+- `faceWithTongue`
+- `faceWithoutMouth`
+- `factory`
+- `fallenLeaf`
+- `family`
+- `familyManManBoy`
+- `familyManManBoyBoy`
+- `familyManManGirl`
+- `familyManManGirlBoy`
+- `familyManManGirlGirl`
+- `familyManWomanBoyBoy`
+- `familyManWomanGirl`
+- `familyManWomanGirlBoy`
+- `familyManWomanGirlGirl`
+- `familyWomanWomanBoy`
+- `familyWomanWomanBoyBoy`
+- `familyWomanWomanGirl`
+- `familyWomanWomanGirlBoy`
+- `familyWomanWomanGirlGirl`
+- `fastDownButton`
+- `fastForwardButton`
+- `fastReverseButton`
+- `fastUpButton`
+- `faxMachine`
+- `fearfulFace`
+- `ferrisWheel`
+- `fileCabinet`
+- `fileFolder`
+- `filmFrames`
+- `filmProjector`
+- `fire`
+- `fireEngine`
+- `fireworks`
+- `firstQuarterMoon`
+- `firstQuarterMoonFace`
+- `fish`
+- `fishCakeWithSwirl`
+- `fishingPole`
+- `fiveOclock`
+- `fiveThirty`
+- `flagForAfghanistan`
+- `flagForAlbania`
+- `flagForAlgeria`
+- `flagForAndorra`
+- `flagForAngola`
+- `flagForAnguilla`
+- `flagForAntiguaAndBarbuda`
+- `flagForArgentina`
+- `flagForArmenia`
+- `flagForAruba`
+- `flagForAscensionIsland`
+- `flagForAustralia`
+- `flagForAustria`
+- `flagForAzerbaijan`
+- `flagForBahamas`
+- `flagForBahrain`
+- `flagForBangladesh`
+- `flagForBarbados`
+- `flagForBelarus`
+- `flagForBelgium`
+- `flagForBelize`
+- `flagForBenin`
+- `flagForBermuda`
+- `flagForBhutan`
+- `flagForBlackFlag`
+- `flagForBolivia`
+- `flagForBosniaAndHerzegovina`
+- `flagForBotswana`
+- `flagForBrazil`
+- `flagForBrunei`
+- `flagForBulgaria`
+- `flagForBurkinaFaso`
+- `flagForBurundi`
+- `flagForCambodia`
+- `flagForCameroon`
+- `flagForCanada`
+- `flagForCapeVerde`
+- `flagForCaymanIslands`
+- `flagForCentralAfricanRepublic`
+- `flagForChad`
+- `flagForChequeredFlag`
+- `flagForChile`
+- `flagForChina`
+- `flagForColombia`
+- `flagForComoros`
+- `flagForCongoBrazzaville`
+- `flagForCongoKinshasa`
+- `flagForCostaRica`
+- `flagForCoteDivoire`
+- `flagForCroatia`
+- `flagForCrossedFlags`
+- `flagForCuba`
+- `flagForCyprus`
+- `flagForCzechia`
+- `flagForDenmark`
+- `flagForDjibouti`
+- `flagForDominica`
+- `flagForDominicanRepublic`
+- `flagForEcuador`
+- `flagForEgypt`
+- `flagForElSalvador`
+- `flagForEquatorialGuinea`
+- `flagForEritrea`
+- `flagForEstonia`
+- `flagForEthiopia`
+- `flagForFalklandIslands`
+- `flagForFaroeIslands`
+- `flagForFiji`
+- `flagForFinland`
+- `flagForFrance`
+- `flagForFrenchPolynesia`
+- `flagForGabon`
+- `flagForGambia`
+- `flagForGeorgia`
+- `flagForGermany`
+- `flagForGhana`
+- `flagForGibraltar`
+- `flagForGreece`
+- `flagForGreenland`
+- `flagForGrenada`
+- `flagForGuam`
+- `flagForGuatemala`
+- `flagForGuinea`
+- `flagForGuineaBissau`
+- `flagForGuyana`
+- `flagForHaiti`
+- `flagForHonduras`
+- `flagForHongKongSarChina`
+- `flagForHungary`
+- `flagForIceland`
+- `flagForIndia`
+- `flagForIndonesia`
+- `flagForIran`
+- `flagForIraq`
+- `flagForIreland`
+- `flagForIsrael`
+- `flagForItaly`
+- `flagForJamaica`
+- `flagForJapan`
+- `flagForJersey`
+- `flagForJordan`
+- `flagForKazakhstan`
+- `flagForKenya`
+- `flagForKiribati`
+- `flagForKosovo`
+- `flagForKuwait`
+- `flagForKyrgyzstan`
+- `flagForLaos`
+- `flagForLatvia`
+- `flagForLebanon`
+- `flagForLesotho`
+- `flagForLiberia`
+- `flagForLibya`
+- `flagForLiechtenstein`
+- `flagForLithuania`
+- `flagForLuxembourg`
+- `flagForMacauSarChina`
+- `flagForMacedonia`
+- `flagForMadagascar`
+- `flagForMalawi`
+- `flagForMalaysia`
+- `flagForMaldives`
+- `flagForMali`
+- `flagForMalta`
+- `flagForMarshallIslands`
+- `flagForMauritania`
+- `flagForMauritius`
+- `flagForMexico`
+- `flagForMicronesia`
+- `flagForMoldova`
+- `flagForMonaco`
+- `flagForMongolia`
+- `flagForMontenegro`
+- `flagForMontserrat`
+- `flagForMorocco`
+- `flagForMozambique`
+- `flagForMyanmar`
+- `flagForNamibia`
+- `flagForNauru`
+- `flagForNepal`
+- `flagForNetherlands`
+- `flagForNewCaledonia`
+- `flagForNewZealand`
+- `flagForNicaragua`
+- `flagForNiger`
+- `flagForNigeria`
+- `flagForNiue`
+- `flagForNorthKorea`
+- `flagForNorway`
+- `flagForOman`
+- `flagForPakistan`
+- `flagForPalau`
+- `flagForPalestinianTerritories`
+- `flagForPanama`
+- `flagForPapuaNewGuinea`
+- `flagForParaguay`
+- `flagForPeru`
+- `flagForPhilippines`
+- `flagForPoland`
+- `flagForPortugal`
+- `flagForPuertoRico`
+- `flagForQatar`
+- `flagForRomania`
+- `flagForRussia`
+- `flagForRwanda`
+- `flagForSamoa`
+- `flagForSanMarino`
+- `flagForSaoTomeAndPrincipe`
+- `flagForSaudiArabia`
+- `flagForSenegal`
+- `flagForSerbia`
+- `flagForSeychelles`
+- `flagForSierraLeone`
+- `flagForSingapore`
+- `flagForSlovakia`
+- `flagForSlovenia`
+- `flagForSolomonIslands`
+- `flagForSomalia`
+- `flagForSouthAfrica`
+- `flagForSouthKorea`
+- `flagForSpain`
+- `flagForSriLanka`
+- `flagForStHelena`
+- `flagForStKittsAndNevis`
+- `flagForStLucia`
+- `flagForStVincentAndGrenadines`
+- `flagForSudan`
+- `flagForSuriname`
+- `flagForSwaziland`
+- `flagForSweden`
+- `flagForSwitzerland`
+- `flagForSyria`
+- `flagForTaiwan`
+- `flagForTajikistan`
+- `flagForTanzania`
+- `flagForThailand`
+- `flagForTimorLeste`
+- `flagForTogo`
+- `flagForTonga`
+- `flagForTriangularFlag`
+- `flagForTrinidadAndTobago`
+- `flagForTunisia`
+- `flagForTurkey`
+- `flagForTurkmenistan`
+- `flagForTuvalu`
+- `flagForUganda`
+- `flagForUkraine`
+- `flagForUnitedArabEmirates`
+- `flagForUnitedKingdom`
+- `flagForUnitedStates`
+- `flagForUruguay`
+- `flagForUsVirginIslands`
+- `flagForUzbekistan`
+- `flagForVanuatu`
+- `flagForVaticanCity`
+- `flagForVenezuela`
+- `flagForVietnam`
+- `flagForWallisAndFutuna`
+- `flagForWesternSahara`
+- `flagForWhiteFlag`
+- `flagForYemen`
+- `flagForZambia`
+- `flagForZimbabwe`
+- `flagInHole`
+- `flashlight`
+- `flexedBiceps`
+- `floppyDisk`
+- `flowerPlayingCards`
+- `flushedFace`
+- `flyingEnvelope`
+- `fog`
+- `foggy`
+- `foldedHands`
+- `folder`
+- `footprints`
+- `forkAndKnife`
+- `forkAndKnifeWithPlate`
+- `fountain`
+- `fountainPen`
+- `fourLeafClover`
+- `fourOclock`
+- `fourThirty`
+- `frameWithTiles`
+- `frameWithX`
+- `framedPicture`
+- `freeButton`
+- `frenchFries`
+- `friedShrimp`
+- `frogFace`
+- `frontFacingBabyChick`
+- `frowningFaceWithOpenMouth`
+- `fuelPump`
+- `fullMoon`
+- `fullMoonFace`
+- `gameDie`
+- `gemStone`
+- `gemini`
+- `ghost`
+- `girl`
+- `girlsSymbol`
+- `glasses`
+- `globeShowingAmericas`
+- `globeShowingAsiaAustralia`
+- `globeShowingEuropeAfrica`
+- `globeWithMeridians`
+- `glowingStar`
+- `goat`
+- `goblin`
+- `graduationCap`
+- `grapes`
+- `greenApple`
+- `greenBook`
+- `greenHeart`
+- `grimacingFace`
+- `grinningCatFace`
+- `grinningCatFaceWithSmilingEyes`
+- `grinningFace`
+- `grinningFaceWithBigEyes`
+- `grinningFaceWithSmilingEyes`
+- `grinningFaceWithSweat`
+- `grinningSquintingFace`
+- `growingHeart`
+- `guard`
+- `guitar`
+- `hamburger`
+- `hammer`
+- `hammerAndWrench`
+- `hamsterFace`
+- `handWithFingersSplayed`
+- `handbag`
+- `hardDisk`
+- `hatchingChick`
+- `headphone`
+- `hearNoEvilMonkey`
+- `heartDecoration`
+- `heartLeftTip`
+- `heartSuit`
+- `heartWithArrow`
+- `heartWithRibbon`
+- `heavyCheckMark`
+- `heavyDivisionSign`
+- `heavyDollarSign`
+- `heavyLargeCircle`
+- `heavyLatinCross`
+- `heavyMinusSign`
+- `heavyMultiplicationX`
+- `heavyPlusSign`
+- `helicopter`
+- `herb`
+- `hibiscus`
+- `highHeeledShoe`
+- `highSpeedTrain`
+- `highVoltage`
+- `hole`
+- `honeyPot`
+- `honeybee`
+- `horizontalTrafficLight`
+- `horse`
+- `horseFace`
+- `horseRacing`
+- `hospital`
+- `hotBeverage`
+- `hotPepper`
+- `hotSprings`
+- `hotel`
+- `hourglassDone`
+- `hourglassNotDone`
+- `house`
+- `houseWithGarden`
+- `houses`
+- `hundredPoints`
+- `hushedFace`
+- `iceCream`
+- `idButton`
+- `inboxTray`
+- `incomingEnvelope`
+- `indexPointingUp`
+- `information`
+- `inputLatinLetters`
+- `inputLatinLowercase`
+- `inputLatinUppercase`
+- `inputNumbers`
+- `inputSymbols`
+- `jackOLantern`
+- `japaneseAcceptableButton`
+- `japaneseApplicationButton`
+- `japaneseBargainButton`
+- `japaneseCastle`
+- `japaneseCongratulationsButton`
+- `japaneseDiscountButton`
+- `japaneseDolls`
+- `japaneseFreeOfChargeButton`
+- `japaneseHereButton`
+- `japaneseMonthlyAmountButton`
+- `japaneseNoVacancyButton`
+- `japaneseNotFreeOfChargeButton`
+- `japaneseOpenForBusinessButton`
+- `japanesePassingGradeButton`
+- `japanesePostOffice`
+- `japaneseProhibitedButton`
+- `japaneseReservedButton`
+- `japaneseSecretButton`
+- `japaneseServiceChargeButton`
+- `japaneseSymbolForBeginner`
+- `japaneseVacancyButton`
+- `jeans`
+- `joker`
+- `joystick`
+- `key`
+- `keyboard`
+- `keyboardAndMouse`
+- `keycap0`
+- `keycap1`
+- `keycap10`
+- `keycap2`
+- `keycap3`
+- `keycap4`
+- `keycap5`
+- `keycap6`
+- `keycap7`
+- `keycap8`
+- `keycap9`
+- `keycapPound`
+- `kimono`
+- `kiss`
+- `kissManMan`
+- `kissMark`
+- `kissWomanWoman`
+- `kissingCatFace`
+- `kissingFace`
+- `kissingFaceWithClosedEyes`
+- `kissingFaceWithSmilingEyes`
+- `kitchenKnife`
+- `koala`
+- `label`
+- `ladyBeetle`
+- `laptopComputer`
+- `largeBlueDiamond`
+- `largeOrangeDiamond`
+- `lastQuarterMoon`
+- `lastQuarterMoonFace`
+- `leafFlutteringInWind`
+- `ledger`
+- `leftAngerBubble`
+- `leftArrow`
+- `leftArrowCurvingRight`
+- `leftCheckMark`
+- `leftHandPhone`
+- `leftLuggage`
+- `leftRightArrow`
+- `leftSpeechBubble`
+- `leftThoughtBubble`
+- `leftWritingHand`
+- `lemon`
+- `leo`
+- `leopard`
+- `levelSlider`
+- `libra`
+- `lightBulb`
+- `lightRail`
+- `lightningMood`
+- `lightningMoodBubble`
+- `link`
+- `linkedPaperclips`
+- `lips2`
+- `lipstick`
+- `litterInBinSign`
+- `locked`
+- `lockedWithKey`
+- `lockedWithPen`
+- `locomotive`
+- `lollipop`
+- `loudlyCryingFace`
+- `loudspeaker`
+- `loveHotel`
+- `loveLetter`
+- `lowerLeftPencil`
+- `magnifyingGlassTiltedLeft`
+- `magnifyingGlassTiltedRight`
+- `mahjongRedDragon`
+- `man`
+- `manAndWomanHoldingHands`
+- `manInSuitLevitating`
+- `manWithChineseCap`
+- `mansShoe`
+- `mantelpieceClock`
+- `mapOfJapan`
+- `mapleLeaf`
+- `meatOnBone`
+- `megaphone`
+- `melon`
+- `memo`
+- `mensRoom`
+- `metro`
+- `microphone`
+- `microscope`
+- `middleFinger`
+- `militaryMedal`
+- `milkyWay`
+- `minibus`
+- `moai`
+- `mobilePhone`
+- `mobilePhoneOff`
+- `mobilePhoneWithArrow`
+- `moneyBag`
+- `moneyWithWings`
+- `monkey`
+- `monkeyFace`
+- `monorail`
+- `moodBubble`
+- `moonViewingCeremony`
+- `motorBoat`
+- `motorcycle`
+- `motorway`
+- `mountFuji`
+- `mountainCableway`
+- `mountainRailway`
+- `mouse`
+- `mouseFace`
+- `mouth`
+- `movieCamera`
+- `mushroom`
+- `musicAscend`
+- `musicDescend`
+- `musicalKeyboard`
+- `musicalNote`
+- `musicalNotes`
+- `musicalScore`
+- `mutedSpeaker`
+- `nailPolish`
+- `nameBadge`
+- `nationalPark`
+- `necktie`
+- `neutralFace`
+- `newButton`
+- `newMoon`
+- `newMoonFace`
+- `newspaper`
+- `ngButton`
+- `nightWithStars`
+- `nineOclock`
+- `nineThirty`
+- `noBicycles`
+- `noEntry`
+- `noLittering`
+- `noMobilePhones`
+- `noOneUnderEighteen`
+- `noPedestrians`
+- `noPiracy`
+- `noSmoking`
+- `nonPotableWater`
+- `northeastPointingAirplane`
+- `nose`
+- `notePad`
+- `notePage`
+- `notebook`
+- `notebookWithDecorativeCover`
+- `nutAndBolt`
+- `oButton`
+- `octopus`
+- `oden`
+- `officeBuilding`
+- `ogre`
+- `oilDrum`
+- `okButton`
+- `okHand`
+- `oldKey`
+- `oldMan`
+- `oldPersonalComputer`
+- `oldWoman`
+- `om`
+- `onArrow`
+- `oncomingAutomobile`
+- `oncomingBus`
+- `oncomingFireEngine`
+- `oncomingFist`
+- `oncomingPoliceCar`
+- `oncomingTaxi`
+- `oneButtonMouse`
+- `oneOclock`
+- `oneThirty`
+- `openBook`
+- `openFileFolder`
+- `openFolder`
+- `openHands`
+- `openMailboxWithLoweredFlag`
+- `openMailboxWithRaisedFlag`
+- `ophiuchus`
+- `opticalDiscIcon`
+- `opticalDisk`
+- `orangeBook`
+- `outboxTray`
+- `ox`
+- `pButton`
+- `package`
+- `page`
+- `pageFacingUp`
+- `pageWithCurl`
+- `pager`
+- `pages`
+- `paintbrush`
+- `palmTree`
+- `pandaFace`
+- `paperclip`
+- `partAlternationMark`
+- `partyPopper`
+- `passengerShip`
+- `passportControl`
+- `pawPrints`
+- `peach`
+- `pear`
+- `pen`
+- `penOverStampedEnvelope`
+- `pencil`
+- `penguin`
+- `pensiveFace`
+- `peopleWithBunnyEars`
+- `performingArts`
+- `perseveringFace`
+- `personBiking`
+- `personBowing`
+- `personFrowning`
+- `personGesturingNo`
+- `personGesturingOk`
+- `personGettingHaircut`
+- `personGettingMassage`
+- `personGolfing`
+- `personInBed`
+- `personLiftingWeights`
+- `personMountainBiking`
+- `personPouting`
+- `personRaisingHand`
+- `personRowingBoat`
+- `personRunning`
+- `personSurfing`
+- `personSwimming`
+- `personTakingBath`
+- `personTippingHand`
+- `personWalking`
+- `personWearingTurban`
+- `pig`
+- `pigFace`
+- `pigNose`
+- `pileOfPoo`
+- `pill`
+- `pineDecoration`
+- `pineapple`
+- `pisces`
+- `pistol`
+- `pizza`
+- `playButton`
+- `pocketCalculator`
+- `policeCar`
+- `policeCarLight`
+- `policeOfficer`
+- `poodle`
+- `pool8Ball`
+- `portableStereo`
+- `postOffice`
+- `postalHorn`
+- `postbox`
+- `potOfFood`
+- `potableWater`
+- `poultryLeg`
+- `poundBanknote`
+- `poutingCatFace`
+- `poutingFace`
+- `princess`
+- `printer`
+- `prohibited`
+- `prohibitedSign`
+- `purpleHeart`
+- `purse`
+- `pushpin`
+- `questionMark`
+- `rabbit`
+- `rabbitFace`
+- `racingCar`
+- `radio`
+- `radioButton`
+- `railwayCar`
+- `railwayTrack`
+- `rainbow`
+- `raisedFist`
+- `raisedHand`
+- `raisingHands`
+- `ram`
+- `rat`
+- `recyclingSymbol`
+- `redApple`
+- `redCircle`
+- `redHeart`
+- `redPaperLantern`
+- `redTrianglePointedDown`
+- `redTrianglePointedUp`
+- `registered`
+- `relievedFace`
+- `reminderRibbon`
+- `repeatButton`
+- `repeatSingleButton`
+- `restroom`
+- `reverseButton`
+- `reverseRaisedHandsFingersSplayed`
+- `reverseThumbsDown`
+- `reverseThumbsUp`
+- `reverseVictoryHand`
+- `revolvingHearts`
+- `ribbon`
+- `riceBall`
+- `riceCracker`
+- `rightAngerBubble`
+- `rightArrow`
+- `rightArrowCurvingDown`
+- `rightArrowCurvingLeft`
+- `rightArrowCurvingUp`
+- `rightSpeaker`
+- `rightSpeaker3SoundWaves`
+- `rightSpeechBubble`
+- `rightThoughtBubble`
+- `ring`
+- `ringingBell`
+- `roastedSweetPotato`
+- `rocket`
+- `rolledUpNewspaper`
+- `rollerCoaster`
+- `rooster`
+- `rose`
+- `rosette`
+- `roundPushpin`
+- `roundedCorners`
+- `rugbyFootball`
+- `runningShirt`
+- `runningShoe`
+- `sadButRelievedFace`
+- `sagittarius`
+- `sailboat`
+- `sake`
+- `santaClaus`
+- `satellite`
+- `satelliteAntenna`
+- `saxophone`
+- `school`
+- `scissors`
+- `scorpio`
+- `scroll`
+- `seat`
+- `seeNoEvilMonkey`
+- `seedling`
+- `sevenOclock`
+- `sevenThirty`
+- `shavedIce`
+- `sheafOfRice`
+- `shield`
+- `ship`
+- `shootingStar`
+- `shoppingBags`
+- `shortcake`
+- `shower`
+- `shuffleTracksButton`
+- `sidewaysDownPointingIndex`
+- `sidewaysLeftPointingIndex`
+- `sidewaysRightPointingIndex`
+- `sidewaysUpPointingIndex`
+- `sixOclock`
+- `sixThirty`
+- `skis`
+- `skull`
+- `sleepingFace`
+- `sleepyFace`
+- `slightlyFrowningFace`
+- `slightlySmilingFace`
+- `slotMachine`
+- `smallAirplane`
+- `smallBlueDiamond`
+- `smallOrangeDiamond`
+- `smilingCatFaceWithHeartEyes`
+- `smilingFace`
+- `smilingFaceWithHalo`
+- `smilingFaceWithHeartEyes`
+- `smilingFaceWithHorns`
+- `smilingFaceWithSmilingEyes`
+- `smilingFaceWithSunglasses`
+- `smirkingFace`
+- `snail`
+- `snake`
+- `snowCappedMountain`
+- `snowboarder`
+- `snowflake`
+- `snowmanWithoutSnow`
+- `soccerBall`
+- `softIceCream`
+- `soonArrow`
+- `sosButton`
+- `spadeSuit`
+- `spaghetti`
+- `sparkle`
+- `sparkler`
+- `sparkles`
+- `sparklingHeart`
+- `speakNoEvilMonkey`
+- `speakerHighVolume`
+- `speakerLowVolume`
+- `speakerMediumVolume`
+- `speakerWith1SoundWave`
+- `speakingHead`
+- `speechBalloon`
+- `speedboat`
+- `spider`
+- `spiderWeb`
+- `spiralCalendar`
+- `spiralNotepad`
+- `spiralShell`
+- `sportUtilityVehicle`
+- `sportsMedal`
+- `spoutingWhale`
+- `squintingFaceWithTongue`
+- `stadium`
+- `stampedEnvelope`
+- `star`
+- `station`
+- `statueOfLiberty`
+- `steamingBowl`
+- `stockChart`
+- `straightRuler`
+- `strawberry`
+- `studioMicrophone`
+- `sun`
+- `sunBehindCloud`
+- `sunWithFace`
+- `sunflower`
+- `sunglasses`
+- `sunrise`
+- `sunriseOverMountains`
+- `sunset`
+- `sushi`
+- `suspensionRailway`
+- `sweatDroplets`
+- `syringe`
+- `tShirt`
+- `tanabataTree`
+- `tangerine`
+- `tapeCartridge`
+- `taurus`
+- `taxi`
+- `teacupWithoutHandle`
+- `tearOffCalendar`
+- `telephone`
+- `telephoneReceiver`
+- `telescope`
+- `television`
+- `tenOclock`
+- `tenThirty`
+- `tennis`
+- `tent`
+- `thermometer`
+- `thoughtBalloon`
+- `threeNetworkedComputers`
+- `threeOclock`
+- `threeSpeechBubbles`
+- `threeThirty`
+- `thumbsDown`
+- `thumbsUp`
+- `ticket`
+- `tiger`
+- `tigerFace`
+- `tiredFace`
+- `toilet`
+- `tokyoTower`
+- `tomato`
+- `tongue`
+- `topArrow`
+- `topHat`
+- `tornado`
+- `trackball`
+- `tractor`
+- `tradeMark`
+- `train`
+- `tram`
+- `tramCar`
+- `triangularRuler`
+- `tridentEmblem`
+- `trolleybus`
+- `trophy`
+- `tropicalDrink`
+- `tropicalFish`
+- `trumpet`
+- `tulip`
+- `turnedOkHand`
+- `turtle`
+- `twelveOclock`
+- `twelveThirty`
+- `twoHearts`
+- `twoHumpCamel`
+- `twoMenHoldingHands`
+- `twoOclock`
+- `twoSpeechBubbles`
+- `twoThirty`
+- `twoWomenHoldingHands`
+- `umbrellaWithRainDrops`
+- `unamusedFace`
+- `unlocked`
+- `upArrow`
+- `upDownArrow`
+- `upLeftArrow`
+- `upPointingAirplane`
+- `upPointingMilitaryAirplane`
+- `upPointingSmallAirplane`
+- `upRightArrow`
+- `upTextButton`
+- `upwardsButton`
+- `verticalTrafficLight`
+- `vibrationMode`
+- `victoryHand`
+- `videoCamera`
+- `videoGame`
+- `videocassette`
+- `violin`
+- `virgo`
+- `volcano`
+- `vsButton`
+- `vulcanSalute`
+- `waningCrescentMoon`
+- `waningGibbousMoon`
+- `warning`
+- `wastebasket`
+- `watch`
+- `waterBuffalo`
+- `waterCloset`
+- `waterWave`
+- `watermelon`
+- `wavingHand`
+- `wavyDash`
+- `waxingCrescentMoon`
+- `waxingGibbousMoon`
+- `wearyCatFace`
+- `wearyFace`
+- `wedding`
+- `whale`
+- `wheelchairSymbol`
+- `whiteCircle`
+- `whiteDownPointingLeftHand`
+- `whiteExclamationMark`
+- `whiteFlower`
+- `whiteHardShellFloppy`
+- `whiteHeavyCheckMark`
+- `whiteLargeSquare`
+- `whiteLatinCross`
+- `whiteMediumSmallSquare`
+- `whiteMediumSquare`
+- `whitePennant`
+- `whiteQuestionMark`
+- `whiteSmallSquare`
+- `whiteSquareButton`
+- `whiteTouchTonePhone`
+- `windChime`
+- `windFace`
+- `window`
+- `wineGlass`
+- `winkingFace`
+- `winkingFaceWithTongue`
+- `wiredKeyboard`
+- `wolf`
+- `woman`
+- `womanDancing`
+- `womansBoot`
+- `womansClothes`
+- `womansHat`
+- `womansSandal`
+- `womensRoom`
+- `worldMap`
+- `worriedFace`
+- `wrappedGift`
+- `wrench`
+- `yellowHeart`
+- `yenBanknote`
+- `zzz`
 
 ## Usage Examples
 
@@ -101,77 +1422,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { aButton, abButton, admissionTickets, aerialTramway } from '@stacksjs/iconify-emojione-v1'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AButtonIcon, AbButtonIcon, AdmissionTicketsIcon, AerialTramwayIcon } from '@stacksjs/iconify-emojione-v1'
 
   global.navIcons = {
-    aButton: renderIcon(aButton, { size: 20, class: 'nav-icon' }),
-    abButton: renderIcon(abButton, { size: 20, class: 'nav-icon' }),
-    admissionTickets: renderIcon(admissionTickets, { size: 20, class: 'nav-icon' }),
-    aerialTramway: renderIcon(aerialTramway, { size: 20, class: 'nav-icon' })
+    home: AButtonIcon({ size: 20, class: 'nav-icon' }),
+    about: AbButtonIcon({ size: 20, class: 'nav-icon' }),
+    contact: AdmissionTicketsIcon({ size: 20, class: 'nav-icon' }),
+    settings: AerialTramwayIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.aButton !!} Home</a>
-  <a href="/about">{!! navIcons.abButton !!} About</a>
-  <a href="/contact">{!! navIcons.admissionTickets !!} Contact</a>
-  <a href="/settings">{!! navIcons.aerialTramway !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { aButton } from '@stacksjs/iconify-emojione-v1'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AButtonIcon } from '@stacksjs/iconify-emojione-v1'
 
-const icon = renderIcon(aButton, {
+const icon = AButtonIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-emojione-v1'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AButtonIcon, AbButtonIcon, AdmissionTicketsIcon } from '@stacksjs/iconify-emojione-v1'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AButtonIcon({ size: 16, color: '#22c55e' })
+const warningIcon = AbButtonIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = AdmissionTicketsIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { aButton, abButton } from '@stacksjs/iconify-emojione-v1'
+   // Recommended
+   import { AButtonIcon, AbButtonIcon } from '@stacksjs/iconify-emojione-v1'
+   const icon = AButtonIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { aButton, abButton } from '@stacksjs/iconify-emojione-v1'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(aButton, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AButtonIcon, AbButtonIcon } from '@stacksjs/iconify-emojione-v1'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-emojione-v1'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { aButton } from '@stacksjs/iconify-emojione-v1'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(aButton, { size: 24 })
+     import { AButtonIcon } from '@stacksjs/iconify-emojione-v1'
+     global.icon = AButtonIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +1508,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AButtonIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

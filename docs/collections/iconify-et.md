@@ -21,79 +21,247 @@ bun add @stacksjs/iconify-et
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AdjustmentsIcon, AlarmclockIcon, AnchorIcon } from '@stacksjs/iconify-et'
+
+// Basic usage
+const icon = AdjustmentsIcon()
+
+// With size
+const sizedIcon = AdjustmentsIcon({ size: 24 })
+
+// With color
+const coloredIcon = AlarmclockIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = AnchorIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { adjustments, alarmclock, anchor } from '@stacksjs/iconify-et'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AdjustmentsIcon, AlarmclockIcon, AnchorIcon } from '@stacksjs/iconify-et'
 
   global.icons = {
-    adjustments: renderIcon(adjustments, { size: 24 }),
-    alarmclock: renderIcon(alarmclock, { size: 24, color: '#4a90e2' }),
-    anchor: renderIcon(anchor, { size: 32 })
+    home: AdjustmentsIcon({ size: 24 }),
+    user: AlarmclockIcon({ size: 24, color: '#4a90e2' }),
+    settings: AnchorIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.adjustments !!}
-  {!! icons.alarmclock !!}
-  {!! icons.anchor !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { adjustments, alarmclock, anchor } from '@stacksjs/iconify-et'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(adjustments, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(alarmclock, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(anchor, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = AdjustmentsIcon({ color: 'red' })
+const blueIcon = AdjustmentsIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AdjustmentsIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AdjustmentsIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AdjustmentsIcon({ size: 24 })
+const icon1em = AdjustmentsIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AdjustmentsIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AdjustmentsIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AdjustmentsIcon({ class: 'icon-small' })
+const largeIcon = AdjustmentsIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **100** icons. Here are some examples:
+This package contains **100** icons:
 
 - `adjustments`
 - `alarmclock`
 - `anchor`
 - `aperture`
 - `attachments`
-
-...and 90 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/et/).
+- `bargraph`
+- `basket`
+- `beaker`
+- `bike`
+- `bookOpen`
+- `briefcase`
+- `browser`
+- `calendar`
+- `camera`
+- `caution`
+- `chat`
+- `circleCompass`
+- `clipboard`
+- `clock`
+- `cloud`
+- `compass`
+- `desktop`
+- `dial`
+- `document`
+- `documents`
+- `download`
+- `dribbble`
+- `edit`
+- `envelope`
+- `expand`
+- `facebook`
+- `flag`
+- `focus`
+- `gears`
+- `genius`
+- `gift`
+- `global`
+- `globe`
+- `googleplus`
+- `grid`
+- `happy`
+- `hazardous`
+- `heart`
+- `hotairballoon`
+- `hourglass`
+- `key`
+- `laptop`
+- `layers`
+- `lifesaver`
+- `lightbulb`
+- `linegraph`
+- `linkedin`
+- `lock`
+- `magnifyingGlass`
+- `map`
+- `mapPin`
+- `megaphone`
+- `mic`
+- `mobile`
+- `newspaper`
+- `notebook`
+- `paintbrush`
+- `paperclip`
+- `pencil`
+- `phone`
+- `picture`
+- `pictures`
+- `piechart`
+- `presentation`
+- `pricetags`
+- `printer`
+- `profileFemale`
+- `profileMale`
+- `puzzle`
+- `quote`
+- `recycle`
+- `refresh`
+- `ribbon`
+- `rss`
+- `sad`
+- `scissors`
+- `scope`
+- `search`
+- `shield`
+- `speedometer`
+- `strategy`
+- `streetsign`
+- `tablet`
+- `telescope`
+- `toolbox`
+- `tools`
+- `tools2`
+- `traget`
+- `trophy`
+- `tumblr`
+- `twitter`
+- `upload`
+- `video`
+- `wallet`
+- `wine`
 
 ## Usage Examples
 
@@ -101,77 +269,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { adjustments, alarmclock, anchor, aperture } from '@stacksjs/iconify-et'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AdjustmentsIcon, AlarmclockIcon, AnchorIcon, ApertureIcon } from '@stacksjs/iconify-et'
 
   global.navIcons = {
-    adjustments: renderIcon(adjustments, { size: 20, class: 'nav-icon' }),
-    alarmclock: renderIcon(alarmclock, { size: 20, class: 'nav-icon' }),
-    anchor: renderIcon(anchor, { size: 20, class: 'nav-icon' }),
-    aperture: renderIcon(aperture, { size: 20, class: 'nav-icon' })
+    home: AdjustmentsIcon({ size: 20, class: 'nav-icon' }),
+    about: AlarmclockIcon({ size: 20, class: 'nav-icon' }),
+    contact: AnchorIcon({ size: 20, class: 'nav-icon' }),
+    settings: ApertureIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.adjustments !!} Home</a>
-  <a href="/about">{!! navIcons.alarmclock !!} About</a>
-  <a href="/contact">{!! navIcons.anchor !!} Contact</a>
-  <a href="/settings">{!! navIcons.aperture !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { adjustments } from '@stacksjs/iconify-et'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AdjustmentsIcon } from '@stacksjs/iconify-et'
 
-const icon = renderIcon(adjustments, {
+const icon = AdjustmentsIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-et'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AdjustmentsIcon, AlarmclockIcon, AnchorIcon } from '@stacksjs/iconify-et'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AdjustmentsIcon({ size: 16, color: '#22c55e' })
+const warningIcon = AlarmclockIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = AnchorIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { adjustments, alarmclock } from '@stacksjs/iconify-et'
+   // Recommended
+   import { AdjustmentsIcon, AlarmclockIcon } from '@stacksjs/iconify-et'
+   const icon = AdjustmentsIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { adjustments, alarmclock } from '@stacksjs/iconify-et'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(adjustments, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AdjustmentsIcon, AlarmclockIcon } from '@stacksjs/iconify-et'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-et'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { adjustments } from '@stacksjs/iconify-et'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(adjustments, { size: 24 })
+     import { AdjustmentsIcon } from '@stacksjs/iconify-et'
+     global.icon = AdjustmentsIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +355,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AdjustmentsIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

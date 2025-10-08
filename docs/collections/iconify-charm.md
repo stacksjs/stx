@@ -21,79 +21,409 @@ bun add @stacksjs/iconify-charm
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AnchorIcon, AppsIcon, AppsMinusIcon } from '@stacksjs/iconify-charm'
+
+// Basic usage
+const icon = AnchorIcon()
+
+// With size
+const sizedIcon = AnchorIcon({ size: 24 })
+
+// With color
+const coloredIcon = AppsIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = AppsMinusIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { anchor, apps, appsMinus } from '@stacksjs/iconify-charm'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AnchorIcon, AppsIcon, AppsMinusIcon } from '@stacksjs/iconify-charm'
 
   global.icons = {
-    anchor: renderIcon(anchor, { size: 24 }),
-    apps: renderIcon(apps, { size: 24, color: '#4a90e2' }),
-    appsMinus: renderIcon(appsMinus, { size: 32 })
+    home: AnchorIcon({ size: 24 }),
+    user: AppsIcon({ size: 24, color: '#4a90e2' }),
+    settings: AppsMinusIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.anchor !!}
-  {!! icons.apps !!}
-  {!! icons.appsMinus !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { anchor, apps, appsMinus } from '@stacksjs/iconify-charm'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(anchor, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(apps, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(appsMinus, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = AnchorIcon({ color: 'red' })
+const blueIcon = AnchorIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AnchorIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AnchorIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AnchorIcon({ size: 24 })
+const icon1em = AnchorIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AnchorIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AnchorIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AnchorIcon({ class: 'icon-small' })
+const largeIcon = AnchorIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **262** icons. Here are some examples:
+This package contains **262** icons:
 
 - `anchor`
 - `apps`
 - `appsMinus`
 - `appsPlus`
 - `archive`
-
-...and 252 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/charm/).
+- `arrowDown`
+- `arrowDownLeft`
+- `arrowDownRight`
+- `arrowLeft`
+- `arrowRight`
+- `arrowUp`
+- `arrowUpLeft`
+- `arrowUpRight`
+- `atSign`
+- `atom`
+- `bell`
+- `bellSlash`
+- `bin`
+- `binary`
+- `block`
+- `bluetooth`
+- `bluetoothConnected`
+- `bluetoothSearching`
+- `bluetoothSlash`
+- `book`
+- `bookOpen`
+- `bookmark`
+- `briefcase`
+- `bug`
+- `calendar`
+- `camera`
+- `cameraVideo`
+- `cameraVideoSlash`
+- `candy`
+- `cards`
+- `cast`
+- `certificate`
+- `chartBar`
+- `chartLine`
+- `chevronDown`
+- `chevronLeft`
+- `chevronRight`
+- `chevronUp`
+- `chevronsDown`
+- `chevronsLeft`
+- `chevronsRight`
+- `chevronsUp`
+- `chevronsUpDown`
+- `chip`
+- `circle`
+- `circleCross`
+- `circleMinus`
+- `circleTick`
+- `circleWarning`
+- `clipboard`
+- `clipboardTick`
+- `clock`
+- `clockAlarm`
+- `cloud`
+- `clover`
+- `code`
+- `coffee`
+- `cog`
+- `compass`
+- `conicalFlask`
+- `container`
+- `copy`
+- `copyleft`
+- `copyright`
+- `creditCard`
+- `crop`
+- `cross`
+- `crosshair`
+- `cube`
+- `cursor`
+- `database`
+- `diamond`
+- `diff`
+- `disc`
+- `download`
+- `droplet`
+- `eraser`
+- `extensions`
+- `eye`
+- `eyeSlash`
+- `faceFrown`
+- `faceNeutral`
+- `faceSmile`
+- `file`
+- `fileBinary`
+- `fileCode`
+- `fileSymlink`
+- `files`
+- `filter`
+- `flag`
+- `flame`
+- `floppyDisk`
+- `folder`
+- `folderSymlink`
+- `folders`
+- `forward`
+- `gamepad`
+- `gem`
+- `gift`
+- `gitBranch`
+- `gitCherryPick`
+- `gitCommit`
+- `gitCompare`
+- `gitFork`
+- `gitMerge`
+- `gitRequest`
+- `gitRequestCross`
+- `gitRequestDraft`
+- `github`
+- `gitlab`
+- `glasses`
+- `globe`
+- `grabHorizontal`
+- `grabVertical`
+- `graduateCap`
+- `hash`
+- `headphones`
+- `heart`
+- `help`
+- `hexagon`
+- `home`
+- `hourglass`
+- `id`
+- `image`
+- `inbox`
+- `infinity`
+- `info`
+- `key`
+- `laptop`
+- `layoutColumns`
+- `layoutDashboard`
+- `layoutGrid`
+- `layoutList`
+- `layoutRows`
+- `layoutSidebar`
+- `layoutStackH`
+- `layoutStackV`
+- `lightbulb`
+- `lightningBolt`
+- `link`
+- `linkExternal`
+- `linkSlash`
+- `mail`
+- `map`
+- `mapPin`
+- `mediaBack`
+- `mediaEject`
+- `mediaFastForward`
+- `mediaPause`
+- `mediaPlay`
+- `mediaRewind`
+- `mediaSkip`
+- `menuHamburger`
+- `menuKebab`
+- `menuMeatball`
+- `message`
+- `messages`
+- `microphone`
+- `minus`
+- `mobile`
+- `monitor`
+- `monitorArrow`
+- `monitorCross`
+- `moon`
+- `move`
+- `music`
+- `newspaper`
+- `northStar`
+- `notes`
+- `notesCross`
+- `notesTick`
+- `nut`
+- `octagon`
+- `octagonWarning`
+- `organisation`
+- `package`
+- `padlock`
+- `paperPlane`
+- `paperclip`
+- `pencil`
+- `people`
+- `person`
+- `phone`
+- `phoneCall`
+- `phoneCross`
+- `phoneForward`
+- `phoneIncoming`
+- `phoneOutgoing`
+- `pin`
+- `plantPot`
+- `plus`
+- `power`
+- `printer`
+- `pulse`
+- `quote`
+- `refresh`
+- `reply`
+- `robot`
+- `rocket`
+- `rotateAntiClockwise`
+- `rotateClockwise`
+- `scales`
+- `screenMaximise`
+- `screenMinimise`
+- `search`
+- `server`
+- `share`
+- `shield`
+- `shieldCross`
+- `shieldKeyhole`
+- `shieldTick`
+- `shieldWarning`
+- `shoppingBag`
+- `signIn`
+- `signOut`
+- `signpost`
+- `skull`
+- `snowflake`
+- `soundDown`
+- `soundMute`
+- `soundUp`
+- `speaker`
+- `square`
+- `squareCross`
+- `squareTick`
+- `stack`
+- `stackPop`
+- `stackPush`
+- `star`
+- `stickyNote`
+- `sun`
+- `swapHorizontal`
+- `swapVertical`
+- `sword`
+- `swords`
+- `tablet`
+- `tag`
+- `telescope`
+- `tent`
+- `terminal`
+- `thumbDown`
+- `thumbUp`
+- `tick`
+- `tickDouble`
+- `ticket`
+- `treeFir`
+- `triangle`
+- `trophy`
+- `umbrella`
+- `upload`
+- `wifi`
+- `wifiFair`
+- `wifiPoor`
+- `wifiSlash`
+- `wifiWarning`
+- `zoomIn`
+- `zoomOut`
 
 ## Usage Examples
 
@@ -101,77 +431,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { anchor, apps, appsMinus, appsPlus } from '@stacksjs/iconify-charm'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AnchorIcon, AppsIcon, AppsMinusIcon, AppsPlusIcon } from '@stacksjs/iconify-charm'
 
   global.navIcons = {
-    anchor: renderIcon(anchor, { size: 20, class: 'nav-icon' }),
-    apps: renderIcon(apps, { size: 20, class: 'nav-icon' }),
-    appsMinus: renderIcon(appsMinus, { size: 20, class: 'nav-icon' }),
-    appsPlus: renderIcon(appsPlus, { size: 20, class: 'nav-icon' })
+    home: AnchorIcon({ size: 20, class: 'nav-icon' }),
+    about: AppsIcon({ size: 20, class: 'nav-icon' }),
+    contact: AppsMinusIcon({ size: 20, class: 'nav-icon' }),
+    settings: AppsPlusIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.anchor !!} Home</a>
-  <a href="/about">{!! navIcons.apps !!} About</a>
-  <a href="/contact">{!! navIcons.appsMinus !!} Contact</a>
-  <a href="/settings">{!! navIcons.appsPlus !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { anchor } from '@stacksjs/iconify-charm'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AnchorIcon } from '@stacksjs/iconify-charm'
 
-const icon = renderIcon(anchor, {
+const icon = AnchorIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-charm'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AnchorIcon, AppsIcon, AppsMinusIcon } from '@stacksjs/iconify-charm'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AnchorIcon({ size: 16, color: '#22c55e' })
+const warningIcon = AppsIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = AppsMinusIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { anchor, apps } from '@stacksjs/iconify-charm'
+   // Recommended
+   import { AnchorIcon, AppsIcon } from '@stacksjs/iconify-charm'
+   const icon = AnchorIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { anchor, apps } from '@stacksjs/iconify-charm'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(anchor, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AnchorIcon, AppsIcon } from '@stacksjs/iconify-charm'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-charm'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { anchor } from '@stacksjs/iconify-charm'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(anchor, { size: 24 })
+     import { AnchorIcon } from '@stacksjs/iconify-charm'
+     global.icon = AnchorIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +517,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AnchorIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

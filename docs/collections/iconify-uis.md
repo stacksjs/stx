@@ -21,79 +21,337 @@ bun add @stacksjs/iconify-uis
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AirplayIcon, AlignAltIcon, AlignCenterIcon } from '@stacksjs/iconify-uis'
+
+// Basic usage
+const icon = AirplayIcon()
+
+// With size
+const sizedIcon = AirplayIcon({ size: 24 })
+
+// With color
+const coloredIcon = AlignAltIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = AlignCenterIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { airplay, alignAlt, alignCenter } from '@stacksjs/iconify-uis'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AirplayIcon, AlignAltIcon, AlignCenterIcon } from '@stacksjs/iconify-uis'
 
   global.icons = {
-    airplay: renderIcon(airplay, { size: 24 }),
-    alignAlt: renderIcon(alignAlt, { size: 24, color: '#4a90e2' }),
-    alignCenter: renderIcon(alignCenter, { size: 32 })
+    home: AirplayIcon({ size: 24 }),
+    user: AlignAltIcon({ size: 24, color: '#4a90e2' }),
+    settings: AlignCenterIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.airplay !!}
-  {!! icons.alignAlt !!}
-  {!! icons.alignCenter !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { airplay, alignAlt, alignCenter } from '@stacksjs/iconify-uis'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(airplay, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(alignAlt, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(alignCenter, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = AirplayIcon({ color: 'red' })
+const blueIcon = AirplayIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AirplayIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AirplayIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AirplayIcon({ size: 24 })
+const icon1em = AirplayIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AirplayIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AirplayIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AirplayIcon({ class: 'icon-small' })
+const largeIcon = AirplayIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **190** icons. Here are some examples:
+This package contains **190** icons:
 
 - `airplay`
 - `alignAlt`
 - `alignCenter`
 - `alignCenterJustify`
 - `alignJustify`
-
-...and 180 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/uis/).
+- `alignLeft`
+- `alignLeftJustify`
+- `alignLetterRight`
+- `alignRight`
+- `alignRightJustify`
+- `analysis`
+- `analytics`
+- `anchor`
+- `angleDoubleDown`
+- `angleDoubleLeft`
+- `angleDoubleRight`
+- `angleDoubleUp`
+- `angleDown`
+- `angleLeft`
+- `angleRight`
+- `angleRightB`
+- `angleUp`
+- `apps`
+- `arrowCircleDown`
+- `arrowCircleLeft`
+- `arrowCircleRight`
+- `arrowCircleUp`
+- `arrowDownLeft`
+- `arrowDownRight`
+- `arrowUpLeft`
+- `arrowUpRight`
+- `at`
+- `bag`
+- `bars`
+- `batteryBolt`
+- `batteryEmpty`
+- `bookmark`
+- `borderAlt`
+- `borderBottom`
+- `borderClear`
+- `borderHorizontal`
+- `borderInner`
+- `borderLeft`
+- `borderOut`
+- `borderRight`
+- `borderTop`
+- `borderVertical`
+- `briefcase`
+- `calendar`
+- `calender`
+- `chart`
+- `chartPie`
+- `check`
+- `checkCircle`
+- `checkSquare`
+- `circleLayer`
+- `clinicMedical`
+- `clock`
+- `clockEight`
+- `clockFive`
+- `clockNine`
+- `clockSeven`
+- `clockTen`
+- `clockThree`
+- `clockTwo`
+- `columns`
+- `commentDots`
+- `compress`
+- `cornerDownLeft`
+- `cornerDownRight`
+- `cornerLeftDown`
+- `cornerRightDown`
+- `cornerUpLeft`
+- `cornerUpRight`
+- `coronavirus`
+- `dialpad`
+- `direction`
+- `documentLayoutCenter`
+- `documentLayoutLeft`
+- `documentLayoutRight`
+- `downloadAlt`
+- `ellipsisH`
+- `ellipsisV`
+- `exclamationCircle`
+- `exclamationOctagon`
+- `exclamationTriangle`
+- `favorite`
+- `flipH`
+- `flipHAlt`
+- `flipV`
+- `flipVAlt`
+- `graphBar`
+- `grid`
+- `grids`
+- `gripHorizontalLine`
+- `headSide`
+- `headSideCough`
+- `headSideMask`
+- `history`
+- `historyAlt`
+- `horizontalAlignLeft`
+- `hospital`
+- `hospitalSquareSign`
+- `hospitalSymbol`
+- `houseUser`
+- `imageV`
+- `keySkeleton`
+- `keySkeletonAlt`
+- `keyholeCircle`
+- `keyholeSquare`
+- `keyholeSquareFull`
+- `layerGroup`
+- `layersAlt`
+- `leftIndent`
+- `leftIndentAlt`
+- `lineSpacing`
+- `linkH`
+- `listUiAlt`
+- `listUl`
+- `lock`
+- `lockAccess`
+- `lockAlt`
+- `lockOpenAlt`
+- `microscope`
+- `minusSquareFull`
+- `multiply`
+- `objectGroup`
+- `objectUngroup`
+- `padlock`
+- `paperclip`
+- `paragraph`
+- `pentagon`
+- `polygon`
+- `previous`
+- `process`
+- `recordAudio`
+- `redo`
+- `refresh`
+- `repeat`
+- `rightIndent`
+- `rightIndentAlt`
+- `rocket`
+- `ruler`
+- `rulerCombined`
+- `sanitizer`
+- `sanitizerAlt`
+- `scenery`
+- `schedule`
+- `shieldPlus`
+- `signalAlt`
+- `signalAlt3`
+- `signout`
+- `socialDistancing`
+- `sorting`
+- `spaceKey`
+- `squareFull`
+- `star`
+- `starHalfAlt`
+- `stepForward`
+- `stethoscope`
+- `stethoscopeAlt`
+- `stopwatch`
+- `storeSlash`
+- `subject`
+- `syncExclamation`
+- `syncSlash`
+- `table`
+- `thLarge`
+- `timesCircle`
+- `toggleOff`
+- `toggleOn`
+- `toiletPaper`
+- `triangle`
+- `unlock`
+- `unlockAlt`
+- `uploadAlt`
+- `userArrows`
+- `userMd`
+- `userNurse`
+- `vectorSquare`
+- `vectorSquareAlt`
+- `virusSlash`
+- `webGrid`
+- `webGridAlt`
+- `webSection`
+- `webSectionAlt`
+- `windowGrid`
+- `windowMaximize`
+- `windowSection`
+- `wrapText`
 
 ## Usage Examples
 
@@ -101,77 +359,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { airplay, alignAlt, alignCenter, alignCenterJustify } from '@stacksjs/iconify-uis'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AirplayIcon, AlignAltIcon, AlignCenterIcon, AlignCenterJustifyIcon } from '@stacksjs/iconify-uis'
 
   global.navIcons = {
-    airplay: renderIcon(airplay, { size: 20, class: 'nav-icon' }),
-    alignAlt: renderIcon(alignAlt, { size: 20, class: 'nav-icon' }),
-    alignCenter: renderIcon(alignCenter, { size: 20, class: 'nav-icon' }),
-    alignCenterJustify: renderIcon(alignCenterJustify, { size: 20, class: 'nav-icon' })
+    home: AirplayIcon({ size: 20, class: 'nav-icon' }),
+    about: AlignAltIcon({ size: 20, class: 'nav-icon' }),
+    contact: AlignCenterIcon({ size: 20, class: 'nav-icon' }),
+    settings: AlignCenterJustifyIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.airplay !!} Home</a>
-  <a href="/about">{!! navIcons.alignAlt !!} About</a>
-  <a href="/contact">{!! navIcons.alignCenter !!} Contact</a>
-  <a href="/settings">{!! navIcons.alignCenterJustify !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { airplay } from '@stacksjs/iconify-uis'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AirplayIcon } from '@stacksjs/iconify-uis'
 
-const icon = renderIcon(airplay, {
+const icon = AirplayIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-uis'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AirplayIcon, AlignAltIcon, AlignCenterIcon } from '@stacksjs/iconify-uis'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AirplayIcon({ size: 16, color: '#22c55e' })
+const warningIcon = AlignAltIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = AlignCenterIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { airplay, alignAlt } from '@stacksjs/iconify-uis'
+   // Recommended
+   import { AirplayIcon, AlignAltIcon } from '@stacksjs/iconify-uis'
+   const icon = AirplayIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { airplay, alignAlt } from '@stacksjs/iconify-uis'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(airplay, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AirplayIcon, AlignAltIcon } from '@stacksjs/iconify-uis'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-uis'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { airplay } from '@stacksjs/iconify-uis'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(airplay, { size: 24 })
+     import { AirplayIcon } from '@stacksjs/iconify-uis'
+     global.icon = AirplayIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +445,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AirplayIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

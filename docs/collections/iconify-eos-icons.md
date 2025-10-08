@@ -21,79 +21,400 @@ bun add @stacksjs/iconify-eos-icons
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { 3dPrintIcon, AbstractIcon, AbstractIncompleteIcon } from '@stacksjs/iconify-eos-icons'
+
+// Basic usage
+const icon = 3dPrintIcon()
+
+// With size
+const sizedIcon = 3dPrintIcon({ size: 24 })
+
+// With color
+const coloredIcon = AbstractIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = AbstractIncompleteIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { 3dPrint, abstract, abstractIncomplete } from '@stacksjs/iconify-eos-icons'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 3dPrintIcon, AbstractIcon, AbstractIncompleteIcon } from '@stacksjs/iconify-eos-icons'
 
   global.icons = {
-    3dPrint: renderIcon(3dPrint, { size: 24 }),
-    abstract: renderIcon(abstract, { size: 24, color: '#4a90e2' }),
-    abstractIncomplete: renderIcon(abstractIncomplete, { size: 32 })
+    home: 3dPrintIcon({ size: 24 }),
+    user: AbstractIcon({ size: 24, color: '#4a90e2' }),
+    settings: AbstractIncompleteIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.3dPrint !!}
-  {!! icons.abstract !!}
-  {!! icons.abstractIncomplete !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { 3dPrint, abstract, abstractIncomplete } from '@stacksjs/iconify-eos-icons'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(3dPrint, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(abstract, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(abstractIncomplete, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = 3dPrintIcon({ color: 'red' })
+const blueIcon = 3dPrintIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = 3dPrintIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = 3dPrintIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = 3dPrintIcon({ size: 24 })
+const icon1em = 3dPrintIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = 3dPrintIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = 3dPrintIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = 3dPrintIcon({ class: 'icon-small' })
+const largeIcon = 3dPrintIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **253** icons. Here are some examples:
+This package contains **253** icons:
 
 - `3dPrint`
 - `abstract`
 - `abstractIncomplete`
 - `abstractInstance`
 - `abstractInstanceOutlined`
-
-...and 243 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/eos-icons/).
+- `abstractOutlined`
+- `actionChains`
+- `actionChainsOutlined`
+- `activateSubscriptions`
+- `activateSubscriptionsOutlined`
+- `admin`
+- `adminOutlined`
+- `ai`
+- `aiHealing`
+- `aiHealingOutlined`
+- `aiOperator`
+- `api`
+- `apiOutlined`
+- `application`
+- `applicationIncomplete`
+- `applicationIncompleteOutlined`
+- `applicationInstance`
+- `applicationInstanceOutlined`
+- `applicationOutlined`
+- `applicationWindow`
+- `applicationWindowOutlined`
+- `arrowRotate`
+- `atomElectron`
+- `augmentedReality`
+- `autoinstallation`
+- `backgroundTasks`
+- `bigData`
+- `bigDataOutlined`
+- `blockchain`
+- `bootstrapping`
+- `bootstrappingOutlined`
+- `branch`
+- `branchOutlined`
+- `bubbleLoading`
+- `cleanup`
+- `cloudComputing`
+- `cloudComputingOutlined`
+- `cloudControllerManager`
+- `cluster`
+- `clusterManagement`
+- `clusterManagementOutlined`
+- `clusterOutlined`
+- `clusterRole`
+- `clusterRoleBinding`
+- `codeDeploy`
+- `codeDeployOutlined`
+- `collocation`
+- `commit`
+- `commitOutlined`
+- `compareStates`
+- `compareStatesOutlined`
+- `compass`
+- `configMap`
+- `configurationFile`
+- `configurationFileOutlined`
+- `constraint`
+- `container`
+- `containerOutlined`
+- `contentDeleted`
+- `contentLifecycleManagement`
+- `contentModified`
+- `contentNew`
+- `counting`
+- `criticalBug`
+- `criticalBugOutlined`
+- `cronjob`
+- `csvFile`
+- `daemon`
+- `daemonOutlined`
+- `daemonSet`
+- `daemonSetOutlined`
+- `dataMining`
+- `dataScientist`
+- `dataScientistOutlined`
+- `database`
+- `databaseMigration`
+- `databaseMigrationOutlined`
+- `databaseOutlined`
+- `deploy`
+- `diffModified`
+- `diffModifiedOutlined`
+- `dns`
+- `drone`
+- `edgeComputing`
+- `edgeComputingOutlined`
+- `endpoints`
+- `endpointsConnected`
+- `endpointsDisconnected`
+- `enhancement`
+- `env`
+- `fileSystem`
+- `fileSystemOutlined`
+- `flask`
+- `fork`
+- `forkOutlined`
+- `genomic`
+- `hardwareCircuit`
+- `hourglass`
+- `inbound`
+- `infinity`
+- `ingress`
+- `initContainer`
+- `initContainerOutlined`
+- `installing`
+- `iot`
+- `ip`
+- `ipOutlined`
+- `job`
+- `kubelet`
+- `kubeletOutlined`
+- `loading`
+- `lockedEnv`
+- `lockedEnvOutlined`
+- `machineLearning`
+- `machineLearningOutlined`
+- `master`
+- `masterOutlined`
+- `merge`
+- `mergeOutlined`
+- `miscellaneous`
+- `miscellaneousOutlined`
+- `modifiedDate`
+- `modifiedDateOutlined`
+- `molecules`
+- `moleculesOutlined`
+- `monitoring`
+- `move`
+- `multistate`
+- `namespace`
+- `network`
+- `networkFileSystem`
+- `networkFileSystemOutlined`
+- `networkPolicy`
+- `networkPolicyOutlined`
+- `neuralNetwork`
+- `node`
+- `nodeOutlined`
+- `organisms`
+- `organismsOutlined`
+- `organization`
+- `organizationOutlined`
+- `outbound`
+- `package`
+- `packageOutlined`
+- `packageUpgrade`
+- `packageUpgradeOutlined`
+- `packages`
+- `packagesOutlined`
+- `patchFixes`
+- `patchFixesOutlined`
+- `patterns`
+- `patternsOutlined`
+- `performance`
+- `persistentVolume`
+- `pin`
+- `pinOutlined`
+- `pipeline`
+- `pipelineOutlined`
+- `pod`
+- `podAutoscaler`
+- `podAutoscalerOutlined`
+- `podOutlined`
+- `podSecurity`
+- `podSecurityOutlined`
+- `primitive`
+- `productClasses`
+- `productClassesOutlined`
+- `productSubscriptions`
+- `productSubscriptionsOutlined`
+- `products`
+- `productsOutlined`
+- `project`
+- `projectOutlined`
+- `proxy`
+- `proxyOutlined`
+- `pullRequest`
+- `pullRequestOutlined`
+- `pushPin`
+- `pushPinOutlined`
+- `quota`
+- `quotaOutlined`
+- `replica`
+- `replicaSet`
+- `repositories`
+- `roleBinding`
+- `roleBindingOutlined`
+- `rotatingGear`
+- `route`
+- `sandbox`
+- `sandboxOutlined`
+- `satelliteAlt`
+- `satelliteAltOutlined`
+- `science`
+- `scienceOutlined`
+- `scientist`
+- `scientistOutlined`
+- `secret`
+- `secretOutlined`
+- `secureData`
+- `secureDataOutlined`
+- `selfHealing`
+- `service`
+- `serviceInstance`
+- `serviceInstanceOutlined`
+- `serviceOutlined`
+- `servicePlan`
+- `servicePlanOutlined`
+- `snapshotRollback`
+- `software`
+- `softwareOutlined`
+- `spinner`
+- `state`
+- `statefulSet`
+- `statefulSetOutlined`
+- `storageClass`
+- `storageClassOutlined`
+- `subscriptionManagement`
+- `subscriptionsCreated`
+- `subscriptionsCreatedOutlined`
+- `symlink`
+- `symlinkOutlined`
+- `systemGroup`
+- `systemImage`
+- `systemImageOutlined`
+- `systemOk`
+- `systemOkOutlined`
+- `systemReRegistered`
+- `systemWarning`
+- `templates`
+- `templatesOutlined`
+- `terminal`
+- `terminalOutlined`
+- `testTube`
+- `threeDotsLoading`
+- `timeout`
+- `troubleshooting`
+- `trustedOrganization`
+- `typing`
+- `virtualGuest`
+- `virtualHostManager`
+- `virtualReality`
+- `virtualRealityOutlined`
+- `virtualSpace`
+- `volume`
+- `volumeBinding`
+- `volumeBindingOutlined`
+- `volumeOutlined`
+- `workload`
 
 ## Usage Examples
 
@@ -101,77 +422,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { 3dPrint, abstract, abstractIncomplete, abstractInstance } from '@stacksjs/iconify-eos-icons'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { 3dPrintIcon, AbstractIcon, AbstractIncompleteIcon, AbstractInstanceIcon } from '@stacksjs/iconify-eos-icons'
 
   global.navIcons = {
-    3dPrint: renderIcon(3dPrint, { size: 20, class: 'nav-icon' }),
-    abstract: renderIcon(abstract, { size: 20, class: 'nav-icon' }),
-    abstractIncomplete: renderIcon(abstractIncomplete, { size: 20, class: 'nav-icon' }),
-    abstractInstance: renderIcon(abstractInstance, { size: 20, class: 'nav-icon' })
+    home: 3dPrintIcon({ size: 20, class: 'nav-icon' }),
+    about: AbstractIcon({ size: 20, class: 'nav-icon' }),
+    contact: AbstractIncompleteIcon({ size: 20, class: 'nav-icon' }),
+    settings: AbstractInstanceIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.3dPrint !!} Home</a>
-  <a href="/about">{!! navIcons.abstract !!} About</a>
-  <a href="/contact">{!! navIcons.abstractIncomplete !!} Contact</a>
-  <a href="/settings">{!! navIcons.abstractInstance !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { 3dPrint } from '@stacksjs/iconify-eos-icons'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 3dPrintIcon } from '@stacksjs/iconify-eos-icons'
 
-const icon = renderIcon(3dPrint, {
+const icon = 3dPrintIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-eos-icons'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { 3dPrintIcon, AbstractIcon, AbstractIncompleteIcon } from '@stacksjs/iconify-eos-icons'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = 3dPrintIcon({ size: 16, color: '#22c55e' })
+const warningIcon = AbstractIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = AbstractIncompleteIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { 3dPrint, abstract } from '@stacksjs/iconify-eos-icons'
+   // Recommended
+   import { 3dPrintIcon, AbstractIcon } from '@stacksjs/iconify-eos-icons'
+   const icon = 3dPrintIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { 3dPrint, abstract } from '@stacksjs/iconify-eos-icons'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(3dPrint, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { 3dPrintIcon, AbstractIcon } from '@stacksjs/iconify-eos-icons'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-eos-icons'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { 3dPrint } from '@stacksjs/iconify-eos-icons'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(3dPrint, { size: 24 })
+     import { 3dPrintIcon } from '@stacksjs/iconify-eos-icons'
+     global.icon = 3dPrintIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +508,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = 3dPrintIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

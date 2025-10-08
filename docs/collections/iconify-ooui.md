@@ -21,79 +21,517 @@ bun add @stacksjs/iconify-ooui
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { AddIcon, AlertIcon, AlignCenterIcon } from '@stacksjs/iconify-ooui'
+
+// Basic usage
+const icon = AddIcon()
+
+// With size
+const sizedIcon = AddIcon({ size: 24 })
+
+// With color
+const coloredIcon = AlertIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = AlignCenterIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { add, alert, alignCenter } from '@stacksjs/iconify-ooui'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AddIcon, AlertIcon, AlignCenterIcon } from '@stacksjs/iconify-ooui'
 
   global.icons = {
-    add: renderIcon(add, { size: 24 }),
-    alert: renderIcon(alert, { size: 24, color: '#4a90e2' }),
-    alignCenter: renderIcon(alignCenter, { size: 32 })
+    home: AddIcon({ size: 24 }),
+    user: AlertIcon({ size: 24, color: '#4a90e2' }),
+    settings: AlignCenterIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.add !!}
-  {!! icons.alert !!}
-  {!! icons.alignCenter !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { add, alert, alignCenter } from '@stacksjs/iconify-ooui'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(add, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(alert, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(alignCenter, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = AddIcon({ color: 'red' })
+const blueIcon = AddIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = AddIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = AddIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = AddIcon({ size: 24 })
+const icon1em = AddIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = AddIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = AddIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = AddIcon({ class: 'icon-small' })
+const largeIcon = AddIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **370** icons. Here are some examples:
+This package contains **370** icons:
 
 - `add`
 - `alert`
 - `alignCenter`
 - `alignLeft`
 - `alignRight`
-
-...and 360 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/ooui/).
+- `appearance`
+- `arrowDown`
+- `arrowNextLtr`
+- `arrowNextRtl`
+- `arrowPreviousLtr`
+- `arrowPreviousRtl`
+- `arrowUp`
+- `articleAdd`
+- `articleCheck`
+- `articleDisambiguationLtr`
+- `articleDisambiguationRtl`
+- `articleLtr`
+- `articleNotFoundLtr`
+- `articleNotFoundRtl`
+- `articleRedirectLtr`
+- `articleRedirectRtl`
+- `articleRtl`
+- `articleSearch`
+- `articlesLtr`
+- `articlesRtl`
+- `articlesSearchLtr`
+- `articlesSearchRtl`
+- `attachment`
+- `bell`
+- `bellOutline`
+- `bigger`
+- `block`
+- `boldA`
+- `boldArabAin`
+- `boldArabDad`
+- `boldArabJeem`
+- `boldArmnTo`
+- `boldB`
+- `boldCyrlBe`
+- `boldCyrlPalochka`
+- `boldCyrlTe`
+- `boldCyrlZhe`
+- `boldF`
+- `boldG`
+- `boldGeorMan`
+- `boldL`
+- `boldN`
+- `boldQ`
+- `boldV`
+- `bookLtr`
+- `bookRtl`
+- `bookmark`
+- `bookmarkListLtr`
+- `bookmarkListRtl`
+- `bookmarkOutline`
+- `bright`
+- `browserLtr`
+- `browserRtl`
+- `calendar`
+- `camera`
+- `cancel`
+- `chart`
+- `check`
+- `checkAll`
+- `clear`
+- `clock`
+- `close`
+- `code`
+- `collapse`
+- `copyLtr`
+- `copyRtl`
+- `cutLtr`
+- `cutRtl`
+- `database`
+- `die`
+- `doubleChevronEndLtr`
+- `doubleChevronEndRtl`
+- `doubleChevronStartLtr`
+- `doubleChevronStartRtl`
+- `downTriangle`
+- `download`
+- `draggable`
+- `edit`
+- `editLock`
+- `editUndoLtr`
+- `editUndoRtl`
+- `ellipsis`
+- `error`
+- `exitFullscreen`
+- `expand`
+- `eye`
+- `eyeClosed`
+- `feedbackLtr`
+- `feedbackRtl`
+- `flagLtr`
+- `flagRtl`
+- `folderPlaceholderLtr`
+- `folderPlaceholderRtl`
+- `fullScreen`
+- `function`
+- `functionArgumentLtr`
+- `functionArgumentRtl`
+- `funnelLtr`
+- `funnelRtl`
+- `globe`
+- `halfBrightLtr`
+- `halfBrightRtl`
+- `halfStarLtr`
+- `halfStarRtl`
+- `hand`
+- `heart`
+- `helpLtr`
+- `helpNoticeLtr`
+- `helpNoticeRtl`
+- `helpRtl`
+- `hieroglyph`
+- `highlight`
+- `history`
+- `home`
+- `image`
+- `imageAddLtr`
+- `imageAddRtl`
+- `imageBroken`
+- `imageGallery`
+- `imageLayoutBasic`
+- `imageLayoutFrame`
+- `imageLayoutFrameless`
+- `imageLayoutThumbnail`
+- `imageLockLtr`
+- `imageLockRtl`
+- `indentLtr`
+- `indentRtl`
+- `info`
+- `infoFilled`
+- `instanceLtr`
+- `instanceRtl`
+- `italicA`
+- `italicArabKehehJeem`
+- `italicArabMeem`
+- `italicArabTeh`
+- `italicArmnSha`
+- `italicC`
+- `italicD`
+- `italicE`
+- `italicGeorKan`
+- `italicI`
+- `italicK`
+- `italicS`
+- `journalLtr`
+- `journalRtl`
+- `key`
+- `keyboard`
+- `labFlask`
+- `language`
+- `largerText`
+- `layoutLtr`
+- `layoutRtl`
+- `lightbulb`
+- `link`
+- `linkExternalLtr`
+- `linkExternalRtl`
+- `linkSecure`
+- `listBulletLtr`
+- `listBulletRtl`
+- `listNumberedLtr`
+- `listNumberedRtl`
+- `literalLtr`
+- `literalRtl`
+- `lock`
+- `logInLtr`
+- `logInRtl`
+- `logOutLtr`
+- `logOutRtl`
+- `logoCc`
+- `logoCodex`
+- `logoMediaWiki`
+- `logoMetaWiki`
+- `logoWikibooks`
+- `logoWikidata`
+- `logoWikifunctions`
+- `logoWikimedia`
+- `logoWikimediaCommons`
+- `logoWikimediaDiscovery`
+- `logoWikinews`
+- `logoWikipedia`
+- `logoWikiquote`
+- `logoWikisource`
+- `logoWikispecies`
+- `logoWikiversity`
+- `logoWikivoyage`
+- `logoWiktionary`
+- `mapLtr`
+- `mapPin`
+- `mapPinAdd`
+- `mapRtl`
+- `mapTrail`
+- `markup`
+- `mathematics`
+- `mathematicsDisplayBlock`
+- `mathematicsDisplayDefault`
+- `mathematicsDisplayInline`
+- `menu`
+- `mergeLtr`
+- `mergeRtl`
+- `message`
+- `moon`
+- `move`
+- `moveFirstLtr`
+- `moveFirstRtl`
+- `moveLastLtr`
+- `moveLastRtl`
+- `musicalScore`
+- `network`
+- `networkOff`
+- `newWindowLtr`
+- `newWindowRtl`
+- `newlineLtr`
+- `newlineRtl`
+- `newspaperLtr`
+- `newspaperRtl`
+- `nextLtr`
+- `nextRtl`
+- `noWikiText`
+- `notBright`
+- `notice`
+- `ocr`
+- `ongoingConversationLtr`
+- `ongoingConversationRtl`
+- `outdentLtr`
+- `outdentRtl`
+- `outlineLtr`
+- `outlineRtl`
+- `pageSettings`
+- `paletteLtr`
+- `paletteRtl`
+- `pasteLtr`
+- `pasteRtl`
+- `pause`
+- `play`
+- `power`
+- `previousLtr`
+- `previousRtl`
+- `printer`
+- `pushPin`
+- `puzzleLtr`
+- `puzzleRtl`
+- `qrCode`
+- `quotesLtr`
+- `quotesRtl`
+- `recentChangesLtr`
+- `recentChangesRtl`
+- `redoLtr`
+- `redoRtl`
+- `reference`
+- `referenceExistingLtr`
+- `referenceExistingRtl`
+- `referencesLtr`
+- `referencesRtl`
+- `reload`
+- `restore`
+- `robot`
+- `sandbox`
+- `search`
+- `searchCaseSensitive`
+- `searchDiacritics`
+- `searchRegularExpression`
+- `settings`
+- `share`
+- `signatureLtr`
+- `signatureRtl`
+- `smaller`
+- `smallerText`
+- `sortVertical`
+- `specialCharacter`
+- `specialPagesLtr`
+- `specialPagesRtl`
+- `speechBubbleAddLtr`
+- `speechBubbleAddRtl`
+- `speechBubbleLtr`
+- `speechBubbleRtl`
+- `speechBubblesLtr`
+- `speechBubblesRtl`
+- `star`
+- `stop`
+- `strikethroughA`
+- `strikethroughS`
+- `strikethroughY`
+- `subscriptLtr`
+- `subscriptRtl`
+- `subtract`
+- `success`
+- `superscriptLtr`
+- `superscriptRtl`
+- `table`
+- `tableAddColumnAfterLtr`
+- `tableAddColumnAfterRtl`
+- `tableAddColumnBeforeLtr`
+- `tableAddColumnBeforeRtl`
+- `tableAddRowAfter`
+- `tableAddRowBefore`
+- `tableCaption`
+- `tableMergeCells`
+- `tableMoveColumnAfterLtr`
+- `tableMoveColumnAfterRtl`
+- `tableMoveColumnBeforeLtr`
+- `tableMoveColumnBeforeRtl`
+- `tableMoveRowAfter`
+- `tableMoveRowBefore`
+- `tagLtr`
+- `tagRtl`
+- `templateAddLtr`
+- `templateAddRtl`
+- `textDirLtr`
+- `textDirRtl`
+- `textFlowLtr`
+- `textFlowRtl`
+- `textStyle`
+- `textSummaryLtr`
+- `textSummaryRtl`
+- `trash`
+- `tray`
+- `unBlock`
+- `unFlagLtr`
+- `unFlagRtl`
+- `unLink`
+- `unLock`
+- `unStar`
+- `underlineA`
+- `underlineU`
+- `undoLtr`
+- `undoRtl`
+- `upTriangle`
+- `updateLtr`
+- `updateRtl`
+- `upload`
+- `userActive`
+- `userAddLtr`
+- `userAddRtl`
+- `userAnonymous`
+- `userAvatar`
+- `userAvatarOutline`
+- `userContributionsLtr`
+- `userContributionsRtl`
+- `userGroupLtr`
+- `userGroupRtl`
+- `userRightsLtr`
+- `userRightsRtl`
+- `userTalkLtr`
+- `userTalkRtl`
+- `userTemporaryLocationLtr`
+- `userTemporaryLocationRtl`
+- `userTemporaryLtr`
+- `userTemporaryRtl`
+- `verticalEllipsis`
+- `viewCompact`
+- `viewDetailsLtr`
+- `viewDetailsRtl`
+- `visionSimulator`
+- `volumeDownLtr`
+- `volumeDownRtl`
+- `volumeOffLtr`
+- `volumeOffRtl`
+- `volumeUpLtr`
+- `volumeUpRtl`
+- `watchlistLtr`
+- `watchlistRtl`
+- `wikiText`
+- `window`
+- `zoomIn`
+- `zoomOut`
 
 ## Usage Examples
 
@@ -101,77 +539,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { add, alert, alignCenter, alignLeft } from '@stacksjs/iconify-ooui'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { AddIcon, AlertIcon, AlignCenterIcon, AlignLeftIcon } from '@stacksjs/iconify-ooui'
 
   global.navIcons = {
-    add: renderIcon(add, { size: 20, class: 'nav-icon' }),
-    alert: renderIcon(alert, { size: 20, class: 'nav-icon' }),
-    alignCenter: renderIcon(alignCenter, { size: 20, class: 'nav-icon' }),
-    alignLeft: renderIcon(alignLeft, { size: 20, class: 'nav-icon' })
+    home: AddIcon({ size: 20, class: 'nav-icon' }),
+    about: AlertIcon({ size: 20, class: 'nav-icon' }),
+    contact: AlignCenterIcon({ size: 20, class: 'nav-icon' }),
+    settings: AlignLeftIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.add !!} Home</a>
-  <a href="/about">{!! navIcons.alert !!} About</a>
-  <a href="/contact">{!! navIcons.alignCenter !!} Contact</a>
-  <a href="/settings">{!! navIcons.alignLeft !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { add } from '@stacksjs/iconify-ooui'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AddIcon } from '@stacksjs/iconify-ooui'
 
-const icon = renderIcon(add, {
+const icon = AddIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-ooui'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { AddIcon, AlertIcon, AlignCenterIcon } from '@stacksjs/iconify-ooui'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = AddIcon({ size: 16, color: '#22c55e' })
+const warningIcon = AlertIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = AlignCenterIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { add, alert } from '@stacksjs/iconify-ooui'
+   // Recommended
+   import { AddIcon, AlertIcon } from '@stacksjs/iconify-ooui'
+   const icon = AddIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { add, alert } from '@stacksjs/iconify-ooui'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(add, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { AddIcon, AlertIcon } from '@stacksjs/iconify-ooui'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-ooui'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { add } from '@stacksjs/iconify-ooui'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(add, { size: 24 })
+     import { AddIcon } from '@stacksjs/iconify-ooui'
+     global.icon = AddIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +625,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = AddIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support

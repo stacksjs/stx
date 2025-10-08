@@ -21,79 +21,217 @@ bun add @stacksjs/iconify-ei
 
 ## Quick Start
 
+### Component Style (Recommended)
+
+Icons are available as component functions that accept props:
+
+```typescript
+import { ArchiveIcon, ArrowDownIcon, ArrowLeftIcon } from '@stacksjs/iconify-ei'
+
+// Basic usage
+const icon = ArchiveIcon()
+
+// With size
+const sizedIcon = ArchiveIcon({ size: 24 })
+
+// With color
+const coloredIcon = ArrowDownIcon({ color: 'red' })
+
+// With multiple props
+const customIcon = ArrowLeftIcon({
+  size: 32,
+  color: '#4a90e2',
+  class: 'my-icon'
+})
+```
+
 ### In stx Templates
 
 ```html
 @js
-  import { archive, arrowDown, arrowLeft } from '@stacksjs/iconify-ei'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { ArchiveIcon, ArrowDownIcon, ArrowLeftIcon } from '@stacksjs/iconify-ei'
 
   global.icons = {
-    archive: renderIcon(archive, { size: 24 }),
-    arrowDown: renderIcon(arrowDown, { size: 24, color: '#4a90e2' }),
-    arrowLeft: renderIcon(arrowLeft, { size: 32 })
+    home: ArchiveIcon({ size: 24 }),
+    user: ArrowDownIcon({ size: 24, color: '#4a90e2' }),
+    settings: ArrowLeftIcon({ size: 32 })
   }
 @endjs
 
 <div class="icons">
-  {!! icons.archive !!}
-  {!! icons.arrowDown !!}
-  {!! icons.arrowLeft !!}
+  {!! icons.home !!}
+  {!! icons.user !!}
+  {!! icons.settings !!}
 </div>
 ```
 
-### In TypeScript/JavaScript
+### Data-Only Import
+
+You can also import icon data and use the `renderIcon` function directly:
 
 ```typescript
 import { archive, arrowDown, arrowLeft } from '@stacksjs/iconify-ei'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-// Basic usage
 const svg = renderIcon(archive, { size: 24 })
-
-// With custom color
-const coloredIcon = renderIcon(arrowDown, {
-  size: 32,
-  color: '#ff0000'
-})
-
-// With transformations
-const transformedIcon = renderIcon(arrowLeft, {
-  size: 24,
-  rotate: 90,
-  hFlip: true
-})
 ```
 
-## Icon Options
+## Icon Properties
 
-The `renderIcon` function accepts the following options:
+All icon component functions and `renderIcon` accept the following properties:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `size` | `string \| number` | - | Icon size (both width and height) |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `'currentColor'` | Icon color (hex or CSS color) |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `string \| number` | - | Icon size (sets both width and height) |
+| `width` | `string \| number` | - | Icon width (overrides size) |
+| `height` | `string \| number` | - | Icon height (overrides size) |
+| `color` | `string` | `'currentColor'` | Icon color (CSS color or hex) |
 | `hFlip` | `boolean` | `false` | Flip horizontally |
 | `vFlip` | `boolean` | `false` | Flip vertically |
 | `rotate` | `0 \| 90 \| 180 \| 270` | `0` | Rotation in degrees |
 | `class` | `string` | - | Additional CSS classes |
-| `style` | `string` | - | Additional inline styles |
+| `style` | `string` | - | Inline styles |
+
+## Color
+
+### Monotone Icons
+
+Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
+
+```typescript
+// Via color property
+const redIcon = ArchiveIcon({ color: 'red' })
+const blueIcon = ArchiveIcon({ color: '#4a90e2' })
+
+// Via inline style
+const greenIcon = ArchiveIcon({ style: 'color: green;' })
+
+// Via CSS class
+const themedIcon = ArchiveIcon({ class: 'text-primary' })
+```
+
+```css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+```
+
+## Size
+
+Control icon size using the `size`, `width`, or `height` properties:
+
+```typescript
+// Set both width and height
+const icon24 = ArchiveIcon({ size: 24 })
+const icon1em = ArchiveIcon({ size: '1em' })
+
+// Set individual dimensions
+const customIcon = ArchiveIcon({ width: 24, height: 32 })
+
+// Only set height (width calculated from ratio)
+const heightOnly = ArchiveIcon({ height: '1em' })
+```
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+```css
+.icon-small {
+  width: 1em;
+  height: 1em;
+}
+
+.icon-large {
+  width: 2em;
+  height: 2em;
+}
+```
+
+```typescript
+const smallIcon = ArchiveIcon({ class: 'icon-small' })
+const largeIcon = ArchiveIcon({ class: 'icon-large' })
+```
 
 ## Available Icons
 
-This package contains **70** icons. Here are some examples:
+This package contains **70** icons:
 
 - `archive`
 - `arrowDown`
 - `arrowLeft`
 - `arrowRight`
 - `arrowUp`
-
-...and 60 more.
-
-To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/ei/).
+- `bell`
+- `calendar`
+- `camera`
+- `cart`
+- `chart`
+- `check`
+- `chevronDown`
+- `chevronLeft`
+- `chevronRight`
+- `chevronUp`
+- `clock`
+- `close`
+- `closeO`
+- `comment`
+- `creditCard`
+- `envelope`
+- `exclamation`
+- `externalLink`
+- `eye`
+- `gear`
+- `heart`
+- `image`
+- `like`
+- `link`
+- `location`
+- `lock`
+- `minus`
+- `navicon`
+- `paperclip`
+- `pencil`
+- `play`
+- `plus`
+- `pointer`
+- `question`
+- `redo`
+- `refresh`
+- `retweet`
+- `scFacebook`
+- `scGithub`
+- `scGooglePlus`
+- `scInstagram`
+- `scLinkedin`
+- `scOdnoklassniki`
+- `scPinterest`
+- `scSkype`
+- `scSoundcloud`
+- `scTelegram`
+- `scTumblr`
+- `scTwitter`
+- `scVimeo`
+- `scVk`
+- `scYoutube`
+- `search`
+- `shareApple`
+- `shareGoogle`
+- `spinner`
+- `spinner2`
+- `spinner3`
+- `star`
+- `tag`
+- `trash`
+- `trophy`
+- `undo`
+- `unlock`
+- `user`
 
 ## Usage Examples
 
@@ -101,77 +239,82 @@ To see all available icons, explore the package source or check the [Iconify web
 
 ```html
 @js
-  import { archive, arrowDown, arrowLeft, arrowRight } from '@stacksjs/iconify-ei'
-  import { renderIcon } from '@stacksjs/iconify-core'
+  import { ArchiveIcon, ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon } from '@stacksjs/iconify-ei'
 
   global.navIcons = {
-    archive: renderIcon(archive, { size: 20, class: 'nav-icon' }),
-    arrowDown: renderIcon(arrowDown, { size: 20, class: 'nav-icon' }),
-    arrowLeft: renderIcon(arrowLeft, { size: 20, class: 'nav-icon' }),
-    arrowRight: renderIcon(arrowRight, { size: 20, class: 'nav-icon' })
+    home: ArchiveIcon({ size: 20, class: 'nav-icon' }),
+    about: ArrowDownIcon({ size: 20, class: 'nav-icon' }),
+    contact: ArrowLeftIcon({ size: 20, class: 'nav-icon' }),
+    settings: ArrowRightIcon({ size: 20, class: 'nav-icon' })
   }
 @endjs
 
 <nav>
-  <a href="/">{!! navIcons.archive !!} Home</a>
-  <a href="/about">{!! navIcons.arrowDown !!} About</a>
-  <a href="/contact">{!! navIcons.arrowLeft !!} Contact</a>
-  <a href="/settings">{!! navIcons.arrowRight !!} Settings</a>
+  <a href="/">{!! navIcons.home !!} Home</a>
+  <a href="/about">{!! navIcons.about !!} About</a>
+  <a href="/contact">{!! navIcons.contact !!} Contact</a>
+  <a href="/settings">{!! navIcons.settings !!} Settings</a>
 </nav>
 ```
 
 ### Custom Styling
 
 ```typescript
-import { archive } from '@stacksjs/iconify-ei'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { ArchiveIcon } from '@stacksjs/iconify-ei'
 
-const icon = renderIcon(archive, {
+const icon = ArchiveIcon({
   size: 24,
   class: 'icon icon-primary',
   style: 'opacity: 0.8; transition: opacity 0.2s;'
 })
 ```
 
-### Dynamic Icons
+### Status Indicators
 
 ```typescript
-import * as icons from '@stacksjs/iconify-ei'
-import { renderIcon } from '@stacksjs/iconify-core'
+import { ArchiveIcon, ArrowDownIcon, ArrowLeftIcon } from '@stacksjs/iconify-ei'
 
-function getIcon(name: string) {
-  const iconData = icons[name]
-  if (!iconData) return null
-
-  return renderIcon(iconData, { size: 24 })
-}
+const successIcon = ArchiveIcon({ size: 16, color: '#22c55e' })
+const warningIcon = ArrowDownIcon({ size: 16, color: '#f59e0b' })
+const errorIcon = ArrowLeftIcon({ size: 16, color: '#ef4444' })
 ```
 
 ## Best Practices
 
-1. **Import Only What You Need**: Use named imports to enable tree-shaking
+1. **Use Component Functions**: Import component functions for cleaner code
    ```typescript
-   // Good
-   import { archive, arrowDown } from '@stacksjs/iconify-ei'
+   // Recommended
+   import { ArchiveIcon, ArrowDownIcon } from '@stacksjs/iconify-ei'
+   const icon = ArchiveIcon({ size: 24 })
 
-   // Avoid (imports everything)
+   // Also works (data + renderIcon)
+   import { archive, arrowDown } from '@stacksjs/iconify-ei'
+   import { renderIcon } from '@stacksjs/iconify-core'
+   const icon = renderIcon(archive, { size: 24 })
+   ```
+
+2. **Import Only What You Need**: Use named imports to enable tree-shaking
+   ```typescript
+   // Good - only imports what you use
+   import { ArchiveIcon, ArrowDownIcon } from '@stacksjs/iconify-ei'
+
+   // Avoid - imports everything
    import * as icons from '@stacksjs/iconify-ei'
    ```
 
-2. **Cache Rendered Icons**: Render once and reuse multiple times
+3. **Cache Rendered Icons**: Render once and reuse multiple times
    ```html
    @js
-     import { archive } from '@stacksjs/iconify-ei'
-     import { renderIcon } from '@stacksjs/iconify-core'
-
-     global.icon = renderIcon(archive, { size: 24 })
+     import { ArchiveIcon } from '@stacksjs/iconify-ei'
+     global.icon = ArchiveIcon({ size: 24 })
    @endjs
 
    {!! icon !!}
    {!! icon !!}
+   {!! icon !!}
    ```
 
-3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+4. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -182,6 +325,10 @@ function getIcon(name: string) {
    .icon:hover {
      opacity: 1;
    }
+   ```
+
+   ```typescript
+   const icon = ArchiveIcon({ class: 'icon' })
    ```
 
 ## TypeScript Support
