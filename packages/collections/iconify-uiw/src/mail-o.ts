@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mailO: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M18.333 2.5c.92 0 1.667.746 1.667 1.667v11.666c0 .92-.746 1.667-1.667 1.667H1.667C.747 17.5 0 16.754 0 15.833V4.167C0 3.247.746 2.5 1.667 2.5zM7.168 11.328l-4.91 4.852h15.325l-4.857-4.802L10 13.265zM18.64 7.292l-4.796 3.316l4.796 4.736zm-17.279.061v7.836l4.686-4.631zm16.956-3.532H1.698a.36.36 0 0 0-.25.086a.26.26 0 0 0-.085.222v1.62L10 11.656l8.644-5.965V4.199q.001-.2-.092-.292a.3.3 0 0 0-.234-.086\"/>",

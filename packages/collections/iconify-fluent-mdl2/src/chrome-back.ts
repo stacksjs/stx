@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chromeBack: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2048 1024H392l674 674l-144 145L0 922L922 0l144 145l-674 674h1656z\"/>",

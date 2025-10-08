@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const netlogo: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m0 49.376l512 197.288L3.568 462.624l102.427-206.087z\"/>",

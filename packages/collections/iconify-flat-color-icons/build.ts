@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-flat-color-icons')
+console.log('✓ Built @stacksjs/iconify-flat-color-icons')

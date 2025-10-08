@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const blankCalendarFlat: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#2859c5\" fill-rule=\"evenodd\" d=\"M3.5 0a1 1 0 0 1 1 1v1h5V1a1 1 0 0 1 2 0v1h1A1.5 1.5 0 0 1 14 3.5v1H0v-1A1.5 1.5 0 0 1 1.5 2h1V1a1 1 0 0 1 1-1\" clip-rule=\"evenodd\"/><path fill=\"#8fbffa\" d=\"M0 4.5h14v8a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 0 12.5z\"/></g>",

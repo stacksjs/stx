@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const shroom: IconData = {
   "body": "<path fill=\"#A1F931\" fill-rule=\"evenodd\" d=\"m8.409 14.437l2.532-9.678c-1.22-.257-3.863.026-5.012 3.45c-1.055 3.149 1.086 5.783 2.48 6.228m7.182-4.874l-2.532 9.678c1.22.257 3.863-.026 5.012-3.45c1.055-3.149-1.086-5.783-2.48-6.228m4.307-.375H10.94c.91-3.728 3.296-4.552 4.375-4.498H21zm-6.84 5.625H4.104L3 19.31h5.684c1.08.054 3.465-.77 4.375-4.497\" clip-rule=\"evenodd\"/>",

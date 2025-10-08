@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fanIndirectSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m12 22l-3.5-3.5l1.4-1.4l1.1 1.075V12h2v6.175l1.075-1.075l1.425 1.4zm-7.5-3L1 15.5L4.5 12l1.4 1.425L4.825 14.5H7V9h2v7.5H4.825L5.9 17.6zm15 0l-1.425-1.4l1.1-1.1H15V9h2v5.5h2.175l-1.1-1.075L19.5 12l3.5 3.5zM2 11.7V3h20v8.7l-2-2V5H4v4.7z\"/>",

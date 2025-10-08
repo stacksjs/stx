@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const xcur: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M12 21a9 9 0 0 0 9-9a9 9 0 0 0-9-9a9 9 0 0 0-9 9a9 9 0 0 0 9 9m6.063-6.03c.289-.588-.107-1.246-.746-1.39c-.579-.129-1.147.217-1.452.726a4.5 4.5 0 1 1-.182-4.892c.363.514 1.016.82 1.6.585c.568-.228.855-.876.546-1.404A6.75 6.75 0 0 0 12 5.25a6.75 6.75 0 1 0 6.064 9.72\" clip-rule=\"evenodd\"/>",

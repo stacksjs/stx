@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const roundWifi1Bar: IconData = {
   "body": "<circle cx=\"12\" cy=\"18\" r=\"2\" fill=\"currentColor\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chat: IconData = {
   "body": "<g fill=\"none\"><path d=\"M2.5 3h19v14h-15l-4 3.5z\"/><path stroke=\"currentColor\" stroke-linecap=\"square\" stroke-width=\"2\" d=\"M2.5 3h19v14h-15l-4 3.5z\"/></g>",

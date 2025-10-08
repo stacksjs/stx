@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const italicOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M4 1.5h9m-11 12h9m-2.5-12l-2 12\"/>",

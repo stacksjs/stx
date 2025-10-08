@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const timer2Sharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 19v-8.5h6V8H8V5h9v8.5h-6V16h6v3z\"/>",

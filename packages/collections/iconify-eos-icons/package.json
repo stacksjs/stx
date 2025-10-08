@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-eos-icons",
+  "name": "@stacksjs/iconify-eos-icons",
   "version": "0.0.1",
   "description": "EOS Icons icons for stx from Iconify",
   "author": "SUSE UX/UI team",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

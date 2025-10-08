@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tetris: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 8V6h4V4h2v4M0 4V2h2V0h4v2H4v2\"/>",

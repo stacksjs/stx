@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const shellWindowMinimizeFilled: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M13 8.5H3v-1h10z\" clip-rule=\"evenodd\"/>",

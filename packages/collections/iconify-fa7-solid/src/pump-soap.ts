@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pumpSoap: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M96 0v80h128V56h72c13.3 0 24-10.7 24-24S309.3 8 296 8h-72V0c0-17.7-14.3-32-32-32h-64c-17.7 0-32 14.3-32 32M64 128c-35.3 0-64 28.7-64 64v256c0 35.3 28.7 64 64 64h192c35.3 0 64-28.7 64-64V192c0-35.3-28.7-64-64-64zm160 216c0 35.3-28.7 56-64 56s-64-20.7-64-56c0-32.5 37-80.9 50.9-97.9c3.2-3.9 8.1-6.1 13.1-6.1s9.9 2.2 13.1 6.1c13.9 17 50.9 65.4 50.9 97.9\"/>",

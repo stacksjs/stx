@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-streamline-plump')
+console.log('✓ Built @stacksjs/iconify-streamline-plump')

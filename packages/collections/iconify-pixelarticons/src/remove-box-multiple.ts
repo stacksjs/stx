@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const removeBoxMultiple: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 3H3v14h14V3zm10 2v10H5V5zm4 2v12H7v2h14V7zm-6 2H7v2h6z\"/>",

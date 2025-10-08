@@ -1,11 +1,11 @@
-# @stx/iconify-foundation
+# @stacksjs/iconify-foundation
 
 Foundation icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-foundation
+bun add @stacksjs/iconify-foundation
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-foundation
 
 ```html
 <script>
-  import { home } from '@stx/iconify-foundation'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-foundation'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-foundation
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-foundation'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-foundation'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

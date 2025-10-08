@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const deviceTvSmart: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 4h18v14h-6v2H8v-2H2V4zm16 12V6H4v10z\"/>",

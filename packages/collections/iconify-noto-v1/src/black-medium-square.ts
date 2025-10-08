@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const blackMediumSquare: IconData = {
   "body": "<path fill=\"#212121\" d=\"M23 23h82v82H23z\"/>",

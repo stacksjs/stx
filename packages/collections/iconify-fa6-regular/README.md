@@ -1,11 +1,11 @@
-# @stx/iconify-fa6-regular
+# @stacksjs/iconify-fa6-regular
 
 Font Awesome 6 Regular icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-fa6-regular
+bun add @stacksjs/iconify-fa6-regular
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-fa6-regular
 
 ```html
 <script>
-  import { home } from '@stx/iconify-fa6-regular'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-fa6-regular'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-fa6-regular
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-fa6-regular'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-fa6-regular'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

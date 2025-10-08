@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const qrcode: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1.363 1.364v6.363h6.363V1.364zm7.726 9.545V20H0v-9.09zm-1.363 1.364H1.363v6.363h6.363zm-1.732 1.873v2.727H3.267v-2.727zM9.089 0v9.09H0V0zM5.994 3.237H3.267v2.727h2.727zm13.999 13.695v3.067h-4.61v-1.364h3.246v-1.703zm-6.15 1.701v1.364h-2.937v-1.364zm-1.575-7.73v5.999h-1.363v-5.999zm3.27 3.243v1.362h1.366v1.363h-2.729v-2.725zM20 13.85v1.529h-1.363v-1.53zm-.01-2.907v1.364h-4.604v-1.364zM19.996 0v9.09h-9.089V0zm-1.363 1.364h-6.362v6.363h6.362zm-1.732 1.873v2.727h-2.727V3.237z\"/>",

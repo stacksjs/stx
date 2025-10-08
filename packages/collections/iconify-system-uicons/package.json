@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-system-uicons",
+  "name": "@stacksjs/iconify-system-uicons",
   "version": "0.0.1",
   "description": "System UIcons icons for stx from Iconify",
   "author": "Corey Ginnivan",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

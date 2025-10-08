@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arithmeticMean: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M24 9h-2l-6 8.571L10 9H8l7 10l-7 10h2l6-8.571L22 29h2l-7-10zM8 3h16v2H8z\"/>",

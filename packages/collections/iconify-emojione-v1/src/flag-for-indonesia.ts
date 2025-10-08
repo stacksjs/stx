@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flagForIndonesia: IconData = {
   "body": "<path fill=\"#e6e7e8\" d=\"M54 54H10C3.373 54 0 49.075 0 43V32h64v11c0 6.075-3.373 11-10 11\"/><path fill=\"#ec1c24\" d=\"M0 21c0-6.075 3.373-11 10-11h44c6.627 0 10 4.925 10 11v11H0z\"/>",

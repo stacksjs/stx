@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cursorThin: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M11 21L4 4l17 7l-6.265 2.685a2 2 0 0 0-1.05 1.05z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hardwareOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9 8H4q0-2.075 1.463-3.537T9 3h6v3l3-3h2v8h-2l-3-3v13H9zm2 11h2v-6h-2zm0-8h2V5H9q-.65 0-1.225.263t-1 .737H11zm1 1\"/>",

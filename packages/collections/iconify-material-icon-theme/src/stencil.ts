@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stencil: IconData = {
   "body": "<path fill=\"#448aff\" d=\"m8 12l-6 8h22l6-8zm6.5-8L10 10h11l4.5-6zm3 24l4.5-6H11l-4.5 6z\"/>",

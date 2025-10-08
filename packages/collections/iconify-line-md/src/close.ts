@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const close: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-dasharray=\"12\" stroke-dashoffset=\"12\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 12l7 7M12 12l-7 -7M12 12l-7 7M12 12l7 -7\"><animate fill=\"freeze\" attributeName=\"stroke-dashoffset\" dur=\"0.3s\" values=\"12;0\"/></path>",

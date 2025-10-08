@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const boxLightUpRight: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 10h12v12h-2V12H0z\"/>",

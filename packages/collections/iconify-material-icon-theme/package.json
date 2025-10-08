@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-material-icon-theme",
+  "name": "@stacksjs/iconify-material-icon-theme",
   "version": "0.0.1",
   "description": "Material Icon Theme icons for stx from Iconify",
   "author": "Material Extensions",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

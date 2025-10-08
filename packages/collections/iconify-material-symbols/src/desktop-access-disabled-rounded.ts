@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const desktopAccessDisabledRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.175 3.175v2.8L1.4 4.2q-.275-.275-.275-.7t.275-.7t.7-.275t.7.275l18.4 18.4q.275.275.275.7t-.275.7t-.7.275t-.7-.275L15.2 18H14v2h1q.425 0 .713.288T16 21t-.288.713T15 22H9q-.425 0-.712-.288T8 21t.288-.712T9 20h1v-2H4q-.825 0-1.412-.587T2 16V5q0-.925.588-1.375zM22 5v11.725q0 .35-.175.575t-.45.35t-.55.088t-.525-.288L7.55 4.7q-.25-.25-.287-.525t.087-.55t.35-.45T8.275 3H20q.825 0 1.413.587T22 5\"/>",

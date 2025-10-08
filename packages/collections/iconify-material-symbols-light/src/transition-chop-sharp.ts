@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const transitionChopSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 19V5h18v14zm1.817-1H20V6h-4.844l2.248 8.692z\"/>",

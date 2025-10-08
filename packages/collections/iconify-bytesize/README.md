@@ -1,11 +1,11 @@
-# @stx/iconify-bytesize
+# @stacksjs/iconify-bytesize
 
 Bytesize Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-bytesize
+bun add @stacksjs/iconify-bytesize
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-bytesize
 
 ```html
 <script>
-  import { home } from '@stx/iconify-bytesize'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-bytesize'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-bytesize
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-bytesize'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-bytesize'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

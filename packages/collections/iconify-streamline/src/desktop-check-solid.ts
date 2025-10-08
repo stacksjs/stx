@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const desktopCheckSolid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M13.498.436a.75.75 0 0 1 .063 1.059l-4 4.5a.75.75 0 0 1-1.01.101l-2-1.5a.75.75 0 1 1 .9-1.2l1.447 1.086L12.44.498a.75.75 0 0 1 1.058-.062M8.515 11H12.5A1.5 1.5 0 0 0 14 9.5v-2a1 1 0 1 0-2 0V9H2V3h2.5a1 1 0 1 0 0-2h-3A1.5 1.5 0 0 0 0 2.5v7A1.5 1.5 0 0 0 1.5 11h3.985l-.537 1.5H4A.75.75 0 0 0 4 14h6a.75.75 0 0 0 0-1.5h-.948z\" clip-rule=\"evenodd\"/>",

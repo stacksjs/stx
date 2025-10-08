@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const layoutColumnFour16Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8.5 14H11V2H8.5zm-1-12H5v12h2.5zm6.5 9.5a2.5 2.5 0 0 1-2 2.45V2.05a2.5 2.5 0 0 1 2 2.45zM4 2.05A2.5 2.5 0 0 0 2 4.5v7a2.5 2.5 0 0 0 2 2.45z\"/>",

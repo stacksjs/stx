@@ -1,11 +1,11 @@
-# @stx/iconify-cil
+# @stacksjs/iconify-cil
 
 CoreUI Free icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-cil
+bun add @stacksjs/iconify-cil
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-cil
 
 ```html
 <script>
-  import { home } from '@stx/iconify-cil'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-cil'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-cil
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-cil'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-cil'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

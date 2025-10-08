@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const incredulousFace: IconData = {
   "body": "<path fill=\"#FCEA2B\" d=\"M36 13c-12.682 0-23 10.318-23 23s10.318 23 23 23s23-10.318 23-23s-10.318-23-23-23\"/><circle cx=\"36\" cy=\"36\" r=\"23\" fill=\"none\" stroke=\"#000\" stroke-miterlimit=\"10\" stroke-width=\"2\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M47.472 24.583c-.449.296-2.431 1.53-5.06 1.08c-2.134-.365-3.451-1.627-3.884-2.081m-14 1.001c.449.296 2.431 1.53 5.06 1.08c2.134-.365 3.451-1.627 3.884-2.081\"/><path stroke=\"#000\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M41 45c0 2.21-2.79 4-5 4s-5-1.79-5-4s2.79-3 5-3s5 .79 5 3z\"/><path d=\"M30 31a3.001 3.001 0 0 1-6 0c0-1.655 1.345-3 3-3s3 1.345 3 3m18 0a3.001 3.001 0 0 1-6 0c0-1.655 1.345-3 3-3s3 1.345 3 3\"/>",

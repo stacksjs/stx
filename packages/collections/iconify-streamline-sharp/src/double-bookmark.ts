@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const doubleBookmark: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M8 2h11v16\"/><path d=\"M4.5 5.5h11V21L10 16.5L4.5 21z\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pols: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M7.065 3h7.25A6.68 6.68 0 0 1 21 9.677a6.68 6.68 0 0 1-6.684 6.678H11.71V21H7.065v-2.392a4.494 4.494 0 0 0 3.344-4.358a4.496 4.496 0 0 0-3.344-4.358zm4.645 3.484h2.698c1.717 0 3.108 1.43 3.108 3.193c0 1.765-1.391 3.194-3.107 3.194h-2.7zM5.903 17.226a2.904 2.904 0 1 0 0-5.808a2.904 2.904 0 0 0 0 5.808\" clip-rule=\"evenodd\"/>",

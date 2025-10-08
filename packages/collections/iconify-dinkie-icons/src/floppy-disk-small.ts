@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const floppyDiskSmall: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 9h9V2H8v6H7V5H2v3H1V1h1v3h4V1h1V0H0Zm3-1V6h3v2Zm1-5V1h1v2Zm3-1h1V1H7Zm0 0\"/>",

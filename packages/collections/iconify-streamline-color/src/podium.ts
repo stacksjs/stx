@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const podium: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#d7e0ff\" d=\"M2 8.5h3v5h4v-5h3l1-5H1z\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M5 8.5H2l-1-5h12l-1 5H9m-2-5v-3m-2 6v7m4-7v7m-5 0h6m-7.5-10s0-3 2-3m7 3s0-3-2-3\"/></g>",

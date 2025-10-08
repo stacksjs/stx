@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const circle: IconData = {
   "body": "<circle cx=\"9\" cy=\"9\" r=\"8\" fill=\"currentColor\" fill-rule=\"evenodd\"/>",

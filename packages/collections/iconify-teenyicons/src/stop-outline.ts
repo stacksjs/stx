@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stopOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M11.5 3.5h-8v8h8z\"/>",

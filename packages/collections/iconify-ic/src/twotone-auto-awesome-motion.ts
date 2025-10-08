@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twotoneAutoAwesomeMotion: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 12h8v8h-8z\" opacity=\".3\"/><path fill=\"currentColor\" d=\"M14 2H4c-1.1 0-2 .9-2 2v10h2V4h10zm6 8h-8c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2m0 10h-8v-8h8z\"/><path fill=\"currentColor\" d=\"M18 6H8c-1.1 0-2 .9-2 2v10h2V8h10z\"/>",

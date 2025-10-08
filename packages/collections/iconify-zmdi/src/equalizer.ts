@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const equalizer: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M128 363V21h85v342zM0 363V192h85v171zm256-235h85v235h-85z\"/>",

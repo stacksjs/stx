@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const collapseContent: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11 13v6H9v-4H5v-2zm4-8v4h4v2h-6V5z\"/>",

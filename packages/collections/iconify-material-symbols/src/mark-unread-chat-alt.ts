@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const markUnreadChatAlt: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M19 6q-1.25 0-2.125-.875T16 3t.875-2.125T19 0t2.125.875T22 3t-.875 2.125T19 6M2 22V4q0-.825.588-1.412T4 2h10.1q-.1.5-.1 1t.1 1q.125.575.35 1.075T15 6H6v2h13q.8 0 1.575-.25T22 7v9q0 .825-.587 1.413T20 18H6zm4-11h12V9H6zm0 3h8v-2H6z\"/>",

@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-svg-spinners",
+  "name": "@stacksjs/iconify-svg-spinners",
   "version": "0.0.1",
   "description": "SVG Spinners icons for stx from Iconify",
   "author": "Utkarsh Verma",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

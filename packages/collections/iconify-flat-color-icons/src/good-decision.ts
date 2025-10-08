@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const goodDecision: IconData = {
   "body": "<g fill=\"#FFCC80\"><circle cx=\"38\" cy=\"26\" r=\"4\"/><circle cx=\"10\" cy=\"26\" r=\"4\"/><path d=\"M39 19c0-12.7-30-8.3-30 0v10c0 8.3 6.7 15 15 15s15-6.7 15-15z\"/><path d=\"M24 4C15.2 4 8 11.2 8 20v3.5l2.1.6V19l19.5-6.3l8.2 6.3v5.1l2.1-.6V20C40 12.5 34.6 4 24 4\"/></g><g fill=\"#4CAF50\"><path d=\"M22 16h4v18h-4z\"/><path d=\"M15 23h18v4H15z\"/></g>",

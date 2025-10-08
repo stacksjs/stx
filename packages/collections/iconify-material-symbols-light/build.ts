@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-material-symbols-light')
+console.log('✓ Built @stacksjs/iconify-material-symbols-light')

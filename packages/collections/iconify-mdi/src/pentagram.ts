@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pentagram: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m16.15 14.4l2.56 7.86L12 17.4l-6.72 4.9l2.57-7.93l-6.7-4.87h8.29L12 1.61l2.56 7.89h8.33zm-2.85 2.07l2.56 1.86l-.98-3.01zM11 9.5h2l-1-3.03zm-.26 6.97L9.13 15.3l-1 3.07zM18.28 11h-3.23l.62 1.9zm-7.75 0l-.91 2.8L12 15.54l2.39-1.72l-.92-2.82zm-4.77 0l2.58 1.87l.61-1.87z\"/>",

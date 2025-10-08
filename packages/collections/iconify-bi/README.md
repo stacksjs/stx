@@ -1,11 +1,11 @@
-# @stx/iconify-bi
+# @stacksjs/iconify-bi
 
 Bootstrap Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-bi
+bun add @stacksjs/iconify-bi
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-bi
 
 ```html
 <script>
-  import { home } from '@stx/iconify-bi'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-bi'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-bi
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-bi'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-bi'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

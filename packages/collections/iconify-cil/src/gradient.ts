@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const gradient: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M440 40H72a16 16 0 0 0-16 16v400a16 16 0 0 0 16 16h368a16 16 0 0 0 16-16V56a16 16 0 0 0-16-16m-16 192h-48v48h48v48h-48v40h-48v-40h-48v40h-48v-40h-48v40h-48v-40H88v-48h48v-48H88V72h336Z\"/><path fill=\"currentColor\" d=\"M136 280h48v48h-48zm48-48h48v48h-48zm48 48h48v48h-48zm48-48h48v48h-48zm48 48h48v48h-48zm-192-96h48v48h-48zm96 0h48v48h-48zm96 0h48v48h-48z\"/>",

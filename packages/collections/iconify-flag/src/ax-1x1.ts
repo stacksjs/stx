@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const ax1x1: IconData = {
   "body": "<defs><clipPath id=\"SVGT2fSOcUc\"><path fill-opacity=\".7\" d=\"M166 0h850v850H166z\"/></clipPath></defs><g clip-path=\"url(#SVGT2fSOcUc)\" transform=\"translate(-100)scale(.6024)\"><path fill=\"#0053a5\" d=\"M0 0h1300v850H0z\"/><g fill=\"#ffce00\"><path d=\"M400 0h250v850H400z\"/><path d=\"M0 300h1300v250H0z\"/></g><g fill=\"#d21034\"><path d=\"M475 0h100v850H475z\"/><path d=\"M0 375h1300v100H0z\"/></g></g>",

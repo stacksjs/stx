@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const necktie: IconData = {
   "body": "<path fill=\"currentColor\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"m15 36l6-23h6l6 23l-9 8zm6-32h6l3 2l-3 7h-6l-3-7z\"/>",

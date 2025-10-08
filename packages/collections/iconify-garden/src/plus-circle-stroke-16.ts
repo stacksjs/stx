@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const plusCircleStroke16: IconData = {
   "body": "<circle cx=\"7.5\" cy=\"8.5\" r=\"7\" fill=\"none\" stroke=\"currentColor\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" d=\"M7.5 4.5v8m4-4h-8\"/>",

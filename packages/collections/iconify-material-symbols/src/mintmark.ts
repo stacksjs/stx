@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mintmark: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M13 21v-2h4.6L13 14.4v-2.8l6 6V13h2v8zm-7-4v-1H3v-2h6v-3H5q-.825 0-1.412-.587T3 9V6q0-.825.588-1.412T5 4h1V3h2v1h3v2H5v3h4q.825 0 1.413.588T11 11v3q0 .825-.587 1.413T9 16H8v1z\"/>",

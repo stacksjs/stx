@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pinboardUnreadSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m6.5 22l-1-1v-4H2v-2l1.5-2.65V10H2V8h9v2H9.5v2.35L11 15v2H7.5v4zM18 8q-1.25 0-2.125-.875T15 5t.875-2.125T18 2t2.125.875T21 5t-.875 2.125T18 8m-4.9-2H2V4h11.1q-.05.25-.075.488T13 5t.025.513T13.1 6M12 20v-2h8V9.575q.6-.275 1.1-.675T22 8v12z\"/>",

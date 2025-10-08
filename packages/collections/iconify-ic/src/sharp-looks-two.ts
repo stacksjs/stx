@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpLooksTwo: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M21 3H3v18h18zm-6 10h-4v2h4v2H9v-6h4V9H9V7h6z\"/>",

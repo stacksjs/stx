@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const curlingStone: IconData = {
   "body": "<path fill=\"#BE1931\" d=\"M28 12H13V8a1 1 0 0 1 1-1h11a2 2 0 0 0 0-4H14a5 5 0 0 0-5 5v4H8a2 2 0 0 0 0 4h20a2 2 0 0 0 0-4\"/><path fill=\"#66757F\" d=\"M36 25a6 6 0 0 1-6 6H6a6 6 0 0 1-6-6v-5a6 6 0 0 1 6-6h24a6 6 0 0 1 6 6z\"/><path fill=\"#99AAB5\" d=\"M0 20h36v5H0z\"/>",

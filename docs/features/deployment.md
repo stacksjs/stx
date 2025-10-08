@@ -174,7 +174,7 @@ app.get('/health', (req, res) => {
 
 ```typescript
 // Performance metrics
-import { metrics } from '@stx/monitoring'
+import { metrics } from '@stacksjs/monitoring'
 
 metrics.counter('requests_total').inc()
 metrics.histogram('request_duration').observe(duration)

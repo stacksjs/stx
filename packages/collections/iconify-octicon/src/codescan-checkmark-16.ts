@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const codescanCheckmark16: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10.28 6.28a.75.75 0 1 0-1.06-1.06L6.25 8.19l-.97-.97a.75.75 0 0 0-1.06 1.06l1.5 1.5a.75.75 0 0 0 1.06 0z\"/><path fill=\"currentColor\" d=\"M7.5 15a7.5 7.5 0 1 1 5.807-2.754l2.473 2.474a.749.749 0 0 1-.326 1.275a.75.75 0 0 1-.734-.215l-2.474-2.473A7.47 7.47 0 0 1 7.5 15m0-13.5a6 6 0 1 0 4.094 10.386a.75.75 0 0 1 .293-.292a6 6 0 0 0 1.117-6.486A6 6 0 0 0 7.5 1.5\"/>",

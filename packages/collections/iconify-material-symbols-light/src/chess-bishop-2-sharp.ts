@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chessBishop2Sharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6.616 17.289q-.737-.91-1.176-2.46Q5 13.279 5 11.636Q5 9.672 6.48 7.89t4.495-3.47q-.183-.181-.29-.438q-.108-.257-.108-.54q0-.594.414-1.018Q11.406 2 12 2t1.009.424t.414 1.018q0 .296-.108.538q-.107.241-.304.422q3.01 1.477 4.5 3.266Q19 9.458 19 11.618q0 1.713-.434 3.274q-.433 1.562-1.162 2.397zM5 21v-1.942h14V21zm6.5-7.096h1V12h1.846v-1H12.5V9.116h-1V11H9.634v1H11.5z\"/>",

@@ -1,11 +1,11 @@
-# @stx/iconify-fontelico
+# @stacksjs/iconify-fontelico
 
 Fontelico icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-fontelico
+bun add @stacksjs/iconify-fontelico
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-fontelico
 
 ```html
 <script>
-  import { home } from '@stx/iconify-fontelico'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-fontelico'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-fontelico
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-fontelico'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-fontelico'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

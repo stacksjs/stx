@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const yenBanknote: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#F3C07B\" d=\"M2 10a2 2 0 0 1 2-2h10.528a2 2 0 0 1 .894.211l.684.342a2 2 0 0 0 1.788 0l.684-.342A2 2 0 0 1 19.472 8H28a2 2 0 0 1 2 2v14.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z\"/><path fill=\"#B97028\" d=\"M26 17a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0\"/><path fill=\"#B97028\" d=\"M3 11a2 2 0 0 1 2-2h22a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h22a1 1 0 0 0 1-1V11a1 1 0 0 0-1-1z\"/><path fill=\"#B97028\" d=\"M2 28a2 2 0 0 0 2 2h11l2-1l2 1h9a2 2 0 0 0 2-2v-4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z\"/><path fill=\"#FFF478\" d=\"M19 8h-4v19h4z\"/><path fill=\"#F3AD61\" d=\"M19 26h-4v4h4z\"/><path fill=\"#F4F4F4\" d=\"M7.437 12.257a.5.5 0 0 0-.874.486L8.928 17H7a.5.5 0 1 0 0 1h2v1H7a.5.5 0 1 0 0 1h2v1.5a.5.5 0 0 0 1 0V20h2a.5.5 0 0 0 0-1h-2v-1h2a.5.5 0 0 0 0-1h-1.928l2.365-4.257a.5.5 0 1 0-.874-.486L9.5 15.97z\"/></g>",

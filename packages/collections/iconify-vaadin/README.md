@@ -1,11 +1,11 @@
-# @stx/iconify-vaadin
+# @stacksjs/iconify-vaadin
 
 Vaadin Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-vaadin
+bun add @stacksjs/iconify-vaadin
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-vaadin
 
 ```html
 <script>
-  import { home } from '@stx/iconify-vaadin'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-vaadin'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-vaadin
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-vaadin'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-vaadin'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

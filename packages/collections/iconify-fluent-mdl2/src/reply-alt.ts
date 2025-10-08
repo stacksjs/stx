@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const replyAlt: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1920 896v128H475l402 403l-90 90l-557-557l557-557l90 90l-402 403z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const outlineAirlineSeatFlatAngled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 6.5c.31 0 .7.15.9.56c.24.5.02 1.1-.47 1.34a.98.98 0 0 1-1.32-.46a.986.986 0 0 1 .46-1.34c.14-.06.28-.1.43-.1m6.47 2.11l6.69 2.41c.52.19.93.56 1.15 1.05c.22.48.25 1.03.06 1.53l-.01.02l-8.59-3.11zM10 15.19l4 1.44V17h-4zM6 4.5c-.44 0-.88.1-1.3.3a2.99 2.99 0 0 0-1.4 4a2.99 2.99 0 0 0 4 1.4a3.01 3.01 0 0 0 1.41-4A3.01 3.01 0 0 0 6 4.5m5.28 1.55L9.2 11.71l12.36 4.47l.69-1.89a4 4 0 0 0-2.41-5.15zm-9.09 4.2l-.69 1.89L8 14.48V19h8v-1.63L20.52 19l.69-1.89z\"/>",

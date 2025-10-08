@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const alignRight1Remix: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M.375 1c0-.345.28-.625.625-.625h12a.625.625 0 1 1 0 1.25H1A.625.625 0 0 1 .375 1m3 3c0-.345.28-.625.625-.625h9a.625.625 0 1 1 0 1.25H4A.625.625 0 0 1 3.375 4M7 6.375a.625.625 0 1 0 0 1.25h6a.625.625 0 1 0 0-1.25zM.375 13c0-.345.28-.625.625-.625h12a.625.625 0 1 1 0 1.25H1A.625.625 0 0 1 .375 13M4 9.375a.625.625 0 1 0 0 1.25h9a.625.625 0 1 0 0-1.25z\" clip-rule=\"evenodd\"/>",

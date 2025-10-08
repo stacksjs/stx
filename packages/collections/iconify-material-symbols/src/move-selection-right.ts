@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const moveSelectionRight: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10 18V6h12v12zm-4 0v-2h2v2zM6 8V6h2v2zM2 18v-2h2v2zm0-5v-2h2v2zm0-5V6h2v2z\"/>",

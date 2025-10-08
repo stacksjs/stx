@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const layoutCellFour20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M14 17h-3.5v-6.5H17V14a3 3 0 0 1-3 3m3-7.5h-6.5V3H14a3 3 0 0 1 3 3zm-7.5 0V3H6a3 3 0 0 0-3 3v3.5zm-6.5 1V14a3 3 0 0 0 3 3h3.5v-6.5z\"/>",

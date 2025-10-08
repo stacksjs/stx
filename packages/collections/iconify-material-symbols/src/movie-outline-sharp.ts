@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const movieOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 20V4h2l2 4h3L7 4h2l2 4h3l-2-4h2l2 4h3l-2-4h5v16zm2-10v8h16v-8zm0 0v8z\"/>",

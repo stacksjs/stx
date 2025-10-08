@@ -1,11 +1,11 @@
-# @stx/iconify-iconamoon
+# @stacksjs/iconify-iconamoon
 
 IconaMoon icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-iconamoon
+bun add @stacksjs/iconify-iconamoon
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-iconamoon
 
 ```html
 <script>
-  import { home } from '@stx/iconify-iconamoon'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-iconamoon'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-iconamoon
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-iconamoon'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-iconamoon'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

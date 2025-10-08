@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sdcard: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 1v2h1V1M2 2v2h1V2m1-1v2h1V1M1 8V2l2-2h5v8\"/>",

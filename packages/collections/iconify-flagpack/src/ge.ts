@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const ge: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#F7FCFF\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/><mask id=\"SVGTrazyc7b\" width=\"32\" height=\"24\" x=\"0\" y=\"0\" maskUnits=\"userSpaceOnUse\" style=\"mask-type:luminance\"><path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/></mask><g fill=\"#E31D1C\" fill-rule=\"evenodd\" clip-rule=\"evenodd\" mask=\"url(#SVGTrazyc7b)\"><path d=\"M14 0h4v10h14v4H18v10h-4V14H0v-4h14z\"/><path d=\"M9.999 17.222L12.2 17v2s-2.201-.138-2.201-.098S10.2 21 10.2 21h-2l.16-2H6.2v-2l2.16.222L8.2 15h2zm0-12L12.2 5v2s-2.201-.138-2.201-.098S10.2 9 10.2 9h-2l.16-2H6.2V5l2.16.222L8.2 3h2zm14 0L26.2 5v2s-2.201-.138-2.201-.098S24.2 9 24.2 9h-2l.16-2H20.2V5l2.16.222L22.2 3h2zm0 12L26.2 17v2s-2.201-.138-2.201-.098S24.2 21 24.2 21h-2l.16-2H20.2v-2l2.16.222L22.2 15h2z\"/></g></g>",

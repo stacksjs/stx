@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twotonePlayDisabled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10 12.83v2.53l1.55-.99z\" opacity=\".3\"/><path fill=\"currentColor\" d=\"M2.81 2.81L1.39 4.22L8 10.83V19l4.99-3.18l6.78 6.78l1.41-1.41zM10 15.36v-2.53l1.55 1.55zM19 12L8 5v.17l8.45 8.45z\"/>",

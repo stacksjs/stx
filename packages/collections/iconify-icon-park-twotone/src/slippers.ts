@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const slippers: IconData = {
   "body": "<defs><mask id=\"SVGNYJBjezk\"><g fill=\"none\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><path d=\"M4 29h40v6H4z\"/><path fill=\"#555\" d=\"M23.53 13c-3.5 4-3.5 12-3.5 16h20v-8.5S28 15 23.53 13\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGNYJBjezk)\"/>",

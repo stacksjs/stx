@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const baselineNavigation: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 2L4.5 20.29l.71.71L12 18l6.79 3l.71-.71z\"/>",

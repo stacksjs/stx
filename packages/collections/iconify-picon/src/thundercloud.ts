@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const thundercloud: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 5C0 5-1 2 2 2c0-3 4-2 4-1c3 1 2 4 0 4M4 4v4l1-2H3\"/>",

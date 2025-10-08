@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tableLock32Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9 4h1v6H4V9a5 5 0 0 1 5-5m3 0h8v6h-8zm0 8h8v4a5 5 0 0 0-.92 2.106A4 4 0 0 0 16.535 20H12zm12 2a4.99 4.99 0 0 1 4 2v-4h-6v2.416A5 5 0 0 1 24 14m-12 8h4v6h-4zM22 4v6h6V9a5 5 0 0 0-5-5zm-12 8H4v8h6zM4 22h6v6H9a5 5 0 0 1-5-5zm16.5-2.5H20a2.5 2.5 0 0 0-2.5 2.5v6a2.5 2.5 0 0 0 2.5 2.5h8a2.5 2.5 0 0 0 2.5-2.5v-6a2.5 2.5 0 0 0-2.5-2.5h-.5V19a3.5 3.5 0 1 0-7 0zm2-.5a1.5 1.5 0 0 1 3 0v.5h-3zm3.5 6a2 2 0 1 1-4 0a2 2 0 0 1 4 0\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const downArrow: IconData = {
   "body": "<path fill=\"#40c0e7\" d=\"M64 105.05L32.86 62.58h19.42V22.95h23.23v39.63h19.62z\"/>",

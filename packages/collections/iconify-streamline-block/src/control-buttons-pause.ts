@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const controlButtonsPause: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6.88.16H.16v15.68h6.72zm8.96 0H9.12v15.68h6.72z\"/>",

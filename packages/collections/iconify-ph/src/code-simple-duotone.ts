@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const codeSimpleDuotone: IconData = {
   "body": "<g fill=\"currentColor\"><path d=\"m240 128l-72 64H88l-72-64l72-64h80Z\" opacity=\".2\"/><path d=\"M93.31 70L28 128l65.27 58a8 8 0 1 1-10.62 12l-72-64a8 8 0 0 1 0-12l72-64a8 8 0 1 1 10.66 12m152 52l-72-64a8 8 0 0 0-10.62 12L228 128l-65.27 58a8 8 0 1 0 10.62 12l72-64a8 8 0 0 0 0-12Z\"/></g>",

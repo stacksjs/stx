@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpScreenRotation: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16.48 2.52c3.27 1.55 5.61 4.72 5.97 8.48h1.5C23.44 4.84 18.29 0 12 0l-.66.03l3.81 3.81zM7.52 21.48A10.49 10.49 0 0 1 1.55 13H.05C.56 19.16 5.71 24 12 24l.66-.03l-3.81-3.81zM9.17.69L.69 9.17l14.14 14.14l8.48-8.48zm5.66 20.5L2.81 9.17l6.36-6.36l12.02 12.02z\"/>",

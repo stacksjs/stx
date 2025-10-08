@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const circleDoubleRight: IconData = {
   "body": "<defs><mask id=\"SVGU5MO7dwm\"><g fill=\"none\" stroke=\"#fff\" stroke-linejoin=\"round\" stroke-width=\"4\"><path fill=\"#555\" d=\"M24 44c11.046 0 20-8.954 20-20S35.046 4 24 4S4 12.954 4 24s8.954 20 20 20Z\"/><path stroke-linecap=\"round\" d=\"m17 31l7-7l-7-7m9 14l7-7l-7-7\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGU5MO7dwm)\"/>",

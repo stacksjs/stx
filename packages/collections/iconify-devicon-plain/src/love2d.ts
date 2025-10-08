@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const love2d: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M64 0c35.323 0 64 28.677 64 64s-28.677 64-64 64S0 99.323 0 64S28.677 0 64 0m-.074 98.715l-.023.013h.045zm0 0c55.886-32.209 29.426-58.095 16.754-61.13c-8.49-2.032-14.024 3.276-16.754 7.004c-2.73-3.728-8.265-9.036-16.754-7.004C34.5 40.619 8.038 66.506 63.926 98.715\"/>",

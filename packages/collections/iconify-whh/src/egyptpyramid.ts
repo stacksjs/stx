@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const egyptpyramid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M832 384L672 160l96-96l256 320zM0 640L480 0l480 640z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const resume: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" d=\"M1 20h5V4H1zm10-1l11-7l-11-7z\"/>",

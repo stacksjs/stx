@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tv28Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5.254 4a3.25 3.25 0 0 0-3.25 3.25v10.5A3.25 3.25 0 0 0 5.254 21h17.497a3.25 3.25 0 0 0 3.25-3.25V7.25A3.25 3.25 0 0 0 22.751 4zm-1.75 3.25c0-.966.784-1.75 1.75-1.75h17.497c.966 0 1.75.784 1.75 1.75v10.5a1.75 1.75 0 0 1-1.75 1.75H5.254a1.75 1.75 0 0 1-1.75-1.75zM6.75 23a.75.75 0 0 0 0 1.5h14.5a.75.75 0 0 0 0-1.5z\"/>",

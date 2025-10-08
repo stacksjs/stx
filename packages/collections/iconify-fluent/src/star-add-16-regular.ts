@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const starAdd16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8.808 2.101a.9.9 0 0 0-1.614 0L5.673 5.183l-3.401.495a.9.9 0 0 0-.5 1.535l2.462 2.399l-.581 3.387a.9.9 0 0 0 1.306.949l.91-.479a5.5 5.5 0 0 1-.461-.887l-.735.387l.555-3.24a.9.9 0 0 0-.258-.797L2.616 6.638l3.253-.473a.9.9 0 0 0 .677-.492l1.455-2.947L9.2 5.154a5.5 5.5 0 0 1 1.041-.148zM5 10.5v-.103v.205zm10 0a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-4-2a.5.5 0 0 0-1 0V10H8.5a.5.5 0 0 0 0 1H10v1.5a.5.5 0 1 0 1 0V11h1.5a.5.5 0 1 0 0-1H11z\"/>",

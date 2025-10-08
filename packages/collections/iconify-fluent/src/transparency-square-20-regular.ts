@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const transparencySquare20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 3a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zM4 6a2 2 0 0 1 2-2h1v3H4zm0 4h3V7h3V4h3v3h3v3h-3v3h3v1a2 2 0 0 1-2 2h-1v-3h-3v3H7v-3H4zm6 0V7h3v3zm0 0H7v3h3z\"/>",

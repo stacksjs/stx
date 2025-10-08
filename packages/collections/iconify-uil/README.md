@@ -1,11 +1,11 @@
-# @stx/iconify-uil
+# @stacksjs/iconify-uil
 
 Unicons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-uil
+bun add @stacksjs/iconify-uil
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-uil
 
 ```html
 <script>
-  import { home } from '@stx/iconify-uil'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-uil'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-uil
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-uil'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-uil'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const colorPickerSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M33.73 2.11a4.09 4.09 0 0 0-5.76.1l-5.16 5.17a3.13 3.13 0 0 1-4.3.11l-1.42 1.42L27 18.79l1.42-1.42a3.18 3.18 0 0 1 .04-4.37l5.17-5.17a4.08 4.08 0 0 0 .1-5.72\" class=\"clr-i-solid clr-i-solid-path-1\"/><path fill=\"currentColor\" d=\"M22.18 16.79L7.46 31.51a2 2 0 1 1-2.82-2.83L19.35 14l-1.41-1.41L3.22 27.27a4 4 0 0 0-.68 4.8l-1.48 1.48a1 1 0 0 0 0 1.41a1 1 0 0 0 1.41 0l1.44-1.44a3.93 3.93 0 0 0 2.09.6a4.06 4.06 0 0 0 2.88-1.2L23.6 18.21Z\" class=\"clr-i-solid clr-i-solid-path-2\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const floatPortrait2Sharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 11h6V6H8zm12 11H4V2h16z\"/>",

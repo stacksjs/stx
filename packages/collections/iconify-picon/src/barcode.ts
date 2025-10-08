@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const barcode: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 7V2h1v5M2 7V2h1v5m1 0V2h2v5M0 7V2h1v5\"/>",

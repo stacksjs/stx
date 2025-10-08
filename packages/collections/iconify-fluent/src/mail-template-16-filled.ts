@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mailTemplate16Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.5 2A2.5 2.5 0 0 0 2 4.5v6A2.5 2.5 0 0 0 4.5 13H5V9.5A2.5 2.5 0 0 1 7.5 7H13V4.5A2.5 2.5 0 0 0 10.5 2zm0 2.5A.5.5 0 0 1 5 4h5a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5m1.502 4.929A1.5 1.5 0 0 1 7.5 8h6a1.5 1.5 0 0 1 1.498 1.429L10.5 11.928zm4.74 3.508L15 10.572V13.5a1.5 1.5 0 0 1-1.5 1.5h-6A1.5 1.5 0 0 1 6 13.5v-2.928l4.257 2.365a.5.5 0 0 0 .486 0\"/>",

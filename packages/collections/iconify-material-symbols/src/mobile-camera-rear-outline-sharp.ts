@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mobileCameraRearOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m9.85 22.5l-1.4-1.4l1.1-1.1H5v-2h4.55l-1.1-1.1l1.4-1.4l3.5 3.5zM14 20v-2h5v2zm-9-3V2h14v5.1h1v4.8h-1V17h-2V4H7v13zm7-10q.425 0 .713-.288T13 6t-.288-.712T12 5t-.712.288T11 6t.288.713T12 7\"/>",

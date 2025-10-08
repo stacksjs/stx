@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const shadowMinusSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 22V6h4V2h16v16h-4v4zm6-6h12V4H8zm2-5V9h8v2z\"/>",

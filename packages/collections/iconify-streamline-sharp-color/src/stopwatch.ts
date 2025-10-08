@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stopwatch: IconData = {
   "body": "<g fill=\"none\" stroke-width=\"1.5\"><path fill=\"#d7e0ff\" d=\"M3 13a9 9 0 1 0 18 0a9 9 0 1 0-18 0\"/><path stroke=\"#4147d5\" d=\"M3 13a9 9 0 1 0 18 0a9 9 0 1 0-18 0M18 2l4.5 4.5m-21 0L6 2\"/><path stroke=\"#4147d5\" d=\"M12 8v5h3.5M12 4V1\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const ceur: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M128 384V128h64V64H64v384h192v-64ZM384 64H256v64h128v256h-64v64h128V64Z\"/>",

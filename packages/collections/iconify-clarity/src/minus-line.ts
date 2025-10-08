@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const minusLine: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M26 17H10a1 1 0 0 0 0 2h16a1 1 0 0 0 0-2\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const premium32Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 4c-.48 0-.916.274-1.125.706l-3.75 7.75a1.25 1.25 0 0 0 .153 1.33l12.75 15.75a1.25 1.25 0 0 0 1.944 0l12.75-15.75a1.25 1.25 0 0 0 .153-1.33l-3.75-7.75A1.25 1.25 0 0 0 25 4zm-1.636 7.5l2.42-5h3.688l-1.563 5zm.304 2.5h4.098l2.868 8.606zm6.733 0h7.198L16 24.797zm9.833 0h4.098l-6.966 8.606zm4.402-2.5H22.09l-1.563-5h3.688zm-7.164 0h-6.944l1.563-5h3.818z\"/>",

@@ -1,11 +1,11 @@
-# @stx/iconify-geo
+# @stacksjs/iconify-geo
 
 GeoGlyphs icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-geo
+bun add @stacksjs/iconify-geo
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-geo
 
 ```html
 <script>
-  import { home } from '@stx/iconify-geo'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-geo'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-geo
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-geo'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-geo'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

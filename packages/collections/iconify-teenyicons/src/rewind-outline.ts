@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const rewindOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" d=\"M14.5 12.5v-10l-7 5zm-7 0v-10l-7 5z\"/>",

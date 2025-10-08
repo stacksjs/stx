@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const japaneseMonthlyAmountButton: IconData = {
   "body": "<path fill=\"#eda454\" d=\"M62 52c0 5.5-4.5 10-10 10H12C6.5 62 2 57.5 2 52V12C2 6.5 6.5 2 12 2h40c5.5 0 10 4.5 10 10z\"/><path fill=\"#fff\" d=\"M47 42.5c0 2.6-.6 3.8-2.3 4.5c-1.8.8-4.3.8-8.1.8c-.3-1.3-1.1-3.3-1.8-4.5c2.6.1 5.7.1 6.5.1c.9 0 1.2-.3 1.2-1v-5.2H26.6c-1 4-2.8 8-6.2 10.8c-.7-.9-2.4-2.5-3.4-3.1c5.6-4.7 6.1-11.5 6.1-17V16H47zm-4.6-9.4v-4.4H27.6c0 1.4-.1 2.9-.3 4.4zM27.6 20.2v4.4h14.8v-4.4z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hotAirBalloon: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"3\"><path d=\"m30 35l2-7M6 16a18 13 0 1 0 36 0a18 13 0 1 0-36 0\"/><path d=\"M16 16a8 13 0 1 0 16 0a8 13 0 1 0-16 0m.893 19.132c-1.04.051-1.848.733-1.883 1.773a18 18 0 0 0 0 1.19a1.75 1.75 0 0 0 1.068 1.584c.106 1.463.305 2.595.491 3.396c.216.93.982 1.573 1.932 1.677C19.62 44.873 21.406 45 24 45s4.38-.127 5.499-.248c.95-.104 1.716-.746 1.932-1.677c.186-.801.385-1.933.491-3.396a1.75 1.75 0 0 0 1.068-1.584a18 18 0 0 0 0-1.19c-.035-1.04-.843-1.722-1.883-1.773C29.787 35.067 27.558 35 24 35s-5.787.067-7.107.132M18 35l-2-7\"/></g>",

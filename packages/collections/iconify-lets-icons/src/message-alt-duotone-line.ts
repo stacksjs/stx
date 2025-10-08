@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const messageAltDuotoneLine: IconData = {
   "body": "<rect width=\"16\" height=\"12\" x=\"4\" y=\"6\" fill=\"currentColor\" fill-opacity=\".25\" stroke=\"currentColor\" stroke-width=\"1.2\" rx=\"2\"/><path fill=\"currentColor\" d=\"M11.106 12.553L4 9v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-7.106 3.553a2 2 0 0 1-1.788 0\"/>",

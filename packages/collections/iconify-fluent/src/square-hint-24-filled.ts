@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const squareHint24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10 4a1 1 0 0 1 1-1h2a1 1 0 1 1 0 2h-2a1 1 0 0 1-1-1m7.5 1a1 1 0 1 1 0-2A3.5 3.5 0 0 1 21 6.5a1 1 0 1 1-2 0A1.5 1.5 0 0 0 17.5 5m-11-2a1 1 0 0 1 0 2A1.5 1.5 0 0 0 5 6.5a1 1 0 0 1-2 0A3.5 3.5 0 0 1 6.5 3M4 16.5a1 1 0 0 0-1 1A3.5 3.5 0 0 0 6.5 21a1 1 0 1 0 0-2A1.5 1.5 0 0 1 5 17.5a1 1 0 0 0-1-1m7 2.5a1 1 0 1 0 0 2h2a1 1 0 1 0 0-2zm6.5 0a1 1 0 1 0 0 2a3.5 3.5 0 0 0 3.5-3.5a1 1 0 1 0-2 0a1.5 1.5 0 0 1-1.5 1.5m2.5-9a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0v-2a1 1 0 0 1 1-1M3 13a1 1 0 1 0 2 0v-2a1 1 0 1 0-2 0z\"/>",

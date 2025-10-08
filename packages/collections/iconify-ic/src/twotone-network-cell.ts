@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twotoneNetworkCell: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 22h20V2zm18-2h-3V9.83l3-3z\"/>",

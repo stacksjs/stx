@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const starOffOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M22.1 21.5L2.4 1.7L1.1 3l5.8 5.8l-4.9.4L7.5 14l-1.6 7l6.2-3.7l6.2 3.7l-.3-1.2l2.9 2.9zm-6.3-3.8L12 15.4l-3.8 2.3l1-4.3l-3.3-2.9l2.5-.2zM11.2 8L10 6.8L12 2l2.8 6.6l7.2.6l-5.1 4.4l-1.1-1.1l2.4-2l-4.4-.4l-1.7-4z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fSevenKey: IconData = {
   "body": "<defs><mask id=\"SVGsc8iabLN\"><g fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><rect width=\"36\" height=\"36\" x=\"6\" y=\"6\" fill=\"#fff\" stroke=\"#fff\" rx=\"3\"/><path stroke=\"#000\" d=\"M26 16h8l-6 16m-7-16h-7v16m0-8h7\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGsc8iabLN)\"/>",

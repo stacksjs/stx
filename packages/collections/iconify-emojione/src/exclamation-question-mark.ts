@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const exclamationQuestionMark: IconData = {
   "body": "<g fill=\"#ff5a79\"><path d=\"M6 42.4h10L20 2H2z\"/><ellipse cx=\"11\" cy=\"54.4\" rx=\"7.7\" ry=\"7.6\"/><path d=\"M40.2 2.1C28.6 2.8 22.5 9.4 22 21.3h11.7c.1-4.1 2.5-7.2 6.7-7.7c4.2-.4 8.2.6 9.4 3.4c1.3 3.1-1.6 6.7-3 8.2c-2.6 2.8-6.8 4.9-8.9 7.9s-2.5 6.9-2.7 11.7h10.3c.1-3.1.3-6 1.7-7.9c2.3-3.1 5.7-4.5 8.5-7c2.7-2.3 5.6-5.1 6-9.5c1.6-12.9-9-19.1-21.5-18.3\"/><ellipse cx=\"40.5\" cy=\"55.6\" rx=\"6.5\" ry=\"6.4\"/></g>",

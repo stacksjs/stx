@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const control: IconData = {
   "body": "<g fill=\"none\" stroke-miterlimit=\"10\"><path fill=\"#ff52a1\" stroke=\"#231f20\" d=\"M37 17.21c3-.69 3.53-4.27 3.53-7S39.94 4 37 3.29c-1.48-.7-9.41-1.4-16-1.4s-14.48.7-16 1.4C2.06 4 1.5 7.56 1.5 10.25s.56 6.27 3.53 7c1.49.7 9.41 1.4 16 1.4s14.46-.74 15.97-1.44Z\"/><path fill=\"#48eeff\" stroke=\"#231f20\" d=\"M37 36.71c3-.69 3.53-4.27 3.53-7s-.56-6.27-3.53-7c-1.48-.7-9.41-1.4-16-1.4s-14.48.7-16 1.4c-3 .69-3.53 4.27-3.53 7s.59 6.29 3.53 7c1.49.7 9.41 1.4 16 1.4s14.49-.7 16-1.4Z\"/><path fill=\"#fff\" stroke=\"#231f20\" d=\"M5.68 10.25a4.18 4.18 0 1 0 8.36 0a4.18 4.18 0 0 0-8.36 0Zm22.28 19.5a4.18 4.18 0 1 0 8.358 0a4.18 4.18 0 0 0-8.358 0Z\"/><path stroke=\"#fff\" stroke-linecap=\"round\" d=\"M34.66 5.29c2.15.54 2.32.71 2.79 2.45m-15.9 15.99c2.35 0 4.22 0 5.33.13\"/></g>",

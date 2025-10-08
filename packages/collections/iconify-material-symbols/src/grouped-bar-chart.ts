@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const groupedBarChart: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 20V8h4v12zm5 0v-7h4v7zm7 0V4h4v16z\"/>",

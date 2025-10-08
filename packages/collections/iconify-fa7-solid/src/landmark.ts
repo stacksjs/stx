@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const landmark: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M238.7 5.1c10.5-6.8 24.1-6.8 34.6 0l224 144c11.9 7.7 17.4 22.3 13.4 35.9s-16.5 23-30.7 23h-32v208l51.2 38.4c8.1 6 12.8 15.5 12.8 25.6c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32c0-10.1 4.7-19.6 12.8-25.6L64 416V208H32c-14.2 0-26.7-9.4-30.7-23s1.5-28.3 13.4-35.9zM336 208v208h64V208zM224 416h64V208h-64zM112 208v208h64V208z\"/>",

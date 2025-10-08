@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const highVoltage: IconData = {
   "body": "<path fill=\"#fbb11c\" d=\"M32 29L42 1L12 35h20L22 63l30-34\"/>",

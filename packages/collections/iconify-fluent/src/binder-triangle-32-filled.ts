@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const binderTriangle32Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6.25 2A3.25 3.25 0 0 0 3 5.25V6H2a1 1 0 0 0 0 2h1v5H2a1 1 0 1 0 0 2h1v5H2a1 1 0 1 0 0 2h1v.75A3.25 3.25 0 0 0 6.25 26h1.446L23 8.14V5.25A3.25 3.25 0 0 0 19.75 2zM10 9h6a1 1 0 1 1 0 2h-6a1 1 0 1 1 0-2m18.996-1.497c0-1.393-1.733-2.034-2.639-.976L8.364 27.526c-.834.973-.143 2.476 1.139 2.476h16.243a3.25 3.25 0 0 0 3.25-3.25zM23.12 17.971a.5.5 0 0 1 .88.326V24a1 1 0 0 1-1 1h-4.815a.5.5 0 0 1-.38-.825z\"/>",

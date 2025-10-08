@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dollarIncrease: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#d7e0ff\" d=\"M5.414 10.04c3.087 0 4.823-1.737 4.823-4.824S8.501.393 5.414.393S.591 2.13.591 5.216s1.736 4.824 4.823 4.824\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M5.414 3.238v-.533m0 5.327V7.5m1.394-3.251c0-.547-.45-1.012-1.394-1.012c-.945 0-1.394.438-1.394 1.012c0 .447.45.877 1.394 1.012c.945.135 1.607.446 1.607 1.12c0 .608-.662 1.117-1.607 1.117s-1.607-.434-1.607-1.012\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10.09 6.794q.142-.656.142-1.426c0-3.087-1.736-4.824-4.823-4.824S.585 2.281.585 5.368c0 2.336.995 3.898 2.817 4.52m.625 3.568s2.359-3.117 3.405-3.032c.84.068.915 1.854 1.694 1.532c.52-.215 3.484-2.904 4.213-3.57\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10.846 8.163c.776-.194 1.784-.116 2.52.195c.194.775.116 1.783-.194 2.52\"/></g>",

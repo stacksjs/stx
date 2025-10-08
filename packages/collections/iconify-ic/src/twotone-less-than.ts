@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twotoneLessThan: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M17.5 17.5L9.25 12l8.25-5.5l-1-1.5L6 12l10.5 7z\"/>",

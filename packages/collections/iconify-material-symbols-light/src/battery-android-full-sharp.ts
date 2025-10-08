@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const batteryAndroidFullSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 17.75V6.25h16.539V10H21v4h-1.461v3.75z\"/>",

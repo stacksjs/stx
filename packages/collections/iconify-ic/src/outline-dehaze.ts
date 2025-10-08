@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const outlineDehaze: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 16v2h20v-2zm0-5v2h20v-2zm0-5v2h20V6z\"/>",

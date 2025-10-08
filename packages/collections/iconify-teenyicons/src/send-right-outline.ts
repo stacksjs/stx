@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sendRightOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"m13.5 7.5l-4 4m4-4l-4-4m4 4H3M1.5 1v13\"/>",

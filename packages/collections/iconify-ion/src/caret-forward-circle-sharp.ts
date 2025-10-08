@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const caretForwardCircleSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M464 256c0-114.87-93.13-208-208-208S48 141.13 48 256s93.13 208 208 208s208-93.13 208-208M212 147.73L342.09 256L212 364.27Z\"/>",

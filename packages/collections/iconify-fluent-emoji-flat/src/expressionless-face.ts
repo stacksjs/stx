@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const expressionlessFace: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#FFB02E\" d=\"M15.999 29.998c9.334 0 13.999-6.268 13.999-14c0-7.73-4.665-13.998-14-13.998C6.665 2 2 8.268 2 15.999s4.664 13.999 13.999 13.999\"/><path fill=\"#402A32\" d=\"M8 13a1 1 0 0 1 1-1h4a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1m10 0a1 1 0 0 1 1-1h4a1 1 0 1 1 0 2h-4a1 1 0 0 1-1-1m-7 6a1 1 0 1 0 0 2h10a1 1 0 1 0 0-2z\"/></g>",

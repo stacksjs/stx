@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dotsVertical: IconData = {
   "body": "<g fill=\"currentColor\"><rect width=\"4\" height=\"4\" x=\"10\" y=\"3\" rx=\"2\"/><rect width=\"4\" height=\"4\" x=\"10\" y=\"10\" rx=\"2\"/><rect width=\"4\" height=\"4\" x=\"10\" y=\"17\" rx=\"2\"/></g>",

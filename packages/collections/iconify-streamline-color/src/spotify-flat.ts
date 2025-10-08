@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const spotifyFlat: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#8fbffa\" d=\"M7 .5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13\"/><path fill=\"#2859c5\" fill-rule=\"evenodd\" d=\"M4.22 5.705a8.4 8.4 0 0 1 1.94-.226c1.416 0 2.748.35 3.916.97a.625.625 0 1 0 .585-1.105a9.6 9.6 0 0 0-4.5-1.115a9.7 9.7 0 0 0-2.23.26a.625.625 0 1 0 .289 1.216m1.94 1.774c-.505 0-.997.059-1.467.17a.625.625 0 1 1-.287-1.217a7.64 7.64 0 0 1 5.2.618a.625.625 0 1 1-.565 1.115a6.35 6.35 0 0 0-2.88-.686Zm0 2q-.518.001-1.001.115a.625.625 0 0 1-.285-1.217a5.64 5.64 0 0 1 3.69.39a.625.625 0 1 1-.535 1.13a4.4 4.4 0 0 0-1.868-.418Z\" clip-rule=\"evenodd\"/></g>",

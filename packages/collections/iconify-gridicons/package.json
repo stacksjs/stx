@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-gridicons",
+  "name": "@stacksjs/iconify-gridicons",
   "version": "0.0.1",
   "description": "Gridicons icons for stx from Iconify",
   "author": "Automattic",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

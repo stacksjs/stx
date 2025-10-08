@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const editProhibited16Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10.529 1.764a2.621 2.621 0 1 1 3.707 3.707l-.547.547a5.5 5.5 0 0 0-1.05-.587L9.75 2.543zM10.5 5q.151 0 .301.008L9.043 3.25L2.657 9.635a2.96 2.96 0 0 0-.772 1.355l-.87 3.386a.5.5 0 0 0 .61.608l3.385-.869c.355-.091.689-.247.985-.46A5.5 5.5 0 0 1 10.5 5M6 10.5a4.5 4.5 0 1 0 9 0a4.5 4.5 0 0 0-9 0m1 0a3.5 3.5 0 0 1 5.596-2.803l-4.9 4.9A3.5 3.5 0 0 1 7 10.5m3.5 3.5c-.786 0-1.512-.26-2.096-.697l4.9-4.9A3.5 3.5 0 0 1 10.5 14\"/>",

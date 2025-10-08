@@ -1,11 +1,11 @@
-# @stx/iconify-radix-icons
+# @stacksjs/iconify-radix-icons
 
 Radix Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-radix-icons
+bun add @stacksjs/iconify-radix-icons
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-radix-icons
 
 ```html
 <script>
-  import { home } from '@stx/iconify-radix-icons'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-radix-icons'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-radix-icons
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-radix-icons'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-radix-icons'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

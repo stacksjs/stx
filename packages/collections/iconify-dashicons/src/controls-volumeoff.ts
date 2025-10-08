@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const controlsVolumeoff: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 7h4l5-4v14l-5-4H2z\"/>",

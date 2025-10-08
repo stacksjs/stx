@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const interfaceDashboardLayoutSquareAppApplicationDashboardHomeLayoutSquare: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"5\" height=\"5\" x=\".5\" y=\".5\" rx=\"1\"/><rect width=\"5\" height=\"5\" x=\"8.5\" y=\".5\" rx=\"1\"/><rect width=\"5\" height=\"5\" x=\".5\" y=\"8.5\" rx=\"1\"/><rect width=\"5\" height=\"5\" x=\"8.5\" y=\"8.5\" rx=\"1\"/></g>",

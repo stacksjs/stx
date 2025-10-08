@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const compassSharp: IconData = {
   "body": "<circle cx=\"256\" cy=\"256\" r=\"24\" fill=\"currentColor\"/><path fill=\"currentColor\" d=\"M256 48C141.31 48 48 141.31 48 256s93.31 208 208 208s208-93.31 208-208S370.69 48 256 48m48 256l-160 64l64-160l160-64Z\"/>",

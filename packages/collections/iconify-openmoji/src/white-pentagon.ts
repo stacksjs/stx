@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const whitePentagon: IconData = {
   "body": "<path fill=\"#FFF\" d=\"M34.824 10.451a2 2 0 0 1 2.352 0l25.229 18.33c.701.51.994 1.412.727 2.236l-9.637 29.659a2 2 0 0 1-1.902 1.382H20.407a2 2 0 0 1-1.902-1.382L8.868 31.017a2 2 0 0 1 .727-2.236z\"/><path fill=\"none\" stroke=\"#000\" stroke-width=\"2\" d=\"M34.824 10.451a2 2 0 0 1 2.352 0l25.229 18.33c.701.51.994 1.412.727 2.236l-9.637 29.659a2 2 0 0 1-1.902 1.382H20.407a2 2 0 0 1-1.902-1.382L8.868 31.017a2 2 0 0 1 .727-2.236z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const warningShield: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" d=\"M12 5v8.5m0 2V17M2.5 2v15l9.5 5l9.5-5V2z\"/>",

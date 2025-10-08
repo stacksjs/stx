@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chevronLeftRectangleFilled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 22V2h20v20zm6.5-10l5.5 4.25v-8.5z\"/>",

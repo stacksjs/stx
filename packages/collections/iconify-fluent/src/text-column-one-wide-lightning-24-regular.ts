@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const textColumnOneWideLightning24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.75 5a.75.75 0 0 0 0 1.5h16.5a.75.75 0 0 0 0-1.5zm0 4a.75.75 0 0 0 0 1.5h9.95a1.5 1.5 0 0 1 1.118-.5h6.14a.75.75 0 0 0-.707-1zm8.698 4l-.711 1.5H3.75a.75.75 0 0 1 0-1.5zm-1.895 4l-.407.858c-.1.211-.146.43-.146.642H3.75a.75.75 0 0 1 0-1.5zm4.258-6h6.32c.381 0 .622.413.434.748l-1.828 3.268h1.513c.64 0 .985.755.567 1.244l-6.406 7.48c-.521.61-1.496.053-1.243-.71l1.326-4H11.5a.502.502 0 0 1-.451-.716l3.31-7.027a.5.5 0 0 1 .452-.287\"/>",

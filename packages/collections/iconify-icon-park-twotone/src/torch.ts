@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const torch: IconData = {
   "body": "<defs><mask id=\"SVGBMoW3ddt\"><g fill=\"none\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"2\" stroke-width=\"4\"><path d=\"M27 34h-6v10h6zm4 0H17l-3-8h20z\"/><path fill=\"#555\" d=\"M21 14c2-4.61 6-10 6-10s6.36 11.49 6.36 15.23S30.74 26 27 26h-8c-2.64 0-4.36-2.14-4.36-4.78S19 10 19 10s.96 2.01 2 4\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGBMoW3ddt)\"/>",

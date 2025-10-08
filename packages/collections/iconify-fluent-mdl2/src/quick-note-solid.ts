@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const quickNoteSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1920 128v1792H768v-640H128V128zM128 1408h512v512z\"/>",

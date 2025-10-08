@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const baselineCelebration: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m2 22l14-5l-9-9zm12.53-9.47l5.59-5.59a1.25 1.25 0 0 1 1.77 0l.59.59l1.06-1.06l-.59-.59a2.76 2.76 0 0 0-3.89 0l-5.59 5.59zm-4.47-5.65l-.59.59l1.06 1.06l.59-.59a2.76 2.76 0 0 0 0-3.89l-.59-.59l-1.06 1.07l.59.59c.48.48.48 1.28 0 1.76m7 5l-1.59 1.59l1.06 1.06l1.59-1.59a1.25 1.25 0 0 1 1.77 0l1.61 1.61l1.06-1.06l-1.61-1.61a2.76 2.76 0 0 0-3.89 0m-2-6l-3.59 3.59l1.06 1.06l3.59-3.59a2.76 2.76 0 0 0 0-3.89l-1.59-1.59l-1.06 1.06l1.59 1.59c.48.49.48 1.29 0 1.77\"/>",

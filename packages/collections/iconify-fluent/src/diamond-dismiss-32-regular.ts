@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const diamondDismiss32Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.318 12.818a4.5 4.5 0 0 0 0 6.364l9.5 9.5a4.5 4.5 0 0 0 6.364 0l9.5-9.5a4.5 4.5 0 0 0 0-6.364l-9.5-9.5a4.5 4.5 0 0 0-6.364 0zm1.414 4.95a2.5 2.5 0 0 1 0-3.536l9.5-9.5a2.5 2.5 0 0 1 3.535 0l9.5 9.5a2.5 2.5 0 0 1 0 3.535l-9.5 9.5a2.5 2.5 0 0 1-3.535 0zm7.975-6.475a1 1 0 0 0-1.414 1.414L14.586 16l-3.293 3.293a1 1 0 0 0 1.414 1.414L16 17.414l3.293 3.293a1 1 0 0 0 1.414-1.414L17.414 16l3.293-3.293a1 1 0 0 0-1.414-1.414L16 14.586z\"/>",

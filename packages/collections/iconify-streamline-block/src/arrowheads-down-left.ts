@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowheadsDownLeft: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"m.16.16l15.68 15.68H.16z\" clip-rule=\"evenodd\"/>",

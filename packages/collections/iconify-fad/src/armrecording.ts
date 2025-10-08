@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const armrecording: IconData = {
   "body": "<circle cx=\"127\" cy=\"129\" r=\"81\" fill=\"currentColor\" fill-rule=\"evenodd\"/>",

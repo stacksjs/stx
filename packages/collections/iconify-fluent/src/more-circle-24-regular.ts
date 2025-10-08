@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const moreCircle24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M20.5 12a8.5 8.5 0 1 0-17 0a8.5 8.5 0 0 0 17 0m1.5 0c0 5.523-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2s10 4.477 10 10M7 13.25a1.25 1.25 0 1 0 0-2.5a1.25 1.25 0 0 0 0 2.5m5 0a1.25 1.25 0 1 0 0-2.5a1.25 1.25 0 0 0 0 2.5m5 0a1.25 1.25 0 1 0 0-2.5a1.25 1.25 0 0 0 0 2.5\"/>",

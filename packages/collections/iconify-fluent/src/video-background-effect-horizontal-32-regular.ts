@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const videoBackgroundEffectHorizontal32Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5.25 4a3.25 3.25 0 0 0-3.001 2h27.502a3.25 3.25 0 0 0-3.001-2zm16.228 5.5H30v2h-7.674a6.5 6.5 0 0 0-.848-2m-10.956 0H2v2h7.674c.17-.72.46-1.395.848-2M9.813 15H2v2h8.876a6.5 6.5 0 0 1-1.062-2m-2.778 5.5H2v2h4.5c0-.729.195-1.412.535-2m18.465 2c0-.729-.195-1.412-.535-2H30v2zM6.5 26H2.249a3.25 3.25 0 0 0 3 2H6.5zm19 2v-2h4.25a3.25 3.25 0 0 1-3 2zm-4.376-11a6.5 6.5 0 0 0 1.063-2H30v2zM10 22.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 .5.5V28h2v-5.5a2.5 2.5 0 0 0-2.5-2.5h-11A2.5 2.5 0 0 0 8 22.5V28h2zm1-9.5a5 5 0 1 1 10 0a5 5 0 0 1-10 0m5-3a3 3 0 1 0 0 6a3 3 0 0 0 0-6\"/>",

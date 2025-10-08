@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const linejoinMiterOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M13.5 2.5h-11V8H8v5.5h5.5z\"/>",

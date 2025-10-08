@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const gripperBarVertical: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M768 2048V0h128v2048zM1152 0h128v2048h-128z\"/>",

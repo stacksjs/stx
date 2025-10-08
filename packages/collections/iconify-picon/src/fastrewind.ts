@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fastrewind: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m4 4l4-4v8M0 4l4-4v8\"/>",

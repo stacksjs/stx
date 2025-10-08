@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const signalCellularAlt2Bar: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 19v-4h1.616v4zm5.808 0v-9h1.615v9z\"/>",

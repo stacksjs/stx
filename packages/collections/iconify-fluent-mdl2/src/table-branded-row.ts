@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tableBrandedRow: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 128h2048v1664H0zm768 1024h512V768H768zM640 768H128v384h512zm768 384h512V768h-512z\"/>",

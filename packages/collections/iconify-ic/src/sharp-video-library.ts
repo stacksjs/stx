@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpVideoLibrary: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 6H2v16h16v-2H4zm18-4H6v16h16zM12 14.5v-9l6 4.5z\"/>",

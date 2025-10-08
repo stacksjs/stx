@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpCrop54: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M21 4H3v16h18zm-2 14H5V6h14z\"/>",

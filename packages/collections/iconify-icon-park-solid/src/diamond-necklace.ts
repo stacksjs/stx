@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const diamondNecklace: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><path fill=\"currentColor\" d=\"M17 32.41L24 29l7 3.41v7.5L24 44l-7-4.09z\"/><path d=\"M8 4c.455 8.333 6 25 16 25S40 12.784 40 4\"/></g>",

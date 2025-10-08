@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const floatLandscapeSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 20V4h20v7h-7v9Zm15 0v-7h5v7Z\"/>",

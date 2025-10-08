@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const unsubscribeSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m12 13l8-5V6l-8 5l-8-5v2zm7 10q-2.075 0-3.537-1.463T14 18t1.463-3.537T19 13t3.538 1.463T24 18t-1.463 3.538T19 23m-3-4.5h6v-1h-6zM2 20V4h20v7.7q-.7-.35-1.45-.525T19 11q-2.925 0-4.962 2.037T12 18q0 .5.075 1t.225 1z\"/>",

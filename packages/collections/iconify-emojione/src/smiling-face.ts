@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const smilingFace: IconData = {
   "body": "<circle cx=\"32\" cy=\"32\" r=\"30\" fill=\"#ffdd67\"/><g fill=\"#664e27\"><circle cx=\"20.5\" cy=\"24.6\" r=\"5\"/><circle cx=\"43.5\" cy=\"24.6\" r=\"5\"/><path d=\"M48.1 37c-4.3 6.1-9.5 7.6-16.1 7.6S20.2 43.1 15.9 37c-.6-.8-2.2-.3-1.8.9c2.3 8 10 12.7 18 12.7s15.7-4.7 18-12.7c.2-1.2-1.4-1.7-2-.9\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const brandWeiboFilled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.972 8.183c2.81-2.987 6.162-4.207 8.006-2.24c.298.316.554.773.736 1.266l.127-.031c2.064-.469 4 1.287 3.817 3.544l-.005.036l.15.057c1.46.574 2.14 1.355 2.193 3.081l.004.231C20 17.903 15.893 21 11 21c-4.854 0-9-2.72-9-6.565c0-2.04 1.068-4.222 2.972-6.252M16 3a6 6 0 0 1 6 6v1a1 1 0 0 1-2 0V9a4 4 0 0 0-4-4h-1a1 1 0 0 1 0-2z\"/>",

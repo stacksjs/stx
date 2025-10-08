@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const clockStarFourPointsOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 20c.4 0 .7 0 1.1-.1c.1.7.3 1.4.6 1.9c-.5.1-1.1.2-1.7.2c-5.5 0-10-4.5-10-10S6.5 2 12 2s10 4.5 10 10c0 .5-.08.97-.16 1.5l-.04.2c-.6-.3-1.2-.5-1.9-.6c.1-.4.1-.7.1-1.1c0-4.4-3.6-8-8-8s-8 3.6-8 8s3.6 8 8 8m.5-7.7l3.1 1.8c-.4.3-.8.6-1.1 1L11 13V7h1.5zm5.24 5.45L19 15l1.25 2.75L23 19l-2.75 1.26L19 23l-1.26-2.74L15 19z\"/>",

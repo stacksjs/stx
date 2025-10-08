@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const rainbowFlag: IconData = {
   "body": "<path fill=\"#880082\" d=\"M0 27a4 4 0 0 0 4 4h28a4 4 0 0 0 4-4v-.5H0z\"/><path fill=\"#3558A0\" d=\"M0 22.07h36v4.6H0z\"/><path fill=\"#138F3E\" d=\"M0 17.83h36v4.5H0z\"/><path fill=\"#FAD220\" d=\"M0 13.5h36V18H0z\"/><path fill=\"#FF7300\" d=\"M0 9.17h36v4.5H0z\"/><path fill=\"#FF000E\" d=\"M32 5H4a4 4 0 0 0-4 4v.33h36V9a4 4 0 0 0-4-4\"/>",

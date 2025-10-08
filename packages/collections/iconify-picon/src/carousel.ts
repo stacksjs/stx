@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const carousel: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 8V0h4v8M0 7V1h1v6m6 0V1h1v6\"/>",

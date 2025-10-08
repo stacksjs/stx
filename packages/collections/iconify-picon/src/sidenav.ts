@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sidenav: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 0h5v8H3M0 0h2v2H0m0 1h2v2H0m0 1h2v2H0\"/>",

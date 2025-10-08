@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const ja: IconData = {
   "body": "<mask id=\"circleFlagsJa0\"><circle cx=\"256\" cy=\"256\" r=\"256\" fill=\"#fff\"/></mask><g mask=\"url(#circleFlagsJa0)\"><path fill=\"#eee\" d=\"M0 0h512v512H0z\"/><circle cx=\"256\" cy=\"256\" r=\"111.3\" fill=\"#d80027\"/></g>",

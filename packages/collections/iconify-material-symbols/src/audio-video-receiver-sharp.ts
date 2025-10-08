@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const audioVideoReceiverSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 17V5h20v12h-2v2h-2v-2H6v2H4v-2zm14.5-4q.825 0 1.413-.587T18.5 11t-.587-1.412T16.5 9t-1.412.588T14.5 11t.588 1.413T16.5 13M6 13h7V9H6z\"/>",

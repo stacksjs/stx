@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const connectAddressOne: IconData = {
   "body": "<g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><path d=\"M6 24C6 33.9411 14.0589 42 24 42C33.9411 42 42 33.9411 42 24\"/><path d=\"M24 14L24 42\"/><circle cx=\"24\" cy=\"10\" r=\"4\" fill=\"#2F88FF\"/></g>",

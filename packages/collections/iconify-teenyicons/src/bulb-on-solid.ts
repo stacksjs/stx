@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bulbOnSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 0v2h1V0zM3.354 3.646l-1.5-1.5l-.708.708l1.5 1.5zm9 .708l1.5-1.5l-.708-.708l-1.5 1.5zM7.5 3a3.96 3.96 0 0 0-3.92 3.4l-.01.07a3.95 3.95 0 0 0 .79 2.989c.383.495.64.968.64 1.442V12.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-1.599c0-.474.257-.947.64-1.442c.63-.814.948-1.875.79-2.99l-.01-.07A3.96 3.96 0 0 0 7.5 3M0 8h2V7H0zm13 0h2V7h-2zm-7 7h3v-1H6z\"/>",

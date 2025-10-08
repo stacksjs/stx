@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const japaneseNotFreeOfChargeButton: IconData = {
   "body": "<path fill=\"#eda454\" d=\"M62 52c0 5.5-4.5 10-10 10H12C6.5 62 2 57.5 2 52V12C2 6.5 6.5 2 12 2h40c5.5 0 10 4.5 10 10z\"/><path fill=\"#fff\" d=\"M29 23c-.5 1-1 2-1.6 3h18.2v19c0 2.3-.4 3.5-2 4.2c-1.6.8-3.8.8-7 .8c-.2-1.3-.8-3.2-1.4-4.4c2 .1 4.3.1 4.9.1c.7 0 .9-.2.9-.8v-2.3H26.9V50h-4.6V33.2c-1.6 1.7-3.3 3.2-5.2 4.5c-.7-1-2.2-2.7-3.1-3.5c4.2-2.7 7.4-6.8 9.8-11.2h-8.6v-4.3h10.6c.6-1.6 1.1-3.1 1.5-4.7l4.8 1.1c-.4 1.2-.8 2.4-1.3 3.6H50V23zm12 7H26.9v2.5H41zm0 8.8v-2.5H26.9v2.5z\"/>",

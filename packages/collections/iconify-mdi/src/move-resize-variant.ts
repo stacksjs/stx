@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const moveResizeVariant: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1.88.46L.46 1.88L5.59 7H2v2h7V2H7v3.59M11 7v2h10v6h2V9a2 2 0 0 0-2-2M7 11v10a2 2 0 0 0 2 2h6v-2H9V11m6.88 3.46l-1.42 1.42L19.6 21H17v2h6v-6h-2v2.59\"/>",

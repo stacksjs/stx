@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cornerUpRightFill: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 10v9h2v-7h7.586v5.414L21 11l-6.414-6.414V10z\"/>",

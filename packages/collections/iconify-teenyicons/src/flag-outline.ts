@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flagOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m14.5.5l.457.203A.5.5 0 0 0 14.5 0zM.5.5V0a.5.5 0 0 0-.5.5zm14 9v.5a.5.5 0 0 0 .457-.703zm-2-4.5l-.457-.203a.5.5 0 0 0 0 .406zm2-5H.5v1h14zM0 .5v9h1v-9zM.5 10h14V9H.5zm14.457-.703l-2-4.5l-.914.406l2 4.5zm-2-4.094l2-4.5l-.914-.406l-2 4.5zM1 15V9.5H0V15z\"/>",

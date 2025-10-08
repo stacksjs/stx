@@ -1,11 +1,11 @@
-# @stx/iconify-ooui
+# @stacksjs/iconify-ooui
 
 OOUI icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-ooui
+bun add @stacksjs/iconify-ooui
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-ooui
 
 ```html
 <script>
-  import { home } from '@stx/iconify-ooui'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-ooui'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-ooui
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-ooui'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-ooui'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

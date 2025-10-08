@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const playStroke12: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M3.5 1.2v9.6c0 .4.5.7.9.4l4.4-4.4c.4-.4.4-1 0-1.4L4.4.9c-.4-.4-.9-.1-.9.3z\"/>",

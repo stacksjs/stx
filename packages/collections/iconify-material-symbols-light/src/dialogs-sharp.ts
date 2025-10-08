@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dialogsSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9 15h6V9H9zm-5 5V4h16v16z\"/>",

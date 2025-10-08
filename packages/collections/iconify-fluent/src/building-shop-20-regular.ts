@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const buildingShop20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11 11.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5m1 2.5v-2h2v2zM5 2a.5.5 0 0 0-.384.18l-2.5 3A.5.5 0 0 0 2 5.5V7c0 .888.386 1.687 1 2.236V17.5a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5V9.236c.614-.55 1-1.348 1-2.236V5.482c0-.09 0-.162-.116-.302l-2.5-3A.5.5 0 0 0 15 2zm0 7a2 2 0 0 1-2-2V6h4v1a2 2 0 0 1-2 2m5 0a2 2 0 0 1-2-2V6h4v1a2 2 0 0 1-2 2m5 0a2 2 0 0 1-2-2V6h4v1a2 2 0 0 1-2 2M5 17H4V9.83a3 3 0 0 0 3.5-1.17A3 3 0 0 0 10 10a3 3 0 0 0 2.5-1.341a3 3 0 0 0 3.5 1.17V17h-6v-5.5a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5zM7.14 5H3.568l1.666-2h2.572zm4.666 0H8.194l.666-2h2.28zm1.054 0l-.666-2h2.572l1.667 2zM6 17v-5h3v5z\"/>",

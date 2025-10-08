@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const takeOff: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m.81 3.78l1.37-.44a.46.46 0 0 1 .51.17L3.63 5l5.16-2.57a3.24 3.24 0 0 1 4.67 1.65a.88.88 0 0 1-.58 1.1l-3.39 1.1l-.34.11l-.64 2.19a.45.45 0 0 1-.31.32l-1.54.5A.48.48 0 0 1 6 8.86l.32-1.56l-.22.07l-3.31 1.07a.86.86 0 0 1-1.11-.52L.52 4.32a.44.44 0 0 1 .29-.54M13.5 13.5H.5\"/>",

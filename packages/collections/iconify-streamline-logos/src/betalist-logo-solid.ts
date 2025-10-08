@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const betalistLogoSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 6V1h13v5zm0 8.5v-5h22v5zM1 23v-5h22v5z\"/>",

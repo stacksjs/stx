@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chromeMaximizeOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 20V4h16v16Zm2-2h12V6H6ZM6 6v12Z\"/>",

@@ -1,0 +1,20 @@
+{
+  "name": "@stacksjs/js-framework-benchmark",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "description": "JS Framework Benchmark implementation for STX",
+  "main": "./src/index.ts",
+  "scripts": {
+    "bench": "bun run src/index.ts",
+    "bench:original": "bun run src/runner.ts src/index-original-backup.stx",
+    "bench:optimized": "bun run src/runner.ts src/index-prev-optimized.stx",
+    "bench:ultra": "bun run src/index.ts",
+    "compare": "bun run src/compare.ts",
+    "compare:ultra": "bun run src/compare-ultra.ts",
+    "dev": "bun --hot src/index.ts"
+  },
+  "dependencies": {
+    "happy-dom": "^18.0.1"
+  }
+}

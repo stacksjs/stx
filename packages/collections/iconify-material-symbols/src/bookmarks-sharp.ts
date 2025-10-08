@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bookmarksSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 22V6h12v16l-6-3zm14-4V4H7V2h13v16z\"/>",

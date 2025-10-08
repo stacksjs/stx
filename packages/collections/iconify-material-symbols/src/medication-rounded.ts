@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const medicationRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10.5 15v1q0 .625.438 1.063T12 17.5t1.063-.437T13.5 16v-1h1q.625 0 1.063-.437T16 13.5t-.437-1.062T14.5 12h-1v-1q0-.625-.437-1.062T12 9.5t-1.062.438T10.5 11v1h-1q-.625 0-1.062.438T8 13.5t.438 1.063T9.5 15zM7 21q-.825 0-1.412-.587T5 19V8q0-.825.588-1.412T7 6h10q.825 0 1.413.588T19 8v11q0 .825-.587 1.413T17 21zM7 5q-.425 0-.712-.288T6 4t.288-.712T7 3h10q.425 0 .713.288T18 4t-.288.713T17 5z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const contentViewGalleryLightning20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1zm4 0H6v2h3zm-3.5 4a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1zM5 13.5a.5.5 0 0 1 .5-.5h4q.023 0 .044.002l-.404.86q-.032.069-.057.138H5.5a.5.5 0 0 1-.5-.5M6 16a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5v5.904l.96-2.042l.04-.08V4h2a2 2 0 0 1 2 2v1h1V6a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h5.971l.25-1zm7.317-8h4.828a.5.5 0 0 1 .436.745L16.75 12h1.496a.75.75 0 0 1 .564 1.244l-4.824 5.508c-.504.576-1.442.085-1.257-.657L13.5 15h-3.003a.5.5 0 0 1-.452-.713l2.82-6A.5.5 0 0 1 13.317 8\"/>",

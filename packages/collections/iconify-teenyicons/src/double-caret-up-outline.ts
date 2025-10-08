@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const doubleCaretUpOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"square\" d=\"M14 8L7.5 1L1 8m13 5.5l-6.5-7l-6.5 7\"/>",

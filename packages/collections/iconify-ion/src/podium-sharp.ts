@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const podiumSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M160 32h192v448H160zm224 160h112v288H384zM16 128h112v352H16z\"/>",

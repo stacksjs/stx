@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const iphone: IconData = {
   "body": "<path fill=\"#E38939\" d=\"M12 40V8c0-2.2 1.8-4 4-4h16c2.2 0 4 1.8 4 4v32c0 2.2-1.8 4-4 4H16c-2.2 0-4-1.8-4-4\"/><path fill=\"#FFF3E0\" d=\"M32 7H16c-.6 0-1 .4-1 1v29c0 .6.4 1 1 1h16c.6 0 1-.4 1-1V8c0-.6-.4-1-1-1\"/><circle cx=\"24\" cy=\"41\" r=\"1.5\" fill=\"#A6642A\"/>",

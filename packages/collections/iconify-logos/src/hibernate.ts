@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hibernate: IconData = {
   "body": "<path fill=\"#59666C\" d=\"m153.671 178.933l-.932 2.757l49.137 83.342l2.781 1.968L256 178.22l-51.342-89.137zM50.273.304L0 89.084l52.234 89.849l49.738-89.85l-.134-3.63L52.565 2.11z\"/><path fill=\"#BCAE79\" d=\"m50.273.304l51.7 88.78h102.684L152.601.304zm1.961 178.629L102.864 267h101.793l-50.986-88.067z\"/>",

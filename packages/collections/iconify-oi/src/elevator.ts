@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const elevator: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 0L1 3h6zM1 5l3 3l3-3z\"/>",

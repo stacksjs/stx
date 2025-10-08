@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-icon-park-solid",
+  "name": "@stacksjs/iconify-icon-park-solid",
   "version": "0.0.1",
   "description": "IconPark Solid icons for stx from Iconify",
   "author": "ByteDance",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

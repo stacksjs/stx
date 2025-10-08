@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const folderArrowUp28Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 6.75A3.75 3.75 0 0 1 5.75 3h3.672c.729 0 1.428.29 1.944.805L13.25 5.69l-2.944 2.945A1.25 1.25 0 0 1 9.422 9H2zm.004 3.75v9.75A3.75 3.75 0 0 0 5.754 24H14.5A7.5 7.5 0 0 1 26 14.401V9.75A3.75 3.75 0 0 0 22.25 6h-7.19l-3.695 3.695a2.75 2.75 0 0 1-1.944.805zM27 19.5a6.5 6.5 0 1 1-13 0a6.5 6.5 0 0 1 13 0m-7 4a.5.5 0 0 0 1 0v-6.793l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.351-.146h-.006a.5.5 0 0 0-.35.146l-3 3a.5.5 0 0 0 .707.708L20 16.707z\"/>",

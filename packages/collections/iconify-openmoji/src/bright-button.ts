@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const brightButton: IconData = {
   "body": "<circle cx=\"36\" cy=\"36\" r=\"15\" fill=\"#fcea2b\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><circle cx=\"36\" cy=\"36\" r=\"15\"/><path d=\"M36 15V8m14.849 13.151l4.95-4.95M57 36h7M50.849 50.849l4.95 4.95M36 57v7M21.151 50.849l-4.95 4.95M15 36H8m13.151-14.849l-4.95-4.95\"/></g>",

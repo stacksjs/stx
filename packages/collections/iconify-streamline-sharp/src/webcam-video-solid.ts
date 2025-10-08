@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const webcamVideoSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 4v16h17v-4.523l5 2V6.523l-5 2V4z\"/>",

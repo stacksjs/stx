@@ -1,10 +1,15 @@
 # @stacksjs/benchmarks
 
-Performance benchmarks comparing `@stacksjs/markdown` and `@stacksjs/sanitizer` against popular competitors in the ecosystem.
+Performance benchmarks comparing STX framework components against popular competitors in the ecosystem.
 
 ## Overview
 
 This package provides comprehensive benchmarks to measure the performance of our Bun-powered implementations against established libraries:
+
+### STX Framework Performance
+- **JS Framework Benchmark** - Industry-standard benchmark comparing STX against Vue, React, Svelte, Solid, and vanilla JavaScript
+- Tests DOM manipulation, rendering, and reactivity performance
+- See `js-framework-benchmark/README.md` for detailed information
 
 ### Markdown Parsing
 - **@stacksjs/markdown** (our implementation)
@@ -34,6 +39,7 @@ This package provides comprehensive benchmarks to measure the performance of our
 bun run bench
 
 # Run specific benchmarks
+bun run bench:js-framework  # STX framework benchmark
 bun run bench:markdown      # Markdown parsing only
 bun run bench:frontmatter   # Frontmatter parsing only
 bun run bench:yaml          # YAML parsing only

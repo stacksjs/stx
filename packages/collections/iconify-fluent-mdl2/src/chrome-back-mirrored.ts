@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chromeBackMirrored: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 1024h1656l-674 674l144 145l922-921L1133 0L989 145l674 674H7z\"/>",

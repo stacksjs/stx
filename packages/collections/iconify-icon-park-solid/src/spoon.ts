@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const spoon: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><rect width=\"20\" height=\"20\" x=\"14\" y=\"4\" fill=\"currentColor\" rx=\"10\"/><path d=\"M24 24v12\"/><rect width=\"6\" height=\"8\" x=\"21\" y=\"36\" fill=\"currentColor\" rx=\"3\"/></g>",

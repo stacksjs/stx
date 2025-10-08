@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const splitSceneLeftSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M14.885 19V5H20v14zM11.5 21v-2H4V5h7.5V3h1v18z\"/>",

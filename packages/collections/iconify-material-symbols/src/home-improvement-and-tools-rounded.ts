@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const homeImprovementAndToolsRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7.95 2h8.1q.625 0 .9.538t-.075 1.037L15 6.2V10H9V6.2L7.125 3.575q-.35-.5-.075-1.037T7.95 2M9 12h6v2H9zm0 4h6v2.175q0 .4-.15.763t-.425.637L12.7 21.3q-.15.15-.325.213t-.375.062t-.375-.062t-.325-.213l-1.725-1.725q-.275-.275-.425-.637T9 18.175z\"/>",

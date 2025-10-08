@@ -34,12 +34,12 @@ bun run build
 
 ```bash
 # From your project
-bun add @stx/iconify-lucide @stx/iconify-core
+bun add @stacksjs/iconify-lucide @stacksjs/iconify-core
 ```
 
 ```typescript
-import { home, settings } from '@stx/iconify-lucide'
-import { renderIcon } from '@stx/iconify-core'
+import { home, settings } from '@stacksjs/iconify-lucide'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, { size: 24 })
 ```

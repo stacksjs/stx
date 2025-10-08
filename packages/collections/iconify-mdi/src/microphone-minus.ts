@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const microphoneMinus: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9 2a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3m7 9c0 3.5-2.56 6.43-6 6.93V21H8v-3.07c-3.44-.5-6-3.43-6-6.93h2a5 5 0 0 0 5 5a5 5 0 0 0 5-5zm-1-6h8v2h-8z\"/>",

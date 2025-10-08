@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const interfaceRemove2DeleteBoxSubtractButtonsButtonRemoveTextboxTextAddBold: IconData = {
   "body": "<rect width=\"13\" height=\"3\" x=\".5\" y=\"5.5\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"1\"/>",

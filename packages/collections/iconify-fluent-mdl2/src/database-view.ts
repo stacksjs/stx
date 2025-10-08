@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const databaseView: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M256 1280v-128h1152v128zM384 0h1664v1536h-256v-128h128V384H384zm1536 256V128H512v128zM0 2048V512h1664v1536zM128 640v128h1408V640zm0 256v1024h1408V896z\"/>",

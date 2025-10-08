@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpSend: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2.01 21L23 12L2.01 3L2 10l15 2l-15 2z\"/>",

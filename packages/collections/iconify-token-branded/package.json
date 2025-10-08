@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-token-branded",
+  "name": "@stacksjs/iconify-token-branded",
   "version": "0.0.1",
   "description": "Web3 Icons Branded icons for stx from Iconify",
   "author": "0xa3k5",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

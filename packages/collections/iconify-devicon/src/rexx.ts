@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const rexx: IconData = {
   "body": "<defs><linearGradient id=\"SVGLG8wjexT\" x1=\"4.154\" x2=\"4.154\" y1=\"108.707\" y2=\"23.639\" gradientTransform=\"translate(-4.294 -1.099)scale(1.03354)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"#a51415\"/><stop offset=\".5\" stop-color=\"#d81511\"/><stop offset=\"1\" stop-color=\"#bf100d\"/></linearGradient></defs><path fill=\"url(#SVGLG8wjexT)\" d=\"m128 16.744l-24.67 42.729l-6.715-11.642H84.682L95.35 66.324l-4.715 8.17L96.602 84.8l6.773-11.702l20.732 35.91l3.893 2.249v-16.18l-16.646-28.831L128 37.415zM0 23.334v61.465h10.336V33.668h3.209l5.37 9.303l-7.522 4.34v14.65l13.185 22.838h11.938L19.172 54.757l13.861-8.003l-13.521-23.42zm33.283 24.498l-12.666 7.313l17.12 29.654h19.497l4.133-7.159V65.29l-10.336 5.966v3.589H43.17v-.826l22.549-12.986l-7.614-13.203zm25.922 0l10.293 17.842l-11.043 19.124h11.938l6.517-11.29l6.518 11.29h11.935L84.32 65.673l4.717-8.168l-5.576-9.674l-6.28 10.895l-6.28-10.895zm-25.19 10.336H49.99L38.004 65.07z\"/><path d=\"m32.744 46.254l.29.5h77.64l.289-.5h-77.93z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowtriangleRightSquareFill: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M13.785 49.574h28.453c4.899 0 7.336-2.437 7.336-7.265V13.69c0-4.828-2.437-7.265-7.336-7.265H13.785c-4.875 0-7.36 2.414-7.36 7.265v28.62c0 4.851 2.485 7.265 7.36 7.265m8.086-29.672c0-1.078 1.313-1.547 2.32-.96l13.172 7.804a1.44 1.44 0 0 1 0 2.485l-13.172 7.78c-1.078.657-2.32.141-2.32-.984Z\"/>",

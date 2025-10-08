@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bat: IconData = {
   "body": "<g fill=\"none\"><circle cx=\"16\" cy=\"16\" r=\"16\" fill=\"#FF5000\"/><path fill=\"#FFF\" d=\"m6 23.5l10.051-17L26 23.477zm10.027-10.12l-4.108 6.786h8.235z\"/></g>",

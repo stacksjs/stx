@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const clipboardUser: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M311.4 32h8.6c35.3 0 64 28.7 64 64v352c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96c0-35.3 28.7-64 64-64h8.6c11-19.1 31.7-32 55.4-32h128c23.7 0 44.4 12.9 55.4 32M248 112c13.3 0 24-10.7 24-24s-10.7-24-24-24H136c-13.3 0-24 10.7-24 24s10.7 24 24 24zm-56 232a56 56 0 1 0 0-112a56 56 0 1 0 0 112m-93.7 69c-12.9 15.6 2.2 35 22.4 35h142.5c20.2 0 35.3-19.4 22.4-35c-14.7-17.7-36.9-29-61.7-29h-64c-24.8 0-47 11.3-61.7 29z\"/>",

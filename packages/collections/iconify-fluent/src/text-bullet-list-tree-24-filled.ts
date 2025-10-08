@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const textBulletListTree24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7.5 16.5a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3m4 .5h9.503a1 1 0 0 1 .117 1.993l-.117.007H11.5a1 1 0 0 1-.116-1.993zh9.503zm-8-6.5a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3m4 .5h13.503a1 1 0 0 1 .117 1.993l-.117.007H7.5a1 1 0 0 1-.116-1.993zh13.503zm-4-6.492a1.5 1.5 0 1 1 0 2.999a1.5 1.5 0 0 1 0-3M7.5 5h13.503a1 1 0 0 1 .117 1.993L21.003 7H7.5a1 1 0 0 1-.116-1.993zh13.503z\"/>",

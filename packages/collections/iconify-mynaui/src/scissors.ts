@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const scissors: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\" d=\"M11.79 12L7 8.855m14-2.903L7 15.145M8 6.92c0 1.337-1.12 2.42-2.5 2.42S3 8.256 3 6.919S4.12 4.5 5.5 4.5S8 5.583 8 6.92m0 10.162c0-1.336-1.12-2.42-2.5-2.42S3 15.745 3 17.081S4.12 19.5 5.5 19.5S8 18.417 8 17.08m13 .968l-6.066-3.983\"/>",

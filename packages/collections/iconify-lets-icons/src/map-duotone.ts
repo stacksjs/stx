@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mapDuotone: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M17.608 21L15.134 7.81L4 8.822V17.8c0 1.12 0 1.68.218 2.108a2 2 0 0 0 .874.874C5.52 21 6.08 21 7.2 21zM13.5 15.03c0 2.158-2.14 3.674-3.073 4.233a.83.83 0 0 1-.854 0C8.64 18.704 6.5 17.188 6.5 15.029c0-2.117 1.696-3.529 3.5-3.529c1.867 0 3.5 1.412 3.5 3.53\" clip-rule=\"evenodd\"/><path fill=\"currentColor\" fill-opacity=\".25\" d=\"M4.218 4.092C4 4.52 4 5.08 4 6.2v.614l17.99-1.636c-.019-.488-.07-.814-.208-1.086a2 2 0 0 0-.874-.874C20.48 3 19.92 3 18.8 3H7.2c-1.12 0-1.68 0-2.108.218a2 2 0 0 0-.874.874M22 7.186l-4.865.442l2.506 13.367c.592-.013.963-.058 1.267-.213a2 2 0 0 0 .874-.874C22 19.48 22 18.92 22 17.8z\"/><circle cx=\"10\" cy=\"15\" r=\"1\" fill=\"currentColor\"/>",

@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-raphael",
+  "name": "@stacksjs/iconify-raphael",
   "version": "0.0.1",
   "description": "Raphael icons for stx from Iconify",
   "author": "Dmitry Baranovskiy",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

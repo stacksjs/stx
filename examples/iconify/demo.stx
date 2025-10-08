@@ -71,8 +71,8 @@
       <div class="icon-card">
         <div class="icon-wrapper">
           @js
-            import { house } from '@stx/iconify-lucide'
-            import { renderIcon } from '@stx/iconify-core'
+            import { house } from '@stacksjs/iconify-lucide'
+            import { renderIcon } from '@stacksjs/iconify-core'
             global.houseIcon = renderIcon(house, { size: 48 })
           @endjs
           {!! houseIcon !!}
@@ -83,8 +83,8 @@
       <div class="icon-card">
         <div class="icon-wrapper">
           @js
-            import { settings } from '@stx/iconify-lucide'
-            import { renderIcon } from '@stx/iconify-core'
+            import { settings } from '@stacksjs/iconify-lucide'
+            import { renderIcon } from '@stacksjs/iconify-core'
             global.settingsIcon = renderIcon(settings, { size: 48, color: '#4a90e2' })
           @endjs
           {!! settingsIcon !!}
@@ -95,8 +95,8 @@
       <div class="icon-card">
         <div class="icon-wrapper">
           @js
-            import { user } from '@stx/iconify-lucide'
-            import { renderIcon } from '@stx/iconify-core'
+            import { user } from '@stacksjs/iconify-lucide'
+            import { renderIcon } from '@stacksjs/iconify-core'
             global.userIcon = renderIcon(user, { size: 48, rotate: 90 })
           @endjs
           {!! userIcon !!}
@@ -108,8 +108,8 @@
     <div class="code-example">
       <h3>Usage Example:</h3>
       <pre><code>@js
-  import { house } from '@stx/iconify-lucide'
-  import { renderIcon } from '@stx/iconify-core'
+  import { house } from '@stacksjs/iconify-lucide'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   global.houseIcon = renderIcon(house, {
     size: 48,

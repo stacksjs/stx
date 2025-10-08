@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const gMobiledataSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 17V7h9v2H9v6h5v-2h-2v-2h4v6z\"/>",

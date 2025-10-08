@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tvSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M488 384H24a8 8 0 0 1-8-8V88a8 8 0 0 1 8-8h464a8 8 0 0 1 8 8v288a8 8 0 0 1-8 8\"/><rect width=\"288\" height=\"32\" x=\"112\" y=\"400\" fill=\"currentColor\" rx=\"4\" ry=\"4\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const folderDebugOpen: IconData = {
   "body": "<g fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path stroke=\"#cad3f5\" d=\"m1.875 8l.686-2.743a1 1 0 0 1 .97-.757h10.938a1 1 0 0 1 .97 1.243l-.315 1.26M6 13.5H2.004A1.5 1.5 0 0 1 .5 12V3.5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v1\"/><path stroke=\"#ed8796\" d=\"M12.5 10.5v-1a1 1 0 1 0-2 0v1m2.667 0c.248.372.308 1.054.333 1.5v1.5c0 1.15-.85 2-2 2s-2-.85-2-2V12c.025-.446.085-1.128.333-1.5zm-5.667 2h2m4 0h2m-4 3V13M8 15.5l1.5-1m5.5 1l-1.5-1M8 9.5l1.5 1m5.5-1l-1.5 1\"/></g>",

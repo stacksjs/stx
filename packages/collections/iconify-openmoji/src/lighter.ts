@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lighter: IconData = {
   "body": "<path fill=\"#EA5A47\" d=\"M45 66H27V28h9l9-3z\"/><path fill=\"#D22F27\" d=\"m33 66l12-33v33z\"/><path fill=\"#D0CFCE\" d=\"M45 25v11H27v-8h9zm-9 3v7\"/><path fill=\"#F1B31C\" d=\"M35 17.714C35 20.857 33.21 25 31 25s-4-4.143-4-7.286C27 11.887 31 9 31 6c0 3 4 5.429 4 11.714\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path d=\"M45 66H27V28h9l9-3zM35 17.714C35 20.857 33.21 25 31 25s-4-4.143-4-7.286C27 11.887 31 9 31 6c0 3 4 5.429 4 11.714\"/><path d=\"M35 17.714C35 20.857 33.21 25 31 25s-4-4.143-4-7.286C27 11.887 31 9 31 6c0 3 4 5.429 4 11.714M27 35h18m-9-7v3\"/></g>",

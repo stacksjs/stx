@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const logoDelicious: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 16h12v12H4zM16 4h12v12H16z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const imageAccessoriesLensesPhotosCameraShutterPicturePhotographyPicturesPhotoLens: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"7\" cy=\"7\" r=\"6.5\"/><circle cx=\"7\" cy=\"7\" r=\"2.5\"/><path d=\"M4.5 7V1M7 4.5h6M9.5 7v6M7 9.5H1\"/></g>",

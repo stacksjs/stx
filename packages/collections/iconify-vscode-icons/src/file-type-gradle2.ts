@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileTypeGradle2: IconData = {
   "body": "<path fill=\"#006533\" d=\"M13.5 6.965h7.923l4 6.887h4.557a14.1 14.1 0 0 0-18.956-10.92z\"/><path fill=\"#82b816\" d=\"m25.628 18l-4.209 7.252H10.806L5.5 16.108L9.739 8.8L7.4 4.981A14.03 14.03 0 1 0 30 18z\"/><path fill=\"#006532\" d=\"M21.061 15.963a5.026 5.026 0 1 1-5.026-5a5.013 5.013 0 0 1 5.026 5\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dataBarHorizontal24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M21 18.251a2.25 2.25 0 0 0-2.25-2.249H5.25a2.249 2.249 0 1 0 0 4.498h13.5A2.25 2.25 0 0 0 21 18.251m-4-6.5a2.25 2.25 0 0 0-2.25-2.249h-9.5a2.25 2.25 0 1 0 0 4.498h9.5A2.25 2.25 0 0 0 17 11.751m-4-6.5a2.25 2.25 0 0 0-2.25-2.25l-5.5.001a2.25 2.25 0 0 0 0 4.498h5.5A2.25 2.25 0 0 0 13 5.251\"/>",

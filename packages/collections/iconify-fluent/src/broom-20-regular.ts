@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const broom20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M17.91 2.182a.5.5 0 0 1 0 .707L12.587 8.21a4.5 4.5 0 0 1-.334 5.991l-.664.664l-2.09 3.483a.5.5 0 0 1-.781.096l-7.072-7.071a.5.5 0 0 1 .097-.782l3.483-2.09l.663-.664a4.5 4.5 0 0 1 5.991-.334l5.323-5.322a.5.5 0 0 1 .707 0M6.243 8.899l4.95 4.95l.353-.354a3.5 3.5 0 1 0-4.95-4.95zm-.785.63l-2.652 1.59l6.166 6.166l1.59-2.652z\"/>",

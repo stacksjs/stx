@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const monitorWeightSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 21V3h18v18zm9-9q1.25 0 2.125-.875T15 9t-.875-2.125T12 6t-2.125.875T9 9t.875 2.125T12 12m-2-2.5v-1h1v1zm1.5 0v-1h1v1zm1.5 0v-1h1v1z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bookClock24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11.75 11.375a.625.625 0 0 0 .688.622q.03.003.062.003h1.25a.625.625 0 1 0 0-1.25H13V9.125a.625.625 0 1 0-1.25 0zM4 4.5A2.5 2.5 0 0 1 6.5 2H18a2.5 2.5 0 0 1 2.5 2.5v14.25a.75.75 0 0 1-.75.75H5.5a1 1 0 0 0 1 1h13.25a.75.75 0 0 1 0 1.5H6.5A2.5 2.5 0 0 1 4 19.5zm8.375 1.505a4.75 4.75 0 1 0 0 9.5a4.75 4.75 0 0 0 0-9.5\"/>",

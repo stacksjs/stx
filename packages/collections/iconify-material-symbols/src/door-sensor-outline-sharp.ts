@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const doorSensorOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9 15V5v14zm-2 1h2v3h6V5H9v9H7V3h10v18H7zm5-6q.425 0 .713-.288T13 9t-.288-.712T12 8t-.712.288T11 9t.288.713T12 10m7-7h2v6h-2zm-6 13H4v-2h9z\"/>",

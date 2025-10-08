@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const giftCardMultiple20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.75 4H7v2.268A2 2 0 0 0 4.268 9H2V6.75A2.75 2.75 0 0 1 4.75 4M2 12.25V10h4.293l-1.647 1.646a.5.5 0 0 0 .708.708L7 10.707V15H4.75A2.75 2.75 0 0 1 2 12.25M8 15h5.25A2.75 2.75 0 0 0 16 12.25V10H8.707l1.647 1.646a.5.5 0 0 1-.708.708L8 10.707zm2.732-6H16V6.75A2.75 2.75 0 0 0 13.25 4H8v2.268A2 2 0 0 1 10.732 9M8 9V8a1 1 0 1 1 1 1zM6 9h1V8a1 1 0 1 0-1 1m.75 8c-.855 0-1.619-.39-2.123-1.002L4.75 16h8.5A3.75 3.75 0 0 0 17 12.25v-5.5l-.002-.123A2.74 2.74 0 0 1 18 8.75v3.5A4.75 4.75 0 0 1 13.25 17z\"/>",

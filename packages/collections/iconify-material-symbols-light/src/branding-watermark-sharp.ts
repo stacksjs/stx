@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const brandingWatermarkSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10.5 16.5h8v-5.692h-8zM3 19V5h18v14z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const crop32Sharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 17V7h16v10z\"/>",

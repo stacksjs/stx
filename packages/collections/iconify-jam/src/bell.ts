@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bell: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M13.666 11.782L13 11.186V6a4 4 0 1 0-8 0v5.186l-.666.596A7 7 0 0 0 2.29 15h13.42a7 7 0 0 0-2.044-3.218M12 17a3 3 0 0 1-6 0H0a8.98 8.98 0 0 1 3-6.708V6a6 6 0 1 1 12 0v4.292A8.98 8.98 0 0 1 18 17zm-3 1a1 1 0 0 0 1-1H8a1 1 0 0 0 1 1\"/>",

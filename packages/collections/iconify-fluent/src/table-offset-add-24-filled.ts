@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tableOffsetAdd24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M14 3H6.25A3.25 3.25 0 0 0 3 6.25V8.5h11zm1.5 5.5H21V6.25A3.25 3.25 0 0 0 17.75 3H15.5zM10 10v4h2.022a6.5 6.5 0 0 1 5.478-3a6.47 6.47 0 0 1 3.5 1.022V10zm-7 5.5h8.314a6.5 6.5 0 0 0-.314 2a6.47 6.47 0 0 0 1.022 3.5H6.25A3.25 3.25 0 0 1 3 17.75zM8.5 10H3v4h5.5zM23 17.5a5.5 5.5 0 1 0-11 0a5.5 5.5 0 0 0 11 0m-5 .5l.001 2.503a.5.5 0 1 1-1 0V18h-2.505a.5.5 0 0 1 0-1H17v-2.5a.5.5 0 1 1 1 0V17h2.497a.5.5 0 0 1 0 1z\"/>",

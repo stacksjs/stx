@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const rightThenCurvingUpArrowSmall: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 6H2v1h3Zm0 0h1V4h1V3H6V2H5v1H4v1h1ZM1 9h7V8H1ZM0 8h1V1H0Zm8 0h1V1H8ZM1 1h7V0H1Zm0 0\"/>",

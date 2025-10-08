@@ -1,11 +1,11 @@
-# @stx/iconify-gravity-ui
+# @stacksjs/iconify-gravity-ui
 
 Gravity UI Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-gravity-ui
+bun add @stacksjs/iconify-gravity-ui
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-gravity-ui
 
 ```html
 <script>
-  import { home } from '@stx/iconify-gravity-ui'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-gravity-ui'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-gravity-ui
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-gravity-ui'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-gravity-ui'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

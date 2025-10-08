@@ -1,11 +1,11 @@
-# @stx/iconify-cuida
+# @stacksjs/iconify-cuida
 
 Cuida Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-cuida
+bun add @stacksjs/iconify-cuida
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-cuida
 
 ```html
 <script>
-  import { home } from '@stx/iconify-cuida'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-cuida'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-cuida
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-cuida'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-cuida'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

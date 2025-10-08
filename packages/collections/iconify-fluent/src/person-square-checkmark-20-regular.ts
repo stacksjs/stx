@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const personSquareCheckmark20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10 5a2 2 0 1 0 0 4a2 2 0 0 0 0-4m-1 9.5q0 .207.015.41c-.677-.127-1.298-.39-1.803-.795C6.46 13.51 6 12.616 6 11.5A1.5 1.5 0 0 1 7.5 10h3.837A5.5 5.5 0 0 0 9 14.5M6 3a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h3.6a5.5 5.5 0 0 1-.393-1H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3.207q.524.149 1 .393V6a3 3 0 0 0-3-3zm13 11.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-2.146-1.854a.5.5 0 0 0-.708 0L13.5 15.293l-.646-.647a.5.5 0 0 0-.708.708l1 1a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0 0-.708\"/>",

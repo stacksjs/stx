@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const smallBlueDiamond: IconData = {
   "body": "<path fill=\"#0071b8\" d=\"m16.019 32l15.98-15.981l15.98 15.98L32 47.98z\"/>",

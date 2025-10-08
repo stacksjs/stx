@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpAnnouncement: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M22 2H2v20l4-4h16zm-9 9h-2V5h2zm0 4h-2v-2h2z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const videoOff24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.28 2.22a.75.75 0 1 0-1.06 1.06l1.915 1.916A3.25 3.25 0 0 0 2 8.25v7.5A3.25 3.25 0 0 0 5.25 19h6.5a3.25 3.25 0 0 0 3.237-2.953l5.732 5.733a.75.75 0 0 0 1.061-1.06zM16 12.818l5.008 5.008c.57-.274.994-.848.994-1.578V7.753c0-1.41-1.584-2.242-2.745-1.44L16 8.563zM8.182 5L15 11.818V8.25A3.25 3.25 0 0 0 11.75 5z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const volumeOffSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M237.65 176.1H144v159.8h93.65L368 440V72z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const namurDiagnosticsPassiveFilled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M85.333 85.333h341.334v341.334H85.333z\"/>",

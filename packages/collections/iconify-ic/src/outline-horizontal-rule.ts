@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const outlineHorizontalRule: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M4 11h16v2H4z\"/>",

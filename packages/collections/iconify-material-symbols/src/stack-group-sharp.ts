@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stackGroupSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 22v-6H2V2h14v6h6v14z\"/>",

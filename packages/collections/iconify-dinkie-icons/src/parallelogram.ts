@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const parallelogram: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 11h7V8h1V4h1V2H3v3H2v4H1Zm0 0\"/>",

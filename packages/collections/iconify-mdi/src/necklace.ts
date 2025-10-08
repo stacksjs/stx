@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const necklace: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M21.5 5h-2c0 4.14-3.36 7.5-7.5 7.5S4.5 9.14 4.5 5h-2c.05 5.11 4.09 9.29 9.2 9.5c-.6.9-1.7 2.7-1.7 3.5c0 2.67 4 2.67 4 0c0-.8-1.1-2.6-1.7-3.5c5.11-.21 9.15-4.39 9.2-9.5\"/>",

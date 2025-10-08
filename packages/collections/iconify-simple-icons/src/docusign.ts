@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const docusign: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9.517 3.31h4.966v6.621h3.31L12 16.552L6.207 9.931h3.31zM0 19.034h24v1.655H0z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const navIcon: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 0h27.65v5.219H0zm0 9.39h27.65v5.219H0zm0 9.391h27.65V24H0z\"/>",

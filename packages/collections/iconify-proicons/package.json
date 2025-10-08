@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-proicons",
+  "name": "@stacksjs/iconify-proicons",
   "version": "0.0.1",
   "description": "ProIcons icons for stx from Iconify",
   "author": "ProCode",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

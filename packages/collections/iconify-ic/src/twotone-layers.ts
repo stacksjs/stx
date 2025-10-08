@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twotoneLayers: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6.26 9L12 13.47L17.74 9L12 4.53z\" opacity=\".3\"/><path fill=\"currentColor\" d=\"m19.37 12.8l-7.38 5.74l-7.37-5.73L3 14.07l9 7l9-7zM12 2L3 9l1.63 1.27L12 16l7.36-5.73L21 9zm0 11.47L6.26 9L12 4.53L17.74 9z\"/>",

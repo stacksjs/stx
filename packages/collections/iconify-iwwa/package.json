@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-iwwa",
+  "name": "@stacksjs/iconify-iwwa",
   "version": "0.0.1",
   "description": "Innowatio Font icons for stx from Iconify",
   "author": "Innowatio",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

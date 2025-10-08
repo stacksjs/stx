@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flashlightOnOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 22V11L6 8V2h12v6l-2 3v11zm4-6.5q-.625 0-1.062-.437T10.5 14t.438-1.062T12 12.5t1.063.438T13.5 14t-.437 1.063T12 15.5M8 5h8V4H8zm8 2H8v.4l2 3V20h4v-9.6l2-3zm-4 5\"/>",

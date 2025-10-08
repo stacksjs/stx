@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const listDownLineDuotone: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"1.5\"><path d=\"M21 6H3m18 4H3m7 4H3m7 4H3\" opacity=\".5\"/><path stroke-linejoin=\"round\" d=\"m14 15l3.5 3l3.5-3\"/></g>",

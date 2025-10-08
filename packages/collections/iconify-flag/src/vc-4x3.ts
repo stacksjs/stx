@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const vc4x3: IconData = {
   "body": "<g fill-rule=\"evenodd\"><path fill=\"#f4f100\" d=\"M0 0h640v480H0z\"/><path fill=\"#199a00\" d=\"M490 0h150v480H490z\"/><path fill=\"#0058aa\" d=\"M0 0h150v480H0z\"/><path fill=\"#199a00\" d=\"m259.3 130l-46.4 71.3l44.7 74.4l43.8-73.7zm121.2 0l-46.3 71.3l44.7 74.4l43.8-73.7zm-61.2 97.3l-46.4 71.4l44.8 74.4l43.8-73.7l-42.2-72z\"/></g>",

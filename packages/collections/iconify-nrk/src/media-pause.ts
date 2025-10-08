@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mediaPause: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M10 3H3v18h7zm11 0h-7v18h7z\" clip-rule=\"evenodd\"/>",

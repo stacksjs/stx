@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const shuffleOutlineRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m16.6 18l-3.175-3.175L14.85 13.4L18 16.55V15q0-.425.288-.712T19 14t.713.288T20 15v4q0 .425-.288.713T19 20h-4q-.425 0-.712-.288T14 19t.288-.712T15 18zM18 7.4L5.7 19.7q-.275.275-.7.275t-.7-.275t-.275-.7t.275-.7L16.6 6H15q-.425 0-.712-.287T14 5t.288-.712T15 4h4q.425 0 .713.288T20 5v4q0 .425-.288.713T19 10t-.712-.288T18 9zm-8.825 3.175L4.275 5.7Q4 5.425 4 5t.275-.7t.688-.275t.712.275l4.9 4.875z\"/>",

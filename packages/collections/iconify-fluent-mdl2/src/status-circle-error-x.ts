@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const statusCircleErrorX: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m1050 1088l371 371l-90 90l-371-371l-371 371l-90-90l371-371l-371-371l90-90l371 371l371-371l90 90z\"/>",

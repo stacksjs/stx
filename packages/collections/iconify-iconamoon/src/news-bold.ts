@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const newsBold: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2.5\"><path d=\"M3 4v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8h-4\"/><path d=\"M3 4h14v14a2 2 0 0 0 2 2v0M13 8H7m6 4H9\"/></g>",

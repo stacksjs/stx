@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const para: IconData = {
   "body": "<g fill=\"none\"><path fill=\"url(#SVGEmGbYeoa)\" d=\"m3.923 9.87l7.996 4.318c.394.214.878.214 1.271 0l6.889-3.728a1.7 1.7 0 0 0 0-3.02L12.206 3.2a1.64 1.64 0 0 0-1.563 0L3.917 6.855a1.698 1.698 0 0 0 0 3.014z\"/><path fill=\"url(#SVGQd5Yddgd)\" d=\"m5.622 12.58l6.377 3.374c.422.225.939.225 1.35-.017l4.909-2.828l1.816.978a1.698 1.698 0 0 1 0 3.02l-6.883 3.728a1.32 1.32 0 0 1-1.27 0l-7.997-4.313a1.697 1.697 0 0 1-.006-3.02z\"/><defs><linearGradient id=\"SVGEmGbYeoa\" x1=\"2.998\" x2=\"19.05\" y1=\"12.163\" y2=\"12.092\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#02DAFF\"/><stop offset=\"1\" stop-color=\"#5414F1\"/></linearGradient><linearGradient id=\"SVGQd5Yddgd\" x1=\"3.001\" x2=\"19.05\" y1=\"15.425\" y2=\"15.319\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FECF7B\"/><stop offset=\"1\" stop-color=\"#EF26A8\"/></linearGradient></defs></g>",

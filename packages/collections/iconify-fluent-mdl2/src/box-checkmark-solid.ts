@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const boxCheckmarkSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1920 0v1920H0V0zm-358 621l-135-135l-659 658l-275-274l-135 135l410 411z\"/>",

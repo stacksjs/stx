@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const shieldLock16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7.647 2.146a.5.5 0 0 1 .708 0C9.595 3.39 10.969 4 12.5 4a.5.5 0 0 1 .5.5v.901a3 3 0 0 0-1-.36v-.06c-1.48-.112-2.815-.726-4-1.792c-1.186 1.066-2.52 1.68-4 1.792v2.52c0 1.434.363 2.565 1.021 3.444c.47.628 1.12 1.168 1.979 1.603v1.104c-2.646-1.155-4-3.228-4-6.15V4.5a.5.5 0 0 1 .5-.5c1.53 0 2.904-.611 4.147-1.854M9.5 8v1H9a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1h-.5V8a2 2 0 1 0-4 0m1 1V8a1 1 0 1 1 2 0v1zm1 2.25a.75.75 0 1 1 0 1.5a.75.75 0 0 1 0-1.5\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const folderJinjaLight: IconData = {
   "body": "<path fill=\"#616161\" d=\"m13.844 7.536l-1.288-1.072A2 2 0 0 0 11.276 6H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h24a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2H15.124a2 2 0 0 1-1.28-.464\"/><path fill=\"#f5f5f5\" d=\"M32 17v-3a41.3 41.3 0 0 1-9 1a41.3 41.3 0 0 1-9-1v3a36 36 0 0 0 3.938.681L17.728 20H14v2h3.545L17 28h3v-6h6v6h3l-.545-6H32v-2h-3.727l-.211-2.319A36 36 0 0 0 32 17m-6 3h-2v-2h-2v2h-2v-2.116c.938.07 1.945.116 3 .116s2.062-.046 3-.116Z\"/>",

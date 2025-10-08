@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const expandDownStopLight: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"m6 7l6 6l6-6m-1 11H7\"/>",

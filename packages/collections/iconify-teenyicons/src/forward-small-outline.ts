@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const forwardSmallOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" d=\"M8.5 9.5v-4l3.5 2zm-4 0v-4l3.5 2z\"/>",

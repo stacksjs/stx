@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const thermostatV2: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 2C6.489 2 2 6.489 2 12s4.489 10 10 10s10-4.489 10-10S17.511 2 12 2m0 2c4.43 0 8 3.57 8 8s-3.57 8-8 8s-8-3.57-8-8s3.57-8 8-8m3.5 1.938L9.402 10.5a3 3 0 0 0 0 3A3 3 0 0 0 12 15a3 3 0 0 0 2.598-1.5z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lettersP: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"square\" stroke-width=\"2\" d=\"M8 12.5V5h7a1 1 0 0 1 1 1v5.5a1 1 0 0 1-1 1zm0 0V19\"/>",

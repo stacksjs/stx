@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const onDeviceTraining: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11 17v-1h2v1zm0-1.5v-.775q-.475-.275-.737-.737T10 13q0-.825.588-1.412T12 11t1.413.588T14 13q0 .525-.262.988t-.738.737v.775zm5 .45l-1.05-1.075q.275-.425.413-.9T15.5 13t-.138-.975t-.412-.9L16 10.05q.5.65.75 1.4T17 13t-.25 1.55t-.75 1.4m-8 0q-.5-.65-.75-1.4T7 13q0-2.075 1.463-3.537T12 8V6.75l2.25 2l-2.25 2V9.5q-1.45 0-2.475 1.025T8.5 13q0 .5.138.975t.412.9zM6 23q-.825 0-1.412-.587T4 21V3q0-.825.588-1.412T6 1h12q.825 0 1.413.588T20 3v18q0 .825-.587 1.413T18 23zm0-5h12V6H6z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const satoshiV2Outline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M7 7.91h10m-5-2.455V3m0 18v-2.455M7 12h10M7 16.09h10\"/>",

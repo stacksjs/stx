@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const autoAwesomeMosaicSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11 20H4V4h7zm2-9V4h7v7zm0 9v-7h7v7z\"/>",

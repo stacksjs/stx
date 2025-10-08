@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const heavyPlusSign: IconData = {
   "body": "<path fill=\"#4d5357\" d=\"M38 26V2H26v24H2v12h24v24h12V38h24V26z\"/>",

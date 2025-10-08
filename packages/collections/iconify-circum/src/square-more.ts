@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const squareMore: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18.437 20.938H5.562a2.5 2.5 0 0 1-2.5-2.5V5.565a2.5 2.5 0 0 1 2.5-2.5h12.875a2.5 2.5 0 0 1 2.5 2.5v12.873a2.5 2.5 0 0 1-2.5 2.5M5.562 4.065a1.5 1.5 0 0 0-1.5 1.5v12.873a1.5 1.5 0 0 0 1.5 1.5h12.875a1.5 1.5 0 0 0 1.5-1.5V5.565a1.5 1.5 0 0 0-1.5-1.5Z\"/><circle cx=\"11.999\" cy=\"12.002\" r=\"1\" fill=\"currentColor\"/><circle cx=\"15.999\" cy=\"12.002\" r=\"1\" fill=\"currentColor\"/><circle cx=\"7.999\" cy=\"12.002\" r=\"1\" fill=\"currentColor\"/>",

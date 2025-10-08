@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const selectionMultiple: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11 6V4h4v2zM6 9h2v4H6zm0-3a2 2 0 0 1 2-2h1v2H8v1H6zm2 12a2 2 0 0 1-2-2v-1h2v1h1v2zM18 4a2 2 0 0 1 2 2v1h-2V6h-1V4zm-3 12v2h-4v-2zm5-3h-2V9h2zm0 3a2 2 0 0 1-2 2h-1v-2h1v-1h2zM3 8h1v12h12v1c0 .54-.43 1-.97 1H3c-.55 0-1-.45-1-1V9c0-.55.45-1 1-1\"/>",

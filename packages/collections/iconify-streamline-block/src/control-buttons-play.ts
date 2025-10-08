@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const controlButtonsPlay: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m1 0l14 8l-14 8z\"/>",

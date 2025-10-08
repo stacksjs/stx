@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const alignObjectBottomFlat: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#8fbffa\" d=\"M1 1h22v22H1z\"/><path fill=\"#2859c5\" d=\"M5.5 13.5h13v5h-13z\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const branchTwo: IconData = {
   "body": "<g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><path fill=\"#2F88FF\" fill-rule=\"evenodd\" d=\"M36 12C38.2091 12 40 10.2091 40 8C40 5.79086 38.2091 4 36 4C33.7909 4 32 5.79086 32 8C32 10.2091 33.7909 12 36 12Z\" clip-rule=\"evenodd\"/><path fill=\"#2F88FF\" fill-rule=\"evenodd\" d=\"M14 12C16.2091 12 18 10.2091 18 8C18 5.79086 16.2091 4 14 4C11.7909 4 10 5.79086 10 8C10 10.2091 11.7909 12 14 12Z\" clip-rule=\"evenodd\"/><path fill=\"#2F88FF\" fill-rule=\"evenodd\" d=\"M14 44C16.2091 44 18 42.2091 18 40C18 37.7909 16.2091 36 14 36C11.7909 36 10 37.7909 10 40C10 42.2091 11.7909 44 14 44Z\" clip-rule=\"evenodd\"/><path d=\"M14 12L14 36L14 33C14 25 36 24 36 16V12\"/></g>",

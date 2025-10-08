@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const train1: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 13.313a1.75 1.75 0 1 0 0 3.5a1.75 1.75 0 0 0 0-3.5\"/><path fill=\"currentColor\" d=\"M3.875 5.5a2.25 2.25 0 0 1 2.25-2.25h11.75a2.25 2.25 0 0 1 2.25 2.25v11.75a2.25 2.25 0 0 1-2.25 2.25h-.69l1.22 1.22a.75.75 0 1 1-1.06 1.06l-2.28-2.28h-6.13l-2.28 2.28a.75.75 0 0 1-1.06-1.06l1.22-1.22h-.69a2.25 2.25 0 0 1-2.25-2.25zm14.75 0a.75.75 0 0 0-.75-.75H12.75v5.875h5.875zm-12.5-.75a.75.75 0 0 0-.75.75v5.125h5.875V4.75zm-.75 7.375v5.125c0 .414.336.75.75.75h11.75a.75.75 0 0 0 .75-.75v-5.125z\"/>",

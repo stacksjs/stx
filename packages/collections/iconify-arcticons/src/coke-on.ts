@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cokeOn: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M32.137 16.258a14.84 14.84 0 0 1 6.699 12.406h0C38.836 36.858 32.194 43.5 24 43.5h0c-8.194 0-14.836-6.642-14.836-14.836h0c0-4.999 2.517-9.661 6.696-12.404\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M25.561 5.562c.215.44.31.697.236 1.298c-.224 1.795.057 2.283.583 3.836c.84 2.476 1.67 3.928 1.67 7.91c0 3.444-.745 5.175-.768 8.08c-.014 1.877.621 2.878.828 4.266c.304 2.049-1.628 2.19-4.11 2.19s-4.415-.141-4.11-2.19c.206-1.388.842-2.39.827-4.267c-.023-2.904-.767-4.635-.767-8.078c0-3.983.83-5.435 1.67-7.911c.525-1.553.807-2.04.583-3.836c-.075-.6.02-.859.236-1.298C21.425 4.849 23.085 4.5 24 4.5c.916 0 2.575.349 1.562 1.062\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const commentsDisabledOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 18q-.825 0-1.412-.587T2 16V4.825L.675 3.5L2.1 2.075l19.8 19.8l-1.425 1.425l-5.3-5.3zm18 1.125L18.875 16H20V4H6.875l-2-2H20q.825 0 1.413.588T22 4zM4 16h9.175l-2-2H6v-2h3.175l-1-1H6V9h.175L4 6.825zm12.875-2l-2-2H18v2zm-3-3l-2-2H18v2zm-3-3l-2-2H18v2zm2 2\"/>",

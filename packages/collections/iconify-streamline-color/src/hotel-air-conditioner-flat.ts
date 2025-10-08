@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hotelAirConditionerFlat: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#8fbffa\" fill-rule=\"evenodd\" d=\"M1.5 0C.706 0 0 .607 0 1.43v4.654c0 .824.706 1.43 1.5 1.43h11c.794 0 1.5-.606 1.5-1.43V1.431C14 .607 13.294 0 12.5 0z\" clip-rule=\"evenodd\"/><path fill=\"#2859c5\" d=\"M11.793 7.5V6a.97.97 0 0 0-.314-.707a1.12 1.12 0 0 0-.76-.293H3.28c-.284 0-.557.105-.759.293A.97.97 0 0 0 2.207 6v1.5\"/><path fill=\"#2859c5\" fill-rule=\"evenodd\" d=\"M4 8.999a.75.75 0 0 1 .75.75v1.1a2.15 2.15 0 0 1-2.15 2.15h-.1a.75.75 0 0 1 0-1.5h.1a.65.65 0 0 0 .65-.65v-1.1a.75.75 0 0 1 .75-.75m6 0a.75.75 0 0 0-.75.75v1.1a2.15 2.15 0 0 0 2.15 2.15h.1a.75.75 0 0 0 0-1.5h-.1a.65.65 0 0 1-.65-.65v-1.1a.75.75 0 0 0-.75-.75m-2.25.75a.75.75 0 0 0-1.5 0v3.5a.75.75 0 0 0 1.5 0z\" clip-rule=\"evenodd\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const folderVm: IconData = {
   "body": "<path fill=\"#039be5\" d=\"m13.844 7.536l-1.288-1.072A2 2 0 0 0 11.276 6H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h24a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2H15.124a2 2 0 0 1-1.28-.464\"/><path fill=\"#b3e5fc\" d=\"M30 26v-9.5a.5.5 0 0 0-.5-.5h-13a.5.5 0 0 0-.5.5V26h-1.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h17a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5Zm-12-8h10v6H18Z\"/>",

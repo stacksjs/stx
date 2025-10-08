@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twoOfCirclesMahjong: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9 11H2v1h7Zm0 0h1V2H9Zm-8 0h1V2H1Zm4-2h1V8H5Zm0-4h1V4H5ZM2 2h7V1H2Zm0 0\"/>",

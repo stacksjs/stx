@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const folderInfoRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h6l2 2h8q.825 0 1.413.588T22 8v2.175q0 .575-.525.838t-1.025-.088q-.8-.45-1.675-.687t-1.8-.238q-2.9 0-4.937 2.038T10 16.975q0 .45.05.888t.175.862q.125.475-.15.875t-.75.4zm13 2q-2.075 0-3.537-1.463T12 17t1.463-3.537T17 12t3.538 1.463T22 17t-1.463 3.538T17 22m0-2q.2 0 .35-.15t.15-.35v-3q0-.2-.15-.35T17 16t-.35.15t-.15.35v3q0 .2.15.35T17 20m0-5q.2 0 .35-.15t.15-.35t-.15-.35T17 14t-.35.15t-.15.35t.15.35t.35.15\"/>",

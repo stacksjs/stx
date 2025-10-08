@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileShareSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M30 9H16.42l-2.31-3.18A2 2 0 0 0 12.49 5H6a2 2 0 0 0-2 2v22a2 2 0 0 0 2 2h24a2 2 0 0 0 2-2V11a2 2 0 0 0-2-2M6 7h6.49l2.72 4H6Zm15.94 19.64a2.09 2.09 0 0 1-2.11-2.06v-.3l-5.67-2.66l-.08.08a2.08 2.08 0 1 1 .08-2.95l5.64-2.66v-.23a2.08 2.08 0 1 1 .58 1.46L14.75 20v.47l5.72 2.66a2.07 2.07 0 1 1 1.47 3.54Z\" class=\"clr-i-solid clr-i-solid-path-1\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",

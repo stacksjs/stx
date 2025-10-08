@@ -1,11 +1,11 @@
-# @stx/iconify-mdi-light
+# @stacksjs/iconify-mdi-light
 
 Material Design Light icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-mdi-light
+bun add @stacksjs/iconify-mdi-light
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-mdi-light
 
 ```html
 <script>
-  import { home } from '@stx/iconify-mdi-light'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-mdi-light'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-mdi-light
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-mdi-light'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-mdi-light'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

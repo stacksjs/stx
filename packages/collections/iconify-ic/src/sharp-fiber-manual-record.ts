@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpFiberManualRecord: IconData = {
   "body": "<circle cx=\"12\" cy=\"12\" r=\"8\" fill=\"currentColor\"/>",

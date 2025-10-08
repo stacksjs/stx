@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const alien: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"3\"><path d=\"M24 45C14 45 3 33.882 3 19.579C3 16.579 3 3 24 3s21 13.579 21 16.579C45 33.882 34 45 24 45Z\"/><path stroke-linecap=\"round\" d=\"M30 34s-2 3-6 3s-6-3-6-3\"/><path d=\"M21.5 24.47c0 .826-.646 1.499-1.47 1.522q-.282.008-.574.008C8.5 26 8.5 17.424 8.5 15.53c0-.826.646-1.499 1.47-1.522q.283-.008.573-.008C21.5 14 21.5 22.576 21.5 24.47Zm5 0c0 .826.646 1.499 1.47 1.522q.282.008.574.008C39.5 26 39.5 17.424 39.5 15.53c0-.826-.646-1.499-1.47-1.522a20 20 0 0 0-.574-.008C26.5 14 26.5 22.576 26.5 24.47Z\"/></g>",

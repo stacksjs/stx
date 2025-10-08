@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sendSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m16 464l480-208L16 48v160l320 48l-320 48Z\"/>",

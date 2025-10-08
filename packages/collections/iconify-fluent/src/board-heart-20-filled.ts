@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const boardHeart20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9.5 7V3H6a3 3 0 0 0-3 3v1zm1.251 8.41l3.43 3.457a.45.45 0 0 0 .637 0l3.431-3.457a2.6 2.6 0 0 0 0-3.653a2.547 2.547 0 0 0-3.626 0l-.123.123l-.123-.123l-.075-.073a2.55 2.55 0 0 0-3.764.316a2.6 2.6 0 0 0 .213 3.41M9.5 17v-1.584a3.6 3.6 0 0 1 0-3.665V8H3v6a3 3 0 0 0 3 3zm5-6.426a3.55 3.55 0 0 1 2.5-.53V6a3 3 0 0 0-3-3h-3.5v7.661a3.55 3.55 0 0 1 4-.087\"/>",

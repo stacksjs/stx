@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const multipleStop: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m7 20l-4-4l4-4l1.425 1.4l-1.6 1.6H11v2H6.825L8.4 18.6zm7-3q-.425 0-.712-.288T13 16t.288-.712T14 15t.713.288T15 16t-.288.713T14 17m4 0q-.425 0-.712-.288T17 16t.288-.712T18 15t.713.288T19 16t-.288.713T18 17m-1-5l-1.425-1.4l1.6-1.6H13V7h4.175L15.6 5.4L17 4l4 4zM6 9q-.425 0-.712-.288T5 8t.288-.712T6 7t.713.288T7 8t-.288.713T6 9m4 0q-.425 0-.712-.288T9 8t.288-.712T10 7t.713.288T11 8t-.288.713T10 9\"/>",

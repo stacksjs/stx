@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const menuFill: IconData = {
   "body": "<rect width=\"18\" height=\"2\" x=\"3\" y=\"11\" fill=\"currentColor\" rx=\".95\" ry=\".95\"/><rect width=\"18\" height=\"2\" x=\"3\" y=\"16\" fill=\"currentColor\" rx=\".95\" ry=\".95\"/><rect width=\"18\" height=\"2\" x=\"3\" y=\"6\" fill=\"currentColor\" rx=\".95\" ry=\".95\"/>",

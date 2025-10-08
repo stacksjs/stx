@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hexo: IconData = {
   "body": "<path fill=\"#0E83CD\" d=\"M128.04 0L.574 73.768L.59 221.079l127.754 73.465l127.464-73.769l.002-147.23z\"/><path fill=\"#FFF\" d=\"m68.242 211.051l.01-63.7l.01-63.702l11.573-6.768l11.085 6.56l.12 26.03l.12 26.031h74.075l.12-26.013l.12-26.014l11.257-6.505l11.412 6.68l-.006 63.658l-.005 63.659l-11.298 6.31l-11.361-6.392l-.12-25.885l-.12-25.886H91.16l-.12 25.878l.034 26.008l-11.36 6.663z\"/>",

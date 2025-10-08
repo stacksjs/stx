@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pixel9ProFoldSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 21V3h20v18zm10-2h8V5h-8zm-2-7v-2H4v2zm6-4q.425 0 .713-.288T17 7t-.288-.712T16 6t-.712.288T15 7t.288.713T16 8m-6 0V6H4v2z\"/>",

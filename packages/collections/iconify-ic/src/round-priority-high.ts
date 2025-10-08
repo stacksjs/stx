@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const roundPriorityHigh: IconData = {
   "body": "<circle cx=\"12\" cy=\"19\" r=\"2\" fill=\"currentColor\"/><path fill=\"currentColor\" d=\"M12 3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2s2-.9 2-2V5c0-1.1-.9-2-2-2\"/>",

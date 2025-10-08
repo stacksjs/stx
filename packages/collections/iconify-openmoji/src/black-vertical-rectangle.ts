@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const blackVerticalRectangle: IconData = {
   "body": "<path d=\"M55 67V5H17v62z\"/><path fill=\"#3F3F3F\" d=\"M55 67V5H17v62z\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M55 67V5H17v62z\"/>",

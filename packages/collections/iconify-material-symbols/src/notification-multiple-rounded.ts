@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const notificationMultipleRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 22q-.825 0-1.412-.587T1 20V8q0-.425.288-.712T2 7t.713.288T3 8v12h14q.425 0 .713.288T18 21t-.288.713T17 22zm4-4q-.825 0-1.412-.587T5 16V7.5q0-.525.238-1t.712-.75l6.525-3.85q.35-.2.763-.1t.612.45q.225.35.113.775t-.463.625l-6.3 3.7l6.8 4l6.75-4q.375-.225.763-.212t.737.212t.55.538t.2.762V16q0 .825-.587 1.413T21 18zm6.85-10.8l2.85-2.85q.275-.275.7-.275t.7.275t.275.7t-.275.7L14.55 9.3q-.3.3-.7.3t-.7-.3l-1.4-1.4q-.275-.275-.275-.7t.275-.7t.7-.275t.7.275z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mail: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\"><rect width=\"18.5\" height=\"15.5\" x=\"2.75\" y=\"4.25\" rx=\"3\"/><path d=\"m2.75 8l8.415 3.866a2 2 0 0 0 1.67 0L21.25 8\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const linejoinBevelFilled: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M2 2h6.207L14 7.793V14H7.5V8.5H2z\" clip-rule=\"evenodd\"/>",

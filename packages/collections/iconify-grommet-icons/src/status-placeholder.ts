@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const statusPlaceholder: IconData = {
   "body": "<rect width=\"20\" height=\"20\" x=\"2\" y=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" rx=\"2\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const whiteExclamationMark: IconData = {
   "body": "<path fill=\"#9B9B9B\" d=\"M13 20.513a2.501 2.501 0 0 0 5 0V4.487a2.501 2.501 0 0 0-5 0zm0 6.987c0 1.375 1.125 2.5 2.5 2.5s2.5-1.125 2.5-2.5s-1.125-2.5-2.5-2.5a2.51 2.51 0 0 0-2.5 2.5\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const wifiNoneOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M6.5 11.5a1 1 0 1 0 2 0a1 1 0 0 0-2 0Z\"/>",

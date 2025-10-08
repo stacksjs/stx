@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const ellipsisVSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 4.25a2.25 2.25 0 1 0 0 4.5a2.25 2.25 0 0 0 0-4.5m0 5.5a2.25 2.25 0 1 0 0 4.5a2.25 2.25 0 0 0 0-4.5m0 5.5a2.25 2.25 0 1 0 0 4.5a2.25 2.25 0 0 0 0-4.5\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowBottomUp4SquareThin: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h16v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z\"/><path d=\"M14 14v-4h-4\"/></g>",

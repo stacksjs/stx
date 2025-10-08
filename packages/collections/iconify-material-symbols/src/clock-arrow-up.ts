@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const clockArrowUp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8.5 19.5q-3.125 0-5.312-2.187T1 12t2.188-5.312T8.5 4.5t5.313 2.188T16 12t-2.187 5.313T8.5 19.5m10 .5V7.8l-1.1 1.1L16 7.5L19.5 4L23 7.5l-1.425 1.4L20.5 7.825V20zm-8-4.5l1.4-1.4l-2.4-2.425V8h-2v4.5z\"/>",

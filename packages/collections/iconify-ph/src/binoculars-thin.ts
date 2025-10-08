@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const binocularsThin: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M231.22 148.09L189.6 53.41a3.9 3.9 0 0 0-.83-1.22a28 28 0 0 0-39.6 0A4 4 0 0 0 148 55v29h-40V55a4 4 0 0 0-1.17-2.83a28 28 0 0 0-39.6 0a3.9 3.9 0 0 0-.83 1.22l-41.62 94.7A44 44 0 1 0 108 168V92h40v76a44 44 0 1 0 83.22-19.91M64 204a36 36 0 1 1 36-36a36 36 0 0 1-36 36m0-80a43.8 43.8 0 0 0-22.66 6.3L73.4 57.35a20 20 0 0 1 26.6-.59v86A44 44 0 0 0 64 124m92-67.23a20 20 0 0 1 26.6.59l32.06 72.94A43.92 43.92 0 0 0 156 142.74ZM192 204a36 36 0 1 1 36-36a36 36 0 0 1-36 36\"/>",

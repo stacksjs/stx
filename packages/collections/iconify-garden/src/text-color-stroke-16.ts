@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const textColorStroke16: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m3.5 11.5l4-10l4 10M5 8.5h5\"/><path fill=\"currentColor\" d=\"M2 13h11v3H2z\"/>",

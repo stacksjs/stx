@@ -1,11 +1,11 @@
-# @stx/iconify-unjs
+# @stacksjs/iconify-unjs
 
 UnJS Logos icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-unjs
+bun add @stacksjs/iconify-unjs
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-unjs
 
 ```html
 <script>
-  import { home } from '@stx/iconify-unjs'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-unjs'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-unjs
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-unjs'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-unjs'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

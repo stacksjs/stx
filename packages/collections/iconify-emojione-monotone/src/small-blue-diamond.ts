@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const smallBlueDiamond: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m16 32l15.999-16l16 16l-16 16z\"/>",

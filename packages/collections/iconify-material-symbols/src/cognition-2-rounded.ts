@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cognition2Rounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 22q-.425 0-.712-.288T6 21v-3.3q-1.425-1.3-2.212-3.037T3 11q0-3.75 2.625-6.375T12 2q3.125 0 5.538 1.838t3.137 4.787l1.3 5.125q.125.475-.175.863T21 15h-2v3q0 .825-.587 1.413T17 20h-2v1q0 .425-.288.713T14 22zm.725-7.725Q8.45 15 9.5 15t1.775-.725l4-4Q16 9.55 16 8.5t-.725-1.775T13.5 6t-1.775.725Q10.8 6.4 9.9 6.575t-1.525.8t-.8 1.525t.15 1.825Q7 11.45 7 12.5t.725 1.775\"/>",

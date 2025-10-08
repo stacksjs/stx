@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sd: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18 8h-2V4h2m-3 4h-2V4h2m-3 4h-2V4h2m6-2h-8L4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2\"/>",

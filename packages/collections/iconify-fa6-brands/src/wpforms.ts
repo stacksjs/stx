@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const wpforms: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M448 75.2v361.7c0 24.3-19 43.2-43.2 43.2H43.2C19.3 480 0 461.4 0 436.8V75.2C0 51.1 18.8 32 43.2 32h361.7c24 0 43.1 18.8 43.1 43.2m-37.3 361.6V75.2c0-3-2.6-5.8-5.8-5.8h-9.3L285.3 144L224 94.1L162.8 144L52.5 69.3h-9.3c-3.2 0-5.8 2.8-5.8 5.8v361.7c0 3 2.6 5.8 5.8 5.8h361.7c3.2.1 5.8-2.7 5.8-5.8M150.2 186v37H76.7v-37zm0 74.4v37.3H76.7v-37.3zm11.1-147.3l54-43.7H96.8zm210 72.9v37h-196v-37zm0 74.4v37.3h-196v-37.3zm-84.6-147.3l64.5-43.7H232.8zM371.3 335v37.3h-99.4V335z\"/>",

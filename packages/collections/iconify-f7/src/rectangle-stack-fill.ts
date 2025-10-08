@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const rectangleStackFill: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M13.164 4.656h30.164c-.14-1.968-1.266-3.023-3.422-3.023h-23.32c-2.156 0-3.281 1.055-3.422 3.023m-5.062 6.492h39.843c-.351-2.132-1.383-3.304-3.726-3.304H11.805c-2.344 0-3.352 1.172-3.703 3.304m2.132 43.22H45.79c4.875 0 7.336-2.438 7.336-7.266V22.21c0-4.828-2.46-7.266-7.336-7.266H10.234c-4.898 0-7.36 2.414-7.36 7.266V47.1c0 4.829 2.462 7.266 7.36 7.266\"/>",

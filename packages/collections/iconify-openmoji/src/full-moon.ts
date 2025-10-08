@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fullMoon: IconData = {
   "body": "<circle cx=\"36\" cy=\"36\" r=\"28\" fill=\"#fcea2b\" stroke=\"#fcea2b\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"/><circle cx=\"36\" cy=\"36\" r=\"28\" fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"/>",

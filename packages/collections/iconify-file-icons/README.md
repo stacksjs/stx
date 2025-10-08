@@ -1,11 +1,11 @@
-# @stx/iconify-file-icons
+# @stacksjs/iconify-file-icons
 
 File Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-file-icons
+bun add @stacksjs/iconify-file-icons
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-file-icons
 
 ```html
 <script>
-  import { home } from '@stx/iconify-file-icons'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-file-icons'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-file-icons
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-file-icons'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-file-icons'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

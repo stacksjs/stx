@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flipvertical: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M64 1024H0V576h1024v64zM0 0h64l960 384v64H0zm64 384h800L64 64z\"/>",

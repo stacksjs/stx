@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tableMoveLeft20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 16.5a.5.5 0 0 0 1 0v-13a.5.5 0 0 0-1 0zm9-4.5H8.415q.085-.244.085-.5h1a1.5 1.5 0 0 0 0-3h-1q0-.257-.085-.5H12zm5-7v2h-4V3h2a2 2 0 0 1 2 2m-5-2v4H8V3.5a.5.5 0 0 1 .5-.5zm5 9V8h-4v4zm-9 1h4v4H8.5a.5.5 0 0 1-.5-.5zm9 0v2a2 2 0 0 1-2 2h-2v-4zM7.354 8.854a.5.5 0 1 0-.708-.708l-1.5 1.5a.5.5 0 0 0 0 .708l1.5 1.5a.5.5 0 0 0 .708-.708l-.647-.646H9.5a.5.5 0 0 0 0-1H6.707z\"/>",

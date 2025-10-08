@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const beeHive: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><rect width=\"10\" height=\"4\" x=\"7\" y=\"2\" rx=\"2\"/><rect width=\"16\" height=\"4\" x=\"4\" y=\"6\" rx=\"2\"/><path d=\"M14 14h6a2 2 0 1 0 0-4H4a2 2 0 1 0 0 4h6\"/><rect width=\"4\" height=\"8\" x=\"10\" y=\"10\" rx=\"2\"/><path d=\"M19 14a2 2 0 1 1 0 4H5a2 2 0 1 1 0-4\"/><rect width=\"14\" height=\"4\" x=\"5\" y=\"18\" rx=\"2\"/></g>",

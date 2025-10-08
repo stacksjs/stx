@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const entertainmentControlButtonStopButtonTelevisionButtonsMoviesStopTvVideoControls: IconData = {
   "body": "<rect width=\"13\" height=\"13\" x=\".5\" y=\".52\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"1\"/>",

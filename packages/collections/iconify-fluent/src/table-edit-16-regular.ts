@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tableEdit16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 4.5A2.5 2.5 0 0 1 4.5 2h7A2.5 2.5 0 0 1 14 4.5v.634a2.87 2.87 0 0 0-2.897.707L10 6.944V6H6v4h.944l-.67.67a3.2 3.2 0 0 0-.841 1.485l-.375 1.498q-.044.176-.054.347H4.5A2.5 2.5 0 0 1 2 11.5zM5 11H3v.5A1.5 1.5 0 0 0 4.5 13H5zm0-5H3v4h2zm1-1h4V3H6zM5 3h-.5A1.5 1.5 0 0 0 3 4.5V5h2zm8 2v-.5A1.5 1.5 0 0 0 11.5 3H11v2zm-6.02 6.377l4.83-4.83a1.87 1.87 0 1 1 2.644 2.646l-4.83 4.829a2.2 2.2 0 0 1-1.02.578l-1.498.374a.89.89 0 0 1-1.079-1.078l.375-1.498a2.2 2.2 0 0 1 .578-1.02\"/>",

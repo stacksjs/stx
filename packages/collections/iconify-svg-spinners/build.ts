@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-svg-spinners')
+console.log('✓ Built @stacksjs/iconify-svg-spinners')

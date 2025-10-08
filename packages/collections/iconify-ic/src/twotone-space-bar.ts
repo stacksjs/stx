@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twotoneSpaceBar: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18 13H6V9H4v6h16V9h-2z\"/>",

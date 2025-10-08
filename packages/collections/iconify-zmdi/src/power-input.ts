@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const powerInput: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 128h405v43H0zm0 128v-43h107v43zm149 0v-43h107v43zm150 0v-43h106v43z\"/>",

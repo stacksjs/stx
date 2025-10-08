@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-fluent-mdl2')
+console.log('✓ Built @stacksjs/iconify-fluent-mdl2')

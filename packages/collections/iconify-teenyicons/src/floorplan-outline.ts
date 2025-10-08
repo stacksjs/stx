@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const floorplanOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M10 .5h4.5v14H.5V.5h4l3 2m-1 12v-7M4 7.5h5m3 0h2.5\"/>",

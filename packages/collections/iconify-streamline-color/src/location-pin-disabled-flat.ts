@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const locationPinDisabledFlat: IconData = {
   "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path fill=\"#8fbffa\" d=\"M1.063 6.047C1.063 2.72 3.712.004 7 .004s5.938 2.715 5.938 6.043c0 1.988-.986 3.7-2.094 5.004c-1.112 1.307-2.39 2.252-3.077 2.714a1.37 1.37 0 0 1-1.534 0c-.686-.462-1.965-1.407-3.077-2.714c-1.108-1.303-2.094-3.016-2.094-5.004ZM9 5.502a2 2 0 0 1-2 2l-2-2a2 2 0 1 1 4 0\"/><path fill=\"#2859c5\" d=\"M.22.22a.75.75 0 0 1 1.06 0l12.5 12.5a.75.75 0 1 1-1.06 1.06L.22 1.28a.75.75 0 0 1 0-1.06\"/></g>",

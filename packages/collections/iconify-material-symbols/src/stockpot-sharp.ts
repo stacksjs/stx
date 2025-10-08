@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stockpotSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 20V8h18v12zM3 7V5h6V3h6v2h6v2z\"/>",

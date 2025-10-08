@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const taskOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m10.95 18l5.65-5.65l-1.45-1.45l-4.225 4.225l-2.1-2.1L7.4 14.45zM4 22V2h10l6 6v14zm9-13V4H6v16h12V9zM6 4v5zv16z\"/>",

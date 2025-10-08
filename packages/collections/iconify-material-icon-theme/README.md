@@ -1,11 +1,11 @@
-# @stx/iconify-material-icon-theme
+# @stacksjs/iconify-material-icon-theme
 
 Material Icon Theme icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-material-icon-theme
+bun add @stacksjs/iconify-material-icon-theme
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-material-icon-theme
 
 ```html
 <script>
-  import { home } from '@stx/iconify-material-icon-theme'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-material-icon-theme'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-material-icon-theme
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-material-icon-theme'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-material-icon-theme'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

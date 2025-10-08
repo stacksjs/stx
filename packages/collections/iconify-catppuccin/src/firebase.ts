@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const firebase: IconData = {
   "body": "<path fill=\"none\" stroke=\"#eed49f\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m3.5 12.5l9-8l1 9l-5 2zm0 0l5-9l1.9 2.78M3.5 12.5l1-11l3.1 3.1\"/>",

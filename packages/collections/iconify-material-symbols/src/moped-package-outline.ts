@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mopedPackageOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 8V3h7v5zm2-2h3V5H5zm2 13q-1.25 0-2.125-.875T4 16H2v-3q0-1.65 1.175-2.825T6 9h4v5h3.5L17 9.65V7h-3V5h3q.825 0 1.413.588T19 7v3.35L14.5 16H10q0 1.25-.875 2.125T7 19m0-2q.425 0 .713-.288T8 16H6q0 .425.288.713T7 17m12 2q-1.25 0-2.125-.875T16 16t.875-2.125T19 13t2.125.875T22 16t-.875 2.125T19 19m0-2q.425 0 .713-.288T20 16t-.288-.712T19 15t-.712.288T18 16t.288.713T19 17M4 14h4v-3H6q-.825 0-1.412.588T4 13zm4-8V5zm0 8\"/>",

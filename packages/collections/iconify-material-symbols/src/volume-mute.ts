@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const volumeMute: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 15V9h4l5-5v16l-5-5z\"/>",

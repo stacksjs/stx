@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-fluent-emoji-high-contrast')
+console.log('✓ Built @stacksjs/iconify-fluent-emoji-high-contrast')

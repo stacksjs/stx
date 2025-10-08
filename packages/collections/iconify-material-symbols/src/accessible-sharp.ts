@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const accessibleSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 6q-.825 0-1.412-.587T10 4t.588-1.412T12 2t1.413.588T14 4t-.587 1.413T12 6m5 16v-5h-7V9q0-.825.588-1.412T12 7q.6 0 1.038.263t.937.837q1.375 1.65 2.488 2.263T19 11v2q-1.325 0-2.675-.575T14 11.05v3.45h5V22zm-7 0q-2.075 0-3.537-1.463T5 17q0-1.8 1.138-3.175T9 12.1v2.05q-.875.35-1.437 1.113T7 17q0 1.25.875 2.125T10 20q.975 0 1.738-.562T12.85 18h2.05q-.35 1.725-1.725 2.863T10 22\"/>",

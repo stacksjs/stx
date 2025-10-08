@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const electricDrill: IconData = {
   "body": "<defs><mask id=\"SVGlbNZIdvN\"><g fill=\"none\" stroke=\"#fff\" stroke-linejoin=\"round\" stroke-width=\"4\"><path fill=\"#555\" d=\"M20 9h19.698a4 4 0 0 1 3.99 4.29l-.584 8a4 4 0 0 1-3.99 3.71H20z\"/><path d=\"M30.09 25H39l-4.089 11.244A4.19 4.19 0 0 1 30.977 39c-2.905 0-4.927-2.887-3.934-5.617z\"/><path fill=\"#555\" d=\"M14 12h6v10h-6z\"/><path stroke-linecap=\"round\" d=\"M14 17H4\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGlbNZIdvN)\"/>",

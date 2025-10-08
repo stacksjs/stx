@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-duo-icons",
+  "name": "@stacksjs/iconify-duo-icons",
   "version": "0.0.1",
   "description": "Duoicons icons for stx from Iconify",
   "author": "fernandcf",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const grabHandleOff: IconData = {
   "body": "<g fill=\"currentColor\"><path d=\"M3.5 8a1 1 0 0 1 0-2h14.423a1 1 0 1 1 0 2zm0 3.75a1 1 0 1 1 0-2h14.423a1 1 0 1 1 0 2zm0 3.25a1 1 0 1 1 0-2h14.423a1 1 0 1 1 0 2z\" opacity=\".2\"/><path d=\"M2.5 7a.5.5 0 0 1 0-1h15a.5.5 0 0 1 0 1zm0 3.25a.5.5 0 0 1 0-1h15a.5.5 0 0 1 0 1zm0 3.25a.5.5 0 0 1 0-1h15a.5.5 0 0 1 0 1z\"/><path d=\"M1.15 1.878a.514.514 0 0 1 .728-.727l16.971 16.971a.514.514 0 0 1-.727.727z\"/></g>",

@@ -1,11 +1,11 @@
-# @stx/iconify-ep
+# @stacksjs/iconify-ep
 
 Element Plus icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-ep
+bun add @stacksjs/iconify-ep
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-ep
 
 ```html
 <script>
-  import { home } from '@stx/iconify-ep'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-ep'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-ep
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-ep'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-ep'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

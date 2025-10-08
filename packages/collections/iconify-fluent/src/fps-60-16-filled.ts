@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fps6016Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.5 2.75a.5.5 0 0 1 1 0V3A.75.75 0 0 0 7 3v-.25a2 2 0 1 0-4 0V6a2 2 0 1 0 1.5-1.937zM4.5 6a.5.5 0 1 1 1 0a.5.5 0 0 1-1 0M10 1a2 2 0 0 0-2 2v3a2 2 0 1 0 4 0V3a2 2 0 0 0-2-2m.5 5a.5.5 0 0 1-1 0V3a.5.5 0 0 1 1 0zm-9 4a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 1 0V13h1.5a.5.5 0 0 0 0-1H2v-1h2.5a.5.5 0 0 0 0-1zm5 0a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 1 0v-1h1.25a1.75 1.75 0 1 0 0-3.5zm1.75 2.5H7V11h1.25a.75.75 0 0 1 0 1.5m2.75-1a1.5 1.5 0 0 1 1.5-1.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 0 0 1h1a1.5 1.5 0 0 1 0 3h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 0 0-1h-1a1.5 1.5 0 0 1-1.5-1.5\"/>",

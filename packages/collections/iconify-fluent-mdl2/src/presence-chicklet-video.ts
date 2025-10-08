@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const presenceChickletVideo: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m1536 760l512-256v1040l-512-256v248H0V512h1536z\"/>",

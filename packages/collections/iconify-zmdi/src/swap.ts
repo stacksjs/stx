@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const swap: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M85 171v64h150v42H85v64L0 256zm299-43l-85 85v-64H149v-42h150V43z\"/>",

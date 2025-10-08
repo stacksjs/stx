@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const collapseDown: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 0v2h8V0zm2 3l2 2l2-2zM0 7v1h8V7z\"/>",

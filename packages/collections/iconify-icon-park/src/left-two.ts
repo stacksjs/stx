@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const leftTwo: IconData = {
   "body": "<path fill=\"#2F88FF\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"M24 5L6 24L24 43L24 31L42 31V17H24V5Z\"/>",

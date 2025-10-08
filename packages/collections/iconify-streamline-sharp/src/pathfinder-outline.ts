@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pathfinderOutline: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M16 5V2H2v14h3m14-8h3v14H8v-3\"/><path d=\"M8 8h8v8H8z\"/></g>",

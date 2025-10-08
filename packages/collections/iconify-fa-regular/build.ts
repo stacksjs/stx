@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-fa-regular')
+console.log('✓ Built @stacksjs/iconify-fa-regular')

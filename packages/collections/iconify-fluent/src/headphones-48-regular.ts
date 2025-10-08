@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const headphones48Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M24 6.5C14.335 6.5 6.5 14.335 6.5 24v4h9.25c.69 0 1.25.56 1.25 1.25v13.5c0 .69-.56 1.25-1.25 1.25h-6A5.75 5.75 0 0 1 4 38.25V24C4 12.954 12.954 4 24 4s20 8.954 20 20v14.25A5.75 5.75 0 0 1 38.25 44h-6c-.69 0-1.25-.56-1.25-1.25v-13.5c0-.69.56-1.25 1.25-1.25h9.25v-4c0-9.665-7.835-17.5-17.5-17.5m17.5 24h-8v11h4.75a3.25 3.25 0 0 0 3.25-3.25zm-35 0v7.75a3.25 3.25 0 0 0 3.25 3.25h4.75v-11z\"/>",

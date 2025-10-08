@@ -1,11 +1,11 @@
-# @stx/iconify-emojione
+# @stacksjs/iconify-emojione
 
 Emoji One (Colored) icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-emojione
+bun add @stacksjs/iconify-emojione
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-emojione
 
 ```html
 <script>
-  import { home } from '@stx/iconify-emojione'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-emojione'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-emojione
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-emojione'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-emojione'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

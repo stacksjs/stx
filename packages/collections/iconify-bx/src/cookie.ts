@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cookie: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M21.598 11.064a1 1 0 0 0-.854-.172A3 3 0 0 1 20 11c-1.654 0-3-1.346-3.003-2.937c.005-.034.016-.136.017-.17a.998.998 0 0 0-1.254-1.006A3 3 0 0 1 15 7c-1.654 0-3-1.346-3-3c0-.217.031-.444.099-.716a1 1 0 0 0-1.067-1.236A9.956 9.956 0 0 0 2 12c0 5.514 4.486 10 10 10s10-4.486 10-10c0-.049-.003-.097-.007-.16a1 1 0 0 0-.395-.776M12 20c-4.411 0-8-3.589-8-8a7.96 7.96 0 0 1 6.006-7.75A5.006 5.006 0 0 0 15 9l.101-.001a5.01 5.01 0 0 0 4.837 4C19.444 16.941 16.073 20 12 20\"/><circle cx=\"12.5\" cy=\"11.5\" r=\"1.5\" fill=\"currentColor\"/><circle cx=\"8.5\" cy=\"8.5\" r=\"1.5\" fill=\"currentColor\"/><circle cx=\"7.5\" cy=\"12.5\" r=\"1.5\" fill=\"currentColor\"/><circle cx=\"15.5\" cy=\"15.5\" r=\"1.5\" fill=\"currentColor\"/><circle cx=\"10.5\" cy=\"16.5\" r=\"1.5\" fill=\"currentColor\"/>",

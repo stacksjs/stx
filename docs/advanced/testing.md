@@ -69,7 +69,7 @@ export default {
 
 ```typescript
 // tests/utils/component-testing.ts
-import { mount } from '@stx/testing'
+import { mount } from '@stacksjs/testing'
 
 export function createComponentTester<T>(component: T) {
   return {
@@ -115,7 +115,7 @@ export function createComponentTester<T>(component: T) {
 
 ```typescript
 import { test, expect } from 'bun:test'
-import { mount, flushPromises } from '@stx/testing'
+import { mount, flushPromises } from '@stacksjs/testing'
 import AsyncDataLoader from './AsyncDataLoader.stx'
 
 test('handles async data loading', async () => {
@@ -176,7 +176,7 @@ test('error boundary catches component errors', async () => {
 ```typescript
 // tests/store/user.test.ts
 import { test, expect, beforeEach } from 'bun:test'
-import { createTestStore } from '@stx/testing'
+import { createTestStore } from '@stacksjs/testing'
 import { userModule } from '@/store/modules/user'
 
 describe('User Store', () => {
@@ -296,7 +296,7 @@ test('UserService handles API errors gracefully', async () => {
 ```typescript
 // tests/performance/component-performance.test.ts
 import { test, expect } from 'bun:test'
-import { benchmark, mount } from '@stx/testing'
+import { benchmark, mount } from '@stacksjs/testing'
 import LargeList from '@/components/LargeList.stx'
 
 test('large list renders within performance budget', async () => {
@@ -354,7 +354,7 @@ test('component cleanup prevents memory leaks', async () => {
 ```typescript
 // tests/a11y/accessibility.test.ts
 import { test, expect } from 'bun:test'
-import { mount } from '@stx/testing'
+import { mount } from '@stacksjs/testing'
 import { axe, toHaveNoViolations } from 'jest-axe'
 
 expect.extend(toHaveNoViolations)

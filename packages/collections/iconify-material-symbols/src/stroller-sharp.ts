@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const strollerSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16 22q-.825 0-1.412-.587T14 20t.588-1.412T16 18t1.413.588T18 20t-.587 1.413T16 22M6 22q-.825 0-1.412-.587T4 20t.588-1.412T6 18t1.413.588T8 20t-.587 1.413T6 22m-.725-5L16.2 4.175q.5-.575 1.113-.875T18.65 3q1.4 0 2.375.975T22 6.35V7h-2v-.65q0-.575-.387-.962T18.65 5q-.275 0-.487.1t-.388.3L17 6.275V17zM9.6 9.6L4.725 4.725q1.2-.85 2.525-1.287T10 3q1.125 0 2.213.275T14.3 4.1z\"/>",

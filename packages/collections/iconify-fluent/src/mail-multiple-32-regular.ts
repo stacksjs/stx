@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mailMultiple32Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7.5 7a2.5 2.5 0 0 0-2.499 2.42l9.499 5.428l9.499-5.428A2.5 2.5 0 0 0 21.5 7zM3 9.5A4.5 4.5 0 0 1 7.5 5h14A4.5 4.5 0 0 1 26 9.5v10a4.5 4.5 0 0 1-4.5 4.5h-14A4.5 4.5 0 0 1 3 19.5zm21 10v-7.777l-9.004 5.145a1 1 0 0 1-.992 0L5 11.723V19.5A2.5 2.5 0 0 0 7.5 22h14a2.5 2.5 0 0 0 2.5-2.5m-13 8a4.5 4.5 0 0 1-3.742-2H22a5.5 5.5 0 0 0 5.5-5.5V9.258c1.206.807 2 2.182 2 3.742v7a7.5 7.5 0 0 1-7.5 7.5z\"/>",

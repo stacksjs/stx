@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const globe3Fill: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2M5 15.8a8.4 8.4 0 0 0 2 .27a5 5 0 0 0 3.14-1c1.71-1.34 1.71-3.06 1.71-4.44a4.76 4.76 0 0 1 .37-2.34a2.86 2.86 0 0 1 1.12-.91a10 10 0 0 0 .92-.61a4.55 4.55 0 0 0 1.4-1.87A8 8 0 0 1 19 8.12c-1.43.2-3.46.67-3.86 2.53A7 7 0 0 0 15 12a2.93 2.93 0 0 1-.29 1.47l-.1.17c-.65 1.08-1.38 2.31-.39 4c.12.21.25.41.38.61a2.3 2.3 0 0 1 .52 1.08A7.9 7.9 0 0 1 12 20a8 8 0 0 1-7-4.2\"/>",

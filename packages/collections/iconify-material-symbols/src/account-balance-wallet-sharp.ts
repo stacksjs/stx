@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const accountBalanceWalletSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 21V3h18v2H9v14h12v2zm8-4V7h11v10zm5-3.5q.65 0 1.075-.425T17.5 12t-.425-1.075T16 10.5t-1.075.425T14.5 12t.425 1.075T16 13.5\"/>",

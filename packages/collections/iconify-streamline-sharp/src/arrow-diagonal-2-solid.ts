@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowDiagonal2Solid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M1 10V1h9l1 1l-3.086 3.086l11 11L22 13l1 1v9h-9l-1-1l3.086-3.086l-11-11L2 11z\" clip-rule=\"evenodd\"/>",

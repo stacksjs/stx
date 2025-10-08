@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const filePowerpointBoxOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 3c-1.11 0-2 .89-2 2v14c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 2h14v14H5zm10.1 2.88c-.65-.59-1.27-.88-2.8-.88H8v10h1.8v-3.6h2.5c1.5 0 2.16-.28 2.8-.82c.64-.55.9-1.33.9-2.35c0-.97-.25-1.73-.9-2.35m-1.5 3.62c-.32.31-.7.5-1.38.5H9.8V8.4h2.3c.66 0 1.17.25 1.5.6s.5.72.5 1.24c0 .56-.18.95-.5 1.26\"/>",

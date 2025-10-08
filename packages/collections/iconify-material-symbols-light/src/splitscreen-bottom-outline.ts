@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const splitscreenBottomOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5.615 19.385q-.69 0-1.152-.463T4 17.77V15q0-.69.463-1.153t1.152-.462h12.77q.69 0 1.152.462T20 15v2.77q0 .69-.462 1.152t-1.153.463zm0-8.77q-.69 0-1.152-.462T4 9V6.23q0-.69.463-1.152t1.152-.463h12.77q.69 0 1.152.463T20 6.23V9q0 .69-.462 1.153t-1.153.462zm12.77-5H5.615q-.23 0-.423.193T5 6.23V9q0 .23.192.423t.423.192h12.77q.23 0 .423-.192T19 9V6.23q0-.23-.192-.422t-.423-.193M5 9.615v-4z\"/>",

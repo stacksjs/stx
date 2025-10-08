@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const buttonPowerCircle1: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0\"/><path d=\"M14.628 7.729a5.014 5.014 0 1 1-5.256 0M12 5.054v3.993\"/></g>",

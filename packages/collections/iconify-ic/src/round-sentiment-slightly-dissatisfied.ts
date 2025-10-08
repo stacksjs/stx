@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const roundSentimentSlightlyDissatisfied: IconData = {
   "body": "<circle cx=\"15.5\" cy=\"9.5\" r=\"1.5\" fill=\"currentColor\"/><circle cx=\"8.5\" cy=\"9.5\" r=\"1.5\" fill=\"currentColor\"/><path fill=\"currentColor\" d=\"M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2M12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8s8 3.58 8 8s-3.58 8-8 8m0-3.5c.537 0 1.036.103 1.494.293c.395.14.705-.001.887-.232c.245-.31.216-.939-.287-1.143a5.5 5.5 0 0 0-4.17-.012c-.5.204-.585.838-.281 1.188c.197.227.524.315.86.194c.461-.185.96-.288 1.497-.288\"/>",

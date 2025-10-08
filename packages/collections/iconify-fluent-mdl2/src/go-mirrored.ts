@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const goMirrored: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1027 0H3v1024h128V219l1827 1826l90-90L222 128h805z\"/>",

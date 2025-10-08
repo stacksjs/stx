@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const calculatorMultiple20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5.5 2A2.5 2.5 0 0 0 3 4.5v9A2.5 2.5 0 0 0 5.5 16h7a2.5 2.5 0 0 0 2.5-2.5v-9A2.5 2.5 0 0 0 12.5 2zM5 5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1zm0 5a1 1 0 1 1 2 0a1 1 0 0 1-2 0m4-1a1 1 0 1 1 0 2a1 1 0 0 1 0-2m0 2.75a1 1 0 1 1 0 2a1 1 0 0 1 0-2M11 10a1 1 0 1 1 2 0a1 1 0 0 1-2 0m1 1.75a1 1 0 1 1 0 2a1 1 0 0 1 0-2m-6 0a1 1 0 1 1 0 2a1 1 0 0 1 0-2M7.5 18a2.5 2.5 0 0 1-2-1h7a3.5 3.5 0 0 0 3.5-3.5v-9c.607.456 1 1.182 1 2v7a4.5 4.5 0 0 1-4.5 4.5z\"/>",

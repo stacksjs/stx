@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hamburgerMenu: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M32 96v64h448V96zm0 128v64h448v-64zm0 128v64h448v-64z\"/>",

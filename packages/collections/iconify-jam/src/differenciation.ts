@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const differenciation: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10 .674a7 7 0 1 1 0 12.653A7 7 0 1 1 10 .673ZM10 3a5 5 0 0 0-2 4c0 1.636.786 3.088 2 4a5 5 0 0 0 2-4a5 5 0 0 0-2-4\"/>",

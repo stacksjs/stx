@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const npmVariantOutline: IconData = {
   "body": "<path d=\"M3 3v18h18V3H3m3 3h12v12h-3V9h-3v9H6V6z\" fill=\"currentColor\"/>",

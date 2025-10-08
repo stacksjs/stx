@@ -1,11 +1,11 @@
-# @stx/iconify-majesticons
+# @stacksjs/iconify-majesticons
 
 Majesticons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-majesticons
+bun add @stacksjs/iconify-majesticons
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-majesticons
 
 ```html
 <script>
-  import { home } from '@stx/iconify-majesticons'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-majesticons'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-majesticons
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-majesticons'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-majesticons'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

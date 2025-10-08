@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const borderAll: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" d=\"M6.5 6.5h11v11h-11z\"/>",

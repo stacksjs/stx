@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const addHomeOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M17.5 19h1v-2.5H21v-1h-2.5V13h-1v2.5H15v1h2.5zm.5 2q-2.075 0-3.537-1.463T13 16t1.463-3.537T18 11t3.538 1.463T23 16t-1.463 3.538T18 21M4 19V7l8-6l8 6v2.3q-.475-.15-.975-.225T18 9V8l-6-4.5L6 8v9h5.075q.075.525.225 1.025t.375.975zm8-8.75\"/>",

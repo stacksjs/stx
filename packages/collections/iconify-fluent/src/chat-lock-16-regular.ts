@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chatLock16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 12a4.97 4.97 0 0 1-2.675-.775a.5.5 0 0 0-.426-.052l-1.658.553l.51-1.781a.5.5 0 0 0-.052-.393a5 5 0 1 1 8.885-4.55c.414.01.807.106 1.163.269A6 6 0 1 0 1.731 9.872l-.712 2.49a.5.5 0 0 0 .64.612l2.337-.779C4.88 12.707 5.906 13 7 13zm2.5-4v1H9a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1h-.5V8a2 2 0 1 0-4 0m1 1V8a1 1 0 1 1 2 0v1zm1 2.25a.75.75 0 1 1 0 1.5a.75.75 0 0 1 0-1.5\"/>",

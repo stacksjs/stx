@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const listUnorderedSolid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M2 4H0V3h2zm13 0H4V3h11zM2 8H0V7h2zm13 0H4V7h11zM2 12H0v-1h2zm13 0H4v-1h11z\" clip-rule=\"evenodd\"/>",

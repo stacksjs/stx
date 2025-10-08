@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const roundMinus: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18 12.998H6a1 1 0 0 1 0-2h12a1 1 0 0 1 0 2\"/>",

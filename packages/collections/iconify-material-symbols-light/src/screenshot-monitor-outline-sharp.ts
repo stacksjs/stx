@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const screenshotMonitorOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M15.5 15.692h3.192V12.5h-.884v2.308H15.5zM5.308 9.5h.884V7.192H8.5v-.884H5.308zM9 20v-2H3V4h18v14h-6v2zm-5-3h16V5H4zm0 0V5z\"/>",

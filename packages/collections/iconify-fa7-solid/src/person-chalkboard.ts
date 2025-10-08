@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const personChalkboard: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M192 80a56 56 0 1 0 0-112a56 56 0 1 0 0 112m-16 432V352c0-8.8 7.2-16 16-16s16 7.2 16 16v160c0 17.7 14.3 32 32 32s32-14.3 32-32V176h128c17.7 0 32-14.3 32-32s-14.3-32-32-32h-16V64h192v192H384v-32h-64v48c0 26.5 21.5 48 48 48h224c26.5 0 48-21.5 48-48V48c0-26.5-21.5-48-48-48H368c-26.5 0-48 21.5-48 48v64H197.3c-45.6 0-88.5 21.6-115.6 58.2l-67.4 90.7c-10.5 14.2-7.6 34.2 6.6 44.8s34.2 7.6 44.8-6.6l46.3-62.4V512c0 17.7 14.3 32 32 32s32-14.3 32-32\"/>",

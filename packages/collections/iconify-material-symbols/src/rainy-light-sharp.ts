@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const rainyLightSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.05 12.375L.65 5.55l1.8-.9l3.4 6.8zm3.5 7L4.675 13.55l1.75-.9l2.9 5.8zm2.05-5L5.2 5.55l1.775-.9l4.4 8.8zm2.175-5.025l-1.9-3.8l1.775-.875l1.9 3.775zm.6 10l-1.9-3.8l1.775-.875l1.875 3.75zm4.65 0l-4.4-8.8l1.775-.9l4.4 8.775zm1.525-5.975L14.675 5.55l1.775-.875l3.9 7.775zm3 6l-2.375-4.825l1.775-.875l2.4 4.775z\"/>",

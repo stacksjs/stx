@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dockLeft: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 384h2048v1152H0zm128 128v896h384V512zm1792 896V512H640v896z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twotoneDragHandle: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 9h16v2H4zm0 4h16v2H4z\"/>",

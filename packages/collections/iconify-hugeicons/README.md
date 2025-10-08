@@ -1,11 +1,11 @@
-# @stx/iconify-hugeicons
+# @stacksjs/iconify-hugeicons
 
 Huge Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-hugeicons
+bun add @stacksjs/iconify-hugeicons
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-hugeicons
 
 ```html
 <script>
-  import { home } from '@stx/iconify-hugeicons'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-hugeicons'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-hugeicons
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-hugeicons'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-hugeicons'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

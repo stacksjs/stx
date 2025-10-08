@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mmsSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 14h12l-3.75-5l-3 4L9 10zm-4 8V2h20v16H6z\"/>",

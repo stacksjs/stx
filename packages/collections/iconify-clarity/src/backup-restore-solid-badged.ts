@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const backupRestoreSolidBadged: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 24v6a2 2 0 0 0 2 2h28a2 2 0 0 0 2-2v-6Zm28 5h-4v-2h4Z\" class=\"clr-i-solid--badged clr-i-solid-path-1--badged\"/><path fill=\"currentColor\" d=\"M13 9.92L17 6v12a1 1 0 1 0 2 0V6l4 3.95a1 1 0 0 0 .71.29h.11a7.46 7.46 0 0 1-1.25-3.52L18 2.16L11.61 8.5A1 1 0 0 0 13 9.92\" class=\"clr-i-solid--badged clr-i-solid-path-2--badged\"/><path fill=\"currentColor\" d=\"M30.87 13.45a8 8 0 0 1-.87.05a7.46 7.46 0 0 1-4.49-1.5H21v6a3 3 0 1 1-6 0v-6H7.07a1.92 1.92 0 0 0-1.9 1.32c-2.31 6.36-2.93 8.11-3.1 8.68h31.86c-.16-.57-.78-2.3-3.06-8.55\" class=\"clr-i-solid--badged clr-i-solid-path-3--badged\"/><circle cx=\"30\" cy=\"6\" r=\"5\" fill=\"currentColor\" class=\"clr-i-solid--badged clr-i-solid-path-4--badged clr-i-badge\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",

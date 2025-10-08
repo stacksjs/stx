@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const batteryUprightThreeQuarter: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M128 85.333h85.333V42.667h85.334v42.666H384v384H128zM170.667 128v298.667h170.666V128zm42.666 85.333h85.334V384h-85.334z\" clip-rule=\"evenodd\"/>",

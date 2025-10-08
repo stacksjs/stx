@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const doorbell3p: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 22q-.825 0-1.412-.587T5 20V4q0-.825.588-1.412T7 2h10q.825 0 1.413.588T19 4v16q0 .825-.587 1.413T17 22zm5-8.5q.45 0 .725-.275T13 12.5h-2q0 .45.275.725T12 13.5M8 12h8v-1h-1V8.7q0-1.125-.575-2.013T12.8 5.5v-.3q0-.35-.225-.575T12 4.4t-.575.225t-.225.575v.3q-1.05.375-1.625 1.225T9 8.7V11H8zm4 7q.825 0 1.413-.587T14 17t-.587-1.412T12 15t-1.412.588T10 17t.588 1.413T12 19m0-1q-.425 0-.712-.288T11 17t.288-.712T12 16t.713.288T13 17t-.288.713T12 18\"/>",

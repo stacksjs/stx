@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const angleUp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M21.57 19.2L24 16.778L12 4.8L0 16.778L2.43 19.2L12 9.653z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pingup: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18.224 0H2.297v32h10.047V12.959H8.661c-.672 0-.864-.423-.427-.932l5.765-6.724c.437-.516 1.156-.516 1.593 0l5.767 6.724c.421.509.239.932-.439.932h-3.681v8.901h.973c8.303 0 11.489-5.745 11.489-11.313C29.717 5.208 26.217 0 18.222 0z\"/>",

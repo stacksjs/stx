@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const textFormattingAlignRight: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 0h16v4H0zm4 6h12v4H4zm12 6H0v4h16z\"/>",

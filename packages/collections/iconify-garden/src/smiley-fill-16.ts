@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const smileyFill16: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8s8-3.58 8-8s-3.58-8-8-8m2 5c.55 0 1 .45 1 1s-.45 1-1 1s-1-.45-1-1s.45-1 1-1M6 5c.55 0 1 .45 1 1s-.45 1-1 1s-1-.45-1-1s.45-1 1-1m6.48 4.16A4.63 4.63 0 0 1 8 12.63c-2.11 0-3.95-1.42-4.48-3.46c-.08-.34.12-.68.45-.77c.34-.09.68.11.76.45A3.38 3.38 0 0 0 8 11.38a3.38 3.38 0 0 0 3.27-2.53c.09-.33.42-.53.76-.45c.33.08.54.42.45.76\"/>",

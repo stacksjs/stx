@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const crossFill: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M14 2h-4v6H4v4h6v10h4V12h6V8h-6z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const threeOclock: IconData = {
   "body": "<circle cx=\"32\" cy=\"32\" r=\"30\" fill=\"#62727a\"/><g fill=\"#fff\"><path d=\"M30 6h4v32h-4z\"/><path d=\"M26 30h24v4H26z\"/><circle cx=\"32\" cy=\"32\" r=\"4\"/></g><circle cx=\"32\" cy=\"32\" r=\"3\" fill=\"#62727a\"/>",

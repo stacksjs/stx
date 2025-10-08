@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tableLampSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M13 21v-2h8v2zm3-3V7h-5v4H2.475l3.5-8H11v2h7v13z\"/>",

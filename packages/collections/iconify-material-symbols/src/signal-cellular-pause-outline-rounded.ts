@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const signalCellularPauseOutlineRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.7 20.3L20.3 3.7q.475-.475 1.088-.213t.612.938V12q0 .425-.288.713T21 13t-.712-.288T20 12V6.825L6.825 20H12q.425 0 .713.288T13 21t-.288.713T12 22H4.425q-.675 0-.937-.612T3.7 20.3M16 22q-.425 0-.712-.288T15 21v-5q0-.425.288-.712T16 15t.713.288T17 16v5q0 .425-.288.713T16 22m4 0q-.425 0-.712-.288T19 21v-5q0-.425.288-.712T20 15t.713.288T21 16v5q0 .425-.288.713T20 22m-6.575-8.6\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const razor: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 3V1h8v2L3 8L2 7l5-5H4L3 3\"/>",

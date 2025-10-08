@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-fa7-brands')
+console.log('✓ Built @stacksjs/iconify-fa7-brands')

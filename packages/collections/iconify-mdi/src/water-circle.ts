@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const waterCircle: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10s10-4.5 10-10S17.5 2 12 2m0 17c-2.76 0-5-2.24-5-5c0-3.33 5-8.96 5-8.96s5 5.63 5 8.96c0 2.76-2.24 5-5 5\"/>",

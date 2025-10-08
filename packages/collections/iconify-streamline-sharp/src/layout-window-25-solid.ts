@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const layoutWindow25Solid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M1 1h22v22H1v-6h22v-2H1V9h22V7H1z\" clip-rule=\"evenodd\"/>",

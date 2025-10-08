@@ -1,11 +1,11 @@
-# @stx/iconify-f7
+# @stacksjs/iconify-f7
 
 Framework7 Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-f7
+bun add @stacksjs/iconify-f7
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-f7
 
 ```html
 <script>
-  import { home } from '@stx/iconify-f7'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-f7'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-f7
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-f7'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-f7'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

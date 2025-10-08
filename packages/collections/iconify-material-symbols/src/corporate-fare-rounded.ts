@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const corporateFareRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 21q-.825 0-1.412-.587T2 19V5q0-.825.588-1.412T4 3h6q.825 0 1.413.588T12 5v2h8q.825 0 1.413.588T22 9v10q0 .825-.587 1.413T20 21zm0-2h6v-2H4zm0-4h6v-2H4zm0-4h6V9H4zm0-4h6V5H4zm8 12h8V9h-8zm3-6q-.425 0-.712-.288T14 12t.288-.712T15 11h2q.425 0 .713.288T18 12t-.288.713T17 13zm0 4q-.425 0-.712-.288T14 16t.288-.712T15 15h2q.425 0 .713.288T18 16t-.288.713T17 17z\"/>",

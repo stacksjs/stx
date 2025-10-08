@@ -1,11 +1,11 @@
-# @stx/iconify-cryptocurrency-color
+# @stacksjs/iconify-cryptocurrency-color
 
 Cryptocurrency Color Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-cryptocurrency-color
+bun add @stacksjs/iconify-cryptocurrency-color
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-cryptocurrency-color
 
 ```html
 <script>
-  import { home } from '@stx/iconify-cryptocurrency-color'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-cryptocurrency-color'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-cryptocurrency-color
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-cryptocurrency-color'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-cryptocurrency-color'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

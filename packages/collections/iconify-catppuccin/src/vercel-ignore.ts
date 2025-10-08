@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const vercelIgnore: IconData = {
   "body": "<path fill=\"none\" stroke=\"#8087a2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M1.5 13.5h13L8 2z\"/>",

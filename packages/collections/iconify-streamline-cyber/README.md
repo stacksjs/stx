@@ -1,11 +1,11 @@
-# @stx/iconify-streamline-cyber
+# @stacksjs/iconify-streamline-cyber
 
 Cyber free icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-streamline-cyber
+bun add @stacksjs/iconify-streamline-cyber
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-streamline-cyber
 
 ```html
 <script>
-  import { home } from '@stx/iconify-streamline-cyber'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-streamline-cyber'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-streamline-cyber
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-streamline-cyber'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-streamline-cyber'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

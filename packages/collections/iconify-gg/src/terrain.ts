@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const terrain: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m8 10l-5 8h10zm2.529.754L13.5 6L21 18h-5.943z\"/>",

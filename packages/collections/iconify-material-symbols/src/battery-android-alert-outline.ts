@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const batteryAndroidAlertOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M21 16.5q-.425 0-.712-.288T20 15.5t.288-.712T21 14.5t.713.288t.287.712t-.288.713T21 16.5M20 13V7h2v6zm-1.225 5H4q-1.25 0-2.125-.875T1 15V9q0-1.25.875-2.125T4 6h14v2H4q-.425 0-.712.288T3 9v6q0 .425.288.713T4 16h14q0 .575.213 1.088t.562.912M3 16V8z\"/>",

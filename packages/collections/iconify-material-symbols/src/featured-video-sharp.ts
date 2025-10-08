@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const featuredVideoSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 14h9V7H5zm-3 6V4h20v16z\"/>",

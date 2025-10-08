@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const naver: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 0v1623h624V811l543 812h625V0h-625v811L624 0z\"/>",

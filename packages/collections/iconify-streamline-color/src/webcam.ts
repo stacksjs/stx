@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const webcam: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#d7e0ff\" fill-rule=\"evenodd\" d=\"M13 6.52a6 6 0 1 1-12 0a6 6 0 0 1 12 0m-3 0a3 3 0 1 1-6 0a3 3 0 0 1 6 0\" clip-rule=\"evenodd\"/><path fill=\"#fff\" d=\"M7 9.52a3 3 0 1 0 0-6a3 3 0 0 0 0 6\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M7 9.52a3 3 0 1 0 0-6a3 3 0 0 0 0 6\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M7 12.52a6 6 0 1 0 0-12a6 6 0 0 0 0 12\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10.07 11.68a7.4 7.4 0 0 1 2.48 1.8m-11.1 0a7.4 7.4 0 0 1 2.48-1.8M7 7.02a.5.5 0 1 0 0-1a.5.5 0 0 0 0 1\"/></g>",

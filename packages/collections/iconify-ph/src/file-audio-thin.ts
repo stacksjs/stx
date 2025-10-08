@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileAudioThin: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M97.53 132.3a4 4 0 0 0-4.36.87L70.34 156H48a4 4 0 0 0-4 4v40a4 4 0 0 0 4 4h22.34l22.83 22.83A4 4 0 0 0 100 224v-88a4 4 0 0 0-2.47-3.7m-5.53 82l-17.17-17.13A4 4 0 0 0 72 196H52v-32h20a4 4 0 0 0 2.83-1.17L92 145.66Zm56-34.3a36.52 36.52 0 0 1-18 31.45a4 4 0 0 1-4-6.9a28.5 28.5 0 0 0 0-49.1a4 4 0 0 1 4-6.9A36.52 36.52 0 0 1 148 180m62.83-94.83l-56-56A4 4 0 0 0 152 28H56a12 12 0 0 0-12 12v80a4 4 0 0 0 8 0V40a4 4 0 0 1 4-4h92v52a4 4 0 0 0 4 4h52v124a4 4 0 0 1-4 4h-32a4 4 0 0 0 0 8h32a12 12 0 0 0 12-12V88a4 4 0 0 0-1.17-2.83M156 41.65L198.34 84H156Z\"/>",

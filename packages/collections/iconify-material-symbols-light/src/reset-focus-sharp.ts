@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const resetFocusSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 15.308V12h3.308v.885h-2.423v2.423zM12 21v-3.308h.885v2.424h2.423V21zm8.116-5.692v-2.424h-2.424V12H21v3.308zM17.692 21v-.885h2.424v-2.423H21V21zm1.93-11.385h-1.037q-.727-2.027-2.504-3.32T12 5Q9.075 5 7.038 7.038T5 12q0 2.108 1.11 3.79Q7.222 17.474 9 18.309V15h1v5H5v-1h3.312q-1.916-1-3.114-2.851T4 12q0-1.665.626-3.119T6.34 6.34t2.54-1.714T12 4q2.706 0 4.778 1.584q2.072 1.583 2.843 4.032\"/>",

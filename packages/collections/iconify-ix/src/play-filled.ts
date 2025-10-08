@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const playFilled: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M426.667 256L128 405.334V106.667z\"/>",

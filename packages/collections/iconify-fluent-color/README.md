@@ -1,11 +1,11 @@
-# @stx/iconify-fluent-color
+# @stacksjs/iconify-fluent-color
 
 Fluent UI System Color Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-fluent-color
+bun add @stacksjs/iconify-fluent-color
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-fluent-color
 
 ```html
 <script>
-  import { home } from '@stx/iconify-fluent-color'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-fluent-color'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-fluent-color
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-fluent-color'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-fluent-color'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

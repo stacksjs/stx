@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpDoorBack: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M19 19V3H5v16H3v2h18v-2zm-8-6H9v-2h2z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twotoneSpaceDashboard: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 19V5h6v14zm14 0h-6v-7h6zm0-9h-6V5h6z\" opacity=\".3\"/><path fill=\"currentColor\" d=\"M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2M5 19V5h6v14zm14 0h-6v-7h6zm0-9h-6V5h6z\"/>",

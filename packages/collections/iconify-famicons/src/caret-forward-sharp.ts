@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const caretForwardSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m144 448l224-192L144 64z\"/>",

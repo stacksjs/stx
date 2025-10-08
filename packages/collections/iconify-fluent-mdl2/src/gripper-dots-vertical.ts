@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const gripperDotsVertical: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1152 384h256v256h-256zm0 768V896h256v256zm0 512v-256h256v256zM640 640V384h256v256zm0 512V896h256v256zm0 512v-256h256v256z\"/>",

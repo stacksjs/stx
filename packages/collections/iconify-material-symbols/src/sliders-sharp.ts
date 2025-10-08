@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const slidersSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 15V9h20v6zm12-2h6v-2h-6z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const collapseMenu: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M128 768V640h1792v128zm0-640h1792v128H128zm0 1152v-128h1792v128zm0 512v-128h1792v128z\"/>",

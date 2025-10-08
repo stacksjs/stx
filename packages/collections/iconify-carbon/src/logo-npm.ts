@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const logoNpm: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 28V4h24v24zM8.5 8.5v15H16v-12h4.5v12h3v-15z\"/>",

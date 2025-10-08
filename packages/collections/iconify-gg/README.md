@@ -1,11 +1,11 @@
-# @stx/iconify-gg
+# @stacksjs/iconify-gg
 
 css.gg icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-gg
+bun add @stacksjs/iconify-gg
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-gg
 
 ```html
 <script>
-  import { home } from '@stx/iconify-gg'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-gg'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-gg
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-gg'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-gg'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

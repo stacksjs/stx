@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const database16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 1C5.149 1 3 2.075 3 3.5v9C3 13.925 5.149 15 8 15s5-1.075 5-2.5v-9C13 2.075 10.851 1 8 1m0 1c2.441 0 4 .888 4 1.5S10.441 5 8 5s-4-.888-4-1.5S5.558 2 8 2m0 12c-2.442 0-4-.889-4-1.5V5.021A7.4 7.4 0 0 0 8 6a7.4 7.4 0 0 0 4-.979V12.5c0 .611-1.559 1.5-4 1.5\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const nestWakeOnApproach: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M20.5 12q-.625 0-1.062-.437T19 10.5v-6q0-.625.438-1.062T20.5 3t1.063.438T22 4.5v6q0 .625-.437 1.063T20.5 12M10 12q-1.65 0-2.825-1.175T6 8t1.175-2.825T10 4t2.825 1.175T14 8t-1.175 2.825T10 12m-8 8v-2.8q0-.85.425-1.562T3.6 14.55q1.5-.75 3.113-1.15T10 13t3.288.4t3.112 1.15q.75.375 1.175 1.088T18 17.2V20z\"/>",

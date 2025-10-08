@@ -1,11 +1,11 @@
-# @stx/iconify-humbleicons
+# @stacksjs/iconify-humbleicons
 
 Humbleicons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-humbleicons
+bun add @stacksjs/iconify-humbleicons
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-humbleicons
 
 ```html
 <script>
-  import { home } from '@stx/iconify-humbleicons'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-humbleicons'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-humbleicons
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-humbleicons'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-humbleicons'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

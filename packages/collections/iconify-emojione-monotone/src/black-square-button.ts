@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const blackSquareButton: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 2v60h60V2zm52 52H10V10h44z\"/>",

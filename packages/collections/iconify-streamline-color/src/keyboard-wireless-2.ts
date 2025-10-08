@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const keyboardWireless2: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#d7e0ff\" d=\"M12.5 5.5h-11a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10.5 1.239a9 9 0 0 0-7 0m5.7 2.099a6.78 6.78 0 0 0-4.36 0M12.5 5.5h-11a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1m-7 5.25h3m-6 0h1m7 0h1m-9-2.5h1m1.667 0h1m1.666 0h1m1.667 0h1\"/></g>",

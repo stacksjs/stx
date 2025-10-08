@@ -1,11 +1,11 @@
-# @stx/iconify-rivet-icons
+# @stacksjs/iconify-rivet-icons
 
 Rivet Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-rivet-icons
+bun add @stacksjs/iconify-rivet-icons
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-rivet-icons
 
 ```html
 <script>
-  import { home } from '@stx/iconify-rivet-icons'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-rivet-icons'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-rivet-icons
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-rivet-icons'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-rivet-icons'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

@@ -1,11 +1,11 @@
-# @stx/iconify-mingcute
+# @stacksjs/iconify-mingcute
 
 MingCute Icon icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-mingcute
+bun add @stacksjs/iconify-mingcute
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-mingcute
 
 ```html
 <script>
-  import { home } from '@stx/iconify-mingcute'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-mingcute'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-mingcute
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-mingcute'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-mingcute'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

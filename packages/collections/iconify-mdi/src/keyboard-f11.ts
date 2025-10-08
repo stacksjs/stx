@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const keyboardF11: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 7h6v2H5v2h3v2H5v4H3zm8 0h4v10h-2V9h-2zm6 0h4v10h-2V9h-2z\"/>",

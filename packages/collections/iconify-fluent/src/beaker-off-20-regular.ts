@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const beakerOff20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2.854 2.146a.5.5 0 1 0-.708.708l4.848 4.848v.985a3.5 3.5 0 0 1-.418 1.66L4.182 14.79a1.5 1.5 0 0 0 1.32 2.212h8.997c.506 0 .93-.242 1.198-.598l1.45 1.45a.5.5 0 0 0 .707-.708zm12.114 13.529a.5.5 0 0 1-.47.327H5.502a.5.5 0 0 1-.44-.738L6.282 13h6.01zM11.293 12H6.82l.635-1.179a4.5 4.5 0 0 0 .538-2.12zm.711-3.316c0 .49.08.973.235 1.434l2.304 2.304l-1.12-2.078a3.5 3.5 0 0 1-.419-1.66V4H14a.5.5 0 0 0 0-1H6a.5.5 0 0 0-.488.39l.61.61h.872v.873l1 1V4h4.01z\"/>",

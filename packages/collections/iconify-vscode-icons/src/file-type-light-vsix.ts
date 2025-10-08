@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileTypeLightVsix: IconData = {
   "body": "<path fill=\"#424242\" d=\"M2 16v14h13v-6H8V8h7V2H2ZM17 5v3h4V6h5v5h-2v4h6V2H17Z\"/><path fill=\"#424242\" d=\"M10 16v6h12V10H10Z\"/><path fill=\"#424242\" d=\"M24 20.5V24h-7v6h13V17h-6Z\"/>",

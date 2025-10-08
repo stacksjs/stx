@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const circleFullFill16: IconData = {
   "body": "<circle cx=\"8\" cy=\"8\" r=\"8\" fill=\"currentColor\"/>",

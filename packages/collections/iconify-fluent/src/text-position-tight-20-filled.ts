@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const textPositionTight20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.5 2.75a.75.75 0 0 0 0 1.5h13a.75.75 0 0 0 0-1.5zm0 12a.75.75 0 0 0 0 1.5h13a.75.75 0 0 0 0-1.5zm6.5-8.5A2.25 2.25 0 0 0 7.75 8.5v5a.75.75 0 0 1-1.5 0v-5a3.75 3.75 0 1 1 7.5 0v5a.75.75 0 0 1-1.5 0v-5A2.25 2.25 0 0 0 10 6.25m-6.5 5.5h1.75v1.5H3.5a.75.75 0 0 1 0-1.5m13 1.5h-1.75v-1.5h1.75a.75.75 0 0 1 0 1.5m-1.75-4.5v1.5h1.75a.75.75 0 0 0 0-1.5zm-8.623-3a4.7 4.7 0 0 0-.71 1.5H3.5a.75.75 0 0 1 0-1.5zM16.5 7.25h-1.916a4.7 4.7 0 0 0-.71-1.5H16.5a.75.75 0 0 1 0 1.5M5.25 8.75v1.5H3.5a.75.75 0 0 1 0-1.5z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileTypeLightLean: IconData = {
   "body": "<path fill=\"none\" stroke=\"#000\" stroke-width=\"2\" d=\"m3 3l13 25L29 3M10 16h12\"/>",

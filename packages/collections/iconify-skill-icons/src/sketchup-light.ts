@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sketchupLight: IconData = {
   "body": "<g fill=\"none\"><rect width=\"256\" height=\"256\" fill=\"#F4F2ED\" rx=\"60\"/><path fill=\"#E7242D\" d=\"M160.016 19L28 36.204v.997L47.07 151.19l27.102 85.035l139.267-39.657L228 72.348zm-3.539 13.192l54.872 43.125l-48.76 8.768l-29.761-30.972l-82.865 12.069l-7.558-18.095zm-22.523 54.31l28.242 35.23l-45.781 9.745l-10.941-18.833l-42.163 8.212l-7.642-20.517zm-25.343 63.481l10.384 20.435l-42.315 10.537l-7.488-21.966z\"/></g>",

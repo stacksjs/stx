@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const textFormattingBlockquote: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 0H0v16h4zm12 0H6v4h10zM6 6h10v4H6zm10 6H6v4h10z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const wifiSignalOff: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M503.785 124.254a431.82 431.82 0 0 0-332.477-69.728L192.9 83.09a403 403 0 0 1 63.1-4.962a397.87 397.87 0 0 1 216.144 63.419L359.092 303l20.278 26.832L504 151.842V124.4ZM82.542 16v21.9l25.874 34.237a431.4 431.4 0 0 0-100.2 52.117L8 124.4v27.438L237.778 480h36.444l68.5-97.829L404.564 464h22.986v-22.658L106.1 16Zm239.9 339.34L256 450.232L39.856 141.547a399 399 0 0 1 88.759-42.683Z\"/>",

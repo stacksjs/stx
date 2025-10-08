@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mailEdit01: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"1.5\"><path d=\"m2 5.5l6.913 3.917c2.549 1.444 3.625 1.444 6.174 0L22 5.5\"/><path stroke-linecap=\"round\" d=\"M21.995 10.028c-.065-3.067-.098-4.6-1.23-5.737c-1.131-1.136-2.706-1.175-5.857-1.254a115 115 0 0 0-5.805 0c-3.15.079-4.726.118-5.857 1.254s-1.165 2.67-1.23 5.737a69 69 0 0 0 0 2.953c.065 3.068.098 4.601 1.23 5.737s2.707 1.176 5.857 1.255q.702.017 1.402.027m10.347-6.56l.693.692a1.5 1.5 0 0 1 0 2.12l-3.628 3.696c-.285.286-.65.478-1.047.552l-2.248.488a.5.5 0 0 1-.595-.593l.479-2.235a2 2 0 0 1 .551-1.047l3.674-3.674a1.5 1.5 0 0 1 2.121 0\"/></g>",

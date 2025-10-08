@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const objectsVerticalBottom: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 20h20v2H2z\"/><rect width=\"6\" height=\"16\" x=\"5\" y=\"2\" fill=\"currentColor\" rx=\"1\"/><rect width=\"6\" height=\"12\" x=\"13\" y=\"6\" fill=\"currentColor\" rx=\"1\"/>",

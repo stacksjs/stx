@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const loopCircular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 1C2.35 1 1 2.35 1 4H0l1.5 2L3 4H2c0-1.11.89-2 2-2zm2.5 1L5 4h1c0 1.11-.89 2-2 2v1c1.65 0 3-1.35 3-3h1z\"/>",

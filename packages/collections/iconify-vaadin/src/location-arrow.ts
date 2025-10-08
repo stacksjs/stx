@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const locationArrow: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m0 9l16-9l-9 16V9z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileSearchTwo: IconData = {
   "body": "<defs><mask id=\"SVGJQWvOeAA\"><g fill=\"none\" stroke=\"#fff\" stroke-width=\"4\"><path fill=\"#555\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10 44h28a2 2 0 0 0 2-2V14H30V4H10a2 2 0 0 0-2 2v36a2 2 0 0 0 2 2\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m30 4l10 10\"/><circle cx=\"22\" cy=\"26\" r=\"6\" fill=\"#555\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m27 30l5 4\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGJQWvOeAA)\"/>",

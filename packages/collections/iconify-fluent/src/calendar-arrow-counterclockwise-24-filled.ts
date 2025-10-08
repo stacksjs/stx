@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const calendarArrowCounterclockwise24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M21 17.75V8.5H7.483a1.75 1.75 0 0 1-.495 1.487l-2 2A1.75 1.75 0 0 1 3 12.331v5.419A3.25 3.25 0 0 0 6.25 21h11.5A3.25 3.25 0 0 0 21 17.75m-15-1.5a1.25 1.25 0 1 1 2.5 0a1.25 1.25 0 0 1-2.5 0m4.75 0a1.25 1.25 0 1 1 2.5 0a1.25 1.25 0 0 1-2.5 0M6 11.75a1.25 1.25 0 1 1 2.5 0a1.25 1.25 0 0 1-2.5 0m4.75 0a1.25 1.25 0 1 1 2.5 0a1.25 1.25 0 0 1-2.5 0m4.75 0a1.25 1.25 0 1 1 2.5 0a1.25 1.25 0 0 1-2.5 0M21 7v-.75A3.25 3.25 0 0 0 17.75 3H6.25A3.25 3.25 0 0 0 3 6.25v2.69l-.72-.72a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l2-2a.75.75 0 0 0-1.06-1.06l-.72.72V7z\"/>",

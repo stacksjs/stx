@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const alignCenterHorizontalOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M7.5 0v3.5m0 8V15m0-8.5v2M4 3.5v3h7v-3zm-2.5 5v3h12v-3z\"/>",

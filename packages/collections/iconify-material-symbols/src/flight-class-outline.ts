@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flightClassOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M14 13q-.825 0-1.412-.587T12 11V6q0-.825.588-1.412T14 4h2q.825 0 1.413.588T18 6v5q0 .825-.587 1.413T16 13zm0-2h2V6h-2zm-4.5 7q-.675 0-1.2-.387t-.725-1.038L5 8V4h2v4l2.5 8H18v2zM8 21v-2h10v2zm6-15h2z\"/>",

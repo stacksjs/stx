@@ -1,11 +1,11 @@
-# @stx/iconify-streamline-plump-color
+# @stacksjs/iconify-streamline-plump-color
 
 Plump color icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-streamline-plump-color
+bun add @stacksjs/iconify-streamline-plump-color
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-streamline-plump-color
 
 ```html
 <script>
-  import { home } from '@stx/iconify-streamline-plump-color'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-streamline-plump-color'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-streamline-plump-color
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-streamline-plump-color'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-streamline-plump-color'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

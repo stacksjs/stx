@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const zoomOutOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"m14.5 14.5l-4-4M4 6.5h5m-2.5 6a6 6 0 1 1 0-12a6 6 0 0 1 0 12Z\"/>",

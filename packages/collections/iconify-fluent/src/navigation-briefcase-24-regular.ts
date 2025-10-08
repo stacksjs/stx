@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const navigationBriefcase24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2.75 18H12v1.5H2.75a.75.75 0 0 1-.1-1.494zm0-4.997h11.353a2.75 2.75 0 0 1 1.062-1.5H2.75l-.102.006a.75.75 0 0 0 .102 1.494m0-8h18.5a.75.75 0 0 1 .102 1.493l-.102.007H2.75a.75.75 0 0 1-.102-1.493zM15 15v-1.25c0-.966.784-1.75 1.75-1.75h3.5c.966 0 1.75.784 1.75 1.75V15h.5a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5h-8a1.5 1.5 0 0 1-1.5-1.5v-5a1.5 1.5 0 0 1 1.5-1.5zm1.5-1.25V15h4v-1.25a.25.25 0 0 0-.25-.25h-3.5a.25.25 0 0 0-.25.25\"/>",

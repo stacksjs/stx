@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const verticalSplitOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M2 2.5h12m-12 11h12m-10.5-4v-3h9v3z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const iosSkipbackward: IconData = {
   "body": "<path d=\"M96 96v320h79V274.2L416 416V96L175 237.8V96H96z\" fill=\"currentColor\"/>",

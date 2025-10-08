@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const keySolidAlerted: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m23.38 16.77l.6-.6a5 5 0 0 0 .63-.77h-2.38A3.68 3.68 0 0 1 19 9.89l2.09-3.62l-2.38-2.43a5 5 0 0 0-7.07 0l-8.55 8.55a5 5 0 0 0 0 7.07l5.26 5.26a5 5 0 0 0 7.07 0l.45-.45l2.1 2.2h3.44v3h3.69v1.63L28 34h6v-6.55Zm-8.56-6.59l-5.45 5.46a1 1 0 0 1-1.41 0l-.4-.4a1 1 0 0 1 0-1.41L13 8.36a1 1 0 0 1 1.41 0l.4.4a1 1 0 0 1 .01 1.42M32 32h-3.14l-1.77-1.76v-2.8h-3.68v-3H18.8l-1.52-1.61L22 18.18l10 10.1Z\" class=\"clr-i-solid--alerted clr-i-solid-path-1--alerted\"/><path fill=\"currentColor\" d=\"M26.85 1.14L21.13 11a1.28 1.28 0 0 0 1.1 2h11.45a1.28 1.28 0 0 0 1.1-2l-5.72-9.86a1.28 1.28 0 0 0-2.21 0\" class=\"clr-i-solid--alerted clr-i-solid-path-2--alerted clr-i-alert\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",

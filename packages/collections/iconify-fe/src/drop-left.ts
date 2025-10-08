@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dropLeft: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"m16 5l-8 7l8 7z\"/>",

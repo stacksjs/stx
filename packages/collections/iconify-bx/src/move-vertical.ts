@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const moveVertical: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m7 17l5 5l5-5h-4V7h4l-5-5l-5 5h4v10z\"/>",

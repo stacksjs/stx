@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hovOutlineRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 21.05q-.25 0-.475-.112t-.375-.363l-4.525-7.55q-.15-.25-.225-.5T6.325 12t.075-.525t.225-.5l4.525-7.55q.15-.25.375-.363T12 2.95t.475.112t.375.363l4.525 7.55q.15.25.225.5t.075.525t-.075.525t-.225.5l-4.525 7.55q-.15.25-.375.363T12 21.05m0-2.95l3.675-6.1L12 5.9L8.325 12zm0-6.1\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const confusedFace: IconData = {
   "body": "<path fill=\"#FCEA2B\" d=\"M36.2 13.316c-12.572 0-22.8 10.228-22.8 22.8s10.228 22.8 22.8 22.8S59 48.688 59 36.116s-10.228-22.8-22.8-22.8\"/><circle cx=\"36\" cy=\"36\" r=\"23\" fill=\"none\" stroke=\"#000\" stroke-miterlimit=\"10\" stroke-width=\"2\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M44.7 43.92c-6.328-1.736-11.41-.906-17.4 1.902\"/><path d=\"M30 31a3.001 3.001 0 0 1-6 0c0-1.655 1.345-3 3-3s3 1.345 3 3m18 0a3.001 3.001 0 0 1-6 0c0-1.655 1.345-3 3-3s3 1.345 3 3\"/>",

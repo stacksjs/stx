@@ -1,11 +1,11 @@
-# @stx/iconify-ps
+# @stacksjs/iconify-ps
 
 PrestaShop Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-ps
+bun add @stacksjs/iconify-ps
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-ps
 
 ```html
 <script>
-  import { home } from '@stx/iconify-ps'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-ps'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-ps
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-ps'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-ps'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

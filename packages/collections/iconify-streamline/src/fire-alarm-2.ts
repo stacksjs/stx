@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fireAlarm2: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6.31 3.773c-.226-.097-.431.13-.334.292a5.5 5.5 0 0 1 .67 1.923c.14.956 0 2.003-.616 2.777a.26.26 0 0 1-.195.097a.26.26 0 0 1-.205-.086c-.279-.289-.568-.581-.756-.94c-.054-.108-.249-.281-.53 0c-.678.558-1.09 1.416-1.005 2.29c.036 1.937 1.747 3.35 3.623 3.374c1.914.023 3.601-1.394 3.617-3.374a6.2 6.2 0 0 0-1.081-3.5a7.7 7.7 0 0 0-3.187-2.853M9.453.5a4 4 0 0 1 4 4m-4-1.5a1.5 1.5 0 0 1 1.5 1.5M4.547.5a4 4 0 0 0-4 4m4-1.5a1.5 1.5 0 0 0-1.5 1.5\"/>",

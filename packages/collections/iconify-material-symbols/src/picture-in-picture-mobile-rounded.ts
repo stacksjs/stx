@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pictureInPictureMobileRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M20 20q0 .825-.587 1.413T18 22H6q-.825 0-1.412-.587T4 20V4q0-.825.588-1.412T6 2h12q.825 0 1.413.588T20 4zm-3-8V6q0-.425-.288-.712T16 5h-4q-.425 0-.712.288T11 6v6q0 .425.288.713T12 13h4q.425 0 .713-.288T17 12\"/>",

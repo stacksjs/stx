@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const selectWindow2Sharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M20 15V7H6V2h16v13zM2 22V9h16v13z\"/>",

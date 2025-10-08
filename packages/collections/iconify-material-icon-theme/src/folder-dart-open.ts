@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const folderDartOpen: IconData = {
   "body": "<path fill=\"#2196f3\" d=\"M28.967 12H9.442a2 2 0 0 0-1.898 1.368L4 24V10h24a2 2 0 0 0-2-2H15.124a2 2 0 0 1-1.28-.464l-1.288-1.072A2 2 0 0 0 11.276 6H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h22l4.805-11.212A2 2 0 0 0 28.967 12\"/><path fill=\"#bbdefb\" d=\"M23.037 14.036L15.999 16l-1.948 7.036c-.147.533.058 1.273.458 1.654a486 486 0 0 1 5.49 5.31H26v-4h4v-6l-5.306-5.513c-.383-.397-1.125-.599-1.657-.45z\"/>",

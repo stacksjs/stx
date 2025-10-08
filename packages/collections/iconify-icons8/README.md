@@ -1,11 +1,11 @@
-# @stx/iconify-icons8
+# @stacksjs/iconify-icons8
 
 Icons8 Windows 10 Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-icons8
+bun add @stacksjs/iconify-icons8
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-icons8
 
 ```html
 <script>
-  import { home } from '@stx/iconify-icons8'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-icons8'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-icons8
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-icons8'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-icons8'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

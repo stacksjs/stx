@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const debugBreakpointFunctionUnverified: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M4 11h8L8 4zm2.154-1.25h3.692L8 6.52z\" clip-rule=\"evenodd\"/>",

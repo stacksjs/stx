@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-core",
+  "name": "@stacksjs/iconify-core",
   "version": "0.0.1",
   "description": "Core utilities for Iconify SVG icons in stx",
   "author": "Chris Breuer <chris@stacksjs.org>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const skipNext: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16 18h2V6h-2M6 18l8.5-6L6 6z\"/>",

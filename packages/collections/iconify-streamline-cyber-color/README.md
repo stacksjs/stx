@@ -1,11 +1,11 @@
-# @stx/iconify-streamline-cyber-color
+# @stacksjs/iconify-streamline-cyber-color
 
 Cyber color icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-streamline-cyber-color
+bun add @stacksjs/iconify-streamline-cyber-color
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-streamline-cyber-color
 
 ```html
 <script>
-  import { home } from '@stx/iconify-streamline-cyber-color'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-streamline-cyber-color'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-streamline-cyber-color
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-streamline-cyber-color'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-streamline-cyber-color'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

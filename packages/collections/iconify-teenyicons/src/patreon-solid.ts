@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const patreonSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 0H0v15h3zm6.5 0a5.5 5.5 0 1 0 0 11a5.5 5.5 0 0 0 0-11\"/>",

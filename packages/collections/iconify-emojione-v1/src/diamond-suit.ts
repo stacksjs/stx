@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const diamondSuit: IconData = {
   "body": "<path fill=\"#e03a4d\" d=\"M56.28 32L32.14 63L8 32L32.14 1\"/>",

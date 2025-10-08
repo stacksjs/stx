@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const ballot: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 1v6h6V1M0 8V0h8v8\"/>",

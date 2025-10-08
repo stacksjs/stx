@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tabInPrivate20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5.5 3h9A2.5 2.5 0 0 1 17 5.5v9a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 3 14.5v-9A2.5 2.5 0 0 1 5.5 3M4 5.5v1.793L7.293 4H5.5A1.5 1.5 0 0 0 4 5.5m0 3.207v2.586L11.293 4H8.707zM12.707 4L4 12.707V14.5c0 .232.052.45.146.647l11-11A1.5 1.5 0 0 0 14.5 4zm3.147.853l-11 11c.195.095.414.147.646.147h1.793L16 7.293V5.5c0-.232-.053-.45-.146-.647M16 8.707L8.707 16h2.586L16 11.293zm0 4L12.707 16H14.5a1.5 1.5 0 0 0 1.5-1.5z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mobilePhoneAlt: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 12h7V1H2Zm3-1v-1h1v1ZM3 9V4h5v5Zm1-6V2h3v1Zm0 0\"/>",

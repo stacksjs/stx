@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const baguette: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 6q-5 4-3-1q3 .5 1-1q4 .5 1-1q3 .5 1-1q6-3 2 2\"/>",

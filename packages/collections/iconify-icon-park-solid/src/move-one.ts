@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const moveOne: IconData = {
   "body": "<path fill=\"currentColor\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"m8 6l35 19l-19 2l-10.005 17z\"/>",

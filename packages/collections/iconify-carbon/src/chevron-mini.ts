@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chevronMini: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M31 19v12H19z\"/>",

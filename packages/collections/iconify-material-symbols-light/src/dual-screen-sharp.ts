@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dualScreenSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 18.277V3l8 3.198v15.29zM15 18V4.842L10.392 3H19v15z\"/>",

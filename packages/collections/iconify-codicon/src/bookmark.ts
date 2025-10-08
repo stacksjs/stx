@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bookmark: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12.5 1h-9l-.5.5v13l.872.335L8 10.247l4.128 4.588L13 14.5v-13zM12 13.2L8.372 9.165h-.744L4 13.2V2h8z\"/>",

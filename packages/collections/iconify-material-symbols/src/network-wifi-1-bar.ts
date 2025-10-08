@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const networkWifi1Bar: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 21L0 9q2.4-2.45 5.5-3.725T12 4q3.425 0 6.525 1.275T24 9zm-2.975-5.825q.625-.45 1.388-.7t1.587-.25t1.588.25t1.387.7L21.1 9.05q-1.95-1.475-4.262-2.262T12 6t-4.837.788T2.9 9.05z\"/>",

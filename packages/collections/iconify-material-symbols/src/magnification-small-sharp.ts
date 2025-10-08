@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const magnificationSmallSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 11h4V7H5zm-3 9V4h20v16z\"/>",

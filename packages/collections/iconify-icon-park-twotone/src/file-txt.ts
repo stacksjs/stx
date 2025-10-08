@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileTxt: IconData = {
   "body": "<defs><mask id=\"SVG8z9Kecla\"><g fill=\"none\" stroke=\"#fff\" stroke-width=\"4\"><path fill=\"#555\" stroke-linejoin=\"round\" d=\"M10 4h20l10 10v28a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z\"/><path stroke-linecap=\"round\" d=\"M18 18.008h12m-5.992 0V34\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVG8z9Kecla)\"/>",

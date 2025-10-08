@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const androidCell4Bar: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1.5 20v-8h3v8zm6 0V9.5h3V20zm6 0V7h3v13zm6 0V4h3v16z\"/>",

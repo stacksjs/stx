@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const looksOneSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12.5 16.5h1v-9h-3v1h2zM20 20H4V4h16z\"/>",

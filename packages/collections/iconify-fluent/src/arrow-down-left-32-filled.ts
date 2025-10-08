@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowDownLeft32Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16.75 29a1.25 1.25 0 1 0 0-2.5H7.268L28.634 5.134a1.25 1.25 0 0 0-1.768-1.768L5.5 24.732V15.25a1.25 1.25 0 0 0-2.5 0v12.5c0 .69.56 1.25 1.25 1.25z\"/>",

@@ -1,11 +1,11 @@
-# @stx/iconify-websymbol
+# @stacksjs/iconify-websymbol
 
 Web Symbols Liga icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-websymbol
+bun add @stacksjs/iconify-websymbol
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-websymbol
 
 ```html
 <script>
-  import { home } from '@stx/iconify-websymbol'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-websymbol'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-websymbol
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-websymbol'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-websymbol'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

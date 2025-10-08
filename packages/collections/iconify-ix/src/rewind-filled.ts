@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const rewindFilled: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M256 253.32v128l-213.333-128L256 125.32zm0 0l213.333 128v-256z\" clip-rule=\"evenodd\"/>",

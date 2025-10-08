@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const atStroke12: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" d=\"M8.5 3.5V6h0A2.5 2.5 0 0 1 6 8.5h0A2.5 2.5 0 0 1 3.5 6h0A2.5 2.5 0 0 1 6 3.5h0A2.5 2.5 0 0 1 8.5 6h0v1A1.5 1.5 0 0 0 10 8.5h0A1.5 1.5 0 0 0 11.5 7V6h0A5.5 5.5 0 0 0 6 .5h0A5.5 5.5 0 0 0 .5 6h0A5.5 5.5 0 0 0 6 11.5h2.5\"/>",

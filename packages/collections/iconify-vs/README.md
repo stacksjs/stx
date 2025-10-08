@@ -1,11 +1,11 @@
-# @stx/iconify-vs
+# @stacksjs/iconify-vs
 
 Vesper Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-vs
+bun add @stacksjs/iconify-vs
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-vs
 
 ```html
 <script>
-  import { home } from '@stx/iconify-vs'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-vs'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-vs
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-vs'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-vs'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const checkmarkCircleSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M256 48C141.31 48 48 141.31 48 256s93.31 208 208 208s208-93.31 208-208S370.69 48 256 48m-38 312.38l-80.6-89.57l23.79-21.41l56 62.22L350 153.46L374.54 174Z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const funnelLtr: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10 13L1 1h18z\"/><path fill=\"currentColor\" d=\"M8 9v8l4 2V9z\"/>",

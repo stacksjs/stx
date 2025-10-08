@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const clearFormattingA: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m640 0l329 988l-105 105l-65-197H353l-85 256H128L512 0zM396 768h360L576 228z\"/>",

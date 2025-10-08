@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const langInterslavic: IconData = {
   "body": "<mask id=\"SVGuywqVbel\"><circle cx=\"256\" cy=\"256\" r=\"256\" fill=\"#fff\"/></mask><g mask=\"url(#SVGuywqVbel)\"><path fill=\"#eee\" d=\"m512 512l-192-64l-64-192l64-192L512 0Z\"/><path fill=\"#ffda44\" d=\"m0 512l192-64l64-192l-64-192L0 0Z\"/><path fill=\"#0052b4\" d=\"m0 0l256 256L512 0Z\"/><path fill=\"#d80027\" d=\"M512 512L256 256L0 512Z\"/></g>",

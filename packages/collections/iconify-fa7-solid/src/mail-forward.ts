@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mailForward: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M307.8 18.4C295.8 23.4 288 35 288 48v80H176C78.8 128 0 206.8 0 304c0 113.3 81.5 163.9 100.2 174.1c2.5 1.4 5.3 1.9 8.1 1.9c10.9 0 19.7-8.9 19.7-19.7c0-7.5-4.3-14.4-9.8-19.5c-9.4-8.8-22.2-26.4-22.2-56.7c0-53 43-96 96-96h96v80c0 12.9 7.8 24.6 19.8 29.6s25.7 2.2 34.9-6.9l160-160c12.5-12.5 12.5-32.8 0-45.3l-160-160c-9.2-9.2-22.9-11.9-34.9-6.9z\"/>",

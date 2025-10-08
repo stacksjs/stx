@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const calculatorEqualTo: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 1408v-128h1920v128zm0-896h1920v128H0z\"/>",

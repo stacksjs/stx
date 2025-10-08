@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lightbulb: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 8c1-4-4-6 1-8c5 2 0 4 1 8M3 6v1h2V6\"/>",

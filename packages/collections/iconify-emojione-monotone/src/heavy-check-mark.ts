@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const heavyCheckMark: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M56 2L18.8 42.909L8 34.729H2L18.8 62L62 2z\"/>",

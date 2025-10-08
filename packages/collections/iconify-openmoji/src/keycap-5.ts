@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const keycap5: IconData = {
   "body": "<path fill=\"#d0cfce\" d=\"M11.75 12.166h48V60h-48z\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M12 11.916h48v48H12z\"/><path d=\"M31.867 41.804a4.2 4.2 0 0 0 3.95 2.767h.115a4.2 4.2 0 0 0 4.201-4.202v-.901a4.2 4.2 0 0 0-4.201-4.201h-4.065v-8.005h8.266\"/></g>",

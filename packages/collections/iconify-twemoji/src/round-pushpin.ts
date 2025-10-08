@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const roundPushpin: IconData = {
   "body": "<ellipse cx=\"18\" cy=\"34.5\" fill=\"#292F33\" rx=\"4\" ry=\"1.5\"/><path fill=\"#99AAB5\" d=\"M14.339 10.725S16.894 34.998 18.001 35s3.66-24.275 3.66-24.275z\"/><circle cx=\"18\" cy=\"8\" r=\"8\" fill=\"#DD2E44\"/>",

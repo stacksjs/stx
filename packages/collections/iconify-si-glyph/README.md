@@ -1,11 +1,11 @@
-# @stx/iconify-si-glyph
+# @stacksjs/iconify-si-glyph
 
 SmartIcons Glyph icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-si-glyph
+bun add @stacksjs/iconify-si-glyph
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-si-glyph
 
 ```html
 <script>
-  import { home } from '@stx/iconify-si-glyph'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-si-glyph'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-si-glyph
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-si-glyph'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-si-glyph'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

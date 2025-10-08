@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const doneRingRoundLight: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\"><path d=\"m9 10l3.258 2.444a1 1 0 0 0 1.353-.142L20 5\"/><path d=\"M21 12a9 9 0 1 1-6.67-8.693\"/></g>",

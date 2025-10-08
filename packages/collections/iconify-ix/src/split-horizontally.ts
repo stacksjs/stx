@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const splitHorizontally: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M448 64v384H64V64zM106.667 277.333v128h298.666v-128zm0-42.666h298.666v-128H106.667z\"/>",

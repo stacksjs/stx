@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const closedUmbrella: IconData = {
   "body": "<path fill=\"#66757F\" d=\"M35 35c1-1 0-2 0-2L9 7S7.521 5.479 9 4s3 0 3 0s1 1 2 0s0-2 0-2s-3.521-3.479-7 0C3.5 5.5 7 9 7 9l26 26s1 1 2 0\"/><path fill=\"#9266CC\" d=\"M7.367 18.102L9 17.559V16a2 2 0 0 1 1.515-1.94l2.836-.709l.709-2.836A2 2 0 0 1 16 9h1.559l.544-1.632a2.001 2.001 0 0 1 3.686-.263L34 32l-2 2L7.106 21.789a2 2 0 0 1 .261-3.687\"/><path fill=\"#744EAA\" d=\"M33 33L13.351 13.351l.709-2.836A2 2 0 0 1 16 9h1.559l.051-.154l15.986 23.558zm-1 1L7.106 21.789a2 2 0 0 1 .261-3.687L9 17.559v-.174l23.409 16.206z\"/>",

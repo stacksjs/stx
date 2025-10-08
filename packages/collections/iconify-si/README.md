@@ -1,11 +1,11 @@
-# @stx/iconify-si
+# @stacksjs/iconify-si
 
 Sargam Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-si
+bun add @stacksjs/iconify-si
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-si
 
 ```html
 <script>
-  import { home } from '@stx/iconify-si'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-si'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-si
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-si'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-si'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

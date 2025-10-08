@@ -1,11 +1,11 @@
-# @stx/iconify-streamline-ultimate-color
+# @stacksjs/iconify-streamline-ultimate-color
 
 Ultimate color icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-streamline-ultimate-color
+bun add @stacksjs/iconify-streamline-ultimate-color
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-streamline-ultimate-color
 
 ```html
 <script>
-  import { home } from '@stx/iconify-streamline-ultimate-color'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-streamline-ultimate-color'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-streamline-ultimate-color
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-streamline-ultimate-color'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-streamline-ultimate-color'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

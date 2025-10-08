@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const man2Rounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10.673 20.692v-5.769H9.269q-.343 0-.575-.232t-.232-.576V9.04q0-.667.474-1.141t1.141-.475h3.846q.667 0 1.141.475t.475 1.14v5.078q0 .343-.233.575q-.232.232-.575.232h-1.404v5.77q0 .343-.232.575t-.576.232h-1.038q-.343 0-.576-.232t-.232-.576M12 5.808q-.698 0-1.195-.497t-.497-1.195t.497-1.196T12 2.423t1.195.497t.497 1.196q0 .698-.497 1.195T12 5.808\"/>",

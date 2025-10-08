@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const panelSplitRow: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect width=\"20\" height=\"18\" x=\"2\" y=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"2\"/><path d=\"M12 3v18\"/></g>",

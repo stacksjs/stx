@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sailing: IconData = {
   "body": "<defs><mask id=\"SVGkZ98JeQp\"><g fill=\"none\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-width=\"4\"><path stroke-linejoin=\"round\" d=\"M19 30h-8l8-9m20 9C39 17.008 28.994 4 19 4v26z\"/><path fill=\"#555\" stroke-linejoin=\"round\" d=\"M32.651 41.577L42 36H6l2 6h23.114a3 3 0 0 0 1.537-.423\"/><path stroke-linejoin=\"round\" d=\"M19 30v6\"/><path d=\"M29 21h12\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGkZ98JeQp)\"/>",

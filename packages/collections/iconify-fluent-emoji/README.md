@@ -1,11 +1,11 @@
-# @stx/iconify-fluent-emoji
+# @stacksjs/iconify-fluent-emoji
 
 Fluent Emoji icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-fluent-emoji
+bun add @stacksjs/iconify-fluent-emoji
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-fluent-emoji
 
 ```html
 <script>
-  import { home } from '@stx/iconify-fluent-emoji'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-fluent-emoji'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-fluent-emoji
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-fluent-emoji'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-fluent-emoji'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lockClosedKey24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16 7V6a4 4 0 0 0-8 0v1h-.75A3.25 3.25 0 0 0 4 10.25v7.5A3.25 3.25 0 0 0 7.25 21H11v-.086a2 2 0 0 1 .586-1.414l3.448-3.448A4.5 4.5 0 0 1 20 11.027v-.777A3.25 3.25 0 0 0 16.75 7zM9.5 7V6a2.5 2.5 0 0 1 5 0v1zm4 7a1.5 1.5 0 1 1-3 0a1.5 1.5 0 0 1 3 0m6 5a3.5 3.5 0 1 0-3.387-2.613l-3.82 3.82a1 1 0 0 0-.293.707V22.5a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5V22h1a.5.5 0 0 0 .5-.5v-1h1a.5.5 0 0 0 .5-.5v-1zm.5-5a1 1 0 1 1 0 2a1 1 0 0 1 0-2\"/>",

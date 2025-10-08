@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const gridTwoUp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 0v3h3V0zm5 0v3h3V0zM0 5v3h3V5zm5 0v3h3V5z\"/>",

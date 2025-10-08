@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const triangleShapeSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1920 1920H0L960 0z\"/>",

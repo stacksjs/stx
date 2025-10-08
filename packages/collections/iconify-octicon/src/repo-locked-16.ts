@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const repoLocked16: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0V1.5h-8a1 1 0 0 0-1 1v6.708A2.5 2.5 0 0 1 4.5 9h1.75a.75.75 0 0 1 0 1.5H4.5a1 1 0 1 0 0 2h1.75a.75.75 0 0 1 0 1.5H4.5A2.5 2.5 0 0 1 2 11.5z\"/><path fill=\"currentColor\" d=\"M9 10.168V9a3 3 0 1 1 6 0v1.168c.591.281 1 .884 1 1.582v2.5A1.75 1.75 0 0 1 14.25 16h-4.5A1.75 1.75 0 0 1 8 14.25v-2.5c0-.698.409-1.3 1-1.582M13.5 10V9a1.5 1.5 0 0 0-3 0v1Z\"/>",

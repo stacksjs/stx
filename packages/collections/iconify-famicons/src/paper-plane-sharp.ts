@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const paperPlaneSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M496 16L15.88 208L195 289L448 64L223 317l81 179z\"/>",

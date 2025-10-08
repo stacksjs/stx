@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sleep: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M2.588 4.403H5.24L2.422 8.38h2.983M7.825.94h2.483L7.67 4.664h2.793M8.402 7.712h3.612l-3.838 5.419h4.064\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const videoClipMultiple16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m6 5.004l-.001 3.993a.5.5 0 0 0 .777.416l2.998-1.996a.5.5 0 0 0 0-.832L6.777 4.588A.5.5 0 0 0 6 5.004M2 4.25A2.25 2.25 0 0 1 4.25 2h6.5A2.25 2.25 0 0 1 13 4.25v5.5A2.25 2.25 0 0 1 10.75 12h-6.5A2.25 2.25 0 0 1 2 9.75zM4.25 3C3.56 3 3 3.56 3 4.25v5.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25v-5.5C12 3.56 11.44 3 10.75 3zM4 13c.456.607 1.182 1 2 1h5.25A3.75 3.75 0 0 0 15 10.25V6c0-.818-.393-1.544-1-2v6.25A2.75 2.75 0 0 1 11.25 13z\"/>",

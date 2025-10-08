@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const interfaceEditColorPaletteColorPaletteCompanyOfficeSuppliesWork: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"4.5\" cy=\"9\" r=\"4\"/><circle cx=\"9.5\" cy=\"9\" r=\"4\"/><circle cx=\"7\" cy=\"5\" r=\"4\"/></g>",

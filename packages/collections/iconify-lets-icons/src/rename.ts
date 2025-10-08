@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const rename: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" d=\"M9 5h5m0 0h5m-5 0v14m-5 0h5m0 0h5M11 9H4a2 2 0 0 0-2 2v4h9m6 0h3a2 2 0 0 0 2-2V9h-5\"/>",

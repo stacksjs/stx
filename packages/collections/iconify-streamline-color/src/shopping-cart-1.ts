@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const shoppingCart1: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#d7e0ff\" d=\"M4.16 9.762a1 1 0 0 1-.34-.612L3.3 4h9.15a1 1 0 0 1 .86.42a1 1 0 0 1 .14.9l-1.33 4a1 1 0 0 1-1 .68h-6.3a1 1 0 0 1-.66-.238\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M.508.5H2.95l.87 8.65a1 1 0 0 0 1 .85h6.3a1 1 0 0 0 1-.68l1.33-4a1 1 0 0 0-.14-.9a1 1 0 0 0-.86-.42H3.3m7.65 9.5a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1m-6.5 0a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1\"/></g>",

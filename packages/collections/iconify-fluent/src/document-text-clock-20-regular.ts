@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const documentTextClock20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9.743 11a5.5 5.5 0 0 0-1.08-1H13.5a.5.5 0 0 1 0 1zm.657 1q.244.476.393 1H13.5a.5.5 0 0 0 0-1zm.6 2.5q0 .252-.022.5H13.5a.5.5 0 0 0 0-1h-2.522q.021.248.022.5M5 4v5.022a5.5 5.5 0 0 0-1 .185V4a2 2 0 0 1 2-2h4.586a1.5 1.5 0 0 1 1.06.44l3.915 3.914A1.5 1.5 0 0 1 16 7.414V16a2 2 0 0 1-2 2H9.743q.381-.462.657-1H14a1 1 0 0 0 1-1V8h-3.5A1.5 1.5 0 0 1 10 6.5V3H6a1 1 0 0 0-1 1m6.5 3h3.293L11 3.207V6.5a.5.5 0 0 0 .5.5m-6 12a4.5 4.5 0 1 0 0-9a4.5 4.5 0 0 0 0 9M5 12.5a.5.5 0 0 1 1 0V14h1a.5.5 0 0 1 0 1H5.5a.5.5 0 0 1-.5-.5z\"/>",

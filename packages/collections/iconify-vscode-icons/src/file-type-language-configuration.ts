@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileTypeLanguageConfiguration: IconData = {
   "body": "<path fill=\"#fff\" d=\"M30 4.33v23.34H2V4.33z\"/><path fill=\"#167abf\" d=\"M2 4.33h8.17v23.34H2zm28 0v23.34H12.5V4.33zM14.83 8.71h9.34V6.96h-9.34zm9.34 14.58h-9.34v1.75h9.34zm3.5-4.08h-9.34v1.75h9.34zm0-4.09h-9.34v1.75h9.34zm0-4.08h-9.34v1.75h9.34z\"/>",

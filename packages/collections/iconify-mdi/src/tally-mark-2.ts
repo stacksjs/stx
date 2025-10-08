@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tallyMark2: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11 19H9V5h2zm4-14h-2v14h2z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const rubleSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M20.75 9.25H15v8.81h5.79a4.66 4.66 0 0 0 4.86-4.4a4.65 4.65 0 0 0-4.9-4.41\" class=\"clr-i-solid clr-i-solid-path-1\"/><path fill=\"currentColor\" d=\"M18 2a16 16 0 1 0 16 16A16 16 0 0 0 18 2m2.75 18.56H15V22h8.29a1 1 0 0 1 0 2H15v5a1.25 1.25 0 0 1-2.5 0v-5h-1.25a1 1 0 0 1 0-2h1.21v-1.44h-1.21a1.25 1.25 0 0 1 0-2.5h1.21V8a1.25 1.25 0 0 1 1.25-1.25h7a7.14 7.14 0 0 1 7.36 6.9a7.15 7.15 0 0 1-7.32 6.91\" class=\"clr-i-solid clr-i-solid-path-2\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",

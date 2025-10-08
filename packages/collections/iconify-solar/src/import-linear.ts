@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const importLinear: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"1.5\"><path d=\"M4 12a8 8 0 1 0 16 0\"/><path stroke-linejoin=\"round\" d=\"M12 4v10m0 0l3-3m-3 3l-3-3\"/></g>",

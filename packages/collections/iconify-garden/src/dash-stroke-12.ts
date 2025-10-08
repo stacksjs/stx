@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dashStroke12: IconData = {
   "body": "<path fill=\"currentColor\" stroke=\"currentColor\" stroke-linecap=\"round\" d=\"M3 6.5h6\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pictureInPictureAltRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v12q0 .825-.587 1.413T20 20zm8-3h6q.425 0 .713-.288T19 16v-4q0-.425-.288-.712T18 11h-6q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m3-3\"/>",

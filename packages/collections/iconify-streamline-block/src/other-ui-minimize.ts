@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const otherUiMinimize: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16 0H3v6h3V3h7v7h-3v3h6z\"/><path fill=\"currentColor\" d=\"M8 8H0v8h8z\"/>",

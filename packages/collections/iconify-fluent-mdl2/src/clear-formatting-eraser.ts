@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const clearFormattingEraser: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m704 1434l422 422l-65 64H731l-211-211q-19-19-19-45t19-45zm640-640l422 422l-550 550l-422-422z\"/>",

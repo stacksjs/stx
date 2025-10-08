@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const layoutColumnOneThirdRightHint16Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.5 2A2.5 2.5 0 0 0 2 4.5a.5.5 0 0 0 1 0A1.5 1.5 0 0 1 4.5 3a.5.5 0 0 0 0-1M7 2a.5.5 0 0 0 0 1h1.5a.5.5 0 0 0 0-1zM3 7a.5.5 0 0 0-1 0v2a.5.5 0 0 0 1 0zm0 4.5a.5.5 0 0 0-1 0A2.5 2.5 0 0 0 4.5 14a.5.5 0 0 0 0-1A1.5 1.5 0 0 1 3 11.5M7 13a.5.5 0 0 0 0 1h1.5a.5.5 0 0 0 0-1zm3-10.5a.5.5 0 0 1 .5-.5h1A2.5 2.5 0 0 1 14 4.5v7a2.5 2.5 0 0 1-2.5 2.5h-1a.5.5 0 0 1-.5-.5z\"/>",

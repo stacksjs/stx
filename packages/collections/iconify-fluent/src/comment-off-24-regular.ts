@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const commentOff24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.28 2.22a.75.75 0 1 0-1.06 1.06l.702.702A3.24 3.24 0 0 0 2 6.25v8.5A3.25 3.25 0 0 0 5.25 18H6v2.75a1.25 1.25 0 0 0 1.999 1L13.013 18h3.926l3.78 3.78a.75.75 0 0 0 1.061-1.06zM15.44 16.5h-2.926L7.5 20.25l-.001-3.75H5.25a1.75 1.75 0 0 1-1.75-1.75v-8.5c0-.468.184-.893.483-1.207zm5.06-1.75a1.75 1.75 0 0 1-.991 1.577l1.093 1.094A3.25 3.25 0 0 0 22 14.75v-8.5A3.25 3.25 0 0 0 18.75 3H6.182l1.5 1.5H18.75c.966 0 1.75.784 1.75 1.75z\"/>",

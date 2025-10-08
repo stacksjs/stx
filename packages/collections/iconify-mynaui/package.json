@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-mynaui",
+  "name": "@stacksjs/iconify-mynaui",
   "version": "0.0.1",
   "description": "Myna UI Icons icons for stx from Iconify",
   "author": "Praveen Juge",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

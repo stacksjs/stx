@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const microsoftoffice: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M576 1024L0 832l576 64V128L192 256v512L0 832V192L576 0l320 128v768z\"/>",

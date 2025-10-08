@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpPentagon: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m2 9l4 12h12l4-12l-10-7z\"/>",

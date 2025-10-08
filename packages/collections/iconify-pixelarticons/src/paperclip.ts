@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const paperclip: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 5h16v10H7V9h10v2H9v2h10V7H5v10h14v2H3V5z\"/>",

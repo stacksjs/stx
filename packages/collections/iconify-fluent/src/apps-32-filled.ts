@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const apps32Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M24.808 2.954a3.25 3.25 0 0 0-4.596 0l-3.213 3.213A3.25 3.25 0 0 0 13.75 3h-7.5A3.25 3.25 0 0 0 3 6.25v19.5A3.25 3.25 0 0 0 6.25 29h19.5A3.25 3.25 0 0 0 29 25.75v-7.5a3.25 3.25 0 0 0-3.158-3.249l3.209-3.208a3.25 3.25 0 0 0 0-4.596zM17 12.824L19.176 15H17zM15 15H5V6.25C5 5.56 5.56 5 6.25 5h7.5c.69 0 1.25.56 1.25 1.25zM5 17h10v10H6.25C5.56 27 5 26.44 5 25.75zm12 10V17h8.75c.69 0 1.25.56 1.25 1.25v7.5c0 .69-.56 1.25-1.25 1.25z\"/>",

@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-geo')
+console.log('✓ Built @stacksjs/iconify-geo')

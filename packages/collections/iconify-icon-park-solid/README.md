@@ -1,11 +1,11 @@
-# @stx/iconify-icon-park-solid
+# @stacksjs/iconify-icon-park-solid
 
 IconPark Solid icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-icon-park-solid
+bun add @stacksjs/iconify-icon-park-solid
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-icon-park-solid
 
 ```html
 <script>
-  import { home } from '@stx/iconify-icon-park-solid'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-icon-park-solid'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-icon-park-solid
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-icon-park-solid'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-icon-park-solid'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

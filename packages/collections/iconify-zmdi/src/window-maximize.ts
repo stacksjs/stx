@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const windowMaximize: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 21h341v342H0zm43 86v213h256V107z\"/>",

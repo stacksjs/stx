@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const diamond24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2.952 14.299a3.25 3.25 0 0 1 0-4.597l6.75-6.75a3.25 3.25 0 0 1 4.597 0l6.75 6.75a3.25 3.25 0 0 1 0 4.597l-6.75 6.75a3.25 3.25 0 0 1-4.597 0zm1.06-3.536a1.75 1.75 0 0 0 0 2.475l6.751 6.75a1.75 1.75 0 0 0 2.475 0l6.75-6.75a1.75 1.75 0 0 0 0-2.475l-6.75-6.75a1.75 1.75 0 0 0-2.475 0z\"/>",

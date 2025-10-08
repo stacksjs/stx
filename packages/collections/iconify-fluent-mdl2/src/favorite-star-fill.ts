@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const favoriteStarFill: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m1416 1254l248 794l-640-492l-640 492l248-794L0 768h784L1024 0l240 768h784z\"/>",

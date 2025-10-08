@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const otherArrowsShrink: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M8 8H0l8 8zm0 0V0l8 8z\" clip-rule=\"evenodd\"/>",

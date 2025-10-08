@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowInfiniteLoop: IconData = {
   "body": "<path fill=\"none\" stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M5 10.43a2.37 2.37 0 0 1-1.5.57A2.75 2.75 0 0 1 .65 9.192C.511 8.811.5 8 .5 8s.012-.81.15-1.192A2.75 2.75 0 0 1 3.5 5c2.75 0 4.25 6 7 6a2.75 2.75 0 0 0 2.85-1.808C13.489 8.811 13.5 8 13.5 8s-.012-.81-.15-1.192A2.75 2.75 0 0 0 10.5 5h-2l2-2\"/>",

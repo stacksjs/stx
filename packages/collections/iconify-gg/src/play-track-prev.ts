@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const playTrackPrev: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m18 17l-8-5l8-5zM6 7h3v10H6z\"/>",

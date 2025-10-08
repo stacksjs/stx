@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const interfacePageControllerFitScreenFitScreenAdjustDisplayArtboardFrameCorner: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M5 .5H1a.5.5 0 0 0-.5.5v4m13 0V1a.5.5 0 0 0-.5-.5H9m0 13h4a.5.5 0 0 0 .5-.5V9M.5 9v4a.5.5 0 0 0 .5.5h4\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const earbudCaseOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 21q-1.65 0-2.825-1.175T3 17V7q0-1.65 1.175-2.825T7 3h10q1.65 0 2.825 1.175T21 7v10q0 1.65-1.175 2.825T17 21zm-2-9v5q0 .825.588 1.413T7 19h10q.825 0 1.413-.587T19 17v-5h-2v4H7v-4zm4 0v2h6v-2zm-4-2h14V7q0-.825-.587-1.412T17 5H7q-.825 0-1.412.588T5 7z\"/>",

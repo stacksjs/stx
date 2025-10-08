@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cardTravelSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 21V6h5V2h10v4h5v15zM9 6h6V4H9zM4 17h16v-3H4z\"/>",

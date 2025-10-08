@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fitPageHeightSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9 9h6l-3-3zm3 9l3-3H9zm8 4H4V2h16z\"/>",

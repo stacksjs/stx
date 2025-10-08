@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const doubleVerticalBar: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 9h2V4H6Zm-6 2h1V2H0Zm1 1h9v-1H1Zm2-3h2V4H3Zm7 2h1V2h-1ZM1 2h9V1H1Zm0 0\"/>",

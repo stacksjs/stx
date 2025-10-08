@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const menuDotsBoldDuotone: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 12a2 2 0 1 1-4 0a2 2 0 0 1 4 0m14 0a2 2 0 1 1-4 0a2 2 0 0 1 4 0\"/><path fill=\"currentColor\" d=\"M14 12a2 2 0 1 1-4 0a2 2 0 0 1 4 0\" opacity=\".5\"/>",

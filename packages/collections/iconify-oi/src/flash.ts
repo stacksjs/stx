@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flash: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.5 0L2 3h2l-.66 2H2l1 3l3-3H4.5L6 2H4l1-2z\"/>",

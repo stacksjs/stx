@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tableLock48Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M35.75 6A6.25 6.25 0 0 1 42 12.25v11.851a7 7 0 0 0-2.5-1.641V19.5H31v5.892a7 7 0 0 0-.941 2.696A5.01 5.01 0 0 0 26.416 31H19.5v8.5H26V42H12.25A6.25 6.25 0 0 1 6 35.75v-23.5A6.25 6.25 0 0 1 12.25 6zM8.5 19.5v9H17v-9zm0 11.5v4.75a3.75 3.75 0 0 0 3.75 3.75H17V31zm31-14v-4.75a3.75 3.75 0 0 0-3.75-3.75H31V17zm-11-8.5h-9V17h9zM17 8.5h-4.75a3.75 3.75 0 0 0-3.75 3.75V17H17zm11.5 20v-9h-9v9zM32 30h-1a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V33a3 3 0 0 0-3-3h-1v-1a5 5 0 0 0-10 0zm2.5-1a2.5 2.5 0 0 1 5 0v1h-5zm5.5 9a3 3 0 1 1-6 0a3 3 0 0 1 6 0\"/>",

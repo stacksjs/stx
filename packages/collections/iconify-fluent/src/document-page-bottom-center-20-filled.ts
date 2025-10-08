@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const documentPageBottomCenter20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m10.753 13.502l-.22 1.5H9.295l.22-1.5zM5.5 2A1.5 1.5 0 0 0 4 3.5v13A1.5 1.5 0 0 0 5.5 18h9a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 14.5 2zm2.572 14.444l.065-.442H7.5a.5.5 0 0 1 0-1h.784l.22-1.5H8a.5.5 0 0 1 0-1h.65l.157-1.074a.5.5 0 0 1 .99.144l-.137.93h1.24l.157-1.074a.5.5 0 0 1 .99.144l-.136.93h.589a.5.5 0 0 1 0 1h-.736l-.22 1.5H12a.5.5 0 0 1 0 1h-.602l-.086.587a.5.5 0 0 1-.99-.145l.065-.442h-1.24l-.085.587a.5.5 0 0 1-.99-.145\"/>",

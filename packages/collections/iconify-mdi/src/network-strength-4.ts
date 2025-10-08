@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const networkStrength4: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 21h20V1\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const block1: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"3\" d=\"M45 24c0 11.598-9.402 21-21 21S3 35.598 3 24S12.402 3 24 3s21 9.402 21 21M30.927 36.17A13.94 13.94 0 0 1 24 38c-7.732 0-14-6.268-14-14c0-2.518.665-4.881 1.829-6.923c2.888 3.082 6.681 7.09 9.222 9.632c2.57 2.57 6.715 6.494 9.876 9.46m5.242-5.243c-2.966-3.16-6.891-7.306-9.46-9.875c-2.542-2.541-6.55-6.335-9.632-9.223A13.94 13.94 0 0 1 24 10c7.732 0 14 6.268 14 14c0 2.52-.666 4.885-1.831 6.927\" clip-rule=\"evenodd\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stairs: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M64 448v-64h64v-64h64v-64h64v-64h64v-64h64V64h64v384z\"/>",

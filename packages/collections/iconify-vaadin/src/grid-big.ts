@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const gridBig: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 0h7v7H0zm9 0h7v7H9zM0 9h7v7H0zm9 0h7v7H9z\"/>",

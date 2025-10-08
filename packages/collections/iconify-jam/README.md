@@ -1,11 +1,11 @@
-# @stx/iconify-jam
+# @stacksjs/iconify-jam
 
 Jam Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-jam
+bun add @stacksjs/iconify-jam
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-jam
 
 ```html
 <script>
-  import { home } from '@stx/iconify-jam'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-jam'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-jam
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-jam'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-jam'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

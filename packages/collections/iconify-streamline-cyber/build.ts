@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-streamline-cyber')
+console.log('✓ Built @stacksjs/iconify-streamline-cyber')

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const modsquare: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M35.996 208A4 4 0 0 1 32 204.005V51.995A3.997 3.997 0 0 1 36.003 48h87.994a4.02 4.02 0 0 1 4.017 4.007l.472 135.486a4.05 4.05 0 0 0 4.01 4.032l71.507.45a3.97 3.97 0 0 0 3.997-3.977V52.002A4 4 0 0 1 211.996 48h8.008A4 4 0 0 1 224 51.995v152.01a3.99 3.99 0 0 1-4.003 3.995H116.003a4.004 4.004 0 0 1-4.003-4.002V68.002A4.004 4.004 0 0 0 107.997 64H52.003A4.005 4.005 0 0 0 48 68.002v135.996A4 4 0 0 1 44.004 208z\"/>",

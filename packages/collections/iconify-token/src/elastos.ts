@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const elastos: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m12 12.31l4.5-2.5L21 7.299L16.5 4.8L12 7.298L7.5 4.8L3 7.298L7.5 9.81z\"/><path fill=\"currentColor\" d=\"M16.5 11.692L12 14.189l-4.5-2.498L3 14.19l4.5 2.513L12 19.2l4.5-2.498L21 14.19z\"/>",

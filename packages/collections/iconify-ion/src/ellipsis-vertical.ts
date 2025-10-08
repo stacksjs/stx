@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const ellipsisVertical: IconData = {
   "body": "<circle cx=\"256\" cy=\"256\" r=\"48\" fill=\"currentColor\"/><circle cx=\"256\" cy=\"416\" r=\"48\" fill=\"currentColor\"/><circle cx=\"256\" cy=\"96\" r=\"48\" fill=\"currentColor\"/>",

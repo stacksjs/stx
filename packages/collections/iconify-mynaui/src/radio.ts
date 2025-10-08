@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const radio: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\" d=\"M12 13.5a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3m-3.449 2.205a5.2 5.2 0 0 1-1.148-1.7a5.19 5.19 0 0 1 1.148-5.71M18.07 5.5a9.15 9.15 0 0 1 2.719 6.5a9.15 9.15 0 0 1-2.72 6.5M15.24 8.295a5.2 5.2 0 0 1 1.148 1.7a5.19 5.19 0 0 1-1.148 5.71M5.512 18.5A9.15 9.15 0 0 1 2.793 12c0-2.438.978-4.776 2.72-6.5\"/>",

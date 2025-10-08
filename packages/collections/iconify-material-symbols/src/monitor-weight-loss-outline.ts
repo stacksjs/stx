@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const monitorWeightLossOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M15 18h8v2h-8zM5 19V5zm7-13q-1.25 0-2.125.875T9 9t.875 2.125T12 12t2.125-.875T15 9t-.875-2.125T12 6m-1.5 2.5q.2 0 .35.15T11 9t-.15.35t-.35.15t-.35-.15T10 9t.15-.35t.35-.15m1.5 0q.2 0 .35.15t.15.35t-.15.35t-.35.15t-.35-.15T11.5 9t.15-.35t.35-.15m1.5 0q.2 0 .35.15T14 9t-.15.35t-.35.15t-.35-.15T13 9t.15-.35t.35-.15M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v8h-2V5H5v14h8v2z\"/>",

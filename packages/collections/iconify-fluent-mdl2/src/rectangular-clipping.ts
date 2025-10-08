@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const rectangularClipping: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2048 256v1152h-128V384H128v1280h1024v128H0V256zm-256 1408h256v128h-256v256h-128v-256h-256v-128h256v-256h128z\"/>",

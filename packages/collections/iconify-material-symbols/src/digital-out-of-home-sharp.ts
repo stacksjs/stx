@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const digitalOutOfHomeSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 23V1h11v22H9v-2H2v2zm15.5 0v-6.6l2.15-2.05l-.525-2.6q-.975 1.125-2.363 1.688T12 14v-2q1.2 0 2.325-.575t1.85-1.75l.75-1.225q.375-.625 1.1-.85t1.375.05L24 9.6v4.9h-2v-3.575l-1.425-.6L23 23h-2.05l-1.525-7.15l-1.925 1.8V23zM4 13l3.5-2L4 9zm13-6q-.825 0-1.412-.587T15 5t.588-1.412T17 3t1.413.588T19 5t-.587 1.413T17 7\"/>",

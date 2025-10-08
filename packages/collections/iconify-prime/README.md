@@ -1,11 +1,11 @@
-# @stx/iconify-prime
+# @stacksjs/iconify-prime
 
 Prime Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-prime
+bun add @stacksjs/iconify-prime
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-prime
 
 ```html
 <script>
-  import { home } from '@stx/iconify-prime'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-prime'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-prime
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-prime'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-prime'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

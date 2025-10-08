@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bxsArrowToBottom: IconData = {
   "body": "<path d=\"M6 18h12v2H6zm5-14v6H6l6 6l6-6h-5V4z\" fill=\"currentColor\"/>",

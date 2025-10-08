@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpSignalCellular0Bar: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 22h20V2zm18-2H6.83L20 6.83z\"/>",

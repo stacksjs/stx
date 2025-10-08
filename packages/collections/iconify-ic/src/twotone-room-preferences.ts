@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twotoneRoomPreferences: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M13 12.11V5H7v14h4.29c-.19-.63-.29-1.3-.29-2c0-1.91.76-3.63 2-4.89M10 11h2v2h-2z\" opacity=\".3\"/><path fill=\"currentColor\" d=\"M12 13h-2v-2h2zm-5 6V5h6v7.11c.57-.59 1.25-1.07 2-1.42V6h2v4h2V4h-4V3H5v16H3v2h9.26c-.42-.6-.75-1.28-.97-2zm14.69-1.37l1.14 1l-1 1.73l-1.45-.49q-.48.405-1.08.63L19 22h-2l-.3-1.49q-.6-.225-1.08-.63l-1.45.49l-1-1.73l1.14-1c-.08-.5-.08-.76 0-1.26l-1.14-1l1-1.73l1.45.49q.48-.405 1.08-.63L17 12h2l.3 1.49q.6.225 1.08.63l1.45-.49l1 1.73l-1.14 1c.08.51.08.77 0 1.27M20 17c0-1.1-.9-2-2-2s-2 .9-2 2s.9 2 2 2s2-.9 2-2\"/>",

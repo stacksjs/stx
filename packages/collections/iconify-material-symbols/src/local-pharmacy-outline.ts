@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const localPharmacyOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 21v-2l2-6l-2-6V5h12.7l1.45-4l2.35.85L18.35 5H21v2l-2 6l2 6v2zm8-4h2v-3h3v-2h-3V9h-2v3H8v2h3zm-5.9 2h13.8l-2-6l2-6H5.1l2 6zm6.9-6\"/>",

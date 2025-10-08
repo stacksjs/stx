@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-dinkie-icons",
+  "name": "@stacksjs/iconify-dinkie-icons",
   "version": "0.0.1",
   "description": "Dinkie Icons icons for stx from Iconify",
   "author": "atelierAnchor",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

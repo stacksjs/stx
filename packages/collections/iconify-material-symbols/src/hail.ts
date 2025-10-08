@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hail: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 22v-6h3v6zm5 0V10.1q-1.25.425-1.625 1.563T7 14H5q0-3.2 1.875-5.1T12 7q2.5 0 3.75-1.238T17 2h2q0 2.2-.937 3.938T15 8.4V22h-2v-6h-2v6zm3-16q-.825 0-1.412-.587T10 4t.588-1.412T12 2t1.413.588T14 4t-.587 1.413T12 6\"/>",

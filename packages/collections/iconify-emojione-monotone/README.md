@@ -1,11 +1,11 @@
-# @stx/iconify-emojione-monotone
+# @stacksjs/iconify-emojione-monotone
 
 Emoji One (Monotone) icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-emojione-monotone
+bun add @stacksjs/iconify-emojione-monotone
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-emojione-monotone
 
 ```html
 <script>
-  import { home } from '@stx/iconify-emojione-monotone'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-emojione-monotone'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-emojione-monotone
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-emojione-monotone'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-emojione-monotone'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

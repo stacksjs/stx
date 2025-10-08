@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chevronSmallDoubleUp: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-dasharray=\"10\" stroke-dashoffset=\"10\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M12 12l-5 5M12 12l5 5\"><animate fill=\"freeze\" attributeName=\"stroke-dashoffset\" dur=\"0.3s\" values=\"10;0\"/></path><path d=\"M12 6l-5 5M12 6l5 5\"><animate fill=\"freeze\" attributeName=\"stroke-dashoffset\" begin=\"0.3s\" dur=\"0.3s\" values=\"10;0\"/></path></g>",

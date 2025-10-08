@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const petriDish: IconData = {
   "body": "<circle cx=\"36.053\" cy=\"36.332\" r=\"21.581\" fill=\"#d0cfce\"/><circle cx=\"36.053\" cy=\"36.332\" r=\"16.939\" fill=\"#92d3f5\"/><g fill=\"none\" stroke=\"#000\" stroke-miterlimit=\"10\" stroke-width=\"2\"><circle cx=\"36.053\" cy=\"36.332\" r=\"16.939\"/><circle cx=\"36.053\" cy=\"36.332\" r=\"21.581\"/><path stroke-linecap=\"round\" d=\"m27.922 28.929l4.116-2.71m-3.674 16.36l-1.436-4.714m18.802-3.308l-4.85-.866m-.464 10.719l1.261-4.763\"/><circle cx=\"33.056\" cy=\"35.069\" r=\".829\" stroke-linecap=\"round\"/><circle cx=\"40.87\" cy=\"27.549\" r=\".829\" stroke-linecap=\"round\"/><circle cx=\"35.28\" cy=\"47.539\" r=\".829\" stroke-linecap=\"round\"/></g>",

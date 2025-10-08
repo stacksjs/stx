@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bubbleMiddleTopFill: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M27.953 3.648c-1.055 0-2.039.446-2.976 2.04L20.64 12.93h-7.735c-6.96 0-10.734 3.867-10.734 10.734v17.953c0 6.89 3.773 10.735 10.734 10.735h30.188c6.984 0 10.734-3.868 10.734-10.735V23.664c0-6.867-3.75-10.734-10.734-10.734h-7.828L30.93 5.688c-.938-1.594-1.922-2.04-2.977-2.04\"/>",

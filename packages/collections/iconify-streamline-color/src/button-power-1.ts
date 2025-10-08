@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const buttonPower1: IconData = {
   "body": "<path fill=\"none\" stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M7 .5v5.456m3.968-3.987a6.448 6.448 0 1 1-7.936 0\"/>",

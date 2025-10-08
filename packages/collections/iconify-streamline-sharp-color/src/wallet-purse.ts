@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const walletPurse: IconData = {
   "body": "<g fill=\"none\" stroke-width=\"1.5\"><path fill=\"#d7e0ff\" d=\"M22 22H2v-3C2 13.477 6.477 9 12 9s10 4.477 10 10z\"/><path stroke=\"#4147d5\" d=\"M22 22H2v-3C2 13.477 6.477 9 12 9s10 4.477 10 10zM2.369 9a14.94 14.94 0 0 1 9.63-3.5A14.94 14.94 0 0 1 21.632 9\"/><path stroke=\"#4147d5\" d=\"M9 1.5v1a3 3 0 1 0 6 0v-1\"/></g>",

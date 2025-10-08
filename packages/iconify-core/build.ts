@@ -10,4 +10,4 @@ await Bun.build({
   sourcemap: 'external',
 })
 
-console.log('✓ Built @stx/iconify-core')
+console.log('✓ Built @stacksjs/iconify-core')

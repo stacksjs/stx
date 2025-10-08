@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpArrowRight: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m10 17l5-5l-5-5z\"/>",

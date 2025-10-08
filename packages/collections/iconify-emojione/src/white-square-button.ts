@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const whiteSquareButton: IconData = {
   "body": "<path fill=\"#d0d0d0\" d=\"M2 2h60v60H2z\"/><path fill=\"#333\" d=\"M10 10h44v44H10z\"/>",

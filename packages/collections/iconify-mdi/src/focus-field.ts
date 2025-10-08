@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const focusField: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M19 19h-4v2h4c1.1 0 2-.9 2-2v-4h-2m0-12h-4v2h4v4h2V5c0-1.1-.9-2-2-2M5 5h4V3H5c-1.1 0-2 .9-2 2v4h2m0 6H3v4c0 1.1.9 2 2 2h4v-2H5zm2-4h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zM7 7h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zm-8 8h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z\"/>",

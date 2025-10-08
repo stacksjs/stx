@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const emojiFoodBeverageOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 21v-2h16v2zm0-4V3h16q.825 0 1.413.588T22 5v3q0 .825-.587 1.413T20 10h-2v7zM6 5h10zm12 3h2V5h-2zm-2 7V5h-6v.4L12 7v5H7V7l2-1.6V5H6v10zM9 5h1z\"/>",

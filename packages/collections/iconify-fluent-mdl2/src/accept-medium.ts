@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const acceptMedium: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m1902 196l121 120L683 1657L25 999l121-121l537 537z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileTypeSails: IconData = {
   "body": "<path fill=\"#28a3b2\" d=\"M4.6 30S-6.108 12.967 15.925 2v28zm14.737 0V12.645S22.853 18.381 30 30z\"/>",

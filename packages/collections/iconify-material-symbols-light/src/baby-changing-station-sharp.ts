@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const babyChangingStationSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.5 21.5v-8.923l1.556-4.548q.142-.477.55-.753Q6.011 7 6.474 7q.148 0 .31.038q.161.037.304.098L11.354 9H13.5v1h-2.404L7.992 8.652L6.5 13.173V21.5zm6-4.5v-1h11v1zm9.197-2q-.495 0-.846-.347q-.351-.346-.351-.84t.347-.847t.84-.35q.496 0 .847.346q.35.346.35.841t-.346.846t-.841.351M11.5 15v-3h-2v-1h3v2h3v-2h1v4zM7.808 5.385q-.698 0-1.195-.498t-.497-1.195t.497-1.195T7.808 2t1.195.497t.497 1.195t-.497 1.196t-1.195.497\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const alignVerticalBottom: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2048 1792v128H0v-128zm-384-128h-512V512h512zM1536 640h-256v896h256zM896 1664H384V0h512zM768 128H512v1408h256z\"/>",

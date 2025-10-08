@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const nPMLogo: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2048 0v2048H0V0zm-384 384H384v1280h640V640h384v1024h256z\"/>",

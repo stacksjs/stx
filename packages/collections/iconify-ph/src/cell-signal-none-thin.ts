@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cellSignalNoneThin: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M44 192v8a4 4 0 0 1-8 0v-8a4 4 0 0 1 8 0\"/>",

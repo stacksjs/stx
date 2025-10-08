@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const squareSplit2x2Fill: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M29.84 26.113h19.734V13.691c0-4.828-2.437-7.265-7.336-7.265H29.84Zm-3.657 0V6.426H13.785c-4.875 0-7.36 2.414-7.36 7.265v12.422Zm3.657 23.461h12.398c4.899 0 7.336-2.437 7.336-7.265V29.816H29.84Zm-16.055 0h12.398V29.816H6.426V42.31c0 4.851 2.484 7.265 7.36 7.265\"/>",

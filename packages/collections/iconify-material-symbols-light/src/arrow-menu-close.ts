@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowMenuClose: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10.616 15.635v-7.25L7.135 12zM13 20h1V4h-1z\"/>",

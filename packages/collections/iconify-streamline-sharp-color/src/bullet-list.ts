@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bulletList: IconData = {
   "body": "<path fill=\"none\" stroke=\"#4147d5\" stroke-width=\"1.5\" d=\"M10 4h13m-13 8h13m-13 8h13M2 2h4v4H2zm0 8h4v4H2zm0 8h4v4H2z\"/>",

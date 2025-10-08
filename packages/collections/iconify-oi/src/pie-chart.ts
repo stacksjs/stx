@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pieChart: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.5 0c-.97 0-1.84.4-2.47 1.03L4 4V.03A4 4 0 0 0 3.5 0M5 1.06v3.41L2.28 7.19c.61.5 1.37.81 2.22.81C6.43 8 8 6.43 8 4.5c0-1.76-1.31-3.19-3-3.44M.91 2.37C.35 2.91 0 3.66 0 4.5c0 .96.46 1.79 1.16 2.34l2.13-2.13z\"/>",

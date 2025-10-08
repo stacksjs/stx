@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const audioFile: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#e4f1f5\" d=\"M20.807 4.826c.18.18.28.423.28.676v16.542a.956.956 0 0 1-.957.956H3.87a.957.957 0 0 1-.957-.956V1.957A.957.957 0 0 1 3.87 1h12.715c.253 0 .497.1.676.28z\"/><path fill=\"#fff\" d=\"M20.807 4.826L17.26 1.28a.96.96 0 0 0-.676-.28H3.87a.957.957 0 0 0-.957.957v20.087a.96.96 0 0 0 .28.676L20.92 4.994a1 1 0 0 0-.112-.168\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M20.807 4.826c.18.18.28.423.28.676v16.542a.956.956 0 0 1-.957.956H3.87a.957.957 0 0 1-.957-.956V1.957A.957.957 0 0 1 3.87 1h12.715c.253 0 .497.1.676.28z\"/><path fill=\"gray\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M14.87 16.304a1.435 1.435 0 1 0 0-2.87a1.435 1.435 0 0 0 0 2.87m-6.695.956a1.435 1.435 0 1 0 0-2.868a1.435 1.435 0 0 0 0 2.869\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M9.61 15.826V10.33a.956.956 0 0 1 .693-.92l4.783-1.366a.956.956 0 0 1 1.219.92v5.906\"/></g>",

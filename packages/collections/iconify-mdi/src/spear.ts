@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const spear: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16 9h.41l-13 13L2 20.59l13-13V9zm0-5v4h4l2-6z\"/>",

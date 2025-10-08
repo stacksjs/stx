@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const ng4x3: IconData = {
   "body": "<g fill-rule=\"evenodd\" stroke-width=\"1pt\"><path fill=\"#fff\" d=\"M0 0h640v480H0z\"/><path fill=\"#008753\" d=\"M426.6 0H640v480H426.6zM0 0h213.3v480H0z\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const checkedBagOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 21v-2h20v2zm4-4q-.825 0-1.412-.587T4 15V8q0-.825.588-1.412T6 6h3q0-1.25.875-2.125T12 3t2.125.875T15 6h3q.825 0 1.413.588T20 8v7q0 .825-.587 1.413T18 17zm11-2h1V8h-1zm-6.5-9h3q0-.65-.425-1.075T12 4.5t-1.075.425T10.5 6M7 15V8H6v7zm1.5-7v7h7V8zM7 15h1.5zm10 0h-1.5zM7 15H6zm1.5 0h7zm8.5 0h1z\"/>",

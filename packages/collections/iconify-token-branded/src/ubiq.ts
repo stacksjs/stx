@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const ubiq: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#0CA579\" d=\"m4.35 14.976l5.298 3.272v-7.427z\"/><path fill=\"#00EA90\" d=\"M12.514 3v7.15L4.35 14.976V7.715z\"/><path fill=\"#333\" d=\"m19.65 9.024l-5.298-3.272v7.427z\"/><path fill=\"#494949\" d=\"M11.486 21v-7.15l8.164-4.826v7.261z\"/></g>",

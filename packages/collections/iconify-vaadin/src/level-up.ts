@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const levelUp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11 15H5V4H3l3-3l3 3H7v9h6z\"/>",

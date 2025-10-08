@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-dashicons",
+  "name": "@stacksjs/iconify-dashicons",
   "version": "0.0.1",
   "description": "Dashicons icons for stx from Iconify",
   "author": "WordPress",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

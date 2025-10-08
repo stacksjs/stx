@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lineEndArrow: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12.192 16.827V12.5H3.077v-1h9.115V7.173L19.788 12z\"/>",

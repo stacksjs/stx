@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const podium: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 6V3h2V1h4v2h2v3M4.5 4V2H3l1 1v1\"/>",

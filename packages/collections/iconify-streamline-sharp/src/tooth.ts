@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tooth: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"m5.5 22l-1.635-3.971A24.8 24.8 0 0 1 2 8.602v-1.05a5.552 5.552 0 0 1 9.02-4.335l.425.34a.89.89 0 0 0 1.11 0l.424-.34A5.553 5.553 0 0 1 22 7.552v1.05c0 3.234-.634 6.437-1.865 9.427L18.5 22h-2.058a2 2 0 0 1-1.898-1.367L13.5 17.5h-3l-1.044 3.133A2 2 0 0 1 7.558 22z\"/><path d=\"m9 7l3 1l3-1\"/></g>",

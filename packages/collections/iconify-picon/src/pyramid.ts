@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pyramid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m0 6l4-6l4 6l-4 2m0-7v6l3-1\"/>",

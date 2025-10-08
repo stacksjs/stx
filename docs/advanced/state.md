@@ -266,7 +266,7 @@ export class CQRSStore {
 
 ```typescript
 // stores/selectors.ts
-import { createSelector } from '@stx/state'
+import { createSelector } from '@stacksjs/state'
 
 // Basic selector
 const getUsers = (state: RootState) => state.data.users
@@ -637,7 +637,7 @@ function saveState(state: any, config: PersistenceConfig) {
 
 ```typescript
 // tests/store.test.ts
-import { createTestStore, StoreTestUtils } from '@stx/testing'
+import { createTestStore, StoreTestUtils } from '@stacksjs/testing'
 
 describe('Advanced Store Testing', () => {
   let store: Store

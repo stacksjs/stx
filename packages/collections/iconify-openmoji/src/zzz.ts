@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const zzz: IconData = {
   "body": "<g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\"><path stroke-width=\"6\" d=\"M49 8h13.143L49 31h13.143m-34 2.75H37l-8.857 15.5H37\"/><path stroke-width=\"4.645\" d=\"M9.143 52.5H16l-6.857 12H16\"/></g>",

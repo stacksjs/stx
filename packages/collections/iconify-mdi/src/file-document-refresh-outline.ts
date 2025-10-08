@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileDocumentRefreshOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 2c-.53 0-1.04.21-1.41.59C4.21 2.96 4 3.47 4 4v16c0 .53.21 1.04.59 1.41c.37.38.88.59 1.41.59h7c-.37-.6-.66-1.28-.83-2H6V4h7v5h5v3h.5c.5 0 1 .06 1.5.17V8l-6-6zm6 16c.07-.7.24-1.38.5-2H8v2zm1.81-4c.62-.64 1.36-1.15 2.19-1.5V12H8v2zm4.19.5c1.11 0 2.11.45 2.83 1.17L22 14.5v4h-4l1.77-1.77A2.5 2.5 0 1 0 20 20h1.71A3.99 3.99 0 0 1 18 22.5c-2.21 0-4-1.79-4-4s1.79-4 4-4\"/>",

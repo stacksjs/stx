@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const labelOff: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18.925 16.075L6.85 4H15q.475 0 .9.213t.7.587L22 12zM20.5 23.3l-3.975-3.975q-.25.325-.6.5T15.15 20H4q-.825 0-1.412-.587T2 18V6q0-.275.063-.513t.187-.437L.7 3.5l1.4-1.4l19.8 19.8z\"/>",

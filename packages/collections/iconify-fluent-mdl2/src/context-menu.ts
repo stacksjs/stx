@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const contextMenu: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1792 128v1664H256V128zm-128 128H384v1408h1280zm-256 768H640V896h768zm0 384H640v-128h768zm0-768H640V512h768z\"/>",

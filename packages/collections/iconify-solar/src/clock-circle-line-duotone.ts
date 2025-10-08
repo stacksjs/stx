@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const clockCircleLineDuotone: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><circle cx=\"12\" cy=\"12\" r=\"10\" opacity=\".5\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 8v4l2.5 2.5\"/></g>",

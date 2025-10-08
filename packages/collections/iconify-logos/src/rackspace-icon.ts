@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const rackspaceIcon: IconData = {
   "body": "<path fill=\"#EA0000\" d=\"M0 0h256v256H0z\"/><path fill=\"#FFF\" d=\"m128.453 88.305l6.165-32.447h-38.09L68.201 204.8h43.255l11.68-61.41c6.887-36.213 27.663-50.704 57.23-46.23l8.446-44.426c-25.678-2.366-49.99 11.961-60.36 35.571z\"/>",

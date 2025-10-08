@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lineThickness: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2048 384v128H0V384zM0 768h2048v256H0zm0 512h2048v384H0z\"/>",

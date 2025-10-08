@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sailboat: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#FCD53F\" d=\"m14 3l8 15l-4 .468L14 18l-.358-7.5zm-1 3L8 18l2.5.468L13 18l.445-6z\"/><path fill=\"#FF8257\" d=\"m9 27l-3-5l10.5-1L27 22v5z\"/><path fill=\"#fff\" d=\"M13.5 2a.5.5 0 0 0-.5.5V18H7.5a.5.5 0 0 0 0 1H13v1l.5.27l.5-.27v-1h8.5a.5.5 0 0 0 0-1H14V2.5a.5.5 0 0 0-.5-.5\"/><path fill=\"#00A6ED\" d=\"M30.01 24c-1.75 0-1.75 1-3.51 1c-1.75 0-1.75-1-3.51-1c-1.75 0-1.74 1-3.49 1s-1.76-1-3.51-1s-1.74 1-3.49 1s-1.76-1-3.51-1s-1.75 1-3.49 1c-1.75 0-1.75-1-3.5-1v6h28z\"/><path fill=\"#FF9F2E\" d=\"M4 21a1 1 0 0 1 1-1h22a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const personSquareAdd20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 7a2 2 0 1 1 4 0a2 2 0 0 1-4 0m1.015 7.91A5.49 5.49 0 0 1 11.337 10H7.5A1.5 1.5 0 0 0 6 11.5c0 1.116.459 2.01 1.212 2.615c.505.405 1.126.668 1.803.796M3 6a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3.6a5.5 5.5 0 0 0-1-.393V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3.207q.149.524.393 1H6a3 3 0 0 1-3-3zm16 8.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-4-2a.5.5 0 0 0-1 0V14h-1.5a.5.5 0 0 0 0 1H14v1.5a.5.5 0 0 0 1 0V15h1.5a.5.5 0 0 0 0-1H15z\"/>",

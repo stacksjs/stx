@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const boxPlaySolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1920 0v1920H0V0zm-576 957L576 448v1024z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const archiveBoxArrowDown16Solid: IconData = {
   "body": "<g fill=\"currentColor\"><path d=\"M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z\"/><path fill-rule=\"evenodd\" d=\"M13 6H3v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2zM8.75 7.75a.75.75 0 0 0-1.5 0v2.69L6.03 9.22a.75.75 0 0 0-1.06 1.06l2.5 2.5a.75.75 0 0 0 1.06 0l2.5-2.5a.75.75 0 1 0-1.06-1.06l-1.22 1.22z\" clip-rule=\"evenodd\"/></g>",

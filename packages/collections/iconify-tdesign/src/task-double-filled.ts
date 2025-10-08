@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const taskDoubleFilled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 0v2h3V0h2v2h4v17H6V2h4V0zm-1 15h5v-2h-5z\"/><path fill=\"currentColor\" d=\"M4 6v15h11v2H2V6z\"/>",

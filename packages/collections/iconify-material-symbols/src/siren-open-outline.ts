@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sirenOpenOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 13h2v-3q0-.825.588-1.412T12 8V6q-1.65 0-2.825 1.175T8 10zm-4 8q-.825 0-1.412-.587T2 19v-2q0-.825.588-1.412T4 15h1v-5q0-2.925 2.038-4.962T12 3t4.963 2.038T19 10v1.075q-.25-.05-.488-.062T18 11t-.513.013t-.487.062V10q0-2.075-1.463-3.537T12 5T8.463 6.463T7 10v5h4.675q-.225.475-.375.975T11.075 17H4v2h7.075q.075.525.225 1.025t.375.975zm14 2q-2.075 0-3.537-1.463T13 18t1.463-3.537T18 13t3.538 1.463T23 18t-1.463 3.538T18 23m-1.8-2.5l2.8-2.8V20h1v-4h-4v1h2.3l-2.8 2.8z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bxsFlagAlt: IconData = {
   "body": "<path d=\"M14.303 6l-3-2H6V2H4v20h2v-8h4.697l3 2H20V6z\" fill=\"currentColor\"/>",

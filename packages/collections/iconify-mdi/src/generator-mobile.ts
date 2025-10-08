@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const generatorMobile: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 2H2v17a2 2 0 0 0 2 2h8.1c-.07-.32-.1-.66-.1-1s.03-.68.1-1H4zm9 15c.91-1.21 2.36-2 4-2s3.09.79 4 2h1V6c0-1.11-.89-2-2-2H8a2 2 0 0 0-2 2v11zm7-11v2h-6V6zm-6 4h6v2h-6zm-7 1l3-6v4h2l-3 6v-4zm7.17 8a3 3 0 0 0-.17 1a3 3 0 0 0 3 3c1.66 0 3-1.34 3-3s-1.34-3-3-3c-1.31 0-2.42.84-2.83 2\"/>",

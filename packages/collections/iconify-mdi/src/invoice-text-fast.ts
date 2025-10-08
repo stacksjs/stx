@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const invoiceTextFast: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 5h15v16l-2.5-1.68L17 21l-2.5-1.68L12 21l-2.5-1.68L7 21zm11 4h-7v2h7zm-7 4v2h5v-2zM3 7c-.6 0-1 .4-1 1s.4 1 1 1h2V7zm-2 5c0-.6.4-1 1-1h3v2H2c-.6 0-1-.4-1-1m0 3c-.6 0-1 .4-1 1s.4 1 1 1h4v-2z\"/>",

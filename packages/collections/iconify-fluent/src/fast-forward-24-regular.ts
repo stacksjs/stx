@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fastForward24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11.5 5.503c0-1.28 1.498-1.971 2.472-1.142l7.41 6.306a1.75 1.75 0 0 1 0 2.665l-7.41 6.306c-.974.83-2.472.137-2.472-1.142v-3.987l-6.028 5.13C4.498 20.468 3 19.776 3 18.497V5.504c0-1.28 1.498-1.972 2.472-1.143l6.028 5.13zm0 5.958l-7-5.957v12.993l7-5.957zm8.91.348L13 5.503v12.993l7.41-6.306a.25.25 0 0 0 0-.38\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const assignUserLine: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18 17a7.46 7.46 0 1 0-7.45-7.46A7.46 7.46 0 0 0 18 17m0-12.93a5.46 5.46 0 1 1-5.45 5.45A5.46 5.46 0 0 1 18 4.07\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"currentColor\" d=\"M6 31.89v-6.12a16.13 16.13 0 0 1 12-5a16.6 16.6 0 0 1 8.71 2.33l1.35-1.51A18.53 18.53 0 0 0 18 18.74A17.7 17.7 0 0 0 4.21 24.8a1 1 0 0 0-.21.6v6.49A2.06 2.06 0 0 0 6 34h12.39l-1.9-2Z\" class=\"clr-i-outline clr-i-outline-path-2\"/><path fill=\"currentColor\" d=\"M30 31.89V32h-3.15l-1.8 2H30a2.06 2.06 0 0 0 2-2.07V26.2l-2 2.23Z\" class=\"clr-i-outline clr-i-outline-path-3\"/><path fill=\"currentColor\" d=\"M34.76 18.62a1 1 0 0 0-1.41.08l-11.62 13l-5.2-5.59a1 1 0 0 0-1.41-.11a1 1 0 0 0-.06 1.42l6.69 7.2L34.84 20a1 1 0 0 0-.08-1.38\" class=\"clr-i-outline clr-i-outline-path-4\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const coloredpetrinets: IconData = {
   "body": "<rect width=\"3\" height=\"1\" x=\"9\" y=\"7.5\" fill=\"#b0bec5\" rx=\"0\" ry=\".032\"/><rect width=\"3\" height=\"1\" x=\"4\" y=\"7.5\" fill=\"#b0bec5\" rx=\"0\" ry=\".032\"/><circle cx=\"3\" cy=\"8\" r=\"2\" fill=\"#4caf50\"/><circle cx=\"13\" cy=\"8\" r=\"2\" fill=\"#ff9800\"/><rect width=\"4\" height=\"4\" x=\"6\" y=\"6\" fill=\"#00bcd4\" rx=\".59\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const featuredPlayListSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 13h9v-2H6zm0-3h9V8H6zM2 20V4h20v16z\"/>",

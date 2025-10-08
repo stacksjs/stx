@@ -18,7 +18,7 @@ stx provides seamless integration with [Iconify](https://iconify.design/), givin
 First, install the iconify core package:
 
 ```bash
-bun add @stx/iconify-core
+bun add @stacksjs/iconify-core
 ```
 
 ### Generating Icon Packages
@@ -69,8 +69,8 @@ stx iconify generate mdi --output ./my-packages
 </head>
 <body>
   @js
-    import { home, settings, user } from '@stx/iconify-lucide'
-    import { renderIcon } from '@stx/iconify-core'
+    import { home, settings, user } from '@stacksjs/iconify-lucide'
+    import { renderIcon } from '@stacksjs/iconify-core'
 
     // Render icons with different options
     global.homeIcon = renderIcon(home, { size: 24 })
@@ -90,8 +90,8 @@ stx iconify generate mdi --output ./my-packages
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, settings, user } from '@stx/iconify-lucide'
-import { renderIcon } from '@stx/iconify-core'
+import { home, settings, user } from '@stacksjs/iconify-lucide'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 // Basic usage
 const svg = renderIcon(home, { size: 24 })
@@ -186,7 +186,7 @@ bun run build
 Or from the root:
 
 ```bash
-bun --filter @stx/iconify-lucide run build
+bun --filter @stacksjs/iconify-lucide run build
 ```
 
 ## Best Practices
@@ -196,17 +196,17 @@ bun --filter @stx/iconify-lucide run build
 2. **Use Tree-Shaking**: Import individual icons rather than the entire package:
    ```typescript
    // Good
-   import { home, settings } from '@stx/iconify-lucide'
+   import { home, settings } from '@stacksjs/iconify-lucide'
 
    // Avoid (imports everything)
-   import * as icons from '@stx/iconify-lucide'
+   import * as icons from '@stacksjs/iconify-lucide'
    ```
 
 3. **Cache Icon Renders**: If using the same icon multiple times with the same options, render it once and reuse:
    ```typescript
    @js
-     import { home } from '@stx/iconify-lucide'
-     import { renderIcon } from '@stx/iconify-core'
+     import { home } from '@stacksjs/iconify-lucide'
+     import { renderIcon } from '@stacksjs/iconify-core'
 
      global.homeIcon = renderIcon(home, { size: 24 })
    @endjs
@@ -230,8 +230,8 @@ bun --filter @stx/iconify-lucide run build
 
 ```html
 @js
-  import { home, users, settings, logout } from '@stx/iconify-lucide'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home, users, settings, logout } from '@stacksjs/iconify-lucide'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   global.navIcons = {
     home: renderIcon(home, { size: 20, class: 'nav-icon' }),
@@ -253,8 +253,8 @@ bun --filter @stx/iconify-lucide run build
 
 ```html
 @js
-  import { checkCircle, alertCircle, xCircle } from '@stx/iconify-lucide'
-  import { renderIcon } from '@stx/iconify-core'
+  import { checkCircle, alertCircle, xCircle } from '@stacksjs/iconify-lucide'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   global.statusIcons = {
     success: renderIcon(checkCircle, { size: 16, color: '#22c55e' }),

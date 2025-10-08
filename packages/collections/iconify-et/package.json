@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-et",
+  "name": "@stacksjs/iconify-et",
   "version": "0.0.1",
   "description": "Elegant icons for stx from Iconify",
   "author": "Kenny Sing",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

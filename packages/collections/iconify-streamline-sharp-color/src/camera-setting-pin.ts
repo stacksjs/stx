@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cameraSettingPin: IconData = {
   "body": "<g fill=\"none\" stroke-width=\"1.5\"><path fill=\"#d7e0ff\" d=\"M2 17V6h3.5L8 2h8l2.5 4H22v11h-6.5L12 21.5L8.5 17z\"/><path fill=\"#fff\" d=\"M8.5 10.5a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0\"/><path stroke=\"#4147d5\" d=\"M2 17V6h3.5L8 2h8l2.5 4H22v11h-6.5L12 21.5L8.5 17z\"/><path stroke=\"#4147d5\" d=\"M8.5 10.5a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0\"/></g>",

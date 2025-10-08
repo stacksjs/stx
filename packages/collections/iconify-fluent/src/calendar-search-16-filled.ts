@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const calendarSearch16Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M14 11.5V6H3.5a4.5 4.5 0 0 1 4.061 6.44L9.121 14H11.5a2.5 2.5 0 0 0 2.5-2.5m0-7A2.5 2.5 0 0 0 11.5 2h-7A2.5 2.5 0 0 0 2 4.5V5h12zM3.5 14c.786 0 1.512-.26 2.096-.697l2.55 2.55a.5.5 0 1 0 .708-.707l-2.55-2.55A3.5 3.5 0 1 0 3.5 14m0-1a2.5 2.5 0 1 1 0-5a2.5 2.5 0 0 1 0 5\"/>",

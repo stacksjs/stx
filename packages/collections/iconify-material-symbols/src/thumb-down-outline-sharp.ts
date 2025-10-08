@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const thumbDownOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 16v-4.4L4.65 3H17v13l-7 7l-1.85-1.85L9.45 16zM15 5H6l-3 7v2h9l-1.35 5.5L15 15.15zm0 10.15V5zm2 .85v-2h3V5h-3V3h5v13z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lineEndDiamondOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M15 16.175L19.175 12L15 7.825L10.825 12zM15 19l-6-6H2v-2h7l6-6l7 7zm0-7\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const offlineStorage: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" d=\"M12 21a9 9 0 1 0 0-18a9 9 0 1 0 0 18Zm8-12h-8a3 3 0 0 0 0 6h8\"/>",

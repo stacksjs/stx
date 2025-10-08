@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chartBarOneSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11 2.25A2.75 2.75 0 0 0 8.25 5v7.536H5a2.75 2.75 0 0 0-2.75 2.75V19A2.75 2.75 0 0 0 5 21.75h14A2.75 2.75 0 0 0 21.75 19v-7.571A2.75 2.75 0 0 0 19 8.679h-3.25V5A2.75 2.75 0 0 0 13 2.25z\"/>",

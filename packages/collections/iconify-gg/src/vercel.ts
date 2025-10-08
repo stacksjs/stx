@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const vercel: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M17.992 17.023L11.981 6.977L6.008 17.023z\"/>",

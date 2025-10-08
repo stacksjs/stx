@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const moonWaxing6: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M14.99 25.71c2.04 0 3.93-.5 5.65-1.51s3.1-2.37 4.1-4.1s1.51-3.61 1.51-5.65s-.5-3.92-1.51-5.65s-2.37-3.09-4.1-4.09s-3.61-1.51-5.65-1.51c1.67 2.9 2.5 6.65 2.5 11.25c0 2.33-.17 4.43-.52 6.3s-1 3.51-1.98 4.96\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fontSans: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 4h12v2h-9v6h8v2h-8v7H7z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const keypadSharp: IconData = {
   "body": "<rect width=\"96\" height=\"96\" x=\"80\" y=\"16\" fill=\"currentColor\" rx=\"8\" ry=\"8\"/><rect width=\"96\" height=\"96\" x=\"208\" y=\"16\" fill=\"currentColor\" rx=\"8\" ry=\"8\"/><rect width=\"96\" height=\"96\" x=\"336\" y=\"16\" fill=\"currentColor\" rx=\"8\" ry=\"8\"/><rect width=\"96\" height=\"96\" x=\"80\" y=\"144\" fill=\"currentColor\" rx=\"8\" ry=\"8\"/><rect width=\"96\" height=\"96\" x=\"208\" y=\"144\" fill=\"currentColor\" rx=\"8\" ry=\"8\"/><rect width=\"96\" height=\"96\" x=\"336\" y=\"144\" fill=\"currentColor\" rx=\"8\" ry=\"8\"/><rect width=\"96\" height=\"96\" x=\"80\" y=\"272\" fill=\"currentColor\" rx=\"8\" ry=\"8\"/><rect width=\"96\" height=\"96\" x=\"208\" y=\"272\" fill=\"currentColor\" rx=\"8\" ry=\"8\"/><rect width=\"96\" height=\"96\" x=\"208\" y=\"400\" fill=\"currentColor\" rx=\"8\" ry=\"8\"/><rect width=\"96\" height=\"96\" x=\"336\" y=\"272\" fill=\"currentColor\" rx=\"8\" ry=\"8\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const field16: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M15.101 3.056L10.427.24h-.06Q10.007 0 9.528 0q-.48 0-.899.24L.9 4.794q-.42.24-.66.66q-.24.417-.24.837v5.034q0 .48.24.899t.659.599l4.674 2.757q.42.24.899.24t.899-.24l7.73-4.495q.42-.24.66-.659T16 9.528V4.554q0-.48-.24-.839q-.24-.42-.659-.659M2.217 5.753l7.191-4.195q.12-.06.24 0l4.075 2.397L6.592 8.09q-.12.12-.24 0zm3.476 8.21l-4.075-2.397q-.12-.06-.12-.24V7.01l4.195 2.457zM7.25 9.468l.12-.06l7.13-4.135v4.315q0 .12-.179.18L7.25 13.963z\" clip-rule=\"evenodd\"/>",

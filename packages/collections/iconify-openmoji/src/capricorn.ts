@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const capricorn: IconData = {
   "body": "<path fill=\"#b399c8\" d=\"M12 12h48v48H12z\"/><g fill=\"none\" stroke=\"#000\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 12h48v48H12z\"/><path stroke-miterlimit=\"10\" stroke-width=\"3\" d=\"M39.5 44.55a5.591 5.591 0 1 1 5.59 5.591a5.59 5.59 0 0 1-5.59-5.591z\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"3\" d=\"M39.5 42.55c-1.351 4.101-1.244 3.865-3.324 8.743M28.06 44.89V30.86c-.145-1.558-.626-3.32-2.212-5.754\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"3\" d=\"M28.06 30.86c.234-2.264 1.17-6.54 5.72-6.544s5.505 3.958 5.719 6.544v13.68\"/></g>",

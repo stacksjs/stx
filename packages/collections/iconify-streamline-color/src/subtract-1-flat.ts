@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const subtract1Flat: IconData = {
   "body": "<path fill=\"#8fbffa\" fill-rule=\"evenodd\" d=\"M0 7a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H1a1 1 0 0 1-1-1\" clip-rule=\"evenodd\"/>",

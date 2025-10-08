@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const channelSubtract28Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.168 6.062A2.75 2.75 0 1 1 3 11.397v9.353A4.25 4.25 0 0 0 7.25 25h7.25a7.47 7.47 0 0 1-1.5-4.5c0-1.47.423-2.842 1.155-4H9.75a.75.75 0 0 1 0-1.5h5.65a7.47 7.47 0 0 1 5.1-2c1.688 0 3.247.558 4.5 1.5V7.25A4.25 4.25 0 0 0 20.75 3H7.25a4.25 4.25 0 0 0-4.082 3.062M9.75 11h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5M3 7.168a1.75 1.75 0 1 0 1.5 3.163A1.75 1.75 0 0 0 3 7.168M27 20.5a6.5 6.5 0 1 1-13 0a6.5 6.5 0 0 1 13 0m-2 0a.5.5 0 0 0-.5-.5h-8a.5.5 0 0 0 0 1h8a.5.5 0 0 0 .5-.5\"/>",

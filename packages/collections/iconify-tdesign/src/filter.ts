@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const filter: IconData = {
   "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path d=\"M19.5 4h-15l6 8.5V20h3v-7.5z\"/><path stroke=\"currentColor\" stroke-linecap=\"square\" stroke-width=\"2\" d=\"M19.5 4h-15l6 8.5V20h3v-7.5z\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const benchmark: IconData = {
   "body": "<path fill=\"none\" stroke=\"#f5a97f\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M14.562 13.625c.636-1.1.938-2.387.938-3.75a7.5 7.5 0 1 0-13.997 3.75m5.56 0l3.75-4.688\"/>",

@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-solar",
+  "name": "@stacksjs/iconify-solar",
   "version": "0.0.1",
   "description": "Solar icons for stx from Iconify",
   "author": "480 Design",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const grabber: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M15 6H1v1h14zm0 3H1v1h14z\" clip-rule=\"evenodd\"/>",

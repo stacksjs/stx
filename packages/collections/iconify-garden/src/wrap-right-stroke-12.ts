@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const wrapRightStroke12: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10.5 11a.5.5 0 1 0 0-1h-9a.5.5 0 1 0 0 1zm-7-3a.5.5 0 0 0 0-1h-2a.5.5 0 0 0 0 1zm0-3a.5.5 0 0 0 0-1h-2a.5.5 0 0 0 0 1zM6 3h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1m0 1v4h4V4zM1.5 1a.5.5 0 0 0 0 1h9a.5.5 0 1 0 0-1z\"/>",

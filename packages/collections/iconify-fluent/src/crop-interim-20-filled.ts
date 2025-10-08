@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cropInterim20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 4h3a2 2 0 0 0 1.773 1.987l.463 4.164A2 2 0 0 0 11 12H6a2 2 0 0 0-1.236-1.849l.463-4.164A2 2 0 0 0 7 4m6.227 6.013l-.463-4.164A2 2 0 1 0 10.268 3H6.732a2 2 0 1 0-2.496 2.849l-.463 4.164A2 2 0 1 0 5.733 13h5.535A2 2 0 0 0 15 12a2 2 0 0 0-1.773-1.987m.738-2.409A4.502 4.502 0 0 1 13 16.5A4.5 4.5 0 0 1 9.645 15h.855a.5.5 0 0 0 0-1h-2a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 1 0v-.725a5.5 5.5 0 1 0 4.85-9.21z\"/>",

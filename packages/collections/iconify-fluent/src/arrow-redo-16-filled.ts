@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowRedo16Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M13.002 2.75a.75.75 0 0 0-1.5 0v3.095L8.828 3.172a4 4 0 0 0-5.656 5.656l4.95 4.95a.75.75 0 1 0 1.06-1.06l-4.95-4.95a2.5 2.5 0 0 1 3.536-3.536L10.036 6.5H7.75a.75.75 0 0 0 0 1.5h4.4c.47 0 .85-.38.85-.85z\"/>",

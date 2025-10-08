@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const radar: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 0L2.197 23.975L12 19.952L21.803 24z\"/>",

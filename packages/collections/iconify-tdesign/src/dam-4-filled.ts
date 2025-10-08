@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dam4Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9.5 13h5v9h-5z\"/><path fill=\"currentColor\" d=\"M13 2h9v20h-5.5V11H13zM2 2h9v9H7.5v11H2z\"/>",

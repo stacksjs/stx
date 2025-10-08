@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const statusTriangleExclamation: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1024 1792H896v-128h128zm0-256H896V896h128z\"/>",

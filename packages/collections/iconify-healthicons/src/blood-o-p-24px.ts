@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bloodOP24px: IconData = {
   "body": "<g fill=\"currentColor\"><path fill-rule=\"evenodd\" d=\"M10.25 6.5C8.947 6.5 8 7.684 8 9s.947 2.5 2.25 2.5S12.5 10.316 12.5 9s-.947-2.5-2.25-2.5M9 9c0-.893.62-1.5 1.25-1.5s1.25.607 1.25 1.5s-.62 1.5-1.25 1.5S9 9.893 9 9\" clip-rule=\"evenodd\"/><path d=\"M13 9a.5.5 0 0 1 .5-.5h.5V8a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1H15v.5a.5.5 0 0 1-1 0v-.5h-.5A.5.5 0 0 1 13 9\"/><path fill-rule=\"evenodd\" d=\"M5 17.015V5.164c0-1.096.895-1.985 2-1.985h3l.566-.578a2.01 2.01 0 0 1 2.868 0L14 3.18h3c1.105 0 2 .889 2 1.985v11.851A1.99 1.99 0 0 1 17 19h-2v1h-2v2h-2v-2H9v-1H7c-1.105 0-2-.889-2-1.985M12.571 4.58a2 2 0 0 0 1.429.6h3v7.419c-.936-.434-2.206-.615-3.605.175c-.953.538-1.957.744-3.162.816a31 31 0 0 1-1.964.032l-.281-.002q-.478-.004-.988-.003V5.179h3a2 2 0 0 0 1.429-.6L11.995 4h.01z\" clip-rule=\"evenodd\"/></g>",

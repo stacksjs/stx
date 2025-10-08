@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const creditCardSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 2h16v12H0V8h12V6H0z\"/>",

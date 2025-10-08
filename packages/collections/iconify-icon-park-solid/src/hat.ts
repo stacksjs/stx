@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hat: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><path d=\"M9 16a8 8 0 0 1 8-8h14a8 8 0 0 1 8 8v16H9z\"/><rect width=\"40\" height=\"8\" x=\"4\" y=\"32\" fill=\"currentColor\" rx=\"2\"/><path d=\"M9 22h8m14 0h8\"/></g>",

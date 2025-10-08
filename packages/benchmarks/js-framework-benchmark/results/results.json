@@ -1,0 +1,60 @@
+{
+  "framework": "stx",
+  "results": [
+    {
+      "name": "create rows",
+      "duration": 21.3216959,
+      "error": 12.068672448219301,
+      "samples": 10
+    },
+    {
+      "name": "replace all rows",
+      "duration": 22.899500199999977,
+      "error": 10.396205103119712,
+      "samples": 10
+    },
+    {
+      "name": "partial update",
+      "duration": 0.16351280000001225,
+      "error": 17.206851676945913,
+      "samples": 10
+    },
+    {
+      "name": "select row",
+      "duration": 0.25572059999998376,
+      "error": 31.382269225195348,
+      "samples": 10
+    },
+    {
+      "name": "swap rows",
+      "duration": 0.02661679999999933,
+      "error": 47.48072395191542,
+      "samples": 10
+    },
+    {
+      "name": "remove row",
+      "duration": 0.010433499999987817,
+      "error": 19.09722464644628,
+      "samples": 10
+    },
+    {
+      "name": "create many rows",
+      "duration": 275.9671501999999,
+      "error": 5.318593689059336,
+      "samples": 5
+    },
+    {
+      "name": "append rows to large table",
+      "duration": 18.946591799999986,
+      "error": 1.301909849395331,
+      "samples": 10
+    },
+    {
+      "name": "clear rows",
+      "duration": 0.004966700000022683,
+      "error": 80.34244528327945,
+      "samples": 10
+    }
+  ],
+  "geometricMean": 0.8082698674377478
+}

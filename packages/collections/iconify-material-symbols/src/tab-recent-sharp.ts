@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tabRecentSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m19.65 20.35l.7-.7l-1.85-1.85V15h-1v3.2zM13 10h7V6h-7zm5 13q-2.075 0-3.537-1.463T13 18t1.463-3.537T18 13t3.538 1.463T23 18t-1.463 3.538T18 23M2 20V4h20v8.275q-.875-.625-1.912-.95T17.975 11q-2.9 0-4.937 2.05T11 18q0 .525.075 1.025T11.3 20z\"/>",

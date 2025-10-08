@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const playPauseRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6.575 15.1q-.5.35-1.037.063T5 14.275v-4.55q0-.6.538-.887t1.037.062l3.25 2.275q.425.3.425.825t-.425.825zM14 16q-.425 0-.712-.288T13 15V9q0-.425.288-.712T14 8t.713.288T15 9v6q0 .425-.288.713T14 16m4 0q-.425 0-.712-.288T17 15V9q0-.425.288-.712T18 8t.713.288T19 9v6q0 .425-.288.713T18 16\"/>",

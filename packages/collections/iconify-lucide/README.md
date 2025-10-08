@@ -1,11 +1,11 @@
-# @stx/iconify-lucide
+# @stacksjs/iconify-lucide
 
 Lucide icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-lucide
+bun add @stacksjs/iconify-lucide
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-lucide
 
 ```html
 <script>
-  import { home } from '@stx/iconify-lucide'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-lucide'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-lucide
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-lucide'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-lucide'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

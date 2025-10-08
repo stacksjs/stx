@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lineVertical: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M136 24v208a8 8 0 0 1-16 0V24a8 8 0 0 1 16 0\"/>",

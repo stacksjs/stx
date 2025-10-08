@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dicesEntertainmentGamingDicesSolid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M.25 1.25a1 1 0 0 1 1-1h6.437a1 1 0 0 1 1 1v2.813H6.313a2.25 2.25 0 0 0-2.25 2.25v2.374H1.25a1 1 0 0 1-1-1zm2.551 2.499h-.036c-.56 0-1.013-.453-1.013-1.013v-.013a1 1 0 0 1 1-1h.014A1.013 1.013 0 0 1 2.8 3.75m3.512 1.564a1 1 0 0 0-1 1v6.437a1 1 0 0 0 1 1h6.437a1 1 0 0 0 1-1V6.313a1 1 0 0 0-1-1zm4.569 3.659a1 1 0 1 0 0-2a1 1 0 0 0 0 2m-1.7 2.12a1 1 0 1 1-2 0a1 1 0 0 1 2 0\" clip-rule=\"evenodd\"/>",

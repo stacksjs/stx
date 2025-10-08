@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const viewStream: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 19v-6h18v6zm0-8V5h18v6z\"/>",

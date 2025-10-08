@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const backLight: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M31 38.32L13.391 21L31 3.68L28.279 1L8 21.01L28.279 41z\"/>",

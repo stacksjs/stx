@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const upwardsButton: IconData = {
   "body": "<circle cx=\"32\" cy=\"32\" r=\"30\" fill=\"#4fd1d9\"/><path fill=\"#fff\" d=\"M52 38L32 18L12 38z\"/>",

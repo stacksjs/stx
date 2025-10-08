@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const notificationActive: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 22a2.02 2.02 0 0 1-2.01-2h4a2.02 2.02 0 0 1-.149.78a2.043 2.043 0 0 1-1.44 1.18h-.046A1.944 1.944 0 0 1 12 22Zm8-3H4v-2l2-1v-5.5a8.065 8.065 0 0 1 .924-4.06A4.654 4.654 0 0 1 10 4.18V2h4v2.18c2.579.614 4 2.858 4 6.32V16l2 1v2Zm1.97-9h-2a8.672 8.672 0 0 0-3.39-6.57L18 2a9.9 9.9 0 0 1 2.825 3.486A11.52 11.52 0 0 1 21.97 10ZM4 10H2c.07-1.567.46-3.103 1.145-4.514A9.9 9.9 0 0 1 5.97 2l1.42 1.43A8.67 8.67 0 0 0 4 10Z\"/>",

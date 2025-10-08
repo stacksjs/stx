@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const addSpaceAfter: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M128 768V640h1792v128zm0-640h1792v128H128zm896 1414l163-163l90 90l-317 317l-317-317l90-90l163 163V896h128z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tableDeleteRow16Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 2h3v3h-.5A2.5 2.5 0 0 1 2 2.5zm8 3H6V2h4zm1 0h.5A2.5 2.5 0 0 0 14 2.5V2h-3zm3 8.5a2.5 2.5 0 0 0-2.5-2.5H11v3h3zM10 11v3H6v-3zm-5 3v-3h-.5A2.5 2.5 0 0 0 2 13.5v.5zm4.854-7.854a.5.5 0 0 1 0 .708L8.707 8l1.147 1.146a.5.5 0 0 1-.708.708L8 8.707L6.854 9.854a.5.5 0 0 1-.708-.708L7.293 8L6.146 6.854a.5.5 0 1 1 .708-.708L8 7.293l1.146-1.147a.5.5 0 0 1 .708 0M14.5 8a.5.5 0 0 1-.5.5h-3.382l-.068-.071L10.121 8l.44-.44q.03-.03.057-.06H14a.5.5 0 0 1 .5.5m-9.05.428l-.068.072H2a.5.5 0 0 1 0-1h3.382l.057.06l.44.44z\"/>",

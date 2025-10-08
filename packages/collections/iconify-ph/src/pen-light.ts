@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const penLight: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M225.91 74.79L181.22 30.1a14 14 0 0 0-19.8 0L38.1 153.41a13.94 13.94 0 0 0-4.1 9.9V208a14 14 0 0 0 14 14h44.69a13.94 13.94 0 0 0 9.9-4.1l86.16-86.16l4.61 18.42l-37.6 37.6a6 6 0 1 0 8.49 8.48l40-40a6 6 0 0 0 1.58-5.7l-7.18-28.7l27.26-27.25a14 14 0 0 0 0-19.8M46 208v-33.51L81.52 210H48a2 2 0 0 1-2-2m50-.49L48.48 160L136 72.49L183.52 120ZM217.42 86.1L192 111.52L144.49 64l25.41-25.41a2 2 0 0 1 2.83 0l44.69 44.68a2 2 0 0 1 0 2.83\"/>",

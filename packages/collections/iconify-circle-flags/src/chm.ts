@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chm: IconData = {
   "body": "<mask id=\"circleFlagsChm0\"><circle cx=\"256\" cy=\"256\" r=\"256\" fill=\"#fff\"/></mask><g mask=\"url(#circleFlagsChm0)\"><path fill=\"#0052b4\" d=\"M512 170v172l-256 32L0 342V170l256-32z\"/><path fill=\"#eee\" d=\"M512 0v170H0V0Z\"/><path fill=\"#d80027\" d=\"M512 342v170H0V342Z\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stackblitz: IconData = {
   "body": "<path fill=\"#1389fd\" d=\"M20 75.294h37.877L35.597 128L108 52.706H70.123L92.403 0z\"/>",

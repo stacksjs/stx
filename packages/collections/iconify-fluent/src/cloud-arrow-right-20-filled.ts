@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cloudArrowRight20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M14.647 6.246C14.415 3.923 12.817 2 10 2S5.587 3.908 5.353 6.246h-.07C3.468 6.246 2 7.758 2 9.623S3.47 13 5.282 13h2.49a5.75 5.75 0 0 1 10.217-3.094q.01-.14.011-.283c0-1.865-1.47-3.377-3.282-3.377zM13.5 9a4.5 4.5 0 1 0 0 9a4.5 4.5 0 0 0 0-9m2.353 4.854l-2 2a.5.5 0 0 1-.707-.708L14.293 14H11.5a.5.5 0 0 1 0-1h2.793l-1.147-1.146a.5.5 0 0 1 .708-.708l2 2a.5.5 0 0 1 .146.351v.006a.5.5 0 0 1-.144.348z\"/>",

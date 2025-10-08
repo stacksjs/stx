@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const xigua: IconData = {
   "body": "<defs><mask id=\"SVG13UMoesz\"><g fill=\"none\" stroke-linejoin=\"round\" stroke-width=\"3.667\"><path fill=\"#fff\" stroke=\"#fff\" d=\"M24 42.333c10.126 0 18.334-8.208 18.334-18.333S34.126 5.667 24 5.667S5.667 13.875 5.667 24c0 2.486 1.14 3.687 2.947 4.745c1.807 1.057 5.206.882 7.519 2.956c2.312 2.075 2.468 5.45 2.947 7.09s2.435 3.542 4.92 3.542Z\"/><path fill=\"#000\" stroke=\"#000\" d=\"M19.526 18.541q-.807 1.962-.807 4.612q0 2.52.535 4.99a3.056 3.056 0 0 0 3.812 2.294q2.7-.757 4.701-1.983q1.871-1.146 3.489-2.894a3.056 3.056 0 0 0-.278-4.413a33 33 0 0 0-3.977-2.87q-2.17-1.328-4.25-1.602a3.056 3.056 0 0 0-3.225 1.866Z\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVG13UMoesz)\"/>",

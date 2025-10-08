@@ -33,8 +33,8 @@
     },
     twitter: {
       card: "summary_large_image",
-      site: "@stxframework",
-      creator: "@stxteam"
+      site: "@stacksjsframework",
+      creator: "@stacksjsteam"
     }
   })
 

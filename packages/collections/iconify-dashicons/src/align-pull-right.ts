@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const alignPullRight: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M17 16V4h-6v12zM9 7H3v2h6zm0 4H3v2h6z\"/>",

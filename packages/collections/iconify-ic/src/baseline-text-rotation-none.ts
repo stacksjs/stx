@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const baselineTextRotationNone: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12.75 3h-1.5L6.5 14h2.1l.9-2.2h5l.9 2.2h2.1zm-2.62 7L12 4.98L13.87 10zm10.37 8l-3-3v2H5v2h12.5v2z\"/>",

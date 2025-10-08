@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpCallToAction: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M23 3H1v18h22zm-2 16H3v-3h18z\"/>",

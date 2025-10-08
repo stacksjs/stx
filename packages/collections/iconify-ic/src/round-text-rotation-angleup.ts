@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const roundTextRotationAngleup: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m17.61 9.85l.56.56l-8.48 8.49a.996.996 0 1 0 1.41 1.41l8.49-8.49l.56.56c.31.32.85.1.85-.34V9.5c0-.28-.22-.5-.5-.5h-2.54a.5.5 0 0 0-.35.85m-9.13 2.9l3.54-3.54l1.6.67c.36.15.77.07 1.05-.21a.958.958 0 0 0-.32-1.57L5.26 4.5c-.43-.16-.91-.06-1.23.26s-.42.8-.25 1.23l3.61 9.09c.25.64 1.08.81 1.57.32c.28-.28.36-.69.21-1.05zm-.82-1.72L5.43 6.16l4.87 2.23z\"/>",

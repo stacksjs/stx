@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pwr: IconData = {
   "body": "<g fill=\"none\"><path fill=\"url(#SVGuZhZnb7q)\" d=\"M11.998 20.999A9.004 9.004 0 0 0 20.65 9.515q.068.388.068.793c0 3.601-3.562 4.501-5.345 4.501H8.622l-.563 2.814H4.964a9 9 0 0 0 7.034 3.376\"/><path fill=\"url(#SVGgyYW2dbG)\" d=\"M4.74 17.324A9.003 9.003 0 1 1 20.27 8.44c-.518-.872-1.56-1.508-3.49-1.508H8.623L5.81 9.745h9.565V8.62l3.376 2.25l-3.376 2.251v-1.125H5.81z\"/><defs><linearGradient id=\"SVGuZhZnb7q\" x1=\"5.842\" x2=\"21.373\" y1=\"17.471\" y2=\"13.118\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#4D4D4D\"/><stop offset=\"1\" stop-color=\"#1A1A1A\"/></linearGradient><linearGradient id=\"SVGgyYW2dbG\" x1=\"4.402\" x2=\"19.594\" y1=\"6.651\" y2=\"6.932\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#008CC4\"/><stop offset=\"1\" stop-color=\"#00A8F8\"/></linearGradient></defs></g>",

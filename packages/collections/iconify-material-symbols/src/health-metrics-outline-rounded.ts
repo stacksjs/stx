@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const healthMetricsOutlineRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9 22q-.825 0-1.412-.587T7 20v-3H4q-.825 0-1.412-.587T2 15V9q0-.825.588-1.412T4 7h3V4q0-.825.588-1.412T9 2h6q.825 0 1.413.588T17 4v3h3q.825 0 1.413.588T22 9v6q0 .825-.587 1.413T20 17h-3v3q0 .825-.587 1.413T15 22zM4 11h5q.25 0 .475.125t.35.325l.875 1.3l1.35-4.05q.1-.3.362-.5T13 8q.25 0 .475.125t.35.325l1.7 2.55H20V9h-4q-.425 0-.712-.288T15 8V4H9v4q0 .425-.288.713T8 9H4zm0 2v2h4q.425 0 .713.288T9 16v4h6v-4q0-.425.288-.712T16 15h4v-2h-5q-.25 0-.475-.125t-.375-.325l-.85-1.3l-1.35 4.05q-.1.3-.375.5t-.6.2q-.25 0-.475-.125t-.35-.325L8.45 13zm8-1\"/>",

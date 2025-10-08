@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const videoProhibited16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 5a1.5 1.5 0 0 1 1.5-1.5h6A1.5 1.5 0 0 1 11 5v1.022a5.6 5.6 0 0 1 1.797.132l1.203-.9V6.6q.538.276 1 .657V4.755a.75.75 0 0 0-1.2-.6L12 5.5V5a2.5 2.5 0 0 0-2.5-2.5h-6A2.5 2.5 0 0 0 1 5v6a2.5 2.5 0 0 0 2.5 2.5h2.875a5.5 5.5 0 0 1-.284-1H3.5A1.5 1.5 0 0 1 2 11zm5 6.5a4.5 4.5 0 1 0 9 0a4.5 4.5 0 0 0-9 0m1 0a3.5 3.5 0 0 1 5.596-2.803l-4.9 4.9A3.5 3.5 0 0 1 8 11.5m3.5 3.5c-.786 0-1.512-.26-2.096-.697l4.9-4.9A3.5 3.5 0 0 1 11.5 15\"/>",

@@ -1,11 +1,11 @@
-# @stx/iconify-material-symbols-light
+# @stacksjs/iconify-material-symbols-light
 
 Material Symbols Light icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-material-symbols-light
+bun add @stacksjs/iconify-material-symbols-light
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-material-symbols-light
 
 ```html
 <script>
-  import { home } from '@stx/iconify-material-symbols-light'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-material-symbols-light'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-material-symbols-light
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-material-symbols-light'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-material-symbols-light'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

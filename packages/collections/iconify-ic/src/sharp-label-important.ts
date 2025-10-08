@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpLabelImportant: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 18.99h12.04L21 12l-4.97-7H4l5 7z\"/>",

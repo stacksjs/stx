@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const personWithFoldedHands: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 12h4V6h-1v1H9v1h1v3H7Zm-7 0h4v-1H1V8h1V7H1V6H0Zm4-1h1v-1H4ZM2 7h1V6H2Zm4 4h1v-1H6Zm-1-1h1V2H5ZM3 6h1V2H3Zm5 1h1V6H8ZM4 2h1V1H4Zm3 4h1V2H7ZM6 2h1V1H6Zm0 0\"/>",

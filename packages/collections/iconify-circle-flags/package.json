@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-circle-flags",
+  "name": "@stacksjs/iconify-circle-flags",
   "version": "0.0.1",
   "description": "Circle Flags icons for stx from Iconify",
   "author": "HatScripts",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

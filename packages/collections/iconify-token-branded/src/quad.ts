@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const quad: IconData = {
   "body": "<path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M19.2 4.8H4.8v14.4h13.128l-3-3H7.8V7.8h8.4v7.128l3 3zM3 3v18h18V3zm6.6 6.6h4.8v4.8H9.6z\" clip-rule=\"evenodd\"/>",

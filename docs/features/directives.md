@@ -473,7 +473,7 @@ Usage:
 ### Testing Custom Directives
 
 ```typescript
-import { mount } from '@stx/testing'
+import { mount } from '@stacksjs/testing'
 import { tooltip } from './directives/tooltip'
 
 describe('Tooltip Directive', () => {

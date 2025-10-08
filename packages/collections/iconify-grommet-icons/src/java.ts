@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const java: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" d=\"M1 18V9h16v9c0 4-2 5-8 5s-8-1-8-5Zm16-9v3a3 3 0 1 0 3-3zm-4-3V2M5 6V4m4 2V0\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const ovenGen: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 12v7q0 .825.588 1.413T5 21h14q.825 0 1.413-.587T21 19v-7h-4v5H7v-5zm6 3h6v-3H9zm-6-5h18V5q0-.825-.587-1.412T19 3H5q-.825 0-1.412.588T3 5zm5-2q-.425 0-.712-.288T7 7t.288-.712T8 6t.713.288T9 7t-.288.713T8 8m4 0q-.425 0-.712-.288T11 7t.288-.712T12 6t.713.288T13 7t-.288.713T12 8m4 0q-.425 0-.712-.288T15 7t.288-.712T16 6t.713.288T17 7t-.288.713T16 8\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sawtoothWave: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11 22V6.83L2 16v-2.83L13 2v15.17L22 8v2.83z\"/>",

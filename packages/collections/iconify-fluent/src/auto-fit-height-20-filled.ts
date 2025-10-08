@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const autoFitHeight20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.25 2a.75.75 0 0 0 0 1.5h11a.75.75 0 0 0 0-1.5zm0 14.5a.75.75 0 0 0 0 1.5h11a.75.75 0 0 0 0-1.5zm6.03-1.72l2-2a.75.75 0 1 0-1.06-1.06l-.72.72V7.56l.72.72a.75.75 0 1 0 1.06-1.06l-2-2a.75.75 0 0 0-1.06 0l-2 2a.75.75 0 0 0 1.06 1.06L9 7.56v4.88l-.72-.72a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0\"/>",

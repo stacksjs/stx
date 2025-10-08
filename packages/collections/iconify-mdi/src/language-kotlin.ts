@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const languageKotlin: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 2h20L12 12l10 10H2Z\"/>",

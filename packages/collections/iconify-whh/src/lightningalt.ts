@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lightningalt: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1024 1024L620 620L384 768L0 256L320 0l232 440l216-120z\"/>",

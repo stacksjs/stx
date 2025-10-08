@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dishwasher20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 3a3 3 0 0 0-3 3v2h13v6a2 2 0 0 1-2 2H6v.085c.426.151.764.489.915.915H14a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zm10 3v1H4V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2m-8.5-.5a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0m2.5 0a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5M2.5 9a.5.5 0 0 0-.5.5v2a2.5 2.5 0 0 0 2 2.45V17h-.5a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1H5v-3.05a2.5 2.5 0 0 0 2-2.45v-2a.5.5 0 0 0-.5-.5z\"/>",

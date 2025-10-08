@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const checkboxCompositeReversed: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2048 0v2048H0V0zm-339 685l-90-90l-851 850l-339-338l-90 90l429 430z\"/>",

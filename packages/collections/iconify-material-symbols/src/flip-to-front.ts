@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flipToFront: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9 17q-.825 0-1.412-.587T7 15V5q0-.825.588-1.412T9 3h10q.825 0 1.413.588T21 5v10q0 .825-.587 1.413T19 17zm0-2h10V5H9zm-4 4v2q-.825 0-1.412-.587T3 19zm-2-2v-2h2v2zm0-4v-2h2v2zm0-4V7h2v2zm4 12v-2h2v2zm4 0v-2h2v2zm4 0v-2h2v2z\"/>",

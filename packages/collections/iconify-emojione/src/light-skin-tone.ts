@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lightSkinTone: IconData = {
   "body": "<circle cx=\"32\" cy=\"32\" r=\"30\" fill=\"#ffe1bd\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const zodiac10: IconData = {
   "body": "<path fill=\"none\" stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M1.5 13.5a7.9 7.9 0 0 0 3-6.5a7.9 7.9 0 0 0-3-6.5m11 13a7.9 7.9 0 0 1-3-6.5a7.9 7.9 0 0 1 3-6.5M.5 7h13\"/>",

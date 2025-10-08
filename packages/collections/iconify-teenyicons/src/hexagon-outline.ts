@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hexagonOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M1.5 4.5v6l6 3.5l6-3.5v-6L7.5 1z\"/>",

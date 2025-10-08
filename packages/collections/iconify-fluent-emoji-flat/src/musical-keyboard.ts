@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const musicalKeyboard: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#9B9B9B\" d=\"M2 9h29v19c0 1.105-.927 2-2.071 2H4.07C2.927 30 2 29.105 2 28z\"/><path fill=\"#F4F4F4\" d=\"M4 7a1 1 0 0 0-1 1v20a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1zm7 0a1 1 0 0 0-1 1v20a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1zm6 1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v20a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1zm8-1a1 1 0 0 0-1 1v20a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z\"/><path fill=\"#533566\" d=\"M8 8a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1zm7 0a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1zm8-1a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z\"/><path fill=\"#321B41\" d=\"M2 3c0-.552.464-1 1.036-1h26.928C30.536 2 31 2.448 31 3v6H2z\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sportsEsportsOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m1.625 19l1.95-14h16.85l1.95 14H18.4l-3-3H8.6l-3 3zM4.8 17l3-3h8.425l3 3h.875L18.65 7H5.35L3.925 17zM17 13q.425 0 .713-.288T18 12t-.288-.712T17 11t-.712.288T16 12t.288.713T17 13m-2-3q.425 0 .713-.288T16 9t-.288-.712T15 8t-.712.288T14 9t.288.713T15 10m-7.25 3h1.5v-1.75H11v-1.5H9.25V8h-1.5v1.75H6v1.5h1.75zm4.275-1\"/>",

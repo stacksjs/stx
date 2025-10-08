@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mediaQuaverActive: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18 5v2h-4v10l-2 2H6v-8h6V5z\"/>",

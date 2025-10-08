@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lineDiagonal: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M431.024 111.085L111.023 431.084l-30.17-30.169l319.999-320z\"/>",

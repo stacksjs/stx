@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cardsPlayingClubMultipleOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M19 0H9C7.9 0 7 .9 7 2v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2m0 18H9V2h10zM3 4v18c0 1.1.9 2 2 2h12v-2H5V4zm11 2c-1.1 0-2 .9-2 2c0 .4.1.7.3 1H12c-1.1 0-2 .9-2 2s.9 2 2 2c.6 0 1.1-.3 1.5-.7l-1 2.7h3l-1-2.7c.4.4.9.7 1.5.7c1.1 0 2-.9 2-2s-.9-2-2-2h-.3c.2-.3.3-.6.3-1c0-1.1-.9-2-2-2\"/>",

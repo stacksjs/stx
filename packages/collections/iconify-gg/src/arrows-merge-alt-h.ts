@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowsMergeAltH: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1.503 6h2v5h4.172L5.846 9.172l1.415-1.415L11.503 12l-4.242 4.243l-1.415-1.415L7.675 13H3.503v5h-2zm18.994 0h2v12h-2v-5h-4.172l1.829 1.829l-1.415 1.414L12.497 12l4.242-4.243l1.415 1.415L16.325 11h4.172z\"/>",

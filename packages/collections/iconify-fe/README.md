@@ -1,11 +1,11 @@
-# @stx/iconify-fe
+# @stacksjs/iconify-fe
 
 Feather Icon icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-fe
+bun add @stacksjs/iconify-fe
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-fe
 
 ```html
 <script>
-  import { home } from '@stx/iconify-fe'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-fe'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-fe
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-fe'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-fe'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

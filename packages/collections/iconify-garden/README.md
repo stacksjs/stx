@@ -1,11 +1,11 @@
-# @stx/iconify-garden
+# @stacksjs/iconify-garden
 
 Garden SVG Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-garden
+bun add @stacksjs/iconify-garden
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-garden
 
 ```html
 <script>
-  import { home } from '@stx/iconify-garden'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-garden'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-garden
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-garden'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-garden'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

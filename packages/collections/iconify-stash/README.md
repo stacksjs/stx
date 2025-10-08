@@ -1,11 +1,11 @@
-# @stx/iconify-stash
+# @stacksjs/iconify-stash
 
 Stash Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-stash
+bun add @stacksjs/iconify-stash
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-stash
 
 ```html
 <script>
-  import { home } from '@stx/iconify-stash'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-stash'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-stash
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-stash'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-stash'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

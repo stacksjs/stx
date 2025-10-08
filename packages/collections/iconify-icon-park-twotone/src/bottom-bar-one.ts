@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bottomBarOne: IconData = {
   "body": "<defs><mask id=\"SVG5B2KGOku\"><path fill=\"#555\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"M13.777 20h4s7 7.28 7 14s-6 10-6 10h-6s-6-3.28-6-10s7-14 7-14m2-16c2.084 0 5 1.52 5 6s-3.333 10-3.333 10h-3.333s-3.334-5.52-3.334-10s2.917-6 5-6m16 16h4s7 7.28 7 14s-6 10-6 10h-6s-6-3.28-6-10s7-14 7-14m2-16c2.084 0 5 1.52 5 6s-3.333 10-3.333 10h-3.333s-3.334-5.52-3.334-10s2.917-6 5-6\"/></mask></defs><path fill=\"currentColor\" d=\"M0 0h49v48H0z\" mask=\"url(#SVG5B2KGOku)\"/>",

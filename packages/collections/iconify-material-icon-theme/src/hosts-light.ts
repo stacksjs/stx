@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hostsLight: IconData = {
   "body": "<path fill=\"#455a64\" d=\"m14 6l-3-3v2H7v2h4v2M5 7l-3 3l3 3v-2h4V9H5z\"/>",

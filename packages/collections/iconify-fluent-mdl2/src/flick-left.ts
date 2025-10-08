@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flickLeft: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1024 1024L0 2048V0z\"/>",

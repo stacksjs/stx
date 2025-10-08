@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const nfcVariantOff: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m1.25 2.05l20.7 20.7L20.7 24l-2-2H4a2 2 0 0 1-2-2V5.3l-2-2zM3.81 2H20c1.11 0 2 .89 2 2v16.19l-2-1.99V4H5.8zM6 9.3l-2-2V20h12.7l-2-2H6zm12 6.9l-2-2V8h-3v2.28c.6.34 1 .98 1 1.72v.19L11 9.2V8a2 2 0 0 1 2-2h5zM8 16h4.7L8 11.3zm2-8h-.2l-2-2H10z\"/>",

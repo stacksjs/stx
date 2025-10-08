@@ -1,11 +1,11 @@
-# @stx/iconify-eva
+# @stacksjs/iconify-eva
 
 Eva Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-eva
+bun add @stacksjs/iconify-eva
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-eva
 
 ```html
 <script>
-  import { home } from '@stx/iconify-eva'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-eva'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-eva
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-eva'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-eva'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

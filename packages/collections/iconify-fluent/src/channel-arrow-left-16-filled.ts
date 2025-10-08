@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const channelArrowLeft16Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 2.25q-.19 0-.37.04A2 2 0 0 1 3.5 1h5a2 2 0 0 1 2 2v2a5.5 5.5 0 0 0-5.478 5H3.5a2 2 0 0 1-2-2V5.678A1.75 1.75 0 1 0 2 2.25M4.5 4a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1zM4 6.5a.5.5 0 0 0 .5.5H6a.5.5 0 0 0 0-1H4.5a.5.5 0 0 0-.5.5M2 4.75a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5m13 5.75a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-6.853-.354l-.003.003a.5.5 0 0 0-.144.348v.006a.5.5 0 0 0 .146.35l2 2a.5.5 0 0 0 .708-.707L9.707 11H12.5a.5.5 0 0 0 0-1H9.707l1.147-1.146a.5.5 0 0 0-.708-.708z\"/>",

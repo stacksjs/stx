@@ -1,11 +1,11 @@
-# @stx/iconify-healthicons
+# @stacksjs/iconify-healthicons
 
 Health Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-healthicons
+bun add @stacksjs/iconify-healthicons
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-healthicons
 
 ```html
 <script>
-  import { home } from '@stx/iconify-healthicons'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-healthicons'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-healthicons
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-healthicons'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-healthicons'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

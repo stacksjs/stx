@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const wirelessCheckout: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18 28v-2a10 10 0 0 0 10-10h2a12 12 0 0 1-12 12\"/><path fill=\"currentColor\" d=\"M18 23v-2a5 5 0 0 0 5-5h2a7 7 0 0 1-7 7\"/><path fill=\"currentColor\" d=\"M27 11h-6V7a3 3 0 0 0-3-3h-6a3 3 0 0 0-3 3v4H3a1 1 0 0 0-1 1.15L3.88 24.3a2 2 0 0 0 2 1.7H15v-2H5.86L4.17 13H27ZM11 7a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v4h-8Z\"/>",

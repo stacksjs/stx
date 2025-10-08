@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const listMiddle: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"4\"><path fill=\"currentColor\" d=\"M8 28a4 4 0 1 0 0-8a4 4 0 0 0 0 8Z\"/><path d=\"M8 12a2 2 0 1 0 0-4a2 2 0 0 0 0 4Zm0 28a2 2 0 1 0 0-4a2 2 0 0 0 0 4Z\"/><path stroke-linecap=\"round\" d=\"M20 24h24M20 38h24M20 10h24\"/></g>",

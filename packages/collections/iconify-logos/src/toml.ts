@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const toml: IconData = {
   "body": "<path fill=\"#9C4221\" d=\"M198.472 0v28.764h25.888v198.472h-25.888V256H256V0z\"/><path d=\"M64.719 83.416V51.775h126.562v31.641H143.82v138.067h-31.64V83.416z\"/><path fill=\"#9C4221\" d=\"M57.528 0v28.764H31.64v198.472h25.888V256H0V0z\"/>",

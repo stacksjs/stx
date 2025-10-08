@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const footer: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M128 0h1792v2048H128zm1664 1920V128H256v1792zm-128-640v512H384v-512zm-128 384v-256H512v256z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hourglass7: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 2H1v4h1l2-2m0 1L2 7H0V1h2l2 2l2-2h2v6H6\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const travelFlag: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16 0H0v16h4v-4h12l-6-6z\"/>",

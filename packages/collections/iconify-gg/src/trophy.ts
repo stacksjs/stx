@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const trophy: IconData = {
   "body": "<g fill=\"currentColor\"><path fill-rule=\"evenodd\" d=\"M13 15.9a5 5 0 0 0 4-4.9V4H7v7a5 5 0 0 0 4 4.9V18H9v2h6v-2h-2zM9 6h6v5a3 3 0 1 1-6 0z\" clip-rule=\"evenodd\"/><path d=\"M18 6h2v5h-2zM6 6H4v5h2z\"/></g>",

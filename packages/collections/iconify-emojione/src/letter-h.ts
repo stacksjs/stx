@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const letterH: IconData = {
   "body": "<circle cx=\"32\" cy=\"32\" r=\"30\" fill=\"#4fd1d9\"/><path fill=\"#fff\" d=\"M20.3 46.5v-29h6v11.1h11.3V17.5h6v29h-6v-13H26.4v13z\"/>",

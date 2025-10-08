@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const envelopeSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 8v18h26V8zm4.313 2h17.375L16 15.781zM5 10.875l10.438 6.969l.562.343l.563-.343L27 10.875V24H5z\"/>",

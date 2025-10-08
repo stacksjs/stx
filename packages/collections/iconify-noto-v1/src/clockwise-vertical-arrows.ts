@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const clockwiseVerticalArrows: IconData = {
   "body": "<g fill=\"#40c0e7\"><path d=\"M66.03 107.58c-.76.09-1.53.16-2.32.16c-10.9 0-19.77-8.87-19.77-19.77v-53.4H61.8L39.29 6.72l-22.5 27.85h16.69v53.4c0 16.67 13.56 30.24 30.24 30.24c3.37 0 6.69-.57 9.89-1.69z\"/><path d=\"M61.97 20.41c.76-.1 1.53-.15 2.32-.15c10.9 0 19.78 8.88 19.78 19.78v53.4H66.2l22.51 27.85l22.5-27.85H94.53v-53.4c0-16.68-13.57-30.24-30.24-30.24c-3.36 0-6.68.56-9.89 1.68z\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const calendarAssistant24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M17.75 3A3.25 3.25 0 0 1 21 6.25v5.772a6.5 6.5 0 0 0-1.5-.709V8.5h-15v9.25c0 .966.784 1.75 1.75 1.75h5.063c.173.534.412 1.037.709 1.5H6.25A3.25 3.25 0 0 1 3 17.75V6.25A3.25 3.25 0 0 1 6.25 3zm0 1.5H6.25A1.75 1.75 0 0 0 4.5 6.25V7h15v-.75a1.75 1.75 0 0 0-1.75-1.75M17.5 23a5.5 5.5 0 1 0 0-11a5.5 5.5 0 0 0 0 11m-.404-9h1.433a.5.5 0 0 1 .468.676L18.5 16h.634a.47.47 0 0 1 .394.726l-2.625 4.038a.518.518 0 0 1-.926-.446L16.75 18h-.778a.5.5 0 0 1-.469-.676l1.125-3a.5.5 0 0 1 .468-.324\"/>",

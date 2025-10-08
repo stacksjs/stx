@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const viewCarouselSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 17V7h4v10zm5 2V5h10v14zm11-2V7h4v10z\"/>",

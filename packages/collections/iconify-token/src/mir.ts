@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mir: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"m3.834 5.905l5.84-2.455c.854-.34 2.93-.815 4.405 0c1.474.817 1.44 1.732 1.24 2.088l5.171 1.148l-2.12 1.13l-4.536-1.13l-1.615.637l3.393 1.865l-2.79 1.514zm5.255-.296l2.008-.827c.251-.091.828-.219 1.125 0c.371.271.162.612-.174.827c-.269.172-1.079.54-1.45.703z\" clip-rule=\"evenodd\"/><path fill=\"currentColor\" d=\"M3.272 6.852v9.305l2.182 1.122v-5.51l1.553 3.614l2.265-1.998v5.926L12.545 21v-9.456l-3.07-1.442l-2.077 1.589l-1.942-3.695zm17.456.818l-7.637 3.78v2.271l2.728-1.317v4.753l-2.728 1.336v2.252l7.637-4.027v-2.233l-2.182 1.278V11.01l2.182-1.145z\"/>",

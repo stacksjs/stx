@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fastReverseButton: IconData = {
   "body": "<circle cx=\"32\" cy=\"32\" r=\"30\" fill=\"#4fd1d9\"/><path fill=\"#fff\" d=\"M44.1 14L31.3 25.9V14L11.9 32l19.4 18V38.1L44.1 50z\"/>",

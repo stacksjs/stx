@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bald: IconData = {
   "body": "<path fill=\"#FFDC5D\" d=\"M34.896 36C30.618 13.677 16.169 2.725 0 1.195V36h34.896z\"/>",

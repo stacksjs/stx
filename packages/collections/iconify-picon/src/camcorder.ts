@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const camcorder: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 7V1h5v6m0-2V3l3-2v6\"/>",

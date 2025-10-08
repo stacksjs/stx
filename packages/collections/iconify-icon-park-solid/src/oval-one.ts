@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const ovalOne: IconData = {
   "body": "<ellipse cx=\"24\" cy=\"24\" fill=\"currentColor\" stroke=\"currentColor\" stroke-width=\"4\" rx=\"14\" ry=\"20\"/>",

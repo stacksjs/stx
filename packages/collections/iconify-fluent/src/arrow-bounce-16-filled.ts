@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowBounce16Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8.002 4.75a.75.75 0 0 0-.75-.75h-5.5a.75.75 0 0 0-.75.75v5.5a.75.75 0 0 0 1.5 0V6.561l5.718 5.72a.75.75 0 0 0 1.06 0l5.5-5.5a.75.75 0 1 0-1.06-1.061l-4.97 4.97L3.562 5.5h3.69a.75.75 0 0 0 .75-.75\"/>",

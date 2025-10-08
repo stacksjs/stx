@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mediumSkinTone: IconData = {
   "body": "<path fill=\"#bf8f68\" d=\"M10 10h108v108H10z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const shield2: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M1 7c0-3.5 1.5-5 2-5.5C3.5 2 5.4 3 7 1c1.6 2 3.5 1 4 .5c.5.5 2 2 2 5.5c0 4-4 5.5-6 6c-2-.5-6-2-6-6\"/>",

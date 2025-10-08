@@ -1,11 +1,11 @@
-# @stx/iconify-fluent-emoji-flat
+# @stacksjs/iconify-fluent-emoji-flat
 
 Fluent Emoji Flat icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-fluent-emoji-flat
+bun add @stacksjs/iconify-fluent-emoji-flat
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-fluent-emoji-flat
 
 ```html
 <script>
-  import { home } from '@stx/iconify-fluent-emoji-flat'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-fluent-emoji-flat'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-fluent-emoji-flat
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-fluent-emoji-flat'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-fluent-emoji-flat'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

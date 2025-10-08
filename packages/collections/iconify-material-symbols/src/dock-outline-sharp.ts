@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dockOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 23v-2h8v2zm8-6V3H8v14zM12 6q.425 0 .713-.288T13 5t-.288-.712T12 4t-.712.288T11 5t.288.713T12 6M8 3v14zM6 19V1h12v4.05h1v3.9h-1V19z\"/>",

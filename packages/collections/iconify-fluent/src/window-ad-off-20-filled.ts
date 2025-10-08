@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const windowAdOff20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2.854 2.146a.5.5 0 1 0-.708.708l1.266 1.265c-.263.396-.416.87-.416 1.381v9a2.5 2.5 0 0 0 2.5 2.5h9c.51 0 .986-.153 1.381-.416l1.27 1.27a.5.5 0 0 0 .707-.708zm12.291 13.707a1.5 1.5 0 0 1-.649.147h-9a1.5 1.5 0 0 1-1.5-1.5V7h2.297l1 1H5.499a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-1.794zM8.293 9l.706.706V12h-3V9zm7.703-2v6.875l.976.975q.024-.171.024-.35V7H17V6h-.003v-.5a2.5 2.5 0 0 0-2.5-2.5h-9q-.179 0-.35.024L9.12 7z\"/>",

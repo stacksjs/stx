@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const boxEditOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5.4 6h13.2l-.85-1H6.25zm4.6 6.75l2-1l2 1V8h-4zM3 21V5.8L5.3 3h13.4L21 5.8v2.325l-2 2V8h-3v5.125l-1.925 1.925L12 14l-4 2V8H5v11h7v2zM16 8h3zM5 8h9.075zm9 13v-3.075l6.575-6.55l3.075 3.05L17.075 21zm7.5-6.575l-.925-.925zm-6 5.075h.95l3.025-3.05l-.45-.475l-.475-.45l-3.05 3.025zm3.525-3.525l-.475-.45l.925.925z\"/>",

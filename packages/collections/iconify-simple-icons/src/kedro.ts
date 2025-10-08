@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const kedro: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m12 0l12 12l-12 12L0 12z\"/>",

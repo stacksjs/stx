@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const subheaderSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6.616 9.192h8v-2h-8zM4 20V4h16v16z\"/>",

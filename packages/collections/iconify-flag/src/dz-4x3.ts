@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dz4x3: IconData = {
   "body": "<path fill=\"#fff\" d=\"M320 0h320v480H320z\"/><path fill=\"#006233\" d=\"M0 0h320v480H0z\"/><path fill=\"#d21034\" d=\"M424 180a120 120 0 1 0 0 120a96 96 0 1 1 0-120m4 60l-108-35.2l67.2 92V183.2l-67.2 92z\"/>",

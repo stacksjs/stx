@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-charm",
+  "name": "@stacksjs/iconify-charm",
   "version": "0.0.1",
   "description": "Charm Icons icons for stx from Iconify",
   "author": "Jay Newey",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

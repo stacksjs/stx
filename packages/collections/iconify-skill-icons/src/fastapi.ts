@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fastapi: IconData = {
   "body": "<g fill=\"none\"><rect width=\"256\" height=\"256\" fill=\"#049789\" rx=\"60\"/><path fill=\"#fff\" d=\"M127.5 41C79.743 41 41 79.743 41 127.5S79.743 214 127.5 214s86.5-38.743 86.5-86.5S175.257 41 127.5 41m-4.507 155.839v-54.258H92.831l43.336-84.42v54.258h29.036z\"/></g>",

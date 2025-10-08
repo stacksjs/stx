@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const recycleBin2Solid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M5.763 2.013a1.75 1.75 0 0 1 2.914.737H5.323a1.75 1.75 0 0 1 .44-.737m-1.974.737a3.25 3.25 0 0 1 6.422 0H13a.75.75 0 0 1 0 1.5h-1v8.25a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 2 12.5V4.25H1a.75.75 0 1 1 0-1.5zM5 5.876c.345 0 .625.28.625.625v4.002a.625.625 0 0 1-1.25 0V6.501c0-.345.28-.625.625-.625m4.625.625a.625.625 0 0 0-1.25 0v4.002a.625.625 0 0 0 1.25 0z\" clip-rule=\"evenodd\"/>",

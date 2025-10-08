@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-geo",
+  "name": "@stacksjs/iconify-geo",
   "version": "0.0.1",
   "description": "GeoGlyphs icons for stx from Iconify",
   "author": "Sam Matthews",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cloudFilled: IconData = {
   "body": "<g fill=\"currentColor\"><rect width=\"16\" height=\"8\" x=\"2\" y=\"6\" rx=\"4\"/><rect width=\"9\" height=\"8\" x=\"6\" y=\"3\" rx=\"4\"/><rect width=\"16\" height=\"8\" x=\"2\" y=\"6\" rx=\"4\"/><rect width=\"9\" height=\"8\" x=\"6\" y=\"3\" rx=\"4\"/></g>",

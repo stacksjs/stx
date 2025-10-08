@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpInsertDriveFile: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.01 2L4 22h16V8l-6-6zM13 9V3.5L18.5 9z\"/>",

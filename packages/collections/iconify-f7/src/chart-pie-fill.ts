@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chartPieFill: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m29.09 25.938l18.422-10.57C43.574 9.226 36.8 5.054 29.09 4.702Zm-1.102 25.359c5.696 0 10.922-2.086 15-5.508L26.512 29.664c-.446-.422-.563-.82-.563-1.453V4.773C14.113 5.805 4.74 15.836 4.74 27.977c0 12.82 10.476 23.32 23.25 23.32m17.32-7.781c3.68-4.125 5.954-9.586 5.954-15.54c0-3.515-.797-6.867-2.203-9.89L30.426 28.82Z\"/>",

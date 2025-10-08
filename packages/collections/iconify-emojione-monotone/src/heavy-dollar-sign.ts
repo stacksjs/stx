@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const heavyDollarSign: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M48.875 28.25h-33.75a5.624 5.624 0 1 1 0-11.25h33.75a5.626 5.626 0 0 1 5.625 5.625H62C62 15.376 56.124 9.5 48.875 9.5H35.75V2h-7.5v7.5H15.125C7.876 9.5 2 15.376 2 22.625S7.876 35.75 15.125 35.75h33.75a5.626 5.626 0 0 1 0 11.252V47h-33.75v.002A5.626 5.626 0 0 1 9.5 41.375H2C2 48.624 7.876 54.5 15.125 54.5H28.25V62h7.5v-7.5h13.125C56.124 54.5 62 48.624 62 41.375S56.124 28.25 48.875 28.25\"/>",

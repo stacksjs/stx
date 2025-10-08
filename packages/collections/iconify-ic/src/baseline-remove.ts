@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const baselineRemove: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M19 13H5v-2h14z\"/>",

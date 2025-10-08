@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const devicesWearables: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 23q-.825 0-1.412-.587T5 21V3q0-.825.588-1.412T7 1h10q.825 0 1.413.588T19 3v6h-5.05l-.8 3.175q-1.025.925-1.588 2.175T11 17t.55 2.638t1.6 2.187l.3 1.175zm8.5 0l-.575-2.3q-.9-.65-1.412-1.612T13 17t.513-2.087t1.412-1.613L15.5 11h4l.575 2.3q.9.65 1.413 1.613T22 17t-.513 2.088t-1.412 1.612L19.5 23zm2-3.5q1.05 0 1.775-.725T20 17t-.725-1.775T17.5 14.5t-1.775.725T15 17t.725 1.775t1.775.725M12 6q.425 0 .713-.288T13 5t-.288-.712T12 4t-.712.288T11 5t.288.713T12 6\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const folderPerson20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.5 3A2.5 2.5 0 0 0 2 5.5V7h5.086a.5.5 0 0 0 .353-.146L9.5 4.793l-1.28-1.28A1.75 1.75 0 0 0 6.982 3zM2 14.5V8h5.086a1.5 1.5 0 0 0 1.06-.44L10.707 5H15.5A2.5 2.5 0 0 1 18 7.5v2.841a3 3 0 1 0-4.727 3.67A2.5 2.5 0 0 0 11 16.5q0 .25.038.5H4.5A2.5 2.5 0 0 1 2 14.5M17.5 12a2 2 0 1 1-4 0a2 2 0 0 1 4 0m1.5 4.5c0 1.245-1 2.5-3.5 2.5S12 17.75 12 16.5a1.5 1.5 0 0 1 1.5-1.5h4a1.5 1.5 0 0 1 1.5 1.5\"/>",

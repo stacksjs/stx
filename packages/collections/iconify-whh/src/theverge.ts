@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const theverge: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M576 896H448L0 128L64 0h896l64 128zM320 192l192 320l192-320z\"/>",

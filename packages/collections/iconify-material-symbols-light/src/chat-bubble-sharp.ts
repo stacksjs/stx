@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chatBubbleSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 20.077V3h18v14H6.077z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowSyncCircle16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2m0 1a5 5 0 1 1 0 10A5 5 0 0 1 8 3M7 8H5.5a.5.5 0 0 0-.492.41L5 8.5v1.501a.5.5 0 0 0 .992.09l.008-.09v-.237a2.665 2.665 0 0 0 3.92.086a.5.5 0 0 0-.72-.694A1.667 1.667 0 0 1 6.666 9H7a.5.5 0 0 0 .09-.992zm1-2.666a2.66 2.66 0 0 0-1.927.823a.5.5 0 1 0 .723.691A1.667 1.667 0 0 1 9.334 7h-.33a.5.5 0 0 0-.09.992l.09.008H10.5a.5.5 0 0 0 .492-.41L11 7.5V6.003a.5.5 0 0 0-.992-.09l-.008.09v.234a2.67 2.67 0 0 0-2-.903\"/>",

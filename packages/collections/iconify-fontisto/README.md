@@ -1,11 +1,11 @@
-# @stx/iconify-fontisto
+# @stacksjs/iconify-fontisto
 
 Fontisto icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-fontisto
+bun add @stacksjs/iconify-fontisto
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-fontisto
 
 ```html
 <script>
-  import { home } from '@stx/iconify-fontisto'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-fontisto'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-fontisto
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-fontisto'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-fontisto'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

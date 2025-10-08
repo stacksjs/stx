@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tabDesktopLink28Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M13 3v3.25A2.75 2.75 0 0 0 15.75 9H25v9.833a4.7 4.7 0 0 0-1.75-.333h-5.5a4.75 4.75 0 0 0-4.417 6.5H6.75A3.75 3.75 0 0 1 3 21.25V6.75A3.75 3.75 0 0 1 6.75 3zm1.5 0v3.25c0 .69.56 1.25 1.25 1.25H25v-.75A3.75 3.75 0 0 0 21.25 3zm3.25 18a2.25 2.25 0 0 0 0 4.5h.5a.75.75 0 0 1 0 1.5h-.5a3.75 3.75 0 1 1 0-7.5h.5a.75.75 0 0 1 0 1.5zM17 23.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 0 1.5h-5.5a.75.75 0 0 1-.75-.75m6.25 2.25a2.25 2.25 0 0 0 0-4.5h-.5a.75.75 0 0 1 0-1.5h.5a3.75 3.75 0 1 1 0 7.5h-.5a.75.75 0 0 1 0-1.5z\"/>",

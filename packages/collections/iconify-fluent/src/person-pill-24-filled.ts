@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const personPill24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11.683 21.997a3.87 3.87 0 0 1 .58-4.735L15.526 14H6.253a2.25 2.25 0 0 0-2.25 2.25v.919c0 .572.18 1.13.511 1.596c1.494 2.097 3.909 3.168 7.169 3.233M17 7.004a5 5 0 1 0-10 0a5 5 0 0 0 10 0m.97 5.965a2.871 2.871 0 0 1 4.06 4.061l-5 5a2.871 2.871 0 0 1-4.06-4.06zm3 1.061a1.37 1.37 0 0 0-1.94 0L17.06 16L19 17.94l1.97-1.97a1.37 1.37 0 0 0 0-1.94m-3.94 6a.75.75 0 1 0-1.06-1.06l-1 1a.75.75 0 1 0 1.06 1.06z\"/>",

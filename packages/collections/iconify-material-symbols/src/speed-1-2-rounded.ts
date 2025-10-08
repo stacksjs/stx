@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const speed12Rounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 17q-.425 0-.712-.288T7 16V9H6q-.425 0-.712-.288T5 8t.288-.712T6 7h1q.825 0 1.413.588T9 9v7q0 .425-.288.713T8 17m7 0q-.825 0-1.412-.587T13 15v-2q0-.825.588-1.412T15 11h2V9h-3q-.425 0-.712-.288T13 8t.288-.712T14 7h3q.825 0 1.413.588T19 9v2q0 .825-.587 1.413T17 13h-2v2h3q.425 0 .713.288T19 16t-.288.713T18 17zm-4 0q-.425 0-.712-.288T10 16t.288-.712T11 15t.713.288T12 16t-.288.713T11 17\"/>",

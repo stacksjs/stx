@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stackedColumnChart2Fill: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1792 256v1408h-384V256zm-128 384V384h-128v256zm-384 128v896H896V768zm-128 384V896h-128v256zM768 512v1152H384V512zM640 896V640H512v256zm-384 896h1664v128H128V128h128z\"/>",

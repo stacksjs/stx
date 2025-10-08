@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const imageCircleStoryLine: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M11.23 13.92c1.598.614 2.56 1.587 3.77 3.08m-3.77-3.08c-1.943-.747-3.405-.942-4.73-.92m4.73.92c1.515-1.666 2.51-2.867 6.27-3.42M10 10\"/><circle cx=\"12\" cy=\"12\" r=\"6\"/><path d=\"M22 12a10 10 0 0 1-.832 4M12 22a9.97 9.97 0 0 0 7.071-2.929M2 12a9.97 9.97 0 0 1 2.929-7.071M12 2a10 10 0 0 0-4 .832m0 18.336A10.02 10.02 0 0 1 2.832 16m13-13A10.02 10.02 0 0 1 21 8.168\"/></g>",

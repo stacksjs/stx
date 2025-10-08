@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const helpCircle: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10c-.006 5.52-4.48 9.994-10 10Zm-1-5v2h2v-2h-2Zm1-10a2 2 0 0 1 2 2a1.95 1.95 0 0 1-.59 1.41l-1.24 1.26A4.015 4.015 0 0 0 11 14.5v.5h2a3.42 3.42 0 0 1 1.17-2.83l.9-.92A3.16 3.16 0 0 0 16 9a4 4 0 0 0-8 0h2a2 2 0 0 1 2-2Z\"/>",

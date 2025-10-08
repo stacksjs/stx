@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lightbulbEmpty: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.5 6.5a3.5 3.5 0 1 1 5.954 2.495c-.193.19-.363.437-.445.736L9.664 11H6.336L5.99 9.731a1.65 1.65 0 0 0-.444-.736A3.5 3.5 0 0 1 4.5 6.5M6.61 12h2.78l-.171.632a.5.5 0 0 1-.483.368H7.264a.5.5 0 0 1-.483-.368zM8 2a4.5 4.5 0 0 0-3.155 7.708a.65.65 0 0 1 .18.287l.792 2.9A1.5 1.5 0 0 0 7.264 14h1.472a1.5 1.5 0 0 0 1.447-1.105l.791-2.9a.65.65 0 0 1 .181-.287A4.5 4.5 0 0 0 8 2\"/>",

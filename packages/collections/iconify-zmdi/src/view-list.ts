@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const viewList: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 235v-86h85v86zm0 106v-85h85v85zm0-213V43h85v85zm107 107v-86h256v86zm0 106v-85h256v85zm0-298h256v85H107z\"/>",

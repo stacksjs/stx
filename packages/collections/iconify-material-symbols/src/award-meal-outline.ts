@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const awardMealOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 23.3L8.65 20H4v-4.65L.7 12L4 8.65V4h4.65L12 .7L15.35 4H20v4.65L23.3 12L20 15.35V20h-4.65zm0-2.8l2-2v-3.7q-.65-.375-1.075-1.263T12.5 11.5q0-1.45.65-2.475T14.75 8q.925 0 1.588 1.025T17 11.5q0 1.175-.425 2.063T15.5 14.8V18H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18h2.5v-4q-.65-.15-1.075-.687T7 12.075V8h1v3.775h.75V8h1v3.775h.75V8h1v4.075q0 .7-.425 1.238T10 14v4.5zm0-8.5\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const keycapTabSmallFilled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 9h7V8h1V1H8V0H1v1H0v7h1Zm2-2V6h1V5H1V4h3V3H3V2h1v1h1v1h1v1H5v1H4v1Zm4 0V2h1v5Zm0 0\"/>",

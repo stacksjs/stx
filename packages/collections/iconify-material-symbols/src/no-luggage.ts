@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const noLuggage: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m20.475 23.3l-2.525-2.525q-.2.125-.437.175T17 21q0 .425-.288.713T16 22t-.712-.288T15 21H9q0 .425-.288.713T8 22t-.712-.288T7 21q-.825 0-1.412-.587T5 19V7.825L.675 3.5L2.1 2.075l19.8 19.8zM9 18h2v-4.175l-2-2zm4 0h2v-.175l-2-2zm6-1.875l-4-4V9h-2v1.125l-4-4V4q0-.825.588-1.412T11 2h2q.825 0 1.413.588T15 4v2h2q.825 0 1.413.588T19 8zM11 6h2V4h-2z\"/>",

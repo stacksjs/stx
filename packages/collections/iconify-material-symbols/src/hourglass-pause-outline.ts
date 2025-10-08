@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hourglassPauseOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 22v-2h2v-3q0-1.525.713-2.863T8.7 12q-1.275-.8-1.987-2.137T6 7V4H4V2h16v2h-2v3q0 1.2-.45 2.3t-1.275 1.925q-.95.25-1.775.725T13 13.125q-.25-.05-.487-.087T12 13q-1.65 0-2.825 1.175T8 17v3h3.3q.175.55.413 1.05t.562.95zm8-11q1.65 0 2.825-1.175T16 7V4H8v3q0 1.65 1.175 2.825T12 11m6.75 9h1v-4h-1zm-2.5 0h1v-4h-1zM18 23q-2.075 0-3.537-1.463T13 18t1.463-3.537T18 13t3.538 1.463T23 18t-1.463 3.538T18 23M12 4\"/>",

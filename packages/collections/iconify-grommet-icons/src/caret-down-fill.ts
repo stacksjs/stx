@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const caretDownFill: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18 9H6l6 6z\"/>",

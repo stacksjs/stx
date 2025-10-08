@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const decimalArrowLeft24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10 4a3 3 0 0 0-3 3v4a3 3 0 1 0 6 0V7a3 3 0 0 0-3-3m1.5 7a1.5 1.5 0 0 1-3 0V7a1.5 1.5 0 1 1 3 0zM5 12.5a1.5 1.5 0 1 1-3 0a1.5 1.5 0 0 1 3 0M19.5 7v4q0 .156-.03.304c.488.155.952.366 1.383.626c.095-.293.147-.605.147-.93V7a3 3 0 1 0-6 0v4q0 .246.039.482q.696-.286 1.463-.406L16.5 11V7a1.5 1.5 0 0 1 3 0M23 17.5a5.5 5.5 0 1 1-11 0a5.5 5.5 0 0 1 11 0m-2.5.5a.5.5 0 0 0 0-1h-4.793l1.647-1.646a.5.5 0 0 0-.708-.708l-2.5 2.5a.5.5 0 0 0 0 .708l2.5 2.5a.5.5 0 0 0 .708-.708L15.707 18z\"/>",

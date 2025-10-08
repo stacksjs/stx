@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const textIndentDecrease: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"1.5\"><path d=\"M6.75 18.75h13.5M6.75 5.25h13.5M10.75 12h9.5\"/><path stroke-linejoin=\"round\" d=\"m6.25 9l-3 3l3 3\"/></g>",

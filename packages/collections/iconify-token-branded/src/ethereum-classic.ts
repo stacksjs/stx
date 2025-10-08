@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const ethereumClassic: IconData = {
   "body": "<path fill=\"#01C853\" d=\"m6.578 11.063l5.475-2.235l5.294 2.295L12.037 3zm.014 2.482l5.46 3.075l5.573-3.075L12.105 21zm5.476-3.623l5.542 2.393l-5.542 3l-5.693-3.067l5.7-2.326z\"/>",

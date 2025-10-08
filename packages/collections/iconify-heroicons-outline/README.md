@@ -1,11 +1,11 @@
-# @stx/iconify-heroicons-outline
+# @stacksjs/iconify-heroicons-outline
 
 HeroIcons v1 Outline icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-heroicons-outline
+bun add @stacksjs/iconify-heroicons-outline
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-heroicons-outline
 
 ```html
 <script>
-  import { home } from '@stx/iconify-heroicons-outline'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-heroicons-outline'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-heroicons-outline
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-heroicons-outline'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-heroicons-outline'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

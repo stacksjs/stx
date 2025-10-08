@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flagChile: IconData = {
   "body": "<path fill=\"#1F429B\" d=\"M13 5H4a4 4 0 0 0-4 4v9h13zm-4.663 9.292l-1.882-1.367l-1.882 1.367l.719-2.212l-1.882-1.368h2.326L6.455 8.5l.719 2.212H9.5L7.618 12.08z\"/><path fill=\"#EEE\" d=\"M32 5H13v13h23V9a4 4 0 0 0-4-4\"/><path fill=\"#D42D27\" d=\"M0 18v9a4 4 0 0 0 4 4h28a4 4 0 0 0 4-4v-9z\"/><path fill=\"#FFF\" d=\"M7.174 10.712L6.455 8.5l-.719 2.212H3.41l1.882 1.368l-.719 2.212l1.882-1.367l1.882 1.367l-.719-2.212L9.5 10.712z\"/>",

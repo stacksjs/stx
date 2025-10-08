@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twotoneArrowForwardIos: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6.23 20.23L8 22l10-10L8 2L6.23 3.77L14.46 12z\"/>",

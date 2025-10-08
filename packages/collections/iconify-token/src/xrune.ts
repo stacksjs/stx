@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const xrune: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7.765 13.059L15.722 3l-3.198 7.941h3.711L8.352 21l3.171-7.941z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const presenceBusy12Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 6A6 6 0 1 1 0 6a6 6 0 0 1 12 0\"/>",

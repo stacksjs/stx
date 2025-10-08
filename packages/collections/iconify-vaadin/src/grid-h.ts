@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const gridH: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 0v16h16V0zm5 15H1V1h4zm5 0H6V1h4zm5 0h-4V1h4z\"/>",

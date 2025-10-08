@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bangladeshiTakaSign: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M36 32.3C18.4 30.1 2.4 42.5.3 60S10.5 93.6 28 95.8l7.9 1c16 2 28 15.6 28 31.8v31.5h-40c-13.3 0-24 10.7-24 24s10.7 24 24 24h40v176c0 53 43 96 96 96h32c106 0 192-86 192-192v-32c0-53-43-96-96-96h-16c-17.7 0-32 14.3-32 32s14.3 32 32 32h16c17.7 0 32 14.3 32 32v32c0 70.7-57.3 128-128 128h-32c-17.7 0-32-14.3-32-32v-176h40c13.3 0 24-10.7 24-24s-10.7-24-24-24h-40v-31.5c.1-48.5-35.9-89.4-84-95.4l-7.9-1z\"/>",

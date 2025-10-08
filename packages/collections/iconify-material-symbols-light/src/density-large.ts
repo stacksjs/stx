@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const densityLarge: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 20v-1h16v1zM4 5V4h16v1z\"/>",

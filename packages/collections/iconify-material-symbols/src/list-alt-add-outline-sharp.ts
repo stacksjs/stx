@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const listAltAddOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M17 20h-3v-2h3v-3h2v3h3v2h-3v3h-2zM5 19V5zm-2 2V3h18v10.825q-.45-.275-.95-.45T19 13.1V5H5v14h7q0 .525.075 1.025t.25.975zm5-4q.425 0 .713-.288T9 16t-.288-.712T8 15t-.712.288T7 16t.288.713T8 17m0-4q.425 0 .713-.288T9 12t-.288-.712T8 11t-.712.288T7 12t.288.713T8 13m0-4q.425 0 .713-.288T9 8t-.288-.712T8 7t-.712.288T7 8t.288.713T8 9m3 4h6v-2h-6zm0-4h6V7h-6zm0 8h1.35q.2-.575.5-1.075t.7-.925H11z\"/>",

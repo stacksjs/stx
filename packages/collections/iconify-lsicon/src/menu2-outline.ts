@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const menu2Outline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M2 12.5h12M2 8h12M2 3.5h12\"/>",

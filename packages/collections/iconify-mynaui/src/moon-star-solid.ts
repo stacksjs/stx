@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const moonStarSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18.5 3.25a.75.75 0 0 1 .75.75v.75H20a.75.75 0 0 1 0 1.5h-.75V7a.75.75 0 0 1-1.5 0v-.75H17a.75.75 0 0 1 0-1.5h.75V4a.75.75 0 0 1 .75-.75m-6.788.2a.75.75 0 0 0-.668-1.197c-5.414.494-8.436 4.752-8.764 9.105c-.328 4.361 2.037 8.975 7.451 10.166c5.686 1.25 11.472-2.837 12.016-8.646a.75.75 0 0 0-1.189-.676c-2.837 2.069-6.08 1.316-8.136-.724c-2.054-2.039-2.8-5.239-.71-8.028\"/>",

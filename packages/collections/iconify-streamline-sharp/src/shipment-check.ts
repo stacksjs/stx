@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const shipmentCheck: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"square\" d=\"m15.625 11.574l-4.798 6.404l-3.202-2.398\"/><path d=\"m5.083 1.75l-3.27 4.858v.694h19.625v-.694L18.166 1.75zm6.542 0v5.552M1.813 22.25V7.302h19.625V22.25H1.811Z\"/></g>",

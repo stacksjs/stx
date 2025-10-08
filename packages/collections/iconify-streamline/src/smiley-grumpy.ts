@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const smileyGrumpy: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 13.5a6.5 6.5 0 1 0 0-13a6.5 6.5 0 0 0 0 13\"/><path d=\"M4 9.5c.448-1.428 2.15-2.3 3.85-1.904A3.07 3.07 0 0 1 10 9.5m-6-5h1.5V5m3-.5H10V5\"/></g>",

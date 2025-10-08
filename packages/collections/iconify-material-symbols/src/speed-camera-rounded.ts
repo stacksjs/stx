@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const speedCameraRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m16.95 14.675l-.925-.525q-.225-.125-.25-.4t.2-.45l2.35-1.75q.25-.2.538-.213t.562.138l.925.525q.225.125.238.4t-.188.45l-2.35 1.75q-.25.2-.537.213t-.563-.138M5 20q-.425 0-.712-.288T4 19t.288-.712T5 18h4v-5.95l-3-1.725q-.725-.425-.937-1.212T5.275 7.6l1.5-2.6q.425-.725 1.213-.937t1.512.212L17.725 9q.475.275.5.813t-.4.862l-3.85 2.875q-.5.35-1.075.388t-1.1-.263l-.8-.45V18q0 .825-.587 1.413T9 20z\"/>",

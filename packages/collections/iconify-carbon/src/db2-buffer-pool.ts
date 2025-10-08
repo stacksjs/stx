@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const db2BufferPool: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m26.338 31l-1.736-1l2.288-4H23l3.993-7l1.737 1l-2.284 4h3.89zM8 14h4v2H8zm12 0h4v2h-4zM8 18h4v2H8zm6 0h4v2h-4zm0 4h4v2h-4z\"/><path fill=\"currentColor\" d=\"M5 11h22v5h2V5c0-1.102-.897-2-2-2H5c-1.103 0-2 .898-2 2v22c0 1.103.897 2 2 2h15v-2H5zm22-6v4H5V5z\"/>",

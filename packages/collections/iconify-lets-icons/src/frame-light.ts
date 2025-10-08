@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const frameLight: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" d=\"M8 3v1c0 1.886 0 2.828-.586 3.414S5.886 8 4 8H3m13-5v1c0 1.886 0 2.828.586 3.414S18.114 8 20 8h1M8 21v-1c0-1.886 0-2.828-.586-3.414S5.886 16 4 16H3m13 5v-1c0-1.886 0-2.828.586-3.414S18.114 16 20 16h1\"/>",

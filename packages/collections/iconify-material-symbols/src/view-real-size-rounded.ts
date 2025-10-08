@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const viewRealSizeRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 17q-.425 0-.712-.288T7 16V9H6q-.425 0-.712-.288T5 8t.288-.712T6 7h1.5q.625 0 1.063.438T9 8.5V16q0 .425-.288.713T8 17m9 0q-.425 0-.712-.288T16 16V9h-1q-.425 0-.712-.288T14 8t.288-.712T15 7h1.5q.625 0 1.063.438T18 8.5V16q0 .425-.288.713T17 17m-5-4q-.425 0-.712-.288T11 12t.288-.712T12 11t.713.288T13 12t-.288.713T12 13m0 4q-.425 0-.712-.288T11 16t.288-.712T12 15t.713.288T13 16t-.288.713T12 17\"/>",

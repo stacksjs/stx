@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const brandAndroid: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M8 8.5h8m-8 0v8h2m-2-8s0-1.815 1.223-3M16 8.5v8h-2m2-8s0-1.815-1.223-3m3.723 4V14m-13-4.5V14m8.5 5.5v-3m0 0h-4m0 3v-3m4.777-11c-.592-.574-1.472-1-2.777-1s-2.185.426-2.777 1m5.554 0L16 4M9.223 5.5L8 4\"/>",

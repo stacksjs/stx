@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lightningAFill: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m173.87 118.58l-95.2 102.85A8 8 0 0 1 65 214.15l13.67-57.56l-50-22.44a8 8 0 0 1-2.59-12.73l95.2-102.85A8 8 0 0 1 135 25.85l-13.69 57.56l50 22.43a8 8 0 0 1 2.59 12.74Zm61.71 104.57a7.9 7.9 0 0 1-3.58.85a8 8 0 0 1-7.16-4.42L215.05 200h-38.11l-9.79 19.58a8 8 0 0 1-14.31-7.16l36-72a8 8 0 0 1 14.31 0l36 72a8 8 0 0 1-3.57 10.73M207.05 184L196 161.89L184.94 184Z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const computerKeyboardReturn2KeyboardArrowReturnEnter: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M.5 9.5h9a4 4 0 0 0 0-8h-3\"/><path d=\"m3.5 6.5l-3 3l3 3\"/></g>",

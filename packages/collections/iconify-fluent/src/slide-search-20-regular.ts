@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const slideSearch20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5.5 7a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm3.032 3.5c-.18-.364-.41-.7-.678-1H14.5a.5.5 0 0 1 0 1zm.468 2q0 .254-.027.5H12.5a.5.5 0 0 0 0-1H8.973q.027.246.027.5m-6-6v1.756a4.5 4.5 0 0 0-1 .502V6.5A2.5 2.5 0 0 1 4.5 4h11A2.5 2.5 0 0 1 18 6.5v7a2.5 2.5 0 0 1-2.5 2.5h-5.379l-1-1H15.5a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 15.5 5h-11A1.5 1.5 0 0 0 3 6.5M4.5 16c.786 0 1.512-.26 2.096-.697l2.55 2.55a.5.5 0 1 0 .708-.707l-2.55-2.55A3.5 3.5 0 1 0 4.5 16m0-1a2.5 2.5 0 1 1 0-5a2.5 2.5 0 0 1 0 5\"/>",

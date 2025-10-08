@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const readingListAdd28Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 7.5a1.5 1.5 0 0 1 2.75-.83a1 1 0 0 0 1.663-1.11A3.5 3.5 0 1 0 5.463 11H21a1 1 0 1 0 0-2H5.5A1.5 1.5 0 0 1 4 7.5M12 5a1 1 0 1 0 0 2h13a1 1 0 1 0 0-2zm-5 8a1 1 0 1 0 0 2h8.4a7.47 7.47 0 0 1 5.059-2zm-4 4h10.865a7.5 7.5 0 0 0-.715 2H3a1 1 0 1 1 0-2m4 4h6.016c.046.697.187 1.368.41 2H7a1 1 0 1 1 0-2m20-.5a6.5 6.5 0 1 1-13 0a6.5 6.5 0 0 1 13 0m-6-4a.5.5 0 0 0-1 0V20h-3.5a.5.5 0 0 0 0 1H20v3.5a.5.5 0 0 0 1 0V21h3.5a.5.5 0 0 0 0-1H21z\"/>",

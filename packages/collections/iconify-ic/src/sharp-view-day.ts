@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpViewDay: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 21h19v-3H2zM21 8H2v8h19zM2 3v3h19V3z\"/>",

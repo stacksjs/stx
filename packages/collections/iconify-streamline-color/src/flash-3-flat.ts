@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flash3Flat: IconData = {
   "body": "<path fill=\"#8fbffa\" d=\"M3.08 5.28L4.286.875a1 1 0 0 1 .965-.736h1.94A1 1 0 0 1 8.156 1.4L7.49 3.847h1.833a1 1 0 0 1 .945 1.327L8.77 9.5h1.337a.5.5 0 0 1 .318.886l-3.82 3.148a.5.5 0 0 1-.713-.08l-2.501-3.237a.5.5 0 0 1 .395-.806h1.511l.843-2.866H4.045A1 1 0 0 1 3.08 5.28\"/>",

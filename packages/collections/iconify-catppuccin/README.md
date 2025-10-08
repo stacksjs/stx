@@ -1,11 +1,11 @@
-# @stx/iconify-catppuccin
+# @stacksjs/iconify-catppuccin
 
 Catppuccin Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-catppuccin
+bun add @stacksjs/iconify-catppuccin
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-catppuccin
 
 ```html
 <script>
-  import { home } from '@stx/iconify-catppuccin'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-catppuccin'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-catppuccin
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-catppuccin'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-catppuccin'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const shintoShrine: IconData = {
   "body": "<path fill=\"#D22F27\" d=\"M16 33h40v4H16z\"/><path fill=\"#EA5A47\" d=\"M22 27h4v28h-4zm24 0h4v28h-4z\"/><path fill=\"#3F3F3F\" d=\"M20.5 55h7v5h-7zm24 0h7v5h-7zM34 27h4v6h-4z\"/><path fill=\"#EA5A47\" d=\"M12.5 21s11.25 2 15 2H46c3.375 0 13.5-2 13.5-2l-4 3l-2 3h-35l-2-3z\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M16 33h6v4h-6zm10 0h20v4H26zm24 0h6v4h-6zm-28-6h4v28h-4zm24 0h4v28h-4zM20.5 55h7v5h-7zm24 0h7v5h-7zM34 27h4v6h-4zm25.5-6l-4 3l-2 3h-35l-2-3l-4-3s11.25 2 15 2H46c3.38 0 13.5-2 13.5-2\"/>",

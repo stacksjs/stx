@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mailArrowForward16Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M13 10.4c-.75.384-1.6.6-2.5.6c-.65 0-1.273-.113-1.852-.32l-1.41.76a.5.5 0 0 1-.475 0L1 8.337V13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM5.022 5H3a2 2 0 0 0-2 2v.201l6 3.231l.544-.293A5.5 5.5 0 0 1 5.022 5M6 5.5a4.5 4.5 0 1 0 9 0a4.5 4.5 0 0 0-9 0m5.396-2.604a.5.5 0 0 1 .708 0l1.75 1.75a.5.5 0 0 1 .002.705l-1.752 1.753a.5.5 0 0 1-.708-.708l.897-.896H10.75A1.75 1.75 0 0 0 9 7.25v.25a.5.5 0 0 1-1 0v-.25a2.75 2.75 0 0 1 2.75-2.75h1.543l-.897-.896a.5.5 0 0 1 0-.708\"/>",

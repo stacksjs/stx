@@ -1,11 +1,11 @@
-# @stx/iconify-circle-flags
+# @stacksjs/iconify-circle-flags
 
 Circle Flags icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-circle-flags
+bun add @stacksjs/iconify-circle-flags
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-circle-flags
 
 ```html
 <script>
-  import { home } from '@stx/iconify-circle-flags'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-circle-flags'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-circle-flags
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-circle-flags'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-circle-flags'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

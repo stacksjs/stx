@@ -57,7 +57,7 @@ onMounted(() => {
 ### Event Handling
 
 ```typescript
-import { onClickOutside, onKeyStroke } from '@stx/use'
+import { onClickOutside, onKeyStroke } from '@stacksjs/use'
 
 // Handle click outside
 onClickOutside(elementRef, (event) => {
@@ -73,7 +73,7 @@ onKeyStroke('Escape', (event) => {
 ## Array Utilities
 
 ```typescript
-import { remove, unique, shuffle } from '@stx/utils'
+import { remove, unique, shuffle } from '@stacksjs/utils'
 
 // Remove item from array
 remove(array, item)
@@ -88,7 +88,7 @@ const shuffled = shuffle(array)
 ## Object Utilities
 
 ```typescript
-import { merge, clone, pick, omit } from '@stx/utils'
+import { merge, clone, pick, omit } from '@stacksjs/utils'
 
 // Deep merge objects
 const merged = merge(obj1, obj2)
@@ -106,7 +106,7 @@ const omitted = omit(object, ['prop1', 'prop2'])
 ## String Utilities
 
 ```typescript
-import { capitalize, slugify, truncate } from '@stx/utils'
+import { capitalize, slugify, truncate } from '@stacksjs/utils'
 
 // Capitalize string
 const capitalized = capitalize('hello') // 'Hello'
@@ -121,7 +121,7 @@ const truncated = truncate('Long text...', 10) // 'Long text...'
 ## Date Utilities
 
 ```typescript
-import { formatDate, parseDate, addDays } from '@stx/utils'
+import { formatDate, parseDate, addDays } from '@stacksjs/utils'
 
 // Format date
 const formatted = formatDate(new Date(), 'YYYY-MM-DD')
@@ -136,7 +136,7 @@ const newDate = addDays(date, 5)
 ## Async Utilities
 
 ```typescript
-import { sleep, retry, debounce, throttle } from '@stx/utils'
+import { sleep, retry, debounce, throttle } from '@stacksjs/utils'
 
 // Sleep for duration
 await sleep(1000)
@@ -160,7 +160,7 @@ const throttledFn = throttle(() => {
 ## URL Utilities
 
 ```typescript
-import { parseQuery, stringifyQuery } from '@stx/utils'
+import { parseQuery, stringifyQuery } from '@stacksjs/utils'
 
 // Parse query string
 const params = parseQuery('?foo=bar&baz=qux')

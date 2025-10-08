@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpSimCardDownload: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M20 2H10L4 8v14h16zm-8 15l-4-4h3V9.02L13 9v4h3z\"/>",

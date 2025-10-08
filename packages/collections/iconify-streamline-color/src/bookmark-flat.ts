@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bookmarkFlat: IconData = {
   "body": "<path fill=\"#8fbffa\" d=\"M4 0a1.5 1.5 0 0 0-1.5 1.5v12a.5.5 0 0 0 .854.354L7 10.207l3.646 3.647a.5.5 0 0 0 .854-.354v-12A1.5 1.5 0 0 0 10 0z\"/>",

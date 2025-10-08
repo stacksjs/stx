@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const underlineStroke12: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" d=\"M1.5 11.5h8m-7-10v5c0 1.7 1.3 3 3 3s3-1.3 3-3v-5\"/>",

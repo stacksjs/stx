@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const textBold24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 5.75C6 4.784 6.784 4 7.75 4h4.749c2.823 0 4.751 2.34 4.751 4.75c0 .931-.288 1.852-.803 2.632C17.369 12.239 18 13.47 18 15c0 3.133-2.677 5-5 5H7.75A1.75 1.75 0 0 1 6 18.25zm3.5 7.75v3H13c.312 0 .71-.138 1.024-.421c.288-.26.476-.615.476-1.079c0-.888-.745-1.5-1.5-1.5zm0-3.5h3c.715 0 1.25-.592 1.25-1.25c0-.657-.536-1.25-1.251-1.25H9.5z\"/>",

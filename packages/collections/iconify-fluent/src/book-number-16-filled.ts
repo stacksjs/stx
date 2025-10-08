@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bookNumber16Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 1h6a2 2 0 0 1 2 2v9.497a.5.5 0 0 1-.5.5H4V13a1 1 0 0 0 1 1h7.5a.5.5 0 0 1 0 1H5a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2m1 4.996h.601L6.38 7H5.5a.5.5 0 0 0 0 1h.658l-.142.639a.5.5 0 0 0 .977.216L7.182 8h.969l-.143.638a.5.5 0 1 0 .976.218L9.175 8H10a.5.5 0 0 0 0-1h-.602l.225-1.004h.877a.5.5 0 0 0 0-1h-.654l.141-.634a.5.5 0 0 0-.976-.218l-.19.852h-.974l.14-.635a.5.5 0 0 0-.976-.216l-.188.85H6a.5.5 0 0 0 0 1M7.403 7h.97l.225-1.004h-.972z\"/>",

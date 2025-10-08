@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const modeCommentSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 18V2h20v20l-4-4z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const branchRequestClosed20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 5a2 2 0 1 1 4 0a2 2 0 0 1-4 0m2.5 2.959a3 3 0 1 0-1 0v4.082a3 3 0 1 0 1 0zM5 13a2 2 0 1 1 0 4a2 2 0 0 1 0-4m10 0a2 2 0 1 0 0 4a2 2 0 0 0 0-4m-3 2a3 3 0 0 1 2.5-2.959V8.5a.5.5 0 0 1 1 0v3.541A3 3 0 1 1 12 15m1.354-12.354a.5.5 0 0 0-.708.708L14.293 5l-1.647 1.646a.5.5 0 0 0 .708.708L15 5.707l1.646 1.647a.5.5 0 0 0 .708-.708L15.707 5l1.647-1.646a.5.5 0 0 0-.708-.708L15 4.293z\"/>",

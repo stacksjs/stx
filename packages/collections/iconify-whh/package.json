@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-whh",
+  "name": "@stacksjs/iconify-whh",
   "version": "0.0.1",
   "description": "WebHostingHub Glyphs icons for stx from Iconify",
   "author": "WebHostingHub",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

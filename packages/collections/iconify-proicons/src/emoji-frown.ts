@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const emojiFrown: IconData = {
   "body": "<g fill=\"none\"><circle cx=\"12\" cy=\"12\" r=\"9.25\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\"/><circle cx=\"9\" cy=\"9.5\" r=\"1.25\" fill=\"currentColor\"/><circle cx=\"15\" cy=\"9.5\" r=\"1.25\" fill=\"currentColor\"/><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\" d=\"M15.464 15.813a4 4 0 0 0-6.928 0\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const elementor: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M.5 256c0 141 113.6 255 254.6 255c142 0 256-114 256-255c0-140-114-253.9-256-253.9C114.1 2.1.5 116 .5 256m191.6-106v213h-43V150zm42 0h128v43h-128zm128 85v43h-128v-43zm-128 85h128v43h-128z\"/>",

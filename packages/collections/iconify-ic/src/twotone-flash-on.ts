@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twotoneFlashOn: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M17 10h-4l3-8H7v11h3v9z\"/>",

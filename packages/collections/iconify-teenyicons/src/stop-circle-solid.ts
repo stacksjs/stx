@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stopCircleSolid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M0 7.5a7.5 7.5 0 1 1 15 0a7.5 7.5 0 0 1-15 0M5 5h5v5H5z\" clip-rule=\"evenodd\"/>",

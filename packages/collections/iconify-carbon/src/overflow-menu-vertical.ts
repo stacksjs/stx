@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const overflowMenuVertical: IconData = {
   "body": "<circle cx=\"16\" cy=\"8\" r=\"2\" fill=\"currentColor\"/><circle cx=\"16\" cy=\"16\" r=\"2\" fill=\"currentColor\"/><circle cx=\"16\" cy=\"24\" r=\"2\" fill=\"currentColor\"/>",

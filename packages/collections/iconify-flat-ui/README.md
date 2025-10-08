@@ -1,11 +1,11 @@
-# @stx/iconify-flat-ui
+# @stacksjs/iconify-flat-ui
 
 Flat UI Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-flat-ui
+bun add @stacksjs/iconify-flat-ui
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-flat-ui
 
 ```html
 <script>
-  import { home } from '@stx/iconify-flat-ui'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-flat-ui'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-flat-ui
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-flat-ui'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-flat-ui'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

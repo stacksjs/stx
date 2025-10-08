@@ -1,11 +1,11 @@
-# @stx/iconify-flowbite
+# @stacksjs/iconify-flowbite
 
 Flowbite Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-flowbite
+bun add @stacksjs/iconify-flowbite
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-flowbite
 
 ```html
 <script>
-  import { home } from '@stx/iconify-flowbite'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-flowbite'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-flowbite
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-flowbite'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-flowbite'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

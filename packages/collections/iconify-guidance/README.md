@@ -1,11 +1,11 @@
-# @stx/iconify-guidance
+# @stacksjs/iconify-guidance
 
 Guidance icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-guidance
+bun add @stacksjs/iconify-guidance
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-guidance
 
 ```html
 <script>
-  import { home } from '@stx/iconify-guidance'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-guidance'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-guidance
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-guidance'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-guidance'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

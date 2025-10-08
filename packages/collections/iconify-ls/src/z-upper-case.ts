@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const zUpperCase: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M34 0h469L124 663h365v72H0L379 71H34z\"/>",

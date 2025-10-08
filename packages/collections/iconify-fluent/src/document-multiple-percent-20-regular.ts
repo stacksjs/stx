@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const documentMultiplePercent20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5.5 10a4.5 4.5 0 1 1 0 9a4.5 4.5 0 0 1 0-9m9.5 7a1 1 0 0 1-1 1H9.743q.382-.462.657-1zm-7.5-2a1 1 0 1 0 0 2a1 1 0 0 0 0-2m.35-2.854a.5.5 0 0 0-.707 0l-3.997 3.997a.5.5 0 1 0 .708.707l3.996-3.997a.5.5 0 0 0 0-.707M11.586 2a1.5 1.5 0 0 1 1.06.44l3.915 3.914A1.5 1.5 0 0 1 17 7.414V14a2 2 0 0 1-2 2h-4.207a5.5 5.5 0 0 0 .184-1H15a1 1 0 0 0 1-1V8h-3.5A1.5 1.5 0 0 1 11 6.5V3H8a1 1 0 0 0-1 1v5.207a5.5 5.5 0 0 0-1-.185V4a2 2 0 0 1 2-2zM3.5 12a1 1 0 1 0 0 2a1 1 0 0 0 0-2M5 9.022a5.5 5.5 0 0 0-1 .185V5a1 1 0 0 1 1-1zM12 6.5a.5.5 0 0 0 .5.5h3.293L12 3.207z\"/>",

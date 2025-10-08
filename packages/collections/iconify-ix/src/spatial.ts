@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const spatial: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"m301.121 40.832l168.213 96.121v251.98l-258.455 82.235l-168.212-96.121v-251.98zm-3.713 258.752l-62.741 19.966v99.273l174.336-55.484zM192 333.127l-87.786 27.936L192 411.237zm234.667-154.619l-117.334 37.334v65.968l117.334 67.048zm-341.334-3.081v169.258L192 310.746V236.38zM288 222.629l-53.333 16.97v57.571L288 280.2zm0-132.876l-171.245 54.489l99.032 56.59L288 177.855zm21.333 4.905v76.409l85.873-27.323z\"/>",

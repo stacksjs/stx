@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twoTriangles: IconData = {
   "body": "<g fill=\"none\"><path d=\"m24 4l17.32 30H6.68z\"/><path d=\"m24 44l17.32-30H6.68z\"/><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"m24 4l17.32 30H6.68z\"/><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"m24 44l17.32-30H6.68z\"/></g>",

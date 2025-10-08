@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const notBright: IconData = {
   "body": "<circle cx=\"9.85\" cy=\"10\" r=\"9\" fill=\"currentColor\"/>",

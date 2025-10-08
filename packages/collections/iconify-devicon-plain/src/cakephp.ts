@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cakephp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 73.69V93c0 10.69 27.75 19.35 62 19.35V93C29.75 93 2 84.36 2 73.69m62-19.35l48.5 12c8.44-3.3 13.51-7.5 13.51-12V35c0-10.68-27.76-19.35-62-19.35S2 24.29 2 35v19.34C2 65 29.75 73.69 64 73.69zm48.49 31.4L64 73.69V93l48.5 12.05c8.43-3.27 13.5-7.46 13.5-12.05V73.69c0 4.55-5.07 8.74-13.51 12.05\"/>",

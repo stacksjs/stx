@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const documentLandscapeSplit24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.5 6a.5.5 0 0 1 .5-.5h6.5v13H4a.5.5 0 0 1-.5-.5zM12 18.5v-13h2V10a2 2 0 0 0 2 2h4.5v6a.5.5 0 0 1-.5.5zm3.5-11.878l3.879 3.878H16a.5.5 0 0 1-.5-.5zm5.914 3.793l-5.828-5.829A2 2 0 0 0 14.172 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6.172l-.007-.082l-.007-.059a2 2 0 0 0-.138-.624c-.024-.057-.056-.112-.087-.166l-.053-.098a1 1 0 0 0-.044-.08a2 2 0 0 0-.18-.219l-.03-.036q-.018-.026-.04-.049\"/>",

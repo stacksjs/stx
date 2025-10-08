@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const checkCircle: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M256 512a256 256 0 1 1 0-512a256 256 0 1 1 0 512m0-464a208 208 0 1 0 0 416a208 208 0 1 0 0-416m70.7 121.9c7.8-10.7 22.8-13.1 33.5-5.3s13.1 22.8 5.3 33.5l-122.1 168c-4.1 5.7-10.5 9.3-17.5 9.8s-13.9-2-18.8-6.9l-55.9-55.9c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l36 36L326.7 170z\"/>",

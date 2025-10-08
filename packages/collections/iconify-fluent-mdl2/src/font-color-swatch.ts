@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fontColorSwatch: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1664 1792v256H256v-256z\"/>",

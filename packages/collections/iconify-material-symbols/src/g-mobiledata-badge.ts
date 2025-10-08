@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const gMobiledataBadge: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zm5-4h4q.825 0 1.413-.587T16 15v-4h-4v2h2v2h-4V9h6q0-.825-.587-1.412T14 7h-4q-.825 0-1.412.588T8 9v6q0 .825.588 1.413T10 17\"/>",

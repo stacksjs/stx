@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const responsiveLayout: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M15 20V9H9.5V4H20v16zm-5.5 0V10H14v10zM4 20V10h4.5v10z\"/>",

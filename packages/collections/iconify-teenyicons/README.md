@@ -1,11 +1,11 @@
-# @stx/iconify-teenyicons
+# @stacksjs/iconify-teenyicons
 
 Teenyicons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-teenyicons
+bun add @stacksjs/iconify-teenyicons
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-teenyicons
 
 ```html
 <script>
-  import { home } from '@stx/iconify-teenyicons'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-teenyicons'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-teenyicons
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-teenyicons'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-teenyicons'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

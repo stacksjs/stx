@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const drinkWine24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M15.929 9.754a.75.75 0 0 0-1.473-.281a2.48 2.48 0 0 1-.773 1.376a2.5 2.5 0 0 1-1.169.598a.75.75 0 1 0 .307 1.469a4 4 0 0 0 1.872-.958a4 4 0 0 0 1.236-2.204M6 2.75A.75.75 0 0 1 6.75 2h10.5a.75.75 0 0 1 .75.75v6.5a6.25 6.25 0 0 1-5.5 6.206v5.053l2.748-.009a.75.75 0 0 1 .004 1.5l-3.5.011h-.005l-3-.011a.75.75 0 0 1 .006-1.5l2.247.008v-5.056A5.75 5.75 0 0 1 6 9.75zm1.5.75v2.75h9V3.5zm0 6.25A4.25 4.25 0 0 0 11.75 14a4.75 4.75 0 0 0 4.75-4.75v-1.5h-9z\"/>",

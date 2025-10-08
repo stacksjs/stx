@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dockLeftMirrored: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2048 384H0v1152h2048zm-128 128v896h-384V512zM128 1408V512h1280v896z\"/>",

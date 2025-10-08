@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const azmOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10 23v-9H1L11 4h9v9zm6-8.825l2-2V6h-6.175l-2 2H16zm-4 4l2-2V10H7.825l-2 2H12z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const voiceMail: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.5 6.5a2.5 2.5 0 1 1-5 0V3a2.5 2.5 0 1 1 5 0z\"/><path d=\"M12 7a4.49 4.49 0 0 1-4.5 4.5h-1A4.49 4.49 0 0 1 2 7m5 4.5v2\"/></g>",

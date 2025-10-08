@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const padlockOpen: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 12v6h10v-6zm8-7a3 3 0 1 0-6 0v5h8a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2V5a5 5 0 1 1 10 0a1 1 0 0 1-2 0M7 17a2 2 0 1 1 0-4a2 2 0 0 1 0 4\"/>",

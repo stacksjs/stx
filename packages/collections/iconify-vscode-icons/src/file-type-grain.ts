@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileTypeGrain: IconData = {
   "body": "<g stroke-width=\".406\"><path fill=\"#faa520\" d=\"m16.056 2.024l-4.726 9.765l4.799 4.182l4.657-4.182z\"/><path fill=\"#f78f28\" d=\"m3.213 6.863l-.367 11.773l13.28 11.34l6.664-5.834z\"/><path fill=\"#e18026\" d=\"M29.153 18.64V6.726l-11.9 10.507l6.843 5.798z\"/></g>",

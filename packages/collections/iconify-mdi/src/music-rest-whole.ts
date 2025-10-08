@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const musicRestWhole: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18 10h-2v4H8v-4H6V9h12z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const menuGridR: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 4h4v4H4zm0 6h4v4H4zm4 6H4v4h4zm2-12h4v4h-4zm4 6h-4v4h4zm-4 6h4v4h-4zM20 4h-4v4h4zm-4 6h4v4h-4zm4 6h-4v4h4z\"/>",

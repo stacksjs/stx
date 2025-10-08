@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const ellipsisH: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 6h4v4H0zm6 0h4v4H6zm6 0h4v4h-4z\"/>",

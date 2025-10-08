@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const contractUpDownFill: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m18 5l-6 6l-6-6zm0 14l-6-6l-6 6z\"/>",

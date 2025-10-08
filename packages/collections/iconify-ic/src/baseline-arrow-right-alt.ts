@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const baselineArrowRightAlt: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16.01 11H4v2h12.01v3L20 12l-3.99-4z\"/>",

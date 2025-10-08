@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const logOutRtl: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M17 17H9v2h8c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2H9v2h8z\"/><path fill=\"currentColor\" d=\"M7 15v-4h8V9H7V5l-6 5z\"/>",

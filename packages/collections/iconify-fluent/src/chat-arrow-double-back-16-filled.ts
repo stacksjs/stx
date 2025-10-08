@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chatArrowDoubleBack16Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 1a6 6 0 0 0-5.27 8.872l-.71 2.49a.5.5 0 0 0 .638.612l2.338-.779c.468.271.976.48 1.513.618a5.5 5.5 0 0 1 7.305-7.304A6 6 0 0 0 7 1m8 9.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0M9.354 9.354a.5.5 0 0 0-.708-.708l-1.5 1.5a.5.5 0 0 0 0 .707l1.5 1.5a.5.5 0 1 0 .708-.707L8.207 10.5zm1.853.646l.647-.646a.5.5 0 0 0-.708-.708l-1.5 1.5a.5.5 0 0 0 0 .707l1.5 1.5a.5.5 0 0 0 .708-.707L11.207 11H13v.5a.5.5 0 0 0 1 0V11a1 1 0 0 0-1-1z\" opacity=\".99\"/>",

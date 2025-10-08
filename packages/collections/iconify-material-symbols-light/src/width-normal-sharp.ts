@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const widthNormalSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 19V5h18v14zm1-1h5V6H4zm11 0h5V6h-5z\"/>",

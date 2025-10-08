@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pictureInPictureMobileOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 22q-.825 0-1.412-.587T4 20V4q0-.825.588-1.412T6 2h12q.825 0 1.413.588T20 4v16q0 .825-.587 1.413T18 22zm12-2V4H6v16zm0-16H6zm-7 9h6V5h-6zm2-2V7h2v4z\"/>",

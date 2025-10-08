@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tape: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M412.8 416c41.5-40.7 67.2-97.3 67.2-160c0-123.7-100.3-224-224-224S32 132.3 32 256s100.3 224 224 224h288c17.7 0 32-14.3 32-32s-14.3-32-32-32zM256 160a96 96 0 1 1 0 192a96 96 0 1 1 0-192m48 96a48 48 0 1 0-96 0a48 48 0 1 0 96 0\"/>",

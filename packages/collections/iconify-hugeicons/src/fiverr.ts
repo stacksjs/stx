@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fiverr: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\" d=\"M15.352 3c0-.471 0-.707-.147-.854C15.06 2 14.823 2 14.352 2h-2.735C8.896 2 6.522 4.51 6.681 8.5H5c-.471 0-.707 0-.854.146C4 8.793 4 9.03 4 9.5V11c0 .471 0 .707.146.854C4.293 12 4.53 12 5 12h2v9c0 .471 0 .707.146.854C7.293 22 7.53 22 8 22h2c.471 0 .707 0 .854-.146C11 21.707 11 21.47 11 21v-9h4.53v9c0 .471 0 .707.147.854c.146.146.382.146.854.146H19c.471 0 .707 0 .854-.146C20 21.707 20 21.47 20 21V10.5c0-.943 0-1.414-.293-1.707S18.943 8.5 18 8.5h-7V7.23c0-.73.5-1.73 1.797-1.73h1.555c.471 0 .707 0 .853-.146c.147-.147.147-.383.147-.854z\"/>",

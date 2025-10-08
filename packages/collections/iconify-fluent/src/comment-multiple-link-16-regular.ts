@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const commentMultipleLink16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M15 9.05a3.5 3.5 0 0 0-1-.713V6a3 3 0 0 0-3-3H3.268A2 2 0 0 1 5 2h6a4 4 0 0 1 4 4zM13 6v2.035A3.5 3.5 0 0 0 12.5 8H12V6a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h1v1.998l1.346-.979q.22.458.56.83l-1.318.958A1 1 0 0 1 3 13.998V13a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2M8.5 9a2.5 2.5 0 0 0 0 5H9a.5.5 0 0 0 0-1h-.5a1.5 1.5 0 0 1 0-3H9a.5.5 0 0 0 0-1zM12 9a.5.5 0 0 0 0 1h.5a1.5 1.5 0 0 1 0 3H12a.5.5 0 0 0 0 1h.5a2.5 2.5 0 0 0 0-5zm-4 2.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5\"/>",

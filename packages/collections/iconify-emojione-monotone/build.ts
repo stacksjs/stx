@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-emojione-monotone')
+console.log('✓ Built @stacksjs/iconify-emojione-monotone')

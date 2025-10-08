@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const callToActionSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6.5 16.5h11v-2h-11zM3 19V5h18v14z\"/>",

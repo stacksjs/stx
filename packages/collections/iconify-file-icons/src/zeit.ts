@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const zeit: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m256 30l256 452H0z\"/>",

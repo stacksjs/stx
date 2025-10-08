@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pageFooterOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 21v-2h18v2zm0-4V3h18v14zm2-2h14V5H5zm0 0V5z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const uploadSquare: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M2 2h20v20H2z\"/><path d=\"m8 11.5l4-4l4 4m-4 6v-10\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const syncSavedLocallyOffRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18.2 21H2q-.425 0-.712-.288T1 20t.288-.712T2 19h14.175l-1-1H4q-.825 0-1.412-.587T2 16V4.85l-.625-.65Q1.1 3.9 1.1 3.5t.3-.7q.275-.275.7-.275t.7.275l18.4 18.4q.275.275.275.7t-.275.7t-.7.275t-.7-.275zm2.5-3.15l-6.775-6.775l1.95-1.975q.3-.3.313-.712t-.288-.713t-.712-.3t-.713.3L12.5 9.65L5.85 3H20q.825 0 1.413.588T22 5v11q0 .65-.363 1.138t-.937.712\"/>",

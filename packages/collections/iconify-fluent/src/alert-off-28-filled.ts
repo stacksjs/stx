@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const alertOff28Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.28 2.22a.75.75 0 1 0-1.06 1.06l4.257 4.258A8.46 8.46 0 0 0 5.5 11.5l-.001 4.111l-1.416 3.644l-.042.125A1.28 1.28 0 0 0 5.275 21h14.664l4.78 4.78a.75.75 0 0 0 1.061-1.061zm5.06 2.938l15.372 15.373c.181-.22.29-.503.29-.81l-.01-.158a1.3 1.3 0 0 0-.077-.306l-1.414-3.644v-4.112h-.004v-.255A8.501 8.501 0 0 0 8.34 5.158m9.126 16.844a3.502 3.502 0 0 1-6.932 0z\"/>",

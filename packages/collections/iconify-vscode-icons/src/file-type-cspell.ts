@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileTypeCspell: IconData = {
   "body": "<path fill=\"#b4301c\" d=\"M2 20.87h28V27a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3Z\"/><path d=\"M2 18.94h28v2H2Z\"/><path d=\"M10.7 2h2.18v28H10.7Z\"/><path fill=\"#f6f200\" d=\"M12.88 2H27a3 3 0 0 1 3 3v14H12.88Z\"/><path fill=\"#d2d2d2\" d=\"M5 2h5.67v17H2V5a3 3 0 0 1 3-3\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flickrAfter: IconData = {
   "body": "<circle cx=\"17\" cy=\"12\" r=\"4\" fill=\"currentColor\"/>",

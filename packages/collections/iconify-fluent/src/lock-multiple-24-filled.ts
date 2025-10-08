@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lockMultiple24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7.25 5.5a3.5 3.5 0 1 1 7 0v1h1a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-9A2.25 2.25 0 0 1 4 16.25v-7.5A2.25 2.25 0 0 1 6.25 6.5h1zm5.5 0a2 2 0 1 0-4 0v1h4zm-2 8.25a1.25 1.25 0 1 0 0-2.5a1.25 1.25 0 0 0 0 2.5M7.628 19.5A2.25 2.25 0 0 0 9.75 21h6A4.25 4.25 0 0 0 20 16.75v-4.5a2.25 2.25 0 0 0-1.5-2.122v6.622a2.75 2.75 0 0 1-2.75 2.75z\"/>",

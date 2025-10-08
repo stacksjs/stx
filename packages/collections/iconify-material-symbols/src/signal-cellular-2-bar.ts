@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const signalCellular2Bar: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 22L22 2v20zm11-2h7V6.85l-7 7z\"/>",

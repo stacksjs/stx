@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cupSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 4h1V0H7zM5 2v2H4V2z\"/><path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M0 6.5A1.5 1.5 0 0 1 1.5 5h9a1.5 1.5 0 0 1 1.415 1H13.5A1.5 1.5 0 0 1 15 7.5v2a1.5 1.5 0 0 1-1.5 1.5H12v.5A3.5 3.5 0 0 1 8.5 15h-5A3.5 3.5 0 0 1 0 11.5zM12 10h1.5a.5.5 0 0 0 .5-.5v-2a.5.5 0 0 0-.5-.5H12z\" clip-rule=\"evenodd\"/>",

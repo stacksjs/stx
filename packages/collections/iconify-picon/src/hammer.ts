@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hammer: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 7L7 8L2 3v2L0 3l2-1q1-2 5-1q-4 0-3 2\"/>",

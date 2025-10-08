@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const vab: IconData = {
   "body": "<g fill=\"none\"><path fill=\"url(#SVGWuiJ6cnP)\" d=\"M13.233 19.463a1.006 1.006 0 0 1-1.71 0L3.134 5.49c-.381-.635.095-1.429.858-1.429h15.026c1.535 0 2.482 1.604 1.704 2.869l-1.826 2.98c-.709 1.159-1.932 1.561-3.334 1.561H9.85a.52.52 0 0 0-.498.53c.01.317.265.529.498.529h4.144a1.927 1.927 0 0 1 1.64 2.927z\"/><defs><linearGradient id=\"SVGWuiJ6cnP\" x1=\"5.384\" x2=\"12.518\" y1=\"5.914\" y2=\"19.151\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#470180\"/><stop offset=\".82\" stop-color=\"#EF62C9\"/><stop offset=\"1\" stop-color=\"#FFCCF7\"/></linearGradient></defs></g>",

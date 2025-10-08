@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const weight: IconData = {
   "body": "<defs><mask id=\"SVG4WpSWcqi\"><g fill=\"none\"><path fill=\"#555\" stroke=\"#fff\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"M41 4H7a3 3 0 0 0-3 3v34a3 3 0 0 0 3 3h34a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Z\"/><path stroke=\"#fff\" stroke-linecap=\"round\" stroke-width=\"4\" d=\"M12 19.054q4.987-6 12-6q7.012 0 12 6\"/><path fill=\"#fff\" d=\"M24 31a3 3 0 1 0 0-6a3 3 0 0 0 0 6\"/><path stroke=\"#fff\" stroke-linecap=\"round\" stroke-width=\"4\" d=\"m19 21l5.008 7\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVG4WpSWcqi)\"/>",

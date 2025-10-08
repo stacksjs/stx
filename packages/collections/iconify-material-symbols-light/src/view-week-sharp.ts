@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const viewWeekSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 19V5h5.325v14zm6.33 0V5h5.345v14zm6.345 0V5H21v14z\"/>",

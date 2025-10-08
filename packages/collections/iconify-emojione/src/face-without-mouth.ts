@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const faceWithoutMouth: IconData = {
   "body": "<circle cx=\"32\" cy=\"32\" r=\"30\" fill=\"#ffdd67\"/><g fill=\"#664e27\"><circle cx=\"20.5\" cy=\"28.5\" r=\"5\"/><circle cx=\"43.5\" cy=\"28.5\" r=\"5\"/></g>",

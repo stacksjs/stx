@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const videoSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 1408V512h1408v896zm1536-640l512-256v896l-512-256z\"/>",

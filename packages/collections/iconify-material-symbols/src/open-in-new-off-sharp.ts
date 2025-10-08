@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const openInNewOffSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M19.775 22.625L18.15 21H3V5.85L1.375 4.225L2.8 2.8l18.4 18.4zM16.15 19l-4.875-4.875L9.7 15.7l-1.4-1.4l1.575-1.575L5 7.85V19zM7.85 5l-2-2H12v2zm6.275 6.275l-1.4-1.4L17.6 5H14V3h7v7h-2V6.4zM21 18.15l-2-2V12h2z\"/>",

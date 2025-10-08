@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flagMontenegro: IconData = {
   "body": "<path fill=\"#d22f27\" d=\"M5 17h62v38H5z\"/><path fill=\"#f1b31c\" stroke=\"#f1b31c\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M39 35c1.501 0 3.508-3.556 1.925-7.305A8 8 0 0 1 36 42m0 0l6 2m-9-9c-1.501 0-3.508-3.556-1.925-7.305A8 8 0 0 0 36 42m0 0l-6 2m6-1l-2 2.5l2 .5l2-.5z\"/><path fill=\"none\" stroke=\"#f1b31c\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M38 31c-2 0-2 2.442-1 4m-3-4c2 0 2 2.442 1 4\"/><path fill=\"#5c9e31\" stroke=\"#5c9e31\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M38 38c0 1.2-.65 1.617-2 2c-1.35-.383-2-.8-2-2\"/><path fill=\"#1e50a0\" d=\"M33 34h6v4h-6z\"/><path fill=\"none\" stroke=\"#f1b31c\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M35 28h2\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 17h62v38H5z\"/>",

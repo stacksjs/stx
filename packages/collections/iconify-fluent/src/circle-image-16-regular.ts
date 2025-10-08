@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const circleImage16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6.5 3A3.5 3.5 0 0 0 5 9.663v1.08A4.502 4.502 0 0 1 6.5 2a4.5 4.5 0 0 1 4.244 3h-1.08A3.5 3.5 0 0 0 6.5 3M8 6a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zM7 8a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-.034.259l-1.729-1.729a1.75 1.75 0 0 0-2.474 0l-1.73 1.729A1 1 0 0 1 7 12zm.741 4.966l1.729-1.729a.75.75 0 0 1 1.06 0l1.729 1.73A1 1 0 0 1 12 13H8q-.135 0-.259-.034M12.25 8.5a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0\"/>",

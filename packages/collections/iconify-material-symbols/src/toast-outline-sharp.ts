@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const toastOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 18h12v-2H6zm-3 3V3h18v18zm2-2h14V5H5zm0 0V5z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const resistorLine: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M29.43 26.34A1.47 1.47 0 0 1 28 25.22l-3.14-12.07l-3.12 12.07a1.49 1.49 0 0 1-1.45 1.12a1.49 1.49 0 0 1-1.46-1.12l-3.12-12.07l-3.11 12.07a1.51 1.51 0 0 1-2.91 0L6.57 13.15l-1.35 5.22H2a1 1 0 0 1 0-2h1.67l1.45-5.59a1.48 1.48 0 0 1 1.45-1.12A1.47 1.47 0 0 1 8 10.78l3.12 12.07l3.12-12.07a1.49 1.49 0 0 1 1.45-1.12a1.49 1.49 0 0 1 1.46 1.12l3.12 12.07l3.12-12.07a1.5 1.5 0 0 1 2.9 0l3.12 12.07l1.35-5.22H34a1 1 0 0 1 0 2h-1.67l-1.45 5.59a1.48 1.48 0 0 1-1.45 1.12\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",

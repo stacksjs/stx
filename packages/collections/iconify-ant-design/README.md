@@ -1,11 +1,11 @@
-# @stx/iconify-ant-design
+# @stacksjs/iconify-ant-design
 
 Ant Design Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-ant-design
+bun add @stacksjs/iconify-ant-design
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-ant-design
 
 ```html
 <script>
-  import { home } from '@stx/iconify-ant-design'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-ant-design'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-ant-design
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-ant-design'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-ant-design'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

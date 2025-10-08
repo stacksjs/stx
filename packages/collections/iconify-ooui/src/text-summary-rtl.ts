@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const textSummaryRtl: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 7h18v2H1zm4 4h14v2H5z\"/>",

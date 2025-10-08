@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tableAdd16Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.5 2A2.5 2.5 0 0 0 2 4.5V5h3V2zM6 2h4v3H6zM5 6H2v4h3zm1 1.337A5.5 5.5 0 0 1 7.337 6H6zM5 11H2v.5A2.5 2.5 0 0 0 4.5 14H5zm9-6v-.5A2.5 2.5 0 0 0 11.5 2H11v3zm1 5.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-4-2a.5.5 0 0 0-1 0V10H8.5a.5.5 0 0 0 0 1H10v1.5a.5.5 0 0 0 1 0V11h1.5a.5.5 0 0 0 0-1H11z\"/>",

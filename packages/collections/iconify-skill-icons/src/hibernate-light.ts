@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hibernateLight: IconData = {
   "body": "<g fill=\"none\"><rect width=\"256\" height=\"256\" fill=\"#F4F4ED\" rx=\"60\"/><path fill=\"#59666C\" d=\"m75.616 38l34.622 59.962l-34.639 60.047L41 97.962z\"/><path fill=\"#BCAE79\" d=\"M144.871 38.003H75.636l34.622 59.962h69.254z\"/><path fill=\"#59666C\" d=\"m179.476 218l-34.622-59.962l34.639-60.047l34.599 60.047z\"/><path fill=\"#BCAE79\" d=\"M110.221 217.995h69.244l-34.594-59.962H75.58z\"/></g>",

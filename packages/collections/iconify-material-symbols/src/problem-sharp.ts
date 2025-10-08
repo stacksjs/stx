@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const problemSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 16q.425 0 .713-.288T8 15t-.288-.712T7 14t-.712.288T6 15t.288.713T7 16m-1-3h2V8H6zm4 2h8v-2h-8zm0-4h8V9h-8zm-8 9V4h20v16z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const addColumn: IconData = {
   "body": "<path fill=\"#90CAF9\" d=\"M30 5H18c-2.2 0-4 1.8-4 4v30c0 2.2 1.8 4 4 4h12c2.2 0 4-1.8 4-4V9c0-2.2-1.8-4-4-4M18 39V9h12v30z\"/><circle cx=\"38\" cy=\"38\" r=\"10\" fill=\"#43A047\"/><g fill=\"#fff\"><path d=\"M36 32h4v12h-4z\"/><path d=\"M32 36h12v4H32z\"/></g>",

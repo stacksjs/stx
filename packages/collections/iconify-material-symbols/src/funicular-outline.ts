@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const funicularOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 23v-2l5-1.375V17H3V6H2V4h3V2h14v2h3v2h-1v9h-3v1.375L23 15v2zm8-4.175l6-1.65V15h-2v2H9zM5 15h6v-1H5zm8-2h6v-1h-6zm-8-1h6V6H5zm8-2h6V6h-6zm-2 5v-1zm2-2v-1z\"/>",

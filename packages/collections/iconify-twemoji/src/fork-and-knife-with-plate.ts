@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const forkAndKnifeWithPlate: IconData = {
   "body": "<path fill=\"#E1E8ED\" d=\"M36 18c0 9.941-8.059 18-18 18S0 27.941 0 18S8.059 0 18 0s18 8.059 18 18\"/><path fill=\"#CCD6DD\" d=\"M30 18c0 6.628-5.372 12-12 12S6 24.628 6 18S11.372 6 18 6s12 5.372 12 12\"/><path fill=\"#E1E8ED\" d=\"M29 18c0 6.075-4.925 11-11 11S7 24.075 7 18S11.925 7 18 7s11 4.924 11 11\"/><g fill=\"#99AAB5\"><circle cx=\"1\" cy=\"1\" r=\"1\"/><path d=\"M0 1h2v7H0z\"/><circle cx=\"5\" cy=\"1\" r=\"1\"/><path d=\"M4 1h2v7H4z\"/><circle cx=\"9\" cy=\"1\" r=\"1\"/><path d=\"M8 1h2v7H8zM3 14h4v20H3z\"/><circle cx=\"5\" cy=\"34\" r=\"2\"/><path d=\"M8 8a1 1 0 0 1-2 0H4a1 1 0 0 1-2 0H0c0 3.866 1 7 5 7s5-3.134 5-7z\"/><circle cx=\"1\" cy=\"8\" r=\"1\"/><circle cx=\"5\" cy=\"8\" r=\"1\"/><circle cx=\"9\" cy=\"8\" r=\"1\"/></g><g fill=\"#99AAB5\"><path d=\"M30 14h4v20h-4z\"/><circle cx=\"32\" cy=\"34\" r=\"2\"/><path d=\"M32 0c1 0 2 1 2 3v16s-7 2-7-8c0-6 3-11 5-11\"/></g>",

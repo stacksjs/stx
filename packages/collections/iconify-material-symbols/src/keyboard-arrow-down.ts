@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const keyboardArrowDown: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z\"/>",

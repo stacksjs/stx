@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const squareMultiple32Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10.208 5.5H8.11A4.5 4.5 0 0 1 12.5 2h11A6.5 6.5 0 0 1 30 8.5v11a4.5 4.5 0 0 1-3.502 4.389v-2.096A2.5 2.5 0 0 0 28 19.5v-11A4.5 4.5 0 0 0 23.5 4h-11a2.5 2.5 0 0 0-2.292 1.5M6.5 7A4.5 4.5 0 0 0 2 11.5v14A4.5 4.5 0 0 0 6.5 30h14a4.5 4.5 0 0 0 4.5-4.5v-14A4.5 4.5 0 0 0 20.5 7zM4 11.5A2.5 2.5 0 0 1 6.5 9h14a2.5 2.5 0 0 1 2.5 2.5v14a2.5 2.5 0 0 1-2.5 2.5h-14A2.5 2.5 0 0 1 4 25.5z\"/>",

@@ -1,11 +1,11 @@
-# @stx/iconify-academicons
+# @stacksjs/iconify-academicons
 
 Academicons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-academicons
+bun add @stacksjs/iconify-academicons
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-academicons
 
 ```html
 <script>
-  import { home } from '@stx/iconify-academicons'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-academicons'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-academicons
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-academicons'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-academicons'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

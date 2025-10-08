@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const horizontalDistribute: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 22V2h2v20zm8.5-5V7h3v10zm9.5 5V2h2v20z\"/>",

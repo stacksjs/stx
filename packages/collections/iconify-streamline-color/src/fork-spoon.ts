@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const forkSpoon: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#d7e0ff\" d=\"M10.6 6.5c1.325 0 2.4-1.343 2.4-3s-1.075-3-2.4-3s-2.4 1.343-2.4 3s1.075 3 2.4 3\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10.6 6.5c1.325 0 2.4-1.343 2.4-3s-1.075-3-2.4-3s-2.4 1.343-2.4 3s1.075 3 2.4 3m0 0v7M3.5.5v13M6 .5V3a2.5 2.5 0 0 1-2.5 2.5v0A2.5 2.5 0 0 1 1 3V.5\"/></g>",

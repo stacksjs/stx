@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const clusterOutlineAlerted: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 10h3.5V8H4.64A1.65 1.65 0 0 0 3 9.67V32h5.5v-2H5Z\" class=\"clr-i-outline--alerted clr-i-outline-path-1--alerted\"/><ellipse cx=\"18.01\" cy=\"25.99\" fill=\"currentColor\" class=\"clr-i-outline--alerted clr-i-outline-path-2--alerted\" rx=\"1.8\" ry=\"1.79\"/><path fill=\"currentColor\" d=\"m19 9.89l.39-.68H13.5v1.6h5.17a3.7 3.7 0 0 1 .33-.92\" class=\"clr-i-outline--alerted clr-i-outline-path-3--alerted\"/><path fill=\"currentColor\" d=\"M24 30H12V6h9.29l1.15-2H11.68A1.68 1.68 0 0 0 10 5.68V32h16V15.4h-2Z\" class=\"clr-i-outline--alerted clr-i-outline-path-4--alerted\"/><path fill=\"currentColor\" d=\"M31 15.4V30h-3.5v2H33V15.4z\" class=\"clr-i-outline--alerted clr-i-outline-path-5--alerted\"/><path fill=\"currentColor\" d=\"M26.85 1.14L21.13 11a1.28 1.28 0 0 0 1.1 2h11.45a1.28 1.28 0 0 0 1.1-2l-5.72-9.86a1.28 1.28 0 0 0-2.21 0\" class=\"clr-i-outline--alerted clr-i-outline-path-6--alerted clr-i-alert\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",

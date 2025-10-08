@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpBookmarkBorder: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M19 3H5v18l7-3l7 3zm-2 15l-5-2.18L7 18V5h10z\"/>",

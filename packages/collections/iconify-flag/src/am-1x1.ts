@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const am1x1: IconData = {
   "body": "<path fill=\"#d90012\" d=\"M0 0h512v170.7H0z\"/><path fill=\"#0033a0\" d=\"M0 170.7h512v170.6H0z\"/><path fill=\"#f2a800\" d=\"M0 341.3h512V512H0z\"/>",

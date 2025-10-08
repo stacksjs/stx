@@ -1,11 +1,11 @@
-# @stx/iconify-token
+# @stacksjs/iconify-token
 
 Web3 Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-token
+bun add @stacksjs/iconify-token
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-token
 
 ```html
 <script>
-  import { home } from '@stx/iconify-token'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-token'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-token
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-token'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-token'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

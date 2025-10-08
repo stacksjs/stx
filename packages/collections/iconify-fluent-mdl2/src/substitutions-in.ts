@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const substitutionsIn: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m1045 0l875 1278h-512v770H638v-770H128zm235 1150h397l-635-927l-665 927h389v770h514z\"/>",

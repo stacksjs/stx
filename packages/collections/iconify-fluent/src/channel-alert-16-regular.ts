@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const channelAlert16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 2.25q-.19 0-.37.04A2 2 0 0 1 3.5 1h5a2 2 0 0 1 2 2v2q-.513 0-1 .09V3a1 1 0 0 0-1-1h-5a1 1 0 0 0-.798.397A1.7 1.7 0 0 0 2 2.25M5.207 9H3.5a1 1 0 0 1-1-1V5.678a1.75 1.75 0 0 1-1 0V8a2 2 0 0 0 2 2h1.522a5.5 5.5 0 0 1 .185-1M4 4.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5M4.5 6a.5.5 0 0 0 0 1H6a.5.5 0 0 0 0-1zM2.75 4a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0M15 10.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0M12.5 9a2 2 0 1 0-4 0v1.793l-.354.353A.5.5 0 0 0 8.5 12h4a.5.5 0 0 0 .354-.854l-.354-.353zm-3.415 4a1.5 1.5 0 0 0 2.83 0z\"/>",

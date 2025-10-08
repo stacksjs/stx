@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const toggleFilled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1582 1490H466q-96 0-181-37t-148-100t-100-148t-37-181t37-181t100-148t148-100t181-37h1116q96 0 181 37t148 100t100 148t37 181t-37 181t-100 148t-148 100t-181 37\"/>",

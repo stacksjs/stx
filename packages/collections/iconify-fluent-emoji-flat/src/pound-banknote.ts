@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const poundBanknote: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#BCA4EB\" d=\"M2 10a2 2 0 0 1 2-2h24a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z\"/><path fill=\"#635994\" d=\"M3 11a2 2 0 0 1 2-2h22a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h22a1 1 0 0 0 1-1V11a1 1 0 0 0-1-1zM2 28a2 2 0 0 0 2 2h24a2 2 0 0 0 2-2v-4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm24-11a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0\"/><path fill=\"#FFF478\" d=\"M19 8h-4v22h4z\"/><path fill=\"#F3AD61\" d=\"M19 26h-4v4h4z\"/><path fill=\"#fff\" d=\"M6 17.5a.5.5 0 0 1 .5-.5h1v-2.214A2.245 2.245 0 0 1 9.75 12.5a2.067 2.067 0 0 1 2.25 2a.5.5 0 0 1-1 0c-.005-.237-.112-1-1.25-1a1.256 1.256 0 0 0-1.25 1.29V17H10a.5.5 0 0 1 0 1H8.5v2.29a1.6 1.6 0 0 1-.118.71H12.5a.5.5 0 0 1 0 1h-6a.5.5 0 0 1 0-1h.41c.537 0 .588-.546.59-.714V18h-1a.5.5 0 0 1-.5-.5\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpCheckBoxOutlineBlank: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M19 5v14H5V5zm2-2H3v18h18z\"/>",

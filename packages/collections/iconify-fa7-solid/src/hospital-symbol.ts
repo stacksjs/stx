@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hospitalSymbol: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M256 512a256 256 0 1 0 0-512a256 256 0 1 0 0 512m96-344v176c0 13.3-10.7 24-24 24s-24-10.7-24-24v-64h-96v64c0 13.3-10.7 24-24 24s-24-10.7-24-24V168c0-13.3 10.7-24 24-24s24 10.7 24 24v64h96v-64c0-13.3 10.7-24 24-24s24 10.7 24 24\"/>",

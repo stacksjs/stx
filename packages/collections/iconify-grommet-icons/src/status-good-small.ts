@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const statusGoodSmall: IconData = {
   "body": "<circle cx=\"6\" cy=\"6\" r=\"5\" fill=\"currentColor\" fill-rule=\"evenodd\" stroke=\"currentColor\"/>",

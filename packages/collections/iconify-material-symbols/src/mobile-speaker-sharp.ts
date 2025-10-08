@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mobileSpeakerSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 22V2h13v4.675L10.675 12H7v8h3.675l2 2zM9.5 7q.425 0 .713-.288T10.5 6t-.288-.712T9.5 5t-.712.288T8.5 6t.288.713T9.5 7M15 21.5L11.5 18H9v-4h2.5l3.5-3.5zm2 1.425v-2q1.75-.375 2.875-1.75T21 16t-1.125-3.175T17 11.1v-2q2.6.35 4.3 2.313T23 16t-1.7 4.588t-4.3 2.337m0-4.125v-5.625q.875.3 1.438 1.075T19 16t-.562 1.738T17 18.8\"/>",

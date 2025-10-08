@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STX Framework Benchmark (Ultra-Optimized)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin: 0 0 20px 0;
+      color: #333;
+    }
+
+    .jumbotron {
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    .jumbotron h1 {
+      font-size: 2em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 8px 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    tr {
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    tr:hover {
+      background: #f8f9fa;
+    }
+
+    tr.selected {
+      background: #d4edff !important;
+    }
+
+    .col-md-1 {
+      width: 8%;
+      text-align: right;
+      padding-right: 20px;
+      font-weight: 600;
+      color: #666;
+    }
+
+    .col-md-4 {
+      width: 75%;
+    }
+
+    .col-md-1-remove {
+      width: 17%;
+      text-align: center;
+    }
+
+    .remove {
+      padding: 4px 12px;
+      background: #dc3545;
+      font-size: 12px;
+    }
+
+    .remove:hover {
+      background: #c82333;
+    }
+
+    #stats {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e7f3ff;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+
+    .stat-row {
+      margin: 5px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .stat-label {
+      font-weight: 600;
+      color: #0066cc;
+    }
+
+    .stat-value {
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="jumbotron">
+      <h1>STX Framework Benchmark (Ultra-Optimized)</h1>
+      <p>Maximum performance with template cloning and optimized DOM</p>
+    </div>
+
+    <div class="button-group">
+      <button id="run" type="button">Create 1,000 rows</button>
+      <button id="runlots" type="button">Create 10,000 rows</button>
+      <button id="add" type="button">Append 1,000 rows</button>
+      <button id="update" type="button">Update every 10th row</button>
+      <button id="clear" type="button">Clear</button>
+      <button id="swaprows" type="button">Swap rows</button>
+    </div>
+
+    <table class="table">
+      <tbody id="tbody"></tbody>
+    </table>
+
+    <div id="stats">
+      <div class="stat-row">
+        <span class="stat-label">Last operation:</span>
+        <span class="stat-value" id="last-op">-</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Duration:</span>
+        <span class="stat-value" id="duration">-</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Rows:</span>
+        <span class="stat-value" id="row-count">0</span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    let idCounter = 1;
+    let data = [];
+    let selectedId = null;
+
+    const adjectives = ["pretty", "large", "big", "small", "tall", "short", "long", "handsome", "plain", "quaint", "clean", "elegant", "easy", "angry", "crazy", "helpful", "mushy", "odd", "unsightly", "adorable", "important", "inexpensive", "cheap", "expensive", "fancy"];
+    const colours = ["red", "yellow", "blue", "green", "pink", "brown", "purple", "brown", "white", "black", "orange"];
+    const nouns = ["table", "chair", "house", "bbq", "desk", "car", "pony", "cookie", "sandwich", "burger", "pizza", "mouse", "keyboard"];
+
+    // Cache lengths for faster access
+    const adjLen = adjectives.length;
+    const colLen = colours.length;
+    const nounLen = nouns.length;
+
+    function _random(max) {
+      return Math.round(Math.random() * 1000) % max;
+    }
+
+    function buildData(count) {
+      const arr = new Array(count);
+      for (let i = 0; i < count; i++) {
+        arr[i] = {
+          id: idCounter++,
+          label: adjectives[_random(adjLen)] + ' ' + colours[_random(colLen)] + ' ' + nouns[_random(nounLen)]
+        };
+      }
+      return arr;
+    }
+
+    // Cache DOM references
+    const tbody = document.getElementById('tbody');
+    const lastOpEl = document.getElementById('last-op');
+    const durationEl = document.getElementById('duration');
+    const rowCountEl = document.getElementById('row-count');
+
+    function updateStats(operation, duration) {
+      lastOpEl.textContent = operation;
+      durationEl.textContent = duration.toFixed(2) + 'ms';
+      rowCountEl.textContent = data.length;
+    }
+
+    function measure(name, fn) {
+      const start = performance.now();
+      fn();
+      const duration = performance.now() - start;
+      updateStats(name, duration);
+      return duration;
+    }
+
+    // Create template row once for cloning - ULTRA FAST
+    const templateRow = document.createElement('tr');
+    const td1 = document.createElement('td');
+    td1.className = 'col-md-1';
+    const td2 = document.createElement('td');
+    td2.className = 'col-md-4';
+    const a = document.createElement('a');
+    a.className = 'label';
+    td2.appendChild(a);
+    const td3 = document.createElement('td');
+    td3.className = 'col-md-1-remove';
+    const btn = document.createElement('button');
+    btn.className = 'remove';
+    const span = document.createElement('span');
+    span.textContent = '❌';
+    btn.appendChild(span);
+    td3.appendChild(btn);
+    templateRow.appendChild(td1);
+    templateRow.appendChild(td2);
+    templateRow.appendChild(td3);
+
+    // ULTRA-OPTIMIZED: Clone template instead of creating from scratch
+    function createRow(item) {
+      const tr = templateRow.cloneNode(true);
+      tr.dataset.id = item.id;
+
+      const tds = tr.children;
+      tds[0].textContent = item.id;
+      tds[1].firstChild.textContent = item.label;
+      tds[2].firstChild.dataset.id = item.id;
+
+      if (item.id === selectedId) {
+        tr.className = 'selected';
+      }
+
+      return tr;
+    }
+
+    // ULTRA-OPTIMIZED: Batch rendering with minimal operations
+    function render() {
+      const fragment = document.createDocumentFragment();
+      const len = data.length;
+
+      for (let i = 0; i < len; i++) {
+        fragment.appendChild(createRow(data[i]));
+      }
+
+      tbody.textContent = '';
+      tbody.appendChild(fragment);
+    }
+
+    function run() {
+      measure('Create 1,000 rows', () => {
+        data = buildData(1000);
+        render();
+      });
+    }
+
+    function runLots() {
+      measure('Create 10,000 rows', () => {
+        data = buildData(10000);
+        render();
+      });
+    }
+
+    // OPTIMIZED: Only append new rows, don't touch existing ones
+    function add() {
+      measure('Append 1,000 rows', () => {
+        const newData = buildData(1000);
+        const fragment = document.createDocumentFragment();
+        const len = newData.length;
+
+        for (let i = 0; i < len; i++) {
+          fragment.appendChild(createRow(newData[i]));
+        }
+
+        data = data.concat(newData);
+        tbody.appendChild(fragment);
+      });
+    }
+
+    // OPTIMIZED: Only update text of every 10th row, don't re-render
+    function update() {
+      measure('Update every 10th row', () => {
+        const rows = tbody.children;
+        const len = data.length;
+
+        for (let i = 0; i < len; i += 10) {
+          data[i].label += ' !!!';
+          // Direct access to label element (cached from row structure)
+          rows[i].children[1].firstChild.textContent = data[i].label;
+        }
+      });
+    }
+
+    function clear() {
+      measure('Clear all rows', () => {
+        data = [];
+        tbody.textContent = '';
+      });
+    }
+
+    // OPTIMIZED: Only swap 2 DOM elements, don't re-render everything
+    function swapRows() {
+      measure('Swap 2 rows', () => {
+        if (data.length > 998) {
+          // Swap in data array
+          const tmp = data[1];
+          data[1] = data[998];
+          data[998] = tmp;
+
+          // Swap in DOM - direct element swap
+          const rows = tbody.children;
+          const row1 = rows[1];
+          const row998 = rows[998];
+
+          // Fastest swap method
+          tbody.insertBefore(row998, row1);
+          tbody.insertBefore(row1, rows[999]);
+        }
+      });
+    }
+
+    // Cache for selected element
+    let selectedRow = null;
+
+    function select(id) {
+      measure('Select row', () => {
+        if (selectedRow) {
+          selectedRow.className = '';
+        }
+
+        selectedId = id;
+        selectedRow = tbody.querySelector(`tr[data-id="${id}"]`);
+        if (selectedRow) {
+          selectedRow.className = 'selected';
+        }
+      });
+    }
+
+    // OPTIMIZED: Remove single row without re-rendering
+    function remove(id) {
+      measure('Remove row', () => {
+        const idx = data.findIndex(d => d.id === id);
+        if (idx > -1) {
+          data.splice(idx, 1);
+
+          // Remove from DOM - direct element removal
+          const row = tbody.children[idx];
+          if (row) {
+            tbody.removeChild(row);
+          }
+        }
+      });
+    }
+
+    // Event delegation - single listener for all rows
+    tbody.addEventListener('click', (e) => {
+      const target = e.target;
+
+      // Handle remove button
+      const btn = target.closest('.remove');
+      if (btn) {
+        remove(parseInt(btn.dataset.id));
+        return;
+      }
+
+      // Handle row selection
+      const tr = target.closest('tr');
+      if (tr) {
+        select(parseInt(tr.dataset.id));
+      }
+    });
+
+    // Button handlers
+    document.getElementById('run').addEventListener('click', run);
+    document.getElementById('runlots').addEventListener('click', runLots);
+    document.getElementById('add').addEventListener('click', add);
+    document.getElementById('update').addEventListener('click', update);
+    document.getElementById('clear').addEventListener('click', clear);
+    document.getElementById('swaprows').addEventListener('click', swapRows);
+
+    // Expose functions globally for benchmarking
+    window.benchmarkFunctions = {
+      run,
+      runLots,
+      add,
+      update,
+      clear,
+      swapRows,
+      select,
+      remove
+    };
+  </script>
+</body>
+</html>

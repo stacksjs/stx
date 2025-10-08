@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const abyss: IconData = {
   "body": "<g fill=\"none\"><path fill=\"url(#SVG4Yb7bepe)\" d=\"M12.01 8.685c-1.35 0-2.379.208-2.379.208v2.16h4.737V8.894c.022 0-1.007-.21-2.358-.21\"/><path fill=\"url(#SVGHuQH0cId)\" d=\"M12 3C8.54 3 4.42 4.778 4.42 4.778V15.6L12 21l7.579-5.378V4.755c.022 0-4.1-1.755-7.58-1.755m4.263 11.436l-1.895 1.383v-2.872H9.631v2.871l-1.894-1.382V7.26s2.5-.57 4.285-.57c1.784-.001 4.241.57 4.241.57z\"/><defs><linearGradient id=\"SVG4Yb7bepe\" x1=\"6.496\" x2=\"18.731\" y1=\"6.106\" y2=\"16.484\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#A025F3\"/><stop offset=\"1\" stop-color=\"#4212A0\"/></linearGradient><linearGradient id=\"SVGHuQH0cId\" x1=\"6.496\" x2=\"18.731\" y1=\"6.105\" y2=\"16.483\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#A025F3\"/><stop offset=\"1\" stop-color=\"#4212A0\"/></linearGradient></defs></g>",

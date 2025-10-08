@@ -1,11 +1,11 @@
-# @stx/iconify-mono-icons
+# @stacksjs/iconify-mono-icons
 
 Mono Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-mono-icons
+bun add @stacksjs/iconify-mono-icons
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-mono-icons
 
 ```html
 <script>
-  import { home } from '@stx/iconify-mono-icons'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-mono-icons'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-mono-icons
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-mono-icons'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-mono-icons'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

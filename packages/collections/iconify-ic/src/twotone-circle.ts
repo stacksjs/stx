@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twotoneCircle: IconData = {
   "body": "<circle cx=\"12\" cy=\"12\" r=\"8\" fill=\"currentColor\" opacity=\".3\"/><path fill=\"currentColor\" d=\"M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10s10-4.47 10-10S17.53 2 12 2m0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8s8 3.58 8 8s-3.58 8-8 8\"/>",

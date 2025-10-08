@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stackedBarChart: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1919 1792v128H128V128h128v256h1024v512H256v128h1536v512H256v256zM768 512v256h384V512zm-512 0v256h384V512zm768 640v256h640v-256zm-768 0v256h640v-256z\"/>",

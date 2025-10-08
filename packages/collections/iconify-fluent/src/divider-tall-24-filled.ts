@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dividerTall24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11 3v18a1 1 0 1 0 2 0V3a1 1 0 1 0-2 0\"/>",

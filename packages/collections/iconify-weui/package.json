@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-weui",
+  "name": "@stacksjs/iconify-weui",
   "version": "0.0.1",
   "description": "WeUI Icon icons for stx from Iconify",
   "author": "WeUI",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

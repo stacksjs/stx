@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const glm: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16.372 4.034L15.342 3l-2.065 2.057a3.648 3.648 0 1 0-2.73 6.627v2.092a3.649 3.649 0 1 0 1.46 0v-2.092a3.652 3.652 0 0 0 2.306-5.6zM13.466 8.11a2.19 2.19 0 1 1-4.38 0a2.19 2.19 0 0 1 4.38 0m0 9.243a2.19 2.19 0 1 1-4.38 0a2.19 2.19 0 0 1 4.38 0\"/>",

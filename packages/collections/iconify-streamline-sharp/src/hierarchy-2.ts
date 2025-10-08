@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hierarchy2: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M10 3h4v4h-4zm0 14h4v4h-4zm-8 0h4v4H2zm16 0h4v4h-4zM12 7v10\"/><path d=\"M4 17v-5h16v5\"/></g>",

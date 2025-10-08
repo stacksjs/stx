@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const interfaceLogoutCircleArrowEnterRightLogoutPointCircle: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6.5 7h7m-2-2l2 2l-2 2\"/><path d=\"M11.7 11.49a6.5 6.5 0 1 1 0-9\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const openOff24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.28 2.22a.75.75 0 1 0-1.06 1.06l1.263 1.264A3.24 3.24 0 0 0 3 6.25v11.5A3.25 3.25 0 0 0 6.25 21h11.5c.626 0 1.21-.177 1.706-.483l1.263 1.264a.75.75 0 0 0 1.061-1.061zm14.647 16.768a1 1 0 0 1-.177.012H6.25C5.56 19 5 18.44 5 17.75V6.25q0-.09.012-.177zm-4.913-9.156l1.154 1.154a1 1 0 0 0 .54-.279L19 6.414V10a1 1 0 1 0 2 0V4a1 1 0 0 0-1-1h-6a1 1 0 1 0 0 2h3.586l-4.293 4.293a1 1 0 0 0-.279.54M21 17.818l-1.999-2V14a1 1 0 1 1 2 0v3.818M6.183 3l1.999 2H10a1 1 0 1 0 0-2z\"/>",

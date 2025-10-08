@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const powerOnSymbol: IconData = {
   "body": "<path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-width=\"2\" d=\"M36 16v40\"/>",

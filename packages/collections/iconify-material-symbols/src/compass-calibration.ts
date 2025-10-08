@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const compassCalibration: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 22q-2.075 0-3.537-1.463T7 17t1.463-3.537T12 12t3.538 1.463T17 17t-1.463 3.538T12 22m-5-9.85l-5-5q2-2 4.588-3.075T12 3t5.413 1.075T22 7.15l-5 5q-1.025-1.025-2.3-1.588T12 10t-2.7.563T7 12.15\"/>",

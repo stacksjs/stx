@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fourSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M13.117 6.277a.75.75 0 0 1 .522.924c-.555 1.997-1.653 3.8-2.59 5.085c-.225.309-.443.59-.644.839h2.283V12a.75.75 0 0 1 1.5 0v1.125H15a.75.75 0 0 1 0 1.5h-.812V17a.75.75 0 0 1-1.5 0v-2.375H8.75a.75.75 0 0 1-.53-1.28l.005-.006l.023-.023l.093-.097a20 20 0 0 0 1.496-1.817c.886-1.215 1.87-2.85 2.357-4.603a.75.75 0 0 1 .923-.522\"/>",

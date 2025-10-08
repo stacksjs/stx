@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const expandSolid: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M8 4H4v4m.5-3.5L9 9m7-5h4v4m-.5-3.5L15 9M8 20H4v-4m.5 3.5L9 15m7 5h4v-4m-.5 3.5L15 15\"/>",

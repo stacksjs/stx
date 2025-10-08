@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const shirtSolid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M23.172 3.836L15 1.113V2.5a3 3 0 0 1-6 0V1.113L.828 3.837L2.198 10H5.5v13h13V10h3.302z\" clip-rule=\"evenodd\"/>",

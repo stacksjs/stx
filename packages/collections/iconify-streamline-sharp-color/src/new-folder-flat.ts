@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const newFolderFlat: IconData = {
   "body": "<path fill=\"#8fbffa\" d=\"M8.06 2H1v21h22V6H12.06z\"/>",

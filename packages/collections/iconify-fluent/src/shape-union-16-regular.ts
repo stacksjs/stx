@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const shapeUnion16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 2a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V4a2 2 0 0 0-2-2zm1.143 1L3 5.143V4a1 1 0 0 1 1-1zM3 6.557L6.557 3h1.586L3 8.143zm6.45-3.45A1 1 0 0 1 10 4v.293L4.293 10H4a1 1 0 0 1-.893-.55zm.55 2.6V6h1.293L6 11.293V10h-.293zm-3.838 6.839l6.384-6.384A1 1 0 0 1 13 7v.293L7.293 13H7a1 1 0 0 1-.838-.454M13 8.707v1.586L10.293 13H8.707zm0 3V12a1 1 0 0 1-1 1h-.293z\"/>",

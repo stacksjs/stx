@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cloud: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M11.223 5.71a.24.24 0 0 1-.167-.19a3.62 3.62 0 0 0-1.037-2.213a3.79 3.79 0 0 0-4.65-.553a3.67 3.67 0 0 0-1.547 1.907a.22.22 0 0 1-.202.12c-.403.027-.797.13-1.159.306a3.1 3.1 0 0 0-.95.718a2.98 2.98 0 0 0-.754 2.187c.055.798.43 1.542 1.045 2.069c2.309 1.978 8.245 2.13 10.576.077a2.54 2.54 0 0 0 .393-3.403a2.63 2.63 0 0 0-1.548-1.025\"/><path d=\"M3.477 4.784c1.189 0 2.252.784 2.588 1.5\"/></g>",

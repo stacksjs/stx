@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const formatHorizontalAlignRight: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M13 8v3H3v2h10v3l4-4zm6 12h2V4h-2z\"/>",

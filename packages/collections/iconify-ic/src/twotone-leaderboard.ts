@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const twotoneLeaderboard: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10 5h4v14h-4zm-6 6h4v8H4zm16 8h-4v-6h4z\" opacity=\".3\"/><path fill=\"currentColor\" d=\"M16 11V3H8v6H2v12h20V11zm-6-6h4v14h-4zm-6 6h4v8H4zm16 8h-4v-6h4z\"/>",

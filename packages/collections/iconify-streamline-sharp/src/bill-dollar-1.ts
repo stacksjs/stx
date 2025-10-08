@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const billDollar1: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M2 15V3h20v12zm2 3.5h16M7 22h10\"/><path d=\"M14 7.5V7a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v.47a1 1 0 0 0 .758.97l2.485.62a1 1 0 0 1 .757.97V11a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-.5\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowHookUpLeft16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 11.5a.5.5 0 0 0 .5.5h3c1.136 0 2.024-.43 2.624-1.105c.591-.666.876-1.538.876-2.395s-.285-1.73-.876-2.395C10.524 5.431 9.636 5 8.5 5H4.707l1.147-1.146a.5.5 0 1 0-.708-.708l-2 2a.5.5 0 0 0 0 .708l2 2a.5.5 0 1 0 .708-.708L4.707 6H8.5c.864 0 1.476.32 1.876.77c.409.46.624 1.087.624 1.73s-.215 1.27-.624 1.73c-.4.45-1.012.77-1.876.77h-3a.5.5 0 0 0-.5.5\"/>",

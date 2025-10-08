@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const alignTop: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"4\"><path fill=\"currentColor\" d=\"M17 14.5h14v28H17z\"/><path stroke-linecap=\"round\" d=\"M42 6.5H6\"/></g>",

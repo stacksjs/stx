@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const buildingLighthouse20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8.446 2.168a1 1 0 0 1 1.11 0l2.998 1.997c.824.549.435 1.833-.554 1.833v2.167a2 2 0 0 1 1.192 1.611l.8 7.112A1 1 0 0 1 13 18H5a1 1 0 0 1-.994-1.112l.8-7.112A2 2 0 0 1 6 8.164V5.998c-.988-.002-1.376-1.284-.553-1.833zM7 5.998V8h4V5.998zm5.332 5.077l-6.868 1.807l-.228 2.026l7.31-1.924zM14.5 7h2a.5.5 0 1 0 0-1h-2a.5.5 0 0 0 0 1m1.354-3.854a.5.5 0 0 1 0 .708l-1 1a.5.5 0 0 1-.707-.708l1-1a.5.5 0 0 1 .707 0m0 6a.5.5 0 0 1-.707.708l-1-1a.5.5 0 1 1 .707-.708z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const spaceDashboardSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 21V3h8v18zm10-11V3h8v7zm8 11h-8v-9h8z\"/>",

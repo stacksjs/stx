@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const framePerson: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 22q-.825 0-1.412-.587T2 20v-4h2v4h4v2zM2 8V4q0-.825.588-1.412T4 2h4v2H4v4zm14 14v-2h4v-4h2v4q0 .825-.587 1.413T20 22zm4-14V4h-4V2h4q.825 0 1.413.588T22 4v4zm-8 4q-1.275 0-2.137-.862T9 9q0-1.25.863-2.125T12 6q1.25 0 2.125.875T15 9q0 1.275-.875 2.138T12 12m-6 6v-1.9q0-.525.263-.987t.712-.738q1.15-.675 2.413-1.025T12 13t2.613.35t2.412 1.025q.45.275.713.738T18 16.1V18z\"/>",

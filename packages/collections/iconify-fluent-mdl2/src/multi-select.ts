@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const multiSelect: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2048 384v128H768V384zM768 768h1280v128H768zm0 384h1280v128H768zm0 384h1280v128H768zM478 990l68 68l-354 354l-178-178l68-68l110 110zm0-768l68 68l-354 354L14 466l68-68l110 110z\"/>",

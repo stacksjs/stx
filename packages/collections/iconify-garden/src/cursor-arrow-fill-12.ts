@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cursorArrowFill12: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m7.587 8.294l-1.147 3.06c-.314.836-1.482.874-1.849.06l-4.5-10C-.286.574.575-.286 1.414.09l10 4.5c.814.367.776 1.535-.06 1.849l-3.06 1.147l3.563 3.563a.5.5 0 1 1-.707.707z\"/>",

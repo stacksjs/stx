@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pointerOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"m4.5 2.5l1.5 11l2.5-4H13z\"/>",

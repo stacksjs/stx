@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const thumbnailBarSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 19V5h5v14zm6 0V5h12v14z\"/>",

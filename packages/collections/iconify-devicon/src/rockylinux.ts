@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const rockylinux: IconData = {
   "body": "<path fill=\"#10b982\" d=\"M124.438 85.105A63.9 63.9 0 0 0 128 64c0-35.348-28.652-64-64-64S0 28.652 0 64c0 17.488 7.016 33.34 18.387 44.89l64.918-64.917Zm-11.692 20.364L83.305 76.027l-46.106 46.106C45.352 125.898 54.43 128 64 128c19.523 0 37.008-8.742 48.746-22.531m0 0\"/>",

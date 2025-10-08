@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stretchingRoundLinear: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><circle cx=\"14.5\" cy=\"4.5\" r=\"2.5\"/><path stroke-linecap=\"round\" d=\"M19 21.996v-3.947c0-1.776-1.605-3.13-3.373-2.844m-7.679-1.77l-.025-.024c-1.042-1.007-.237-2.626.67-3.268c.907-.643 4.752-1.643 4.752 3.291C13.345 18.13 9.695 22 5 22\"/></g>",

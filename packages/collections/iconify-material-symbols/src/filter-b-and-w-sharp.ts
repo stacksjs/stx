@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const filterBAndWSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M21 21H3V3h18zM5 19h7v-8l7 8V5h-7v6z\"/>",

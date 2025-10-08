@@ -1,11 +1,11 @@
-# @stx/iconify-icon-park-outline
+# @stacksjs/iconify-icon-park-outline
 
 IconPark Outline icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-icon-park-outline
+bun add @stacksjs/iconify-icon-park-outline
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-icon-park-outline
 
 ```html
 <script>
-  import { home } from '@stx/iconify-icon-park-outline'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-icon-park-outline'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-icon-park-outline
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-icon-park-outline'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-icon-park-outline'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

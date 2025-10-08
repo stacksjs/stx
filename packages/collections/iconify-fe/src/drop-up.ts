@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dropUp: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"m12 8l7 8H5z\"/>",

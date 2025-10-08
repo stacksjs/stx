@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const caretLeft: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M672 192L288 511.936L672 832z\"/>",

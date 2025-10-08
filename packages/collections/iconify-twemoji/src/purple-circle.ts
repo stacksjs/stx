@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const purpleCircle: IconData = {
   "body": "<circle cx=\"18\" cy=\"18\" r=\"18\" fill=\"#AA8ED6\"/>",

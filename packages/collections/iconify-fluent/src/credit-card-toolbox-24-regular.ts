@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const creditCardToolbox24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5.25 5A3.25 3.25 0 0 0 2 8.25v7.5A3.25 3.25 0 0 0 5.25 19H11v-1.5H5.25a1.75 1.75 0 0 1-1.75-1.75V11H22V8.25A3.25 3.25 0 0 0 18.75 5zM20.5 8.25V9.5h-17V8.25c0-.966.784-1.75 1.75-1.75h13.5c.966 0 1.75.784 1.75 1.75m-7 6.5h.5v-1c0-.966.784-1.75 1.75-1.75h3.5c.966 0 1.75.784 1.75 1.75v1h.5a1.5 1.5 0 0 1 1.5 1.5V18h-3v-.5a.5.5 0 0 0-1 0v.5h-3v-.5a.5.5 0 0 0-1 0v.5h-3v-1.75a1.5 1.5 0 0 1 1.5-1.5m2.25-1.25a.25.25 0 0 0-.25.25v1h4v-1a.25.25 0 0 0-.25-.25zm3.25 6V19h-3v.5a.5.5 0 0 1-1 0V19h-3v2.5a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5V19h-3v.5a.5.5 0 0 1-1 0\"/>",

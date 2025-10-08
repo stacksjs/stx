@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const eyeF: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10 12c-5.042.007-10-2.686-10-6S4.984-.017 10 0s10 2.686 10 6s-4.958 5.993-10 6m0-2a4 4 0 1 0 0-8a4 4 0 0 0 0 8m0-2a2 2 0 1 1 0-4a2 2 0 0 1 0 4\"/>",

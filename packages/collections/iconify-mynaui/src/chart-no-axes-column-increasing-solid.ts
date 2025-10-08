@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chartNoAxesColumnIncreasingSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 21v-5a1 1 0 1 1 2 0v5a1 1 0 1 1-2 0m5 0V9a1 1 0 1 1 2 0v12a1 1 0 1 1-2 0m5 0V3a1 1 0 1 1 2 0v18a1 1 0 1 1-2 0\"/>",

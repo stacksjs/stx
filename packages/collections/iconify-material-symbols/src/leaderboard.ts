@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const leaderboard: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 21V9h5.5v12zm7.25 0V3h5.5v18zm7.25 0V11H22v10z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chair: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M152 256V74.2c-24.5 20.5-40 51.4-40 85.8v96zm48 0h48V50.6c-7.7-1.7-15.8-2.6-24-2.6s-16.3.9-24 2.6zm96-181.8V256h40v-96c0-34.4-15.5-65.2-40-85.8M32 256h32v-96C64 71.6 135.6 0 224 0s160 71.6 160 160v96h32c17.7 0 32 14.3 32 32v64c0 17.7-14.3 32-32 32v96c0 17.7-14.3 32-32 32s-32-14.3-32-32v-96H96v96c0 17.7-14.3 32-32 32s-32-14.3-32-32v-96c-17.7 0-32-14.3-32-32v-64c0-17.7 14.3-32 32-32\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fragile: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 0H3v2h1l1 2V1H4m1 4v2l2 1H1l2-1V5L1 3V0h6v3\"/>",

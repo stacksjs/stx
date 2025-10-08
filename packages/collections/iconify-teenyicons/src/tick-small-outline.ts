@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tickSmallOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M4 7.5L7 10l4-5\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const paragraphSolid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M4.786 0a4.786 4.786 0 1 0 0 9.573h.943v3.677a.75.75 0 0 0 1.5 0V1.5h2.146v11.75a.75.75 0 0 0 1.5 0V1.5h2.375a.75.75 0 0 0 0-1.5z\" clip-rule=\"evenodd\"/>",

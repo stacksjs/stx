@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sidebysideSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 15V1h14v14zM9 3H7v10h2z\"/>",

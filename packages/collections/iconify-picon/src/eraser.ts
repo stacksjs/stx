@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const eraser: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m1 5l2 2l2-1.5l-2-2M0 5l5-4l3 3l-5 4\"/>",

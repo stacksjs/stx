@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const squareDovetailJoint32Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M24.5 3h-17A4.5 4.5 0 0 0 3 7.5v17A4.5 4.5 0 0 0 7.5 29h17a4.5 4.5 0 0 0 4.5-4.5v-17A4.5 4.5 0 0 0 24.5 3M5 24.5v-17A2.5 2.5 0 0 1 7.5 5H11v7.727c0 .312.146.605.393.795c.249.188.572.252.87.17L19 11.855v8.291l-6.737-1.837a1.002 1.002 0 0 0-1.263.965v7.727H7.5A2.5 2.5 0 0 1 5 24.5m22 0a2.5 2.5 0 0 1-2.5 2.5H13v-6.418l6.737 1.837A1.002 1.002 0 0 0 21 21.454V10.545c0-.312-.146-.605-.393-.795a1 1 0 0 0-.87-.17L13 11.417V4.999h11.5a2.5 2.5 0 0 1 2.5 2.5z\"/>",

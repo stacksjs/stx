@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const markdownCircleProgrammingSolid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M14 7A7 7 0 1 1 0 7a7 7 0 0 1 14 0M3.743 4.375c.341 0 .651.2.791.512L5 5.92l.466-1.034a.868.868 0 0 1 1.659.356V9a.625.625 0 0 1-1.25 0V7.023l-.023.051a.934.934 0 0 1-1.704 0l-.023-.05V9a.625.625 0 1 1-1.25 0V5.243c0-.48.389-.868.868-.868M10.125 5a.625.625 0 1 0-1.25 0v2.5H8.5a.5.5 0 0 0-.354.854l1 1a.5.5 0 0 0 .708 0l1-1A.5.5 0 0 0 10.5 7.5h-.375z\" clip-rule=\"evenodd\"/>",

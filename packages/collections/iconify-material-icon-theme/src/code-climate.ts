@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const codeClimate: IconData = {
   "body": "<path fill=\"#eee\" d=\"m196.19 75.562l-51.846 51.561l30.766 30.766l21.08-21.08l59.252 59.537l30.481-30.766zm-61.246 60.961l-30.481-30.481l-78.053 78.053l-11.964 11.964l30.766 30.766l11.964-12.249l39.596-39.312l7.691-7.691l30.481 30.48l28.772 28.773l30.766-30.766l-28.772-28.772z\"/>",

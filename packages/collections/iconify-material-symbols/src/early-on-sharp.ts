@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const earlyOnSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M17 21q-1.25 0-2.125-.875T14 18t.875-2.125T17 15t2.125.875T20 18t-.875 2.125T17 21m-.75-7v-2h1.5v2zm0 10v-2h1.5v2zm4.125-8.325l-1.075-1.05l1.425-1.425l1.05 1.075zm-7.1 7.1l-1.05-1.05L13.65 20.3l1.05 1.05zM21 18.75v-1.5h2v1.5zm-10 0v-1.5h2v1.5zm9.725 4.025l-1.4-1.425l1.05-1.05l1.425 1.4zm-7.1-7.075l-1.4-1.425l1.05-1.05l1.425 1.4zM3 22V4h3V2h2v2h8V2h2v2h3v6H5v10h4v2z\"/>",

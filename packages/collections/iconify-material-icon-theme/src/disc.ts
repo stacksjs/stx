@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const disc: IconData = {
   "body": "<path fill=\"#b0bec5\" d=\"M16 12a4 4 0 1 1-4 4a4.005 4.005 0 0 1 4-4m0-10a14 14 0 1 0 14 14A14 14 0 0 0 16 2\"/>",

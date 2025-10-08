@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const formatClearRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m13.2 10.35l-2.325-2.325l-.663-.662L9.55 6.7q-.475-.475-.213-1.088T10.276 5H18.5q.625 0 1.063.438T20 6.5t-.437 1.063T18.5 8h-4.3zm5.9 11.55l-7.6-7.6l-1.6 3.775q-.175.425-.562.675T8.5 19q-.8 0-1.25-.675T7.125 16.9L9.2 12L2.1 4.9q-.275-.275-.275-.7t.275-.7t.7-.275t.7.275l17 17q.275.275.275.7t-.275.7t-.7.275t-.7-.275\"/>",

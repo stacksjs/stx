@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const computersDevicesElectronicsmicrochipBoard: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 0v32h32V0Zm1.52 7.62H6.1v3.05h18.28V7.62h3.05v7.62h-1.52v-3.05h-1.53v1.53h-3.05v-1.53h-1.52v1.53h-3.05v-1.53h-1.52v1.53h-3.05v-1.53h-1.52v1.53H7.62v-1.53H6.1v3.05H4.57V9.15H1.52Zm6.1 1.53V7.62h1.52v1.53Zm4.57 0V7.62h1.52v1.53Zm4.57 0V7.62h1.53v1.53Zm4.57 0V7.62h1.53v1.53Zm3.05 6.09v3.05H7.62v-3.05ZM1.52 10.67h1.53v9.14H1.52Zm28.96 18.29H1.52v-1.53h6.1v-4.57h-6.1v-1.52h3.05v-4.58H6.1v4.58h1.52v-1.53h3.05v1.53h1.52v-1.53h3.05v1.53h1.52v-1.53h3.05v1.53h1.52v-1.53h3.05v1.53h1.53v-4.58h1.52v1.53h1.52v-3.05h1.53Zm0-15.24h-1.53V6.1h-4.57V4.57H6.1V6.1H1.52V1.53h7.62v1.52h1.53V1.53h1.52v1.52h1.52V1.53h1.53v1.52h1.52V1.53h1.53v1.52h1.52V1.53h1.52v1.52h1.53V1.53h7.62Z\"/><path fill=\"currentColor\" d=\"M27.43 22.86h1.52v4.57h-1.52Zm0-19.81h1.52v1.52h-1.52Zm-3.05 19.81h1.53v4.57h-1.53Zm-3.05 0h-1.52v1.52h-1.52v-1.52h-1.53v1.52h-1.52v3.05h7.62v-3.05h-1.53zm-12.19 0h4.57v4.57H9.14ZM3.05 3.05h1.52v1.52H3.05Z\"/>",

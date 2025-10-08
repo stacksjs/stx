@@ -1,11 +1,11 @@
-# @stx/iconify-meteocons
+# @stacksjs/iconify-meteocons
 
 Meteocons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-meteocons
+bun add @stacksjs/iconify-meteocons
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-meteocons
 
 ```html
 <script>
-  import { home } from '@stx/iconify-meteocons'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-meteocons'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-meteocons
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-meteocons'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-meteocons'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const goToLineRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12.002 7q-.416 0-.709-.291T11 6.002t.291-.709t.707-.293t.709.291t.293.707t-.291.709t-.707.293m0 12q-.416 0-.709-.291T11 18.002t.291-.709t.707-.293t.709.291t.293.707t-.291.709t-.707.293\"/>",

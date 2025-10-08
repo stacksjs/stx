@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hederaHashgraph: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#000\" d=\"M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18\"/><path fill=\"#fff\" d=\"M15.659 15.893h-1.143v-2.43H9.485v2.43H8.342v-7.88h1.143v2.372h5.03V8.013h1.144zm-6.12-3.34h5.03v-1.255H9.54z\"/></g>",

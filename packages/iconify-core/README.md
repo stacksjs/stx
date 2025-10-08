@@ -1,20 +1,20 @@
-# @stx/iconify-core
+# @stacksjs/iconify-core
 
 Core utilities for using Iconify icons in stx templates.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-core
+bun add @stacksjs/iconify-core
 ```
 
 ## Usage
 
-This package provides the core utilities for rendering icons. You'll typically use it alongside a specific icon collection package like `@stx/iconify-lucide` or `@stx/iconify-mdi`.
+This package provides the core utilities for rendering icons. You'll typically use it alongside a specific icon collection package like `@stacksjs/iconify-lucide` or `@stacksjs/iconify-mdi`.
 
 ```typescript
-import { renderIcon } from '@stx/iconify-core'
-import type { IconData, IconProps } from '@stx/iconify-core'
+import { renderIcon } from '@stacksjs/iconify-core'
+import type { IconData, IconProps } from '@stacksjs/iconify-core'
 
 const iconData: IconData = {
   body: '<path fill="currentColor" d="..."/>',
@@ -59,8 +59,8 @@ interface IconProps {
 ## Example
 
 ```typescript
-import { home } from '@stx/iconify-lucide'
-import { renderIcon } from '@stx/iconify-core'
+import { home } from '@stacksjs/iconify-lucide'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 // Basic usage
 const icon1 = renderIcon(home, { size: 24 })

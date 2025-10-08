@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const imageMultiple32Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 7a4 4 0 0 1 4-4h14a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4zm4-2a2 2 0 0 0-2 2v14a2 2 0 0 0 .077.552l7.32-6.914c.9-.85 2.306-.85 3.205 0l7.32 6.914A2 2 0 0 0 23 21V7a2 2 0 0 0-2-2zm0 18h14q.25 0 .482-.058l-7.253-6.85a.333.333 0 0 0-.458 0l-7.253 6.85q.233.057.482.058m11.5-11a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3m-8 16.5a4 4 0 0 1-3.465-2H21a5.5 5.5 0 0 0 5.5-5.5V7.035c1.196.692 2 1.984 2 3.465V21a7.5 7.5 0 0 1-7.5 7.5z\"/>",

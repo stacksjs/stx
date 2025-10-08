@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mobileCameraFront: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m9.85 22.5l-1.4-1.4l1.1-1.1H5v-2h4.55l-1.1-1.1l1.4-1.4l3.5 3.5zM14 20v-2h5v2zm-2-9q-1.25 0-2.125-.875T9 8t.875-2.125T12 5t2.125.875T15 8t-.875 2.125T12 11m-7 6V4q0-.825.588-1.412T7 2h10q.825 0 1.413.588T19 4v3.1q.45.175.725.55T20 8.5v2q0 .475-.275.85T19 11.9V17h-6.225L9.85 14.075L6.925 17zm2-3.85q1.2-.575 2.463-.862T12 12t2.538.288T17 13.15V4H7z\"/>",

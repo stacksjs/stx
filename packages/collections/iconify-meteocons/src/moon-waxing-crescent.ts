@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const moonWaxingCrescent: IconData = {
   "body": "<path fill=\"none\" stroke=\"#e2e8f0\" stroke-dasharray=\"16.9 56.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"12\" d=\"M384 256a128 128 0 0 0-128-128c-169.8 6.7-169.7 249.3 0 256a128 128 0 0 0 128-128\"/><path fill=\"none\" stroke=\"#72b9d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"13.7\" d=\"M308.2 139a129.4 129.4 0 0 0-17.4-6.4l.6.5h0c84.2 88.2 19.3 234.1-102.6 230.7l-.8-.2a129 129 0 0 0 16.3 8.7a127.7 127.7 0 1 0 103.9-233.4Z\"/>",

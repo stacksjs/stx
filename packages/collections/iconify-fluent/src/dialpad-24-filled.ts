@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dialpad24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 17.75a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3m0-5a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3m4.996 0a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3m-9.992 0a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3m4.996-5a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3m4.996 0a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3m-9.992 0a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3m4.996-5a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3m4.996 0a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3m-9.992 0a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3\"/>",

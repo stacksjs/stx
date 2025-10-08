@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const skipLeftFill: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 18V6h2v12zm4-6l6-6v12z\"/>",

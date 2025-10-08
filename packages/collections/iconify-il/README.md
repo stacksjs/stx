@@ -1,11 +1,11 @@
-# @stx/iconify-il
+# @stacksjs/iconify-il
 
 Icalicons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-il
+bun add @stacksjs/iconify-il
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-il
 
 ```html
 <script>
-  import { home } from '@stx/iconify-il'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-il'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-il
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-il'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-il'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const voicemailDuotone: IconData = {
   "body": "<g fill=\"currentColor\"><path d=\"M104 128a48 48 0 1 1-48-48a48 48 0 0 1 48 48m96-48a48 48 0 1 0 48 48a48 48 0 0 0-48-48\" opacity=\".2\"/><path d=\"M200 72a56 56 0 0 0-39.14 96H95.14A56 56 0 1 0 56 184h144a56 56 0 0 0 0-112M16 128a40 40 0 1 1 40 40a40 40 0 0 1-40-40m184 40a40 40 0 1 1 40-40a40 40 0 0 1-40 40\"/></g>",

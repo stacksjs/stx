@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pnpmLock: IconData = {
   "body": "<g fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path stroke=\"#8087a2\" d=\"M15 11.5c.27 0 .5.22.5.5v3a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-3c0-.28.22-.5.5-.5zm-4 0V10a1.5 1.5 0 0 1 3 0v1.5\"/><path stroke=\"#f5a97f\" d=\"M4.5 1.5v3\"/><path stroke=\"#cad3f5\" d=\"M7.5 7.5v3m-3-6v6\"/><path stroke=\"#f5a97f\" d=\"M7.5 1.5v6m3 0v-6h-9v3h9\"/><path stroke=\"#cad3f5\" d=\"M10.5 7.5h-9v3h7\"/></g>",

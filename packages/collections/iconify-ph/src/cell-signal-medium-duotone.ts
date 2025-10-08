@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cellSignalMediumDuotone: IconData = {
   "body": "<g fill=\"currentColor\"><path d=\"M120 100.7V208H32a8 8 0 0 1-5.66-13.66Z\" opacity=\".2\"/><path d=\"M198.12 25.23a16 16 0 0 0-17.44 3.46l-160 160A16 16 0 0 0 32 216h160a16 16 0 0 0 16-16V40a15.94 15.94 0 0 0-9.88-14.77M112 120v80H32Zm80 80h-64v-96l64-64Z\"/></g>",

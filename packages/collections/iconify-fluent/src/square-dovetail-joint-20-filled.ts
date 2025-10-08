@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const squareDovetailJoint20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 11.75a.5.5 0 0 1 .676-.468L12 12.528V7.467L8.673 8.696A.5.5 0 0 1 8 8.227V3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h2zM14 3H9v4.51l3.327-1.229A.5.5 0 0 1 13 6.75v6.5a.5.5 0 0 1-.676.468L9 12.472V17h5a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3\"/>",

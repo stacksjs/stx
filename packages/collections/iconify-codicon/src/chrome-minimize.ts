@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chromeMinimize: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M14 8v1H3V8z\"/>",

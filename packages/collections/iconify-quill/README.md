@@ -1,11 +1,11 @@
-# @stx/iconify-quill
+# @stacksjs/iconify-quill
 
 Quill Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-quill
+bun add @stacksjs/iconify-quill
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-quill
 
 ```html
 <script>
-  import { home } from '@stx/iconify-quill'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-quill'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-quill
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-quill'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-quill'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

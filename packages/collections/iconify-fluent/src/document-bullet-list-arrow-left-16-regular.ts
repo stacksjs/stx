@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const documentBulletListArrowLeft16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 1a2 2 0 0 0-2 2v2.207a5.5 5.5 0 0 1 1-.185V3a1 1 0 0 1 1-1h3v2.5A1.5 1.5 0 0 0 10.5 6H13v7a1 1 0 0 1-1 1H9.743a5.5 5.5 0 0 1-1.08 1H12a2 2 0 0 0 2-2V5.414a1.5 1.5 0 0 0-.44-1.06l-2.914-2.915A1.5 1.5 0 0 0 9.586 1zm3.743 6q.381.462.657 1h1.1a.5.5 0 0 0 0-1zm1.05 2q.137.484.185 1h.522a.5.5 0 0 0 0-1zm.185 2a5.5 5.5 0 0 1-.185 1h.707a.5.5 0 0 0 0-1zm1.815-6H10.5a.5.5 0 0 1-.5-.5V2.207zM5.5 15a4.5 4.5 0 1 1 0-9a4.5 4.5 0 0 1 0 9m-2.353-4.854l-.003.003a.5.5 0 0 0-.144.348v.006a.5.5 0 0 0 .146.35l2 2a.5.5 0 0 0 .708-.707L4.707 11H7.5a.5.5 0 0 0 0-1H4.707l1.147-1.146a.5.5 0 1 0-.708-.708z\"/>",

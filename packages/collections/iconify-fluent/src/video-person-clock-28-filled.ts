@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const videoPersonClock28Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.754 4a2.75 2.75 0 0 0-2.75 2.75v14.5A2.75 2.75 0 0 0 4.754 24h9.111A7.5 7.5 0 0 1 13 20.5c0-1.47.423-2.842 1.155-4H10a2 2 0 0 0-2 2v4H4.754c-.69 0-1.25-.56-1.25-1.25V6.75c0-.69.56-1.25 1.25-1.25H23.25c.69 0 1.25.56 1.25 1.25v7.405c.554.35 1.058.769 1.5 1.247V6.75A2.75 2.75 0 0 0 23.25 4zM17.5 11.5a3.5 3.5 0 1 1-7 0a3.5 3.5 0 0 1 7 0m9.5 9a6.5 6.5 0 1 1-13 0a6.5 6.5 0 0 1 13 0m-6.5-4a.5.5 0 0 0-.5.5v3.5a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 0-1H21v-3a.5.5 0 0 0-.5-.5\"/>",

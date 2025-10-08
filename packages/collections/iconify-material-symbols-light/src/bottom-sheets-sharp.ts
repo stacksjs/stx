@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bottomSheetsSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 20V4h16v16zm1-7.384h14V5H5z\"/>",

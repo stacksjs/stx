@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const vrCardboard: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M512 96H64c-35.3 0-64 28.7-64 64v192c0 35.3 28.7 64 64 64h117.5c17 0 33.3-6.7 45.3-18.7l33.9-33.9c7.2-7.2 17.1-11.3 27.3-11.3s20.1 4.1 27.3 11.3l33.9 33.9c12 12 28.3 18.7 45.3 18.7H512c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64M80 240a64 64 0 1 1 128 0a64 64 0 1 1-128 0m352-64a64 64 0 1 1 0 128a64 64 0 1 1 0-128\"/>",

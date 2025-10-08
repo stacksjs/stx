@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const massageChairOne: IconData = {
   "body": "<defs><mask id=\"SVGoxMPfe4c\"><g fill=\"none\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><path d=\"M15 28V15.652C15 13 18 10 24 10s9 3 9 5.652V28\"/><path fill=\"#555\" d=\"M12 34v-6h24v6z\"/><path d=\"M20 4h8M8 16v12h32V16M17 43h14m-7-9v9m0-39v6\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGoxMPfe4c)\"/>",

@@ -1,11 +1,11 @@
-# @stx/iconify-gis
+# @stacksjs/iconify-gis
 
 Font-GIS icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-gis
+bun add @stacksjs/iconify-gis
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-gis
 
 ```html
 <script>
-  import { home } from '@stx/iconify-gis'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-gis'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-gis
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-gis'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-gis'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

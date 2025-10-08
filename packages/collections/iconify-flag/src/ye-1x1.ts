@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const ye1x1: IconData = {
   "body": "<g fill-rule=\"evenodd\" stroke-width=\"1pt\"><path fill=\"#fff\" d=\"M0 0h512v504.3H0z\"/><path fill=\"#f10600\" d=\"M0 0h512v167.9H0z\"/><path fill=\"#000001\" d=\"M0 344.1h512V512H0z\"/></g>",

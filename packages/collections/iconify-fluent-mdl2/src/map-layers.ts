@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mapLayers: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m1664 832l384 192l-384 192l384 192l-1024 512L0 1408l384-192L0 1024l384-192L0 640l1024-512l1024 512zM286 640l738 369l738-369l-738-369zm1476 768l-241-120l-497 248l-497-248l-241 120l738 369zm-738-15l738-369l-241-120l-497 248l-497-248l-241 120z\"/>",

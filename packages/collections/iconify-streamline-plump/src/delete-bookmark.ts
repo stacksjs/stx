@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const deleteBookmark: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"3\" d=\"M8.499 8.812c.132-1.787 1.193-3.3 2.936-3.711C13.688 4.569 17.598 4 24 4s10.312.57 12.565 1.1c1.743.412 2.804 1.925 2.936 3.712c.22 2.971.499 8.455.499 17.188c0 6.946-.102 11.486-.231 14.451c-.137 3.147-2.573 4.21-5.206 2.48l-7.271-4.77a6 6 0 0 0-6.584 0l-7.27 4.77c-2.634 1.73-5.07.667-5.207-2.48C8.101 37.486 8 32.946 8 26c0-8.733.278-14.217.499-17.188m21.157 6.531L18.343 26.657m11.313 0L18.343 15.343\"/>",

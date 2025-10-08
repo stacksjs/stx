@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileCvFilled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m12 2l.117.007a1 1 0 0 1 .876.876L13 3v4l.005.15a2 2 0 0 0 1.838 1.844L15 9h4l.117.007a1 1 0 0 1 .876.876L20 10v9a3 3 0 0 1-2.824 2.995L17 22H7a3 3 0 0 1-2.995-2.824L4 19V5a3 3 0 0 1 2.824-2.995L7 2zm-2.5 8A2.5 2.5 0 0 0 7 12.5v3a2.5 2.5 0 1 0 5 0a1 1 0 0 0-2 0a.5.5 0 1 1-1 0v-3a.5.5 0 1 1 1 0a1 1 0 0 0 2 0A2.5 2.5 0 0 0 9.5 10m6.743.03a1 1 0 0 0-1.213.727l-.53 2.119l-.53-2.119a1 1 0 1 0-1.94.486l1.5 6c.252 1.01 1.688 1.01 1.94 0l1.5-6a1 1 0 0 0-.727-1.213m-1.244-7.031L19 7h-4z\"/>",

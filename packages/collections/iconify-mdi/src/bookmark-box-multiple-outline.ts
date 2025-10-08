@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bookmarkBoxMultipleOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 20h14v2H4c-1.1 0-2-.9-2-2V6h2zM22 4v12c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h12c1.1 0 2 .9 2 2m-2 0H8v12h12zm-2 2h-5v7l2.5-1.5L18 13z\"/>",

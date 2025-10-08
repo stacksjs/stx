@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const adjacentItem: IconData = {
   "body": "<g fill=\"none\"><path d=\"M14 29h28v12H14zm0-22h28v12H14z\"/><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"M14 13v6h28V7H14zm0 0H6v22h8m0 0v6h28V29H14z\"/><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"M14 13H6v22h8m0-6h28v12H14zm0-22h28v12H14z\"/></g>",

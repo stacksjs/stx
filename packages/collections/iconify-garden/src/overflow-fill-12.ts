@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const overflowFill12: IconData = {
   "body": "<g fill=\"currentColor\"><circle cx=\"1.5\" cy=\"6\" r=\"1.5\"/><circle cx=\"10.5\" cy=\"6\" r=\"1.5\"/><circle cx=\"6\" cy=\"6\" r=\"1.5\"/></g>",

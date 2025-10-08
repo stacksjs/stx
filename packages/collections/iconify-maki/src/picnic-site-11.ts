@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const picnicSite11: IconData = {
   "body": "<path d=\"M2.75 2c-.416 0-.75.334-.75.75s.334.75.75.75H4L3.54 5H1.75c-.415 0-.75.335-.75.75s.335.75.75.75h1.326L2 10h1l1.076-3.5h2.848L8 10h1L7.924 6.5H9.25c.415 0 .75-.335.75-.75S9.665 5 9.25 5H7.46L7 3.5h1.25c.415 0 .75-.334.75-.75S8.665 2 8.25 2h-5.5zM5 3.5h1L6.46 5H4.54L5 3.5z\" fill=\"currentColor\"/>",

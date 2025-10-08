@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dollarCircle: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\"><path d=\"M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0\"/><path d=\"M15.333 7.722H12m0 0h-1.667C9.045 7.722 8 8.68 8 9.862C8 11.041 9.045 12 10.333 12H12m0-4.278V6.5m0 1.222V12m0 0h1.667c1.288 0 2.333.958 2.333 2.139s-1.045 2.139-2.333 2.139H12M12 12v4.278m0 0H8m4 0V17.5\"/></g>",

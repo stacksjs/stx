@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const triangleOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 2L1 21h22M12 6l7.53 13H4.47\"/>",

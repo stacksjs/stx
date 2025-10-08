@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const toolbarSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 8V4h16v4zm0 12V9h16v11z\"/>",

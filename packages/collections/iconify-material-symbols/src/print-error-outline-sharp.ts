@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const printErrorOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 21v-4H2V8h19.825v2H4v5h2v-2h10v2H8v4h8v2zM6 8V3h12v5h-2V5H8v3zm13 13q-.425 0-.712-.288T18 20t.288-.712T19 19t.713.288T20 20t-.288.713T19 21m-1-4v-5h2v5zM4 10h17.825z\"/>",

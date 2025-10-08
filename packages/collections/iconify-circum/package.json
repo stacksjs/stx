@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-circum",
+  "name": "@stacksjs/iconify-circum",
   "version": "0.0.1",
   "description": "Circum Icons icons for stx from Iconify",
   "author": "Klarr Agency",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

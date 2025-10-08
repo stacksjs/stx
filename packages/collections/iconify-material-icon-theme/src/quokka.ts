@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const quokka: IconData = {
   "body": "<path fill=\"#ff6d00\" d=\"M8 2v6H2v6h12V2z\" paint-order=\"fill markers stroke\"/>",

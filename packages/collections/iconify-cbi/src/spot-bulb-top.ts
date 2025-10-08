@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const spotBulbTop: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M22 22v-2H2v2zm-2-4\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const blankAltDuotone: IconData = {
   "body": "<path fill=\"currentColor\" fill-opacity=\".25\" d=\"M5 19a2 2 0 0 0 2 2h4.75a.25.25 0 0 0 .25-.25V16a2 2 0 0 1 2-2h4.75a.25.25 0 0 0 .25-.25V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z\"/><path fill=\"currentColor\" d=\"M13 16v4.396c0 .223.27.335.427.177l5.146-5.146a.25.25 0 0 0-.177-.427H14a1 1 0 0 0-1 1\"/>",

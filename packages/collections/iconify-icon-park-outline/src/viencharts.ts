@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const viencharts: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><circle cx=\"24\" cy=\"17\" r=\"12\"/><circle cx=\"16\" cy=\"31\" r=\"12\"/><circle cx=\"32\" cy=\"31\" r=\"12\"/></g>",

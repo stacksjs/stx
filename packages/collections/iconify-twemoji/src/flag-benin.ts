@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flagBenin: IconData = {
   "body": "<path fill=\"#FCD116\" d=\"M32 5H14v13h22V9a4 4 0 0 0-4-4\"/><path fill=\"#E8112D\" d=\"M14 31h18a4 4 0 0 0 4-4v-9H14z\"/><path fill=\"#008751\" d=\"M14 5H4a4 4 0 0 0-4 4v18a4 4 0 0 0 4 4h10z\"/>",

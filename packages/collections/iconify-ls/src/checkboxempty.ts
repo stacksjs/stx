@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const checkboxempty: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 677V87h591v590zm517-516H74v443h443z\"/>",

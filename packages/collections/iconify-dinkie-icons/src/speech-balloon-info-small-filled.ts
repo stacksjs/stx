@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const speechBalloonInfoSmallFilled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 9h2V8h1V7h5V6h1V1H8V0H1v1H0v5h1v2H0Zm3-3V5h1V4H3V3h2v2h1v1Zm1-4V1h1v1Zm0 0\"/>",

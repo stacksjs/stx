@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const otherUiMail: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 3.121V15h16V3.121l-8 8z\"/><path fill=\"currentColor\" d=\"M16 1H0l8 8z\"/>",

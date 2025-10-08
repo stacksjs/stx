@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpFilterAlt: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 4c2.01 2.59 7 9 7 9v7h4v-7s4.98-6.41 7-9z\"/>",

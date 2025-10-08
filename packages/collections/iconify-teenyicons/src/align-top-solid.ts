@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const alignTopSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M15 0H0v1h15zM7 3H3v12h4zm5 0H8v8h4z\"/>",

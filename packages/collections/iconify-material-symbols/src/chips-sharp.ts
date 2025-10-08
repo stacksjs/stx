@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chipsSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 13h10v-2H7zm-4 8V3h18v18z\"/>",

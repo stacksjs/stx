@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const departmentStore: IconData = {
   "body": "<g stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path fill=\"#D0CFCE\" d=\"M16 12h40v48H16z\"/><path fill=\"#92D3F5\" d=\"M20 50h8v10h-8zm24 0h8v10h-8zm-12 0h8v10h-8zM16 36h10v10H16zm10 0h10v10H26zm10 0h10v10H36zm10 0h10v10H46zM16 26h10v10H16zm10 0h10v10H26zm10 0h10v10H36zm10 0h10v10H46zM16 16h10v10H16zm10 0h10v10H26zm10 0h10v10H36zm10 0h10v10H46z\"/></g><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path d=\"M16 12h40v48H16z\"/><path d=\"M20 50h8v10h-8zm24 0h8v10h-8zm-12 0h8v10h-8zM16 36h10v10H16zm10 0h10v10H26zm10 0h10v10H36zm10 0h10v10H46zM16 26h10v10H16zm10 0h10v10H26zm10 0h10v10H36zm10 0h10v10H46zM16 16h10v10H16zm10 0h10v10H26zm10 0h10v10H36zm10 0h10v10H46z\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowUp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10 2.5L16.5 9H13v8H7V9H3.5z\"/>",

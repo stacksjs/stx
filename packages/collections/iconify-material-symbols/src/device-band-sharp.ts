@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const deviceBandSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 22V9H7V6h1V2h8v4h1v3h-1v13z\"/>",

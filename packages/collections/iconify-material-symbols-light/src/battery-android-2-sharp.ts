@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const batteryAndroid2Sharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 17V7h17.885v10zm6-1h10.885V8H8zm12.885-1.884V9.904H22v4.212z\"/>",

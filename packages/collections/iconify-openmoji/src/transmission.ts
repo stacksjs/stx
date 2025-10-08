@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const transmission: IconData = {
   "body": "<circle cx=\"35.939\" cy=\"29.281\" r=\"3.15\" fill=\"#3f3f3f\"/><path fill=\"#d0cfce\" d=\"M46.439 64.56L36.838 32.3h-1.797l-9.602 32.26\"/><g stroke=\"#000\" stroke-width=\"2\"><path fill=\"none\" stroke-linecap=\"round\" stroke-miterlimit=\"10\" d=\"M18.863 46.357a24.15 24.15 0 0 1-1.782-32.163m37.717 0a24.15 24.15 0 0 1-1.782 32.163m-4.778-26.916a15.75 15.75 0 0 1-1.162 20.976m-22.274.001A15.75 15.75 0 0 1 23.64 19.44\"/><circle cx=\"35.939\" cy=\"29.281\" r=\"3.15\" fill=\"none\" stroke-miterlimit=\"10\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M28.589 55.477h14.7m-11.55-11.864h8.4\"/><path fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m35.041 32.3l-9.602 32.26m21 0L36.838 32.3\"/></g>",

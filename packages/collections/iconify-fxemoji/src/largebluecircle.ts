@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const largebluecircle: IconData = {
   "body": "<circle cx=\"256\" cy=\"256.167\" r=\"223.167\" fill=\"#00B1FF\"/>",

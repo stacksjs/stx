@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const panelTopGallery28Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5.754 4a3.75 3.75 0 0 0-3.75 3.75v12.5A3.75 3.75 0 0 0 5.754 24H22.25A3.75 3.75 0 0 0 26 20.25V7.75A3.75 3.75 0 0 0 22.25 4zm-2.25 3.75a2.25 2.25 0 0 1 2.25-2.25H9.5v6H3.504zm0 5.25H24.5v7.25a2.25 2.25 0 0 1-2.25 2.25H5.755a2.25 2.25 0 0 1-2.25-2.25zM24.5 11.5h-6v-6h3.75a2.25 2.25 0 0 1 2.25 2.25zm-7.5-6v6h-6v-6z\"/>",

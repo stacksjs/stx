@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dlc: IconData = {
   "body": "<g fill=\"none\"><path fill=\"url(#SVGrI9GCcyq)\" fill-rule=\"evenodd\" d=\"M3.603 3.564v5.458l1.757 2.16l-1.757 2.686v6.568c0 .312.252.564.558.564h8.02c.431-.006 8.216-.456 8.216-8.763C20.397 5.603 15.263 3 12.174 3H4.167a.564.564 0 0 0-.564.564m1.2 4.648l1.313 1.83l1.14-2.028a.38.38 0 0 1 .342-.216h7.611c.138 0 .264.078.33.192l1.877 3.017c.078.132.06.3-.03.42L12 18.355a.6.6 0 0 1-.444.246a.59.59 0 0 1-.455-.24l-4.979-6.142l-1.32 2.057v5.14c0 .21.169.378.378.378h6.976c2.345-.084 7.042-1.757 7.042-7.767c0-6.004-4.697-7.72-7.042-7.827H5.18a.38.38 0 0 0-.377.377zm5.866.786l-1.164 1.8h-2.49l1.02-1.8zm-3.3 2.4l3 4.078l-.912-4.079zm7.318-2.4H12.06l1.164 1.8h2.483zm.672 2.4l-2.999 4.174l.906-4.175h2.099zm-5.11-.6h2.207l-1.092-1.8zm2.363.6h-2.52l1.272 5.098z\" clip-rule=\"evenodd\"/><defs><linearGradient id=\"SVGrI9GCcyq\" x1=\"3.603\" x2=\"20.397\" y1=\"12\" y2=\"12\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#16E0B0\"/><stop offset=\"1\" stop-color=\"#14C5D7\"/></linearGradient></defs></g>",

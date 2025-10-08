@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const screenOffOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M6.5 12.152V9.5H3.85M9.5 3.848V6.5h2.652M13 3l-3 3m-4 4l-3 3\"/>",

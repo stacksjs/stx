@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const kissingFaceThin: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\" stroke-linecap=\"round\"/><path stroke-linecap=\"round\" d=\"m13 16l-2-1l2-1\"/><path stroke-width=\"1.5\" d=\"M9.01 9.5v.01H9V9.5zm6 0v.01H15V9.5z\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const searchLight: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\"><circle cx=\"11\" cy=\"11\" r=\"6\"/><path stroke-linecap=\"round\" d=\"m20 20l-3-3\"/></g>",

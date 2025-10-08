@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const transitionPushSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 20v-1.975h2V6H8V4h4v16zm6 0V4h9v16zm-9-4l-1.425-1.4L5.15 13H1v-2h4.15L3.575 9.425L5 8l4 4z\"/>",

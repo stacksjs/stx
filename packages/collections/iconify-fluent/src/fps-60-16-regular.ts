@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fps6016Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 2a1 1 0 0 0-1 1v1.268A2 2 0 1 1 3 6V3a2 2 0 1 1 4 0a.5.5 0 0 1-1 0a1 1 0 0 0-1-1m0 5a1 1 0 1 0 0-2a1 1 0 0 0 0 2m-3.5 3a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 1 0V13h1.5a.5.5 0 0 0 0-1H2v-1h2.5a.5.5 0 0 0 0-1zm5 0a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 1 0v-1h1.25a1.75 1.75 0 1 0 0-3.5zm1.75 2.5H7V11h1.25a.75.75 0 0 1 0 1.5m2.75-1a1.5 1.5 0 0 1 1.5-1.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 0 0 1h1a1.5 1.5 0 0 1 0 3h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 0 0-1h-1a1.5 1.5 0 0 1-1.5-1.5M8 3a2 2 0 1 1 4 0v3a2 2 0 1 1-4 0zm3 0a1 1 0 1 0-2 0v3a1 1 0 0 0 2 0z\"/>",

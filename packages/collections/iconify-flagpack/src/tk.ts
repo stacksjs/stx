@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tk: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#2E42A5\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/><mask id=\"SVGTrazyc7b\" width=\"32\" height=\"24\" x=\"0\" y=\"0\" maskUnits=\"userSpaceOnUse\" style=\"mask-type:luminance\"><path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/></mask><g fill-rule=\"evenodd\" clip-rule=\"evenodd\" mask=\"url(#SVGTrazyc7b)\"><path fill=\"#F7FCFF\" d=\"m3.294 10.063l-.885.548l.344-.92L2 8.995h.913L3.294 8l.292.995H4.5l-.659.696l.323.92zm4-4l-.885.548l.344-.92L6 4.995h.913L7.294 4l.292.995H8.5l-.659.696l.323.92zm4.001 4l-.886.548l.344-.92L10 8.995h.913L11.294 8l.292.995h.914l-.659.696l.323.92zm-4.001 4l-.885.548l.344-.92L6 12.996h.913L7.294 12l.292.995H8.5l-.659.697l.323.92z\"/><path fill=\"#FECA00\" d=\"M24.842 5.463c-4.083 2.017-17.5 11.082-17.5 11.082h22.35q-.334-.073-.628-.13c-1.64-.327-2.45-.488-4.222-4.018c-1.984-3.952 0-6.934 0-6.934M6.616 17.965l-.306.76l.306.835l22.753.44l.631-1.16l-.63-.835z\"/></g></g>",

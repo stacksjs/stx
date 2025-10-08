@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mdRemove: IconData = {
   "body": "<path d=\"M96 235h320v42H96z\" fill=\"currentColor\"/>",

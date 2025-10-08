@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const playList9: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3.688 5.656a1 1 0 0 1 1-1h7.75a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-7.75a1 1 0 0 1-1-1z\"/><path d=\"M10.5 2.875v-.281a1 1 0 0 0-1-1H1.75a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h.188M7.5 6.781l3 1.875l-3 1.875z\"/></g>",

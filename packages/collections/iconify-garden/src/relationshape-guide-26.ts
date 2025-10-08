@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const relationshapeGuide26: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m7 7.8l6-6l6 6zM.5 23L13 10.4L25.5 23z\"/>",

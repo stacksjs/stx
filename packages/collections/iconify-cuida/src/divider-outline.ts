@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dividerOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M21 11a1 1 0 1 1 0 2H3a1 1 0 1 1 0-2z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const wrenchScrewdriver32Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M21.072 3.629A1 1 0 0 1 22 3h3a1 1 0 0 1 .928.629l1 2.5a1 1 0 0 1 0 .742L26 9.193V16h2a1 1 0 0 1 1 1v3H18v-3a1 1 0 0 1 1-1h2V9.193l-.928-2.322a1 1 0 0 1 0-.742zM8.577 3.525A1 1 0 0 1 9 4.341V9a1 1 0 0 0 2 0V4.341a1 1 0 0 1 1.333-.942A7.002 7.002 0 0 1 13 16.326V26a3 3 0 1 1-6 0v-9.674a7.002 7.002 0 0 1 .667-12.928a1 1 0 0 1 .91.127M18 22v1.5a5.5 5.5 0 1 0 11 0V22z\"/>",

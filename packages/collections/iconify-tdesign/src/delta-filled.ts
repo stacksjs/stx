@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const deltaFilled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M19 2.092V22.79L3.172 13.05z\"/>",

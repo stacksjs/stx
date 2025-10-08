@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const labProfileOutlineRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9 12q-.425 0-.712-.288T8 11t.288-.712T9 10h6q.425 0 .713.288T16 11t-.288.713T15 12zm0-4q-.425 0-.712-.288T8 7t.288-.712T9 6h6q.425 0 .713.288T16 7t-.288.713T15 8zm-3 6h7.5q.725 0 1.35.313t1.05.887l2.1 2.75V4H6zm0 6h11.05l-2.725-3.575q-.15-.2-.362-.312T13.5 16H6zm12 2H6q-.825 0-1.412-.587T4 20V4q0-.825.588-1.412T6 2h12q.825 0 1.413.588T20 4v16q0 .825-.587 1.413T18 22M6 20V4zm0-4v-2z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const horizontalRule: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 12.5v-1h14v1z\"/>",

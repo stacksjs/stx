@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const moveTask: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18.964 7h-8v2h8zM6 8.829v6.342L9.964 12zM18.964 11h-8v2h8zm-8 4h8v2h-8z\"/>",

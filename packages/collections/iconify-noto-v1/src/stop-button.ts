@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stopButton: IconData = {
   "body": "<path fill=\"none\" d=\"M0 0h128v128H0z\"/><path fill=\"#40c0e7\" d=\"M32 32h64v64H32z\"/>",

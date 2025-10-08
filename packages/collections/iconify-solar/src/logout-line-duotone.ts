@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const logoutLineDuotone: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"1.5\"><path d=\"M12 20a8 8 0 1 1 0-16\" opacity=\".5\"/><path stroke-linejoin=\"round\" d=\"M10 12h10m0 0l-3-3m3 3l-3 3\"/></g>",

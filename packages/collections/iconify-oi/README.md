@@ -1,11 +1,11 @@
-# @stx/iconify-oi
+# @stacksjs/iconify-oi
 
 Open Iconic icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-oi
+bun add @stacksjs/iconify-oi
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-oi
 
 ```html
 <script>
-  import { home } from '@stx/iconify-oi'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-oi'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-oi
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-oi'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-oi'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const deployedCodeAlertOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m12 10.85l5.925-3.425L12 4L6.075 7.425zm-9 6.275V6.875L12 1.7l9 5.175V12h-2V9.1l-7.025 4.05L5 9.1v6.85l6.025 3.475v2.3zM18 22q.2 0 .35-.15t.15-.35t-.15-.35T18 21t-.35.15t-.15.35t.15.35t.35.15m-.5-2h1v-4h-1zm.5 4q-2.075 0-3.537-1.463T13 19t1.463-3.537T18 14t3.538 1.463T23 19t-1.463 3.538T18 24m-6.975-12.275\"/>",

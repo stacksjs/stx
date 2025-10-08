@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const exclamationSmallSolid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M7 8V4h1v4zm1 2v1.01H7V10z\" clip-rule=\"evenodd\"/>",

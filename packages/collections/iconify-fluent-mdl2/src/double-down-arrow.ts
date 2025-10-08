@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const doubleDownArrow: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m512 1798l261-261l90 90l-415 415l-415-415l90-90l261 261V0h128zm1285-261l90 90l-415 415l-415-415l90-90l261 261V0h128v1798z\"/>",

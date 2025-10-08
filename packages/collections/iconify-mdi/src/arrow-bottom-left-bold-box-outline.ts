@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowBottomLeftBoldBoxOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 16V8.9l2.1 2.1l4.1-3.9L17 10l-4.1 3.9L15 16zm13 3V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2m-2 0H5V5h14z\"/>",

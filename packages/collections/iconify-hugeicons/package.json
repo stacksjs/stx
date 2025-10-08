@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-hugeicons",
+  "name": "@stacksjs/iconify-hugeicons",
   "version": "0.0.1",
   "description": "Huge Icons icons for stx from Iconify",
   "author": "Hugeicons",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

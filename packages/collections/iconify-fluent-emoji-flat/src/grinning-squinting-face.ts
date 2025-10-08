@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const grinningSquintingFace: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#FFB02E\" d=\"M15.999 29.998c9.334 0 13.999-6.268 13.999-14c0-7.73-4.665-13.998-14-13.998C6.665 2 2 8.268 2 15.999s4.664 13.999 13.999 13.999\"/><path fill=\"#402A32\" d=\"M9.447 8.106a1 1 0 1 0-.894 1.788L10.763 11l-2.21 1.105a1 1 0 0 0 .894 1.79l4-2a1 1 0 0 0 0-1.79zm13.106 0a1 1 0 1 1 .894 1.788L21.237 11l2.21 1.105a1 1 0 0 1-.894 1.79l-4-2a1 1 0 0 1 0-1.79z\"/><path fill=\"#BB1D80\" d=\"M16 26C6 26 6 16 6 16h20s0 10-10 10\"/><path fill=\"#fff\" d=\"M23.5 17.5h-15A1.5 1.5 0 0 1 7 16h18a1.5 1.5 0 0 1-1.5 1.5\"/></g>",

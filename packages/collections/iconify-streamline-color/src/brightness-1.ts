@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const brightness1: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#d7e0ff\" d=\"M7 8.998a1.998 1.998 0 1 0 0-3.996a1.998 1.998 0 0 0 0 3.996\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M7 8.998a1.998 1.998 0 1 0 0-3.996a1.998 1.998 0 0 0 0 3.996M7 .5v1m0 11v1M13.5 7h-1m-11 0h-1m11.1-4.6l-.71.71m-7.78 7.78l-.71.71m9.2 0l-.71-.71M3.11 3.11L2.4 2.4\"/></g>",

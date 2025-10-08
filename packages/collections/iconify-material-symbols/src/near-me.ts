@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const nearMe: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m12.9 21l-2.85-7.05L3 11.1V9.7L21 3l-6.7 18z\"/>",

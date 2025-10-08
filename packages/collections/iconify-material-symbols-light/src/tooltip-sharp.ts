@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tooltipSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m12 21l-2.29-3.5H3V3h18v14.5h-6.71z\"/>",

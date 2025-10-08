@@ -1,11 +1,11 @@
-# @stx/iconify-tabler
+# @stacksjs/iconify-tabler
 
 Tabler Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-tabler
+bun add @stacksjs/iconify-tabler
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-tabler
 
 ```html
 <script>
-  import { home } from '@stx/iconify-tabler'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-tabler'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-tabler
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-tabler'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-tabler'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

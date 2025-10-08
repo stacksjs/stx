@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const openFolder48Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M40.75 24c.69 0 1.25-.56 1.25-1.25v-9.5A7.25 7.25 0 0 0 34.75 6h-21.5A7.25 7.25 0 0 0 6 13.25v21.5A7.25 7.25 0 0 0 13.25 42h9.5a1.25 1.25 0 1 0 0-2.5h-9.5a4.75 4.75 0 0 1-4.75-4.75v-21.5a4.75 4.75 0 0 1 4.75-4.75h21.5a4.75 4.75 0 0 1 4.75 4.75v9.5c0 .69.56 1.25 1.25 1.25m-21.5-6c-.69 0-1.25.56-1.25 1.25v13.5a1.25 1.25 0 1 0 2.5 0V22.268l15.366 15.366a1.25 1.25 0 1 0 1.768-1.768L22.268 20.5H32.75a1.25 1.25 0 1 0 0-2.5z\"/>",

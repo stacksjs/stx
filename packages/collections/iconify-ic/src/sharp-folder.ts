@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpFolder: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10 4H2v16h20V6H12z\"/>",

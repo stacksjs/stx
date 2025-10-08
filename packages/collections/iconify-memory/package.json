@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-memory",
+  "name": "@stacksjs/iconify-memory",
   "version": "0.0.1",
   "description": "Memory Icons icons for stx from Iconify",
   "author": "Pictogrammers",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

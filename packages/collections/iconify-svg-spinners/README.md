@@ -1,11 +1,11 @@
-# @stx/iconify-svg-spinners
+# @stacksjs/iconify-svg-spinners
 
 SVG Spinners icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-svg-spinners
+bun add @stacksjs/iconify-svg-spinners
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-svg-spinners
 
 ```html
 <script>
-  import { home } from '@stx/iconify-svg-spinners'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-svg-spinners'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-svg-spinners
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-svg-spinners'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-svg-spinners'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

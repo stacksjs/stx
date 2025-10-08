@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const gitlab: IconData = {
   "body": "<path fill=\"none\" stroke=\"#f5a97f\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M8 14.49L14.5 10L12 2l-1.5 4.5h-5L4 2l-2.5 8z\"/>",

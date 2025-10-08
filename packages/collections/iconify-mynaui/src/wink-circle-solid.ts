@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const winkCircleSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2.25 12c0 5.385 4.365 9.75 9.75 9.75s9.75-4.365 9.75-9.75S17.385 2.25 12 2.25S2.25 6.615 2.25 12m6-1.5A.75.75 0 0 1 9 9.75h1a.75.75 0 1 1 0 1.5H9a.75.75 0 0 1-.75-.75m7-.5v.5a.75.75 0 1 1-1.5 0V10a.75.75 0 0 1 1.5 0m-6.852 4.553a.75.75 0 0 1 1.049-.155c.728.54 1.607.852 2.553.852s1.825-.313 2.553-.852a.75.75 0 1 1 .894 1.204A5.77 5.77 0 0 1 12 16.75a5.77 5.77 0 0 1-3.447-1.148a.75.75 0 0 1-.155-1.049\"/>",

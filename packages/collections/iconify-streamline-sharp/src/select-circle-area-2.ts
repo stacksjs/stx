@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const selectCircleArea2: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-dasharray=\"1.5 1.5\" stroke-width=\"1.5\" d=\"M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0\"/>",

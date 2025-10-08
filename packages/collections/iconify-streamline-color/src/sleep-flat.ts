@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sleepFlat: IconData = {
   "body": "<path fill=\"#8fbffa\" fill-rule=\"evenodd\" d=\"M10.974.595a.75.75 0 0 0-.666-.405H7.825a.75.75 0 0 0 0 1.5h1.033l-1.8 2.54a.75.75 0 0 0 .612 1.184h2.793a.75.75 0 0 0 0-1.5H9.12l1.8-2.54a.75.75 0 0 0 .054-.779M5.906 4.058a.75.75 0 0 0-.667-.405H2.588a.75.75 0 1 0 0 1.5h1.201L1.81 7.947a.75.75 0 0 0 .613 1.183h2.983a.75.75 0 1 0 0-1.5H3.872l1.98-2.794a.75.75 0 0 0 .054-.778m6.108 2.904a.75.75 0 0 1 .612 1.184l-3 4.235h2.614a.75.75 0 0 1 0 1.5H8.176a.75.75 0 0 1-.612-1.184l3-4.235H8.402a.75.75 0 1 1 0-1.5z\" clip-rule=\"evenodd\"/>",

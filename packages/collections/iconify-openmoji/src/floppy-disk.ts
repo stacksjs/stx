@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const floppyDisk: IconData = {
   "body": "<g stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path fill=\"#3F3F3F\" d=\"M11.136 11h50v50h-50z\"/><path fill=\"#D0CFCE\" d=\"M56.136 60V35.162h-40V60\"/><path fill=\"#9B9B9A\" d=\"M16.136 12v17.607h30.913V12\"/><path fill=\"#61B2E4\" d=\"M19.956 38.96h32.031v5.771H19.956z\"/></g><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path d=\"M11.136 11h50v50h-50z\"/><path d=\"M56.136 60V35.162h-40V60m0-48v17.607h30.913V12\"/><path d=\"M19.956 38.96h32.031v5.771H19.956z\"/></g>",

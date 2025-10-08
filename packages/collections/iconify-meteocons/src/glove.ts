@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const glove: IconData = {
   "body": "<g><path fill=\"none\" stroke=\"#ef4444\" stroke-miterlimit=\"10\" stroke-width=\"9\" d=\"M320.3 302v-88a64.1 64.1 0 0 0-64.2-64a64.1 64.1 0 0 0-64.3 64v39.3l-19.4-11.2a16.1 16.1 0 0 0-22 5.9a16 16 0 0 0 6 21.9l34.7 20c.3 0 .5.2.7.3V302\"/><rect width=\"144.5\" height=\"60\" x=\"183.8\" y=\"302\" fill=\"none\" stroke=\"#e2e8f0\" stroke-miterlimit=\"10\" stroke-width=\"9\" rx=\"12\"/><animateTransform id=\"SVGfY1CHcFo\" additive=\"sum\" attributeName=\"transform\" begin=\"0s; x1.end+1.75s\" calcMode=\"spline\" dur=\"1.25s\" keySplines=\".42, 0, .58, 1; .42, 0, .58, 1; .42, 0, .58, 1; .42, 0, .58, 1; .42, 0, .58, 1; .42, 0, .58, 1; .42, 0, .58, 1; .42, 0, .58, 1\" type=\"rotate\" values=\"0 256 332; 0 256 332; -15 256 332; 15 256 332; -9 256 332; 9 256 332; -6 256 332; 3 256 332; 0 256 332\"/></g>",

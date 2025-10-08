@@ -1,11 +1,11 @@
-# @stx/iconify-cbi
+# @stacksjs/iconify-cbi
 
 Custom Brand Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-cbi
+bun add @stacksjs/iconify-cbi
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-cbi
 
 ```html
 <script>
-  import { home } from '@stx/iconify-cbi'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-cbi'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-cbi
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-cbi'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-cbi'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

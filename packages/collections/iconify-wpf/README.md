@@ -1,11 +1,11 @@
-# @stx/iconify-wpf
+# @stacksjs/iconify-wpf
 
 Icons8 Windows 8 Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-wpf
+bun add @stacksjs/iconify-wpf
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-wpf
 
 ```html
 <script>
-  import { home } from '@stx/iconify-wpf'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-wpf'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-wpf
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-wpf'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-wpf'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

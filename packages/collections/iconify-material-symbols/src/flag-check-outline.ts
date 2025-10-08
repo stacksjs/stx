@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flagCheckOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 21V4h6.25q-.125.5-.2 1T11 6H7v6h7.25l.4 2H18v-1.15q.5 0 1-.075t1-.225V16h-7l-.4-2H7v7zM17.275 8.1l3.475-3.45L19.7 3.6l-2.425 2.375L16.3 5l-1.05 1.075zM18 .85q2.075 0 3.538 1.463T23 5.85t-1.463 3.538T18 10.85t-3.537-1.462T13 5.85t1.463-3.537T18 .85\"/>",

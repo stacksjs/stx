@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const alignHorizontalLeftRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 22q-.425 0-.712-.288T2 21V3q0-.425.288-.712T3 2t.713.288T4 3v18q0 .425-.288.713T3 22m4.5-5q-.625 0-1.062-.437T6 15.5t.438-1.062T7.5 14h7q.625 0 1.063.438T16 15.5t-.437 1.063T14.5 17zm0-7q-.625 0-1.062-.437T6 8.5t.438-1.062T7.5 7h13q.625 0 1.063.438T22 8.5t-.437 1.063T20.5 10z\"/>",

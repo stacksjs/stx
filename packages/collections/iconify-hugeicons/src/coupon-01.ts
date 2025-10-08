@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const coupon01: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path stroke-width=\"1.5\" d=\"m10.874 21.512l-2.03-1.205c-.516-.306-.773-.459-1.06-.467c-.308-.01-.57.137-1.127.467c-.624.37-1.864 1.39-2.666.904c-.491-.298-.491-1.054-.491-2.565V8c0-2.828 0-4.243.879-5.121C5.257 2 6.672 2 9.5 2h5c2.828 0 4.243 0 5.121.879c.879.878.879 2.293.879 5.121v10.646c0 1.511 0 2.267-.49 2.565c-.803.486-2.043-.534-2.667-.904c-.515-.306-.773-.459-1.058-.467c-.31-.01-.572.137-1.128.467l-2.03 1.205c-.548.325-.822.488-1.127.488s-.579-.163-1.126-.488M15 8l-6 6\"/><path stroke-width=\"2\" d=\"M15 14h-.009M9.009 8H9\"/></g>",

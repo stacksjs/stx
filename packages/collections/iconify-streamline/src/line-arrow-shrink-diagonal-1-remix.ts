@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lineArrowShrinkDiagonal1Remix: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M13.442.558a.625.625 0 0 1 0 .884l-3.433 3.433H12.5a.625.625 0 1 1 0 1.25h-4a.623.623 0 0 1-.625-.625v-4a.625.625 0 1 1 1.25 0v2.491L12.558.558a.625.625 0 0 1 .884 0M6.078 8.261a.6.6 0 0 0-.135-.202h-.001l-.001-.002a.62.62 0 0 0-.441-.182h-4a.625.625 0 1 0 0 1.25h2.491L.558 12.558a.625.625 0 1 0 .884.884l3.433-3.433V12.5a.625.625 0 1 0 1.25 0v-4a.6.6 0 0 0-.047-.24\" clip-rule=\"evenodd\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const textLink: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18.706 27.585a5.262 5.262 0 0 1-3.723-8.983l1.415 1.414a3.264 3.264 0 1 0 4.616 4.616l6.03-6.03a3.264 3.264 0 0 0-4.616-4.616l-1.414-1.414a5.264 5.264 0 0 1 7.444 7.444l-6.03 6.03a5.25 5.25 0 0 1-3.722 1.539\"/><path fill=\"currentColor\" d=\"M10.264 29.997a5.262 5.262 0 0 1-3.722-8.983l6.03-6.03a5.264 5.264 0 1 1 7.444 7.443l-1.414-1.414a3.264 3.264 0 1 0-4.616-4.615l-6.03 6.03a3.264 3.264 0 0 0 4.616 4.616l1.414 1.414a5.25 5.25 0 0 1-3.722 1.54M2 10h8v2H2zm0-4h12v2H2zm0-4h12v2H2z\"/>",

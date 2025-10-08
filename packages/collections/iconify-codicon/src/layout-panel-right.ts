@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const layoutPanelRight: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m1 2l1-1h12l1 1v12l-1 1H2l-1-1zm1 0v12h3V2zm4 0v8h8V2z\"/>",

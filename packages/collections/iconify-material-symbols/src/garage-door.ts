@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const garageDoor: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 14v-2h8v2zm0 3v-2h8v2zm0 3v-2h8v2zm4-17l10 9h-3v8h-2v-9H7v9H5v-8H2z\"/>",

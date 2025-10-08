@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const notificationOff: IconData = {
   "body": "<circle cx=\"18\" cy=\"6\" r=\"3\" fill=\"currentColor\"/><path fill=\"currentColor\" d=\"M20 18v-7.422A5 5 0 0 1 18 11a5 5 0 0 1-5-5c0-.712.153-1.387.422-2H6c-.178 0-.347.031-.51.076L3.707 2.293L2.293 3.707l18 18l1.414-1.414l-1.783-1.783c.045-.163.076-.332.076-.51M4 18c0 1.103.897 2 2 2h9.879L4 8.121z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const playArrowOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9 17.192V6.808L17.154 12zm1-1.842L15.289 12L10 8.65z\"/>",

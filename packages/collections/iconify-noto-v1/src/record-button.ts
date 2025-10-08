@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const recordButton: IconData = {
   "body": "<path fill=\"none\" d=\"M128 128H0V0h128z\"/><circle cx=\"64\" cy=\"64\" r=\"32\" fill=\"#40c0e7\"/>",

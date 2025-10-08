@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-streamline-freehand-color')
+console.log('✓ Built @stacksjs/iconify-streamline-freehand-color')

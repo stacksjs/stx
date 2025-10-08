@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bulletedListBullet: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 1664v-128h128v128zm0-384v-128h128v128zm0-896h128v128H0zm0 512V768h128v128z\"/>",

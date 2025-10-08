@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const firebaseBolt: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 0v278.831h83.547V512L272 197.081H160.806L272 0z\"/>",

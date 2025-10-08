@@ -1,11 +1,11 @@
-# @stx/iconify-pepicons-pop
+# @stacksjs/iconify-pepicons-pop
 
 Pepicons Pop! icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-pepicons-pop
+bun add @stacksjs/iconify-pepicons-pop
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-pepicons-pop
 
 ```html
 <script>
-  import { home } from '@stx/iconify-pepicons-pop'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-pepicons-pop'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-pepicons-pop
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-pepicons-pop'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-pepicons-pop'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

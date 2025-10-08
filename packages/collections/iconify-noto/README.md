@@ -1,11 +1,11 @@
-# @stx/iconify-noto
+# @stacksjs/iconify-noto
 
 Noto Emoji icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-noto
+bun add @stacksjs/iconify-noto
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-noto
 
 ```html
 <script>
-  import { home } from '@stx/iconify-noto'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-noto'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-noto
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-noto'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-noto'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

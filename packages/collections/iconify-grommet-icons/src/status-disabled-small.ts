@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const statusDisabledSmall: IconData = {
   "body": "<rect width=\"10\" height=\"10\" x=\"1\" y=\"1\" fill=\"currentColor\" fill-rule=\"evenodd\" stroke=\"currentColor\" rx=\"1\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowsOppositeToDots: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M9.28 4.78a.75.75 0 0 0 0-1.06l-2.5-2.5a.75.75 0 1 0-1.06 1.06L6.94 3.5H1.75a.75.75 0 1 0 0 1.5h5.19L5.72 6.22a.75.75 0 1 0 1.06 1.06zm-.06 3.94l-2.5 2.5a.75.75 0 0 0 0 1.06l2.5 2.5a.75.75 0 1 0 1.06-1.06L9.06 12.5h5.19a.75.75 0 0 0 0-1.5H9.06l1.22-1.22a.75.75 0 1 0-1.06-1.06M14 4.25a1.75 1.75 0 1 1-3.5 0a1.75 1.75 0 0 1 3.5 0M3.75 13.5a1.75 1.75 0 1 0 0-3.5a1.75 1.75 0 0 0 0 3.5\" clip-rule=\"evenodd\"/>",

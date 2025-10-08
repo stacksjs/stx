@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const blurMediumRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 17q-.425 0-.712-.288T7 16t.288-.712T8 15h3q-.35-.425-.562-.937T10.1 13H5.5q-.425 0-.712-.288T4.5 12t.288-.712T5.5 11h4.6q.125-.55.338-1.062T11 9H5q-.425 0-.712-.288T4 8t.288-.712T5 7h10q2.075 0 3.538 1.463T20 12t-1.463 3.538T15 17zm7-2q1.25 0 2.125-.875T18 12t-.875-2.125T15 9t-2.125.875T12 12t.875 2.125T15 15M5 17q-.425 0-.712-.288T4 16t.288-.712T5 15t.713.288T6 16t-.288.713T5 17\"/>",

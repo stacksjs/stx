@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pathTrim: IconData = {
   "body": "<g fill=\"currentColor\"><path d=\"M5 5h10v3H8v7H5z\"/><path d=\"M19 9H9v10h10z\"/></g>",

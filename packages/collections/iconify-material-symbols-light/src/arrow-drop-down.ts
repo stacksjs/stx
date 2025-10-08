@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowDropDown: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 14.308L8.192 10.5h7.616z\"/>",

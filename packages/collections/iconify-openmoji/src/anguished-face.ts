@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const anguishedFace: IconData = {
   "body": "<path fill=\"#FCEA2B\" d=\"M36 13c-12.682 0-23 10.318-23 23s10.318 23 23 23s23-10.318 23-23s-10.318-23-23-23\"/><path fill=\"#FFF\" d=\"M28 46s-.12-2.904 0-3c1.369-.73 3.965-1 8-1c4 0 6.652.28 8 1c.088.057 0 3 0 3z\"/><circle cx=\"36\" cy=\"36\" r=\"23\" fill=\"none\" stroke=\"#000\" stroke-miterlimit=\"10\" stroke-width=\"2\"/><path d=\"M30 30.925a3.001 3.001 0 0 1-6 0c0-1.655 1.345-3 3-3s3 1.345 3 3m18 0a3.001 3.001 0 0 1-6 0c0-1.655 1.345-3 3-3s3 1.345 3 3\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M28 46s-.12-2.904 0-3c1.369-.73 3.965-1 8-1c4 0 6.652.28 8 1c.088.057 0 3 0 3zm-4.852-21.75c.487.228 2.628 1.16 5.164.333c2.058-.672 3.177-2.112 3.54-2.624m17 2.291c-.487.228-2.628 1.16-5.164.333c-2.058-.672-3.177-2.112-3.54-2.624\"/>",

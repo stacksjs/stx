@@ -406,7 +406,7 @@ const cspConfig = {
 ### Template Unit Tests
 
 ```typescript
-import { renderTemplate } from '@stx/testing'
+import { renderTemplate } from '@stacksjs/testing'
 
 test('user list template', () => {
   const template = `

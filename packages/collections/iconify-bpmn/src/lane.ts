@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lane: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M96 484v1080h1856V484zm96 989.242v-891.54l1660-.003v891.543z\"/>",

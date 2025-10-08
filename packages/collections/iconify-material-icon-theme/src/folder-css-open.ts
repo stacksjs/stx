@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const folderCssOpen: IconData = {
   "body": "<defs><path id=\"SVG7dKqKcJs\" fill=\"#d1c4e9\" d=\"M14 20v-2h-2v8h2v-2h2v2a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2Zm10 0v-2a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2c0 .839.357 2.34 2.746 2.966C21.437 23.15 22 23.612 22 24v2h-2v-2h-2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a3.345 3.345 0 0 0-2.746-2.967C20 20.703 20 20.193 20 20v-2h2v2Zm8 0v-2a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2c0 .839.357 2.34 2.746 2.966C29.437 23.15 30 23.612 30 24v2h-2v-2h-2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a3.345 3.345 0 0 0-2.746-2.967C28 20.703 28 20.193 28 20v-2h2v2Z\"/></defs><path fill=\"#7e57c2\" d=\"M28.967 12H9.442a2 2 0 0 0-1.898 1.368L4 24V10h24a2 2 0 0 0-2-2H15.124a2 2 0 0 1-1.28-.464l-1.288-1.072A2 2 0 0 0 11.276 6H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h22l4.805-11.212A2 2 0 0 0 28.967 12\"/><use href=\"#SVG7dKqKcJs\"/><use href=\"#SVG7dKqKcJs\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cropArrowRotate20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.805 6.734A7 7 0 0 1 9.998 3a6.99 6.99 0 0 1 5.746 3H14a.5.5 0 0 0 0 1h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-1 0v1.838A7.99 7.99 0 0 0 9.998 2a8 8 0 0 0-7.077 4.266a.5.5 0 1 0 .884.468M6 14H4.253a6.99 6.99 0 0 0 5.745 3a7 7 0 0 0 6.193-3.734a.5.5 0 0 1 .884.468A8 8 0 0 1 9.998 18A7.99 7.99 0 0 1 3.5 14.667V16.5a.5.5 0 0 1-1 0v-3A.5.5 0 0 1 3 13h3a.5.5 0 0 1 0 1m1.5-9a.5.5 0 0 1 .5.5V11a1 1 0 0 0 1 1h5.5a.5.5 0 0 1 0 1H13v1.5a.5.5 0 0 1-1 0V13H9a2 2 0 0 1-2-2V8H5.5a.5.5 0 0 1 0-1H7V5.5a.5.5 0 0 1 .5-.5m4.5 6V9a1 1 0 0 0-1-1H9V7h2a2 2 0 0 1 2 2v2z\"/>",

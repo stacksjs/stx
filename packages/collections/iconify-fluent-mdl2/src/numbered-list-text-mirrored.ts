@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const numberedListTextMirrored: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 1536v-128h1536v128zm0-512V896h1536v128zm0-640h1536v128H0z\"/>",

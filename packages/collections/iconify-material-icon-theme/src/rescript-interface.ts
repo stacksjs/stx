@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const rescriptInterface: IconData = {
   "body": "<path fill=\"#ef5350\" d=\"M16 21.862A2.14 2.14 0 0 1 13.862 24h-1.724A2.14 2.14 0 0 1 10 21.862V10.138A2.14 2.14 0 0 1 12.138 8H16ZM21 14a3 3 0 1 1 3-3a3 3 0 0 1-3 3\"/><path fill=\"#ef5350\" d=\"M24 4a4.005 4.005 0 0 1 4 4v16a4.005 4.005 0 0 1-4 4H8a4.005 4.005 0 0 1-4-4V8a4.005 4.005 0 0 1 4-4zm0-2H8a6 6 0 0 0-6 6v16a6 6 0 0 0 6 6h16a6 6 0 0 0 6-6V8a6 6 0 0 0-6-6\"/>",

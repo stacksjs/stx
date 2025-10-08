@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const officeChatSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1792 128v512H640v859l-384 384v-475H0V128zM768 768h1280v896h-256v347l-347-347H768z\"/>",

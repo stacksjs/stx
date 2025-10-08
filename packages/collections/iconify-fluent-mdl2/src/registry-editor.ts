@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const registryEditor: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1152 896h512v1152H0V384h1152zM640 512v384h384V512zm384 896v-384H640v384zM128 512v384h384V512zm0 512v384h384v-384zm384 896v-384H128v384zm512 0v-384H640v384zm512 0v-384h-384v384zm-384-512h384v-384h-384zm832-960l-384 384l-384-384l384-384zm-384-239l-239 239l239 239l239-239z\"/>",

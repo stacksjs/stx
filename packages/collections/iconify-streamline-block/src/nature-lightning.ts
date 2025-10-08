@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const natureLightning: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 10H0L10 0v6h6L6 16z\"/>",

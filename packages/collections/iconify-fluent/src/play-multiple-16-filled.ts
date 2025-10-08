@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const playMultiple16Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.44 12.56a1.5 1.5 0 0 0 1.795.245l8-4.5a1.5 1.5 0 0 0 0-2.611l-8.01-4.506A1.52 1.52 0 0 0 4 2.5v9c0 .398.158.78.44 1.06m7.32-1.72l1.22-.68q.018.124.02.25a1.51 1.51 0 0 1-.76 1.31l-5.08 2.86A3.6 3.6 0 0 1 5.5 15a3 3 0 0 1-.91-.13A3.33 3.33 0 0 1 3 13.94a3.46 3.46 0 0 1-1-2.44V5.91a1.48 1.48 0 0 1 1-1.39v6.98a2.513 2.513 0 0 0 3.7 2.19l5.05-2.84a.01.01 0 0 0 .01-.01\"/>",

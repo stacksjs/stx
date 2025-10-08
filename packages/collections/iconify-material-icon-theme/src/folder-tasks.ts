@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const folderTasks: IconData = {
   "body": "<path fill=\"#5c6bc0\" d=\"m13.844 7.536l-1.288-1.072A2 2 0 0 0 11.276 6H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h24a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2H15.124a2 2 0 0 1-1.28-.464\"/><path fill=\"#c5cae9\" d=\"M23.08 24L20 21.108l1.378-1.465l1.718 1.612L26.638 18L28 19.48z\"/><path fill=\"#c5cae9\" d=\"M30 12v-2h-2v2h-8v-2h-2v2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V14a2 2 0 0 0-2-2m0 14H18V16h12Z\"/>",

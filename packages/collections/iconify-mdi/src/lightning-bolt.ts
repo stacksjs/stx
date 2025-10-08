@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lightningBolt: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11 15H6l7-14v8h5l-7 14z\"/>",

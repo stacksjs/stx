@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bulletedList2Mirrored: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 384v128h1536V384zm1536 512H0v128h1536zm0 512H0v128h1536zm512-1152h-384v384h384zm-128 256h-128V384h128zm128 256h-384v384h384zm-128 256h-128V896h128zm128 256h-384v384h384zm-128 256h-128v-128h128z\"/>",

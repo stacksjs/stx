@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chatBubbleOval: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#d7e0ff\" d=\"M7 13.5a6.5 6.5 0 1 0-5.411-2.897L.5 13.5l3.645-.66A6.46 6.46 0 0 0 7 13.5\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M4.145 12.84a6.5 6.5 0 1 0-2.556-2.238m2.556 2.239L.5 13.5l1.089-2.897m2.556 2.238l.005-.001m-2.561-2.237l.001-.003\"/></g>",

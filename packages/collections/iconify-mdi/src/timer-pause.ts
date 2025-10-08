@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const timerPause: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16.5 16.5h1.88v5H16.5zm3.13 0v5h1.87v-5zM15 1H9v2h6zm6 12.35c-.64-.22-1.3-.35-2-.35c-3.31 0-6 2.69-6 6c0 1.03.26 2 .71 2.83c-.55.11-1.12.17-1.71.17a9 9 0 0 1 0-18c2.12 0 4.07.74 5.62 2l1.42-1.44c.51.44.96.9 1.41 1.41l-1.42 1.42A8.96 8.96 0 0 1 21 13zM13 7h-2v7h2z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const seilor: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M16.5 7.5C16.5 5.047 14.453 3 12 3S7.5 5.047 7.5 7.5V3C5.047 3 3 5.047 3 7.5h4.5C5.047 7.5 3 9.547 3 12s2.047 4.5 4.5 4.5H3C3 18.953 5.047 21 7.5 21v-4.5c0 2.453 2.047 4.5 4.5 4.5s4.5-2.047 4.5-4.5V21c2.453 0 4.5-2.047 4.5-4.5h-4.5c2.453 0 4.5-2.047 4.5-4.5s-2.047-4.5-4.5-4.5m0 4.5v4.5H12a4.5 4.5 0 0 0 4.5-4.5m-9 0A4.5 4.5 0 0 1 12 7.5H7.5zm0 0a4.5 4.5 0 0 0 4.5 4.5H7.5zm9 0V3C18.953 3 21 5.047 21 7.5h-9a4.5 4.5 0 0 1 4.5 4.5\" clip-rule=\"evenodd\"/>",

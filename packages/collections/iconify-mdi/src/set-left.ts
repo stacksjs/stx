@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const setLeft: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9 5a7 7 0 0 0-7 7a7 7 0 0 0 7 7c1.04 0 2.06-.24 3-.68c.94.44 1.96.68 3 .68a7 7 0 0 0 7-7a7 7 0 0 0-7-7c-1.04 0-2.06.24-3 .68c-.94-.44-1.96-.68-3-.68m6 2a5 5 0 0 1 5 5a5 5 0 0 1-5 5c-.34 0-.67-.03-1-.1c1.28-1.31 2-3.07 2-4.9s-.72-3.59-2-4.89c.33-.07.66-.11 1-.11m-3 1c1.26.95 2 2.43 2 4s-.74 3.05-2 4a5.01 5.01 0 0 1-2-4c0-1.57.74-3.05 2-4\"/>",

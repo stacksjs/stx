@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bbank: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.91 3h1.637v10.907H4.91z\"/><path fill=\"currentColor\" d=\"M4.91 3h1.637v3.817S6.274 4.363 4.91 3m14.18 10.907A7.088 7.088 0 1 1 6.546 9.381v4.526a5.453 5.453 0 1 0 1.636-3.894V7.93a7.09 7.09 0 0 1 10.906 5.977\"/><path fill=\"currentColor\" d=\"M19.088 13.907c0-4.614-5.59-6.686-9.358-4.963a5.5 5.5 0 0 0-1.548 1.074V7.935a7.09 7.09 0 0 1 10.906 5.972\"/><path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"m10.364 9.544l-1.636.818v4.09a3.272 3.272 0 1 0 1.636-2.835zm0 4.908a1.637 1.637 0 1 0 3.274 0a1.637 1.637 0 0 0-3.274 0\" clip-rule=\"evenodd\"/><path fill=\"currentColor\" d=\"m8.728 10.362l1.636-.818v2.073a3.256 3.256 0 0 1 4.292.927c-1.048 0-2.525-.055-3.474.49c-1.615.933-1.833 3.338-1.833 3.338a3.26 3.26 0 0 1-.621-1.92z\"/>",

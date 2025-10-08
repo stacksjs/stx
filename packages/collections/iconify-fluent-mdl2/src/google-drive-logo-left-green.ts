@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const googleDriveLogoLeftGreen: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M942 836L323 1920L0 1354L619 270z\"/>",

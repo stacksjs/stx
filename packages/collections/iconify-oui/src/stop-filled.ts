@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stopFilled: IconData = {
   "body": "<rect width=\"12\" height=\"12\" x=\"2\" y=\"2\" fill=\"currentColor\" fill-rule=\"evenodd\" rx=\"2\"/>",

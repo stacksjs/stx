@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tableLightning16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.5 2A2.5 2.5 0 0 0 2 4.5v7A2.5 2.5 0 0 0 4.5 14h3.22l.25-1H6v-2h.087l.03-.077l.385-.923H6V6h2.168l.032-.077A1.5 1.5 0 0 1 9.585 5h3.473c.363 0 .688.126.942.332V4.5A2.5 2.5 0 0 0 11.5 2zm5.085 3H6V3h4v2zM3 11h2v2h-.5A1.5 1.5 0 0 1 3 11.5zm0-5h2v4H3zm1.5-3H5v2H3v-.5A1.5 1.5 0 0 1 4.5 3M13 4.5V5h-2V3h.5A1.5 1.5 0 0 1 13 4.5M8.61 12a.5.5 0 0 1 .485.621l-.434 1.738c-.121.483.462.827.826.487l4.873-4.548A.75.75 0 0 0 13.848 9h-.404a.5.5 0 0 1-.474-.658l.561-1.684A.5.5 0 0 0 13.057 6H9.584a.5.5 0 0 0-.462.308l-2.083 5a.5.5 0 0 0 .462.692z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dataBackup: IconData = {
   "body": "<circle cx=\"7\" cy=\"7\" r=\"1\" fill=\"currentColor\"/><circle cx=\"7\" cy=\"15\" r=\"1\" fill=\"currentColor\"/><circle cx=\"7\" cy=\"23\" r=\"1\" fill=\"currentColor\"/><path fill=\"currentColor\" d=\"M12 26H4v-6h8v-2H4v-6h18V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v22a2 2 0 0 0 2 2h8ZM4 4h16v6H4Z\"/><path fill=\"currentColor\" d=\"M28 17v2.413A6.996 6.996 0 1 0 22 30v-2a5 5 0 1 1 4.576-7H24v2h6v-6Z\"/>",

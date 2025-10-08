@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dataPie24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12.728 2.216a.75.75 0 0 1 .544-.212a9 9 0 0 1 8.724 8.724a.75.75 0 0 1-.75.772H13.25a.75.75 0 0 1-.75-.75V2.754a.75.75 0 0 1 .228-.538M14 3.566V10h6.434A7.504 7.504 0 0 0 14 3.566m-3 1.199a.75.75 0 0 0-.817-.747a9 9 0 1 0 9.779 9.801a.75.75 0 0 0-.747-.819H13.25A2.25 2.25 0 0 1 11 10.75zM3.5 12.98a7.5 7.5 0 0 1 6-7.35v5.119a3.75 3.75 0 0 0 3.75 3.75h5.096A7.5 7.5 0 0 1 3.5 12.981\"/>",

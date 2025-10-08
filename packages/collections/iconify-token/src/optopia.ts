@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const optopia: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M9.318 15.614a4.5 4.5 0 1 1 4.932.284v-.893l-4.032 2.373v1.953l-.9.9zm.9.72l4.032-2.373V9.534l-4.032 2.378zM21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0\" clip-rule=\"evenodd\"/>",

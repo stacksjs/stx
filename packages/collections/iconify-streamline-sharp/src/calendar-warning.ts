@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const calendarWarning: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" d=\"M2 4h20v18H2zm5-3v3m10-3v3M2 8h20m-10 2.5v5m0 2V19\"/>",

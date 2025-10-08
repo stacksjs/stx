@@ -1,11 +1,11 @@
-# @stx/iconify-devicon
+# @stacksjs/iconify-devicon
 
 Devicon icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-devicon
+bun add @stacksjs/iconify-devicon
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-devicon
 
 ```html
 <script>
-  import { home } from '@stx/iconify-devicon'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-devicon'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-devicon
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-devicon'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-devicon'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

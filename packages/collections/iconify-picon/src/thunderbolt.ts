@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const thunderbolt: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m2 0l4 4H2l4 4\"/>",

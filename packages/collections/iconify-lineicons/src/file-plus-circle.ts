@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const filePlusCircle: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M10.945 20.5a7 7 0 0 0 1.393 1.5H6.75a2.25 2.25 0 0 1-2.25-2.25V9.621c0-.596.237-1.169.659-1.59l5.367-5.371A2.25 2.25 0 0 1 12.118 2h5.132a2.25 2.25 0 0 1 2.25 2.25v6.128a6.8 6.8 0 0 0-1.5-.49V4.25a.75.75 0 0 0-.75-.75h-5.002l.003 3.998A2.25 2.25 0 0 1 10 9.75H6v10c0 .414.336.75.75.75zM10.75 4.559L7.059 8.25h2.942a.75.75 0 0 0 .75-.75z\" clip-rule=\"evenodd\"/><path fill=\"currentColor\" d=\"M15.875 15a.75.75 0 0 1 1.5 0v.875h.875a.75.75 0 0 1 0 1.5h-.875v.875a.75.75 0 1 1-1.5 0v-.875H15a.75.75 0 0 1 0-1.5h.875z\"/><path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M11.25 16.625a5.375 5.375 0 1 1 10.75 0a5.375 5.375 0 0 1-10.75 0m5.375-3.875a3.875 3.875 0 1 0 0 7.75a3.875 3.875 0 0 0 0-7.75\" clip-rule=\"evenodd\"/>",

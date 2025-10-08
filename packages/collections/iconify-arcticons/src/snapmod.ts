@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const snapmod: IconData = {
   "body": "<rect width=\"21.7\" height=\"39\" x=\"13.15\" y=\"4.5\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"2.022\"/>",

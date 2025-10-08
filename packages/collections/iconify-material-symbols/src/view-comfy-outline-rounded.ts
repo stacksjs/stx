@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const viewComfyOutlineRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v12q0 .825-.587 1.413T20 20H4q-.825 0-1.412-.587T2 18m18-7V6H4v5zm-10 7h10v-5H10zm-6 0h4v-5H4z\"/>",

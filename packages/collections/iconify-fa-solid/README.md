@@ -1,11 +1,11 @@
-# @stx/iconify-fa-solid
+# @stacksjs/iconify-fa-solid
 
 Font Awesome 5 Solid icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-fa-solid
+bun add @stacksjs/iconify-fa-solid
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-fa-solid
 
 ```html
 <script>
-  import { home } from '@stx/iconify-fa-solid'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-fa-solid'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-fa-solid
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-fa-solid'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-fa-solid'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

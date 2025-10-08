@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fingerprint: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 7a1 1 0 1 1-2 0a7 7 0 1 1 14 0v2a1 1 0 0 1-2 0V7A5 5 0 1 0 2 7m3 3a1 1 0 0 1-2 0V7a4 4 0 1 1 8 0a1 1 0 0 1-2 0a2 2 0 1 0-4 0zm-2 3a1 1 0 0 1 2 0a2 2 0 1 0 4 0v-3a1 1 0 1 1 2 0v3a4 4 0 1 1-8 0m3-5a1 1 0 1 1 2 0v4a1 1 0 0 1-2 0zm-6 3a1 1 0 0 1 2 0v2a5 5 0 0 0 10 0a1 1 0 0 1 2 0a7 7 0 0 1-14 0z\"/>",

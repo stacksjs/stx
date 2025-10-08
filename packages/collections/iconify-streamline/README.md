@@ -1,11 +1,11 @@
-# @stx/iconify-streamline
+# @stacksjs/iconify-streamline
 
 Streamline icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-streamline
+bun add @stacksjs/iconify-streamline
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-streamline
 
 ```html
 <script>
-  import { home } from '@stx/iconify-streamline'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-streamline'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-streamline
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-streamline'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-streamline'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

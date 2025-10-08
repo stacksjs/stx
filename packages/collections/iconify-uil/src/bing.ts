@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bing: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m10.1 8.6l1.7 4.3l2.8 1.3L9 17.5V3.4L5 2v17.8L9 22l10-5.8v-4.5z\"/>",

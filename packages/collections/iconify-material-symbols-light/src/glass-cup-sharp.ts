@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const glassCupSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6.027 21L4 3h16l-2.008 18zm.51-4.5h10.952L18.866 4H5.116z\"/>",

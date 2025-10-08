@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const codepen: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\"><path d=\"M21 9v6M3 15V9m9 12v-6m0-12v6m0 6L3 9l9-6l9 6z\"/><path d=\"m12 21l-9-6l9-6l9 6z\"/></g>",

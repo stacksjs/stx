@@ -1,11 +1,11 @@
-# @stx/iconify-mynaui
+# @stacksjs/iconify-mynaui
 
 Myna UI Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-mynaui
+bun add @stacksjs/iconify-mynaui
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-mynaui
 
 ```html
 <script>
-  import { home } from '@stx/iconify-mynaui'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-mynaui'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-mynaui
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-mynaui'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-mynaui'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

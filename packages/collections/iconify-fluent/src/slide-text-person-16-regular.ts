@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const slideTextPerson16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 5.5A2.5 2.5 0 0 1 3.5 3h9A2.5 2.5 0 0 1 15 5.5v.841c-.257-.386-.6-.71-1.003-.942A1.5 1.5 0 0 0 12.5 4h-9A1.5 1.5 0 0 0 2 5.5v5A1.5 1.5 0 0 0 3.5 12h4.55q-.05.243-.05.5q0 .25.038.5H3.5A2.5 2.5 0 0 1 1 10.5zM9.67 7c-.11.313-.17.65-.17 1h-5a.5.5 0 0 1 0-1zM4.5 5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1zm0 4a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1zm10-1a2 2 0 1 1-4 0a2 2 0 0 1 4 0m1.5 4.5c0 1.245-1 2.5-3.5 2.5S9 13.75 9 12.5a1.5 1.5 0 0 1 1.5-1.5h4a1.5 1.5 0 0 1 1.5 1.5\"/>",

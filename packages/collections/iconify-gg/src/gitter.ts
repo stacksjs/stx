@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const gitter: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 1.5h2v13H5zm4 3h2v18H9zm6 0h-2v18h2zm2 0h2v10h-2z\"/>",

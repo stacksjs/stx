@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-generator",
+  "name": "@stacksjs/iconify-generator",
   "version": "0.0.1",
   "description": "Generator for Iconify icon packages",
   "author": "Chris Breuer <chris@stacksjs.org>",
@@ -26,7 +26,7 @@
     "dev": "bun build.ts --watch"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

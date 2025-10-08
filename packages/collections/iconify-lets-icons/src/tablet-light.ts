@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tabletLight: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\"><rect width=\"15\" height=\"19\" x=\"4.5\" y=\"2.5\" rx=\"2.5\"/><path d=\"M15 18H9\"/></g>",

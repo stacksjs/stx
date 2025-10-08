@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const doubleChevronRight8: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m187 262l762 762l-762 762L6 1605l581-581L6 443zm1786 762l-762 762l-181-181l581-581l-581-581l181-181z\"/>",

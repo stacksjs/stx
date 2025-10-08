@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const iosPlus: IconData = {
   "body": "<path d=\"M256 48C141.1 48 48 141.1 48 256s93.1 208 208 208 208-93.1 208-208S370.9 48 256 48zm128 217H264v119h-17V265H128v-17h119V128h17v120h120v17z\" fill=\"currentColor\"/>",

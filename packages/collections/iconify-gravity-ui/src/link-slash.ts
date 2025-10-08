@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const linkSlash: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"m8 9.06l4.97 4.97a.75.75 0 1 0 1.06-1.06l-11-11a.75.75 0 0 0-1.06 1.06L6.94 8L5.47 9.47a.75.75 0 1 0 1.06 1.06zm3.54-.722L12.601 9.4l.656-.656a4.243 4.243 0 0 0-6-6l-.656.656l1.06 1.06l.657-.656a2.743 2.743 0 0 1 3.879 3.879zM9.47 5.47l-.4.399l1.061 1.06l.4-.399A.75.75 0 1 0 9.47 5.47M3.22 6.78a.75.75 0 0 1 1.06 1.061l-.477.477a2.743 2.743 0 0 0 3.879 3.879l.477-.477a.75.75 0 0 1 1.06 1.06l-.476.477a4.243 4.243 0 0 1-6-6z\" clip-rule=\"evenodd\"/>",

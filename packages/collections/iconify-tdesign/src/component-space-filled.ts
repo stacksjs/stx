@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const componentSpaceFilled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M22 3H2v8h20zm0 10H2v8h20z\"/>",

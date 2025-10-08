@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const shoppingCartCheckSolid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M3.505.078a.75.75 0 0 1 .746.675l.285 2.833h7.549a1.43 1.43 0 0 1 1.217.6a1.43 1.43 0 0 1 .199 1.286l-1.239 3.725V9.2a1.43 1.43 0 0 1-1.417.973H4.994a1.43 1.43 0 0 1-1.431-1.24L3.08 4.135l-.002-.052l-.252-2.506H1.177a.75.75 0 0 1 0-1.5zm7.15 11.566a1.178 1.178 0 1 1 0 2.356a1.178 1.178 0 0 1 0-2.356m-3.969 1.178a1.178 1.178 0 1 0-2.355 0a1.178 1.178 0 0 0 2.355 0m3.305-6.668a.625.625 0 0 0-1-.75L7.702 7.126l-.61-.457a.625.625 0 1 0-.75 1l1.111.832a.625.625 0 0 0 .875-.125z\" clip-rule=\"evenodd\"/>",

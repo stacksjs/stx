@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const primitiveSquare: IconData = {
   "body": "<path fill-rule=\"evenodd\" d=\"M8 12H0V4h8v8z\" fill=\"currentColor\"/>",

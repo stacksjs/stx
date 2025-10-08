@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const paddingDown20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m14.354 11.354l-4.5 4.5a.5.5 0 0 1-.708 0l-4.5-4.5a.5.5 0 0 1 .708-.708L9 14.293V4.5a.5.5 0 0 1 1 0v9.793l3.646-3.647a.5.5 0 0 1 .708.708M3.5 3a.5.5 0 0 1 0-1h12a.5.5 0 0 1 0 1zm0 15a.5.5 0 0 1 0-1h1a.5.5 0 0 1 0 1zm3 0a.5.5 0 0 1 0-1h2a.5.5 0 0 1 0 1zm4 0a.5.5 0 0 1 0-1h2a.5.5 0 0 1 0 1zm4 0a.5.5 0 0 1 0-1h1a.5.5 0 0 1 0 1z\"/>",

@@ -1,11 +1,11 @@
-# @stx/iconify-entypo
+# @stacksjs/iconify-entypo
 
 Entypo+ icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-entypo
+bun add @stacksjs/iconify-entypo
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-entypo
 
 ```html
 <script>
-  import { home } from '@stx/iconify-entypo'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-entypo'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-entypo
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-entypo'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-entypo'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

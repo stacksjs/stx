@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const borderStyleDotted: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 11H1v2h2zm4 0H5v2h2zm2 0h2v2H9zm6 0h-2v2h2zm2 0h2v2h-2zm6 0h-2v2h2z\"/>",

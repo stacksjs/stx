@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const magnifyingGlassMinus20Solid: IconData = {
   "body": "<g fill=\"currentColor\"><path d=\"M6.75 8.25a.75.75 0 0 0 0 1.5h4.5a.75.75 0 0 0 0-1.5z\"/><path fill-rule=\"evenodd\" d=\"M9 2a7 7 0 1 0 4.391 12.452l3.329 3.328a.75.75 0 1 0 1.06-1.06l-3.328-3.329A7 7 0 0 0 9 2M3.5 9a5.5 5.5 0 1 1 11 0a5.5 5.5 0 0 1-11 0\" clip-rule=\"evenodd\"/></g>",

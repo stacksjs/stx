@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fruiter: IconData = {
   "body": "<defs><mask id=\"SVGYfIswQmF\"><g fill=\"none\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><path d=\"M19 32c-4 0-13 .13-13-9.059c0-1.749.594-5.244 3.865-7.328a2.73 2.73 0 0 0 1.235-1.897C11.6 10.226 14.11 4 22 4c2.293 0 5.988.3 8.384 3.93c.416.631 1.096 1.059 1.838 1.204C35.79 9.83 42.058 13.276 42 20c.06 2.17-.443 5.346-4.506 7.37c-.846.421-1.379 1.313-1.546 2.243C35.497 32.117 33.277 35.375 27 36\"/><path fill=\"#555\" d=\"M16 44c7.093-12.93 2.956-18.653 0-20l14-2c-6.72 9.339-3.422 18.558-.933 22z\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGYfIswQmF)\"/>",

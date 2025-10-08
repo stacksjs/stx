@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const eraserSegment24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M15.841 2.661a2.25 2.25 0 0 0-3.19-.023l-9.598 9.508a2.25 2.25 0 0 0 .007 3.204l5.099 5.008a2.24 2.24 0 0 0 1.69.642h6.265a2.501 2.501 0 1 0 0-1.5h-3.953l8.583-8.673a2.25 2.25 0 0 0 .007-3.158zM9.75 19.5v.002a.75.75 0 0 1-.54-.214l-5.1-5.008a.75.75 0 0 1-.002-1.068l1.53-1.514l6.098 6.099l-1.468 1.483a.75.75 0 0 1-.468.22zm3.957-15.796a.75.75 0 0 1 1.063.007l4.91 5.009a.75.75 0 0 1-.002 1.052L12.79 16.73l-6.088-6.088z\"/>",

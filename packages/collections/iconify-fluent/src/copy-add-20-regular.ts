@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const copyAdd20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 2a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h1.207a5.5 5.5 0 0 1-.185-1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v5.022q.516.047 1 .185V4a2 2 0 0 0-2-2zm-.5 15h2.1q.276.538.657 1H7.5A3.5 3.5 0 0 1 4 14.5V6a2 2 0 0 1 1-1.732V14.5A2.5 2.5 0 0 0 7.5 17M19 14.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-4-2a.5.5 0 0 0-1 0V14h-1.5a.5.5 0 0 0 0 1H14v1.5a.5.5 0 0 0 1 0V15h1.5a.5.5 0 0 0 0-1H15z\"/>",

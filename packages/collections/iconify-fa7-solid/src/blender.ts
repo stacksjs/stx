@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const blender: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 56C0 25.1 25.1 0 56 0h381.6c21.3 0 36.6 20.3 30.8 40.8L457.1 80H344c-13.3 0-24 10.7-24 24s10.7 24 24 24h99.4l-18.3 64H344c-13.3 0-24 10.7-24 24s10.7 24 24 24h67.4L384 336H128l-9.1-96H56c-30.9 0-56-25.1-56-56zm114.3 136L100.6 48H56c-4.4 0-8 3.6-8 8v128c0 4.4 3.6 8 8 8zM136 384h240c22.1 0 40 17.9 40 40v48c0 22.1-17.9 40-40 40H136c-22.1 0-40-17.9-40-40v-48c0-22.1 17.9-40 40-40m120 88a24 24 0 1 0 0-48a24 24 0 1 0 0 48\"/>",

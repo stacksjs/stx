@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const undoLeftRoundLineDuotone: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"1.5\"><path stroke-linejoin=\"round\" d=\"M7 4L4 7l3 3\"/><path d=\"M4 7h11a5 5 0 0 1 0 10H8\" opacity=\".5\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileTypeTaskfile: IconData = {
   "body": "<path fill=\"#28bdb0\" d=\"M16.002 16.256v13.73l-11.75-7.12V9.132z\"/><path fill=\"#68d1c7\" d=\"M16.002 16.256v13.73l11.747-7.12V9.132z\"/><path fill=\"#94ded7\" d=\"M16.002 16.256L4.252 9.133l11.75-7.12l11.747 7.12z\"/>",

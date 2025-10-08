@@ -1,11 +1,11 @@
-# @stx/iconify-dashicons
+# @stacksjs/iconify-dashicons
 
 Dashicons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-dashicons
+bun add @stacksjs/iconify-dashicons
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-dashicons
 
 ```html
 <script>
-  import { home } from '@stx/iconify-dashicons'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-dashicons'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-dashicons
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-dashicons'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-dashicons'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

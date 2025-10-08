@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const galaxy1: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#d7e0ff\" d=\"M5 7a2 2 0 1 0 4 0a2 2 0 1 0-4 0\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M5 7a2 2 0 1 0 4 0a2 2 0 1 0-4 0\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M7.013 9c3 0 5.713-2 5.713-5.083M7.013 5c-3 0-5.739 2-5.739 5.083\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M8.739 7.989C10.239 5.39 9.863 2.042 7.193.5M5.274 5.989c-1.5 2.598-1.137 5.97 1.533 7.511\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M8.725 5.989C7.225 3.39 4.137 2.04 1.467 3.583m3.794 4.406c1.5 2.598 4.602 3.97 7.272 2.428\"/></g>",

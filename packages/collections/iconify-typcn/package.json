@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-typcn",
+  "name": "@stacksjs/iconify-typcn",
   "version": "0.0.1",
   "description": "Typicons icons for stx from Iconify",
   "author": "Stephen Hutchings",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

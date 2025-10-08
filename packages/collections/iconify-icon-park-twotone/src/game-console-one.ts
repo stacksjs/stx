@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const gameConsoleOne: IconData = {
   "body": "<defs><mask id=\"SVGDnWODc1N\"><g fill=\"none\"><rect width=\"28\" height=\"40\" x=\"10\" y=\"4\" stroke=\"#fff\" stroke-width=\"4\" rx=\"2\"/><path fill=\"#555\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"M16 12h16v10H16z\"/><path stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"M16 32h8m-4 4v-8\"/><rect width=\"4\" height=\"4\" x=\"27\" y=\"33\" fill=\"#fff\" rx=\"2\"/><rect width=\"4\" height=\"4\" x=\"30\" y=\"26\" fill=\"#fff\" rx=\"2\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGDnWODc1N)\"/>",

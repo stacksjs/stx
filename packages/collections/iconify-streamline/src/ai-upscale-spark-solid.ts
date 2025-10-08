@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const aiUpscaleSparkSolid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M6.5 1.5a5 5 0 1 0 0 10a5 5 0 0 0 0-10M0 6.5a6.5 6.5 0 1 1 11.749 3.835l1.958 1.958a1 1 0 1 1-1.414 1.414l-1.958-1.958A6.5 6.5 0 0 1 0 6.5m5.74-2.63c.18-.824 1.352-.829 1.539-.007l.009.038A2.275 2.275 0 0 0 9.13 5.697c.859.149.859 1.382 0 1.531A2.275 2.275 0 0 0 7.3 8.964l-.022.098c-.187.821-1.36.816-1.54-.007l-.018-.084a2.26 2.26 0 0 0-1.822-1.744c-.857-.15-.857-1.38 0-1.53a2.26 2.26 0 0 0 1.82-1.734l.013-.062l.007-.031Z\" clip-rule=\"evenodd\"/>",

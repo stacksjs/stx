@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const controlButtonsRewind: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m0 8l10-8v4.8L16 0v16l-6-4.8V16z\"/>",

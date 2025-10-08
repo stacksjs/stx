@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const phoneSignalLowPhoneMobileDeviceSignalWirelessSmartphoneIphoneBarLowBarsAndroid: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M.5 7.5h4.25v6H.5zm10.5 6h2.5m-8.75 0H8.5\"/>",

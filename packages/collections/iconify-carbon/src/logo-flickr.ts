@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const logoFlickr: IconData = {
   "body": "<circle cx=\"8\" cy=\"16\" r=\"6\" fill=\"currentColor\"/><circle cx=\"24\" cy=\"16\" r=\"6\" fill=\"currentColor\"/>",

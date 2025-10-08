@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stopSign: IconData = {
   "body": "<path fill=\"#DD2E44\" d=\"m12 3l-9 8.985V24l9 9h12l9-9V11.985L24 3z\"/><path fill=\"#CCD6DD\" d=\"M24.827 1H11.173L1 11.156v13.672L11.172 35h13.657L35 24.828V11.156zM33 24l-9 9H12l-9-9V11.985L12 3h12l9 8.985z\"/>",

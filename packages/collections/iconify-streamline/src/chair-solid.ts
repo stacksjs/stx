@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chairSolid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M3.532.907a.75.75 0 1 0-1.5 0v6.28h-.187a.75.75 0 1 0 0 1.5h.704l3.127 2.15l-2.382 1.637a.75.75 0 0 0 .85 1.236L7 11.747l2.856 1.963a.75.75 0 0 0 .85-1.236l-2.382-1.637l3.127-2.15h.704a.75.75 0 0 0 0-1.5h-.187V.907a.75.75 0 0 0-1.5 0zm5.271 7.78H5.197L7 9.927zM3.532 5.144v2.043h6.936V5.144z\" clip-rule=\"evenodd\"/>",

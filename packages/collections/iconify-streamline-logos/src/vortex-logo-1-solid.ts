@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const vortexLogo1Solid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M23 1L12 23L1 1h5.762L12 12l5.238-11z\"/>",

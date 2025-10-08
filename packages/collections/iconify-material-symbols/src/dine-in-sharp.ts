@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dineInSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 20V7h2v11h7v2zM7 6q-.825 0-1.412-.587T5 4t.588-1.412T7 2t1.413.588T9 4t-.587 1.413T7 6m5 16v-5H5V9.1q0-.875.6-1.487T7.05 7q.475 0 .888.2t.712.55q1.125 1.225 2.413 2.238T14 11h1.35q-.625-.425-.987-1.062T14 8.5h6.025q0 .8-.363 1.438T18.676 11H22v2h-4v9h-2v-9h-2q-1.325 0-2.675-.575T9 11.05v3.45h5V22z\"/>",

@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-material-symbols-light",
+  "name": "@stacksjs/iconify-material-symbols-light",
   "version": "0.0.1",
   "description": "Material Symbols Light icons for stx from Iconify",
   "author": "Google",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const wallaby: IconData = {
   "body": "<path fill=\"#4caf50\" d=\"M16 2v14H2v14h28V2z\"/>",

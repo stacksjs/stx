@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-streamline-kameleon-color')
+console.log('✓ Built @stacksjs/iconify-streamline-kameleon-color')

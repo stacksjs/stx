@@ -15,20 +15,20 @@ Successfully implemented lightweight Iconify SVG CSS support for stx with the fo
 
 ### Packages Created
 
-1. **@stx/iconify-core** (`packages/iconify-core/`)
+1. **@stacksjs/iconify-core** (`packages/iconify-core/`)
    - Core rendering utilities
    - Icon data types and interfaces
    - SVG generation functions
 
-2. **@stx/iconify-generator** (`packages/iconify-generator/`)
+2. **@stacksjs/iconify-generator** (`packages/iconify-generator/`)
    - CLI tool for generating icon packages
    - Fetches data from Iconify API
    - Generates TypeScript icon components
    - Creates complete packages with build scripts
 
-3. **@stx/iconify-{collection}** (generated on demand)
+3. **@stacksjs/iconify-{collection}** (generated on demand)
    - Individual icon collection packages
-   - Example: `@stx/iconify-lucide`
+   - Example: `@stacksjs/iconify-lucide`
    - Each icon is a separate TypeScript module
    - Fully tree-shakeable
 
@@ -60,8 +60,8 @@ stx iconify generate mdi --output ./my-packages
 
 ```html
 @js
-  import { home, settings, user } from '@stx/iconify-lucide'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home, settings, user } from '@stacksjs/iconify-lucide'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   global.homeIcon = renderIcon(home, { size: 24 })
   global.settingsIcon = renderIcon(settings, { size: 24, color: '#4a90e2' })
@@ -76,8 +76,8 @@ stx iconify generate mdi --output ./my-packages
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, settings } from '@stx/iconify-lucide'
-import { renderIcon } from '@stx/iconify-core'
+import { home, settings } from '@stacksjs/iconify-lucide'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 32,

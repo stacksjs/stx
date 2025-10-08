@@ -1,11 +1,11 @@
-# @stx/iconify-nrk
+# @stacksjs/iconify-nrk
 
 NRK Core Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-nrk
+bun add @stacksjs/iconify-nrk
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-nrk
 
 ```html
 <script>
-  import { home } from '@stx/iconify-nrk'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-nrk'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-nrk
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-nrk'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-nrk'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

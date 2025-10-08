@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const caretHollowMirrored: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m1371 293l-731 731l731 731zm-128 310v842l-421-421z\"/>",

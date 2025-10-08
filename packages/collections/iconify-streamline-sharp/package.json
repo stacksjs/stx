@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-streamline-sharp",
+  "name": "@stacksjs/iconify-streamline-sharp",
   "version": "0.0.1",
   "description": "Sharp free icons icons for stx from Iconify",
   "author": "Streamline",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chevronDoubleUp20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.207 15.267a.75.75 0 0 1 .026-1.06l5.25-5.001a.75.75 0 0 1 1.034 0l5.25 5a.75.75 0 0 1-1.034 1.087L10 10.784l-4.733 4.51a.75.75 0 0 1-1.06-.027m0-4.998a.75.75 0 0 1 .026-1.06l5.25-5.002a.75.75 0 0 1 1.034 0l5.25 5.001a.75.75 0 0 1-1.034 1.086L10 5.786l-4.733 4.509a.75.75 0 0 1-1.06-.026\"/>",

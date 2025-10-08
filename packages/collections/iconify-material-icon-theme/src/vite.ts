@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const vite: IconData = {
   "body": "<path fill=\"#ffab00\" d=\"M10 2v16h4v12l9-16h-6l5-12Z\"/>",

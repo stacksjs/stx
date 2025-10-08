@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const baselineRectangle: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 4h20v16H2z\"/>",

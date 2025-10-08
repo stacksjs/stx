@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const verticalShades: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 20v-1h2V4h14v15h2v1zm6.75-1h4.5V5h-4.5z\"/>",

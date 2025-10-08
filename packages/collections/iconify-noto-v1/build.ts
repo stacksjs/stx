@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-noto-v1')
+console.log('✓ Built @stacksjs/iconify-noto-v1')

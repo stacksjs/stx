@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const breadcrumb: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M256 512h1536v128H256zm384 512V896h1152v128zm384 384v-128h768v128z\"/>",

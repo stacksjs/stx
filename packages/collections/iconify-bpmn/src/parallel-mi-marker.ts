@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const parallelMiMarker: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M500 400v1200h200V400zm400 0v1200h200V400zm400 0v1200h200V400z\"/>",

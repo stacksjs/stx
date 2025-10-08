@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const folderBuildkite: IconData = {
   "body": "<path fill=\"#4caf50\" d=\"m13.844 7.536l-1.288-1.072A2 2 0 0 0 11.276 6H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h24a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2H15.124a2 2 0 0 1-1.28-.464\"/><path fill=\"#c8e6c9\" d=\"m20 24l-6-2v-6l6 2zm10-2h-4v-6l6 4z\"/><path fill=\"#a5d6a7\" d=\"m20 24l6-2v-6l-6 2zm6 4l6-2v-6l-6 2z\"/>",

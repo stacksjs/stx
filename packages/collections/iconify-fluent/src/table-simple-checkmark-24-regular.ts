@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tableSimpleCheckmark24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6.25 3A3.25 3.25 0 0 0 3 6.25v11.5A3.25 3.25 0 0 0 6.25 21h11.5A3.25 3.25 0 0 0 21 17.75V6.25A3.25 3.25 0 0 0 17.75 3zM4.5 6.25c0-.966.784-1.75 1.75-1.75h5v6.75H4.5zm8.25 5V4.5h5c.966 0 1.75.784 1.75 1.75v5zm-8.25 1.5h6.75v6.75h-5a1.75 1.75 0 0 1-1.75-1.75zm13.783 1.967a.75.75 0 0 1 0 1.06L16.28 17.78a.75.75 0 0 1-1.06 0l-1-1a.75.75 0 1 1 1.06-1.06l.47.47l1.473-1.473a.75.75 0 0 1 1.06 0\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const textDirectionVertical24Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 3.75a.75.75 0 0 1 1.5 0v14.69l.72-.72a.75.75 0 0 1 1.06 1.06l-2 2a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 1 1 1.06-1.06l.72.72zm5.553 9.22l3.753-9.496a.75.75 0 0 1 1.345-.104l.05.105l3.747 9.5a.75.75 0 0 1-1.352.643l-.044-.092L18.057 11h-4.113l-.995 2.52a.75.75 0 0 1-.876.454l-.097-.031a.75.75 0 0 1-.453-.876zm4.45-7.178L14.536 9.5h2.928zM16.25 14a.75.75 0 0 0-.75.75v3.69l-.72-.72a.75.75 0 1 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l2-2a.75.75 0 1 0-1.06-1.06l-.72.72v-3.69a.75.75 0 0 0-.75-.75\"/>",

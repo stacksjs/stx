@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const reverseButton: IconData = {
   "body": "<path fill=\"#40c0e7\" d=\"M106 112.5v-97L22 64z\"/>",

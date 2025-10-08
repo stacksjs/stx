@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const emojiAdd16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M13 7a6 6 0 1 0-5.746 5.995A4.5 4.5 0 0 1 7.027 12H7a5 5 0 1 1 5-5v.027q.518.06.995.227Q13 7.128 13 7m-5.888 3.498q.127-.554.38-1.046q-.24.047-.492.048c-.74 0-1.405-.321-1.864-.833a.5.5 0 0 0-.745.666a3.5 3.5 0 0 0 2.72 1.165M6 6a.75.75 0 1 1-1.5 0A.75.75 0 0 1 6 6m2.75.75a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5M15 11.5a3.5 3.5 0 1 1-7 0a3.5 3.5 0 0 1 7 0m-3-2a.5.5 0 0 0-1 0V11H9.5a.5.5 0 0 0 0 1H11v1.5a.5.5 0 0 0 1 0V12h1.5a.5.5 0 0 0 0-1H12z\"/>",

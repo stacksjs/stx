@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const programmingBrowserRemoveAppCodeAppsSubtractProgrammingWindowMinus: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"13\" height=\"13\" x=\".5\" y=\".5\" rx=\"1\"/><path d=\"M.5 3.5h13m-4 5h-5\"/></g>",

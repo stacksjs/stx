@@ -1,11 +1,11 @@
-# @stx/iconify-mi
+# @stacksjs/iconify-mi
 
 Mono Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-mi
+bun add @stacksjs/iconify-mi
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-mi
 
 ```html
 <script>
-  import { home } from '@stx/iconify-mi'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-mi'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-mi
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-mi'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-mi'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const transitionSlideSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 20V4h6v16zm8 0V4h14v16z\"/>",

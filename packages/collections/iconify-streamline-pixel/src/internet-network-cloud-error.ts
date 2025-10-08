@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const internetNetworkCloudError: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M30.47 16.005H32v6.09h-1.53Zm-1.52 6.09h1.52v1.53h-1.52Zm0-7.62h1.52v1.53h-1.52Zm-1.52 9.15h1.52v1.52h-1.52Zm0-10.67h1.52v1.52h-1.52ZM3.05 25.145h24.38v1.52H3.05Zm21.33-13.71h3.05v1.52h-3.05Zm-1.53-1.53h1.53v1.53h-1.53Zm-1.52 7.62h1.52v1.52h-1.52Zm0-3.05h1.52v1.53h-1.52Zm0-6.09h1.52v1.52h-1.52Zm-1.52 7.62h1.52v1.52h-1.52Zm-1.53 1.52h1.53v1.52h-1.53Zm0-3.05h1.53v1.53h-1.53Zm0-7.62h3.05v1.53h-3.05Zm-4.57 15.24h3.05v1.53h3.05v-3.05h-6.1zm0-16.76h4.57v1.52h-4.57Zm-1.52 12.19h1.52v1.52h-1.52Zm0-3.05h1.52v1.53h-1.52Zm-1.53-7.62h3.05v1.53h-3.05Zm0 9.15h1.53v1.52h-1.53Zm-1.52 1.52h1.52v1.52H9.14Zm0-3.05h1.52v1.53H9.14Zm0-6.09h1.52v1.52H9.14Zm-1.52 1.52h1.52v3.05H7.62Zm-4.57 3.05h4.57v1.52H3.05Zm-1.53 10.67h1.53v1.52H1.52Zm0-9.15h1.53v1.53H1.52ZM0 16.005h1.52v7.62H0Z\"/>",

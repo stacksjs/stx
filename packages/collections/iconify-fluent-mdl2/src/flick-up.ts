@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flickUp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1024 1024L0 0h2048z\"/>",

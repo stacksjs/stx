@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const beakerAlert: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 3h18v2c-1.1 0-2 .9-2 2v12c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V7c0-1.1-.9-2-2-2zm4 6v1h3V9zm0 2v1h3v-1zm3 5v-1H7v1zm2-2v-1H7v1zm0-6V7H7v1zm9 5V7h2v6zm0 4v-2h2v2z\"/>",

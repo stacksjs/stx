@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const uploadOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"m7.5 1.5l3.25 3m-3.25-3l-3 3m3-3V11m6-4v6.5h-12V7\"/>",

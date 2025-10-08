@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const histogram: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M416 896V128h192v768zm-288 0V448h192v448zm576 0V320h192v576z\"/>",

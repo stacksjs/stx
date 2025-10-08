@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const downloadFour: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"4\"><path stroke-linejoin=\"round\" d=\"M24 29L12 17h8V6h8v11h8z\" clip-rule=\"evenodd\"/><path d=\"M42 37H6m28 7H14\"/></g>",

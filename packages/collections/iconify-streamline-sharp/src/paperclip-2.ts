@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const paperclip2: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" d=\"M18 18V2H6v20h8V7h-4v11\"/>",

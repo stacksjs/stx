@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const searchFill12: IconData = {
   "body": "<circle cx=\"4.5\" cy=\"4.5\" r=\"3.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path fill=\"currentColor\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"2\" d=\"M11 11L7.5 7.5\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const highlighterF: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m12.914 15.45l-3.182 1.06l-4.242-4.242l1.06-3.182zm1.414-1.414L7.964 7.672l6.364-6.364c1.566-1.566 3.969-1.69 5.657 0l.707.707c1.69 1.688 1.566 4.091 0 5.657zM7.964 17.57L5.136 20.4L.893 17.571l3.536-3.535l3.535 3.535z\"/>",

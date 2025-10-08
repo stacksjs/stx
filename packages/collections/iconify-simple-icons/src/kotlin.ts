@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const kotlin: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M24 24H0V0h24L12 12Z\"/>",

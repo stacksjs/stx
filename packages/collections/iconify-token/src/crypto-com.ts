@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cryptoCom: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M15.078 17.488h-1.114l-1.321-1.221v-.625l1.372-1.308v-2.083l1.795-1.17l2.048 1.544zm-4.597-3.283l.208-1.954l-.675-1.752h3.972l-.66 1.752l.186 1.954zm.905 2.062l-1.322 1.235H8.937l-2.795-4.877l2.062-1.53l1.81 1.156v2.083l1.372 1.308zM8.922 6.893h6.141l.733 3.125H8.204zM11.996 3L4.203 7.504v9L11.996 21l7.8-4.496v-9z\"/>",

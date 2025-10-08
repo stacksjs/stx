@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dottedSixPointedStar: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#8D65C5\" d=\"M2 6a4 4 0 0 1 4-4h20a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z\"/><path fill=\"#fff\" d=\"M16 17a1 1 0 1 0 0-2a1 1 0 0 0 0 2\"/><path fill=\"#fff\" d=\"m15.134 6.5l-2.31 4H8.207A1 1 0 0 0 7.34 12l2.31 4l-2.31 4a1 1 0 0 0 .866 1.5h4.619l2.309 4a1 1 0 0 0 1.732 0l2.31-4h4.618a1 1 0 0 0 .866-1.5l-2.31-4l2.31-4a1 1 0 0 0-.866-1.5h-4.619l-2.309-4a1 1 0 0 0-1.732 0M16 8l1.443 2.5h-2.886zm-6.928 4h2.887l-1.444 2.5zm4.619 0h4.618l2.31 4l-2.31 4h-4.618l-2.31-4zm-4.62 8l1.444-2.5L11.96 20zM16 24l-1.443-2.5h2.886zm5.485-6.5l1.443 2.5h-2.887zm1.443-5.5l-1.443 2.5L20.04 12z\"/></g>",

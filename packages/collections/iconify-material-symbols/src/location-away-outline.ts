@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const locationAwayOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 21V9l8-6l5.375 4.05q-.625.075-1.175.288t-1.05.562L10 5.5L4 10v9h4v2zm8 0v-1.9q0-.525.263-.987t.712-.738q1.15-.675 2.413-1.025T16 16t2.613.35t2.412 1.025q.45.275.713.738T22 19.1V21zm2.15-2h7.7q-.875-.5-1.85-.75T16 18t-2 .25t-1.85.75M16 15q-1.25 0-2.125-.875T13 12t.875-2.125T16 9t2.125.875T19 12t-.875 2.125T16 15m0-2q.425 0 .713-.288T17 12t-.288-.712T16 11t-.712.288T15 12t.288.713T16 13m0 6\"/>",

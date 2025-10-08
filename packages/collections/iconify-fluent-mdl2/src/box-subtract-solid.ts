@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const boxSubtractSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1920 0v1920H0V0zm-384 896H384v128h1152z\"/>",

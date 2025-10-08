@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const windowRestore: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M512 80H224c-8.8 0-16 7.2-16 16v16h-48V96c0-35.3 28.7-64 64-64h288c35.3 0 64 28.7 64 64v192c0 35.3-28.7 64-64 64h-48v-48h48c8.8 0 16-7.2 16-16V96c0-8.8-7.2-16-16-16M368 288H48v128c0 8.8 7.2 16 16 16h288c8.8 0 16-7.2 16-16zM64 160h288c35.3 0 64 28.7 64 64v192c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64\"/>",

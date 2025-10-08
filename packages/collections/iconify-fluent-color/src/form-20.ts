@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const form20: IconData = {
   "body": "<g fill=\"none\"><path fill=\"url(#SVGXvOFIekl)\" d=\"M6 3a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3z\"/><path fill=\"url(#SVGO1yCMdSB)\" d=\"M5 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5\"/><path fill=\"url(#SVGO1yCMdSB)\" d=\"M6.5 11a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3\"/><path fill=\"url(#SVGO1yCMdSB)\" d=\"M8 13.5a1.5 1.5 0 1 1-3 0a1.5 1.5 0 0 1 3 0\"/><path fill=\"url(#SVGO1yCMdSB)\" d=\"M9 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5\"/><path fill=\"url(#SVGO1yCMdSB)\" d=\"M9.5 13a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z\"/><defs><linearGradient id=\"SVGXvOFIekl\" x1=\"8\" x2=\"13.364\" y1=\"3\" y2=\"16.245\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#B3E0FF\"/><stop offset=\"1\" stop-color=\"#8CD0FF\"/></linearGradient><linearGradient id=\"SVGO1yCMdSB\" x1=\"4.5\" x2=\"16.658\" y1=\"4.5\" y2=\"6.658\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0094F0\"/><stop offset=\"1\" stop-color=\"#2764E7\"/></linearGradient></defs></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const keyboardFullSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 20V4h20v16zm2-6h16V6H4z\"/>",

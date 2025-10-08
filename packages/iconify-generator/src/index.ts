@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export interface IconifyCollection {
   prefix: string
@@ -131,7 +131,7 @@ export function generateIconComponent(
 ): string {
   const camelCaseName = toCamelCase(name)
 
-  return `import type { IconData } from '@stx/iconify-core'
+  return `import type { IconData } from '@stacksjs/iconify-core'
 
 export const ${camelCaseName}: IconData = ${JSON.stringify(iconData, null, 2)}
 
@@ -158,7 +158,7 @@ export * from './types.js'
  * Generate types file
  */
 export function generateTypesFile(prefix: string): string {
-  return `import type { IconData, IconProps } from '@stx/iconify-core'
+  return `import type { IconData, IconProps } from '@stacksjs/iconify-core'
 
 export type { IconData, IconProps }
 
@@ -175,7 +175,7 @@ export function generatePackageJson(
   iconCount: number,
 ): string {
   const packageJson = {
-    name: `@stx/iconify-${prefix}`,
+    name: `@stacksjs/iconify-${prefix}`,
     version: '0.0.1',
     description: `${collectionInfo.name} icons for stx from Iconify`,
     author: collectionInfo.author?.name || 'Iconify',
@@ -198,7 +198,7 @@ export function generatePackageJson(
       build: 'bun build.ts',
     },
     dependencies: {
-      '@stx/iconify-core': 'workspace:*',
+      '@stacksjs/iconify-core': 'workspace:*',
     },
     keywords: [
       'iconify',
@@ -240,7 +240,7 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-${prefix}')
+console.log('✓ Built @stacksjs/iconify-${prefix}')
 `
 }
 
@@ -252,14 +252,14 @@ export function generateReadme(
   collectionInfo: IconifyCollection,
   iconCount: number,
 ): string {
-  return `# @stx/iconify-${prefix}
+  return `# @stacksjs/iconify-${prefix}
 
 ${collectionInfo.name} icons for stx from Iconify.
 
 ## Installation
 
 \`\`\`bash
-bun add @stx/iconify-${prefix}
+bun add @stacksjs/iconify-${prefix}
 \`\`\`
 
 ## Usage
@@ -268,8 +268,8 @@ bun add @stx/iconify-${prefix}
 
 \`\`\`html
 <script>
-  import { home } from '@stx/iconify-${prefix}'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-${prefix}'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -282,8 +282,8 @@ bun add @stx/iconify-${prefix}
 ### In TypeScript/JavaScript
 
 \`\`\`typescript
-import { home, account, settings } from '@stx/iconify-${prefix}'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-${prefix}'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

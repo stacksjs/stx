@@ -1,11 +1,11 @@
-# @stx/iconify-formkit
+# @stacksjs/iconify-formkit
 
 FormKit Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-formkit
+bun add @stacksjs/iconify-formkit
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-formkit
 
 ```html
 <script>
-  import { home } from '@stx/iconify-formkit'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-formkit'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-formkit
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-formkit'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-formkit'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

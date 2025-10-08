@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const spaceBar: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M17 13H7V9H5v6h14V9h-2z\"/>",

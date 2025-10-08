@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const navigationOne: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\" d=\"M3.414 12.086a.546.546 0 0 1-.101-1.024l16.905-8.007a.546.546 0 0 1 .727.727l-8.007 16.905a.546.546 0 0 1-1.024-.1l-1.62-6.483a.55.55 0 0 0-.398-.397z\"/>",

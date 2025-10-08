@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const roundNotEqual: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18 9.998H6a1 1 0 1 1 0-2h12a1 1 0 0 1 0 2m0 6H6a1 1 0 0 1 0-2h12a1 1 0 0 1 0 2\"/><path fill=\"currentColor\" d=\"M14.999 5c.507.219.742.806.525 1.314l-5.212 12.162A1 1 0 0 1 9 19a1 1 0 0 1-.525-1.314l5.212-12.162A1 1 0 0 1 15 5z\"/>",

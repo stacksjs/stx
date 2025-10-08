@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const expandLeftDoubleLight: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"m12 18l-6-6l6-6m6 12l-6-6l6-6\"/>",

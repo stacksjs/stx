@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const eventUpcomingRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M19 22h-3q-.425 0-.712-.288T15 21t.288-.712T16 20h3V10H5v3q0 .425-.288.713T4 14t-.712-.288T3 13V6q0-.825.588-1.412T5 4h1V3q0-.425.288-.712T7 2t.713.288T8 3v1h8V3q0-.425.288-.712T17 2t.713.288T18 3v1h1q.825 0 1.413.588T21 6v14q0 .825-.587 1.413T19 22m-9.825-2H2q-.425 0-.712-.288T1 19t.288-.712T2 18h7.175L7.3 16.1q-.275-.275-.287-.687T7.3 14.7q.275-.275.7-.275t.7.275l3.6 3.6q.3.3.3.7t-.3.7l-3.6 3.6q-.275.275-.687.288T7.3 23.3q-.275-.275-.275-.7t.275-.7z\"/>",

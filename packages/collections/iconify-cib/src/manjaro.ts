@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const manjaro: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 0v32h9V9h11.5V0zm11.5 11.5V32h9V11.5zM23 0v32h9V0z\"/>",

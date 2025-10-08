@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const straightenSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 18V6h5v6h2V6h2v6h2V6h2v6h2V6h5v12z\"/>",

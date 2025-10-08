@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const realEstateAgentOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m14 22.5l-7-1.95V22H1V11h7.95L17 14v2h5v4zM3 20h2v-7H3zm10.95.4l5.95-1.85V18h-7.075L9.7 16.95l.6-1.9l2.925.95H15v-.65L8.6 13H7v5.5zM19 14V7.5L14 4L9 7.5V9H7V6.5l7-5l7 5V14zm-4.5-6h1V7h-1zm-2 0h1V7h-1zm2 2h1V9h-1zm-2 0h1V9h-1z\"/>",

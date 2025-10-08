@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const blockBuster: IconData = {
   "body": "<rect width=\"29.514\" height=\"29.514\" x=\"9.38\" y=\"9.243\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"4.216\" ry=\"4.216\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m37.662 10.477l-27.05 27.048M4.5 24.142h39\"/>",

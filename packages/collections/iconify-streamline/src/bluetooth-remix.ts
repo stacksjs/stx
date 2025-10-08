@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const bluetoothRemix: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.25\" d=\"m2.625 9.5l8.75-5.375l-4.75-3.5v12.75l4.75-3.5L2.625 4.5\"/>",

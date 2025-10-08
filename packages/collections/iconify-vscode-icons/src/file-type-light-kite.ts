@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileTypeLightKite: IconData = {
   "body": "<path fill=\"#09234c\" d=\"m16.235 13.059l-4.525 8.516L21.575 30l3.249-12.561z\"/><path fill=\"#09234c\" d=\"m12.751 2l-7.81 13.792l5.991 5.113l4.996-8.824l9.158 4.362l1.973-7.629z\"/>",

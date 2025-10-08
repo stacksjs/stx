@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const kda: IconData = {
   "body": "<g fill=\"none\"><path fill=\"url(#SVGZzo5GdiL)\" d=\"M20.357 21h-5.571L9.07 12.857l2.286-4.714z\"/><path fill=\"#6A0097\" d=\"M3.643 3h4.5v18h-4.5z\"/><path fill=\"url(#SVGs4OFfeAW)\" d=\"M19.357 3h-5.142L8.143 9.187v5.623z\"/><defs><linearGradient id=\"SVGZzo5GdiL\" x1=\"16.43\" x2=\"7.141\" y1=\"21\" y2=\"7.898\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#6A0097\"/><stop offset=\"1\" stop-color=\"#E40790\"/></linearGradient><linearGradient id=\"SVGs4OFfeAW\" x1=\"17.706\" x2=\"7.581\" y1=\"3\" y2=\"12.281\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#730196\"/><stop offset=\"1\" stop-color=\"#ED098F\"/></linearGradient></defs></g>",

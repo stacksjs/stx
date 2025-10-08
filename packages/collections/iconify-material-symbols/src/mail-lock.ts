@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mailLock: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m12 13l8-5V6l-8 5l-8-5v2zm7 7q-.425 0-.712-.288T18 19v-3q0-.425.288-.712T19 15v-1q0-.825.588-1.412T21 12t1.413.588T23 14v1q.425 0 .713.288T24 16v3q0 .425-.288.713T23 20zm1-5h2v-1q0-.425-.288-.712T21 13t-.712.288T20 14zM4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v4h-1q-2.075 0-3.537 1.463T16 15v5z\"/>",

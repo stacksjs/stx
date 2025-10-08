@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const personLink16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5.975 13.924C3.459 13.537 2 11.746 2 10v-.5A1.5 1.5 0 0 1 3.5 8h5c-.954 0-1.818.381-2.45 1H3.5a.5.5 0 0 0-.5.5v.5c0 1.06.777 2.186 2.213 2.706a3.5 3.5 0 0 0 .762 1.218M7 1.5A2.75 2.75 0 1 1 7 7a2.75 2.75 0 0 1 0-5.5m0 1A1.75 1.75 0 1 0 7 6a1.75 1.75 0 0 0 0-3.5M8.5 9a2.5 2.5 0 0 0 0 5H9a.5.5 0 0 0 0-1h-.5a1.5 1.5 0 0 1 0-3H9a.5.5 0 0 0 0-1zM12 9a.5.5 0 0 0 0 1h.5a1.5 1.5 0 0 1 0 3H12a.5.5 0 0 0 0 1h.5a2.5 2.5 0 0 0 0-5zm-4 2.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5\"/>",

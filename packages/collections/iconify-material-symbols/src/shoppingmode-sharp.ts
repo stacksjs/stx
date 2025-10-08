@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const shoppingmodeSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11.975 22.825L2 12.85L12.8 2h10v10zM18.3 8q.625 0 1.063-.437T19.8 6.5t-.437-1.062T18.3 5t-1.062.438T16.8 6.5t.438 1.063T18.3 8\"/>",

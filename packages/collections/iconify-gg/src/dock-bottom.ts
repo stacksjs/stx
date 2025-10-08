@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dockBottom: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M2 20V4h20v16zM4 6h16v8H4z\" clip-rule=\"evenodd\"/>",

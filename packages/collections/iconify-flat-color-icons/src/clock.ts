@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const clock: IconData = {
   "body": "<circle cx=\"24\" cy=\"24\" r=\"20\" fill=\"#00ACC1\"/><circle cx=\"24\" cy=\"24\" r=\"16\" fill=\"#eee\"/><path d=\"M23 11h2v13h-2z\"/><path d=\"M31.285 29.654L29.66 31.28l-6.504-6.504l1.626-1.627z\"/><circle cx=\"24\" cy=\"24\" r=\"2\"/><circle cx=\"24\" cy=\"24\" r=\"1\" fill=\"#00ACC1\"/>",

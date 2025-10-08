@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const contractDownLeft28Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M21.25 25A3.75 3.75 0 0 0 25 21.25v-4.5a.75.75 0 0 0-1.5 0v4.5a2.25 2.25 0 0 1-2.25 2.25H14v-6.75A2.75 2.75 0 0 0 11.25 14H4.5V6.75A2.25 2.25 0 0 1 6.75 4.5h4.5a.75.75 0 0 0 0-1.5h-4.5A3.75 3.75 0 0 0 3 6.75v14.5A3.75 3.75 0 0 0 6.75 25zm-8.75-8.25v6.75H6.75a2.25 2.25 0 0 1-2.25-2.25V15.5h6.75c.69 0 1.25.56 1.25 1.25m12.5-4.5a.75.75 0 0 0-.75-.75h-6.69l7.22-7.22a.75.75 0 0 0-1.06-1.06l-7.22 7.22V3.75a.75.75 0 0 0-1.5 0v8.5c0 .414.336.75.75.75h8.5a.75.75 0 0 0 .75-.75\"/>",

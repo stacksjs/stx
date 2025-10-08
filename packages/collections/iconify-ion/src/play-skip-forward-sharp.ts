@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const playSkipForwardSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M368.53 64v163.52L96 64v384l272.53-163.52V448H416V64z\"/>",

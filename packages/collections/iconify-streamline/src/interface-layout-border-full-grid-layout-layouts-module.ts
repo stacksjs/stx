@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const interfaceLayoutBorderFullGridLayoutLayoutsModule: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"13\" height=\"13\" x=\".5\" y=\".5\" rx=\"1\"/><path d=\"M7 .5v13M.5 7h13\"/></g>",

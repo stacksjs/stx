@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const carryOnBagInactiveSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m19.8 22.6l-3.75-3.675q.2.2.325.475t.125.6q0 .625-.437 1.063T15 21.5t-1.062-.437T13.5 20t.438-1.062T15 18.5q.3 0 .538.088t.437.262L14.25 17.1q-1 .275-1.625 1.063T12 20q0 .275.038.513t.137.487H9.5v-8.65L8 10.85V21H5V7.8L1.4 4.2l1.4-1.4l18.4 18.4zM15 12.15L9.85 7H13V4h-2V2h4z\"/>",

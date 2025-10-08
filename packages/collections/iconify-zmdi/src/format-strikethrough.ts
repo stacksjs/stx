@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const formatStrikethrough: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M149 341v-64h86v64zM43 21h298v64H235v64h-86V85H43zM0 235v-43h384v43z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const calendarPhone16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11.5 2A2.5 2.5 0 0 1 14 4.5v1.604A2.8 2.8 0 0 0 13.25 6H3v5.5A1.5 1.5 0 0 0 4.5 13H8v1H4.5A2.5 2.5 0 0 1 2 11.5v-7A2.5 2.5 0 0 1 4.5 2zm0 1h-7A1.5 1.5 0 0 0 3 4.5V5h10v-.5A1.5 1.5 0 0 0 11.5 3M9 8.75C9 7.784 9.784 7 10.75 7h2.5c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 13.25 16h-2.5A1.75 1.75 0 0 1 9 14.25zM11.5 13a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1z\"/>",

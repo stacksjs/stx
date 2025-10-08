@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const baselineBrightness1: IconData = {
   "body": "<circle cx=\"12\" cy=\"12\" r=\"10\" fill=\"currentColor\"/>",

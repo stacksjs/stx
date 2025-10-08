@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const checklist: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><path d=\"m34 10l8 8m0-8l-8 8m10 12l-7 8l-4-4\"/><path fill=\"currentColor\" d=\"M26 10H4v8h22zm0 20H4v8h22z\"/></g>",

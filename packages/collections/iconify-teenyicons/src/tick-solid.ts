@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tickSolid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M14.707 3L5.5 12.207L.293 7L1 6.293l4.5 4.5l8.5-8.5z\" clip-rule=\"evenodd\"/>",

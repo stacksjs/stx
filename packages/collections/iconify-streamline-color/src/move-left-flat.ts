@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const moveLeftFlat: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#2859c5\" d=\"M8.5 1.5A1.5 1.5 0 0 1 10 0h2.5A1.5 1.5 0 0 1 14 1.5v11a1.5 1.5 0 0 1-1.5 1.5H10a1.5 1.5 0 0 1-1.5-1.5z\"/><path fill=\"#8fbffa\" fill-rule=\"evenodd\" d=\"M3.191 4.038A.5.5 0 0 1 3.5 4.5V6h3a1 1 0 0 1 0 2h-3v1.5a.5.5 0 0 1-.854.354l-2.5-2.5a.5.5 0 0 1 0-.708l2.5-2.5a.5.5 0 0 1 .545-.108\" clip-rule=\"evenodd\"/></g>",

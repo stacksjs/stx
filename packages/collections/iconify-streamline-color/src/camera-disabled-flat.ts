@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cameraDisabledFlat: IconData = {
   "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path fill=\"#8fbffa\" d=\"M13.5 5a1 1 0 0 0-1-1h-2L9 2H5L3.5 4h-2a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1zM7 9.75a2.266 2.266 0 1 0 0-4.531A2.266 2.266 0 0 0 7 9.75\"/><path fill=\"#2859c5\" d=\"M.219.219a.75.75 0 0 0 0 1.06L12.72 13.782a.75.75 0 1 0 1.06-1.06L1.28.218a.75.75 0 0 0-1.061 0Z\"/></g>",

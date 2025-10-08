@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stjuno: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M21 12a9 9 0 1 1-17.999 0A9 9 0 0 1 21 12m-.582 0a8.418 8.418 0 1 1-16.836 0a8.418 8.418 0 0 1 16.836 0m-8.947 4.765v1.058h1.058v-1.058h1.589v-1.06h-1.589v-3.97l1.853 1.853l.795-.794l-1.854-1.853h2.383V9.882h-2.383l1.854-1.853l-.795-.794l-1.853 1.853V6.706h-1.058v2.382L9.618 7.235l-.794.794l1.852 1.853H8.294v1.06h2.382l-1.852 1.852l.794.794l1.853-1.853v3.97H9.882v1.06z\" clip-rule=\"evenodd\"/>",

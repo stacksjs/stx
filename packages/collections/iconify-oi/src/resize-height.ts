@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const resizeHeight: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3.5 0L1 3h2v2H1l2.5 3L6 5H4V3h2z\"/>",

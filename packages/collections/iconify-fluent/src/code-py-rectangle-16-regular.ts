@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const codePyRectangle16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.5 6h1a1.5 1.5 0 0 1 0 3H5v1.5a.5.5 0 0 1-1 0v-4a.5.5 0 0 1 .5-.5M5 8h.5a.5.5 0 0 0 0-1H5zm5 .666L11.4 6.8a.5.5 0 1 0-.8-.6L9.5 7.667L8.4 6.2a.5.5 0 1 0-.8.6L9 8.666V10.5a.5.5 0 0 0 1 0zM2.75 3A1.75 1.75 0 0 0 1 4.75v7.5c0 .966.784 1.75 1.75 1.75h9.5A1.75 1.75 0 0 0 14 12.25v-7.5A1.75 1.75 0 0 0 12.25 3zM2 4.75A.75.75 0 0 1 2.75 4h9.5a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 1-.75.75h-9.5a.75.75 0 0 1-.75-.75z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const outlineBeachAccess: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m21 19.57l-1.427 1.428l-6.442-6.442l1.43-1.428zM13.12 3c-2.58 0-5.16.98-7.14 2.95l-.01.01c-3.95 3.95-3.95 10.36 0 14.31l14.3-14.31A10.1 10.1 0 0 0 13.12 3M6.14 17.27a8.06 8.06 0 0 1-.68-6.82c.19 1.91.89 3.79 2.07 5.44zm2.84-2.84C7.63 12.38 7.12 9.93 7.6 7.6c.58-.12 1.16-.18 1.75-.18c1.8 0 3.55.55 5.08 1.56zm1.47-8.97a8.06 8.06 0 0 1 6.82.68l-1.39 1.39a11.25 11.25 0 0 0-5.43-2.07\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const laptopCamera: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#fff\" d=\"M2.293 3.793A1 1 0 0 1 3 3.5h6.995a1 1 0 0 1 1 1v5H2v-5a1 1 0 0 1 .293-.707\"/><path fill=\"#d7e0ff\" d=\"M13.5 3a1 1 0 0 0-1-1H12L11 .5H9L8 2h-.5a1 1 0 0 0-1 1v2.5a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1z\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M13.5 3a1 1 0 0 0-1-1H12L11 .5H9L8 2h-.5a1 1 0 0 0-1 1v2.5a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1z\"/><path fill=\"#d7e0ff\" d=\"M2 9.5L.61 12.05a1 1 0 0 0 .89 1.45h10a1 1 0 0 0 .89-1.45L11 9.5z\"/><path stroke=\"#4147d5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M2 9.5L.61 12.05a1 1 0 0 0 .89 1.45h10a1 1 0 0 0 .89-1.45L11 9.5zm2-6H3a1 1 0 0 0-1 1v5m8-5.125a.375.375 0 1 1 0-.75m0 .75a.375.375 0 0 0 0-.75\"/></g>",

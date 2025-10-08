@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const framer: IconData = {
   "body": "<path d=\"M0 0h256v128H128zm0 128h128l128 128H128v128L0 256z\"/>",

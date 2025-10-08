@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tileSmall: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 18v-4.808h6.808V18zm9.192 0v-4.808H20V18zM4 10.808V6h6.808v4.808zm9.192 0V6H20v4.808z\"/>",

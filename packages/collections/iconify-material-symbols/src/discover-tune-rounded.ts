@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const discoverTuneRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M14 9q-.425 0-.712-.288T13 8t.288-.712T14 7h2V4q0-.425.288-.712T17 3t.713.288T18 4v3h2q.425 0 .713.288T21 8t-.288.713T20 9zm3 12q-.425 0-.712-.288T16 20v-8q0-.425.288-.712T17 11t.713.288T18 12v8q0 .425-.288.713T17 21M7 21q-.425 0-.712-.288T6 20v-3H4q-.425 0-.712-.288T3 16t.288-.712T4 15h6q.425 0 .713.288T11 16t-.288.713T10 17H8v3q0 .425-.288.713T7 21m0-8q-.425 0-.712-.288T6 12V4q0-.425.288-.712T7 3t.713.288T8 4v8q0 .425-.288.713T7 13\"/>",

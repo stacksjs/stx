@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const labPanelOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M3 21q-.825 0-1.412-.587T1 19v-5q0-.825.588-1.412T3 12V7.725q-.45-.275-.725-.712T2 6V5q0-.825.588-1.412T4 3h5q.825 0 1.413.588T11 5v1q0 .575-.275 1.013T10 7.725V12h4V7.725q-.45-.275-.725-.712T13 6V5q0-.825.588-1.412T15 3h5q.825 0 1.413.588T22 5v1q0 .575-.275 1.013T21 7.725V12q.825 0 1.413.588T23 14v5q0 .825-.587 1.413T21 21zM15 6h5V5h-5zM4 6h5V5H4zm12 6h3V8h-3zM5 12h3V8H5zm-2 7h18v-5H3zM4 6V5zm11 0V5zM3 19v-5z\"/>",

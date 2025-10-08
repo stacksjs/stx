@@ -1,11 +1,11 @@
-# @stx/iconify-basil
+# @stacksjs/iconify-basil
 
 Basil icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-basil
+bun add @stacksjs/iconify-basil
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-basil
 
 ```html
 <script>
-  import { home } from '@stx/iconify-basil'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-basil'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-basil
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-basil'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-basil'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

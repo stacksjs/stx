@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const thumbsUp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M15.6 8.2s.5-.5.4-1.6C16 5.1 14.4 5 14.4 5H12c-.2 0-.3-.2-.3-.4c.3-.7.8-2.1.6-3.1C12 .1 10.8 0 10.4 0c-.1 0-.2.1-.2.2L9.2 3s0 .1-.1.1L6.5 5.9c-.1.1-.2.1-.3.1H6v7h.2c.7 0 3.2 2 5.4 2s2.7-.3 3.1-1s.1-1.3.1-1.3s.5-.3.6-1s-.1-1.1-.1-1.1s.5-.4.5-1.2c.1-.9-.2-1.2-.2-1.2M0 14h5V6H0zm2.5-3.5c.6 0 1 .4 1 1s-.4 1-1 1s-1-.4-1-1s.4-1 1-1\"/>",

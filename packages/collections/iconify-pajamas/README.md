@@ -1,11 +1,11 @@
-# @stx/iconify-pajamas
+# @stacksjs/iconify-pajamas
 
 Gitlab SVGs icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-pajamas
+bun add @stacksjs/iconify-pajamas
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-pajamas
 
 ```html
 <script>
-  import { home } from '@stx/iconify-pajamas'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-pajamas'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-pajamas
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-pajamas'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-pajamas'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

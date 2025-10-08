@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pixelapse: IconData = {
   "body": "<path d=\"M.03 0H256v256H.03V0z\" fill=\"#2B87D4\"/><path d=\"M84 68h24v24H84V68z\" fill=\"#FFF\"/><path d=\"M116 68h24v24h-24V68z\" fill=\"#FFF\"/><path d=\"M84 132h24v24H84v-24z\" fill=\"#FFF\"/><path d=\"M84 164h24v24H84v-24z\" fill=\"#FFF\"/><path d=\"M116 132h24v24h-24v-24z\" fill=\"#FFF\"/><path d=\"M148 100h24v24h-24v-24z\" fill=\"#FFF\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const baselineTrendingFlat: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m22 12l-4-4v3H3v2h15v3z\"/>",

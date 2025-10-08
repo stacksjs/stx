@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const selectArrowUp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 3h1v2H3V4c0-.6.4-1 1-1m16 0c.6 0 1 .4 1 1v1h-2V3zm-5 2V3h2v2zm-4 0V3h2v2zM7 5V3h2v2zm4 16v-2h2v2zm-4 0v-2h2v2zm-3 0c-.6 0-1-.4-1-1v-1h2v2zm-1-6h2v2H3zm0-4h2v2H3zm18 0v2h-2v-2zM3 7h2v2H3zm18 0v2h-2V7zm-2 8l-3 3h2v4h2v-4h2z\"/>",

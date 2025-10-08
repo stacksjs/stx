@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const flagStLucia: IconData = {
   "body": "<path fill=\"#6CF\" d=\"M32 5H4a4 4 0 0 0-4 4v18a4 4 0 0 0 4 4h28a4 4 0 0 0 4-4V9a4 4 0 0 0-4-4\"/><path fill=\"#FFF\" d=\"m9.333 28.747l2.346-2.909L18 10.2l6.321 15.638l2.346 2.909L18 7.34z\"/><path d=\"M24.321 25.838L18 10.2l-6.321 15.638L18 18z\"/><path fill=\"#FCD116\" d=\"m18 18l-6.321 7.838l-2.346 2.909h17.334l-2.346-2.909z\"/>",

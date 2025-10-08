@@ -1,11 +1,11 @@
-# @stx/iconify-covid
+# @stacksjs/iconify-covid
 
 Covid Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-covid
+bun add @stacksjs/iconify-covid
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-covid
 
 ```html
 <script>
-  import { home } from '@stx/iconify-covid'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-covid'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-covid
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-covid'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-covid'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

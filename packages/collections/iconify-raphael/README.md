@@ -1,11 +1,11 @@
-# @stx/iconify-raphael
+# @stacksjs/iconify-raphael
 
 Raphael icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-raphael
+bun add @stacksjs/iconify-raphael
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-raphael
 
 ```html
 <script>
-  import { home } from '@stx/iconify-raphael'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-raphael'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-raphael
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-raphael'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-raphael'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pocketcasts: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M19 2H5a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3m-3.975 10.09a2.935 2.935 0 1 0-2.935 2.935V16.7a4.612 4.612 0 1 1 4.61-4.61zm2.83 0a5.765 5.765 0 1 0-5.765 5.765v1.921a7.686 7.686 0 1 1 7.686-7.686z\"/>",

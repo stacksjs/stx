@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pictureInPictureMediumSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 16V8h10v8zm-6 4v-2h18V4h2v16z\"/>",

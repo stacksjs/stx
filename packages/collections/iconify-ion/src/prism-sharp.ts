@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const prismSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M256 16L16 352l240 144l240-144Zm-20 96.82v324.53L73.73 340Z\"/>",

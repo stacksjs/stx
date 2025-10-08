@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const unsplash: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M10 9V0h12v9zm12 5h10v18H0V14h10v9h12z\"/>",

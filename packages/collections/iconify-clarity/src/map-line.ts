@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mapLine: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M33.59 6.19A1 1 0 0 0 32.7 6l-9.61 3l-9.63-4.89a1 1 0 0 0-.84 0l-10 4.09a1 1 0 0 0-.62.93v20.48a1 1 0 0 0 1.38.92L13 26.58l9.59 4.92a1 1 0 0 0 .46.11a1 1 0 0 0 .3 0l10-3.12a1 1 0 0 0 .7-1V7a1 1 0 0 0-.46-.81M32 26.75l-8.32 2.6v-2.29h-1.6v2l-8.4-4.31v-1.69h-1.6v1.72L4 28.11V9.79l8.08-3.33v2.35h1.6V6.47l8.4 4.3v2.1h1.6V11L32 8.36Z\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"currentColor\" d=\"M22.08 15.06h1.6v3.81h-1.6z\" class=\"clr-i-outline clr-i-outline-path-2\"/><path fill=\"currentColor\" d=\"M22.08 21.06h1.6v3.81h-1.6z\" class=\"clr-i-outline clr-i-outline-path-3\"/><path fill=\"currentColor\" d=\"M12.08 11.06h1.6v3.81h-1.6z\" class=\"clr-i-outline clr-i-outline-path-4\"/><path fill=\"currentColor\" d=\"M12.08 17.13h1.6v3.75h-1.6z\" class=\"clr-i-outline clr-i-outline-path-5\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",

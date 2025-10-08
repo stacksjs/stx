@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const certificateSolidBadged: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M27.46 17.23a6.36 6.36 0 0 0-4.4 11l-1.94 2.37l.9 3.61l3.66-4.46a6.26 6.26 0 0 0 3.55 0l3.66 4.46l.9-3.61l-1.94-2.37a6.36 6.36 0 0 0-4.4-11Zm0 10.68a4.31 4.31 0 1 1 4.37-4.31a4.35 4.35 0 0 1-4.37 4.31\" class=\"clr-i-solid--badged clr-i-solid-path-1--badged\"/><path fill=\"currentColor\" d=\"M30 13.5A7.5 7.5 0 0 1 22.5 6H4a2 2 0 0 0-2 2v20a2 2 0 0 0 2 2h15l.57-.7l.93-1.14A8.34 8.34 0 0 1 34 18.37v-6a7.46 7.46 0 0 1-4 1.13M17 24.6H7V23h10Zm1-7H7V16h11Zm6-4H7V12h17Z\" class=\"clr-i-solid--badged clr-i-solid-path-2--badged\"/><circle cx=\"30\" cy=\"6\" r=\"5\" fill=\"currentColor\" class=\"clr-i-solid--badged clr-i-solid-path-3--badged clr-i-badge\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",

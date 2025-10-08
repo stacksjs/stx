@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pricetagsSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M288 16L0 304l176 176l288-288V16Zm80 128a32 32 0 1 1 32-32a32 32 0 0 1-32 32\"/><path fill=\"currentColor\" d=\"M480 64v144L216.9 471.1L242 496l270-272V64z\"/>",

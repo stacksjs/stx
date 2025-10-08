@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const leftOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M9.5 4.5L6 8l3.5 3.5\"/>",

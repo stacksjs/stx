@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const octagramShape: IconData = {
   "body": "<g fill=\"none\" stroke-width=\"1.5\"><path fill=\"#d7e0ff\" d=\"m9 5l3-3l3 3h4v4l3 3l-3 3v4h-4l-3 3l-3-3H5v-4l-3-3l3-3V5z\"/><path stroke=\"#4147d5\" d=\"m9 5l3-3l3 3h4v4l3 3l-3 3v4h-4l-3 3l-3-3H5v-4l-3-3l3-3V5z\"/></g>",

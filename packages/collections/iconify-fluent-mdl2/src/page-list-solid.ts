@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pageListSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1792 0v1792H256V0zM640 1152H512v128h128zm0-384H512v128h128zm0-384H512v128h128zm896 768H768v128h768zm0-384H768v128h768zm0-384H768v128h768z\"/>",

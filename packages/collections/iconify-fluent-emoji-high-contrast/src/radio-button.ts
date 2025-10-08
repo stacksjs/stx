@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const radioButton: IconData = {
   "body": "<circle cx=\"16\" cy=\"16\" r=\"12\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"4\"/>",

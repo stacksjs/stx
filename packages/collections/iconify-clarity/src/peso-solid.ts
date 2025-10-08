@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pesoSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M14.18 13.8V16h9.45a5 5 0 0 0 .08-.89a4.7 4.7 0 0 0-.2-1.31Z\" class=\"clr-i-solid clr-i-solid-path-1\"/><path fill=\"currentColor\" d=\"M14.18 19.7h5.19a4.28 4.28 0 0 0 3.5-1.9h-8.69Z\" class=\"clr-i-solid clr-i-solid-path-2\"/><path fill=\"currentColor\" d=\"M19.37 10.51h-5.19V12h8.37a4.21 4.21 0 0 0-3.18-1.49\" class=\"clr-i-solid clr-i-solid-path-3\"/><path fill=\"currentColor\" d=\"M17.67 2a16 16 0 1 0 16 16a16 16 0 0 0-16-16m10.5 15.8H25.7a6.87 6.87 0 0 1-6.33 4.4h-5.19v6.54a1.25 1.25 0 1 1-2.5 0V17.8H8.76a.9.9 0 1 1 0-1.8h2.92v-2.2H8.76a.9.9 0 1 1 0-1.8h2.92V9.26A1.25 1.25 0 0 1 12.93 8h6.44a6.84 6.84 0 0 1 6.15 4h2.65a.9.9 0 0 1 0 1.8h-2.08a7 7 0 0 1 .12 1.3a7 7 0 0 1-.06.9h2a.9.9 0 0 1 0 1.8Z\" class=\"clr-i-solid clr-i-solid-path-4\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",

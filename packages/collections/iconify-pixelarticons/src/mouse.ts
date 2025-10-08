@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mouse: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 3h12v18H6zm2 2v4h3V5zm5 0v4h3V5zm3 6H8v8h8z\"/>",

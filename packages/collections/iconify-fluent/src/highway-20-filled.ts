@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const highway20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5.993 2.853a.75.75 0 0 0-1.486-.205l-2 14.5a.75.75 0 1 0 1.486.204zm9.5-.205a.75.75 0 0 0-1.486.205l2 14.5a.75.75 0 0 0 1.486-.205zm-4.743.102a.75.75 0 0 0-1.5 0v2.5a.75.75 0 0 0 1.5 0zm-1.5 8.5a.75.75 0 0 0 1.5 0v-2.5a.75.75 0 0 0-1.5 0zm0 3.5a.75.75 0 0 1 1.5 0v2.5a.75.75 0 0 1-1.5 0z\"/>",

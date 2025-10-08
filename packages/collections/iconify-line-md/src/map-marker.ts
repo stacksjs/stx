@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mapMarker: IconData = {
   "body": "<circle cx=\"12\" cy=\"9\" r=\"2.5\" fill=\"currentColor\" fill-opacity=\"0\"><animate fill=\"freeze\" attributeName=\"fill-opacity\" begin=\"0.7s\" dur=\"0.15s\" values=\"0;1\"/></circle><path fill=\"none\" stroke=\"currentColor\" stroke-dasharray=\"48\" stroke-dashoffset=\"48\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 20.5c0 0 -6 -7 -6 -11.5c0 -3.31 2.69 -6 6 -6c3.31 0 6 2.69 6 6c0 4.5 -6 11.5 -6 11.5Z\"><animate fill=\"freeze\" attributeName=\"stroke-dashoffset\" dur=\"0.6s\" values=\"48;0\"/></path>",

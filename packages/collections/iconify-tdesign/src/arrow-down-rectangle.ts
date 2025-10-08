@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowDownRectangle: IconData = {
   "body": "<g fill=\"none\"><path d=\"M3 3h18v18H3z\"/><path stroke=\"currentColor\" stroke-linecap=\"square\" stroke-width=\"2\" d=\"M3 3h18v18H3z\"/><path stroke=\"currentColor\" stroke-linecap=\"square\" stroke-width=\"2\" d=\"m8 12.5l4 4l4-4m-4 2.75V7.5\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const controller: IconData = {
   "body": "<g fill=\"currentColor\"><path d=\"M6.5 6.5h9A4.5 4.5 0 0 1 20 11v2a4.5 4.5 0 0 1-4.5 4.5h-9A4.5 4.5 0 0 1 2 13v-2a4.5 4.5 0 0 1 4.5-4.5\" opacity=\".2\"/><path d=\"M12.25 10a1.25 1.25 0 1 1 0-2.5a1.25 1.25 0 0 1 0 2.5m2 2.5a1.25 1.25 0 1 1 0-2.5a1.25 1.25 0 0 1 0 2.5\"/><path fill-rule=\"evenodd\" d=\"M14.5 4.5h-9A4.5 4.5 0 0 0 1 9v2a4.5 4.5 0 0 0 4.5 4.5h9A4.5 4.5 0 0 0 19 11V9a4.5 4.5 0 0 0-4.5-4.5M2 9a3.5 3.5 0 0 1 3.5-3.5h9A3.5 3.5 0 0 1 18 9v2a3.5 3.5 0 0 1-3.5 3.5h-9A3.5 3.5 0 0 1 2 11z\" clip-rule=\"evenodd\"/><path d=\"M4 11a1 1 0 1 1 0-2h4a1 1 0 0 1 0 2z\"/><path d=\"M7 12a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0z\"/></g>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fsharp: IconData = {
   "body": "<path fill=\"#378BBA\" d=\"M0 121.492L121.492 0v60.746l-60.746 60.746l60.746 60.745v60.746z\"/><path fill=\"#378BBA\" d=\"m78.102 121.492l43.39-43.39v86.78z\"/><path fill=\"#30B9DB\" d=\"M256 121.492L130.17 0v60.746l60.745 60.746l-60.746 60.745v60.746z\"/>",

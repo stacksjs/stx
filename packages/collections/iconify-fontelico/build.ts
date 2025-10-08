@@ -15,4 +15,4 @@ await Bun.build({
   splitting: true,
 })
 
-console.log('✓ Built @stx/iconify-fontelico')
+console.log('✓ Built @stacksjs/iconify-fontelico')

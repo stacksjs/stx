@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mediaStepBackward: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 1v6h2V1zm2 3l5 3V1z\"/>",

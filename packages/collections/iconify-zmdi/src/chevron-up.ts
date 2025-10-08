@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const chevronUp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m128 107l128 128l-30 30l-98-98l-98 98l-30-30z\"/>",

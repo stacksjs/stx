@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const nht: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16.5 5.261c-.04 3.589-3.004 4.5-4.5 4.489l.006 3.864H21V5.25z\"/><path fill=\"currentColor\" d=\"M16.792 18.75H12v-4.5h4.5v-9h.4A4.09 4.09 0 0 1 21 9.283v5.214a4.293 4.293 0 0 1-4.208 4.253\"/><path fill=\"currentColor\" d=\"M7.5 14.25h9c-3.645 0-4.494 2.852-4.5 4.387c-.056-3.453-2.818-4.353-4.331-4.387zm4.523-4.714v.506H7.376V5.283h.394a4.253 4.253 0 0 1 4.253 4.253\"/><path fill=\"currentColor\" d=\"M3.107 18.75H3V9.3a4.05 4.05 0 0 1 4.05-4.05h.45c0 3.487 2.728 4.483 4.05 4.5h.793a4.084 4.084 0 0 1 4.157 4.072v.428h-9v.011a4.416 4.416 0 0 1-4.393 4.489\"/>",

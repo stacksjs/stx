@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const alignCenter: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 15h18v2H1zM1 3h18v2H1z\"/><rect width=\"8\" height=\"6\" x=\"6\" y=\"7\" fill=\"currentColor\" rx=\"1\"/>",

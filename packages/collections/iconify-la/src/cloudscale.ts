@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cloudscale: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16 3C8.832 3 3 8.832 3 16s5.832 13 13 13s13-5.832 13-13S23.168 3 16 3m0 2c6.065 0 11 4.935 11 11s-4.935 11-11 11S5 22.065 5 16S9.935 5 16 5m0 4a7 7 0 0 0-6.967 7.666C9.207 14.063 11.353 12 14 12c1.31 0 2.487.515 3.375 1.342l-.863.732A2 2 0 0 0 16 14a2 2 0 1 0 2 2a2 2 0 0 0-.074-.512l3.928-4.634A.501.501 0 0 0 21.5 10a.5.5 0 0 0-.354.146l-.615.522A6.97 6.97 0 0 0 16 9\"/>",

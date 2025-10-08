@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharpExpandLess: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m12 8l-6 6l1.41 1.41L12 10.83l4.59 4.58L18 14z\"/>",

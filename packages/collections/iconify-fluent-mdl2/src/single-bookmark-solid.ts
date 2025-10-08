@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const singleBookmarkSolid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M384 0h1280v2048l-640-323l-640 323z\"/>",

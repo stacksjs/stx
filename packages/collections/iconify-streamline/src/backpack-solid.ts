@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const backpackSolid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M6.116 1.866a1.25 1.25 0 0 1 2.134.884v.202h-2.5V2.75c0-.332.132-.65.366-.884M4.25 3.101V2.75a2.75 2.75 0 1 1 5.5 0v.35c.246.102.473.254.664.45c.375.382.586.9.586 1.44v1.69H7.625v-.322a.625.625 0 1 0-1.25 0v.322H3V4.99c0-.54.21-1.058.586-1.44c.191-.196.418-.348.664-.45m2.125 4.83H3v6.022h8V7.93H7.625v.428a.625.625 0 1 1-1.25 0zM1.5 7.952h.25v6H.5a.5.5 0 0 1-.5-.5v-4a1.5 1.5 0 0 1 1.5-1.5m11 0h-.25v6h1.25a.5.5 0 0 0 .5-.5v-4a1.5 1.5 0 0 0-1.5-1.5\" clip-rule=\"evenodd\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const toggleSquareOff: IconData = {
   "body": "<g fill=\"currentColor\"><path d=\"M15 9a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1z\"/><path fill-rule=\"evenodd\" d=\"M0 7a2 2 0 0 1 2-2h20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2 0h20v10H2z\" clip-rule=\"evenodd\"/></g>",

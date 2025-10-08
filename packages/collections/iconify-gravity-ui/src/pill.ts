@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pill: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M8.922 3.7L7.81 4.81L6.444 6.179a3.326 3.326 0 0 0 3.378 3.378L11.19 8.19l1.11-1.11A2.39 2.39 0 0 0 8.922 3.7M7 3.5l-2 2l-2.36 2.36a3.89 3.89 0 1 0 5.5 5.5L10.5 11l2-2l.86-.86a3.889 3.889 0 1 0-5.5-5.5zm.078 8.8l1.413-1.412A4.85 4.85 0 0 1 5.11 7.51L3.7 8.922A2.39 2.39 0 0 0 7.078 12.3m.892-6.33a.75.75 0 1 0 1.06 1.06l1.5-1.5a.75.75 0 1 0-1.06-1.06z\" clip-rule=\"evenodd\"/>",

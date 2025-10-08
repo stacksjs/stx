@@ -239,7 +239,7 @@ Use computed properties for expensive calculations:
 Use debounce/throttle for frequent events:
 
 ```typescript
-import { debounce } from '@stx/utils'
+import { debounce } from '@stacksjs/utils'
 
 @component('SearchInput', {
   setup() {
@@ -327,7 +327,7 @@ function isUser(value: any): value is User {
 Write comprehensive component tests:
 
 ```typescript
-import { mount } from '@stx/test-utils'
+import { mount } from '@stacksjs/test-utils'
 import Button from './Button.stx'
 
 describe('Button', () => {
@@ -356,7 +356,7 @@ describe('Button', () => {
 Test store functionality:
 
 ```typescript
-import { createStore } from '@stx/store'
+import { createStore } from '@stacksjs/store'
 
 const useCounterStore = createStore({
   state: {
@@ -690,7 +690,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['@stx/core', '@stx/store']
+          vendor: ['@stacksjs/core', '@stacksjs/store']
         }
       }
     },

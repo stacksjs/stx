@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const speechBubbleLtr: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 14H0v6z\"/><rect width=\"20\" height=\"16\" fill=\"currentColor\" rx=\"2\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const documentRibbon20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M6 2a2 2 0 0 0-2 2v5.126Q4.481 9 5 9V4a1 1 0 0 1 1-1h4v3.5A1.5 1.5 0 0 0 11.5 8H15v8a1 1 0 0 1-1 1H8v1h6a2 2 0 0 0 2-2V7.413a1.5 1.5 0 0 0-.44-1.06l-3.914-3.915A1.5 1.5 0 0 0 10.586 2zm8.793 5H11.5a.5.5 0 0 1-.5-.5V3.207zM8 13a3 3 0 1 1-6 0a3 3 0 0 1 6 0m-1 3.464A4 4 0 0 1 5 17a4 4 0 0 1-2-.535v2.286a.25.25 0 0 0 .378.215L5 17.999l1.622.966A.25.25 0 0 0 7 18.75z\"/>",

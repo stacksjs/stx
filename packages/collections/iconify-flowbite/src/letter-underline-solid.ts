@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const letterUnderlineSolid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M10 6H9v8a3 3 0 1 0 6 0V6h-1a1 1 0 1 1 0-2h4a1 1 0 1 1 0 2h-1v8a5 5 0 0 1-2 4h3a1 1 0 1 1 0 2H6a1 1 0 1 1 0-2h3a5 5 0 0 1-2-4V6H6a1 1 0 0 1 0-2h4a1 1 0 1 1 0 2\" clip-rule=\"evenodd\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const alignJustifySpaceBetween: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M20 22v-5h-3V7h3V2h2v20zM2 22V2h2v5h3v10H4v5z\"/>",

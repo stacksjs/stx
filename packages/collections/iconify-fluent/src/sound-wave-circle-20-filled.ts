@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const soundWaveCircle20Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18 10a8 8 0 1 1-16 0a8 8 0 0 1 16 0M6 8.5a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 1 0V9a.5.5 0 0 0-.5-.5m5.5 0a.5.5 0 0 0-1 0v3a.5.5 0 0 0 1 0zM8.5 7a.5.5 0 0 0-.5.5v5a.5.5 0 0 0 1 0v-5a.5.5 0 0 0-.5-.5m5.5.5a.5.5 0 0 0-1 0v5a.5.5 0 0 0 1 0z\"/>",

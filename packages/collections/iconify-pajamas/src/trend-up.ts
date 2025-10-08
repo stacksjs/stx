@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const trendUp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5.143 2.153a1 1 0 0 1 1.715 0l3.999 6.665a1 1 0 0 1-.858 1.515H2.001a1 1 0 0 1-.858-1.515z\"/>",

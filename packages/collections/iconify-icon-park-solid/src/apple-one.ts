@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const appleOne: IconData = {
   "body": "<defs><mask id=\"SVGKtHq3p8r\"><g fill=\"none\" stroke-width=\"4\"><path fill=\"#fff\" fill-rule=\"evenodd\" stroke=\"#fff\" d=\"M24 41.02c2.431 0 3.431 1.31 4.734 1.601c1.303.292 2.397.372 3.517-.121c2.219-.978 3.571-2.142 5.212-3.881C40.505 35.395 42 30.964 42 25.029s-1.6-9.003-4.067-11.009s-3.896-2.39-6.878-2.006s-4.606 3.589-7.047 3.589s-5.415-3.16-8.002-3.589c-2.588-.43-4.006 0-6.246 2.006S6 19.15 6 25.03c0 5.878 1.552 10.236 4.593 13.46c1.64 1.739 2.937 3.033 5.156 4.01c1.12.494 2.278.414 3.535.122c1.258-.29 2.258-1.6 4.716-1.6Z\" clip-rule=\"evenodd\"/><path stroke=\"#fff\" stroke-linecap=\"round\" d=\"M24.009 15.603Q25.186 4 34.01 4q.81 2.441.418 4.727q-.185 1.085-1.153 3.095\"/><path stroke=\"#000\" stroke-linecap=\"round\" d=\"M14.229 26q-.415 2.019 0 4.157q.414 2.137 1.767 3.3\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGKtHq3p8r)\"/>",

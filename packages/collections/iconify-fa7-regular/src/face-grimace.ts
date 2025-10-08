@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const faceGrimace: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M256 48a208 208 0 1 0 0 416a208 208 0 1 0 0-416m256 208a256 256 0 1 1-512 0a256 256 0 1 1 512 0m-360 96c0 11.9 8.6 21.8 20 23.7v-47.3c-11.4 1.9-20 11.8-20 23.7zm84 24v-48h-24v48zm64 0v-48h-24v48zm40-.3c11.4-1.9 20-11.8 20-23.7s-8.6-21.8-20-23.7v47.3zM176 288h160c35.3 0 64 28.7 64 64s-28.7 64-64 64H176c-35.3 0-64-28.7-64-64s28.7-64 64-64m0-112a32 32 0 1 1 0 64a32 32 0 1 1 0-64m128 32a32 32 0 1 1 64 0a32 32 0 1 1-64 0\"/>",

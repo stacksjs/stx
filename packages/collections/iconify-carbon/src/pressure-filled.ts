@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pressureFilled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M22 30H10v-5H6l10-9l10 9h-4zm-6-14L6 7h4V2h12v5h4z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const inboxTextSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M7 12.25h10v-2H7zm0-3.5h10v-2H7zM3 21V3h18v18zm9-5q.95 0 1.725-.55T14.8 14H19V5H5v9h4.2q.3.9 1.075 1.45T12 16\"/>",

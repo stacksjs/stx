@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const zoomout: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1005 1005q-19 19-45.5 19t-45.5-19L716 807q-120 89-268 89q-91 0-174-35.5T131 765T35.5 622T0 448t35.5-174T131 131t143-95.5T448 0t174 35.5T765 131t95.5 143T896 448q0 148-89 268l198 198q19 19 19 45.5t-19 45.5M448 128q-87 0-160.5 43T171 287.5T128 448t43 161t116.5 116.5T448 768t160.5-42.5T725 609t43-161t-43-160.5T608.5 171T448 128m128 384H320q-27 0-45.5-18.5t-18.5-45t18.5-45.5t45.5-19h256q26 0 45 19t19 45.5t-19 45t-45 18.5\"/>",

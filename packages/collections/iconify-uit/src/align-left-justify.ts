@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const alignLeftJustify: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M15.5 20h-13a.5.5 0 0 0 0 1h13a.5.5 0 0 0 0-1M2.5 5h19a.5.5 0 0 0 0-1h-19a.5.5 0 0 0 0 1m19 7h-19a.5.5 0 0 0 0 1h19a.5.5 0 0 0 0-1m0-4h-19a.5.5 0 0 0 0 1h19a.5.5 0 0 0 0-1m0 8h-19a.5.5 0 0 0 0 1h19a.5.5 0 0 0 0-1\"/>",

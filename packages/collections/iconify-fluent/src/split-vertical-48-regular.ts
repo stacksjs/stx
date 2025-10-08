@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const splitVertical48Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M25.5 5.25a1.25 1.25 0 1 0-2.5 0v37.5a1.25 1.25 0 1 0 2.5 0zM39.75 37.5H27.5V40h12.25A4.25 4.25 0 0 0 44 35.75v-23.5A4.25 4.25 0 0 0 39.75 8H27.5v2.5h12.25c.967 0 1.75.784 1.75 1.75v23.5a1.75 1.75 0 0 1-1.75 1.75M21 8H8.25A4.25 4.25 0 0 0 4 12.25v23.5A4.25 4.25 0 0 0 8.25 40H21v-2.5H8.25a1.75 1.75 0 0 1-1.75-1.75v-23.5c0-.966.784-1.75 1.75-1.75H21z\"/>",

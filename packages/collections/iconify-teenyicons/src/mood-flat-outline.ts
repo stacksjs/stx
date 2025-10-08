@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const moodFlatOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M4 5.5h1m5 0h1m-7 4h7m-3.5 5a7 7 0 1 1 0-14a7 7 0 0 1 0 14Z\"/>",

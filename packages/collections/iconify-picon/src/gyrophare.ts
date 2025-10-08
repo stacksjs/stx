@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const gyrophare: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 8V7h8v1M5 5V3L4 2v4M1 6l1-4h4l1 4\"/>",

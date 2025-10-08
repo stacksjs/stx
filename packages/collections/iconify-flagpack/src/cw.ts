@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const cw: IconData = {
   "body": "<g fill=\"none\"><path fill=\"#2E42A5\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/><mask id=\"SVGTrazyc7b\" width=\"32\" height=\"24\" x=\"0\" y=\"0\" maskUnits=\"userSpaceOnUse\" style=\"mask-type:luminance\"><path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/></mask><g fill-rule=\"evenodd\" clip-rule=\"evenodd\" mask=\"url(#SVGTrazyc7b)\"><path fill=\"#F7FCFF\" d=\"M4.254 6.15L2.266 7.198l.96-1.868L2 3.963l1.523-.056L4.254 2l.558 1.907l1.783.056l-1.284 1.368l.815 1.868zm7.098 4.927l-2.454 1.028l.963-2.577L7.726 7.8h2.558l1.068-2.787l.816 2.787h2.56l-1.82 1.73l.905 2.576z\"/><path fill=\"#F9E813\" d=\"M0 14v4h32v-4z\"/></g></g>",

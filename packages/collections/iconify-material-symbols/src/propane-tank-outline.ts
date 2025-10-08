@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const propaneTankOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8 22q-1.65 0-2.825-1.175T4 18v-8q0-1.425.85-2.475T7 6.125V4q0-.825.588-1.412T9 2h6q.825 0 1.413.588T17 4v2.125q1.3.35 2.15 1.4T20 10v8q0 1.65-1.175 2.825T16 22zm-2-9h12v-3q0-.825-.587-1.412T16 8H8q-.825 0-1.412.588T6 10zm2 7h8q.825 0 1.413-.587T18 18v-3H6v3q0 .825.588 1.413T8 20m5-14h2V4H9v2h2q0-.425.288-.712T12 5t.713.288T13 6\"/>",

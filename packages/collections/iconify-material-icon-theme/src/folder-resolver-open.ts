@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const folderResolverOpen: IconData = {
   "body": "<path fill=\"#43a047\" d=\"M28.967 12H9.442a2 2 0 0 0-1.898 1.368L4 24V10h24a2 2 0 0 0-2-2H15.124a2 2 0 0 1-1.28-.464l-1.288-1.072A2 2 0 0 0 11.276 6H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h22l4.805-11.212A2 2 0 0 0 28.967 12\"/><path fill=\"#c8e6c9\" d=\"M29.216 14L20.6 22.159l-3.816-3.614L14 21.183L20.6 28L32 17.205Z\"/>",

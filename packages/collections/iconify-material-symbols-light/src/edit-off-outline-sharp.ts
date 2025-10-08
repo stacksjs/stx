@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const editOffOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m14.685 11.829l-.708-.708l2.82-2.819l-1.099-1.098l-2.82 2.819l-.707-.707l5.743-5.762l2.526 2.544zM5 19h1.098l5.74-5.74l-.546-.552l-.552-.547L5 17.902zm14.762 2.177l-7.21-7.185L6.519 20H4v-2.513l6.014-6.033l-7.191-7.215l.714-.714l16.938 16.938zm-.743-15.085l-1.111-1.111zm-3.321 1.112l1.098 1.098zm-4.406 5.504l-.551-.546l1.098 1.097z\"/>",

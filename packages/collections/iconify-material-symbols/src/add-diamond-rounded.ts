@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const addDiamondRounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 22q-.4 0-.763-.137t-.637-.438l-7.975-8q-.275-.3-.45-.663T2 12t.175-.763t.45-.637l7.975-8q.3-.3.65-.45T12 2t.775.15t.65.45l7.95 8q.275.3.45.65T22 12t-.162.763t-.463.662l-7.95 8q-.275.275-.65.425T12 22m-1-9v2q0 .425.288.713T12 16t.713-.288T13 15v-2h2q.425 0 .713-.288T16 12t-.288-.712T15 11h-2V9q0-.425-.288-.712T12 8t-.712.288T11 9v2H9q-.425 0-.712.288T8 12t.288.713T9 13z\"/>",

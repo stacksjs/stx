@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const toilet: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M469.613 46.229A77.38 77.38 0 0 0 408 16h-12.381l-56 216H40v32c0 46.482 18.616 88.125 52.417 117.257C124.4 408.82 168.288 424 216 424h38.124l-8 72H448V250.04l35.411-136.585a77.38 77.38 0 0 0-13.798-67.226M416 464H281.876l8-72H216c-84.785 0-144-52.636-144-128h344Zm36.435-358.576L419.619 232h-46.942l47.3-182.436a45.95 45.95 0 0 1 32.46 55.86Z\"/>",

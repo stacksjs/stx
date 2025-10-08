@@ -1,11 +1,11 @@
-# @stx/iconify-fa
+# @stacksjs/iconify-fa
 
 Font Awesome 4 icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-fa
+bun add @stacksjs/iconify-fa
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-fa
 
 ```html
 <script>
-  import { home } from '@stx/iconify-fa'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-fa'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-fa
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-fa'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-fa'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

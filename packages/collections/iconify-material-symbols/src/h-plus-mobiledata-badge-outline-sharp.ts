@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hPlusMobiledataBadgeOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.5 17h2v-4h4v4h2V7h-2v4h-4V7h-2zm11-2h2v-2h2v-2h-2V9h-2v2h-2v2h2zM1 21V3h22v18zm2-2h18V5H3zm0 0V5z\"/>",

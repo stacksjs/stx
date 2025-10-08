@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const waterDrop: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2 13a5 5 0 0 0 10 0c0-1.726-1.66-5.031-5-9.653C3.66 7.969 2 11.274 2 13M7 0q7 9.135 7 13a7 7 0 0 1-14 0Q0 9.135 7 0\"/>",

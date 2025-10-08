@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const layerMask: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"3\"><path d=\"M3.503 11.622c.219-2.203 1.85-3.842 4.055-4.05C10.499 7.293 15.593 7 24 7s13.5.293 16.442.572c2.205.208 3.836 1.847 4.055 4.05C44.748 14.144 45 18.136 45 24s-.252 9.856-.503 12.378c-.219 2.203-1.85 3.842-4.055 4.05C37.501 40.707 32.407 41 24 41s-13.5-.293-16.442-.572c-2.205-.208-3.836-1.847-4.055-4.05C3.252 33.856 3 29.864 3 24s.252-9.856.503-12.378\"/><path d=\"M24 14c5.523 0 10 4.477 10 10s-4.477 10-10 10s-10-4.477-10-10s4.477-10 10-10\"/></g>",

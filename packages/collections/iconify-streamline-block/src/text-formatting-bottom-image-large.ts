@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const textFormattingBottomImageLarge: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 2.5h16V0H0zM0 7h12V4.5H0zm16 2H0v7h16z\"/>",

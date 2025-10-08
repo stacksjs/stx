@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mdSkipForward: IconData = {
   "body": "<path d=\"M64 64v384l277.3-192L64 64z\" fill=\"currentColor\"/><path d=\"M384 64h64v384h-64z\" fill=\"currentColor\"/>",

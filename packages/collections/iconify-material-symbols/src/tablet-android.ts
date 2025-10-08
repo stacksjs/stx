@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tabletAndroid: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 23q-.825 0-1.412-.587T3 21V3q0-.825.588-1.412T5 1h14q.825 0 1.413.588T21 3v18q0 .825-.587 1.413T19 23zm5-3h4v-1h-4zm-5-4h14V6H5z\"/>",

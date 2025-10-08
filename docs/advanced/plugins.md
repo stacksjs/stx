@@ -37,7 +37,7 @@ export default MyPlugin
 ### Plugin Registration
 
 ```typescript
-import { createApp } from '@stx/core'
+import { createApp } from '@stacksjs/core'
 import MyPlugin from './plugins/my-plugin'
 
 const app = createApp()
@@ -88,13 +88,13 @@ export class StateManagerPlugin {
 
 ```json
 {
-  "name": "@stx/my-plugin",
+  "name": "@stacksjs/my-plugin",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["dist"],
   "peerDependencies": {
-    "@stx/core": "^2.0.0"
+    "@stacksjs/core": "^2.0.0"
   },
   "keywords": ["stx", "plugin", "my-plugin"]
 }
@@ -103,7 +103,7 @@ export class StateManagerPlugin {
 ### TypeScript Definitions
 
 ```typescript
-declare module '@stx/core' {
+declare module '@stacksjs/core' {
   interface ComponentCustomProperties {
     $myPlugin: MyPlugin
   }
@@ -120,7 +120,7 @@ declare module '@stx/core' {
 
 ```typescript
 import { test, expect } from 'bun:test'
-import { createApp } from '@stx/core'
+import { createApp } from '@stacksjs/core'
 import MyPlugin from '../src'
 
 test('plugin installs correctly', () => {
@@ -138,11 +138,11 @@ test('plugin installs correctly', () => {
 
 ### Official Plugins
 
-- `@stx/router` - Client-side routing
-- `@stx/state` - State management
-- `@stx/i18n` - Internationalization
-- `@stx/analytics` - Analytics integration
-- `@stx/auth` - Authentication
+- `@stacksjs/router` - Client-side routing
+- `@stacksjs/state` - State management
+- `@stacksjs/i18n` - Internationalization
+- `@stacksjs/analytics` - Analytics integration
+- `@stacksjs/auth` - Authentication
 
 ### Community Guidelines
 

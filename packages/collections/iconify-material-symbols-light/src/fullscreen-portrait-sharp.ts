@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fullscreenPortraitSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M8.385 17.616h7.23V6.385h-7.23zM19 21H5V3h14z\"/>",

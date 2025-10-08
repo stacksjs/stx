@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const deviceMeetingRoomRemote16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M2.742 3.459A2 2 0 0 1 4.668 2h6.668a2 2 0 0 1 1.926 1.459l1.66 5.898A2.08 2.08 0 0 1 12.917 12H7.002v-1h5.916a1.08 1.08 0 0 0 1.04-1.372l-1.66-5.899A1 1 0 0 0 11.337 3H4.668a1 1 0 0 0-.963.73L3.348 5H2.5q-.099 0-.194.007zM6.952 14h4.551a.5.5 0 1 0 0-1h-4.5v.5q-.001.257-.05.5M3.501 9.5a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5M1 7.5A1.5 1.5 0 0 1 2.5 6h2.001a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5h-2A1.5 1.5 0 0 1 1 13.5zM2.5 7a.5.5 0 0 0-.5.5v6a.5.5 0 0 0 .5.5h2.001a.5.5 0 0 0 .5-.5v-6a.5.5 0 0 0-.5-.5z\"/>",

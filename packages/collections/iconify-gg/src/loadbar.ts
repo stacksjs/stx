@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const loadbar: IconData = {
   "body": "<rect width=\"18\" height=\"4\" x=\"3\" y=\"10\" fill=\"currentColor\" rx=\"2\"/>",

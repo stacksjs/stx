@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const libreofficecalc: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9 13H7v-1h2zm6-3h-2v1h2zm-6 0H7v1h2zm3 0h-2v1h2zm3-10l7 7V0zM9 14H7v1h2zm5 3h1v-3h-1zm2 0h1v-1h-1zm-4 0h1v-2h-1zm1-17l9 9v12c0 1.662-1.338 3-3 3H5c-1.662 0-3-1.338-3-3V3c0-1.662 1.338-3 3-3zm5 13h-7v5h7zm-2-4H6v7h4.5v-1H10v-1h.5v-1H10v-1h2v.5h1V12h2v.5h1z\"/>",

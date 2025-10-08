@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pantoneLine: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m5.765 8l-.296-.73a1 1 0 0 1 .553-1.302l9.272-3.746a1 1 0 0 1 1.302.552l5.619 13.908a1 1 0 0 1-.553 1.302L12.39 21.73a1 1 0 0 1-1.302-.553L11 20.96V21H7a1 1 0 0 1-1-1v-.27l-3.35-1.353a1 1 0 0 1-.552-1.302zM8 19h2.209L8 13.533zm-2-6.244l-1.673 4.141L6 17.608zm1.698-5.309l4.87 12.054l7.418-2.997l-4.87-12.053zm2.979 2.033a1 1 0 1 1-.75-1.855a1 1 0 0 1 .75 1.855\"/>",

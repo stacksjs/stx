@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const exclamation: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11 4h2v11h-2zm2 14v2h-2v-2z\"/>",

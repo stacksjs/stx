@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const settingsBrightnessOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m12 17.5l1.5-1.5H16v-2.5l1.5-1.5l-1.5-1.5V8h-2.5L12 6.5L10.5 8H8v2.5L6.5 12L8 13.5V16h2.5zm0-2.5V9q1.25 0 2.125.875T15 12t-.875 2.125T12 15M2 20V4h20v16zm2-2h16V6H4zm0 0V6z\"/>",

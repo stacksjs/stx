@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const microSdCardOutline: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" d=\"M6.5 3v3m2-3v3m2-3v3m-8 8.5h10a1 1 0 0 0 1-1v-12a1 1 0 0 0-1-1h-8a1 1 0 0 0-1 1v5l-2 2v5a1 1 0 0 0 1 1Z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const recordingTape2Solid: IconData = {
   "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M6 10.5a2 2 0 1 0 0 4a2 2 0 0 0 0-4m4.584 4A5 5 0 1 0 6 17.5h12a5 5 0 1 0-4.584-3zm7.416 0a2 2 0 1 0 0-4a2 2 0 0 0 0 4\" clip-rule=\"evenodd\"/>",

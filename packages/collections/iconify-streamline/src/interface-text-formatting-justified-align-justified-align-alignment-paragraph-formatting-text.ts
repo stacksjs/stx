@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const interfaceTextFormattingJustifiedAlignJustifiedAlignAlignmentParagraphFormattingText: IconData = {
   "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M13.5 1H.5m13 3H.5m13 3H.5m13 6H.5m13-3H.5\"/>",

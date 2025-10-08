@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const surfaceHub24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M19.25 2a.75.75 0 0 1 .75.727l-.004.102l-1 9.5a.75.75 0 0 1-.643.664L18.25 13h-.729l1.467 8.118l.011.102a.75.75 0 0 1-1.462.264l-.025-.1L16.9 18h-2.797l-.607 3.384a.75.75 0 0 1-1.488-.164l.011-.101l.56-3.119H8.103l-.607 3.384a.75.75 0 0 1-1.488-.164l.011-.101L7.478 13H4.75a.75.75 0 0 1-.75-.727l.004-.101l1-9.5a.75.75 0 0 1 .643-.665L5.75 2zm-5.772 11H9.002l-.629 3.5h4.476zm2.518 0h-.994l-.629 3.5h2.255z\"/>",

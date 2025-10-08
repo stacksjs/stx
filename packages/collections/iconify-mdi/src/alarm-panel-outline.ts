@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const alarmPanelOutline: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9 12H6v-2h3zm4.5-2h-3v2h3zm4.5 0h-3v2h3zm0-4H6v3h12zm2-1H4v14h16zm0-2c1.1 0 2 .9 2 2v14c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2zM9 13H6v2h3zm4.5 0h-3v2h3zm4.5 0h-3v2h3zm-9 3H6v2h3zm4.5 0h-3v2h3zm4.5 0h-3v2h3z\"/>",

@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const volumeIncrease: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16 9h-3v3h-2V9H8V7h3V4h2v3h3zm-9.5 6a.5.5 0 0 1-.354-.146L2.292 11H.499a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5h1.793l3.854-3.854A.499.499 0 0 1 7 1.5v13a.5.5 0 0 1-.5.5\"/>",

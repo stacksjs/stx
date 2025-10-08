@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mdBarcode: IconData = {
   "body": "<path d=\"M88 128h48v256H88z\" fill=\"currentColor\"/><path d=\"M232 128h48v256h-48z\" fill=\"currentColor\"/><path d=\"M160 144h48v224h-48z\" fill=\"currentColor\"/><path d=\"M304 144h48v224h-48z\" fill=\"currentColor\"/><path d=\"M376 128h48v256h-48z\" fill=\"currentColor\"/><path d=\"M104 104V56H16v400h88v-48H64V104z\" fill=\"currentColor\"/><path d=\"M408 56v48h40v304h-40v48h88V56z\" fill=\"currentColor\"/>",

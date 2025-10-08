@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const eye: IconData = {
   "body": "<ellipse cx=\"35.75\" cy=\"36.428\" fill=\"#FFF\" rx=\"34.81\" ry=\"20.428\"/><ellipse cx=\"35.75\" cy=\"36.428\" fill=\"#FFF\" rx=\"34.81\" ry=\"20.428\"/><circle cx=\"36\" cy=\"35.958\" r=\"15.484\" fill=\"#a57939\"/><ellipse cx=\"35.75\" cy=\"36.428\" fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\" rx=\"34.81\" ry=\"20.428\"/><circle cx=\"36\" cy=\"35.958\" r=\"8.442\"/><circle cx=\"36\" cy=\"35.958\" r=\"8.442\" fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"/><circle cx=\"36\" cy=\"35.958\" r=\"15.484\" fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"/>",

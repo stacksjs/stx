@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const hardDiskOne: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"4\"><path d=\"M39 6H9a3 3 0 0 0-3 3v30a3 3 0 0 0 3 3h30a3 3 0 0 0 3-3V9a3 3 0 0 0-3-3Z\"/><path fill=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M32 6H16v10h16z\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M17 36h14\"/></g>",

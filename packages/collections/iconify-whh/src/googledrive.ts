@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const googledrive: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m376 13l8-13h256l346 576H701zM143 845L0 640L335 81l123 213zm199-205h682L846 896H194z\"/>",

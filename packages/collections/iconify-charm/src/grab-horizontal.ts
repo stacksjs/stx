@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const grabHorizontal: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\"><circle cx=\"2.5\" cy=\"5.5\" r=\".75\"/><circle cx=\"8\" cy=\"5.5\" r=\".75\"/><circle cx=\"13.5\" cy=\"5.5\" r=\".75\"/><circle cx=\"2.5\" cy=\"10.5\" r=\".75\"/><circle cx=\"8\" cy=\"10.5\" r=\".75\"/><circle cx=\"13.5\" cy=\"10.5\" r=\".75\"/></g>",

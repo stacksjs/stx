@@ -1,11 +1,11 @@
-# @stx/iconify-ix
+# @stacksjs/iconify-ix
 
 Siemens Industrial Experience Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-ix
+bun add @stacksjs/iconify-ix
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-ix
 
 ```html
 <script>
-  import { home } from '@stx/iconify-ix'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-ix'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-ix
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-ix'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-ix'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

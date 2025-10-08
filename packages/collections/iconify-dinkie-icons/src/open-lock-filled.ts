@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const openLockFilled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M0 12h11V7H4V3h3v2h2V2H8V1H3v1H2v5H0Zm9-1V8h1v3Zm0 0\"/>",

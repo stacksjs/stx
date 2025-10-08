@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const formatH6Rounded: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4 17q-.425 0-.712-.288T3 16V8q0-.425.288-.712T4 7t.713.288T5 8v3h4V8q0-.425.288-.712T10 7t.713.288T11 8v8q0 .425-.288.713T10 17t-.712-.288T9 16v-3H5v3q0 .425-.288.713T4 17m11 0q-.825 0-1.412-.587T13 15V9q0-.825.588-1.412T15 7h5q.425 0 .713.288T21 8t-.288.713T20 9h-5v2h4q.825 0 1.413.588T21 13v2q0 .825-.587 1.413T19 17zm0-4v2h4v-2z\"/>",

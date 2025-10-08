@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-entypo-social",
+  "name": "@stacksjs/iconify-entypo-social",
   "version": "0.0.1",
   "description": "Entypo+ Social icons for stx from Iconify",
   "author": "Daniel Bruce",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

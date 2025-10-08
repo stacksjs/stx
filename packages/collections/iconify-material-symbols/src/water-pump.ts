@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const waterPump: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m12 9l-.85 1.25q-.675 1.05-.913 1.613T10 13q0 .825.588 1.413T12 15t1.413-.587T14 13q0-.575-.238-1.137t-.912-1.613zm0 9.25q-2.6 0-4.425-1.825T5.75 12t1.825-4.425T12 5.75t4.425 1.825T18.25 12t-1.825 4.425T12 18.25M21 12v-1h-1.325q-.275-2-1.437-3.588T15.325 5H21V4h2v8zM1 20v-8h2v1h1.325q.275 2 1.438 3.588T8.675 19H3v1z\"/>",

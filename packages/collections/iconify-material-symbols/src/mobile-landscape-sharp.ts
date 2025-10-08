@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mobileLandscapeSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M1 19V5h5.1V4h4.8v1H23v14zm4-6q.425 0 .713-.288T6 12t-.288-.712T5 11t-.712.288T4 12t.288.713T5 13\"/>",

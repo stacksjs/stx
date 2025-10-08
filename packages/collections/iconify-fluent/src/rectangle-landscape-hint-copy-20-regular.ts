@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const rectangleLandscapeHintCopy20Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M5 5a2 2 0 0 1 2-2h1.5a.5.5 0 0 1 0 1H7a1 1 0 0 0-1 1v.5a.5.5 0 0 1-1 0zm5-1.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m6-.5a2 2 0 0 1 2 2v.5a.5.5 0 0 1-1 0V5a1 1 0 0 0-1-1h-1.5a.5.5 0 0 1 0-1zm-6 10.5a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 0-1h-2a.5.5 0 0 0-.5.5M7 14a2 2 0 0 1-2-2v-.5a.5.5 0 0 1 1 0v.5a1 1 0 0 0 1 1h1.5a.5.5 0 0 1 0 1zm11-2a2 2 0 0 1-2 2h-1.5a.5.5 0 0 1 0-1H16a1 1 0 0 0 1-1v-.5a.5.5 0 0 1 1 0zM5.5 7a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 1 0v-2a.5.5 0 0 0-.5-.5m11.5.5a.5.5 0 0 1 1 0v2a.5.5 0 0 1-1 0zM2 7.41a3.4 3.4 0 0 1 1-2.412V12.5A3.5 3.5 0 0 0 6.5 16h9.503a3.4 3.4 0 0 1-2.413 1H6.5A4.5 4.5 0 0 1 2 12.5z\"/>",

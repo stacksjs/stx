@@ -1,11 +1,11 @@
-# @stx/iconify-fa7-brands
+# @stacksjs/iconify-fa7-brands
 
 Font Awesome Brands icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-fa7-brands
+bun add @stacksjs/iconify-fa7-brands
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-fa7-brands
 
 ```html
 <script>
-  import { home } from '@stx/iconify-fa7-brands'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-fa7-brands'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-fa7-brands
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-fa7-brands'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-fa7-brands'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

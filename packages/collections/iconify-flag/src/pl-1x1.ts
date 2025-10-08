@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const pl1x1: IconData = {
   "body": "<g fill-rule=\"evenodd\"><path fill=\"#fff\" d=\"M512 512H0V0h512z\"/><path fill=\"#dc143c\" d=\"M512 512H0V256h512z\"/></g>",

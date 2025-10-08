@@ -1,5 +1,5 @@
 {
-  "name": "@stx/iconify-bytesize",
+  "name": "@stacksjs/iconify-bytesize",
   "version": "0.0.1",
   "description": "Bytesize Icons icons for stx from Iconify",
   "author": "Dan Klammer",
@@ -22,7 +22,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@stx/iconify-core": "workspace:*"
+    "@stacksjs/iconify-core": "workspace:*"
   },
   "keywords": [
     "iconify",

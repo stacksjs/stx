@@ -1,11 +1,11 @@
-# @stx/iconify-medical-icon
+# @stacksjs/iconify-medical-icon
 
 Medical Icons icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-medical-icon
+bun add @stacksjs/iconify-medical-icon
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-medical-icon
 
 ```html
 <script>
-  import { home } from '@stx/iconify-medical-icon'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-medical-icon'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-medical-icon
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-medical-icon'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-medical-icon'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

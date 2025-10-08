@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const climb: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m0 1l3-1l-1 3m6-3v2L2 8H0V6h2V4h2V2h2V0\"/>",

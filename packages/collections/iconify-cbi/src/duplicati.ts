@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const duplicati: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M9.186 2.937h11.25A1.56 1.56 0 0 1 22 4.501v8.368a1.56 1.56 0 0 1-1.564 1.564H9.186a1.56 1.56 0 0 1-1.564-1.564V4.501a1.56 1.56 0 0 1 1.564-1.564M6.22 13.214H3.433A1.434 1.434 0 0 0 2 14.647v4.983a1.434 1.434 0 0 0 1.433 1.433h7.483a1.434 1.434 0 0 0 1.433-1.433v-3.774H9.186a2.99 2.99 0 0 1-2.966-2.642m7.214 6.401H17a1.43 1.43 0 0 0 1.431-1.431v-2.136h-4.997z\"/>",

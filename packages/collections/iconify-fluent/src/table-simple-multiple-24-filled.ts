@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const tableSimpleMultiple24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M15.75 19H11.5v-7.5H19v4.25A3.25 3.25 0 0 1 15.75 19M19 10h-7.5V2h4.25A3.25 3.25 0 0 1 19 5.25zm-9 0V2H5.25A3.25 3.25 0 0 0 2 5.25V10zm0 9v-7.5H2v4.25A3.25 3.25 0 0 0 5.25 19zm-1.75 3a3.25 3.25 0 0 1-3-2h10.502a4.25 4.25 0 0 0 4.25-4.25V5.25a3.25 3.25 0 0 1 1.999 3v8.25a5.5 5.5 0 0 1-5.5 5.5z\"/>",

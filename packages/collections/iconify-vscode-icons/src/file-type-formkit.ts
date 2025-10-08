@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const fileTypeFormkit: IconData = {
   "body": "<defs><linearGradient id=\"SVG5m9VwcFL\" x1=\"217.28\" x2=\"217.34\" y1=\"987.61\" y2=\"987.51\" gradientTransform=\"matrix(300 0 0 -300 -65182 296286.64)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"#f79259\"/><stop offset=\"1\" stop-color=\"#f8ce68\"/></linearGradient></defs><path fill=\"url(#SVG5m9VwcFL)\" fill-rule=\"evenodd\" d=\"M30.07 25.39v4.67h-14v-4.67ZM6.74 20.73v4.66H2.07v-4.66Zm4.66-4.67v4.67H6.74v-4.67Zm4.67-4.67v4.67H11.4v-4.67ZM11.4 6.73v4.66H6.74V6.73ZM6.74 2.06v4.67H2.07V2.06Z\"/>",

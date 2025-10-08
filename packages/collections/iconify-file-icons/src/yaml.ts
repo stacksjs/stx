@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const yaml: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M342.016 0H457L114.983 512H0l171.008-256L0 0h114.983L228.5 169.934z\"/>",

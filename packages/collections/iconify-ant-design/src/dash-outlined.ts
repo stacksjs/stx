@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dashOutlined: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M112 476h160v72H112zm320 0h160v72H432zm320 0h160v72H752z\"/>",

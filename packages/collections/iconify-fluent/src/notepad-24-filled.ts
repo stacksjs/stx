@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const notepad24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M16.25 2a.75.75 0 0 1 .75.75V4h.75A2.25 2.25 0 0 1 20 6.25V16h-3.75A2.25 2.25 0 0 0 14 18.25V22H6.25A2.25 2.25 0 0 1 4 19.75V6.25A2.25 2.25 0 0 1 6.25 4H7V2.75a.75.75 0 0 1 1.5 0V4h2.75V2.75a.75.75 0 0 1 1.5 0V4h2.75V2.75a.75.75 0 0 1 .75-.75m3.51 15.5q-.085.136-.2.25l-3.81 3.81q-.115.115-.25.2v-3.51a.75.75 0 0 1 .75-.75zM8.25 16a.75.75 0 0 0 0 1.5h3l.077-.004a.75.75 0 0 0 0-1.492L11.25 16zm0-4a.75.75 0 0 0 0 1.5h7.5a.75.75 0 0 0 0-1.5zm0-4a.75.75 0 0 0 0 1.5h7.5a.75.75 0 0 0 0-1.5z\"/>",

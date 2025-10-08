@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const borderLeftRight24Filled: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M17 4a1 1 0 0 1 1-1a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3a1 1 0 1 1 0-2a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1a1 1 0 0 1-1-1m-4 1a1 1 0 1 0 0-2h-2a1 1 0 1 0 0 2zm0 14a1 1 0 1 1 0 2h-2a1 1 0 1 1 0-2zM6 3a1 1 0 1 1 0 2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1a1 1 0 1 1 0 2a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3\"/>",

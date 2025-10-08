@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const interfaceAlertInformationCircleInformationFrameInfoMoreHelpPointCircle: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"7\" cy=\"7\" r=\"6.5\"/><path d=\"M7 7v3.5\"/><circle cx=\"7\" cy=\"4.5\" r=\".5\"/></g>",

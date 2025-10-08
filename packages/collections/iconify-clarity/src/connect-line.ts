@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const connectLine: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M34 17h-5.77A6.25 6.25 0 0 0 22 12h-7.85a6.25 6.25 0 0 0-6.21 5H2v2h5.93a6.22 6.22 0 0 0 6.22 5H22a6.22 6.22 0 0 0 6.22-5H34Zm-16.92 5h-2.93a4.17 4.17 0 0 1-4.31-4a4.17 4.17 0 0 1 4.31-4h2.94ZM22 22h-3v-8h3a4.17 4.17 0 0 1 4.31 4A4.17 4.17 0 0 1 22 22\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",

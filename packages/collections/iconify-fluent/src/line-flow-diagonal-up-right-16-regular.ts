@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const lineFlowDiagonalUpRight16Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12.854 3.854a.5.5 0 0 0-.708-.708L5.88 9.414a2.5 2.5 0 1 0 .707.707zM3 11.5a1.5 1.5 0 1 1 3 0a1.5 1.5 0 0 1-3 0\"/>",

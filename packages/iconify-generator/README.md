@@ -1,4 +1,4 @@
-# @stx/iconify-generator
+# @stacksjs/iconify-generator
 
 Generator for creating Iconify icon packages for stx.
 
@@ -37,7 +37,7 @@ stx iconify generate mdi --output ./my-packages
 You can also use the generator programmatically:
 
 ```typescript
-import { fetchCollections, generatePackage } from '@stx/iconify-generator'
+import { fetchCollections, generatePackage } from '@stacksjs/iconify-generator'
 
 // List all available collections
 const collections = await fetchCollections()

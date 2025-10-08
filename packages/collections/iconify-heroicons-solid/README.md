@@ -1,11 +1,11 @@
-# @stx/iconify-heroicons-solid
+# @stacksjs/iconify-heroicons-solid
 
 HeroIcons v1 Solid icons for stx from Iconify.
 
 ## Installation
 
 ```bash
-bun add @stx/iconify-heroicons-solid
+bun add @stacksjs/iconify-heroicons-solid
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @stx/iconify-heroicons-solid
 
 ```html
 <script>
-  import { home } from '@stx/iconify-heroicons-solid'
-  import { renderIcon } from '@stx/iconify-core'
+  import { home } from '@stacksjs/iconify-heroicons-solid'
+  import { renderIcon } from '@stacksjs/iconify-core'
 
   export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
 </script>
@@ -28,8 +28,8 @@ bun add @stx/iconify-heroicons-solid
 ### In TypeScript/JavaScript
 
 ```typescript
-import { home, account, settings } from '@stx/iconify-heroicons-solid'
-import { renderIcon } from '@stx/iconify-core'
+import { home, account, settings } from '@stacksjs/iconify-heroicons-solid'
+import { renderIcon } from '@stacksjs/iconify-core'
 
 const svg = renderIcon(home, {
   size: 24,

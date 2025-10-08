@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const outlineSpaceBar: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M18 9v4H6V9H4v6h16V9z\"/>",

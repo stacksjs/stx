@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const kingBedOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M4.77 18h-.54l-.38-2H3v-5h2V7h14v4h2v5h-.85l-.38 2h-.54l-.38-2H5.15zm7.73-7H18V8h-5.5zM6 11h5.5V8H6zm-2 4h16v-3H4zm16 0H4z\"/>",

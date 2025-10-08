@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const stylusPencilSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"m6 16l5-13h2l5 13zm-2 5l1-3h14l1 3z\"/>",

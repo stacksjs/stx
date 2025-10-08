@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const facebookLogo: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M256 42.667c-111.476-.174-204.29 85.51-213.011 196.644c-8.72 111.134 69.593 210.245 179.731 227.462V317.44h-54.187V256h54.187v-46.933a75.094 75.094 0 0 1 80.427-82.987a335.5 335.5 0 0 1 47.786 4.053v52.48h-26.88a30.934 30.934 0 0 0-34.773 33.28V256h59.307l-9.6 61.653H289.28v149.334c110.805-16.546 189.934-115.984 181.174-227.675S368.03 41.735 256 42.667\"/>",

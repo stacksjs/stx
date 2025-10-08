@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const sharedWalletOutline: IconData = {
   "body": "<g fill=\"none\" stroke=\"currentColor\"><path stroke-linecap=\"square\" stroke-linejoin=\"round\" d=\"M15.5 8.504V4.5a1 1 0 0 0-1-1h-8a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4\"/><rect width=\"6\" height=\"10\" x=\"12.5\" y=\"10.5\" rx=\"1\"/><path stroke-linecap=\"square\" d=\"M13.5 18h4m-11-3h4\"/></g>",

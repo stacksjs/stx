@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const dragVerticalVariant: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M11 21H9V3h2zm4-18h-2v18h2z\"/>",

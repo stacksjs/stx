@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const mobileBlockOutlineSharp: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 16q1.65 0 2.825-1.175T16 12t-1.175-2.825T12 8T9.175 9.175T8 12t1.175 2.825T12 16m0-1.5q-1.05 0-1.775-.725T9.5 12q0-.3.075-.587t.225-.563l3.35 3.35q-.275.15-.563.225T12 14.5m2.2-1.35L10.85 9.8q.275-.15.563-.225T12 9.5q1.05 0 1.775.725T14.5 12q0 .3-.075.588t-.225.562M5 23V1h14v5.1h1v4.8h-1V23zm2-2h10V3H7zm0 0V3z\"/>",

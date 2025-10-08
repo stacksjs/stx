@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const arrowMaximize32Regular: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M27 4a1 1 0 0 1 1 1v10a1 1 0 1 1-2 0V7.414L7.414 26H15a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1V17a1 1 0 1 1 2 0v7.586L24.586 6H17a1 1 0 1 1 0-2z\"/>",

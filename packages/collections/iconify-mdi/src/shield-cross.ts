@@ -1,4 +1,4 @@
-import type { IconData } from '@stx/iconify-core'
+import type { IconData } from '@stacksjs/iconify-core'
 
 export const shieldCross: IconData = {
   "body": "<path fill=\"currentColor\" d=\"M12 1L3 5v6c0 5.5 3.8 10.7 9 12c5.2-1.3 9-6.5 9-12V5zm4 9h-3v8h-2v-8H8V8h3V5h2v3h3z\"/>",
