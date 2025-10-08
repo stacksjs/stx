@@ -310,12 +310,239 @@ ${collectionInfo.license?.url ? `License: ${collectionInfo.license.url}` : ''}
 }
 
 /**
+ * Generate documentation file for a collection
+ */
+export function generateDocumentation(
+  prefix: string,
+  collectionInfo: IconifyCollection,
+  iconNames: string[],
+): string {
+  const iconCount = iconNames.length
+  const exampleIcons = iconNames.slice(0, 5).map(toCamelCase)
+
+  return `# ${collectionInfo.name}
+
+> ${collectionInfo.name} icons for stx from Iconify
+
+## Overview
+
+This package provides access to ${iconCount} icons from the ${collectionInfo.name} collection through the stx iconify integration.
+
+**Collection ID:** \`${prefix}\`
+**Total Icons:** ${iconCount}
+${collectionInfo.author?.name ? `**Author:** ${collectionInfo.author.name}${collectionInfo.author.url ? ` ([Website](${collectionInfo.author.url}))` : ''}` : ''}
+${collectionInfo.license?.title ? `**License:** ${collectionInfo.license.title}${collectionInfo.license.url ? ` ([Details](${collectionInfo.license.url}))` : ''}` : ''}
+${collectionInfo.category ? `**Category:** ${collectionInfo.category}` : ''}
+${collectionInfo.palette !== undefined ? `**Palette:** ${collectionInfo.palette ? 'Yes (color icons)' : 'No (monotone icons)'}` : ''}
+
+## Installation
+
+\`\`\`bash
+bun add @stacksjs/iconify-${prefix}
+\`\`\`
+
+## Quick Start
+
+### In stx Templates
+
+\`\`\`html
+@js
+  import { ${exampleIcons.slice(0, 3).join(', ')} } from '@stacksjs/iconify-${prefix}'
+  import { renderIcon } from '@stacksjs/iconify-core'
+
+  global.icons = {
+    ${exampleIcons[0] || 'icon'}: renderIcon(${exampleIcons[0] || 'icon'}, { size: 24 }),
+    ${exampleIcons[1] || 'icon2'}: renderIcon(${exampleIcons[1] || 'icon2'}, { size: 24, color: '#4a90e2' }),
+    ${exampleIcons[2] || 'icon3'}: renderIcon(${exampleIcons[2] || 'icon3'}, { size: 32 })
+  }
+@endjs
+
+<div class="icons">
+  {!! icons.${exampleIcons[0] || 'icon'} !!}
+  {!! icons.${exampleIcons[1] || 'icon2'} !!}
+  {!! icons.${exampleIcons[2] || 'icon3'} !!}
+</div>
+\`\`\`
+
+### In TypeScript/JavaScript
+
+\`\`\`typescript
+import { ${exampleIcons.slice(0, 3).join(', ')} } from '@stacksjs/iconify-${prefix}'
+import { renderIcon } from '@stacksjs/iconify-core'
+
+// Basic usage
+const svg = renderIcon(${exampleIcons[0] || 'icon'}, { size: 24 })
+
+// With custom color
+const coloredIcon = renderIcon(${exampleIcons[1] || 'icon2'}, {
+  size: 32,
+  color: '#ff0000'
+})
+
+// With transformations
+const transformedIcon = renderIcon(${exampleIcons[2] || 'icon3'}, {
+  size: 24,
+  rotate: 90,
+  hFlip: true
+})
+\`\`\`
+
+## Icon Options
+
+The \`renderIcon\` function accepts the following options:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| \`size\` | \`string \\| number\` | - | Icon size (both width and height) |
+| \`width\` | \`string \\| number\` | - | Icon width |
+| \`height\` | \`string \\| number\` | - | Icon height |
+| \`color\` | \`string\` | \`'currentColor'\` | Icon color (hex or CSS color) |
+| \`hFlip\` | \`boolean\` | \`false\` | Flip horizontally |
+| \`vFlip\` | \`boolean\` | \`false\` | Flip vertically |
+| \`rotate\` | \`0 \\| 90 \\| 180 \\| 270\` | \`0\` | Rotation in degrees |
+| \`class\` | \`string\` | - | Additional CSS classes |
+| \`style\` | \`string\` | - | Additional inline styles |
+
+## Available Icons
+
+This package contains **${iconCount}** icons. Here are some examples:
+
+${exampleIcons.slice(0, 10).map(icon => `- \`${icon}\``).join('\n')}
+${iconCount > 10 ? `\n...and ${iconCount - 10} more.` : ''}
+
+To see all available icons, explore the package source or check the [Iconify website](https://icon-sets.iconify.design/${prefix}/).
+
+## Usage Examples
+
+### Navigation Menu
+
+\`\`\`html
+@js
+  import { ${exampleIcons.slice(0, 4).join(', ')} } from '@stacksjs/iconify-${prefix}'
+  import { renderIcon } from '@stacksjs/iconify-core'
+
+  global.navIcons = {
+    ${exampleIcons.slice(0, 4).map(icon => `${icon}: renderIcon(${icon}, { size: 20, class: 'nav-icon' })`).join(',\n    ')}
+  }
+@endjs
+
+<nav>
+  <a href="/">{!! navIcons.${exampleIcons[0] || 'icon'} !!} Home</a>
+  <a href="/about">{!! navIcons.${exampleIcons[1] || 'icon2'} !!} About</a>
+  <a href="/contact">{!! navIcons.${exampleIcons[2] || 'icon3'} !!} Contact</a>
+  <a href="/settings">{!! navIcons.${exampleIcons[3] || 'icon4'} !!} Settings</a>
+</nav>
+\`\`\`
+
+### Custom Styling
+
+\`\`\`typescript
+import { ${exampleIcons[0] || 'icon'} } from '@stacksjs/iconify-${prefix}'
+import { renderIcon } from '@stacksjs/iconify-core'
+
+const icon = renderIcon(${exampleIcons[0] || 'icon'}, {
+  size: 24,
+  class: 'icon icon-primary',
+  style: 'opacity: 0.8; transition: opacity 0.2s;'
+})
+\`\`\`
+
+### Dynamic Icons
+
+\`\`\`typescript
+import * as icons from '@stacksjs/iconify-${prefix}'
+import { renderIcon } from '@stacksjs/iconify-core'
+
+function getIcon(name: string) {
+  const iconData = icons[name]
+  if (!iconData) return null
+
+  return renderIcon(iconData, { size: 24 })
+}
+\`\`\`
+
+## Best Practices
+
+1. **Import Only What You Need**: Use named imports to enable tree-shaking
+   \`\`\`typescript
+   // Good
+   import { ${exampleIcons[0] || 'icon'}, ${exampleIcons[1] || 'icon2'} } from '@stacksjs/iconify-${prefix}'
+
+   // Avoid (imports everything)
+   import * as icons from '@stacksjs/iconify-${prefix}'
+   \`\`\`
+
+2. **Cache Rendered Icons**: Render once and reuse multiple times
+   \`\`\`html
+   @js
+     import { ${exampleIcons[0] || 'icon'} } from '@stacksjs/iconify-${prefix}'
+     import { renderIcon } from '@stacksjs/iconify-core'
+
+     global.icon = renderIcon(${exampleIcons[0] || 'icon'}, { size: 24 })
+   @endjs
+
+   {!! icon !!}
+   {!! icon !!}
+   \`\`\`
+
+3. **Use CSS for Theming**: Apply consistent styling through CSS classes
+   \`\`\`css
+   .icon {
+     color: currentColor;
+     opacity: 0.8;
+     transition: opacity 0.2s;
+   }
+
+   .icon:hover {
+     opacity: 1;
+   }
+   \`\`\`
+
+## TypeScript Support
+
+This package includes full TypeScript support with type definitions for all icons.
+
+\`\`\`typescript
+import type { IconData } from '@stacksjs/iconify-core'
+import { ${exampleIcons[0] || 'icon'} } from '@stacksjs/iconify-${prefix}'
+
+// Icons are typed as IconData
+const myIcon: IconData = ${exampleIcons[0] || 'icon'}
+\`\`\`
+
+## Related Packages
+
+- [\`@stacksjs/iconify-core\`](../iconify-core) - Core rendering functions
+- [Main Iconify Documentation](../../docs/iconify.md) - Complete iconify integration guide
+
+## License
+
+${collectionInfo.license?.title || 'MIT'}
+
+${collectionInfo.license?.url ? `See [license details](${collectionInfo.license.url}) for more information.` : ''}
+
+## Credits
+
+- **Icons**: ${collectionInfo.author?.name || 'Iconify'}${collectionInfo.author?.url ? ` ([Website](${collectionInfo.author.url}))` : ''}
+- **Iconify**: [https://iconify.design/](https://iconify.design/)
+- **Icon Set**: [View on Iconify](https://icon-sets.iconify.design/${prefix}/)
+
+## Resources
+
+- [Browse all icons in this collection](https://icon-sets.iconify.design/${prefix}/)
+- [Iconify documentation](https://iconify.design/docs/)
+- [stx iconify integration guide](../../docs/iconify.md)
+`
+}
+
+/**
  * Generate a complete icon package
  */
 export async function generatePackage(
   prefix: string,
   outputDir: string,
   icons?: string[],
+  docsDir?: string,
 ): Promise<void> {
   console.log(`\n📦 Generating package for ${prefix}...`)
 
@@ -373,6 +600,15 @@ export async function generatePackage(
   // Generate README
   const readmeContent = generateReadme(prefix, collectionInfo, iconNames.length)
   await writeFile(join(packageDir, 'README.md'), readmeContent)
+
+  // Generate documentation if docsDir is provided
+  if (docsDir) {
+    const docsPath = join(docsDir, `iconify-${prefix}.md`)
+    const docContent = generateDocumentation(prefix, collectionInfo, iconNames)
+    await mkdir(docsDir, { recursive: true })
+    await writeFile(docsPath, docContent)
+    console.log(`   ✓ Generated documentation in ${docsPath}`)
+  }
 
   console.log(`   ✓ Generated ${iconNames.length} icons in ${packageDir}`)
 }

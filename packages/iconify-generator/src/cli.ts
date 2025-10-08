@@ -18,11 +18,18 @@ Commands:
   generate <prefix>       Generate an icon package for a collection
   generate <prefix> <icons...>  Generate specific icons from a collection
 
+Options:
+  --output, -o <dir>      Output directory for packages (default: ./packages)
+  --docs, -d <dir>        Generate documentation in specified directory
+  --help, -h              Show this help message
+
 Examples:
   stx-iconify list
   stx-iconify generate mdi
   stx-iconify generate lucide home settings user
   stx-iconify generate tabler --output ./packages
+  stx-iconify generate lucide --docs ./docs/collections
+  stx-iconify generate mdi --output ./packages --docs ./docs/collections
     `)
     process.exit(0)
   }
@@ -51,6 +58,7 @@ Examples:
     }
 
     let outputDir = join(process.cwd(), 'packages')
+    let docsDir: string | undefined
     const icons: string[] = []
 
     // Parse remaining args
@@ -59,12 +67,16 @@ Examples:
         outputDir = args[i + 1]
         i++
       }
-      else if (!args[i].startsWith('--')) {
+      else if (args[i] === '--docs' || args[i] === '-d') {
+        docsDir = args[i + 1]
+        i++
+      }
+      else if (!args[i].startsWith('--') && !args[i].startsWith('-')) {
         icons.push(args[i])
       }
     }
 
-    await generatePackage(prefix, outputDir, icons.length > 0 ? icons : undefined)
+    await generatePackage(prefix, outputDir, icons.length > 0 ? icons : undefined, docsDir)
     console.log('\n✓ Package generated successfully!')
     console.log(`\nTo use the package:`)
     console.log(`  1. cd packages/iconify-${prefix}`)
