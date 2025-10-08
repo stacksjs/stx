@@ -92,7 +92,7 @@
     "bun-git-hooks": "^0.3.1",
     "bun-plugin-dtsx": "0.9.5",
     "happy-dom": "^18.0.1",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "git-hooks": {
     "pre-commit": {
