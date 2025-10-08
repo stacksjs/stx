@@ -864,6 +864,127 @@ Conditionally render content based on environment:
 @endenv
 ```
 
+## Icon Components
+
+stx includes a powerful icon component system powered by [Iconify](https://iconify.design/), giving you access to over 200,000 icons from 150+ icon sets as ready-to-use components.
+
+### Available Icon Collections
+
+All icons are available as PascalCase components. For example, the Material Symbols collection includes icons like:
+
+```html
+<DraftsIcon size="24" />
+<HomeIcon size="24" />
+<SettingsIcon size="24" />
+<SearchIcon size="24" />
+```
+
+Browse all available collections:
+- [Material Symbols](./docs/collections/iconify-material-symbols.md) (2,500+ icons)
+- [Heroicons](./docs/collections/iconify-heroicons.md) (300+ icons)
+- [Lucide](./docs/collections/iconify-lucide.md) (1,000+ icons)
+- [And 150+ more...](./docs/collections/)
+
+### Usage
+
+Icon components work seamlessly in your `.stx` templates:
+
+```html
+<!-- Basic usage -->
+<HomeIcon />
+
+<!-- With size -->
+<HomeIcon size="24" />
+<HomeIcon height="1em" />
+
+<!-- With color -->
+<HomeIcon size="24" color="red" />
+<HomeIcon size="24" color="#4a90e2" />
+
+<!-- With transformations -->
+<ArrowRightIcon hFlip="true" />
+<ArrowDownIcon rotate="1" />  <!-- 90° rotation -->
+
+<!-- With CSS classes -->
+<SettingsIcon size="20" className="nav-icon" />
+
+<!-- Inline in text -->
+<p>Welcome <WavingHandIcon height="1em" /> to our app!</p>
+```
+
+### Component Props
+
+All icon components support these props:
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `size` | `string \| number` | `24` | Sets both width and height |
+| `width` | `string \| number` | - | Icon width |
+| `height` | `string \| number` | - | Icon height |
+| `color` | `string` | `currentColor` | Icon color (hex, rgb, or CSS color name) |
+| `hFlip` | `boolean` | `false` | Flip horizontally |
+| `vFlip` | `boolean` | `false` | Flip vertically |
+| `rotate` | `0 \| 1 \| 2 \| 3 \| number` | `0` | Rotation (0-3 = multiples of 90°, or degrees) |
+| `className` | `string` | - | CSS classes to apply |
+| `style` | `string` | - | Inline styles |
+
+### Generating Icon Packages
+
+To generate icon packages from any Iconify collection:
+
+```bash
+# List available collections
+bun stx iconify list
+
+# Generate a specific collection
+bun stx iconify generate material-symbols
+bun stx iconify generate heroicons
+bun stx iconify generate lucide
+
+# Generate specific icons only
+bun stx iconify generate lucide --icons home,settings,user
+```
+
+This creates a package with:
+- TypeScript icon data files (`.ts`)
+- stx component files (`.stx`)
+- Full TypeScript types
+- Component documentation
+
+### Example: Navigation Menu
+
+```html
+<nav>
+  <a href="/"><HomeIcon size="20" className="nav-icon" /> Home</a>
+  <a href="/about"><InfoIcon size="20" className="nav-icon" /> About</a>
+  <a href="/contact"><MailIcon size="20" className="nav-icon" /> Contact</a>
+  <a href="/settings"><SettingsIcon size="20" className="nav-icon" /> Settings</a>
+</nav>
+
+<style>
+  .nav-icon {
+    vertical-align: middle;
+    margin-right: 0.5rem;
+  }
+</style>
+```
+
+### Example: Status Indicators
+
+```html
+<div class="status">
+  <CheckCircleIcon size="16" color="green" /> Success
+</div>
+<div class="status">
+  <AlertCircleIcon size="16" color="orange" /> Warning
+</div>
+<div class="status">
+  <XCircleIcon size="16" color="red" /> Error
+</div>
+```
+
+For more details, see the [icon collections documentation](./docs/collections/).
+
 ## Testing
 
 ```bash

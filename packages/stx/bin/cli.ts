@@ -409,7 +409,7 @@ else {
     .action(async (command: string, options: { output?: string, icons?: string }) => {
       try {
         // Dynamically import the generator to avoid bundle size issues
-        const { fetchCollections, generatePackage } = await import('../../../iconify-generator/src/index.js')
+        const { fetchCollections, generatePackage } = await import('@stacksjs/iconify-generator')
 
         if (command === 'list') {
           console.log('\n📚 Fetching available icon collections...\n')

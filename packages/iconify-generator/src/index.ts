@@ -152,46 +152,44 @@ export function generateIconComponent(
   const componentName = `${camelCaseName.charAt(0).toUpperCase()}${camelCaseName.slice(1)}Icon`
 
   return `<script>
-/**
- * ${componentName} - Icon component for ${name}
- *
- * @type {string | number} size - Icon size (sets both width and height)
- * @type {string | number} width - Icon width
- * @type {string | number} height - Icon height
- * @type {string} color - Icon color
- * @type {boolean} hFlip - Flip horizontally
- * @type {boolean} vFlip - Flip vertically
- * @type {0 | 90 | 180 | 270} rotate - Rotation in degrees
- * @type {string} class - Additional CSS classes
- * @type {string} style - Inline styles
- */
-import { ${camelCaseName} } from './${name}.js'
-import { renderIcon } from '@stacksjs/iconify-core'
+// Get props with defaults (handle undefined)
+const iconWidth = (typeof width !== 'undefined' ? width : null) || (typeof size !== 'undefined' ? size : null) || ${iconData.width || 24}
+const iconHeight = (typeof height !== 'undefined' ? height : null) || (typeof size !== 'undefined' ? size : null) || ${iconData.height || 24}
+const iconColor = typeof color !== 'undefined' ? color : 'currentColor'
+const viewBox = "${iconData.viewBox || `0 0 ${iconData.width || 24} ${iconData.height || 24}`}"
 
-module.exports = {
-  size,
-  width,
-  height,
-  color,
-  hFlip,
-  vFlip,
-  rotate,
-  class: classList,
-  style
+// Build transform
+const transforms = []
+if (typeof hFlip !== 'undefined' && hFlip) transforms.push('scaleX(-1)')
+if (typeof vFlip !== 'undefined' && vFlip) transforms.push('scaleY(-1)')
+if (typeof rotate !== 'undefined' && rotate) {
+  const rotateNum = typeof rotate === 'string' ? parseInt(rotate, 10) : rotate
+  const deg = typeof rotateNum === 'number' && rotateNum < 4 ? rotateNum * 90 : rotateNum
+  transforms.push(\`rotate(\${deg}deg)\`)
 }
+
+const transform = transforms.length > 0 ? transforms.join(' ') : ''
+const transformStyle = transform ? \`transform: \${transform};\` : ''
+
+// Build style
+const styles = []
+if (transformStyle) styles.push(transformStyle)
+if (typeof style !== 'undefined' && style) styles.push(style)
+
+const styleAttr = styles.length > 0 ? \` style="\${styles.join(' ')}"\` : ''
+const classAttr = typeof className !== 'undefined' && className ? \` class="\${className}"\` : ''
+
+// Icon body
+let body = ${JSON.stringify(iconData.body)}
+if (iconColor && iconColor !== 'currentColor') {
+  body = body.replace(/currentColor/g, iconColor)
+}
+
+// Generate SVG
+const svg = \`<svg xmlns="http://www.w3.org/2000/svg" width="\${iconWidth}" height="\${iconHeight}" viewBox="\${viewBox}"\${classAttr}\${styleAttr}>\${body}</svg>\`
 </script>
 
-{!! renderIcon(${camelCaseName}, {
-  size,
-  width,
-  height,
-  color,
-  hFlip,
-  vFlip,
-  rotate,
-  class: classList,
-  style
-}) !!}
+{!! svg !!}
 `
 }
 
@@ -774,9 +772,9 @@ export async function generatePackage(
     const dataFile = generateIconData(iconName, converted, prefix)
     await writeFile(join(srcDir, `${iconName}.ts`), dataFile)
 
-    // Generate component file (.stx)
+    // Generate component file (.stx) with -icon suffix for PascalCase component names
     const componentFile = generateIconComponent(iconName, converted, prefix)
-    await writeFile(join(srcDir, `${iconName}.stx`), componentFile)
+    await writeFile(join(srcDir, `${iconName}-icon.stx`), componentFile)
   }
 
   // Generate index file

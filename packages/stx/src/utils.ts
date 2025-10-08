@@ -188,10 +188,14 @@ export async function extractVariables(scriptContent: string, context: Record<st
     // Step 2: Parse and convert the script content systematically
     const convertedScript = convertToCommonJS(scriptContent)
 
-    // Step 3: Execute the converted script
+    // Step 3: Execute the converted script with context variables available
+    // Get all context keys and values to inject into the script execution
+    const contextKeys = Object.keys(context)
+    const contextValues = Object.values(context)
+
     // eslint-disable-next-line no-new-func
-    const scriptFn = new Function('module', 'exports', convertedScript)
-    scriptFn(module, exports)
+    const scriptFn = new Function('module', 'exports', ...contextKeys, convertedScript)
+    scriptFn(module, exports, ...contextValues)
 
     // Step 4: Copy results to context
     Object.assign(context, module.exports)
