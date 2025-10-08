@@ -880,6 +880,7 @@ All icons are available as PascalCase components. For example, the Material Symb
 ```
 
 Browse all available collections:
+
 - [Material Symbols](./docs/collections/iconify-material-symbols.md) (2,500+ icons)
 - [Heroicons](./docs/collections/iconify-heroicons.md) (300+ icons)
 - [Lucide](./docs/collections/iconify-lucide.md) (1,000+ icons)
@@ -946,6 +947,7 @@ bun stx iconify generate lucide --icons home,settings,user
 ```
 
 This creates a package with:
+
 - TypeScript icon data files (`.ts`)
 - stx component files (`.stx`)
 - Full TypeScript types
@@ -1038,10 +1040,10 @@ Made with 💙
 
 <!-- Badges -->
 
-[npm-version-src]: https://img.shields.io/npm/v/bun-plugin-stx?style=flat-square
-[npm-version-href]: https://npmjs.com/package/bun-plugin-stx
-[npm-downloads-src]: https://img.shields.io/npm/dm/bun-plugin-stx?style=flat-square
-[npm-downloads-href]: https://npmjs.com/package/bun-plugin-stx
+[npm-version-src]: https://img.shields.io/npm/v/@stacksjs/stx?style=flat-square
+[npm-version-href]: https://npmjs.com/package/@stacksjs/stx
+[npm-downloads-src]: https://img.shields.io/npm/dm/@stacksjs/stx?style=flat-square
+[npm-downloads-href]: https://npmjs.com/package/@stacksjs/stx
 [github-actions-src]: https://img.shields.io/github/actions/workflow/status/stacksjs/stx/ci.yml?style=flat-square&branch=main
 [github-actions-href]: https://github.com/stacksjs/stx/actions?query=workflow%3Aci
 

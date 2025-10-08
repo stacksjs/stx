@@ -2,7 +2,7 @@
   "name": "@stacksjs/stx",
   "type": "module",
   "version": "0.0.10",
-  "description": "A Bun plugin that allows for using Laravel Blade-like syntax.",
+  "description": "A performant UI Framework. Powered by Bun.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
   "homepage": "https://github.com/stacksjs/stx#readme",
