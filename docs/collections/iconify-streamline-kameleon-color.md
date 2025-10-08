@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-streamline-kameleon-color
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { AidKitIcon, AidKitDuoIcon, AirconditionerIcon } from '@stacksjs/iconify-streamline-kameleon-color'
+```html
+<AidKitIcon height="1em" />
+<AidKitIcon width="1em" height="1em" />
+<AidKitIcon height="24" />
+```
 
-// Basic usage
-const icon = AidKitIcon()
+### With Properties
 
-// With size
-const sizedIcon = AidKitIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<AidKitIcon size="24" />
+<AidKitIcon size="1em" />
 
-// With color
-const coloredIcon = AidKitDuoIcon({ color: 'red' })
+<!-- Using width and height -->
+<AidKitIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = AirconditionerIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<AidKitIcon size="24" color="red" />
+<AidKitIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<AidKitIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<AidKitIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { AidKitIcon, AidKitDuoIcon, AirconditionerIcon } from '@stacksjs/iconify-streamline-kameleon-color'
-
-  global.icons = {
-    home: AidKitIcon({ size: 24 }),
-    user: AidKitDuoIcon({ size: 24, color: '#4a90e2' }),
-    settings: AirconditionerIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <AidKitIcon size="24" />
+    <AidKitDuoIcon size="24" color="#4a90e2" />
+    <AirconditionerIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,34 +115,55 @@ All icon component functions and `renderIcon` accept the following properties:
 
 This collection contains color icons. While you can still set a color property, it may override the original colors.
 
-```typescript
-// Via color property
-const redIcon = AidKitIcon({ color: 'red' })
-const blueIcon = AidKitIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<AidKitIcon size="24" color="red" />
+<AidKitIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = AidKitIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<AidKitIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = AidKitIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<AidKitIcon size="24" class="text-primary" />
 ```
 
 
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = AidKitIcon({ size: 24 })
-const icon1em = AidKitIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = AidKitIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = AidKitIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<AidKitIcon height="1em" />
+<AidKitIcon width="1em" height="1em" />
+<AidKitIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<AidKitIcon size="24" />
+<AidKitIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -133,20 +171,14 @@ const heightOnly = AidKitIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.streamlineKameleonColor-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = AidKitIcon({ class: 'icon-small' })
-const largeIcon = AidKitIcon({ class: 'icon-large' })
+```html
+<AidKitIcon class="streamlineKameleonColor-icon" />
 ```
 
 ## Available Icons
@@ -559,83 +591,77 @@ This package contains **400** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { AidKitIcon, AidKitDuoIcon, AirconditionerIcon, AirconditionerDuoIcon } from '@stacksjs/iconify-streamline-kameleon-color'
-
-  global.navIcons = {
-    home: AidKitIcon({ size: 20, class: 'nav-icon' }),
-    about: AidKitDuoIcon({ size: 20, class: 'nav-icon' }),
-    contact: AirconditionerIcon({ size: 20, class: 'nav-icon' }),
-    settings: AirconditionerDuoIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><AidKitIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><AidKitDuoIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><AirconditionerIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><AirconditionerDuoIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { AidKitIcon } from '@stacksjs/iconify-streamline-kameleon-color'
+```html
+<AidKitIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = AidKitIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { AidKitIcon, AidKitDuoIcon, AirconditionerIcon } from '@stacksjs/iconify-streamline-kameleon-color'
-
-const successIcon = AidKitIcon({ size: 16, color: '#22c55e' })
-const warningIcon = AidKitDuoIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = AirconditionerIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <AidKitIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <AidKitDuoIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <AirconditionerIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { AidKitIcon, AidKitDuoIcon } from '@stacksjs/iconify-streamline-kameleon-color'
-   const icon = AidKitIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { aidKit, aidKitDuo } from '@stacksjs/iconify-streamline-kameleon-color'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(aidKit, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { AidKitIcon, AidKitDuoIcon } from '@stacksjs/iconify-streamline-kameleon-color'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-streamline-kameleon-color'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { AidKitIcon } from '@stacksjs/iconify-streamline-kameleon-color'
-     global.icon = AidKitIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <AidKitIcon size="24" />
+   <AidKitDuoIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -648,8 +674,28 @@ const errorIcon = AirconditionerIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = AidKitIcon({ class: 'icon' })
+   ```html
+   <AidKitIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <AidKitIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <AidKitIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { aidKit } from '@stacksjs/iconify-streamline-kameleon-color'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(aidKit, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

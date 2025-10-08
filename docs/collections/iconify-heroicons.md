@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-heroicons
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { AcademicCapIcon, AcademicCap16SolidIcon, AcademicCap20SolidIcon } from '@stacksjs/iconify-heroicons'
+```html
+<AcademicCapIcon height="1em" />
+<AcademicCapIcon width="1em" height="1em" />
+<AcademicCapIcon height="24" />
+```
 
-// Basic usage
-const icon = AcademicCapIcon()
+### With Properties
 
-// With size
-const sizedIcon = AcademicCapIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<AcademicCapIcon size="24" />
+<AcademicCapIcon size="1em" />
 
-// With color
-const coloredIcon = AcademicCap16SolidIcon({ color: 'red' })
+<!-- Using width and height -->
+<AcademicCapIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = AcademicCap20SolidIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<AcademicCapIcon size="24" color="red" />
+<AcademicCapIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<AcademicCapIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<AcademicCapIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { AcademicCapIcon, AcademicCap16SolidIcon, AcademicCap20SolidIcon } from '@stacksjs/iconify-heroicons'
-
-  global.icons = {
-    home: AcademicCapIcon({ size: 24 }),
-    user: AcademicCap16SolidIcon({ size: 24, color: '#4a90e2' }),
-    settings: AcademicCap20SolidIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <AcademicCapIcon size="24" />
+    <AcademicCap16SolidIcon size="24" color="#4a90e2" />
+    <AcademicCap20SolidIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,16 +115,16 @@ All icon component functions and `renderIcon` accept the following properties:
 
 Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
 
-```typescript
-// Via color property
-const redIcon = AcademicCapIcon({ color: 'red' })
-const blueIcon = AcademicCapIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<AcademicCapIcon size="24" color="red" />
+<AcademicCapIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = AcademicCapIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<AcademicCapIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = AcademicCapIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<AcademicCapIcon size="24" class="text-primary" />
 ```
 
 ```css
@@ -123,18 +140,39 @@ const themedIcon = AcademicCapIcon({ class: 'text-primary' })
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = AcademicCapIcon({ size: 24 })
-const icon1em = AcademicCapIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = AcademicCapIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = AcademicCapIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<AcademicCapIcon height="1em" />
+<AcademicCapIcon width="1em" height="1em" />
+<AcademicCapIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<AcademicCapIcon size="24" />
+<AcademicCapIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -142,20 +180,14 @@ const heightOnly = AcademicCapIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.heroicons-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = AcademicCapIcon({ class: 'icon-small' })
-const largeIcon = AcademicCapIcon({ class: 'icon-large' })
+```html
+<AcademicCapIcon class="heroicons-icon" />
 ```
 
 ## Available Icons
@@ -1456,83 +1488,77 @@ This package contains **1288** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { AcademicCapIcon, AcademicCap16SolidIcon, AcademicCap20SolidIcon, AcademicCapSolidIcon } from '@stacksjs/iconify-heroicons'
-
-  global.navIcons = {
-    home: AcademicCapIcon({ size: 20, class: 'nav-icon' }),
-    about: AcademicCap16SolidIcon({ size: 20, class: 'nav-icon' }),
-    contact: AcademicCap20SolidIcon({ size: 20, class: 'nav-icon' }),
-    settings: AcademicCapSolidIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><AcademicCapIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><AcademicCap16SolidIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><AcademicCap20SolidIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><AcademicCapSolidIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { AcademicCapIcon } from '@stacksjs/iconify-heroicons'
+```html
+<AcademicCapIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = AcademicCapIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { AcademicCapIcon, AcademicCap16SolidIcon, AcademicCap20SolidIcon } from '@stacksjs/iconify-heroicons'
-
-const successIcon = AcademicCapIcon({ size: 16, color: '#22c55e' })
-const warningIcon = AcademicCap16SolidIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = AcademicCap20SolidIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <AcademicCapIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <AcademicCap16SolidIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <AcademicCap20SolidIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { AcademicCapIcon, AcademicCap16SolidIcon } from '@stacksjs/iconify-heroicons'
-   const icon = AcademicCapIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { academicCap, academicCap16Solid } from '@stacksjs/iconify-heroicons'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(academicCap, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { AcademicCapIcon, AcademicCap16SolidIcon } from '@stacksjs/iconify-heroicons'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-heroicons'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { AcademicCapIcon } from '@stacksjs/iconify-heroicons'
-     global.icon = AcademicCapIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <AcademicCapIcon size="24" />
+   <AcademicCap16SolidIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -1545,8 +1571,28 @@ const errorIcon = AcademicCap20SolidIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = AcademicCapIcon({ class: 'icon' })
+   ```html
+   <AcademicCapIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <AcademicCapIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <AcademicCapIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { academicCap } from '@stacksjs/iconify-heroicons'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(academicCap, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

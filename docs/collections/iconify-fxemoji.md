@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-fxemoji
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { 2heartsIcon, AcornIcon, AdmissionticketsIcon } from '@stacksjs/iconify-fxemoji'
+```html
+<2heartsIcon height="1em" />
+<2heartsIcon width="1em" height="1em" />
+<2heartsIcon height="24" />
+```
 
-// Basic usage
-const icon = 2heartsIcon()
+### With Properties
 
-// With size
-const sizedIcon = 2heartsIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<2heartsIcon size="24" />
+<2heartsIcon size="1em" />
 
-// With color
-const coloredIcon = AcornIcon({ color: 'red' })
+<!-- Using width and height -->
+<2heartsIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = AdmissionticketsIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<2heartsIcon size="24" color="red" />
+<2heartsIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<2heartsIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<2heartsIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { 2heartsIcon, AcornIcon, AdmissionticketsIcon } from '@stacksjs/iconify-fxemoji'
-
-  global.icons = {
-    home: 2heartsIcon({ size: 24 }),
-    user: AcornIcon({ size: 24, color: '#4a90e2' }),
-    settings: AdmissionticketsIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <2heartsIcon size="24" />
+    <AcornIcon size="24" color="#4a90e2" />
+    <AdmissionticketsIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,34 +115,55 @@ All icon component functions and `renderIcon` accept the following properties:
 
 This collection contains color icons. While you can still set a color property, it may override the original colors.
 
-```typescript
-// Via color property
-const redIcon = 2heartsIcon({ color: 'red' })
-const blueIcon = 2heartsIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<2heartsIcon size="24" color="red" />
+<2heartsIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = 2heartsIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<2heartsIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = 2heartsIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<2heartsIcon size="24" class="text-primary" />
 ```
 
 
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = 2heartsIcon({ size: 24 })
-const icon1em = 2heartsIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = 2heartsIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = 2heartsIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<2heartsIcon height="1em" />
+<2heartsIcon width="1em" height="1em" />
+<2heartsIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<2heartsIcon size="24" />
+<2heartsIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -133,20 +171,14 @@ const heightOnly = 2heartsIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.fxemoji-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = 2heartsIcon({ class: 'icon-small' })
-const largeIcon = 2heartsIcon({ class: 'icon-large' })
+```html
+<2heartsIcon class="fxemoji-icon" />
 ```
 
 ## Available Icons
@@ -1193,83 +1225,77 @@ This package contains **1034** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { 2heartsIcon, AcornIcon, AdmissionticketsIcon, AerialtramwayIcon } from '@stacksjs/iconify-fxemoji'
-
-  global.navIcons = {
-    home: 2heartsIcon({ size: 20, class: 'nav-icon' }),
-    about: AcornIcon({ size: 20, class: 'nav-icon' }),
-    contact: AdmissionticketsIcon({ size: 20, class: 'nav-icon' }),
-    settings: AerialtramwayIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><2heartsIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><AcornIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><AdmissionticketsIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><AerialtramwayIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { 2heartsIcon } from '@stacksjs/iconify-fxemoji'
+```html
+<2heartsIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = 2heartsIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { 2heartsIcon, AcornIcon, AdmissionticketsIcon } from '@stacksjs/iconify-fxemoji'
-
-const successIcon = 2heartsIcon({ size: 16, color: '#22c55e' })
-const warningIcon = AcornIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = AdmissionticketsIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <2heartsIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <AcornIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <AdmissionticketsIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { 2heartsIcon, AcornIcon } from '@stacksjs/iconify-fxemoji'
-   const icon = 2heartsIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { 2hearts, acorn } from '@stacksjs/iconify-fxemoji'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(2hearts, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { 2heartsIcon, AcornIcon } from '@stacksjs/iconify-fxemoji'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-fxemoji'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { 2heartsIcon } from '@stacksjs/iconify-fxemoji'
-     global.icon = 2heartsIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <2heartsIcon size="24" />
+   <AcornIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -1282,8 +1308,28 @@ const errorIcon = AdmissionticketsIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = 2heartsIcon({ class: 'icon' })
+   ```html
+   <2heartsIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <2heartsIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <2heartsIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { 2hearts } from '@stacksjs/iconify-fxemoji'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(2hearts, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

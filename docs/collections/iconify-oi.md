@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-oi
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { AccountLoginIcon, AccountLogoutIcon, ActionRedoIcon } from '@stacksjs/iconify-oi'
+```html
+<AccountLoginIcon height="1em" />
+<AccountLoginIcon width="1em" height="1em" />
+<AccountLoginIcon height="24" />
+```
 
-// Basic usage
-const icon = AccountLoginIcon()
+### With Properties
 
-// With size
-const sizedIcon = AccountLoginIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<AccountLoginIcon size="24" />
+<AccountLoginIcon size="1em" />
 
-// With color
-const coloredIcon = AccountLogoutIcon({ color: 'red' })
+<!-- Using width and height -->
+<AccountLoginIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = ActionRedoIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<AccountLoginIcon size="24" color="red" />
+<AccountLoginIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<AccountLoginIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<AccountLoginIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { AccountLoginIcon, AccountLogoutIcon, ActionRedoIcon } from '@stacksjs/iconify-oi'
-
-  global.icons = {
-    home: AccountLoginIcon({ size: 24 }),
-    user: AccountLogoutIcon({ size: 24, color: '#4a90e2' }),
-    settings: ActionRedoIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <AccountLoginIcon size="24" />
+    <AccountLogoutIcon size="24" color="#4a90e2" />
+    <ActionRedoIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,16 +115,16 @@ All icon component functions and `renderIcon` accept the following properties:
 
 Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
 
-```typescript
-// Via color property
-const redIcon = AccountLoginIcon({ color: 'red' })
-const blueIcon = AccountLoginIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<AccountLoginIcon size="24" color="red" />
+<AccountLoginIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = AccountLoginIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<AccountLoginIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = AccountLoginIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<AccountLoginIcon size="24" class="text-primary" />
 ```
 
 ```css
@@ -123,18 +140,39 @@ const themedIcon = AccountLoginIcon({ class: 'text-primary' })
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = AccountLoginIcon({ size: 24 })
-const icon1em = AccountLoginIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = AccountLoginIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = AccountLoginIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<AccountLoginIcon height="1em" />
+<AccountLoginIcon width="1em" height="1em" />
+<AccountLoginIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<AccountLoginIcon size="24" />
+<AccountLoginIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -142,20 +180,14 @@ const heightOnly = AccountLoginIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.oi-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = AccountLoginIcon({ class: 'icon-small' })
-const largeIcon = AccountLoginIcon({ class: 'icon-large' })
+```html
+<AccountLoginIcon class="oi-icon" />
 ```
 
 ## Available Icons
@@ -391,83 +423,77 @@ This package contains **223** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { AccountLoginIcon, AccountLogoutIcon, ActionRedoIcon, ActionUndoIcon } from '@stacksjs/iconify-oi'
-
-  global.navIcons = {
-    home: AccountLoginIcon({ size: 20, class: 'nav-icon' }),
-    about: AccountLogoutIcon({ size: 20, class: 'nav-icon' }),
-    contact: ActionRedoIcon({ size: 20, class: 'nav-icon' }),
-    settings: ActionUndoIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><AccountLoginIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><AccountLogoutIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><ActionRedoIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><ActionUndoIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { AccountLoginIcon } from '@stacksjs/iconify-oi'
+```html
+<AccountLoginIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = AccountLoginIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { AccountLoginIcon, AccountLogoutIcon, ActionRedoIcon } from '@stacksjs/iconify-oi'
-
-const successIcon = AccountLoginIcon({ size: 16, color: '#22c55e' })
-const warningIcon = AccountLogoutIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = ActionRedoIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <AccountLoginIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <AccountLogoutIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <ActionRedoIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { AccountLoginIcon, AccountLogoutIcon } from '@stacksjs/iconify-oi'
-   const icon = AccountLoginIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { accountLogin, accountLogout } from '@stacksjs/iconify-oi'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(accountLogin, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { AccountLoginIcon, AccountLogoutIcon } from '@stacksjs/iconify-oi'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-oi'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { AccountLoginIcon } from '@stacksjs/iconify-oi'
-     global.icon = AccountLoginIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <AccountLoginIcon size="24" />
+   <AccountLogoutIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -480,8 +506,28 @@ const errorIcon = ActionRedoIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = AccountLoginIcon({ class: 'icon' })
+   ```html
+   <AccountLoginIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <AccountLoginIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <AccountLoginIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { accountLogin } from '@stacksjs/iconify-oi'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(accountLogin, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

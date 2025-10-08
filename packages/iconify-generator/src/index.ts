@@ -123,7 +123,25 @@ export function convertIconData(data: IconifyIconData, defaultWidth = 24, defaul
 }
 
 /**
- * Generate TypeScript icon component file
+ * Generate TypeScript icon data file
+ */
+export function generateIconData(
+  name: string,
+  iconData: IconData,
+  prefix: string,
+): string {
+  const camelCaseName = toCamelCase(name)
+
+  return `import type { IconData } from '@stacksjs/iconify-core'
+
+export const ${camelCaseName}: IconData = ${JSON.stringify(iconData, null, 2)}
+
+export default ${camelCaseName}
+`
+}
+
+/**
+ * Generate stx icon component file
  */
 export function generateIconComponent(
   name: string,
@@ -133,25 +151,47 @@ export function generateIconComponent(
   const camelCaseName = toCamelCase(name)
   const componentName = `${camelCaseName.charAt(0).toUpperCase()}${camelCaseName.slice(1)}Icon`
 
-  return `import type { IconData, IconProps } from '@stacksjs/iconify-core'
+  return `<script>
+/**
+ * ${componentName} - Icon component for ${name}
+ *
+ * @type {string | number} size - Icon size (sets both width and height)
+ * @type {string | number} width - Icon width
+ * @type {string | number} height - Icon height
+ * @type {string} color - Icon color
+ * @type {boolean} hFlip - Flip horizontally
+ * @type {boolean} vFlip - Flip vertically
+ * @type {0 | 90 | 180 | 270} rotate - Rotation in degrees
+ * @type {string} class - Additional CSS classes
+ * @type {string} style - Inline styles
+ */
+import { ${camelCaseName} } from './${name}.js'
 import { renderIcon } from '@stacksjs/iconify-core'
 
-export const ${camelCaseName}: IconData = ${JSON.stringify(iconData, null, 2)}
-
-/**
- * ${componentName} - Icon component
- *
- * @example
- * \`\`\`typescript
- * import { ${componentName} } from '@stacksjs/iconify-${prefix}'
- * const icon = ${componentName}({ size: 24, color: 'currentColor' })
- * \`\`\`
- */
-export function ${componentName}(props?: IconProps): string {
-  return renderIcon(${camelCaseName}, props)
+module.exports = {
+  size,
+  width,
+  height,
+  color,
+  hFlip,
+  vFlip,
+  rotate,
+  class: classList,
+  style
 }
+</script>
 
-export default ${camelCaseName}
+{!! renderIcon(${camelCaseName}, {
+  size,
+  width,
+  height,
+  color,
+  hFlip,
+  vFlip,
+  rotate,
+  class: classList,
+  style
+}) !!}
 `
 }
 
@@ -164,17 +204,8 @@ export function generateIndexFile(iconNames: string[]): string {
     return `export { default as ${camelCaseName} } from './${name}.js'`
   }).join('\n')
 
-  const componentExports = iconNames.map((name) => {
-    const camelCaseName = toCamelCase(name)
-    const componentName = `${camelCaseName.charAt(0).toUpperCase()}${camelCaseName.slice(1)}Icon`
-    return `export { ${componentName} } from './${name}.js'`
-  }).join('\n')
-
   return `// Icon data exports
 ${dataExports}
-
-// Icon component exports
-${componentExports}
 
 export * from './types.js'
 `
@@ -375,48 +406,65 @@ bun add @stacksjs/iconify-${prefix}
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-\`\`\`typescript
-import { ${exampleComponents.slice(0, 3).join(', ')} } from '@stacksjs/iconify-${prefix}'
+\`\`\`html
+<${exampleComponents[0] || 'Icon'} height="1em" />
+<${exampleComponents[0] || 'Icon'} width="1em" height="1em" />
+<${exampleComponents[0] || 'Icon'} height="24" />
+\`\`\`
 
-// Basic usage
-const icon = ${exampleComponents[0] || 'Icon'}()
+### With Properties
 
-// With size
-const sizedIcon = ${exampleComponents[0] || 'Icon'}({ size: 24 })
+\`\`\`html
+<!-- Using size property -->
+<${exampleComponents[0] || 'Icon'} size="24" />
+<${exampleComponents[0] || 'Icon'} size="1em" />
 
-// With color
-const coloredIcon = ${exampleComponents[1] || 'Icon'}({ color: 'red' })
+<!-- Using width and height -->
+<${exampleComponents[0] || 'Icon'} width="24" height="32" />
 
-// With multiple props
-const customIcon = ${exampleComponents[2] || 'Icon'}({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<${exampleComponents[0] || 'Icon'} size="24" color="red" />
+<${exampleComponents[0] || 'Icon'} size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<${exampleComponents[0] || 'Icon'} size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<${exampleComponents[0] || 'Icon'}
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 \`\`\`
 
 ### In stx Templates
 
 \`\`\`html
-@js
-  import { ${exampleComponents.slice(0, 3).join(', ')} } from '@stacksjs/iconify-${prefix}'
-
-  global.icons = {
-    home: ${exampleComponents[0] || 'Icon'}({ size: 24 }),
-    user: ${exampleComponents[1] || 'Icon'}({ size: 24, color: '#4a90e2' }),
-    settings: ${exampleComponents[2] || 'Icon'}({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <${exampleComponents[0] || 'Icon'} size="24" />
+    <${exampleComponents[1] || 'Icon'} size="24" color="#4a90e2" />
+    <${exampleComponents[2] || 'Icon'} size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 \`\`\`
 
 ### Data-Only Import
@@ -450,16 +498,16 @@ All icon component functions and \`renderIcon\` accept the following properties:
 
 ${collectionInfo.palette ? '### Color Icons\n\nThis collection contains color icons. While you can still set a color property, it may override the original colors.' : '### Monotone Icons\n\nMonotone icons use \`currentColor\` by default, allowing you to change icon color via the \`color\` property or CSS:'}
 
-\`\`\`typescript
-// Via color property
-const redIcon = ${exampleComponents[0] || 'Icon'}({ color: 'red' })
-const blueIcon = ${exampleComponents[0] || 'Icon'}({ color: '#4a90e2' })
+\`\`\`html
+<!-- Via color property -->
+<${exampleComponents[0] || 'Icon'} size="24" color="red" />
+<${exampleComponents[0] || 'Icon'} size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = ${exampleComponents[0] || 'Icon'}({ style: 'color: green;' })
+<!-- Via inline style -->
+<${exampleComponents[0] || 'Icon'} size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = ${exampleComponents[0] || 'Icon'}({ class: 'text-primary' })
+<!-- Via CSS class -->
+<${exampleComponents[0] || 'Icon'} size="24" class="text-primary" />
 \`\`\`
 
 ${!collectionInfo.palette ? `\`\`\`css
@@ -475,18 +523,39 @@ ${!collectionInfo.palette ? `\`\`\`css
 
 ## Size
 
-Control icon size using the \`size\`, \`width\`, or \`height\` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-\`\`\`typescript
-// Set both width and height
-const icon24 = ${exampleComponents[0] || 'Icon'}({ size: 24 })
-const icon1em = ${exampleComponents[0] || 'Icon'}({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = ${exampleComponents[0] || 'Icon'}({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = ${exampleComponents[0] || 'Icon'}({ height: '1em' })
+You can change icon size by:
+- Setting \`width\` and \`height\` properties
+- Using CSS
+
+### Properties
+
+All icon components support \`width\` and \`height\` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+\`\`\`html
+<${exampleComponents[0] || 'DraftsIcon'} height="1em" />
+<${exampleComponents[0] || 'DraftsIcon'} width="1em" height="1em" />
+<${exampleComponents[0] || 'DraftsIcon'} height="24" />
+\`\`\`
+
+You can also use the \`size\` property as a shorthand for setting both width and height:
+
+\`\`\`html
+<${exampleComponents[0] || 'DraftsIcon'} size="24" />
+<${exampleComponents[0] || 'DraftsIcon'} size="1em" />
 \`\`\`
 
 ### CSS Sizing
@@ -494,20 +563,14 @@ const heightOnly = ${exampleComponents[0] || 'Icon'}({ height: '1em' })
 You can also control icon size via CSS:
 
 \`\`\`css
-.icon-small {
+.${toCamelCase(prefix)}-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 \`\`\`
 
-\`\`\`typescript
-const smallIcon = ${exampleComponents[0] || 'Icon'}({ class: 'icon-small' })
-const largeIcon = ${exampleComponents[0] || 'Icon'}({ class: 'icon-large' })
+\`\`\`html
+<${exampleComponents[0] || 'DraftsIcon'} class="${toCamelCase(prefix)}-icon" />
 \`\`\`
 
 ## Available Icons
@@ -521,83 +584,77 @@ ${allIconsList}
 ### Navigation Menu
 
 \`\`\`html
-@js
-  import { ${exampleComponents.slice(0, 4).join(', ')} } from '@stacksjs/iconify-${prefix}'
-
-  global.navIcons = {
-    home: ${exampleComponents[0] || 'Icon'}({ size: 20, class: 'nav-icon' }),
-    about: ${exampleComponents[1] || 'Icon'}({ size: 20, class: 'nav-icon' }),
-    contact: ${exampleComponents[2] || 'Icon'}({ size: 20, class: 'nav-icon' }),
-    settings: ${exampleComponents[3] || 'Icon'}({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><${exampleComponents[0] || 'Icon'} size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><${exampleComponents[1] || 'Icon'} size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><${exampleComponents[2] || 'Icon'} size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><${exampleComponents[3] || 'Icon'} size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 \`\`\`
 
 ### Custom Styling
 
-\`\`\`typescript
-import { ${exampleComponents[0] || 'Icon'} } from '@stacksjs/iconify-${prefix}'
+\`\`\`html
+<${exampleComponents[0] || 'Icon'}
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = ${exampleComponents[0] || 'Icon'}({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 \`\`\`
 
 ### Status Indicators
 
-\`\`\`typescript
-import { ${exampleComponents.slice(0, 3).join(', ')} } from '@stacksjs/iconify-${prefix}'
-
-const successIcon = ${exampleComponents[0] || 'Icon'}({ size: 16, color: '#22c55e' })
-const warningIcon = ${exampleComponents[1] || 'Icon'}({ size: 16, color: '#f59e0b' })
-const errorIcon = ${exampleComponents[2] || 'Icon'}({ size: 16, color: '#ef4444' })
+\`\`\`html
+<div class="status-grid">
+  <div class="status-item">
+    <${exampleComponents[0] || 'Icon'} size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <${exampleComponents[1] || 'Icon'} size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <${exampleComponents[2] || 'Icon'} size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 \`\`\`
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   \`\`\`typescript
-   // Recommended
-   import { ${exampleComponents[0] || 'Icon'}, ${exampleComponents[1] || 'Icon2'} } from '@stacksjs/iconify-${prefix}'
-   const icon = ${exampleComponents[0] || 'Icon'}({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { ${exampleIcons[0] || 'icon'}, ${exampleIcons[1] || 'icon2'} } from '@stacksjs/iconify-${prefix}'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(${exampleIcons[0] || 'icon'}, { size: 24 })
-   \`\`\`
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   \`\`\`typescript
-   // Good - only imports what you use
-   import { ${exampleComponents[0] || 'Icon'}, ${exampleComponents[1] || 'Icon2'} } from '@stacksjs/iconify-${prefix}'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-${prefix}'
-   \`\`\`
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    \`\`\`html
-   @js
-     import { ${exampleComponents[0] || 'Icon'} } from '@stacksjs/iconify-${prefix}'
-     global.icon = ${exampleComponents[0] || 'Icon'}({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <${exampleComponents[0] || 'Icon'} size="24" />
+   <${exampleComponents[1] || 'Icon'} size="24" color="#4a90e2" />
    \`\`\`
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    \`\`\`css
    .icon {
      color: currentColor;
@@ -610,8 +667,28 @@ const errorIcon = ${exampleComponents[2] || 'Icon'}({ size: 16, color: '#ef4444'
    }
    \`\`\`
 
-   \`\`\`typescript
-   const icon = ${exampleComponents[0] || 'Icon'}({ class: 'icon' })
+   \`\`\`html
+   <${exampleComponents[0] || 'Icon'} size="24" class="icon" />
+   \`\`\`
+
+3. **Set Appropriate Sizes**: Use \`1em\` for inline icons, fixed pixel sizes for standalone icons
+   \`\`\`html
+   <!-- Inline with text -->
+   <p>Click the <${exampleComponents[0] || 'Icon'} height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <${exampleComponents[0] || 'Icon'} size="24" />
+   \`\`\`
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   \`\`\`html
+   @js
+     import { ${exampleIcons[0] || 'icon'} } from '@stacksjs/iconify-${prefix}'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(${exampleIcons[0] || 'icon'}, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    \`\`\`
 
 ## TypeScript Support
@@ -692,9 +769,14 @@ export async function generatePackage(
   for (const iconName of iconNames) {
     const iconData = collectionData.icons[iconName]
     const converted = convertIconData(iconData, defaultWidth, defaultHeight)
-    const component = generateIconComponent(iconName, converted, prefix)
 
-    await writeFile(join(srcDir, `${iconName}.ts`), component)
+    // Generate data file (.ts)
+    const dataFile = generateIconData(iconName, converted, prefix)
+    await writeFile(join(srcDir, `${iconName}.ts`), dataFile)
+
+    // Generate component file (.stx)
+    const componentFile = generateIconComponent(iconName, converted, prefix)
+    await writeFile(join(srcDir, `${iconName}.stx`), componentFile)
   }
 
   // Generate index file

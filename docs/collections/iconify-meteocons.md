@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-meteocons
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { BarometerIcon, BarometerFillIcon, BeanieIcon } from '@stacksjs/iconify-meteocons'
+```html
+<BarometerIcon height="1em" />
+<BarometerIcon width="1em" height="1em" />
+<BarometerIcon height="24" />
+```
 
-// Basic usage
-const icon = BarometerIcon()
+### With Properties
 
-// With size
-const sizedIcon = BarometerIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<BarometerIcon size="24" />
+<BarometerIcon size="1em" />
 
-// With color
-const coloredIcon = BarometerFillIcon({ color: 'red' })
+<!-- Using width and height -->
+<BarometerIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = BeanieIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<BarometerIcon size="24" color="red" />
+<BarometerIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<BarometerIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<BarometerIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { BarometerIcon, BarometerFillIcon, BeanieIcon } from '@stacksjs/iconify-meteocons'
-
-  global.icons = {
-    home: BarometerIcon({ size: 24 }),
-    user: BarometerFillIcon({ size: 24, color: '#4a90e2' }),
-    settings: BeanieIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <BarometerIcon size="24" />
+    <BarometerFillIcon size="24" color="#4a90e2" />
+    <BeanieIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,34 +115,55 @@ All icon component functions and `renderIcon` accept the following properties:
 
 This collection contains color icons. While you can still set a color property, it may override the original colors.
 
-```typescript
-// Via color property
-const redIcon = BarometerIcon({ color: 'red' })
-const blueIcon = BarometerIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<BarometerIcon size="24" color="red" />
+<BarometerIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = BarometerIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<BarometerIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = BarometerIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<BarometerIcon size="24" class="text-primary" />
 ```
 
 
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = BarometerIcon({ size: 24 })
-const icon1em = BarometerIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = BarometerIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = BarometerIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<BarometerIcon height="1em" />
+<BarometerIcon width="1em" height="1em" />
+<BarometerIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<BarometerIcon size="24" />
+<BarometerIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -133,20 +171,14 @@ const heightOnly = BarometerIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.meteocons-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = BarometerIcon({ class: 'icon-small' })
-const largeIcon = BarometerIcon({ class: 'icon-large' })
+```html
+<BarometerIcon class="meteocons-icon" />
 ```
 
 ## Available Icons
@@ -609,83 +641,77 @@ This package contains **450** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { BarometerIcon, BarometerFillIcon, BeanieIcon, BeanieFillIcon } from '@stacksjs/iconify-meteocons'
-
-  global.navIcons = {
-    home: BarometerIcon({ size: 20, class: 'nav-icon' }),
-    about: BarometerFillIcon({ size: 20, class: 'nav-icon' }),
-    contact: BeanieIcon({ size: 20, class: 'nav-icon' }),
-    settings: BeanieFillIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><BarometerIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><BarometerFillIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><BeanieIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><BeanieFillIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { BarometerIcon } from '@stacksjs/iconify-meteocons'
+```html
+<BarometerIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = BarometerIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { BarometerIcon, BarometerFillIcon, BeanieIcon } from '@stacksjs/iconify-meteocons'
-
-const successIcon = BarometerIcon({ size: 16, color: '#22c55e' })
-const warningIcon = BarometerFillIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = BeanieIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <BarometerIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <BarometerFillIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <BeanieIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { BarometerIcon, BarometerFillIcon } from '@stacksjs/iconify-meteocons'
-   const icon = BarometerIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { barometer, barometerFill } from '@stacksjs/iconify-meteocons'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(barometer, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { BarometerIcon, BarometerFillIcon } from '@stacksjs/iconify-meteocons'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-meteocons'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { BarometerIcon } from '@stacksjs/iconify-meteocons'
-     global.icon = BarometerIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <BarometerIcon size="24" />
+   <BarometerFillIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -698,8 +724,28 @@ const errorIcon = BeanieIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = BarometerIcon({ class: 'icon' })
+   ```html
+   <BarometerIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <BarometerIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <BarometerIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { barometer } from '@stacksjs/iconify-meteocons'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(barometer, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

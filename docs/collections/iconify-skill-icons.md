@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-skill-icons
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { AbletonDarkIcon, AbletonLightIcon, ActivitypubDarkIcon } from '@stacksjs/iconify-skill-icons'
+```html
+<AbletonDarkIcon height="1em" />
+<AbletonDarkIcon width="1em" height="1em" />
+<AbletonDarkIcon height="24" />
+```
 
-// Basic usage
-const icon = AbletonDarkIcon()
+### With Properties
 
-// With size
-const sizedIcon = AbletonDarkIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<AbletonDarkIcon size="24" />
+<AbletonDarkIcon size="1em" />
 
-// With color
-const coloredIcon = AbletonLightIcon({ color: 'red' })
+<!-- Using width and height -->
+<AbletonDarkIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = ActivitypubDarkIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<AbletonDarkIcon size="24" color="red" />
+<AbletonDarkIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<AbletonDarkIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<AbletonDarkIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { AbletonDarkIcon, AbletonLightIcon, ActivitypubDarkIcon } from '@stacksjs/iconify-skill-icons'
-
-  global.icons = {
-    home: AbletonDarkIcon({ size: 24 }),
-    user: AbletonLightIcon({ size: 24, color: '#4a90e2' }),
-    settings: ActivitypubDarkIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <AbletonDarkIcon size="24" />
+    <AbletonLightIcon size="24" color="#4a90e2" />
+    <ActivitypubDarkIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,34 +115,55 @@ All icon component functions and `renderIcon` accept the following properties:
 
 This collection contains color icons. While you can still set a color property, it may override the original colors.
 
-```typescript
-// Via color property
-const redIcon = AbletonDarkIcon({ color: 'red' })
-const blueIcon = AbletonDarkIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<AbletonDarkIcon size="24" color="red" />
+<AbletonDarkIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = AbletonDarkIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<AbletonDarkIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = AbletonDarkIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<AbletonDarkIcon size="24" class="text-primary" />
 ```
 
 
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = AbletonDarkIcon({ size: 24 })
-const icon1em = AbletonDarkIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = AbletonDarkIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = AbletonDarkIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<AbletonDarkIcon height="1em" />
+<AbletonDarkIcon width="1em" height="1em" />
+<AbletonDarkIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<AbletonDarkIcon size="24" />
+<AbletonDarkIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -133,20 +171,14 @@ const heightOnly = AbletonDarkIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.skillIcons-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = AbletonDarkIcon({ class: 'icon-small' })
-const largeIcon = AbletonDarkIcon({ class: 'icon-large' })
+```html
+<AbletonDarkIcon class="skillIcons-icon" />
 ```
 
 ## Available Icons
@@ -556,83 +588,77 @@ This package contains **397** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { AbletonDarkIcon, AbletonLightIcon, ActivitypubDarkIcon, ActivitypubLightIcon } from '@stacksjs/iconify-skill-icons'
-
-  global.navIcons = {
-    home: AbletonDarkIcon({ size: 20, class: 'nav-icon' }),
-    about: AbletonLightIcon({ size: 20, class: 'nav-icon' }),
-    contact: ActivitypubDarkIcon({ size: 20, class: 'nav-icon' }),
-    settings: ActivitypubLightIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><AbletonDarkIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><AbletonLightIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><ActivitypubDarkIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><ActivitypubLightIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { AbletonDarkIcon } from '@stacksjs/iconify-skill-icons'
+```html
+<AbletonDarkIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = AbletonDarkIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { AbletonDarkIcon, AbletonLightIcon, ActivitypubDarkIcon } from '@stacksjs/iconify-skill-icons'
-
-const successIcon = AbletonDarkIcon({ size: 16, color: '#22c55e' })
-const warningIcon = AbletonLightIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = ActivitypubDarkIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <AbletonDarkIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <AbletonLightIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <ActivitypubDarkIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { AbletonDarkIcon, AbletonLightIcon } from '@stacksjs/iconify-skill-icons'
-   const icon = AbletonDarkIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { abletonDark, abletonLight } from '@stacksjs/iconify-skill-icons'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(abletonDark, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { AbletonDarkIcon, AbletonLightIcon } from '@stacksjs/iconify-skill-icons'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-skill-icons'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { AbletonDarkIcon } from '@stacksjs/iconify-skill-icons'
-     global.icon = AbletonDarkIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <AbletonDarkIcon size="24" />
+   <AbletonLightIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -645,8 +671,28 @@ const errorIcon = ActivitypubDarkIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = AbletonDarkIcon({ class: 'icon' })
+   ```html
+   <AbletonDarkIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <AbletonDarkIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <AbletonDarkIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { abletonDark } from '@stacksjs/iconify-skill-icons'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(abletonDark, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

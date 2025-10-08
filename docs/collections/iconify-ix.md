@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-ix
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { AboutIcon, AboutFilledIcon, AddIcon } from '@stacksjs/iconify-ix'
+```html
+<AboutIcon height="1em" />
+<AboutIcon width="1em" height="1em" />
+<AboutIcon height="24" />
+```
 
-// Basic usage
-const icon = AboutIcon()
+### With Properties
 
-// With size
-const sizedIcon = AboutIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<AboutIcon size="24" />
+<AboutIcon size="1em" />
 
-// With color
-const coloredIcon = AboutFilledIcon({ color: 'red' })
+<!-- Using width and height -->
+<AboutIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = AddIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<AboutIcon size="24" color="red" />
+<AboutIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<AboutIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<AboutIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { AboutIcon, AboutFilledIcon, AddIcon } from '@stacksjs/iconify-ix'
-
-  global.icons = {
-    home: AboutIcon({ size: 24 }),
-    user: AboutFilledIcon({ size: 24, color: '#4a90e2' }),
-    settings: AddIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <AboutIcon size="24" />
+    <AboutFilledIcon size="24" color="#4a90e2" />
+    <AddIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,16 +115,16 @@ All icon component functions and `renderIcon` accept the following properties:
 
 Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
 
-```typescript
-// Via color property
-const redIcon = AboutIcon({ color: 'red' })
-const blueIcon = AboutIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<AboutIcon size="24" color="red" />
+<AboutIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = AboutIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<AboutIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = AboutIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<AboutIcon size="24" class="text-primary" />
 ```
 
 ```css
@@ -123,18 +140,39 @@ const themedIcon = AboutIcon({ class: 'text-primary' })
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = AboutIcon({ size: 24 })
-const icon1em = AboutIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = AboutIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = AboutIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<AboutIcon height="1em" />
+<AboutIcon width="1em" height="1em" />
+<AboutIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<AboutIcon size="24" />
+<AboutIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -142,20 +180,14 @@ const heightOnly = AboutIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.ix-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = AboutIcon({ class: 'icon-small' })
-const largeIcon = AboutIcon({ class: 'icon-large' })
+```html
+<AboutIcon class="ix-icon" />
 ```
 
 ## Available Icons
@@ -1586,83 +1618,77 @@ This package contains **1418** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { AboutIcon, AboutFilledIcon, AddIcon, AddApplicationIcon } from '@stacksjs/iconify-ix'
-
-  global.navIcons = {
-    home: AboutIcon({ size: 20, class: 'nav-icon' }),
-    about: AboutFilledIcon({ size: 20, class: 'nav-icon' }),
-    contact: AddIcon({ size: 20, class: 'nav-icon' }),
-    settings: AddApplicationIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><AboutIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><AboutFilledIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><AddIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><AddApplicationIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { AboutIcon } from '@stacksjs/iconify-ix'
+```html
+<AboutIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = AboutIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { AboutIcon, AboutFilledIcon, AddIcon } from '@stacksjs/iconify-ix'
-
-const successIcon = AboutIcon({ size: 16, color: '#22c55e' })
-const warningIcon = AboutFilledIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = AddIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <AboutIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <AboutFilledIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <AddIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { AboutIcon, AboutFilledIcon } from '@stacksjs/iconify-ix'
-   const icon = AboutIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { about, aboutFilled } from '@stacksjs/iconify-ix'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(about, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { AboutIcon, AboutFilledIcon } from '@stacksjs/iconify-ix'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-ix'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { AboutIcon } from '@stacksjs/iconify-ix'
-     global.icon = AboutIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <AboutIcon size="24" />
+   <AboutFilledIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -1675,8 +1701,28 @@ const errorIcon = AddIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = AboutIcon({ class: 'icon' })
+   ```html
+   <AboutIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <AboutIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <AboutIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { about } from '@stacksjs/iconify-ix'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(about, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

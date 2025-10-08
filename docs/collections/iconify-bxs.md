@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-bxs
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { AddToQueueIcon, AdjustIcon, AdjustAltIcon } from '@stacksjs/iconify-bxs'
+```html
+<AddToQueueIcon height="1em" />
+<AddToQueueIcon width="1em" height="1em" />
+<AddToQueueIcon height="24" />
+```
 
-// Basic usage
-const icon = AddToQueueIcon()
+### With Properties
 
-// With size
-const sizedIcon = AddToQueueIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<AddToQueueIcon size="24" />
+<AddToQueueIcon size="1em" />
 
-// With color
-const coloredIcon = AdjustIcon({ color: 'red' })
+<!-- Using width and height -->
+<AddToQueueIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = AdjustAltIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<AddToQueueIcon size="24" color="red" />
+<AddToQueueIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<AddToQueueIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<AddToQueueIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { AddToQueueIcon, AdjustIcon, AdjustAltIcon } from '@stacksjs/iconify-bxs'
-
-  global.icons = {
-    home: AddToQueueIcon({ size: 24 }),
-    user: AdjustIcon({ size: 24, color: '#4a90e2' }),
-    settings: AdjustAltIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <AddToQueueIcon size="24" />
+    <AdjustIcon size="24" color="#4a90e2" />
+    <AdjustAltIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,16 +115,16 @@ All icon component functions and `renderIcon` accept the following properties:
 
 Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
 
-```typescript
-// Via color property
-const redIcon = AddToQueueIcon({ color: 'red' })
-const blueIcon = AddToQueueIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<AddToQueueIcon size="24" color="red" />
+<AddToQueueIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = AddToQueueIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<AddToQueueIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = AddToQueueIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<AddToQueueIcon size="24" class="text-primary" />
 ```
 
 ```css
@@ -123,18 +140,39 @@ const themedIcon = AddToQueueIcon({ class: 'text-primary' })
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = AddToQueueIcon({ size: 24 })
-const icon1em = AddToQueueIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = AddToQueueIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = AddToQueueIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<AddToQueueIcon height="1em" />
+<AddToQueueIcon width="1em" height="1em" />
+<AddToQueueIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<AddToQueueIcon size="24" />
+<AddToQueueIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -142,20 +180,14 @@ const heightOnly = AddToQueueIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.bxs-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = AddToQueueIcon({ class: 'icon-small' })
-const largeIcon = AddToQueueIcon({ class: 'icon-large' })
+```html
+<AddToQueueIcon class="bxs-icon" />
 ```
 
 ## Available Icons
@@ -833,83 +865,77 @@ This package contains **665** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { AddToQueueIcon, AdjustIcon, AdjustAltIcon, AlarmIcon } from '@stacksjs/iconify-bxs'
-
-  global.navIcons = {
-    home: AddToQueueIcon({ size: 20, class: 'nav-icon' }),
-    about: AdjustIcon({ size: 20, class: 'nav-icon' }),
-    contact: AdjustAltIcon({ size: 20, class: 'nav-icon' }),
-    settings: AlarmIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><AddToQueueIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><AdjustIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><AdjustAltIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><AlarmIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { AddToQueueIcon } from '@stacksjs/iconify-bxs'
+```html
+<AddToQueueIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = AddToQueueIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { AddToQueueIcon, AdjustIcon, AdjustAltIcon } from '@stacksjs/iconify-bxs'
-
-const successIcon = AddToQueueIcon({ size: 16, color: '#22c55e' })
-const warningIcon = AdjustIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = AdjustAltIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <AddToQueueIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <AdjustIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <AdjustAltIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { AddToQueueIcon, AdjustIcon } from '@stacksjs/iconify-bxs'
-   const icon = AddToQueueIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { addToQueue, adjust } from '@stacksjs/iconify-bxs'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(addToQueue, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { AddToQueueIcon, AdjustIcon } from '@stacksjs/iconify-bxs'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-bxs'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { AddToQueueIcon } from '@stacksjs/iconify-bxs'
-     global.icon = AddToQueueIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <AddToQueueIcon size="24" />
+   <AdjustIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -922,8 +948,28 @@ const errorIcon = AdjustAltIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = AddToQueueIcon({ class: 'icon' })
+   ```html
+   <AddToQueueIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <AddToQueueIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <AddToQueueIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { addToQueue } from '@stacksjs/iconify-bxs'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(addToQueue, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-ri
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { 24HoursFillIcon, 24HoursLineIcon, 4kFillIcon } from '@stacksjs/iconify-ri'
+```html
+<24HoursFillIcon height="1em" />
+<24HoursFillIcon width="1em" height="1em" />
+<24HoursFillIcon height="24" />
+```
 
-// Basic usage
-const icon = 24HoursFillIcon()
+### With Properties
 
-// With size
-const sizedIcon = 24HoursFillIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<24HoursFillIcon size="24" />
+<24HoursFillIcon size="1em" />
 
-// With color
-const coloredIcon = 24HoursLineIcon({ color: 'red' })
+<!-- Using width and height -->
+<24HoursFillIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = 4kFillIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<24HoursFillIcon size="24" color="red" />
+<24HoursFillIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<24HoursFillIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<24HoursFillIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { 24HoursFillIcon, 24HoursLineIcon, 4kFillIcon } from '@stacksjs/iconify-ri'
-
-  global.icons = {
-    home: 24HoursFillIcon({ size: 24 }),
-    user: 24HoursLineIcon({ size: 24, color: '#4a90e2' }),
-    settings: 4kFillIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <24HoursFillIcon size="24" />
+    <24HoursLineIcon size="24" color="#4a90e2" />
+    <4kFillIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,16 +115,16 @@ All icon component functions and `renderIcon` accept the following properties:
 
 Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
 
-```typescript
-// Via color property
-const redIcon = 24HoursFillIcon({ color: 'red' })
-const blueIcon = 24HoursFillIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<24HoursFillIcon size="24" color="red" />
+<24HoursFillIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = 24HoursFillIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<24HoursFillIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = 24HoursFillIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<24HoursFillIcon size="24" class="text-primary" />
 ```
 
 ```css
@@ -123,18 +140,39 @@ const themedIcon = 24HoursFillIcon({ class: 'text-primary' })
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = 24HoursFillIcon({ size: 24 })
-const icon1em = 24HoursFillIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = 24HoursFillIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = 24HoursFillIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<24HoursFillIcon height="1em" />
+<24HoursFillIcon width="1em" height="1em" />
+<24HoursFillIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<24HoursFillIcon size="24" />
+<24HoursFillIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -142,20 +180,14 @@ const heightOnly = 24HoursFillIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.ri-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = 24HoursFillIcon({ class: 'icon-small' })
-const largeIcon = 24HoursFillIcon({ class: 'icon-large' })
+```html
+<24HoursFillIcon class="ri-icon" />
 ```
 
 ## Available Icons
@@ -3226,83 +3258,77 @@ This package contains **3058** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { 24HoursFillIcon, 24HoursLineIcon, 4kFillIcon, 4kLineIcon } from '@stacksjs/iconify-ri'
-
-  global.navIcons = {
-    home: 24HoursFillIcon({ size: 20, class: 'nav-icon' }),
-    about: 24HoursLineIcon({ size: 20, class: 'nav-icon' }),
-    contact: 4kFillIcon({ size: 20, class: 'nav-icon' }),
-    settings: 4kLineIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><24HoursFillIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><24HoursLineIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><4kFillIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><4kLineIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { 24HoursFillIcon } from '@stacksjs/iconify-ri'
+```html
+<24HoursFillIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = 24HoursFillIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { 24HoursFillIcon, 24HoursLineIcon, 4kFillIcon } from '@stacksjs/iconify-ri'
-
-const successIcon = 24HoursFillIcon({ size: 16, color: '#22c55e' })
-const warningIcon = 24HoursLineIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = 4kFillIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <24HoursFillIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <24HoursLineIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <4kFillIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { 24HoursFillIcon, 24HoursLineIcon } from '@stacksjs/iconify-ri'
-   const icon = 24HoursFillIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { 24HoursFill, 24HoursLine } from '@stacksjs/iconify-ri'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(24HoursFill, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { 24HoursFillIcon, 24HoursLineIcon } from '@stacksjs/iconify-ri'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-ri'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { 24HoursFillIcon } from '@stacksjs/iconify-ri'
-     global.icon = 24HoursFillIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <24HoursFillIcon size="24" />
+   <24HoursLineIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -3315,8 +3341,28 @@ const errorIcon = 4kFillIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = 24HoursFillIcon({ class: 'icon' })
+   ```html
+   <24HoursFillIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <24HoursFillIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <24HoursFillIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { 24HoursFill } from '@stacksjs/iconify-ri'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(24HoursFill, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

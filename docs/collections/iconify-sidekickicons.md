@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-sidekickicons
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { ArcThirdIcon, ArcThird16SolidIcon, ArcThird20SolidIcon } from '@stacksjs/iconify-sidekickicons'
+```html
+<ArcThirdIcon height="1em" />
+<ArcThirdIcon width="1em" height="1em" />
+<ArcThirdIcon height="24" />
+```
 
-// Basic usage
-const icon = ArcThirdIcon()
+### With Properties
 
-// With size
-const sizedIcon = ArcThirdIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<ArcThirdIcon size="24" />
+<ArcThirdIcon size="1em" />
 
-// With color
-const coloredIcon = ArcThird16SolidIcon({ color: 'red' })
+<!-- Using width and height -->
+<ArcThirdIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = ArcThird20SolidIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<ArcThirdIcon size="24" color="red" />
+<ArcThirdIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<ArcThirdIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<ArcThirdIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { ArcThirdIcon, ArcThird16SolidIcon, ArcThird20SolidIcon } from '@stacksjs/iconify-sidekickicons'
-
-  global.icons = {
-    home: ArcThirdIcon({ size: 24 }),
-    user: ArcThird16SolidIcon({ size: 24, color: '#4a90e2' }),
-    settings: ArcThird20SolidIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <ArcThirdIcon size="24" />
+    <ArcThird16SolidIcon size="24" color="#4a90e2" />
+    <ArcThird20SolidIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,16 +115,16 @@ All icon component functions and `renderIcon` accept the following properties:
 
 Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
 
-```typescript
-// Via color property
-const redIcon = ArcThirdIcon({ color: 'red' })
-const blueIcon = ArcThirdIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<ArcThirdIcon size="24" color="red" />
+<ArcThirdIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = ArcThirdIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<ArcThirdIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = ArcThirdIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<ArcThirdIcon size="24" class="text-primary" />
 ```
 
 ```css
@@ -123,18 +140,39 @@ const themedIcon = ArcThirdIcon({ class: 'text-primary' })
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = ArcThirdIcon({ size: 24 })
-const icon1em = ArcThirdIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = ArcThirdIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = ArcThirdIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<ArcThirdIcon height="1em" />
+<ArcThirdIcon width="1em" height="1em" />
+<ArcThirdIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<ArcThirdIcon size="24" />
+<ArcThirdIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -142,20 +180,14 @@ const heightOnly = ArcThirdIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.sidekickicons-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = ArcThirdIcon({ class: 'icon-small' })
-const largeIcon = ArcThirdIcon({ class: 'icon-large' })
+```html
+<ArcThirdIcon class="sidekickicons-icon" />
 ```
 
 ## Available Icons
@@ -392,83 +424,77 @@ This package contains **224** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { ArcThirdIcon, ArcThird16SolidIcon, ArcThird20SolidIcon, ArcThirdSolidIcon } from '@stacksjs/iconify-sidekickicons'
-
-  global.navIcons = {
-    home: ArcThirdIcon({ size: 20, class: 'nav-icon' }),
-    about: ArcThird16SolidIcon({ size: 20, class: 'nav-icon' }),
-    contact: ArcThird20SolidIcon({ size: 20, class: 'nav-icon' }),
-    settings: ArcThirdSolidIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><ArcThirdIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><ArcThird16SolidIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><ArcThird20SolidIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><ArcThirdSolidIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { ArcThirdIcon } from '@stacksjs/iconify-sidekickicons'
+```html
+<ArcThirdIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = ArcThirdIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { ArcThirdIcon, ArcThird16SolidIcon, ArcThird20SolidIcon } from '@stacksjs/iconify-sidekickicons'
-
-const successIcon = ArcThirdIcon({ size: 16, color: '#22c55e' })
-const warningIcon = ArcThird16SolidIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = ArcThird20SolidIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <ArcThirdIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <ArcThird16SolidIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <ArcThird20SolidIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { ArcThirdIcon, ArcThird16SolidIcon } from '@stacksjs/iconify-sidekickicons'
-   const icon = ArcThirdIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { arcThird, arcThird16Solid } from '@stacksjs/iconify-sidekickicons'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(arcThird, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { ArcThirdIcon, ArcThird16SolidIcon } from '@stacksjs/iconify-sidekickicons'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-sidekickicons'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { ArcThirdIcon } from '@stacksjs/iconify-sidekickicons'
-     global.icon = ArcThirdIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <ArcThirdIcon size="24" />
+   <ArcThird16SolidIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -481,8 +507,28 @@ const errorIcon = ArcThird20SolidIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = ArcThirdIcon({ class: 'icon' })
+   ```html
+   <ArcThirdIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <ArcThirdIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <ArcThirdIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { arcThird } from '@stacksjs/iconify-sidekickicons'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(arcThird, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-mynaui
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { AArrowDownIcon, AArrowDownSolidIcon, AArrowUpIcon } from '@stacksjs/iconify-mynaui'
+```html
+<AArrowDownIcon height="1em" />
+<AArrowDownIcon width="1em" height="1em" />
+<AArrowDownIcon height="24" />
+```
 
-// Basic usage
-const icon = AArrowDownIcon()
+### With Properties
 
-// With size
-const sizedIcon = AArrowDownIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<AArrowDownIcon size="24" />
+<AArrowDownIcon size="1em" />
 
-// With color
-const coloredIcon = AArrowDownSolidIcon({ color: 'red' })
+<!-- Using width and height -->
+<AArrowDownIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = AArrowUpIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<AArrowDownIcon size="24" color="red" />
+<AArrowDownIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<AArrowDownIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<AArrowDownIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { AArrowDownIcon, AArrowDownSolidIcon, AArrowUpIcon } from '@stacksjs/iconify-mynaui'
-
-  global.icons = {
-    home: AArrowDownIcon({ size: 24 }),
-    user: AArrowDownSolidIcon({ size: 24, color: '#4a90e2' }),
-    settings: AArrowUpIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <AArrowDownIcon size="24" />
+    <AArrowDownSolidIcon size="24" color="#4a90e2" />
+    <AArrowUpIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,16 +115,16 @@ All icon component functions and `renderIcon` accept the following properties:
 
 Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
 
-```typescript
-// Via color property
-const redIcon = AArrowDownIcon({ color: 'red' })
-const blueIcon = AArrowDownIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<AArrowDownIcon size="24" color="red" />
+<AArrowDownIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = AArrowDownIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<AArrowDownIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = AArrowDownIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<AArrowDownIcon size="24" class="text-primary" />
 ```
 
 ```css
@@ -123,18 +140,39 @@ const themedIcon = AArrowDownIcon({ class: 'text-primary' })
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = AArrowDownIcon({ size: 24 })
-const icon1em = AArrowDownIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = AArrowDownIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = AArrowDownIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<AArrowDownIcon height="1em" />
+<AArrowDownIcon width="1em" height="1em" />
+<AArrowDownIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<AArrowDownIcon size="24" />
+<AArrowDownIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -142,20 +180,14 @@ const heightOnly = AArrowDownIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.mynaui-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = AArrowDownIcon({ class: 'icon-small' })
-const largeIcon = AArrowDownIcon({ class: 'icon-large' })
+```html
+<AArrowDownIcon class="mynaui-icon" />
 ```
 
 ## Available Icons
@@ -2730,83 +2762,77 @@ This package contains **2562** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { AArrowDownIcon, AArrowDownSolidIcon, AArrowUpIcon, AArrowUpSolidIcon } from '@stacksjs/iconify-mynaui'
-
-  global.navIcons = {
-    home: AArrowDownIcon({ size: 20, class: 'nav-icon' }),
-    about: AArrowDownSolidIcon({ size: 20, class: 'nav-icon' }),
-    contact: AArrowUpIcon({ size: 20, class: 'nav-icon' }),
-    settings: AArrowUpSolidIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><AArrowDownIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><AArrowDownSolidIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><AArrowUpIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><AArrowUpSolidIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { AArrowDownIcon } from '@stacksjs/iconify-mynaui'
+```html
+<AArrowDownIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = AArrowDownIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { AArrowDownIcon, AArrowDownSolidIcon, AArrowUpIcon } from '@stacksjs/iconify-mynaui'
-
-const successIcon = AArrowDownIcon({ size: 16, color: '#22c55e' })
-const warningIcon = AArrowDownSolidIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = AArrowUpIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <AArrowDownIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <AArrowDownSolidIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <AArrowUpIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { AArrowDownIcon, AArrowDownSolidIcon } from '@stacksjs/iconify-mynaui'
-   const icon = AArrowDownIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { aArrowDown, aArrowDownSolid } from '@stacksjs/iconify-mynaui'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(aArrowDown, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { AArrowDownIcon, AArrowDownSolidIcon } from '@stacksjs/iconify-mynaui'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-mynaui'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { AArrowDownIcon } from '@stacksjs/iconify-mynaui'
-     global.icon = AArrowDownIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <AArrowDownIcon size="24" />
+   <AArrowDownSolidIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -2819,8 +2845,28 @@ const errorIcon = AArrowUpIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = AArrowDownIcon({ class: 'icon' })
+   ```html
+   <AArrowDownIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <AArrowDownIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <AArrowDownIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { aArrowDown } from '@stacksjs/iconify-mynaui'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(aArrowDown, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

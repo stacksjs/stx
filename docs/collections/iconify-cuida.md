@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-cuida
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { AlertOutlineIcon, AmbulanceOutlineIcon, ArrowDownCircleOutlineIcon } from '@stacksjs/iconify-cuida'
+```html
+<AlertOutlineIcon height="1em" />
+<AlertOutlineIcon width="1em" height="1em" />
+<AlertOutlineIcon height="24" />
+```
 
-// Basic usage
-const icon = AlertOutlineIcon()
+### With Properties
 
-// With size
-const sizedIcon = AlertOutlineIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<AlertOutlineIcon size="24" />
+<AlertOutlineIcon size="1em" />
 
-// With color
-const coloredIcon = AmbulanceOutlineIcon({ color: 'red' })
+<!-- Using width and height -->
+<AlertOutlineIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = ArrowDownCircleOutlineIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<AlertOutlineIcon size="24" color="red" />
+<AlertOutlineIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<AlertOutlineIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<AlertOutlineIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { AlertOutlineIcon, AmbulanceOutlineIcon, ArrowDownCircleOutlineIcon } from '@stacksjs/iconify-cuida'
-
-  global.icons = {
-    home: AlertOutlineIcon({ size: 24 }),
-    user: AmbulanceOutlineIcon({ size: 24, color: '#4a90e2' }),
-    settings: ArrowDownCircleOutlineIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <AlertOutlineIcon size="24" />
+    <AmbulanceOutlineIcon size="24" color="#4a90e2" />
+    <ArrowDownCircleOutlineIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,16 +115,16 @@ All icon component functions and `renderIcon` accept the following properties:
 
 Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
 
-```typescript
-// Via color property
-const redIcon = AlertOutlineIcon({ color: 'red' })
-const blueIcon = AlertOutlineIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<AlertOutlineIcon size="24" color="red" />
+<AlertOutlineIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = AlertOutlineIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<AlertOutlineIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = AlertOutlineIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<AlertOutlineIcon size="24" class="text-primary" />
 ```
 
 ```css
@@ -123,18 +140,39 @@ const themedIcon = AlertOutlineIcon({ class: 'text-primary' })
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = AlertOutlineIcon({ size: 24 })
-const icon1em = AlertOutlineIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = AlertOutlineIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = AlertOutlineIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<AlertOutlineIcon height="1em" />
+<AlertOutlineIcon width="1em" height="1em" />
+<AlertOutlineIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<AlertOutlineIcon size="24" />
+<AlertOutlineIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -142,20 +180,14 @@ const heightOnly = AlertOutlineIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.cuida-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = AlertOutlineIcon({ class: 'icon-small' })
-const largeIcon = AlertOutlineIcon({ class: 'icon-large' })
+```html
+<AlertOutlineIcon class="cuida-icon" />
 ```
 
 ## Available Icons
@@ -350,83 +382,77 @@ This package contains **182** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { AlertOutlineIcon, AmbulanceOutlineIcon, ArrowDownCircleOutlineIcon, ArrowDownOutlineIcon } from '@stacksjs/iconify-cuida'
-
-  global.navIcons = {
-    home: AlertOutlineIcon({ size: 20, class: 'nav-icon' }),
-    about: AmbulanceOutlineIcon({ size: 20, class: 'nav-icon' }),
-    contact: ArrowDownCircleOutlineIcon({ size: 20, class: 'nav-icon' }),
-    settings: ArrowDownOutlineIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><AlertOutlineIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><AmbulanceOutlineIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><ArrowDownCircleOutlineIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><ArrowDownOutlineIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { AlertOutlineIcon } from '@stacksjs/iconify-cuida'
+```html
+<AlertOutlineIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = AlertOutlineIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { AlertOutlineIcon, AmbulanceOutlineIcon, ArrowDownCircleOutlineIcon } from '@stacksjs/iconify-cuida'
-
-const successIcon = AlertOutlineIcon({ size: 16, color: '#22c55e' })
-const warningIcon = AmbulanceOutlineIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = ArrowDownCircleOutlineIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <AlertOutlineIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <AmbulanceOutlineIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <ArrowDownCircleOutlineIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { AlertOutlineIcon, AmbulanceOutlineIcon } from '@stacksjs/iconify-cuida'
-   const icon = AlertOutlineIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { alertOutline, ambulanceOutline } from '@stacksjs/iconify-cuida'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(alertOutline, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { AlertOutlineIcon, AmbulanceOutlineIcon } from '@stacksjs/iconify-cuida'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-cuida'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { AlertOutlineIcon } from '@stacksjs/iconify-cuida'
-     global.icon = AlertOutlineIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <AlertOutlineIcon size="24" />
+   <AmbulanceOutlineIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -439,8 +465,28 @@ const errorIcon = ArrowDownCircleOutlineIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = AlertOutlineIcon({ class: 'icon' })
+   ```html
+   <AlertOutlineIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <AlertOutlineIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <AlertOutlineIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { alertOutline } from '@stacksjs/iconify-cuida'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(alertOutline, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

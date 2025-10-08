@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-geo
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { TurfAlongIcon, TurfBboxPolygonIcon, TurfBezierIcon } from '@stacksjs/iconify-geo'
+```html
+<TurfAlongIcon height="1em" />
+<TurfAlongIcon width="1em" height="1em" />
+<TurfAlongIcon height="24" />
+```
 
-// Basic usage
-const icon = TurfAlongIcon()
+### With Properties
 
-// With size
-const sizedIcon = TurfAlongIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<TurfAlongIcon size="24" />
+<TurfAlongIcon size="1em" />
 
-// With color
-const coloredIcon = TurfBboxPolygonIcon({ color: 'red' })
+<!-- Using width and height -->
+<TurfAlongIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = TurfBezierIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<TurfAlongIcon size="24" color="red" />
+<TurfAlongIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<TurfAlongIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<TurfAlongIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { TurfAlongIcon, TurfBboxPolygonIcon, TurfBezierIcon } from '@stacksjs/iconify-geo'
-
-  global.icons = {
-    home: TurfAlongIcon({ size: 24 }),
-    user: TurfBboxPolygonIcon({ size: 24, color: '#4a90e2' }),
-    settings: TurfBezierIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <TurfAlongIcon size="24" />
+    <TurfBboxPolygonIcon size="24" color="#4a90e2" />
+    <TurfBezierIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,16 +115,16 @@ All icon component functions and `renderIcon` accept the following properties:
 
 Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
 
-```typescript
-// Via color property
-const redIcon = TurfAlongIcon({ color: 'red' })
-const blueIcon = TurfAlongIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<TurfAlongIcon size="24" color="red" />
+<TurfAlongIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = TurfAlongIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<TurfAlongIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = TurfAlongIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<TurfAlongIcon size="24" class="text-primary" />
 ```
 
 ```css
@@ -123,18 +140,39 @@ const themedIcon = TurfAlongIcon({ class: 'text-primary' })
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = TurfAlongIcon({ size: 24 })
-const icon1em = TurfAlongIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = TurfAlongIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = TurfAlongIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<TurfAlongIcon height="1em" />
+<TurfAlongIcon width="1em" height="1em" />
+<TurfAlongIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<TurfAlongIcon size="24" />
+<TurfAlongIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -142,20 +180,14 @@ const heightOnly = TurfAlongIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.geo-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = TurfAlongIcon({ class: 'icon-small' })
-const largeIcon = TurfAlongIcon({ class: 'icon-large' })
+```html
+<TurfAlongIcon class="geo-icon" />
 ```
 
 ## Available Icons
@@ -198,83 +230,77 @@ This package contains **30** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { TurfAlongIcon, TurfBboxPolygonIcon, TurfBezierIcon, TurfBufferIcon } from '@stacksjs/iconify-geo'
-
-  global.navIcons = {
-    home: TurfAlongIcon({ size: 20, class: 'nav-icon' }),
-    about: TurfBboxPolygonIcon({ size: 20, class: 'nav-icon' }),
-    contact: TurfBezierIcon({ size: 20, class: 'nav-icon' }),
-    settings: TurfBufferIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><TurfAlongIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><TurfBboxPolygonIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><TurfBezierIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><TurfBufferIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { TurfAlongIcon } from '@stacksjs/iconify-geo'
+```html
+<TurfAlongIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = TurfAlongIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { TurfAlongIcon, TurfBboxPolygonIcon, TurfBezierIcon } from '@stacksjs/iconify-geo'
-
-const successIcon = TurfAlongIcon({ size: 16, color: '#22c55e' })
-const warningIcon = TurfBboxPolygonIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = TurfBezierIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <TurfAlongIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <TurfBboxPolygonIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <TurfBezierIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { TurfAlongIcon, TurfBboxPolygonIcon } from '@stacksjs/iconify-geo'
-   const icon = TurfAlongIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { turfAlong, turfBboxPolygon } from '@stacksjs/iconify-geo'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(turfAlong, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { TurfAlongIcon, TurfBboxPolygonIcon } from '@stacksjs/iconify-geo'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-geo'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { TurfAlongIcon } from '@stacksjs/iconify-geo'
-     global.icon = TurfAlongIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <TurfAlongIcon size="24" />
+   <TurfBboxPolygonIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -287,8 +313,28 @@ const errorIcon = TurfBezierIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = TurfAlongIcon({ class: 'icon' })
+   ```html
+   <TurfAlongIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <TurfAlongIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <TurfAlongIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { turfAlong } from '@stacksjs/iconify-geo'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(turfAlong, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

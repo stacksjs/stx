@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-gravity-ui
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { AbbrApiIcon, AbbrMlIcon, AbbrQlIcon } from '@stacksjs/iconify-gravity-ui'
+```html
+<AbbrApiIcon height="1em" />
+<AbbrApiIcon width="1em" height="1em" />
+<AbbrApiIcon height="24" />
+```
 
-// Basic usage
-const icon = AbbrApiIcon()
+### With Properties
 
-// With size
-const sizedIcon = AbbrApiIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<AbbrApiIcon size="24" />
+<AbbrApiIcon size="1em" />
 
-// With color
-const coloredIcon = AbbrMlIcon({ color: 'red' })
+<!-- Using width and height -->
+<AbbrApiIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = AbbrQlIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<AbbrApiIcon size="24" color="red" />
+<AbbrApiIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<AbbrApiIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<AbbrApiIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { AbbrApiIcon, AbbrMlIcon, AbbrQlIcon } from '@stacksjs/iconify-gravity-ui'
-
-  global.icons = {
-    home: AbbrApiIcon({ size: 24 }),
-    user: AbbrMlIcon({ size: 24, color: '#4a90e2' }),
-    settings: AbbrQlIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <AbbrApiIcon size="24" />
+    <AbbrMlIcon size="24" color="#4a90e2" />
+    <AbbrQlIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,16 +115,16 @@ All icon component functions and `renderIcon` accept the following properties:
 
 Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
 
-```typescript
-// Via color property
-const redIcon = AbbrApiIcon({ color: 'red' })
-const blueIcon = AbbrApiIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<AbbrApiIcon size="24" color="red" />
+<AbbrApiIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = AbbrApiIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<AbbrApiIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = AbbrApiIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<AbbrApiIcon size="24" class="text-primary" />
 ```
 
 ```css
@@ -123,18 +140,39 @@ const themedIcon = AbbrApiIcon({ class: 'text-primary' })
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = AbbrApiIcon({ size: 24 })
-const icon1em = AbbrApiIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = AbbrApiIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = AbbrApiIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<AbbrApiIcon height="1em" />
+<AbbrApiIcon width="1em" height="1em" />
+<AbbrApiIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<AbbrApiIcon size="24" />
+<AbbrApiIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -142,20 +180,14 @@ const heightOnly = AbbrApiIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.gravityUi-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = AbbrApiIcon({ class: 'icon-small' })
-const largeIcon = AbbrApiIcon({ class: 'icon-large' })
+```html
+<AbbrApiIcon class="gravityUi-icon" />
 ```
 
 ## Available Icons
@@ -912,83 +944,77 @@ This package contains **744** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { AbbrApiIcon, AbbrMlIcon, AbbrQlIcon, AbbrSqlIcon } from '@stacksjs/iconify-gravity-ui'
-
-  global.navIcons = {
-    home: AbbrApiIcon({ size: 20, class: 'nav-icon' }),
-    about: AbbrMlIcon({ size: 20, class: 'nav-icon' }),
-    contact: AbbrQlIcon({ size: 20, class: 'nav-icon' }),
-    settings: AbbrSqlIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><AbbrApiIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><AbbrMlIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><AbbrQlIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><AbbrSqlIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { AbbrApiIcon } from '@stacksjs/iconify-gravity-ui'
+```html
+<AbbrApiIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = AbbrApiIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { AbbrApiIcon, AbbrMlIcon, AbbrQlIcon } from '@stacksjs/iconify-gravity-ui'
-
-const successIcon = AbbrApiIcon({ size: 16, color: '#22c55e' })
-const warningIcon = AbbrMlIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = AbbrQlIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <AbbrApiIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <AbbrMlIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <AbbrQlIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { AbbrApiIcon, AbbrMlIcon } from '@stacksjs/iconify-gravity-ui'
-   const icon = AbbrApiIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { abbrApi, abbrMl } from '@stacksjs/iconify-gravity-ui'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(abbrApi, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { AbbrApiIcon, AbbrMlIcon } from '@stacksjs/iconify-gravity-ui'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-gravity-ui'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { AbbrApiIcon } from '@stacksjs/iconify-gravity-ui'
-     global.icon = AbbrApiIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <AbbrApiIcon size="24" />
+   <AbbrMlIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -1001,8 +1027,28 @@ const errorIcon = AbbrQlIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = AbbrApiIcon({ class: 'icon' })
+   ```html
+   <AbbrApiIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <AbbrApiIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <AbbrApiIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { abbrApi } from '@stacksjs/iconify-gravity-ui'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(abbrApi, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

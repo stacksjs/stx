@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-fad
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { AdrIcon, AdsrIcon, AhdsrIcon } from '@stacksjs/iconify-fad'
+```html
+<AdrIcon height="1em" />
+<AdrIcon width="1em" height="1em" />
+<AdrIcon height="24" />
+```
 
-// Basic usage
-const icon = AdrIcon()
+### With Properties
 
-// With size
-const sizedIcon = AdrIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<AdrIcon size="24" />
+<AdrIcon size="1em" />
 
-// With color
-const coloredIcon = AdsrIcon({ color: 'red' })
+<!-- Using width and height -->
+<AdrIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = AhdsrIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<AdrIcon size="24" color="red" />
+<AdrIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<AdrIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<AdrIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { AdrIcon, AdsrIcon, AhdsrIcon } from '@stacksjs/iconify-fad'
-
-  global.icons = {
-    home: AdrIcon({ size: 24 }),
-    user: AdsrIcon({ size: 24, color: '#4a90e2' }),
-    settings: AhdsrIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <AdrIcon size="24" />
+    <AdsrIcon size="24" color="#4a90e2" />
+    <AhdsrIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,16 +115,16 @@ All icon component functions and `renderIcon` accept the following properties:
 
 Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
 
-```typescript
-// Via color property
-const redIcon = AdrIcon({ color: 'red' })
-const blueIcon = AdrIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<AdrIcon size="24" color="red" />
+<AdrIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = AdrIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<AdrIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = AdrIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<AdrIcon size="24" class="text-primary" />
 ```
 
 ```css
@@ -123,18 +140,39 @@ const themedIcon = AdrIcon({ class: 'text-primary' })
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = AdrIcon({ size: 24 })
-const icon1em = AdrIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = AdrIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = AdrIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<AdrIcon height="1em" />
+<AdrIcon width="1em" height="1em" />
+<AdrIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<AdrIcon size="24" />
+<AdrIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -142,20 +180,14 @@ const heightOnly = AdrIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.fad-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = AdrIcon({ class: 'icon-small' })
-const largeIcon = AdrIcon({ class: 'icon-large' })
+```html
+<AdrIcon class="fad-icon" />
 ```
 
 ## Available Icons
@@ -323,83 +355,77 @@ This package contains **155** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { AdrIcon, AdsrIcon, AhdsrIcon, ArIcon } from '@stacksjs/iconify-fad'
-
-  global.navIcons = {
-    home: AdrIcon({ size: 20, class: 'nav-icon' }),
-    about: AdsrIcon({ size: 20, class: 'nav-icon' }),
-    contact: AhdsrIcon({ size: 20, class: 'nav-icon' }),
-    settings: ArIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><AdrIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><AdsrIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><AhdsrIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><ArIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { AdrIcon } from '@stacksjs/iconify-fad'
+```html
+<AdrIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = AdrIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { AdrIcon, AdsrIcon, AhdsrIcon } from '@stacksjs/iconify-fad'
-
-const successIcon = AdrIcon({ size: 16, color: '#22c55e' })
-const warningIcon = AdsrIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = AhdsrIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <AdrIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <AdsrIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <AhdsrIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { AdrIcon, AdsrIcon } from '@stacksjs/iconify-fad'
-   const icon = AdrIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { adr, adsr } from '@stacksjs/iconify-fad'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(adr, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { AdrIcon, AdsrIcon } from '@stacksjs/iconify-fad'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-fad'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { AdrIcon } from '@stacksjs/iconify-fad'
-     global.icon = AdrIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <AdrIcon size="24" />
+   <AdsrIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -412,8 +438,28 @@ const errorIcon = AhdsrIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = AdrIcon({ class: 'icon' })
+   ```html
+   <AdrIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <AdrIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <AdrIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { adr } from '@stacksjs/iconify-fad'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(adr, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

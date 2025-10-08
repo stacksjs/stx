@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-codex
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { AddBackgroundIcon, AddBorderIcon, AlignCenterIcon } from '@stacksjs/iconify-codex'
+```html
+<AddBackgroundIcon height="1em" />
+<AddBackgroundIcon width="1em" height="1em" />
+<AddBackgroundIcon height="24" />
+```
 
-// Basic usage
-const icon = AddBackgroundIcon()
+### With Properties
 
-// With size
-const sizedIcon = AddBackgroundIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<AddBackgroundIcon size="24" />
+<AddBackgroundIcon size="1em" />
 
-// With color
-const coloredIcon = AddBorderIcon({ color: 'red' })
+<!-- Using width and height -->
+<AddBackgroundIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = AlignCenterIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<AddBackgroundIcon size="24" color="red" />
+<AddBackgroundIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<AddBackgroundIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<AddBackgroundIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { AddBackgroundIcon, AddBorderIcon, AlignCenterIcon } from '@stacksjs/iconify-codex'
-
-  global.icons = {
-    home: AddBackgroundIcon({ size: 24 }),
-    user: AddBorderIcon({ size: 24, color: '#4a90e2' }),
-    settings: AlignCenterIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <AddBackgroundIcon size="24" />
+    <AddBorderIcon size="24" color="#4a90e2" />
+    <AlignCenterIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,16 +115,16 @@ All icon component functions and `renderIcon` accept the following properties:
 
 Monotone icons use `currentColor` by default, allowing you to change icon color via the `color` property or CSS:
 
-```typescript
-// Via color property
-const redIcon = AddBackgroundIcon({ color: 'red' })
-const blueIcon = AddBackgroundIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<AddBackgroundIcon size="24" color="red" />
+<AddBackgroundIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = AddBackgroundIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<AddBackgroundIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = AddBackgroundIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<AddBackgroundIcon size="24" class="text-primary" />
 ```
 
 ```css
@@ -123,18 +140,39 @@ const themedIcon = AddBackgroundIcon({ class: 'text-primary' })
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = AddBackgroundIcon({ size: 24 })
-const icon1em = AddBackgroundIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = AddBackgroundIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = AddBackgroundIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<AddBackgroundIcon height="1em" />
+<AddBackgroundIcon width="1em" height="1em" />
+<AddBackgroundIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<AddBackgroundIcon size="24" />
+<AddBackgroundIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -142,20 +180,14 @@ const heightOnly = AddBackgroundIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.codex-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = AddBackgroundIcon({ class: 'icon-small' })
-const largeIcon = AddBackgroundIcon({ class: 'icon-large' })
+```html
+<AddBackgroundIcon class="codex-icon" />
 ```
 
 ## Available Icons
@@ -246,83 +278,77 @@ This package contains **78** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { AddBackgroundIcon, AddBorderIcon, AlignCenterIcon, AlignJustifyIcon } from '@stacksjs/iconify-codex'
-
-  global.navIcons = {
-    home: AddBackgroundIcon({ size: 20, class: 'nav-icon' }),
-    about: AddBorderIcon({ size: 20, class: 'nav-icon' }),
-    contact: AlignCenterIcon({ size: 20, class: 'nav-icon' }),
-    settings: AlignJustifyIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><AddBackgroundIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><AddBorderIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><AlignCenterIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><AlignJustifyIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { AddBackgroundIcon } from '@stacksjs/iconify-codex'
+```html
+<AddBackgroundIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = AddBackgroundIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { AddBackgroundIcon, AddBorderIcon, AlignCenterIcon } from '@stacksjs/iconify-codex'
-
-const successIcon = AddBackgroundIcon({ size: 16, color: '#22c55e' })
-const warningIcon = AddBorderIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = AlignCenterIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <AddBackgroundIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <AddBorderIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <AlignCenterIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { AddBackgroundIcon, AddBorderIcon } from '@stacksjs/iconify-codex'
-   const icon = AddBackgroundIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { addBackground, addBorder } from '@stacksjs/iconify-codex'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(addBackground, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { AddBackgroundIcon, AddBorderIcon } from '@stacksjs/iconify-codex'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-codex'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { AddBackgroundIcon } from '@stacksjs/iconify-codex'
-     global.icon = AddBackgroundIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <AddBackgroundIcon size="24" />
+   <AddBorderIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -335,8 +361,28 @@ const errorIcon = AlignCenterIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = AddBackgroundIcon({ class: 'icon' })
+   ```html
+   <AddBackgroundIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <AddBackgroundIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <AddBackgroundIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { addBackground } from '@stacksjs/iconify-codex'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(addBackground, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support

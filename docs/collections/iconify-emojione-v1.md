@@ -21,48 +21,65 @@ bun add @stacksjs/iconify-emojione-v1
 
 ## Quick Start
 
-### Component Style (Recommended)
+### Component Usage (Recommended)
 
-Icons are available as component functions that accept props:
+Icons are available as .stx components that can be used directly in templates:
 
-```typescript
-import { AButtonIcon, AbButtonIcon, AdmissionTicketsIcon } from '@stacksjs/iconify-emojione-v1'
+```html
+<AButtonIcon height="1em" />
+<AButtonIcon width="1em" height="1em" />
+<AButtonIcon height="24" />
+```
 
-// Basic usage
-const icon = AButtonIcon()
+### With Properties
 
-// With size
-const sizedIcon = AButtonIcon({ size: 24 })
+```html
+<!-- Using size property -->
+<AButtonIcon size="24" />
+<AButtonIcon size="1em" />
 
-// With color
-const coloredIcon = AbButtonIcon({ color: 'red' })
+<!-- Using width and height -->
+<AButtonIcon width="24" height="32" />
 
-// With multiple props
-const customIcon = AdmissionTicketsIcon({
-  size: 32,
-  color: '#4a90e2',
-  class: 'my-icon'
-})
+<!-- With color -->
+<AButtonIcon size="24" color="red" />
+<AButtonIcon size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<AButtonIcon size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<AButtonIcon
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
 ```
 
 ### In stx Templates
 
 ```html
-@js
-  import { AButtonIcon, AbButtonIcon, AdmissionTicketsIcon } from '@stacksjs/iconify-emojione-v1'
-
-  global.icons = {
-    home: AButtonIcon({ size: 24 }),
-    user: AbButtonIcon({ size: 24, color: '#4a90e2' }),
-    settings: AdmissionTicketsIcon({ size: 32 })
-  }
-@endjs
-
-<div class="icons">
-  {!! icons.home !!}
-  {!! icons.user !!}
-  {!! icons.settings !!}
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <AButtonIcon size="24" />
+    <AbButtonIcon size="24" color="#4a90e2" />
+    <AdmissionTicketsIcon size="32" class="my-icon" />
+  </div>
+</body>
+</html>
 ```
 
 ### Data-Only Import
@@ -98,34 +115,55 @@ All icon component functions and `renderIcon` accept the following properties:
 
 This collection contains color icons. While you can still set a color property, it may override the original colors.
 
-```typescript
-// Via color property
-const redIcon = AButtonIcon({ color: 'red' })
-const blueIcon = AButtonIcon({ color: '#4a90e2' })
+```html
+<!-- Via color property -->
+<AButtonIcon size="24" color="red" />
+<AButtonIcon size="24" color="#4a90e2" />
 
-// Via inline style
-const greenIcon = AButtonIcon({ style: 'color: green;' })
+<!-- Via inline style -->
+<AButtonIcon size="24" style="color: green;" />
 
-// Via CSS class
-const themedIcon = AButtonIcon({ class: 'text-primary' })
+<!-- Via CSS class -->
+<AButtonIcon size="24" class="text-primary" />
 ```
 
 
 
 ## Size
 
-Control icon size using the `size`, `width`, or `height` properties:
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
 
-```typescript
-// Set both width and height
-const icon24 = AButtonIcon({ size: 24 })
-const icon1em = AButtonIcon({ size: '1em' })
+**Disadvantages:**
+- You need to set size yourself.
 
-// Set individual dimensions
-const customIcon = AButtonIcon({ width: 24, height: 32 })
+**Advantages:**
+- You have full control over icon size.
 
-// Only set height (width calculated from ratio)
-const heightOnly = AButtonIcon({ height: '1em' })
+You can change icon size by:
+- Setting `width` and `height` properties
+- Using CSS
+
+### Properties
+
+All icon components support `width` and `height` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+```html
+<AButtonIcon height="1em" />
+<AButtonIcon width="1em" height="1em" />
+<AButtonIcon height="24" />
+```
+
+You can also use the `size` property as a shorthand for setting both width and height:
+
+```html
+<AButtonIcon size="24" />
+<AButtonIcon size="1em" />
 ```
 
 ### CSS Sizing
@@ -133,20 +171,14 @@ const heightOnly = AButtonIcon({ height: '1em' })
 You can also control icon size via CSS:
 
 ```css
-.icon-small {
+.emojioneV1-icon {
   width: 1em;
   height: 1em;
 }
-
-.icon-large {
-  width: 2em;
-  height: 2em;
-}
 ```
 
-```typescript
-const smallIcon = AButtonIcon({ class: 'icon-small' })
-const largeIcon = AButtonIcon({ class: 'icon-large' })
+```html
+<AButtonIcon class="emojioneV1-icon" />
 ```
 
 ## Available Icons
@@ -1421,83 +1453,77 @@ This package contains **1262** icons:
 ### Navigation Menu
 
 ```html
-@js
-  import { AButtonIcon, AbButtonIcon, AdmissionTicketsIcon, AerialTramwayIcon } from '@stacksjs/iconify-emojione-v1'
-
-  global.navIcons = {
-    home: AButtonIcon({ size: 20, class: 'nav-icon' }),
-    about: AbButtonIcon({ size: 20, class: 'nav-icon' }),
-    contact: AdmissionTicketsIcon({ size: 20, class: 'nav-icon' }),
-    settings: AerialTramwayIcon({ size: 20, class: 'nav-icon' })
-  }
-@endjs
-
 <nav>
-  <a href="/">{!! navIcons.home !!} Home</a>
-  <a href="/about">{!! navIcons.about !!} About</a>
-  <a href="/contact">{!! navIcons.contact !!} Contact</a>
-  <a href="/settings">{!! navIcons.settings !!} Settings</a>
+  <a href="/"><AButtonIcon size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><AbButtonIcon size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><AdmissionTicketsIcon size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><AerialTramwayIcon size="20" class="nav-icon" /> Settings</a>
 </nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
 ```
 
 ### Custom Styling
 
-```typescript
-import { AButtonIcon } from '@stacksjs/iconify-emojione-v1'
+```html
+<AButtonIcon
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
 
-const icon = AButtonIcon({
-  size: 24,
-  class: 'icon icon-primary',
-  style: 'opacity: 0.8; transition: opacity 0.2s;'
-})
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
 ```
 
 ### Status Indicators
 
-```typescript
-import { AButtonIcon, AbButtonIcon, AdmissionTicketsIcon } from '@stacksjs/iconify-emojione-v1'
-
-const successIcon = AButtonIcon({ size: 16, color: '#22c55e' })
-const warningIcon = AbButtonIcon({ size: 16, color: '#f59e0b' })
-const errorIcon = AdmissionTicketsIcon({ size: 16, color: '#ef4444' })
+```html
+<div class="status-grid">
+  <div class="status-item">
+    <AButtonIcon size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <AbButtonIcon size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <AdmissionTicketsIcon size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
 ```
 
 ## Best Practices
 
-1. **Use Component Functions**: Import component functions for cleaner code
-   ```typescript
-   // Recommended
-   import { AButtonIcon, AbButtonIcon } from '@stacksjs/iconify-emojione-v1'
-   const icon = AButtonIcon({ size: 24 })
-
-   // Also works (data + renderIcon)
-   import { aButton, abButton } from '@stacksjs/iconify-emojione-v1'
-   import { renderIcon } from '@stacksjs/iconify-core'
-   const icon = renderIcon(aButton, { size: 24 })
-   ```
-
-2. **Import Only What You Need**: Use named imports to enable tree-shaking
-   ```typescript
-   // Good - only imports what you use
-   import { AButtonIcon, AbButtonIcon } from '@stacksjs/iconify-emojione-v1'
-
-   // Avoid - imports everything
-   import * as icons from '@stacksjs/iconify-emojione-v1'
-   ```
-
-3. **Cache Rendered Icons**: Render once and reuse multiple times
+1. **Use Components Directly**: Import and use icon components in your templates
    ```html
-   @js
-     import { AButtonIcon } from '@stacksjs/iconify-emojione-v1'
-     global.icon = AButtonIcon({ size: 24 })
-   @endjs
-
-   {!! icon !!}
-   {!! icon !!}
-   {!! icon !!}
+   <!-- Recommended -->
+   <AButtonIcon size="24" />
+   <AbButtonIcon size="24" color="#4a90e2" />
    ```
 
-4. **Use CSS for Theming**: Apply consistent styling through CSS classes
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
    ```css
    .icon {
      color: currentColor;
@@ -1510,8 +1536,28 @@ const errorIcon = AdmissionTicketsIcon({ size: 16, color: '#ef4444' })
    }
    ```
 
-   ```typescript
-   const icon = AButtonIcon({ class: 'icon' })
+   ```html
+   <AButtonIcon size="24" class="icon" />
+   ```
+
+3. **Set Appropriate Sizes**: Use `1em` for inline icons, fixed pixel sizes for standalone icons
+   ```html
+   <!-- Inline with text -->
+   <p>Click the <AButtonIcon height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <AButtonIcon size="24" />
+   ```
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   ```html
+   @js
+     import { aButton } from '@stacksjs/iconify-emojione-v1'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(aButton, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
    ```
 
 ## TypeScript Support
