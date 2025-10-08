@@ -81,6 +81,7 @@
     "typecheck": "bun tsc --noEmit"
   },
   "devDependencies": {
+    "@iconify/json": "^2.2.392",
     "@stacksjs/bumpx": "^0.1.86",
     "@stacksjs/docs": "^0.70.23",
     "@stacksjs/eslint-config": "^4.14.0-beta.3",
@@ -103,6 +104,7 @@
   },
   "workspaces": [
     "packages/*",
+    "packages/collections/*",
     "!packages/vscode"
   ]
 }
