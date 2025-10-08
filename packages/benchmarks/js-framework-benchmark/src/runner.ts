@@ -32,29 +32,25 @@ function createEnvironment() {
 }
 
 /**
- * Load the stx template into the DOM and execute scripts
+ * Load the HTML and Main.js into the DOM
  */
-async function loadTemplate(window: any, document: any, templatePath: string) {
-  // Read the template file
-  const file = Bun.file(templatePath)
-  const html = await file.text()
+async function loadTemplate(window: any, document: any, htmlPath: string, jsPath: string) {
+  // Read the HTML file
+  const htmlFile = Bun.file(htmlPath)
+  const html = await htmlFile.text()
 
   // Set up the document
   document.write(html)
 
-  // Extract and execute script content
-  const scriptMatch = html.match(/<script[^>]*>([\s\S]*?)<\/script>/i)
-  if (scriptMatch) {
-    const scriptContent = scriptMatch[1]
-      .replace(/type\s*=\s*["']module["']/g, '') // Remove module type
-      .replace(/export\s+/g, '') // Remove exports
+  // Read and execute the Main.js script
+  const jsFile = Bun.file(jsPath)
+  const scriptContent = await jsFile.text()
 
-    // Create a function to execute in the window context
-    const scriptFn = new Function('window', 'document', 'performance', scriptContent)
+  // Create a function to execute in the window context
+  const scriptFn = new Function('window', 'document', 'performance', scriptContent)
 
-    // Execute the script in the window context
-    scriptFn(window, document, performance)
-  }
+  // Execute the script in the window context
+  scriptFn(window, document, performance)
 
   return document
 }
@@ -100,7 +96,7 @@ async function runBenchmark(
 /**
  * Run all benchmarks in the suite
  */
-export async function runAllBenchmarks(templatePath: string): Promise<BenchmarkSuite> {
+export async function runAllBenchmarks(htmlPath: string, jsPath: string): Promise<BenchmarkSuite> {
   const results: BenchmarkResult[] = []
 
   console.log('🚀 Starting STX Framework Benchmarks...\n')
@@ -108,7 +104,7 @@ export async function runAllBenchmarks(templatePath: string): Promise<BenchmarkS
   // Test 1: Create 1,000 rows
   console.log('Running: Create 1,000 rows...')
   const { window: w1, document: d1 } = createEnvironment()
-  await loadTemplate(w1, d1, templatePath)
+  await loadTemplate(w1, d1, htmlPath, jsPath)
   const result1 = await runBenchmark('create rows', () => {
     ;(w1 as any).benchmarkFunctions.run()
   })
@@ -118,7 +114,7 @@ export async function runAllBenchmarks(templatePath: string): Promise<BenchmarkS
   // Test 2: Replace all rows
   console.log('Running: Replace all 1,000 rows...')
   const { window: w2, document: d2 } = createEnvironment()
-  await loadTemplate(w2, d2, templatePath)
+  await loadTemplate(w2, d2, htmlPath, jsPath)
   // First create 1000 rows
   ;(w2 as any).benchmarkFunctions.run()
   const result2 = await runBenchmark('replace all rows', () => {
@@ -130,7 +126,7 @@ export async function runAllBenchmarks(templatePath: string): Promise<BenchmarkS
   // Test 3: Partial update (every 10th row)
   console.log('Running: Partial update (every 10th row)...')
   const { window: w3, document: d3 } = createEnvironment()
-  await loadTemplate(w3, d3, templatePath)
+  await loadTemplate(w3, d3, htmlPath, jsPath)
   ;(w3 as any).benchmarkFunctions.run()
   const result3 = await runBenchmark('partial update', () => {
     ;(w3 as any).benchmarkFunctions.update()
@@ -141,7 +137,7 @@ export async function runAllBenchmarks(templatePath: string): Promise<BenchmarkS
   // Test 4: Select row
   console.log('Running: Select row...')
   const { window: w4, document: d4 } = createEnvironment()
-  await loadTemplate(w4, d4, templatePath)
+  await loadTemplate(w4, d4, htmlPath, jsPath)
   ;(w4 as any).benchmarkFunctions.run()
   const result4 = await runBenchmark('select row', () => {
     ;(w4 as any).benchmarkFunctions.select(500)
@@ -152,7 +148,7 @@ export async function runAllBenchmarks(templatePath: string): Promise<BenchmarkS
   // Test 5: Swap rows
   console.log('Running: Swap rows...')
   const { window: w5, document: d5 } = createEnvironment()
-  await loadTemplate(w5, d5, templatePath)
+  await loadTemplate(w5, d5, htmlPath, jsPath)
   ;(w5 as any).benchmarkFunctions.run()
   const result5 = await runBenchmark('swap rows', () => {
     ;(w5 as any).benchmarkFunctions.swapRows()
@@ -163,7 +159,7 @@ export async function runAllBenchmarks(templatePath: string): Promise<BenchmarkS
   // Test 6: Remove row
   console.log('Running: Remove row...')
   const { window: w6, document: d6 } = createEnvironment()
-  await loadTemplate(w6, d6, templatePath)
+  await loadTemplate(w6, d6, htmlPath, jsPath)
   ;(w6 as any).benchmarkFunctions.run()
   const result6 = await runBenchmark('remove row', () => {
     ;(w6 as any).benchmarkFunctions.remove(500)
@@ -174,7 +170,7 @@ export async function runAllBenchmarks(templatePath: string): Promise<BenchmarkS
   // Test 7: Create 10,000 rows
   console.log('Running: Create 10,000 rows...')
   const { window: w7, document: d7 } = createEnvironment()
-  await loadTemplate(w7, d7, templatePath)
+  await loadTemplate(w7, d7, htmlPath, jsPath)
   const result7 = await runBenchmark(
     'create many rows',
     () => {
@@ -189,7 +185,7 @@ export async function runAllBenchmarks(templatePath: string): Promise<BenchmarkS
   // Test 8: Append rows to large table
   console.log('Running: Append 1,000 rows to table...')
   const { window: w8, document: d8 } = createEnvironment()
-  await loadTemplate(w8, d8, templatePath)
+  await loadTemplate(w8, d8, htmlPath, jsPath)
   ;(w8 as any).benchmarkFunctions.run()
   const result8 = await runBenchmark('append rows to large table', () => {
     ;(w8 as any).benchmarkFunctions.add()
@@ -200,7 +196,7 @@ export async function runAllBenchmarks(templatePath: string): Promise<BenchmarkS
   // Test 9: Clear rows
   console.log('Running: Clear rows...')
   const { window: w9, document: d9 } = createEnvironment()
-  await loadTemplate(w9, d9, templatePath)
+  await loadTemplate(w9, d9, htmlPath, jsPath)
   ;(w9 as any).benchmarkFunctions.run()
   const result9 = await runBenchmark('clear rows', () => {
     ;(w9 as any).benchmarkFunctions.clear()

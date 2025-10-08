@@ -1,7 +1,7 @@
-import { existsSync } from 'node:fs'
+/* eslint-disable no-console */
+import type { IconData } from '@stacksjs/iconify-core'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { IconData } from '@stacksjs/iconify-core'
 
 export interface IconifyCollection {
   prefix: string
@@ -70,7 +70,7 @@ export async function fetchCollectionIcons(
   try {
     const iconifyJsonPath = require.resolve('@iconify/json')
     // The resolve gives us the main module path, get the package directory
-    const basePath = iconifyJsonPath.substring(0, iconifyJsonPath.lastIndexOf('/node_modules/@iconify/json/')) + '/node_modules/@iconify/json'
+    const basePath = `${iconifyJsonPath.substring(0, iconifyJsonPath.lastIndexOf('/node_modules/@iconify/json/'))}/node_modules/@iconify/json`
     const jsonPath = `${basePath}/json/${prefix}.json`
 
     const file = Bun.file(jsonPath)
@@ -87,13 +87,14 @@ export async function fetchCollectionIcons(
         }
         return {
           ...data,
-          icons: filteredIcons
+          icons: filteredIcons,
         }
       }
 
       return data
     }
-  } catch (error) {
+  }
+  catch {
     // Fall through to API if local file not found
   }
 
@@ -176,11 +177,25 @@ export function generatePackageJson(
 ): string {
   const packageJson = {
     name: `@stacksjs/iconify-${prefix}`,
+    type: 'module',
     version: '0.0.1',
     description: `${collectionInfo.name} icons for stx from Iconify`,
     author: collectionInfo.author?.name || 'Iconify',
     license: collectionInfo.license?.spdx || 'MIT',
-    type: 'module',
+    repository: {
+      type: 'git',
+      url: 'https://github.com/stacksjs/stx.git',
+      directory: `packages/iconify-${prefix}`,
+    },
+    keywords: [
+      'iconify',
+      'icons',
+      'svg',
+      prefix,
+      collectionInfo.name,
+      'stx',
+    ],
+    sideEffects: false,
     exports: {
       '.': {
         types: './dist/index.d.ts',
@@ -200,20 +215,6 @@ export function generatePackageJson(
     dependencies: {
       '@stacksjs/iconify-core': 'workspace:*',
     },
-    keywords: [
-      'iconify',
-      'icons',
-      'svg',
-      prefix,
-      collectionInfo.name,
-      'stx',
-    ],
-    repository: {
-      type: 'git',
-      url: 'https://github.com/stacksjs/stx.git',
-      directory: `packages/collections/iconify-${prefix}`,
-    },
-    sideEffects: false,
   }
 
   return JSON.stringify(packageJson, null, 2)

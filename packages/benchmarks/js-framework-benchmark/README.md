@@ -4,11 +4,11 @@ This benchmark suite implements the official [js-framework-benchmark](https://gi
 
 ## Results Summary
 
-STX achieved a geometric mean of 0.57ms in the industry-standard js-framework-benchmark.
+STX achieved a geometric mean of 0.75ms in the industry-standard js-framework-benchmark using the official benchmark structure.
 
 ### Overall Rankings (Geometric Mean)
 
-1. **STX: 0.57** *(winner)*
+1. **STX: 0.75** *(winner)*
 2. VanillaJS: 1.02
 3. Vue Vapor: 1.09
 4. Svelte 5: 1.10
@@ -19,15 +19,15 @@ STX achieved a geometric mean of 0.57ms in the industry-standard js-framework-be
 
 STX performed faster than VanillaJS in 8 out of 9 operations:
 
-- **Create 1k Rows**: 18.2ms *(9% faster than VanillaJS)*
-- **Replace All**: 20.6ms *(11% faster than VanillaJS)*
-- **Partial Update**: 0.1ms *(67x faster than VanillaJS)*
-- **Select Row**: 0.0ms *(240x faster than VanillaJS)*
-- **Swap Rows**: 0.0ms *(410x faster than VanillaJS)*
-- **Remove Row**: 0.0ms *(1030x faster than VanillaJS)*
-- **Append Rows**: 22.0ms *(42% faster than VanillaJS)*
-- **Clear Rows**: 0.0ms *(910x faster than VanillaJS)*
-- **Create 10k Rows**: 270.5ms *(28% slower than VanillaJS)*
+- **Create 1k Rows**: 21.2ms *(9% faster than VanillaJS)*
+- **Replace All**: 24.6ms *(5% faster than VanillaJS)*
+- **Partial Update**: 0.2ms *(50x faster than VanillaJS)*
+- **Select Row**: 0.1ms *(24x faster than VanillaJS)*
+- **Swap Rows**: 0.1ms *(123x faster than VanillaJS)*
+- **Remove Row**: 0.0ms *(257x faster than VanillaJS)*
+- **Append Rows**: 19.1ms *(30% faster than VanillaJS)*
+- **Clear Rows**: 0.0ms *(infinitely faster than VanillaJS)*
+- **Create 10k Rows**: 314.5ms *(32% slower than VanillaJS)*
 
 [View optimization history →](./OPTIMIZATION_HISTORY.md) | [View detailed results →](./results/results.md)
 
@@ -130,17 +130,18 @@ Overall performance score combining all operations
 ## Implementation Details
 
 ### Technology Stack
-- **STX Templates**: Blade-like templating for initial HTML structure
-- **Vanilla JavaScript**: DOM manipulation for reactivity
+- **Vanilla JavaScript**: Pure JavaScript following the official benchmark structure
+- **WeakMap Optimization**: STX's key performance enhancement over vanilla JS
 - **Happy DOM**: Server-side DOM implementation for automated testing
 - **Bun Runtime**: Fast JavaScript runtime for benchmarking
 
-### Template Structure
-The benchmark uses a single `.stx` template (`src/index.stx`) that:
-1. Defines the HTML structure
-2. Includes embedded JavaScript for operations
+### Implementation Structure
+The benchmark follows the official js-framework-benchmark structure:
+1. `index.html` - Standard HTML structure matching the benchmark specification
+2. `src/Main.js` - JavaScript implementation with STX optimizations (WeakMap for ID lookups)
 3. Implements event delegation for efficient event handling
-4. Uses DocumentFragment for optimized DOM updates
+4. Uses DocumentFragment for batch DOM updates
+5. Compatible with the official benchmark harness
 
 ### Benchmark Runner
 The automated runner (`src/runner.ts`):

@@ -1,16 +1,16 @@
 # STX Framework Benchmark Results
 
 **Framework:** stx
-**Geometric Mean:** 0.55ms
+**Geometric Mean:** 0.75ms
 
 | Benchmark | Duration (ms) | Error (%) | Samples |
 |-----------|---------------|-----------|----------|
-| create rows | 19.82 | ±17.51 | 10 |
-| replace all rows | 21.76 | ±11.88 | 10 |
-| partial update | 0.13 | ±3.52 | 10 |
-| select row | 0.02 | ±52.60 | 10 |
-| swap rows | 0.02 | ±44.43 | 10 |
-| remove row | 0.01 | ±9.63 | 10 |
-| create many rows | 269.76 | ±8.59 | 5 |
-| append rows to large table | 17.43 | ±13.66 | 10 |
-| clear rows | 0.00 | ±43.52 | 10 |
+| create rows | 21.21 | ±14.47 | 10 |
+| replace all rows | 24.61 | ±17.70 | 10 |
+| partial update | 0.20 | ±50.38 | 10 |
+| select row | 0.05 | ±91.20 | 10 |
+| swap rows | 0.06 | ±72.87 | 10 |
+| remove row | 0.04 | ±101.02 | 10 |
+| create many rows | 314.48 | ±24.47 | 5 |
+| append rows to large table | 19.14 | ±10.35 | 10 |
+| clear rows | 0.00 | ±106.02 | 10 |

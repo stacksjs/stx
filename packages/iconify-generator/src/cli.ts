@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { join } from 'node:path'
-import { fetchCollections, generatePackage } from './index.js'
+import process from 'node:process'
+import { fetchCollections, generatePackage } from './index'
 
 const args = process.argv.slice(2)
 
@@ -50,7 +51,7 @@ Examples:
     }
 
     let outputDir = join(process.cwd(), 'packages')
-    let icons: string[] = []
+    const icons: string[] = []
 
     // Parse remaining args
     for (let i = 2; i < args.length; i++) {

@@ -3,58 +3,58 @@
   "results": [
     {
       "name": "create rows",
-      "duration": 19.822441500000004,
-      "error": 17.512393019369064,
+      "duration": 21.209266799999995,
+      "error": 14.467229177175165,
       "samples": 10
     },
     {
       "name": "replace all rows",
-      "duration": 21.76198320000001,
-      "error": 11.879949117657315,
+      "duration": 24.611171000000013,
+      "error": 17.697311238661545,
       "samples": 10
     },
     {
       "name": "partial update",
-      "duration": 0.13330860000000938,
-      "error": 3.5227171431650275,
+      "duration": 0.20045419999999012,
+      "error": 50.37869503703892,
       "samples": 10
     },
     {
       "name": "select row",
-      "duration": 0.015016800000000784,
-      "error": 52.59818062702247,
+      "duration": 0.048308399999973516,
+      "error": 91.19702303957486,
       "samples": 10
     },
     {
       "name": "swap rows",
-      "duration": 0.024212599999998474,
-      "error": 44.43255597466237,
+      "duration": 0.0602167999999665,
+      "error": 72.87442969403732,
       "samples": 10
     },
     {
       "name": "remove row",
-      "duration": 0.012512700000002042,
-      "error": 9.632799318077408,
+      "duration": 0.04368340000005446,
+      "error": 101.02442817631278,
       "samples": 10
     },
     {
       "name": "create many rows",
-      "duration": 269.76432520000014,
-      "error": 8.594502758673064,
+      "duration": 314.4782166000001,
+      "error": 24.466417832651313,
       "samples": 5
     },
     {
       "name": "append rows to large table",
-      "duration": 17.429008299999985,
-      "error": 13.6590150544523,
+      "duration": 19.137095799999997,
+      "error": 10.348281661848306,
       "samples": 10
     },
     {
       "name": "clear rows",
-      "duration": 0.003524900000184061,
-      "error": 43.52060073235292,
+      "duration": 0.0009162999998807208,
+      "error": 106.02213616879466,
       "samples": 10
     }
   ],
-  "geometricMean": 0.5463289085237911
+  "geometricMean": 0.74802291846565
 }

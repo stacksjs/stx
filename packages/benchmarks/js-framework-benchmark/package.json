@@ -1,13 +1,17 @@
 {
-  "name": "@stacksjs/js-framework-benchmark",
-  "type": "module",
-  "version": "0.0.1",
+  "name": "js-framework-benchmark-stx",
+  "version": "1.0.0",
   "private": true,
-  "description": "JS Framework Benchmark implementation for STX",
-  "main": "./src/index.ts",
+  "type": "module",
+  "description": "STX (keyed) benchmark",
+  "js-framework-benchmark": {
+    "frameworkVersionFromPackage": "@stacksjs/stx",
+    "frameworkHomeURL": "https://github.com/stacksjs/stx"
+  },
   "scripts": {
-    "bench": "bun run src/index.ts",
-    "dev": "bun --hot src/index.ts"
+    "dev": "exit 0",
+    "build-prod": "exit 0",
+    "bench": "bun run src/index.ts"
   },
   "dependencies": {
     "happy-dom": "^18.0.1"

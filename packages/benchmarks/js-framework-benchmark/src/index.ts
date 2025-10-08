@@ -10,11 +10,12 @@ async function main() {
   console.log('   STX Framework - JS Framework Benchmark Suite')
   console.log('═══════════════════════════════════════════════════════\n')
 
-  const templatePath = path.join(import.meta.dir, 'index.stx')
+  const htmlPath = path.join(import.meta.dir, '..', 'index.html')
+  const jsPath = path.join(import.meta.dir, 'Main.js')
 
   try {
     // Run all benchmarks
-    const results = await runAllBenchmarks(templatePath)
+    const results = await runAllBenchmarks(htmlPath, jsPath)
 
     // Format and display results
     console.log('\n═══════════════════════════════════════════════════════')
