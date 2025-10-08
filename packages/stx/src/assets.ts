@@ -189,13 +189,9 @@ async function applyCodeHighlighting(html: string, theme: SyntaxHighlightTheme, 
         theme: actualTheme,
       })
 
-      // Extract just the content from the Shiki output (between code tags)
-      const contentRegex = /<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/i
-      const contentMatch = highlighted.match(contentRegex)
-
-      if (contentMatch && contentMatch[1]) {
-        return `<pre><code class="language-${language || 'text'}">${contentMatch[1]}</code></pre>`
-      }
+      // Return the full Shiki output with inline styles
+      // Shiki wraps the code in <pre> and <code> tags with proper styling
+      return highlighted
     }
     catch (err) {
       console.error(`Error highlighting code block with language ${language}:`, err)

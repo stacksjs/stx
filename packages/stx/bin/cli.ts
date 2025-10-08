@@ -17,6 +17,8 @@ import { performanceMonitor } from '../src/performance-utils'
 import { formatStxContent } from '../src/formatter'
 import { analyzeProject, analyzeTemplate } from '../src/analyzer'
 
+const cli = new CAC('stx')
+
 // Test command utilities
 interface TestCommandOptions {
   watch?: boolean
@@ -260,8 +262,6 @@ async function runTests(
   }
 }
 
-const cli = new CAC('stx')
-
 // Check if direct file(s) run mode or glob pattern is provided
 const isDirectMode = process.argv.length >= 3 && (
   (isSupportedFileType(process.argv[2]) && fs.existsSync(process.argv[2]))
@@ -280,7 +280,7 @@ if (isDirectMode) {
       syntaxHighlighting: {
         enabled: true,
         serverSide: true,
-        defaultTheme: 'github' as SyntaxHighlightTheme,
+        defaultTheme: 'github-light' as SyntaxHighlightTheme,
         highlightUnknownLanguages: true,
       },
     },
@@ -460,7 +460,7 @@ else {
     .command('dev <file>', 'Start a development server for an STX file')
     .option('--port <port>', 'Port to use for the dev server', { default: 3000 })
     .option('--no-watch', 'Disable file watching and auto-reload')
-    .option('--highlight-theme <theme>', 'Syntax highlighting theme for Markdown code blocks', { default: 'github' })
+    .option('--highlight-theme <theme>', 'Syntax highlighting theme for Markdown code blocks', { default: 'github-light' })
     .option('--no-highlight', 'Disable syntax highlighting for Markdown code blocks')
     .option('--no-highlight-unknown', 'Disable syntax highlighting for unknown languages in Markdown')
     .option('--no-cache', 'Disable caching of parsed files')
@@ -493,7 +493,7 @@ else {
           syntaxHighlighting: {
             enabled: options.highlight !== false,
             serverSide: true,
-            defaultTheme: (options.highlightTheme || 'github') as SyntaxHighlightTheme,
+            defaultTheme: (options.highlightTheme || 'github-light') as SyntaxHighlightTheme,
             highlightUnknownLanguages: options.highlightUnknown !== false,
           },
         }
