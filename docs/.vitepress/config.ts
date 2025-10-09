@@ -90,6 +90,14 @@ export default defineConfig({
             { text: 'Migration Guide', link: '/guide/migration' },
             { text: 'Templates', link: '/guide/templates' },
             { text: 'Testing', link: '/guide/testing' },
+            { text: 'Programmatic Usage', link: '/guide/programmatic-usage' },
+          ]
+        },
+        {
+          text: '🛠️ Tools',
+          collapsed: false,
+          items: [
+            { text: 'VSCode Extension', link: '/guide/tools/vscode' },
           ]
         }
       ],
@@ -98,19 +106,43 @@ export default defineConfig({
           text: '📖 API Reference',
           items: [
             { text: 'Overview', link: '/api/reference' },
+            { text: 'API Index', link: '/api/index' },
+          ]
+        },
+        {
+          text: '🎯 Core APIs',
+          collapsed: false,
+          items: [
             { text: 'Template Syntax', link: '/api/template-syntax' },
             { text: 'Component API', link: '/api/component' },
+            { text: 'Components', link: '/api/components' },
             { text: 'State Management', link: '/api/state' },
             { text: 'Styling API', link: '/api/styling' },
             { text: 'TypeScript Integration', link: '/api/typescript' },
             { text: 'Utilities', link: '/api/utilities' },
+            { text: 'Helpers', link: '/api/helpers' },
+          ]
+        },
+        {
+          text: '📦 Package APIs',
+          collapsed: false,
+          items: [
+            { text: 'Markdown', link: '/api/markdown' },
+            { text: 'Caching', link: '/api/caching' },
+            { text: 'Error Handling', link: '/api/error-handling' },
+            { text: 'i18n', link: '/api/i18n' },
+          ]
+        },
+        {
+          text: '🔧 Development',
+          collapsed: false,
+          items: [
             { text: 'Configuration', link: '/api/config' },
             { text: 'CLI Commands', link: '/api/cli' },
+            { text: 'Testing', link: '/api/testing' },
             { text: 'Core API', link: '/api/core' },
             { text: 'Plugins', link: '/api/plugins' },
             { text: 'Router', link: '/api/router' },
-            { text: 'Helpers', link: '/api/helpers' },
-            { text: 'Testing', link: '/api/testing' },
           ]
         }
       ],
