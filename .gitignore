@@ -31,3 +31,5 @@ docs/.vitepress/cache/
 bin/
 
 tasks/
+
+examples/stx/test/.stx/cache/
