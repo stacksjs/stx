@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-/// <reference path="../global.d.ts" />
 import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import path from 'node:path'
