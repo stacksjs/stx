@@ -1,15 +1,15 @@
-/* eslint-disable no-console */
 /**
  * Programmatic server API for serving stx templates and markdown files
  * Designed to be used by documentation systems like BunPress
  */
 
+import type { Server } from 'bun'
 import type { StxOptions } from './types'
-import { serve as bunServe, type Server } from 'bun'
+import { serve as bunServe } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
-import { processDirectives } from './process'
 import { readMarkdownFile } from './assets'
+import { processDirectives } from './process'
 import { extractVariables } from './utils'
 
 export interface ServeOptions {
@@ -128,7 +128,7 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
    */
   function resolveRequestPath(pathname: string): string | null {
     // Remove leading slash
-    let relPath = pathname.startsWith('/') ? pathname.slice(1) : pathname
+    const relPath = pathname.startsWith('/') ? pathname.slice(1) : pathname
 
     // Try different file extensions and paths
     const possiblePaths = [
