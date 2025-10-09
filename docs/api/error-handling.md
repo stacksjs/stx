@@ -593,4 +593,4 @@ async function logToService(error: StxError) {
 - [Configuration](/guide/config) - stx configuration options
 - [Security](/features/security) - Security best practices
 - [Testing](/guide/testing) - Testing error scenarios
-- [Debugging](/guide/debugging) - Debugging techniques
+- [Best Practices](/guide/best-practices) - Development best practices
