@@ -416,11 +416,12 @@ else {
           const collections = await fetchCollections()
 
           const sortedCollections = Object.entries(collections)
-            .sort((a, b) => b[1].total - a[1].total)
+            .sort((a, b) => (b[1] as { total: number }).total - (a[1] as { total: number }).total)
 
           console.log('Available collections:\n')
           for (const [prefix, info] of sortedCollections) {
-            console.log(`  ${prefix.padEnd(30)} ${info.name} (${info.total} icons)`)
+            const collectionInfo = info as { name: string, total: number }
+            console.log(`  ${prefix.padEnd(30)} ${collectionInfo.name} (${collectionInfo.total} icons)`)
           }
           console.log(`\nTotal: ${sortedCollections.length} collections`)
         }

@@ -2,8 +2,7 @@
 import { watch } from 'node:fs'
 import path from 'node:path'
 import config from '../headwind.config.ts'
-import { defaultConfig } from '/Users/chrisbreuer/Code/headwind/packages/headwind/src/config.ts'
-import { build } from '/Users/chrisbreuer/Code/headwind/packages/headwind/src/index.ts'
+import { build, defaultConfig } from '@stacksjs/headwind'
 
 console.log('🚀 Starting Headwind in watch mode...')
 console.log('👀 Watching for changes in:', config.content)

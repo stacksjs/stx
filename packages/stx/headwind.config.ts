@@ -1,4 +1,4 @@
-import type { HeadwindConfig } from '/Users/chrisbreuer/Code/headwind/packages/headwind/src/types.ts'
+import type { HeadwindConfig } from '@stacksjs/headwind'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
