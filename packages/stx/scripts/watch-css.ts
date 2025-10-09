@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 import { watch } from 'node:fs'
 import path from 'node:path'
-import config from '../headwind.config.ts'
 import { build, defaultConfig } from '@stacksjs/headwind'
+import config from '../headwind.config.ts'
 
 console.log('🚀 Starting Headwind in watch mode...')
 console.log('👀 Watching for changes in:', config.content)

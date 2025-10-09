@@ -13,8 +13,5 @@
   },
   "dependencies": {
     "bun-plugin-stx": "workspace:*"
-  },
-  "devDependencies": {
-    "unocss": "^66.3.3"
   }
 }

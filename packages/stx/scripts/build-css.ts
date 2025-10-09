@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
-import config from '../headwind.config.ts'
 import { build, defaultConfig } from '@stacksjs/headwind'
+import config from '../headwind.config.ts'
 
 console.log('🚀 Building CSS with Headwind...')
 
