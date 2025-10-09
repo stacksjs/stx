@@ -30,5 +30,5 @@
     "skipLibCheck": true
   },
   "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx", "stx"],
-  "exclude": ["packages/vscode/**/*", "node_modules", "dist", "**/dist/**/*", "packages/*/dist/**/*"]
+  "exclude": ["packages/vscode/**/*", "packages/collections/**/*", "node_modules", "dist", "**/dist/**/*", "packages/*/dist/**/*"]
 }

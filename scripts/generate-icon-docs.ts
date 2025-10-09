@@ -23,10 +23,6 @@ async function main() {
 
   for (const prefix of iconCollections) {
     try {
-      // Read package.json to get icon list
-      const packageJsonPath = join(collectionsDir, `iconify-${prefix}`, 'package.json')
-      const packageJson = await Bun.file(packageJsonPath).json()
-
       // Check if src/index.ts exists to get icon list
       const srcIndexPath = join(collectionsDir, `iconify-${prefix}`, 'src', 'index.ts')
       const srcIndexFile = Bun.file(srcIndexPath)
@@ -69,7 +65,8 @@ async function main() {
       }
     }
     catch (error) {
-      console.error(`✗ Error generating docs for ${prefix}:`, error.message)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error(`✗ Error generating docs for ${prefix}:`, errorMessage)
       errorCount++
     }
   }

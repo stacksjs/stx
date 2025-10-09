@@ -77,7 +77,7 @@ This is in a subdirectory.
 
   test('should serve markdown files', async () => {
     const port = getPort()
-    const { server, url, stop } = await serve({
+    const { server: _server, url, stop } = await serve({
       port,
       root: TEST_DIR,
       watch: false,
@@ -100,7 +100,7 @@ This is in a subdirectory.
 
   test('should serve stx files', async () => {
     const port = getPort()
-    const { server, url, stop } = await serve({
+    const { server: _server, url, stop } = await serve({
       port,
       root: TEST_DIR,
       watch: false,
@@ -123,7 +123,7 @@ This is in a subdirectory.
 
   test('should serve plain HTML files', async () => {
     const port = getPort()
-    const { server, url, stop } = await serve({
+    const { server: _server, url, stop } = await serve({
       port,
       root: TEST_DIR,
       watch: false,
@@ -143,7 +143,7 @@ This is in a subdirectory.
 
   test('should handle subdirectories', async () => {
     const port = getPort()
-    const { server, url, stop } = await serve({
+    const { server: _server, url, stop } = await serve({
       port,
       root: TEST_DIR,
       watch: false,
@@ -163,7 +163,7 @@ This is in a subdirectory.
 
   test('should return 404 for missing files', async () => {
     const port = getPort()
-    const { server, url, stop } = await serve({
+    const { server: _server, url, stop } = await serve({
       port,
       root: TEST_DIR,
       watch: false,
@@ -181,7 +181,7 @@ This is in a subdirectory.
   test('should apply middleware', async () => {
     const port = getPort()
 
-    const testMiddleware = createMiddleware(async (request, next) => {
+    const testMiddleware = createMiddleware(async (_request, next) => {
       const response = await next()
       const content = await response.text()
       const wrapped = `<div class="wrapper">${content}</div>`
@@ -191,7 +191,7 @@ This is in a subdirectory.
       })
     })
 
-    const { server, url, stop } = await serve({
+    const { server: _server, url, stop } = await serve({
       port,
       root: TEST_DIR,
       watch: false,
@@ -214,7 +214,7 @@ This is in a subdirectory.
   test('should handle custom routes', async () => {
     const port = getPort()
 
-    const { server, url, stop } = await serve({
+    const { server: _server, url, stop } = await serve({
       port,
       root: TEST_DIR,
       watch: false,
@@ -240,11 +240,11 @@ This is in a subdirectory.
   test('should call custom 404 handler', async () => {
     const port = getPort()
 
-    const { server, url, stop } = await serve({
+    const { server: _server, url, stop } = await serve({
       port,
       root: TEST_DIR,
       watch: false,
-      on404: (request) => {
+      on404: (_request) => {
         return new Response('Custom 404 Page', {
           status: 404,
           headers: { 'Content-Type': 'text/plain' },
@@ -278,11 +278,11 @@ module.exports = {
 <h1>Should not render {{ getData() }}</h1>
 `)
 
-    const { server, url, stop } = await serve({
+    const { server: _server, url, stop } = await serve({
       port,
       root: TEST_DIR,
       watch: false,
-      onError: (error, request) => {
+      onError: (error, _request) => {
         return new Response(`Custom Error: ${error.message}`, {
           status: 500,
           headers: { 'Content-Type': 'text/plain' },
@@ -312,7 +312,7 @@ module.exports = {
   test('should use custom request handler', async () => {
     const port = getPort()
 
-    const { server, url, stop } = await serve({
+    const { server: _server, url, stop } = await serve({
       port,
       root: TEST_DIR,
       watch: false,
@@ -338,7 +338,7 @@ module.exports = {
   test('should cache processed files', async () => {
     const port = getPort()
 
-    const { server, url, stop } = await serve({
+    const { server: _server, url, stop } = await serve({
       port,
       root: TEST_DIR,
       watch: false,
@@ -379,7 +379,7 @@ This tests serving a single file.
     const port = getPort()
     const filePath = path.join(TEST_DIR, 'single.md')
 
-    const { server, url, stop } = await serveFile(filePath, {
+    const { server: _server, url, stop } = await serveFile(filePath, {
       port,
       watch: false,
     })
@@ -418,7 +418,7 @@ This tests serving a single file.
 
 describe('Helper functions', () => {
   test('createMiddleware should create a middleware function', () => {
-    const middleware = createMiddleware(async (request, next) => {
+    const middleware = createMiddleware(async (_request, next) => {
       return await next()
     })
 
@@ -426,7 +426,7 @@ describe('Helper functions', () => {
   })
 
   test('createRoute should create a route handler', () => {
-    const route = createRoute(async (request) => {
+    const route = createRoute(async (_request) => {
       return new Response('test')
     })
 

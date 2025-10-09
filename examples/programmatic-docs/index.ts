@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Example: Using stx programmatically for a documentation system
  * This example shows how to build a VitePress-like documentation system using stx
@@ -301,7 +302,7 @@ async function startDocsServer() {
     },
   }
 
-  const { server, url, stop } = await serve(serverConfig)
+  const { server: _server, url, stop } = await serve(serverConfig)
 
   console.log(`\n📚 Documentation server running at ${url}`)
   console.log('Press Ctrl+C to stop\n')

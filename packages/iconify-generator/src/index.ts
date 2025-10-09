@@ -143,12 +143,9 @@ export default ${camelCaseName}
  * Generate stx icon component file
  */
 export function generateIconComponent(
-  name: string,
+  _name: string,
   iconData: IconData,
 ): string {
-  const camelCaseName = toCamelCase(name)
-  const componentName = `${camelCaseName.charAt(0).toUpperCase()}${camelCaseName.slice(1)}Icon`
-
   return `<script>
 // Get props with defaults (handle undefined)
 const iconWidth = (typeof width !== 'undefined' ? width : null) || (typeof size !== 'undefined' ? size : null) || ${iconData.width || 24}
@@ -225,7 +222,7 @@ export type ${toPascalCase(prefix)}Icon = IconData
 export function generatePackageJson(
   prefix: string,
   collectionInfo: IconifyCollection,
-  iconCount: number,
+  _iconCount: number,
 ): string {
   const packageJson = {
     name: `@stacksjs/iconify-${prefix}`,
@@ -770,11 +767,11 @@ export async function generatePackage(
     const converted = convertIconData(iconData, defaultWidth, defaultHeight)
 
     // Generate data file (.ts)
-    const dataFile = generateIconData(iconName, converted, prefix)
+    const dataFile = generateIconData(iconName, converted)
     await writeFile(join(srcDir, `${iconName}.ts`), dataFile)
 
     // Generate component file (.stx) with -icon suffix for PascalCase component names
-    const componentFile = generateIconComponent(iconName, converted, prefix)
+    const componentFile = generateIconComponent(iconName, converted)
     await writeFile(join(srcDir, `${iconName}-icon.stx`), componentFile)
   }
 
