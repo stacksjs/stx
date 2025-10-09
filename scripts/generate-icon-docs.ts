@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { readdir } from 'node:fs/promises'
 import { join } from 'node:path'
-import { generatePackage } from '../packages/iconify-generator/src/index'
+import process from 'node:process'
 
 const collectionsDir = join(process.cwd(), 'packages/collections')
 const docsDir = join(process.cwd(), 'docs/collections')
@@ -52,19 +52,23 @@ async function main() {
             await Bun.write(docPath, docContent)
             console.log(`✓ Generated docs for ${prefix} (${icons.length} icons)`)
             successCount++
-          } else {
+          }
+          else {
             console.log(`⚠ Skipped ${prefix} - collection info not found`)
             errorCount++
           }
-        } else {
+        }
+        else {
           console.log(`⚠ Skipped ${prefix} - no icons found`)
           errorCount++
         }
-      } else {
+      }
+      else {
         console.log(`⚠ Skipped ${prefix} - src/index.ts not found`)
         errorCount++
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error(`✗ Error generating docs for ${prefix}:`, error.message)
       errorCount++
     }

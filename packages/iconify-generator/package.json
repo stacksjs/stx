@@ -1,13 +1,17 @@
 {
   "name": "@stacksjs/iconify-generator",
+  "type": "module",
   "version": "0.0.1",
   "description": "Generator for Iconify icon packages",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
-  "type": "module",
-  "bin": {
-    "stx-iconify": "./dist/cli.js"
-  },
+  "keywords": [
+    "iconify",
+    "icons",
+    "generator",
+    "svg",
+    "stx"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -17,6 +21,9 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "stx-iconify": "./dist/cli.js"
+  },
   "files": [
     "dist",
     "src"
@@ -27,12 +34,5 @@
   },
   "dependencies": {
     "@stacksjs/iconify-core": "workspace:*"
-  },
-  "keywords": [
-    "iconify",
-    "icons",
-    "generator",
-    "svg",
-    "stx"
-  ]
+  }
 }

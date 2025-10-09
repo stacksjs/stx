@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
-import { readdir, readFile, writeFile } from 'fs/promises'
-import { join } from 'path'
+import { readdir, readFile, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 
 const docsDir = 'docs/collections'
 
@@ -22,7 +22,7 @@ async function generateSidebar() {
 
   // Generate sidebar items as TypeScript code
   const itemsCode = items.map(item =>
-    `            { text: '${item.text}', link: '${item.link}' }`
+    `            { text: '${item.text}', link: '${item.link}' }`,
   ).join(',\n')
 
   // Generate full sidebar config

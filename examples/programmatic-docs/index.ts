@@ -3,10 +3,9 @@
  * This example shows how to build a VitePress-like documentation system using stx
  */
 
-import { serve, createMiddleware, createRoute } from '@stacksjs/stx'
 import type { ServeOptions } from '@stacksjs/stx'
-import fs from 'node:fs'
-import path from 'node:path'
+import process from 'node:process'
+import { createMiddleware, serve } from '@stacksjs/stx'
 
 // Example configuration (like bunPress.config.ts)
 interface DocsConfig {
@@ -320,4 +319,4 @@ if (import.meta.main) {
   startDocsServer().catch(console.error)
 }
 
-export { startDocsServer, docsConfig }
+export { docsConfig, startDocsServer }

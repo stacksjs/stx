@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
-import { fetchCollections, generatePackage } from '../packages/iconify-generator/src/index.js'
 import { join } from 'node:path'
+import process from 'node:process'
+import { fetchCollections, generatePackage } from '../packages/iconify-generator/src/index.js'
 
 const PACKAGES_DIR = join(process.cwd(), 'packages/collections')
 
@@ -27,7 +28,8 @@ async function generateAllIconify() {
       successCount++
 
       console.log(`${progress} ✓ ${prefix} completed\n`)
-    } catch (error) {
+    }
+    catch (error) {
       errorCount++
       const errorMsg = error instanceof Error ? error.message : String(error)
       errors.push({ prefix, error: errorMsg })
@@ -35,7 +37,7 @@ async function generateAllIconify() {
     }
   }
 
-  console.log('\n' + '='.repeat(80))
+  console.log(`\n${'='.repeat(80)}`)
   console.log('📊 Generation Summary')
   console.log('='.repeat(80))
   console.log(`✅ Successful: ${successCount}`)

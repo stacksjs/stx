@@ -468,7 +468,7 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
       console.log(`${colors.yellow}Port ${port} is busy, using port ${actualPort} instead${colors.reset}`)
     }
   }
-  catch (error) {
+  catch {
     console.error(`${colors.red}Could not find an available port${colors.reset}`)
     return false
   }
@@ -639,7 +639,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
       console.log(`${colors.yellow}Port ${port} is busy, using port ${actualPort} instead${colors.reset}`)
     }
   }
-  catch (error) {
+  catch {
     console.error(`${colors.red}Could not find an available port${colors.reset}`)
     return false
   }
@@ -1164,7 +1164,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       console.log(`${colors.yellow}Port ${port} is busy, using port ${actualPort} instead${colors.reset}`)
     }
   }
-  catch (error) {
+  catch {
     console.error(`${colors.red}Could not find an available port${colors.reset}`)
     return false
   }

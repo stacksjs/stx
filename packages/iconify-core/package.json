@@ -1,10 +1,17 @@
 {
   "name": "@stacksjs/iconify-core",
+  "type": "module",
   "version": "0.0.1",
   "description": "Core utilities for Iconify SVG icons in stx",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
-  "type": "module",
+  "keywords": [
+    "iconify",
+    "icons",
+    "svg",
+    "stx",
+    "ui"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -21,12 +28,5 @@
   "scripts": {
     "build": "bun build.ts",
     "dev": "bun build.ts --watch"
-  },
-  "keywords": [
-    "iconify",
-    "icons",
-    "svg",
-    "stx",
-    "ui"
-  ]
+  }
 }

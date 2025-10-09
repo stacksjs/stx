@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import { serve, serveFile, createMiddleware, createRoute } from '../../src/serve'
+import { createMiddleware, createRoute, serve, serveFile } from '../../src/serve'
 
 const TEST_DIR = path.join(import.meta.dir, 'fixtures')
 const PORT_START = 9000 + Math.floor(Math.random() * 1000) // Random port to avoid conflicts
@@ -219,7 +219,7 @@ This is in a subdirectory.
       root: TEST_DIR,
       watch: false,
       routes: {
-        '/api/test': createRoute(async (request) => {
+        '/api/test': createRoute(async (_request) => {
           return Response.json({ message: 'Custom route works!' })
         }),
       },

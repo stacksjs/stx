@@ -128,7 +128,6 @@ export function convertIconData(data: IconifyIconData, defaultWidth = 24, defaul
 export function generateIconData(
   name: string,
   iconData: IconData,
-  prefix: string,
 ): string {
   const camelCaseName = toCamelCase(name)
 
@@ -146,7 +145,6 @@ export default ${camelCaseName}
 export function generateIconComponent(
   name: string,
   iconData: IconData,
-  prefix: string,
 ): string {
   const camelCaseName = toCamelCase(name)
   const componentName = `${camelCaseName.charAt(0).toUpperCase()}${camelCaseName.slice(1)}Icon`
@@ -376,7 +374,7 @@ export function generateDocumentation(
   const exampleComponents = exampleIcons.map(name => `${name.charAt(0).toUpperCase()}${name.slice(1)}Icon`)
 
   // Generate full icon list
-  const allIconsList = iconNames.map(name => {
+  const allIconsList = iconNames.map((name) => {
     const camelName = toCamelCase(name)
     return `- \`${camelName}\``
   }).join('\n')
@@ -508,7 +506,8 @@ ${collectionInfo.palette ? '### Color Icons\n\nThis collection contains color ic
 <${exampleComponents[0] || 'Icon'} size="24" class="text-primary" />
 \`\`\`
 
-${!collectionInfo.palette ? `\`\`\`css
+${!collectionInfo.palette
+  ? `\`\`\`css
 /* In your CSS */
 .text-primary {
   color: #4a90e2;
@@ -517,7 +516,8 @@ ${!collectionInfo.palette ? `\`\`\`css
 .icon:hover {
   color: #357abd;
 }
-\`\`\`` : ''}
+\`\`\``
+  : ''}
 
 ## Size
 
