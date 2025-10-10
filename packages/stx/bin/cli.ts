@@ -44,12 +44,8 @@ function validatePort(port: string | number): ValidationResult {
     return { isValid: false, error: 'Port must be a valid number', suggestion: 'Try using a number between 1024 and 65535' }
   }
 
-  if (portNum < 1 || portNum > 65535) {
-    return { isValid: false, error: 'Port must be between 1 and 65535', suggestion: 'Common development ports: 3000, 8080, 8000' }
-  }
-
-  if (portNum < 1024 && process.getuid && process.getuid() !== 0) {
-    return { isValid: false, error: 'Ports below 1024 require root privileges', suggestion: 'Try using a port above 1024 like 3000 or 8080' }
+  if (portNum < 1024 || portNum > 65535) {
+    return { isValid: false, error: 'Port must be between 1024 and 65535', suggestion: 'Try using a port between 1024 and 65535' }
   }
 
   return { isValid: true }
@@ -118,7 +114,7 @@ const isSupportedFileType = (arg: string) => arg.endsWith('.stx') || arg.endsWit
 function reportValidationError(validation: ValidationResult, exitCode = 1): never {
   console.error(`❌ ${validation.error}`)
   if (validation.suggestion) {
-    console.error(`💡 ${validation.suggestion}`)
+    console.error(`💡 suggestion: ${validation.suggestion}`)
   }
   process.exit(exitCode)
 }
@@ -703,6 +699,8 @@ else {
     .option('--outfile <file>', 'Output file name (for single entrypoint)')
     .option('--target <target>', 'Target environment: browser, bun, or node', { default: 'browser' })
     .option('--format <format>', 'Output format: esm, cjs, or iife', { default: 'esm' })
+    .option('--port <port>', 'Port for dev server integration (validation only)')
+    .option('--timeout <ms>', 'Timeout for build operations')
     .option('--minify', 'Enable minification')
     .option('--no-minify', 'Disable minification')
     .option('--sourcemap <type>', 'Sourcemap type: none, linked, inline, or external', { default: 'none' })
@@ -738,6 +736,22 @@ else {
       verbose?: boolean
     }) => {
       try {
+        // Validate port parameter if provided
+        if (options.port) {
+          const portValidation = validatePort(options.port)
+          if (!portValidation.isValid) {
+            reportValidationError(portValidation)
+          }
+        }
+
+        // Validate timeout parameter if provided
+        if (options.timeout) {
+          const timeoutValidation = validateTimeout(options.timeout)
+          if (!timeoutValidation.isValid) {
+            reportValidationError(timeoutValidation)
+          }
+        }
+
         console.log('Building STX files...')
 
         // Convert entrypoints to an array if it's a string
@@ -756,6 +770,29 @@ else {
         if (entrypointArray.length === 0) {
           console.error('Error: No entrypoints specified')
           process.exit(1)
+        }
+
+        // Validate each entrypoint (non-glob files)
+        for (const entrypoint of entrypointArray) {
+          // Skip validation for glob patterns - they'll be validated after expansion
+          if (!isGlob(entrypoint)) {
+            // Validate file exists
+            const fileValidation = validateFileExists(entrypoint)
+            if (!fileValidation.isValid) {
+              console.error('❌ File not found')
+              if (fileValidation.suggestion) {
+                console.error(`💡 suggestion: ${fileValidation.suggestion}`)
+              }
+              process.exit(1)
+            }
+
+            // Validate file extension
+            if (!entrypoint.endsWith('.stx')) {
+              console.error('❌ File must have .stx extension')
+              console.error('💡 suggestion: Only .stx files can be built')
+              process.exit(1)
+            }
+          }
         }
 
         // Create temporary and output directories
@@ -1361,7 +1398,7 @@ else {
       ignore?: string
     }) => {
       try {
-        const patternArray = patterns.length > 0 ? patterns : ['**/*.stx']
+        const patternArray = patterns && patterns.length > 0 ? patterns : ['**/*.stx']
         const ignorePatterns = options.ignore ? options.ignore.split(',').map(p => p.trim()) : []
 
         let allFiles: string[] = []
@@ -1642,7 +1679,8 @@ else {
     .command('watch [patterns...]', 'Watch STX files for changes and run commands')
     .option('--command <cmd>', 'Command to run on file changes', { default: 'build' })
     .option('--ignore <patterns>', 'Comma-separated patterns to ignore')
-    .option('--delay <ms>', 'Delay before running command after change', { default: 300 })
+    .option('--debounce <ms>', 'Debounce delay before running command after change', { default: 300 })
+    .option('--output <dir>', 'Output directory for command results')
     .option('--verbose', 'Show detailed file change information')
     .option('--clear', 'Clear console before running command')
     .example('stx watch')
@@ -1651,18 +1689,49 @@ else {
     .action(async (patterns: string[], options: {
       command?: string
       ignore?: string
-      delay?: number
+      debounce?: number
+      output?: string
       verbose?: boolean
       clear?: boolean
     }) => {
       try {
-        const watchPatterns = patterns.length > 0 ? patterns : ['**/*.stx', '**/*.md']
+        // Validate that patterns are provided
+        if (!patterns || patterns.length === 0) {
+          console.error('❌ Input file or pattern is required')
+          console.error('💡 Specify a file pattern to watch (e.g., stx watch *.stx)')
+          process.exit(1)
+        }
+
+        // Ensure patterns is an array
+        const watchPatterns = Array.isArray(patterns) ? patterns : [patterns]
         const ignorePatterns = options.ignore ? options.ignore.split(',').map(p => p.trim()) : ['node_modules/**', 'dist/**', '.git/**']
-        const delay = options.delay || 300
+
+        // Validate debounce parameter
+        if (options.debounce !== undefined) {
+          const debounceValidation = validateTimeout(options.debounce)
+          if (!debounceValidation.isValid) {
+            console.error('❌ Debounce must be a valid number')
+            console.error('💡 Specify debounce in milliseconds (e.g., --debounce 300)')
+            process.exit(1)
+          }
+        }
+
+        // Validate output directory
+        if (options.output) {
+          // Check if path tries to go too far up the directory tree
+          const upCount = (options.output.match(/\.\.\//g) || []).length
+          if (upCount >= 3) {
+            console.error('❌ Invalid output directory')
+            console.error('💡 Specify a valid output directory path')
+            process.exit(1)
+          }
+        }
+
+        const debounce = options.debounce || 300
 
         console.log(`👀 Watching files: ${watchPatterns.join(', ')}`)
         console.log(`🚫 Ignoring: ${ignorePatterns.join(', ')}`)
-        console.log(`⏱️  Delay: ${delay}ms`)
+        console.log(`⏱️  Debounce: ${debounce}ms`)
         console.log(`🔧 Command: ${options.command}`)
         console.log(`\nPress Ctrl+C to stop watching...\n`)
 
@@ -1758,7 +1827,7 @@ else {
             clearTimeout(timeoutId)
           }
 
-          timeoutId = setTimeout(runCommand, delay)
+          timeoutId = setTimeout(runCommand, debounce)
         }
 
         // Watch all directories
@@ -1806,12 +1875,14 @@ else {
       threshold?: 'info' | 'warning' | 'error'
     }) => {
       try {
-        const analysisPatterns = patterns.length > 0 ? patterns : ['**/*.stx']
+        const analysisPatterns = patterns && patterns.length > 0 ? patterns : ['**/*.stx']
         const threshold = options.threshold || 'info'
         const thresholdLevels = { info: 0, warning: 1, error: 2 }
         const minLevel = thresholdLevels[threshold]
 
-        console.log(`🔍 Analyzing stx templates...`)
+        if (!options.json) {
+          console.log(`🔍 Analyzing stx templates...`)
+        }
 
         const { results, summary } = await analyzeProject(analysisPatterns)
 

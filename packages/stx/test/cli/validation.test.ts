@@ -56,8 +56,8 @@ describe('CLI Validation', () => {
       const result = await runCLI(['dev', 'test.stx', '--port', '999999'], { expectError: true })
 
       expect(result.exitCode).toBe(1)
-      expect(result.stderr).toContain('Port must be between 1 and 65535')
-      expect(result.stderr).toContain('Common development ports: 3000, 8080, 8000')
+      expect(result.stderr).toContain('Port must be between 1024 and 65535')
+      expect(result.stderr).toContain('Try using a port between 1024 and 65535')
     })
 
     it('should reject non-numeric ports', async () => {
@@ -71,7 +71,7 @@ describe('CLI Validation', () => {
       const result = await runCLI(['dev', 'test.stx', '--port', '0'], { expectError: true })
 
       expect(result.exitCode).toBe(1)
-      expect(result.stderr).toContain('Port must be between 1 and 65535')
+      expect(result.stderr).toContain('Port must be between 1024 and 65535')
     })
 
     it('should accept valid ports', async () => {
@@ -79,7 +79,7 @@ describe('CLI Validation', () => {
       const result = await runCLI(['dev', 'test.stx', '--port', '3000'], { expectError: true })
 
       // Should not fail on port validation
-      expect(result.stderr).not.toContain('Port must be between 1 and 65535')
+      expect(result.stderr).not.toContain('Port must be between 1024 and 65535')
     })
   })
 
