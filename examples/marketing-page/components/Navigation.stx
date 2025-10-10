@@ -1,0 +1,56 @@
+<div class="relative z-20">
+  <div class="px-4 mx-auto max-w-7xl sm:px-6">
+    <nav class="relative z-20 flex items-center justify-between sm:h-10 md:justify-center" aria-label="Global">
+      <div class="flex items-center flex-1 md:absolute md:inset-y-0 md:left-0">
+        <div class="flex items-center justify-between w-full md:w-auto">
+          @include('marketing-page/components/Logo')
+
+          <div class="flex items-center -mr-2 md:hidden">
+            <button
+              type="button"
+              class="z-20 inline-flex items-center justify-center p-2 rounded-md text-sky-50 bg-blue-gray-50 hover:text-sky-100 hover:bg-blue-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-500"
+            >
+              <span class="sr-only">Open main menu</span>
+              <svg
+                class="w-6 h-6"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hidden md:flex md:space-x-10">
+        <a href="#features" class="z-20 text-base font-medium text-sky-100 hover:text-sky-200 transition duration-150 ease-in-out">
+          Features
+        </a>
+        <a href="#learn" class="z-20 text-base font-medium text-sky-100 hover:text-sky-200 transition duration-150 ease-in-out">
+          Learn
+        </a>
+        <a href="#explore" class="z-20 text-base font-medium text-sky-100 hover:text-sky-200 transition duration-150 ease-in-out">
+          Explore
+        </a>
+        <a href="#pricing" class="z-20 text-base font-medium text-sky-100 hover:text-sky-200 transition duration-150 ease-in-out">
+          Pricing
+        </a>
+      </div>
+
+      <div class="hidden md:absolute md:flex md:items-center md:justify-end md:inset-y-0 md:right-0">
+        <span class="inline-flex rounded-md shadow">
+          <a
+            href="#"
+            class="z-20 inline-flex items-center px-4 py-2 text-base font-medium bg-white border border-transparent rounded-md text-sky-600 hover:text-sky-500"
+          >
+            Log in
+          </a>
+        </span>
+      </div>
+    </nav>
+  </div>
+</div>

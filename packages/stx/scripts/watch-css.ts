@@ -1,59 +1,24 @@
 #!/usr/bin/env bun
-import { watch } from 'node:fs'
-import path from 'node:path'
-import { build, defaultConfig } from '@stacksjs/headwind'
-import config from '../headwind.config.ts'
+import { resolve } from 'node:path'
+import { $ } from 'bun'
 
 console.log('🚀 Starting Headwind in watch mode...')
-console.log('👀 Watching for changes in:', config.content)
 console.log('')
 
-// Merge with default config
-const fullConfig = {
-  ...defaultConfig,
-  ...config,
-}
+const headwindPath = resolve(process.env.HOME!, 'Code/headwind')
+const contentPath = resolve(import.meta.dir, '../../../examples/**/*.stx')
+const outputPath = resolve(import.meta.dir, '../examples/dist/styles.css')
 
-// Initial build
-async function buildCSS() {
-  try {
-    const startTime = performance.now()
-    const result = await build(fullConfig)
-    const duration = performance.now() - startTime
-
-    console.log(`✅ Built ${result.classes.size} classes in ${duration.toFixed(2)}ms`)
-
-    const fileSize = Bun.file(config.output!)
-    const sizeKB = ((await fileSize.size) / 1024).toFixed(2)
-    console.log(`📦 File size: ${sizeKB} KB`)
-    console.log('')
-  }
-  catch (error) {
-    console.error('❌ Build failed:', error)
-  }
-}
-
-// Run initial build
-await buildCSS()
-
-// Watch for changes
-const watchDirs = new Set<string>()
-for (const pattern of config.content || []) {
-  const dir = path.dirname(pattern.replace('/**/*', ''))
-  watchDirs.add(dir)
-}
-
-console.log('👀 Watching directories:')
-for (const dir of watchDirs) {
-  console.log(`   ${dir}`)
-
-  watch(dir, { recursive: true }, async (eventType, filename) => {
-    if (filename && (filename.endsWith('.stx') || filename.endsWith('.html') || filename.endsWith('.tsx') || filename.endsWith('.jsx'))) {
-      console.log(`\n📝 ${filename} changed, rebuilding...`)
-      await buildCSS()
-    }
+try {
+  // Use headwind CLI in watch mode
+  const proc = Bun.spawn(['./headwind', 'build', '--content', contentPath, '--output', outputPath, '--watch'], {
+    cwd: headwindPath,
+    stdout: 'inherit',
+    stderr: 'inherit',
   })
-}
 
-console.log('')
-console.log('Press Ctrl+C to stop watching')
+  await proc.exited
+} catch (error) {
+  console.error('❌ Failed to start watch mode:', error)
+  process.exit(1)
+}

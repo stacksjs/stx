@@ -1,0 +1,41 @@
+<section
+  class="relative z-10 max-w-screen-lg pt-20 mx-auto overflow-hidden text-center md:pt-24 lg:pt-32 xl:max-w-screen-xl"
+>
+  <div class="relative px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+    <div class="relative">
+      <div class="relative z-10 max-w-screen-lg mx-auto text-center xl:max-w-screen-xl">
+        <h2 class="mb-8 text-3xl font-extrabold leading-none tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+          Media management isn&rsquo;t easy.
+        </h2>
+      </div>
+
+      <blockquote class="mt-10">
+        <p class="max-w-5xl mx-auto mb-6 space-y-6 text-lg font-medium text-gray-500 sm:text-2xl sm:leading-10">
+          &ldquo;It also should not be this complicated &amp; repetitive.
+          <span
+            class="font-semibold text-sky-600"
+            style="box-shadow: inset 0 -0.1666666667em 0 0 #fff, inset 0 -0.3333333333em 0 0 #bae6fd"
+            >Learning about best-practices is time-consuming.</span
+          >
+          How many times have you created an API endpoint to handle your file uploads? Are your images &amp; videos
+          utilizing a modern web-optimized format? Do you use differently encoded videos to ensure that no matter the
+          internet connection &mdash; or device &mdash; there will be as little buffering as possible? The list is
+          long which is why we try to create a set of standards to simplify your management process.
+        </p>
+      </blockquote>
+
+      <figcaption class="flex flex-col items-center mt-12 font-medium sm:text-xl">
+        <div class="p-1 mb-3 border-2 rounded-full border-sky-400">
+          <img
+            src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+            alt=""
+            class="w-10 h-10 rounded-full bg-sky-100"
+            loading="lazy"
+          />
+        </div>
+        <div class="text-gray-900">Chris Breuer</div>
+        <div class="text-sky-600">Creator of Media Cloud</div>
+      </figcaption>
+    </div>
+  </div>
+</section>

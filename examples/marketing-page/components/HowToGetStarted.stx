@@ -1,0 +1,112 @@
+<div class="relative z-10 pt-16 pb-32 overflow-hidden bg-gradient-to-b from-[#FFFDFA] to-[#fff6ea]">
+  <section class="relative z-10 max-w-screen-lg py-12 mx-auto text-center xl:max-w-screen-xl">
+    <div class="relative px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="relative">
+        <div class="relative z-10 max-w-screen-lg mx-auto text-center xl:max-w-screen-xl">
+          <h2 class="mb-8 text-3xl font-extrabold leading-none tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+            Why? Why another service?
+          </h2>
+        </div>
+
+        <blockquote class="mt-10">
+          <p class="max-w-5xl mx-auto mb-6 space-y-6 text-lg font-medium text-gray-500 sm:text-2xl sm:leading-10">
+            Media management is an incredibly complicated subject to master. As an example, prior to displaying images
+            &amp; videos, these assets likely need to be optimized in format and in filesize for an ideal web
+            delivery. Now, what is the &ldquo;best format&rdquo; and how do we optimally convert &amp; compress it?
+            What if AVIF or HLS isn&rsquo;t supported by the client? Is there a fallback plan? Last but not least, how
+            would we develop the infrastructure for a secure &amp; blazing-fast global CDN?
+            <span
+              class="font-semibold text-sky-600"
+              style="box-shadow: inset 0 -0.1666666667em 0 0 #fff, inset 0 -0.3333333333em 0 0 #bae6fd"
+              >We answer these questions for you and so you don&rsquo;t ever have to deal with it.</span
+            >
+          </p>
+        </blockquote>
+      </div>
+    </div>
+  </section>
+
+  <div class="relative">
+    <div class="lg:mx-auto lg:max-w-7xl lg:px-8 lg:grid lg:grid-cols-2 lg:grid-flow-col-dense lg:gap-24">
+      <div class="max-w-xl px-4 mx-auto sm:px-6 lg:py-16 lg:max-w-none lg:mx-0 lg:px-0">
+        <div>
+          <div class="flex flex-col items-center justify-center w-12 h-12 rounded-md text-cyan-50">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-6 h-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+              />
+            </svg>
+          </div>
+          <div class="mt-6">
+            <h2 class="text-3xl font-extrabold tracking-tight text-blue-gray-900">How to get started</h2>
+            <p class="mt-4 text-lg text-blue-gray-500">
+              It is super easy. No matter whether you are a no-code advocate or a &ldquo;DIY&rdquo;-developer, our
+              graphical user &amp; programmatic interfaces allow for an incredibly simple and personalized media
+              management experience.
+            </p>
+            <p class="mt-4 text-lg text-blue-gray-500">
+              Whether you prefer uploading files via a backend or a frontend language or framework, we got
+              you covered. Use one of our many first-party integrations to quickly get started!
+            </p>
+            <div class="mt-6">
+              <a
+                href="#"
+                class="inline-flex px-4 py-2 text-base font-medium text-white transition duration-150 ease-in-out border border-transparent rounded-md shadow-sm bg-sky-600 hover:bg-sky-700"
+              >
+                Get started
+              </a>
+            </div>
+          </div>
+
+          <div class="pt-6 mt-8 border-t border-blue-gray-200">
+            <blockquote>
+              <div>
+                <p class="text-base text-blue-gray-500">
+                  &ldquo;This is the tool I wish I always had. There have been numerous times we developed an admin
+                  panel/dashboard for a client and there was no budget for a thorough media manager implementation.
+                  Incredibly useful!&rdquo;
+                </p>
+              </div>
+              <footer class="mt-3">
+                <div class="flex items-center space-x-3">
+                  <div class="flex-shrink-0">
+                    <img
+                      class="w-6 h-6 rounded-full"
+                      src="https://images.unsplash.com/photo-1509783236416-c9ad59bae472?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80"
+                      alt=""
+                    />
+                  </div>
+                  <div class="text-base font-medium text-blue-gray-700">Chris Breuer, Founder</div>
+                </div>
+              </footer>
+            </blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="mx-auto mt-12 sm:mt-16 lg:mt-0">
+        <div class="flex flex-col justify-center pl-4 -mr-48 sm:pl-6 md:-mr-16 lg:px-0 lg:m-0 lg:relative lg:h-full">
+          <div class="relative rounded-lg overflow-hidden shadow-xl">
+            <img
+              src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+              alt="Code example"
+              class="w-full"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pt-20">
+    @include('marketing-page/components/Testimonial')
+  </div>
+</div>

@@ -1,0 +1,12 @@
+<div class="px-4 pb-16 mx-auto mt-16 max-w-7xl sm:mt-24 sm:px-6 sm:pb-24">
+  <div class="text-center">
+    <h1 class="z-10 text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl">
+      <span class="block">Media Management</span>
+      <span class="block text-transparent bg-clip-text bg-gradient-to-b from-[#225e8d] to-[#478bca] z-10">as a Service</span>
+    </h1>
+    <p class="z-10 max-w-md mx-auto mt-3 text-base text-cyan-100 sm:text-lg md:mt-5 md:text-xl md:max-w-2xl">
+      The easiest way to securely manage, distribute &amp; scale your media delivery across platforms. Privacy-first
+      cloud done right.
+    </p>
+  </div>
+</div>

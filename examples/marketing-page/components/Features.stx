@@ -1,0 +1,121 @@
+<div class="relative z-20 overflow-hidden bg-gradient-to-b from-[#FFFDFA] to-[#fff6ea]">
+  <!-- Empty placeholder container to negate the negative margin of the media manager demo -->
+  <div class="h-64"></div>
+
+  <div class="relative px-4 py-16 mx-auto max-w-7xl sm:px-6 lg:px-8">
+    <div class="relative lg:grid lg:grid-cols-3 lg:gap-x-8">
+      <div class="lg:col-span-1">
+        <h2 class="text-3xl font-extrabold tracking-tight text-sky-900 sm:text-4xl">
+          A better Development Experience.
+        </h2>
+      </div>
+      <dl class="mt-10 space-y-10 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-x-8 sm:gap-y-10 lg:mt-0 lg:col-span-2">
+        <div>
+          <dt>
+            <div class="flex flex-col items-center justify-center w-12 h-12 rounded-md text-cyan-50">
+              <svg
+                class="w-6 h-6 text-cyan-50"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                />
+              </svg>
+            </div>
+            <p class="mt-5 text-lg font-medium leading-6 text-blue-gray-900">Cloud Platform</p>
+          </dt>
+          <dd class="mt-2 text-base text-blue-gray-500">
+            More than a blazing-fast CDN for your files and your images and videos, in particular. It as a
+            cloud and ecosystem tailored towards providing the ideal media delivery experience for developers and
+            end-users. We mastered your privacy-first cloud.
+          </dd>
+        </div>
+
+        <div>
+          <dt>
+            <div class="flex flex-col items-center justify-center w-12 h-12 rounded-md text-cyan-50">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <p class="mt-5 text-lg font-medium leading-6 text-blue-gray-900">Image Optimization</p>
+          </dt>
+          <dd class="mt-2 text-base text-blue-gray-500">
+            Is the image sized properly? Is it as optimized as can be to increase page speed? How do I implement
+            responsive images again? Questions we answer for you.
+          </dd>
+        </div>
+
+        <div>
+          <dt>
+            <div class="flex flex-col items-center justify-center w-12 h-12 rounded-md text-cyan-50">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"
+                />
+              </svg>
+            </div>
+            <p class="mt-5 text-lg font-medium leading-6 text-blue-gray-900">Video Streaming</p>
+          </dt>
+          <dd class="mt-2 text-base text-blue-gray-500">
+            Buffering videos are annoying. Figuring out how to stream video on the internet is difficult. That's why
+            we encode the video for you using an adaptive bitrate streaming technology.
+          </dd>
+        </div>
+
+        <div>
+          <dt>
+            <div class="flex flex-col items-center justify-center w-12 h-12 rounded-md text-cyan-50">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"
+                />
+              </svg>
+            </div>
+            <p class="mt-5 text-lg font-medium leading-6 text-blue-gray-900">Media Manager</p>
+          </dt>
+          <dd class="mt-2 text-base text-blue-gray-500">
+            The flagship feature. Don't waste time anymore developing a custom media management experience. Inject
+            &amp; configure this manager to create your own experience.
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>
