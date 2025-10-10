@@ -33,6 +33,11 @@ const DEFAULT_OPTIONS: Required<FormatterOptions> = {
 export function formatStxContent(content: string, options: FormatterOptions = {}): string {
   const opts = { ...DEFAULT_OPTIONS, ...options }
 
+  // Handle empty or whitespace-only content
+  if (content.trim() === '') {
+    return '\n'
+  }
+
   let formatted = content
 
   // Remove trailing whitespace from all lines
@@ -45,6 +50,9 @@ export function formatStxContent(content: string, options: FormatterOptions = {}
 
   // Format HTML structure
   formatted = formatHtml(formatted, opts)
+
+  // Format attributes
+  formatted = formatAttributes(formatted, opts)
 
   // Format stx directives
   formatted = formatStxDirectives(formatted, opts)
@@ -104,7 +112,80 @@ function formatScriptTags(content: string, options: Required<FormatterOptions>):
  * Format HTML structure with proper indentation
  */
 function formatHtml(content: string, options: Required<FormatterOptions>): string {
-  const lines = content.split('\n')
+  // Pre-process: Split inline nested HTML elements and directives into separate lines
+  let preprocessed = content
+
+  // First, protect whitespace-sensitive tags from formatting (pre, code, textarea, style)
+  const whitespaceSensitivePlaceholders: string[] = []
+  const whitespaceTags = ['pre', 'code', 'textarea', 'style']
+  for (const tag of whitespaceTags) {
+    const regex = new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, 'gi')
+    preprocessed = preprocessed.replace(regex, (match) => {
+      const placeholder = `__WHITESPACE_TAG_${whitespaceSensitivePlaceholders.length}__`
+      whitespaceSensitivePlaceholders.push(match)
+      return placeholder
+    })
+  }
+
+  // Then protect empty tags from being split (e.g., <script></script>, <div></div>)
+  const emptyTagPlaceholders: string[] = []
+  preprocessed = preprocessed.replace(/<(\w+)([^>]*)><\/\1>/g, (match) => {
+    const placeholder = `__EMPTY_TAG_${emptyTagPlaceholders.length}__`
+    emptyTagPlaceholders.push(match)
+    return placeholder
+  })
+
+  // Split between HTML tags: ><  → >\n<
+  preprocessed = preprocessed.replace(/>(\s*)</g, (match, whitespace) => {
+    // If there's already whitespace including newlines, keep it
+    if (whitespace.includes('\n')) {
+      return match
+    }
+    // Otherwise add a newline between tags
+    return '>\n<'
+  })
+
+  // Split before directives: >@ → >\n@
+  preprocessed = preprocessed.replace(/>(\s*)@/g, (match, whitespace) => {
+    if (whitespace.includes('\n')) {
+      return match
+    }
+    return '>\n@'
+  })
+
+  // Split after closing directives before tags: @endif< → @endif\n<
+  preprocessed = preprocessed.replace(/(@end\w+)(\s*)</g, (match, directive, whitespace) => {
+    if (whitespace.includes('\n')) {
+      return match
+    }
+    return `${directive}\n<`
+  })
+
+  // Split after directive statements before other directives: )@ → )\n@
+  preprocessed = preprocessed.replace(/\)(\s*)@/g, (match, whitespace) => {
+    if (whitespace.includes('\n')) {
+      return match
+    }
+    return ')\n@'
+  })
+
+  // Split after directive statements before tags: )<tag> → )\n<tag>
+  preprocessed = preprocessed.replace(/\)(\s*)</g, (match, whitespace) => {
+    if (whitespace.includes('\n')) {
+      return match
+    }
+    return ')\n<'
+  })
+
+  // Split between closing directives: @endif@endif → @endif\n@endif
+  preprocessed = preprocessed.replace(/(@end\w+)(\s*)@/g, (match, directive, whitespace) => {
+    if (whitespace.includes('\n')) {
+      return match
+    }
+    return `${directive}\n@`
+  })
+
+  const lines = preprocessed.split('\n')
   const formattedLines: string[] = []
   let indentLevel = 0
   const indent = options.useTabs ? '\t' : ' '.repeat(options.indentSize)
@@ -142,7 +223,19 @@ function formatHtml(content: string, options: Required<FormatterOptions>): strin
     }
   }
 
-  return formattedLines.join('\n')
+  let result = formattedLines.join('\n')
+
+  // Restore whitespace-sensitive tag placeholders first
+  whitespaceSensitivePlaceholders.forEach((tag, index) => {
+    result = result.replace(`__WHITESPACE_TAG_${index}__`, tag)
+  })
+
+  // Then restore empty tag placeholders
+  emptyTagPlaceholders.forEach((tag, index) => {
+    result = result.replace(`__EMPTY_TAG_${index}__`, tag)
+  })
+
+  return result
 }
 
 /**
@@ -218,13 +311,18 @@ function isOpeningDirective(line: string): boolean {
 /**
  * Format attributes in HTML tags
  */
-function _formatAttributes(content: string, options: Required<FormatterOptions>): string {
+function formatAttributes(content: string, options: Required<FormatterOptions>): string {
   if (!options.sortAttributes)
     return content
 
   return content.replace(/<(\w+)([^>]*)>/g, (match, tagName, attributes) => {
     if (!attributes.trim())
       return match
+
+    // Skip malformed tags (attributes containing < or newlines suggest malformed HTML)
+    if (attributes.includes('<') || attributes.includes('\n')) {
+      return match
+    }
 
     // Parse attributes
     const attrRegex = /(\w+)(?:=("[^"]*"|'[^']*'|[^\s>]+))?/g
