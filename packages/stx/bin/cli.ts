@@ -1446,6 +1446,10 @@ else {
         const stats = performanceMonitor.getStats()
 
         if (Object.keys(stats).length === 0) {
+          if (options.json) {
+            console.log(JSON.stringify({}, null, 2))
+            return
+          }
           console.log('No performance data available. Run some STX commands first.')
           return
         }
@@ -1493,7 +1497,7 @@ else {
           reportValidationError(fileValidation)
         }
 
-        console.log(`🔍 Debugging STX template: ${file}\n`)
+        console.log(`🔍 Debugging stx template: ${file}\n`)
 
         // Parse context if provided
         let context: Record<string, any> = {}
@@ -1606,11 +1610,11 @@ else {
         if (options.json) {
           console.log(JSON.stringify(status, null, 2))
         } else {
-          console.log('\n📋 STX Project Status\n')
+          console.log('\n📋 stx Project Status\n')
           console.log(`📁 Project Root: ${projectRoot}`)
           console.log(`⚙️  Config File: ${status.hasConfig ? '✅ Found' : '❌ Not found'}`)
           console.log(`📦 Package.json: ${status.hasPackageJson ? '✅ Found' : '❌ Not found'}`)
-          console.log(`📄 STX Files: ${status.stxFiles}`)
+          console.log(`📄 stx Files: ${status.stxFiles}`)
           console.log(`📝 Markdown Files: ${status.markdownFiles}`)
           console.log(`📊 Total Files: ${status.totalFiles}`)
 
@@ -1807,7 +1811,7 @@ else {
         const thresholdLevels = { info: 0, warning: 1, error: 2 }
         const minLevel = thresholdLevels[threshold]
 
-        console.log(`🔍 Analyzing STX templates...`)
+        console.log(`🔍 Analyzing stx templates...`)
 
         const { results, summary } = await analyzeProject(analysisPatterns)
 

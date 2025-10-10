@@ -340,7 +340,7 @@ function findUnmatchedDirectives(content: string, startDirective: string, endDir
 /**
  * Analyze multiple templates
  */
-export async function analyzeProject(patterns: string[] = ['**/*.stx']): Promise<{
+export async function analyzeProject(patterns: string[] = ['**/*.stx'], cwd?: string): Promise<{
   results: AnalysisResult[]
   summary: ProjectSummary
 }> {
@@ -349,7 +349,11 @@ export async function analyzeProject(patterns: string[] = ['**/*.stx']): Promise
   // Find all stx files
   const allFiles: string[] = []
   for (const pattern of patterns) {
-    const files = await Array.fromAsync(new Bun.Glob(pattern).scan({ onlyFiles: true, absolute: true }))
+    const files = await Array.fromAsync(new Bun.Glob(pattern).scan({
+      cwd: cwd || process.cwd(),
+      onlyFiles: true,
+      absolute: true
+    }))
     allFiles.push(...files.filter(f => f.endsWith('.stx')))
   }
 
@@ -383,7 +387,9 @@ export interface ProjectSummary {
 function generateProjectSummary(results: AnalysisResult[]): ProjectSummary {
   const totalFiles = results.length
   const totalLines = results.reduce((sum, r) => sum + r.metrics.lines, 0)
-  const avgComplexity = results.reduce((sum, r) => sum + r.metrics.complexity, 0) / totalFiles
+  const avgComplexity = totalFiles > 0
+    ? results.reduce((sum, r) => sum + r.metrics.complexity, 0) / totalFiles
+    : 0
   const totalIssues = results.reduce((sum, r) => sum + r.issues.length, 0)
 
   const issuesByCategory: Record<string, number> = {}
@@ -394,7 +400,9 @@ function generateProjectSummary(results: AnalysisResult[]): ProjectSummary {
   })
 
   // Calculate performance score (higher is better)
-  const avgRenderTime = results.reduce((sum, r) => sum + r.performance.estimatedRenderTime, 0) / totalFiles
+  const avgRenderTime = totalFiles > 0
+    ? results.reduce((sum, r) => sum + r.performance.estimatedRenderTime, 0) / totalFiles
+    : 0
   const performanceScore = Math.max(1, Math.min(10, Math.round(10 - (avgRenderTime / 2) - (avgComplexity / 2))))
 
   const recommendations: string[] = []
