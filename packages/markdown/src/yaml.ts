@@ -31,7 +31,7 @@ export function parse<T = any>(input: string, options: YamlOptions = {}): T {
       }
       return result as T
     }
-    
+
     // Fallback to custom parser
     return _parseFallback<T>(input, options)
   }
@@ -275,7 +275,7 @@ export function stringify(obj: any, _options: YamlOptions = {}): string {
     if (typeof Bun !== 'undefined' && 'YAML' in Bun && typeof (Bun as any).YAML?.stringify === 'function') {
       return (Bun as any).YAML.stringify(obj, null, 2)
     }
-    
+
     // Fallback to custom implementation if needed
     return stringifyFallback(obj, 0)
   }

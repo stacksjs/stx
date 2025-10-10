@@ -35,9 +35,9 @@ const config: Partial<HeadwindConfig> = {
   theme: {
     colors: {
       // Default colors
-      black: '#000',
-      white: '#fff',
-      gray: {
+      'black': '#000',
+      'white': '#fff',
+      'gray': {
         50: '#f9fafb',
         100: '#f3f4f6',
         200: '#e5e7eb',
@@ -49,35 +49,35 @@ const config: Partial<HeadwindConfig> = {
         800: '#1f2937',
         900: '#111827',
       },
-      red: {
+      'red': {
         500: '#ef4444',
         700: '#b91c1c',
       },
-      orange: {
+      'orange': {
         400: '#fb923c',
       },
-      yellow: {
+      'yellow': {
         100: '#fef9c3',
         300: '#fde047',
       },
-      green: {
+      'green': {
         400: '#4ade80',
         500: '#22c55e',
       },
-      blue: {
+      'blue': {
         400: '#60a5fa',
         500: '#3b82f6',
       },
-      purple: {
+      'purple': {
         400: '#c084fc',
       },
-      pink: {
+      'pink': {
         300: '#f9a8d4',
         400: '#f472b6',
         500: '#ec4899',
         600: '#db2777',
       },
-      sky: {
+      'sky': {
         50: '#f0f9ff',
         100: '#e0f2fe',
         200: '#bae6fd',
@@ -89,7 +89,7 @@ const config: Partial<HeadwindConfig> = {
         800: '#075985',
         900: '#0c4a6e',
       },
-      cyan: {
+      'cyan': {
         50: '#ecfeff',
         100: '#cffafe',
         200: '#a5f3fc',
