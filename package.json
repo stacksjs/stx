@@ -90,7 +90,7 @@
     "buddy-bot": "^0.9.8",
     "bun-git-hooks": "^0.3.1",
     "bun-plugin-dtsx": "0.9.5",
-    "happy-dom": "^19.0.2",
+    "happy-dom": "^20.0.0",
     "typescript": "^5.9.3"
   },
   "git-hooks": {
