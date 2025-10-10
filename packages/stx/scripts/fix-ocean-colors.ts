@@ -6,8 +6,9 @@
  * This script fixes ocean colors to their correct hex values.
  */
 
-import { resolve } from 'node:path'
 import { readFile, writeFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
+import process from 'node:process'
 
 const cssPath = resolve(import.meta.dir, '../examples/dist/styles.css')
 
@@ -38,7 +39,8 @@ try {
   await writeFile(cssPath, css)
 
   console.log('✅ Ocean colors fixed successfully!')
-} catch (error) {
+}
+catch (error) {
   console.error('❌ Failed to fix ocean colors:', error)
   process.exit(1)
 }

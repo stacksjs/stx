@@ -314,33 +314,6 @@ export function applyFilters(value: any, filterExpression: string, context: Reco
 }
 
 /**
- * Memoized version of unsafe expression evaluation for performance
- */
-const memoizedUnsafeEvaluate = memoize((expression: string, contextKeys: string, contextValues: string) => {
-  try {
-    const keys = JSON.parse(contextKeys)
-    const values = JSON.parse(contextValues)
-
-    // eslint-disable-next-line no-new-func
-    const exprFn = new Function(...keys, `
-      try {
-        return ${expression};
-      } catch (e) {
-        if (e instanceof ReferenceError || e instanceof TypeError) {
-          return undefined;
-        }
-        throw e;
-      }
-    `)
-
-    return exprFn(...values)
-  }
-  catch {
-    return undefined
-  }
-}, 500)
-
-/**
  * Evaluate an expression within the given context
  * @param {string} expression - The expression to evaluate
  * @param {Record<string, any>} context - The context object containing variables
@@ -415,7 +388,7 @@ export function evaluateExpression(expression: string, context: Record<string, a
 
       return exprFn(...values)
     }
-    catch (evalError: any) {
+    catch {
       // If evaluation fails, fall back to safe evaluator
       return safeEvaluate(trimmedExpr, context)
     }

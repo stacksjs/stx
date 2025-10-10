@@ -398,7 +398,7 @@ export async function analyzeProject(patterns: string[] = ['**/*.stx'], cwd?: st
     const files = await Array.fromAsync(new Bun.Glob(pattern).scan({
       cwd: cwd || process.cwd(),
       onlyFiles: true,
-      absolute: true
+      absolute: true,
     }))
     allFiles.push(...files.filter(f => f.endsWith('.stx')))
   }

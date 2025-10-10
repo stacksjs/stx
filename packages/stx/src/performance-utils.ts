@@ -233,8 +233,9 @@ class ExpressionEvaluatorPool {
     }
 
     // Create new evaluator - handle empty context keys
-    // eslint-disable-next-line no-new-func
+
     const evaluator = uniqueKeys.length === 0
+    // eslint-disable-next-line no-new-func
       ? new Function(`
         'use strict';
         return function(expr) {
@@ -248,6 +249,7 @@ class ExpressionEvaluatorPool {
           }
         }
       `)() as (...args: any[]) => any
+      // eslint-disable-next-line no-new-func
       : new Function(...uniqueKeys, `
         'use strict';
         return function(expr) {

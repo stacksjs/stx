@@ -3,7 +3,6 @@
  */
 
 import type { I18nConfig, StxOptions } from './types'
-import fs from 'node:fs'
 import path from 'node:path'
 import { createDetailedErrorMessage } from './utils'
 
@@ -68,36 +67,6 @@ export async function loadTranslation(
 
     // Return empty object if default locale file is also not found
     return {}
-  }
-}
-
-/**
- * Parse YAML content using Bun's native YAML parser
- */
-async function parseYaml(content: string): Promise<Record<string, any>> {
-  try {
-    // Remove UTF-8 BOM if present
-    const cleanContent = content.replace(/^\uFEFF/, '')
-
-    // Handle empty input
-    if (!cleanContent.trim()) {
-      return {}
-    }
-
-    // Use Bun's native YAML parser for optimal performance
-    const result = Bun.YAML.parse(cleanContent)
-
-    // Bun.YAML.parse returns an array for multi-document YAML
-    // If it's a single document, return the first element
-    if (Array.isArray(result) && result.length === 1) {
-      return result[0] || {}
-    }
-
-    return result || {}
-  }
-  catch (error) {
-    console.error('Failed to parse YAML content:', error)
-    throw new Error(`Could not parse YAML: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
-import { resolve } from 'node:path'
 import { $ } from 'bun'
+import { resolve } from 'node:path'
+import process from 'node:process'
 
 console.log('🚀 Building CSS with Headwind...')
 
@@ -22,7 +23,8 @@ try {
   const fileSize = Bun.file(outputPath)
   const sizeKB = ((await fileSize.size) / 1024).toFixed(2)
   console.log(`📦 Final file size: ${sizeKB} KB`)
-} catch (error) {
+}
+catch (error) {
   console.error('❌ Failed to build CSS:', error)
   process.exit(1)
 }

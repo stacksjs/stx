@@ -58,7 +58,8 @@ export function processLoops(template: string, context: Record<string, any>, fil
     while (pos < template.length && parenDepth > 0) {
       if (template[pos] === '(') {
         parenDepth++
-      } else if (template[pos] === ')') {
+      }
+      else if (template[pos] === ')') {
         parenDepth--
         if (parenDepth === 0) {
           closeParen = pos
@@ -108,7 +109,8 @@ export function processLoops(template: string, context: Record<string, any>, fil
         // Found a nested @foreach
         depth++
         searchPos = nextForeach.index + 8 // length of '@foreach'
-      } else {
+      }
+      else {
         // Found an @endforeach
         depth--
         if (depth === 0) {

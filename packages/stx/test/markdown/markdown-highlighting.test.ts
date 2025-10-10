@@ -549,7 +549,7 @@ Regular text after a broken code block.`
       })
 
       // Read without providing explicit options - should use config
-      const { content} = await readMarkdownFile(filePath)
+      const { content } = await readMarkdownFile(filePath)
 
       // When highlighting is enabled, it uses <pre> and <code> tags
       // Check that code content is present and highlighted

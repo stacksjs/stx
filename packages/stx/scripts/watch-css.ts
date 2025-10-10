@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { resolve } from 'node:path'
-import { $ } from 'bun'
+import process from 'node:process'
 
 console.log('🚀 Starting Headwind in watch mode...')
 console.log('')
@@ -18,7 +18,8 @@ try {
   })
 
   await proc.exited
-} catch (error) {
+}
+catch (error) {
   console.error('❌ Failed to start watch mode:', error)
   process.exit(1)
 }

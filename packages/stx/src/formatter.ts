@@ -144,12 +144,10 @@ function formatHtml(content: string, options: Required<FormatterOptions>): strin
 
   // Extract embedded directives from HTML tags
   // Match: <tag ... @directive(...) ... @enddirective>
-  preprocessed = preprocessed.replace(/<(\w+)([^>]*?)(@\w+\([^)]*\))([^>]*?)(@end\w+)([^>]*)>/g,
-    (match, tagName, beforeDirective, openDirective, betweenDirectives, closeDirective, afterDirective) => {
-      // Split into separate lines: tag opening, directive, content between, close directive, tag continuation
-      return `<${tagName}${beforeDirective}\n${openDirective}\n${betweenDirectives.trim()}\n${closeDirective}${afterDirective}>`
-    }
-  )
+  preprocessed = preprocessed.replace(/<(\w+)([^>]*?)(@\w+\([^)]*\))([^>]*?)(@end\w+)([^>]*)>/g, (match, tagName, beforeDirective, openDirective, betweenDirectives, closeDirective, afterDirective) => {
+    // Split into separate lines: tag opening, directive, content between, close directive, tag continuation
+    return `<${tagName}${beforeDirective}\n${openDirective}\n${betweenDirectives.trim()}\n${closeDirective}${afterDirective}>`
+  })
 
   // Split between HTML tags: ><  → >\n<
   // But preserve inline elements when both tags are inline-level elements with text
