@@ -177,7 +177,7 @@ export function memoize<T extends (...args: any[]) => any>(
 }
 
 /**
- * Optimized string replacement that reuses regex patterns
+ * Optimized string replacement that reuses regex patterns with case-preserving support
  */
 export function optimizedReplace(
   text: string,
@@ -187,6 +187,27 @@ export function optimizedReplace(
 ): string {
   if (typeof pattern === 'string') {
     const regex = getCachedRegex(pattern, flags)
+
+    // If replacement is a string and case-insensitive flag is set, preserve case
+    if (typeof replacement === 'string' && flags?.includes('i')) {
+      const replacementStr = replacement
+      return text.replace(regex, (match: string) => {
+        // Detect the case of the original match
+        if (match === match.toUpperCase() && match !== match.toLowerCase()) {
+          // All uppercase (but not all same case like numbers)
+          return replacementStr.toUpperCase()
+        }
+        else if (match[0] === match[0].toUpperCase() && match[0] !== match[0].toLowerCase()) {
+          // First letter capitalized
+          return replacementStr[0].toUpperCase() + replacementStr.slice(1).toLowerCase()
+        }
+        else {
+          // All lowercase or no case
+          return replacementStr.toLowerCase()
+        }
+      })
+    }
+
     return text.replace(regex, replacement as any)
   }
 
@@ -201,7 +222,9 @@ class ExpressionEvaluatorPool {
   private maxPoolSize = 10
 
   getEvaluator(contextKeys: string[]): (...args: any[]) => any {
-    const contextSignature = contextKeys.sort().join(',')
+    // Deduplicate keys to avoid "duplicate parameter name" errors in strict mode
+    const uniqueKeys = Array.from(new Set(contextKeys))
+    const contextSignature = uniqueKeys.sort().join(',')
 
     // Try to find a reusable evaluator
     const reusable = this.pool.find(item => item.context.join(',') === contextSignature)
@@ -211,7 +234,7 @@ class ExpressionEvaluatorPool {
 
     // Create new evaluator - handle empty context keys
     // eslint-disable-next-line no-new-func
-    const evaluator = contextKeys.length === 0
+    const evaluator = uniqueKeys.length === 0
       ? new Function(`
         'use strict';
         return function(expr) {
@@ -225,7 +248,7 @@ class ExpressionEvaluatorPool {
           }
         }
       `)() as (...args: any[]) => any
-      : new Function(...contextKeys, `
+      : new Function(...uniqueKeys, `
         'use strict';
         return function(expr) {
           try {
@@ -243,7 +266,7 @@ class ExpressionEvaluatorPool {
     if (this.pool.length < this.maxPoolSize) {
       this.pool.push({
         func: evaluator,
-        context: contextKeys.slice(),
+        context: uniqueKeys.slice(),
       })
     }
 

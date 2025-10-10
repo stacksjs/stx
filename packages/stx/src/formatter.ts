@@ -208,7 +208,7 @@ function formatHtml(content: string, options: Required<FormatterOptions>): strin
     }
 
     // Handle closing tags
-    if (line.startsWith('</') || line.includes('@end')) {
+    if (line.startsWith('</') || line.startsWith('@end')) {
       indentLevel = Math.max(0, indentLevel - 1)
     }
 
@@ -306,7 +306,7 @@ function isSelfClosingTag(line: string): boolean {
  * Check if a directive opens a block that needs closing
  */
 function isOpeningDirective(line: string): boolean {
-  const blockDirectives = ['if', 'unless', 'foreach', 'for', 'while', 'section', 'push', 'component', 'slot', 'markdown', 'wrap']
+  const blockDirectives = ['if', 'unless', 'foreach', 'for', 'while', 'section', 'push', 'component', 'slot', 'markdown', 'wrap', 'error']
 
   for (const directive of blockDirectives) {
     if (line.startsWith(`@${directive}`)) {
