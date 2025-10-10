@@ -23,7 +23,7 @@ const DEFAULT_OPTIONS: Required<FormatterOptions> = {
   useTabs: false,
   maxLineLength: 120,
   normalizeWhitespace: true,
-  sortAttributes: true,
+  sortAttributes: false,
   trimTrailingWhitespace: true,
 }
 
@@ -185,6 +185,15 @@ function formatHtml(content: string, options: Required<FormatterOptions>): strin
     return `${directive}\n@`
   })
 
+  // Split standalone directives (no parens) from tags: @csrf< → @csrf\n<, @endif< → @endif\n<
+  // Match @directive< where there's no ( between @ and <
+  preprocessed = preprocessed.replace(/(@\w+)(?!\s*\()(\s*)</g, (match, directive, whitespace) => {
+    if (whitespace.includes('\n')) {
+      return match
+    }
+    return `${directive}\n<`
+  })
+
   const lines = preprocessed.split('\n')
   const formattedLines: string[] = []
   let indentLevel = 0
@@ -319,8 +328,8 @@ function formatAttributes(content: string, options: Required<FormatterOptions>):
     if (!attributes.trim())
       return match
 
-    // Skip malformed tags (attributes containing < or newlines suggest malformed HTML)
-    if (attributes.includes('<') || attributes.includes('\n')) {
+    // Skip malformed tags (attributes containing <, newlines, or @ directives suggest malformed HTML)
+    if (attributes.includes('<') || attributes.includes('\n') || attributes.includes('@')) {
       return match
     }
 
