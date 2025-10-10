@@ -72,12 +72,12 @@
     "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {
-    "@stacksjs/headwind": "link:@stacksjs/headwind",
+    "@stacksjs/clapp": "^0.2.0",
+    "@stacksjs/headwind": "^0.1.3",
     "@stacksjs/markdown": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",
     "bun-plugin-stx": "workspace:*",
     "bunfig": "^0.15.0",
-    "cac": "^6.7.14",
     "ts-syntax-highlighter": "link:ts-syntax-highlighter"
   }
 }

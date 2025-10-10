@@ -2,7 +2,6 @@
  * Module for processing template expressions and filters
  */
 
-import { memoize } from './performance-utils'
 import { isExpressionSafe, safeEvaluate } from './safe-evaluator'
 import { createDetailedErrorMessage } from './utils'
 
