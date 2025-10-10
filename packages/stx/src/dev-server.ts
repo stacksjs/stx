@@ -207,8 +207,8 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${data.title || path.basename(absolutePath)}</title>
-  <!-- Shiki syntax highlighting styles -->
-  <style id="shiki-theme">
+  <!-- Syntax highlighting styles -->
+  <style id="syntax-theme">
     :root {
       --shiki-color-text: #24292e;
       --shiki-color-background: #ffffff;
@@ -270,10 +270,10 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
       overflow-x: auto;
     }
     /* Apply background color to code blocks based on theme */
-    pre.shiki {
+    pre.syntax-highlighter {
       background-color: var(--shiki-color-background) !important;
     }
-    .dark-mode pre.shiki {
+    .dark-mode pre.syntax-highlighter {
       background-color: var(--shiki-color-background) !important;
     }
     code {
@@ -825,8 +825,8 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${data.title || path.basename(absolutePath)}</title>
-  <!-- Shiki syntax highlighting styles -->
-  <style id="shiki-theme">
+  <!-- Syntax highlighting styles -->
+  <style id="syntax-theme">
     :root {
       --shiki-color-text: #24292e;
       --shiki-color-background: #ffffff;
@@ -888,10 +888,10 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       overflow-x: auto;
     }
     /* Apply background color to code blocks based on theme */
-    pre.shiki {
+    pre.syntax-highlighter {
       background-color: var(--shiki-color-background) !important;
     }
-    .dark-mode pre.shiki {
+    .dark-mode pre.syntax-highlighter {
       background-color: var(--shiki-color-background) !important;
     }
     code {

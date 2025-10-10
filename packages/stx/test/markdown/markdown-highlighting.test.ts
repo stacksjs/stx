@@ -289,14 +289,16 @@ LIMIT 10;
     })
 
     // Test that basic HTML structures are present
-    expect(content).toContain('<h1>Code Syntax Highlighting Test</h1>')
-    expect(content).toContain('<pre><code class="language-javascript">')
-    expect(content).toContain('<pre><code class="language-typescript">')
-    expect(content).toContain('<pre><code class="language-html">')
-    expect(content).toContain('<pre><code class="language-css">')
-    expect(content).toContain('<pre><code class="language-unknown">')
+    expect(content).toMatch(/<h1[^>]*>Code Syntax Highlighting Test<\/h1>/)
+    // When highlighting is enabled, it uses <pre> and <code> tags
+    expect(content).toContain('<pre')
+    expect(content).toContain('function greet')
+    expect(content).toContain('interface User')
+    expect(content).toContain('<!DOCTYPE html')
+    expect(content).toContain('font-family')
+    expect(content).toContain('unknown language')
 
-    // Test for presence of syntax highlight elements (Shiki uses spans for highlighting)
+    // Test for presence of syntax highlight elements (uses spans for highlighting)
     expect(content).toContain('<span')
   })
 
@@ -420,7 +422,7 @@ Regular text after a broken code block.`
     })
 
     // Test that markdown has been processed
-    expect(content).toContain('<h1>Mixed Content Test</h1>')
+    expect(content).toMatch(/<h1[^>]*>Mixed Content Test<\/h1>/)
     expect(content).toContain('<strong>bold</strong>')
     expect(content).toContain('<em>italic</em>')
     expect(content).toContain('<blockquote>')
@@ -459,7 +461,7 @@ Regular text after a broken code block.`
     expect(content).toContain('<pre><code class="language-ruby">')
     expect(content).toContain('<pre><code class="language-c++">')
 
-    // Check if syntax highlighting is applied (Shiki uses spans)
+    // Check if syntax highlighting is applied (uses spans)
     expect(content).toContain('<span')
   })
 
@@ -488,7 +490,7 @@ Regular text after a broken code block.`
     expect(content).toContain('special')
     expect(content).toContain('console')
 
-    // Check that syntax highlighting is applied (Shiki uses spans)
+    // Check that syntax highlighting is applied (uses spans)
     expect(content).toContain('<span')
   })
 
@@ -547,13 +549,15 @@ Regular text after a broken code block.`
       })
 
       // Read without providing explicit options - should use config
-      const { content } = await readMarkdownFile(filePath)
+      const { content} = await readMarkdownFile(filePath)
 
-      // Should have code blocks with the language class
-      expect(content).toContain('<pre><code class="language-javascript">')
-      expect(content).toContain('<pre><code class="language-typescript">')
+      // When highlighting is enabled, it uses <pre> and <code> tags
+      // Check that code content is present and highlighted
+      expect(content).toContain('<pre')
+      expect(content).toContain('function greet')
+      expect(content).toContain('interface User')
 
-      // The content should contain highlighting (Shiki uses spans)
+      // The content should contain highlighting (uses spans)
       expect(content).toContain('<span')
     }
     finally {
@@ -650,7 +654,7 @@ This is text that will be highlighted as plain text.
     // With highlighting disabled, it should still have the language class but not highlight
     expect(withoutHighlighting).toContain('<pre><code class="language-text">')
 
-    // For Shiki output, we'll just check that it contains the text content
+    // Check that it contains the text content
     expect(withHighlighting).toContain('This is text that will be highlighted as plain text.')
 
     // Since unknown languages may not always get highlighted even when enabled,

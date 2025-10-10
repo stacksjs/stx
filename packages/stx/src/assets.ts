@@ -2,7 +2,7 @@ import type { StxOptions, SyntaxHighlightTheme } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
 import { parseFrontmatter, parseMarkdown } from '@stacksjs/markdown'
-import { createHighlighter } from 'shiki'
+import { createHighlighter } from 'ts-syntax-highlighter'
 import { config } from './config'
 import { createDetailedErrorMessage, fileExists } from './utils'
 
@@ -119,7 +119,7 @@ export async function readMarkdownFile(
 let highlighterCache: any = null
 
 /**
- * Apply syntax highlighting to code blocks in HTML content using Shiki
+ * Apply syntax highlighting to code blocks in HTML content using ts-syntax-highlighter
  */
 async function applyCodeHighlighting(html: string, theme: SyntaxHighlightTheme, highlightUnknown: boolean): Promise<string> {
   // Find all code blocks in the HTML
@@ -129,12 +129,12 @@ async function applyCodeHighlighting(html: string, theme: SyntaxHighlightTheme, 
   if (!highlighterCache) {
     try {
       highlighterCache = await createHighlighter({
-        themes: ['github-dark', 'github-light', 'nord', 'dracula', 'monokai'],
-        langs: ['javascript', 'typescript', 'html', 'css', 'json', 'jsx', 'tsx', 'text', 'bash', 'markdown', 'python', 'ruby', 'c', 'cpp'],
+        theme: theme || 'github-dark',
+        cache: true,
       })
     }
     catch (err) {
-      console.error('Failed to initialize Shiki highlighter:', err)
+      console.error('Failed to initialize ts-syntax-highlighter:', err)
       return html // Return original HTML if we can't initialize the highlighter
     }
   }
@@ -159,39 +159,20 @@ async function applyCodeHighlighting(html: string, theme: SyntaxHighlightTheme, 
 
     try {
       // Use cached highlighter to render the code
-      let highlighted = ''
-
       // Check if language is supported, fall back to text if not
       let actualLang = langToUse
-      try {
-        if (!highlighterCache.getLoadedLanguages().includes(langToUse)) {
-          actualLang = 'text'
-        }
-      }
-      catch {
+      const supportedLanguages = highlighterCache.getSupportedLanguages()
+      if (!supportedLanguages.includes(langToUse)) {
         actualLang = 'text'
       }
 
-      // Get the actual theme to use, defaulting to github-dark if not available
-      let actualTheme = 'github-dark'
-      try {
-        if (highlighterCache.getLoadedThemes().includes(theme)) {
-          actualTheme = theme
-        }
-      }
-      catch {
-        // Keep the default
-      }
-
       // Generate highlighted HTML
-      highlighted = highlighterCache.codeToHtml(decodedCode, {
-        lang: actualLang,
-        theme: actualTheme,
+      const result = await highlighterCache.highlight(decodedCode, actualLang, {
+        theme,
       })
 
-      // Return the full Shiki output with inline styles
-      // Shiki wraps the code in <pre> and <code> tags with proper styling
-      return highlighted
+      // Return the HTML from ts-syntax-highlighter
+      return result.html
     }
     catch (err) {
       console.error(`Error highlighting code block with language ${language}:`, err)

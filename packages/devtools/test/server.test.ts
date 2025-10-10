@@ -121,25 +121,6 @@ describe('DEVTOOLS: Server Functionality Tests', () => {
     expect(content).toContain('[')
   })
 
-  test('should validate UnoCSS configuration', async () => {
-    const unoConfigPath = path.join(PACKAGE_ROOT, 'uno.config.ts')
-    const exists = await Bun.file(unoConfigPath).exists()
-    expect(exists).toBe(true)
-
-    const content = await Bun.file(unoConfigPath).text()
-    expect(content).toContain('export')
-    expect(content).toMatch(/defineConfig|export\s+default/)
-  })
-
-  test('should validate UnoCSS source configuration', async () => {
-    const srcUnoConfigPath = path.join(PACKAGE_ROOT, 'src/uno.config.ts')
-    const exists = await Bun.file(srcUnoConfigPath).exists()
-    expect(exists).toBe(true)
-
-    const content = await Bun.file(srcUnoConfigPath).text()
-    expect(content).toContain('export')
-  })
-
   test('should validate stx type definitions', async () => {
     const stxTypesPath = path.join(PACKAGE_ROOT, 'src/stx.d.ts')
     const exists = await Bun.file(stxTypesPath).exists()

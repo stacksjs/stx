@@ -396,10 +396,19 @@ export function evaluateExpression(expression: string, context: Record<string, a
     }
 
     // For safe expressions, use memoized evaluation for performance
-    const contextKeys = JSON.stringify(Object.keys(context))
-    const contextValues = JSON.stringify(Object.values(context))
-
-    return memoizedUnsafeEvaluate(trimmedExpr, contextKeys, contextValues)
+    // Try to stringify context, but handle circular references gracefully
+    try {
+      const contextKeys = JSON.stringify(Object.keys(context))
+      const contextValues = JSON.stringify(Object.values(context))
+      return memoizedUnsafeEvaluate(trimmedExpr, contextKeys, contextValues)
+    }
+    catch (stringifyError: any) {
+      // If JSON.stringify fails (e.g., circular references), fall back to safe evaluator
+      if (stringifyError.message?.includes('cyclic') || stringifyError.message?.includes('circular')) {
+        return safeEvaluate(trimmedExpr, context)
+      }
+      throw stringifyError
+    }
   }
   catch (error: any) {
     if (!silent) {

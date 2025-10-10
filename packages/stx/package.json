@@ -78,6 +78,6 @@
     "bun-plugin-stx": "workspace:*",
     "bunfig": "^0.15.0",
     "cac": "^6.7.14",
-    "shiki": "^3.8.0"
+    "ts-syntax-highlighter": "link:ts-syntax-highlighter"
   }
 }

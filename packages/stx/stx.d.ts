@@ -13,13 +13,3 @@ declare module '*.md' {
   // Named export for frontmatter data
   export { data }
 }
-
-// Extend BuildConfig to support stx options
-declare module 'bun' {
-  interface BuildConfig {
-    stx?: import('./src/types').StxOptions
-    config?: {
-      stx?: import('./src/types').StxOptions
-    }
-  }
-}
