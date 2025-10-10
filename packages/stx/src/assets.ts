@@ -46,8 +46,8 @@ export async function readMarkdownFile(
       }
     }
 
-    // Read the file
-    const fileContent = await fs.promises.readFile(filePath, 'utf-8')
+    // Read the file using Bun's native file API
+    const fileContent = await Bun.file(filePath).text()
 
     // Parse the content and frontmatter
     const { data, content: markdownContent } = parseFrontmatter(fileContent)
@@ -159,15 +159,15 @@ async function applyCodeHighlighting(html: string, theme: SyntaxHighlightTheme, 
 
     try {
       // Use cached highlighter to render the code
-      // Check if language is supported, fall back to text if not
-      let actualLang = langToUse
+      // Check if language is supported, if not return unhighlighted code
       const supportedLanguages = highlighterCache.getSupportedLanguages()
       if (!supportedLanguages.includes(langToUse)) {
-        actualLang = 'text'
+        // Return unhighlighted code block for unsupported languages
+        return match
       }
 
       // Generate highlighted HTML
-      const result = await highlighterCache.highlight(decodedCode, actualLang, {
+      const result = await highlighterCache.highlight(decodedCode, langToUse, {
         theme,
       })
 

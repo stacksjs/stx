@@ -21,24 +21,21 @@ export function parse<T = any>(input: string, options: YamlOptions = {}): T {
     }
 
     // Use Bun's native YAML parser for optimal performance
-    // Check if Bun.YAML is available (newer versions of Bun)
-    if (typeof Bun !== 'undefined' && 'YAML' in Bun && typeof (Bun as any).YAML?.parse === 'function') {
-      const result = (Bun as any).YAML.parse(content)
-      // Bun.YAML.parse returns an array for multi-document YAML
-      // If it's a single document, return the first element
-      if (Array.isArray(result) && result.length === 1) {
-        return result[0] as T
-      }
-      return result as T
+    const result = Bun.YAML.parse(content)
+
+    // Bun.YAML.parse returns an array for multi-document YAML
+    // If it's a single document, return the first element
+    if (Array.isArray(result) && result.length === 1) {
+      return result[0] as T
     }
 
-    // Fallback to custom parser
-    return _parseFallback<T>(input, options)
+    return result as T
   }
   catch (error) {
     if (strict) {
       throw new Error(`YAML parsing failed: ${error}`)
     }
+    // Return empty object for malformed YAML in non-strict mode
     return {} as T
   }
 }
@@ -271,13 +268,7 @@ function parseValue(value: string): any {
 export function stringify(obj: any, _options: YamlOptions = {}): string {
   try {
     // Use Bun's native YAML stringify with block-style formatting (2 spaces)
-    // Check if Bun.YAML is available (newer versions of Bun)
-    if (typeof Bun !== 'undefined' && 'YAML' in Bun && typeof (Bun as any).YAML?.stringify === 'function') {
-      return (Bun as any).YAML.stringify(obj, null, 2)
-    }
-
-    // Fallback to custom implementation if needed
-    return stringifyFallback(obj, 0)
+    return Bun.YAML.stringify(obj, null, 2)
   }
   catch {
     // Fallback to custom implementation if needed

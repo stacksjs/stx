@@ -395,19 +395,29 @@ export function evaluateExpression(expression: string, context: Record<string, a
       return safeEvaluate(trimmedExpr, context)
     }
 
-    // For safe expressions, use memoized evaluation for performance
-    // Try to stringify context, but handle circular references gracefully
+    // For safe expressions, evaluate directly (memoization with functions is complex)
+    // Create a function that evaluates the expression in the context
     try {
-      const contextKeys = JSON.stringify(Object.keys(context))
-      const contextValues = JSON.stringify(Object.values(context))
-      return memoizedUnsafeEvaluate(trimmedExpr, contextKeys, contextValues)
+      const keys = Object.keys(context)
+      const values = Object.values(context)
+
+      // eslint-disable-next-line no-new-func
+      const exprFn = new Function(...keys, `
+        try {
+          return ${trimmedExpr};
+        } catch (e) {
+          if (e instanceof ReferenceError || e instanceof TypeError) {
+            return undefined;
+          }
+          throw e;
+        }
+      `)
+
+      return exprFn(...values)
     }
-    catch (stringifyError: any) {
-      // If JSON.stringify fails (e.g., circular references), fall back to safe evaluator
-      if (stringifyError.message?.includes('cyclic') || stringifyError.message?.includes('circular')) {
-        return safeEvaluate(trimmedExpr, context)
-      }
-      throw stringifyError
+    catch (evalError: any) {
+      // If evaluation fails, fall back to safe evaluator
+      return safeEvaluate(trimmedExpr, context)
     }
   }
   catch (error: any) {

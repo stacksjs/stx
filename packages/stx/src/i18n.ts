@@ -45,24 +45,9 @@ export async function loadTranslation(
   try {
     let translations: Record<string, any> = {}
 
-    if (i18nConfig.format === 'js') {
-      // For JS files, import them dynamically
-      const imported = await import(translationFile)
-      translations = imported.default || imported
-    }
-    else {
-      // For JSON or YAML files, read and parse
-      const content = await fs.promises.readFile(translationFile, 'utf-8')
-
-      if (i18nConfig.format === 'yaml' || i18nConfig.format === 'yml') {
-        // Parse YAML content
-        translations = await parseYaml(content)
-      }
-      else {
-        // Parse JSON content
-        translations = JSON.parse(content)
-      }
-    }
+    // Use dynamic imports for all formats - Bun supports JS, JSON, and YAML
+    const imported = await import(translationFile)
+    translations = imported.default || imported
 
     // Cache the translations if caching is enabled
     if (i18nConfig.cache) {
@@ -87,27 +72,32 @@ export async function loadTranslation(
 }
 
 /**
- * Parse YAML content
+ * Parse YAML content using Bun's native YAML parser
  */
 async function parseYaml(content: string): Promise<Record<string, any>> {
   try {
-    // Dynamically import yaml library
-    const { parse } = await import('yaml')
-    return parse(content) || {}
+    // Remove UTF-8 BOM if present
+    const cleanContent = content.replace(/^\uFEFF/, '')
+
+    // Handle empty input
+    if (!cleanContent.trim()) {
+      return {}
+    }
+
+    // Use Bun's native YAML parser for optimal performance
+    const result = Bun.YAML.parse(cleanContent)
+
+    // Bun.YAML.parse returns an array for multi-document YAML
+    // If it's a single document, return the first element
+    if (Array.isArray(result) && result.length === 1) {
+      return result[0] || {}
+    }
+
+    return result || {}
   }
-  catch (importError) {
-    console.error('Failed to import yaml parser:', importError)
-    try {
-      // Try using Bun's native parsing if available
-      if (typeof Bun !== 'undefined' && 'YAML' in Bun && typeof (Bun as any).YAML?.parse === 'function') {
-        return ((Bun as any).YAML.parse(content)) || {}
-      }
-      throw new Error('No YAML parser available')
-    }
-    catch (error) {
-      console.error('Failed to parse YAML content:', error)
-      throw new Error('Could not parse YAML. Please install the "yaml" package or use JSON format instead.')
-    }
+  catch (error) {
+    console.error('Failed to parse YAML content:', error)
+    throw new Error(`Could not parse YAML: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 

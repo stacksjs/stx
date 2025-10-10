@@ -38,3 +38,4 @@ examples/stx/test/.stx/cache/
 examples/.stx/
 
 examples/.stx-output/
+packages/stx/test/performance/perf-temp
