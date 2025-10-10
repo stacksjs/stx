@@ -790,7 +790,7 @@ public function boot() {
           </a>
         </div>
         <p class="mt-8 text-base text-blue-gray-400 md:mt-0 md:order-1">
-          &copy; 2021 Meema, Inc. All rights reserved. Made with &#10084; in Silicon Beach.
+          &copy; 2025 Stacks.js, Inc. All rights reserved. Made with &#10084; in Silicon Beach.
         </p>
       </div>
     </div>
