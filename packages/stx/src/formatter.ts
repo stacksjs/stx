@@ -78,7 +78,14 @@ export function formatStxContent(content: string, options: FormatterOptions = {}
  */
 function formatScriptTags(content: string, options: Required<FormatterOptions>): string {
   return content.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, (match, scriptContent) => {
-    // Basic script formatting - normalize indentation
+    const trimmed = scriptContent.trim()
+
+    // Keep simple one-liner scripts inline (single statement, reasonable length)
+    if (trimmed && !trimmed.includes('\n') && trimmed.length < 80) {
+      return match.replace(scriptContent, trimmed)
+    }
+
+    // Basic script formatting - normalize indentation for multi-line scripts
     const lines = scriptContent.split('\n')
     const formattedLines = lines.map((line: string, index: number) => {
       if (index === 0 && line.trim() === '')
@@ -87,12 +94,12 @@ function formatScriptTags(content: string, options: Required<FormatterOptions>):
         return '' // Empty last line
 
       // Add consistent indentation
-      const trimmed = line.trim()
-      if (trimmed === '')
+      const lineTrimmed = line.trim()
+      if (lineTrimmed === '')
         return ''
 
       const indent = options.useTabs ? '\t' : ' '.repeat(options.indentSize)
-      return `${indent}${trimmed}`
+      return `${indent}${lineTrimmed}`
     }).filter((line: string, index: number, arr: string[]) => {
       // Remove empty lines at start and end
       if (index === 0 || index === arr.length - 1)
@@ -135,12 +142,61 @@ function formatHtml(content: string, options: Required<FormatterOptions>): strin
     return placeholder
   })
 
+  // Extract embedded directives from HTML tags
+  // Match: <tag ... @directive(...) ... @enddirective>
+  preprocessed = preprocessed.replace(/<(\w+)([^>]*?)(@\w+\([^)]*\))([^>]*?)(@end\w+)([^>]*)>/g,
+    (match, tagName, beforeDirective, openDirective, betweenDirectives, closeDirective, afterDirective) => {
+      // Split into separate lines: tag opening, directive, content between, close directive, tag continuation
+      return `<${tagName}${beforeDirective}\n${openDirective}\n${betweenDirectives.trim()}\n${closeDirective}${afterDirective}>`
+    }
+  )
+
   // Split between HTML tags: ><  → >\n<
-  preprocessed = preprocessed.replace(/>(\s*)</g, (match, whitespace) => {
+  // But preserve inline elements when both tags are inline-level elements with text
+  preprocessed = preprocessed.replace(/>(\s*)</g, (match, whitespace, offset, string) => {
     // If there's already whitespace including newlines, keep it
     if (whitespace.includes('\n')) {
       return match
     }
+
+    // Check the tags on both sides of this split point
+    const before = string.substring(Math.max(0, offset - 50), offset + 1)
+    const after = string.substring(offset + match.length - 1, Math.min(string.length, offset + match.length + 50))
+
+    // Extract tag names
+    const closingTagMatch = before.match(/<\/(\w+)>$/)
+    const openingTagMatch = after.match(/^<(\w+)/)
+
+    // List of inline-level HTML elements
+    const inlineTags = ['span', 'a', 'strong', 'em', 'b', 'i', 'u', 'small', 'mark', 'del', 'ins', 'sub', 'sup', 'code', 'kbd', 'samp', 'var', 'abbr', 'cite', 'q', 'dfn', 'time']
+
+    if (closingTagMatch && openingTagMatch) {
+      const closingTag = closingTagMatch[1].toLowerCase()
+      const openingTag = openingTagMatch[1].toLowerCase()
+
+      // If both are inline tags, check for text content on the line
+      if (inlineTags.includes(closingTag) && inlineTags.includes(openingTag)) {
+        // Find the line boundaries
+        const beforeMatch = string.substring(0, offset)
+        const lastNewline = beforeMatch.lastIndexOf('\n')
+        const lineStart = lastNewline + 1
+        const afterMatch = string.substring(offset + match.length)
+        const nextNewline = afterMatch.indexOf('\n')
+        const lineEnd = nextNewline === -1 ? string.length : offset + match.length + nextNewline
+
+        // Get the full current line
+        const currentLine = string.substring(lineStart, lineEnd)
+
+        // Check if line has text content mixed with tags
+        const withoutTags = currentLine.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+
+        // If there's text content, preserve inline formatting
+        if (withoutTags.length > 0) {
+          return match
+        }
+      }
+    }
+
     // Otherwise add a newline between tags
     return '>\n<'
   })

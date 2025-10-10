@@ -101,7 +101,9 @@ function calculateMetrics(content: string): TemplateMetrics {
   // Count expressions (both {{ }} and {!! !!})
   const regularExpressions = (content.match(/\{\{[\s\S]*?\}\}/g) || []).length
   const rawExpressions = (content.match(/\{!![\s\S]*?!!\}/g) || []).length
-  const expressions = regularExpressions + rawExpressions
+  // Also count directive conditions as they contain evaluated expressions
+  const directiveExpressions = (content.match(/@(?:if|unless|elseif|foreach|for|while)\s*\([^)]+\)/g) || []).length
+  const expressions = regularExpressions + rawExpressions + directiveExpressions
 
   // Count components (custom elements)
   const components = (content.match(/<[A-Z][^>]*>/g) || []).length
@@ -109,9 +111,24 @@ function calculateMetrics(content: string): TemplateMetrics {
   // Count layouts
   const layouts = (content.match(/@extends\(/g) || []).length
 
-  // Detect deeply nested structures
-  const deepNesting = content.match(/@if[\s\S]*?@if[\s\S]*?@if[\s\S]*?@if/g)
-  const nestingBonus = deepNesting ? deepNesting.length * 3 : 0
+  // Detect deeply nested structures (4+ levels) - check for any block directives
+  // Match patterns like @if...@if...@if...@if or @foreach...@if...@if...@if
+  let maxNestingDepth = 0
+  let currentDepth = 0
+
+  for (const line of lines) {
+    // Count opening directives
+    if (/@(?:if|unless|foreach|for|while|section)\b/.test(line) && !/@end/.test(line) && !/@else/.test(line)) {
+      currentDepth++
+      maxNestingDepth = Math.max(maxNestingDepth, currentDepth)
+    }
+    // Count closing directives
+    else if (/@end(?:if|unless|foreach|for|while|section)\b/.test(line)) {
+      currentDepth--
+    }
+  }
+
+  const nestingBonus = maxNestingDepth >= 4 ? 3 : 0
 
   // Calculate complexity score
   const complexity = Math.min(10, Math.ceil(
