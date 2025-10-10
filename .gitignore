@@ -34,3 +34,7 @@ tasks/
 
 examples/stx/test/.stx/cache/
 /packages/stx/.stx-output
+
+examples/.stx/
+
+examples/.stx-output/

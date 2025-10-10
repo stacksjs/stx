@@ -1,4 +1,3 @@
-/// <reference path="../global.d.ts" />
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'

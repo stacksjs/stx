@@ -332,13 +332,13 @@ export async function serveFile(
  */
 export function createMiddleware(
   handler: (request: Request, next: () => Response | Promise<Response>) => Response | Promise<Response>,
-) {
+): (request: Request, next: () => Response | Promise<Response>) => Response | Promise<Response> {
   return handler
 }
 
 /**
  * Helper to create a route handler
  */
-export function createRoute(handler: (request: Request) => Response | Promise<Response>) {
+export function createRoute(handler: (request: Request) => Response | Promise<Response>): (request: Request) => Response | Promise<Response> {
   return handler
 }

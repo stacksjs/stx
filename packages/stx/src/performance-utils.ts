@@ -28,7 +28,7 @@ export class TemplateCache {
   private maxSize: number
   private ttl: number // Time to live in milliseconds
 
-  constructor(maxSize = 1000, ttl = 5 * 60 * 1000) { // 5 minutes default TTL
+  constructor(maxSize = 1000, ttl: number = 5 * 60 * 1000) { // 5 minutes default TTL
     this.maxSize = maxSize
     this.ttl = ttl
   }
@@ -242,7 +242,7 @@ class ExpressionEvaluatorPool {
 }
 
 // Global expression evaluator pool
-export const expressionEvaluatorPool = new ExpressionEvaluatorPool()
+export const expressionEvaluatorPool: ExpressionEvaluatorPool = new ExpressionEvaluatorPool()
 
 /**
  * Performance monitor for tracking processing times
@@ -337,4 +337,4 @@ export class PerformanceMonitor {
 }
 
 // Global performance monitor instance
-export const performanceMonitor = new PerformanceMonitor()
+export const performanceMonitor: PerformanceMonitor = new PerformanceMonitor()

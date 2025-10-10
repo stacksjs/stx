@@ -1,6 +1,24 @@
-import type { HeadwindConfig } from '@stacksjs/headwind'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+// Define HeadwindConfig type locally since @stacksjs/headwind may not be available
+interface HeadwindConfig {
+  content: string[]
+  output: string
+  minify: boolean
+  watch: boolean
+  safelist: string[]
+  blocklist: string[]
+  theme: {
+    colors: Record<string, any>
+    spacing: Record<string, string>
+    fontSize: Record<string, any>
+    fontFamily: Record<string, string[]>
+    screens: Record<string, string>
+    borderRadius: Record<string, string>
+    boxShadow: Record<string, string>
+  }
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 

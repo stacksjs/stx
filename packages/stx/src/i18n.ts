@@ -98,9 +98,9 @@ async function parseYaml(content: string): Promise<Record<string, any>> {
   catch (importError) {
     console.error('Failed to import yaml parser:', importError)
     try {
-      // Try using Bun's native parsing via .toJSON() if available
-      if (typeof Bun !== 'undefined') {
-        return (Bun.YAML?.parse?.(content)) || {}
+      // Try using Bun's native parsing if available
+      if (typeof Bun !== 'undefined' && 'YAML' in Bun && typeof (Bun as any).YAML?.parse === 'function') {
+        return ((Bun as any).YAML.parse(content)) || {}
       }
       throw new Error('No YAML parser available')
     }

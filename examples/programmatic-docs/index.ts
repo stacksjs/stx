@@ -258,7 +258,7 @@ const layoutMiddleware = createMiddleware(async (request, next) => {
 /**
  * Start the documentation server
  */
-async function startDocsServer() {
+async function startDocsServer(): Promise<void> {
   const serverConfig: ServeOptions = {
     port: 3000,
     root: './docs', // Directory containing .md and .stx files

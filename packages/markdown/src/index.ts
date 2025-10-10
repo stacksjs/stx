@@ -25,7 +25,7 @@ export { parse as parseYaml, stringify as stringifyYaml } from './yaml'
 export function parseMarkdownWithFrontmatter<T = Record<string, any>>(
   content: string,
   options?: { gfm?: boolean, breaks?: boolean },
-) {
+): { data: T, content: string, html: string } {
   const { data, content: markdown } = parseFrontmatter<T>(content)
   const html = parseMarkdown(markdown, options)
 
@@ -39,8 +39,14 @@ export function parseMarkdownWithFrontmatter<T = Record<string, any>>(
 /**
  * Default export
  */
-export default {
+const markdownParser: {
+  parseFrontmatter: typeof parseFrontmatter
+  parseMarkdown: typeof parseMarkdown
+  parseMarkdownWithFrontmatter: typeof parseMarkdownWithFrontmatter
+} = {
   parseFrontmatter,
   parseMarkdown,
   parseMarkdownWithFrontmatter,
 }
+
+export default markdownParser
