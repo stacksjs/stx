@@ -1621,7 +1621,7 @@
         "stx": "./dist/bin/cli.js",
       },
       "dependencies": {
-        "@stacksjs/headwind": "^0.1.1",
+        "@stacksjs/headwind": "link:@stacksjs/headwind",
         "@stacksjs/markdown": "workspace:*",
         "@stacksjs/sanitizer": "workspace:*",
         "bun-plugin-stx": "workspace:*",
@@ -2146,7 +2146,7 @@
 
     "@stacksjs/gitlint": ["@stacksjs/gitlint@0.1.5", "", { "bin": { "gitlint": "dist/bin/cli.js" } }, "sha512-5nSr6PN8/cRPdIz9Cj65Dh12N9gR7BPtJzR3rnqhAgpm5q0ihjmVTTybFQqigMcYuRpt2qX4HenV7YXuFOYScw=="],
 
-    "@stacksjs/headwind": ["@stacksjs/headwind@0.1.1", "", { "dependencies": { "bunfig": "^0.15.0" }, "bin": { "headwind": "dist/bin/cli.js" } }, "sha512-2ss37wbEO96Ir0/3QFN2x85TLPpQTsV1HrTLttvQ+EP2WqyB9fz5eSZYHXyswBXrisoauftwFDvm4kw5Wrd99w=="],
+    "@stacksjs/headwind": ["@stacksjs/headwind@link:@stacksjs/headwind", { "bin": { "headwind": "./dist/bin/cli.js" } }],
 
     "@stacksjs/iconify-academicons": ["@stacksjs/iconify-academicons@workspace:packages/collections/iconify-academicons"],
 

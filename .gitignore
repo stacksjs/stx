@@ -33,3 +33,4 @@ bin/
 tasks/
 
 examples/stx/test/.stx/cache/
+/packages/stx/.stx-output

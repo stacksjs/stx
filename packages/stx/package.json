@@ -72,7 +72,7 @@
     "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {
-    "@stacksjs/headwind": "^0.1.1",
+    "@stacksjs/headwind": "link:@stacksjs/headwind",
     "@stacksjs/markdown": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",
     "bun-plugin-stx": "workspace:*",

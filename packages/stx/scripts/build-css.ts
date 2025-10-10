@@ -7,10 +7,11 @@ console.log('🚀 Building CSS with Headwind...')
 const headwindPath = resolve(process.env.HOME!, 'Code/headwind')
 const contentPath = resolve(import.meta.dir, '../../../examples/**/*.stx')
 const outputPath = resolve(import.meta.dir, '../examples/dist/styles.css')
+const configPath = resolve(import.meta.dir, '../headwind.config.ts')
 
 try {
-  // Use headwind CLI directly
-  const result = await $`cd ${headwindPath} && ./headwind build --content ${contentPath} --output ${outputPath}`.text()
+  // Use headwind CLI directly with config file
+  const result = await $`cd ${headwindPath} && ./headwind build --content ${contentPath} --output ${outputPath} --config ${configPath}`.text()
 
   console.log(result)
 

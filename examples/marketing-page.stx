@@ -7,45 +7,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/packages/stx/examples/dist/styles.css">
+  <link rel="stylesheet" href="styles.css">
   <style>
-    :root {
-      --ocean-blue: #182848;
-      --ocean-green: #2980B9;
-      --ocean-blue-green: #084E77;
-    }
-
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-
-    /* Ocean color classes */
-    .bg-ocean-blue {
-      background-color: #182848 !important;
-    }
-
-    .bg-ocean-green {
-      background-color: #2980B9 !important;
-    }
-
-    .bg-ocean-blue-green {
-      background-color: #084E77 !important;
-    }
-
-    .from-ocean-blue {
-      --tw-gradient-from: #182848 !important;
-    }
-
-    .to-ocean-green {
-      --tw-gradient-to: #2980B9 !important;
-    }
-
-    .from-ocean-green {
-      --tw-gradient-from: #2980B9 !important;
-    }
-
-    .to-ocean-blue {
-      --tw-gradient-to: #182848 !important;
     }
 
     /* Waves animation */
@@ -484,7 +449,7 @@ public function boot() {
   </div>
 
   <!-- Pricing -->
-  <div id="pricing" class="relative bg-ocean-green">
+  <div id="pricing" class="relative bg-gradient-to-b from-ocean-green to-ocean-blue">
     <div class="relative pt-12 pb-20 sm:pt-16 sm:pb-24 lg:pt-24 lg:pb-32">
       <div class="px-4 mx-auto text-center max-w-7xl sm:px-6 lg:px-8">
         <div class="max-w-3xl mx-auto space-y-2 lg:max-w-none">
@@ -499,7 +464,6 @@ public function boot() {
 
     <div class="pb-12 mt-8 sm:mt-12 sm:pb-16 lg:mt-16 lg:pb-24">
       <div class="relative">
-        <div class="absolute inset-0 bg-gradient-to-b from-ocean-green to-ocean-blue h-2/3"></div>
         <div class="relative px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
           <div class="max-w-md mx-auto space-y-4 lg:max-w-5xl lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0 relative z-10">
 
@@ -655,25 +619,25 @@ public function boot() {
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="relative px-4 mx-auto mt-8 max-w-7xl sm:px-6 lg:px-8 lg:mt-12">
-        <div class="max-w-md mx-auto lg:max-w-5xl">
-          <div class="px-6 py-8 bg-white rounded-lg shadow-md sm:p-10 lg:flex lg:items-center">
-            <div class="flex-1">
-              <div>
-                <h3 class="inline-flex px-4 py-1 text-sm font-semibold tracking-wide uppercase rounded-full text-cyan-600 bg-cyan-100">
-                  Purchasing Power Parity
-                </h3>
+        <div class="relative px-4 mx-auto mt-8 pb-12 max-w-7xl sm:px-6 sm:pb-16 lg:px-8 lg:mt-12 lg:pb-24">
+          <div class="max-w-md mx-auto lg:max-w-5xl">
+            <div class="px-6 py-8 bg-white rounded-lg shadow-md sm:p-10 lg:flex lg:items-center">
+              <div class="flex-1">
+                <div>
+                  <h3 class="inline-flex px-4 py-1 text-sm font-semibold tracking-wide uppercase rounded-full text-cyan-600 bg-cyan-100">
+                    Purchasing Power Parity
+                  </h3>
+                </div>
+                <div class="mt-4 text-lg text-gray-700">
+                  We participate in the "purchasing power parity" (PPP) program based on the Big Mac Index. Contact us to participate.
+                </div>
               </div>
-              <div class="mt-4 text-lg text-gray-700">
-                We participate in the "purchasing power parity" (PPP) program based on the Big Mac Index. Contact us to participate.
+              <div class="mt-6 rounded-md shadow lg:mt-0 lg:ml-10 lg:flex-shrink-0">
+                <a href="#" class="flex items-center justify-center px-5 py-3 text-base font-medium text-white border border-transparent rounded-md bg-ocean-blue hover:bg-ocean-blue-green transition">
+                  Contact Us
+                </a>
               </div>
-            </div>
-            <div class="mt-6 rounded-md shadow lg:mt-0 lg:ml-10 lg:flex-shrink-0">
-              <a href="#" class="flex items-center justify-center px-5 py-3 text-base font-medium text-white border border-transparent rounded-md bg-ocean-blue hover:bg-ocean-blue-green transition">
-                Contact Us
-              </a>
             </div>
           </div>
         </div>
@@ -769,20 +733,44 @@ public function boot() {
             </div>
           </div>
         </div>
-        <div class="mt-8 xl:mt-0">
-          <h3 class="text-sm font-semibold tracking-wider uppercase text-sky-400">Subscribe to our newsletter</h3>
-          <p class="mt-4 text-base text-blue-gray-300">
-            The latest news, articles, and resources, sent to your inbox weekly.
+        <div class="mt-12 xl:mt-0">
+          <div class="flex items-start space-x-2 mb-4">
+            <svg class="w-6 h-6 text-sky-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <div>
+              <h3 class="text-base font-bold tracking-wide uppercase text-white">Subscribe to our newsletter</h3>
+            </div>
+          </div>
+          <p class="mt-3 text-base leading-relaxed text-blue-gray-200">
+            Get the latest news, articles, and resources delivered to your inbox weekly.
           </p>
-          <form class="mt-4 sm:flex sm:max-w-md">
+          <form class="mt-6 sm:flex sm:max-w-md">
             <label for="emailAddress" class="sr-only">Email address</label>
-            <input id="emailAddress" type="email" name="emailAddress" autocomplete="email" required class="w-full min-w-0 px-4 py-2 text-base bg-white border border-transparent rounded-md appearance-none text-blue-gray-900 placeholder-blue-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-blue-gray-800 focus:ring-white focus:border-white focus:placeholder-blue-gray-400" placeholder="Enter your email" />
+            <input
+              id="emailAddress"
+              type="email"
+              name="emailAddress"
+              autocomplete="email"
+              required
+              class="w-full min-w-0 px-4 py-3 text-base bg-white border-2 border-blue-gray-700 rounded-lg appearance-none text-blue-gray-900 placeholder-blue-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent transition-all shadow-sm"
+              placeholder="you@example.com"
+            />
             <div class="mt-3 rounded-md sm:mt-0 sm:ml-3 sm:flex-shrink-0">
-              <button type="submit" class="flex items-center justify-center w-full px-4 py-2 text-base font-medium text-white border border-transparent rounded-md bg-sky-500 hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-blue-gray-800 focus:ring-sky-500">
-                Subscribe
+              <button
+                type="submit"
+                class="flex items-center justify-center w-full px-6 py-3 text-base font-semibold text-white border-2 border-transparent rounded-lg bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-ocean-blue focus:ring-sky-400 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <span>Subscribe</span>
+                <svg class="w-5 h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
               </button>
             </div>
           </form>
+          <p class="mt-3 text-xs text-blue-gray-400">
+            We care about your data. Read our <a href="#" class="underline hover:text-sky-400 transition-colors">Privacy Policy</a>.
+          </p>
         </div>
       </div>
       <div class="pt-8 mt-8 border-t border-gray-700 md:flex md:items-center md:justify-between">
