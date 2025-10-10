@@ -49,6 +49,13 @@ export function formatStxContent(content: string, options: FormatterOptions = {}
   // Format stx directives
   formatted = formatStxDirectives(formatted, opts)
 
+  // Final pass: remove any trailing whitespace that might have been introduced
+  if (opts.trimTrailingWhitespace) {
+    formatted = formatted.replace(/[ \t]+$/gm, '')
+    // Also remove whitespace before closing tags (but only when there's content before it on the same line)
+    formatted = formatted.replace(/(\S)[ \t]+(<\/[^>]+>)/g, '$1$2')
+  }
+
   // Normalize line endings and ensure file ends with newline
   formatted = formatted.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
   if (!formatted.endsWith('\n')) {
@@ -122,7 +129,9 @@ function formatHtml(content: string, options: Required<FormatterOptions>): strin
     // Handle opening tags (but not self-closing)
     if (line.startsWith('<') && !line.includes('/>') && !line.startsWith('</')) {
       // Check if it's not a self-closing tag or comment
-      if (!line.includes('<!') && !isSelfClosingTag(line)) {
+      // Also check if the line contains both opening and closing tags (e.g., <title>Text</title>)
+      const hasMatchingClosingTag = line.match(/<(\w+)[^>]*>.*<\/\1>/)
+      if (!line.includes('<!') && !isSelfClosingTag(line) && !hasMatchingClosingTag) {
         indentLevel++
       }
     }

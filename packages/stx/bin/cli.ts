@@ -470,7 +470,7 @@ else {
     .action(async (filePattern, options) => {
       try {
         // Validate port if provided
-        if (options.port) {
+        if (options.port !== undefined) {
           const portValidation = validatePort(options.port)
           if (!portValidation.isValid) {
             reportValidationError(portValidation)
@@ -478,7 +478,7 @@ else {
         }
 
         // Validate timeout if provided
-        if (options.timeout) {
+        if (options.timeout !== undefined) {
           const timeoutValidation = validateTimeout(options.timeout)
           if (!timeoutValidation.isValid) {
             reportValidationError(timeoutValidation)
@@ -737,7 +737,7 @@ else {
     }) => {
       try {
         // Validate port parameter if provided
-        if (options.port) {
+        if (options.port !== undefined) {
           const portValidation = validatePort(options.port)
           if (!portValidation.isValid) {
             reportValidationError(portValidation)
@@ -745,7 +745,7 @@ else {
         }
 
         // Validate timeout parameter if provided
-        if (options.timeout) {
+        if (options.timeout !== undefined) {
           const timeoutValidation = validateTimeout(options.timeout)
           if (!timeoutValidation.isValid) {
             reportValidationError(timeoutValidation)
@@ -1398,6 +1398,13 @@ else {
       ignore?: string
     }) => {
       try {
+        // Validate mutually exclusive options
+        if (options.check && options.write) {
+          console.error('❌ Options --check and --write are mutually exclusive')
+          console.error('💡 Use --check to verify formatting or --write to apply changes, but not both')
+          process.exit(1)
+        }
+
         const patternArray = patterns && patterns.length > 0 ? patterns : ['**/*.stx']
         const ignorePatterns = options.ignore ? options.ignore.split(',').map(p => p.trim()) : []
 
@@ -1998,6 +2005,73 @@ else {
   cli.command('version', 'Show the version of the CLI').action(() => {
     console.log(version)
   })
+
+  // Helper function to calculate Levenshtein distance for command suggestions
+  function levenshteinDistance(a: string, b: string): number {
+    const matrix: number[][] = []
+
+    for (let i = 0; i <= b.length; i++) {
+      matrix[i] = [i]
+    }
+
+    for (let j = 0; j <= a.length; j++) {
+      matrix[0][j] = j
+    }
+
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1]
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          )
+        }
+      }
+    }
+
+    return matrix[b.length][a.length]
+  }
+
+  // Check for unknown commands and provide suggestions
+  const knownCommands = [
+    'docs', 'iconify', 'dev', 'a11y', 'build', 'test', 'init', 'new',
+    'format', 'perf', 'debug', 'status', 'watch', 'analyze', 'version'
+  ]
+
+  const args = process.argv.slice(2)
+  if (args.length > 0 && !args[0].startsWith('-')) {
+    const command = args[0]
+
+    // Handle empty command
+    if (command === '') {
+      console.error('❌ No command provided')
+      console.error('💡 Use --help to see available commands')
+      process.exit(1)
+    }
+
+    if (!knownCommands.includes(command)) {
+      // Find the closest matching command
+      const distances = knownCommands.map(cmd => ({
+        command: cmd,
+        distance: levenshteinDistance(command, cmd)
+      }))
+
+      distances.sort((a, b) => a.distance - b.distance)
+
+      const closest = distances[0]
+
+      // Only suggest if the distance is reasonable (less than 4 edits)
+      if (closest.distance <= 3) {
+        console.error(`❌ Unknown command: ${command}`)
+        console.error(`💡 Did you mean: ${closest.command}?`)
+        console.error(`\nRun 'stx --help' to see available commands.`)
+        process.exit(1)
+      }
+    }
+  }
 
   cli.help()
   cli.version(version)

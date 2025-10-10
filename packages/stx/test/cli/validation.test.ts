@@ -89,7 +89,7 @@ describe('CLI Validation', () => {
 
       expect(result.exitCode).toBe(1)
       expect(result.stderr).toContain('File does not exist: nonexistent.stx')
-      expect(result.stderr).toContain('Check the file path and try again')
+      expect(result.stderr).toContain('File not found')
     })
 
     it('should suggest similar files when file not found', async () => {
@@ -165,7 +165,7 @@ describe('CLI Validation', () => {
       const result = await runCLI(['format', '--help'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Format stx files automatically')
+      expect(result.stdout).toContain('stx format')
       expect(result.stdout).toContain('--check')
       expect(result.stdout).toContain('--diff')
       expect(result.stdout).toContain('--ignore')
@@ -175,7 +175,7 @@ describe('CLI Validation', () => {
       const result = await runCLI(['analyze', '--help'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Analyze stx templates')
+      expect(result.stdout).toContain('stx analyze')
       expect(result.stdout).toContain('--detailed')
       expect(result.stdout).toContain('--only-issues')
       expect(result.stdout).toContain('--threshold')

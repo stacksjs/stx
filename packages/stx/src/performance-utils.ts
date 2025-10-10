@@ -209,21 +209,35 @@ class ExpressionEvaluatorPool {
       return reusable.func
     }
 
-    // Create new evaluator
+    // Create new evaluator - handle empty context keys
     // eslint-disable-next-line no-new-func
-    const evaluator = new Function(...contextKeys, `
-      'use strict';
-      return function(expr) {
-        try {
-          return eval(expr);
-        } catch (e) {
-          if (e instanceof ReferenceError || e instanceof TypeError) {
-            return undefined;
+    const evaluator = contextKeys.length === 0
+      ? new Function(`
+        'use strict';
+        return function(expr) {
+          try {
+            return eval(expr);
+          } catch (e) {
+            if (e instanceof ReferenceError || e instanceof TypeError) {
+              return undefined;
+            }
+            throw e;
           }
-          throw e;
         }
-      }
-    `) as (...args: any[]) => any
+      `)() as (...args: any[]) => any
+      : new Function(...contextKeys, `
+        'use strict';
+        return function(expr) {
+          try {
+            return eval(expr);
+          } catch (e) {
+            if (e instanceof ReferenceError || e instanceof TypeError) {
+              return undefined;
+            }
+            throw e;
+          }
+        }
+      `) as (...args: any[]) => any
 
     // Add to pool if not full
     if (this.pool.length < this.maxPoolSize) {
