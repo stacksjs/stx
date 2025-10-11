@@ -86,7 +86,7 @@ describe('stx with Bun.serve direct imports', () => {
           path.join(TEMPLATES_DIR, "dashboard.stx")
         ],
         outdir: path.join(import.meta.dir, "dist"),
-        plugins: [stxPlugin]
+        plugins: [stxPlugin()]
       });
 
       // Get HTML content

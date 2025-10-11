@@ -50,7 +50,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -89,7 +89,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -125,7 +125,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -162,7 +162,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -206,7 +206,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -246,7 +246,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -286,7 +286,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -330,7 +330,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -366,7 +366,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -405,7 +405,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -448,7 +448,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -488,7 +488,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -533,7 +533,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -571,7 +571,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -608,7 +608,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -674,7 +674,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -721,7 +721,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -764,7 +764,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -802,7 +802,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -854,7 +854,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -898,10 +898,9 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
+      plugins: [stxPlugin({
         partialsDir,
-      },
+      })],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -941,10 +940,10 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
+      plugins: [stxPlugin(
+      {
         partialsDir,
-      },
+      })],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -989,7 +988,7 @@ describe('bun-plugin-stx', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -1037,14 +1036,13 @@ nav:
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
+      plugins: [stxPlugin({
         i18n: {
           translationsDir,
           locale: 'de', // Set locale to German
           format: 'yaml',
         },
-      },
+      })],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -1110,14 +1108,13 @@ nav:
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
+      plugins: [stxPlugin({
         i18n: {
           translationsDir,
           locale: 'en',
           format: 'yaml',
         },
-      },
+      })],
     })
 
     const outputHtml = await getHtmlOutput(result)

@@ -42,10 +42,11 @@ describe('stx Custom Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        customDirectives: [uppercaseDirective],
-      },
+      plugins: [stxPlugin(
+        {
+          customDirectives: [uppercaseDirective],
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -100,10 +101,11 @@ describe('stx Custom Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        customDirectives: [wrapDirective],
-      },
+      plugins: [stxPlugin(
+        {
+          customDirectives: [wrapDirective],
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -169,10 +171,11 @@ describe('stx Custom Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        customDirectives: [uppercaseDirective, lowercaseDirective, highlightDirective],
-      },
+      plugins: [stxPlugin(
+        {
+          customDirectives: [uppercaseDirective, lowercaseDirective, highlightDirective],
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -229,10 +232,11 @@ describe('stx Custom Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        customDirectives: [userInfoDirective],
-      },
+      plugins: [stxPlugin(
+        {
+          customDirectives: [userInfoDirective],
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -274,11 +278,12 @@ describe('stx Custom Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        customDirectives: [errorDirective],
-        debug: true,
-      },
+      plugins: [stxPlugin(
+        {
+          customDirectives: [errorDirective],
+          debug: true,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -320,11 +325,12 @@ describe('stx Custom Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        customDirectives: [asyncDirective],
-        debug: true,
-      },
+      plugins: [stxPlugin(
+        {
+          customDirectives: [asyncDirective],
+          debug: true,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -375,10 +381,11 @@ describe('stx Custom Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        customDirectives: [fileInfoDirective],
-      },
+      plugins: [stxPlugin(
+        {
+          customDirectives: [fileInfoDirective],
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)

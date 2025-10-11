@@ -47,7 +47,7 @@ describe('stx Template Caching', () => {
     const result1 = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
       stx: {
         cache: true,
         cachePath: CACHE_DIR,
@@ -72,7 +72,7 @@ describe('stx Template Caching', () => {
     const result2 = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
       stx: {
         cache: true,
         cachePath: CACHE_DIR,
@@ -110,7 +110,7 @@ describe('stx Template Caching', () => {
     const result1 = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
       stx: {
         cache: true,
         cachePath: CACHE_DIR,
@@ -146,7 +146,7 @@ describe('stx Template Caching', () => {
     const result2 = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
       stx: {
         cache: true,
         cachePath: CACHE_DIR,
@@ -186,7 +186,7 @@ describe('stx Template Caching', () => {
     await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
       stx: {
         cache: true,
         cachePath: customCachePath,
@@ -223,7 +223,7 @@ describe('stx Template Caching', () => {
     const result1 = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
       stx: {
         cache: true,
         cachePath: CACHE_DIR,
@@ -258,7 +258,7 @@ describe('stx Template Caching', () => {
     const result2 = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
       stx: {
         cache: true,
         cachePath: CACHE_DIR,
@@ -273,7 +273,7 @@ describe('stx Template Caching', () => {
     const result3 = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
       stx: {
         cache: true,
         cachePath: CACHE_DIR,

@@ -68,7 +68,7 @@ describe('stx Template Integration Tests', () => {
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     // Verify build was successful
@@ -132,7 +132,7 @@ describe('stx Template Integration Tests', () => {
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     expect(result.success).toBe(true)
@@ -192,7 +192,7 @@ describe('stx Template Integration Tests', () => {
     const result = await Bun.build({
       entrypoints: [conditionalTemplate],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     expect(result.success).toBe(true)

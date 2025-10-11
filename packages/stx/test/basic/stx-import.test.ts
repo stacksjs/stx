@@ -24,7 +24,7 @@ function createTestServer(routes: Record<string, string>) {
       const result = await Bun.build({
         entrypoints: [template],
         outdir: OUTPUT_DIR,
-        plugins: [stxPlugin],
+        plugins: [stxPlugin()],
       })
 
       const outputs = result.outputs || []

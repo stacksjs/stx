@@ -13,7 +13,7 @@ describe('stx Edge Cases', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -62,7 +62,7 @@ describe('stx Edge Cases', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -106,7 +106,7 @@ describe('stx Edge Cases', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -140,7 +140,7 @@ describe('stx Edge Cases', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -173,7 +173,7 @@ describe('stx Edge Cases', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -214,7 +214,7 @@ describe('stx Edge Cases', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -256,7 +256,7 @@ describe('stx Edge Cases', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -305,7 +305,7 @@ describe('stx Edge Cases', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -354,7 +354,7 @@ describe('stx Edge Cases', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)

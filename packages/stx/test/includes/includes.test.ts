@@ -29,10 +29,11 @@ describe('stx Include Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        partialsDir: PARTIALS_DIR,
-      },
+      plugins: [stxPlugin(
+        {
+          partialsDir: PARTIALS_DIR,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -76,10 +77,11 @@ describe('stx Include Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        partialsDir: PARTIALS_DIR,
-      },
+      plugins: [stxPlugin(
+        {
+          partialsDir: PARTIALS_DIR,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -135,10 +137,11 @@ describe('stx Include Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        partialsDir: PARTIALS_DIR,
-      },
+      plugins: [stxPlugin(
+        {
+          partialsDir: PARTIALS_DIR,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -175,10 +178,11 @@ describe('stx Include Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        partialsDir: PARTIALS_DIR,
-      },
+      plugins: [stxPlugin(
+        {
+          partialsDir: PARTIALS_DIR,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -239,10 +243,11 @@ describe('stx Include Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        partialsDir: PARTIALS_DIR,
-      },
+      plugins: [stxPlugin(
+        {
+          partialsDir: PARTIALS_DIR,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -308,10 +313,11 @@ describe('stx Include Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        partialsDir: PARTIALS_DIR,
-      },
+      plugins: [stxPlugin(
+        {
+          partialsDir: PARTIALS_DIR,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)

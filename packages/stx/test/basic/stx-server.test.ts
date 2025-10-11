@@ -44,7 +44,7 @@ class MockServer {
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
       define: {
         'process.env.NODE_ENV': this.development ? '"development"' : '"production"',
       },

@@ -28,7 +28,7 @@ describe('stx Comments', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -74,7 +74,7 @@ describe('stx Comments', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -116,7 +116,7 @@ describe('stx Comments', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -158,11 +158,11 @@ describe('stx Comments', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        debug: false,
-      },
-    } as any)
+      plugins: [stxPlugin({
+      debug: false,
+    })]
+,
+    })
 
     const outputHtml = await getHtmlOutput(result)
 
@@ -210,7 +210,7 @@ describe('stx Comments', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)

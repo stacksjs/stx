@@ -18,7 +18,7 @@ async function processTemplate(templatePath: string): Promise<ProcessedTemplate>
   const result = await Bun.build({
     entrypoints: [templatePath],
     outdir: outputDir,
-    plugins: [stxPlugin],
+    plugins: [stxPlugin()],
   })
 
   // Get the HTML output

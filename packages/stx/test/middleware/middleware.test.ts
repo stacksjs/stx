@@ -49,10 +49,11 @@ describe('stx Middleware', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        middleware: [preProcessMiddleware],
-      },
+      plugins: [stxPlugin(
+        {
+          middleware: [preProcessMiddleware],
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -95,10 +96,11 @@ describe('stx Middleware', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        middleware: [postProcessMiddleware],
-      },
+      plugins: [stxPlugin(
+        {
+          middleware: [postProcessMiddleware],
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -154,10 +156,11 @@ describe('stx Middleware', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        middleware: [headerMiddleware, footerMiddleware, textTransformer],
-      },
+      plugins: [stxPlugin(
+        {
+          middleware: [headerMiddleware, footerMiddleware, textTransformer],
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -212,10 +215,11 @@ describe('stx Middleware', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        middleware: [contextAwareMiddleware],
-      },
+      plugins: [stxPlugin(
+        {
+          middleware: [contextAwareMiddleware],
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -258,10 +262,11 @@ describe('stx Middleware', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        middleware: [asyncMiddleware],
-      },
+      plugins: [stxPlugin(
+        {
+          middleware: [asyncMiddleware],
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -303,10 +308,11 @@ describe('stx Middleware', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        middleware: [filePathMiddleware],
-      },
+      plugins: [stxPlugin(
+        {
+          middleware: [filePathMiddleware],
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -356,11 +362,12 @@ describe('stx Middleware', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        middleware: [errorMiddleware, safeMiddleware],
-        debug: true,
-      },
+      plugins: [stxPlugin(
+        {
+          middleware: [errorMiddleware, safeMiddleware],
+          debug: true,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)

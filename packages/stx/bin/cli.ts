@@ -734,6 +734,8 @@ else {
       compile?: boolean
       root?: string
       verbose?: boolean
+      port?: string | number
+      timeout?: string | number
     }) => {
       try {
         // Validate port parameter if provided

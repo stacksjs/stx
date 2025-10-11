@@ -10,7 +10,7 @@ async function getPascalCaseOutput(testFile: string) {
   await Bun.build({
     entrypoints: [testFile],
     outdir: OUTPUT_DIR,
-    plugins: [stxPlugin],
+    plugins: [stxPlugin()],
   })
 
   const outputFile = path.join(OUTPUT_DIR, path.basename(testFile).replace('.stx', '.html'))
@@ -49,7 +49,7 @@ async function getNestedComponentOutput(testFile: string) {
   await Bun.build({
     entrypoints: [testFile],
     outdir: OUTPUT_DIR,
-    plugins: [stxPlugin],
+    plugins: [stxPlugin()],
   })
 
   const outputFile = path.join(OUTPUT_DIR, path.basename(testFile).replace('.stx', '.html'))
@@ -131,7 +131,7 @@ describe('stx Components', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -179,7 +179,7 @@ describe('stx Components', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -346,7 +346,7 @@ describe('stx Components', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
