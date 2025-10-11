@@ -1,4 +1,25 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.1.8...v0.1.9)
+
+### 🧹 Chores
+
+- release v0.1.9 ([b0cbd51](https://github.com/stacksjs/stx/commit/b0cbd51))
+- wip ([6a65eaa](https://github.com/stacksjs/stx/commit/6a65eaa))
+
+### Contributors
+
+- Chris <chrisbreuer93@gmail.com>
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.1.8...HEAD)
+
+### 🧹 Chores
+
+- wip ([6a65eaa](https://github.com/stacksjs/stx/commit/6a65eaa))
+
+### Contributors
+
+- Chris <chrisbreuer93@gmail.com>
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.1.7...v0.1.8)
 
 ### 🧹 Chores
