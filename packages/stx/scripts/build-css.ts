@@ -5,14 +5,13 @@ import process from 'node:process'
 
 console.log('🚀 Building CSS with Headwind...')
 
-const headwindPath = resolve(process.env.HOME!, 'Code/headwind')
 const contentPath = resolve(import.meta.dir, '../../../examples/**/*.stx')
 const outputPath = resolve(import.meta.dir, '../examples/dist/styles.css')
 const configPath = resolve(import.meta.dir, '../headwind.config.ts')
 
 try {
-  // Use headwind CLI directly with config file
-  const result = await $`cd ${headwindPath} && ./headwind build --content ${contentPath} --output ${outputPath} --config ${configPath}`.text()
+  // Use bunx to run headwind CLI (works in CI/CD and locally)
+  const result = await $`bunx --bun @stacksjs/headwind build --content ${contentPath} --output ${outputPath} --config ${configPath}`.text()
 
   console.log(result)
 
