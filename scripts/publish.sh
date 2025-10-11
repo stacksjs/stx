@@ -74,14 +74,100 @@ for package_name in "${PUBLISH_ORDER[@]}"; do
   fi
 done
 
-# Then publish iconify collections (which depend on iconify-core)
+# Publish iconify collections with workspace dependency resolution
 if [ -d "packages/collections" ]; then
-  echo "Processing collections subdirectories..."
+  echo "========================================="
+  echo "Publishing Iconify Collections..."
+  echo "========================================="
+
+  # Get the current version of iconify-core
+  if command -v bun >/dev/null 2>&1; then
+    ICONIFY_CORE_VERSION=$(bun --eval "console.log(require('./packages/iconify-core/package.json').version)")
+  elif command -v node >/dev/null 2>&1; then
+    ICONIFY_CORE_VERSION=$(node -p "require('./packages/iconify-core/package.json').version")
+  else
+    echo "Error: Neither bun nor node found to read iconify-core version"
+    exit 1
+  fi
+
+  if [ -z "$ICONIFY_CORE_VERSION" ]; then
+    echo "Error: Could not determine iconify-core version"
+    exit 1
+  fi
+
+  echo "Using @stacksjs/iconify-core version: $ICONIFY_CORE_VERSION"
+  echo ""
+
+  # Counter for published packages
+  published_count=0
+
   for collection_dir in packages/collections/*/ ; do
     if [ -d "$collection_dir" ]; then
-      publish_package "$collection_dir"
+      package_name=$(basename "$collection_dir")
+      package_json="$collection_dir/package.json"
+
+      if [ ! -f "$package_json" ]; then
+        continue
+      fi
+
+      # Check if package is private
+      if command -v bun >/dev/null 2>&1; then
+        is_private=$(bun --eval "try { const pkg = JSON.parse(require('fs').readFileSync('$package_json', 'utf8')); console.log(pkg.private === true ? 'true' : 'false'); } catch(e) { console.log('false'); }")
+      else
+        is_private="false"
+      fi
+
+      if [ "$is_private" = "true" ]; then
+        continue
+      fi
+
+      echo "----------------------------------------"
+      echo "Processing $package_name..."
+      echo "Package $package_name private status: $is_private"
+
+      # Create a backup of package.json
+      cp "$package_json" "$package_json.backup"
+
+      # Replace workspace:* with actual version
+      if command -v jq >/dev/null 2>&1; then
+        jq ".dependencies.\"@stacksjs/iconify-core\" = \"^$ICONIFY_CORE_VERSION\"" "$package_json.backup" > "$package_json.tmp"
+        mv "$package_json.tmp" "$package_json"
+      else
+        # Fallback to bun/node for JSON manipulation
+        if command -v bun >/dev/null 2>&1; then
+          bun --eval "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('$package_json.backup', 'utf8')); pkg.dependencies['@stacksjs/iconify-core'] = '^$ICONIFY_CORE_VERSION'; fs.writeFileSync('$package_json', JSON.stringify(pkg, null, 2));"
+        else
+          node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('$package_json.backup', 'utf8')); pkg.dependencies['@stacksjs/iconify-core'] = '^$ICONIFY_CORE_VERSION'; fs.writeFileSync('$package_json', JSON.stringify(pkg, null, 2));"
+        fi
+      fi
+
+      echo "Publishing $package_name..."
+      cd "$collection_dir"
+      if bun publish --access public; then
+        echo "✅ Published $package_name"
+        published_count=$((published_count + 1))
+      else
+        echo "❌ Failed to publish $package_name"
+        # Restore original package.json on failure
+        mv "$package_json.backup" "$package_json"
+        cd - > /dev/null
+        echo "----------------------------------------"
+        continue
+      fi
+      cd - > /dev/null
+
+      # Restore original package.json after successful publish
+      mv "$package_json.backup" "$package_json"
+
+      echo "----------------------------------------"
     fi
   done
+
+  echo ""
+  echo "========================================="
+  echo "Collections Summary: Published $published_count packages"
+  echo "========================================="
+  echo ""
 fi
 
 echo "All packages published successfully!"
