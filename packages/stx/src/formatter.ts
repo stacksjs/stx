@@ -274,6 +274,7 @@ function formatHtml(content: string, options: Required<FormatterOptions>): strin
     if (line.startsWith('<') && !line.includes('/>') && !line.startsWith('</')) {
       // Check if it's not a self-closing tag or comment
       // Also check if the line contains both opening and closing tags (e.g., <title>Text</title>)
+      // eslint-disable-next-line regexp/optimal-quantifier-concatenation
       const hasMatchingClosingTag = line.match(/<(\w+)[^>]*>.*<\/\1>/)
       if (!line.includes('<!') && !isSelfClosingTag(line) && !hasMatchingClosingTag) {
         indentLevel++
