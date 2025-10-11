@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/sanitizer",
   "type": "module",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "A fast, native Bun-powered HTML sanitizer with DOMPurify-like features. Protection against XSS and malicious content.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
