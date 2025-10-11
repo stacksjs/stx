@@ -44,7 +44,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "cd packages/bun-plugin && bun --bun build.ts && cd ../stx && bun run build:css && bun --bun build.ts && cd ../.. && bun run compile",
+    "build": "cd packages/bun-plugin && bun --bun build.ts && cd ../stx && bun --bun build.ts && cd ../.. && bun run compile",
     "build:css": "cd packages/stx && bun run build:css && cd ../..",
     "css:watch": "cd packages/stx && bun run css:watch && cd ../..",
     "compile": "bun build ./packages/stx/bin/cli.ts --compile --minify --outfile bin/stx",
