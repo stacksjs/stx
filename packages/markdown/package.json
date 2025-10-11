@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/markdown",
   "type": "module",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "A fast, native Bun-powered markdown parser with frontmatter support. Replaces gray-matter, marked, and yaml.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
