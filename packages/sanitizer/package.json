@@ -47,6 +47,6 @@
   },
   "devDependencies": {
     "@types/bun": "^1.2.18",
-    "happy-dom": "^18.0.1"
+    "happy-dom": "^20.0.0"
   }
 }
