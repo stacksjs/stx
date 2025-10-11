@@ -144,6 +144,11 @@ if [ -d "packages/collections" ]; then
         fi
       fi
 
+      # Copy bunfig.toml from root to collection directory for authentication
+      if [ -f "bunfig.toml" ]; then
+        cp bunfig.toml "$collection_dir/bunfig.toml"
+      fi
+
       echo "Publishing $package_name..."
       # Change to the collection directory to publish
       cd "$collection_dir"
@@ -158,9 +163,14 @@ if [ -d "packages/collections" ]; then
         if [ -f "$package_json_backup" ]; then
           mv "$package_json_backup" "$package_json"
         fi
+        # Clean up bunfig.toml
+        rm -f "$collection_dir/bunfig.toml"
         echo "----------------------------------------"
         continue
       fi
+
+      # Clean up bunfig.toml after publish
+      rm -f "$collection_dir/bunfig.toml"
 
       # Restore original package.json after successful publish
       if [ -f "$package_json_backup" ]; then
