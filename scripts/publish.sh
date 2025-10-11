@@ -103,8 +103,11 @@ if [ -d "packages/collections" ]; then
 
   for collection_dir in packages/collections/*/ ; do
     if [ -d "$collection_dir" ]; then
+      # Remove trailing slash to avoid double slashes
+      collection_dir="${collection_dir%/}"
       package_name=$(basename "$collection_dir")
       package_json="$collection_dir/package.json"
+      package_json_backup="$collection_dir/package.json.backup"
 
       if [ ! -f "$package_json" ]; then
         continue
@@ -126,38 +129,40 @@ if [ -d "packages/collections" ]; then
       echo "Package $package_name private status: $is_private"
 
       # Create a backup of package.json
-      cp "$package_json" "$package_json.backup"
+      cp "$package_json" "$package_json_backup"
 
       # Replace workspace:* with actual version
       if command -v jq >/dev/null 2>&1; then
-        jq ".dependencies.\"@stacksjs/iconify-core\" = \"^$ICONIFY_CORE_VERSION\"" "$package_json.backup" > "$package_json.tmp"
+        jq ".dependencies.\"@stacksjs/iconify-core\" = \"^$ICONIFY_CORE_VERSION\"" "$package_json_backup" > "$package_json.tmp"
         mv "$package_json.tmp" "$package_json"
       else
         # Fallback to bun/node for JSON manipulation
         if command -v bun >/dev/null 2>&1; then
-          bun --eval "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('$package_json.backup', 'utf8')); pkg.dependencies['@stacksjs/iconify-core'] = '^$ICONIFY_CORE_VERSION'; fs.writeFileSync('$package_json', JSON.stringify(pkg, null, 2));"
+          bun --eval "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('$package_json_backup', 'utf8')); pkg.dependencies['@stacksjs/iconify-core'] = '^$ICONIFY_CORE_VERSION'; fs.writeFileSync('$package_json', JSON.stringify(pkg, null, 2));"
         else
-          node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('$package_json.backup', 'utf8')); pkg.dependencies['@stacksjs/iconify-core'] = '^$ICONIFY_CORE_VERSION'; fs.writeFileSync('$package_json', JSON.stringify(pkg, null, 2));"
+          node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('$package_json_backup', 'utf8')); pkg.dependencies['@stacksjs/iconify-core'] = '^$ICONIFY_CORE_VERSION'; fs.writeFileSync('$package_json', JSON.stringify(pkg, null, 2));"
         fi
       fi
 
       echo "Publishing $package_name..."
-      cd "$collection_dir"
-      if bun publish --access public; then
+      # Publish from the root directory to maintain authentication
+      if bun publish --cwd "$collection_dir" --access public; then
         echo "✅ Published $package_name"
         published_count=$((published_count + 1))
       else
         echo "❌ Failed to publish $package_name"
-        # Restore original package.json on failure
-        mv "$package_json.backup" "$package_json"
-        cd - > /dev/null
+        # Restore original package.json on failure if backup exists
+        if [ -f "$package_json_backup" ]; then
+          mv "$package_json_backup" "$package_json"
+        fi
         echo "----------------------------------------"
         continue
       fi
-      cd - > /dev/null
 
       # Restore original package.json after successful publish
-      mv "$package_json.backup" "$package_json"
+      if [ -f "$package_json_backup" ]; then
+        mv "$package_json_backup" "$package_json"
+      fi
 
       echo "----------------------------------------"
     fi
