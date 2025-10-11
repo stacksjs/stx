@@ -1,4 +1,14 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.1.3...v0.1.4)
+
+### 🧹 Chores
+
+- release v0.1.4 ([1fb296b](https://github.com/stacksjs/stx/commit/1fb296b))
+
+### Contributors
+
+- Chris <chrisbreuer93@gmail.com>
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.1.2...v0.1.3)
 
 ### 🧹 Chores
