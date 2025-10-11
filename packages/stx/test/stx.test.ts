@@ -941,9 +941,10 @@ describe('bun-plugin-stx', () => {
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
       plugins: [stxPlugin(
-      {
-        partialsDir,
-      })],
+        {
+          partialsDir,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)

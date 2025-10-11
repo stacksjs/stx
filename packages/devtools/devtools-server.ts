@@ -29,7 +29,7 @@ async function buildTemplates() {
       ],
       outdir: PUBLIC_DIR,
       plugins: [
-        stxPlugin,
+        stxPlugin(),
       ],
       minify: false,
       target: 'browser',

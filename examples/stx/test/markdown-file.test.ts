@@ -223,7 +223,7 @@ Use the \`@markdown-file\` directive to include markdown files.
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     expect(result.success).toBe(true)
@@ -259,7 +259,7 @@ Use the \`@markdown-file\` directive to include markdown files.
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     expect(result.success).toBe(true)
@@ -284,7 +284,7 @@ Use the \`@markdown-file\` directive to include markdown files.
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     expect(result.success).toBe(true)
@@ -309,7 +309,7 @@ Use the \`@markdown-file\` directive to include markdown files.
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     expect(result.success).toBe(true)
@@ -338,7 +338,7 @@ Use the \`@markdown-file\` directive to include markdown files.
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     expect(result.success).toBe(true)
@@ -398,7 +398,7 @@ This markdown file was included using a relative path.
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     expect(result.success).toBe(true)
@@ -438,7 +438,7 @@ Written by {{ author }} on {{ publishDate }}
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     expect(result.success).toBe(true)
@@ -466,7 +466,7 @@ Written by {{ author }} on {{ publishDate }}
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     expect(result.success).toBe(true)
@@ -503,7 +503,7 @@ Written by {{ author }} on {{ publishDate }}
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     expect(result.success).toBe(true)

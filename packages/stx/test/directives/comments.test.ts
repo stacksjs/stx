@@ -159,9 +159,8 @@ describe('stx Comments', () => {
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
       plugins: [stxPlugin({
-      debug: false,
-    })]
-,
+        debug: false,
+      })],
     })
 
     const outputHtml = await getHtmlOutput(result)

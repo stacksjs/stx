@@ -33,7 +33,7 @@ This is a basic markdown file.
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -64,7 +64,7 @@ Written by: {{ author }}
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -108,7 +108,7 @@ const user: User = {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -135,7 +135,7 @@ This is a blog post content.
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -168,7 +168,7 @@ Just plain markdown content without any frontmatter.
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -196,7 +196,7 @@ This markdown has invalid frontmatter.
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -233,7 +233,7 @@ Here's a [link](https://example.com) and some \`inline code\`.
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -259,7 +259,7 @@ Here's a [link](https://example.com) and some \`inline code\`.
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -300,7 +300,7 @@ Views: {{ meta.views }}
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)

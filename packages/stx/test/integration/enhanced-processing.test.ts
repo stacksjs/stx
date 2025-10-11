@@ -57,10 +57,11 @@ describe('Enhanced Template Processing Integration', () => {
         entrypoints: [testFile],
         outdir: OUTPUT_DIR,
         plugins: [stxPlugin(
-        {
-          debug: false, // Enable performance tracking without debug noise
-        })],
-    })
+          {
+            debug: false, // Enable performance tracking without debug noise
+          },
+        )],
+      })
 
       const outputHtml = await getHtmlOutput(result)
       expect(outputHtml).toContain('Item 0')
@@ -116,9 +117,9 @@ describe('Enhanced Template Processing Integration', () => {
         entrypoints: [testFile],
         outdir: OUTPUT_DIR,
         plugins: [stxPlugin()],
-    })
+      })
 
-    await getHtmlOutput(result)
+      await getHtmlOutput(result)
 
       const stats = performanceMonitor.getStats()
 
@@ -188,10 +189,11 @@ describe('Enhanced Template Processing Integration', () => {
         entrypoints: [testFile],
         outdir: OUTPUT_DIR,
         plugins: [stxPlugin(
-        {
-          debug: false, // Even in production, should handle gracefully
-        })],
-    })
+          {
+            debug: false, // Even in production, should handle gracefully
+          },
+        )],
+      })
 
       // Should still succeed by handling the script error gracefully
       expect(result.success).toBe(true)
@@ -221,10 +223,11 @@ describe('Enhanced Template Processing Integration', () => {
         entrypoints: [testFile],
         outdir: OUTPUT_DIR,
         plugins: [stxPlugin(
-        {
-          debug: false,
-        })],
-    })
+          {
+            debug: false,
+          },
+        )],
+      })
 
       // Build should succeed even with script errors
       expect(result.success).toBe(true)
@@ -256,9 +259,9 @@ describe('Enhanced Template Processing Integration', () => {
         entrypoints: [testFile],
         outdir: OUTPUT_DIR,
         plugins: [stxPlugin()],
-    })
+      })
 
-    const outputHtml = await getHtmlOutput(result)
+      const outputHtml = await getHtmlOutput(result)
 
       // Script errors are handled gracefully, template still renders
       expect(outputHtml).toContain('html')
@@ -352,10 +355,11 @@ describe('Enhanced Template Processing Integration', () => {
         entrypoints: [template1],
         outdir: OUTPUT_DIR,
         plugins: [stxPlugin(
-        {
-          debug: false,
-        })],
-    })
+          {
+            debug: false,
+          },
+        )],
+      })
 
       // Should handle gracefully without infinite recursion
       expect(result.success).toBe(true)

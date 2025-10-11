@@ -47,13 +47,12 @@ describe('stx Template Caching', () => {
     const result1 = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
-      stx: {
+      plugins: [stxPlugin({
         cache: true,
         cachePath: CACHE_DIR,
         debug: true,
-      },
-    } as any)
+      })],
+    })
 
     // Get the output HTML
     const output1 = await getHtmlOutput(result1)
@@ -72,13 +71,12 @@ describe('stx Template Caching', () => {
     const result2 = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
-      stx: {
+      plugins: [stxPlugin({
         cache: true,
         cachePath: CACHE_DIR,
         debug: true,
-      },
-    } as any)
+      })],
+    })
 
     // Get the output HTML
     const output2 = await getHtmlOutput(result2)
@@ -110,13 +108,12 @@ describe('stx Template Caching', () => {
     const result1 = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
-      stx: {
+      plugins: [stxPlugin({
         cache: true,
         cachePath: CACHE_DIR,
         debug: true,
-      },
-    } as any)
+      })],
+    })
 
     const output1 = await getHtmlOutput(result1)
     expect(output1).toContain('Original Message')
@@ -146,13 +143,12 @@ describe('stx Template Caching', () => {
     const result2 = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
-      stx: {
+      plugins: [stxPlugin({
         cache: true,
         cachePath: CACHE_DIR,
         debug: true,
-      },
-    } as any)
+      })],
+    })
 
     const output2 = await getHtmlOutput(result2)
     expect(output2).toContain('Updated Message')
@@ -186,13 +182,12 @@ describe('stx Template Caching', () => {
     await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
-      stx: {
+      plugins: [stxPlugin({
         cache: true,
         cachePath: customCachePath,
         debug: true,
-      },
-    } as any)
+      })],
+    })
 
     // Verify cache files were created in the custom directory
     const cacheFiles = await fs.promises.readdir(customCachePath)
@@ -223,14 +218,13 @@ describe('stx Template Caching', () => {
     const result1 = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
-      stx: {
+      plugins: [stxPlugin({
         cache: true,
         cachePath: CACHE_DIR,
         cacheVersion: '1.0.0',
         debug: true,
-      },
-    } as any)
+      })],
+    })
 
     const output1 = await getHtmlOutput(result1)
     expect(output1).toContain('Version: v1')
@@ -258,14 +252,13 @@ describe('stx Template Caching', () => {
     const result2 = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
-      stx: {
+      plugins: [stxPlugin({
         cache: true,
         cachePath: CACHE_DIR,
         cacheVersion: '1.0.0',
         debug: true,
-      },
-    } as any)
+      })],
+    })
 
     const output2 = await getHtmlOutput(result2)
 
@@ -273,14 +266,13 @@ describe('stx Template Caching', () => {
     const result3 = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
-      stx: {
+      plugins: [stxPlugin({
         cache: true,
         cachePath: CACHE_DIR,
         cacheVersion: '2.0.0', // Different version
         debug: true,
-      },
-    } as any)
+      })],
+    })
 
     const output3 = await getHtmlOutput(result3)
     expect(output3).toContain('Version: v2')
