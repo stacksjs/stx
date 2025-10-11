@@ -101,7 +101,7 @@
         "@stacksjs/sanitizer": "workspace:*",
         "bun-plugin-stx": "workspace:*",
         "bunfig": "^0.15.0",
-        "ts-syntax-highlighter": "link:ts-syntax-highlighter",
+        "ts-syntax-highlighter": "^0.1.0",
       },
     },
   },
@@ -1990,7 +1990,7 @@
 
     "ts-pkgx": ["ts-pkgx@0.4.88", "", { "optionalDependencies": { "chromium-bidi": "^7.2.0", "electron": "^37.4.0", "js-yaml": "^4.1.0", "playwright": "^1.55.0" }, "bin": { "ts-pkgx": "dist/bin/cli.js" } }, "sha512-VL9G/3QQbintDF/3uE5aabwSBvnv2xKdcKAsYyluUGKSnWD4zhgjIYvQxpnWvr6XuDvClc3wJPhA+RSfgbAAmg=="],
 
-    "ts-syntax-highlighter": ["ts-syntax-highlighter@link:ts-syntax-highlighter", { "bin": { "ts-syntax-highlighter": "./dist/bin/cli.js" } }],
+    "ts-syntax-highlighter": ["ts-syntax-highlighter@0.1.0", "", { "bin": { "ts-syntax-highlighter": "dist/bin/cli.js" } }, "sha512-IF2QmmHyFb5zioh2s+XaNKGNi0PwhITVk+lwdSfto0rdtDVpz+RRViEg1/LGYzX466XGnOjNk3Vh6sFSQMMzQg=="],
 
     "tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
 
