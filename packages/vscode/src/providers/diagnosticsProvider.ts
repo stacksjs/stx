@@ -1,3 +1,5 @@
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import * as vscode from 'vscode'
 
 /**
@@ -181,5 +183,97 @@ function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: 
     diagnostics.push(diagnostic)
   }
 
+  // Validate template paths in @include and @component directives
+  validateTemplatePaths(document, diagnostics)
+
   diagnosticCollection.set(document.uri, diagnostics)
+}
+
+/**
+ * Validates template paths in @include and @component directives
+ */
+function validateTemplatePaths(document: vscode.TextDocument, diagnostics: vscode.Diagnostic[]): void {
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+  if (!workspaceFolder) {
+    return
+  }
+
+  const workspacePath = workspaceFolder.uri.fsPath
+
+  // Common template directories
+  const templateDirs = [
+    'views',
+    'templates',
+    'resources/views',
+    'src/views',
+    'src/templates',
+    'app/views',
+    'partials',
+    'components',
+    'layouts',
+    'src/components',
+    'app/components',
+  ]
+
+  // Regular expression to match @include and @component with paths
+  const pathDirectiveRegex = /@(include(?:If|When|Unless|First)?|component|webcomponent)\s*\(\s*['"`]([^'"`]+)['"`]/g
+
+  for (let lineNum = 0; lineNum < document.lineCount; lineNum++) {
+    const line = document.lineAt(lineNum)
+    const text = line.text
+
+    let match: RegExpExecArray | null
+    pathDirectiveRegex.lastIndex = 0
+
+    while ((match = pathDirectiveRegex.exec(text)) !== null) {
+      const directiveName = match[1]
+      const templatePath = match[2]
+      const pathStart = match.index + match[0].indexOf(templatePath)
+
+      // Skip validation for @includeFirst (it's expected that some might not exist)
+      if (directiveName === 'includeFirst') {
+        continue
+      }
+
+      // Try to find the template file
+      let found = false
+
+      for (const templateDir of templateDirs) {
+        // Try with .stx extension
+        const stxPath = path.join(workspacePath, templateDir, `${templatePath}.stx`)
+        if (fs.existsSync(stxPath)) {
+          found = true
+          break
+        }
+
+        // Try with .html extension
+        const htmlPath = path.join(workspacePath, templateDir, `${templatePath}.html`)
+        if (fs.existsSync(htmlPath)) {
+          found = true
+          break
+        }
+
+        // Try without extension (exact path)
+        const exactPath = path.join(workspacePath, templateDir, templatePath)
+        if (fs.existsSync(exactPath)) {
+          found = true
+          break
+        }
+      }
+
+      // If not found, create a diagnostic
+      if (!found) {
+        const diagnostic = new vscode.Diagnostic(
+          new vscode.Range(
+            new vscode.Position(lineNum, pathStart),
+            new vscode.Position(lineNum, pathStart + templatePath.length),
+          ),
+          `Template file '${templatePath}' not found in any template directory`,
+          vscode.DiagnosticSeverity.Warning,
+        )
+        diagnostic.code = 'template-not-found'
+        diagnostics.push(diagnostic)
+      }
+    }
+  }
 }

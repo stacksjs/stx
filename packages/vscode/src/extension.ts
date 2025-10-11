@@ -3,12 +3,15 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
 
+import { createCodeActionsProvider } from './providers/codeActionsProvider'
 import { createCompletionProvider } from './providers/completionProvider'
 import { createDefinitionProvider } from './providers/definitionProvider'
 import { createDiagnosticsProvider } from './providers/diagnosticsProvider'
 import { createDocumentLinkProvider } from './providers/documentLinkProvider'
+import { createFoldingRangeProvider } from './providers/foldingProvider'
 import { createHoverProvider } from './providers/hoverProvider'
 import { createPathCompletionProvider } from './providers/pathCompletionProvider'
+import { createSemanticTokensProvider, legend } from './providers/semanticTokensProvider'
 import { VirtualTsDocumentProvider } from './providers/virtualTsDocumentProvider'
 
 export function activate(context: vscode.ExtensionContext) {
@@ -95,6 +98,32 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Create diagnostics provider for syntax validation
   createDiagnosticsProvider(context)
+
+  // Register code actions provider for quick fixes
+  const codeActionsProvider = vscode.languages.registerCodeActionsProvider(
+    'stx',
+    createCodeActionsProvider(),
+    {
+      providedCodeActionKinds: [
+        vscode.CodeActionKind.QuickFix,
+        vscode.CodeActionKind.RefactorRewrite,
+        vscode.CodeActionKind.RefactorExtract,
+      ],
+    },
+  )
+
+  // Register folding range provider
+  const foldingRangeProvider = vscode.languages.registerFoldingRangeProvider(
+    'stx',
+    createFoldingRangeProvider(),
+  )
+
+  // Register semantic tokens provider for enhanced syntax highlighting
+  const semanticTokensProvider = vscode.languages.registerDocumentSemanticTokensProvider(
+    'stx',
+    createSemanticTokensProvider(),
+    legend,
+  )
 
   // Track document changes
   const documentChangeListener = vscode.workspace.onDidChangeTextDocument((event) => {
@@ -184,6 +213,9 @@ export function activate(context: vscode.ExtensionContext) {
     atTriggerCompletionProvider,
     parameterCompletionProvider,
     pathCompletionProvider,
+    codeActionsProvider,
+    foldingRangeProvider,
+    semanticTokensProvider,
   )
 
   console.log('stx language support activated (with Markdown frontmatter support)')
