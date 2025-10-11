@@ -145,12 +145,15 @@ if [ -d "packages/collections" ]; then
       fi
 
       echo "Publishing $package_name..."
-      # Publish from the root directory to maintain authentication
-      if bun publish --cwd "$collection_dir" --access public; then
+      # Change to the collection directory to publish
+      cd "$collection_dir"
+      if bun publish --access public; then
         echo "✅ Published $package_name"
         published_count=$((published_count + 1))
+        cd - > /dev/null
       else
         echo "❌ Failed to publish $package_name"
+        cd - > /dev/null
         # Restore original package.json on failure if backup exists
         if [ -f "$package_json_backup" ]; then
           mv "$package_json_backup" "$package_json"
