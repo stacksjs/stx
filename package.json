@@ -103,7 +103,6 @@
   },
   "workspaces": [
     "packages/*",
-    "packages/collections/*",
     "!packages/vscode"
   ]
 }
