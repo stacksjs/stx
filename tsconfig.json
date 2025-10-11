@@ -31,6 +31,6 @@
     "skipDefaultLibCheck": true,
     "skipLibCheck": true
   },
-  "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx", "stx"],
+  "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx", "stx", ".config/buddy-bot.config.ts", ".config/gitlint.config.ts", ".config/stx.config.ts"],
   "exclude": ["packages/vscode/**/*", "packages/collections/**/*", "packages/benchmarks/**/*", "examples/**/*", "node_modules", "dist", "**/dist/**/*", "packages/*/dist/**/*"]
 }
