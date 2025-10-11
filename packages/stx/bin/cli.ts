@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { CAC } from 'cac'
+import { CLI } from '@stacksjs/clapp'
 import { version } from '../package.json'
 import { scanA11yIssues } from '../src/a11y'
 import { serveMultipleStxFiles, serveStxFile } from '../src/dev-server'
@@ -15,9 +15,9 @@ import { plugin as stxPlugin } from '../src/plugin'
 import { gitHash } from '../src/release'
 import { performanceMonitor } from '../src/performance-utils'
 import { formatStxContent } from '../src/formatter'
-import { analyzeProject, analyzeTemplate } from '../src/analyzer'
+import { analyzeProject } from '../src/analyzer'
 
-const cli = new CAC('stx')
+const cli = new CLI('stx')
 
 // Test command utilities
 interface TestCommandOptions {
