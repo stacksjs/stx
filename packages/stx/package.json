@@ -65,7 +65,6 @@
     "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
     "changelog": "bunx changelogen --output CHANGELOG.md",
     "prepublishOnly": "bun run build && bun ./scripts/update-git-hash.ts && bun run compile:all && bun run zip:all",
-    "release": "bun run changelog && bunx bumpp package.json --all",
     "test": "bun test --preload ./happy-dom.ts",
     "test:watch": "bun test --watch --preload ./happy-dom.ts",
     "test:coverage": "bun test --coverage --preload ./happy-dom.ts",
