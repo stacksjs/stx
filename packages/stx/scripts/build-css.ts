@@ -3,6 +3,13 @@ import { $ } from 'bun'
 import { resolve } from 'node:path'
 import process from 'node:process'
 
+// Skip CSS build in CI/CD environments or during npm publish
+// CSS is only for examples and not included in published package
+if (process.env.CI || process.env.npm_lifecycle_event === 'prepublishOnly') {
+  console.log('⏭️  Skipping CSS build (not needed for publish)')
+  process.exit(0)
+}
+
 console.log('🚀 Building CSS with Headwind...')
 
 const contentPath = resolve(import.meta.dir, '../../../examples/**/*.stx')
