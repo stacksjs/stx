@@ -63,7 +63,7 @@ PUBLISH_ORDER=(
   "devtools"
   "iconify-generator"
   "benchmarks"
-  "vscode"
+  # "vscode"          # VSCode extension - needs separate marketplace release process
 )
 
 # First, publish packages in the defined order
