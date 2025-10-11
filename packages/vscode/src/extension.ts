@@ -5,8 +5,10 @@ import * as vscode from 'vscode'
 
 import { createCompletionProvider } from './providers/completionProvider'
 import { createDefinitionProvider } from './providers/definitionProvider'
+import { createDiagnosticsProvider } from './providers/diagnosticsProvider'
 import { createDocumentLinkProvider } from './providers/documentLinkProvider'
 import { createHoverProvider } from './providers/hoverProvider'
+import { createPathCompletionProvider } from './providers/pathCompletionProvider'
 import { VirtualTsDocumentProvider } from './providers/virtualTsDocumentProvider'
 
 export function activate(context: vscode.ExtensionContext) {
@@ -77,10 +79,22 @@ export function activate(context: vscode.ExtensionContext) {
     ',', // Trigger on comma
   )
 
+  // Register path completion provider for @include and @component
+  const pathCompletionProvider = vscode.languages.registerCompletionItemProvider(
+    'stx',
+    createPathCompletionProvider(),
+    '/', // Trigger on forward slash for path navigation
+    '\'', // Trigger on quote
+    '"', // Trigger on double-quote
+  )
+
   // Register the virtual document provider
   context.subscriptions.push(
     vscode.workspace.registerTextDocumentContentProvider('stx-ts', virtualTsDocumentProvider),
   )
+
+  // Create diagnostics provider for syntax validation
+  createDiagnosticsProvider(context)
 
   // Track document changes
   const documentChangeListener = vscode.workspace.onDidChangeTextDocument((event) => {
@@ -169,6 +183,7 @@ export function activate(context: vscode.ExtensionContext) {
     documentLinkProvider,
     atTriggerCompletionProvider,
     parameterCompletionProvider,
+    pathCompletionProvider,
   )
 
   console.log('stx language support activated (with Markdown frontmatter support)')

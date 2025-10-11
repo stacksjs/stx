@@ -602,42 +602,34 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
 
         // List of valid stx directives
         const validDirectives = [
-          'if',
-          'else',
-          'elseif',
-          'elif',
-          'endif',
-          'unless',
-          'endunless',
-          'for',
-          'endfor',
-          'foreach',
-          'endforeach',
-          'while',
-          'endwhile',
-          'switch',
-          'case',
-          'default',
-          'endswitch',
-          'component',
-          'endcomponent',
-          'slot',
-          'endslot',
-          'ts',
-          'endts',
-          'include',
-          'raw',
-          'endraw',
-          'markdown',
-          'endmarkdown',
-          't',
-          'translate',
-          'continue',
-          'break',
-          'transition',
-          'endtransition',
-          'animationGroup',
-          'motion', // Animation directives
+          // Conditional directives
+          'if', 'else', 'elseif', 'elif', 'endif', 'unless', 'endunless',
+          // Loop directives
+          'for', 'endfor', 'foreach', 'endforeach', 'forelse', 'endforelse', 'while', 'endwhile',
+          // Switch directives
+          'switch', 'case', 'default', 'endswitch', 'break', 'continue',
+          // Component directives
+          'component', 'endcomponent', 'slot', 'endslot', 'webcomponent', 'endwebcomponent',
+          // Code block directives
+          'ts', 'endts', 'js', 'endjs', 'script', 'endscript', 'css', 'endcss',
+          // Content directives
+          'json', 'markdown', 'endmarkdown', 'raw', 'endraw', 'verbatim', 'endverbatim',
+          // Translation directives
+          't', 'translate',
+          // Layout directives
+          'extends', 'section', 'endsection', 'yield', 'parent',
+          // Stack directives
+          'stack', 'push', 'endpush', 'pushif', 'endpushif', 'pushonce', 'endpushonce',
+          'prepend', 'endprepend', 'prependonce', 'endprependonce',
+          // Include directives
+          'include', 'includeif', 'includewhen', 'includeunless', 'includefirst',
+          // Auth directives
+          'auth', 'endauth', 'guest', 'endguest', 'can', 'endcan', 'cannot', 'endcannot', 'elsecan',
+          // Utility directives
+          'env', 'endenv', 'isset', 'endisset', 'empty', 'endempty', 'error', 'enderror',
+          'hassection', 'once', 'endonce', 'use', 'csrf', 'method', 'locale',
+          // Animation directives
+          'transition', 'endtransition', 'motion', 'endmotion', 'animationgroup', 'scrollanimate', 'endscrollanimate',
         ]
 
         // Skip if not a valid directive
@@ -1221,6 +1213,738 @@ errors.notFound: "Page not found"`, 'yaml')
             if (syntax) {
               hover.appendMarkdown('\n\n**Syntax**\n')
               hover.appendCodeblock(syntax, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'verbatim':
+            description = 'Displays content exactly as is, without processing any stx directives or expressions.'
+            syntax = '@verbatim\n    Content to display verbatim\n@endverbatim'
+            example = '@verbatim\n    @if (true) This directive will not be processed @endif\n@endverbatim'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'endverbatim':
+            description = 'Marks the end of a verbatim content block.'
+            syntax = '@endverbatim'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'forelse':
+            description = 'Iterates over a collection with a fallback when the collection is empty.'
+            syntax = '@forelse (collection as item)\n    // Loop content\n@empty\n    // Empty fallback\n@endforelse'
+            example = '@forelse (users as user)\n    <li>\\${user.name}</li>\n@empty\n    <li>No users found</li>\n@endforelse'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'endforelse':
+            description = 'Marks the end of a @forelse loop block.'
+            syntax = '@endforelse'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'js':
+            description = 'Defines a JavaScript code block.'
+            syntax = '@js\n    // JavaScript code\n@endjs'
+            example = '@js\n    const message = "Hello from JavaScript";\n    console.log(message);\n@endjs'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'endjs':
+            description = 'Marks the end of a JavaScript code block.'
+            syntax = '@endjs'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'script':
+            description = 'Alternative syntax for TypeScript/JavaScript code block.'
+            syntax = '@script\n    // Code here\n@endscript'
+            example = '@script\n    const data = { name: "Example" };\n@endscript'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'endscript':
+            description = 'Marks the end of a script code block.'
+            syntax = '@endscript'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'css':
+            description = 'Defines a CSS code block for component-specific styles.'
+            syntax = '@css\n    /* CSS styles */\n@endcss'
+            example = '@css\n    .button { background: blue; color: white; }\n@endcss'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'endcss':
+            description = 'Marks the end of a CSS code block.'
+            syntax = '@endcss'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'json':
+            description = 'Outputs a variable as JSON, useful for passing data to JavaScript.'
+            syntax = '@json(variable)'
+            example = '<script>\n    const data = @json(user);\n    const config = @json(settings);\n</script>'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'extends':
+            description = 'Extends a base layout template.'
+            syntax = '@extends(layoutPath)'
+            example = '@extends(\'layouts/main\')'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'section':
+            description = 'Defines a content section that can be yielded in a layout.'
+            syntax = '@section(name)\n    // Section content\n@endsection'
+            example = '@section(\'content\')\n    <h1>Page Content</h1>\n@endsection'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'endsection':
+            description = 'Marks the end of a section block.'
+            syntax = '@endsection'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'yield':
+            description = 'Outputs the contents of a section defined in a child template.'
+            syntax = '@yield(sectionName)'
+            example = '@yield(\'content\')'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'parent':
+            description = 'Includes the parent section\'s content when overriding a section.'
+            syntax = '@parent'
+            example = '@section(\'sidebar\')\n    @parent\n    <p>Additional sidebar content</p>\n@endsection'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'stack':
+            description = 'Defines a location where stacked content will be rendered.'
+            syntax = '@stack(stackName)'
+            example = '@stack(\'scripts\')'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'push':
+            description = 'Pushes content onto a named stack.'
+            syntax = '@push(stackName)\n    // Content to push\n@endpush'
+            example = '@push(\'scripts\')\n    <script src="/js/app.js"></script>\n@endpush'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'endpush':
+            description = 'Marks the end of a push block.'
+            syntax = '@endpush'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'pushif':
+            description = 'Conditionally pushes content onto a stack.'
+            syntax = '@pushIf(condition, stackName)\n    // Content to push\n@endPushIf'
+            example = '@pushIf(isDevelopment, \'scripts\')\n    <script src="/js/debug.js"></script>\n@endPushIf'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'pushonce':
+            description = 'Pushes content onto a stack only once during a rendering cycle.'
+            syntax = '@pushOnce(stackName)\n    // Content to push once\n@endPushOnce'
+            example = '@pushOnce(\'scripts\')\n    <script src="/js/shared.js"></script>\n@endPushOnce'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'prepend':
+            description = 'Prepends content to the beginning of a stack.'
+            syntax = '@prepend(stackName)\n    // Content to prepend\n@endprepend'
+            example = '@prepend(\'scripts\')\n    <script src="/js/first.js"></script>\n@endprepend'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'prependonce':
+            description = 'Prepends content to a stack only once during a rendering cycle.'
+            syntax = '@prependOnce(stackName)\n    // Content to prepend once\n@endPrependOnce'
+            example = '@prependOnce(\'styles\')\n    <link rel="stylesheet" href="/css/base.css">\n@endPrependOnce'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'includeif':
+            description = 'Conditionally includes a template if a condition is true.'
+            syntax = '@includeIf(condition, path)'
+            example = '@includeIf(user.hasAccess, \'partials/admin-panel\')'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'includewhen':
+            description = 'Includes a template when a condition is true.'
+            syntax = '@includeWhen(condition, path)'
+            example = '@includeWhen(showBanner, \'partials/banner\')'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'includeunless':
+            description = 'Includes a template unless a condition is true.'
+            syntax = '@includeUnless(condition, path)'
+            example = '@includeUnless(user.isPremium, \'partials/ads\')'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'includefirst':
+            description = 'Includes the first existing template from an array of paths.'
+            syntax = '@includeFirst([paths])'
+            example = '@includeFirst([\'custom/header\', \'default/header\'])'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'auth':
+            description = 'Displays content only to authenticated users.'
+            syntax = '@auth\n    // Content for authenticated users\n@endauth'
+            example = '@auth\n    <p>Welcome back, \\${user.name}!</p>\n@endauth'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'endauth':
+            description = 'Marks the end of an auth block.'
+            syntax = '@endauth'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'guest':
+            description = 'Displays content only to guests (non-authenticated users).'
+            syntax = '@guest\n    // Content for guests\n@endguest'
+            example = '@guest\n    <a href="/login">Please log in</a>\n@endguest'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'endguest':
+            description = 'Marks the end of a guest block.'
+            syntax = '@endguest'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'can':
+            description = 'Checks if the authenticated user has a specific permission.'
+            syntax = '@can(permission, model)\n    // Content for authorized users\n@endcan'
+            example = '@can(\'edit\', post)\n    <button>Edit Post</button>\n@endcan'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'endcan':
+            description = 'Marks the end of a can block.'
+            syntax = '@endcan'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'cannot':
+            description = 'Checks if the authenticated user lacks a specific permission.'
+            syntax = '@cannot(permission, model)\n    // Content for unauthorized users\n@endcannot'
+            example = '@cannot(\'delete\', post)\n    <p>You cannot delete this post</p>\n@endcannot'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'endcannot':
+            description = 'Marks the end of a cannot block.'
+            syntax = '@endcannot'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'error':
+            description = 'Displays a validation error message for a specific field.'
+            syntax = '@error(fieldName)\n    <div class="error">\\${$message}</div>\n@enderror'
+            example = '@error(\'email\')\n    <div class="error">\\${$message}</div>\n@enderror'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'enderror':
+            description = 'Marks the end of an error block.'
+            syntax = '@enderror'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'hassection':
+            description = 'Checks if a section has been defined.'
+            syntax = '@hasSection(sectionName)\n    // Content if section exists\n@endif'
+            example = '@hasSection(\'sidebar\')\n    <div class="with-sidebar">\n@endif'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'use':
+            description = 'Imports a class or namespace for use in the template.'
+            syntax = '@use(namespace)'
+            example = '@use(\'App\\\\View\\\\Components\\\\Alert\')'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'csrf':
+            description = 'Includes a CSRF protection token field for forms.'
+            syntax = '@csrf'
+            example = '<form method="POST">\n    @csrf\n    <!-- form fields -->\n</form>'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'method':
+            description = 'Specifies the HTTP method for a form.'
+            syntax = '@method(httpMethod)'
+            example = '<form>\n    @method(\'PUT\')\n    <!-- form fields -->\n</form>'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'locale':
+            description = 'Sets the locale for localized content.'
+            syntax = '@locale(localeCode)'
+            example = '@locale(\'fr\')'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'webcomponent':
+            description = 'Includes a web component with slots and attributes.'
+            syntax = '@webcomponent(componentName)\n    // Component content\n@endwebcomponent'
+            example = '@webcomponent(\'ui-card\')\n    <h2 slot="header">Title</h2>\n    <p>Content</p>\n@endwebcomponent'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'endwebcomponent':
+            description = 'Marks the end of a webcomponent block.'
+            syntax = '@endwebcomponent'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            return new vscode.Hover(hover)
+          case 'scrollanimate':
+            description = 'Triggers animation when element scrolls into view.'
+            syntax = '@scrollAnimate(type, duration, ease, threshold, delay)\n    // Animated content\n@endscrollAnimate'
+            example = '@scrollAnimate(\'fade\', 400, \'ease-out\', 0.2, 0)\n    <div>Content fades in on scroll</div>\n@endscrollAnimate'
+
+            hover.appendMarkdown(description)
+
+            if (syntax) {
+              hover.appendMarkdown('\n\n**Syntax**\n')
+              hover.appendCodeblock(syntax, 'stx')
+            }
+
+            if (example) {
+              hover.appendMarkdown('\n\n**Example**\n')
+              hover.appendCodeblock(example, 'stx')
             }
 
             return new vscode.Hover(hover)
