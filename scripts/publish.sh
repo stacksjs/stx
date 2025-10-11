@@ -53,25 +53,35 @@ publish_package() {
   echo "----------------------------------------"
 }
 
-# Process top-level packages
-for dir in packages/*/ ; do
-  if [ -d "$dir" ]; then
-    package_name=$(basename "$dir")
+# Define publish order - dependencies first
+PUBLISH_ORDER=(
+  "iconify-core"      # Must be published before iconify collections
+  "sanitizer"
+  "markdown"
+  "stx"
+  "bun-plugin"
+  "devtools"
+  "iconify-generator"
+  "benchmarks"
+  "vscode"
+)
 
-    # Special handling for collections directory
-    if [ "$package_name" = "collections" ]; then
-      echo "Processing collections subdirectories..."
-      # Process each iconify package inside collections
-      for collection_dir in "$dir"*/ ; do
-        if [ -d "$collection_dir" ]; then
-          publish_package "$collection_dir"
-        fi
-      done
-    else
-      # Regular package
-      publish_package "$dir"
-    fi
+# First, publish packages in the defined order
+for package_name in "${PUBLISH_ORDER[@]}"; do
+  dir="packages/$package_name/"
+  if [ -d "$dir" ]; then
+    publish_package "$dir"
   fi
 done
+
+# Then publish iconify collections (which depend on iconify-core)
+if [ -d "packages/collections" ]; then
+  echo "Processing collections subdirectories..."
+  for collection_dir in packages/collections/*/ ; do
+    if [ -d "$collection_dir" ]; then
+      publish_package "$collection_dir"
+    fi
+  done
+fi
 
 echo "All packages published successfully!"
