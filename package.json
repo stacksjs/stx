@@ -1,7 +1,7 @@
 {
   "name": "stx",
   "type": "module",
-  "version": "0.0.14",
+  "version": "0.1.5",
   "private": true,
   "description": "A fast & powerful UI / templating engine. Laravel Blade-inspired. Powered by Bun.",
   "author": "Chris Breuer <chris@stacksjs.org>",
@@ -44,7 +44,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "cd packages/bun-plugin && bun --bun build.ts && cd ../stx && bun run build:css && bun --bun build.ts && cd ../.. && bun run compile",
+    "build": "cd packages/bun-plugin && bun --bun build.ts && cd ../stx && bun --bun build.ts && cd ../.. && bun run compile",
     "build:css": "cd packages/stx && bun run build:css && cd ../..",
     "css:watch": "cd packages/stx && bun run css:watch && cd ../..",
     "compile": "bun build ./packages/stx/bin/cli.ts --compile --minify --outfile bin/stx",
@@ -74,7 +74,7 @@
     "lint:fix": "bunx --bun eslint . --fix",
     "changelog": "bunx logsmith --verbose",
     "changelog:generate": "bunx logsmith --output CHANGELOG.md",
-    "release": "bun run changelog:generate && bunx bumpx prompt --recursive",
+    "release": "bun run changelog:generate && bunx --bun bumpx prompt --recursive",
     "dev:docs": "bun --bun vitepress dev docs",
     "build:docs": "bun --bun vitepress build docs",
     "preview:docs": "bun --bun vitepress preview docs",

@@ -35,7 +35,7 @@ jobs:
           bun add -g logsmith
 
       - name: Publish to npm
-        run: ./scripts/publish-packages.sh
+        run: ./scripts/publish.sh
         env:
           BUN_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 
