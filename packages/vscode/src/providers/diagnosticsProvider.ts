@@ -277,4 +277,3 @@ function validateTemplatePaths(document: vscode.TextDocument, diagnostics: vscod
     }
   }
 }
-
