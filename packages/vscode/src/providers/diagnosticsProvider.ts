@@ -2,9 +2,6 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
 
-// Decoration type for error highlighting (red background)
-let errorDecorationType: vscode.TextEditorDecorationType
-
 /**
  * Creates a diagnostic collection for stx files
  */
@@ -12,30 +9,11 @@ export function createDiagnosticsProvider(context: vscode.ExtensionContext): vsc
   const diagnosticCollection = vscode.languages.createDiagnosticCollection('stx')
   context.subscriptions.push(diagnosticCollection)
 
-  // Create error decoration type with red background
-  errorDecorationType = vscode.window.createTextEditorDecorationType({
-    backgroundColor: 'rgba(255, 0, 0, 0.3)',
-    border: '1px solid rgba(255, 0, 0, 0.8)',
-    borderRadius: '3px',
-    overviewRulerColor: 'red',
-    overviewRulerLane: vscode.OverviewRulerLane.Right,
-    light: {
-      backgroundColor: 'rgba(255, 0, 0, 0.2)',
-      border: '1px solid rgba(255, 0, 0, 0.6)',
-    },
-    dark: {
-      backgroundColor: 'rgba(255, 0, 0, 0.3)',
-      border: '1px solid rgba(255, 0, 0, 0.8)',
-    },
-  })
-  context.subscriptions.push(errorDecorationType)
-
   // Update diagnostics when document changes
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument((event) => {
       if (event.document.languageId === 'stx' || event.document.fileName.endsWith('.stx')) {
         updateDiagnostics(event.document, diagnosticCollection)
-        updateErrorDecorations(event.document, diagnosticCollection)
       }
     }),
   )
@@ -45,16 +23,6 @@ export function createDiagnosticsProvider(context: vscode.ExtensionContext): vsc
     vscode.workspace.onDidOpenTextDocument((document) => {
       if (document.languageId === 'stx' || document.fileName.endsWith('.stx')) {
         updateDiagnostics(document, diagnosticCollection)
-        updateErrorDecorations(document, diagnosticCollection)
-      }
-    }),
-  )
-
-  // Update when active editor changes
-  context.subscriptions.push(
-    vscode.window.onDidChangeActiveTextEditor((editor) => {
-      if (editor && (editor.document.languageId === 'stx' || editor.document.fileName.endsWith('.stx'))) {
-        updateErrorDecorations(editor.document, diagnosticCollection)
       }
     }),
   )
@@ -63,7 +31,6 @@ export function createDiagnosticsProvider(context: vscode.ExtensionContext): vsc
   vscode.workspace.textDocuments.forEach((document) => {
     if (document.languageId === 'stx' || document.fileName.endsWith('.stx')) {
       updateDiagnostics(document, diagnosticCollection)
-      updateErrorDecorations(document, diagnosticCollection)
     }
   })
 
@@ -311,25 +278,3 @@ function validateTemplatePaths(document: vscode.TextDocument, diagnostics: vscod
   }
 }
 
-/**
- * Updates error decorations (red highlighting) for diagnostics
- */
-function updateErrorDecorations(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): void {
-  const editor = vscode.window.activeTextEditor
-  if (!editor || editor.document !== document) {
-    return
-  }
-
-  const diagnostics = diagnosticCollection.get(document.uri) || []
-  const errorRanges: vscode.Range[] = []
-
-  for (const diagnostic of diagnostics) {
-    // Only highlight errors and warnings (not info/hints)
-    if (diagnostic.severity === vscode.DiagnosticSeverity.Error || diagnostic.severity === vscode.DiagnosticSeverity.Warning) {
-      errorRanges.push(diagnostic.range)
-    }
-  }
-
-  // Apply decorations
-  editor.setDecorations(errorDecorationType, errorRanges)
-}
