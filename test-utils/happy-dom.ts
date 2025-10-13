@@ -12,8 +12,8 @@ const document = window.document
 // Setup global variables
 globalThis.window = window as any
 globalThis.document = document as any
-globalThis.navigator = window.navigator
-globalThis.location = window.location
+globalThis.navigator = window.navigator as any
+globalThis.location = window.location as any
 globalThis.HTMLElement = window.HTMLElement as any
 globalThis.Element = window.Element as any
 globalThis.Node = window.Node as any
@@ -26,10 +26,11 @@ globalThis.DOMParser = window.DOMParser as any
 // Add __dispatchEvent_safe method to Element prototype for tests
 // This is a safer version of dispatchEvent that handles errors gracefully
 if (typeof Element !== 'undefined') {
-  (Element.prototype as any).__dispatchEvent_safe = function(event: Event): boolean {
+  (Element.prototype as any).__dispatchEvent_safe = function (event: Event): boolean {
     try {
       return this.dispatchEvent(event)
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error dispatching event:', error)
       return false
     }
@@ -42,15 +43,19 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
     constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
       // Store callback and options if needed for testing
     }
+
     observe(target: Element) {
       // Mock implementation - immediately call callback as if element is visible
     }
+
     unobserve(target: Element) {
       // Mock implementation
     }
+
     disconnect() {
       // Mock implementation
     }
+
     takeRecords(): IntersectionObserverEntry[] {
       return []
     }
