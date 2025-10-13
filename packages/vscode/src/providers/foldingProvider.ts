@@ -6,6 +6,14 @@ import * as vscode from 'vscode'
 export function createFoldingRangeProvider(): vscode.FoldingRangeProvider {
   return {
     provideFoldingRanges(document, context, token) {
+      // Check configuration
+      const config = vscode.workspace.getConfiguration('stx.folding')
+      const foldingEnabled = config.get<boolean>('enable', true)
+
+      if (!foldingEnabled) {
+        return []
+      }
+
       const foldingRanges: vscode.FoldingRange[] = []
 
       // Directive pairs that can be folded

@@ -8,6 +8,14 @@ import { TransitionDirection, TransitionEase, TransitionType } from '../interfac
 export function createCompletionProvider(): vscode.CompletionItemProvider {
   return {
     provideCompletionItems(document, position, token, context) {
+      // Check configuration
+      const config = vscode.workspace.getConfiguration('stx.completion')
+      const completionEnabled = config.get<boolean>('enable', true)
+
+      if (!completionEnabled) {
+        return undefined
+      }
+
       // Check if this is an stx file by extension, even if language ID isn't set
       const isStxFile = document.fileName.endsWith('.stx')
       if (!isStxFile && document.languageId !== 'stx') {

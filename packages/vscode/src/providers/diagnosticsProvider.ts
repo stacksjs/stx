@@ -89,6 +89,19 @@ const directivePairs: Record<string, string> = {
  * Updates diagnostics for a document
  */
 function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): void {
+  // Check if diagnostics are enabled
+  const config = vscode.workspace.getConfiguration('stx.diagnostics')
+  const diagnosticsEnabled = config.get<boolean>('enable', true)
+
+  if (!diagnosticsEnabled) {
+    diagnosticCollection.set(document.uri, [])
+    return
+  }
+
+  const validateUnclosed = config.get<boolean>('validateUnclosedDirectives', true)
+  const validateMismatched = config.get<boolean>('validateMismatchedDirectives', true)
+  const validatePaths = config.get<boolean>('validateTemplatePaths', true)
+
   const diagnostics: vscode.Diagnostic[] = []
 
   // Stack to track open directives
@@ -132,7 +145,7 @@ function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: 
             key => directivePairs[key] === directiveName,
           )
 
-          if (openingName) {
+          if (openingName && validateMismatched) {
             // Pop from stack if it matches
             if (stack.length > 0) {
               const lastOpening = stack[stack.length - 1]
@@ -149,6 +162,7 @@ function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: 
                   `Mismatched directive. Expected @${directivePairs[lastOpening.name]} but found @${directiveName}`,
                   vscode.DiagnosticSeverity.Error,
                 )
+                diagnostic.source = 'stx'
                 diagnostics.push(diagnostic)
               }
             }
@@ -162,7 +176,14 @@ function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: 
                 `Unexpected @${directiveName}. No matching opening directive found`,
                 vscode.DiagnosticSeverity.Error,
               )
+              diagnostic.source = 'stx'
               diagnostics.push(diagnostic)
+            }
+          }
+          else if (openingName) {
+            // Pop from stack even if validation is disabled
+            if (stack.length > 0 && stack[stack.length - 1].name === openingName) {
+              stack.pop()
             }
           }
         }
@@ -171,20 +192,25 @@ function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: 
   }
 
   // Report unclosed directives
-  for (const unclosed of stack) {
-    const diagnostic = new vscode.Diagnostic(
-      new vscode.Range(
-        new vscode.Position(unclosed.line, unclosed.character),
-        new vscode.Position(unclosed.line, unclosed.character + unclosed.name.length),
-      ),
-      `Unclosed @${unclosed.name} directive. Expected @${directivePairs[unclosed.name]}`,
-      vscode.DiagnosticSeverity.Warning,
-    )
-    diagnostics.push(diagnostic)
+  if (validateUnclosed) {
+    for (const unclosed of stack) {
+      const diagnostic = new vscode.Diagnostic(
+        new vscode.Range(
+          new vscode.Position(unclosed.line, unclosed.character),
+          new vscode.Position(unclosed.line, unclosed.character + unclosed.name.length),
+        ),
+        `Unclosed @${unclosed.name} directive. Expected @${directivePairs[unclosed.name]}`,
+        vscode.DiagnosticSeverity.Warning,
+      )
+      diagnostic.source = 'stx'
+      diagnostics.push(diagnostic)
+    }
   }
 
   // Validate template paths in @include and @component directives
-  validateTemplatePaths(document, diagnostics)
+  if (validatePaths) {
+    validateTemplatePaths(document, diagnostics)
+  }
 
   diagnosticCollection.set(document.uri, diagnostics)
 }
@@ -272,6 +298,7 @@ function validateTemplatePaths(document: vscode.TextDocument, diagnostics: vscod
           vscode.DiagnosticSeverity.Warning,
         )
         diagnostic.code = 'template-not-found'
+        diagnostic.source = 'stx'
         diagnostics.push(diagnostic)
       }
     }

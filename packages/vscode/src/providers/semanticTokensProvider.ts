@@ -28,6 +28,14 @@ export const legend = new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers
 export function createSemanticTokensProvider(): vscode.DocumentSemanticTokensProvider {
   return {
     provideDocumentSemanticTokens(document, token) {
+      // Check configuration
+      const config = vscode.workspace.getConfiguration('stx.semanticHighlighting')
+      const semanticEnabled = config.get<boolean>('enable', true)
+
+      if (!semanticEnabled) {
+        return new vscode.SemanticTokensBuilder(legend).build()
+      }
+
       const tokensBuilder = new vscode.SemanticTokensBuilder(legend)
 
       // Directive categories for different highlighting

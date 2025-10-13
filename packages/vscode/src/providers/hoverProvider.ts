@@ -5,9 +5,83 @@ import { TransitionDirection, TransitionEase, TransitionType } from '../interfac
 import { findCssStylesForClass, isInStyleTag } from '../utils/cssUtils'
 import { formatJSDoc } from '../utils/jsdocUtils'
 
+/**
+ * Checks for diagnostics at the given position and appends them to the hover content
+ */
+function appendDiagnosticInfo(hover: vscode.MarkdownString, document: vscode.TextDocument, position: vscode.Position): void {
+  // Get all diagnostics for this document
+  const diagnostics = vscode.languages.getDiagnostics(document.uri)
+
+  if (!diagnostics || diagnostics.length === 0) {
+    return
+  }
+
+  // Find diagnostics that overlap with this position
+  const relevantDiagnostics = diagnostics.filter(diagnostic =>
+    diagnostic.range.contains(position),
+  )
+
+  if (relevantDiagnostics.length === 0) {
+    return
+  }
+
+  // Add separator
+  hover.appendMarkdown('\n\n---\n\n')
+
+  // Add each diagnostic
+  for (const diagnostic of relevantDiagnostics) {
+    const severityIcon = diagnostic.severity === vscode.DiagnosticSeverity.Error
+      ? '❌'
+      : diagnostic.severity === vscode.DiagnosticSeverity.Warning
+        ? '⚠️'
+        : 'ℹ️'
+
+    const severityLabel = diagnostic.severity === vscode.DiagnosticSeverity.Error
+      ? 'Error'
+      : diagnostic.severity === vscode.DiagnosticSeverity.Warning
+        ? 'Warning'
+        : 'Info'
+
+    hover.appendMarkdown(`${severityIcon} **${severityLabel}**: ${diagnostic.message}\n\n`)
+
+    if (diagnostic.source) {
+      hover.appendMarkdown(`*Source: ${diagnostic.source}*\n\n`)
+    }
+
+    // Add code if available
+    if (diagnostic.code) {
+      hover.appendMarkdown(`*Code: ${diagnostic.code}*\n\n`)
+    }
+  }
+}
+
+/**
+ * Creates a hover with diagnostic information appended
+ */
+function createHoverWithDiagnostics(hover: vscode.MarkdownString, document: vscode.TextDocument, position: vscode.Position, range?: vscode.Range): vscode.Hover {
+  // Append diagnostic information if any exists
+  appendDiagnosticInfo(hover, document, position)
+
+  // Return the hover with the specified range or undefined
+  if (range) {
+    return new vscode.Hover(hover, range)
+  }
+  return createHoverWithDiagnostics(hover, document, position)
+}
+
 export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocumentProvider): vscode.HoverProvider {
   return {
     async provideHover(document, position, token) {
+      // Check configuration
+      const config = vscode.workspace.getConfiguration('stx.hover')
+      const hoverEnabled = config.get<boolean>('enable', true)
+
+      if (!hoverEnabled) {
+        return null
+      }
+
+      const showExamples = config.get<boolean>('showExamples', true)
+
       // Check if we're in a TypeScript section or expression
       const wordRange = document.getWordRangeAtPosition(position)
 
@@ -160,13 +234,13 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
                 hover.appendMarkdown(`\n- \`flip\`: 3D flipping animations`)
                 hover.appendMarkdown(`\n- \`rotate\`: Rotation-based animations`)
                 hover.appendMarkdown(`\n- \`custom\`: Custom animation (requires additional CSS)`)
-                return new vscode.Hover(hover)
+                return createHoverWithDiagnostics(hover, document, position)
               }
               break
 
             case 1: // Duration
               hover.appendMarkdown(`**Duration**: Transition duration in milliseconds (default: 300)`)
-              return new vscode.Hover(hover)
+              return createHoverWithDiagnostics(hover, document, position)
 
             case 2: // Ease
               // Handle hyphenated values like 'ease-out'
@@ -185,7 +259,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
                 hover.appendMarkdown(`\n- \`ease-in\`: Starts slowly, speeds up`)
                 hover.appendMarkdown(`\n- \`ease-out\`: Starts quickly, slows down`)
                 hover.appendMarkdown(`\n- \`ease-in-out\`: Slow start, fast middle, slow end`)
-                return new vscode.Hover(hover)
+                return createHoverWithDiagnostics(hover, document, position)
               }
               else if (fullParam.includes('-') && (fullParam.startsWith('ease-') || fullParam === 'linear')) {
                 // Handle parts of hyphenated values (if word is just "out" from "ease-out")
@@ -199,14 +273,14 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
                   hover.appendMarkdown(`\n- \`ease-in\`: Starts slowly, speeds up`)
                   hover.appendMarkdown(`\n- \`ease-out\`: Starts quickly, slows down`)
                   hover.appendMarkdown(`\n- \`ease-in-out\`: Slow start, fast middle, slow end`)
-                  return new vscode.Hover(hover)
+                  return createHoverWithDiagnostics(hover, document, position)
                 }
               }
               break
 
             case 3: // Delay
               hover.appendMarkdown(`**Delay**: Transition delay in milliseconds (default: 0)`)
-              return new vscode.Hover(hover)
+              return createHoverWithDiagnostics(hover, document, position)
 
             case 4: // Direction
               if (Object.values(TransitionDirection).includes(fullParam as TransitionDirection)) {
@@ -216,7 +290,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
                 hover.appendMarkdown(`\n- \`in\`: Element transitions in (appears)`)
                 hover.appendMarkdown(`\n- \`out\`: Element transitions out (disappears)`)
                 hover.appendMarkdown(`\n- \`both\`: Element transitions both in and out (default)`)
-                return new vscode.Hover(hover)
+                return createHoverWithDiagnostics(hover, document, position)
               }
               break
           }
@@ -240,7 +314,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
           hover.appendMarkdown('- `delay` (optional): Animation delay in milliseconds (default: 0)\n')
           hover.appendMarkdown('- `direction` (optional): Animation direction (\'in\', \'out\', \'both\')')
 
-          return new vscode.Hover(hover)
+          return createHoverWithDiagnostics(hover, document, position)
         }
       }
 
@@ -270,7 +344,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
           hover.appendMarkdown(`\n\nWhen set to \`false\`, no animations will be shown regardless of user preferences.`)
         }
 
-        return new vscode.Hover(hover)
+        return createHoverWithDiagnostics(hover, document, position)
       }
 
       // Check if we're inside an animationGroup directive
@@ -295,7 +369,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
           hover.appendMarkdown('- `name` (required): Unique name for the animation group\n')
           hover.appendMarkdown('- `selectors` (required): One or more CSS selectors for elements to include in this group')
 
-          return new vscode.Hover(hover)
+          return createHoverWithDiagnostics(hover, document, position)
         }
         // Check if we're hovering over parameter
         else if (params.some(p => p.replace(/['"`]/g, '') === word)) {
@@ -312,7 +386,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
             hover.appendMarkdown(`**Element Selector**: CSS selector for elements to include in this animation group`)
           }
 
-          return new vscode.Hover(hover)
+          return createHoverWithDiagnostics(hover, document, position)
         }
       }
 
@@ -351,7 +425,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
             hover.appendMarkdown(`Translation key for a localized string.`)
           }
 
-          return new vscode.Hover(hover)
+          return createHoverWithDiagnostics(hover, document, position)
         }
       }
 
@@ -411,7 +485,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
           hover.appendMarkdown('*No styles found for this class in the current document.*')
         }
 
-        return new vscode.Hover(hover)
+        return createHoverWithDiagnostics(hover, document, position)
       }
 
       // CSS CLASS SELECTOR DETECTION - This comes first
@@ -439,7 +513,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
           hover.appendCodeblock(`.${word} {\n${cssStyles.join('\n')}\n}`, 'css')
         }
 
-        return new vscode.Hover(hover)
+        return createHoverWithDiagnostics(hover, document, position)
       }
 
       // HTML TAG DETECTION
@@ -539,7 +613,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
           hover.appendMarkdown(tagDescription)
           hover.appendMarkdown(`\n\n[MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/${word})`)
 
-          return new vscode.Hover(hover)
+          return createHoverWithDiagnostics(hover, document, position)
         }
       }
 
@@ -569,7 +643,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
             hover.appendMarkdown('Selects all elements with the specified tag name.\n\n')
             hover.appendMarkdown('[Selector Specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Specificity): (0, 0, 1)')
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           }
         }
       }
@@ -749,7 +823,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endforeach':
             description = 'Marks the end of a @foreach loop block.'
             syntax = '@endforeach'
@@ -761,7 +835,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'if':
             description = 'Conditionally renders content if the expression evaluates to true.'
             syntax = '@if (condition)'
@@ -779,7 +853,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'else':
             description = 'Provides an alternative content block to render when the preceding @if condition is false.'
             syntax = '@else'
@@ -797,7 +871,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'elseif':
           case 'elif':
             description = 'Checks an additional condition when the preceding @if or @elseif condition is false.'
@@ -816,7 +890,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endif':
             description = 'Marks the end of an @if/@elseif/@else conditional block.'
             syntax = '@endif'
@@ -828,7 +902,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'unless':
             description = 'Conditionally renders content if the expression evaluates to false (opposite of @if).'
             syntax = '@unless (condition)'
@@ -846,7 +920,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endunless':
             description = 'Marks the end of an @unless conditional block.'
             syntax = '@endunless'
@@ -858,7 +932,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'include':
             description = 'Includes and renders a partial template at the current position.'
             syntax = '@include (path[, data])'
@@ -876,7 +950,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'component':
             description = 'Renders a reusable component with the provided props.'
             syntax = '@component (name[, props])'
@@ -894,7 +968,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'slot':
             description = 'Defines a named slot within a component that can be filled with content.'
             syntax = '@slot (name)'
@@ -912,7 +986,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endslot':
             description = 'Marks the end of a @slot content block.'
             syntax = '@endslot'
@@ -924,7 +998,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'ts':
             description = 'Defines a TypeScript code block for client-side or server-side logic.'
             syntax = '@ts'
@@ -942,7 +1016,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endts':
             description = 'Marks the end of a TypeScript code block.'
             syntax = '@endts'
@@ -954,7 +1028,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'switch':
             description = 'Evaluates an expression and matches it against multiple cases.'
             syntax = '@switch (expression)'
@@ -972,7 +1046,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'case':
             description = 'Defines a case to match within a @switch block.'
             syntax = '@case (value)'
@@ -984,7 +1058,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'default':
             description = 'Provides a default case within a @switch block when no other cases match.'
             syntax = '@default'
@@ -996,7 +1070,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endswitch':
             description = 'Marks the end of a @switch block.'
             syntax = '@endswitch'
@@ -1008,7 +1082,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'for':
             description = 'Creates a for loop with standard initialization, condition, and increment syntax.'
             syntax = '@for (initialization; condition; increment)'
@@ -1026,7 +1100,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endfor':
             description = 'Marks the end of a @for loop block.'
             syntax = '@endfor'
@@ -1038,7 +1112,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'while':
             description = 'Creates a while loop that executes as long as the condition is true.'
             syntax = '@while (condition)'
@@ -1056,7 +1130,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endwhile':
             description = 'Marks the end of a @while loop block.'
             syntax = '@endwhile'
@@ -1068,7 +1142,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'continue':
             description = 'Skips the rest of the current iteration and moves to the next iteration of the loop.'
             syntax = '@continue'
@@ -1086,7 +1160,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'break':
             description = 'Exits the current loop immediately.'
             syntax = '@break'
@@ -1104,7 +1178,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 't':
           case 'translate':
             description = 'Renders translated text using the specified translation key.'
@@ -1140,7 +1214,7 @@ errors.notFound: "Page not found"`, 'yaml')
             hover.appendCodeblock(`@t('common.greeting', { name: user.name })
 // If translation is "Hello, {name}", outputs: "Hello, John"`, 'stx')
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'transition':
             description = 'Applies animation transitions to elements based on specified parameters.'
             syntax = '@transition(type, duration?, ease?, delay?, direction?)'
@@ -1165,7 +1239,7 @@ errors.notFound: "Page not found"`, 'yaml')
             hover.appendMarkdown('- `delay` (optional): Animation delay in milliseconds (default: 0)\n')
             hover.appendMarkdown('- `direction` (optional): Animation direction (\'in\', \'out\', \'both\')')
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'animationgroup':
             description = 'Groups elements for synchronized animations.'
             syntax = '@animationGroup(name, ...selectors)'
@@ -1187,7 +1261,7 @@ errors.notFound: "Page not found"`, 'yaml')
             hover.appendMarkdown('- `name` (required): Unique name for the animation group\n')
             hover.appendMarkdown('- `selectors` (required): One or more CSS selectors for elements to include in this group')
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'motion':
             description = 'Controls animation preferences based on user accessibility settings.'
             syntax = '@motion(enabled)'
@@ -1210,7 +1284,7 @@ errors.notFound: "Page not found"`, 'yaml')
             hover.appendMarkdown('\nWhen set to `true`, animations will only be shown to users who haven\'t requested reduced motion.\n')
             hover.appendMarkdown('When set to `false`, animations will be disabled for everyone.')
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endtransition':
             description = 'Marks the end of a @transition block.'
             syntax = '@endtransition'
@@ -1222,7 +1296,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'markdown':
             description = 'Embeds Markdown content that will be rendered as HTML in the output.'
             syntax = '@markdown\n    # Markdown content\n    Text with **bold** and *italic*\n@endmarkdown'
@@ -1249,7 +1323,7 @@ errors.notFound: "Page not found"`, 'yaml')
             hover.appendMarkdown('- Links: `[text](url)`\n')
             hover.appendMarkdown('- Code: `` `code` `` or ````code block````')
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endmarkdown':
             description = 'Marks the end of a Markdown content block.'
             syntax = '@endmarkdown'
@@ -1261,7 +1335,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'raw':
             description = 'Displays content exactly as is, without processing any stx expressions or directives.'
             syntax = '@raw\n    Content to display verbatim\n@endraw'
@@ -1284,7 +1358,7 @@ errors.notFound: "Page not found"`, 'yaml')
             hover.appendMarkdown('- Including content that contains curly braces or @ symbols\n')
             hover.appendMarkdown('- Showing code snippets that should not be processed')
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endraw':
             description = 'Marks the end of a raw content block.'
             syntax = '@endraw'
@@ -1296,7 +1370,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'verbatim':
             description = 'Displays content exactly as is, without processing any stx directives or expressions.'
             syntax = '@verbatim\n    Content to display verbatim\n@endverbatim'
@@ -1314,7 +1388,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endverbatim':
             description = 'Marks the end of a verbatim content block.'
             syntax = '@endverbatim'
@@ -1326,7 +1400,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'forelse':
             description = 'Iterates over a collection with a fallback when the collection is empty.'
             syntax = '@forelse (collection as item)\n    // Loop content\n@empty\n    // Empty fallback\n@endforelse'
@@ -1344,7 +1418,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endforelse':
             description = 'Marks the end of a @forelse loop block.'
             syntax = '@endforelse'
@@ -1356,7 +1430,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'js':
             description = 'Defines a JavaScript code block.'
             syntax = '@js\n    // JavaScript code\n@endjs'
@@ -1374,7 +1448,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endjs':
             description = 'Marks the end of a JavaScript code block.'
             syntax = '@endjs'
@@ -1386,7 +1460,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'script':
             description = 'Alternative syntax for TypeScript/JavaScript code block.'
             syntax = '@script\n    // Code here\n@endscript'
@@ -1404,7 +1478,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endscript':
             description = 'Marks the end of a script code block.'
             syntax = '@endscript'
@@ -1416,7 +1490,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'css':
             description = 'Defines a CSS code block for component-specific styles.'
             syntax = '@css\n    /* CSS styles */\n@endcss'
@@ -1434,7 +1508,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endcss':
             description = 'Marks the end of a CSS code block.'
             syntax = '@endcss'
@@ -1446,7 +1520,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'json':
             description = 'Outputs a variable as JSON, useful for passing data to JavaScript.'
             syntax = '@json(variable)'
@@ -1464,7 +1538,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'extends':
             description = 'Extends a base layout template.'
             syntax = '@extends(layoutPath)'
@@ -1482,7 +1556,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'section':
             description = 'Defines a content section that can be yielded in a layout.'
             syntax = '@section(name)\n    // Section content\n@endsection'
@@ -1500,7 +1574,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endsection':
             description = 'Marks the end of a section block.'
             syntax = '@endsection'
@@ -1512,7 +1586,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'yield':
             description = 'Outputs the contents of a section defined in a child template.'
             syntax = '@yield(sectionName)'
@@ -1530,7 +1604,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'parent':
             description = 'Includes the parent section\'s content when overriding a section.'
             syntax = '@parent'
@@ -1548,7 +1622,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'stack':
             description = 'Defines a location where stacked content will be rendered.'
             syntax = '@stack(stackName)'
@@ -1566,7 +1640,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'push':
             description = 'Pushes content onto a named stack.'
             syntax = '@push(stackName)\n    // Content to push\n@endpush'
@@ -1584,7 +1658,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endpush':
             description = 'Marks the end of a push block.'
             syntax = '@endpush'
@@ -1596,7 +1670,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'pushif':
             description = 'Conditionally pushes content onto a stack.'
             syntax = '@pushIf(condition, stackName)\n    // Content to push\n@endPushIf'
@@ -1614,7 +1688,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'pushonce':
             description = 'Pushes content onto a stack only once during a rendering cycle.'
             syntax = '@pushOnce(stackName)\n    // Content to push once\n@endPushOnce'
@@ -1632,7 +1706,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'prepend':
             description = 'Prepends content to the beginning of a stack.'
             syntax = '@prepend(stackName)\n    // Content to prepend\n@endprepend'
@@ -1650,7 +1724,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'prependonce':
             description = 'Prepends content to a stack only once during a rendering cycle.'
             syntax = '@prependOnce(stackName)\n    // Content to prepend once\n@endPrependOnce'
@@ -1668,7 +1742,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'includeif':
             description = 'Conditionally includes a template if a condition is true.'
             syntax = '@includeIf(condition, path)'
@@ -1686,7 +1760,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'includewhen':
             description = 'Includes a template when a condition is true.'
             syntax = '@includeWhen(condition, path)'
@@ -1704,7 +1778,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'includeunless':
             description = 'Includes a template unless a condition is true.'
             syntax = '@includeUnless(condition, path)'
@@ -1722,7 +1796,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'includefirst':
             description = 'Includes the first existing template from an array of paths.'
             syntax = '@includeFirst([paths])'
@@ -1740,7 +1814,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'auth':
             description = 'Displays content only to authenticated users.'
             syntax = '@auth\n    // Content for authenticated users\n@endauth'
@@ -1758,7 +1832,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endauth':
             description = 'Marks the end of an auth block.'
             syntax = '@endauth'
@@ -1770,7 +1844,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'guest':
             description = 'Displays content only to guests (non-authenticated users).'
             syntax = '@guest\n    // Content for guests\n@endguest'
@@ -1788,7 +1862,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endguest':
             description = 'Marks the end of a guest block.'
             syntax = '@endguest'
@@ -1800,7 +1874,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'can':
             description = 'Checks if the authenticated user has a specific permission.'
             syntax = '@can(permission, model)\n    // Content for authorized users\n@endcan'
@@ -1818,7 +1892,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endcan':
             description = 'Marks the end of a can block.'
             syntax = '@endcan'
@@ -1830,7 +1904,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'cannot':
             description = 'Checks if the authenticated user lacks a specific permission.'
             syntax = '@cannot(permission, model)\n    // Content for unauthorized users\n@endcannot'
@@ -1848,7 +1922,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endcannot':
             description = 'Marks the end of a cannot block.'
             syntax = '@endcannot'
@@ -1860,7 +1934,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'error':
             description = 'Displays a validation error message for a specific field.'
             syntax = '@error(fieldName)\n    <div class="error">\\${$message}</div>\n@enderror'
@@ -1878,7 +1952,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'enderror':
             description = 'Marks the end of an error block.'
             syntax = '@enderror'
@@ -1890,7 +1964,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'hassection':
             description = 'Checks if a section has been defined.'
             syntax = '@hasSection(sectionName)\n    // Content if section exists\n@endif'
@@ -1908,7 +1982,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'use':
             description = 'Imports a class or namespace for use in the template.'
             syntax = '@use(namespace)'
@@ -1926,7 +2000,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'csrf':
             description = 'Includes a CSRF protection token field for forms.'
             syntax = '@csrf'
@@ -1944,7 +2018,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'method':
             description = 'Specifies the HTTP method for a form.'
             syntax = '@method(httpMethod)'
@@ -1962,7 +2036,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'locale':
             description = 'Sets the locale for localized content.'
             syntax = '@locale(localeCode)'
@@ -1980,7 +2054,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'webcomponent':
             description = 'Includes a web component with slots and attributes.'
             syntax = '@webcomponent(componentName)\n    // Component content\n@endwebcomponent'
@@ -1998,7 +2072,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'endwebcomponent':
             description = 'Marks the end of a webcomponent block.'
             syntax = '@endwebcomponent'
@@ -2010,7 +2084,7 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(syntax, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           case 'scrollanimate':
             description = 'Triggers animation when element scrolls into view.'
             syntax = '@scrollAnimate(type, duration, ease, threshold, delay)\n    // Animated content\n@endscrollAnimate'
@@ -2028,12 +2102,12 @@ errors.notFound: "Page not found"`, 'yaml')
               hover.appendCodeblock(example, 'stx')
             }
 
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
           default:
             description = `stx directive: @${directiveName}`
 
             hover.appendMarkdown(description)
-            return new vscode.Hover(hover)
+            return createHoverWithDiagnostics(hover, document, position)
         }
       }
 
@@ -2177,7 +2251,7 @@ errors.notFound: "Page not found"`, 'yaml')
         }
 
         hover.appendMarkdown(description)
-        return new vscode.Hover(hover)
+        return createHoverWithDiagnostics(hover, document, position)
       }
 
       // Create virtual TS document

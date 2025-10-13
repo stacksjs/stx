@@ -6,6 +6,14 @@ import * as vscode from 'vscode'
 export function createCodeActionsProvider(): vscode.CodeActionProvider {
   return {
     provideCodeActions(document, range, context, token) {
+      // Check configuration
+      const config = vscode.workspace.getConfiguration('stx.codeActions')
+      const codeActionsEnabled = config.get<boolean>('enable', true)
+
+      if (!codeActionsEnabled) {
+        return []
+      }
+
       const actions: vscode.CodeAction[] = []
 
       // Directive pairs
