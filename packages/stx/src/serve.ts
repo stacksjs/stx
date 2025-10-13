@@ -34,7 +34,7 @@ export interface ServeOptions {
 }
 
 export interface ServeResult {
-  server: Server
+  server: Server<any>
   stop: () => void
   url: string
 }

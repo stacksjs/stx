@@ -5,12 +5,11 @@
       "esnext",
       "dom"
     ],
-    "rootDir": "src",
     "paths": {
       "bun-plugin-stx": ["./packages/bun-plugin/src/index.ts"]
     },
     "outDir": "dist"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "test/**/*"],
   "exclude": ["node_modules", "dist"]
 }
