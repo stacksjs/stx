@@ -234,10 +234,6 @@
           "name": "keyword.stx"
         },
         {
-          "match": "(?x)(?<![A-Za-z0-9_@]) @(end)? (?i:  auth\n  |can\n  |canany\n  |cannot\n  |component\n  |css\n  |empty\n  |env\n  |error\n  |for\n  |foreach\n  |forelse\n  |guest\n  |if\n  |isset\n  |js\n  |lang\n  |markdown\n  |motion\n  |once\n  |prepend\n  |prependOnce\n  |push\n  |pushIf\n  |pushOnce\n  |raw\n  |script\n  |scrollAnimate\n  |section\n  |session\n  |slot\n  |switch\n  |transition\n  |ts\n  |unless\n  |verbatim\n  |webcomponent\n  |while\n)\\b\n",
-          "name": "keyword.stx"
-        },
-        {
           "begin": "(?<![A-Za-z0-9_@])@(?i:ts)\\b",
           "beginCaptures": {
             "0": {
@@ -257,6 +253,10 @@
           ],
           "contentName": "source.ts",
           "name": "meta.embedded.block.ts"
+        },
+        {
+          "match": "(?x)(?<![A-Za-z0-9_@]) @(end)? (?i:  auth\n  |can\n  |canany\n  |cannot\n  |component\n  |css\n  |empty\n  |env\n  |error\n  |for\n  |foreach\n  |forelse\n  |guest\n  |if\n  |isset\n  |js\n  |lang\n  |markdown\n  |motion\n  |once\n  |prepend\n  |prependOnce\n  |push\n  |pushIf\n  |pushOnce\n  |raw\n  |script\n  |scrollAnimate\n  |section\n  |session\n  |slot\n  |switch\n  |transition\n  |unless\n  |verbatim\n  |webcomponent\n  |while\n)\\b\n",
+          "name": "keyword.stx"
         },
         {
           "begin": "(?<![A-Za-z0-9_@])@(?i:js)\\b",
