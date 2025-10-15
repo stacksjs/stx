@@ -2453,29 +2453,83 @@ errors.notFound: "Page not found"`, 'yaml')
               const assignment = assignmentMatch[1].trim()
               variableValue = assignment // Store the actual value
 
-              if (assignment.startsWith('"') || assignment.startsWith('\'')) {
+              // Improved type inference using typeof-like logic
+              // String literals
+              if (assignment.startsWith('"') || assignment.startsWith('\'') || assignment.startsWith('`')) {
                 variableType = 'string'
               }
-              else if (/^\d+(\.\d+)?$/.test(assignment)) {
+              // Number literals (including decimals, negative numbers, hex, binary, octal)
+              else if (/^-?\d+(\.\d+)?$/.test(assignment) || /^0[xbo][0-9a-f]+$/i.test(assignment)) {
                 variableType = 'number'
               }
+              // Boolean literals
               else if (assignment === 'true' || assignment === 'false') {
                 variableType = 'boolean'
               }
-              else if (assignment.startsWith('[')) {
-                variableType = 'array'
+              // null
+              else if (assignment === 'null') {
+                variableType = 'null'
               }
+              // undefined
+              else if (assignment === 'undefined') {
+                variableType = 'undefined'
+              }
+              // Array literals
+              else if (assignment.startsWith('[')) {
+                variableType = 'any[]'
+
+                // Try to infer array item type from first element
+                const arrayContentMatch = assignment.match(/\[\s*([^,\]]+)/)
+                if (arrayContentMatch) {
+                  const firstItem = arrayContentMatch[1].trim()
+                  if (firstItem.startsWith('"') || firstItem.startsWith('\'')) {
+                    variableType = 'string[]'
+                  }
+                  else if (/^\d+(\.\d+)?$/.test(firstItem)) {
+                    variableType = 'number[]'
+                  }
+                  else if (firstItem === 'true' || firstItem === 'false') {
+                    variableType = 'boolean[]'
+                  }
+                  else if (firstItem.startsWith('{')) {
+                    variableType = 'object[]'
+                  }
+                }
+              }
+              // Object literals
               else if (assignment.startsWith('{')) {
                 variableType = 'object'
 
-                // Try to parse object structure
+                // Try to parse object structure and infer property types
                 const objectMatch = assignment.match(/\{([^}]*)\}/)
                 if (objectMatch) {
-                  variableInterface = objectMatch[1].trim()
+                  const objBody = objectMatch[1].trim()
+                  // Parse properties and infer their types
+                  const props = objBody.split(',').map((prop) => {
+                    const [key, val] = prop.split(':').map(s => s.trim())
+                    if (key && val) {
+                      let propType = 'any'
+                      if (val.startsWith('"') || val.startsWith('\'')) {
+                        propType = 'string'
+                      }
+                      else if (/^\d+(\.\d+)?$/.test(val)) {
+                        propType = 'number'
+                      }
+                      else if (val === 'true' || val === 'false') {
+                        propType = 'boolean'
+                      }
+                      return `${key}: ${propType}`
+                    }
+                    return null
+                  }).filter(Boolean)
+
+                  if (props.length > 0) {
+                    variableInterface = props.join('; ')
+                  }
                 }
               }
+              // Function calls
               else {
-                // Try to extract type from function call
                 const functionCallMatch = assignment.match(/(\w+)\(\)/)
                 if (functionCallMatch) {
                   const functionName = functionCallMatch[1]
@@ -2491,6 +2545,22 @@ errors.notFound: "Page not found"`, 'yaml')
                       variableInterface = returnInterfaceMatch[1].trim()
                     }
                   }
+                  else {
+                    // If no return type found, try to infer from common built-in functions
+                    if (['parseInt', 'parseFloat', 'Math.floor', 'Math.ceil', 'Math.round'].includes(functionName)) {
+                      variableType = 'number'
+                    }
+                    else if (['String', 'toString'].includes(functionName)) {
+                      variableType = 'string'
+                    }
+                    else if (['Boolean'].includes(functionName)) {
+                      variableType = 'boolean'
+                    }
+                  }
+                }
+                // Template literals
+                else if (assignment.startsWith('`')) {
+                  variableType = 'string'
                 }
               }
             }
