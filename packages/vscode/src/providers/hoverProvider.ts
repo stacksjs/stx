@@ -95,6 +95,13 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
       // Get the entire line for context analysis
       const line = document.lineAt(position.line).text
 
+      // Check if this is a property access (e.g., user.name)
+      const textBeforeWord = document.getText(new vscode.Range(
+        new vscode.Position(position.line, 0),
+        wordRange.start,
+      ))
+      const propertyAccessMatch = textBeforeWord.match(/(\w+)\.$/)
+
       // Skip processing normal text in HTML context
       const isInHtmlContext = !line.includes('@ts')
         && !line.includes('{{')
@@ -2262,6 +2269,118 @@ errors.notFound: "Page not found"`, 'yaml')
 
       try {
         const tsContent = virtualTsDocumentProvider.provideTextDocumentContent(virtualUri)
+
+        // HANDLE PROPERTY ACCESS (e.g., user.name)
+        if (propertyAccessMatch) {
+          const parentObject = propertyAccessMatch[1]
+          const propertyName = word
+
+          // Find the parent object's type
+          const parentTypeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${parentObject}\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'))
+
+          if (parentTypeMatch) {
+            const parentType = parentTypeMatch[1].replace('[]', '')
+
+            // Find the interface/type definition
+            const interfaceMatch = tsContent.match(new RegExp(`interface\\s+${parentType}\\s*\\{([^}]*)\\}`, 's'))
+            const typeMatch = tsContent.match(new RegExp(`type\\s+${parentType}\\s*=\\s*\\{([^}]*)\\}`, 's'))
+
+            const typeBody = interfaceMatch ? interfaceMatch[1] : (typeMatch ? typeMatch[1] : null)
+
+            if (typeBody) {
+              // Find the property definition
+              const propMatch = typeBody.match(new RegExp(`${propertyName}\\s*:\\s*([^;,\\n]+)`, 'i'))
+
+              if (propMatch) {
+                const propType = propMatch[1].trim()
+
+                // Try to find the actual value from initialization
+                const objectInitMatch = tsContent.match(new RegExp(`${parentObject}\\s*[=:]\\s*\\{([^}]*)\\}`, 's'))
+                let actualValue = null
+
+                if (objectInitMatch) {
+                  const objBody = objectInitMatch[1]
+                  const valueMatch = objBody.match(new RegExp(`${propertyName}\\s*:\\s*([^,}\\n]+)`, 'i'))
+                  if (valueMatch) {
+                    actualValue = valueMatch[1].trim()
+                  }
+                }
+
+                // Create hover with property information
+                const hoverContent = new vscode.MarkdownString()
+                hoverContent.isTrusted = true
+                hoverContent.supportHtml = true
+
+                // Show property signature
+                hoverContent.appendCodeblock(`(property) ${parentObject}.${propertyName}: ${propType}`, 'typescript')
+
+                if (actualValue) {
+                  hoverContent.appendText('\n\n')
+                  hoverContent.appendMarkdown(`**Value:** \`${actualValue}\``)
+                }
+
+                hoverContent.appendText('\n\n')
+                hoverContent.appendMarkdown(`Property of \`${parentType}\``)
+
+                return new vscode.Hover(hoverContent, wordRange)
+              }
+            }
+          }
+        }
+
+        // Try to use TypeScript's language service for better type inference
+        try {
+          // Check if we're in {{ }} expressions
+          const isInExpression = line.includes('{{') && line.includes('}}')
+
+          if (isInExpression || line.includes('@ts')) {
+            // Use vscode's built-in TypeScript support for better type information
+            const tsUri = vscode.Uri.parse(`untitled:${document.uri.path}.ts`)
+
+            // Query TypeScript for hover information
+            const commands = await vscode.commands.getCommands()
+            if (commands.includes('vscode.executeHoverProvider')) {
+              try {
+                const tsHovers = await vscode.commands.executeCommand<vscode.Hover[]>(
+                  'vscode.executeHoverProvider',
+                  virtualUri,
+                  position,
+                )
+
+                if (tsHovers && tsHovers.length > 0) {
+                  const tsHover = tsHovers[0]
+                  if (tsHover.contents && tsHover.contents.length > 0) {
+                    // Extract type information from TypeScript hover
+                    const hoverContent = new vscode.MarkdownString()
+                    hoverContent.isTrusted = true
+                    hoverContent.supportHtml = true
+
+                    // Process the hover content
+                    for (const content of tsHover.contents) {
+                      if (typeof content === 'string') {
+                        hoverContent.appendMarkdown(content)
+                      }
+                      else if (content instanceof vscode.MarkdownString) {
+                        hoverContent.appendMarkdown(content.value)
+                      }
+                    }
+
+                    // If we got meaningful content, return it
+                    if (hoverContent.value && hoverContent.value.trim().length > 0) {
+                      return new vscode.Hover(hoverContent)
+                    }
+                  }
+                }
+              }
+              catch (tsError) {
+                console.log('TypeScript hover provider error:', tsError)
+              }
+            }
+          }
+        }
+        catch (tsError) {
+          console.log('Error querying TypeScript language service:', tsError)
+        }
 
         // First determine the symbol type more accurately
         let symbolType = 'variable'

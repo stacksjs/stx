@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>STX Hover Test</title>
+</head>
+<body>
+
+@ts
+  interface User {
+    name: string
+    age: number
+  }
+  
+  const user: User = { name: "John", age: 30 }
+
+  const count = 1
+@endts
+
+<div>{{ user.name }}</div>
+
+<div>{{ count }}</div>
+
+</body>
+</html>

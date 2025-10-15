@@ -9,7 +9,14 @@ try {
     outdir: './dist',
     target: 'node',
     format: 'cjs',
-    external: ['vscode'],
+    external: [
+      'vscode',
+      // External UnoCSS dependencies (optional feature)
+      '@unocss/core',
+      '@unocss/preset-uno',
+      'find-up',
+      'unplugin-utils',
+    ],
     minify: false, // Disable minification for easier debugging
     sourcemap: 'external',
   })

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>STX Hover Test</title>
+</head>
+<body>
+
+@ts
+  // Test 1: Interface with object
+  interface User {
+    name: string
+    age: number
+    email: string
+  }
+
+  const user: User = { name: "John", age: 30, email: "john@example.com" }
+
+  // Test 2: Simple variables
+  const greeting: string = "Hello World"
+  const count: number = 42
+  const isActive: boolean = true
+
+  // Test 3: Array types
+  interface Product {
+    id: number
+    title: string
+    price: number
+  }
+
+  const products: Product[] = [
+    { id: 1, title: "Laptop", price: 999 },
+    { id: 2, title: "Mouse", price: 29 }
+  ]
+
+  // Test 4: Function with return type
+  function getUserEmail(): string {
+    return user.email
+  }
+
+  // Test 5: Nested objects
+  interface Address {
+    street: string
+    city: string
+    country: string
+  }
+
+  interface Customer {
+    name: string
+    address: Address
+  }
+
+  const customer: Customer = {
+    name: "Jane Doe",
+    address: {
+      street: "123 Main St",
+      city: "New York",
+      country: "USA"
+    }
+  }
+@endts
+
+<h1>STX Hover Test Cases</h1>
+
+<!-- Test Case 1: Hover over property access -->
+<div>
+  <h2>User Information</h2>
+  <p>Name: {{ user.name }}</p>          <!-- Hover 'name' should show: (property) user.name: string -->
+  <p>Age: {{ user.age }}</p>            <!-- Hover 'age' should show: (property) user.age: number -->
+  <p>Email: {{ user.email }}</p>        <!-- Hover 'email' should show: (property) user.email: string -->
+</div>
+
+<!-- Test Case 2: Hover over simple variables -->
+<div>
+  <h2>Simple Variables</h2>
+  <p>{{ greeting }}</p>                 <!-- Hover should show: const greeting: string -->
+  <p>Count: {{ count }}</p>             <!-- Hover should show: const count: number -->
+  <p>Active: {{ isActive }}</p>         <!-- Hover should show: const isActive: boolean -->
+</div>
+
+<!-- Test Case 3: Hover in loops -->
+<div>
+  <h2>Products</h2>
+  @foreach(products as product)
+    <div>
+      <h3>{{ product.title }}</h3>      <!-- Hover 'title' should show property type -->
+      <p>Price: ${{ product.price }}</p> <!-- Hover 'price' should show property type -->
+      <p>ID: {{ product.id }}</p>       <!-- Hover 'id' should show property type -->
+    </div>
+  @endforeach
+</div>
+
+<!-- Test Case 4: Function return types -->
+<div>
+  <h2>Function Result</h2>
+  <p>Email from function: {{ getUserEmail() }}</p>  <!-- Hover should show function signature -->
+</div>
+
+<!-- Test Case 5: Nested object properties -->
+<div>
+  <h2>Customer Address</h2>
+  <p>Name: {{ customer.name }}</p>
+  <p>Street: {{ customer.address.street }}</p>     <!-- Hover should work for nested properties -->
+  <p>City: {{ customer.address.city }}</p>
+  <p>Country: {{ customer.address.country }}</p>
+</div>
+
+<!-- Test Case 6: Hover over parent object -->
+<div>
+  <h2>Object Hover</h2>
+  <p>{{ user }}</p>                     <!-- Hover 'user' should show: const user: User -->
+  <p>{{ customer }}</p>                 <!-- Hover 'customer' should show: const customer: Customer -->
+</div>
+
+</body>
+</html>
