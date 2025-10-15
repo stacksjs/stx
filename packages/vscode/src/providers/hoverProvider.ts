@@ -2424,12 +2424,14 @@ errors.notFound: "Page not found"`, 'yaml')
         // Look for variable type information
         let variableType = null
         let variableInterface = null
+        let variableValue = null
 
         if ((constMatch || letMatch || varMatch) && !mightBeHtmlTag) {
           // Try to find type declaration like "const products: Product[]"
-          const varTypeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${word}\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'))
+          const varTypeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${word}\\s*:\\s*([\\w\\[\\]<>]+)\\s*=\\s*([^;]+)`, 'i'))
           if (varTypeMatch) {
             variableType = varTypeMatch[1]
+            variableValue = varTypeMatch[2].trim()
 
             // Try to find the interface or type definition for this type
             const interfaceDef = tsContent.match(new RegExp(`interface\\s+${variableType.replace('[]', '')}\\s*{([^}]*)}`, 's'))
@@ -2444,11 +2446,13 @@ errors.notFound: "Page not found"`, 'yaml')
             }
           }
           else {
-            // Try to infer from assignment
+            // Try without explicit type (e.g., const count = 1)
             const assignmentMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${word}\\s*=\\s*([^;]+)`, 'i'))
             if (assignmentMatch) {
               // Handle common cases
               const assignment = assignmentMatch[1].trim()
+              variableValue = assignment // Store the actual value
+
               if (assignment.startsWith('"') || assignment.startsWith('\'')) {
                 variableType = 'string'
               }
@@ -2649,7 +2653,13 @@ interface ${typeInfo} {
           }
         }
         else if (variableType) {
-          hoverContent.appendCodeblock(`${symbolType} ${word}: ${variableType}`, 'typescript')
+          // Show variable with type and value
+          if (variableValue) {
+            hoverContent.appendCodeblock(`${symbolType} ${word}: ${variableType} = ${variableValue}`, 'typescript')
+          }
+          else {
+            hoverContent.appendCodeblock(`${symbolType} ${word}: ${variableType}`, 'typescript')
+          }
 
           // If we have the interface definition, show it too
           if (variableInterface) {

@@ -14,7 +14,7 @@
   
   const user: User = { name: "John", age: 30 }
 
-  const count = 1
+  const count: number = 1
 @endts
 
 <div>{{ user.name }}</div>

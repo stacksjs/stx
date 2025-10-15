@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>STX Hover Value Test</title>
+</head>
+<body>
+
+@ts
+  interface User {
+    name: string
+    age: number
+  }
+
+  const user: User = { name: "John", age: 30 }
+
+  const count = 1
+@endts
+
+<h1>Hover Test - Variable Values</h1>
+
+<!-- Test 1: Property hover should show: (property) user.name: string with Value: "John" -->
+<div>{{ user.name }}</div>
+
+<!-- Test 2: Variable hover should show: const count: number = 1 -->
+<div>{{ count }}</div>
+
+<!-- Additional test cases -->
+@ts
+  const message = "Hello World"
+  const price = 99.99
+  const isActive = true
+  const items = [1, 2, 3]
+@endts
+
+<div>
+  <p>{{ message }}</p>      <!-- Should show: const message: string = "Hello World" -->
+  <p>{{ price }}</p>        <!-- Should show: const price: number = 99.99 -->
+  <p>{{ isActive }}</p>     <!-- Should show: const isActive: boolean = true -->
+  <p>{{ items }}</p>        <!-- Should show: const items: array = [1, 2, 3] -->
+</div>
+
+<!-- Test with explicit types and values -->
+@ts
+  const greeting: string = "Hi there"
+  const total: number = 100
+  const enabled: boolean = false
+@endts
+
+<div>
+  <p>{{ greeting }}</p>     <!-- Should show: const greeting: string = "Hi there" -->
+  <p>{{ total }}</p>        <!-- Should show: const total: number = 100 -->
+  <p>{{ enabled }}</p>      <!-- Should show: const enabled: boolean = false -->
+</div>
+
+</body>
+</html>
