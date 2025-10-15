@@ -1,12 +1,12 @@
 /**
- * Shared Happy DOM setup for all packages in the workspace
+ * Shared VeryHappyDOM setup for all packages in the workspace
  * This file is preloaded by Bun test to provide a DOM environment
  */
 
-import { GlobalWindow } from 'happy-dom'
+import { Window } from 'very-happy-dom'
 
 // Create and setup the global window
-const window = new GlobalWindow()
+const window = new Window()
 const document = window.document
 
 // Setup global variables
@@ -37,7 +37,7 @@ if (typeof Element !== 'undefined') {
   }
 }
 
-// Mock IntersectionObserver for tests (not implemented in happy-dom)
+// Mock IntersectionObserver for tests (if not implemented in very-happy-dom)
 if (typeof globalThis.IntersectionObserver === 'undefined') {
   class MockIntersectionObserver {
     constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {

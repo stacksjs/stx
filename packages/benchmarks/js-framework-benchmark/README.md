@@ -132,7 +132,7 @@ Overall performance score combining all operations
 ### Technology Stack
 - **Vanilla JavaScript**: Pure JavaScript following the official benchmark structure
 - **WeakMap Optimization**: STX's key performance enhancement over vanilla JS
-- **Happy DOM**: Server-side DOM implementation for automated testing
+- **VeryHappyDOM**: Blazing-fast server-side DOM implementation for automated testing
 - **Bun Runtime**: Fast JavaScript runtime for benchmarking
 
 ### Implementation Structure
@@ -169,8 +169,8 @@ Operations that perform similarly to or better than vanilla JavaScript are excel
 
 ## Limitations
 
-1. **Server-Side Testing**: Uses Happy DOM instead of a real browser
-   - Benefits: Consistent, automated, reproducible
+1. **Server-Side Testing**: Uses VeryHappyDOM instead of a real browser
+   - Benefits: Consistent, automated, reproducible, extremely fast
    - Trade-offs: May differ from browser performance
 
 2. **Single Implementation**: Tests one specific STX implementation approach

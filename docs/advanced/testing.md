@@ -39,7 +39,7 @@ export default {
       name: 'unit',
       testMatch: 'tests/unit/**/*.test.ts',
       use: {
-        environment: 'happy-dom',
+        environment: 'very-happy-dom',
         setupFiles: ['./tests/setup/unit.ts']
       }
     },

@@ -3,7 +3,7 @@
  * Measures performance of DOM operations following the official benchmark specification
  */
 
-import { Window } from 'happy-dom'
+import { Window } from 'very-happy-dom'
 
 interface BenchmarkResult {
   name: string

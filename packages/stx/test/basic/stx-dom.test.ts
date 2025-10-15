@@ -8,7 +8,7 @@ const TEST_DIR = import.meta.dir
 const TEMPLATE_DIR = path.join(TEST_DIR, 'templates')
 const OUTPUT_DIR = path.join(TEST_DIR, 'out')
 
-// DOM globals are provided by happy-dom registration
+// DOM globals are provided by very-happy-dom registration
 
 describe('stx DOM Interaction Tests', () => {
   // Set up test environment

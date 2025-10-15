@@ -39,7 +39,7 @@ async function processTemplate(templatePath: string): Promise<ProcessedTemplate>
 const TEST_DIR = import.meta.dir
 const TEMPLATE_DIR = path.join(TEST_DIR, 'templates')
 
-// DOM environment is provided by happy-dom registration
+// DOM environment is provided by very-happy-dom registration
 
 describe('Direct stx Import Tests', () => {
   // Set up test environment

@@ -187,7 +187,7 @@ The following approaches were tested but did not significantly improve performan
 
 **Test Environment:**
 - Runtime: Bun
-- DOM: Happy DOM (server-side)
+- DOM: VeryHappyDOM (server-side, blazing-fast)
 - Warmup runs: 5 (10 for heavy operations)
 - Benchmark runs: 10 (5 for heavy operations)
 

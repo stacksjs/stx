@@ -1,7 +1,7 @@
 /**
- * Happy DOM setup for tests
+ * VeryHappyDOM setup for tests
  * Uses shared configuration from test-utils
  */
 
-// Import the shared happy-dom configuration
+// Import the shared very-happy-dom configuration
 import '../../test-utils/happy-dom'

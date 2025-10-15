@@ -1,7 +1,7 @@
 /* eslint-disable unused-imports/no-unused-vars */
 import type { CustomDirective, StxOptions } from './types'
 import path from 'node:path'
-// Fix: Use the correct happy-dom import that exists in v12.10.3
+// Note: Using very-happy-dom for DOM parsing in tests
 
 /**
  * Accessibility violation found during a11y checks
@@ -100,9 +100,9 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
   const violations: A11yViolation[] = []
 
   try {
-    // Create a Happy DOM window
-    // Create a Happy DOM window using the correct API
-    // Register Happy DOM globals if not already done
+    // Create a VeryHappyDOM window
+    // Create a VeryHappyDOM window using the correct API
+    // Register VeryHappyDOM globals if not already done
     if (!globalThis.window) {
       // Use existing DOM setup from happy-dom.ts
     }

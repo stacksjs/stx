@@ -7,5 +7,5 @@ plugins = [ "./src/index.ts" ]
 [test]
 timeout = 30000
 coverage = true
-# Use shared happy-dom configuration
+# Use shared very-happy-dom configuration
 preload = "../../test-utils/happy-dom.ts"

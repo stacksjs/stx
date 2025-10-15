@@ -7,7 +7,7 @@ const TEST_DIR = import.meta.dir
 const TEMPLATE_DIR = path.join(TEST_DIR, 'templates')
 const OUTPUT_DIR = path.join(TEST_DIR, 'out')
 
-// DOM environment is provided by happy-dom registration
+// DOM environment is provided by very-happy-dom registration
 
 describe('DOM User Interaction Tests', () => {
   // Set up test environment
