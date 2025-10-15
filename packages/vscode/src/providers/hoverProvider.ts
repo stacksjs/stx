@@ -2379,59 +2379,69 @@ errors.notFound: "Page not found"`, 'yaml')
       try {
         const tsContent = virtualTsDocumentProvider.provideTextDocumentContent(virtualUri)
 
-        // HANDLE PROPERTY ACCESS (e.g., user.name)
+        // HANDLE PROPERTY ACCESS (e.g., user.name, document.getElementById)
         if (propertyAccessMatch) {
           const parentObject = propertyAccessMatch[1]
           const propertyName = word
 
-          // Find the parent object's type
-          const parentTypeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${parentObject}\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'))
+          // Check if parent is a global object
+          const globalObjects = ['window', 'document', 'console', 'navigator', 'location', 'localStorage', 'sessionStorage', 'history', 'Math', 'JSON']
 
-          if (parentTypeMatch) {
-            const parentType = parentTypeMatch[1].replace('[]', '')
+          if (globalObjects.includes(parentObject)) {
+            // For global objects, delegate to TypeScript language service
+            // It knows about all DOM APIs and their signatures
+            // Fall through to the TypeScript hover provider below
+          }
+          else {
+            // Find the parent object's type (for user-defined objects)
+            const parentTypeMatch = tsContent.match(new RegExp(`(?:const|let|var)\\s+${parentObject}\\s*:\\s*([\\w\\[\\]<>]+)`, 'i'))
 
-            // Find the interface/type definition
-            const interfaceMatch = tsContent.match(new RegExp(`interface\\s+${parentType}\\s*\\{([^}]*)\\}`, 's'))
-            const typeMatch = tsContent.match(new RegExp(`type\\s+${parentType}\\s*=\\s*\\{([^}]*)\\}`, 's'))
+            if (parentTypeMatch) {
+              const parentType = parentTypeMatch[1].replace('[]', '')
 
-            const typeBody = interfaceMatch ? interfaceMatch[1] : (typeMatch ? typeMatch[1] : null)
+              // Find the interface/type definition
+              const interfaceMatch = tsContent.match(new RegExp(`interface\\s+${parentType}\\s*\\{([^}]*)\\}`, 's'))
+              const typeMatch = tsContent.match(new RegExp(`type\\s+${parentType}\\s*=\\s*\\{([^}]*)\\}`, 's'))
 
-            if (typeBody) {
-              // Find the property definition
-              const propMatch = typeBody.match(new RegExp(`${propertyName}\\s*:\\s*([^;,\\n]+)`, 'i'))
+              const typeBody = interfaceMatch ? interfaceMatch[1] : (typeMatch ? typeMatch[1] : null)
 
-              if (propMatch) {
-                const propType = propMatch[1].trim()
+              if (typeBody) {
+                // Find the property definition
+                const propMatch = typeBody.match(new RegExp(`${propertyName}\\s*:\\s*([^;,\\n]+)`, 'i'))
 
-                // Try to find the actual value from initialization
-                const objectInitMatch = tsContent.match(new RegExp(`${parentObject}\\s*[=:]\\s*\\{([^}]*)\\}`, 's'))
-                let actualValue = null
+                if (propMatch) {
+                  const propType = propMatch[1].trim()
 
-                if (objectInitMatch) {
-                  const objBody = objectInitMatch[1]
-                  const valueMatch = objBody.match(new RegExp(`${propertyName}\\s*:\\s*([^,}\\n]+)`, 'i'))
-                  if (valueMatch) {
-                    actualValue = valueMatch[1].trim()
+                  // Try to find the actual value from initialization
+                  const objectInitMatch = tsContent.match(new RegExp(`${parentObject}\\s*[=:]\\s*\\{([^}]*)\\}`, 's'))
+                  let actualValue = null
+
+                  if (objectInitMatch) {
+                    const objBody = objectInitMatch[1]
+                    const valueMatch = objBody.match(new RegExp(`${propertyName}\\s*:\\s*([^,}\\n]+)`, 'i'))
+                    if (valueMatch) {
+                      actualValue = valueMatch[1].trim()
+                    }
                   }
-                }
 
-                // Create hover with property information
-                const hoverContent = new vscode.MarkdownString()
-                hoverContent.isTrusted = true
-                hoverContent.supportHtml = true
+                  // Create hover with property information
+                  const hoverContent = new vscode.MarkdownString()
+                  hoverContent.isTrusted = true
+                  hoverContent.supportHtml = true
 
-                // Show property signature
-                hoverContent.appendCodeblock(`(property) ${parentObject}.${propertyName}: ${propType}`, 'typescript')
+                  // Show property signature
+                  hoverContent.appendCodeblock(`(property) ${parentObject}.${propertyName}: ${propType}`, 'typescript')
 
-                if (actualValue) {
+                  if (actualValue) {
+                    hoverContent.appendText('\n\n')
+                    hoverContent.appendMarkdown(`**Value:** \`${actualValue}\``)
+                  }
+
                   hoverContent.appendText('\n\n')
-                  hoverContent.appendMarkdown(`**Value:** \`${actualValue}\``)
+                  hoverContent.appendMarkdown(`Property of \`${parentType}\``)
+
+                  return new vscode.Hover(hoverContent, wordRange)
                 }
-
-                hoverContent.appendText('\n\n')
-                hoverContent.appendMarkdown(`Property of \`${parentType}\``)
-
-                return new vscode.Hover(hoverContent, wordRange)
               }
             }
           }
@@ -2439,10 +2449,11 @@ errors.notFound: "Page not found"`, 'yaml')
 
         // Try to use TypeScript's language service for better type inference
         try {
-          // Check if we're in {{ }} expressions
+          // Check if we're in {{ }} expressions or script tags
           const isInExpression = line.includes('{{') && line.includes('}}')
+          const inScriptTag = isInScriptTag(document, position)
 
-          if (isInExpression || line.includes('@ts')) {
+          if (isInExpression || line.includes('@ts') || inScriptTag) {
             // Use vscode's built-in TypeScript support for better type information
             const tsUri = vscode.Uri.parse(`untitled:${document.uri.path}.ts`)
 
@@ -2508,7 +2519,12 @@ errors.notFound: "Page not found"`, 'yaml')
         // Check if this might be an HTML tag rather than a variable
         const htmlTagMatch = line.match(new RegExp(`<(/)?${word}(\\s|/?>|$)`))
         const commonHtmlTags = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'a', 'img', 'button', 'input', 'form', 'label', 'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'pre', 'code', 'body', 'html', 'head', 'header', 'footer', 'main', 'section', 'article', 'aside']
-        const mightBeHtmlTag = htmlTagMatch !== null || (commonHtmlTags.includes(word) && line.includes('<'))
+
+        // Only treat as HTML tag if it's actually used as a tag (with < bracket before it)
+        const isActuallyHtmlTag = htmlTagMatch !== null
+        // Check if in script/code context - if yes, treat as variable even if it's a common tag name
+        const isInCodeContext = isInScriptTag(document, position) || line.includes('@ts') || line.includes('{{')
+        const mightBeHtmlTag = isActuallyHtmlTag && !isInCodeContext
 
         // Skip variable processing for CSS class selectors
         if (inStyleBlock) {
@@ -2521,7 +2537,8 @@ errors.notFound: "Page not found"`, 'yaml')
 
         // Skip if this is a common HTML tag in a context that looks like HTML
         // This prevents it from being treated as a variable
-        if (mightBeHtmlTag || commonHtmlTags.includes(word)) {
+        // BUT: allow it if we're in a code context (script tag, @ts block, etc.)
+        if (mightBeHtmlTag) {
           return null
         }
 

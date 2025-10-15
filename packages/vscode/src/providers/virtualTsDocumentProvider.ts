@@ -185,6 +185,24 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
       const jsDocComments: JSDocInfo[] = []
       let tsLineCounter = 0
 
+      // Add global type declarations for browser APIs
+      // This makes TypeScript aware of document, window, console, etc.
+      tsContent += `/// <reference lib="dom" />
+/// <reference lib="es2015" />
+
+// Global browser objects
+declare const window: Window & typeof globalThis;
+declare const document: Document;
+declare const console: Console;
+declare const navigator: Navigator;
+declare const location: Location;
+declare const localStorage: Storage;
+declare const sessionStorage: Storage;
+declare const history: History;
+
+`
+      tsLineCounter += 13
+
       // Extract TypeScript from @ts blocks
       const tsBlockRegex = /@ts\s+([\s\S]*?)@endts/g
       let blockMatch
