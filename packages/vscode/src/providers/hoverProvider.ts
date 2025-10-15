@@ -2,7 +2,7 @@
 import type { VirtualTsDocumentProvider } from './virtualTsDocumentProvider'
 import * as vscode from 'vscode'
 import { TransitionDirection, TransitionEase, TransitionType } from '../interfaces/animation-types'
-import { findCssStylesForClass, isInStyleTag } from '../utils/cssUtils'
+import { findCssStylesForClass, isInScriptTag, isInStyleTag } from '../utils/cssUtils'
 import { formatJSDoc } from '../utils/jsdocUtils'
 
 /**
@@ -106,6 +106,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
       const isInHtmlContext = !line.includes('@ts')
         && !line.includes('{{')
         && !isInStyleTag(document, position)
+        && !isInScriptTag(document, position)
 
       // Check for HTML tag content
       const lineBeforeWord = line.substring(0, wordRange.start.character)
@@ -170,6 +171,114 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
       || (isInCodeTag && !shouldShowHoverInCodeTag)) {
         return null
       }
+
+      // ========== JAVASCRIPT OPERATORS & GLOBAL OBJECTS (HIGH PRIORITY) ==========
+      // These checks must come early to override other processing
+
+      // JAVASCRIPT OPERATORS (typeof, instanceof, etc.)
+      const jsOperators = ['typeof', 'instanceof', 'delete', 'in', 'of']
+      if (jsOperators.includes(word)) {
+        const hover = new vscode.MarkdownString()
+        hover.isTrusted = true
+        hover.supportHtml = true
+
+        let description = ''
+        switch (word) {
+          case 'typeof':
+            hover.appendCodeblock('typeof operand', 'typescript')
+            hover.appendText('\n\n')
+            description = '**JavaScript Operator**\n\nReturns a string indicating the type of the operand.\n\n**Possible return values:**\n- `"string"` - for string values\n- `"number"` - for number values\n- `"boolean"` - for boolean values\n- `"object"` - for objects and null\n- `"function"` - for functions\n- `"undefined"` - for undefined\n- `"symbol"` - for symbols\n- `"bigint"` - for BigInt values'
+            break
+          case 'instanceof':
+            hover.appendCodeblock('object instanceof Constructor', 'typescript')
+            hover.appendText('\n\n')
+            description = '**JavaScript Operator**\n\nTests whether an object has in its prototype chain the prototype property of a constructor. Returns `true` or `false`.'
+            break
+          case 'delete':
+            hover.appendCodeblock('delete object.property', 'typescript')
+            hover.appendText('\n\n')
+            description = '**JavaScript Operator**\n\nRemoves a property from an object. Returns `true` if successful.'
+            break
+          case 'in':
+            hover.appendCodeblock('"property" in object', 'typescript')
+            hover.appendText('\n\n')
+            description = '**JavaScript Operator**\n\nReturns `true` if the specified property is in the specified object or its prototype chain.'
+            break
+          case 'of':
+            hover.appendCodeblock('for (const item of iterable)', 'typescript')
+            hover.appendText('\n\n')
+            description = '**JavaScript Keyword**\n\nUsed in `for...of` loops to iterate over iterable objects (Arrays, Strings, Maps, Sets, etc.).'
+            break
+        }
+
+        hover.appendMarkdown(description)
+        return createHoverWithDiagnostics(hover, document, position)
+      }
+
+      // GLOBAL OBJECTS (window, document, console, etc.)
+      const globalObjects: { [key: string]: { type: string, description: string } } = {
+        window: {
+          type: 'Window & typeof globalThis',
+          description: 'The global window object represents the browser window. Provides access to the DOM, browser APIs, and global variables.',
+        },
+        document: {
+          type: 'Document',
+          description: 'The Document interface represents the web page loaded in the browser. Entry point to the DOM tree.',
+        },
+        console: {
+          type: 'Console',
+          description: 'Provides access to the browser\'s debugging console with methods like `log()`, `error()`, `warn()`, etc.',
+        },
+        navigator: {
+          type: 'Navigator',
+          description: 'Represents the state and identity of the user agent (browser). Provides information about the browser and device.',
+        },
+        location: {
+          type: 'Location',
+          description: 'Represents the URL of the current document and provides methods to manipulate the browser\'s location.',
+        },
+        localStorage: {
+          type: 'Storage',
+          description: 'Provides access to the browser\'s local storage. Data persists even after the browser is closed.',
+        },
+        sessionStorage: {
+          type: 'Storage',
+          description: 'Provides access to the browser\'s session storage. Data is cleared when the page session ends.',
+        },
+        history: {
+          type: 'History',
+          description: 'Provides an interface for manipulating the browser session history (pages visited in the tab/frame).',
+        },
+        Math: {
+          type: 'Math',
+          description: 'Built-in object with properties and methods for mathematical constants and functions.',
+        },
+        JSON: {
+          type: 'JSON',
+          description: 'Provides methods for parsing JSON and converting values to JSON: `parse()` and `stringify()`.',
+        },
+        globalThis: {
+          type: 'typeof globalThis',
+          description: 'Provides a standard way to access the global object across different JavaScript environments.',
+        },
+      }
+
+      if (word in globalObjects) {
+        const global = globalObjects[word]
+        const hover = new vscode.MarkdownString()
+        hover.isTrusted = true
+        hover.supportHtml = true
+
+        hover.appendCodeblock(`var ${word}: ${global.type}`, 'typescript')
+        hover.appendText('\n\n')
+        hover.appendMarkdown(global.description)
+        hover.appendText('\n\n')
+        hover.appendMarkdown(`[MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/${word})`)
+
+        return createHoverWithDiagnostics(hover, document, position)
+      }
+
+      // ========== END JAVASCRIPT OPERATORS & GLOBAL OBJECTS ==========
 
       // ANIMATION DIRECTIVE HANDLING
       // Check if we're inside a transition directive
@@ -2558,6 +2667,31 @@ errors.notFound: "Page not found"`, 'yaml')
                     }
                   }
                 }
+                // DOM methods with specific return types
+                else if (assignment.includes('.querySelector(')) {
+                  variableType = 'Element | null'
+                }
+                else if (assignment.includes('.querySelectorAll(')) {
+                  variableType = 'NodeListOf<Element>'
+                }
+                else if (assignment.includes('.getElementById(')) {
+                  variableType = 'HTMLElement | null'
+                }
+                else if (assignment.includes('.getElementsByClassName(')) {
+                  variableType = 'HTMLCollectionOf<Element>'
+                }
+                else if (assignment.includes('.getElementsByTagName(')) {
+                  variableType = 'HTMLCollectionOf<Element>'
+                }
+                else if (assignment.includes('.createElement(')) {
+                  variableType = 'HTMLElement'
+                }
+                else if (assignment.includes('.createTextNode(')) {
+                  variableType = 'Text'
+                }
+                else if (assignment.includes('.addEventListener(')) {
+                  variableType = 'void'
+                }
                 // Template literals
                 else if (assignment.startsWith('`')) {
                   variableType = 'string'
@@ -2724,7 +2858,18 @@ interface ${typeInfo} {
         }
         else if (variableType) {
           // Show variable with type and value
-          if (variableValue) {
+          // Only show value for simple literals (not function calls or complex expressions)
+          const isSimpleValue = variableValue
+            && (
+              // Primitive literals
+              /^["'`]/.test(variableValue) // strings
+              || /^-?\d+(\.\d+)?$/.test(variableValue) // numbers
+              || variableValue === 'true' || variableValue === 'false' // booleans
+              || variableValue === 'null' || variableValue === 'undefined' // null/undefined
+              || /^\[.*\]$/.test(variableValue) && variableValue.length < 50 // short arrays
+            )
+
+          if (isSimpleValue) {
             hoverContent.appendCodeblock(`${symbolType} ${word}: ${variableType} = ${variableValue}`, 'typescript')
           }
           else {

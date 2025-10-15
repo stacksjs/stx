@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Script Tag Hover Test</title>
+</head>
+<body>
+
+<h1>Your Exact Example - Test Hovers in Script Tags</h1>
+
+<script>
+    if(typeof window !== 'undefined') {
+      console.log("Hello")
+    }
+
+    const tabs = document.querySelector(".ecosystem-tab")
+
+  </script>
+
+<div class="ecosystem-tab">Tab 1</div>
+<div class="ecosystem-tab">Tab 2</div>
+
+<hr>
+
+<h2>More Test Cases in Script Tags</h2>
+
+<script>
+  // Test 1: typeof operator
+  typeof "hello"              // Hover 'typeof' -> JavaScript Operator
+
+  // Test 2: window object
+  window.innerWidth           // Hover 'window' -> var window: Window & typeof globalThis
+
+  // Test 3: document object
+  document.title              // Hover 'document' -> var document: Document
+
+  // Test 4: console object
+  console.log("test")         // Hover 'console' -> var console: Console
+
+  // Test 5: querySelector
+  const header = document.querySelector("#header")
+  // Hover 'header' -> const header: Element | null = ...
+
+  // Test 6: getElementById
+  const main = document.getElementById("main")
+  // Hover 'main' -> const main: HTMLElement | null = ...
+
+  // Test 7: querySelectorAll
+  const buttons = document.querySelectorAll("button")
+  // Hover 'buttons' -> const buttons: NodeListOf<Element> = ...
+
+  // Test 8: Other global objects
+  navigator.userAgent         // Hover 'navigator' -> var navigator: Navigator
+  localStorage.getItem("key") // Hover 'localStorage' -> var localStorage: Storage
+  Math.round(3.14)           // Hover 'Math' -> var Math: Math
+  JSON.parse('{}')           // Hover 'JSON' -> var JSON: JSON
+
+  // Test 9: instanceof operator
+  if (header instanceof Element) {
+    // Hover 'instanceof' -> JavaScript Operator
+    console.log("Is an Element")
+  }
+
+  // Test 10: Simple variables with type inference
+  const count = 42            // Hover 'count' -> const count: number = 42
+  const message = "Hi"        // Hover 'message' -> const message: string = "Hi"
+  const active = true         // Hover 'active' -> const active: boolean = true
+</script>
+
+<div id="header">Header</div>
+<div id="main">Main Content</div>
+
+</body>
+</html>
