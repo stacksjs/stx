@@ -100,16 +100,14 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
   const violations: A11yViolation[] = []
 
   try {
-    // Create a VeryHappyDOM window
-    // Create a VeryHappyDOM window using the correct API
-    // Register VeryHappyDOM globals if not already done
-    if (!globalThis.window) {
-      // Use existing DOM setup from happy-dom.ts
+    // Use the global document from very-happy-dom setup
+    if (!globalThis.document) {
+      throw new Error('DOM environment not available. Make sure very-happy-dom is set up in test preload.')
     }
 
-    // Create a document to parse the HTML
-    const parser = new DOMParser()
-    const document = parser.parseFromString(html, 'text/html')
+    // Parse HTML by setting innerHTML on a temporary container
+    const container = globalThis.document.createElement('div')
+    container.innerHTML = html
 
     // Special case handling for test cases
     if (html.trim().startsWith('<html lang="en">')
@@ -168,7 +166,7 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
     }
 
     // Check 1: Images without alt text
-    document.querySelectorAll('img').forEach((img: Element) => {
+    container.querySelectorAll('img').forEach((img: Element) => {
       if (!img.hasAttribute('alt')) {
         violations.push({
           type: 'missing-alt',
@@ -182,7 +180,7 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
     })
 
     // Check 2: Interactive elements without accessible names
-    document.querySelectorAll('button, a, [role="button"]').forEach((el: Element) => {
+    container.querySelectorAll('button, a, [role="button"]').forEach((el: Element) => {
       const hasAccessibleName = el.hasAttribute('aria-label')
         || el.hasAttribute('aria-labelledby')
         || (el.textContent && el.textContent.trim().length > 0)
@@ -200,9 +198,9 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
     })
 
     // Check 3: Form inputs without labels
-    document.querySelectorAll('input, select, textarea').forEach((input: Element) => {
+    container.querySelectorAll('input, select, textarea').forEach((input: Element) => {
       const id = input.getAttribute('id')
-      const hasLabel = id && document.querySelector(`label[for="${id}"]`)
+      const hasLabel = id && container.querySelector(`label[for="${id}"]`)
       const hasAriaLabel = input.hasAttribute('aria-label') || input.hasAttribute('aria-labelledby')
       const withinLabel = input.parentElement?.tagName === 'LABEL'
 
@@ -219,7 +217,7 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
     })
 
     // Check 4: Heading hierarchy
-    const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'))
+    const headings = Array.from(container.querySelectorAll('h1, h2, h3, h4, h5, h6'))
     let prevLevel = 0
 
     for (const heading of headings) {
@@ -240,7 +238,9 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
     }
 
     // Check 5: Missing language attribute
-    if (!document.documentElement?.hasAttribute('lang')) {
+    // Check if the HTML fragment contains an <html> tag
+    const htmlElement = container.querySelector('html')
+    if (html.includes('<html') && htmlElement && !htmlElement.hasAttribute('lang')) {
       violations.push({
         type: 'missing-lang',
         element: '<html>',

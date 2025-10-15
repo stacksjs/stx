@@ -3,7 +3,7 @@
  * This file is preloaded by Bun test to provide a DOM environment
  */
 
-import { Window } from 'very-happy-dom'
+import { Window, VirtualEvent, CustomEvent as VirtualCustomEvent } from 'very-happy-dom'
 
 // Create and setup the global window
 const window = new Window()
@@ -17,22 +17,81 @@ globalThis.location = window.location as any
 globalThis.HTMLElement = window.HTMLElement as any
 globalThis.Element = window.Element as any
 globalThis.Node = window.Node as any
-globalThis.Event = window.Event as any
-globalThis.MouseEvent = window.MouseEvent as any
-globalThis.KeyboardEvent = window.KeyboardEvent as any
-globalThis.CustomEvent = window.CustomEvent as any
-globalThis.DOMParser = window.DOMParser as any
 
-// Add __dispatchEvent_safe method to Element prototype for tests
-// This is a safer version of dispatchEvent that handles errors gracefully
-if (typeof Element !== 'undefined') {
-  (Element.prototype as any).__dispatchEvent_safe = function (event: Event): boolean {
-    try {
-      return this.dispatchEvent(event)
-    }
-    catch (error) {
-      console.error('Error dispatching event:', error)
-      return false
+// Use VirtualEvent as Event polyfill since very-happy-dom doesn't expose window.Event
+globalThis.Event = VirtualEvent as any
+globalThis.MouseEvent = VirtualEvent as any
+globalThis.KeyboardEvent = VirtualEvent as any
+globalThis.CustomEvent = VirtualCustomEvent as any
+
+// Add HTMLInputElement if not available
+if (!globalThis.HTMLInputElement) {
+  globalThis.HTMLInputElement = window.HTMLElement as any
+}
+
+// Add property reflection for common HTMLInput/TextArea attributes
+// very-happy-dom doesn't implement these as properties, only as attributes
+const elementProto = (window.Element?.prototype || globalThis.Element?.prototype) as any
+
+// Only add polyfills if Element prototype is available
+if (elementProto) {
+  if (!Object.getOwnPropertyDescriptor(elementProto, 'placeholder')) {
+    Object.defineProperty(elementProto, 'placeholder', {
+      get(this: Element) {
+        return this.getAttribute('placeholder') || ''
+      },
+      set(this: Element, value: string) {
+        this.setAttribute('placeholder', value)
+      },
+      enumerable: true,
+      configurable: true,
+    })
+  }
+
+  // Add value property if not present
+  if (!Object.getOwnPropertyDescriptor(elementProto, 'value')) {
+    Object.defineProperty(elementProto, 'value', {
+      get(this: Element) {
+        return this.getAttribute('value') || ''
+      },
+      set(this: Element, value: string) {
+        this.setAttribute('value', value)
+      },
+      enumerable: true,
+      configurable: true,
+    })
+  }
+
+  // Add checked property for checkboxes/radios
+  if (!Object.getOwnPropertyDescriptor(elementProto, 'checked')) {
+    Object.defineProperty(elementProto, 'checked', {
+      get(this: Element) {
+        return this.hasAttribute('checked')
+      },
+      set(this: Element, value: boolean) {
+        if (value) {
+          this.setAttribute('checked', '')
+        }
+        else {
+          this.removeAttribute('checked')
+        }
+      },
+      enumerable: true,
+      configurable: true,
+    })
+  }
+
+  // Add __dispatchEvent_safe method to Element prototype for tests
+  // This is a safer version of dispatchEvent that handles errors gracefully
+  if (!elementProto.__dispatchEvent_safe) {
+    elementProto.__dispatchEvent_safe = function (event: Event): boolean {
+      try {
+        return this.dispatchEvent(event)
+      }
+      catch (error) {
+        console.error('Error dispatching event:', error)
+        return false
+      }
     }
   }
 }
