@@ -1,4 +1,77 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.1.12...v0.1.13)
+
+### 🐛 Bug Fixes
+
+- add syntax highlight ([77b16c2](https://github.com/stacksjs/stx/commit/77b16c2))
+
+### 🧹 Chores
+
+- release v0.1.13 ([21348af](https://github.com/stacksjs/stx/commit/21348af))
+- wip ([77e7624](https://github.com/stacksjs/stx/commit/77e7624))
+- wip ([45889cd](https://github.com/stacksjs/stx/commit/45889cd))
+- update highlights for blocks ([3d7c317](https://github.com/stacksjs/stx/commit/3d7c317))
+- improve inference hover details ([122e935](https://github.com/stacksjs/stx/commit/122e935))
+- wip ([56131a2](https://github.com/stacksjs/stx/commit/56131a2))
+- wip ([1598f54](https://github.com/stacksjs/stx/commit/1598f54))
+- wip ([43e695a](https://github.com/stacksjs/stx/commit/43e695a))
+- wip ([2f3ea34](https://github.com/stacksjs/stx/commit/2f3ea34))
+- wip ([766e5aa](https://github.com/stacksjs/stx/commit/766e5aa))
+- wip ([70dca40](https://github.com/stacksjs/stx/commit/70dca40))
+- wip ([8976c17](https://github.com/stacksjs/stx/commit/8976c17))
+- fix tests ([eff37b1](https://github.com/stacksjs/stx/commit/eff37b1))
+- wip ([93f0110](https://github.com/stacksjs/stx/commit/93f0110))
+- wip ([40d9fee](https://github.com/stacksjs/stx/commit/40d9fee))
+- make configurable ([6e8a6f5](https://github.com/stacksjs/stx/commit/6e8a6f5))
+- lint ([40b1af5](https://github.com/stacksjs/stx/commit/40b1af5))
+- add underline on errors ([966a435](https://github.com/stacksjs/stx/commit/966a435))
+- **extension**: add red background on error ([293c8c9](https://github.com/stacksjs/stx/commit/293c8c9))
+- wip ([aa292d9](https://github.com/stacksjs/stx/commit/aa292d9))
+- wip ([1895ad0](https://github.com/stacksjs/stx/commit/1895ad0))
+- wip ([20b11d9](https://github.com/stacksjs/stx/commit/20b11d9))
+- wip ([f0096aa](https://github.com/stacksjs/stx/commit/f0096aa))
+
+### Contributors
+
+- Adelino Ngomacha <adelinob335@gmail.com>
+- Chris <chrisbreuer93@gmail.com>
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.1.12...HEAD)
+
+### 🐛 Bug Fixes
+
+- add syntax highlight ([77b16c2](https://github.com/stacksjs/stx/commit/77b16c2))
+
+### 🧹 Chores
+
+- wip ([77e7624](https://github.com/stacksjs/stx/commit/77e7624))
+- wip ([45889cd](https://github.com/stacksjs/stx/commit/45889cd))
+- update highlights for blocks ([3d7c317](https://github.com/stacksjs/stx/commit/3d7c317))
+- improve inference hover details ([122e935](https://github.com/stacksjs/stx/commit/122e935))
+- wip ([56131a2](https://github.com/stacksjs/stx/commit/56131a2))
+- wip ([1598f54](https://github.com/stacksjs/stx/commit/1598f54))
+- wip ([43e695a](https://github.com/stacksjs/stx/commit/43e695a))
+- wip ([2f3ea34](https://github.com/stacksjs/stx/commit/2f3ea34))
+- wip ([766e5aa](https://github.com/stacksjs/stx/commit/766e5aa))
+- wip ([70dca40](https://github.com/stacksjs/stx/commit/70dca40))
+- wip ([8976c17](https://github.com/stacksjs/stx/commit/8976c17))
+- fix tests ([eff37b1](https://github.com/stacksjs/stx/commit/eff37b1))
+- wip ([93f0110](https://github.com/stacksjs/stx/commit/93f0110))
+- wip ([40d9fee](https://github.com/stacksjs/stx/commit/40d9fee))
+- make configurable ([6e8a6f5](https://github.com/stacksjs/stx/commit/6e8a6f5))
+- lint ([40b1af5](https://github.com/stacksjs/stx/commit/40b1af5))
+- add underline on errors ([966a435](https://github.com/stacksjs/stx/commit/966a435))
+- **extension**: add red background on error ([293c8c9](https://github.com/stacksjs/stx/commit/293c8c9))
+- wip ([aa292d9](https://github.com/stacksjs/stx/commit/aa292d9))
+- wip ([1895ad0](https://github.com/stacksjs/stx/commit/1895ad0))
+- wip ([20b11d9](https://github.com/stacksjs/stx/commit/20b11d9))
+- wip ([f0096aa](https://github.com/stacksjs/stx/commit/f0096aa))
+
+### Contributors
+
+- Adelino Ngomacha <adelinob335@gmail.com>
+- Chris <chrisbreuer93@gmail.com>
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.1.11...v0.1.12)
 
 ### 🧹 Chores

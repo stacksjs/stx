@@ -1,6 +1,6 @@
 {
   "name": "@stacksjs/iconify-carbon",
-  "version": "0.0.1",
+  "version": "0.1.13",
   "description": "Carbon icons for stx from Iconify",
   "author": "IBM",
   "license": "Apache-2.0",
