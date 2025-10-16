@@ -11,13 +11,13 @@
     },
     "packages/benchmarks": {
       "name": "@stacksjs/benchmarks",
-      "version": "0.1.13",
+      "version": "0.1.14",
       "dependencies": {
         "@stacksjs/markdown": "workspace:*",
         "@stacksjs/sanitizer": "workspace:*",
-        "dompurify": "^3.2.7",
+        "dompurify": "^3.3.0",
         "gray-matter": "^4.0.3",
-        "isomorphic-dompurify": "^2.28.0",
+        "isomorphic-dompurify": "^2.29.0",
         "js-yaml": "^4.1.0",
         "markdown-it": "^14.1.0",
         "marked": "^16.4.0",
@@ -37,25 +37,25 @@
     },
     "packages/bun-plugin": {
       "name": "bun-plugin-stx",
-      "version": "0.1.13",
+      "version": "0.1.14",
       "dependencies": {
         "stx": "workspace:*",
       },
     },
     "packages/devtools": {
       "name": "@stacksjs/devtools",
-      "version": "0.1.13",
+      "version": "0.1.14",
       "dependencies": {
         "bun-plugin-stx": "workspace:*",
       },
     },
     "packages/iconify-core": {
       "name": "@stacksjs/iconify-core",
-      "version": "0.1.13",
+      "version": "0.1.14",
     },
     "packages/iconify-generator": {
       "name": "@stacksjs/iconify-generator",
-      "version": "0.1.13",
+      "version": "0.1.14",
       "bin": {
         "stx-iconify": "./dist/cli.js",
       },
@@ -65,24 +65,24 @@
     },
     "packages/markdown": {
       "name": "@stacksjs/markdown",
-      "version": "0.1.13",
+      "version": "0.1.14",
       "devDependencies": {
-        "@types/bun": "^1.2.18",
+        "@types/bun": "^1.3.0",
         "bun-plugin-dtsx": "^0.21.12",
-        "typescript": "^5.8.3",
+        "typescript": "^5.9.3",
       },
     },
     "packages/sanitizer": {
       "name": "@stacksjs/sanitizer",
-      "version": "0.1.13",
+      "version": "0.1.14",
       "devDependencies": {
-        "@types/bun": "^1.2.18",
+        "@types/bun": "^1.3.0",
         "happy-dom": "^18.0.1",
       },
     },
     "packages/stx": {
       "name": "stx",
-      "version": "0.1.13",
+      "version": "0.1.14",
       "bin": {
         "stx": "./dist/bin/cli.js",
       },
