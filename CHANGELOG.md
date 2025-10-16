@@ -1,4 +1,27 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.1.13...v0.1.14)
+
+### 🧹 Chores
+
+- release v0.1.14 ([50dbe10](https://github.com/stacksjs/stx/commit/50dbe10))
+- wip ([d9e9ef5](https://github.com/stacksjs/stx/commit/d9e9ef5))
+- wip ([44af572](https://github.com/stacksjs/stx/commit/44af572))
+
+### Contributors
+
+- Chris <chrisbreuer93@gmail.com>
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.1.13...HEAD)
+
+### 🧹 Chores
+
+- wip ([d9e9ef5](https://github.com/stacksjs/stx/commit/d9e9ef5))
+- wip ([44af572](https://github.com/stacksjs/stx/commit/44af572))
+
+### Contributors
+
+- Chris <chrisbreuer93@gmail.com>
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.1.12...v0.1.13)
 
 ### 🐛 Bug Fixes
