@@ -1,5 +1,5 @@
 {
-  "name": "stx",
+  "name": "@stacksjs/stx",
   "type": "module",
   "version": "0.1.14",
   "description": "A performant UI Framework. Powered by Bun.",
