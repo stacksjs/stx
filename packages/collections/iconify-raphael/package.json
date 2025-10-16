@@ -1,6 +1,6 @@
 {
   "name": "@stacksjs/iconify-raphael",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "Raphael icons for stx from Iconify",
   "author": "Dmitry Baranovskiy",
   "license": "MIT",
