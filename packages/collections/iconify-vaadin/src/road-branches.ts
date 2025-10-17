@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const roadBranches: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16 4V1H0v3h1.7l7.7 9.5c1.3 1.6 3.1 2.5 5 2.5H16v-3h-1.5c-1 0-1.9-.5-2.7-1.4L10.5 10H16V7H8L5.6 4z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default roadBranches

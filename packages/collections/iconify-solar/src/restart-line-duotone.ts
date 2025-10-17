@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const restartLineDuotone: IconData = {
+  "body": "<g fill=\"none\"><g stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\" clip-path=\"url(#SVGXv8lpc2Y)\"><path d=\"M19.729 10.929a8 8 0 1 1-2.072-3.585l.707.706\" opacity=\".5\"/><path d=\"M14.121 8.05h4.243V3.808\"/></g><defs><clipPath id=\"SVGXv8lpc2Y\"><path fill=\"#fff\" d=\"M0 0h24v24H0z\"/></clipPath></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default restartLineDuotone

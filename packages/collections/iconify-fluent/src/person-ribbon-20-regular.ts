@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const personRibbon20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10 2a4 4 0 1 0 0 8a4 4 0 0 0 0-8M7 6a3 3 0 1 1 6 0a3 3 0 0 1-6 0m-1.991 5A2 2 0 0 0 3 13c0 1.691.833 2.966 2.135 3.797C6.417 17.614 8.145 18 10 18c1.061 0 2.081-.126 3-.388v-1.045c-.872.285-1.892.433-3 .433c-1.735 0-3.257-.364-4.327-1.047C4.623 15.283 4 14.31 4 13c0-.553.448-1 1.009-1h7.117q.139-.534.409-1zM16 16a3 3 0 1 0 0-6a3 3 0 0 0 0 6m0 1a4 4 0 0 0 2-.536v2.285a.25.25 0 0 1-.378.215L16 18l-1.622.965A.25.25 0 0 1 14 18.75v-2.285A4 4 0 0 0 16 17\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default personRibbon20Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const box: IconData = {
+  "body": "<g fill=\"currentColor\"><path d=\"M10 12a1 1 0 1 0 0 2h4a1 1 0 0 0 0-2z\"/><path fill-rule=\"evenodd\" d=\"M4 2a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h16a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3zm16 2H4a1 1 0 0 0-1 1v3h18V5a1 1 0 0 0-1-1M3 19v-9h18v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1\" clip-rule=\"evenodd\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default box

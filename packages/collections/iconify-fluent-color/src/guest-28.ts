@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const guest28: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGTUNXFe2m)\" fill-rule=\"evenodd\" d=\"M20.25 2A2.75 2.75 0 0 1 23 4.75v18.5A2.75 2.75 0 0 1 20.25 26H7.75A2.75 2.75 0 0 1 5 23.25V4.75A2.75 2.75 0 0 1 7.75 2zm-7.5 3a.75.75 0 0 0 0 1.5h2.5a.75.75 0 0 0 0-1.5z\" clip-rule=\"evenodd\"/><path fill=\"url(#SVG9ddcbbqr)\" fill-opacity=\".7\" fill-rule=\"evenodd\" d=\"M20.25 2A2.75 2.75 0 0 1 23 4.75v18.5A2.75 2.75 0 0 1 20.25 26H7.75A2.75 2.75 0 0 1 5 23.25V4.75A2.75 2.75 0 0 1 7.75 2zm-7.5 3a.75.75 0 0 0 0 1.5h2.5a.75.75 0 0 0 0-1.5z\" clip-rule=\"evenodd\"/><path fill=\"url(#SVGUCbFoeuU)\" fill-opacity=\".9\" d=\"M10.84 16a2.34 2.34 0 0 0-2.34 2.34c0 1.4.644 2.48 1.69 3.18c1.013.68 2.363.98 3.81.98s2.797-.3 3.81-.98c1.046-.7 1.69-1.78 1.69-3.18A2.34 2.34 0 0 0 17.16 16z\"/><path fill=\"url(#SVGM6Qd2dSS)\" fill-opacity=\".9\" d=\"M10.75 11.75a3.25 3.25 0 1 1 6.5 0a3.25 3.25 0 0 1-6.5 0\"/><defs><linearGradient id=\"SVGTUNXFe2m\" x1=\"-1\" x2=\"23.028\" y1=\"-3.248\" y2=\"17.798\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#36DFF1\"/><stop offset=\".218\" stop-color=\"#35DAF1\"/><stop offset=\"1\" stop-color=\"#2764E7\"/></linearGradient><linearGradient id=\"SVG9ddcbbqr\" x1=\"16.786\" x2=\"24.349\" y1=\"4.947\" y2=\"29.13\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".549\" stop-color=\"#FF6CE8\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#FF6CE8\"/></linearGradient><linearGradient id=\"SVGUCbFoeuU\" x1=\"22.255\" x2=\"15.097\" y1=\"28.071\" y2=\"5.855\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#9DEAFF\"/><stop offset=\"1\" stop-color=\"#fff\"/></linearGradient><linearGradient id=\"SVGM6Qd2dSS\" x1=\"18.878\" x2=\"8.571\" y1=\"20.571\" y2=\"1.669\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#9DEAFF\"/><stop offset=\"1\" stop-color=\"#fff\"/></linearGradient></defs></g>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default guest28

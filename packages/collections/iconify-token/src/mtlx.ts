@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const mtlx: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M19.941 4.324H21v14.294h-1.059zM3 4.324h1.059v14.294H3zm3.176 1.588H5.118V17.03h1.058zm11.648 0h1.058v11.647h-1.059zm-9.53 1.059H7.235v11.647h1.06zm7.412-.025h1.059v11.647h-1.06zm-5.294 1.613h-1.06v9h1.06zm3.176 0h1.059v9h-1.059zm-1.059 1.588h-1.058v9.53h1.058z\" clip-rule=\"evenodd\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default mtlx

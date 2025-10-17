@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const chatBubbleOutlineBadged: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M33.38 12.69a7.4 7.4 0 0 1-1.89.66A10.4 10.4 0 0 1 32 16.5a11.08 11.08 0 0 1-3.71 8.11a1 1 0 0 0-.32.73v5.34l-4.38-2.79a1 1 0 0 0-.83-.11a16 16 0 0 1-4.76.72c-7.72 0-14-5.38-14-12s6.28-12 14-12a16 16 0 0 1 4.55.66A7.4 7.4 0 0 1 23 3.22a18 18 0 0 0-5-.72c-8.82 0-16 6.28-16 14s7.18 14 16 14a18 18 0 0 0 4.88-.68l5.53 3.52a1 1 0 0 0 1.54-.84v-6.73a13 13 0 0 0 4-9.27a12.3 12.3 0 0 0-.57-3.81\" class=\"clr-i-outline--badged clr-i-outline-path-1--badged\"/><path fill=\"currentColor\" d=\"M11 15.5a1 1 0 0 0 0 2h14a1 1 0 0 0 0-2Z\" class=\"clr-i-outline--badged clr-i-outline-path-2--badged\"/><path fill=\"currentColor\" d=\"M14.25 20.5a1 1 0 0 0 0 2h7.5a1 1 0 0 0 0-2Z\" class=\"clr-i-outline--badged clr-i-outline-path-3--badged\"/><path fill=\"currentColor\" d=\"M10.28 11.5a1 1 0 0 0 1 1h13.44a1 1 0 0 0 .83-.47A7.5 7.5 0 0 1 24 10.5H11.28a1 1 0 0 0-1 1\" class=\"clr-i-outline--badged clr-i-outline-path-4--badged\"/><circle cx=\"30\" cy=\"6\" r=\"5\" fill=\"currentColor\" class=\"clr-i-outline--badged clr-i-outline-path-5--badged clr-i-badge\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default chatBubbleOutlineBadged

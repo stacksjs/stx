@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tableFreezeColumn20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16 14.5a1.5 1.5 0 0 1-1.5 1.5H12v-3H8v4h6.5a2.5 2.5 0 0 0 2.5-2.5v-9A2.5 2.5 0 0 0 14.5 3H8v4h4V4h2.5A1.5 1.5 0 0 1 16 5.5zM5.5 3H7v4H3V5.5A2.5 2.5 0 0 1 5.5 3M7 12V8H3v4zm5-4H8v4h4zm-9 5h4v4H5.5A2.5 2.5 0 0 1 3 14.5z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default tableFreezeColumn20Filled

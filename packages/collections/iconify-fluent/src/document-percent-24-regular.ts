@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const documentPercent24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.5 12a5.5 5.5 0 1 1 0 11a5.5 5.5 0 0 1 0-11m5.672-10c.53 0 1.04.21 1.415.586l5.827 5.827c.375.375.586.885.586 1.415V20a2 2 0 0 1-2 2h-6.812a6.5 6.5 0 0 0 1.079-1.5H18a.5.5 0 0 0 .5-.5V10H14a2 2 0 0 1-2-2V3.5H6a.5.5 0 0 0-.5.5v7.076a6.5 6.5 0 0 0-1.5.422V4a2 2 0 0 1 2-2zM9 17.5a1.5 1.5 0 1 0 0 3a1.5 1.5 0 0 0 0-3m.33-2.828a.5.5 0 0 0-.707 0l-4.95 4.95a.5.5 0 0 0 .707.707l4.95-4.95a.5.5 0 0 0 0-.707M9 18.5a.5.5 0 1 1 0 1a.5.5 0 0 1 0-1m-5-4a1.5 1.5 0 1 0 0 3a1.5 1.5 0 0 0 0-3m0 1a.5.5 0 1 1 0 1a.5.5 0 0 1 0-1M13.5 8a.5.5 0 0 0 .5.5h3.379L13.5 4.621z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default documentPercent24Regular

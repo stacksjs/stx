@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const wagmigames: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M12 21a9 9 0 1 0 0-17.999A9 9 0 0 0 12 21m0-1.059a7.942 7.942 0 1 0 0-15.883a7.942 7.942 0 0 0 0 15.883\" clip-rule=\"evenodd\"/><path fill=\"currentColor\" d=\"M7.378 9.882H6.176l2.838 6.353h.868l2.134-4.844l2.085 4.844h.948l2.774-6.353H16.69L14.573 14.7l-2.097-4.818h-.9L9.422 14.7l-2.05-4.818zM6.176 8.294v.53h4.114l.339-.287h7.194v-.243z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default wagmigames

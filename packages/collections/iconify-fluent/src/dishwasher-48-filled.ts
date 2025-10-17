@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const dishwasher48Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 6a6 6 0 0 0-6 6v5.5h36V12a6 6 0 0 0-6-6zm30 14H16.25a3.25 3.25 0 0 1 3.25 3.25v5a8.75 8.75 0 0 1-5.5 8.127v3.21A3.26 3.26 0 0 1 16.413 42H36a6 6 0 0 0 6-6zm-24-7.75a2 2 0 1 1-4 0a2 2 0 0 1 4 0M25.25 11h7.5a1.25 1.25 0 1 1 0 2.5h-7.5a1.25 1.25 0 1 1 0-2.5m-20 11C4.56 22 4 22.56 4 23.25v5c0 3.3 2.37 6.048 5.5 6.635V41.5H8.25a1.25 1.25 0 1 0 0 2.5h5a1.25 1.25 0 1 0 0-2.5H12v-6.615a6.75 6.75 0 0 0 5.5-6.635v-5c0-.69-.56-1.25-1.25-1.25z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default dishwasher48Filled

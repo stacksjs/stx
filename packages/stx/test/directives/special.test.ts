@@ -50,13 +50,11 @@ describe('stx Special Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      // Disable SEO features for this test
-      stx: {
+      plugins: [stxPlugin({
         seo: {
           enabled: false,
         },
-      },
+      })],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -118,13 +116,11 @@ describe('stx Special Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      // Disable SEO features for this test
-      stx: {
+      plugins: [stxPlugin({
         seo: {
           enabled: false,
         },
-      },
+      })],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -186,7 +182,7 @@ describe('stx Special Directives', () => {
       const result = await Bun.build({
         entrypoints: [testFile],
         outdir: OUTPUT_DIR,
-        plugins: [stxPlugin],
+        plugins: [stxPlugin()],
       })
 
       const outputHtml = await getHtmlOutput(result)
@@ -263,7 +259,7 @@ describe('stx Special Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -344,7 +340,7 @@ describe('stx Special Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -391,7 +387,7 @@ describe('stx Special Directives', () => {
       const result = await Bun.build({
         entrypoints: [testFile],
         outdir: OUTPUT_DIR,
-        plugins: [stxPlugin],
+        plugins: [stxPlugin()],
       })
 
       const outputHtml = await getHtmlOutput(result)
@@ -441,7 +437,7 @@ describe('stx Special Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -513,7 +509,7 @@ describe('stx Special Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)

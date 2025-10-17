@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const template: IconData = {
+  "body": "<path fill=\"#BBDEFB\" d=\"M4 7h40v34H4z\"/><path fill=\"#3F51B5\" d=\"M9 12h30v5H9z\"/><path fill=\"#2196F3\" d=\"M9 21h13v16H9zm17 0h13v16H26z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default template

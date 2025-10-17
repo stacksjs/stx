@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const adjustmentsVertical16Solid: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.25 13.25V7.5h1.5v5.75a.75.75 0 0 1-1.5 0m1.5-10.5V5h.75a.75.75 0 0 1 0 1.5h-3a.75.75 0 0 1 0-1.5h.75V2.75a.75.75 0 0 1 1.5 0M2.25 9.5a.75.75 0 0 0 0 1.5h3a.75.75 0 0 0 0-1.5H4.5V2.75a.75.75 0 0 0-1.5 0V9.5zm7.75.75a.75.75 0 0 1 .75-.75h.75V2.75a.75.75 0 0 1 1.5 0V9.5h.75a.75.75 0 0 1 0 1.5h-3a.75.75 0 0 1-.75-.75M3 12v1.25a.75.75 0 0 0 1.5 0V12zm8.5 1.25V12H13v1.25a.75.75 0 0 1-1.5 0\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default adjustmentsVertical16Solid

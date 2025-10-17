@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const screenCurve: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M1.101 8.69c.076.51.518.89 1.032.874C3.71 9.517 5.317 9.456 7 9.456c1.677 0 3.284.038 4.851.097c.521.02.973-.362 1.05-.878c.161-1.078.349-2.2.349-3.354c0-1.15-.186-2.27-.347-3.344a1.035 1.035 0 0 0-1.063-.88c-1.55.065-3.171.088-4.84.088c-1.676 0-3.297-.046-4.856-.1A1.025 1.025 0 0 0 1.1 1.96C.938 3.041.75 4.165.75 5.321c0 1.159.19 2.287.351 3.37Zm3.407 3.823h4.984M7 9.459v3.054\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default screenCurve

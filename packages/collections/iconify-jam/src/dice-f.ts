@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const diceF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16 0a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V4a4 4 0 0 1 4-4zm-1 13a2 2 0 1 0 0 4a2 2 0 0 0 0-4m-5-5a2 2 0 1 0 0 4a2 2 0 0 0 0-4M5 3a2 2 0 1 0 0 4a2 2 0 0 0 0-4\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default diceF

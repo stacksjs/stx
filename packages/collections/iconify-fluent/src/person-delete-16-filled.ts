@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const personDelete16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9.5 9a1.5 1.5 0 0 1 1.5 1.5v.5c0 1.971-1.86 4-5 4s-5-2.029-5-4v-.5A1.5 1.5 0 0 1 2.5 9zM6 2.5A2.75 2.75 0 1 1 6 8a2.75 2.75 0 0 1 0-5.5m4.784-1.411l.07.057L12.5 2.793l1.646-1.647a.5.5 0 0 1 .708.708L13.207 3.5l1.647 1.646a.5.5 0 0 1 .057.638l-.057.07a.5.5 0 0 1-.638.057l-.07-.057L12.5 4.207l-1.646 1.647a.5.5 0 0 1-.708-.708L11.793 3.5l-1.647-1.646a.5.5 0 0 1-.057-.638l.057-.07a.5.5 0 0 1 .562-.1z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default personDelete16Filled

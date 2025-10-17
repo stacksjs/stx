@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const graphicDesign: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"4\"><path d=\"M19 32c-7.732 0-14-6.268-14-14S11.268 4 19 4s14 6.268 14 14\"/><path fill=\"currentColor\" d=\"M44 18H18v26h26z\"/></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default graphicDesign

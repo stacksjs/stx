@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const windowWrench32Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.5 3A4.5 4.5 0 0 0 3 7.5v17A4.5 4.5 0 0 0 7.5 29h7.164a4 4 0 0 1 .26-2H7.5A2.5 2.5 0 0 1 5 24.5V11h22v3.685l.065.025C27.75 14.838 29 15.45 29 17V7.5A4.5 4.5 0 0 0 24.5 3zm12.9 27.268a2.5 2.5 0 0 1-3.535-3.536l3.435-3.435a5.5 5.5 0 0 1 6.105-7.223c.368.061.48.506.215.77l-1.888 1.888a2.5 2.5 0 0 0 3.536 3.536l1.888-1.888c.264-.264.709-.153.77.215q.074.443.074.905a5.5 5.5 0 0 1-7.096 5.265z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default windowWrench32Filled

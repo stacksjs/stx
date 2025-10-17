@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const kitchenOutlineRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9 8q-.425 0-.712-.288T8 7V6q0-.425.288-.712T9 5t.713.288T10 6v1q0 .425-.288.713T9 8m0 9q-.425 0-.712-.288T8 16v-3q0-.425.288-.712T9 12t.713.288T10 13v3q0 .425-.288.713T9 17m-3 5q-.825 0-1.412-.587T4 20V4q0-.825.588-1.412T6 2h12q.825 0 1.413.588T20 4v16q0 .825-.587 1.413T18 22zm0-2h12v-9H6zM6 9h12V4H6z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default kitchenOutlineRounded

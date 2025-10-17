@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const briefcase20: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGB7GpQc9K)\" fill-rule=\"evenodd\" d=\"M11.25 2c.966 0 1.75.784 1.75 1.75V5l-3 1.5L7 5V3.75C7 2.784 7.784 2 8.75 2zm-2.5 1a.75.75 0 0 0-.75.75V5h4V3.75a.75.75 0 0 0-.75-.75z\" clip-rule=\"evenodd\"/><path fill=\"url(#SVGN5rdmdCy)\" d=\"M3 8h14v5.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 3 13.5z\"/><path fill=\"url(#SVGUkkOHcYu)\" d=\"M3 8h14v5.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 3 13.5z\"/><path fill=\"url(#SVGP24PxcKB)\" d=\"M3 7.5A2.5 2.5 0 0 1 5.5 5h9A2.5 2.5 0 0 1 17 7.5v2a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 9.5z\"/><path fill=\"url(#SVG9ajY2b7u)\" d=\"M10.5 9h-1a.5.5 0 0 0-.5.5v2.012a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .501-.5V9.5a.5.5 0 0 0-.5-.5\"/><defs><linearGradient id=\"SVGB7GpQc9K\" x1=\"6.728\" x2=\"8.313\" y1=\"2.45\" y2=\"7.222\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0094F0\"/><stop offset=\"1\" stop-color=\"#163697\"/></linearGradient><linearGradient id=\"SVGN5rdmdCy\" x1=\"3.5\" x2=\"8.322\" y1=\"9.5\" y2=\"23.887\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0FAFFF\"/><stop offset=\"1\" stop-color=\"#CC23D1\"/></linearGradient><linearGradient id=\"SVGP24PxcKB\" x1=\"4.4\" x2=\"10.982\" y1=\"5.249\" y2=\"13.018\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#80F1E6\"/><stop offset=\".552\" stop-color=\"#40C4F5\"/><stop offset=\"1\" stop-color=\"#00A2FA\"/></linearGradient><linearGradient id=\"SVG9ajY2b7u\" x1=\"10.001\" x2=\"10.001\" y1=\"9\" y2=\"11.001\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#B8F5FF\"/><stop offset=\".844\" stop-color=\"#7CECFF\"/></linearGradient><radialGradient id=\"SVGUkkOHcYu\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(0 8 -15.6051 0 10 8)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".243\" stop-color=\"#194694\"/><stop offset=\".747\" stop-color=\"#367AF2\" stop-opacity=\"0\"/></radialGradient></defs></g>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default briefcase20

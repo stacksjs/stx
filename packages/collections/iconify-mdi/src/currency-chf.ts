@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const currencyChf: IconData = {
+  "body": "<path d=\"M7 3h11v2H9v6h8v2H9v3h2v2H9v3H7v-3H5v-2h2V3z\" fill=\"currentColor\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default currencyChf

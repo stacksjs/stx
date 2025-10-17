@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const mobilePhoneWithArrow: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#7167A4\" d=\"M13.5 2a3 3 0 0 0-3 3v2h19V5a3 3 0 0 0-3-3zm0 28a3 3 0 0 1-3-3v-2h19v2a3 3 0 0 1-3 3z\"/><path fill=\"#321B41\" d=\"M10.5 6h19v20h-19z\"/><path fill=\"#00A6ED\" d=\"M18 10a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1zm-5 5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1zm6 4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1z\"/><path fill=\"#FF822D\" d=\"M13 10a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1zm0 10a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1zm11-6a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1z\"/><path fill=\"#00A6ED\" d=\"m11.58 15.58l-4.54-4.13a.518.518 0 0 0-.87.39v1.81c0 .29-.23.52-.52.52H3.76a.76.76 0 0 0-.76.76v2.08c0 .42.34.76.76.76h1.89c.29 0 .52.23.52.52v1.81c0 .45.54.69.87.39l4.54-4.13c.23-.21.23-.57 0-.78\"/><path fill=\"#FCD53F\" d=\"M23 10a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1zm-5 5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1zm6 4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1z\"/></g>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default mobilePhoneWithArrow

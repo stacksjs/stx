@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const theta: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGUkcTWcFh)\" fill-rule=\"evenodd\" d=\"M16.737 3.947H7.263v16.106h9.474zm-10.421 0v16.106l.947.947h9.474l.947-.947V3.947L16.737 3H7.263z\" clip-rule=\"evenodd\"/><path fill=\"url(#SVGqCtlYbvD)\" d=\"M11.527 9.628H9.158v.948h5.684v-.948h-2.368V6.786h-.947zm0 4.737H9.158v-.947h5.684v.947h-2.368v2.842h-.947z\"/><defs><linearGradient id=\"SVGUkcTWcFh\" x1=\"4.825\" x2=\"19.536\" y1=\"4.355\" y2=\"19.844\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#2AB8E6\"/><stop offset=\".53\" stop-color=\"#29CAD2\"/><stop offset=\"1\" stop-color=\"#2EE4BE\"/></linearGradient><linearGradient id=\"SVGqCtlYbvD\" x1=\"8.413\" x2=\"16.902\" y1=\"7.571\" y2=\"15.291\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#2AB8E6\"/><stop offset=\".53\" stop-color=\"#29CAD2\"/><stop offset=\"1\" stop-color=\"#2EE4BE\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default theta

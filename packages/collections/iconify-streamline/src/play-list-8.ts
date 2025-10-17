@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const playList8: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 .5H1.5a1 1 0 0 0-1 1V10a1 1 0 0 0 1 1H10a1 1 0 0 0 1-1V1.5a1 1 0 0 0-1-1\"/><path d=\"M13.5 3.5v9a1 1 0 0 1-1 1h-9m.25-5.86V3.86a.36.36 0 0 1 .55-.31l3.27 1.89a.36.36 0 0 1 0 .62L4.3 8a.36.36 0 0 1-.55-.36\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default playList8

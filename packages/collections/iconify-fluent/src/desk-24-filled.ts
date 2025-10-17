@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const desk24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.25 4A2.25 2.25 0 0 0 2 6.25V8h18.5v11.25a.75.75 0 0 0 1.5 0v-13A2.25 2.25 0 0 0 19.75 4zM12 9.5H2v7.75A2.75 2.75 0 0 0 4.75 20h4.5A2.75 2.75 0 0 0 12 17.25zm-7 3.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default desk24Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const chevronRightSquareFill: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M13.785 49.574h28.453c4.899 0 7.336-2.437 7.336-7.265V13.69c0-4.828-2.437-7.265-7.336-7.265H13.785c-4.875 0-7.36 2.414-7.36 7.265v28.62c0 4.851 2.485 7.265 7.36 7.265m9.914-9.422c-.75-.75-.726-1.968 0-2.625l10.125-9.539L23.7 18.496c-.773-.703-.703-1.922.024-2.648c.703-.703 1.851-.657 2.625.07l10.242 9.656c1.383 1.29 1.383 3.563 0 4.852l-10.242 9.656c-.704.633-1.993.727-2.649.07\"/>",
+  "width": 56,
+  "height": 56,
+  "viewBox": "0 0 56 56"
+}
+
+export default chevronRightSquareFill

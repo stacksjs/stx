@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const dock24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12.707 3.293a1 1 0 0 0-1.414 0l-3.5 3.5a1 1 0 0 0 1.414 1.414L11 6.414V15a1 1 0 1 0 2 0V6.414l1.793 1.793a1 1 0 1 0 1.414-1.414zM4 12.75a.75.75 0 0 1 .75-.75H9a1 1 0 1 0 0-2H4.75A2.75 2.75 0 0 0 2 12.75v4.5A2.75 2.75 0 0 0 4.75 20h14.5A2.75 2.75 0 0 0 22 17.25v-4.5A2.75 2.75 0 0 0 19.25 10H15a1 1 0 1 0 0 2h4.25a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-.75.75H4.75a.75.75 0 0 1-.75-.75z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default dock24Filled

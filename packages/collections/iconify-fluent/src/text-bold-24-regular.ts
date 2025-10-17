@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const textBold24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.935 4.44A1.5 1.5 0 0 1 7.996 4h4.384C15.016 4 17 6.182 17 8.625a4.63 4.63 0 0 1-.866 2.682c1.077.827 1.866 2.12 1.866 3.813c0 3.112-2.7 4.88-4.88 4.88H8a1.5 1.5 0 0 1-1.5-1.5l-.004-13c0-.397.158-.779.44-1.06M9.5 10.25h2.88c.903 0 1.62-.76 1.62-1.625S13.282 7 12.38 7H9.498zm0 3V17h3.62c.874 0 1.88-.754 1.88-1.88c0-1.13-.974-1.87-1.88-1.87z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default textBold24Regular

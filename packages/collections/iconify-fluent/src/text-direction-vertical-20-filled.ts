@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const textDirectionVertical20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 3.75a.75.75 0 0 1 1.5 0v10.69l.72-.72a.75.75 0 0 1 1.06 1.06l-2 2a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 1 1 1.06-1.06l.72.72zm8 9a.75.75 0 0 1 1.5 0v1.69l.72-.72a.75.75 0 1 1 1.06 1.06l-2 2a.747.747 0 0 1-1.06 0l-2-2a.76.76 0 0 1 0-1.07a.75.75 0 0 1 1.06.01l.72.72zM13.5 3a.75.75 0 0 1 .696.471l3 7.5a.75.75 0 0 1-1.392.557L14.992 9.5h-2.984l-.812 2.028a.75.75 0 0 1-1.392-.556l3-7.5A.75.75 0 0 1 13.5 3m0 2.77L12.608 8h1.784z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default textDirectionVertical20Filled

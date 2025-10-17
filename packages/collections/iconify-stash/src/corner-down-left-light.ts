@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cornerDownLeftLight: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M20 3.5a.5.5 0 0 1 .5.5v1.423c0 1.66 0 2.938-.083 3.959c-.085 1.03-.257 1.845-.626 2.569a6.5 6.5 0 0 1-2.84 2.84c-.724.37-1.538.541-2.57.626c-1.02.083-2.297.083-3.958.083H5.207l4.147 4.146a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 1 1 .708.708L5.207 14.5H10.4c1.688 0 2.925 0 3.9-.08c.97-.08 1.637-.234 2.197-.52a5.5 5.5 0 0 0 2.404-2.403c.285-.56.44-1.227.519-2.197c.08-.975.08-2.212.08-3.9V4a.5.5 0 0 1 .5-.5\" clip-rule=\"evenodd\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default cornerDownLeftLight

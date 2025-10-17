@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const videoPlayPause24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 7.75c0-.966.784-1.75 1.75-1.75h1.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 15.25 18h-1.5A1.75 1.75 0 0 1 12 16.25v-4.13a1.73 1.73 0 0 1-.84 1.417l-6.5 3.952C3.493 18.197 2 17.358 2 15.993V8.004c0-1.372 1.507-2.21 2.673-1.486l6.502 4.037c.526.327.8.862.825 1.408zm6 0c0-.966.784-1.75 1.75-1.75h1.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 21.25 18h-1.5A1.75 1.75 0 0 1 18 16.25z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default videoPlayPause24Filled

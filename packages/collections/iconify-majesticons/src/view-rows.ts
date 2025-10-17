@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const viewRows: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M2 8a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3zm0 2v4h20v-4zm20 6H2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3\" clip-rule=\"evenodd\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default viewRows

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const webTemplate: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M768 896h1280v1152H768zm1152 1024v-640H896v640zm0-768v-128H896v128zM128 0v128H0V0zm0 256v128H0V256zm0 256v128H0V512zm0 256v128H0V768zm0 256v128H0v-128zm0 256v128H0v-128zm0 256v128H0v-128zM0 1792h128v128H0zm128 256v-128h128v128zM384 0v128H256V0zm0 2048v-128h128v128zM512 128V0h128v128zM896 0v128H768V0zm256 0v128h-128V0zm256 0v128h-128V0zm128 256h-128V128h128zm0 128v128h-128V384zm-128 384V640h128v128z\"/>",
+  "width": 2048,
+  "height": 2048,
+  "viewBox": "0 0 2048 2048"
+}
+
+export default webTemplate

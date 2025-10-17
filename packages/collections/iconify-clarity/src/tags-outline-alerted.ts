@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tagsOutlineAlerted: IconData = {
+  "body": "<circle cx=\"7.81\" cy=\"11.14\" r=\"1.33\" fill=\"currentColor\" class=\"clr-i-outline--alerted clr-i-outline-path-1--alerted\"/><path fill=\"currentColor\" d=\"M27.78 19.17L24 15.4h-1.77a3.7 3.7 0 0 1-1.23-.21l5.33 5.29l-9.11 9.21L3.69 16.15V7h9.1l6 5.94a3.68 3.68 0 0 1 .1-2.69L14.2 5.58A1.92 1.92 0 0 0 12.83 5H3.61a1.93 1.93 0 0 0-1.93 1.93v9.22a1.92 1.92 0 0 0 .57 1.36L15.84 31.1a1.93 1.93 0 0 0 2.73 0l9.21-9.21a1.93 1.93 0 0 0 0-2.72\" class=\"clr-i-outline--alerted clr-i-outline-path-2--alerted\"/><path fill=\"currentColor\" d=\"m20.83 6.8l-1.25-1.25A1.92 1.92 0 0 0 18.21 5h-2.09l3.67 3.6Z\" class=\"clr-i-outline--alerted clr-i-outline-path-3--alerted\"/><path fill=\"currentColor\" d=\"m33.16 19.13l-3.73-3.73h-2.78l5.1 5l-10.53 10.67a1.93 1.93 0 0 0 2.73 0l9.21-9.21a1.93 1.93 0 0 0 0-2.73\" class=\"clr-i-outline--alerted clr-i-outline-path-4--alerted\"/><path fill=\"currentColor\" d=\"M26.85 1.14L21.13 11a1.28 1.28 0 0 0 1.1 2h11.45a1.28 1.28 0 0 0 1.1-2l-5.72-9.86a1.28 1.28 0 0 0-2.21 0\" class=\"clr-i-outline--alerted clr-i-outline-path-5--alerted clr-i-alert\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default tagsOutlineAlerted

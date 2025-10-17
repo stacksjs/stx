@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tableSimple28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 6.75A3.75 3.75 0 0 1 6.75 3h6.5v10.25H3zm0 8v6.5A3.75 3.75 0 0 0 6.75 25h6.5V14.75zM14.75 25h6.5A3.75 3.75 0 0 0 25 21.25v-6.5H14.75zM25 13.25v-6.5A3.75 3.75 0 0 0 21.25 3h-6.5v10.25z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default tableSimple28Filled

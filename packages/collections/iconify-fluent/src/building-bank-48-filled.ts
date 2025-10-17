@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const buildingBank48Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M25.346 4.447a2.25 2.25 0 0 0-2.692 0L6.71 16.349c-1.35 1.007-.637 3.152 1.046 3.152h32.489c1.684 0 2.396-2.145 1.047-3.152zM24 14a2 2 0 1 1 0-4a2 2 0 0 1 0 4M6 38.251A5.25 5.25 0 0 1 11.25 33h25.5c2.9 0 5.25 2.35 5.25 5.25v1.5c0 .69-.56 1.249-1.25 1.249H7.25A1.25 1.25 0 0 1 6 39.75zM14 31h-4v-9.5h4zm4-9.5V31h4v-9.5zm8 0V31h4v-9.5zm8 0V31h4v-9.5z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default buildingBank48Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const dj: IconData = {
+  "body": "<defs><path id=\"SVG4FwY8ceZ\" fill=\"#fff\" d=\"M0 0v24l18-12z\"/></defs><g fill=\"none\"><path fill=\"#73BE4A\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/><mask id=\"SVGTrazyc7b\" width=\"32\" height=\"24\" x=\"0\" y=\"0\" maskUnits=\"userSpaceOnUse\" style=\"mask-type:luminance\"><path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/></mask><g mask=\"url(#SVGTrazyc7b)\"><path fill=\"#69F\" fill-rule=\"evenodd\" d=\"M0-2v14h32V-2z\" clip-rule=\"evenodd\"/></g><use href=\"#SVG4FwY8ceZ\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"/><mask id=\"SVGYW1Iidkf\" width=\"18\" height=\"24\" x=\"0\" y=\"0\" maskUnits=\"userSpaceOnUse\" style=\"mask-type:luminance\"><use href=\"#SVG4FwY8ceZ\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"/></mask><g mask=\"url(#SVGYW1Iidkf)\"><path fill=\"#E31D1C\" fill-rule=\"evenodd\" d=\"m7.002 14.07l-1.87 1.13l.426-2.204L4 11.347l2.11-.09l.892-2.057l.892 2.058H10l-1.554 1.738l.468 2.204z\" clip-rule=\"evenodd\"/></g></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default dj

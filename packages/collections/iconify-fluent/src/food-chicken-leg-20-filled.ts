@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const foodChickenLeg20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M18 7a5 5 0 0 0-9.925-.866c-.427 1.493-.833 2.282-1.045 2.63l-1.884 1.883a.5.5 0 0 0 .354.853h.389l-2.003 2.003a2 2 0 0 0-1.146 3.55q.114.093.207.207a2 2 0 0 0 3.55-1.157L8.5 14.102v.4a.5.5 0 0 0 .853.353l1.872-1.872c.345-.212 1.154-.631 2.709-1.07q.355-.066.69-.182q.198-.05.37-.144A5 5 0 0 0 18 7M7.303 11.5H8.5v1.187l-2.784 2.785A.75.75 0 0 0 5.5 16a1 1 0 0 1-1.777.63a2.4 2.4 0 0 0-.353-.353A1 1 0 0 1 4 14.5a.72.72 0 0 0 .513-.21z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default foodChickenLeg20Filled

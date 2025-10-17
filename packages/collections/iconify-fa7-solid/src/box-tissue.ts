@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const boxTissue: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M103.9 32h161c13.8 0 26 8.8 30.4 21.9l17.4 52.2c4.4 13.1 16.6 21.9 30.4 21.9h60.5c21.8 0 37.3 21.4 30.4 42.1L384 320H128L72.7 70.9C68.2 51 83.4 32 103.9 32M48 256h16.6l16.5 74.4c4.9 22 24.4 37.6 46.9 37.6h256c20.7 0 39-13.2 45.5-32.8l26.4-79.2h8.1c26.5 0 48 21.5 48 48v128c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V304c0-26.5 21.5-48 48-48\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default boxTissue

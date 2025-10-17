@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const investingAndBanking: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M13.18 5.345C13.3 3.7 8.695.622 8.695 2.011v1.615a48 48 0 0 0-2.444.035a.933.933 0 0 0-.907.846c-.043.547-.043 1.08 0 1.627a.933.933 0 0 0 .907.846q.726.028 1.432.035a1.017 1.017 0 0 1 1.012 1.011v.603c0 1.361 4.62-1.695 4.485-3.284\"/><path d=\"M.822 8.715C.703 7.069 5.307 3.992 5.307 5.38v.604c0 .556.455 1.005 1.012 1.01q.706.008 1.432.036a.934.934 0 0 1 .907.846c.043.547.043 1.08 0 1.627a.933.933 0 0 1-.907.846a48 48 0 0 1-2.444.035v1.615c0 1.36-4.62-1.695-4.485-3.284\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default investingAndBanking

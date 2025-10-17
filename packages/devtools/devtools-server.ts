@@ -29,7 +29,7 @@ async function buildTemplates() {
       ],
       outdir: PUBLIC_DIR,
       plugins: [
-        stxPlugin,
+        stxPlugin(),
       ],
       minify: false,
       target: 'browser',
@@ -45,9 +45,8 @@ async function buildTemplates() {
 
     console.log('Templates built successfully!')
 
-    // Copy UnoCSS file to public
-    const unoCSS = `@import url('https://cdn.jsdelivr.net/npm/@unocss/reset/tailwind.min.css');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    // Copy CSS file to public
+    const css = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
   --primary-color: #3b82f6;
@@ -131,7 +130,7 @@ body {
 .border-gray-200 { border-color: #e5e7eb; }
 `
 
-    fs.writeFileSync(path.join(PUBLIC_DIR, 'styles.css'), unoCSS)
+    fs.writeFileSync(path.join(PUBLIC_DIR, 'styles.css'), css)
 
     // Generate a simple HTML template for each page
     const htmlFiles = fs.readdirSync(PUBLIC_DIR).filter(file => file.endsWith('.html'))
@@ -145,7 +144,6 @@ body {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>stx DevTools</title>
   <link rel="stylesheet" href="/styles.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@unocss/reset/tailwind.min.css">
   <style>
     body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;

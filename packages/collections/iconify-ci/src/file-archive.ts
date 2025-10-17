@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const fileArchive: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M18 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h1v2h2v2H7v2h2v2H7v7h4v-5H9v-2h2V8H9V6h2V4H9V2h4a.104.104 0 0 1 .027 0h.006a.15.15 0 0 0 .029.006c.088.006.175.023.259.051h.042a.421.421 0 0 1 .052.043a.988.988 0 0 1 .293.2l6 6a.987.987 0 0 1 .2.293a.735.735 0 0 1 .023.066l.01.028c.028.083.044.17.049.258a.1.1 0 0 0 .007.029v.006A.112.112 0 0 1 20 9v11a2 2 0 0 1-2 2ZM13 4v5h5l-5-5Zm-3 12H8v-2h2v2Z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default fileArchive

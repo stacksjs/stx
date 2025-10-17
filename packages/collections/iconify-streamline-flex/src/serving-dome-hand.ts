@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const servingDomeHand: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6.066 4.312c0-.91.335-1.78.93-2.423A3.06 3.06 0 0 1 9.237.885c.842 0 1.648.36 2.243 1.004a3.57 3.57 0 0 1 .93 2.423m-6.978 0c2.868.317 4.53.33 7.613 0M.854 6.37l.713-.045a8 8 0 0 1 2.448.227l1.184.299c.643.161 1.07.77 1.001 1.43v0A1.335 1.335 0 0 1 4.638 9.46l-1.117-.2l3.938.706l4.078-.968a1.25 1.25 0 0 1 1.498.897v0a1.25 1.25 0 0 1-.738 1.48L9.035 12.7a7 7 0 0 1-4.97.113L.682 11.615\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default servingDomeHand

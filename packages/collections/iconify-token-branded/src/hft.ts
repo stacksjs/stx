@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const hft: IconData = {
+  "body": "<path fill-rule=\"evenodd\" d=\"M7.765 5.647H5.118v3.706H3v2.118h2.118v1.588H3v2.118h2.118v3.176h2.647v-3.176h8.47v3.176h2.647v-3.176H21v-2.118h-2.118v-1.588H21V9.353h-2.118V5.647h-2.647v3.706h-8.47zm8.47 7.412v-1.588h-8.47v1.588z\" clip-rule=\"evenodd\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default hft

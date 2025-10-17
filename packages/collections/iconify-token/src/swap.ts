@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const swap: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.5 9.616v1.034l3.15-2.25L7.5 6.375v.92a4.95 4.95 0 0 0 .45 9.88c1.133 0 2.7-.399 3.6-1.35c1.125-1.299 2.466-4.57 2.466-4.57L9.999 13.86a2.59 2.59 0 0 1-3.327.465A2.588 2.588 0 0 1 7.5 9.616\"/><path fill=\"currentColor\" d=\"M16.5 14.384V13.35l-3.15 2.25l3.15 2.025v-.92a4.95 4.95 0 0 0-.45-9.88c-1.134 0-2.7.399-3.6 1.35c-1.125 1.299-2.466 4.57-2.466 4.57L14 10.14a2.588 2.588 0 1 1 2.499 4.243\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default swap

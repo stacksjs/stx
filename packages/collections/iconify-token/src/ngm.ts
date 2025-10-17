@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const ngm: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M3 12h1.626A7.31 7.31 0 0 0 12 19.312V21a9 9 0 0 1-9-9m9-9v1.687A7.31 7.31 0 0 1 19.25 12H21a9 9 0 0 0-9-9m2.79 10.896a3.375 3.375 0 0 1-6.12-1.334H7.5v-1.125h1.17a3.375 3.375 0 0 1 6.66 0h1.451l-.562 1.126H10.11a1.968 1.968 0 0 0 3.426.675zm-4.68-2.459a1.97 1.97 0 0 1 3.774 0z\" clip-rule=\"evenodd\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default ngm

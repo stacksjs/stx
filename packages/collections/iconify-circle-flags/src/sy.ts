@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const sy: IconData = {
+  "body": "<mask id=\"SVGuywqVbel\"><circle cx=\"256\" cy=\"256\" r=\"256\" fill=\"#fff\"/></mask><g mask=\"url(#SVGuywqVbel)\"><path fill=\"#eee\" d=\"m0 167l253.8-19.3L512 167v178l-254.9 32.3L0 345z\"/><path fill=\"#496e2d\" d=\"M0 0h512v167H0z\"/><path fill=\"#333\" d=\"M0 345h512v167H0z\"/><path fill=\"#d80027\" d=\"m110 200l36 112l-95-69h117l-94 69zm146 0l36 112l-94-69h117l-95 69zm146 0l36 112l-94-69h117l-95 69z\"/></g>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default sy

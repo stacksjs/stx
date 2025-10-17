@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const pazzword: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M13.973 26.09h20.038c1.2 0 2.173.972 2.173 2.172h0v13.055A2.17 2.17 0 0 1 34.02 43.5H13.973c-1.2 0-2.173-.973-2.173-2.172V28.262c0-1.2.973-2.173 2.173-2.173\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M23.835 38.65c4.588-1.617 4.972-4.234 4.588-10.085c-1.425 0-2.95-.526-4.638-1.96c-1.688 1.434-3.203 1.96-4.628 1.96c-.384 5.85 0 8.468 4.678 10.085\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M23.856 30.222c1.303 0 2.364 1.081 2.364 2.415s-1.06 2.415-2.364 2.415s-2.365-1.08-2.365-2.415s1.061-2.415 2.365-2.415\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m22.956 32.769l.586.495l1.162-1.122\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M11.578 40.61C4.212 38.225 5.798 33.749 7.051 29c.829-4.79 6.356-5.64 10.65-7.59c-2.829-1.97-2.576-3.708-1.656-7.72c1.121-12.257 14.965-12.257 15.44.02c1.354 3.8 1.455 5.589-1.435 7.71c4.547 1.971 10.065 2.83 10.903 7.61c1.243 4.749 2.84 9.236-4.527 11.61\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M16.156 13.923c1.233-2.456 9.226-6.043 15.329-.212M30.05 21.42c-4.79 4.982-11.459 1.77-12.399-.01\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M18.106 12.215c-.08 4.396-.005 7.86 5.7 9.984V20.52v1.68c5.96-2.152 5.78-5.588 5.708-9.984\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M20.693 14.054c.606 1.193 1.677-1.06 2.273.101m4.234-.05c-.606 1.182-1.667-1.071-2.263.09m1.233 3.436c-.597 1.132-1.738 1.112-2.284-.04c-.596 1.132-1.738 1.101-2.284-.05\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default pazzword

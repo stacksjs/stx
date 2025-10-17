@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const videoMultiple20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 7a3 3 0 0 1 3-3h4a3 3 0 0 1 2.947 2.437l1.701-1.169c.995-.684 2.35.028 2.35 1.236v4.993c0 1.207-1.355 1.92-2.35 1.236l-1.7-1.17A3 3 0 0 1 11 14H7a3 3 0 0 1-3-3zm10 3.386l2.215 1.523a.5.5 0 0 0 .783-.412V6.504a.5.5 0 0 0-.783-.412L14 7.615zM7 5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zM3 7q0-.122.007-.243A3 3 0 0 0 2 9v2a5 5 0 0 0 5 5h2c.892 0 1.693-.39 2.243-1.007Q11.123 15 11 15H7a4 4 0 0 1-4-4z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default videoMultiple20Regular

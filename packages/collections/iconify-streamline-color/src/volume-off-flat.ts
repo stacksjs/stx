@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const volumeOffFlat: IconData = {
+  "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path fill=\"#8fbffa\" d=\"M8.716 1.578A1.454 1.454 0 0 1 11 2.805v8.005c-.027 1.186-1.403 1.883-2.374 1.21l-.008-.005L4.84 9.3H3.5C2.68 9.3 2 8.62 2 7.8v-2c0-.82.68-1.5 1.5-1.5h1.342l3.87-2.719z\"/><path fill=\"#2859c5\" d=\"M.22.22a.75.75 0 0 0 0 1.06l12.5 12.5a.75.75 0 1 0 1.06-1.06L1.28.22a.75.75 0 0 0-1.06 0\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default volumeOffFlat

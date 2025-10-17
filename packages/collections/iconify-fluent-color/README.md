@@ -1,0 +1,53 @@
+# @stacksjs/iconify-fluent-color
+
+Fluent UI System Color Icons icons for stx from Iconify.
+
+## Installation
+
+```bash
+bun add @stacksjs/iconify-fluent-color
+```
+
+## Usage
+
+### In stx templates
+
+```html
+<script>
+  import { home } from '@stacksjs/iconify-fluent-color'
+  import { renderIcon } from '@stacksjs/iconify-core'
+
+  export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
+</script>
+
+<div class="icon">
+  {!! homeIcon !!}
+</div>
+```
+
+### In TypeScript/JavaScript
+
+```typescript
+import { home, account, settings } from '@stacksjs/iconify-fluent-color'
+import { renderIcon } from '@stacksjs/iconify-core'
+
+const svg = renderIcon(home, {
+  size: 24,
+  color: '#000000',
+})
+```
+
+## Available Icons
+
+This package contains 889 icons from Fluent UI System Color Icons.
+
+## License
+
+MIT
+
+License: https://github.com/microsoft/fluentui-system-icons/blob/main/LICENSE
+
+## Credits
+
+- Icons: Microsoft Corporation (https://github.com/microsoft/fluentui-system-icons)
+- Iconify: https://iconify.design/

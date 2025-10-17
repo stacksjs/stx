@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const pipelineAdd32Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 9a3 3 0 0 1 6 0h16a3 3 0 1 1 6 0v8.343a9 9 0 0 0-2-1.828V9a1 1 0 1 0-2 0v5.512a9 9 0 0 0-2-.457V11H8v10h6.223A9 9 0 0 0 14 23H8a3 3 0 1 1-6 0zm4 0a1 1 0 0 0-2 0v14a1 1 0 1 0 2 0zm17 21.5a7.5 7.5 0 1 0 0-15a7.5 7.5 0 0 0 0 15m1-12.25V22h3.75a.75.75 0 0 1 0 1.5H24v3.75a.75.75 0 0 1-1.5 0V23.5h-3.75a.75.75 0 0 1 0-1.5h3.75v-3.75a.75.75 0 0 1 1.5 0\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default pipelineAdd32Regular

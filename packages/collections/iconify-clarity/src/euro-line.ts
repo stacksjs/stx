@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const euroLine: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M31.48 28.49a1 1 0 0 0-1.38-.32A12 12 0 0 1 12.45 22h11.71a1 1 0 0 0 0-2H11.93a11.2 11.2 0 0 1 0-4h12.23a1 1 0 0 0 0-2H12.45a12 12 0 0 1 17.61-6.2a1 1 0 0 0 1.06-1.7A14 14 0 0 0 10.34 14h-6.8a1 1 0 1 0 0 2h6.37a14 14 0 0 0-.16 2a14 14 0 0 0 .16 2H3.54a1 1 0 1 0 0 2h6.8a14 14 0 0 0 20.83 7.87a1 1 0 0 0 .31-1.38\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default euroLine

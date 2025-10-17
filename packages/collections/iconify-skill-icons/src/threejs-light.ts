@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const threejsLight: IconData = {
+  "body": "<g fill=\"none\"><rect width=\"256\" height=\"256\" fill=\"#fff\" rx=\"60\"/><path stroke=\"#000\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"4\" d=\"M93.213 222.94L50 48l173.23 49.874z\" clip-rule=\"evenodd\"/><path stroke=\"#000\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"4\" d=\"m136.583 72.942l21.591 87.496l-86.567-24.945z\" clip-rule=\"evenodd\"/><path stroke=\"#000\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"4\" d=\"m115.103 147.36l-10.724-43.465l43.008 12.346zM93.65 60.483l10.725 43.465l-43.008-12.346zm86.013 24.777l10.724 43.465l-43.008-12.346zm-64.555 62.13l10.724 43.465l-43.008-12.346z\" clip-rule=\"evenodd\"/></g>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default threejsLight

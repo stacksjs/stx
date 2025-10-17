@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const gy: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#5EAA22\" fill-rule=\"evenodd\" d=\"M0 0h32v24H0z\" clip-rule=\"evenodd\"/><path fill=\"#FECA00\" stroke=\"#F7FCFF\" stroke-width=\"2\" d=\"M1 22.587V1.413L30.995 12z\"/><path fill=\"#E11C1B\" stroke=\"#272727\" stroke-width=\"2\" d=\"M-1 23.955V.045L14.371 12z\"/></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default gy

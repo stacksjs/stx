@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tableFreezeRow20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14.5 17a2.5 2.5 0 0 0 2.5-2.5v-9A2.5 2.5 0 0 0 14.5 3h-9A2.5 2.5 0 0 0 3 5.5v9A2.5 2.5 0 0 0 5.5 17zM4 12V8h3v4zm12-5H4V5.5l.007-.144A1.5 1.5 0 0 1 5.5 4h9l.145.007A1.5 1.5 0 0 1 16 5.5zM8 8h4v4H8zm-4 6.5V13h3v3H5.5l-.144-.007A1.5 1.5 0 0 1 4 14.5m8-1.5v3H8v-3zm4-5v4h-3V8zm0 5v1.5l-.007.145A1.5 1.5 0 0 1 14.5 16H13v-3z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default tableFreezeRow20Regular

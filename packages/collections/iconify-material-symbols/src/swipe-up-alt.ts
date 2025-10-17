@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const swipeUpAlt: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 20q-2.075 0-3.537-1.463T7 15q0-1.825 1.138-3.187T11 10.1V5.825L9.4 7.4L8 6l4-4l4 4l-1.4 1.425l-1.6-1.6V10.1q1.725.35 2.863 1.713T17 15q0 2.075-1.463 3.538T12 20\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default swipeUpAlt

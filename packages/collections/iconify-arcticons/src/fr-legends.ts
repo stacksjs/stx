@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const frLegends: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M40.671 28.43c.29-5.077-.171-22.965-15.908-20.236c-6.25 1.084-11.796 4.844-11.581 11.581c.13 4.047 1.197 7.902 3.101 11.806m24.388-3.151c-3.18 5.002-8.538 6.395-14.007 7.604c-.748-1.18-4.886-5.15-10.38-4.452\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M17.86 31.504c-1.876-3.47-1.87-5.08-2.077-6.901c7.468.731 14.793-2.288 22.062-6.804c.696 2.493 1.44 4.955 1.75 7.704c-5.144 4.036-10.437 7.736-17.809 6.729m-9.11 4.514c4.63-3.671 12.128 1.16 13.62 3.689\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15.795 30.54c-.963-.83-2.875-3.508-4.189-.334c-1.41-.312-2.266.145-2.476 1.5c-1.103-.043-1.521.69-1.626 1.776c-1.247.626-.828 1.751-.825 2.752L23.317 37.7\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M23.037 33.292c-1.6 1.722-1.557 2.396-1.828 3.27m4.454-1.635c-1.05 1.415-1.624 2.036-2.346 2.773m7.265-2.624c1.766.308 2.357 1.827 1.36 2.934c1.325.137 2.043.88.975 2.801c1.457.15.972 1.654.425 1.654H29.09c-1.25.203-2.148-.498-1.25-1.504c-.89.264-2.897-1.08-1.677-2.426l2.736-3.017m11.475-6.64c-.193 3.744-1.05 7.376 2.126 9.307m-18.287.2l-2.09 2.151l-16.61-1.746\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M32.217 36.084c.486-.07 1.423.042 1.786.45c2.657.303 5.94 1.473 5.62 3.253c-.47.311-1.087-.228-1.64-.398c.736.992.57 2.038.539 3.076\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M32.917 40.811c1.751-1.003 3.535-2.277 5.065-1.422M9.005 23.152l3.67 1.3M9.23 26.379l3.076-.2\"/><rect width=\"37\" height=\"37\" x=\"5.5\" y=\"5.5\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"4\" ry=\"4\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default frLegends

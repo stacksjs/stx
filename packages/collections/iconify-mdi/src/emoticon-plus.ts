@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const emoticonPlus: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15 18h3v-3h2v3h3v2h-3v3h-2v-3h-3zM12 2c5.5 0 10 4.5 10 10c0 .59-.05 1.16-.15 1.72C21 13.26 20.03 13 19 13c-1.23 0-2.37.37-3.32 1H6.89c.8 2.04 2.78 3.5 5.11 3.5c.42 0 .83-.05 1.23-.14a5.97 5.97 0 0 0 .49 4.49c-.56.1-1.13.15-1.72.15c-5.5 0-10-4.5-10-10S6.47 2 12 2m3.5 6c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5s1.5-.67 1.5-1.5S16.33 8 15.5 8m-7 0C7.67 8 7 8.67 7 9.5S7.67 11 8.5 11s1.5-.67 1.5-1.5S9.33 8 8.5 8\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default emoticonPlus

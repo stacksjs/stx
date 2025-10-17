@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const imageReflection20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 6a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v6a3 3 0 0 1-1.341 2.5A3 3 0 0 1 16 17a.5.5 0 0 1-1 0a2 2 0 0 0-2-2a.5.5 0 0 1 0-1h-2.5a.5.5 0 0 1 0 1h-1a.5.5 0 0 1 0-1H7a.5.5 0 0 1 0 1a2 2 0 0 0-2 2a.5.5 0 0 1-1 0c0-1.043.533-1.963 1.341-2.5A3 3 0 0 1 4 12zm1.984 7.723l3.521-3.52a.7.7 0 0 1 .99 0l3.521 3.52a2 2 0 0 0 .707-.707l-3.52-3.521a1.7 1.7 0 0 0-2.405 0l-3.521 3.521c.172.291.416.535.707.707M13 7a1 1 0 1 0-2 0a1 1 0 0 0 2 0\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default imageReflection20Filled

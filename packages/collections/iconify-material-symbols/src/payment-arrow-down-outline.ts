@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const paymentArrowDownOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 11q-1.25 0-2.125-.875T9 8t.875-2.125T12 5t2.125.875T15 8t-.875 2.125T12 11m-7 3q-.825 0-1.412-.587T3 12V4q0-.825.588-1.412T5 2h14q.825 0 1.413.588T21 4v8q0 .825-.587 1.413T19 14zm2-2h10q0-.825.588-1.412T19 10V6q-.825 0-1.412-.587T17 4H7q0 .825-.587 1.413T5 6v4q.825 0 1.413.588T7 12m-2 0V4zm7 10l4-4l-1.4-1.4l-1.6 1.6V15h-2v3.2l-1.6-1.6L8 18z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default paymentArrowDownOutline

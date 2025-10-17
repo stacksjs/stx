@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const idCard: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 0h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m0 2v10h16V2zm9 2h5a1 1 0 0 1 0 2h-5a1 1 0 0 1 0-2m0 3h5a1 1 0 0 1 0 2h-5a1 1 0 0 1 0-2M4 4h3a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default idCard

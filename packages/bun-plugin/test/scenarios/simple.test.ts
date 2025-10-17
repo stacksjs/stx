@@ -48,7 +48,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -111,7 +111,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -184,7 +184,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -278,7 +278,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -345,7 +345,7 @@ describe('BUN-PLUGIN: Simple Scenario Tests', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)

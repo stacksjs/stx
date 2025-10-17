@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const alignBoxMiddleLeft: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M26 30H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h20a2 2 0 0 1 2 2v24a2 2 0 0 1-2 2M6 4v24h20V4Z\"/><path fill=\"currentColor\" d=\"M9 13h11v2H9zm0 5h7v2H9z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default alignBoxMiddleLeft

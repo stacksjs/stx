@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const wifi320Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12.888 11.854c.354.354.646.79.849 1.254a.5.5 0 1 1-.916.401a3.1 3.1 0 0 0-.64-.948a3.033 3.033 0 0 0-4.29 0a3 3 0 0 0-.631.938a.5.5 0 0 1-.916-.401a4 4 0 0 1 .84-1.244a4.033 4.033 0 0 1 5.704 0m-1.925 1.933a1.298 1.298 0 1 1-1.836 1.836a1.298 1.298 0 0 1 1.836-1.836\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default wifi320Regular

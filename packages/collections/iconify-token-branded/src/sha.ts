@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const sha: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGSW5jodhm)\" d=\"M12.225 3.04a.6.6 0 0 0-.438 0q-3.04 1.095-6.076 2.198c-.247.094-.396.3-.396.442v5.662c0 3.526.938 5.253 2.008 6.53c2.085 2.235 4.271 2.946 4.468 3.075c.146.096.356.04.444 0c1.908-.838 3.617-2.123 4.43-3.075c1.606-1.884 2.02-3.57 2.02-6.531V5.629c0-.229-.225-.356-.338-.392z\"/><path fill=\"url(#SVGOwGZrWNO)\" d=\"M12.208 3.551a.54.54 0 0 0-.404 0q-2.805 1.032-5.61 2.072c-.228.088-.365.283-.365.416v5.338c0 3.325.866 4.952 1.854 6.156c1.925 2.108 3.942 2.778 4.124 2.9c.134.09.33.037.41 0c1.76-.79 3.339-2.001 4.089-2.9c1.483-1.775 1.864-3.366 1.864-6.156V5.992c0-.216-.208-.337-.312-.37z\"/><path fill=\"url(#SVGrzhQfTbM)\" d=\"M12.19 4.064a.48.48 0 0 0-.37 0q-2.573.97-5.142 1.946c-.209.083-.335.266-.335.39v5.015c0 3.123.794 4.653 1.7 5.784c1.764 1.98 3.613 2.61 3.78 2.723c.123.085.302.036.376 0c1.614-.742 3.06-1.88 3.748-2.724c1.359-1.668 1.71-3.162 1.71-5.783V6.358c0-.204-.191-.317-.287-.347z\"/><path fill=\"url(#SVGOJJxmeTX)\" d=\"M12.75 11.034a1.543 1.543 0 1 0-1.514-.007l-.779 3.287h3.086z\"/><defs><linearGradient id=\"SVGSW5jodhm\" x1=\"12\" x2=\"12\" y1=\"3\" y2=\"21\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#132368\"/><stop offset=\"1\" stop-color=\"#B02CBC\"/></linearGradient><linearGradient id=\"SVGOwGZrWNO\" x1=\"12\" x2=\"12\" y1=\"2.999\" y2=\"20.999\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#F8F9FB\"/><stop offset=\"1\" stop-color=\"#AF2CBB\"/></linearGradient><linearGradient id=\"SVGrzhQfTbM\" x1=\"12\" x2=\"12\" y1=\"2.999\" y2=\"21\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#1B246C\"/><stop offset=\".496\" stop-color=\"#A27DC3\"/><stop offset=\"1\" stop-color=\"#FAEFFD\"/></linearGradient><linearGradient id=\"SVGOJJxmeTX\" x1=\"12.008\" x2=\"12.008\" y1=\"8.217\" y2=\"14.404\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#31237B\"/><stop offset=\"1\" stop-color=\"#72259E\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sha

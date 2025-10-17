@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const eraserFill: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 18.997h7v2h-9l-3.998.002l-6.487-6.488a1 1 0 0 1 0-1.414L12.12 2.491a1 1 0 0 1 1.414 0l7.779 7.778a1 1 0 0 1 0 1.414zm1.657-4.486l3.535-3.535l-6.364-6.364l-3.535 3.535z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default eraserFill

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cd: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#3195F9\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/><mask id=\"SVGTrazyc7b\" width=\"32\" height=\"24\" x=\"0\" y=\"0\" maskUnits=\"userSpaceOnUse\" style=\"mask-type:luminance\"><path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M0 0v24h32V0z\" clip-rule=\"evenodd\"/></mask><g mask=\"url(#SVGTrazyc7b)\"><path fill=\"#E31D1C\" stroke=\"#FECA00\" stroke-width=\"2.5\" d=\"m-1.822 25.44l.694 1.039l1.04-.694L36.172 1.58l1.04-.693l-.693-1.04l-2.221-3.327l-.694-1.04l-1.04.694l-36.26 24.204l-1.04.694l.694 1.04z\"/><path fill=\"#FECA00\" fill-rule=\"evenodd\" d=\"m4.93 8.606l-3.485 2.418l1.114-4.141L0 4.238l3.465-.143L4.93 0l1.466 4.095h3.458L7.303 6.883L8.58 10.78z\" clip-rule=\"evenodd\"/></g></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default cd

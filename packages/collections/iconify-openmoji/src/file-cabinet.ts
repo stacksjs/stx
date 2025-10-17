@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const fileCabinet: IconData = {
+  "body": "<path fill=\"#3f3f3f\" d=\"M18 55h36V13H18z\"/><path fill=\"#d0cfce\" d=\"M22.27 17.011v14h27.499v-14zM49.769 50.83v-14h-27.5v14z\"/><path fill=\"#9B9B9A\" d=\"M29.947 19.677H41.93v4.357H29.947zm-.352 20.116h12.679v4.067H29.595z\"/><path fill=\"#d0cfce\" d=\"M17.009 60.003H55\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path d=\"M17 12h38v44H17zm.009 48.003H55\"/><path d=\"M21.269 35.829h29.5v16h-29.5z\"/><path d=\"M29.735 39.713h12.399v4.116H29.735zm12.399 8.116H29.735m-8.466-31.818h29.5v16h-29.5z\"/><path d=\"M29.735 19.895h12.399v4.116H29.735zm12.399 8.116H29.735\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default fileCabinet

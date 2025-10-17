@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const adobePhotoshop: IconData = {
+  "body": "<g fill=\"none\" stroke-width=\"4\"><path fill=\"#2F88FF\" stroke=\"#000\" d=\"M39 6H9C7.34315 6 6 7.34315 6 9V39C6 40.6569 7.34315 42 9 42H39C40.6569 42 42 40.6569 42 39V9C42 7.34315 40.6569 6 39 6Z\"/><path stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M14 15V33\"/><path stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M16 25C19 25 23 24.2 23 20C23 15.8 19 15 16 15H14V25H16Z\" clip-rule=\"evenodd\"/><path stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M34 21.0246C33 21.0246 28 20.5266 28 24.0123C28 27.4979 34 26.5021 34 29.9877C34 33.4734 28 32.9754 28 32.9754\"/></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default adobePhotoshop

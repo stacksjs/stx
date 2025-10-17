@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const appShortcutRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17.15 13H12v2q0 .425-.288.713T11 16t-.712-.288T10 15v-2q0-.825.588-1.412T12 11h5.15l-.875-.9Q16 9.825 16 9.413t.3-.713q.275-.275.7-.275t.7.275l2.6 2.6q.3.3.3.7t-.3.7l-2.6 2.6q-.275.275-.687.288T16.3 15.3q-.275-.275-.288-.687t.263-.713zM7 23q-.825 0-1.412-.587T5 21V3q0-.825.588-1.412T7 1h10q.825 0 1.413.588T19 3v3q0 .425-.288.713T18 7t-.712-.288T17 6H7v12h10q0-.425.288-.712T18 17t.713.288T19 18v3q0 .825-.587 1.413T17 23z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default appShortcutRounded

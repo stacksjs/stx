@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cloudEdit24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.08 9.02a6.001 6.001 0 0 1 11.84 0a4.5 4.5 0 0 1 2.433 1a3.27 3.27 0 0 0-1.96.942l-5.903 5.903A3.7 3.7 0 0 0 11.717 18H6.5a4.5 4.5 0 0 1-.42-8.98m13.02 2.65l-5.903 5.902a2.7 2.7 0 0 0-.706 1.247l-.458 1.831a1.087 1.087 0 0 0 1.319 1.318l1.83-.457a2.7 2.7 0 0 0 1.248-.707l5.902-5.902A2.286 2.286 0 0 0 19.1 11.67\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default cloudEdit24Filled

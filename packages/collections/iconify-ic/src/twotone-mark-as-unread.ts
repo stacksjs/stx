@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const twotoneMarkAsUnread: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M13.5 13.33L20 10H7z\" opacity=\".3\"/><path fill=\"currentColor\" d=\"M7 12v7h13v-7l-6.5 3.33z\" opacity=\".3\"/><path fill=\"currentColor\" d=\"M16.23 7h2.6c-.06-.47-.36-.94-.79-1.17L10.5 2L2.8 5.83c-.48.26-.8.81-.8 1.34V15c0 1.1.9 2 2 2V7.4L10.5 4z\"/><path fill=\"currentColor\" d=\"M20 8H7c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h13c1.1 0 2-.9 2-2v-9c0-1.1-.9-2-2-2m0 11H7v-7l6.5 3.33L20 12zm-6.5-5.67L7 10h13z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default twotoneMarkAsUnread

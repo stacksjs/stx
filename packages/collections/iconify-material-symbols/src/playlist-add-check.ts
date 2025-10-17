@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const playlistAddCheck: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 16v-2h8v2zm0-4v-2h12v2zm0-4V6h12v2zm13.35 11l-3.55-3.55l1.4-1.4l2.15 2.1l4.25-4.25l1.4 1.45z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default playlistAddCheck

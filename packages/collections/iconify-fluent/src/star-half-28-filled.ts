@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const starHalf28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 3.1c-.517 0-1.033.27-1.299.808l-2.69 5.452l-6.018.875c-1.19.173-1.664 1.634-.804 2.473l4.355 4.244l-1.028 5.993c-.203 1.185 1.04 2.088 2.104 1.529L14 21.645z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default starHalf28Filled

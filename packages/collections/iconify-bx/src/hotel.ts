@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const hotel: IconData = {
+  "body": "<circle cx=\"7.5\" cy=\"11.5\" r=\"2.5\" fill=\"currentColor\"/><path fill=\"currentColor\" d=\"M17.205 7H12a1 1 0 0 0-1 1v7H4V6H2v14h2v-3h16v3h2v-8.205A4.8 4.8 0 0 0 17.205 7M13 15V9h4.205A2.8 2.8 0 0 1 20 11.795V15z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default hotel

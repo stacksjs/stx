@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const oven20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 3a3 3 0 0 0-3 3v1h14V6a3 3 0 0 0-3-3zm1.5 2.5a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0m6.5 0a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0m-4 .75a.75.75 0 1 1 0-1.5a.75.75 0 0 1 0 1.5M3 14V8h14v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3m3.5-4a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default oven20Filled

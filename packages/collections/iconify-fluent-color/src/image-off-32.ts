@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const imageOff32: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGpXGS5xGV)\" d=\"M3 7.5A4.5 4.5 0 0 1 7.5 3h17A4.5 4.5 0 0 1 29 7.5v17a4.5 4.5 0 0 1-4.5 4.5h-17A4.5 4.5 0 0 1 3 24.5z\"/><path fill=\"url(#SVGgmXd9b0C)\" d=\"M28.356 26.82A4.5 4.5 0 0 1 24.5 29h-17a4.5 4.5 0 0 1-3.856-2.18l10.588-10.588a2.5 2.5 0 0 1 3.536 0z\"/><path fill=\"url(#SVG3Bl2jcNd)\" d=\"M19 11a3 3 0 1 1 6 0a3 3 0 0 1-6 0\"/><path fill=\"url(#SVGlD2dTbAu)\" d=\"M3 7.5A4.5 4.5 0 0 1 7.5 3h17A4.5 4.5 0 0 1 29 7.5v17a4.5 4.5 0 0 1-4.5 4.5h-17A4.5 4.5 0 0 1 3 24.5z\"/><path fill=\"url(#SVGO9BkEYaE)\" d=\"M2.366 2.366a1.25 1.25 0 0 1 1.768 0l25.5 25.5a1.25 1.25 0 0 1-1.768 1.768l-25.5-25.5a1.25 1.25 0 0 1 0-1.768\"/><defs><linearGradient id=\"SVGgmXd9b0C\" x1=\"12.469\" x2=\"15.605\" y1=\"15.5\" y2=\"29.673\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#E7DEDE\"/><stop offset=\"1\" stop-color=\"#D3D3D3\"/></linearGradient><linearGradient id=\"SVG3Bl2jcNd\" x1=\"20.8\" x2=\"22.992\" y1=\"7.333\" y2=\"15.225\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FDFDFD\"/><stop offset=\"1\" stop-color=\"#E4E4E4\"/></linearGradient><linearGradient id=\"SVGlD2dTbAu\" x1=\"29\" x2=\"3\" y1=\"3\" y2=\"29\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".464\" stop-opacity=\"0\"/><stop offset=\".484\"/><stop offset=\".573\" stop-opacity=\"0\"/></linearGradient><linearGradient id=\"SVGO9BkEYaE\" x1=\"2\" x2=\"24.75\" y1=\"-3.25\" y2=\"30.875\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#E82C41\"/><stop offset=\"1\" stop-color=\"#AA1D2D\"/></linearGradient><radialGradient id=\"SVGpXGS5xGV\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(44.57142 56.41068 -51.30938 40.54076 -7.214 -11.625)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".338\" stop-color=\"#A9A9A9\"/><stop offset=\".695\" stop-color=\"#898989\"/></radialGradient></defs></g>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default imageOff32

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const presenter20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9.999 6a2 2 0 1 0 0-4a2 2 0 0 0 0 4m0-1a1 1 0 1 1 0-2a1 1 0 0 1 0 2m-1.5 3a.5.5 0 0 0-.5.5V9h-1v-.5a1.5 1.5 0 0 1 1.5-1.5h3a1.5 1.5 0 0 1 1.5 1.5V9h-1v-.5a.5.5 0 0 0-.5-.5zm-1.5 6.784V16.5a1.5 1.5 0 0 0 1.5 1.5h3a1.5 1.5 0 0 0 1.5-1.5v-1.716a.5.5 0 0 1 .153-.36l3.703-3.564a.5.5 0 0 0-.347-.86H3.49a.5.5 0 0 0-.346.86l3.702 3.564a.5.5 0 0 1 .154.36M8 16.5v-1.716a1.5 1.5 0 0 0-.46-1.08L4.729 11h10.539l-2.81 2.703a1.5 1.5 0 0 0-.46 1.081V16.5a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default presenter20Regular

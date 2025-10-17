@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const sportsScoreRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8.808 6.077h1.846V4.231H8.808zm3.692 0V4.231h1.846v1.846zm-3.692 7.385v-1.846h1.846v1.846zm7.384-3.693V7.923h1.847v1.846zm0 3.693v-1.846h1.847v1.846zm-3.692 0v-1.846h1.846v1.846zm3.692-7.385V4.231h1.847v1.846zm-5.538 1.846V6.077H12.5v1.846zM6.46 19.462q-.213 0-.356-.144t-.143-.357V4.732q0-.213.144-.356t.356-.144t.356.144t.144.356v1.346h1.846v1.846H6.962V9.77h1.846v1.847H6.962v7.346q0 .212-.144.356q-.144.143-.357.143m7.885-7.845V9.769h1.846v1.847zm-3.692 0V9.769H12.5v1.847zM8.808 9.769V7.923h1.846v1.846zm3.692 0V7.923h1.846v1.846zm1.846-1.846V6.077h1.846v1.846z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sportsScoreRounded

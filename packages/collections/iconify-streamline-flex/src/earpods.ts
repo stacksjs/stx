@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const earpods: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m2.15 7.1l-.112-.002C1.235 7.074.75 6.295.75 5.491V3.008c0-.803.485-1.582 1.288-1.606L2.15 1.4A3.6 3.6 0 0 1 5.75 5v6.5a1.5 1.5 0 0 1-3 0V7.05q-.293.05-.6.05m9.7 0l.112-.002c.803-.024 1.288-.803 1.288-1.607V3.008c0-.803-.485-1.582-1.288-1.606L11.85 1.4a3.603 3.603 0 0 0-3.6 3.619V11.5a1.5 1.5 0 0 0 3 0V7.05q.293.05.6.05\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default earpods

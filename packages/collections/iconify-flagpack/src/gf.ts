@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const gf: IconData = {
+  "body": "<g fill=\"none\"><rect width=\"32\" height=\"24\" fill=\"#5EAA22\" rx=\"2\"/><path fill=\"#FECA00\" fill-rule=\"evenodd\" d=\"m0 0l32 24H0z\" clip-rule=\"evenodd\"/><path fill=\"#E21835\" fill-rule=\"evenodd\" d=\"m15.93 14.406l-3.485 2.418l1.114-4.141L11 10.038l3.465-.143L15.93 5.8l1.466 4.095h3.458l-2.553 2.788l1.279 3.897z\" clip-rule=\"evenodd\"/></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default gf

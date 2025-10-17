@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const switchAccount: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M13.998 11.462q1.04 0 1.771-.729t.731-1.77t-.728-1.77t-1.77-.731t-1.771.728t-.731 1.77t.729 1.77t1.769.732M8.616 17q-.667 0-1.141-.475T7 15.386V4.615q0-.666.475-1.14T8.615 3h10.77q.666 0 1.14.475T21 4.615v10.77q0 .666-.475 1.14t-1.14.475zm-4 4q-.667 0-1.141-.475T3 19.386V7h1v12.385q0 .269.173.442t.443.173H17v1zm3.961-5h10.846q-1.05-1.175-2.451-1.818q-1.402-.644-2.969-.644t-2.971.644T8.577 16\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default switchAccount

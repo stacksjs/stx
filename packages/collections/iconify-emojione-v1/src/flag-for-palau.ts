@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const flagForPalau: IconData = {
+  "body": "<path fill=\"#4189dd\" d=\"M64 44c0 6.075-3.373 11-10 11H10C3.373 55 0 50.075 0 44V22c0-6.075 3.373-11 10-11h44c6.627 0 10 4.925 10 11z\"/><circle cx=\"25.654\" cy=\"32.654\" r=\"14.15\" fill=\"#f9cb38\"/>",
+  "width": 64,
+  "height": 64,
+  "viewBox": "0 0 64 64"
+}
+
+export default flagForPalau

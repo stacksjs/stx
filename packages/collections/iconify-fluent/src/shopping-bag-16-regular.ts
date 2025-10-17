@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const shoppingBag16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 5V3a2 2 0 0 1 3-1.732A2 2 0 0 1 11 3v2h.5A1.5 1.5 0 0 1 13 6.5V13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6.5A1.5 1.5 0 0 1 4.5 5zm1-2v2h2V3a1 1 0 0 0-2 0m5 11a1 1 0 0 0 1-1V6.5a.5.5 0 0 0-.5-.5H10v7a1 1 0 0 0 1 1M9 6H4.5a.5.5 0 0 0-.5.5V13a1 1 0 0 0 1 1h4.268A2 2 0 0 1 9 13zm0-3v2h1V3a1 1 0 0 0-1.25-.969c.16.287.25.618.25.969\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default shoppingBag16Regular

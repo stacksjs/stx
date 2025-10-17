@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DOM and Global Objects Test</title>
+</head>
+<body>
+
+<h1>Test JavaScript Keywords, Global Objects, and DOM Methods</h1>
+
+<script>
+  // Test Case 1: typeof operator
+  if(typeof window !== 'undefined') {
+    // Hover 'typeof' -> Should show: JavaScript Operator with description
+    // Hover 'window' -> Should show: var window: Window & typeof globalThis
+    console.log("Hello")
+  }
+
+  // Test Case 2: DOM querySelector
+  const tabs = document.querySelector(".ecosystem-tab")
+  // Hover 'document' -> Should show: var document: Document
+  // Hover 'tabs' -> Should show: const tabs: Element | null = document.querySelector(...)
+
+  // Test Case 3: getElementById
+  const header = document.getElementById("main-header")
+  // Hover 'header' -> Should show: const header: HTMLElement | null = document.getElementById(...)
+
+  // Test Case 4: querySelectorAll
+  const buttons = document.querySelectorAll("button")
+  // Hover 'buttons' -> Should show: const buttons: NodeListOf<Element> = document.querySelectorAll(...)
+
+  // Test Case 5: Global objects
+  console.log("Testing console")     // Hover 'console' -> var console: Console
+  navigator.userAgent                // Hover 'navigator' -> var navigator: Navigator
+  location.href                      // Hover 'location' -> var location: Location
+  localStorage.getItem("key")        // Hover 'localStorage' -> var localStorage: Storage
+  sessionStorage.setItem("k", "v")   // Hover 'sessionStorage' -> var sessionStorage: Storage
+  history.pushState({}, "", "/")     // Hover 'history' -> var history: History
+
+  // Test Case 6: Math and JSON
+  Math.round(3.14)                   // Hover 'Math' -> var Math: Math
+  JSON.parse('{"key": "value"}')     // Hover 'JSON' -> var JSON: JSON
+
+  // Test Case 7: instanceof operator
+  if (tabs instanceof HTMLElement) {
+    // Hover 'instanceof' -> Should show: JavaScript Operator with description
+    console.log("It's an HTMLElement")
+  }
+
+  // Test Case 8: Other operators
+  delete window.customProperty       // Hover 'delete' -> JavaScript Operator
+  "length" in tabs                   // Hover 'in' -> JavaScript Operator
+
+  // Test Case 9: More DOM methods
+  const newDiv = document.createElement("div")           // const newDiv: HTMLElement
+  const textNode = document.createTextNode("Hello")      // const textNode: Text
+  const byClass = document.getElementsByClassName("btn") // const byClass: HTMLCollectionOf<Element>
+  const byTag = document.getElementsByTagName("p")       // const byTag: HTMLCollectionOf<Element>
+
+  // Test Case 10: Built-in functions
+  const num = parseInt("42")         // const num: number = parseInt("42")
+  const float = parseFloat("3.14")   // const float: number = parseFloat("3.14")
+  const str = String(123)            // const str: string = String(123)
+
+  // Test Case 11: for...of loop
+  for (const button of buttons) {
+    // Hover 'of' -> JavaScript Keyword for iteration
+    console.log(button)
+  }
+
+  // Test Case 12: globalThis
+  globalThis.customGlobal = "test"   // Hover 'globalThis' -> var globalThis: typeof globalThis
+</script>
+
+<div id="main-header">Header</div>
+<button class="ecosystem-tab">Tab 1</button>
+<button class="ecosystem-tab">Tab 2</button>
+
+</body>
+</html>

@@ -116,7 +116,7 @@ export const useCounterStore = defineStore('counter', {
 
 ```typescript
 // stx
-import { createStore } from '@stx/store'
+import { createStore } from '@stacksjs/store'
 
 export const useCounterStore = createStore({
   state: {
@@ -411,17 +411,17 @@ interface Props {
 
 ```bash
 # Update stx core
-bun install @stx/core@latest
+bun install @stacksjs/core@latest
 
 # Update optional packages
-bun install @stx/store@latest @stx/router@latest
+bun install @stacksjs/store@latest @stacksjs/router@latest
 ```
 
 2. Update Configuration
 
 ```typescript
 // stx.config.ts
-import { defineConfig } from '@stx/core'
+import { defineConfig } from '@stacksjs/core'
 
 // Before (1.x)
 export default {
@@ -438,17 +438,17 @@ export default defineConfig({
 
 ```typescript
 // Before (1.x)
-import { createComponent } from '@stx/core'
+import { createComponent } from '@stacksjs/core'
 
 // After (2.0)
-import { component } from '@stx/core'
+import { component } from '@stacksjs/core'
 ```
 
 4. Update Store Usage
 
 ```typescript
 // Before (1.x)
-import { createStore } from '@stx/store'
+import { createStore } from '@stacksjs/store'
 
 const store = createStore({
   state: {
@@ -462,7 +462,7 @@ const store = createStore({
 })
 
 // After (2.0)
-import { createStore } from '@stx/store'
+import { createStore } from '@stacksjs/store'
 
 const store = createStore({
   state: {
@@ -482,7 +482,7 @@ stx provides a migration tool to help automate these changes:
 
 ```bash
 # Install migration tool
-bun install -g @stx/migrate
+bun install -g @stacksjs/migrate
 
 # Run migration
 stx-migrate

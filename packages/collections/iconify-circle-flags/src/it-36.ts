@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const it36: IconData = {
+  "body": "<defs><mask id=\"SVGsBqRke6O\" width=\"512\" height=\"512\" x=\"0\" y=\"0\" maskUnits=\"userSpaceOnUse\"><circle cx=\"256\" cy=\"256\" r=\"256\" fill=\"#fff\"/></mask></defs><g mask=\"url(#SVGsBqRke6O)\"><path fill=\"#338af3\" d=\"M0 0h512v512H0z\"/><path fill=\"#eee\" d=\"M304 344v16h-32v-16h-32v16h-32v-16h-32v64h160v-64z\"/><path fill=\"#333\" d=\"M248 352h-2.3l24-24l-5.7-5.7l-29.7 29.7H224a8 8 0 0 0-8 8h10.3a8 8 0 0 0 0 11.3l11.4-11.3H256a8 8 0 0 0-8-8m56 8a8 8 0 0 0-8-8h-8v-24h-8v24h-8a8 8 0 0 0-8 8h18.3l11.4 11.3a8 8 0 0 0 0-11.3z\"/><path fill=\"#ffda44\" d=\"M304 256a24 24 0 0 0 24-24a24 24 0 0 0 24-24a24 24 0 0 0 24-24h-80c-9 0-17.3 3-24 8v-8a24 24 0 0 0-24-24a24 24 0 0 0-24-24a24 24 0 0 0-24-24v80a40 40 0 0 0 4.5 18.5A84.2 84.2 0 0 0 184 208a32 32 0 0 0-32 32c9.4-5.5 20.3-8 32-8l72 80a24 24 0 1 0 48 0l16-16l40 40a16 16 0 0 0 16-16a16 16 0 0 0 16-16z\"/></g>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default it36

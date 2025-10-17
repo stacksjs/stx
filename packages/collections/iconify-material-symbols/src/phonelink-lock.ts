@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const phonelinkLock: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15.85 16q-.35 0-.6-.25t-.25-.6v-3.3q0-.35.25-.6t.6-.25H16v-1q0-.825.588-1.412T18 8t1.413.588T20 10v1h.15q.35 0 .6.25t.25.6v3.3q0 .35-.25.6t-.6.25zM17 11h2v-1q0-.425-.288-.712T18 9t-.712.288T17 10zM7 23q-.825 0-1.412-.587T5 21V3q0-.825.588-1.412T7 1h10q.825 0 1.413.588T19 3v4h-2V6H7v12h10v-1h2v4q0 .825-.587 1.413T17 23z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default phonelinkLock

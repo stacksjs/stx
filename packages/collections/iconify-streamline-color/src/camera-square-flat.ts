@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cameraSquareFlat: IconData = {
+  "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path fill=\"#8fbffa\" d=\"M0 1.5A1.5 1.5 0 0 1 1.5 0h11A1.5 1.5 0 0 1 14 1.5v11a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 0 12.5z\"/><path fill=\"#2859c5\" d=\"M10.504 5.46c.205.204.32.482.32.772v2.731a1.09 1.09 0 0 1-1.092 1.093H4.268a1.093 1.093 0 0 1-1.092-1.093V6.232a1.093 1.093 0 0 1 1.092-1.093h.547L5.907 3.5h2.186l1.092 1.639h.547c.29 0 .567.115.772.32ZM5.81 7.47a1.191 1.191 0 1 1 2.382 0a1.191 1.191 0 0 1-2.382 0\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default cameraSquareFlat

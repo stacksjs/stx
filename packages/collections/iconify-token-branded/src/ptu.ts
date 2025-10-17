@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const ptu: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGxHuG2cjE)\" d=\"M14.669 3H9.33a4.84 4.84 0 0 0-4.78 4.903V21h3.104V7.903c0-1.117.577-1.8 1.676-1.8h5.338c1.098 0 1.676.677 1.676 1.8V21h3.103V7.903A4.84 4.84 0 0 0 14.668 3\"/><defs><linearGradient id=\"SVGxHuG2cjE\" x1=\"6.383\" x2=\"21.037\" y1=\"9.468\" y2=\"17.673\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0A68F4\"/><stop offset=\"1\" stop-color=\"#3DFFB9\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default ptu

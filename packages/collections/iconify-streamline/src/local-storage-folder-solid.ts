@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const localStorageFolderSolid: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M8.796 5h4.77c.24 0 .434-.195.434-.435v-3.26a.435.435 0 0 0-.434-.435h-2.61l-.12-.54A.435.435 0 0 0 10.4 0H8.796a.435.435 0 0 0-.435.435v4.13A.435.435 0 0 0 8.796 5M2 3h4.25a1 1 0 0 0 0-2H1.457C.652 1 0 1.652 0 2.457v7.086C0 10.348.652 11 1.457 11h4.028l-.537 1.5H4A.75.75 0 0 0 4 14h6a.75.75 0 1 0 0-1.5h-.948L8.515 11h4.028C13.348 11 14 10.348 14 9.543V7.25a1 1 0 1 0-2 0V9H2z\" clip-rule=\"evenodd\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default localStorageFolderSolid

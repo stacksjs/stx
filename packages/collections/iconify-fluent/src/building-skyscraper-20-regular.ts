@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const buildingSkyscraper20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.5 8.75a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5M7.5 11.25a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5m5.25 2.25a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0m-.75-1.75a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5M7 1.997a.5.5 0 0 0-.5.5V4h-.945a.5.5 0 0 0-.5.5v1.738A2 2 0 0 0 4 8.001v8.498a.5.5 0 0 0 .5.5h6.958L11.5 17h5a.5.5 0 0 0 .5-.5v-4A4.5 4.5 0 0 0 12.5 8H12a2 2 0 0 0-.945-1.7V4.5a.5.5 0 0 0-.5-.5H9.5V2.496a.5.5 0 0 0-.5-.5zm3 4.005H6.055V4.999h4V6zM11 16h-1v-1.994a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1V16H5V8a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1zm-4 0v-1.994h2V16zm9 0h-4V9h.5a3.5 3.5 0 0 1 3.5 3.5zM8.5 4h-1V2.996h1z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default buildingSkyscraper20Regular

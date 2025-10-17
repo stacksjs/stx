@@ -1,0 +1,41 @@
+{
+  "name": "@stacksjs/iconify-ls",
+  "version": "0.1.15",
+  "description": "Ligature Symbols icons for stx from Iconify",
+  "author": "Kazuyuki Motoyama",
+  "license": "OFL-1.1",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": "./dist/*"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun build.ts"
+  },
+  "dependencies": {
+    "@stacksjs/iconify-core": "workspace:*"
+  },
+  "keywords": [
+    "iconify",
+    "icons",
+    "svg",
+    "ls",
+    "Ligature Symbols",
+    "stx"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stacksjs/stx.git",
+    "directory": "packages/iconify-ls"
+  },
+  "sideEffects": false
+}

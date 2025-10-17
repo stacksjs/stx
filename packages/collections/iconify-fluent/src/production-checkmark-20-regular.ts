@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const productionCheckmark20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 3.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5zm6.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5zm.5 3V4h2v2zM2 12a4 4 0 0 1 4-4h8c1.39 0 2.613.708 3.33 1.783a5.47 5.47 0 0 0-3.118-.776A3 3 0 0 0 14 9H6a3 3 0 1 0 0 6h3.022q.047.516.185 1H6a4 4 0 0 1-4-4m8-1q.121 0 .235.028a5.5 5.5 0 0 0-.938 1.683A1 1 0 0 1 10 11m-4 2a1 1 0 1 0 0-2a1 1 0 0 0 0 2m13 1.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-2.854-1.854L13.5 15.293l-.646-.647a.5.5 0 0 0-.708.708l1 1a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default productionCheckmark20Regular

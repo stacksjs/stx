@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const doorSlidingOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9 13q-.425 0-.712-.288T8 12t.288-.712T9 11t.713.288T10 12t-.288.713T9 13m6 0q-.425 0-.712-.288T14 12t.288-.712T15 11t.713.288T16 12t-.288.713T15 13M3 21v-2h1V3h16v16h1v2zm3-2h5V5H6zm7 0h5V5h-5zm-1-8\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default doorSlidingOutlineSharp

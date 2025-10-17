@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const mailDismiss16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15 5.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-2.646-1.146a.5.5 0 0 0-.708-.708L10.5 4.793L9.354 3.646a.5.5 0 1 0-.708.708L9.793 5.5L8.646 6.646a.5.5 0 1 0 .708.708L10.5 6.207l1.146 1.147a.5.5 0 0 0 .708-.708L11.207 5.5zM10.5 11c.9 0 1.75-.216 2.5-.6V13a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8.337l5.763 3.103a.5.5 0 0 0 .474 0l1.411-.76c.579.207 1.202.32 1.852.32M3 5h2.022a5.5 5.5 0 0 0 2.522 5.14L7 10.431l-6-3.23V7a2 2 0 0 1 2-2\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default mailDismiss16Filled

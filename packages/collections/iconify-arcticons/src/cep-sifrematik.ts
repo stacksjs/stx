@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cepSifrematik: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M28.706 10.577h-5.881c-.432 0-.782.548-.782 1.225v20.21c0 .676.35 1.225.782 1.225h12.902c.432 0 .782-.549.782-1.225V22.003\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M40.806 10.318h-8.745c-.293 0-.53.208-.53.466v7.689c0 .257.237.466.53.466h8.745c.293 0 .53-.209.53-.466h0v-7.69c0-.257-.237-.465-.53-.465\"/><path fill=\"none\" stroke=\"currentColor\" d=\"M22 27.8h14.54\"/><circle cx=\"29.242\" cy=\"30.509\" r=\"1.159\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M40.116 7.595a3.75 3.75 0 0 0-3.865-3.091a3.74 3.74 0 0 0-3.56 3.466l.008 2.353\"/><circle cx=\"36.464\" cy=\"14.135\" r=\"1\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M36.476 15.135v.987M8.442 25.987c-.816.002-1.463.682-1.77 2.322c-.201 2.567 3.588 4.986 7.458 3.788c-1.637-3.271-4.018-6.113-5.688-6.11m2.972-2.905c-.69-.003-1.348.467-1.827 1.57q3.453 2.447 5.108 5.877c.76-3.819-1.377-7.439-3.281-7.447m6.161 1.816c-1.067-.012-2.445 2.47-1.81 6.656c2.72-2.695 3.862-5.79 2.129-6.572a.7.7 0 0 0-.32-.084Zm2.075 2.355q-.432 2.632-3.375 5.257c2.943-.207 4.8-3.173 3.375-5.257m-6.951 6.273c-2.814.046-6.28 2.512-5.965 4.835c.279 1.099 1.156 1.709 1.819 1.924q3.38-2.238 5.299-6.625a4.1 4.1 0 0 0-1.153-.135Zm1.955 1.234c-1.072 3.009-3.665 5.745-5.116 6.764q.142.864.586 1.42c2.268 2.388 5.336-3.405 4.53-8.184m1.374-.22c-.41 5.269.555 6.385 1.755 5.947q.65-.329.832-.761c-.2-1.4-.46-3.087-2.587-5.186m.942-1.122q2.182 2.248 2.58 4.736c1.724-2.416-.22-4.293-2.58-4.737\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default cepSifrematik

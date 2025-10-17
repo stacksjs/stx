@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const diamond: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17.813 3.838A2 2 0 0 0 16.187 3H7.813c-.644 0-1.252.313-1.667.899l-4 6.581a1 1 0 0 0 .111 1.188l9 10a.995.995 0 0 0 1.486.001l9-10a1 1 0 0 0 .111-1.188zM12 19.505L5.245 12h13.509zM4.777 10l3.036-5l8.332-.062L19.222 10z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default diamond

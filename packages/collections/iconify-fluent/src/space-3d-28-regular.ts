@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const space3d28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 6.75A3.75 3.75 0 0 1 6.75 3h14.5A3.75 3.75 0 0 1 25 6.75v14.5A3.75 3.75 0 0 1 21.25 25H6.75A3.75 3.75 0 0 1 3 21.25zM6.75 4.5A2.25 2.25 0 0 0 4.5 6.75V13h19V6.75a2.25 2.25 0 0 0-2.25-2.25zM4.5 17.174L6.64 14.5H4.5zM5.76 18h4.534l1.095-3.5H8.56zM4.5 19.5v1.75a2.25 2.25 0 0 0 2.25 2.25h1.824l1.251-4zm6.897 0l-1.252 4h8.21l-1.252-4zm7.278 0l1.251 4h1.324a2.25 2.25 0 0 0 2.25-2.25V19.5zm3.564-1.5l-2.8-3.5h-2.328l1.095 3.5zm-5.605 0l-1.095-3.5h-2.578L11.866 18zm6.866-.826V14.5h-2.14z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default space3d28Regular

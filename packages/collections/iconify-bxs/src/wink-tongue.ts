@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const winkTongue: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 19v-4h-4v4c0 1.103.897 2 2 2s2-.897 2-2\"/><path fill=\"currentColor\" d=\"M12 2C6.486 2 2 6.486 2 12c0 4.434 2.903 8.198 6.906 9.505A3.97 3.97 0 0 1 8 19v-2.499C6.412 15.027 6 13 6 13h12s-.411 2.027-2 3.501V19c0 .953-.349 1.816-.906 2.504C19.097 20.197 22 16.434 22 12c0-5.514-4.486-10-10-10m-3.5 9a1.5 1.5 0 1 1 .001-3.001A1.5 1.5 0 0 1 8.5 11m4.5 0s.5-2 2.5-2s2.5 2 2.5 2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default winkTongue

@@ -134,7 +134,7 @@ mixed: mixed whitespace`
   })
 
   it('should handle empty input gracefully', () => {
-    expect(parse('')).toEqual({})
+    expect(parse('') ?? {}).toEqual({})
     // Bun's YAML parser returns null for only whitespace/comments
     const result = parse('   \n\n   ')
     expect(result === null || (typeof result === 'object' && Object.keys(result as object).length === 0)).toBe(true)

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const ruble: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M291.75 308.1a105.8 105.8 0 1 0 0-211.6H136v32h39.943v147.6H136v32h39.943V352H136v32h39.943v56h32v-56H304v-32h-96.057v-43.9Zm-83.807-179.6h83.807a73.8 73.8 0 1 1 0 147.6h-83.807Z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default ruble

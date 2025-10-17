@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const imageTable16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 2.05c-.98.199-1.751.97-1.95 1.95H4zM2 5v6h2V5zm3-1h6V2H5zm7-1.95V4h1.95A2.5 2.5 0 0 0 12 2.05M14 5h-2v6h2zm-.05 7H12v1.95A2.5 2.5 0 0 0 13.95 12M11 14v-2H5v2zm-7-.05V12H2.05c.199.98.97 1.751 1.95 1.95M5 5v6h.296l1.502-1.502a1.7 1.7 0 0 1 2.404 0L10.704 11H11V5zm3 2a1 1 0 1 1 2 0a1 1 0 0 1-2 0m1.29 4l-.795-.795a.7.7 0 0 0-.99 0L6.71 11z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default imageTable16Filled

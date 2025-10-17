@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>STX Implicit Type Inference Test</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    .test-case { margin: 20px 0; padding: 10px; background: #f5f5f5; }
+    .expected { color: #008000; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<h1>STX Type Inference Test Cases</h1>
+<p>Hover over each variable to see the inferred type!</p>
+
+<!-- Test Case 1: Numbers -->
+@ts
+  const count = 1
+  const price = 99.99
+  const negative = -42
+  const hex = 0xFF
+  const binary = 0b1010
+@endts
+
+<div class="test-case">
+  <h2>Numbers (implicit type inference)</h2>
+  <p>{{ count }}</p>        <!-- Expected: const count: number = 1 -->
+  <p>{{ price }}</p>        <!-- Expected: const price: number = 99.99 -->
+  <p>{{ negative }}</p>     <!-- Expected: const negative: number = -42 -->
+  <p>{{ hex }}</p>          <!-- Expected: const hex: number = 0xFF -->
+  <p>{{ binary }}</p>       <!-- Expected: const binary: number = 0b1010 -->
+</div>
+
+<!-- Test Case 2: Strings -->
+@ts
+  const message = "Hello World"
+  const singleQuote = 'Single quoted'
+  const template = `Template literal`
+  const empty = ""
+@endts
+
+<div class="test-case">
+  <h2>Strings (implicit type inference)</h2>
+  <p>{{ message }}</p>      <!-- Expected: const message: string = "Hello World" -->
+  <p>{{ singleQuote }}</p>  <!-- Expected: const singleQuote: string = 'Single quoted' -->
+  <p>{{ template }}</p>     <!-- Expected: const template: string = `Template literal` -->
+  <p>{{ empty }}</p>        <!-- Expected: const empty: string = "" -->
+</div>
+
+<!-- Test Case 3: Booleans -->
+@ts
+  const isActive = true
+  const isDisabled = false
+@endts
+
+<div class="test-case">
+  <h2>Booleans (implicit type inference)</h2>
+  <p>{{ isActive }}</p>     <!-- Expected: const isActive: boolean = true -->
+  <p>{{ isDisabled }}</p>   <!-- Expected: const isDisabled: boolean = false -->
+</div>
+
+<!-- Test Case 4: null and undefined -->
+@ts
+  const nothing = null
+  const notDefined = undefined
+@endts
+
+<div class="test-case">
+  <h2>null and undefined</h2>
+  <p>{{ nothing }}</p>      <!-- Expected: const nothing: null = null -->
+  <p>{{ notDefined }}</p>   <!-- Expected: const notDefined: undefined = undefined -->
+</div>
+
+<!-- Test Case 5: Arrays with type inference -->
+@ts
+  const numbers = [1, 2, 3]
+  const strings = ["a", "b", "c"]
+  const bools = [true, false]
+  const mixed = [1, "two", true]
+@endts
+
+<div class="test-case">
+  <h2>Arrays (inferred item types)</h2>
+  <p>{{ numbers }}</p>      <!-- Expected: const numbers: number[] = [1, 2, 3] -->
+  <p>{{ strings }}</p>      <!-- Expected: const strings: string[] = ["a", "b", "c"] -->
+  <p>{{ bools }}</p>        <!-- Expected: const bools: boolean[] = [true, false] -->
+  <p>{{ mixed }}</p>        <!-- Expected: const mixed: any[] = [1, "two", true] -->
+</div>
+
+<!-- Test Case 6: Objects with inferred property types -->
+@ts
+  const config = { port: 3000, host: "localhost", debug: true }
+  const settings = { theme: "dark", fontSize: 14 }
+@endts
+
+<div class="test-case">
+  <h2>Objects (inferred property types)</h2>
+  <p>{{ config }}</p>       <!-- Expected: const config: object = { port: 3000, host: "localhost", debug: true } -->
+  <p>{{ settings }}</p>     <!-- Expected: const settings: object = { theme: "dark", fontSize: 14 } -->
+</div>
+
+<!-- Test Case 7: Comparison with Explicit Types -->
+@ts
+  // Explicit types
+  const explicitString: string = "test"
+  const explicitNumber: number = 100
+  const explicitBool: boolean = true
+
+  // Implicit types (should look identical in hover)
+  const implicitString = "test"
+  const implicitNumber = 100
+  const implicitBool = true
+@endts
+
+<div class="test-case">
+  <h2>Explicit vs Implicit (should show same hover)</h2>
+  <h3>Explicit:</h3>
+  <p>{{ explicitString }}</p>   <!-- const explicitString: string = "test" -->
+  <p>{{ explicitNumber }}</p>   <!-- const explicitNumber: number = 100 -->
+  <p>{{ explicitBool }}</p>     <!-- const explicitBool: boolean = true -->
+
+  <h3>Implicit (should be identical):</h3>
+  <p>{{ implicitString }}</p>   <!-- const implicitString: string = "test" -->
+  <p>{{ implicitNumber }}</p>   <!-- const implicitNumber: number = 100 -->
+  <p>{{ implicitBool }}</p>     <!-- const implicitBool: boolean = true -->
+</div>
+
+<!-- Test Case 8: Property Access with Implicit Types -->
+@ts
+  interface Product {
+    name: string
+    price: number
+    inStock: boolean
+  }
+
+  const product: Product = { name: "Laptop", price: 999, inStock: true }
+@endts
+
+<div class="test-case">
+  <h2>Property Access</h2>
+  <p>{{ product.name }}</p>     <!-- (property) product.name: string -->
+  <p>{{ product.price }}</p>    <!-- (property) product.price: number -->
+  <p>{{ product.inStock }}</p>  <!-- (property) product.inStock: boolean -->
+</div>
+
+<!-- Test Case 9: Built-in Function Calls -->
+@ts
+  const parsed = parseInt("42")
+  const floated = parseFloat("3.14")
+  const stringified = String(123)
+@endts
+
+<div class="test-case">
+  <h2>Built-in Functions (inferred return types)</h2>
+  <p>{{ parsed }}</p>       <!-- const parsed: number = parseInt("42") -->
+  <p>{{ floated }}</p>      <!-- const floated: number = parseFloat("3.14") -->
+  <p>{{ stringified }}</p>  <!-- const stringified: string = String(123) -->
+</div>
+
+<div style="margin-top: 40px; padding: 20px; background: #e8f4f8; border-left: 4px solid #0066cc;">
+  <h3>✨ All types are now inferred automatically!</h3>
+  <p>The extension now uses <strong>typeof-like logic</strong> to infer types from values:</p>
+  <ul>
+    <li><code>const x = 1</code> → <span class="expected">number</span></li>
+    <li><code>const x = "hi"</code> → <span class="expected">string</span></li>
+    <li><code>const x = true</code> → <span class="expected">boolean</span></li>
+    <li><code>const x = [1, 2]</code> → <span class="expected">number[]</span></li>
+    <li><code>const x = null</code> → <span class="expected">null</span></li>
+  </ul>
+</div>
+
+</body>
+</html>

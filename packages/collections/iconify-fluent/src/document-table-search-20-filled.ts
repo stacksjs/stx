@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const documentTableSearch20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9 15h3.5a.5.5 0 0 0 .5-.5V13H9zm.121 1l1.44 1.44c.163.163.281.355.354.56H14.5a1.5 1.5 0 0 0 1.5-1.5V8h-4.5A1.5 1.5 0 0 1 10 6.5V2H5.5A1.5 1.5 0 0 0 4 3.5v5.527Q4.246 9 4.5 9c.695 0 1.353.157 1.94.439A1.5 1.5 0 0 1 7.5 9h5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5zM13 12v-1.5a.5.5 0 0 0-.5-.5H9v2zm-2-9.75V6.5a.5.5 0 0 0 .5.5h4.25zM7.303 15.596a3.5 3.5 0 1 0-.707.707l2.55 2.55a.5.5 0 1 0 .708-.707zM7 13.5a2.5 2.5 0 1 1-5 0a2.5 2.5 0 0 1 5 0\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default documentTableSearch20Filled

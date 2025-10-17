@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const beakerEdit20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.5 3.5A.5.5 0 0 1 6 3h8a.5.5 0 0 1 0 1h-.996v4.684c0 .58.144 1.15.42 1.66l.41.764l-.891.892H5.685l.89-1.653a3.5 3.5 0 0 0 .42-1.66V4H6a.5.5 0 0 1-.5-.5m4.773 11.17l1.67-1.67H5.146l-.964 1.79a1.5 1.5 0 0 0 1.32 2.212H9.22l.212-.847a3.2 3.2 0 0 1 .84-1.485m.707.707l4.83-4.83a1.87 1.87 0 1 1 2.644 2.646l-4.83 4.829a2.2 2.2 0 0 1-1.02.578l-1.498.374a.89.89 0 0 1-1.079-1.078l.375-1.498a2.2 2.2 0 0 1 .578-1.02\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default beakerEdit20Filled

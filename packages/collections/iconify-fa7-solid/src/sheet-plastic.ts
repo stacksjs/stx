@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const sheetPlastic: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M0 448c0 35.3 28.7 64 64 64h149.5c17 0 33.3-6.7 45.3-18.7l106.5-106.6c12-12 18.7-28.3 18.7-45.3V64c0-35.3-28.7-64-64-64H64C28.7 0 0 28.7 0 64zm208 5.5V360c0-13.3 10.7-24 24-24h93.5zM153 105l-48 48c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l48-48c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9m96 32L137 249c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9L215 103c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z\"/>",
+  "width": 384,
+  "height": 512,
+  "viewBox": "0 0 384 512"
+}
+
+export default sheetPlastic

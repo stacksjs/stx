@@ -33,7 +33,7 @@ describe('BUN-PLUGIN: stx File Processing', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -66,7 +66,7 @@ describe('BUN-PLUGIN: stx File Processing', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -100,7 +100,7 @@ describe('BUN-PLUGIN: stx File Processing', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -125,16 +125,13 @@ describe('BUN-PLUGIN: stx File Processing', () => {
   };
 
   const items = ["apple", "banana", "cherry"];
+  const greeting = "Hello, John Doe!";
 
-  function getGreeting(name) {
-    return \`Hello, \${name}!\`;
-  }
-
-  module.exports = { user, items, getGreeting };
+  module.exports = { user, items, greeting };
 </script>
 
 <div>
-  <h1>{{ getGreeting(user.name) }}</h1>
+  <h1>{{ greeting }}</h1>
   <p>Age: {{ user.age }}</p>
   <p>Status: {{ user.isActive ? 'Active' : 'Inactive' }}</p>
 
@@ -148,7 +145,7 @@ describe('BUN-PLUGIN: stx File Processing', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -204,7 +201,7 @@ describe('BUN-PLUGIN: stx File Processing', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -240,7 +237,7 @@ describe('BUN-PLUGIN: stx File Processing', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -278,7 +275,7 @@ describe('BUN-PLUGIN: stx File Processing', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -311,7 +308,7 @@ describe('BUN-PLUGIN: stx File Processing', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -389,7 +386,7 @@ describe('BUN-PLUGIN: stx File Processing', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)

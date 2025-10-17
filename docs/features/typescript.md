@@ -180,7 +180,7 @@ export interface UIState {
 }
 
 // store.ts
-import { createStore } from '@stx/state'
+import { createStore } from '@stacksjs/state'
 import type { AppState } from './types/store'
 
 const store = createStore<AppState>({
@@ -614,7 +614,7 @@ declare global {
   }
 }
 
-declare module '@stx/core' {
+declare module '@stacksjs/core' {
   interface ComponentInstance {
     $auth: AuthService
     $router: Router
@@ -623,7 +623,7 @@ declare module '@stx/core' {
 }
 
 declare module '*.stx' {
-  import type { ComponentOptions } from '@stx/core'
+  import type { ComponentOptions } from '@stacksjs/core'
   const component: ComponentOptions
   export default component
 }
@@ -638,7 +638,7 @@ export {}
 ```typescript
 // tests/setup.ts
 import { beforeEach } from 'bun:test'
-import type { ComponentWrapper } from '@stx/testing'
+import type { ComponentWrapper } from '@stacksjs/testing'
 
 declare global {
   interface TestContext {
@@ -658,7 +658,7 @@ beforeEach<TestContext>(async (context) => {
 
 ```typescript
 import { test, expect } from 'bun:test'
-import { mount } from '@stx/testing'
+import { mount } from '@stacksjs/testing'
 import type { User } from '@/types'
 import UserCard from '@/components/UserCard.stx'
 

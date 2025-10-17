@@ -1,0 +1,41 @@
+{
+  "name": "@stacksjs/iconify-openmoji",
+  "version": "0.1.15",
+  "description": "OpenMoji icons for stx from Iconify",
+  "author": "OpenMoji",
+  "license": "CC-BY-SA-4.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": "./dist/*"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun build.ts"
+  },
+  "dependencies": {
+    "@stacksjs/iconify-core": "workspace:*"
+  },
+  "keywords": [
+    "iconify",
+    "icons",
+    "svg",
+    "openmoji",
+    "OpenMoji",
+    "stx"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stacksjs/stx.git",
+    "directory": "packages/iconify-openmoji"
+  },
+  "sideEffects": false
+}

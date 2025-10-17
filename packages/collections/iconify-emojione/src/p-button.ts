@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const pButton: IconData = {
+  "body": "<path fill=\"#4fd1d9\" d=\"M62 52c0 5.5-4.5 10-10 10H12C6.5 62 2 57.5 2 52V12C2 6.5 6.5 2 12 2h40c5.5 0 10 4.5 10 10z\"/><path fill=\"#fff\" d=\"M34 12H21v40h7.4V37.5H34c7.2 0 13-5.7 13-12.7C47 17.7 41.2 12 34 12m0 18.2h-5.6V19.3H34c3.1 0 5.6 2.4 5.6 5.5c0 2.9-2.5 5.4-5.6 5.4\"/>",
+  "width": 64,
+  "height": 64,
+  "viewBox": "0 0 64 64"
+}
+
+export default pButton

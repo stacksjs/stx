@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const dataBarVerticalAscending16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12.5 2A1.5 1.5 0 0 1 14 3.5v9a1.5 1.5 0 0 1-3 0v-9A1.5 1.5 0 0 1 12.5 2m-4 3A1.5 1.5 0 0 1 10 6.5v6a1.5 1.5 0 0 1-3 0v-6A1.5 1.5 0 0 1 8.5 5m-4 3A1.5 1.5 0 0 1 6 9.5v3a1.5 1.5 0 0 1-3 0v-3A1.5 1.5 0 0 1 4.5 8\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default dataBarVerticalAscending16Filled

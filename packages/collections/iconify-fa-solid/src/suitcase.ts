@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const suitcase: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M128 480h256V80c0-26.5-21.5-48-48-48H176c-26.5 0-48 21.5-48 48zm64-384h128v32H192zm320 80v256c0 26.5-21.5 48-48 48h-48V128h48c26.5 0 48 21.5 48 48M96 480H48c-26.5 0-48-21.5-48-48V176c0-26.5 21.5-48 48-48h48z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default suitcase

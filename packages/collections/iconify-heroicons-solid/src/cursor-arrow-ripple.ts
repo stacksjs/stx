@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cursorArrowRipple: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M6.111 11.89A5.5 5.5 0 1 1 15.501 8A.75.75 0 1 0 17 8a7 7 0 1 0-11.95 4.95a.75.75 0 0 0 1.06-1.06Zm2.121-5.658a2.5 2.5 0 0 0 0 3.536a.75.75 0 1 1-1.06 1.06A4 4 0 1 1 14 8a.75.75 0 0 1-1.5 0a2.5 2.5 0 0 0-4.268-1.768Zm2.534 1.279a.75.75 0 0 0-1.37.364l-.492 6.861a.75.75 0 0 0 1.204.65l1.043-.799l.985 3.678a.75.75 0 0 0 1.45-.388l-.978-3.646l1.292.204a.75.75 0 0 0 .74-1.16l-3.874-5.764Z\" clip-rule=\"evenodd\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default cursorArrowRipple

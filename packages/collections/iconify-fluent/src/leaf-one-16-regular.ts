@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const leafOne16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.5 13.022V14.5a.5.5 0 0 0 1 0v-1.478a4.886 4.886 0 0 0 2.775-8.486l-2.437-2.2a1.25 1.25 0 0 0-1.676 0l-2.437 2.2A4.886 4.886 0 0 0 7.5 13.022m3.105-7.744A3.886 3.886 0 0 1 8.5 12.015V7.501a.5.5 0 0 0-1 0v4.514a3.886 3.886 0 0 1-2.105-6.737l2.437-2.2a.25.25 0 0 1 .336 0z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default leafOne16Regular

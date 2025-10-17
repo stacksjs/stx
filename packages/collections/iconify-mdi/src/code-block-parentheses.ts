@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const codeBlockParentheses: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11.6 3C13.1 4.3 14 6.1 14 8s-.9 3.7-2.4 5l-1.6-.6c1.3-1 2-2.7 2-4.4s-.7-3.4-2-4.4zM4.4 3l1.6.6C4.7 4.6 4 6.3 4 8s.7 3.4 2 4.4l-1.6.6C2.9 11.7 2 9.9 2 8s.9-3.7 2.4-5M22 6v12c0 1.11-.89 2-2 2H4a2 2 0 0 1-2-2v-3h2v3h16V6h-3.97V4H20c1.11 0 2 .89 2 2\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default codeBlockParentheses

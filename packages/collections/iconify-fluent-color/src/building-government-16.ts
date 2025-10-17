@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const buildingGovernment16: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#70777D\" d=\"M7 2h1v2.5H7z\"/><path fill=\"#F83F54\" d=\"M7 1.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5z\"/><path fill=\"url(#SVGvDby0b2T)\" d=\"M4 8a4 4 0 1 1 8 0v1.5H4z\"/><path fill=\"url(#SVGPZmeJeYP)\" d=\"M4 8a4 4 0 1 1 8 0v1.5H4z\"/><path fill=\"url(#SVGtjUdpMvn)\" d=\"M1 10.5A1.5 1.5 0 0 1 2.5 9h11a1.5 1.5 0 0 1 1.5 1.5v4a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5z\"/><path fill=\"url(#SVGEhnnydjj)\" fill-opacity=\".6\" d=\"M1 10.5A1.5 1.5 0 0 1 2.5 9h11a1.5 1.5 0 0 1 1.5 1.5v4a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5z\"/><path fill=\"#55595E\" d=\"M6.5 12a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3h-3z\"/><path fill=\"#63686E\" d=\"M4.5 11a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0v-1a.5.5 0 0 1 .5-.5m7.5.5a.5.5 0 0 0-1 0v1a.5.5 0 0 0 1 0z\"/><path fill=\"#CA6407\" d=\"M9.5 6a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0v-1a.5.5 0 0 1 .5-.5m-3 0a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0v-1a.5.5 0 0 1 .5-.5\"/><defs><radialGradient id=\"SVGPZmeJeYP\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(0 2.96154 -4.26938 0 10.8 4.846)\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFD638\"/><stop offset=\"1\" stop-color=\"#FFD638\" stop-opacity=\"0\"/></radialGradient><radialGradient id=\"SVGEhnnydjj\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"rotate(97.272 3.1 10.719)scale(3.45637 7.92075)\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFB357\"/><stop offset=\"1\" stop-color=\"#FFB357\" stop-opacity=\"0\"/></radialGradient><linearGradient id=\"SVGvDby0b2T\" x1=\"8\" x2=\"8\" y1=\"4\" y2=\"9.5\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFC205\"/><stop offset=\".735\" stop-color=\"#FFA43D\"/><stop offset=\"1\" stop-color=\"#E67505\"/></linearGradient><linearGradient id=\"SVGtjUdpMvn\" x1=\"6.469\" x2=\"12.675\" y1=\"9\" y2=\"15.664\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#AAB3BD\"/><stop offset=\"1\" stop-color=\"#889096\"/></linearGradient></defs></g>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default buildingGovernment16

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const hardDrive20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 12c0-.398.08-.791.237-1.156l2.414-5.632A2 2 0 0 1 6.489 4h7.104c.742 0 1.43.41 1.763 1.088c.571 1.162 1.633 3.424 2.454 5.774c.13.369.19.754.19 1.138v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm11.593-7H6.49a1 1 0 0 0-.919.606l-1.894 4.42Q3.834 10 4 10h12q.231 0 .447.05a57 57 0 0 0-1.988-4.521a.96.96 0 0 0-.866-.529M16 15a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1zm-1.25-1.25a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default hardDrive20Regular

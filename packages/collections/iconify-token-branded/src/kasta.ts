@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const kasta: IconData = {
+  "body": "<g fill=\"#621EFD\"><path d=\"M3 7.027h1.895v5.637L7.462 9.87h2.17L6.59 13.185l3.041 3.316H7.462l-2.567-2.8v2.8H3zm16.58 9.945a1.42 1.42 0 1 0 0-2.841a1.42 1.42 0 0 0 0 2.841\"/><path fill-rule=\"evenodd\" d=\"M17.21 16.973V13.42c0-1.184-.681-3.552-3.41-3.552c-3.046 0-3.695 2.695-3.695 3.552c0 1.023.569 3.553 3.207 3.553c1.545 0 1.961-1.142 2.004-1.307v1.307zm-3.552-1.895a1.658 1.658 0 1 0 0-3.316a1.658 1.658 0 0 0 0 3.316\" clip-rule=\"evenodd\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default kasta

@@ -3,13 +3,18 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
 
+import { createCodeActionsProvider } from './providers/codeActionsProvider'
 import { createCompletionProvider } from './providers/completionProvider'
 import { createDefinitionProvider } from './providers/definitionProvider'
+import { createDiagnosticsProvider } from './providers/diagnosticsProvider'
 import { createDocumentLinkProvider } from './providers/documentLinkProvider'
+import { createFoldingRangeProvider } from './providers/foldingProvider'
 import { createHoverProvider } from './providers/hoverProvider'
+import { createPathCompletionProvider } from './providers/pathCompletionProvider'
+import { createSemanticTokensProvider, legend } from './providers/semanticTokensProvider'
 import { VirtualTsDocumentProvider } from './providers/virtualTsDocumentProvider'
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   // Create virtual TypeScript files for each stx and MD file to support language features
   const virtualTsDocumentProvider = new VirtualTsDocumentProvider()
   console.log('stx Extension - Activating')
@@ -77,9 +82,47 @@ export function activate(context: vscode.ExtensionContext) {
     ',', // Trigger on comma
   )
 
+  // Register path completion provider for @include and @component
+  const pathCompletionProvider = vscode.languages.registerCompletionItemProvider(
+    'stx',
+    createPathCompletionProvider(),
+    '/', // Trigger on forward slash for path navigation
+    '\'', // Trigger on quote
+    '"', // Trigger on double-quote
+  )
+
   // Register the virtual document provider
   context.subscriptions.push(
     vscode.workspace.registerTextDocumentContentProvider('stx-ts', virtualTsDocumentProvider),
+  )
+
+  // Create diagnostics provider for syntax validation
+  createDiagnosticsProvider(context)
+
+  // Register code actions provider for quick fixes
+  const codeActionsProvider = vscode.languages.registerCodeActionsProvider(
+    'stx',
+    createCodeActionsProvider(),
+    {
+      providedCodeActionKinds: [
+        vscode.CodeActionKind.QuickFix,
+        vscode.CodeActionKind.RefactorRewrite,
+        vscode.CodeActionKind.RefactorExtract,
+      ],
+    },
+  )
+
+  // Register folding range provider
+  const foldingRangeProvider = vscode.languages.registerFoldingRangeProvider(
+    'stx',
+    createFoldingRangeProvider(),
+  )
+
+  // Register semantic tokens provider for enhanced syntax highlighting
+  const semanticTokensProvider = vscode.languages.registerDocumentSemanticTokensProvider(
+    'stx',
+    createSemanticTokensProvider(),
+    legend,
   )
 
   // Track document changes
@@ -169,7 +212,25 @@ export function activate(context: vscode.ExtensionContext) {
     documentLinkProvider,
     atTriggerCompletionProvider,
     parameterCompletionProvider,
+    pathCompletionProvider,
+    codeActionsProvider,
+    foldingRangeProvider,
+    semanticTokensProvider,
   )
+
+  // Activate UnoCSS features for utility class highlighting and color previews
+  // NOTE: UnoCSS features require additional dependencies (@unocss/core, @unocss/preset-uno, etc.)
+  // Uncomment the following code block to enable UnoCSS features after installing dependencies:
+  /*
+  try {
+    const unocssModule = await import('./styles-uno/index')
+    await unocssModule.activate(context)
+    console.log('stx Extension - UnoCSS features activated')
+  }
+  catch (error) {
+    console.log('stx Extension - UnoCSS features not available:', error)
+  }
+  */
 
   console.log('stx language support activated (with Markdown frontmatter support)')
 }

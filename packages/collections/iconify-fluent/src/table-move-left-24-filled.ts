@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tableMoveLeft24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16 21h1.75A3.25 3.25 0 0 0 21 17.75V16h-5zm0-6.5h5v-5h-5zm-5.518-5H14.5v5h-4.018c.036-.25.018-.506-.054-.75h.822a1.75 1.75 0 1 0 0-3.5h-.822c.072-.244.09-.5.054-.75M16 8h5V6.25A3.25 3.25 0 0 0 17.75 3H16zm-1.5-5v5h-5V3.75a.75.75 0 0 1 .75-.75zm0 13v5h-4.25a.75.75 0 0 1-.75-.75V16zM4.5 3.75a.75.75 0 0 0-1.5 0v16.5a.75.75 0 0 0 1.5 0zm4.748 5.44a.75.75 0 0 1 .063 1.058l-.89 1.002h2.829a.75.75 0 0 1 0 1.5H8.42l.89 1.002a.75.75 0 0 1-1.12.996l-2-2.25a.75.75 0 0 1 0-.996l2-2.25a.75.75 0 0 1 1.058-.063\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default tableMoveLeft24Filled

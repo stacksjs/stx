@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const borderTopBottomThick20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.121 5.522A1 1 0 0 1 6 5h8a1 1 0 0 1 .879.522l.006-.004a1 1 0 1 0 1.62-1.162l.003-.003A3 3 0 0 0 14 3H6a3 3 0 0 0-2.508 1.353l.004.003a1 1 0 1 0 1.62 1.162zm0 8.956A1 1 0 0 0 6 15h8a1 1 0 0 0 .879-.522l.006.004a1 1 0 1 1 1.62 1.162l.003.003A3 3 0 0 1 14 17H6a3 3 0 0 1-2.508-1.353l.004-.002a1 1 0 1 1 1.62-1.162zM4 12a1 1 0 0 1-1-1V9a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1m11-1a1 1 0 0 0 2 0V9a1 1 0 1 0-2 0z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default borderTopBottomThick20Filled

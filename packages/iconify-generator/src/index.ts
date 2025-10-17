@@ -1,0 +1,823 @@
+/* eslint-disable no-console */
+import type { IconData } from '@stacksjs/iconify-core'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
+
+export interface IconifyCollection {
+  prefix: string
+  name: string
+  total: number
+  author?: {
+    name: string
+    url?: string
+  }
+  license?: {
+    title: string
+    spdx: string
+    url?: string
+  }
+  height?: number
+  category?: string
+  palette?: boolean
+}
+
+export interface IconifyIconData {
+  body: string
+  width?: number
+  height?: number
+  left?: number
+  top?: number
+  rotate?: number
+  hFlip?: boolean
+  vFlip?: boolean
+}
+
+export interface IconifyCollectionData {
+  prefix: string
+  lastModified: number
+  icons: Record<string, IconifyIconData>
+  aliases?: Record<string, {
+    parent: string
+    hFlip?: boolean
+    vFlip?: boolean
+    rotate?: number
+  }>
+  width?: number
+  height?: number
+}
+
+const ICONIFY_API = 'https://api.iconify.design'
+
+/**
+ * Fetch available icon collections from Iconify
+ */
+export async function fetchCollections(): Promise<Record<string, IconifyCollection>> {
+  const response = await fetch(`${ICONIFY_API}/collections`)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch collections: ${response.statusText}`)
+  }
+  return await response.json()
+}
+
+/**
+ * Fetch icons from a specific collection
+ */
+export async function fetchCollectionIcons(
+  prefix: string,
+  icons?: string[],
+): Promise<IconifyCollectionData> {
+  // Try to load from @iconify/json package first
+  try {
+    const iconifyJsonPath = require.resolve('@iconify/json')
+    // The resolve gives us the main module path, get the package directory
+    const basePath = `${iconifyJsonPath.substring(0, iconifyJsonPath.lastIndexOf('/node_modules/@iconify/json/'))}/node_modules/@iconify/json`
+    const jsonPath = `${basePath}/json/${prefix}.json`
+
+    const file = Bun.file(jsonPath)
+    if (await file.exists()) {
+      const data: IconifyCollectionData = await file.json()
+
+      // If specific icons are requested, filter them
+      if (icons && icons.length > 0) {
+        const filteredIcons: Record<string, IconifyIconData> = {}
+        for (const iconName of icons) {
+          if (data.icons[iconName]) {
+            filteredIcons[iconName] = data.icons[iconName]
+          }
+        }
+        return {
+          ...data,
+          icons: filteredIcons,
+        }
+      }
+
+      return data
+    }
+  }
+  catch {
+    // Fall through to API if local file not found
+  }
+
+  // Fallback to API (only works for specific icons, not full collections)
+  const url = icons && icons.length > 0
+    ? `${ICONIFY_API}/${prefix}.json?icons=${icons.join(',')}`
+    : `${ICONIFY_API}/${prefix}.json`
+
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch icons for ${prefix}: ${response.statusText}`)
+  }
+  return await response.json()
+}
+
+/**
+ * Convert Iconify icon data to our IconData format
+ */
+export function convertIconData(data: IconifyIconData, defaultWidth = 24, defaultHeight = 24): IconData {
+  return {
+    body: data.body,
+    width: data.width || defaultWidth,
+    height: data.height || defaultHeight,
+    viewBox: `0 0 ${data.width || defaultWidth} ${data.height || defaultHeight}`,
+  }
+}
+
+/**
+ * Generate TypeScript icon data file
+ */
+export function generateIconData(
+  name: string,
+  iconData: IconData,
+): string {
+  const camelCaseName = toCamelCase(name)
+
+  return `import type { IconData } from '@stacksjs/iconify-core'
+
+export const ${camelCaseName}: IconData = ${JSON.stringify(iconData, null, 2)}
+
+export default ${camelCaseName}
+`
+}
+
+/**
+ * Generate stx icon component file
+ */
+export function generateIconComponent(
+  _name: string,
+  iconData: IconData,
+): string {
+  return `<script>
+// Get props with defaults (handle undefined)
+const iconWidth = (typeof width !== 'undefined' ? width : null) || (typeof size !== 'undefined' ? size : null) || ${iconData.width || 24}
+const iconHeight = (typeof height !== 'undefined' ? height : null) || (typeof size !== 'undefined' ? size : null) || ${iconData.height || 24}
+const iconColor = typeof color !== 'undefined' ? color : 'currentColor'
+const viewBox = "${iconData.viewBox || `0 0 ${iconData.width || 24} ${iconData.height || 24}`}"
+
+// Build transform
+const transforms = []
+if (typeof hFlip !== 'undefined' && hFlip) transforms.push('scaleX(-1)')
+if (typeof vFlip !== 'undefined' && vFlip) transforms.push('scaleY(-1)')
+if (typeof rotate !== 'undefined' && rotate) {
+  const rotateNum = typeof rotate === 'string' ? parseInt(rotate, 10) : rotate
+  const deg = typeof rotateNum === 'number' && rotateNum < 4 ? rotateNum * 90 : rotateNum
+  transforms.push(\`rotate(\${deg}deg)\`)
+}
+
+const transform = transforms.length > 0 ? transforms.join(' ') : ''
+const transformStyle = transform ? \`transform: \${transform};\` : ''
+
+// Build style
+const styles = []
+if (transformStyle) styles.push(transformStyle)
+if (typeof style !== 'undefined' && style) styles.push(style)
+
+const styleAttr = styles.length > 0 ? \` style="\${styles.join(' ')}"\` : ''
+const classAttr = typeof className !== 'undefined' && className ? \` class="\${className}"\` : ''
+
+// Icon body
+let body = ${JSON.stringify(iconData.body)}
+if (iconColor && iconColor !== 'currentColor') {
+  body = body.replace(/currentColor/g, iconColor)
+}
+
+// Generate SVG
+const svg = \`<svg xmlns="http://www.w3.org/2000/svg" width="\${iconWidth}" height="\${iconHeight}" viewBox="\${viewBox}"\${classAttr}\${styleAttr}>\${body}</svg>\`
+</script>
+
+{!! svg !!}
+`
+}
+
+/**
+ * Generate index file for a collection
+ */
+export function generateIndexFile(iconNames: string[]): string {
+  const dataExports = iconNames.map((name) => {
+    const camelCaseName = toCamelCase(name)
+    return `export { default as ${camelCaseName} } from './${name}.js'`
+  }).join('\n')
+
+  return `// Icon data exports
+${dataExports}
+
+export * from './types.js'
+`
+}
+
+/**
+ * Generate types file
+ */
+export function generateTypesFile(prefix: string): string {
+  return `import type { IconData, IconProps } from '@stacksjs/iconify-core'
+
+export type { IconData, IconProps }
+
+export type ${toPascalCase(prefix)}Icon = IconData
+`
+}
+
+/**
+ * Generate package.json for a collection
+ */
+export function generatePackageJson(
+  prefix: string,
+  collectionInfo: IconifyCollection,
+  _iconCount: number,
+): string {
+  const packageJson = {
+    name: `@stacksjs/iconify-${prefix}`,
+    type: 'module',
+    version: '0.0.1',
+    description: `${collectionInfo.name} icons for stx from Iconify`,
+    author: collectionInfo.author?.name || 'Iconify',
+    license: collectionInfo.license?.spdx || 'MIT',
+    repository: {
+      type: 'git',
+      url: 'https://github.com/stacksjs/stx.git',
+      directory: `packages/iconify-${prefix}`,
+    },
+    keywords: [
+      'iconify',
+      'icons',
+      'svg',
+      prefix,
+      collectionInfo.name,
+      'stx',
+    ],
+    sideEffects: false,
+    exports: {
+      '.': {
+        types: './dist/index.d.ts',
+        import: './dist/index.js',
+      },
+      './*': './dist/*',
+    },
+    main: './dist/index.js',
+    module: './dist/index.js',
+    types: './dist/index.d.ts',
+    files: [
+      'dist',
+    ],
+    scripts: {
+      build: 'bun build.ts',
+    },
+    dependencies: {
+      '@stacksjs/iconify-core': 'workspace:*',
+    },
+  }
+
+  return JSON.stringify(packageJson, null, 2)
+}
+
+/**
+ * Generate build.ts file for a collection
+ */
+export function generateBuildFile(prefix: string): string {
+  return `import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import dts from 'bun-plugin-dtsx'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+await Bun.build({
+  entrypoints: [join(__dirname, 'src/index.ts')],
+  outdir: join(__dirname, 'dist'),
+  target: 'bun',
+  format: 'esm',
+  plugins: [dts()],
+  minify: false,
+  sourcemap: 'external',
+  splitting: true,
+})
+
+console.log('✓ Built @stacksjs/iconify-${prefix}')
+`
+}
+
+/**
+ * Generate README for a collection
+ */
+export function generateReadme(
+  prefix: string,
+  collectionInfo: IconifyCollection,
+  iconCount: number,
+): string {
+  return `# @stacksjs/iconify-${prefix}
+
+${collectionInfo.name} icons for stx from Iconify.
+
+## Installation
+
+\`\`\`bash
+bun add @stacksjs/iconify-${prefix}
+\`\`\`
+
+## Usage
+
+### In stx templates
+
+\`\`\`html
+<script>
+  import { home } from '@stacksjs/iconify-${prefix}'
+  import { renderIcon } from '@stacksjs/iconify-core'
+
+  export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
+</script>
+
+<div class="icon">
+  {!! homeIcon !!}
+</div>
+\`\`\`
+
+### In TypeScript/JavaScript
+
+\`\`\`typescript
+import { home, account, settings } from '@stacksjs/iconify-${prefix}'
+import { renderIcon } from '@stacksjs/iconify-core'
+
+const svg = renderIcon(home, {
+  size: 24,
+  color: '#000000',
+})
+\`\`\`
+
+## Available Icons
+
+This package contains ${iconCount} icons from ${collectionInfo.name}.
+
+## License
+
+${collectionInfo.license?.title || 'MIT'}
+
+${collectionInfo.license?.url ? `License: ${collectionInfo.license.url}` : ''}
+
+## Credits
+
+- Icons: ${collectionInfo.author?.name || 'Iconify'}${collectionInfo.author?.url ? ` (${collectionInfo.author.url})` : ''}
+- Iconify: https://iconify.design/
+`
+}
+
+/**
+ * Generate documentation file for a collection
+ */
+export function generateDocumentation(
+  prefix: string,
+  collectionInfo: IconifyCollection,
+  iconNames: string[],
+): string {
+  const iconCount = iconNames.length
+  const exampleIcons = iconNames.slice(0, 5).map(toCamelCase)
+  const exampleComponents = exampleIcons.map(name => `${name.charAt(0).toUpperCase()}${name.slice(1)}Icon`)
+
+  // Generate full icon list
+  const allIconsList = iconNames.map((name) => {
+    const camelName = toCamelCase(name)
+    return `- \`${camelName}\``
+  }).join('\n')
+
+  return `# ${collectionInfo.name}
+
+> ${collectionInfo.name} icons for stx from Iconify
+
+## Overview
+
+This package provides access to ${iconCount} icons from the ${collectionInfo.name} collection through the stx iconify integration.
+
+**Collection ID:** \`${prefix}\`
+**Total Icons:** ${iconCount}
+${collectionInfo.author?.name ? `**Author:** ${collectionInfo.author.name}${collectionInfo.author.url ? ` ([Website](${collectionInfo.author.url}))` : ''}` : ''}
+${collectionInfo.license?.title ? `**License:** ${collectionInfo.license.title}${collectionInfo.license.url ? ` ([Details](${collectionInfo.license.url}))` : ''}` : ''}
+${collectionInfo.category ? `**Category:** ${collectionInfo.category}` : ''}
+${collectionInfo.palette !== undefined ? `**Palette:** ${collectionInfo.palette ? 'Yes (color icons)' : 'No (monotone icons)'}` : ''}
+
+## Installation
+
+\`\`\`bash
+bun add @stacksjs/iconify-${prefix}
+\`\`\`
+
+## Quick Start
+
+### Component Usage (Recommended)
+
+Icons are available as .stx components that can be used directly in templates:
+
+\`\`\`html
+<${exampleComponents[0] || 'Icon'} height="1em" />
+<${exampleComponents[0] || 'Icon'} width="1em" height="1em" />
+<${exampleComponents[0] || 'Icon'} height="24" />
+\`\`\`
+
+### With Properties
+
+\`\`\`html
+<!-- Using size property -->
+<${exampleComponents[0] || 'Icon'} size="24" />
+<${exampleComponents[0] || 'Icon'} size="1em" />
+
+<!-- Using width and height -->
+<${exampleComponents[0] || 'Icon'} width="24" height="32" />
+
+<!-- With color -->
+<${exampleComponents[0] || 'Icon'} size="24" color="red" />
+<${exampleComponents[0] || 'Icon'} size="24" color="#4a90e2" />
+
+<!-- With CSS class -->
+<${exampleComponents[0] || 'Icon'} size="24" class="icon-primary" />
+
+<!-- With all properties -->
+<${exampleComponents[0] || 'Icon'}
+  size="32"
+  color="#4a90e2"
+  class="my-icon"
+  style="opacity: 0.8;"
+/>
+\`\`\`
+
+### In stx Templates
+
+\`\`\`html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Demo</title>
+  <style>
+    .icon-grid {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-grid">
+    <${exampleComponents[0] || 'Icon'} size="24" />
+    <${exampleComponents[1] || 'Icon'} size="24" color="#4a90e2" />
+    <${exampleComponents[2] || 'Icon'} size="32" class="my-icon" />
+  </div>
+</body>
+</html>
+\`\`\`
+
+### Data-Only Import
+
+You can also import icon data and use the \`renderIcon\` function directly:
+
+\`\`\`typescript
+import { ${exampleIcons.slice(0, 3).join(', ')} } from '@stacksjs/iconify-${prefix}'
+import { renderIcon } from '@stacksjs/iconify-core'
+
+const svg = renderIcon(${exampleIcons[0] || 'icon'}, { size: 24 })
+\`\`\`
+
+## Icon Properties
+
+All icon component functions and \`renderIcon\` accept the following properties:
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| \`size\` | \`string \\| number\` | - | Icon size (sets both width and height) |
+| \`width\` | \`string \\| number\` | - | Icon width (overrides size) |
+| \`height\` | \`string \\| number\` | - | Icon height (overrides size) |
+| \`color\` | \`string\` | \`'currentColor'\` | Icon color (CSS color or hex) |
+| \`hFlip\` | \`boolean\` | \`false\` | Flip horizontally |
+| \`vFlip\` | \`boolean\` | \`false\` | Flip vertically |
+| \`rotate\` | \`0 \\| 90 \\| 180 \\| 270\` | \`0\` | Rotation in degrees |
+| \`class\` | \`string\` | - | Additional CSS classes |
+| \`style\` | \`string\` | - | Inline styles |
+
+## Color
+
+${collectionInfo.palette ? '### Color Icons\n\nThis collection contains color icons. While you can still set a color property, it may override the original colors.' : '### Monotone Icons\n\nMonotone icons use \`currentColor\` by default, allowing you to change icon color via the \`color\` property or CSS:'}
+
+\`\`\`html
+<!-- Via color property -->
+<${exampleComponents[0] || 'Icon'} size="24" color="red" />
+<${exampleComponents[0] || 'Icon'} size="24" color="#4a90e2" />
+
+<!-- Via inline style -->
+<${exampleComponents[0] || 'Icon'} size="24" style="color: green;" />
+
+<!-- Via CSS class -->
+<${exampleComponents[0] || 'Icon'} size="24" class="text-primary" />
+\`\`\`
+
+${!collectionInfo.palette
+  ? `\`\`\`css
+/* In your CSS */
+.text-primary {
+  color: #4a90e2;
+}
+
+.icon:hover {
+  color: #357abd;
+}
+\`\`\``
+  : ''}
+
+## Size
+
+Unlike other components, SVG + CSS components do not set icon size by default. This has advantages and disadvantages.
+
+**Disadvantages:**
+- You need to set size yourself.
+
+**Advantages:**
+- You have full control over icon size.
+
+You can change icon size by:
+- Setting \`width\` and \`height\` properties
+- Using CSS
+
+### Properties
+
+All icon components support \`width\` and \`height\` properties.
+
+Value is a string or number.
+
+You do not need to set both properties. If you set one property, the other property will automatically be calculated from the icon's width/height ratio.
+
+**Examples:**
+
+\`\`\`html
+<${exampleComponents[0] || 'DraftsIcon'} height="1em" />
+<${exampleComponents[0] || 'DraftsIcon'} width="1em" height="1em" />
+<${exampleComponents[0] || 'DraftsIcon'} height="24" />
+\`\`\`
+
+You can also use the \`size\` property as a shorthand for setting both width and height:
+
+\`\`\`html
+<${exampleComponents[0] || 'DraftsIcon'} size="24" />
+<${exampleComponents[0] || 'DraftsIcon'} size="1em" />
+\`\`\`
+
+### CSS Sizing
+
+You can also control icon size via CSS:
+
+\`\`\`css
+.${toCamelCase(prefix)}-icon {
+  width: 1em;
+  height: 1em;
+}
+\`\`\`
+
+\`\`\`html
+<${exampleComponents[0] || 'DraftsIcon'} class="${toCamelCase(prefix)}-icon" />
+\`\`\`
+
+## Available Icons
+
+This package contains **${iconCount}** icons:
+
+${allIconsList}
+
+## Usage Examples
+
+### Navigation Menu
+
+\`\`\`html
+<nav>
+  <a href="/"><${exampleComponents[0] || 'Icon'} size="20" class="nav-icon" /> Home</a>
+  <a href="/about"><${exampleComponents[1] || 'Icon'} size="20" class="nav-icon" /> About</a>
+  <a href="/contact"><${exampleComponents[2] || 'Icon'} size="20" class="nav-icon" /> Contact</a>
+  <a href="/settings"><${exampleComponents[3] || 'Icon'} size="20" class="nav-icon" /> Settings</a>
+</nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .nav-icon {
+    color: currentColor;
+  }
+</style>
+\`\`\`
+
+### Custom Styling
+
+\`\`\`html
+<${exampleComponents[0] || 'Icon'}
+  size="24"
+  class="icon icon-primary"
+  style="opacity: 0.8; transition: opacity 0.2s;"
+/>
+
+<style>
+  .icon-primary {
+    color: #4a90e2;
+  }
+  .icon-primary:hover {
+    opacity: 1;
+  }
+</style>
+\`\`\`
+
+### Status Indicators
+
+\`\`\`html
+<div class="status-grid">
+  <div class="status-item">
+    <${exampleComponents[0] || 'Icon'} size="16" color="#22c55e" />
+    <span>Success</span>
+  </div>
+  <div class="status-item">
+    <${exampleComponents[1] || 'Icon'} size="16" color="#f59e0b" />
+    <span>Warning</span>
+  </div>
+  <div class="status-item">
+    <${exampleComponents[2] || 'Icon'} size="16" color="#ef4444" />
+    <span>Error</span>
+  </div>
+</div>
+\`\`\`
+
+## Best Practices
+
+1. **Use Components Directly**: Import and use icon components in your templates
+   \`\`\`html
+   <!-- Recommended -->
+   <${exampleComponents[0] || 'Icon'} size="24" />
+   <${exampleComponents[1] || 'Icon'} size="24" color="#4a90e2" />
+   \`\`\`
+
+2. **Use CSS for Theming**: Apply consistent styling through CSS classes
+   \`\`\`css
+   .icon {
+     color: currentColor;
+     opacity: 0.8;
+     transition: opacity 0.2s;
+   }
+
+   .icon:hover {
+     opacity: 1;
+   }
+   \`\`\`
+
+   \`\`\`html
+   <${exampleComponents[0] || 'Icon'} size="24" class="icon" />
+   \`\`\`
+
+3. **Set Appropriate Sizes**: Use \`1em\` for inline icons, fixed pixel sizes for standalone icons
+   \`\`\`html
+   <!-- Inline with text -->
+   <p>Click the <${exampleComponents[0] || 'Icon'} height="1em" /> icon to continue</p>
+
+   <!-- Standalone -->
+   <${exampleComponents[0] || 'Icon'} size="24" />
+   \`\`\`
+
+4. **Use Data Import for Advanced Use Cases**: When you need more control
+   \`\`\`html
+   @js
+     import { ${exampleIcons[0] || 'icon'} } from '@stacksjs/iconify-${prefix}'
+     import { renderIcon } from '@stacksjs/iconify-core'
+     global.customIcon = renderIcon(${exampleIcons[0] || 'icon'}, { size: 24 })
+   @endjs
+
+   {!! customIcon !!}
+   \`\`\`
+
+## TypeScript Support
+
+This package includes full TypeScript support with type definitions for all icons.
+
+\`\`\`typescript
+import type { IconData } from '@stacksjs/iconify-core'
+import { ${exampleIcons[0] || 'icon'} } from '@stacksjs/iconify-${prefix}'
+
+// Icons are typed as IconData
+const myIcon: IconData = ${exampleIcons[0] || 'icon'}
+\`\`\`
+
+## Related Packages
+
+- [\`@stacksjs/iconify-core\`](../iconify#installation) - Core rendering functions and utilities
+- [Iconify Integration Guide](../iconify) - Complete guide to using Iconify with stx
+- [stx Documentation](../) - Main stx documentation
+
+## License
+
+${collectionInfo.license?.title || 'MIT'}
+
+${collectionInfo.license?.url ? `See [license details](${collectionInfo.license.url}) for more information.` : ''}
+
+## Credits
+
+- **Icons**: ${collectionInfo.author?.name || 'Iconify'}${collectionInfo.author?.url ? ` ([Website](${collectionInfo.author.url}))` : ''}
+- **Iconify**: [https://iconify.design/](https://iconify.design/)
+- **Icon Set**: [View on Iconify](https://icon-sets.iconify.design/${prefix}/)
+
+## Resources
+
+- [Browse all icons in this collection](https://icon-sets.iconify.design/${prefix}/)
+- [Iconify documentation](https://iconify.design/docs/)
+- [stx iconify integration guide](../../docs/iconify.md)
+`
+}
+
+/**
+ * Generate a complete icon package
+ */
+export async function generatePackage(
+  prefix: string,
+  outputDir: string,
+  icons?: string[],
+  docsDir?: string,
+): Promise<void> {
+  console.log(`\n📦 Generating package for ${prefix}...`)
+
+  // Fetch collection info
+  const collections = await fetchCollections()
+  const collectionInfo = collections[prefix]
+
+  if (!collectionInfo) {
+    throw new Error(`Collection ${prefix} not found`)
+  }
+
+  console.log(`   Collection: ${collectionInfo.name}`)
+  console.log(`   Total icons: ${collectionInfo.total}`)
+
+  // Fetch icons
+  const collectionData = await fetchCollectionIcons(prefix, icons)
+  const iconNames = Object.keys(collectionData.icons)
+
+  console.log(`   Generating ${iconNames.length} icons...`)
+
+  // Create package directory structure
+  const packageDir = join(outputDir, `iconify-${prefix}`)
+  const srcDir = join(packageDir, 'src')
+
+  await mkdir(srcDir, { recursive: true })
+
+  // Generate icon files
+  const defaultWidth = collectionData.width || 24
+  const defaultHeight = collectionData.height || 24
+
+  for (const iconName of iconNames) {
+    const iconData = collectionData.icons[iconName]
+    const converted = convertIconData(iconData, defaultWidth, defaultHeight)
+
+    // Generate data file (.ts)
+    const dataFile = generateIconData(iconName, converted)
+    await writeFile(join(srcDir, `${iconName}.ts`), dataFile)
+
+    // Generate component file (.stx) with -icon suffix for PascalCase component names
+    const componentFile = generateIconComponent(iconName, converted)
+    await writeFile(join(srcDir, `${iconName}-icon.stx`), componentFile)
+  }
+
+  // Generate index file
+  const indexContent = generateIndexFile(iconNames)
+  await writeFile(join(srcDir, 'index.ts'), indexContent)
+
+  // Generate types file
+  const typesContent = generateTypesFile(prefix)
+  await writeFile(join(srcDir, 'types.ts'), typesContent)
+
+  // Generate package.json
+  const packageJsonContent = generatePackageJson(prefix, collectionInfo, iconNames.length)
+  await writeFile(join(packageDir, 'package.json'), packageJsonContent)
+
+  // Generate build file
+  const buildContent = generateBuildFile(prefix)
+  await writeFile(join(packageDir, 'build.ts'), buildContent)
+
+  // Generate README
+  const readmeContent = generateReadme(prefix, collectionInfo, iconNames.length)
+  await writeFile(join(packageDir, 'README.md'), readmeContent)
+
+  // Generate documentation if docsDir is provided
+  if (docsDir) {
+    const docsPath = join(docsDir, `iconify-${prefix}.md`)
+    const docContent = generateDocumentation(prefix, collectionInfo, iconNames)
+    await mkdir(docsDir, { recursive: true })
+    await writeFile(docsPath, docContent)
+    console.log(`   ✓ Generated documentation in ${docsPath}`)
+  }
+
+  console.log(`   ✓ Generated ${iconNames.length} icons in ${packageDir}`)
+}
+
+/**
+ * Convert kebab-case to camelCase
+ */
+export function toCamelCase(str: string): string {
+  return str.replace(/-([a-z0-9])/g, g => g[1].toUpperCase())
+}
+
+/**
+ * Convert kebab-case to PascalCase
+ */
+export function toPascalCase(str: string): string {
+  const camel = toCamelCase(str)
+  return camel.charAt(0).toUpperCase() + camel.slice(1)
+}

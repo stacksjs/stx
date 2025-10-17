@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const dropmark: IconData = {
+  "body": "<defs><path id=\"SVGAb6rGccK\" d=\"M128 0S0 91.067 0 219.067c0 70.704 57.296 128 128 128s128-57.296 128-128C256 91.067 128 0 128 0m0 293.312l-68.68-79.051h30.61v-90.308h76.142v90.308h30.609z\"/></defs><use fill=\"#38DEDF\" href=\"#SVGAb6rGccK\"/>",
+  "width": 256,
+  "height": 348,
+  "viewBox": "0 0 256 348"
+}
+
+export default dropmark

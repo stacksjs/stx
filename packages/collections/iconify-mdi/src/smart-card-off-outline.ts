@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const smartCardOffOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M19 13h-2.8L15 11.8V10h4zm3-10H6.2l2 2H22v13.8l1.5 1.49c.29-.35.5-.79.5-1.29V5a2.074 2.074 0 0 0-2-2m.11 18.46l-1.27 1.27L19.11 21H2a2.07 2.07 0 0 1-2-2V5a2.08 2.08 0 0 1 1.27-1.84L1.11 3l1.28-1.27zm-5-2.46L14 15.89V17H4v-1.25c0-1.66 3.34-2.5 5-2.5c.78 0 1.91.19 2.91.55l-2-2c-.28.12-.58.2-.91.2a2.5 2.5 0 0 1-2.5-2.5c0-.33.08-.63.2-.91L3.11 5H2v14z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default smartCardOffOutline

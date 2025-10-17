@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const variablesOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M19 17v-3h-3v-2h3V9h2v3h3v2h-3v3h-2ZM3 14V4h18v3h-2V6H5v6h9v2H3Zm2-4V6v6v-2Z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default variablesOutline

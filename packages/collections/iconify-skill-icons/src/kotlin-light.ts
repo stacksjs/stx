@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const kotlinLight: IconData = {
+  "body": "<g fill=\"none\"><rect width=\"256\" height=\"256\" fill=\"#F4F2ED\" rx=\"60\"/><path fill=\"url(#SVG0uhxOdCt)\" d=\"M218 218H38V38h180l-90 90z\"/><defs><linearGradient id=\"SVG0uhxOdCt\" x1=\"218\" x2=\"38\" y1=\"38\" y2=\"218\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".003\" stop-color=\"#E44857\"/><stop offset=\".469\" stop-color=\"#C711E1\"/><stop offset=\"1\" stop-color=\"#7F52FF\"/></linearGradient></defs></g>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default kotlinLight

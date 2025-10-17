@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const imageShadow24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.25 2A3.25 3.25 0 0 0 2 5.25v9c0 .641.186 1.24.506 1.743l5.701-5.37a2.25 2.25 0 0 1 3.086 0l5.7 5.37a3.23 3.23 0 0 0 .507-1.743v-9A3.25 3.25 0 0 0 14.25 2zm7.5 6a1.25 1.25 0 1 1 0-2.5a1.25 1.25 0 0 1 0 2.5m-7.5 9.5c-.61 0-1.18-.168-1.668-.46l5.654-5.325a.75.75 0 0 1 1.028 0l5.654 5.325a3.24 3.24 0 0 1-1.668.46zm1.249 1.25v-.25H14.5a4 4 0 0 0 4-4v-8h.249a3.25 3.25 0 0 1 3.25 3.25v7c0 2.9-2.35 5.25-5.25 5.25h-7a3.25 3.25 0 0 1-3.25-3.25\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default imageShadow24Filled

@@ -28,7 +28,7 @@ export class TemplateCache {
   private maxSize: number
   private ttl: number // Time to live in milliseconds
 
-  constructor(maxSize = 1000, ttl = 5 * 60 * 1000) { // 5 minutes default TTL
+  constructor(maxSize = 1000, ttl: number = 5 * 60 * 1000) { // 5 minutes default TTL
     this.maxSize = maxSize
     this.ttl = ttl
   }
@@ -177,7 +177,7 @@ export function memoize<T extends (...args: any[]) => any>(
 }
 
 /**
- * Optimized string replacement that reuses regex patterns
+ * Optimized string replacement that reuses regex patterns with case-preserving support
  */
 export function optimizedReplace(
   text: string,
@@ -187,6 +187,27 @@ export function optimizedReplace(
 ): string {
   if (typeof pattern === 'string') {
     const regex = getCachedRegex(pattern, flags)
+
+    // If replacement is a string and case-insensitive flag is set, preserve case
+    if (typeof replacement === 'string' && flags?.includes('i')) {
+      const replacementStr = replacement
+      return text.replace(regex, (match: string) => {
+        // Detect the case of the original match
+        if (match === match.toUpperCase() && match !== match.toLowerCase()) {
+          // All uppercase (but not all same case like numbers)
+          return replacementStr.toUpperCase()
+        }
+        else if (match[0] === match[0].toUpperCase() && match[0] !== match[0].toLowerCase()) {
+          // First letter capitalized
+          return replacementStr[0].toUpperCase() + replacementStr.slice(1).toLowerCase()
+        }
+        else {
+          // All lowercase or no case
+          return replacementStr.toLowerCase()
+        }
+      })
+    }
+
     return text.replace(regex, replacement as any)
   }
 
@@ -201,7 +222,9 @@ class ExpressionEvaluatorPool {
   private maxPoolSize = 10
 
   getEvaluator(contextKeys: string[]): (...args: any[]) => any {
-    const contextSignature = contextKeys.sort().join(',')
+    // Deduplicate keys to avoid "duplicate parameter name" errors in strict mode
+    const uniqueKeys = Array.from(new Set(contextKeys))
+    const contextSignature = uniqueKeys.sort().join(',')
 
     // Try to find a reusable evaluator
     const reusable = this.pool.find(item => item.context.join(',') === contextSignature)
@@ -209,27 +232,43 @@ class ExpressionEvaluatorPool {
       return reusable.func
     }
 
-    // Create new evaluator
+    // Create new evaluator - handle empty context keys
+
+    const evaluator = uniqueKeys.length === 0
     // eslint-disable-next-line no-new-func
-    const evaluator = new Function(...contextKeys, `
-      'use strict';
-      return function(expr) {
-        try {
-          return eval(expr);
-        } catch (e) {
-          if (e instanceof ReferenceError || e instanceof TypeError) {
-            return undefined;
+      ? new Function(`
+        'use strict';
+        return function(expr) {
+          try {
+            return eval(expr);
+          } catch (e) {
+            if (e instanceof ReferenceError || e instanceof TypeError) {
+              return undefined;
+            }
+            throw e;
           }
-          throw e;
         }
-      }
-    `) as (...args: any[]) => any
+      `)() as (...args: any[]) => any
+      // eslint-disable-next-line no-new-func
+      : new Function(...uniqueKeys, `
+        'use strict';
+        return function(expr) {
+          try {
+            return eval(expr);
+          } catch (e) {
+            if (e instanceof ReferenceError || e instanceof TypeError) {
+              return undefined;
+            }
+            throw e;
+          }
+        }
+      `) as (...args: any[]) => any
 
     // Add to pool if not full
     if (this.pool.length < this.maxPoolSize) {
       this.pool.push({
         func: evaluator,
-        context: contextKeys.slice(),
+        context: uniqueKeys.slice(),
       })
     }
 
@@ -242,7 +281,7 @@ class ExpressionEvaluatorPool {
 }
 
 // Global expression evaluator pool
-export const expressionEvaluatorPool = new ExpressionEvaluatorPool()
+export const expressionEvaluatorPool: ExpressionEvaluatorPool = new ExpressionEvaluatorPool()
 
 /**
  * Performance monitor for tracking processing times
@@ -337,4 +376,4 @@ export class PerformanceMonitor {
 }
 
 // Global performance monitor instance
-export const performanceMonitor = new PerformanceMonitor()
+export const performanceMonitor: PerformanceMonitor = new PerformanceMonitor()

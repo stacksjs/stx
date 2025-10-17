@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cameraTripod: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M1 5.5c0-1.028.085-2.016.241-2.885a1.63 1.63 0 0 1 1.384-1.322C3.633 1.146 5.15 1 7 1s3.367.146 4.375.293a1.63 1.63 0 0 1 1.384 1.322c.156.869.241 1.857.241 2.885s-.085 2.016-.241 2.885a1.63 1.63 0 0 1-1.384 1.322C10.367 9.854 8.85 10 7 10s-3.367-.146-4.375-.293a1.63 1.63 0 0 1-1.384-1.322A16.6 16.6 0 0 1 1 5.5M7 10l4.25 3.25m-8.5 0L7 10m0 0v3.25\"/><path d=\"M7 7.5c1.28 0 2-.72 2-2s-.72-2-2-2s-2 .72-2 2s.72 2 2 2\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default cameraTripod

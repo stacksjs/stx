@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const stairway: IconData = {
+  "body": "<path fill=\"#9B9B9A\" d=\"M62 27v33H21v-9h10v-8l9.565.068L42 35h9l1-8z\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M61 27H51m0 8v-8m0 8H41m0 8v-8m0 8H31m0 8v-8m0 8H21m0 8v-8m0 8H11m5.397-19.37l22.627-22.628m-8.485 0h8.485m0 8.485v-8.485M16.397 31.144v8.486m8.485 0h-8.485\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default stairway

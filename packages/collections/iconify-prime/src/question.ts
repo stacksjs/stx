@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const question: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16.07 4.93A5.75 5.75 0 0 0 6.25 9a.75.75 0 0 0 1.5 0A4.26 4.26 0 1 1 12 13.25a.76.76 0 0 0-.75.75v2a.75.75 0 0 0 1.5 0v-1.3a5.76 5.76 0 0 0 3.32-9.77\"/><circle cx=\"12\" cy=\"19.5\" r=\"1.25\" fill=\"currentColor\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default question

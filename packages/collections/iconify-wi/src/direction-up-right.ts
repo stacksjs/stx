@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const directionUpRight: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10.05 17.55c0 .3.09.55.26.73c.2.19.46.28.79.28c.3 0 .55-.09.73-.28l6.04-6.05v1.95q0 .45.3.75t.75.3c.29 0 .54-.1.74-.31s.3-.45.3-.75V9.7q0-.45-.3-.75c-.3-.3-.45-.3-.74-.3h-4.5c-.29 0-.54.1-.73.3s-.29.44-.29.75c0 .29.1.54.29.73s.44.29.73.29h1.95l-6.06 6.06c-.17.21-.26.47-.26.77\"/>",
+  "width": 30,
+  "height": 30,
+  "viewBox": "0 0 30 30"
+}
+
+export default directionUpRight

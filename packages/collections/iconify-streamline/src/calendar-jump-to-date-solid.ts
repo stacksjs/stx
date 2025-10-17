@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const calendarJumpToDateSolid: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M3.5 0a1 1 0 0 1 1 1v1h5V1a1 1 0 0 1 2 0v1h1A1.5 1.5 0 0 1 14 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 0 12.5v-9A1.5 1.5 0 0 1 1.5 2h1V1a1 1 0 0 1 1-1m-.214 8.181a.75.75 0 0 1 .75-.75H7.43V6.272a.625.625 0 0 1 1.066-.442l1.91 1.91a.625.625 0 0 1 0 .883l-1.91 1.91a.625.625 0 0 1-1.066-.442V8.93H4.036a.75.75 0 0 1-.75-.75Z\" clip-rule=\"evenodd\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default calendarJumpToDateSolid

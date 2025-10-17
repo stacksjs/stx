@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const localPizza: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 22L2 7q2.125-1.8 4.663-2.9T12 3t5.338 1.088T22 7zM9.5 10q.625 0 1.063-.437T11 8.5t-.437-1.062T9.5 7t-1.062.438T8 8.5t.438 1.063T9.5 10m2.5 5q.625 0 1.063-.437T13.5 13.5t-.437-1.062T12 12t-1.062.438T10.5 13.5t.438 1.063T12 15\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default localPizza

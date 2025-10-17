@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const textDirectionRotate45Right24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M22 11.5a1 1 0 1 0-2 0v.086l-3.043-3.043a1 1 0 1 0-1.414 1.414L18.586 13H18.5a1 1 0 1 0 0 2H21a1 1 0 0 0 1-1zm-5.596-8.072a1 1 0 0 0-1.332-1.332l-9.5 4.5a1 1 0 1 0 .856 1.808l2.417-1.145l2.396 2.396l-1.145 2.417a1 1 0 1 0 1.808.856zM12.15 7.736L10.764 6.35l2.634-1.248zM15 18.5a1 1 0 1 0-2 0v.086L3.707 9.293a1 1 0 0 0-1.414 1.414L11.586 20H11.5a1 1 0 1 0 0 2H14a1 1 0 0 0 1-1z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default textDirectionRotate45Right24Filled

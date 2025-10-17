@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const torchF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M0 10h8v1a2 2 0 0 1-1.35 1.892l-.508 7.113a2.148 2.148 0 0 1-4.284 0l-.509-7.113A2 2 0 0 1 0 11zm7.465-2H8H0h.535A4 4 0 0 1 0 6q0-2.21 4-6q4 3.79 4 6c0 .729-.195 1.412-.535 2\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default torchF

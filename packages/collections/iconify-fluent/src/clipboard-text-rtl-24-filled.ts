@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const clipboardTextRtl24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15.98 3.945A2.25 2.25 0 0 0 13.75 2h-3.5a2.25 2.25 0 0 0-2.23 1.945l-.014.135l.008-.08H6.25A2.25 2.25 0 0 0 4 6.25v13.5A2.25 2.25 0 0 0 6.25 22h11.5A2.25 2.25 0 0 0 20 19.75V6.25A2.25 2.25 0 0 0 17.75 4h-1.764l.007.08zM10.25 3.5h3.5a.75.75 0 0 1 0 1.5h-3.5a.75.75 0 0 1 0-1.5M8 9h8a.75.75 0 0 1 0 1.5H8A.75.75 0 0 1 8 9m3.25 4.75A.75.75 0 0 1 12 13h4a.75.75 0 0 1 0 1.5h-4a.75.75 0 0 1-.75-.75M10 17h6a.75.75 0 0 1 0 1.5h-6a.75.75 0 0 1 0-1.5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default clipboardTextRtl24Filled

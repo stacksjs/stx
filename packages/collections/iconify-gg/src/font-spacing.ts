@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const fontSpacing: IconData = {
+  "body": "<g fill=\"currentColor\"><path d=\"M19 21h2V3h-2zM5 21H3V3h2z\"/><path fill-rule=\"evenodd\" d=\"M9.464 16.048L9.953 15h4.094l.489 1.048a1 1 0 1 0 1.813-.845l-3.381-7.25A1 1 0 0 0 12 7.375a1 1 0 0 0-.967.576l-3.381 7.25a1 1 0 0 0 1.812.846M12 10.61L10.885 13h2.23z\" clip-rule=\"evenodd\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default fontSpacing

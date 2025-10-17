@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const viewSidebarOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 20V4h20v16zM17.5 8.675H20V6h-2.5zm0 4.65H20v-2.65h-2.5zM4 18h11.5V6H4zm13.5 0H20v-2.675h-2.5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default viewSidebarOutlineSharp

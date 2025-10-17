@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const ak: IconData = {
+  "body": "<mask id=\"circleFlagsAk0\"><circle cx=\"256\" cy=\"256\" r=\"256\" fill=\"#fff\"/></mask><g mask=\"url(#circleFlagsAk0)\"><path fill=\"#ffda44\" d=\"m0 167l256-32l256 32v178l-256 32L0 345Z\"/><path fill=\"#d80027\" d=\"M0 0h512v167H0Z\"/><path fill=\"#496e2d\" d=\"M0 345h512v167H0Z\"/><path fill=\"#333\" d=\"m198 345l151-109H163l151 109l-58-178Z\"/></g>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default ak

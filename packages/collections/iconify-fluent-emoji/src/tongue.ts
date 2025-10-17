@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tongue: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#89029C\" d=\"M30 7c0 7.73-6.27 14-14 14S2 14.73 2 7z\"/><path fill=\"#F92F60\" d=\"M19.313 12.063h-6.5c-1.079 0-4.797.593-4.797 2.906v7.969C8.016 25.344 10.063 30 16 30c5.938 0 8-4.656 8-7.062v-7.97c0-2.155-3.156-2.905-4.687-2.905\"/></g>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default tongue

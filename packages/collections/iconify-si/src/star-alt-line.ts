@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const starAltLine: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"1.5\" d=\"m21.748 10.576l-5.304 4.293l1.894 6.187c.127.253 0 .632-.252.758c-.127.126-.253.126-.38.126c-.125 0-.252 0-.378-.126l-5.177-3.788l-5.303 3.788a.8.8 0 0 1-.758 0c-.252-.126-.379-.505-.252-.758l1.641-6.313l-5.177-4.167c-.252-.126-.379-.505-.252-.757c.126-.253.378-.506.63-.506h6.693l2.02-5.808c.127-.252.38-.505.632-.505s.505.253.631.505l2.147 5.808h6.566c.252 0 .505.253.631.506c0 .252-.126.505-.253.757Z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default starAltLine

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const gasStationFuelPetroleumSolid: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M13.723.859a.625.625 0 0 1 0 .883l-.793.793v2.17a.625.625 0 0 1-.473.606l-1.479.37v.987a.35.35 0 0 0 .351.351a2.577 2.577 0 1 1 0 5.154H8.901v.327a1.5 1.5 0 0 1-1.5 1.5H1.594a1.5 1.5 0 0 1-1.5-1.5V3.788a2.5 2.5 0 0 1 2.5-2.5H6.4a2.5 2.5 0 0 1 2.5 2.5v7.135h2.428a1.327 1.327 0 1 0 0-2.654a1.6 1.6 0 0 1-1.6-1.6V4.227c0-.165.065-.324.182-.442L12.84.86a.625.625 0 0 1 .884 0M1.093 7.144V4.881h6.808v2.263zm4.87 2.316c.345 0 .625.28.625.625v.976a.625.625 0 1 1-1.25 0v-.976c0-.345.28-.625.625-.625\" clip-rule=\"evenodd\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default gasStationFuelPetroleumSolid

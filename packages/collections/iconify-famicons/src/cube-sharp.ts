@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cubeSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M48 170v196.92L240 480V284zm224 310l192-113.08V170L272 284Zm176-336L256 32L64 144l192 112z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default cubeSharp

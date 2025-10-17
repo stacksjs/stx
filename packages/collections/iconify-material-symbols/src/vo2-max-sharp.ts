@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const vo2MaxSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M13 20v-6h4.5v6zm1.5-1.5H16v-3h-1.5zm4 3.5v-3.75h3v-.75h-3V16H23v3.75h-3v.75h3V22zM1 20V9.525L8 4V1h2v3l7 5.5V13h-5v7h-2V6.55l-1-.8l-1 .8L8.05 20z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default vo2MaxSharp

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const arrowDecisionAuto: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 5H9l4-4l4 4h-3v4.43c-.75.46-1.42 1.03-2 1.69zm-1.6 10H8.5l-.7-2H4.6l-.7 2H2l3.2-9h2zm-3.05-3.35L6.2 8l-1.15 3.65zM23 11l-4-4v3a6.747 6.747 0 0 0-7 6.17A3.006 3.006 0 0 0 10.17 20A3.006 3.006 0 0 0 14 21.83A3.01 3.01 0 0 0 15.83 18c-.3-.86-.98-1.53-1.83-1.83c.47-4 4.47-4.2 4.95-4.2v3z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default arrowDecisionAuto

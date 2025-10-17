@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const hostSolidBadged: IconData = {
+  "body": "<circle cx=\"18\" cy=\"25.64\" r=\"1.5\" fill=\"currentColor\"/><path fill=\"currentColor\" d=\"M24 10.49v1.17H12v-1.6h11.7a7.4 7.4 0 0 1-1-2.4H12v-1.6h10.5V6a7.45 7.45 0 0 1 1.25-4.14H9.5A1.5 1.5 0 0 0 8 3.36v30.5h20V13.22a7.5 7.5 0 0 1-4-2.73m-6 18.15a3 3 0 1 1 3-3a3 3 0 0 1-3 3\"/><circle cx=\"30\" cy=\"6\" r=\"5\" fill=\"currentColor\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default hostSolidBadged

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const briefcase: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M471.232 111.731H368V16H144.232v95.731h-103A24.8 24.8 0 0 0 16.464 136.5v334.032A24.8 24.8 0 0 0 41.232 495.3h430A24.8 24.8 0 0 0 496 470.532V136.5a24.8 24.8 0 0 0-24.768-24.769M176.232 48H336v63.731H176.232Zm286.232 97.269v80.286l-53.177 53.176H273V232h-33.536v46.731H103.177L50 225.555v-80.286ZM50 461.764V272.982l39.286 39.287h150.178V359.5H273v-47.231h150.178l39.286-39.287v188.782Z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default briefcase

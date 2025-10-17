@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const gitRequestDraft: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\"><circle cx=\"12.5\" cy=\"12.5\" r=\"1.75\"/><circle cx=\"3.5\" cy=\"12.5\" r=\"1.75\"/><circle cx=\"3.5\" cy=\"3.5\" r=\"1.75\"/><path d=\"m7.75 2.75h.5m2.5 0h.5m1.5 2.5v-.5m0 3v.5m-9-2.5v4.5\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default gitRequestDraft

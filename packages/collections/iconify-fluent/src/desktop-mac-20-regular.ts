@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const desktopMac20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-4v1a1 1 0 0 0 1 1h.5a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1H7a1 1 0 0 0 1-1v-1H4a2 2 0 0 1-2-2zm1 8v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1zm14-1V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v7zm-5.732 6A2 2 0 0 1 11 16v-1H9v1c0 .364-.097.706-.268 1z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default desktopMac20Regular

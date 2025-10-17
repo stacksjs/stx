@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const letterTt: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 11h3v12h2V11h3V9H8zm15 4v-2h-3v-2h-2v2h-2v2h2v6a2 2 0 0 0 2 2h3v-2h-3v-6z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default letterTt

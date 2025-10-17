@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const script32Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M30 8a2 2 0 0 1-2 2h-4v16.125h-.002a4 4 0 0 1-4.217 3.87V30H6a4 4 0 0 1-4-4v-2a2 2 0 0 1 2-2h2V7a5 5 0 0 1 5-5h15a4 4 0 0 1 4 4zm-8 18V6c0-.729.195-1.412.535-2H11a3 3 0 0 0-3 3v15h8a2 2 0 0 1 2 2v2a2 2 0 1 0 4 0m2-20v2h4V6a2 2 0 0 0-2-2h-.002A2 2 0 0 0 24 6M4 24v2a2 2 0 0 0 2 2h10.535A4 4 0 0 1 16 26v-2z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default script32Regular

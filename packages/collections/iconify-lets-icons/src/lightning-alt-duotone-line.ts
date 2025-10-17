@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const lightningAltDuotoneLine: IconData = {
+  "body": "<defs><mask id=\"iconify-5cxjwdeO\"><g fill=\"none\"><path stroke=\"#fff\" d=\"m10.646 18.633l.682-2.501c.079-.29.118-.436.043-.534s-.225-.098-.526-.098H8.902c-.399 0-.598 0-.67-.129c-.071-.129.035-.298.246-.636l1.544-2.47c.211-.338.317-.507.246-.636s-.271-.129-.67-.129H7.194c-.317 0-.475 0-.55-.104s-.025-.254.075-.554l2.667-8c.055-.165.083-.248.148-.295s.152-.047.326-.047h5.757c.391 0 .587 0 .659.127s-.029.295-.23.63l-2.092 3.486c-.201.335-.302.503-.23.63s.268.127.66.127H15.5c.436 0 .654 0 .724.138s-.062.313-.324.662l-1.8 2.4c-.262.35-.393.524-.324.662c.07.138.288.138.724.138h1.968c.449 0 .673 0 .741.141s-.07.317-.348.669l-5.34 6.764c-.592.749-.887 1.123-1.07 1.031c-.182-.092-.056-.552.195-1.472Z\" /><path stroke=\"silver\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-opacity=\".25\" d=\"M19.5 4L18 6h2l-1.5 2m-12 8L5 18h2l-1.5 2\" /></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h24v24H0z\" mask=\"url(#iconify-5cxjwdeO)\" />",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default lightningAltDuotoneLine

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const roomServiceSolid: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2.25 20a.75.75 0 0 1 .75-.75h18a.75.75 0 0 1 0 1.5H3a.75.75 0 0 1-.75-.75m10.5-16a.75.75 0 0 0-1.5 0v1.448a8.75 8.75 0 0 0-8 8.719V17c0 .414.336.75.75.75h16a.75.75 0 0 0 .75-.75v-2.833a8.75 8.75 0 0 0-8-8.719z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default roomServiceSolid

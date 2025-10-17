@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tableLink20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9 15.5c0 .537.12 1.045.337 1.5H8v-4h2.05A3.5 3.5 0 0 0 9 15.5M13 8v4h3.5q.255 0 .5.035V8zm-1 4V8H8v4zm-5 0V8H3v4zm-4 1h4v4H5.5A2.5 2.5 0 0 1 3 14.5zm10-6h4V5.5A2.5 2.5 0 0 0 14.5 3H13zm-1-4v4H8V3zM7 3v4H3V5.5A2.5 2.5 0 0 1 5.5 3zm3 12.5a2.5 2.5 0 0 1 2.5-2.5h.5a.5.5 0 0 1 0 1h-.5a1.5 1.5 0 0 0 0 3h.5a.5.5 0 0 1 0 1h-.5a2.5 2.5 0 0 1-2.5-2.5m5.5-2a.5.5 0 0 1 .5-.5h.5a2.5 2.5 0 0 1 0 5H16a.5.5 0 0 1 0-1h.5a1.5 1.5 0 0 0 0-3H16a.5.5 0 0 1-.5-.5m-3 1.5a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default tableLink20Filled

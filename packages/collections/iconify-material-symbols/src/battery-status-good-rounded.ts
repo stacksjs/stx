@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const batteryStatusGoodRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m15.95 18.35l2.825-2.825q.3-.3.7-.3t.7.3t.3.713t-.3.712l-3.525 3.525q-.3.3-.712.3t-.713-.3l-1.4-1.425q-.3-.3-.3-.7t.3-.7t.7-.287t.7.287zM8 22q-.425 0-.712-.288T7 21V5q0-.425.288-.712T8 4h2V3q0-.425.288-.712T11 2h2q.425 0 .713.288T14 3v1h2q.425 0 .713.288T17 5v6.325q0 .275-.2.488t-.475.237q-1.05.125-1.95.563t-1.6 1.137q-.8.8-1.287 1.888T11 18q0 .75.175 1.45t.525 1.35q.2.425 0 .813t-.625.387z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default batteryStatusGoodRounded

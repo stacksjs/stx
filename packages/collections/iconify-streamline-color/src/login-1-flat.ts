@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const login1Flat: IconData = {
+  "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path fill=\"#8fbffa\" d=\"M1.5 0A1.5 1.5 0 0 0 0 1.5v11A1.5 1.5 0 0 0 1.5 14h7a1.5 1.5 0 0 0 1.5-1.5V9.25h-.516a2 2 0 0 1-3.398 1.164l-2-2a2 2 0 0 1 0-2.828l2-2A2 2 0 0 1 9.484 4.75H10V1.5A1.5 1.5 0 0 0 8.5 0z\"/><path fill=\"#2859c5\" d=\"M8.25 5a.75.75 0 0 0-1.28-.53l-2 2a.75.75 0 0 0 0 1.06l2 2A.75.75 0 0 0 8.25 9V8H13a1 1 0 1 0 0-2H8.25z\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default login1Flat

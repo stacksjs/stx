@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const playPauseDuotone: IconData = {
+  "body": "<g fill=\"currentColor\"><path d=\"m132.37 134.59l-88.19 56.15A7.91 7.91 0 0 1 32 184.15V71.85a7.91 7.91 0 0 1 12.18-6.59l88.19 56.15a7.8 7.8 0 0 1 0 13.18\" opacity=\".2\"/><path d=\"M184 64v128a8 8 0 0 1-16 0V64a8 8 0 0 1 16 0m40-8a8 8 0 0 0-8 8v128a8 8 0 0 0 16 0V64a8 8 0 0 0-8-8m-80 72a15.76 15.76 0 0 1-7.33 13.34l-88.19 56.15A15.91 15.91 0 0 1 24 184.15V71.85a15.91 15.91 0 0 1 24.48-13.34l88.19 56.15A15.76 15.76 0 0 1 144 128m-16.18 0L40 72.08v111.85Z\"/></g>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default playPauseDuotone

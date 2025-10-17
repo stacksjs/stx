@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const barbecue: IconData = {
+  "body": "<defs><mask id=\"SVGXIDiKbln\"><g fill=\"none\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-width=\"4\"><rect width=\"8\" height=\"8\" x=\"12\" y=\"4\" fill=\"#555\" stroke-linejoin=\"round\" rx=\"4\"/><rect width=\"8\" height=\"8\" x=\"12\" y=\"22\" fill=\"#555\" stroke-linejoin=\"round\" rx=\"4\"/><path d=\"M16 31v13\"/><rect width=\"8\" height=\"8\" x=\"28\" y=\"4\" fill=\"#555\" stroke-linejoin=\"round\" rx=\"4\"/><rect width=\"8\" height=\"8\" x=\"28\" y=\"22\" fill=\"#555\" stroke-linejoin=\"round\" rx=\"4\"/><path d=\"M32 31v13\"/><path stroke-linejoin=\"round\" stroke-miterlimit=\"2\" d=\"M13 17h6m10 0h6M13 36h6m10 0h6\"/><path d=\"M16 14v6m16-6v6\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGXIDiKbln)\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default barbecue

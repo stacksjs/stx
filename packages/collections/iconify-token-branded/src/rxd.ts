@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const rxd: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGENKGQdVt)\" d=\"M18.065 18.662a9.008 9.008 0 0 0-3.047-15.136A9.01 9.01 0 0 0 4.977 6.362h-1.97L6.09 9.244a1.82 1.82 0 0 0 1.256.496h5.426c.822 0 1.492.585 1.492 1.407s-.839 1.407-1.66 1.407h-.592l2.81 2.815c1.862 0 3.382-1.689 3.382-4.222v-.079a4.706 4.706 0 0 0-4.7-4.706H5.568a8.556 8.556 0 1 1 12.21 11.945l.28.355zm-12.469-5.77l7.43 7.6a8.56 8.56 0 0 1-9.525-7.63a8.56 8.56 0 0 1 .727-4.417l-.32-.394a9.007 9.007 0 0 0 9.513 12.835l.112.107h5.798L9.368 10.865H6.44c-1.041 0-1.565 1.272-.833 2.02z\"/><defs><linearGradient id=\"SVGENKGQdVt\" x1=\"12.013\" x2=\"12.013\" y1=\"2.985\" y2=\"20.998\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#4D8FB2\"/><stop offset=\".36\" stop-color=\"#35C6F3\"/><stop offset=\".71\" stop-color=\"#FFF4C4\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default rxd

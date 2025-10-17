@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const documentOnePageAdd24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 4.25A2.25 2.25 0 0 1 6.25 2h11.5A2.25 2.25 0 0 1 20 4.25v7.248a6.5 6.5 0 0 0-3.439-.43a.75.75 0 0 0-.311-.068h-8.5a.75.75 0 0 0 0 1.5h5.596a6.49 6.49 0 0 0-2.346 5c0 1.747.689 3.332 1.81 4.5H6.25A2.25 2.25 0 0 1 4 19.75zM16.25 6h-8.5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5M23 17.5a5.5 5.5 0 1 0-11 0a5.5 5.5 0 0 0 11 0m-5 .5l.001 2.503a.5.5 0 1 1-1 0V18h-2.505a.5.5 0 0 1 0-1H17v-2.5a.5.5 0 1 1 1 0V17h2.497a.5.5 0 0 1 0 1z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default documentOnePageAdd24Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const objectUngroup: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2304 768h-128v640h128v384h-384v-128h-896v128H640v-384h128v-128H384v128H0v-384h128V384H0V0h384v128h896V0h384v384h-128v128h384V384h384zm-256-256v128h128V512zm-640-384v128h128V128zm-1280 0v128h128V128zm128 1152v-128H128v128zm1280-128h-128v128h128zm-1152 0h896v-128h128V384h-128V256H384v128H256v640h128zm512 512v-128H768v128zm1280 0v-128h-128v128zm-128-256V768h-128V640h-384v384h128v384h-384v-128H896v128h128v128h896v-128z\"/>",
+  "width": 2304,
+  "height": 1792,
+  "viewBox": "0 0 2304 1792"
+}
+
+export default objectUngroup

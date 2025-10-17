@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const albumOpen: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"1.5\"><path stroke-linejoin=\"round\" d=\"M15 2.2c4.564.927 8 4.962 8 9.8s-3.436 8.873-8 9.8\"/><path stroke-linejoin=\"round\" d=\"M15 9c1.141.284 2 1.519 2 3s-.859 2.716-2 3M1 2h10v20H1\"/><path d=\"M4 15.5a1.5 1.5 0 1 1-3 0a1.5 1.5 0 0 1 3 0Zm0 0V7.6a.6.6 0 0 1 .6-.6H7\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default albumOpen

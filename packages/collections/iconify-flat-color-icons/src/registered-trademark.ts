@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const registeredTrademark: IconData = {
+  "body": "<circle cx=\"24\" cy=\"24\" r=\"21\" fill=\"#9C27B0\"/><path fill=\"#E1BEE7\" d=\"M25 26.8h-4.5v9h-4V12.5h8.2c1.3 0 2.5.2 3.6.5c1 .3 1.9.8 2.6 1.3c.7.6 1.3 1.3 1.6 2.2s.6 1.9.6 3c0 1.6-.4 2.9-1.1 3.9c-.8 1-1.8 1.9-3.1 2.4l5.2 9.7v.2h-4.3zm-4.5-3.2h4.2c.7 0 1.4-.1 1.9-.3s1-.5 1.4-.8s.6-.7.8-1.2s.3-1 .3-1.6s-.1-1.1-.3-1.6s-.4-.9-.8-1.2s-.8-.6-1.4-.8c-.5-.2-1.2-.3-2-.3h-4.1z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default registeredTrademark

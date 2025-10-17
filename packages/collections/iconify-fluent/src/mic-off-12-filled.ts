@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const micOff12Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M1.854 1.146a.5.5 0 1 0-.708.708L4 4.707V5.5a2 2 0 0 0 2.676 1.883l.755.755A3 3 0 0 1 3 5.5a.5.5 0 1 0-1.001 0a4 4 0 0 0 3.5 3.97v1.03a.5.5 0 1 0 1 0V9.47a4 4 0 0 0 1.66-.603l1.986 1.987a.5.5 0 0 0 .708-.708zM9.52 7.4l-.75-.75A3 3 0 0 0 9 5.5a.5.5 0 1 1 1 0c0 .688-.173 1.335-.479 1.9M7.97 5.849L4.216 2.095A2 2 0 0 1 8 3v2.5q0 .178-.03.349\"/>",
+  "width": 12,
+  "height": 12,
+  "viewBox": "0 0 12 12"
+}
+
+export default micOff12Filled

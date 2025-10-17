@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const 1xMobiledataRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 9H5q-.425 0-.712-.288T4 8t.288-.712T5 7h2q.425 0 .713.288T8 8v8q0 .425-.288.713T7 17t-.712-.288T6 16zm8.65 4.65l-1.725 2.875q-.125.225-.337.35T12.1 17q-.575 0-.862-.5t.012-1l2.25-3.8l-1.925-3.175q-.3-.5-.013-1.013T12.425 7q.275 0 .513.138t.362.362l1.35 2.25l1.4-2.275q.125-.225.35-.35T16.9 7q.575 0 .863.5t-.013 1l-1.9 3.2l2.25 3.775q.3.5.013 1.013t-.888.512q-.275 0-.513-.137t-.362-.363z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default 1xMobiledataRounded

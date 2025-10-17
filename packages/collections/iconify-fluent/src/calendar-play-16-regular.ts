@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const calendarPlay16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11.5 2A2.5 2.5 0 0 1 14 4.5v2.1a5.5 5.5 0 0 0-1-.393V6H3v5.5A1.5 1.5 0 0 0 4.5 13h1.707q.149.524.393 1H4.5A2.5 2.5 0 0 1 2 11.5v-7A2.5 2.5 0 0 1 4.5 2zm0 1h-7A1.5 1.5 0 0 0 3 4.5V5h10v-.5A1.5 1.5 0 0 0 11.5 3m0 13a4.5 4.5 0 1 0 0-9a4.5 4.5 0 0 0 0 9m-.74-6.545q.143 0 .26.079l2.296 1.506a.5.5 0 0 1 .229.426a.54.54 0 0 1-.091.3a.5.5 0 0 1-.13.128l-2.296 1.567a.6.6 0 0 1-.13.063a.45.45 0 0 1-.323-.018a.6.6 0 0 1-.158-.111a.5.5 0 0 1-.145-.357V9.962a.51.51 0 0 1 .3-.466a.4.4 0 0 1 .189-.042\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default calendarPlay16Regular

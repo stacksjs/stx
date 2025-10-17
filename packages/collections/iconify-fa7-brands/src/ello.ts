@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const ello: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M256 8a248 248 0 1 0 0 496a248 248 0 1 0 0-496m143.8 285.2c-16.5 65.3-76 111.6-143.8 111.6s-127.3-46.3-143.8-111.6c-1.6-7.4 2.5-15.7 9.9-17.4s15.7 2.5 17.4 9.9c14 52.9 62 90.1 116.6 90.1s102.5-37.2 116.6-90.1c1.7-7.4 9.9-12.4 17.4-9.9c7.4 1.7 12.4 9.9 9.9 17.4z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default ello

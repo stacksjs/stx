@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const pageCopy: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M75.272 7.482h-.005v-4.02a1.73 1.73 0 0 0-1.73-1.73h-32.87l-25.95 25.95v58.819c0 .956.774 1.73 1.73 1.73h57.089a1.73 1.73 0 0 0 1.73-1.73v-2.448h.005zM24.674 78.276V31.142h17.723a1.73 1.73 0 0 0 1.73-1.73V11.689h21.188v66.587z\"/><path fill=\"currentColor\" d=\"M83.77 24.857h-3.475v66.911c0 .835-.677 1.513-1.513 1.513H29.306v3.475c0 .836.677 1.513 1.513 1.513H83.77c.836 0 1.513-.677 1.513-1.513V26.37c0-.836-.677-1.513-1.513-1.513\"/>",
+  "width": 100,
+  "height": 100,
+  "viewBox": "0 0 100 100"
+}
+
+export default pageCopy

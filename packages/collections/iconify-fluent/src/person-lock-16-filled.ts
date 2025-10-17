@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const personLock16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9.5 8v1h-.625A.89.89 0 0 0 8 9.9v4.2c0 .497.392.9.875.9h5.25a.89.89 0 0 0 .875-.9V9.9c0-.497-.392-.9-.875-.9H13.5V8a2 2 0 1 0-4 0m2-1a1 1 0 0 1 1 1v1h-2V8a1 1 0 0 1 1-1m0 5.75a.75.75 0 1 1 0-1.5a.75.75 0 0 1 0 1.5M7 14V9.9c0-.898.628-1.685 1.5-1.862V8h-5A1.5 1.5 0 0 0 2 9.5v.5c0 1.971 1.86 4 5 4m2.75-9.75a2.75 2.75 0 1 0-5.5 0a2.75 2.75 0 0 0 5.5 0\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default personLock16Filled

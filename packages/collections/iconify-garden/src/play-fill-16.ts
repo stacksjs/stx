@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const playFill16: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 15.79c-.13 0-.26-.03-.38-.08a.98.98 0 0 1-.62-.92V1.21a1 1 0 0 1 .62-.93C6 .12 6.42.21 6.71.5l6.44 6.44c.58.58.58 1.54 0 2.12L6.71 15.5c-.19.19-.45.29-.71.29\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default playFill16

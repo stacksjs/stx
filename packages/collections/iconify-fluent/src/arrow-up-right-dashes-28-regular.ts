@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const arrowUpRightDashes28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M23.5 15.25a.75.75 0 0 0 1.5 0V3.75a.75.75 0 0 0-.75-.75h-11.5a.75.75 0 0 0 0 1.5h9.69l-5.22 5.22a.75.75 0 1 0 1.06 1.06l5.22-5.22zM8.78 20.28a.75.75 0 1 0-1.06-1.06l-4.5 4.5a.75.75 0 1 0 1.06 1.06zm7-8.06a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06l4.5-4.5a.75.75 0 0 1 1.06 0\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default arrowUpRightDashes28Regular

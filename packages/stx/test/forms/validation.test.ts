@@ -227,7 +227,7 @@ describe('stx Form Validation Tests', () => {
       const result = await Bun.build({
         entrypoints: [testFile],
         outdir: OUTPUT_DIR,
-        plugins: [stxPlugin],
+        plugins: [stxPlugin()],
       })
 
       const outputHtml = await getHtmlOutput(result)

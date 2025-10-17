@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const bookContacts20: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVG3C9tOdSZ)\" d=\"M4.5 15H16s-.5.5-.5 1.5s.5 1 .5 1H5.5a1 1 0 0 1-1-1z\"/><path fill=\"url(#SVGbRqNXdlM)\" d=\"M4 4v12a2 2 0 0 0 2 2h9.5a.5.5 0 0 0 0-1H6a1 1 0 0 1-1-1h10a1 1 0 0 0 1-1V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2\"/><path fill=\"url(#SVGm99l5c2W)\" fill-opacity=\".3\" d=\"M4 4v12a2 2 0 0 0 2 2h9.5a.5.5 0 0 0 0-1H6a1 1 0 0 1-1-1h10a1 1 0 0 0 1-1V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2\"/><path fill=\"url(#SVG2dJsqdux)\" fill-opacity=\".3\" d=\"M4 4v12a2 2 0 0 0 2 2h9.5a.5.5 0 0 0 0-1H6a1 1 0 0 1-1-1h10a1 1 0 0 0 1-1V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2\"/><path fill=\"url(#SVGi9788dON)\" fill-opacity=\".9\" d=\"M10 13c2.143 0 3-.941 3-1.875c0-.621-.576-1.125-1.286-1.125H8.286C7.576 10 7 10.504 7 11.125C7 12.062 7.857 13 10 13m1.5-5.5a1.5 1.5 0 1 1-3 0a1.5 1.5 0 0 1 3 0\"/><defs><linearGradient id=\"SVG3C9tOdSZ\" x1=\"10\" x2=\"10\" y1=\"17\" y2=\"15\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#9DEAFF\"/><stop offset=\".716\" stop-color=\"#58AAFE\"/></linearGradient><linearGradient id=\"SVGbRqNXdlM\" x1=\"8.27\" x2=\"10.813\" y1=\"4.994\" y2=\"22.202\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#20AC9D\"/><stop offset=\"1\" stop-color=\"#2052CB\"/></linearGradient><linearGradient id=\"SVGi9788dON\" x1=\"14.503\" x2=\"2.542\" y1=\"19\" y2=\".199\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#9DEAFF\"/><stop offset=\"1\" stop-color=\"#fff\"/></linearGradient><radialGradient id=\"SVGm99l5c2W\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(4 0 0 2.23514 10 12)\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#171155\"/><stop offset=\"1\" stop-color=\"#4A43CB\" stop-opacity=\"0\"/></radialGradient><radialGradient id=\"SVG2dJsqdux\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(2 0 0 1.94168 10.5 7.5)\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#171155\"/><stop offset=\"1\" stop-color=\"#4A43CB\" stop-opacity=\"0\"/></radialGradient></defs></g>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default bookContacts20

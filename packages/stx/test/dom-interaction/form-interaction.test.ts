@@ -18,7 +18,7 @@ async function processTemplate(templatePath: string): Promise<ProcessedTemplate>
   const result = await Bun.build({
     entrypoints: [templatePath],
     outdir: outputDir,
-    plugins: [stxPlugin],
+    plugins: [stxPlugin()],
   })
 
   // Get the HTML output
@@ -39,7 +39,7 @@ async function processTemplate(templatePath: string): Promise<ProcessedTemplate>
 const TEST_DIR = import.meta.dir
 const TEMPLATE_DIR = path.join(TEST_DIR, 'templates')
 
-// DOM environment is provided by happy-dom registration
+// DOM environment is provided by very-happy-dom registration
 
 describe('stx Form Interaction Tests', () => {
   // Set up test environment

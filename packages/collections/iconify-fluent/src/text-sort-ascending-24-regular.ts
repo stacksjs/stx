@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const textSortAscending24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17.25 2a.75.75 0 0 1 .75.75v16.69l2.22-2.22a.75.75 0 1 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 1 1 1.06-1.06l2.22 2.22V2.75a.75.75 0 0 1 .75-.75m-9.481.487a.75.75 0 0 0-1.401-.01l-3.317 8.5a.75.75 0 1 0 1.398.546l.79-2.023h3.555l.754 2.013a.75.75 0 0 0 1.405-.526zM5.823 8l1.23-3.15L8.232 8zM4 13.75a.75.75 0 0 1 .75-.75H9.5a.75.75 0 0 1 .634 1.151L6.114 20.5H9.5a.75.75 0 1 1 0 1.5H4.75a.75.75 0 0 1-.633-1.151l4.02-6.35H4.75a.75.75 0 0 1-.75-.75\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default textSortAscending24Regular

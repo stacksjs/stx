@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const textHeader1Lines20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3.002 2.499a.5.5 0 1 0-1 0v6a.5.5 0 0 0 1 0v-2.5h3v2.495a.5.5 0 0 0 1 0V2.5a.5.5 0 1 0-1 0V5h-3zm7.613-.486A.5.5 0 0 1 11 2.5v6a.5.5 0 0 1-1 0V3.912a4.6 4.6 0 0 1-.756.525l-.013.007l-.005.002h-.001l-.001.001a.5.5 0 0 1-.449-.894l.004-.002l.023-.012q.034-.018.1-.059a3.5 3.5 0 0 0 .86-.752a2.5 2.5 0 0 0 .29-.452a.5.5 0 0 1 .563-.263M2 16.498a.5.5 0 0 1 .5-.5h15a.5.5 0 1 1 0 1h-15a.5.5 0 0 1-.5-.5M2.5 12a.5.5 0 0 0 0 1h15a.5.5 0 0 0 0-1z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default textHeader1Lines20Regular

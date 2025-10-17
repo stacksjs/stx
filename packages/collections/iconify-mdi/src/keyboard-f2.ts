@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const keyboardF2: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 7h6v2H7v2h3v2H7v4H5zm8 0h4a2 2 0 0 1 2 2v2c0 1.11-.89 2-2 2h-2v2h4v2h-6v-4c0-1.1.9-2 2-2h2V9h-4z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default keyboardF2

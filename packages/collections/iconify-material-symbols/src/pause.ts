@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const pause: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 19V5h4v14zm-8 0V5h4v14z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default pause

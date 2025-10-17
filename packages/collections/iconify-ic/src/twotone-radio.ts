@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const twotoneRadio: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M20 13H4v7h16zM8 18.98a2.5 2.5 0 0 1 0-5a2.5 2.5 0 0 1 0 5\" opacity=\".3\"/><path fill=\"currentColor\" d=\"M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8c0-1.11-.89-2-2-2H8.3l8.26-3.34L15.88 1L3.24 6.15C2.51 6.43 2 7.17 2 8zM4 8h16v3h-2V9h-2v2H4zm0 5h16v7H4z\"/><circle cx=\"8\" cy=\"16.48\" r=\"2.5\" fill=\"currentColor\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default twotoneRadio

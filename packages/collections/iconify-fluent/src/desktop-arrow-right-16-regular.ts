@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const desktopArrowRight16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15 5.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-2.147.354l.003-.003A.5.5 0 0 0 13 5.503v-.006a.5.5 0 0 0-.146-.35l-2-2a.5.5 0 0 0-.708.707L11.293 5H8.5a.5.5 0 0 0 0 1h2.793l-1.147 1.146a.5.5 0 0 0 .708.708zM10.5 11q.158 0 .313-.009h1.181a1 1 0 0 0 .883-.53a5.5 5.5 0 0 0 1.117-.713v.243a2 2 0 0 1-2 2H9.997v1.01h1.5a.5.5 0 1 1 0 1H4.5a.5.5 0 1 1 0-1H6v-1.01H3.993a2 2 0 0 1-2-2V3.994a2 2 0 0 1 2-2h2.268a5.5 5.5 0 0 0-.66 1H3.995a1 1 0 0 0-1 1v5.997a1 1 0 0 0 1 1h6.193q.156.009.313.009m-1.503.991H7v1.01h1.998z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default desktopArrowRight16Regular

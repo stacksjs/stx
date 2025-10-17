@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const logoTumblr: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M22.6 28h-4c-3.59 0-6.3-1.86-6.3-6.3v-7.12H9v-3.86A7.17 7.17 0 0 0 14.3 4h3.76v6.12h4.36v4.46h-4.36v6.2c0 1.86.94 2.49 2.42 2.49h2.12Z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default logoTumblr

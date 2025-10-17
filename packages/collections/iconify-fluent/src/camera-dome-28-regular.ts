@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cameraDome28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17.5 16.5a3.5 3.5 0 1 1-7 0a3.5 3.5 0 0 1 7 0m-10 0a6.5 6.5 0 1 1 13 0a6.5 6.5 0 0 1-13 0m6.5-5a5 5 0 1 0 0 10a5 5 0 0 0 0-10M3.75 3A1.75 1.75 0 0 0 2 4.75v1.5c0 .698.409 1.3 1 1.582V15c0 6.075 4.925 11 11 11s11-4.925 11-11V7.832c.591-.281 1-.884 1-1.582v-1.5A1.75 1.75 0 0 0 24.25 3zM23.5 8v7a9.5 9.5 0 0 1-19 0V8zm.75-1.5H3.75a.25.25 0 0 1-.25-.25v-1.5a.25.25 0 0 1 .25-.25h20.5a.25.25 0 0 1 .25.25v1.5a.25.25 0 0 1-.25.25\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default cameraDome28Regular

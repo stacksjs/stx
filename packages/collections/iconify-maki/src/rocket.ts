@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const rocket: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11.555 2C9.41 2 6.534 3.471 4.602 6H3C1.843 6 1.18 6.864.723 7.777L.11 9H3l1.5 1.5L6 12v2.889l1.223-.612C8.136 13.821 9 13.157 9 12v-1.602c2.529-1.932 4-4.809 4-6.953V2zM9 5a1 1 0 1 1 0 2a1 1 0 0 1 0-2m-6.5 6l-.5.5c-.722.722-1 2.5-1 2.5s1.698-.198 2.5-1l.5-.5z\"/>",
+  "width": 15,
+  "height": 15,
+  "viewBox": "0 0 15 15"
+}
+
+export default rocket

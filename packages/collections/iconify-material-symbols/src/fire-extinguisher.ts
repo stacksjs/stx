@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const fireExtinguisher: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.975 16v-3h10v3zm5-10.025q.425 0 .713-.288t.287-.712t-.287-.712t-.713-.288t-.712.288t-.288.712t.288.713t.712.287M7.075 11q.25-1.25 1.063-2.212t1.987-1.438q-.275-.2-.488-.462T9.276 6.3L5 5.475v-1l4.275-.825q.375-.75 1.088-1.225t1.612-.475q.575 0 1.1.225T14 2.75l4-.775v6L14 7.2q-.05.05-.088.075t-.087.075Q15 7.825 15.8 8.775T16.875 11zm1.9 11q-.825 0-1.412-.587T6.975 20v-2h10v2q0 .825-.587 1.413T14.975 22z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default fireExtinguisher

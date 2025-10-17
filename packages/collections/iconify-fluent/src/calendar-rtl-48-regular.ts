@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const calendarRtl48Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M32.5 26a2.5 2.5 0 1 1 0-5a2.5 2.5 0 0 1 0 5m-11-2.5a2.5 2.5 0 1 0 5 0a2.5 2.5 0 0 0-5 0m-6 2.5a2.5 2.5 0 1 1 0-5a2.5 2.5 0 0 1 0 5M30 31.5a2.5 2.5 0 1 0 5 0a2.5 2.5 0 0 0-5 0M24 34a2.5 2.5 0 1 1 0-5a2.5 2.5 0 0 1 0 5m18-21.75A6.25 6.25 0 0 0 35.75 6h-23.5A6.25 6.25 0 0 0 6 12.25v23.5A6.25 6.25 0 0 0 12.25 42h23.5A6.25 6.25 0 0 0 42 35.75zM35.75 8.5a3.75 3.75 0 0 1 3.75 3.75V14h-31v-1.75a3.75 3.75 0 0 1 3.75-3.75zm3.75 27.25a3.75 3.75 0 0 1-3.75 3.75h-23.5a3.75 3.75 0 0 1-3.75-3.75V16.5h31z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default calendarRtl48Regular

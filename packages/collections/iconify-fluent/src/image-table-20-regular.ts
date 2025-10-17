@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const imageTable20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11 8a1 1 0 1 0 0 2a1 1 0 0 0 0-2M3 6a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3zm3-2a2 2 0 0 0-2 2h2zm1 0v2h6V4zm7 0v2h2a2 2 0 0 0-2-2m2 3h-2v6h2zm0 7h-2v2a2 2 0 0 0 2-2m-3 2v-2H7v2zm-7 0v-2H4a2 2 0 0 0 2 2m-2-3h2V7H4zm3-6v6h.296l1.502-1.502a1.7 1.7 0 0 1 2.404 0L12.704 13H13V7zm4.29 6l-.795-.795a.7.7 0 0 0-.99 0L8.71 13z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default imageTable20Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const wrapArch: IconData = {
+  "body": "<g fill=\"none\" stroke-width=\"1.5\"><path fill=\"#d7e0ff\" d=\"M22 6.031A17.9 17.9 0 0 0 12 3C8.3 3 4.86 4.117 2 6.031v14A17.9 17.9 0 0 1 12 17c3.7 0 7.14 1.116 10 3.031z\"/><path stroke=\"#4147d5\" d=\"M22 6.031A17.9 17.9 0 0 0 12 3C8.3 3 4.86 4.117 2 6.031v14A17.9 17.9 0 0 1 12 17c3.7 0 7.14 1.116 10 3.031z\"/><path stroke=\"#4147d5\" d=\"M2 13.031A17.9 17.9 0 0 1 12 10c3.7 0 7.14 1.117 10 3.031\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default wrapArch

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const dataClusterSolidAlerted: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17 9.48V7.91c0-2.52-3.77-3.84-7.5-3.84S2 5.4 2 7.91v10.33C2 20.4 4.77 21.67 7.9 22l.1-.07v-6.7c0-3.15 3.7-5.49 9-5.75\" class=\"clr-i-solid--alerted clr-i-solid-path-1--alerted\"/><path fill=\"currentColor\" d=\"M19 13.56a3.68 3.68 0 0 1-.39-2.7h-.66c-4.93 0-8.65 1.88-8.65 4.38v12.3c0 2.5 3.72 4.38 8.65 4.38s8.65-1.88 8.65-4.38v-2.16A13.58 13.58 0 0 1 18 28a16.8 16.8 0 0 1-6-1v-1.73a14.5 14.5 0 0 0 6 1.17c4.21 0 7.65-1.23 8.63-3.23v-2.74C24.8 22 21.72 23 18 23a16.8 16.8 0 0 1-6-1v-1.77a14.5 14.5 0 0 0 6 1.17c4.21 0 7.65-1.11 8.63-3.11V15.4h-4.4A3.69 3.69 0 0 1 19 13.56\" class=\"clr-i-solid--alerted clr-i-solid-path-2--alerted\"/><path fill=\"currentColor\" d=\"M22 4.8c-1.75.63-3 1.68-3 3.12v1.56h.27Z\" class=\"clr-i-solid--alerted clr-i-solid-path-3--alerted\"/><path fill=\"currentColor\" d=\"M33.68 15.4H28v6.53l.05.06c3.13-.32 5.9-1.6 5.9-3.75v-2.86Z\" class=\"clr-i-solid--alerted clr-i-solid-path-4--alerted\"/><path fill=\"currentColor\" d=\"M26.85 1.14L21.13 11a1.28 1.28 0 0 0 1.1 2h11.45a1.28 1.28 0 0 0 1.1-2l-5.72-9.86a1.28 1.28 0 0 0-2.21 0\" class=\"clr-i-solid--alerted clr-i-solid-path-5--alerted clr-i-alert\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default dataClusterSolidAlerted

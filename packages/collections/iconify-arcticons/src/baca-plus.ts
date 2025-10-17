@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const bacaPlus: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m20.664 8.959l.433-.155l.447-.125c.337-.095 1.45-.202 2.472-.239l1.719-.062l.212.012m11.247 9.588c.033.088.445.473.678.517c.995.186 1.968 1.547 2.404 3.36c.309 1.286.306 4.287-.006 5.518c-.623 2.464-1.841 4.007-3.568 4.52c-.463.137-.761.357-1.37 1.01c-1.748 1.877-3.756 3.013-6.99 3.954l-.86.185l-1.643.168c-.442.042-1.559.061-1.575.08l-.867-.061l-.855-.085c-2.357-.233-4.819-1.101-6.894-2.431c-.61-.392-.78-.44-1.612-.46c-2.952-.072-5.269-2.732-6.263-7.19c-.298-1.338-.377-4.625-.138-5.748l.034-.149c.369-1.583 1.079-2.347 2.18-2.347h.585l-.553-.554m27.313-.287c.012.038.798 2.02.81 2.058c.77 2.563.765 6.187-.02 8.452c-.3.868-.912 2.172-1.272 2.712c-.158.169-1.374 1.65-1.38 1.703m-9.769-8.751c.417-.297 1.608-2.03 1.993-2.9c.347-.785.287-1.4-.17-1.74c-.325-.24-.504-.26-2.418-.25c-2.934.012-3.99.335-3.988 1.218c0 .211.165.668.364 1.015c.453.79 2.097 2.552 2.639 2.826c.493.251 1.078.188 1.58-.17zm-9.915 10.56l-2.592-1.899c-1.97-2.094-3.262-4.35-3.594-7.331c-.172-1.538-.027-3.318.41-5.046l.563-1.618\"/><circle cx=\"17.573\" cy=\"14.166\" r=\"2.65\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"30.298\" cy=\"13.267\" r=\"2.65\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"15.366\" cy=\"13.716\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"7.378\" ry=\"6.817\"/><ellipse cx=\"32.217\" cy=\"12.558\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"7.769\" ry=\"7.058\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m24.335 40.125l3.878 2.375m-3.949-5.21l.07 2.835l-5.022 1.883m8.296-2.021l5.204 1.41m-5.33-4.355l.126 2.945l-4.346 2.105\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default bacaPlus

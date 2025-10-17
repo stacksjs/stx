@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const neovimLight: IconData = {
+  "body": "<g fill=\"none\"><rect width=\"256\" height=\"256\" fill=\"#F4F2ED\" rx=\"60\"/><path fill=\"url(#SVGeORNEcII)\" fill-rule=\"evenodd\" d=\"M46 71.006L88.595 28v199.957L46 185.45z\" clip-rule=\"evenodd\"/><path fill=\"url(#SVGCDVgrbQz)\" fill-rule=\"evenodd\" d=\"m210.584 71.41l-43.178-43.387l.876 199.935l42.596-42.508z\" clip-rule=\"evenodd\"/><path fill=\"url(#SVG1sDTb44w)\" fill-rule=\"evenodd\" d=\"M88.567 28.033L199.31 197.012L168.32 228L57.52 59.395z\" clip-rule=\"evenodd\"/><path fill=\"#000\" fill-opacity=\".13\" fill-rule=\"evenodd\" d=\"m88.605 106.416l-.059 6.656l-34.193-50.48l3.166-3.224z\" clip-rule=\"evenodd\"/><defs><linearGradient id=\"SVGeORNEcII\" x1=\"67.297\" x2=\"67.297\" y1=\"28\" y2=\"227.958\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#16B0ED\" stop-opacity=\".8\"/><stop offset=\"1\" stop-color=\"#0F59B2\" stop-opacity=\".837\"/></linearGradient><linearGradient id=\"SVGCDVgrbQz\" x1=\"189.14\" x2=\"189.14\" y1=\"28.023\" y2=\"227.957\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#7DB643\"/><stop offset=\"1\" stop-color=\"#367533\"/></linearGradient><linearGradient id=\"SVG1sDTb44w\" x1=\"128.414\" x2=\"128.414\" y1=\"28.033\" y2=\"228.01\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#88C649\" stop-opacity=\".8\"/><stop offset=\"1\" stop-color=\"#439240\" stop-opacity=\".84\"/></linearGradient></defs></g>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default neovimLight

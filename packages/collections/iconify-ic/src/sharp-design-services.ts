@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const sharpDesignServices: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m21.79 17.06l-5.55-5.55l1.57-1.57l-3.75-3.75l-1.57 1.57l-5.55-5.55l-4.73 4.73l5.55 5.55L3 17.25V21h3.75l4.76-4.76l5.55 5.55zM9.18 11.07L5.04 6.94l1.9-1.9l1.27 1.27L7.02 7.5l1.41 1.41l1.19-1.19l1.45 1.45zm3.75 3.75l1.9-1.9l1.45 1.45l-1.19 1.19l1.41 1.41l1.19-1.19l1.27 1.27l-1.9 1.9zm2.203-9.697l2.538-2.539l3.748 3.748l-2.538 2.539z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sharpDesignServices

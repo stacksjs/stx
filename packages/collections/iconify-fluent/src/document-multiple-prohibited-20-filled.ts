@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const documentMultipleProhibited20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11 2v4.5A1.5 1.5 0 0 0 12.5 8H17v6.5a1.5 1.5 0 0 1-1.5 1.5h-4.707A5.5 5.5 0 0 0 6 9.022V3.5A1.5 1.5 0 0 1 7.5 2zM5 9.022V4a1 1 0 0 0-1 1v4.207a5.5 5.5 0 0 1 1-.185M10.4 17a5.5 5.5 0 0 1-.657 1H14a1 1 0 0 0 1-1zM12 2.25V6.5a.5.5 0 0 0 .5.5h4.25zM1 14.5a4.5 4.5 0 1 0 9 0a4.5 4.5 0 0 0-9 0m2.404 2.803l4.9-4.9a3.5 3.5 0 0 1-4.9 4.9m-.707-.707a3.5 3.5 0 0 1 4.9-4.9z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default documentMultipleProhibited20Filled

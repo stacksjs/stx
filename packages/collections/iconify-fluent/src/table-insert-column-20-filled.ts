@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tableInsertColumn20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 3.5a.5.5 0 0 0-1 0v13a.5.5 0 0 0 1 0zm13 0a.5.5 0 0 0-1 0v13a.5.5 0 0 0 1 0zM9 3a2 2 0 0 0-2 2v2h6V5a2 2 0 0 0-2-2zm-2 9V8h6v4zm0 1h6v2a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default tableInsertColumn20Filled

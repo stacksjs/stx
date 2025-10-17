@@ -1,0 +1,53 @@
+# @stacksjs/iconify-dinkie-icons
+
+Dinkie Icons icons for stx from Iconify.
+
+## Installation
+
+```bash
+bun add @stacksjs/iconify-dinkie-icons
+```
+
+## Usage
+
+### In stx templates
+
+```html
+<script>
+  import { home } from '@stacksjs/iconify-dinkie-icons'
+  import { renderIcon } from '@stacksjs/iconify-core'
+
+  export const homeIcon = renderIcon(home, { size: 24, color: 'currentColor' })
+</script>
+
+<div class="icon">
+  {!! homeIcon !!}
+</div>
+```
+
+### In TypeScript/JavaScript
+
+```typescript
+import { home, account, settings } from '@stacksjs/iconify-dinkie-icons'
+import { renderIcon } from '@stacksjs/iconify-core'
+
+const svg = renderIcon(home, {
+  size: 24,
+  color: '#000000',
+})
+```
+
+## Available Icons
+
+This package contains 1198 icons from Dinkie Icons.
+
+## License
+
+MIT
+
+License: https://github.com/atelier-anchor/dinkie-icons/blob/main/LICENSE
+
+## Credits
+
+- Icons: atelierAnchor (https://github.com/atelier-anchor/dinkie-icons)
+- Iconify: https://iconify.design/

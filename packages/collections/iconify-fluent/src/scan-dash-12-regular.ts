@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const scanDash12Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 2a2 2 0 0 0-2 2v.5a.5.5 0 0 0 1 0V4a1 1 0 0 1 1-1h.5a.5.5 0 0 0 0-1zm3.5 0a.5.5 0 0 0 0 1H8a1 1 0 0 1 1 1v.5a.5.5 0 0 0 1 0V4a2 2 0 0 0-2-2zM3 7.5a.5.5 0 0 0-1 0V8a2 2 0 0 0 2 2h.5a.5.5 0 0 0 0-1H4a1 1 0 0 1-1-1zm7 0a.5.5 0 0 0-1 0V8a1 1 0 0 1-1 1h-.5a.5.5 0 0 0 0 1H8a2 2 0 0 0 2-2zm-5.5-2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1z\"/>",
+  "width": 12,
+  "height": 12,
+  "viewBox": "0 0 12 12"
+}
+
+export default scanDash12Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const folderTypeDapr: IconData = {
+  "body": "<path fill=\"#5569bf\" d=\"M27.5 5.5h-9.3l-2.1 4.2H4.4v16.8h25.2v-21Zm0 4.2h-8.2l1.1-2.1h7.1Z\"/><path fill=\"#0d2192\" d=\"M30.53 28.808h-3.457v-8.29a.253.253 0 0 0-.252-.253H14.35a.253.253 0 0 0-.252.253v8.29H10.47a.47.47 0 0 0-.47.47v1.252a.47.47 0 0 0 .47.47h20.06a.47.47 0 0 0 .47-.47v-1.252a.47.47 0 0 0-.47-.47\"/><path fill=\"#20329b\" d=\"M10.47 31h6.03v-1.6h2.4v-9.135h-4.55a.253.253 0 0 0-.252.253v8.29H10.47a.47.47 0 0 0-.47.47v1.252a.47.47 0 0 0 .47.47\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default folderTypeDapr

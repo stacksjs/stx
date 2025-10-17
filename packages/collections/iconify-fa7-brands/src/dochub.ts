@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const dochub: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M413.9 160H272V19.6zM320 192v130c0 66.8-36.5 100.1-113.3 100.1H112V84.8h94.7c12 0 23.1.8 33.1 2.5v-84C228.9 1.1 217.4 0 205.2 0H16v512h189.2C345.7 512 416 447.4 416 318.1V192z\"/>",
+  "width": 448,
+  "height": 512,
+  "viewBox": "0 0 448 512"
+}
+
+export default dochub

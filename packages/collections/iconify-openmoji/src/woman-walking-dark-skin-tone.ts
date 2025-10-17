@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const womanWalkingDarkSkinTone: IconData = {
+  "body": "<g fill=\"#6a462f\"><circle cx=\"34.37\" cy=\"10.73\" r=\"3\"/><path d=\"m31.19 19.48l-4.872 42.77l1.689 2.021l2.016-2.205l3.646-15.09l8.79 14.17l3.414-.895l-6.826-14.91l-.783-26.22l-5.001-2.252z\"/></g><g fill=\"none\" stroke=\"#000\" stroke-width=\"2\"><ellipse cx=\"34.44\" cy=\"10.67\" stroke-miterlimit=\"10\" rx=\"2.702\" ry=\"2.719\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" d=\"M26.32 62.25c-.097.992.517 1.804 1.365 1.804s1.756-.787 2.016-1.749l4.941-18.23c.26-.962.94-2.417 1.508-3.233l1.981-2.845c.568-.816.994-2.299.946-3.295l-.45-9.289l-.287-4.827c-.118-1.99-1.837-3.656-3.819-3.656h-.046c-1.982 0-3.783 1.659-4.005 3.64l-.5 4.506z\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" d=\"m38.2 37.9l1.64 10.44c.154.985.702 2.488 1.216 3.339l4.345 7.196c.514.851.327 1.957-.416 2.455s-1.832.25-2.421-.552l-4.745-6.466c-.588-.803-1.364-2.22-1.724-3.147l-1.984-5.123m.509-24.582l.05 5.664c.008.997-.178 2.604-.412 3.573l-2.562 10.55\"/><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M37.86 8.885s.57-.328.952-.064c.45.31.846 1.582 1.39 2.1a3.36 3.36 0 0 0 1.958.94\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default womanWalkingDarkSkinTone

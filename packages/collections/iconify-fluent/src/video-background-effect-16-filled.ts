@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const videoBackgroundEffect16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3.293 3h1.414L1 6.707V5.293zM1 8.793v1.414l4.152-4.152a3 3 0 0 1 1.903-1.903L8.207 3H6.793zm4.204-.704l-4.118 4.118c.127.323.384.58.707.707l2.232-2.232a2 2 0 0 1 1.657-1.657l.055-.055a3 3 0 0 1-.533-.88m6.52 1.895a2 2 0 0 0-.708-.707L15 5.293v1.414zM12 13h.207L15 10.207V8.793l-3 3zM9.97 4.737a3 3 0 0 0-.88-.533L10.292 3h1.414zm1.022 2.478a3 3 0 0 0-.172-1.242l2.972-2.972c.38.012.719.195.94.475zM10 7a2 2 0 1 1-4 0a2 2 0 0 1 4 0m-5 6v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default videoBackgroundEffect16Filled

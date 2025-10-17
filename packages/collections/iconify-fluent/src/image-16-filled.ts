@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const image16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.5 2A2.5 2.5 0 0 0 2 4.5v7c0 .51.152.983.414 1.379l4.384-4.384a1.7 1.7 0 0 1 2.404 0l4.384 4.384A2.5 2.5 0 0 0 14 11.5v-7A2.5 2.5 0 0 0 11.5 2zm7 3.502a1.002 1.002 0 1 1-2.004 0a1.002 1.002 0 0 1 2.004 0m1.379 8.084L8.495 9.202a.7.7 0 0 0-.99 0l-4.384 4.384c.396.262.87.414 1.379.414h7c.51 0 .983-.152 1.379-.414\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default image16Filled

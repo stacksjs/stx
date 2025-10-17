@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const haxeflixelLight: IconData = {
+  "body": "<g fill=\"none\"><rect width=\"256\" height=\"256\" fill=\"#F4F2ED\" rx=\"60\"/><path fill=\"#0C3\" d=\"M56.805 55.977h142.828V199.84H56.805z\"/><path fill=\"#FC3\" d=\"M33 32h47.61l47.609 23.977l-71.414 71.931L33 79.954z\"/><path fill=\"#F36\" d=\"M128.219 55.977L175.828 32h47.609v47.954l-23.804 47.954z\"/><path fill=\"#33F\" d=\"m56.805 127.908l71.414 71.931l-47.61 23.977H33v-47.954z\"/><path fill=\"#0CF\" d=\"m199.633 127.908l23.804 47.954v47.954h-47.609l-47.609-23.977z\"/></g>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default haxeflixelLight

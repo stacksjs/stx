@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const peopleTeam48Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M18 11a6 6 0 1 1 12 0a6 6 0 0 1-12 0m19-4a5 5 0 1 0 0 10a5 5 0 0 0 0-10M11 7a5 5 0 1 0 0 10a5 5 0 0 0 0-10m8.25 12A4.25 4.25 0 0 0 15 23.25V34a9 9 0 1 0 18 0V23.25A4.25 4.25 0 0 0 28.75 19zM13 23.25c0-1.6.602-3.061 1.592-4.167A4.3 4.3 0 0 0 13.75 19h-5.5A4.25 4.25 0 0 0 4 23.25V33a7 7 0 0 0 10.293 6.179A10.95 10.95 0 0 1 13 34zM35 34c0 1.872-.468 3.635-1.293 5.179A7 7 0 0 0 44 33v-9.75A4.25 4.25 0 0 0 39.75 19h-5.5q-.433.001-.842.083A6.23 6.23 0 0 1 35 23.25z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default peopleTeam48Filled

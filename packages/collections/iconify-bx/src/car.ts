@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const car: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m20.772 10.156l-1.368-4.105A2.995 2.995 0 0 0 16.559 4H7.441a2.995 2.995 0 0 0-2.845 2.051l-1.368 4.105A2 2 0 0 0 2 12v5c0 .753.423 1.402 1.039 1.743c-.013.066-.039.126-.039.195V21a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2h12v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2.062c0-.069-.026-.13-.039-.195A1.99 1.99 0 0 0 22 17v-5c0-.829-.508-1.541-1.228-1.844M4 17v-5h16l.002 5zM7.441 6h9.117c.431 0 .813.274.949.684L18.613 10H5.387l1.105-3.316A1 1 0 0 1 7.441 6\"/><circle cx=\"6.5\" cy=\"14.5\" r=\"1.5\" fill=\"currentColor\"/><circle cx=\"17.5\" cy=\"14.5\" r=\"1.5\" fill=\"currentColor\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default car

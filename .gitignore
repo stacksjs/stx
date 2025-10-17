@@ -31,3 +31,11 @@ docs/.vitepress/cache/
 bin/
 
 tasks/
+
+examples/stx/test/.stx/cache/
+/packages/stx/.stx-output
+
+examples/.stx/
+
+examples/.stx-output/
+packages/stx/test/performance/perf-temp

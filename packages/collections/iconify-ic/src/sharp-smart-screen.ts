@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const sharpSmartScreen: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M1 5v14h22V5zm17 12H6V7h12z\"/><path fill=\"currentColor\" d=\"M12.5 11.25H14v1.5h-1.5zm2.5 0h1.5v1.5H15zm-5 0h1.5v1.5H10zm-2.5 0H9v1.5H7.5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sharpSmartScreen

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const calendarEmpty32Light: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M29 24.5a4.5 4.5 0 0 1-4.5 4.5h-17A4.5 4.5 0 0 1 3 24.5v-17A4.5 4.5 0 0 1 7.5 3h17A4.5 4.5 0 0 1 29 7.5zM7.5 4A3.5 3.5 0 0 0 4 7.5V10h24V7.5A3.5 3.5 0 0 0 24.5 4zM4 11v13.5A3.5 3.5 0 0 0 7.5 28h17a3.5 3.5 0 0 0 3.5-3.5V11z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default calendarEmpty32Light

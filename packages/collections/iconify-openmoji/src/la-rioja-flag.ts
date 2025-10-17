@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const laRiojaFlag: IconData = {
+  "body": "<path fill=\"#f1b31c\" d=\"M5 17h62v38H5z\"/><path fill=\"#5c9e31\" d=\"M5 36h62v9H5z\"/><path fill=\"#fff\" d=\"M5 27h62v9H5z\"/><path fill=\"#ea5a47\" d=\"M5 17h62v10H5z\"/><g stroke-linecap=\"round\"><path stroke=\"#1e50a0\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"M31.595 34.255h8.784c0 10.31-2.035 10.34-4.416 10.34c-2.431 0-4.368.094-4.368-10.34\"/><path fill=\"#61b2e4\" stroke=\"#61b2e4\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M31.595 34.255h8.784c0 10.31-2.035 10.34-4.416 10.34c-2.431 0-4.368.094-4.368-10.34\"/><path fill=\"none\" stroke=\"#d22f27\" stroke-linejoin=\"round\" stroke-width=\"3\" d=\"M31.485 29.805c3.306-.871 5.541-.936 8.997-.032\"/><path fill=\"none\" stroke=\"#f1b31c\" stroke-linejoin=\"round\" d=\"M30.925 31.225c3.306-.871 6.684-.904 10.14 0\"/><path fill=\"none\" stroke=\"#f1b31c\" stroke-width=\"2\" d=\"m35.965 26.405l.03 3.714m-6.46-2.304l1.396 2.911m11.534-2.911l-1.396 2.911\"/><path fill=\"#ea5a47\" d=\"M30.595 33.255h10.78v3.779l-.246 2.392h-10.32l-.22-2.394z\"/><path fill=\"#fcea2b\" d=\"M30.595 33.255h5.393l-.003 6.169l-.013 6.171c-6.237.587-5.381-8.094-5.377-12.34\"/><path fill=\"#ea5a47\" d=\"M41.345 33.255h-5.393l.003 6.169l.013 6.171c6.237.587 5.381-8.094 5.377-12.34\"/><path fill=\"none\" stroke=\"#fff\" stroke-linejoin=\"round\" d=\"M36.575 44.595h1.594m-1.594-1.32h2.386\"/><path fill=\"none\" stroke=\"#f1b31c\" stroke-width=\"1.5\" d=\"M38.88 39.1v-4.558\"/><path fill=\"none\" stroke=\"#d22f27\" stroke-width=\"1.5\" d=\"M33.09 38.13v-3.584\"/><path fill=\"none\" stroke=\"#f1b31c\" stroke-linejoin=\"round\" d=\"M36.72 39.43h3.777\"/></g><path fill=\"#b1cc33\" d=\"M30.92 41.04h5.06l.009 4.554c-2.753.286-4.415-1.279-5.069-4.554\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 17h62v38H5z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default laRiojaFlag

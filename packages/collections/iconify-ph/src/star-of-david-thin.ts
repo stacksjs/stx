@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const starOfDavidThin: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m196.61 128l30.86-54a4 4 0 0 0-3.47-6h-61.67l-30.86-54a4 4 0 0 0-6.94 0L93.66 68H32a4 4 0 0 0-3.47 6l30.85 54l-30.85 54a4 4 0 0 0 3.47 6h61.66l30.87 54a4 4 0 0 0 6.94 0l30.86-54H224a4 4 0 0 0 3.47-6Zm20.5-52L192 119.94L166.9 76Zm-29.72 52l-29.7 52H98.3l-29.71-52L98.3 76h59.39ZM128 24.06l25.12 44h-50.25ZM38.89 76h50.19L64 119.94Zm0 103.92L64 136.06L89.08 180Zm89.11 52l-25.13-44h50.25ZM166.9 180l25.1-43.94L217.11 180Z\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default starOfDavidThin

@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Media Management as a Service</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* Waves animation */
+    .waves {
+      position: relative;
+      width: 100%;
+      height: 15vh;
+      margin-bottom: -7px;
+      min-height: 100px;
+      max-height: 150px;
+    }
+
+    .parallax > use {
+      animation: move-forever 25s cubic-bezier(0.55, 0.5, 0.45, 0.5) infinite;
+    }
+    .parallax > use:nth-child(1) {
+      animation-delay: -2s;
+      animation-duration: 13s;
+    }
+    .parallax > use:nth-child(2) {
+      animation-delay: -3s;
+      animation-duration: 19s;
+    }
+    .parallax > use:nth-child(3) {
+      animation-delay: -4s;
+      animation-duration: 23s;
+    }
+    .parallax > use:nth-child(4) {
+      animation-delay: -5s;
+      animation-duration: 27s;
+    }
+
+    @keyframes move-forever {
+      0% {
+        transform: translate3d(-90px, 0, 0);
+      }
+      100% {
+        transform: translate3d(85px, 0, 0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .waves {
+        height: 40px;
+        min-height: 40px;
+      }
+    }
+
+    /* Bubble animations for footer */
+    @keyframes animateBubble {
+      0% {
+        margin-top: 0px;
+      }
+      100% {
+        margin-top: -300%;
+      }
+    }
+
+    @keyframes sideWays {
+      0% {
+        margin-left: 0px;
+      }
+      100% {
+        margin-left: 50px;
+      }
+    }
+
+    .bubble {
+      border-radius: 50%;
+      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2), inset 0px 5px 15px 2px rgba(255, 255, 255, 1);
+      height: 100px;
+      position: absolute;
+      width: 100px;
+      z-index: -1;
+    }
+
+    .bubble:after {
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 70%);
+      border-radius: 50%;
+      box-shadow: inset 0 20px 30px rgba(255, 255, 255, 0.3);
+      content: '';
+      height: 90px;
+      left: 5px;
+      position: absolute;
+      width: 90px;
+    }
+
+    .x2 {
+      animation: animateBubble 53s linear infinite, sideWays 4s ease-in-out infinite alternate;
+      left: 5%;
+      top: 10%;
+      transform: scale(0.2);
+    }
+
+    .x3 {
+      animation: animateBubble 58s linear infinite, sideWays 2s ease-in-out infinite alternate;
+      left: 10%;
+      top: 40%;
+      transform: scale(0.3);
+    }
+
+    .x5 {
+      animation: animateBubble 54s linear infinite, sideWays 4s ease-in-out infinite alternate;
+      left: 30%;
+      top: 0;
+      transform: scale(0.3);
+    }
+
+    .x6 {
+      animation: animateBubble 55s linear infinite, sideWays 2s ease-in-out infinite alternate;
+      left: 50%;
+      top: 10%;
+      transform: scale(0.2);
+    }
+
+    .x8 {
+      animation: animateBubble 56s linear infinite, sideWays 3s ease-in-out infinite alternate;
+      left: 80%;
+      top: 10%;
+      transform: scale(0.3);
+    }
+
+    .x9 {
+      animation: animateBubble 59s linear infinite, sideWays 4s ease-in-out infinite alternate;
+      left: 90%;
+      top: 25%;
+      transform: scale(0.4);
+    }
+  </style>
+</head>
+<body class="antialiased">
+
+  <!-- Hero with Gradient Background -->
+  <div class="bg-gradient-to-br from-ocean-blue to-ocean-green">
+    <div class="relative z-30 pt-6 overflow-hidden">
+
+      <!-- Top Navigation -->
+      <div class="relative z-20">
+        <div class="px-4 mx-auto max-w-7xl sm:px-6">
+          <nav class="relative z-20 flex items-center justify-between sm:h-10 md:justify-center" aria-label="Global">
+            <div class="flex items-center flex-1 md:absolute md:inset-y-0 md:left-0">
+              <div class="flex items-center justify-between w-full md:w-auto">
+                <a href="/" class="flex items-center">
+                  <span class="sr-only">Meema</span>
+                  <div class="flex items-center justify-center w-12 h-12">
+                    <svg version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 500 500" xml:space="preserve">
+                      <g>
+                        <path fill="#fff" d="M250.4,0.8C112.7,0.8,1,112.4,1,250.2c0,137.7,111.7,249.4,249.4,249.4c137.7,0,249.4-111.7,249.4-249.4 C499.8,112.4,388.1,0.8,250.4,0.8z M383.8,326.3c-62,0-101.4-14.1-117.6-46.3c-17.1-34.1-2.3-75.4,13.2-104.1 c-22.4,3-38.4,9.2-47.8,18.3c-11.2,10.9-13.6,26.7-16.3,45c-3.1,20.8-6.6,44.4-25.3,62.4c-19.8,19.1-51.6,26.9-100.2,24.6l1.8-39.7 c35.9,1.6,59.7-2.9,70.8-13.6c8.9-8.6,11.1-22.9,13.5-39.6c6.3-42,14.8-99.4,141.4-99.4h41L333,166c-12.6,16-45.4,68.2-31.2,96.2 c9.2,18.3,41.5,25.6,91.2,24.2l1.1,39.8C390.5,326.2,387.1,326.3,383.8,326.3z"/>
+                      </g>
+                    </svg>
+                  </div>
+                  <span class="items-center pl-5 text-2xl font-semibold tracking-wide text-sky-50">Meema</span>
+                </a>
+
+                <div class="flex items-center -mr-2 md:hidden">
+                  <button type="button" class="z-20 inline-flex items-center justify-center p-2 rounded-md text-sky-50 hover:text-sky-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-500">
+                    <span class="sr-only">Open main menu</span>
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="hidden md:flex md:space-x-10">
+              <a href="#features" class="z-20 text-base font-medium text-sky-100 hover:text-sky-200 transition duration-150">
+                Features
+              </a>
+              <a href="#learn" class="z-20 text-base font-medium text-sky-100 hover:text-sky-200 transition duration-150">
+                Learn
+              </a>
+              <a href="#explore" class="z-20 text-base font-medium text-sky-100 hover:text-sky-200 transition duration-150">
+                Explore
+              </a>
+              <a href="#pricing" class="z-20 text-base font-medium text-sky-100 hover:text-sky-200 transition duration-150">
+                Pricing
+              </a>
+            </div>
+
+            <div class="hidden md:absolute md:flex md:items-center md:justify-end md:inset-y-0 md:right-0">
+              <span class="inline-flex rounded-md shadow">
+                <a href="#" class="z-20 inline-flex items-center px-4 py-2 text-base font-medium bg-white border border-transparent rounded-md text-sky-600 hover:text-sky-500">
+                  Log in
+                </a>
+              </span>
+            </div>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Hero Content -->
+      <div class="px-4 pb-16 mx-auto mt-16 max-w-7xl sm:mt-24 sm:px-6 sm:pb-24">
+        <div class="text-center">
+          <h1 class="z-10 text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl">
+            <span class="block">Media Management</span>
+            <span class="block text-transparent bg-clip-text bg-gradient-to-b from-[#225e8d] to-[#478bca] z-10">as a Service</span>
+          </h1>
+          <p class="z-10 max-w-md mx-auto mt-3 text-base text-cyan-100 sm:text-lg md:mt-5 md:text-xl md:max-w-2xl">
+            The easiest way to securely manage, distribute &amp; scale your media delivery across platforms. Privacy-first cloud done right.
+          </p>
+        </div>
+      </div>
+
+      <!-- Media Manager Demo -->
+      <div class="relative z-10 px-4 mx-auto mb-8 max-w-7xl sm:px-2 rounded-lg">
+        <img class="relative z-10 w-full rounded-lg shadow-xl" src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" alt="Media manager screenshot" />
+      </div>
+    </div>
+
+    <!-- Waves -->
+    <div class="relative z-10 w-full -mt-96">
+      <svg class="waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
+        <defs>
+          <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+        </defs>
+        <g class="parallax">
+          <use xlink:href="#gentle-wave" x="48" y="0" fill="rgba(255,255,255,0.7" />
+          <use xlink:href="#gentle-wave" x="48" y="3" fill="rgba(255,255,255,0.5)" />
+          <use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(255,255,255,0.3)" />
+          <use xlink:href="#gentle-wave" x="48" y="7" fill="#fff" />
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Four Features Section -->
+  <div id="features" class="relative z-20 overflow-hidden bg-gradient-to-b from-[#FFFDFA] to-[#fff6ea]">
+    <div class="h-64"></div>
+
+    <div class="relative px-4 py-16 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="relative lg:grid lg:grid-cols-3 lg:gap-x-8">
+        <div class="lg:col-span-1">
+          <h2 class="text-3xl font-extrabold tracking-tight text-sky-900 sm:text-4xl">
+            A better Development Experience.
+          </h2>
+        </div>
+        <dl class="mt-10 space-y-10 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-x-8 sm:gap-y-10 lg:mt-0 lg:col-span-2">
+          <div>
+            <dt>
+              <div class="flex flex-col items-center justify-center w-12 h-12 rounded-md text-cyan-50">
+                <svg class="w-6 h-6 text-cyan-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                </svg>
+              </div>
+              <p class="mt-5 text-lg font-medium leading-6 text-blue-gray-900">Meema Cloud</p>
+            </dt>
+            <dd class="mt-2 text-base text-blue-gray-500">
+              Meema is more than a blazing-fast CDN for your files and your images and videos, in particular. It as a cloud and ecosystem tailored towards providing the ideal media delivery experience for developers and end-users. We mastered your privacy-first cloud.
+            </dd>
+          </div>
+
+          <div>
+            <dt>
+              <div class="flex flex-col items-center justify-center w-12 h-12 rounded-md text-cyan-50">
+                <svg class="w-6 h-6 text-cyan-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <p class="mt-5 text-lg font-medium leading-6 text-blue-gray-900">Meema Images</p>
+            </dt>
+            <dd class="mt-2 text-base text-blue-gray-500">
+              Is the image sized properly? Is it as optimized as can be to increase page speed? How do I implement responsive images again? Questions we answer for you.
+            </dd>
+          </div>
+
+          <div>
+            <dt>
+              <div class="flex flex-col items-center justify-center w-12 h-12 rounded-md text-cyan-50">
+                <svg class="w-6 h-6 text-cyan-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                </svg>
+              </div>
+              <p class="mt-5 text-lg font-medium leading-6 text-blue-gray-900">Meema Videos</p>
+            </dt>
+            <dd class="mt-2 text-base text-blue-gray-500">
+              Buffering videos are annoying. Figuring out how to stream video on the internet is difficult. That's why Meema encodes the video for you using an adaptive bitrate streaming technology.
+            </dd>
+          </div>
+
+          <div>
+            <dt>
+              <div class="flex flex-col items-center justify-center w-12 h-12 rounded-md text-cyan-50">
+                <svg class="w-6 h-6 text-cyan-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+                </svg>
+              </div>
+              <p class="mt-5 text-lg font-medium leading-6 text-blue-gray-900">Meema Manager</p>
+            </dt>
+            <dd class="mt-2 text-base text-blue-gray-500">
+              The flagship feature. Don't waste time anymore developing a custom media management experience. Inject &amp; configure this manager to create your own experience.
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- Call to Action -->
+  <div class="relative bg-ocean-blue">
+    <div class="px-4 py-10 mx-auto max-w-7xl sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between text-sky-800">
+      <h2 class="z-10 text-3xl font-extrabold tracking-tight text-blue-gray-900 md:text-4xl">
+        <span class="block text-white">Ready to dive in?</span>
+        <span class="block text-cyan-400">Start your free trial in less than a minute.</span>
+      </h2>
+
+      <div class="z-10 flex mt-8 lg:mt-0 lg:flex-shrink-0">
+        <div class="inline-flex rounded-md shadow">
+          <a href="#" class="items-center justify-center px-5 py-3 text-base font-medium text-white transition duration-150 ease-in-out border border-transparent rounded-md inline-flex bg-cyan-400 hover:bg-cyan-300">
+            Get started
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Why Section -->
+  <div id="learn" class="relative z-10 pt-16 pb-32 overflow-hidden bg-gradient-to-b from-[#FFFDFA] to-[#fff6ea]">
+    <section class="relative z-10 max-w-screen-lg py-12 mx-auto text-center xl:max-w-screen-xl">
+      <div class="relative px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div class="relative">
+          <div class="relative z-10 max-w-screen-lg mx-auto text-center xl:max-w-screen-xl">
+            <h2 class="mb-8 text-3xl font-extrabold leading-none tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+              Why? Why another service?
+            </h2>
+          </div>
+
+          <blockquote class="mt-10">
+            <p class="max-w-5xl mx-auto mb-6 space-y-6 text-lg font-medium text-gray-500 sm:text-2xl sm:leading-10">
+              Media management is an incredibly complicated subject to master. As an example, prior to displaying images &amp; videos, these assets likely need to be optimized in format and in filesize for an ideal web delivery. Now, what is the "best format" and how do we optimally convert &amp; compress it? What if AVIF or HLS isn't supported by the client? Is there a fallback plan? Last but not least, how would we develop the infrastructure for a secure &amp; blazing-fast global CDN?
+              <span class="font-semibold text-sky-600" style="box-shadow: inset 0 -0.1666666667em 0 0 #fff, inset 0 -0.3333333333em 0 0 #bae6fd">Meema answers these questions for you and so you don't ever have to deal with it.</span>
+            </p>
+          </blockquote>
+        </div>
+      </div>
+    </section>
+
+    <div class="relative">
+      <div class="lg:mx-auto lg:max-w-7xl lg:px-8 lg:grid lg:grid-cols-2 lg:grid-flow-col-dense lg:gap-24">
+        <div class="max-w-xl px-4 mx-auto sm:px-6 lg:py-16 lg:max-w-none lg:mx-0 lg:px-0">
+          <div>
+            <div class="flex flex-col items-center justify-center w-12 h-12 rounded-md text-cyan-50">
+              <svg class="w-6 h-6 text-cyan-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+              </svg>
+            </div>
+            <div class="mt-6">
+              <h2 class="text-3xl font-extrabold tracking-tight text-blue-gray-900">How to get started</h2>
+              <p class="mt-4 text-lg text-blue-gray-500">
+                It is super easy. No matter whether you are a no-code advocate or a "DIY"-developer, our graphical user &amp; programmatic interfaces allow for an incredibly simple and personalized media management experience.
+              </p>
+              <p class="mt-4 text-lg text-blue-gray-500">
+                Whether you prefer uploading files to Meema via a backend or a frontend language or framework, we got you covered. Use one of our many first-party integrations to quickly get started!
+              </p>
+              <div class="mt-6">
+                <a href="#" class="inline-flex px-4 py-2 text-base font-medium text-white transition duration-150 ease-in-out border border-transparent rounded-md shadow-sm bg-sky-600 hover:bg-sky-700">
+                  Get started
+                </a>
+              </div>
+            </div>
+
+            <div class="pt-6 mt-8 border-t border-blue-gray-200">
+              <blockquote>
+                <div>
+                  <p class="text-base text-blue-gray-500">
+                    "This is the tool I wish I always had. There have been numerous times we developed an admin panel/dashboard for a client and there was no budget for a thorough media manager implementation. Incredibly useful!"
+                  </p>
+                </div>
+                <footer class="mt-3">
+                  <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                      <img class="w-6 h-6 rounded-full" src="https://images.unsplash.com/photo-1509783236416-c9ad59bae472?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80" alt="" />
+                    </div>
+                    <div class="text-base font-medium text-blue-gray-700">Chris Breuer, Founder of Meema</div>
+                  </div>
+                </footer>
+              </blockquote>
+            </div>
+          </div>
+        </div>
+        <div class="mx-auto mt-12 sm:mt-16 lg:mt-0">
+          <div class="flex flex-col justify-center pl-4 -mr-48 sm:pl-6 md:-mr-16 lg:px-0 lg:m-0 lg:relative lg:h-full">
+            <div class="w-full rounded-lg shadow-xl overflow-hidden">
+              <div class="bg-ocean-blue-green p-8 text-cyan-50">
+                <h3 class="text-lg font-semibold mb-4">Example Integration</h3>
+                <pre class="text-sm overflow-x-auto"><code>use League\Flysystem\Filesystem;
+use Meema\Client as MeemaClient;
+use Meema\FlysystemMeema\MeemaAdapter;
+
+public function boot() {
+    Storage::extend('meema', function ($app, $config) {
+        $client = new MeemaClient($config['api_secret']);
+        return new Filesystem(new MeemaAdapter($client));
+    });
+}</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-24">
+      <div class="lg:mx-auto lg:max-w-7xl lg:px-8 lg:grid lg:grid-cols-2 lg:grid-flow-col-dense lg:gap-24">
+        <div class="max-w-xl px-4 mx-auto sm:px-6 lg:py-8 lg:max-w-none lg:mx-0 lg:px-0 lg:col-start-2">
+          <div>
+            <div class="flex flex-col items-center justify-center w-12 h-12 rounded-md text-cyan-50">
+              <svg class="w-6 h-6 text-cyan-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              </svg>
+            </div>
+            <div class="mt-6">
+              <h2 class="text-3xl font-extrabold tracking-tight text-blue-gray-900">Compressing &amp; Optimizing</h2>
+              <p class="mt-4 text-lg text-blue-gray-500">
+                Enjoy the feeling of not having to worry about web optimizing your images and videos anymore. Not only will your media be optimized for ideal delivery but applying edits &amp; improvements to your images is as simple as can be. And all of it "on-the-fly." View our Playground to test the waters.
+              </p>
+              <p class="mt-4 text-lg text-blue-gray-500">
+                <span class="font-medium transition duration-150 ease-in-out text-sky-600 hover:text-sky-800" style="box-shadow: inset 0 -0.1666666667em 0 0 #fff, inset 0 -0.3333333333em 0 0 #bae6fd">Meema.js</span> utilizes our on-the-fly functionalities to help you properly implement "responsive images" because, let's be honest, we all should be making use of them.
+              </p>
+
+              <div class="mt-6">
+                <a href="#" class="inline-flex px-4 py-2 text-base font-medium text-white border border-transparent rounded-md shadow-sm bg-sky-600 hover:bg-sky-700">View Playground</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center mt-12 sm:mt-16 lg:mt-0 lg:col-start-1">
+          <div class="pr-4 -ml-48 sm:pr-6 md:-ml-16 lg:px-0 lg:m-0">
+            <div class="w-full rounded-lg shadow-xl overflow-hidden">
+              <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?ixlib=rb-4.0.3&auto=format&fit=crop&w=1064&q=80" alt="Optimization comparison" class="w-full" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing -->
+  <div id="pricing" class="relative bg-gradient-to-b from-ocean-green to-ocean-blue">
+    <div class="relative pt-12 pb-20 sm:pt-16 sm:pb-24 lg:pt-24 lg:pb-32">
+      <div class="px-4 mx-auto text-center max-w-7xl sm:px-6 lg:px-8">
+        <div class="max-w-3xl mx-auto space-y-2 lg:max-w-none">
+          <h2 class="text-lg font-semibold leading-6 tracking-wider uppercase text-white opacity-75">Pricing</h2>
+          <p class="text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl">
+            Oh, 🐳. Are you ready to start your journey?
+          </p>
+          <p class="text-xl text-white opacity-90">Anchor down in less than a minute.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pb-12 mt-8 sm:mt-12 sm:pb-16 lg:mt-16 lg:pb-24">
+      <div class="relative">
+        <div class="relative px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+          <div class="max-w-md mx-auto space-y-4 lg:max-w-5xl lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0 relative z-10">
+
+            <!-- Hobby Plan -->
+            <div class="flex flex-col overflow-hidden rounded-lg shadow-lg">
+              <div class="px-6 py-8 bg-white sm:p-10 sm:pb-6">
+                <div>
+                  <h3 id="tier-hobby" class="inline-flex px-4 py-1 text-sm font-semibold tracking-wide uppercase rounded-full text-cyan-600 bg-cyan-100">
+                    Hobby
+                  </h3>
+                </div>
+                <div class="flex items-baseline mt-4 text-6xl font-extrabold">
+                  $19
+                  <span class="ml-1 text-2xl font-medium text-blue-gray-500"> /mo </span>
+                </div>
+                <p class="mt-5 text-lg text-blue-gray-500">
+                  Everything your heart desires to manage your own personal media.
+                </p>
+              </div>
+              <div class="flex flex-col justify-between flex-1 px-6 pt-6 pb-8 space-y-6 bg-blue-gray-50 sm:p-10 sm:pt-6">
+                <ul class="space-y-4">
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0">
+                      <svg class="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="ml-3 text-base text-blue-gray-700">Blazing-fast CDN</p>
+                  </li>
+
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0">
+                      <svg class="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="ml-3 text-base text-blue-gray-700">Private &amp; encrypted cloud storage</p>
+                  </li>
+
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0">
+                      <svg class="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="ml-3 text-base text-blue-gray-700">Embeddable media manager</p>
+                  </li>
+
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0">
+                      <svg class="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="ml-3 text-base text-blue-gray-700">Optimized image delivery</p>
+                  </li>
+
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0">
+                      <svg class="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="ml-3 text-base text-blue-gray-700">Smart video encoding &amp; streaming</p>
+                  </li>
+
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0">
+                      <svg class="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="ml-3 text-base text-blue-gray-700">On-The-Fly &amp; and much more...</p>
+                  </li>
+                </ul>
+                <div class="rounded-md shadow">
+                  <a href="#" class="flex items-center justify-center px-5 py-3 text-base font-medium text-white border border-transparent rounded-md bg-blue-gray-800 hover:bg-blue-gray-900" aria-describedby="tier-standard">
+                    Get started
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Professional Plan -->
+            <div class="flex flex-col overflow-hidden rounded-lg shadow-lg">
+              <div class="px-6 py-8 bg-white sm:p-10 sm:pb-6">
+                <div>
+                  <h3 id="tier-professional" class="inline-flex px-4 py-1 text-sm font-semibold tracking-wide uppercase rounded-full text-cyan-600 bg-cyan-100">
+                    Professional
+                  </h3>
+                </div>
+                <div class="flex items-baseline mt-4 text-6xl font-extrabold">
+                  $39
+                  <span class="ml-1 text-2xl font-medium text-blue-gray-500"> /mo </span>
+                </div>
+                <p class="mt-5 text-lg text-blue-gray-500">
+                  Scale up the the way your work with media. Ideal for use at work &amp; when working in teams.
+                </p>
+              </div>
+              <div class="flex flex-col justify-between flex-1 px-6 pt-6 pb-8 space-y-6 bg-blue-gray-50 sm:p-10 sm:pt-6">
+                <ul class="space-y-4">
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0">
+                      <svg class="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="ml-3 text-base text-blue-gray-700">Increased cloud storage limit</p>
+                  </li>
+
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0">
+                      <svg class="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="ml-3 text-base text-blue-gray-700">Increased video encoding limit</p>
+                  </li>
+
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0">
+                      <svg class="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="ml-3 text-base text-blue-gray-700">Increased smart labeling limit</p>
+                  </li>
+
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0">
+                      <svg class="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="ml-3 text-base text-blue-gray-700">Team management</p>
+                  </li>
+
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0">
+                      <svg class="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="ml-3 text-base text-blue-gray-700">Prioritized support</p>
+                  </li>
+                </ul>
+                <div class="rounded-md shadow">
+                  <a href="#" class="flex items-center justify-center px-5 py-3 text-base font-medium text-white border border-transparent rounded-md bg-blue-gray-800 hover:bg-blue-gray-900" aria-describedby="tier-standard">
+                    Get started
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative px-4 mx-auto mt-8 pb-12 max-w-7xl sm:px-6 sm:pb-16 lg:px-8 lg:mt-12 lg:pb-24">
+          <div class="max-w-md mx-auto lg:max-w-5xl">
+            <div class="px-6 py-8 bg-white rounded-lg shadow-md sm:p-10 lg:flex lg:items-center">
+              <div class="flex-1">
+                <div>
+                  <h3 class="inline-flex px-4 py-1 text-sm font-semibold tracking-wide uppercase rounded-full text-cyan-600 bg-cyan-100">
+                    Purchasing Power Parity
+                  </h3>
+                </div>
+                <div class="mt-4 text-lg text-gray-700">
+                  We participate in the "purchasing power parity" (PPP) program based on the Big Mac Index. Contact us to participate.
+                </div>
+              </div>
+              <div class="mt-6 rounded-md shadow lg:mt-0 lg:ml-10 lg:flex-shrink-0">
+                <a href="#" class="flex items-center justify-center px-5 py-3 text-base font-medium text-white border border-transparent rounded-md bg-ocean-blue hover:bg-ocean-blue-green transition">
+                  Contact Us
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="relative bg-ocean-blue" aria-labelledby="footerHeading">
+    <div class="absolute top-0 bottom-0 left-0 right-0 z-0">
+      <div class="bubble x2"></div>
+      <div class="bubble x3"></div>
+      <div class="bubble x5"></div>
+      <div class="bubble x6"></div>
+      <div class="bubble x8"></div>
+      <div class="bubble x9"></div>
+    </div>
+
+    <h2 id="footerHeading" class="sr-only">Footer</h2>
+    <div class="relative z-10 px-4 py-12 mx-auto max-w-7xl sm:px-6 lg:py-16 lg:px-8">
+      <div class="xl:grid xl:grid-cols-3 xl:gap-8">
+        <div class="grid grid-cols-2 gap-8 xl:col-span-2">
+          <div class="md:grid md:grid-cols-2 md:gap-8">
+            <div>
+              <h3 class="text-sm font-semibold tracking-wider uppercase text-sky-400">Products</h3>
+              <ul class="mt-4 space-y-4">
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">Cloud</a>
+                </li>
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">Media Manager</a>
+                </li>
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">Images</a>
+                </li>
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">Video</a>
+                </li>
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">On-The-Fly</a>
+                </li>
+              </ul>
+            </div>
+            <div class="mt-12 md:mt-0">
+              <h3 class="text-sm font-semibold tracking-wider uppercase text-sky-400">Support</h3>
+              <ul class="mt-4 space-y-4">
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">Pricing</a>
+                </li>
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">Documentation</a>
+                </li>
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">Open Source</a>
+                </li>
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">Contact Us</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="md:grid md:grid-cols-2 md:gap-8">
+            <div>
+              <h3 class="text-sm font-semibold tracking-wider uppercase text-sky-400">Company</h3>
+              <ul class="mt-4 space-y-4">
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">About</a>
+                </li>
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">Blog</a>
+                </li>
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">Changelog</a>
+                </li>
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">Affiliates</a>
+                </li>
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">Save The Oceans</a>
+                </li>
+              </ul>
+            </div>
+            <div class="mt-12 md:mt-0">
+              <h3 class="text-sm font-semibold tracking-wider uppercase text-sky-400">Legal</h3>
+              <ul class="mt-4 space-y-4">
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">Privacy</a>
+                </li>
+                <li>
+                  <a href="#" class="text-base text-blue-gray-300 hover:text-white">Terms</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="mt-12 xl:mt-0">
+          <div class="flex items-start space-x-2 mb-4">
+            <svg class="w-6 h-6 text-sky-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <div>
+              <h3 class="text-base font-bold tracking-wide uppercase text-white">Subscribe to our newsletter</h3>
+            </div>
+          </div>
+          <p class="mt-3 text-base leading-relaxed text-blue-gray-200">
+            Get the latest news, articles, and resources delivered to your inbox weekly.
+          </p>
+          <form class="mt-6 sm:flex sm:max-w-md">
+            <label for="emailAddress" class="sr-only">Email address</label>
+            <input
+              id="emailAddress"
+              type="email"
+              name="emailAddress"
+              autocomplete="email"
+              required
+              class="w-full min-w-0 px-4 py-3 text-base bg-white border-2 border-blue-gray-700 rounded-lg appearance-none text-blue-gray-900 placeholder-blue-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent transition-all shadow-sm"
+              placeholder="you@example.com"
+            />
+            <div class="mt-3 rounded-md sm:mt-0 sm:ml-3 sm:flex-shrink-0">
+              <button
+                type="submit"
+                class="flex items-center justify-center w-full px-6 py-3 text-base font-semibold text-white border-2 border-transparent rounded-lg bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-ocean-blue focus:ring-sky-400 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <span>Subscribe</span>
+                <svg class="w-5 h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </button>
+            </div>
+          </form>
+          <p class="mt-3 text-xs text-blue-gray-400">
+            We care about your data. Read our <a href="#" class="underline hover:text-sky-400 transition-colors">Privacy Policy</a>.
+          </p>
+        </div>
+      </div>
+      <div class="pt-8 mt-8 border-t border-gray-700 md:flex md:items-center md:justify-between">
+        <div class="flex space-x-6 md:order-2">
+          <a href="https://twitter.com" class="text-blue-gray-400 hover:text-blue-gray-300">
+            <span class="sr-only">Twitter</span>
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+            </svg>
+          </a>
+
+          <a href="https://github.com" class="text-blue-gray-400 hover:text-blue-gray-300">
+            <span class="sr-only">GitHub</span>
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
+            </svg>
+          </a>
+        </div>
+        <p class="mt-8 text-base text-blue-gray-400 md:mt-0 md:order-1">
+          &copy; 2025 Stacks.js, Inc. All rights reserved. Made with &#10084; in Silicon Beach.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

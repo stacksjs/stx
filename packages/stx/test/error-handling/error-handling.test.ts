@@ -86,7 +86,7 @@ line 5`
 
       expect(enhancedError).toContain('[Syntax Error at line 3 in /test/file.stx]: Test error message')
       expect(enhancedError).toContain('Context:')
-      expect(enhancedError).toContain('> 3: line 3 with error')
+      expect(enhancedError).toContain('>   3: line 3 with error')
       expect(enhancedError).toContain('^')
     })
 

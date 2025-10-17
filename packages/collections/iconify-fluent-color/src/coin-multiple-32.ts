@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const coinMultiple32: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGEb39HbdD)\" d=\"M16 30c5.523 0 10-2.462 10-5.5v-3H6v3c0 3.038 4.477 5.5 10 5.5\"/><ellipse cx=\"16\" cy=\"21.5\" fill=\"url(#SVGGphaWcDQ)\" rx=\"10\" ry=\"5.5\"/><path fill=\"url(#SVGNQOq7c2R)\" d=\"M16 23c5.523 0 10-2.462 10-5.5v-3H6v3c0 3.038 4.477 5.5 10 5.5\"/><ellipse cx=\"16\" cy=\"14.5\" fill=\"url(#SVGrtBUZc3g)\" rx=\"10\" ry=\"5.5\"/><path fill=\"url(#SVGE7nQfdRI)\" d=\"M16 16c5.523 0 10-2.462 10-5.5v-3H6v3c0 3.038 4.477 5.5 10 5.5\"/><ellipse cx=\"16\" cy=\"7.5\" fill=\"url(#SVGpAFDPbsh)\" rx=\"10\" ry=\"5.5\"/><defs><linearGradient id=\"SVGEb39HbdD\" x1=\"11.305\" x2=\"14.301\" y1=\"23.586\" y2=\"30.645\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFA43D\"/><stop offset=\"1\" stop-color=\"#FB5937\"/></linearGradient><linearGradient id=\"SVGGphaWcDQ\" x1=\"26.029\" x2=\"16.157\" y1=\"26.996\" y2=\"12.314\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FF8A69\"/><stop offset=\"1\" stop-color=\"#FFCD0F\"/></linearGradient><linearGradient id=\"SVGNQOq7c2R\" x1=\"11.305\" x2=\"14.301\" y1=\"16.586\" y2=\"23.645\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFA43D\"/><stop offset=\"1\" stop-color=\"#FB5937\"/></linearGradient><linearGradient id=\"SVGrtBUZc3g\" x1=\"26.029\" x2=\"16.157\" y1=\"19.996\" y2=\"5.314\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FF8A69\"/><stop offset=\"1\" stop-color=\"#FFCD0F\"/></linearGradient><linearGradient id=\"SVGE7nQfdRI\" x1=\"11.305\" x2=\"14.301\" y1=\"9.586\" y2=\"16.645\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFA43D\"/><stop offset=\"1\" stop-color=\"#FB5937\"/></linearGradient><linearGradient id=\"SVGpAFDPbsh\" x1=\"26.029\" x2=\"16.157\" y1=\"12.996\" y2=\"-1.686\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FF8A69\"/><stop offset=\"1\" stop-color=\"#FFCD0F\"/></linearGradient></defs></g>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default coinMultiple32

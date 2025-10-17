@@ -301,7 +301,7 @@ describe('stx Markdown Support', () => {
       module.processMarkdownDirectives(template, {}),
     )
 
-    expect(processedContent).toContain('<h1>Heading</h1>')
+    expect(processedContent).toMatch(/<h1[^>]*>Heading<\/h1>/)
     expect(processedContent).toContain('<ul>')
     expect(processedContent).toContain('<li>List item 1</li>')
     expect(processedContent).toContain('<li>List item 2</li>')
@@ -333,7 +333,7 @@ Unclosed code block
       module.processMarkdownDirectives(template, {}),
     )
 
-    expect(processedContent).toContain('<h1>Valid markdown</h1>')
+    expect(processedContent).toMatch(/<h1[^>]*>Valid markdown<\/h1>/)
     // Despite the syntax error, marked will still render it
     expect(processedContent).toContain('Unclosed code block')
   })

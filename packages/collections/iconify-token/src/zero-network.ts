@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const zeroNetwork: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9.646 12.946c.224 1.413.965 2.253 2.395 2.253s2.156-.84 2.374-2.254a.175.175 0 0 0-.173-.202H9.818a.175.175 0 0 0-.172.203m-.019-1.935c-.014.106.067.2.172.2h4.461a.175.175 0 0 0 .173-.2c-.193-1.47-.918-2.291-2.392-2.291s-2.216.822-2.414 2.291\"/><path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0m4.663-.088c0-2.822 1.241-4.74 4.378-4.74s4.377 1.918 4.377 4.74s-1.24 4.834-4.377 4.834s-4.378-2.011-4.378-4.834\" clip-rule=\"evenodd\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default zeroNetwork

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cPlusPlus: IconData = {
+  "body": "<g fill=\"currentColor\"><path d=\"M12.207 16.278a6 6 0 1 1 .071-8.485l1.414-1.414a8 8 0 1 0-.071 11.314z\"/><path d=\"M15 9h-2v2h-2v2h2v2h2v-2h2v-2h-2zm5 0h2v2h2v2h-2v2h-2v-2h-2v-2h2z\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default cPlusPlus

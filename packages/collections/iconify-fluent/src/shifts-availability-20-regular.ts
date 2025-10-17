@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const shiftsAvailability20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11.916 6.083A5.002 5.002 0 0 0 2 7a5 5 0 0 0 4.083 4.916q-.076.49-.083 1.001A6.002 6.002 0 0 1 7 1a6 6 0 0 1 5.917 5q-.51.007-1 .083m-.562 4.563a.5.5 0 0 0-.708.708L12.293 13l-1.647 1.646a.5.5 0 0 0 .708.708L13 13.707l1.646 1.647a.5.5 0 0 0 .708-.708L13.707 13l1.647-1.646a.5.5 0 0 0-.708-.708L13 12.293zM13 19a6 6 0 1 0 0-12a6 6 0 0 0 0 12m0-1a5 5 0 1 1 0-10a5 5 0 0 1 0 10M9.354 5.354a.5.5 0 1 0-.708-.708L6 7.293L4.854 6.146a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default shiftsAvailability20Regular

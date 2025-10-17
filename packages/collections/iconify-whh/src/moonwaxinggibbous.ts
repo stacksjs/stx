@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const moonwaxinggibbous: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M512 1024q-104 0-199-40.5t-163.5-109T40.5 711T0 512t40.5-199t109-163.5T313 40.5T512 0t199 40.5t163.5 109t109 163.5t40.5 199t-40.5 199t-109 163.5t-163.5 109t-199 40.5m0-960q-91 0-174 35.5T195 195T99.5 338T64 512t35.5 174T195 829t143 95.5T512 960q-61 0-122-72t-97.5-176.5T256 512t36.5-199.5T390 136t122-72\"/>",
+  "width": 1024,
+  "height": 1024,
+  "viewBox": "0 0 1024 1024"
+}
+
+export default moonwaxinggibbous

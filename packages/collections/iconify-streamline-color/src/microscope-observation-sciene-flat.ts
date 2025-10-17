@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const microscopeObservationScieneFlat: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#2859c5\" fill-rule=\"evenodd\" d=\"M3.959.018h1a.5.5 0 0 1 .5.5v1.72h-2V.518a.5.5 0 0 1 .5-.5\" clip-rule=\"evenodd\"/><path fill=\"#8fbffa\" d=\"M2.709 2.738a.5.5 0 0 1 .5-.5h3v4c0 .554-.446 1.006-1 1.012l-1.459.017a1.03 1.03 0 0 1-1.04-1.029z\"/><path fill=\"#2859c5\" fill-rule=\"evenodd\" d=\"M6.19 4.791h1.54a3.22 3.22 0 0 1 3.222 3.22v1.721h2.038a.75.75 0 0 1 .719.534V8.04a5.8 5.8 0 0 0-5.802-5.802H6.189v2.553Z\" clip-rule=\"evenodd\"/><path fill=\"#8fbffa\" fill-rule=\"evenodd\" d=\"M1.959 9.732a.75.75 0 1 0 0 1.5h3.05c0 .246-.108.582-.305.908c-.23.222-.488.342-.745.342h-2.95a.75.75 0 0 0 0 1.5h11.95a.75.75 0 0 0 .75-.75v-2.535a.75.75 0 0 0-.719-.965z\" clip-rule=\"evenodd\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default microscopeObservationScieneFlat

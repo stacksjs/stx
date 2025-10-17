@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const transferDown: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" d=\"M9 5v7H5.483a.2.2 0 0 0-.142.341L12 19l6.659-6.659a.2.2 0 0 0-.142-.341H15V5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default transferDown

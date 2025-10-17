@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const triangleStroked11: IconData = {
+  "body": "<path d=\"M5.517 1.232a.556.556 0 0 0-.493.268l-4 6.66c-.223.37.044.84.476.84h8c.432 0 .699-.47.476-.84l-4-6.66a.556.556 0 0 0-.459-.268zM5.5 2.861l3.02 5.03H2.48l3.02-5.03z\" fill=\"currentColor\"/>",
+  "width": 11,
+  "height": 11,
+  "viewBox": "0 0 11 11"
+}
+
+export default triangleStroked11

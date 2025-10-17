@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const shareIos48Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M23.116 4.366a1.25 1.25 0 0 1 1.768 0l11.5 11.5a1.25 1.25 0 0 1-1.768 1.768L25.25 8.268V30.75a1.25 1.25 0 1 1-2.5 0V8.268l-9.366 9.366a1.25 1.25 0 0 1-1.768-1.768zM7.25 22c.69 0 1.25.56 1.25 1.25v12.5a3.75 3.75 0 0 0 3.75 3.75h23.5a3.75 3.75 0 0 0 3.75-3.75v-12.5a1.25 1.25 0 1 1 2.5 0v12.5A6.25 6.25 0 0 1 35.75 42h-23.5A6.25 6.25 0 0 1 6 35.75v-12.5c0-.69.56-1.25 1.25-1.25\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default shareIos48Regular

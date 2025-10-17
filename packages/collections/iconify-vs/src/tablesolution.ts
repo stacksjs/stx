@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tablesolution: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m0 1248l320-320q5 105 48 202t120 174t174 120t202 48l-320 320q-188-74-328-216Q74 1436 0 1248m1792 0l-320-320q-5 105-48 202t-120 174t-174 120t-202 48l320 320q188-74 328-216q142-140 216-328M1248 0L980 268l-52 52q105 5 202 48t174 120t120 174t48 202l320-320q-74-188-216-328Q1436 74 1248 0M544 0l320 320q-105 5-202 48T488 488T368 662t-48 202l-52-52L0 544q74-188 216-328Q356 74 544 0\"/>",
+  "width": 1792,
+  "height": 1792,
+  "viewBox": "0 0 1792 1792"
+}
+
+export default tablesolution

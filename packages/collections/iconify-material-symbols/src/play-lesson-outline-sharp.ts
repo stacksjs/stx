@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const playLessonOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 22V2h16v9.1q-.45-.05-1-.05t-1 .05V4h-5v7L9.5 9.5L7 11V4H5v16h6.3q.15.5.413 1.038t.537.962zm15 1q-2.075 0-3.537-1.463T13 18t1.463-3.537T18 13t3.538 1.463T23 18t-1.463 3.538T18 23m-1.25-2.5l4-2.5l-4-2.5zM7 4h5zM5 4h12h-6h.3z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default playLessonOutlineSharp

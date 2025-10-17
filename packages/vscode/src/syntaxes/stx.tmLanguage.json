@@ -23,6 +23,87 @@
     "stx": {
       "patterns": [
         {
+          "begin": "(<)(script)(?=[\\s>])",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.begin.html"
+            },
+            "2": {
+              "name": "entity.name.tag.script.html"
+            }
+          },
+          "end": "(</)(script)(>)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.begin.html"
+            },
+            "2": {
+              "name": "entity.name.tag.script.html"
+            },
+            "3": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "name": "meta.tag.script.html",
+          "patterns": [
+            {
+              "begin": "(?<=>)(?!</)",
+              "end": "(?=</script)",
+              "name": "source.js.embedded.html",
+              "patterns": [
+                {
+                  "include": "#stx"
+                },
+                {
+                  "include": "source.js"
+                }
+              ]
+            },
+            {
+              "include": "text.html.derivative#tag-stuff"
+            }
+          ]
+        },
+        {
+          "begin": "(<)(style)(?=[\\s>])",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.begin.html"
+            },
+            "2": {
+              "name": "entity.name.tag.style.html"
+            }
+          },
+          "end": "(</)(style)(>)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.begin.html"
+            },
+            "2": {
+              "name": "entity.name.tag.style.html"
+            },
+            "3": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "name": "meta.tag.style.html",
+          "patterns": [
+            {
+              "begin": "(?<=>)(?!</)",
+              "end": "(?=</style)",
+              "name": "source.css.embedded.html",
+              "patterns": [
+                {
+                  "include": "source.css"
+                }
+              ]
+            },
+            {
+              "include": "text.html.derivative#tag-stuff"
+            }
+          ]
+        },
+        {
           "begin": "{{--",
           "beginCaptures": {
             "0": {
@@ -125,7 +206,7 @@
           ]
         },
         {
-          "begin": "(?x)(?<![A-Za-z0-9_@]) (@  (?i:\n    auth\n    |break\n    |can\n    |canany\n    |cannot\n    |case\n    |choice\n    |component\n    |continue\n    |dd\n    |dump\n    |each\n    |elsecan\n    |elsecanany\n    |elsecannot\n    |elseif\n    |empty\n    |error\n    |extends\n    |for\n    |foreach\n    |forelse\n    |guest\n    |hassection\n    |if\n    |include\n    |includefirst\n    |includeif\n    |includeunless\n    |includewhen\n    |inject\n    |isset\n    |json\n    |lang\n    |once\n    |prepend\n    |push\n    |section\n    |sectionMissing\n    |slot\n    |stack\n    |switch\n    |unless\n    |unset\n    |while\n    |yield\n    |props\n    |env\n    |js\n    |checked\n    |selected\n    |disabled\n    |style\n    |readonly\n    |required\n    |pushOnce\n    |pushIf\n    |prependOnce\n    |use\n  )[\\t ]*\n)(\\() # Followed by opening parentheses\n",
+          "begin": "(?x)(?<![A-Za-z0-9_@]) (@  (?i:\n    animationGroup\n    |auth\n    |break\n    |can\n    |canany\n    |cannot\n    |case\n    |checked\n    |choice\n    |component\n    |continue\n    |css\n    |csrf\n    |dd\n    |disabled\n    |dump\n    |each\n    |elsecan\n    |elsecanany\n    |elsecannot\n    |elseif\n    |empty\n    |env\n    |error\n    |extends\n    |for\n    |foreach\n    |forelse\n    |guest\n    |hassection\n    |if\n    |include\n    |includefirst\n    |includeif\n    |includeunless\n    |includewhen\n    |inject\n    |isset\n    |js\n    |json\n    |lang\n    |locale\n    |method\n    |motion\n    |once\n    |prepend\n    |prependOnce\n    |props\n    |push\n    |pushIf\n    |pushOnce\n    |readonly\n    |required\n    |scrollAnimate\n    |section\n    |sectionMissing\n    |selected\n    |slot\n    |stack\n    |style\n    |switch\n    |t\n    |translate\n    |transition\n    |unless\n    |unset\n    |use\n    |webcomponent\n    |while\n    |yield\n  )[\\t ]*\n)(\\() # Followed by opening parentheses\n",
           "beginCaptures": {
             "1": {
               "name": "keyword.stx"
@@ -153,10 +234,6 @@
           "name": "keyword.stx"
         },
         {
-          "match": "(?x)(?<![A-Za-z0-9_@]) @(end)? (?i:  auth\n  |can\n  |canany\n  |cannot\n  |component\n  |empty\n  |error\n  |for\n  |foreach\n  |forelse\n  |guest\n  |if\n  |isset\n  |lang\n  |markdown\n  |prepend\n  |push\n  |raw\n  |section\n  |slot\n  |switch\n  |unless\n  |while\n  |once\n  |pushOnce\n  |pushIf\n  |prependOnce\n  |session\n)\\b\n",
-          "name": "keyword.stx"
-        },
-        {
           "begin": "(?<![A-Za-z0-9_@])@(?i:ts)\\b",
           "beginCaptures": {
             "0": {
@@ -176,6 +253,10 @@
           ],
           "contentName": "source.ts",
           "name": "meta.embedded.block.ts"
+        },
+        {
+          "match": "(?x)(?<![A-Za-z0-9_@]) @(end)? (?i:  auth\n  |can\n  |canany\n  |cannot\n  |component\n  |css\n  |empty\n  |env\n  |error\n  |for\n  |foreach\n  |forelse\n  |guest\n  |if\n  |isset\n  |js\n  |lang\n  |markdown\n  |motion\n  |once\n  |prepend\n  |prependOnce\n  |push\n  |pushIf\n  |pushOnce\n  |raw\n  |script\n  |scrollAnimate\n  |section\n  |session\n  |slot\n  |switch\n  |transition\n  |unless\n  |verbatim\n  |webcomponent\n  |while\n)\\b\n",
+          "name": "keyword.stx"
         },
         {
           "begin": "(?<![A-Za-z0-9_@])@(?i:js)\\b",
@@ -218,6 +299,27 @@
           ],
           "contentName": "source.ts",
           "name": "meta.embedded.block.script"
+        },
+        {
+          "begin": "(?<![A-Za-z0-9_@])@(?i:css)\\b",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.control.directive.stx"
+            }
+          },
+          "end": "(?<![A-Za-z0-9_@])@(?i:endcss)\\b",
+          "endCaptures": {
+            "0": {
+              "name": "keyword.control.directive.stx"
+            }
+          },
+          "patterns": [
+            {
+              "include": "source.css"
+            }
+          ],
+          "contentName": "source.css",
+          "name": "meta.embedded.block.css"
         },
         {
           "begin": "(?<![A-Za-z0-9_@])@(?i:markdown)\\b",

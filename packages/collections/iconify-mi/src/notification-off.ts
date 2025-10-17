@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const notificationOff: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M19 10c0-3.224-2.18-5.94-5.146-6.752a2 2 0 0 0-3.708 0a7 7 0 0 0-1.587.655l1.492 1.491A5 5 0 0 1 17 10v2.343l2 2zM3.175 17.434L5 14.697V10c0-1.05.231-2.046.646-2.94L3.293 4.707a1 1 0 1 1 1.414-1.414l16 16a1 1 0 0 1-1.414 1.414L17.586 19h-2.121a3.5 3.5 0 0 1-6.93 0H4.013a1 1 0 0 1-.633-.215a1 1 0 0 1-.205-1.35zM5.87 17h9.717l-8.39-8.39A5 5 0 0 0 7 10v5a1 1 0 0 1-.168.555zm4.716 2a1.5 1.5 0 0 0 2.83 0z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default notificationOff

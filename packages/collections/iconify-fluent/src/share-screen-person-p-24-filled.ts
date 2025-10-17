@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const shareScreenPersonP24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 7.25A3.25 3.25 0 0 1 5.25 4h13.5A3.25 3.25 0 0 1 22 7.25v7.25a3.5 3.5 0 1 0-5.95 2.5h-.277A2.77 2.77 0 0 0 13 19.772v.103q0 .063.002.125H5.25A3.25 3.25 0 0 1 2 16.75zm5 1.5v6.5a.75.75 0 0 0 1.5 0V13.5h1.25a2.75 2.75 0 1 0 0-5.5h-2a.75.75 0 0 0-.75.75M8.5 12h1.25a1.25 1.25 0 1 0 0-2.5H8.5zM21 14.5a2.5 2.5 0 1 1-5 0a2.5 2.5 0 0 1 5 0m2 5.375C23 21.431 21.714 23 18.5 23S14 21.437 14 19.875v-.103c0-.98.794-1.772 1.773-1.772h5.454c.98 0 1.773.793 1.773 1.772z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default shareScreenPersonP24Filled

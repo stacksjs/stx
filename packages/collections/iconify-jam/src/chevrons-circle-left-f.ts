@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const chevronsCircleLeftF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m11.818 10l2.121-2.121a1 1 0 1 0-1.414-1.415L9.697 9.293a1 1 0 0 0 0 1.414l2.828 2.829a1 1 0 0 0 1.414-1.415zm-4.99 0L8.95 7.879a1 1 0 0 0-1.414-1.415L4.707 9.293a1 1 0 0 0 0 1.414l2.829 2.829A1 1 0 1 0 8.95 12.12zM10 20C4.477 20 0 15.523 0 10S4.477 0 10 0s10 4.477 10 10s-4.477 10-10 10\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default chevronsCircleLeftF

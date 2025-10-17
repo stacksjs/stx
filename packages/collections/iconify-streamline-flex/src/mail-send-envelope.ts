@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const mailSendEnvelope: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M1.032 10.537a2.09 2.09 0 0 0 1.852 1.814c1.329.14 2.705.286 4.116.286s2.787-.147 4.116-.286a2.09 2.09 0 0 0 1.852-1.814c.142-1.144.282-2.326.282-3.537s-.14-2.393-.282-3.537a2.09 2.09 0 0 0-1.852-1.815C9.787 1.51 8.41 1.364 7 1.364s-2.787.147-4.116.286a2.09 2.09 0 0 0-1.852 1.814C.89 4.607.75 5.79.75 7s.14 2.393.282 3.537\"/><path d=\"m1.06 3.204l4.702 3.708a2 2 0 0 0 2.476 0l4.702-3.708\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default mailSendEnvelope

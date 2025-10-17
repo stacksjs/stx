@@ -185,6 +185,24 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
       const jsDocComments: JSDocInfo[] = []
       let tsLineCounter = 0
 
+      // Add global type declarations for browser APIs
+      // This makes TypeScript aware of document, window, console, etc.
+      tsContent += `/// <reference lib="dom" />
+/// <reference lib="es2015" />
+
+// Global browser objects
+declare const window: Window & typeof globalThis;
+declare const document: Document;
+declare const console: Console;
+declare const navigator: Navigator;
+declare const location: Location;
+declare const localStorage: Storage;
+declare const sessionStorage: Storage;
+declare const history: History;
+
+`
+      tsLineCounter += 13
+
       // Extract TypeScript from @ts blocks
       const tsBlockRegex = /@ts\s+([\s\S]*?)@endts/g
       let blockMatch
@@ -273,6 +291,40 @@ export class VirtualTsDocumentProvider implements vscode.TextDocumentContentProv
 
         // Extract interface information from type definitions
         this.extractInterfaceTypeInfo(blockContent, jsDocComments)
+
+        // Add an extra newline for separation
+        tsContent += '\n'
+        tsLineCounter++
+      }
+
+      // Extract TypeScript from <script> tags
+      const scriptTagRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi
+      let scriptMatch
+
+      while ((scriptMatch = scriptTagRegex.exec(text)) !== null) {
+        const scriptContent = scriptMatch[1]
+        const scriptStartPos = document.positionAt(scriptMatch.index + scriptMatch[0].indexOf('>') + 1)
+
+        // Add each line with position mapping
+        const scriptLines = scriptContent.split('\n')
+        for (let i = 0; i < scriptLines.length; i++) {
+          const line = scriptLines[i]
+          tsContent += `${line}\n`
+
+          // Create position mapping for this line
+          mappings.push({
+            stxLine: scriptStartPos.line + i,
+            stxChar: i === 0 ? scriptStartPos.character : 0,
+            tsLine: tsLineCounter,
+            tsChar: 0,
+            length: line.length,
+          })
+
+          tsLineCounter++
+        }
+
+        // Extract interface information from script content
+        this.extractInterfaceTypeInfo(scriptContent, jsDocComments)
 
         // Add an extra newline for separation
         tsContent += '\n'

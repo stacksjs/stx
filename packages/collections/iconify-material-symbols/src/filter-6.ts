@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const filter6: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M13 15h2q.825 0 1.413-.587T17 13v-2q0-.825-.587-1.412T15 9h-2V7h3V5h-3q-.825 0-1.412.588T11 7v6q0 .825.588 1.413T13 15m0-4h2v2h-2zm-5 7q-.825 0-1.412-.587T6 16V4q0-.825.588-1.412T8 2h12q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-4 4q-.825 0-1.412-.587T2 20V6h2v14h14v2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default filter6

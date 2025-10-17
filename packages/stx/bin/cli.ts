@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { CAC } from 'cac'
+import { CLI } from '@stacksjs/clapp'
 import { version } from '../package.json'
 import { scanA11yIssues } from '../src/a11y'
 import { serveMultipleStxFiles, serveStxFile } from '../src/dev-server'
@@ -15,7 +15,9 @@ import { plugin as stxPlugin } from '../src/plugin'
 import { gitHash } from '../src/release'
 import { performanceMonitor } from '../src/performance-utils'
 import { formatStxContent } from '../src/formatter'
-import { analyzeProject, analyzeTemplate } from '../src/analyzer'
+import { analyzeProject } from '../src/analyzer'
+
+const cli = new CLI('stx')
 
 // Test command utilities
 interface TestCommandOptions {
@@ -42,12 +44,8 @@ function validatePort(port: string | number): ValidationResult {
     return { isValid: false, error: 'Port must be a valid number', suggestion: 'Try using a number between 1024 and 65535' }
   }
 
-  if (portNum < 1 || portNum > 65535) {
-    return { isValid: false, error: 'Port must be between 1 and 65535', suggestion: 'Common development ports: 3000, 8080, 8000' }
-  }
-
-  if (portNum < 1024 && process.getuid && process.getuid() !== 0) {
-    return { isValid: false, error: 'Ports below 1024 require root privileges', suggestion: 'Try using a port above 1024 like 3000 or 8080' }
+  if (portNum < 1024 || portNum > 65535) {
+    return { isValid: false, error: 'Port must be between 1024 and 65535', suggestion: 'Try using a port between 1024 and 65535' }
   }
 
   return { isValid: true }
@@ -116,7 +114,7 @@ const isSupportedFileType = (arg: string) => arg.endsWith('.stx') || arg.endsWit
 function reportValidationError(validation: ValidationResult, exitCode = 1): never {
   console.error(`❌ ${validation.error}`)
   if (validation.suggestion) {
-    console.error(`💡 ${validation.suggestion}`)
+    console.error(`💡 suggestion: ${validation.suggestion}`)
   }
   process.exit(exitCode)
 }
@@ -260,8 +258,6 @@ async function runTests(
   }
 }
 
-const cli = new CAC('stx')
-
 // Check if direct file(s) run mode or glob pattern is provided
 const isDirectMode = process.argv.length >= 3 && (
   (isSupportedFileType(process.argv[2]) && fs.existsSync(process.argv[2]))
@@ -280,7 +276,7 @@ if (isDirectMode) {
       syntaxHighlighting: {
         enabled: true,
         serverSide: true,
-        defaultTheme: 'github' as SyntaxHighlightTheme,
+        defaultTheme: 'github-dark' as SyntaxHighlightTheme,
         highlightUnknownLanguages: true,
       },
     },
@@ -400,10 +396,68 @@ else {
     })
 
   cli
+    .command('iconify <command>', 'Generate Iconify icon packages')
+    .option('--output <dir>', 'Output directory for generated packages', { default: 'packages' })
+    .option('--icons <icons>', 'Comma-separated list of specific icons to generate')
+    .example('stx iconify list')
+    .example('stx iconify generate mdi')
+    .example('stx iconify generate lucide --icons home,settings,user')
+    .action(async (command: string, options: { output?: string, icons?: string }) => {
+      try {
+        // Dynamically import the generator to avoid bundle size issues
+        const { fetchCollections, generatePackage } = await import('@stacksjs/iconify-generator')
+
+        if (command === 'list') {
+          console.log('\n📚 Fetching available icon collections...\n')
+          const collections = await fetchCollections()
+
+          const sortedCollections = Object.entries(collections)
+            .sort((a, b) => (b[1] as { total: number }).total - (a[1] as { total: number }).total)
+
+          console.log('Available collections:\n')
+          for (const [prefix, info] of sortedCollections) {
+            const collectionInfo = info as { name: string, total: number }
+            console.log(`  ${prefix.padEnd(30)} ${collectionInfo.name} (${collectionInfo.total} icons)`)
+          }
+          console.log(`\nTotal: ${sortedCollections.length} collections`)
+        }
+        else if (command.startsWith('generate')) {
+          // Extract the prefix from the command or next arg
+          const prefix = command === 'generate' ? '' : command.replace('generate:', '').replace('generate-', '').replace('generate', '').trim()
+
+          if (!prefix) {
+            console.error('Error: Please specify a collection prefix')
+            console.error('Usage: stx iconify generate <prefix> [--icons icon1,icon2,...]')
+            process.exit(1)
+          }
+
+          const outputDir = options.output || path.join(process.cwd(), 'packages/collections')
+          const icons = options.icons ? options.icons.split(',').map(i => i.trim()) : undefined
+
+          await generatePackage(prefix, outputDir, icons)
+          console.log('\n✓ Package generated successfully!')
+          console.log(`\nTo use the package:`)
+          console.log(`  1. cd packages/collections/iconify-${prefix}`)
+          console.log(`  2. bun install`)
+          console.log(`  3. bun run build`)
+        }
+        else {
+          console.error(`Unknown iconify command: ${command}`)
+          console.error('Available commands: list, generate')
+          process.exit(1)
+        }
+      }
+      catch (error) {
+        console.error('Error:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
+
+  cli
     .command('dev <file>', 'Start a development server for an STX file')
     .option('--port <port>', 'Port to use for the dev server', { default: 3000 })
     .option('--no-watch', 'Disable file watching and auto-reload')
-    .option('--highlight-theme <theme>', 'Syntax highlighting theme for Markdown code blocks', { default: 'github' })
+    .option('--highlight-theme <theme>', 'Syntax highlighting theme for Markdown code blocks', { default: 'github-dark' })
     .option('--no-highlight', 'Disable syntax highlighting for Markdown code blocks')
     .option('--no-highlight-unknown', 'Disable syntax highlighting for unknown languages in Markdown')
     .option('--no-cache', 'Disable caching of parsed files')
@@ -416,7 +470,7 @@ else {
     .action(async (filePattern, options) => {
       try {
         // Validate port if provided
-        if (options.port) {
+        if (options.port !== undefined) {
           const portValidation = validatePort(options.port)
           if (!portValidation.isValid) {
             reportValidationError(portValidation)
@@ -424,7 +478,7 @@ else {
         }
 
         // Validate timeout if provided
-        if (options.timeout) {
+        if (options.timeout !== undefined) {
           const timeoutValidation = validateTimeout(options.timeout)
           if (!timeoutValidation.isValid) {
             reportValidationError(timeoutValidation)
@@ -436,7 +490,7 @@ else {
           syntaxHighlighting: {
             enabled: options.highlight !== false,
             serverSide: true,
-            defaultTheme: (options.highlightTheme || 'github') as SyntaxHighlightTheme,
+            defaultTheme: (options.highlightTheme || 'github-dark') as SyntaxHighlightTheme,
             highlightUnknownLanguages: options.highlightUnknown !== false,
           },
         }
@@ -645,6 +699,8 @@ else {
     .option('--outfile <file>', 'Output file name (for single entrypoint)')
     .option('--target <target>', 'Target environment: browser, bun, or node', { default: 'browser' })
     .option('--format <format>', 'Output format: esm, cjs, or iife', { default: 'esm' })
+    .option('--port <port>', 'Port for dev server integration (validation only)')
+    .option('--timeout <ms>', 'Timeout for build operations')
     .option('--minify', 'Enable minification')
     .option('--no-minify', 'Disable minification')
     .option('--sourcemap <type>', 'Sourcemap type: none, linked, inline, or external', { default: 'none' })
@@ -678,8 +734,26 @@ else {
       compile?: boolean
       root?: string
       verbose?: boolean
+      port?: string | number
+      timeout?: string | number
     }) => {
       try {
+        // Validate port parameter if provided
+        if (options.port !== undefined) {
+          const portValidation = validatePort(options.port)
+          if (!portValidation.isValid) {
+            reportValidationError(portValidation)
+          }
+        }
+
+        // Validate timeout parameter if provided
+        if (options.timeout !== undefined) {
+          const timeoutValidation = validateTimeout(options.timeout)
+          if (!timeoutValidation.isValid) {
+            reportValidationError(timeoutValidation)
+          }
+        }
+
         console.log('Building STX files...')
 
         // Convert entrypoints to an array if it's a string
@@ -698,6 +772,29 @@ else {
         if (entrypointArray.length === 0) {
           console.error('Error: No entrypoints specified')
           process.exit(1)
+        }
+
+        // Validate each entrypoint (non-glob files)
+        for (const entrypoint of entrypointArray) {
+          // Skip validation for glob patterns - they'll be validated after expansion
+          if (!isGlob(entrypoint)) {
+            // Validate file exists
+            const fileValidation = validateFileExists(entrypoint)
+            if (!fileValidation.isValid) {
+              console.error('❌ File not found')
+              if (fileValidation.suggestion) {
+                console.error(`💡 suggestion: ${fileValidation.suggestion}`)
+              }
+              process.exit(1)
+            }
+
+            // Validate file extension
+            if (!entrypoint.endsWith('.stx')) {
+              console.error('❌ File must have .stx extension')
+              console.error('💡 suggestion: Only .stx files can be built')
+              process.exit(1)
+            }
+          }
         }
 
         // Create temporary and output directories
@@ -1303,7 +1400,14 @@ else {
       ignore?: string
     }) => {
       try {
-        const patternArray = patterns.length > 0 ? patterns : ['**/*.stx']
+        // Validate mutually exclusive options
+        if (options.check && options.write) {
+          console.error('❌ Options --check and --write are mutually exclusive')
+          console.error('💡 Use --check to verify formatting or --write to apply changes, but not both')
+          process.exit(1)
+        }
+
+        const patternArray = patterns && patterns.length > 0 ? patterns : ['**/*.stx']
         const ignorePatterns = options.ignore ? options.ignore.split(',').map(p => p.trim()) : []
 
         let allFiles: string[] = []
@@ -1388,6 +1492,10 @@ else {
         const stats = performanceMonitor.getStats()
 
         if (Object.keys(stats).length === 0) {
+          if (options.json) {
+            console.log(JSON.stringify({}, null, 2))
+            return
+          }
           console.log('No performance data available. Run some STX commands first.')
           return
         }
@@ -1435,7 +1543,7 @@ else {
           reportValidationError(fileValidation)
         }
 
-        console.log(`🔍 Debugging STX template: ${file}\n`)
+        console.log(`🔍 Debugging stx template: ${file}\n`)
 
         // Parse context if provided
         let context: Record<string, any> = {}
@@ -1548,11 +1656,11 @@ else {
         if (options.json) {
           console.log(JSON.stringify(status, null, 2))
         } else {
-          console.log('\n📋 STX Project Status\n')
+          console.log('\n📋 stx Project Status\n')
           console.log(`📁 Project Root: ${projectRoot}`)
           console.log(`⚙️  Config File: ${status.hasConfig ? '✅ Found' : '❌ Not found'}`)
           console.log(`📦 Package.json: ${status.hasPackageJson ? '✅ Found' : '❌ Not found'}`)
-          console.log(`📄 STX Files: ${status.stxFiles}`)
+          console.log(`📄 stx Files: ${status.stxFiles}`)
           console.log(`📝 Markdown Files: ${status.markdownFiles}`)
           console.log(`📊 Total Files: ${status.totalFiles}`)
 
@@ -1580,7 +1688,8 @@ else {
     .command('watch [patterns...]', 'Watch STX files for changes and run commands')
     .option('--command <cmd>', 'Command to run on file changes', { default: 'build' })
     .option('--ignore <patterns>', 'Comma-separated patterns to ignore')
-    .option('--delay <ms>', 'Delay before running command after change', { default: 300 })
+    .option('--debounce <ms>', 'Debounce delay before running command after change', { default: 300 })
+    .option('--output <dir>', 'Output directory for command results')
     .option('--verbose', 'Show detailed file change information')
     .option('--clear', 'Clear console before running command')
     .example('stx watch')
@@ -1589,18 +1698,49 @@ else {
     .action(async (patterns: string[], options: {
       command?: string
       ignore?: string
-      delay?: number
+      debounce?: number
+      output?: string
       verbose?: boolean
       clear?: boolean
     }) => {
       try {
-        const watchPatterns = patterns.length > 0 ? patterns : ['**/*.stx', '**/*.md']
+        // Validate that patterns are provided
+        if (!patterns || patterns.length === 0) {
+          console.error('❌ Input file or pattern is required')
+          console.error('💡 Specify a file pattern to watch (e.g., stx watch *.stx)')
+          process.exit(1)
+        }
+
+        // Ensure patterns is an array
+        const watchPatterns = Array.isArray(patterns) ? patterns : [patterns]
         const ignorePatterns = options.ignore ? options.ignore.split(',').map(p => p.trim()) : ['node_modules/**', 'dist/**', '.git/**']
-        const delay = options.delay || 300
+
+        // Validate debounce parameter
+        if (options.debounce !== undefined) {
+          const debounceValidation = validateTimeout(options.debounce)
+          if (!debounceValidation.isValid) {
+            console.error('❌ Debounce must be a valid number')
+            console.error('💡 Specify debounce in milliseconds (e.g., --debounce 300)')
+            process.exit(1)
+          }
+        }
+
+        // Validate output directory
+        if (options.output) {
+          // Check if path tries to go too far up the directory tree
+          const upCount = (options.output.match(/\.\.\//g) || []).length
+          if (upCount >= 3) {
+            console.error('❌ Invalid output directory')
+            console.error('💡 Specify a valid output directory path')
+            process.exit(1)
+          }
+        }
+
+        const debounce = options.debounce || 300
 
         console.log(`👀 Watching files: ${watchPatterns.join(', ')}`)
         console.log(`🚫 Ignoring: ${ignorePatterns.join(', ')}`)
-        console.log(`⏱️  Delay: ${delay}ms`)
+        console.log(`⏱️  Debounce: ${debounce}ms`)
         console.log(`🔧 Command: ${options.command}`)
         console.log(`\nPress Ctrl+C to stop watching...\n`)
 
@@ -1654,7 +1794,7 @@ else {
           }
         }
 
-        const handleFileChange = (filename: string | null, eventType: string) => {
+        const handleFileChange = (eventType: string, filename: string | null) => {
           if (!filename) return
 
           // Check if file should be ignored
@@ -1696,7 +1836,7 @@ else {
             clearTimeout(timeoutId)
           }
 
-          timeoutId = setTimeout(runCommand, delay)
+          timeoutId = setTimeout(runCommand, debounce)
         }
 
         // Watch all directories
@@ -1744,12 +1884,14 @@ else {
       threshold?: 'info' | 'warning' | 'error'
     }) => {
       try {
-        const analysisPatterns = patterns.length > 0 ? patterns : ['**/*.stx']
+        const analysisPatterns = patterns && patterns.length > 0 ? patterns : ['**/*.stx']
         const threshold = options.threshold || 'info'
         const thresholdLevels = { info: 0, warning: 1, error: 2 }
         const minLevel = thresholdLevels[threshold]
 
-        console.log(`🔍 Analyzing STX templates...`)
+        if (!options.json) {
+          console.log(`🔍 Analyzing stx templates...`)
+        }
 
         const { results, summary } = await analyzeProject(analysisPatterns)
 
@@ -1865,6 +2007,73 @@ else {
   cli.command('version', 'Show the version of the CLI').action(() => {
     console.log(version)
   })
+
+  // Helper function to calculate Levenshtein distance for command suggestions
+  function levenshteinDistance(a: string, b: string): number {
+    const matrix: number[][] = []
+
+    for (let i = 0; i <= b.length; i++) {
+      matrix[i] = [i]
+    }
+
+    for (let j = 0; j <= a.length; j++) {
+      matrix[0][j] = j
+    }
+
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1]
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          )
+        }
+      }
+    }
+
+    return matrix[b.length][a.length]
+  }
+
+  // Check for unknown commands and provide suggestions
+  const knownCommands = [
+    'docs', 'iconify', 'dev', 'a11y', 'build', 'test', 'init', 'new',
+    'format', 'perf', 'debug', 'status', 'watch', 'analyze', 'version'
+  ]
+
+  const args = process.argv.slice(2)
+  if (args.length > 0 && !args[0].startsWith('-')) {
+    const command = args[0]
+
+    // Handle empty command
+    if (command === '') {
+      console.error('❌ No command provided')
+      console.error('💡 Use --help to see available commands')
+      process.exit(1)
+    }
+
+    if (!knownCommands.includes(command)) {
+      // Find the closest matching command
+      const distances = knownCommands.map(cmd => ({
+        command: cmd,
+        distance: levenshteinDistance(command, cmd)
+      }))
+
+      distances.sort((a, b) => a.distance - b.distance)
+
+      const closest = distances[0]
+
+      // Only suggest if the distance is reasonable (less than 4 edits)
+      if (closest.distance <= 3) {
+        console.error(`❌ Unknown command: ${command}`)
+        console.error(`💡 Did you mean: ${closest.command}?`)
+        console.error(`\nRun 'stx --help' to see available commands.`)
+        process.exit(1)
+      }
+    }
+  }
 
   cli.help()
   cli.version(version)

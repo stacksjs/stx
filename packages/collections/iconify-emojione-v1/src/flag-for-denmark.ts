@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const flagForDenmark: IconData = {
+  "body": "<path fill=\"#ec1c24\" d=\"M64 43c0 6.075-3.373 11-10 11H10C3.373 54 0 49.075 0 43V21c0-6.075 3.373-11 10-11h44c6.627 0 10 4.925 10 11z\"/><path fill=\"#e6e7e8\" d=\"M20 10h9v44h-9z\"/><path fill=\"#e6e7e8\" d=\"M0 27h64v8H0z\"/>",
+  "width": 64,
+  "height": 64,
+  "viewBox": "0 0 64 64"
+}
+
+export default flagForDenmark

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const globeFill12: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10 5v2h1.91A6 6 0 0 0 12 6a6 6 0 0 0-.09-1zM2.29 4L5.65.65a.48.48 0 0 1 .7 0L9.71 4h1.94A6 6 0 0 0 .35 4zM3 5h6v2H3zM2 5H.09A6 6 0 0 0 0 6a6 6 0 0 0 .09 1H2zm6.29 3H3.71L6 10.29zm1.42 0l-3.36 3.35a.48.48 0 0 1-.7 0L2.29 8H.35a6 6 0 0 0 11.3 0zm-6-4h4.58L6 1.71z\"/>",
+  "width": 12,
+  "height": 12,
+  "viewBox": "0 0 12 12"
+}
+
+export default globeFill12

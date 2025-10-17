@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const androidCell5BarOff: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10.5 20v-6L.75 7.15l1.425-2.025l19.65 13.75l-1.425 2.05l-2.15-1.5V20h-3v-2.675L13.5 16.1V20zM1 20v-6h3v6zm4.75 0v-8h3v8zm12.5-6.675l-3-2.1V7h3zM23 16.65l-3-2.1V4h3z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default androidCell5BarOff

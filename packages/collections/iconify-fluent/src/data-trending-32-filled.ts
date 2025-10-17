@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const dataTrending32Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.5 4.25a1.25 1.25 0 1 0-2.5 0v20.5A4.25 4.25 0 0 0 7.25 29h20.5a1.25 1.25 0 1 0 0-2.5H7.25a1.75 1.75 0 0 1-1.75-1.75zM20.246 6.5a1.25 1.25 0 1 0 0 2.5h3.986L18.5 14.732l-3.116-3.116a1.25 1.25 0 0 0-1.768 0l-6.25 6.25a1.25 1.25 0 0 0 1.768 1.768l5.366-5.366l3.116 3.116a1.25 1.25 0 0 0 1.768 0l6.612-6.612v3.978a1.25 1.25 0 1 0 2.5 0v-7c0-.69-.56-1.25-1.25-1.25z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default dataTrending32Filled

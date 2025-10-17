@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const usCa: IconData = {
+  "body": "<mask id=\"SVGuywqVbel\"><circle cx=\"256\" cy=\"256\" r=\"256\" fill=\"#fff\"/></mask><g mask=\"url(#SVGuywqVbel)\"><path fill=\"#eee\" d=\"M0 0h512v416l-256 32L0 416Z\"/><path fill=\"#6da544\" d=\"m396 280l-132-10l-140 14l-8 12h299z\"/><path fill=\"#584528\" d=\"m389 273l-19-77l-55-31l-95-4l-75 27l-16 35l11 19l26 1l10-11l24-4l-12 31l-19 25l17 2l19-12l26-24l22 11l-13 17l26-2l9-16l-4-19l21 4l1 23l-14 8l1 6h26l34-30l27 16l-6 8l1 5h17l10-7zM84 340h178v32H84Z\"/><path fill=\"#d80027\" d=\"M0 416h512v96H0Z\"/><path fill=\"#584528\" d=\"M288 340h140v32H288Z\"/><path fill=\"#d80027\" d=\"m71 182l69-50H55l69 50l-26-81z\"/></g>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default usCa

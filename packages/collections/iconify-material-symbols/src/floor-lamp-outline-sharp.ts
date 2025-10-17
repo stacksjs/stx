@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const floorLampOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11 19v-8H4.65l2.775-9h9.15l2.775 9H13v8zM7.35 9h9.3L15.1 4H8.9zM8 22v-2h8v2zm4-15.5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default floorLampOutlineSharp

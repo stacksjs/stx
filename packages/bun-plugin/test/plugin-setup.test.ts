@@ -1,4 +1,3 @@
-/// <reference path="../global.d.ts" />
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -31,7 +30,7 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -51,14 +50,14 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
       stx: {
         debug: true,
         cache: false,
         partialsDir: 'custom-partials',
         componentsDir: 'custom-components',
       },
-    })
+    } as any)
 
     expect(result.success).toBe(true)
     expect(result.outputs.length).toBeGreaterThanOrEqual(1)
@@ -66,8 +65,9 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
 
   test('should register plugin in Bun build', async () => {
     // Test that the plugin name is correctly registered
-    expect(plugin.name).toBe('bun-plugin-stx')
-    expect(typeof plugin.setup).toBe('function')
+    const pluginInstance = plugin()
+    expect(pluginInstance.name).toBe('bun-plugin-stx')
+    expect(typeof pluginInstance.setup).toBe('function')
   })
 
   test('should handle web components configuration', async () => {
@@ -83,7 +83,7 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
       stx: {
         webComponents: {
           enabled: true,
@@ -98,7 +98,7 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
           ],
         },
       },
-    })
+    } as any)
 
     expect(result.success).toBe(true)
   })
@@ -117,12 +117,12 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
       stx: {
         // Intentionally invalid config for testing - should not cause errors
         invalidOption: 'invalid',
-      } as any,
-    })
+      },
+    } as any)
 
     expect(result.success).toBe(true)
   })
@@ -136,7 +136,7 @@ describe('BUN-PLUGIN: Plugin Setup & Configuration', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
       // No config provided
     })
 

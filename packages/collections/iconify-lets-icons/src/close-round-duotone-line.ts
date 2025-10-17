@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const closeRoundDuotoneLine: IconData = {
+  "body": "<defs><mask id=\"iconify-84sDq60s\"><g fill=\"none\" stroke-width=\"1.2\"><circle cx=\"12\" cy=\"12\" r=\"8.4\" stroke=\"silver\" stroke-opacity=\".25\" /><path stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m16 8l-8 8m0-8l8 8\" /></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h24v24H0z\" mask=\"url(#iconify-84sDq60s)\" />",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default closeRoundDuotoneLine

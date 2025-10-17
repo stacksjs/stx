@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const socialOrkut: IconData = {
+  "body": "<g fill=\"currentColor\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path d=\"M50.104 34.348c-8.863 0-16.062 7.198-16.062 16.076s7.199 16.062 16.062 16.062c8.878 0 16.077-7.185 16.077-16.062s-7.199-16.076-16.077-16.076\"/><path d=\"M79 14H21a7 7 0 0 0-7 7v58a7 7 0 0 0 7 7h58a7 7 0 0 0 7-7V21a7 7 0 0 0-7-7M50.104 74.707c-13.404 0-24.297-10.864-24.297-24.283S36.7 26.113 50.104 26.113c13.419 0 24.297 10.893 24.297 24.311c0 13.419-10.878 24.283-24.297 24.283\"/></g>",
+  "width": 100,
+  "height": 100,
+  "viewBox": "0 0 100 100"
+}
+
+export default socialOrkut

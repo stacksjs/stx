@@ -51,7 +51,7 @@ app.use(csp({
 ### Authentication Middleware
 
 ```typescript
-import { auth } from '@stx/auth'
+import { auth } from '@stacksjs/auth'
 
 // Route protection
 app.use('/dashboard', auth.requireAuth())
@@ -79,7 +79,7 @@ app.use(session({
 ### JWT Security
 
 ```typescript
-import { jwt } from '@stx/auth'
+import { jwt } from '@stacksjs/auth'
 
 // Secure JWT configuration
 const jwtConfig = {
@@ -98,7 +98,7 @@ app.use(jwt.verify(jwtConfig))
 ### Form Validation
 
 ```typescript
-import { validate } from '@stx/validation'
+import { validate } from '@stacksjs/validation'
 
 const userSchema = {
   email: 'email|required',
@@ -128,7 +128,7 @@ const user = await User.where('email', email).first()
 ### File Upload Security
 
 ```typescript
-import { upload } from '@stx/upload'
+import { upload } from '@stacksjs/upload'
 
 app.post('/upload', upload({
   allowedTypes: ['image/jpeg', 'image/png'],
@@ -170,7 +170,7 @@ app.use(helmet({
 ### Password Hashing
 
 ```typescript
-import { hash, verify } from '@stx/crypto'
+import { hash, verify } from '@stacksjs/crypto'
 
 // Hash password
 const hashedPassword = await hash.password(plainPassword, {
@@ -187,7 +187,7 @@ const isValid = await verify.password(plainPassword, hashedPassword)
 ### Data Encryption
 
 ```typescript
-import { encrypt, decrypt } from '@stx/crypto'
+import { encrypt, decrypt } from '@stacksjs/crypto'
 
 // Encrypt sensitive data
 const encrypted = await encrypt(sensitiveData, {
@@ -206,7 +206,7 @@ const decrypted = await decrypt(encrypted, {
 ### Request Rate Limiting
 
 ```typescript
-import { rateLimit } from '@stx/security'
+import { rateLimit } from '@stacksjs/security'
 
 // Global rate limiting
 app.use(rateLimit({
@@ -225,7 +225,7 @@ app.use('/api', rateLimit({
 ### Brute Force Protection
 
 ```typescript
-import { bruteForce } from '@stx/security'
+import { bruteForce } from '@stacksjs/security'
 
 app.post('/login', bruteForce.protect(), async (req, res) => {
   // Login logic with automatic brute force protection
@@ -237,7 +237,7 @@ app.post('/login', bruteForce.protect(), async (req, res) => {
 ### Security Event Logging
 
 ```typescript
-import { securityLogger } from '@stx/logging'
+import { securityLogger } from '@stacksjs/logging'
 
 // Log security events
 securityLogger.warn('Failed login attempt', {
@@ -256,7 +256,7 @@ securityLogger.info('User authenticated', {
 ### Intrusion Detection
 
 ```typescript
-import { ids } from '@stx/security'
+import { ids } from '@stacksjs/security'
 
 // Configure intrusion detection
 app.use(ids({
@@ -291,7 +291,7 @@ bun run security:deps
 
 ```typescript
 // Security test suite
-import { securityTest } from '@stx/testing'
+import { securityTest } from '@stacksjs/testing'
 
 securityTest('XSS protection', () => {
   const maliciousInput = '<script>alert("xss")</script>'
@@ -329,7 +329,7 @@ stx addresses the OWASP Top 10 security risks:
 
 ```typescript
 // GDPR compliance helpers
-import { gdpr } from '@stx/compliance'
+import { gdpr } from '@stacksjs/compliance'
 
 // Data anonymization
 const anonymized = gdpr.anonymize(userData)

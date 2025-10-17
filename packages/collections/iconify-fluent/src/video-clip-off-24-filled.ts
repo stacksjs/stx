@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const videoClipOff24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3.28 2.22a.75.75 0 1 0-1.06 1.06l.702.702A3.24 3.24 0 0 0 2 6.25v11.5A3.25 3.25 0 0 0 5.25 21h13.5a3.2 3.2 0 0 0 1.024-.165l.945.945a.75.75 0 0 0 1.061-1.06zm9.837 11.957l-2.635 1.45A1 1 0 0 1 9 14.75v-4.69zm2.364-3.053a1 1 0 0 1 .312 1.487l6.071 6.072q.135-.445.136-.933V6.25A3.25 3.25 0 0 0 18.75 3H6.182l6.688 6.688z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default videoClipOff24Filled

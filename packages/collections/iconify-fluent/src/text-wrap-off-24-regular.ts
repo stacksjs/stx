@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const textWrapOff24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3.28 2.22a.75.75 0 1 0-1.06 1.06L3.94 5H2.75a.75.75 0 0 0 0 1.5h2.69l5 5H2.75a.75.75 0 0 0 0 1.5h9.19l3.033 3.034a.75.75 0 0 0-.753.186l-2 2a.75.75 0 0 0 0 1.06l2 2a.75.75 0 1 0 1.06-1.06l-.72-.72h3.879l2.28 2.28a.75.75 0 0 0 1.061-1.06zM16.94 18h-2.378l.72-.72a.75.75 0 0 0 .185-.753zM19 11.5h-4.319l1.5 1.5H19a2.5 2.5 0 0 1 1.601 4.42l1.064 1.063A4 4 0 0 0 19 11.5M8.182 5l1.5 1.5H21.25a.75.75 0 0 0 0-1.5zM2 18.75a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5a.75.75 0 0 1-.75-.75\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default textWrapOff24Regular

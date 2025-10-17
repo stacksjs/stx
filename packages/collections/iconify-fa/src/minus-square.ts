@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const minusSquare: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M1280 832V704q0-26-19-45t-45-19H320q-26 0-45 19t-19 45v128q0 26 19 45t45 19h896q26 0 45-19t19-45m256-544v960q0 119-84.5 203.5T1248 1536H288q-119 0-203.5-84.5T0 1248V288Q0 169 84.5 84.5T288 0h960q119 0 203.5 84.5T1536 288\"/>",
+  "width": 1536,
+  "height": 1536,
+  "viewBox": "0 0 1536 1536"
+}
+
+export default minusSquare

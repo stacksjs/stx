@@ -281,7 +281,7 @@ export class ErrorLogger {
 }
 
 // Global error logger instance
-export const errorLogger = new ErrorLogger()
+export const errorLogger: ErrorLogger = new ErrorLogger()
 
 /**
  * Development mode helpers

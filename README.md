@@ -9,21 +9,77 @@
 
 # stx
 
-A Blade-like template engine plugin for Bun, enabling simple and powerful templating with .stx files.
+Build modern web applications with intuitive templating, reactive components, and zero configuration.
+
+stx combines the elegance of Laravel Blade syntax with the speed of Bun, delivering a complete solution for server-side rendering, component-based architecture, and seamless developer experience.
 
 ## Features
 
-- 🦋 Laravel Blade-like syntax
-- 🚀 Fast and lightweight
-- 📦 Zero config
+### Core Framework
 
-## Installation
+- 🎨 **Intuitive Template Syntax** - Laravel Blade-like directives with enhanced capabilities
+- ⚡ **Lightning Fast** - Built with performance in mind
+- 🧩 **Component System** - Create reusable `.stx` components with props, slots, and composition
+- 🔄 **Reactive State** - Built-in state management for interactive UIs
+- 🎯 **TypeScript First** - Full type safety and autocomplete support
+- 📦 **Zero Config** - Works out of the box, configure when you need to
+
+### Rich Feature Set
+
+- 🎭 **200,000+ Icons** - Built-in Iconify integration with component-based icons
+- 🛣️ **Smart Routing** - File-based and programmatic routing with middleware
+- 💅 **Scoped Styling** - Component-scoped CSS with utility classes
+- 🔌 **Plugin System** - Extend functionality with custom plugins
+- 🧪 **Testing Utilities** - Built-in tools for component and integration testing
+- 📊 **SEO Optimized** - Meta tags, structured data, and OG tags support
+
+### Developer Experience
+
+- 🔥 **Hot Reload** - Instant updates during development
+- 🐛 **Enhanced Debugging** - Detailed error messages with stack traces
+- 📝 **Markdown Support** - Render markdown with syntax highlighting
+- 🌍 **i18n Ready** - Built-in internationalization support
+- 🔒 **Security First** - CSRF protection, XSS prevention, and sanitization
+- ⚙️ **CLI Tools** - Powerful command-line interface for scaffolding and generation
+
+## Why stx?
+
+stx is designed for developers who want the **productivity of modern frameworks** with the **performance of Bun**. Whether you're building a simple landing page or a complex web application, stx provides the tools you need without the bloat.
+
+```html
+<!-- Create beautiful UIs with familiar syntax -->
+<div class="hero">
+  <h1>{{ title }}</h1>
+  <SearchIcon size="24" />
+
+  @if(user.isAuthenticated)
+    <UserProfile :user="user" />
+  @else
+    <LoginButton />
+  @endif
+</div>
+```
+
+### How It Compares
+
+| Feature | stx | Next.js | SvelteKit | Astro |
+|---------|-----|---------|-----------|-------|
+| **Setup** | Zero config | Config needed | Config needed | Config needed |
+| **Template Syntax** | HTML & Blade-like | JSX | Svelte | Astro |
+| **Component System** | Built-in | React | Svelte | Any |
+| **Icons** | 200K+ built-in | Requires setup | Requires setup | Requires setup |
+| **Learning Curve** | Low | Medium | Medium | Medium |
+| **Bundle Size** | Minimal | Large | Medium | Small |
+
+## Quick Start
+
+### Installation
 
 ```bash
 bun add bun-plugin-stx
 ```
 
-## Setup
+### Setup
 
 Add the plugin to your `bunfig.toml`:
 
@@ -48,37 +104,71 @@ await build({
 });
 ```
 
-## Usage with ESM
+### Create Your First Template
 
-### 1. Configure Bun to use the plugin
+```stx
+<!-- views/home.stx -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ title }}</title>
+</head>
+<body>
+  <nav>
+    <HomeIcon size="20" /> Home
+  </nav>
 
-In your build script or Bun configuration:
-
-```js
-// build.js
-import { build } from "bun";
-import stxPlugin from "bun-plugin-stx";
-
-await build({
-  entrypoints: ["./src/index.ts", "./templates/home.stx"],
-  outdir: "./dist",
-  plugins: [stxPlugin],
-});
+  <main>
+    @foreach(posts as post)
+      <article>
+        <h2>{{ post.title }}</h2>
+        <p>{{ post.excerpt }}</p>
+      </article>
+    @endforeach
+  </main>
+</body>
+</html>
 ```
 
-### 2. Import and use .stx files directly
+```typescript
+// Use in your Bun server
+import homeTemplate from './views/home.stx'
 
-You can import .stx files directly in your ESM code:
+const html = homeTemplate // Already processed and ready to use!
+```
 
-```js
-// app.js
-import homeTemplate from "./templates/home.stx";
+## What You Can Build
+
+- 🌐 **Server-Side Rendered Apps** - Full-featured web applications with SSR
+- 📱 **Landing Pages** - Beautiful marketing sites with minimal JavaScript
+- 🛍️ **E-commerce Platforms** - Product catalogs with dynamic content
+- 📝 **Content Management** - Blogs and documentation sites
+- 🎮 **Interactive Dashboards** - Data visualizations and admin panels
+- 🔐 **Authentication Flows** - Login, registration, and protected routes
+
+## Documentation
+
+📚 **[Read the Full Documentation →](https://stx.sh)**
+
+- [Getting Started Guide](./docs/guide/getting-started.md)
+- [Template Syntax Reference](./docs/api/template-syntax.md)
+- [Component System](./docs/api/components.md)
+- [Iconify Integration](./docs/iconify.md)
+- [API Reference](./docs/api/)
+- [Examples & Recipes](./docs/examples.md)
+
+## Usage
+
+### Import and Use Templates
+
+```typescript
+import homeTemplate from './views/home.stx'
 
 // Use the processed HTML content
-document.body.innerHTML = homeTemplate;
+document.body.innerHTML = homeTemplate
 ```
 
-### 3. Use with Bun's server
+### Use with Bun Server
 
 You can serve .stx files directly with Bun's server:
 
@@ -864,6 +954,129 @@ Conditionally render content based on environment:
 @endenv
 ```
 
+## Icon Components
+
+stx includes a powerful icon component system powered by [Iconify](https://iconify.design/), giving you access to over 200,000 icons from 150+ icon sets as ready-to-use components.
+
+### Available Icon Collections
+
+All icons are available as PascalCase components. For example, the Material Symbols collection includes icons like:
+
+```html
+<DraftsIcon size="24" />
+<HomeIcon size="24" />
+<SettingsIcon size="24" />
+<SearchIcon size="24" />
+```
+
+Browse all available collections:
+
+- [Material Symbols](./docs/collections/iconify-material-symbols.md) (2,500+ icons)
+- [Heroicons](./docs/collections/iconify-heroicons.md) (300+ icons)
+- [Lucide](./docs/collections/iconify-lucide.md) (1,000+ icons)
+- [And 150+ more...](./docs/collections/)
+
+### Usage
+
+Icon components work seamlessly in your `.stx` templates:
+
+```html
+<!-- Basic usage -->
+<HomeIcon />
+
+<!-- With size -->
+<HomeIcon size="24" />
+<HomeIcon height="1em" />
+
+<!-- With color -->
+<HomeIcon size="24" color="red" />
+<HomeIcon size="24" color="#4a90e2" />
+
+<!-- With transformations -->
+<ArrowRightIcon hFlip="true" />
+<ArrowDownIcon rotate="1" />  <!-- 90° rotation -->
+
+<!-- With CSS classes -->
+<SettingsIcon size="20" className="nav-icon" />
+
+<!-- Inline in text -->
+<p>Welcome <WavingHandIcon height="1em" /> to our app!</p>
+```
+
+### Component Props
+
+All icon components support these props:
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `size` | `string \| number` | `24` | Sets both width and height |
+| `width` | `string \| number` | - | Icon width |
+| `height` | `string \| number` | - | Icon height |
+| `color` | `string` | `currentColor` | Icon color (hex, rgb, or CSS color name) |
+| `hFlip` | `boolean` | `false` | Flip horizontally |
+| `vFlip` | `boolean` | `false` | Flip vertically |
+| `rotate` | `0 \| 1 \| 2 \| 3 \| number` | `0` | Rotation (0-3 = multiples of 90°, or degrees) |
+| `className` | `string` | - | CSS classes to apply |
+| `style` | `string` | - | Inline styles |
+
+### Generating Icon Packages
+
+To generate icon packages from any Iconify collection:
+
+```bash
+# List available collections
+bun stx iconify list
+
+# Generate a specific collection
+bun stx iconify generate material-symbols
+bun stx iconify generate heroicons
+bun stx iconify generate lucide
+
+# Generate specific icons only
+bun stx iconify generate lucide --icons home,settings,user
+```
+
+This creates a package with:
+
+- TypeScript icon data files (`.ts`)
+- stx component files (`.stx`)
+- Full TypeScript types
+- Component documentation
+
+### Example: Navigation Menu
+
+```html
+<nav>
+  <a href="/"><HomeIcon size="20" className="nav-icon" /> Home</a>
+  <a href="/about"><InfoIcon size="20" className="nav-icon" /> About</a>
+  <a href="/contact"><MailIcon size="20" className="nav-icon" /> Contact</a>
+  <a href="/settings"><SettingsIcon size="20" className="nav-icon" /> Settings</a>
+</nav>
+
+<style>
+  .nav-icon {
+    vertical-align: middle;
+    margin-right: 0.5rem;
+  }
+</style>
+```
+
+### Example: Status Indicators
+
+```html
+<div class="status">
+  <CheckCircleIcon size="16" color="green" /> Success
+</div>
+<div class="status">
+  <AlertCircleIcon size="16" color="orange" /> Warning
+</div>
+<div class="status">
+  <XCircleIcon size="16" color="red" /> Error
+</div>
+```
+
+For more details, see the [icon collections documentation](./docs/collections/).
+
 ## Testing
 
 ```bash
@@ -917,10 +1130,10 @@ Made with 💙
 
 <!-- Badges -->
 
-[npm-version-src]: https://img.shields.io/npm/v/bun-plugin-stx?style=flat-square
-[npm-version-href]: https://npmjs.com/package/bun-plugin-stx
-[npm-downloads-src]: https://img.shields.io/npm/dm/bun-plugin-stx?style=flat-square
-[npm-downloads-href]: https://npmjs.com/package/bun-plugin-stx
+[npm-version-src]: https://img.shields.io/npm/v/@stacksjs/stx?style=flat-square
+[npm-version-href]: https://npmjs.com/package/@stacksjs/stx
+[npm-downloads-src]: https://img.shields.io/npm/dm/@stacksjs/stx?style=flat-square
+[npm-downloads-href]: https://npmjs.com/package/@stacksjs/stx
 [github-actions-src]: https://img.shields.io/github/actions/workflow/status/stacksjs/stx/ci.yml?style=flat-square&branch=main
 [github-actions-href]: https://github.com/stacksjs/stx/actions?query=workflow%3Aci
 

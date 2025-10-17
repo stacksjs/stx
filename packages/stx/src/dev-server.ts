@@ -4,12 +4,37 @@ import { serve } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { loadConfig } from '@unocss/config'
-import { createGenerator } from '@unocss/core'
 import { readMarkdownFile } from './assets'
 import { config } from './config'
 // TODO: import this from `bun-plugin-stx`. Oddly, there seemingly are issues right now
 import { plugin as stxPlugin } from './plugin'
+
+/**
+ * Find an available port starting from the given port
+ */
+async function findAvailablePort(startPort: number, maxAttempts = 10): Promise<number> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const port = startPort + i
+    try {
+      // Try to create a temporary server to check if port is available
+      const testServer = serve({
+        port,
+        fetch: () => new Response('test'),
+      })
+      testServer.stop()
+      return port
+    }
+    catch (error: any) {
+      // Port is in use, try next one
+      if (error.code === 'EADDRINUSE') {
+        continue
+      }
+      // Other error, rethrow
+      throw error
+    }
+  }
+  throw new Error(`Could not find an available port between ${startPort} and ${startPort + maxAttempts - 1}`)
+}
 
 // ANSI color codes for terminal output
 const colors = {
@@ -182,8 +207,8 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${data.title || path.basename(absolutePath)}</title>
-  <!-- Shiki syntax highlighting styles -->
-  <style id="shiki-theme">
+  <!-- Syntax highlighting styles -->
+  <style id="syntax-theme">
     :root {
       --shiki-color-text: #24292e;
       --shiki-color-background: #ffffff;
@@ -245,10 +270,10 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
       overflow-x: auto;
     }
     /* Apply background color to code blocks based on theme */
-    pre.shiki {
+    pre.syntax-highlighter {
       background-color: var(--shiki-color-background) !important;
     }
-    .dark-mode pre.shiki {
+    .dark-mode pre.syntax-highlighter {
       background-color: var(--shiki-color-background) !important;
     }
     code {
@@ -433,10 +458,23 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
     return false
   }
 
+  // Find an available port (with fallback)
+  let actualPort = port
+  try {
+    actualPort = await findAvailablePort(port)
+    if (actualPort !== port) {
+      console.log(`${colors.yellow}Port ${port} is busy, using port ${actualPort} instead${colors.reset}`)
+    }
+  }
+  catch {
+    console.error(`${colors.red}Could not find an available port${colors.reset}`)
+    return false
+  }
+
   // Start a server
-  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${port}/${colors.reset}...`)
+  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${actualPort}/${colors.reset}...`)
   const server = serve({
-    port,
+    port: actualPort,
     fetch(request) {
       const url = new URL(request.url)
 
@@ -561,20 +599,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
       }
 
       // Read the file content
-      let html = await Bun.file(htmlOutput.path).text()
-
-      // Apply UnoCSS
-      try {
-        const unoConfig = await loadConfig()
-        const generator = await createGenerator(unoConfig.config)
-        const { css } = await generator.generate(html)
-        if (css) {
-          html = html.replace('</head>', `<style>${css}</style>\n</head>`)
-        }
-      }
-      catch (error) {
-        console.warn(`${colors.yellow}UnoCSS processing skipped:${colors.reset}`, error)
-      }
+      const html = await Bun.file(htmlOutput.path).text()
 
       htmlContent = html
       return true
@@ -591,10 +616,23 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     return false
   }
 
+  // Find an available port (with fallback)
+  let actualPort = port
+  try {
+    actualPort = await findAvailablePort(port)
+    if (actualPort !== port) {
+      console.log(`${colors.yellow}Port ${port} is busy, using port ${actualPort} instead${colors.reset}`)
+    }
+  }
+  catch {
+    console.error(`${colors.red}Could not find an available port${colors.reset}`)
+    return false
+  }
+
   // Start a server
-  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${port}/${colors.reset}...`)
+  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${actualPort}/${colors.reset}...`)
   const server = serve({
-    port,
+    port: actualPort,
     fetch(request) {
       const url = new URL(request.url)
 
@@ -787,8 +825,8 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${data.title || path.basename(absolutePath)}</title>
-  <!-- Shiki syntax highlighting styles -->
-  <style id="shiki-theme">
+  <!-- Syntax highlighting styles -->
+  <style id="syntax-theme">
     :root {
       --shiki-color-text: #24292e;
       --shiki-color-background: #ffffff;
@@ -850,10 +888,10 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       overflow-x: auto;
     }
     /* Apply background color to code blocks based on theme */
-    pre.shiki {
+    pre.syntax-highlighter {
       background-color: var(--shiki-color-background) !important;
     }
-    .dark-mode pre.shiki {
+    .dark-mode pre.syntax-highlighter {
       background-color: var(--shiki-color-background) !important;
     }
     code {
@@ -1103,10 +1141,23 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
     return false
   }
 
+  // Find an available port (with fallback)
+  let actualPort = port
+  try {
+    actualPort = await findAvailablePort(port)
+    if (actualPort !== port) {
+      console.log(`${colors.yellow}Port ${port} is busy, using port ${actualPort} instead${colors.reset}`)
+    }
+  }
+  catch {
+    console.error(`${colors.red}Could not find an available port${colors.reset}`)
+    return false
+  }
+
   // Start a server
-  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${port}/${colors.reset}...`)
+  console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${actualPort}/${colors.reset}...`)
   const server = serve({
-    port,
+    port: actualPort,
     fetch(request) {
       const url = new URL(request.url)
 

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const dataExplorationOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 21q-1.868 0-3.51-.708t-2.857-1.924t-1.924-2.856T3 12.003t.709-3.51Q4.417 6.85 5.63 5.634t2.857-1.925T11.997 3t3.51.709t2.859 1.924t1.925 2.857T21 12v9zm0-1q3.35 0 5.675-2.325T20 12t-2.325-5.675T12 4T6.325 6.325T4 12q0 .71.113 1.394q.114.685.36 1.325l3.546-3.546l3.32 2.775L15.787 9.5H13.5v-1h4v4h-1v-2.267l-5.12 5.094l-3.274-2.8l-3.181 3.18q.992 1.918 2.875 3.105T12 20m7.27.039q.309 0 .539-.23t.23-.54t-.23-.54q-.23-.229-.54-.229t-.54.23t-.229.54t.23.539t.54.23M11.855 12\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default dataExplorationOutlineSharp

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const presentationMicrophone1: IconData = {
+  "body": "<g fill=\"none\"><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 9.609v1.913\"/><path fill=\"#e3e3e3\" d=\"M14.87 3.87v2.87H9.13V3.87a2.87 2.87 0 0 1 5.74 0\"/><path fill=\"#fff\" d=\"M12 1a2.87 2.87 0 0 0-2.87 2.87v2.238a2.87 2.87 0 0 1 5.74 0V3.87A2.87 2.87 0 0 0 12 1\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M14.87 3.87v2.87H9.13V3.87a2.87 2.87 0 0 1 5.74 0\"/><path fill=\"gray\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M14.87 6.74a2.87 2.87 0 0 1-5.74 0z\"/><path fill=\"#e3bfb3\" d=\"M10.087 16.304h-2.87a1.88 1.88 0 0 1-1.449-.82l-1.885-3.142c-.27-.451-.061-.82.465-.82h15.304c.526 0 .735.369.464.82l-1.889 3.143a1.88 1.88 0 0 1-1.444.82h-2.87\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10.087 16.304h-2.87a1.88 1.88 0 0 1-1.449-.82l-1.885-3.142c-.27-.451-.061-.82.465-.82h15.304c.526 0 .735.369.464.82l-1.889 3.143a1.88 1.88 0 0 1-1.444.82h-2.87\"/><path fill=\"#c77f67\" d=\"M10.087 23v-8.609h3.826V23\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10.087 23v-8.609h3.826V23M11.044 4.826h1.913m-1.913-1.913h1.913\"/><path fill=\"#b2b2b2\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M5.84 4.826a1.297 1.297 0 0 0 0-1.913a1.297 1.297 0 0 0-1.913 0l-.757.759a.957.957 0 0 0 0 1.352l.56.56a.956.956 0 0 0 1.353 0z\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M3.45 5.304a2.965 2.965 0 0 0 0 3.826l2.39 2.392\"/><path fill=\"#b2b2b2\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M18.16 4.826a1.3 1.3 0 0 1 0-1.913a1.295 1.295 0 0 1 1.912 0l.759.759a.956.956 0 0 1 0 1.352l-.56.56a.96.96 0 0 1-1.353 0z\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M20.55 5.304a2.966 2.966 0 0 1 0 3.826l-2.39 2.392\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default presentationMicrophone1

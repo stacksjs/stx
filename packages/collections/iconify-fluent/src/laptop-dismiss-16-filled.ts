@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const laptopDismiss16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11 5.5a5.5 5.5 0 0 1-6.97 5.301A1.5 1.5 0 0 0 5.5 12h7a1.5 1.5 0 0 0 1.5-1.5v-4A1.5 1.5 0 0 0 12.5 5h-1.522q.021.247.022.5m-8 8a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5M5.5 10a4.5 4.5 0 1 0 0-9a4.5 4.5 0 0 0 0 9m1.854-6.354a.5.5 0 0 1 0 .708L6.207 5.5l1.147 1.146a.5.5 0 1 1-.708.708L5.5 6.207L4.354 7.354a.5.5 0 1 1-.708-.708L4.793 5.5L3.646 4.354a.5.5 0 1 1 .708-.708L5.5 4.793l1.146-1.147a.5.5 0 0 1 .708 0\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default laptopDismiss16Filled

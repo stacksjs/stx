@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const dataTreemap24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 6.25A3.25 3.25 0 0 1 6.25 3H9v18H6.25A3.25 3.25 0 0 1 3 17.75zM10.5 21h7.25A3.25 3.25 0 0 0 21 17.75V15.5H10.5zM21 14V6.25A3.25 3.25 0 0 0 17.75 3H10.5v11z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default dataTreemap24Filled

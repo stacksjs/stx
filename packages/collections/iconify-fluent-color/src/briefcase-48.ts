@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const briefcase48: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGXLPZ6bJJ)\" fill-rule=\"evenodd\" d=\"M27.75 4A4.25 4.25 0 0 1 32 8.25V12h.634L24.5 16.696L15.914 12H16V8.25A4.25 4.25 0 0 1 20.25 4zm-7.5 2.5a1.75 1.75 0 0 0-1.75 1.75V12h11V8.25a1.75 1.75 0 0 0-1.75-1.75z\" clip-rule=\"evenodd\"/><path fill=\"url(#SVG6ivbvbkc)\" d=\"M6 21h36v12.75A6.25 6.25 0 0 1 35.75 40h-23.5A6.25 6.25 0 0 1 6 33.75z\"/><path fill=\"url(#SVGdaE2jcbX)\" d=\"M6 21h36v12.75A6.25 6.25 0 0 1 35.75 40h-23.5A6.25 6.25 0 0 1 6 33.75z\"/><path fill=\"url(#SVGLYBNH7XW)\" d=\"M6 18.25A6.25 6.25 0 0 1 12.25 12h23.5A6.25 6.25 0 0 1 42 18.25v6A3.75 3.75 0 0 1 38.25 28H9.75A3.75 3.75 0 0 1 6 24.25z\"/><path fill=\"url(#SVG17prIc3S)\" d=\"M26 23h-4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2\"/><defs><linearGradient id=\"SVGXLPZ6bJJ\" x1=\"15.155\" x2=\"19.673\" y1=\"5.27\" y2=\"18.701\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0094F0\"/><stop offset=\"1\" stop-color=\"#163697\"/></linearGradient><linearGradient id=\"SVG6ivbvbkc\" x1=\"7.286\" x2=\"18.023\" y1=\"24.563\" y2=\"59.247\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0FAFFF\"/><stop offset=\"1\" stop-color=\"#CC23D1\"/></linearGradient><linearGradient id=\"SVGLYBNH7XW\" x1=\"9.6\" x2=\"27.246\" y1=\"12.664\" y2=\"32.749\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#80F1E6\"/><stop offset=\".552\" stop-color=\"#40C4F5\"/><stop offset=\"1\" stop-color=\"#00A2FA\"/></linearGradient><linearGradient id=\"SVG17prIc3S\" x1=\"24\" x2=\"24\" y1=\"23\" y2=\"31\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#B8F5FF\"/><stop offset=\".844\" stop-color=\"#7CECFF\"/></linearGradient><radialGradient id=\"SVGdaE2jcbX\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(0 19 -40.1275 0 24 21)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".337\" stop-color=\"#194694\"/><stop offset=\".747\" stop-color=\"#367AF2\" stop-opacity=\"0\"/></radialGradient></defs></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default briefcase48

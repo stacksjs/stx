@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const flagGeorgia: IconData = {
+  "body": "<path fill=\"#fff\" d=\"M5 17h62v38H5z\"/><path fill=\"#d22f27\" stroke=\"#d22f27\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M67 33H39V17h-6v16H5v6h28v16h6V39h28z\"/><path fill=\"#d22f27\" stroke=\"#d22f27\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M54.958 24.684h-1.642V23h-.632v1.684h-1.642v.632h1.642V27h.632v-1.684h1.642zm0 22h-1.642V45h-.632v1.684h-1.642v.632h1.642V49h.632v-1.684h1.642zm-34 0h-1.642V45h-.632v1.684h-1.642v.632h1.642V49h.632v-1.684h1.642zm0-22h-1.642V23h-.632v1.684h-1.642v.632h1.642V27h.632v-1.684h1.642z\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 17h62v38H5z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default flagGeorgia

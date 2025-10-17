@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tableMoveLeft20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3.5 17a.5.5 0 0 1-.5-.5v-13a.5.5 0 0 1 1 0v13a.5.5 0 0 1-.5.5m4.5-.5v-3.882l.06-.057c.164-.164.282-.356.355-.561H12V8H8.415A1.5 1.5 0 0 0 8 7.382V3.5a.5.5 0 0 1 .5-.5H15a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8.5a.5.5 0 0 1-.5-.5m5-.5h2a1 1 0 0 0 1-1v-2h-3zm3-8h-3v4h3zm0-1V5a1 1 0 0 0-1-1h-2v3zm-4 0V4H9v3zm-3 9h3v-3H9zM7.354 8.854a.5.5 0 1 0-.708-.708l-1.5 1.5a.5.5 0 0 0 0 .708l1.5 1.5a.5.5 0 0 0 .708-.708l-.647-.646H9.5a.5.5 0 0 0 0-1H6.707z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default tableMoveLeft20Regular

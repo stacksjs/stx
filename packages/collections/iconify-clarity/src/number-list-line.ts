@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const numberListLine: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.46 7.41v4.15h1.19V6.05H5.7L4.05 7.16l.47.84z\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"currentColor\" d=\"M5.57 14.82a.76.76 0 0 1 .83.73c0 .38-.21.74-.87 1.27l-2 1.57v1h4.14v-1.11H5.33l1-.77c1-.7 1.28-1.27 1.28-2a1.83 1.83 0 0 0-2-1.76a2.63 2.63 0 0 0-2.14 1.08l.76.73a1.75 1.75 0 0 1 1.34-.74\" class=\"clr-i-outline clr-i-outline-path-2\"/><path fill=\"currentColor\" d=\"M6.56 24.64a1.32 1.32 0 0 0 1-1.27c0-.87-.78-1.51-2-1.51a2.61 2.61 0 0 0-2.1 1l.69.72a1.78 1.78 0 0 1 1.3-.64c.54 0 .92.26.92.66s-.36.62-1 .62h-.58v1h.64c.74 0 1.07.21 1.07.63s-.35.68-1 .68a2 2 0 0 1-1.46-.65l-.7.78a2.85 2.85 0 0 0 2.21.93c1.29 0 2.13-.69 2.13-1.64a1.33 1.33 0 0 0-1.12-1.31\" class=\"clr-i-outline clr-i-outline-path-3\"/><path fill=\"currentColor\" d=\"M32.42 9a1 1 0 0 0-1-1H10v2h21.42a1 1 0 0 0 1-1\" class=\"clr-i-outline clr-i-outline-path-4\"/><path fill=\"currentColor\" d=\"M31.42 16H10v2h21.42a1 1 0 0 0 0-2\" class=\"clr-i-outline clr-i-outline-path-5\"/><path fill=\"currentColor\" d=\"M31.42 24H10v2h21.42a1 1 0 0 0 0-2\" class=\"clr-i-outline clr-i-outline-path-6\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default numberListLine

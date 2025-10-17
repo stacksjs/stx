@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const warehouse: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M41 41v62h30V41zm48 0v62h30V41zm48 0v62h30V41zm222 7v71H16v18h343v174H16v18h343v167h18v-39h62v39h18V329h39v-18h-39V137h39v-18h-39V48h-18v71h-62V48zM185 73v30h158V73zm192 64h62v46h-62zm-240 16v142h46V153zm-41 16c-12.81 0-23 10.19-23 23s10.19 23 23 23s23-10.19 23-23s-10.19-23-23-23m105 16v110h110V185zm176 16h62v46h-62zM41 233v62h78v-62zm336 32h62v46h-62zm0 64h62v46h-62zm-137 24c-8.39 0-15 6.61-15 15s6.61 15 15 15s15-6.61 15-15s-6.61-15-15-15m137 40h62v46h-62zm-352 8v94h254v-94zm228.977 14.23l4.046 17.54l-208 48l-4.046-17.54zM297 449v46h46v-46z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default warehouse

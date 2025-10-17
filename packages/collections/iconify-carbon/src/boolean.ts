@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const boolean: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M23 23a7 7 0 1 1 7-7a7.01 7.01 0 0 1-7 7m0-12a5 5 0 1 0 5 5a5.006 5.006 0 0 0-5-5\"/><circle cx=\"9\" cy=\"16\" r=\"7\" fill=\"currentColor\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default boolean

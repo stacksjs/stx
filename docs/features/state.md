@@ -79,7 +79,7 @@ stx provides powerful state management capabilities for building complex applica
 ### Store Creation
 
 ```typescript
-import { createStore } from '@stx/state'
+import { createStore } from '@stacksjs/state'
 
 interface AppState {
   user: User | null
@@ -189,7 +189,7 @@ const store = createStore({
 ### LocalStorage Integration
 
 ```typescript
-import { createPersistedStore } from '@stx/state'
+import { createPersistedStore } from '@stacksjs/state'
 
 const store = createPersistedStore({
   key: 'app-state',
@@ -276,7 +276,7 @@ const store = createStore({
 ### Resource Management
 
 ```typescript
-import { createResource } from '@stx/state'
+import { createResource } from '@stacksjs/state'
 
 const userResource = createResource({
   fetcher: (id: string) => userAPI.get(id),
@@ -470,7 +470,7 @@ const store = createStore({
 ### State Testing
 
 ```typescript
-import { createTestStore } from '@stx/testing'
+import { createTestStore } from '@stacksjs/testing'
 
 describe('User Store', () => {
   let store

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const deso: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGpMrOQ8hl)\" d=\"M4.5 3v4.5l11.4 6.576L4.5 21h9.282c3.162 0 5.718-2.22 5.718-4.95V12z\"/><path fill=\"url(#SVGR1dTXcGO)\" d=\"m4.5 3l15 9V7.95C19.5 5.214 16.938 3 13.782 3z\"/><path fill=\"url(#SVGAw4wdbrg)\" d=\"m12.21 11.946l-7.71 4.56V21l11.4-6.924z\"/><defs><linearGradient id=\"SVGpMrOQ8hl\" x1=\"4.5\" x2=\"17.28\" y1=\"6\" y2=\"19.014\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#3FA3FF\"/><stop offset=\"1\" stop-color=\"#F0F8FF\"/></linearGradient><linearGradient id=\"SVGR1dTXcGO\" x1=\"4.5\" x2=\"22.324\" y1=\"3\" y2=\"7.563\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#84C3FF\"/><stop offset=\"1\" stop-color=\"#FBFEFF\"/></linearGradient><linearGradient id=\"SVGAw4wdbrg\" x1=\"5.1\" x2=\"14.034\" y1=\"18.9\" y2=\"13.692\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#A8D5FF\"/><stop offset=\"1\" stop-color=\"#F6FBFF\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default deso

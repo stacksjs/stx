@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const receipt32Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 6.25A3.25 3.25 0 0 1 6.25 3h13.5A3.25 3.25 0 0 1 23 6.25V19h6v5.5a4.5 4.5 0 0 1-4.5 4.5h-17A4.5 4.5 0 0 1 3 24.5zM23 27h1.5a2.5 2.5 0 0 0 2.5-2.5V21h-4zM6.25 5C5.56 5 5 5.56 5 6.25V24.5A2.5 2.5 0 0 0 7.5 27H21V6.25C21 5.56 20.44 5 19.75 5zM9 9a1 1 0 0 0 0 2h8a1 1 0 1 0 0-2zm-1 7a1 1 0 0 1 1-1h8a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1m1 5a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default receipt32Regular

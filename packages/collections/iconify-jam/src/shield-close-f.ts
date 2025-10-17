@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const shieldCloseF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m9.414 9.565l1.414-1.414a1 1 0 1 0-1.414-1.414L8 8.15L6.586 6.737A1 1 0 1 0 5.172 8.15l1.414 1.414l-1.414 1.414a1 1 0 1 0 1.414 1.414L8 10.98l1.414 1.414a1 1 0 1 0 1.414-1.414zM.65 3.322L8 .565l7.351 2.757a1 1 0 0 1 .649.936v4.307c0 3.177-1.372 6.2-3.763 8.292L8 20.565l-4.237-3.708A11.02 11.02 0 0 1 0 8.565V4.258a1 1 0 0 1 .649-.936z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default shieldCloseF

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const slideMultipleSearch24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.75 3A4.75 4.75 0 0 0 2 7.75v4.507a5.5 5.5 0 0 1 1.5-.882V7.75A3.25 3.25 0 0 1 6.75 4.5h10a.75.75 0 0 1 .75.75v.25H19v-.25A2.25 2.25 0 0 0 16.75 3zm13 17.5h-7.775l-1.5-1.5h9.275a.75.75 0 0 0 .75-.75v-9.5a.75.75 0 0 0-.75-.75h-12a.75.75 0 0 0-.75.75v2.457A5.5 5.5 0 0 0 5.5 11V8.75A2.25 2.25 0 0 1 7.75 6.5h12A2.25 2.25 0 0 1 22 8.75v9.5a2.25 2.25 0 0 1-2.25 2.25M5.5 21a4.5 4.5 0 0 0 2.607-.832l2.613 2.612a.75.75 0 1 0 1.06-1.06l-2.612-2.613A4.5 4.5 0 1 0 5.5 21m0-1.5a3 3 0 1 1 0-6a3 3 0 0 1 0 6\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default slideMultipleSearch24Regular

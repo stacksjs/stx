@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const baggage: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M.953 11.415c.13.878.882 1.514 1.766 1.588c1.38.117 2.812.246 4.281.246c1.49 0 2.934-.082 4.333-.211a1.875 1.875 0 0 0 1.696-1.576a19 19 0 0 0 .221-2.785c0-.963-.078-1.909-.216-2.82c-.127-.838-.822-1.462-1.666-1.541A47 47 0 0 0 7 4.106c-1.51 0-2.985.073-4.398.208c-.829.079-1.513.689-1.639 1.512a19 19 0 0 0-.01 5.59m3.643 1.736V4.188m4.808 8.988V4.188\"/><path d=\"M9.855 4.173v-.567a2.855 2.855 0 0 0-5.71 0v.567\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default baggage

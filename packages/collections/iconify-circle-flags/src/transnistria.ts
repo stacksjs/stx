@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const transnistria: IconData = {
+  "body": "<mask id=\"SVGuywqVbel\"><circle cx=\"256\" cy=\"256\" r=\"256\" fill=\"#fff\"/></mask><g mask=\"url(#SVGuywqVbel)\"><path fill=\"#a2001d\" d=\"M0 0h512v189.5l-39 62l39 71.6V512H0V323l40.8-67L0 189.5z\"/><path fill=\"#6da544\" d=\"M0 189.5h512v133.6H0z\"/></g>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default transnistria

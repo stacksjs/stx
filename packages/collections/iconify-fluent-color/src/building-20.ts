@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const building20: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGteQkLezk)\" d=\"M5.5 2A1.5 1.5 0 0 0 4 3.5v14a.5.5 0 0 0 .5.5h11.005a.494.494 0 0 0 .495-.498V9.5A1.5 1.5 0 0 0 14.5 8H13V3.5A1.5 1.5 0 0 0 11.5 2z\"/><path fill=\"url(#SVGtpcFAbKv)\" d=\"M10 18h3v-3.5a.5.5 0 0 0-.5-.5H10l-.5 2z\"/><path fill=\"url(#SVGq3KcFbAd)\" d=\"M10 14H7.5a.5.5 0 0 0-.5.5V18h3z\"/><path fill=\"url(#SVG7Douac2D)\" d=\"M7.5 5.75a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0\"/><path fill=\"url(#SVG7Douac2D)\" d=\"M9.75 5a.75.75 0 1 1 0 1.5a.75.75 0 0 1 0-1.5\"/><path fill=\"url(#SVG7Douac2D)\" d=\"M9.75 9.5a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5\"/><path fill=\"url(#SVG7Douac2D)\" d=\"M6.75 8a.75.75 0 1 1 0 1.5a.75.75 0 0 1 0-1.5\"/><path fill=\"url(#SVG7Douac2D)\" d=\"M6.75 12.5a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5\"/><path fill=\"url(#SVG7Douac2D)\" d=\"M10.5 11.75a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0\"/><path fill=\"url(#SVG7Douac2D)\" d=\"M12.75 12.5a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5\"/><defs><linearGradient id=\"SVGteQkLezk\" x1=\"4\" x2=\"19.257\" y1=\"2.5\" y2=\"17.149\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#29C3FF\"/><stop offset=\"1\" stop-color=\"#2764E7\"/></linearGradient><linearGradient id=\"SVGtpcFAbKv\" x1=\"9.625\" x2=\"12.375\" y1=\"14.75\" y2=\"17.25\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0067BF\"/><stop offset=\"1\" stop-color=\"#003580\"/></linearGradient><linearGradient id=\"SVGq3KcFbAd\" x1=\"7.107\" x2=\"9.786\" y1=\"14.75\" y2=\"16.837\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0067BF\"/><stop offset=\"1\" stop-color=\"#003580\"/></linearGradient><linearGradient id=\"SVG7Douac2D\" x1=\"8.25\" x2=\"10.99\" y1=\"4.167\" y2=\"14.031\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FDFDFD\"/><stop offset=\"1\" stop-color=\"#B3E0FF\"/></linearGradient></defs></g>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default building20

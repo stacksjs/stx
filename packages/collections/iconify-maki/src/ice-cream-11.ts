@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const iceCream11: IconData = {
+  "body": "<path d=\"M4 6a2.49 2.49 0 0 0 1.5-.5c.432.325.959.5 1.5.5l-1 4.69a.5.5 0 0 1-.92 0L4 6zm3-4h-.09a1.5 1.5 0 1 0-2.82 0H4a1.5 1.5 0 1 0 1.5 1.5A1.5 1.5 0 1 0 7 2z\" fill=\"currentColor\"/>",
+  "width": 11,
+  "height": 11,
+  "viewBox": "0 0 11 11"
+}
+
+export default iceCream11

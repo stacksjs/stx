@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const grimacingFace: IconData = {
+  "body": "<path fill=\"#FCEA2B\" d=\"M36 13c-12.702 0-23 10.298-23 23s10.298 23 23 23s23-10.297 23-23c-.014-12.697-10.303-22.986-23-23\"/><path fill=\"#FFF\" d=\"M44.5 49.27h-17a4.01 4.01 0 0 1-4-4a4.01 4.01 0 0 1 4-4h17a4.01 4.01 0 0 1 4 4a4.01 4.01 0 0 1-4 4\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M28 41.771v7m5-7v7m5-7v7m5-7v7\"/><circle cx=\"36\" cy=\"36\" r=\"23\" fill=\"none\" stroke=\"#000\" stroke-miterlimit=\"10\" stroke-width=\"2\"/><path fill=\"none\" stroke=\"#000\" stroke-miterlimit=\"2\" stroke-width=\"2\" d=\"M44.5 49.27h-17a4.01 4.01 0 0 1-4-4a4.01 4.01 0 0 1 4-4h17a4.01 4.01 0 0 1 4 4a4.01 4.01 0 0 1-4 4z\"/><path d=\"M30 31a3.001 3.001 0 0 1-6 0c0-1.655 1.345-3 3-3s3 1.345 3 3m18 0a3.001 3.001 0 0 1-6 0c0-1.655 1.345-3 3-3s3 1.345 3 3\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default grimacingFace

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cutleryFill12: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M1 3h1V.5a.5.5 0 0 1 1 0V3h1V.5a.5.5 0 0 1 1 0v5a2.5 2.5 0 0 1-2 2.45v3.55a.5.5 0 1 1-1 0V7.95A2.5 2.5 0 0 1 0 5.5v-5a.5.5 0 1 1 1 0zm6.5 5a.5.5 0 0 1-.5-.5v-4A3.5 3.5 0 0 1 10.5 0a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5V8z\"/>",
+  "width": 12,
+  "height": 12,
+  "viewBox": "0 0 12 12"
+}
+
+export default cutleryFill12

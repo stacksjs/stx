@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const handPackageSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 11V2h8v9zm10 0V2h5v9zM8 21v-8h6.8q.35 0 .6.2t.35.475t.038.575t-.338.525L13.975 16H10v1.5h4.5l4.05-3.35q.55-.4 1.163-.5t1.212.05t1.138.513t.912.937l-7 5.85zm-6 1v-9h4v9z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default handPackageSharp

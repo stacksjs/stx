@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const guestAdd20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6 2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4.257a5.5 5.5 0 0 1-1.242-3.084c-.634-.115-1.166-.348-1.58-.684A2.5 2.5 0 0 1 6.5 12.25c0-.69.56-1.25 1.25-1.25h2.507A5.49 5.49 0 0 1 14.5 9a5.5 5.5 0 0 1 1.5.207V4a2 2 0 0 0-2-2zm2.5 2h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1 0-1M8 8a2 2 0 1 1 4 0a2 2 0 0 1-4 0m11 6.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-4-2a.5.5 0 0 0-1 0V14h-1.5a.5.5 0 0 0 0 1H14v1.5a.5.5 0 0 0 1 0V15h1.5a.5.5 0 0 0 0-1H15z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default guestAdd20Filled

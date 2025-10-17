@@ -7,6 +7,7 @@ on:
 
 jobs:
   npm:
+    name: npm
     runs-on: ubuntu-latest
 
     steps:
@@ -30,22 +31,15 @@ jobs:
             node-modules-
 
       - name: Install Dependencies
-        run: |
-          bun install
-          bun add -g logsmith
+        run: bun install
 
       - name: Publish to npm
-        run: ./scripts/publish-packages.sh
+        run: ./scripts/publish.sh
         env:
           BUN_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 
-      - name: Create GitHub release
-        run: bunx changelogithub
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-
-      - name: Attach Binaries
-        uses: stacksjs/action-releaser@v1.1.0
+      - name: Create GitHub Release
+        uses: stacksjs/action-releaser@v1.2.6
         with:
           files: |
             packages/stx/bin/stx-linux-x64.zip
@@ -55,39 +49,3 @@ jobs:
             packages/stx/bin/stx-darwin-arm64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract Version
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
-      - name: Generate Release Changelog
-        run: |
-          # Generate changelog for this release only
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
-          if [ -n "$PREVIOUS_TAG" ]; then
-            logsmith --from "$PREVIOUS_TAG" --to "${{ steps.version.outputs.VERSION }}" \
-              --theme github --format markdown --output RELEASE_NOTES.md
-          else
-            logsmith --to "${{ steps.version.outputs.VERSION }}" \
-              --theme github --format markdown --output RELEASE_NOTES.md
-          fi
-
-      - name: Update Full Changelog
-        run: |
-          logsmith --theme github --output CHANGELOG.md
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add CHANGELOG.md
-          git commit -m "docs: update changelog for ${{ steps.version.outputs.VERSION }}" || exit 0
-          git push origin HEAD:main
-
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.version.outputs.VERSION }}
-          release_name: Release ${{ steps.version.outputs.VERSION }}
-          body_path: RELEASE_NOTES.md
-          draft: false
-          prerelease: false

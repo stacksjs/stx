@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cloudWords48Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14.5 21a9.5 9.5 0 1 1 18.998.221a1.25 1.25 0 0 0 1.25 1.279H36.5a6 6 0 0 1 0 12h-25a6 6 0 0 1 0-12h1.753a1.25 1.25 0 0 0 1.25-1.279zM24 9c-6.29 0-11.45 4.84-11.959 11H11.5a8.5 8.5 0 0 0 0 17h25a8.5 8.5 0 0 0 0-17h-.541C35.45 13.84 30.29 9 24 9m-3.75 9a1.25 1.25 0 1 0 0 2.5h7.5a1.25 1.25 0 1 0 0-2.5zM10 28.75c0-.69.56-1.25 1.25-1.25h9.5a1.25 1.25 0 1 1 0 2.5h-9.5c-.69 0-1.25-.56-1.25-1.25m17.25-1.25a1.25 1.25 0 1 0 0 2.5h9.5a1.25 1.25 0 1 0 0-2.5z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default cloudWords48Regular

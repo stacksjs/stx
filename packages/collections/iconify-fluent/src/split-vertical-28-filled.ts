@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const splitVertical28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12.998 25.25a.75.75 0 0 0 1.5 0V2.75a.75.75 0 0 0-1.5 0zM2 6.75A2.75 2.75 0 0 1 4.75 4h7.248v20H4.75A2.75 2.75 0 0 1 2 21.25zM22.75 24h-7.252V4h7.252a2.75 2.75 0 0 1 2.75 2.75v14.5A2.75 2.75 0 0 1 22.75 24\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default splitVertical28Filled

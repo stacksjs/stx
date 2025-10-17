@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const gamepadRetroF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 5V4a1 1 0 1 0-2 0v1H4a1 1 0 1 0 0 2h1v1a1 1 0 1 0 2 0V7h1a1 1 0 1 0 0-2zM6 0h12a6 6 0 1 1-4.472 10h-3.056A6 6 0 1 1 6 0m12 5a1 1 0 1 0 0-2a1 1 0 0 0 0 2m-2 2a1 1 0 1 0 0-2a1 1 0 0 0 0 2m4 0a1 1 0 1 0 0-2a1 1 0 0 0 0 2m-2 2a1 1 0 1 0 0-2a1 1 0 0 0 0 2\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default gamepadRetroF

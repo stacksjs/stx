@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const shareScreenPersonOverlay28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 7.75A3.75 3.75 0 0 1 5.75 4h16.5A3.75 3.75 0 0 1 26 7.75v9a.25.25 0 0 1-.25.25a.263.263 0 0 1-.258-.25A4 4 0 1 0 18.854 20h-.808A3.045 3.045 0 0 0 15 23.045v.205q0 .377.066.75H5.75A3.75 3.75 0 0 1 2 20.25zm4 1.5v4.5c0 .69.56 1.25 1.25 1.25h5.5c.69 0 1.25-.56 1.25-1.25v-4.5C14 8.56 13.44 8 12.75 8h-5.5C6.56 8 6 8.56 6 9.25M24.5 17a3 3 0 1 1-6 0a3 3 0 0 1 6 0m2.5 6.25c0 1.868-1.571 3.75-5.5 3.75S16 25.125 16 23.25v-.205c0-1.13.916-2.045 2.046-2.045h6.909c1.13 0 2.045.915 2.045 2.045z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default shareScreenPersonOverlay28Filled

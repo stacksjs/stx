@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const pop: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGj4KcYdCv)\" d=\"M6.15 13.8h12.6V8.4H21v7.2H6.15zm-.9 1.8H3V8.4h14.85v1.8H5.25zm12.6-2.7v-1.8H6.15v1.8z\"/><defs><linearGradient id=\"SVGj4KcYdCv\" x1=\"12.45\" x2=\"9.75\" y1=\"7.5\" y2=\"15.6\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#00BAC9\"/><stop offset=\".12\" stop-color=\"#2060B2\"/><stop offset=\".18\" stop-color=\"#7046B2\"/><stop offset=\".24\" stop-color=\"#CC83A1\"/><stop offset=\".3\" stop-color=\"#663FA9\"/><stop offset=\".37\" stop-color=\"#3557B8\"/><stop offset=\".45\" stop-color=\"#8851B7\"/><stop offset=\".56\" stop-color=\"#E096AC\"/><stop offset=\".75\" stop-color=\"#7443B7\"/><stop offset=\".91\" stop-color=\"#8F48A9\"/><stop offset=\"1\" stop-color=\"#C379AD\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default pop

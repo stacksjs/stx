@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const nunjucks: IconData = {
+  "body": "<path fill=\"#388e3c\" d=\"M12 4v12L8 4H4v24h4V18l4 10h4V4zm12 6v14h-2v-4h-4v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V10Z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default nunjucks

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const arch: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M832 832V704h192v128zm0-320v-3l187-64q5 38 5 67v128H832zm-46-165l138-138q58 79 83 173l-182 62q-11-51-39-97M651 224l59-184q98 41 173 120L747 296q-41-45-96-72m-139-32q-39 0-79 10L374 19Q444 0 512 0t137 19l-58 183q-40-10-79-10M277 296L141 160q75-79 173-120l59 184q-55 27-96 72m-78 148L17 382q25-94 83-173l138 138q-28 46-39 97m-7 68v128H0V512q0-29 5-67l187 64zm0 320H0V704h192zm0 64v128H0V896zm832 0v128H832V896z\"/>",
+  "width": 1024,
+  "height": 1024,
+  "viewBox": "0 0 1024 1024"
+}
+
+export default arch

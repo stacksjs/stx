@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const beautyNailPolish: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M31.24 32v-1.52h-1.52v-4.57h-1.53V13.72h1.53V3.05h-4.57v10.67h1.52v12.19h-1.52v4.57h1.52V32ZM26.67 4.57h1.52v7.62h-1.52Zm-6.1 10.67h1.53v9.14h-1.53Zm-1.52 9.14h1.52v3.05h-1.52Zm-1.52 3.05h1.52v3.05h-1.52Zm0-13.71h3.04v1.52h-3.04ZM5.34 24.38h1.52v3.05h1.52v1.53h6.1v-1.53H16v-3.05h1.53v-1.52h1.52v-6.09H16v-1.53H6.86v1.53H3.81v6.09h1.53Zm1.52-6.09h1.52v-1.52h1.53v7.61h1.52v1.53H9.91v-1.53H8.38v-1.52H6.86Zm9.14-6.1h1.53v1.53H16ZM5.34 30.48h12.19V32H5.34Zm7.62-28.95h1.52v1.52h-1.52ZM9.91 0h3.05v1.53H9.91ZM16 12.19V3.05h-1.52v7.62h-6.1V3.05H6.86v9.14zM8.38 1.53h1.53v1.52H8.38ZM5.34 12.19h1.52v1.53H5.34ZM3.81 27.43h1.53v3.05H3.81ZM2.29 13.72h3.05v1.52H2.29Zm0 10.66h1.52v3.05H2.29ZM.76 15.24h1.53v9.14H.76Z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default beautyNailPolish

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const safetyVest: IconData = {
+  "body": "<path fill=\"#e27022\" d=\"M15.52 11.4v49.2a7.4 7.4 0 0 0 7.4 7.4H48.8a7.4 7.4 0 0 0 7.4-7.4V11.4A7.4 7.4 0 0 0 48.8 4L36.277 5.47q-.277.01-.554 0L23.2 4h-.28a7.4 7.4 0 0 0-7.4 7.4\"/><path fill=\"none\" stroke=\"#fcea2b\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M51.36 4.038L43.076 48.8M20.64 4.038L28.32 48.8m9.68 0h18.48m-40.96 0H34m4 10.24h18.48m-40.96 0H34\"/><path fill=\"#ea5a47\" d=\"m25.24 6l9.24 15.694v42.29L33.085 67h6.299L38 63.984v-42.19L47.24 6z\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-width=\"2\"><path stroke-linejoin=\"round\" d=\"M44.033 68h4.937a7.51 7.51 0 0 0 7.51-7.51V9.516C56.48 5 52.2 4 50.92 4h-1.41a1.28 1.28 0 0 0-1.086.602l-9.81 16.264a4.2 4.2 0 0 0-.598 1.9l-.007.09Q38 23 38 23.145v38.824A6.033 6.033 0 0 0 44.032 68\"/><path stroke-miterlimit=\"10\" d=\"M48 5S38 6 36 6S25 5 25 5m7 62s3.257.108 4.38.1c1.06-.007 4.12-.1 4.12-.1\"/><path stroke-linejoin=\"round\" d=\"M28.448 68H23.51A7.51 7.51 0 0 1 16 60.49V9.516C16 5 20.28 4 21.56 4h1.41a1.28 1.28 0 0 1 1.086.602l9.81 16.264a4.2 4.2 0 0 1 .598 1.9l.007.09q.01.144.01.288v38.824A6.033 6.033 0 0 1 28.448 68\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default safetyVest

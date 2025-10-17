@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const panelRightContract16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m6.293 8.5l-.647.647a.5.5 0 1 0 .708.707l1.5-1.5a.5.5 0 0 0 0-.707l-1.5-1.5a.5.5 0 1 0-.708.707l.647.646H4.502a.5.5 0 1 0 0 1zM12 13.001a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v6.002a2 2 0 0 0 2 2zm1-2a1 1 0 0 1-1 1H9.998V4H12a1 1 0 0 1 1 1zM8.998 4v8.002H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default panelRightContract16Regular

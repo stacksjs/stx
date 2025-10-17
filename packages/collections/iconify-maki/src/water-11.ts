@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const water11: IconData = {
+  "body": "<path d=\"M5.5 11C3.59 11 2 9 2 7s2.61-5.81 3.5-7C6.39 1.19 9 5 9 7s-1.59 4-3.5 4z\" fill=\"currentColor\"/>",
+  "width": 11,
+  "height": 11,
+  "viewBox": "0 0 11 11"
+}
+
+export default water11

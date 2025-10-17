@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const chevronDoubleUpRightSolid: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9.257 5.507a.75.75 0 0 0-.75.75l3.25 3.25h-6.5a.75.75 0 0 0-.75.75l9.236 9.236a.75.75 0 0 0 .75-.75v-6.5l3.25 3.25a.75.75 0 0 0 .75-.75V6.257a.75.75 0 0 0-.75-.75z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default chevronDoubleUpRightSolid

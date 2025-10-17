@@ -62,13 +62,14 @@ describe('stx Layout Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
+      plugins: [stxPlugin(
+        {
         // Define the right paths for partials and components
-        partialsDir: TEMP_DIR,
-        componentsDir: TEMP_DIR,
-        debug: true,
-      },
+          partialsDir: TEMP_DIR,
+          componentsDir: TEMP_DIR,
+          debug: true,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -158,12 +159,13 @@ describe('stx Layout Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        partialsDir: TEMP_DIR,
-        componentsDir: TEMP_DIR,
-        debug: true,
-      },
+      plugins: [stxPlugin(
+        {
+          partialsDir: TEMP_DIR,
+          componentsDir: TEMP_DIR,
+          debug: true,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -261,12 +263,13 @@ describe('stx Layout Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        partialsDir: PARTIALS_DIR,
-        componentsDir: TEMP_DIR,
-        debug: true,
-      },
+      plugins: [stxPlugin(
+        {
+          partialsDir: PARTIALS_DIR,
+          componentsDir: TEMP_DIR,
+          debug: true,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -395,12 +398,13 @@ describe('stx Layout Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        partialsDir: PARTIALS_DIR,
-        componentsDir: TEMP_DIR,
-        debug: true,
-      },
+      plugins: [stxPlugin(
+        {
+          partialsDir: PARTIALS_DIR,
+          componentsDir: TEMP_DIR,
+          debug: true,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -476,12 +480,13 @@ describe('stx Layout Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
-      stx: {
-        partialsDir: TEMP_DIR,
-        componentsDir: TEMP_DIR,
-        debug: true,
-      },
+      plugins: [stxPlugin(
+        {
+          partialsDir: TEMP_DIR,
+          componentsDir: TEMP_DIR,
+          debug: true,
+        },
+      )],
     })
 
     const outputHtml = await getHtmlOutput(result)

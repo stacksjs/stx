@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const chessKnightOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.885 21.02v-4.226l5.538-2.852V11.29l-3.802 1.955q-.223.131-.477.177q-.253.046-.507.046q-.604 0-1.14-.317q-.537-.317-.83-.911q-.273-.535-.223-1.134t.379-1.096l3.004-4.625L6.25 2.981h4.77q2.901 0 4.921 2.073t2.02 5.062v10.903zm1.019-1h10.058v-9.904q0-2.557-1.734-4.346T11.02 3.98H8.135l.9 1.405l-3.383 5.192q-.183.277-.195.594t.126.616q.183.39.48.535q.298.145.578.145q.055 0 .528-.113l5.273-2.7v4.904l-5.538 2.846zm4.519-8.731\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default chessKnightOutlineSharp

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const presenceUnknown10Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.999 1a3.999 3.999 0 1 0 0 7.997a3.999 3.999 0 0 0 0-7.997M0 4.999a4.999 4.999 0 1 1 9.997 0a4.999 4.999 0 0 1-9.997 0\"/>",
+  "width": 10,
+  "height": 10,
+  "viewBox": "0 0 10 10"
+}
+
+export default presenceUnknown10Regular

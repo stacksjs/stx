@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const backpack20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 8.7a.7.7 0 0 1 .7-.7h2.6a.7.7 0 0 1 .7.7a.3.3 0 0 1-.3.3H8.3a.3.3 0 0 1-.3-.3M10 2a2.5 2.5 0 0 0-2.5 2.5v.044A6 6 0 0 0 4 10v2h12v-2a6 6 0 0 0-3.5-5.456V4.5A2.5 2.5 0 0 0 10 2m0 2c.506 0 .997.063 1.466.18a1.5 1.5 0 0 0-2.932 0C9.004 4.063 9.494 4 10 4M8.7 7h2.6A1.7 1.7 0 0 1 13 8.7a1.3 1.3 0 0 1-1.3 1.3H8.3A1.3 1.3 0 0 1 7 8.7A1.7 1.7 0 0 1 8.7 7M7 14.5V13H4v2a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3v-2H8v1.5a.5.5 0 0 1-1 0\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default backpack20Filled

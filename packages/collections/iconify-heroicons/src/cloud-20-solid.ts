@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cloud20Solid: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M1 12.5A4.5 4.5 0 0 0 5.5 17H15a4 4 0 0 0 1.866-7.539a3.504 3.504 0 0 0-4.504-4.272A4.5 4.5 0 0 0 4.06 8.235A4.5 4.5 0 0 0 1 12.5\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default cloud20Solid

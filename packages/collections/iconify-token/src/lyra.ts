@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const lyra: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m15.884 9.979l-3.134 3.145H4.812c-.574 0-.861-.658-.473-1.052l8.872-8.929a.495.495 0 0 1 .794.135l2.211 4.923a1.59 1.59 0 0 1-.332 1.778M3 13.686c.18.242.827.563 1.947.563h12.32a1.78 1.78 0 0 1 1.644 1.069l2.042 4.827a.62.62 0 0 1-.574.855H7.523a2.02 2.02 0 0 1-1.856-1.204z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default lyra

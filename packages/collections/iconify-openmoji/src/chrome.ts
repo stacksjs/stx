@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const chrome: IconData = {
+  "body": "<circle cx=\"36\" cy=\"36\" r=\"28\" fill=\"#B1CC33\"/><path fill=\"#FCEA2B\" fill-rule=\"evenodd\" d=\"m34.312 27.158l.008.047a9 9 0 0 1 9.327 13.369L30.386 63.542C41.828 65.821 53.943 60.74 60.1 50.074c4.21-7.291 4.767-15.688 2.24-23.074H36q-.867.001-1.688.158\" clip-rule=\"evenodd\"/><path fill=\"#EA5A47\" fill-rule=\"evenodd\" d=\"M27 43.5L8.202 32.617C9.872 18.748 21.681 8 36 8c12.316 0 22.774 7.951 26.522 19H36a9 9 0 0 0-6.914 14.762z\" clip-rule=\"evenodd\"/><circle cx=\"36\" cy=\"36\" r=\"9\" fill=\"#61B2E4\"/><g fill=\"none\" stroke=\"#000\" stroke-width=\"2\"><circle cx=\"36\" cy=\"36\" r=\"28\"/><path stroke-linecap=\"round\" d=\"M36 26h23M44.66 41l-11.5 19.919M11.081 33.16L31 44.66\"/><circle cx=\"36\" cy=\"36\" r=\"10\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default chrome

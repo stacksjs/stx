@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const weatherMoon48Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M37.903 33.01c-4.971 8.609-15.98 11.558-24.589 6.588a17.9 17.9 0 0 1-5.821-5.368a1.35 1.35 0 0 1 .656-2.036c6.78-2.427 10.412-5.24 12.52-9.262c2.218-4.235 2.791-8.873 1.24-15.232a1.35 1.35 0 0 1 1.383-1.668c2.802.15 5.54.956 8.022 2.389c8.61 4.97 11.56 15.979 6.589 24.588\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default weatherMoon48Filled

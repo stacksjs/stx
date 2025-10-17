@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const userlane: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15 4h6v6h-6zM3 12a9 9 0 1 0 18 0h-4a5 5 0 0 1-10 0zm3-2a3 3 0 1 0 0-6a3 3 0 0 0 0 6\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default userlane

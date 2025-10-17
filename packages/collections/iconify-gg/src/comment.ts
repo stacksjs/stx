@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const comment: IconData = {
+  "body": "<g fill=\"currentColor\"><path d=\"M17 9H7V7h10zM7 13h10v-2H7z\"/><path fill-rule=\"evenodd\" d=\"M2 18V2h20v16h-6v4h-2a4 4 0 0 1-4-4zm10-2v2a2 2 0 0 0 2 2v-4h6V4H4v12z\" clip-rule=\"evenodd\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default comment

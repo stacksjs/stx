@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cloudWords16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 3a4 4 0 0 0-3.97 3.507A3.25 3.25 0 0 0 4.25 13h7.5a3.25 3.25 0 0 0 .22-6.493A4 4 0 0 0 8 3M7 6h2a.5.5 0 0 1 0 1H7a.5.5 0 0 1 0-1M4 9.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5M9.5 9h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default cloudWords16Filled

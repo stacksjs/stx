@@ -2,6 +2,8 @@
  * stx Template Analyzer - Analyze templates for performance, best practices, and potential issues
  */
 
+import process from 'node:process'
+
 export interface AnalysisResult {
   file: string
   metrics: TemplateMetrics
@@ -98,8 +100,12 @@ function calculateMetrics(content: string): TemplateMetrics {
   }
   directives.total = directives.conditionals + directives.loops + directives.includes + directives.custom
 
-  // Count expressions
-  const expressions = (content.match(/\{\{[\s\S]*?\}\}/g) || []).length
+  // Count expressions (both {{ }} and {!! !!})
+  const regularExpressions = (content.match(/\{\{[\s\S]*?\}\}/g) || []).length
+  const rawExpressions = (content.match(/\{!![\s\S]*?!!\}/g) || []).length
+  // Also count directive conditions as they contain evaluated expressions
+  const directiveExpressions = (content.match(/@(?:if|unless|elseif|foreach|for|while)\s*\([^)]+\)/g) || []).length
+  const expressions = regularExpressions + rawExpressions + directiveExpressions
 
   // Count components (custom elements)
   const components = (content.match(/<[A-Z][^>]*>/g) || []).length
@@ -107,12 +113,32 @@ function calculateMetrics(content: string): TemplateMetrics {
   // Count layouts
   const layouts = (content.match(/@extends\(/g) || []).length
 
+  // Detect deeply nested structures (4+ levels) - check for any block directives
+  // Match patterns like @if...@if...@if...@if or @foreach...@if...@if...@if
+  let maxNestingDepth = 0
+  let currentDepth = 0
+
+  for (const line of lines) {
+    // Count opening directives
+    if (/@(?:if|unless|foreach|for|while|section)\b/.test(line) && !/@end/.test(line) && !/@else/.test(line)) {
+      currentDepth++
+      maxNestingDepth = Math.max(maxNestingDepth, currentDepth)
+    }
+    // Count closing directives
+    else if (/@end(?:if|unless|foreach|for|while|section)\b/.test(line)) {
+      currentDepth--
+    }
+  }
+
+  const nestingBonus = maxNestingDepth >= 4 ? 3 : 0
+
   // Calculate complexity score
   const complexity = Math.min(10, Math.ceil(
     directives.total * 0.5
     + expressions * 0.1
     + components * 0.3
-    + (scriptLines > 10 ? scriptLines * 0.05 : 0),
+    + (scriptLines > 10 ? scriptLines * 0.05 : 0)
+    + nestingBonus,
   ))
 
   return {
@@ -230,6 +256,14 @@ function generateSuggestions(content: string, metrics: TemplateMetrics): Suggest
       effort: 'medium',
     })
   }
+  else if (metrics.complexity > 5 && metrics.directives.total > 8) {
+    suggestions.push({
+      type: 'optimization',
+      message: 'Template has moderate complexity. Consider component extraction for reusability.',
+      impact: 'medium',
+      effort: 'low',
+    })
+  }
 
   // Component extraction suggestions
   if (metrics.lines > 100 && metrics.components === 0) {
@@ -248,6 +282,17 @@ function generateSuggestions(content: string, metrics: TemplateMetrics): Suggest
       message: 'Many template expressions detected. Consider preprocessing some data in the script section.',
       impact: 'medium',
       effort: 'low',
+    })
+  }
+
+  // Nested loops optimization
+  const nestedLoops = content.match(/@foreach[\s\S]*?@foreach[\s\S]*?@endforeach[\s\S]*?@endforeach/g)
+  if (nestedLoops && nestedLoops.length > 0) {
+    suggestions.push({
+      type: 'optimization',
+      message: 'Nested loops detected. Consider preprocessing data or optimizing data structures.',
+      impact: 'high',
+      effort: 'medium',
     })
   }
 
@@ -316,7 +361,7 @@ function analyzePerformance(content: string, metrics: TemplateMetrics): Performa
     recommendations.push('Reduce dynamic content for better caching')
   }
 
-  if (metrics.components === 0 && metrics.lines > 50) {
+  if (metrics.components === 0 && metrics.lines > 40) {
     recommendations.push('Extract components to improve reusability and performance')
   }
 
@@ -332,15 +377,18 @@ function analyzePerformance(content: string, metrics: TemplateMetrics): Performa
  * Find unmatched directive pairs
  */
 function findUnmatchedDirectives(content: string, startDirective: string, endDirective: string): number {
-  const starts = (content.match(new RegExp(`@${startDirective}\\b`, 'g')) || []).length
-  const ends = (content.match(new RegExp(`@${endDirective}\\b`, 'g')) || []).length
+  // Remove HTML comments to avoid false matches
+  const contentWithoutComments = content.replace(/<!--[\s\S]*?-->/g, '')
+
+  const starts = (contentWithoutComments.match(new RegExp(`@${startDirective}\\b`, 'g')) || []).length
+  const ends = (contentWithoutComments.match(new RegExp(`@${endDirective}\\b`, 'g')) || []).length
   return Math.abs(starts - ends)
 }
 
 /**
  * Analyze multiple templates
  */
-export async function analyzeProject(patterns: string[] = ['**/*.stx']): Promise<{
+export async function analyzeProject(patterns: string[] = ['**/*.stx'], cwd?: string): Promise<{
   results: AnalysisResult[]
   summary: ProjectSummary
 }> {
@@ -349,7 +397,11 @@ export async function analyzeProject(patterns: string[] = ['**/*.stx']): Promise
   // Find all stx files
   const allFiles: string[] = []
   for (const pattern of patterns) {
-    const files = await Array.fromAsync(new Bun.Glob(pattern).scan({ onlyFiles: true, absolute: true }))
+    const files = await Array.fromAsync(new Bun.Glob(pattern).scan({
+      cwd: cwd || process.cwd(),
+      onlyFiles: true,
+      absolute: true,
+    }))
     allFiles.push(...files.filter(f => f.endsWith('.stx')))
   }
 
@@ -383,7 +435,9 @@ export interface ProjectSummary {
 function generateProjectSummary(results: AnalysisResult[]): ProjectSummary {
   const totalFiles = results.length
   const totalLines = results.reduce((sum, r) => sum + r.metrics.lines, 0)
-  const avgComplexity = results.reduce((sum, r) => sum + r.metrics.complexity, 0) / totalFiles
+  const avgComplexity = totalFiles > 0
+    ? results.reduce((sum, r) => sum + r.metrics.complexity, 0) / totalFiles
+    : 0
   const totalIssues = results.reduce((sum, r) => sum + r.issues.length, 0)
 
   const issuesByCategory: Record<string, number> = {}
@@ -394,7 +448,9 @@ function generateProjectSummary(results: AnalysisResult[]): ProjectSummary {
   })
 
   // Calculate performance score (higher is better)
-  const avgRenderTime = results.reduce((sum, r) => sum + r.performance.estimatedRenderTime, 0) / totalFiles
+  const avgRenderTime = totalFiles > 0
+    ? results.reduce((sum, r) => sum + r.performance.estimatedRenderTime, 0) / totalFiles
+    : 0
   const performanceScore = Math.max(1, Math.min(10, Math.round(10 - (avgRenderTime / 2) - (avgComplexity / 2))))
 
   const recommendations: string[] = []

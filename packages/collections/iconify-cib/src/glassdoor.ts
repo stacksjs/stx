@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const glassdoor: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M22.859 27.427H4.573A4.57 4.57 0 0 0 9.141 32h13.714a4.57 4.57 0 0 0 4.573-4.573V8.656a.165.165 0 0 0-.167-.167h-4.24a.163.163 0 0 0-.161.167v18.776zm0-27.427a4.57 4.57 0 0 1 4.568 4.573H9.146v18.771a.17.17 0 0 1-.167.167h-4.24a.17.17 0 0 1-.167-.167V4.573A4.57 4.57 0 0 1 9.14 0z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default glassdoor

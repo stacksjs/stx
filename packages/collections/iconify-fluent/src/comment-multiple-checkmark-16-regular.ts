@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const commentMultipleCheckmark16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15 7.257a5.5 5.5 0 0 0-1-.657V6a3 3 0 0 0-3-3H3.268A2 2 0 0 1 5 2h6a4 4 0 0 1 4 4zM13 6v.207a5.5 5.5 0 0 0-1-.185V6a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h1v1.998l2.087-1.518q.097.533.29 1.026l-1.789 1.3A1 1 0 0 1 3 13.999V13a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2m3 5.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-2.146-1.854a.5.5 0 0 0-.708 0L10.5 12.293l-.646-.647a.5.5 0 0 0-.708.708l1 1a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0 0-.708\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default commentMultipleCheckmark16Regular

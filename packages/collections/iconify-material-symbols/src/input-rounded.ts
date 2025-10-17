@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const inputRounded: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 20q-.825 0-1.412-.587T2 18v-2q0-.425.288-.712T3 15t.713.288T4 16v2h16V6H4v2q0 .425-.288.713T3 9t-.712-.288T2 8V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v12q0 .825-.587 1.413T20 20zm8.175-7H3q-.425 0-.712-.288T2 12t.288-.712T3 11h9.175L10.8 9.65q-.3-.275-.288-.687t.288-.713q.3-.3.713-.312t.712.287L15.3 11.3q.3.3.3.7t-.3.7l-3.075 3.075q-.3.3-.712.3t-.713-.3q-.275-.3-.288-.712t.288-.713z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default inputRounded

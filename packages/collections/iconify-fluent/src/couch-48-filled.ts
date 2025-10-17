@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const couch48Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M34.75 11h-21.5A5.25 5.25 0 0 0 8 16.25v.769q.248-.02.5-.019a6.5 6.5 0 0 1 6.481 6H33.02A6.5 6.5 0 0 1 40 17.019v-.769c0-2.9-2.35-5.25-5.25-5.25m4.75 8q.25 0 .493.027A4.5 4.5 0 0 1 44 23.5v6.25a5.25 5.25 0 0 1-4 5.1v2.9a1.25 1.25 0 1 1-2.5 0V35h-27v2.75a1.25 1.25 0 1 1-2.5 0v-2.9a5.25 5.25 0 0 1-4-5.1V23.5a4.5 4.5 0 0 1 9 0v.5a1 1 0 0 0 1 1h20a1 1 0 0 0 1-1v-.5a4.5 4.5 0 0 1 4.5-4.5\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default couch48Filled

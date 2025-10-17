@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const boardSplit24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.25 3A3.25 3.25 0 0 0 3 6.25V11h11V3zM3 17.75V12.5h11V21H6.25A3.25 3.25 0 0 1 3 17.75M15.5 16v5h2.25A3.25 3.25 0 0 0 21 17.75V16zm5.5-1.5v-5h-5.5v5zM21 8h-5.5V3h2.25A3.25 3.25 0 0 1 21 6.25z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default boardSplit24Filled

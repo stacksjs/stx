@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const testTube: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"3\"><path d=\"M11.493 3.551C14.267 3.291 18.575 3 24 3s9.733.29 12.507.551c1.545.145 2.239 1.92 1.25 3.116L35 10v15.5c0 3.818-.061 7.044-.146 9.681c-.17 5.287-4.068 9.643-9.355 9.797a52 52 0 0 1-2.934.002c-5.318-.148-9.24-4.549-9.415-9.866A294 294 0 0 1 13 25.5V10l-2.757-3.333c-.989-1.196-.295-2.97 1.25-3.116Z\"/><path stroke-linecap=\"round\" d=\"M17 15h-4m4 8h-4m4 8h-4\"/></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default testTube

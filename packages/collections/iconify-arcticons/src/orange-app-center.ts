@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const orangeAppCenter: IconData = {
+  "body": "<rect width=\"5\" height=\"5\" x=\"2.5\" y=\"21.5\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"1\" ry=\"1\"/><rect width=\"5\" height=\"5\" x=\"40.5\" y=\"21.5\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"1\" ry=\"1\"/><rect width=\"5\" height=\"5\" x=\"21.5\" y=\"2.5\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"1\" ry=\"1\"/><rect width=\"14.77\" height=\"24.617\" x=\"16.615\" y=\"11.692\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"1.231\" ry=\"1.231\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M18.461 14.769h11.078v17.724H18.461z\"/><rect width=\"5\" height=\"5\" x=\"21.5\" y=\"40.5\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"1\" ry=\"1\"/><rect width=\"5\" height=\"5\" x=\"8.065\" y=\"8.065\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"1\" ry=\"1\" transform=\"rotate(-45 10.565 10.565)\"/><rect width=\"5\" height=\"5\" x=\"34.935\" y=\"34.935\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"1\" ry=\"1\" transform=\"rotate(-45 37.435 37.435)\"/><rect width=\"5\" height=\"5\" x=\"34.935\" y=\"8.065\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"1\" ry=\"1\" transform=\"rotate(-45 37.435 10.565)\"/><rect width=\"5\" height=\"5\" x=\"8.065\" y=\"34.935\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"1\" ry=\"1\" transform=\"rotate(-45 10.565 37.435)\"/><circle cx=\"24\" cy=\"34.462\" r=\".75\" fill=\"currentColor\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M25.23 13.23h-2.46\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default orangeAppCenter

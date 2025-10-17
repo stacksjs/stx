@@ -13,6 +13,13 @@ Welcome to the stx API Reference. This section provides detailed documentation f
 - [Configuration](/api/config) - Configure your stx application
 - [CLI Commands](/api/cli) - Command line interface reference
 
+## Package APIs
+
+- [Markdown](/api/markdown) - Markdown file processing and `@markdown-file` directive
+- [Caching](/api/caching) - Template caching system for performance
+- [Error Handling](/api/error-handling) - Error types and error recovery
+- [Internationalization (i18n)](/api/i18n) - Multi-language support and `@translate` directive
+
 ## Additional APIs
 
 - [Core API](/api/core) - Core functionality and features

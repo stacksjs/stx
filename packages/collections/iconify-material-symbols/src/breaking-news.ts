@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const breakingNews: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 17q.425 0 .713-.288T8 16t-.288-.712T7 15t-.712.288T6 16t.288.713T7 17m-1-4h2V7H6zm5 4h7v-2h-7zm0-4h7v-2h-7zm0-4h7V7h-7zM4 21q-.825 0-1.412-.587T2 19V5q0-.825.588-1.412T4 3h16q.825 0 1.413.588T22 5v14q0 .825-.587 1.413T20 21z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default breakingNews

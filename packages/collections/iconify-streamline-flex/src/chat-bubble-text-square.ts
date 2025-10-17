@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const chatBubbleTextSquare: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M3.208 1.014C4.51.866 5.938.75 7.25.75s2.741.116 4.044.264a1.93 1.93 0 0 1 1.7 1.71c.14 1.295.256 2.723.256 4.026c0 1.304-.115 2.734-.257 4.031a1.93 1.93 0 0 1-1.699 1.71c-1.303.146-2.733.259-4.044.259c-1.143 0-2.376-.086-3.537-.205L.75 13.25l.687-3.159A35 35 0 0 1 1.25 6.75c0-1.303.116-2.73.258-4.027a1.93 1.93 0 0 1 1.7-1.71M4.813 5.5h4.875m-4.875 3H8.5\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default chatBubbleTextSquare

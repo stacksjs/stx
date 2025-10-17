@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const searchSparkle24: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVG8N2secNv)\" d=\"M17 10a7 7 0 1 1-14 0a7 7 0 0 1 14 0\"/><path fill=\"url(#SVG90IkHdbf)\" d=\"M14.843 16.368a8 8 0 1 1 1.428-1.4l4.427 4.316a1 1 0 1 1-1.396 1.432zM16 10a6 6 0 1 0-12 0a6 6 0 0 0 12 0\"/><path fill=\"url(#SVGsv4VlbxT)\" d=\"m20.783 10.213l-.766-.248a1.58 1.58 0 0 1-.998-.999l-.25-.764a.302.302 0 0 0-.57 0l-.248.764a1.58 1.58 0 0 1-.984.999l-.765.248a.302.302 0 0 0 0 .57l.765.249a1.58 1.58 0 0 1 1 1.002l.248.764a.302.302 0 0 0 .57 0l.249-.764a1.58 1.58 0 0 1 .999-.999l.765-.248a.302.302 0 0 0 0-.57z\"/><path fill=\"url(#SVGz10vMeQR)\" d=\"M13.088 6.412a2.84 2.84 0 0 0-1.347-.955l-1.378-.448a.544.544 0 0 1 0-1.025l1.378-.448A2.84 2.84 0 0 0 13.5 1.774l.011-.034l.448-1.377a.544.544 0 0 1 1.027 0l.447 1.377a2.84 2.84 0 0 0 1.799 1.796l1.377.448l.028.007a.544.544 0 0 1 0 1.025l-1.378.448a2.84 2.84 0 0 0-1.798 1.796l-.448 1.377l-.013.034a.544.544 0 0 1-1.013-.034l-.448-1.377a2.8 2.8 0 0 0-.45-.848\"/><defs><radialGradient id=\"SVGsv4VlbxT\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(12.82142 25.58036 -19.91881 9.98373 7.375 -10.813)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".718\" stop-color=\"#FFCD0F\"/><stop offset=\".991\" stop-color=\"#E67505\"/></radialGradient><radialGradient id=\"SVGz10vMeQR\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"rotate(61.2 18.574 -12.32)scale(38.6974 30.1328)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".698\" stop-color=\"#FFCD0F\"/><stop offset=\".991\" stop-color=\"#E67505\"/></radialGradient><linearGradient id=\"SVG8N2secNv\" x1=\"13.5\" x2=\"3\" y1=\"5.333\" y2=\"17\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FDFDFD\"/><stop offset=\"1\" stop-color=\"#B3E0FF\"/></linearGradient><linearGradient id=\"SVG90IkHdbf\" x1=\"3\" x2=\"19\" y1=\"19\" y2=\"6\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0094F0\"/><stop offset=\"1\" stop-color=\"#29C3FF\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default searchSparkle24

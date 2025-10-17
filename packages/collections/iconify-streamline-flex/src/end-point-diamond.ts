@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const endPointDiamond: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\"><path d=\"M.5 7h8\"/><path stroke-linejoin=\"round\" d=\"M9 6.373c-.291.36-.291.885-.001 1.247c.215.27.44.54.693.794c.254.254.525.479.794.694c.362.29.887.29 1.248-.002c.266-.215.535-.44.787-.692s.477-.52.692-.787c.29-.36.29-.885.001-1.247a10 10 0 0 0-.693-.794a10 10 0 0 0-.794-.694a1 1 0 0 0-1.248.002c-.266.215-.535.44-.787.692s-.477.52-.692.787\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default endPointDiamond

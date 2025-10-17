@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cloudRainF: IconData = {
+  "body": "<g fill=\"currentColor\"><path d=\"M13 0a7 7 0 0 1 0 14H5a5 5 0 1 1 1.561-9.751A7 7 0 0 1 13 0\"/><rect width=\"2\" height=\"4\" x=\"5\" y=\"15\" rx=\"1\"/><rect width=\"2\" height=\"5\" x=\"9\" y=\"15\" rx=\"1\"/><rect width=\"2\" height=\"3\" x=\"13\" y=\"15\" rx=\"1\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default cloudRainF

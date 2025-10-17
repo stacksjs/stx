@@ -325,7 +325,7 @@ interface Props {
 Create a store for blog posts (`stores/posts.ts`):
 
 ```typescript
-import { createStore } from '@stx/store'
+import { createStore } from '@stacksjs/store'
 import type { Post } from '../types'
 
 export const usePostStore = createStore({

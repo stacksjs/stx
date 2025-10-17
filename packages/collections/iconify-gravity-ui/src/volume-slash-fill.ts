@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const volumeSlashFill: IconData = {
+  "body": "<g fill=\"none\"><g clip-path=\"url(#SVGFd4lJeyK)\"><path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M3.03 1.97a.75.75 0 0 0-1.06 1.06L3.94 5H1.5A1.5 1.5 0 0 0 0 6.5v3A1.5 1.5 0 0 0 1.5 11h3l2.586 2.586a1.414 1.414 0 0 0 2.414-1V10.56l3.47 3.47a.75.75 0 1 0 1.06-1.061zm8.459 6.317l1.265 1.265C12.915 9.064 13 8.542 13 8a4.98 4.98 0 0 0-.975-2.967c-.247-.334-.727-.33-1.02-.038s-.284.765-.06 1.113a3.5 3.5 0 0 1 .544 2.179m2.422 2.422l1.117 1.117C15.648 10.689 16 9.386 16 8c0-1.94-.69-3.717-1.838-5.102c-.264-.32-.743-.317-1.035-.024c-.293.293-.29.765-.032 1.09A6.47 6.47 0 0 1 14.5 8c0 .967-.21 1.884-.59 2.709m-7.56-7.56L9.5 6.298V3.414a1.414 1.414 0 0 0-2.414-1z\" clip-rule=\"evenodd\"/></g><defs><clipPath id=\"SVGFd4lJeyK\"><path fill=\"currentColor\" d=\"M0 0h16v16H0z\"/></clipPath></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default volumeSlashFill

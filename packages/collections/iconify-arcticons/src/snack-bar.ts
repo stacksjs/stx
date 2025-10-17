@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const snackBar: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M8.017 37.715A3.99 3.99 0 0 1 4.5 33.744v-23c0-2.216 1.784-4 4-4h31c2.216 0 4 1.784 4 4v23a3.99 3.99 0 0 1-3.517 3.971m-7.919.029H15.937\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M4.65 34.89c3.327-8.911 8.895-21.675 11.554-20.709c1.518.553 2.48 2.352 3.7 3.611c1.23 1.562 6.96 1.562 8.192 0c1.22-1.259 2.182-3.058 3.7-3.61c2.658-.967 8.226 11.797 11.554 20.707\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m20.125 18.013l.812-3.049c-1.771.117-2.884-1.365-2.735-2.343c.238-1.552 2.042-2.258 3.323-1.132c0 0 .459-1.848 2.475-1.848s2.477 1.848 2.474 1.849c1.282-1.127 3.086-.42 3.323 1.13c.15.98-.963 2.461-2.734 2.344l.78 2.93m-.362-1.353l-7.025.454m10.591 8.902a1.738 1.738 0 0 1-3.476.002v0a1.738 1.738 0 0 1 3.476-.002m-7.172.829h.25m-3.416 1.645c1.318 1.015 3.056.192 3.29-1.578c.236 1.77 1.974 2.593 3.292 1.577\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M21.897 28.846c.232.583.781 1.754 2.103 1.754s1.87-1.17 2.103-1.754m8.876-4.003c3.696-1.126 6.091-1.06 9.147-.817m-8.187 2.945c2.518-.033 4.257.184 6.282.853m-29.2-2.981c-3.696-1.126-6.091-1.06-9.147-.817m8.187 2.945c-2.518-.033-4.257.184-6.282.853m29.586 4.403c-2.738 3.088-4.91 6.826-1.98 8.567c2.34 1.39 5.12-.376 7.89-5.038m-28.639-3.529c2.737 3.088 4.91 6.826 1.98 8.567c-2.34 1.39-5.12-.376-7.892-5.038\"/><circle cx=\"18.689\" cy=\"25.898\" r=\"1.738\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"29.309\" cy=\"25.897\" r=\"1.738\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default snackBar

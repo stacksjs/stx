@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const houseFill: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.17 1.907a3 3 0 0 1 3.66 0l3.5 2.693a3 3 0 0 1 1.17 2.378V11.5a3 3 0 0 1-3 3h-7a3 3 0 0 1-3-3V6.978A3 3 0 0 1 2.67 4.6zM7 8c-.69 0-1.25.56-1.25 1.25V13h4.5V9.25C10.25 8.56 9.69 8 9 8z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default houseFill

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const lightbulbF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11 14.565H8v-8a1 1 0 1 0-2 0v8H3V13.31a7 7 0 1 1 8 0zm0 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default lightbulbF

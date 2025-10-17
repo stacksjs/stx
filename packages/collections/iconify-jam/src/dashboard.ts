@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const dashboard: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M.832 14A10 10 0 0 1 0 10C0 4.477 4.477 0 10 0s10 4.477 10 10a10 10 0 0 1-.832 4zm16.916-2a8 8 0 1 0-15.497 0zM10 5a1 1 0 1 1 0-2a1 1 0 0 1 0 2M5 9a1 1 0 1 1 0-2a1 1 0 0 1 0 2m10 0a1 1 0 1 1 0-2a1 1 0 0 1 0 2m-5-3a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0V7a1 1 0 0 1 1-1\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default dashboard

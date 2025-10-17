@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const contactCard28: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGDTkSIc4x)\" d=\"M2.004 6.75A2.75 2.75 0 0 1 4.754 4H23.25A2.75 2.75 0 0 1 26 6.75v14.5A2.75 2.75 0 0 1 23.25 24H4.755a2.75 2.75 0 0 1-2.75-2.75z\"/><path fill=\"url(#SVGaa73pbcc)\" fill-opacity=\".7\" d=\"M2.004 6.75A2.75 2.75 0 0 1 4.754 4H23.25A2.75 2.75 0 0 1 26 6.75v14.5A2.75 2.75 0 0 1 23.25 24H4.755a2.75 2.75 0 0 1-2.75-2.75z\"/><path fill=\"url(#SVG8CZLPeAp)\" d=\"M15 11.75a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 0 1.5h-5.5a.75.75 0 0 1-.75-.75m.75 3.25a.75.75 0 0 0 0 1.5h5.5a.75.75 0 0 0 0-1.5z\"/><path fill=\"url(#SVGgGgTKeXT)\" d=\"M7 14.5h5a1 1 0 0 1 1 1v.5s-.5 2.5-3.5 2.5S6 16 6 16v-.5a1 1 0 0 1 1-1\"/><path fill=\"url(#SVGqwayScXQ)\" d=\"M11.25 11.75a1.75 1.75 0 1 1-3.5 0a1.75 1.75 0 0 1 3.5 0\"/><defs><linearGradient id=\"SVGDTkSIc4x\" x1=\"10.574\" x2=\"17.248\" y1=\"4\" y2=\"23.773\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#B3E0FF\"/><stop offset=\"1\" stop-color=\"#8CD0FF\"/></linearGradient><linearGradient id=\"SVGaa73pbcc\" x1=\"17.716\" x2=\"23.413\" y1=\"6.456\" y2=\"34.901\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".447\" stop-color=\"#FF6CE8\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#FF6CE8\"/></linearGradient><linearGradient id=\"SVG8CZLPeAp\" x1=\"17.864\" x2=\"20.098\" y1=\"10.365\" y2=\"21.167\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0078D4\"/><stop offset=\"1\" stop-color=\"#0067BF\"/></linearGradient><linearGradient id=\"SVGgGgTKeXT\" x1=\"6\" x2=\"7.52\" y1=\"12.072\" y2=\"19.091\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".125\" stop-color=\"#9C6CFE\"/><stop offset=\"1\" stop-color=\"#7A41DC\"/></linearGradient><linearGradient id=\"SVGqwayScXQ\" x1=\"7.75\" x2=\"10.366\" y1=\"8.833\" y2=\"13.313\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".125\" stop-color=\"#9C6CFE\"/><stop offset=\"1\" stop-color=\"#7A41DC\"/></linearGradient></defs></g>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default contactCard28

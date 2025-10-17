@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const keyboardLayoutSplit20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 5.5A1.5 1.5 0 0 1 3.5 4h13A1.5 1.5 0 0 1 18 5.5v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 13.5zm3 7a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 0-1h-3a.5.5 0 0 0-.5.5M4.75 8a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5m3.75-.75a.75.75 0 1 0-1.5 0a.75.75 0 0 0 1.5 0M5.25 10.5a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5M9 9.75a.75.75 0 1 0-1.5 0a.75.75 0 0 0 1.5 0M14.5 12h-3a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1m0-4.75a.75.75 0 1 0 1.5 0a.75.75 0 0 0-1.5 0M12.25 8a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5M14 9.75a.75.75 0 1 0 1.5 0a.75.75 0 0 0-1.5 0m-2.25.75a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default keyboardLayoutSplit20Filled

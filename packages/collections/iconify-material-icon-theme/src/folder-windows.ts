@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const folderWindows: IconData = {
+  "body": "<path fill=\"#2196f3\" d=\"M12.667 6h-8A2.657 2.657 0 0 0 2 8.648v16.019a2.68 2.68 0 0 0 2.667 2.666H26a2.68 2.68 0 0 0 2.667-2.666V11.333A2.667 2.667 0 0 0 26 8.667H15.333z\"/><path fill=\"#bbdefb\" d=\"M14 12h8v8h-8zm10 0h8v8h-8zm0 10h8v8h-8zm-10 0h8v8h-8z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default folderWindows

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const what3words: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M0 0v24h24V0zm13.515 6.75a.75.75 0 0 1 .696.987l-3 9a.75.75 0 0 1-.711.513a.75.75 0 0 1-.712-.987l3-9a.75.75 0 0 1 .727-.513m-4.499.002a.75.75 0 0 1 .695.985l-3 9A.75.75 0 0 1 6 17.25a.75.75 0 0 1-.712-.987l3-9a.75.75 0 0 1 .728-.511m9 0a.75.75 0 0 1 .695.985l-3 9a.75.75 0 0 1-.711.513a.75.75 0 0 1-.712-.987l3-9a.75.75 0 0 1 .728-.511\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default what3words

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const openUmbrella: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"3\" d=\"m21.77 6.519l1.56-3.109a.751.751 0 0 1 1.342 0l1.558 3.108c10.04 1.136 17.978 9.748 18.76 17.344c.08.775-.253 1.515-.933 1.899c-1.995 1.125-7.421 3.236-20.056 3.236s-18.06-2.111-20.055-3.236c-.68-.384-1.013-1.124-.933-1.899c.78-7.595 8.717-16.207 18.757-17.342Zm-.584 22.479l-.19 8a2 2 0 1 1-4 0v-.646c0-1.136-.667-2.16-1.796-2.289c-.35-.04-.752-.065-1.205-.065s-.854.026-1.205.065c-1.129.128-1.795 1.153-1.795 2.29v.645a8 8 0 1 0 16 0l-.191-8\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default openUmbrella

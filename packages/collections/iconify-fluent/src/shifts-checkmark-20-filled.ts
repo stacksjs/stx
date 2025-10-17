@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const shiftsCheckmark20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 6a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-3.6c.384-.75.6-1.6.6-2.5c0-1.33-.472-2.55-1.257-3.5H12.5a.5.5 0 0 0 0-1H10V6.5a.5.5 0 0 0-1 0v3.757A5.48 5.48 0 0 0 5.5 9c-.9 0-1.75.216-2.5.6zm7 8.5a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-2.146-1.854a.5.5 0 0 0-.708 0L4.5 15.293l-.646-.647a.5.5 0 0 0-.708.708l1 1a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0 0-.708\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default shiftsCheckmark20Filled

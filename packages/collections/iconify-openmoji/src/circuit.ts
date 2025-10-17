@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const circuit: IconData = {
+  "body": "<path fill=\"#9B9B9A\" stroke=\"#9B9B9A\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M52 38v14H20v-8h-4v11.035c0 .533.432.965.965.965h38.07a.965.965 0 0 0 .965-.965V38z\"/><path fill=\"#EA5A47\" stroke=\"#EA5A47\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M17.155 16c-.638 0-1.155.517-1.155 1.155V28h4v-8h32v14h4V17.155c0-.638-.517-1.155-1.155-1.155z\"/><circle cx=\"18\" cy=\"36\" r=\"8\" fill=\"#FFF\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path d=\"M16 28.25V16h40v14.5m0 7.5v18H16V43.75\"/><path d=\"M20 28.25V20h32v14m0 7.5V52H20v-8.25\"/><circle cx=\"18\" cy=\"36\" r=\"8\"/><path d=\"M23.657 30.343L12.343 41.657m0-11.314l11.314 11.314M49 34h10m-15 4h20\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default circuit

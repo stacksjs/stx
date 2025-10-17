@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const protocolHandler20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.585 5.414L2.414 8.585a2 2 0 0 0 0 2.829l3.171 3.172a2 2 0 0 0 2.829 0l3.172-3.172a2 2 0 0 0 0-2.829L8.414 5.414a2 2 0 0 0-2.829 0M3.121 9.293L6.293 6.12a1 1 0 0 1 1.414 0l3.171 3.172a1 1 0 0 1 0 1.414l-3.171 3.171a1 1 0 0 1-1.414 0l-3.173-3.17a1 1 0 0 1 0-1.414m8.465 5.293l-.88-.88l.708-.706l.879.878a1 1 0 0 0 1.414 0l3.171-3.171a1 1 0 0 0 0-1.414l-3.17-3.173a1 1 0 0 0-1.414 0l-.88.879l-.706-.707l.878-.88a2 2 0 0 1 2.829 0l3.172 3.172a2 2 0 0 1 0 2.829l-3.172 3.172a2 2 0 0 1-2.828 0\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default protocolHandler20Regular

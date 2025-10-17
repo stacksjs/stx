@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const kettlePourOver: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10 4c-.6 0-1 .4-1 1v1h5V5c0-.6-.4-1-1-1zM3 7l1.1 7.1c.1.7.4 1.4 1 2c.4.5 1.1.8 1.9.9c0 .6.4 1 1 1h8c.6 0 1-.4 1-1l-2-6h2l3.3 5l1.7-1l-3.3-5l1.3-.8l-1-1.7L16.4 9H15V7H8v4l-.8 5c-.7-.1-1.1-.3-1.4-.6c-.4-.4-.6-.9-.7-1.5L4 7zm1 12v2h16v-2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default kettlePourOver

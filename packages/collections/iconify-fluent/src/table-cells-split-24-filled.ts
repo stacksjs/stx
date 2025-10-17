@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tableCellsSplit24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.25 3H11v4H3v-.75A3.25 3.25 0 0 1 6.25 3M21 7v-.75A3.25 3.25 0 0 0 17.75 3H12.5v4zm-8.5 14h5.25A3.25 3.25 0 0 0 21 17.75V17h-8.5zM3 8.5v7h18v-7zm9.5 1.5v4H11v-4zM3 17.75V17h8v4H6.25A3.25 3.25 0 0 1 3 17.75\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default tableCellsSplit24Filled

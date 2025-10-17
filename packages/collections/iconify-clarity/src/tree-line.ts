@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const treeLine: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M30.6 11.7C29.2 5.8 24 1.7 18 1.7c-7.2 0-13 5.8-13 13c0 6.8 5.3 12.4 12 12.9v5c0 .6.4 1 1 1s1-.4 1-1V18.3l4.7-4.7c.4-.4.4-1 0-1.4s-1-.4-1.4 0L19 15.6v-3l-3.3-3.3c-.4-.4-1-.4-1.4 0s-.4 1 0 1.4l2.7 2.7v6.2l-3.8-3.8c-.4-.4-1-.4-1.4 0s-.4 1 0 1.4l5.2 5.2v3.2c-5.6-.5-10-5.2-10-10.9c0-6.1 4.9-11 11-11s11 4.9 11 11c0 4.9-3.3 9.2-8 10.6v2.1c7-1.7 11.3-8.7 9.6-15.7\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default treeLine

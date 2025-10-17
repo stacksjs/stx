@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const pnpmLight: IconData = {
+  "body": "<g fill=\"none\"><g clip-path=\"url(#SVG9PUMWdIu)\"><path fill=\"#F4F2ED\" d=\"M196 0H60C26.863 0 0 26.863 0 60v136c0 33.137 26.863 60 60 60h136c33.137 0 60-26.863 60-60V60c0-33.137-26.863-60-60-60\"/><path fill=\"#F9AD00\" d=\"M40 41h55v55H40zm60 0h55v55h-55zm60 0h55v55h-55zm0 60h55v55h-55z\"/><path fill=\"#4E4E4E\" d=\"M160 161h55v55h-55zm-60 0h55v55h-55zm-60 0h55v55H40z\"/><path fill=\"#F4F2ED\" d=\"M40 101h55v55H40z\"/><path fill=\"#4E4E4E\" d=\"M100 101h55v55h-55z\"/></g><defs><clipPath id=\"SVG9PUMWdIu\"><path fill=\"#fff\" d=\"M0 0h256v256H0z\"/></clipPath></defs></g>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default pnpmLight

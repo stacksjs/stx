@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const markdownDocumentProgrammingSolid: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M2.5 0A1.5 1.5 0 0 0 1 1.5v11A1.5 1.5 0 0 0 2.5 14h9a1.5 1.5 0 0 0 1.5-1.5v-7a.5.5 0 0 0-.146-.354l-5-5A.5.5 0 0 0 7.5 0zm1.243 5.875c.341 0 .651.2.791.512L5 7.42l.466-1.034a.868.868 0 0 1 1.659.356V10.5a.625.625 0 1 1-1.25 0V8.523l-.023.051a.934.934 0 0 1-1.704 0l-.023-.05V10.5a.625.625 0 1 1-1.25 0V6.743c0-.48.389-.868.868-.868m6.382.625a.625.625 0 1 0-1.25 0V9H8.5a.5.5 0 0 0-.354.853l1 1a.5.5 0 0 0 .708 0l1-1A.5.5 0 0 0 10.5 9h-.375z\" clip-rule=\"evenodd\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default markdownDocumentProgrammingSolid

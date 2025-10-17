@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/benchmarks",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.1.15",
   "private": true,
   "description": "Performance benchmarks comparing @stacksjs/markdown and @stacksjs/sanitizer against competitors",
   "main": "./src/index.ts",
@@ -11,7 +11,8 @@
     "bench:frontmatter": "bun run src/frontmatter-bench.ts",
     "bench:yaml": "bun run src/yaml-bench.ts",
     "bench:sanitizer": "bun run src/sanitizer-bench.ts",
-    "bench:all": "bun run src/all-bench.ts"
+    "bench:all": "bun run src/all-bench.ts",
+    "bench:js-framework": "bun run --cwd js-framework-benchmark bench"
   },
   "dependencies": {
     "@stacksjs/markdown": "workspace:*",

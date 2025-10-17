@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const chevronCollapseSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M102.145 108.514L256 241.855l153.855-133.341l-31.437-36.273L256 178.337L133.582 72.241zm0 294.972L256 270.145l153.855 133.341l-31.437 36.273L256 333.663L133.582 439.759z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default chevronCollapseSharp

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const linkUp: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" d=\"M12 2v20M3 11l9-9l9 9\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default linkUp

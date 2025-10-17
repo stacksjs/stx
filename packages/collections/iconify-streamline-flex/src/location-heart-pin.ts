@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const locationHeartPin: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 4.87c-1.208-1.482-2.483-.429-2.5.706c0 1.69 2.022 3.077 2.5 3.077s2.5-1.387 2.5-3.077C9.483 4.441 8.208 3.388 7 4.87\"/><path d=\"M7.067.75h-.134A5.3 5.3 0 0 0 1.65 5.67c-.097 1.351.208 2.722 1.028 3.8c1.041 1.366 2.098 2.306 3.786 3.43a.97.97 0 0 0 1.074 0c1.688-1.124 2.745-2.064 3.786-3.43c.82-1.078 1.125-2.449 1.028-3.8A5.3 5.3 0 0 0 7.067.75\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default locationHeartPin

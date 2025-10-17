@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const octoloaderthree: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M768 583V441l256-106v354zM643 280L749 25l251 250l-257 106zm-202-24L335 0h354L583 256zM281 381L25 275L275 24l106 256zm-28-244L137 253l128 53l41-41zm3 446L0 689V335l256 106zM64 430v164l128-53v-58zm317 313L275 999L24 749l256-106zM253 887l53-128l-41-41l-128 53zm330-119l106 256H335l106-256zm11 192l-53-128h-58l-53 128zm149-317l256 106l-250 250l-106-256zm28 244l116-116l-128-53l-41 41z\"/>",
+  "width": 1024,
+  "height": 1024,
+  "viewBox": "0 0 1024 1024"
+}
+
+export default octoloaderthree

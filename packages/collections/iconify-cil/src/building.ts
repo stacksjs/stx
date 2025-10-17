@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const building: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M440 464V16H72v448H16v32h480v-32Zm-32 0H272v-64h-32v64H104V48h304Z\"/><path fill=\"currentColor\" d=\"M160 304h32v32h-32zm80 0h32v32h-32zm80 0h32v32h-32zm-160-96h32v32h-32zm80 0h32v32h-32zm80 0h32v32h-32zm-160-96h32v32h-32zm80 0h32v32h-32zm80 0h32v32h-32z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default building

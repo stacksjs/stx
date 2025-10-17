@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const mailTemplate16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.5 2A2.5 2.5 0 0 0 2 4.5v6A2.5 2.5 0 0 0 4.5 13H5v-1h-.5A1.5 1.5 0 0 1 3 10.5v-6A1.5 1.5 0 0 1 4.5 3h6A1.5 1.5 0 0 1 12 4.5V7h1V4.5A2.5 2.5 0 0 0 10.5 2zm3 6A1.5 1.5 0 0 0 6 9.5v4A1.5 1.5 0 0 0 7.5 15h6a1.5 1.5 0 0 0 1.5-1.5v-4A1.5 1.5 0 0 0 13.5 8zM7 9.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 .5.5v.484l-3.5 1.944L7 9.984zm0 1.627l3.257 1.81a.5.5 0 0 0 .486 0L14 11.127V13.5a.5.5 0 0 1-.5.5h-6a.5.5 0 0 1-.5-.5zM5 5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default mailTemplate16Regular

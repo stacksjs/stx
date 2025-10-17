@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cableRelease: IconData = {
+  "body": "<path fill=\"#37474F\" d=\"M34.9 29.1c-2.7-2.7-7.1-2.7-9.8 0l-4 4c-1.7 1.7-4.5 1.7-6.2 0s-1.7-4.5 0-6.2l4.5-4.5l-2.8-2.8l-4.5 4.5c-3.3 3.3-3.3 8.6 0 11.8c3.3 3.3 8.6 3.3 11.8 0l4-4c1.2-1.1 3-1.1 4.2 0c1.1 1.2 1.1 3 0 4.2L27 41.2l2.8 2.8l5.1-5.1c2.7-2.7 2.7-7.1 0-9.8\"/><path fill=\"#0277BD\" d=\"M16.1 22.9c-2.8-2.8-2.8-7.3 0-10l6.8-6.8c2.8-2.8 7.3-2.8 10 0c2.8 2.8 2.8 7.3 0 10l-6.8 6.8c-2.8 2.8-7.2 2.8-10 0\"/><circle cx=\"28\" cy=\"11\" r=\"4\" fill=\"#B3E5FC\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default cableRelease

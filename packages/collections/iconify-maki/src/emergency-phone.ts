@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const emergencyPhone: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.875 11.49a.51.51 0 0 0 .72 0l.72-.72l2.18 2.16l-.37.37a2.24 2.24 0 0 1-1.44.7H8.24a2.24 2.24 0 0 1-1.45-.7L1.72 8.23A2.24 2.24 0 0 1 1 6.78V5.33a2.24 2.24 0 0 1 .72-1.45l.36-.36l2.18 2.17l-.73.73a.51.51 0 0 0 0 .72Zm4.72.38a1 1 0 0 0 .036-1.414l-.036-.036l-.72-.72a1 1 0 0 0-1.414-.036l-.036.036Zm-7.28-7.25a1 1 0 0 0 .036-1.414l-.756-.756a1 1 0 0 0-1.414-.036l-.041.036ZM10 2v2H8v1h2v2h1V5h2V4h-2V2Z\"/>",
+  "width": 15,
+  "height": 15,
+  "viewBox": "0 0 15 15"
+}
+
+export default emergencyPhone

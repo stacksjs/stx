@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const headset48: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGIZvzGx6L)\" d=\"M11.25 31L10 32a8.25 8.25 0 0 0 8.25 8.25H20v-2.5h-1.75A5.75 5.75 0 0 1 12.5 32z\"/><path fill=\"url(#SVGmsy4KbGM)\" d=\"M29 39a5 5 0 1 1-10 0a5 5 0 0 1 10 0\"/><path fill=\"url(#SVGSKZPBboy)\" d=\"M12.5 18c0-6.351 5.149-11.5 11.5-11.5S35.5 11.649 35.5 18v2l1 1.5L38 20v-2c0-7.732-6.268-14-14-14s-14 6.268-14 14v2l1.5 1.5l1-1.5z\"/><path fill=\"url(#SVGJ4Q4ueEh)\" d=\"M12.5 20h5.25A2.25 2.25 0 0 1 20 22.25v7.5A2.25 2.25 0 0 1 17.75 32H12.5L11 26z\"/><path fill=\"url(#SVGJ4Q4ueEh)\" d=\"m35.5 31.624l1.5-5.812L35.5 20h-5.25A2.25 2.25 0 0 0 28 22.25v7.5A2.25 2.25 0 0 0 30.25 32h3.5c.624 0 1.216-.134 1.75-.376\"/><path fill=\"url(#SVGK0GNocsw)\" d=\"M12.5 20H10v12h2.5z\"/><path fill=\"url(#SVGK0GNocsw)\" d=\"M35.5 31.624A4.25 4.25 0 0 0 38 27.75V20h-2.5z\"/><defs><linearGradient id=\"SVGIZvzGx6L\" x1=\"15.833\" x2=\"12.993\" y1=\"38.708\" y2=\"30.977\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#9CA5AD\"/><stop offset=\"1\" stop-color=\"#70777D\"/></linearGradient><linearGradient id=\"SVGmsy4KbGM\" x1=\"27.75\" x2=\"19.279\" y1=\"42.75\" y2=\"37.802\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#383B3D\"/><stop offset=\"1\" stop-color=\"#70777D\"/></linearGradient><linearGradient id=\"SVGSKZPBboy\" x1=\"0\" x2=\"3.354\" y1=\"4\" y2=\"18.391\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#B9C0C7\"/><stop offset=\"1\" stop-color=\"#70777D\"/></linearGradient><linearGradient id=\"SVGJ4Q4ueEh\" x1=\"24\" x2=\"24\" y1=\"20\" y2=\"32\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0FAFFF\"/><stop offset=\"1\" stop-color=\"#0067BF\"/></linearGradient><linearGradient id=\"SVGK0GNocsw\" x1=\"24\" x2=\"23.718\" y1=\"20\" y2=\"31.993\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0078D4\"/><stop offset=\"1\" stop-color=\"#2052CB\"/></linearGradient></defs></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default headset48

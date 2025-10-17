@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const altArrowLeftBoldDuotone: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11.596 8.303L8.165 11.63a.5.5 0 0 0 0 .74l6.63 6.43c.414.401 1.205.158 1.205-.37v-5.723z\"/><path fill=\"currentColor\" d=\"M16 11.293V5.57c0-.528-.791-.771-1.205-.37l-2.482 2.406z\" opacity=\".5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default altArrowLeftBoldDuotone

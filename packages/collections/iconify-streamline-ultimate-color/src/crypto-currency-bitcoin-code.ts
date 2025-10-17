@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cryptoCurrencyBitcoinCode: IconData = {
+  "body": "<defs><path id=\"SVGtokRgcto\" stroke=\"#191919\" d=\"M10.809 13.833a1.833 1.833 0 0 1-1.834 1.834H6.684V12h2.291a1.833 1.833 0 0 1 1.834 1.833\"/><path id=\"SVG5vpiNd3s\" stroke=\"#191919\" d=\"M10.809 17.5a1.833 1.833 0 0 1-1.834 1.833H6.684v-3.666h2.291A1.833 1.833 0 0 1 10.81 17.5m-2.751-6.417V12m0 7.333v.917\"/></defs><g fill=\"none\"><path fill=\"#c9f7ca\" d=\"M19.333 1H4.667A3.667 3.667 0 0 0 1 4.667v14.666A3.667 3.667 0 0 0 4.667 23h14.666A3.667 3.667 0 0 0 23 19.333V4.667A3.667 3.667 0 0 0 19.333 1\"/><path fill=\"#ffef5e\" d=\"M8.333 22.542a6.876 6.876 0 1 0 0-13.751a6.876 6.876 0 0 0 0 13.75\"/><path fill=\"#fff9bf\" d=\"M8.334 8.792a6.875 6.875 0 0 0-4.832 11.763l9.717-9.716a6.85 6.85 0 0 0-4.885-2.047\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M8.333 22.542a6.876 6.876 0 1 0 0-13.751a6.876 6.876 0 0 0 0 13.75M2.375 6.958h3.667M2.375 2.833l1.213-1.212a.55.55 0 0 1 .391-.163a.23.23 0 0 1 .23.23v5.27m5.499-5.5a1.833 1.833 0 0 0-1.833 1.834v1.833a1.833 1.833 0 1 0 3.667 0V3.292a1.833 1.833 0 0 0-1.834-1.834m3.667 5.5h3.667m-3.667-4.125l1.213-1.212a.55.55 0 0 1 .391-.163a.23.23 0 0 1 .23.23v5.27m5.499-5.5a1.833 1.833 0 0 0-1.833 1.834v1.833a1.833 1.833 0 1 0 3.667 0V3.292a1.833 1.833 0 0 0-1.834-1.834m-1.833 12.834h3.667m-3.667-4.125l1.213-1.213a.55.55 0 0 1 .391-.162a.23.23 0 0 1 .23.229v5.27m-3.924-.898c.168-.283.257-.606.256-.935v-1.833a1.834 1.834 0 0 0-2.305-1.772m.472 12.772h1.833m-1.833-.917v.917m5.5-5.5a1.833 1.833 0 0 0-1.833 1.833v1.834a1.833 1.833 0 1 0 3.667 0v-1.834a1.833 1.833 0 0 0-1.834-1.833\"/><use href=\"#SVGtokRgcto\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><use href=\"#SVG5vpiNd3s\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><use href=\"#SVGtokRgcto\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><use href=\"#SVG5vpiNd3s\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default cryptoCurrencyBitcoinCode

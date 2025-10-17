@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const markdownCopyOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 18V2h13v16zm2-2h9V4H9zm-6 6V6h2v14h11v2zm7.25-9h1.5V8.5h1v3h1.5v-3h1V13h1.5V7h-6.5zM9 16V4z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default markdownCopyOutlineSharp

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const brownCircle: IconData = {
+  "body": "<circle cx=\"18\" cy=\"18\" r=\"18\" fill=\"#C1694F\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default brownCircle

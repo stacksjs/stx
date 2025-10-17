@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const circleImage16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8 5h2.744A4.502 4.502 0 0 0 2 6.5a4.5 4.5 0 0 0 3 4.244V8a3 3 0 0 1 3-3m0 1a2 2 0 0 0-2 2v4c0 .37.101.718.277 1.016l2.486-2.486a1.75 1.75 0 0 1 2.474 0l2.486 2.486C13.9 12.718 14 12.371 14 12V8a2 2 0 0 0-2-2zm0 8c-.37 0-.718-.101-1.016-.277l2.486-2.486a.75.75 0 0 1 1.06 0l2.486 2.486A2 2 0 0 1 12 14zm3.5-4.75a.75.75 0 1 1 0-1.5a.75.75 0 0 1 0 1.5\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default circleImage16Filled

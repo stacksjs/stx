@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const parkingValetOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m15.654 20l-.423-5.52l-1.27-.845V9.769q0-.698.498-1.195q.497-.497 1.195-.497h.423l.846 1.692l.846-1.692h.423q.699 0 1.196.497t.497 1.195v3.866l-1.27.846L18.193 20zm1.269-12.77q-.71 0-1.201-.49q-.491-.492-.491-1.201h3.385q0 .709-.492 1.2q-.491.492-1.201.492m-1.692-2.462V3h3.385v1.77zM9.058 20v-2H3v-1h6.289v-4.846H3v-1h5.873L7.4 7H3V6h5.127l2.161 6.154V20zM6.87 15.692q.467 0 .789-.326q.322-.327.322-.793q0-.467-.327-.79q-.326-.321-.793-.321t-.789.326t-.322.793t.327.79q.326.321.793.321\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default parkingValetOutlineSharp

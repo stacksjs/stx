@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const creditCard: IconData = {
+  "body": "<defs><path id=\"SVGJORAzdgL\" d=\"M125.76 64.91c2.32 2.99 2.04 6.61-.68 8.03l-82.41 43.15c-3.62 1.88-8.38.33-10.54-3.45L1.46 59.07c-1.79-3.13-.4-6.8 3.03-8.17l79.49-31.67c2.66-1.05 6.41.15 8.39 2.7z\"/></defs><use fill=\"#fcc21b\" href=\"#SVGJORAzdgL\"/><clipPath id=\"SVGlbgyOdbd\"><use href=\"#SVGJORAzdgL\"/></clipPath><path fill=\"#2f2f2f\" d=\"M106.86 35.82L8.43 79.41L-.02 64.45l97.55-40.54z\" clip-path=\"url(#SVGlbgyOdbd)\"/><path fill=\"#fff\" d=\"M119.26 64.62c1.14 1.5.98 3.3-.4 3.99l-11.09 5.66c-1.43.73-3.54.05-4.68-1.51l-6.51-8.93c-1.09-1.51-.82-3.29.6-3.97l11.03-5.25c1.36-.65 3.36 0 4.48 1.44z\"/>",
+  "width": 128,
+  "height": 128,
+  "viewBox": "0 0 128 128"
+}
+
+export default creditCard

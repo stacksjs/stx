@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const imageTable32Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17 13a2 2 0 1 1 4 0a2 2 0 0 1-4 0M3 7.5A4.5 4.5 0 0 1 7.5 3h17A4.5 4.5 0 0 1 29 7.5v17a4.5 4.5 0 0 1-4.5 4.5h-17A4.5 4.5 0 0 1 3 24.5zM7.5 5A2.5 2.5 0 0 0 5 7.5V8h3V5zM10 5v3h12V5zm14 0v3h3v-.5A2.5 2.5 0 0 0 24.5 5zm3 5h-3v12h3zm0 14h-3v3h.5a2.5 2.5 0 0 0 2.5-2.5zm-5 3v-3H10v3zM8 27v-3H5v.5A2.5 2.5 0 0 0 7.5 27zm-3-5h3V10H5zm5-1.535l4.232-4.233a2.5 2.5 0 0 1 3.536 0L22 20.465V10H10zM20.707 22l-4.353-4.354a.5.5 0 0 0-.708 0L11.293 22z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default imageTable32Regular

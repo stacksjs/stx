@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const archive28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11.75 12.5a.75.75 0 0 0 0 1.5h4.5a.75.75 0 0 0 0-1.5zM3 5.25A2.25 2.25 0 0 1 5.25 3h17.5A2.25 2.25 0 0 1 25 5.25v2c0 .78-.397 1.467-1 1.871V20.25A4.75 4.75 0 0 1 19.25 25H8.75A4.75 4.75 0 0 1 4 20.25V9.121A2.25 2.25 0 0 1 3 7.25zM5.5 9.5v10.75a3.25 3.25 0 0 0 3.25 3.25h10.5a3.25 3.25 0 0 0 3.25-3.25V9.5zm-.25-5a.75.75 0 0 0-.75.75v2c0 .414.336.75.75.75h17.5a.75.75 0 0 0 .75-.75v-2a.75.75 0 0 0-.75-.75z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default archive28Regular

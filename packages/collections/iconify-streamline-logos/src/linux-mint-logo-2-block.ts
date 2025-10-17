@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const linuxMintLogo2Block: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M5 1a4 4 0 0 0-4 4v14a4 4 0 0 0 4 4h14a4 4 0 0 0 4-4V5a4 4 0 0 0-4-4zm15 11a8 8 0 1 1-16 0a8 8 0 0 1 16 0M7.375 13.818V7.636h1.25v6.182c0 .86.697 1.557 1.557 1.557h3.636c.86 0 1.557-.697 1.557-1.557v-3.272a.83.83 0 1 0-1.66 0v3.272h-1.25v-3.272a.83.83 0 1 0-1.658 0v3.272h-1.25v-3.272a2.08 2.08 0 0 1 3.534-1.487a2.08 2.08 0 0 1 3.534 1.486v3.273a2.807 2.807 0 0 1-2.807 2.807h-3.636a2.807 2.807 0 0 1-2.807-2.807\" clip-rule=\"evenodd\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default linuxMintLogo2Block

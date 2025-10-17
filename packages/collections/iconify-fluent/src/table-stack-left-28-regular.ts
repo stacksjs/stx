@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tableStackLeft28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 24.25a.75.75 0 0 0 1.5 0V3.75a.75.75 0 0 0-1.5 0zm22-17.5A3.75 3.75 0 0 0 21.25 3H10.5a1 1 0 0 0-1 1v20a1 1 0 0 0 1 1h10.75A3.75 3.75 0 0 0 25 21.25zM11 18.5h6v5h-6zm6-1.5h-6v-6h6zm1.5 1.5h5v2.75a2.25 2.25 0 0 1-2.25 2.25H18.5zm5-1.5h-5v-6h5zm0-10.25V9.5h-5v-5h2.75a2.25 2.25 0 0 1 2.25 2.25M17 4.5v5h-6v-5z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default tableStackLeft28Regular

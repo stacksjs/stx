@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const fastBackward: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M0 1200V0h200v550L700 50v500l500-500v1100L700 650v500L200 650v550z\"/>",
+  "width": 1200,
+  "height": 1200,
+  "viewBox": "0 0 1200 1200"
+}
+
+export default fastBackward

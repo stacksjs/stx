@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const folderVueDirectives: IconData = {
+  "body": "<path fill=\"#00838f\" d=\"m13.844 7.536l-1.288-1.072A2 2 0 0 0 11.276 6H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h24a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2H15.124a2 2 0 0 1-1.28-.464\"/><path fill=\"#41b883\" d=\"m12 12l10 16l10-15.923V12h-3.889l-6.053 9.641l-6.026-9.64Z\"/><path fill=\"#35495e\" d=\"m16.03 12l6.027 9.642L28.11 12h-3.647l-2.383 3.795L19.708 12Z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default folderVueDirectives

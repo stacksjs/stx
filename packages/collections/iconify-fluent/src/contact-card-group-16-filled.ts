@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const contactCardGroup16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3.5 3A2.5 2.5 0 0 0 1 5.5v5A2.5 2.5 0 0 0 3.5 13h9a2.5 2.5 0 0 0 2.5-2.5v-5A2.5 2.5 0 0 0 12.5 3zM10 6.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m.5 2.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1M6 6a1 1 0 1 1-2 0a1 1 0 0 1 2 0M3.75 8h2.5a.75.75 0 0 1 .75.75v.75S7 11 5 11S3 9.5 3 9.5v-.75A.75.75 0 0 1 3.75 8M8.5 6.25a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0m-.555 3.701a2.4 2.4 0 0 0 .053-.39L8 9.535V8.75c0-.268-.06-.523-.168-.75H8.5a.5.5 0 0 1 .5.5V9a1 1 0 0 1-1 1h-.066z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default contactCardGroup16Filled

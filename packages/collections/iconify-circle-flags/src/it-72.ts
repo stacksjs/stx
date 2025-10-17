@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const it72: IconData = {
+  "body": "<defs><mask id=\"SVGsBqRke6O\" width=\"512\" height=\"512\" x=\"0\" y=\"0\" maskUnits=\"userSpaceOnUse\"><circle cx=\"256\" cy=\"256\" r=\"256\" fill=\"#fff\"/></mask></defs><g mask=\"url(#SVGsBqRke6O)\"><path fill=\"#0052b4\" d=\"M0 0h512v512H0z\"/><path fill=\"#eee\" d=\"m176 152l-32 32v109c0 85.6 112 111.4 112 111.4s40.6-9.3 73-35.5l29.2-34.7A88.6 88.6 0 0 0 368 293V152z\"/><path fill=\"#d80027\" d=\"M358.2 334.2L176 152h-32v32l185 185a110 110 0 0 0 29.2-34.8\"/></g>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default it72

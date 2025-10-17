@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const nightWithStars: IconData = {
+  "body": "<path fill=\"#8967aa\" d=\"M4 3.985h64v64H4z\"/><path fill=\"#9b9b9a\" d=\"M9.923 45.944v-17h10v17m14-13h13v35.041h-13z\"/><path fill=\"#d0cfce\" d=\"M50.923 67.985V36.944h16v31.041m-62 0V45.944h34v22.041\"/><path fill=\"#fcea2b\" d=\"M8.923 48.948h2.991v5.997H8.923zm6 0h2.991v5.997h-2.991zm12 0h2.991v5.997h-2.991zm6 0h2.991v5.997h-2.991zm22-9h2.991v5.997h-2.991zm6 10h2.991v5.997h-2.991zm0 10h2.991v5.997h-2.991zm-6 0h2.991v5.997h-2.991zm-22-1h2.991v5.997h-2.991zm-12 0h2.991v5.997h-2.991zm-12 0h2.991v5.997H8.923z\"/><circle cx=\"22\" cy=\"20.842\" r=\"2\" fill=\"#fcea2b\"/><circle cx=\"34\" cy=\"25.842\" r=\"2\" fill=\"#fcea2b\"/><circle cx=\"33\" cy=\"14.842\" r=\"2\" fill=\"#fcea2b\"/><circle cx=\"14\" cy=\"10.842\" r=\"2\" fill=\"#fcea2b\"/><path fill=\"#fcea2b\" d=\"M56 25.842c-.484.527-9.016-2.397-9-9c.01-4.4 3.813-8.554 9-9a22 22 0 0 0-2.078 2.087A10.45 10.45 0 0 0 51 16.842c.063 2.889 1.758 5.223 3.16 6.797c1.102 1.235 2.024 2.003 1.84 2.203\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M50.923 66.944v-30h16v30m-62 0v-21h34v21\"/><path d=\"M34.923 42.944v-10h12v34m-36-24v-14h8v14m38 3h-2v-5m8 15h-2v-5m-32 4h-2v-5m8 5h-2v-5m2 15h-2v-5m-16-5h-2v-5m-4 5h-2v-5m2 15h-2v-5m14 5h-2v-5m36 6h-2v-5m8 5h-2v-5m-46-29v11m24-7v7m4-7v31M14 12.842a2 2 0 0 1 0-4m8 14a2 2 0 0 1 0-4m11-2a2 2 0 1 1 0-4m1 15a2 2 0 0 1 0-4m22 2c-.484.527-9.016-2.397-9-9c.01-4.4 3.813-8.554 9-9a22 22 0 0 0-2.078 2.087A10.45 10.45 0 0 0 51 16.842c.063 2.889 1.758 5.223 3.16 6.797c1.102 1.235 2.024 2.003 1.84 2.203\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default nightWithStars

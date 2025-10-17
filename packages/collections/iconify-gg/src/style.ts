@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const style: IconData = {
+  "body": "<g fill=\"currentColor\"><path fill-rule=\"evenodd\" d=\"M13 21v-8h8v8zm2-6h4v4h-4zM3 11V3h8v8zm2-6h4v4H5z\" clip-rule=\"evenodd\"/><path d=\"M18 6v6h-2V8h-4V6zm-6 12H6v-6h2v4h4z\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default style

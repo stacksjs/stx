@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const commentFlash: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M22.5 16h-2.2l1.7-4h-5v6h2v5zM15 18h-1.1l-3.7 3.7c-.2.2-.4.3-.7.3H9c-.6 0-1-.4-1-1v-3H4c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2v6h-7z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default commentFlash

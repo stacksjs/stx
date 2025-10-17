@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const bottomAppBarSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 21V3h18v18zm9-6q.425 0 .713-.288T13 14t-.288-.712T12 13t-.712.288T11 14t.288.713T12 15m-7-1h4q0-1.25.875-2.125T12 11t2.125.875T15 14h4V5H5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default bottomAppBarSharp

@@ -9,7 +9,7 @@ stx provides comprehensive monitoring capabilities to help you observe, debug, a
 Track key performance indicators:
 
 ```typescript
-import { metrics } from '@stx/monitoring'
+import { metrics } from '@stacksjs/monitoring'
 
 // Request metrics
 metrics.counter('http_requests_total', {
@@ -47,7 +47,7 @@ activeUsers.set(await getActiveUserCount())
 ### Error Monitoring
 
 ```typescript
-import { errorTracker } from '@stx/monitoring'
+import { errorTracker } from '@stacksjs/monitoring'
 
 // Automatic error tracking
 app.use(errorTracker.middleware({
@@ -91,7 +91,7 @@ errorTracker.setUser({
 ### Structured Logging
 
 ```typescript
-import { logger } from '@stx/logging'
+import { logger } from '@stacksjs/logging'
 
 // Structured log entries
 logger.info('User registration completed', {
@@ -133,7 +133,7 @@ const logConfig = {
 ### Live Dashboard
 
 ```typescript
-import { dashboard } from '@stx/devtools'
+import { dashboard } from '@stacksjs/devtools'
 
 // Enable development dashboard
 if (process.env.NODE_ENV === 'development') {
@@ -173,7 +173,7 @@ app.get('/health', (req, res) => {
 ### CPU Profiling
 
 ```typescript
-import { profiler } from '@stx/monitoring'
+import { profiler } from '@stacksjs/monitoring'
 
 // Profile specific operations
 const profile = profiler.start('heavy-computation')
@@ -208,7 +208,7 @@ profiler.detectMemoryLeaks({
 ### Request Tracing
 
 ```typescript
-import { tracer } from '@stx/tracing'
+import { tracer } from '@stacksjs/tracing'
 
 // Automatic request tracing
 app.use(tracer.middleware({
@@ -258,7 +258,7 @@ httpSpan.finish()
 ### Alert Configuration
 
 ```typescript
-import { alerts } from '@stx/monitoring'
+import { alerts } from '@stacksjs/monitoring'
 
 // Response time alerts
 alerts.create({
@@ -298,7 +298,7 @@ alerts.create({
 
 ```typescript
 // Prometheus metrics endpoint
-import { promClient } from '@stx/monitoring'
+import { promClient } from '@stacksjs/monitoring'
 
 app.get('/metrics', (req, res) => {
   res.set('Content-Type', promClient.register.contentType)
@@ -336,7 +336,7 @@ app.get('/metrics', (req, res) => {
 
 ```typescript
 // DataDog integration
-import { datadog } from '@stx/monitoring'
+import { datadog } from '@stacksjs/monitoring'
 
 datadog.configure({
   apiKey: process.env.DATADOG_API_KEY,
@@ -345,7 +345,7 @@ datadog.configure({
 })
 
 // New Relic integration
-import { newrelic } from '@stx/monitoring'
+import { newrelic } from '@stacksjs/monitoring'
 
 newrelic.configure({
   license_key: process.env.NEW_RELIC_LICENSE_KEY,
@@ -359,7 +359,7 @@ newrelic.configure({
 
 ```typescript
 // Track Core Web Vitals
-import { webVitals } from '@stx/monitoring'
+import { webVitals } from '@stacksjs/monitoring'
 
 webVitals.track({
   onCLS: (metric) => logger.info('CLS', metric),

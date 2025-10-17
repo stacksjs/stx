@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const deviceMeetingRoomRemote16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.668 2a2 2 0 0 0-1.926 1.459l-.435 1.548Q2.403 5.001 2.5 5h2a2.5 2.5 0 0 1 2.502 2.5V12h5.915a2.08 2.08 0 0 0 2.003-2.643l-1.66-5.898A2 2 0 0 0 11.337 2zm2.285 12a2.5 2.5 0 0 0 .05-.5V13h4.5a.5.5 0 1 1 0 1zM3.5 9.5a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5M1 7.5A1.5 1.5 0 0 1 2.5 6h2.001a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5h-2A1.5 1.5 0 0 1 1 13.5zM2.5 7a.5.5 0 0 0-.5.5v6a.5.5 0 0 0 .5.5h2.001a.5.5 0 0 0 .5-.5v-6a.5.5 0 0 0-.5-.5z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default deviceMeetingRoomRemote16Filled

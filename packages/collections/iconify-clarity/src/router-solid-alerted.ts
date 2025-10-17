@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const routerSolidAlerted: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M33.82 15.39h-5.14L31 17.67l-4.19 4.09a.8.8 0 1 1-1.12-1.14l2.2-2.15h-6.26a.8.8 0 0 1 0-1.6h6.27l-1.5-1.47h-4.17a3.68 3.68 0 0 1-3-1.51L18 15.15l-4.14-4.1A.8.8 0 1 1 15 9.92l2.21 2.19V5.93a.8.8 0 0 1 1.6 0v4.49a4 4 0 0 1 .19-.53l4.22-7.31A16 16 0 1 0 34 17.67a16 16 0 0 0-.18-2.28m-23.5 6.35a.8.8 0 0 1-1.13 0L5 17.67l4.19-4.09a.8.8 0 1 1 1.12 1.14l-2.2 2.14h6.27a.8.8 0 0 1 0 1.6H8.11l2.2 2.15a.8.8 0 0 1 .01 1.13m11.82 3.67a.8.8 0 0 1-1.13 0l-2.21-2.18v6.17a.8.8 0 0 1-1.6 0v-6.17L15 25.42a.8.8 0 1 1-1.13-1.14l4.13-4.1l4.14 4.1a.8.8 0 0 1 0 1.13\" class=\"clr-i-solid--alerted clr-i-solid-path-1--alerted\"/><path fill=\"currentColor\" d=\"M26.85 1.14L21.13 11a1.28 1.28 0 0 0 1.1 2h11.45a1.28 1.28 0 0 0 1.1-2l-5.72-9.86a1.28 1.28 0 0 0-2.21 0\" class=\"clr-i-solid--alerted clr-i-solid-path-2--alerted clr-i-alert\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default routerSolidAlerted

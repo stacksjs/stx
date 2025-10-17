@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const sharpImageSearch: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M18 13v7H4V6h5.02c.05-.71.22-1.38.48-2H2v18h18v-7zm-1.5 5h-11l2.75-3.53l1.96 2.36l2.75-3.54zm2.8-9.11c.44-.7.7-1.51.7-2.39C20 4.01 17.99 2 15.5 2S11 4.01 11 6.5s2.01 4.5 4.49 4.5c.88 0 1.7-.26 2.39-.7L21 13.42L22.42 12zM15.5 9a2.5 2.5 0 0 1 0-5a2.5 2.5 0 0 1 0 5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default sharpImageSearch

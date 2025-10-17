@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const lineStyle: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M1920 384v128H0V384zM128 896H0V768h128zm256 0H256V768h128zm128-128h128v128H512zm384 128H768V768h128zm256 0h-128V768h128zm128-128h128v128h-128zm384 128h-128V768h128zm128-128h128v128h-128zM256 1280H0v-128h256zm128-128h256v128H384zm384 0h256v128H768zm384 0h256v128h-256zm384 0h256v128h-256zM0 1536h384v128H0zm512 0h128v128H512zm256 0h384v128H768zm768 0h384v128h-384zm-256 0h128v128h-128z\"/>",
+  "width": 2048,
+  "height": 2048,
+  "viewBox": "0 0 2048 2048"
+}
+
+export default lineStyle

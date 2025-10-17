@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const layoutList: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9 7H7v2h2zm-2 6v-2h2v2zm0 2v2h2v-2zm4 0v2h6v-2zm6-2v-2h-6v2zm0-6v2h-6V7z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default layoutList

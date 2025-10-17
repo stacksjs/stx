@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const videoBackgroundEffectHorizontal32Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2.249 6c.49-1.174 1.649-2 3-2h21.5c1.353 0 2.512.826 3.002 2zM30 9.5h-8.522a6.5 6.5 0 0 1 .848 2H30zm-28 0h8.522a6.5 6.5 0 0 0-.848 2H2zM2 15h7.813c.237.732.6 1.407 1.063 2H2zm0 5.5h5.035a4 4 0 0 0-.535 2H2zm22.965 0c.34.588.535 1.271.535 2H30v-2zM2.249 26H6.5v2H5.25a3.25 3.25 0 0 1-3.001-2M25.5 26v2h1.25a3.25 3.25 0 0 0 3-2zm-3.314-11a6.5 6.5 0 0 1-1.062 2H30v-2zM16 18a5 5 0 1 0 0-10a5 5 0 0 0 0 10M8 28v-5.5a2.5 2.5 0 0 1 2.5-2.5h11a2.5 2.5 0 0 1 2.5 2.5V28z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default videoBackgroundEffectHorizontal32Filled

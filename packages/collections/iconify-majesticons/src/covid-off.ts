@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const covidOff: IconData = {
+  "body": "<g fill=\"none\"><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m3 3l18 18\"/><path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M3.379 4.207L2.293 5.293a1 1 0 0 0 1.414 1.414l.793-.793l1.18 1.18A7.96 7.96 0 0 0 4.062 11H3v-1a1 1 0 0 0-2 0v4a1 1 0 1 0 2 0v-1h1.062c.182 1.46.759 2.8 1.618 3.906l-1.18 1.18l-.793-.793a1 1 0 0 0-1.414 1.414l3 3a1 1 0 0 0 1.414-1.414l-.793-.793l1.18-1.18A7.97 7.97 0 0 0 11 19.938V21h-1a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2h-1v-1.062a7.97 7.97 0 0 0 3.906-1.618l1.18 1.18l-.793.793a1 1 0 0 0 1.414 1.414l1.086-1.086l-5.634-5.633a1 1 0 0 1-.158.012H14a1 1 0 0 1-.987-1.159l-1.208-1.208a2.5 2.5 0 0 1-3.438-3.438zm16.153 10.496A8 8 0 0 0 19.938 13H21v1a1 1 0 1 0 2 0v-4a1 1 0 1 0-2 0v1h-1.062a7.97 7.97 0 0 0-1.618-3.906l1.18-1.18l.793.793a1 1 0 1 0 1.414-1.414l-3-3a1 1 0 1 0-1.414 1.414l.793.793l-1.18 1.18A7.97 7.97 0 0 0 13 4.062V3h1a1 1 0 1 0 0-2h-4a1 1 0 0 0 0 2h1v1.062a8 8 0 0 0-1.703.406z\" clip-rule=\"evenodd\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default covidOff

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const folderTypeCommonOpened: IconData = {
+  "body": "<path fill=\"#a1aeb9\" d=\"M27.4 5.5h-9.2l-2.1 4.2H4.3v16.8h25.2v-21Zm0 18.7H6.6V11.8h20.8Zm0-14.5h-8.2l1-2.1h7.1v2.1Z\"/><path fill=\"#a1aeb9\" d=\"M25.7 13.7H.5l3.8 12.8h25.2Z\"/><path fill=\"#d1d1d1\" d=\"M23.507 15a7.45 7.45 0 0 0-3 .63a7.5 7.5 0 0 1 1.684 1.02a6 6 0 1 1 0 11.7a7.5 7.5 0 0 1-1.684 1.02a7.5 7.5 0 1 0 3-14.371Z\"/><path fill=\"#d1d1d1\" d=\"M17.507 22.5a6.01 6.01 0 0 0 4.686 5.85a7.49 7.49 0 0 0 0-11.7a6.01 6.01 0 0 0-4.686 5.85\"/><path fill=\"#d1d1d1\" d=\"M16.007 22.5a7.51 7.51 0 0 1 4.5-6.87a7.5 7.5 0 1 0 0 13.74a7.51 7.51 0 0 1-4.5-6.87\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default folderTypeCommonOpened

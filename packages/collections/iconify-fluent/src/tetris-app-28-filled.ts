@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tetrisApp28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9 3.25C9 2.56 9.56 2 10.25 2H15v6H9zM3.25 9C2.56 9 2 9.56 2 10.25v3.5c0 .69.56 1.25 1.25 1.25H8V9zM15 9H9v6h4.75c.69 0 1.25-.56 1.25-1.25zm5.75-7H16v6h4.75C21.44 8 22 7.44 22 6.75v-3.5C22 2.56 21.44 2 20.75 2M5 20.256C5 19.562 5.562 19 6.256 19H11v6H6.256A1.256 1.256 0 0 1 5 23.744zM18 25v-6h-6v6zm7-6v4.75c0 .69-.56 1.25-1.25 1.25H19v-6zm-4.5-7a1.5 1.5 0 0 0-1.5 1.5V18h6v-4.5a1.5 1.5 0 0 0-1.5-1.5z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default tetrisApp28Filled

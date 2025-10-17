@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const pokemonQuest: IconData = {
+  "body": "<rect width=\"37\" height=\"37\" x=\"5.5\" y=\"5.5\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" rx=\"4\" ry=\"4\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m15.149 17.47l15.756 3.587a1.54 1.54 0 0 1 1.149 1.97l-4.121 13.757a1.81 1.81 0 0 1-2.108 1.23L10.07 34.425a1.54 1.54 0 0 1-1.149-1.97l4.121-13.758a1.81 1.81 0 0 1 2.108-1.229m1.65.332s4.2-8.86 4.53-9.66c.334-.808 5.29-.251 4.9 1.98s-3.92 8.95-3.92 8.95\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M27.1 20.2s4.34-9.65 4.62-10.2c.279-.502 4.74-.263 4.46 2.2c-.279 2.45-3.988 9.826-3.988 9.826M19.9 11.3s3.38.656 4.33 1.09c1.08.49.308 2.157.308 2.157\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M30.2 13.3s3.33.647 4 .838c1.33.384 1.09 1.1.623 2.19M18.6 22l-2.97-.707l-.872 3.4l2.9.754zm5.4.9l3.09.675l-1.04 3.68l-2.99-.754zm1.2 5.7l3.32.745l-1.04 3.68l-3.34-.863zM11 25.5l3.58.853l-1.04 3.66l-3.61-.925zm9 1.9l-1.24.889l-2.12-.563l-.997 3.47l6 1.37l1.19-3.4l-2.15-.52zm-.2-1l.798.209\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m16.815 31.464l.38-1.264l4.85 1.07m9.601-9.82l8.764 9.25l-3.31 11.8h-4.63l-6.41-4.45M42.5 15.3h-3.34c-1.84 0-1.42 1.42-1.95 12m5.29 6h-2.818M9.5 34.175l3.522 3.14\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m35.6 25.6l-1.06 3.8l1.25 1.18l1.03-3.66M37.9 28l-1.06 3.8l1.25 1.18l1.03-3.66M17 21.6l-.447 1.74l1.58.358m5.395 1.009l1.512.346l.476-1.82M15.765 42.47l1.99-4.67m.81 4.665l1.22-3.02l-2.03-1.64l-4.56-.925l-2.22 5.59m16.79-.005l.305-.875l-2.19-1.54l-3.9-.79l-.896 3.21m3.99 0l.81-2.42\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default pokemonQuest

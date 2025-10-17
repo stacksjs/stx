@@ -65,7 +65,7 @@ function render(context) {
 
 ```typescript
 // Streaming rendering for large datasets
-import { renderStream } from '@stx/core'
+import { renderStream } from '@stacksjs/core'
 
 const stream = renderStream(template, {
   items: largeDataset,
@@ -118,8 +118,8 @@ const HeavyComponent = lazy(() => import('./HeavyComponent.stx'))
 
 ```typescript
 // Dead code elimination
-import { render } from '@stx/core' // Only imports what's used
-import { component } from '@stx/components' // Tree-shaken automatically
+import { render } from '@stacksjs/core' // Only imports what's used
+import { component } from '@stacksjs/components' // Tree-shaken automatically
 
 // Bundle analysis
 bun run build:analyze
@@ -296,7 +296,7 @@ export default {
 
 ```typescript
 // Track performance metrics
-import { performanceMonitor } from '@stx/monitoring'
+import { performanceMonitor } from '@stacksjs/monitoring'
 
 performanceMonitor.track({
   // Largest Contentful Paint
@@ -364,7 +364,7 @@ export default {
 
 ```typescript
 // Performance benchmarks
-import { benchmark } from '@stx/testing'
+import { benchmark } from '@stacksjs/testing'
 
 benchmark('template rendering', async () => {
   const html = render(complexTemplate, largeDataset)

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const scp: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M15.938 10.313c0 2.306-1.632 3.937-3.938 3.937H8.062v-3.937c0-2.307 1.632-3.938 3.938-3.938s3.938 1.631 3.938 3.938m3.374 0A7.313 7.313 0 0 1 12 17.625H8.062V21H4.688V10.313a7.313 7.313 0 1 1 14.625 0\" clip-rule=\"evenodd\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default scp

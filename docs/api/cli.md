@@ -223,10 +223,10 @@ stx env:push
 
 ```bash
 # Add plugin
-stx plugin:add @stx/auth
+stx plugin:add @stacksjs/auth
 
 # Remove plugin
-stx plugin:remove @stx/auth
+stx plugin:remove @stacksjs/auth
 
 # List installed plugins
 stx plugin:list

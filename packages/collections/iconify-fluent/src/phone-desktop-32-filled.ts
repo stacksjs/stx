@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const phoneDesktop32Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5 5.25A3.25 3.25 0 0 1 8.25 2h18.5A3.25 3.25 0 0 1 30 5.25v12.5A3.25 3.25 0 0 1 26.75 21H22v3h2a1 1 0 1 1 0 2h-9.5v-2H20v-3h-5.5v-5.75a4.75 4.75 0 0 0-4.75-4.75h-4.5a5 5 0 0 0-.25.007zm-3 10A3.25 3.25 0 0 1 5.25 12h4.5A3.25 3.25 0 0 1 13 15.25v11.5A3.25 3.25 0 0 1 9.75 30h-4.5A3.25 3.25 0 0 1 2 26.75zM6 26a1 1 0 0 0 1 1h1a1 1 0 1 0 0-2H7a1 1 0 0 0-1 1\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default phoneDesktop32Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const channelSubtract16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 2.25q-.19 0-.37.04A2 2 0 0 1 3.5 1h5a2 2 0 0 1 2 2v2a5.5 5.5 0 0 0-5.478 5H3.5a2 2 0 0 1-2-2V5.678A1.75 1.75 0 1 0 2 2.25M4.5 4a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1zM4 6.5a.5.5 0 0 0 .5.5H6a.5.5 0 0 0 0-1H4.5a.5.5 0 0 0-.5.5M2 4.75a.75.75 0 1 0 0-1.5a.75.75 0 0 0 0 1.5M10.5 15a4.5 4.5 0 1 0 0-9a4.5 4.5 0 0 0 0 9m2-4h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default channelSubtract16Filled

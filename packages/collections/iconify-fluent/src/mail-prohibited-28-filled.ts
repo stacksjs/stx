@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const mailProhibited28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M20.5 14a6.5 6.5 0 1 0 0-13a6.5 6.5 0 0 0 0 13m0-1.5a4.98 4.98 0 0 1-2.965-.974l6.991-6.991A5 5 0 0 1 20.5 12.5m2.965-9.026l-6.991 6.991a5 5 0 0 1 6.991-6.991M25 13.5a7.47 7.47 0 0 1-4.5 1.5a7.5 7.5 0 0 1-3.355-.79l-2.799 1.455a.75.75 0 0 1-.692 0L3 10.124v9.626l.005.184A3.25 3.25 0 0 0 6.25 23h15.5l.185-.005A3.25 3.25 0 0 0 25 19.75zM13.427 5H6.25l-.184.005A3.25 3.25 0 0 0 3 8.25v.184l11 5.72l1.706-.886A7.48 7.48 0 0 1 13 7.5c0-.877.15-1.718.427-2.5\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default mailProhibited28Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const trainCarTank: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M23 15v2h-1c0 1.11-.89 2-2 2s-2-.89-2-2H6c0 1.11-.89 2-2 2s-2-.89-2-2H1v-2zm-2-7h-6V7H9v1H3c-1.1 0-2 .9-2 2v2a2 2 0 0 0 2 2h18c1.11 0 2-.89 2-2v-2a2 2 0 0 0-2-2\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default trainCarTank

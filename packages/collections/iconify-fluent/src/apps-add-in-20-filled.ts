@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const appsAddIn20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15.5 2.75a.75.75 0 0 0-1.5 0V4.5h-1.75a.75.75 0 0 0 0 1.5H14v1.75a.75.75 0 0 0 1.5 0V6h1.75a.75.75 0 0 0 0-1.5H15.5zM5 3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3.75a2 2 0 0 0-2-2h-4.25V5a2 2 0 0 0-2-2zm4.25 2v4.25H4.5V5a.5.5 0 0 1 .5-.5h3.75a.5.5 0 0 1 .5.5m0 5.75v4.75H5a.5.5 0 0 1-.5-.5v-4.25zm1.5 0H15a.5.5 0 0 1 .5.5V15a.5.5 0 0 1-.5.5h-4.25z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default appsAddIn20Filled

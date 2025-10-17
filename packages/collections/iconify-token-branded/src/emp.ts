@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const emp: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGDD5vHdiR)\" d=\"M8.626 14.25H3.282A9 9 0 0 1 3.001 12c0-4.973 3.988-9 8.91-9H21l-2.785 2.627l-.073-.034z\"/><path fill=\"url(#SVGKNn2adAZ)\" d=\"M20.999 11.999A9 9 0 0 1 5.7 18.422l3.487-3.61A3.98 3.98 0 0 0 12 15.935a3.938 3.938 0 0 0 3.121-6.339l.253-.225l3.353-3.352a8.97 8.97 0 0 1 2.272 5.979\"/><path fill=\"url(#SVGJgoNDeKB)\" d=\"M20.999 11.999A9 9 0 0 1 3.45 14.81h5.737l.287.253c.855.76 2.47 2.182 4.96 2.182c3.19 0 6.002-3.183 6.002-6.372c0-1.361-.281-2.503-.63-3.353A8.96 8.96 0 0 1 21 12\"/><defs><linearGradient id=\"SVGDD5vHdiR\" x1=\"6.713\" x2=\"18.084\" y1=\"18.598\" y2=\"13.719\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0031A5\"/><stop offset=\".48\" stop-color=\"#009EEF\"/><stop offset=\"1\" stop-color=\"#009DEE\"/></linearGradient><linearGradient id=\"SVGKNn2adAZ\" x1=\"12.039\" x2=\"12.039\" y1=\"3\" y2=\"21.005\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#00BAFF\"/><stop offset=\".67\" stop-color=\"#05207D\"/></linearGradient><linearGradient id=\"SVGJgoNDeKB\" x1=\"21.19\" x2=\"3.231\" y1=\"14.434\" y2=\"15.199\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#03DDFE\"/><stop offset=\".41\" stop-color=\"#0058C1\"/><stop offset=\".69\" stop-color=\"#00136C\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default emp

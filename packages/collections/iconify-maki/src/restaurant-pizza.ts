@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const restaurantPizza: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M1.393 7.931L.025 7.315A14.05 14.05 0 0 1 7.764-.001l.027.07l.511 1.331l-.003.001a12.6 12.6 0 0 0-6.906 6.53m10.963 4.96L2.42 8.414a11.6 11.6 0 0 1 6.354-6.009l.003-.001l.817 2.122c-.028-.002-.052-.016-.081-.016a1.062 1.062 0 1 0 .764 1.793l2.413 6.273a.249.249 0 0 1-.334.316ZM7.426 7.52a.925.925 0 1 0-1.849 0a.925.925 0 0 0 1.849 0m3.017 2.03a.925.925 0 1 0-.07.353a.9.9 0 0 0 .07-.354Z\"/>",
+  "width": 15,
+  "height": 15,
+  "viewBox": "0 0 15 15"
+}
+
+export default restaurantPizza

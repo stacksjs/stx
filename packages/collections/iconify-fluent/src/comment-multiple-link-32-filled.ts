@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const commentMultipleLink32Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m10.405 29.692l4.221-3.192A6 6 0 0 1 19.5 17h6q.252 0 .5.02V11.5A4.5 4.5 0 0 0 21.5 7h-14A4.5 4.5 0 0 0 3 11.5v9A4.5 4.5 0 0 0 7.5 25H8v3.495c0 1.239 1.417 1.944 2.405 1.197M27.5 17.014v.327a6 6 0 0 1 1.794 1.01c.134-.426.206-.88.206-1.351v-5.5a8 8 0 0 0-8-8H11a4.5 4.5 0 0 0-3.746 2.005Q7.377 5.5 7.5 5.5h14q.53 0 1.036.09A6 6 0 0 1 27.5 11.5zM21 19.5a1 1 0 0 0-1-1h-.5a4.5 4.5 0 1 0 0 9h.5a1 1 0 1 0 0-2h-.5a2.5 2.5 0 0 1 0-5h.5a1 1 0 0 0 1-1m4-1a1 1 0 1 0 0 2h.5a2.5 2.5 0 0 1 0 5H25a1 1 0 1 0 0 2h.5a4.5 4.5 0 1 0 0-9zM20 22a1 1 0 1 0 0 2h5a1 1 0 1 0 0-2z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default commentMultipleLink32Filled

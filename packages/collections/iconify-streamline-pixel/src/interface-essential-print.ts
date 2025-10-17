@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const interfaceEssentialPrint: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M30.47 13.71H32V25.9h-1.53ZM28.95 25.9h1.52v1.53h-1.52Zm-1.52-7.61h1.52v1.52h-1.52Z\"/><path fill=\"currentColor\" d=\"M22.85 27.43v-4.57h3.05v-1.53H6.09v1.53h3.05v4.57H3.05v1.52h6.09V32h13.71v-3.05h6.1v-1.52Zm-1.52 3.05H10.66v-7.62h10.67Zm3.05-12.19h1.52v1.52h-1.52ZM6.09 15.24H25.9v1.52H6.09Z\"/><path fill=\"currentColor\" d=\"M12.19 27.43h7.62v1.52h-7.62Zm0-3.05h7.62v1.52h-7.62Zm-7.62-9.14h1.52v-1.53H25.9v1.53h1.53v-1.53h3.04v-1.52h-3.04V7.62H25.9V6.1h-3.05V1.52h-1.52v1.53h-1.52V1.52h1.52V0H9.14v6.1H6.09v1.52H4.57v4.57H1.52v1.52h3.05Zm6.09-13.72h7.62v3.05h3.05v7.62H10.66ZM1.52 25.9h1.53v1.53H1.52ZM0 13.71h1.52V25.9H0Z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default interfaceEssentialPrint

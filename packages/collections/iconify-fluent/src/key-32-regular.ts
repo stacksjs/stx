@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const key32Regular: IconData = {
+  "body": "<g fill=\"currentColor\"><path d=\"M22 12a2 2 0 1 0 0-4a2 2 0 0 0 0 4\"/><path d=\"M15 24v-1h2a1 1 0 0 0 1-1v-2h2a8 8 0 1 0-7.676-5.739L4.586 22A2 2 0 0 0 4 23.414V26a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-1h2a1 1 0 0 0 1-1m-1-12a6 6 0 1 1 6 6h-3a1 1 0 0 0-1 1v2h-2a1 1 0 0 0-1 1v1h-2a1 1 0 0 0-1 1v2H6v-2.586l8.178-8.178a1 1 0 0 0 .225-1.068A6 6 0 0 1 14 12\"/></g>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default key32Regular

@@ -73,8 +73,8 @@ describe('SEO template integration', () => {
     // Verify Twitter Card tags
     expect(finalOutput).toContain('<meta name="twitter:card" content="summary_large_image">')
     expect(finalOutput).toContain(`<meta name="twitter:title" content="${productContext.pageTitle}">`)
-    expect(finalOutput).toContain('<meta name="twitter:site" content="@stxframework">')
-    expect(finalOutput).toContain('<meta name="twitter:creator" content="@stxteam">')
+    expect(finalOutput).toContain('<meta name="twitter:site" content="@stacksjsframework">')
+    expect(finalOutput).toContain('<meta name="twitter:creator" content="@stacksjsteam">')
 
     // Verify structured data
     expect(finalOutput).toContain('<script type="application/ld+json">')

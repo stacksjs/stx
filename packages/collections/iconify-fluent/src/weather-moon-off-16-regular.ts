@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const weatherMoonOff16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m11.616 12.324l2.53 2.53a.5.5 0 0 0 .708-.708l-13-13a.5.5 0 1 0-.708.708L6.38 7.087c-.86 1.93-2.748 2.586-3.97 2.808a.5.5 0 0 0-.36.71a6 6 0 0 0 9.566 1.718m-.707-.708A4.98 4.98 0 0 1 7.456 13a5 5 0 0 1-4.191-2.273c1.257-.34 2.923-1.116 3.863-2.892zM12.456 8a5 5 0 0 1-.391 1.943l.753.753a6 6 0 0 0-5.572-8.693a.5.5 0 0 0-.475.593a8.8 8.8 0 0 1 .145 2.199l.902.902a9.2 9.2 0 0 0 .032-2.682A5 5 0 0 1 12.456 8\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default weatherMoonOff16Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const rectanglePortrait28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.752 25.998a3.75 3.75 0 0 1-3.75-3.75V5.752a3.75 3.75 0 0 1 3.75-3.75h12.5a3.75 3.75 0 0 1 3.75 3.75v16.496a3.75 3.75 0 0 1-3.75 3.75zm-2.25-3.75a2.25 2.25 0 0 0 2.25 2.25h12.5a2.25 2.25 0 0 0 2.25-2.25V5.752a2.25 2.25 0 0 0-2.25-2.25h-12.5a2.25 2.25 0 0 0-2.25 2.25z\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default rectanglePortrait28Regular

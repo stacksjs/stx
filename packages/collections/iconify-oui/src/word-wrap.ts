@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const wordWrap: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 3h12v1H2zm0 8h6v1H2z\"/><path fill=\"currentColor\" d=\"M2 7h9.5v.5V7h.039l.083.005a3 3 0 0 1 1.102.298c.309.154.633.394.88.763c.248.373.396.847.396 1.434c0 .588-.148 1.061-.396 1.434a2.26 2.26 0 0 1-.88.763a3 3 0 0 1-1.185.302h-.025l-.009.001h-.003s-.002 0-.002-.5v.5H11v1l-2-1.5l2-1.5v1h.506l.044-.003a2 2 0 0 0 .726-.195c.191-.095.367-.23.495-.423c.127-.19.229-.466.229-.879s-.102-.689-.229-.879a1.26 1.26 0 0 0-.495-.424a2 2 0 0 0-.77-.197H2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default wordWrap

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const packageOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m10 9.75l2-1l2 1V5h-4zM7 17v-2h5v2zm-2 4q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zM5 5v14zm0 14h14V5h-3v8l-4-2l-4 2V5H5z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default packageOutline

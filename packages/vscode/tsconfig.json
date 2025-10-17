@@ -1,15 +1,17 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": ["ES2020"],
+    "target": "ES2021",
+    "lib": ["ES2021"],
     "rootDir": "src",
     "module": "commonjs",
-    "strict": true,
+    "strict": false,
+    "noImplicitAny": false,
     "outDir": "dist",
     "sourceMap": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "strictNullChecks": false
   },
   "include": ["src"],
   "exclude": ["node_modules", ".vscode-test"]

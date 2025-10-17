@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const articlesSearchLtr: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 0a2 2 0 0 0-2 2h9a2 2 0 0 1 2 2v12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z\"/><path fill=\"currentColor\" d=\"M10.8 15.6a4.6 4.7 0 0 1-2.3.6a4.6 4.7 0 1 1 3.7-1.9l2.8 3V4.9A1.9 1.9 0 0 0 13.1 3H4a1.9 1.9 0 0 0-2 1.9V18a1.9 1.9 0 0 0 1.9 2H13a1.9 1.9 0 0 0 1.4-.6z\"/><circle cx=\"8.5\" cy=\"11.5\" r=\"3\" fill=\"currentColor\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default articlesSearchLtr

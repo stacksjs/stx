@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const nightSightMax: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M17 11V8h-3V6h3V3h2v3h3v2h-3v3zm-6 10q-3.35 0-5.675-2.325T3 13t2.325-5.675T11 5q.125 0 .25.012t.25.013q-.725.8-1.112 1.812T10 9q0 2.5 1.75 4.25T16 15q.8 0 1.525-.2t1.375-.55q-.45 2.875-2.662 4.813T11 21\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default nightSightMax

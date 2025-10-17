@@ -35,6 +35,7 @@ export function parse<T = any>(input: string, options: YamlOptions = {}): T {
     if (strict) {
       throw new Error(`YAML parsing failed: ${error}`)
     }
+    // Return empty object for malformed YAML in non-strict mode
     return {} as T
   }
 }

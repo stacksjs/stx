@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const shapesSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M363.27 336H4.73L184 16Z\"/><path fill=\"currentColor\" d=\"M336 160a160.5 160.5 0 0 0-32.55 3.36l87.75 157L417.81 368H183.36C203.8 432.85 264.49 480 336 480c88.22 0 160-71.78 160-160s-71.78-160-160-160\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default shapesSharp

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const creditCardPerson24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.25 5A3.25 3.25 0 0 0 2 8.25V9.5h20V8.25A3.25 3.25 0 0 0 18.75 5zM2 15.75V11h16.5a3.5 3.5 0 0 0-2.45 6h-.277c-1.263 0-2.33.844-2.664 2H5.25A3.25 3.25 0 0 1 2 15.75m19-1.25a2.5 2.5 0 1 1-5 0a2.5 2.5 0 0 1 5 0m2 5.375C23 21.431 21.714 23 18.5 23S14 21.437 14 19.875v-.103c0-.98.794-1.772 1.773-1.772h5.454c.98 0 1.773.793 1.773 1.772z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default creditCardPerson24Filled

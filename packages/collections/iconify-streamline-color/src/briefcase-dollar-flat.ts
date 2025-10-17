@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const briefcaseDollarFlat: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#2859c5\" fill-rule=\"evenodd\" d=\"M3.763.587A1.75 1.75 0 0 1 5 .074h4a1.75 1.75 0 0 1 1.75 1.75v2a.75.75 0 0 1-1.5 0v-2a.25.25 0 0 0-.25-.25H5a.25.25 0 0 0-.25.25v2a.75.75 0 0 1-1.5 0v-2c0-.464.184-.91.513-1.237\" clip-rule=\"evenodd\"/><path fill=\"#8fbffa\" d=\"M1.5 3A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h11a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 12.5 3z\"/><path fill=\"#2859c5\" fill-rule=\"evenodd\" d=\"M7 4a.75.75 0 0 1 .75.75v.528a2 2 0 0 1 1.553 1.306a.75.75 0 0 1-1.415.5a.5.5 0 0 0-.471-.334h-.968a.366.366 0 0 0-.078.723l1.473.322a2 2 0 0 1-.094 3.927v.528a.75.75 0 0 1-1.5 0v-.528a2 2 0 0 1-1.553-1.305a.75.75 0 0 1 1.415-.5a.5.5 0 0 0 .471.333h.834a.5.5 0 0 0 .107-.99L6.05 8.94a1.866 1.866 0 0 1 .2-3.678v-.51A.75.75 0 0 1 7 4\" clip-rule=\"evenodd\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default briefcaseDollarFlat

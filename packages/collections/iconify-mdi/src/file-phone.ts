@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const filePhone: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 2H6c-1.11 0-2 .89-2 2v16c0 1.11.89 2 2 2h12c1.11 0 2-.89 2-2V8zm3 17.44c0 .31-.25.56-.56.56C11.23 20 7 15.77 7 10.56c0-.31.25-.56.56-.56H9.5c.31 0 .56.25.56.56c0 .69.11 1.36.31 1.98c.06.19.02.41-.14.57L9 14.33c.81 1.57 2.1 2.86 3.67 3.67l1.23-1.23c.15-.16.37-.2.56-.14c.62.2 1.29.32 1.99.32c.3 0 .55.24.55.55zM13 9V3.5L18.5 9z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default filePhone

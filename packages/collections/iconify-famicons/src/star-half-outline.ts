@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const starHalfOutline: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"32\" d=\"M480 208H308L256 48l-52 160H32l140 96l-54 160l138-100l138 100l-54-160Z\"/><path fill=\"currentColor\" d=\"M256 48v316L118 464l54-160l-140-96h172z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default starHalfOutline

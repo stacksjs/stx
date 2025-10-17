@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const boxF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M20 5H0V3a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3zm0 2v6a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3V7h6.126a4.002 4.002 0 0 0 7.748 0z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default boxF

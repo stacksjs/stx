@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const flagPapuaNewGuinea: IconData = {
+  "body": "<rect width=\"62\" height=\"38\" x=\"5\" y=\"17\" fill=\"#d22f27\" rx=\"2.092\" ry=\"2.092\"/><path d=\"M5 54.37V17.312c0-.264.29-.426.515-.288l60.464 37.058c.29.178.164.626-.177.626H5.338A.34.34 0 0 1 5 54.37\"/><circle cx=\"19\" cy=\"50\" r=\"1\" fill=\"#fff\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"/><circle cx=\"19\" cy=\"32\" r=\"1\" fill=\"#fff\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"/><circle cx=\"12\" cy=\"40\" r=\"1\" fill=\"#fff\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"/><circle cx=\"26\" cy=\"40\" r=\"1\" fill=\"#fff\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"/><circle cx=\"21.5\" cy=\"44.5\" r=\".5\" fill=\"#fff\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"/><path fill=\"none\" stroke=\"#f1b31c\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M42 25c9 1 15 6.087 15 11a5.17 5.17 0 0 1-3 5\"/><path fill=\"#f1b31c\" stroke=\"#f1b31c\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M50 21c-1.75.658-3.154 3.571-1.9 5l1.9 1zm0 6c5-3 9 0 9 3h-5zm-5.19 4.19C44 28 46 26 47.81 26.29l2 .9zm5-4c-.81 3.81-1 8 2 8l2-5z\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 17h62v38H5z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default flagPapuaNewGuinea

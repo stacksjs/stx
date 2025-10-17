@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const microphone: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M192 0c-53 0-96 43-96 96v128c0 53 43 96 96 96s96-43 96-96V96c0-53-43-96-96-96M48 184c0-13.3-10.7-24-24-24S0 170.7 0 184v40c0 97.9 73.3 178.7 168 190.5V464h-48c-13.3 0-24 10.7-24 24s10.7 24 24 24h144c13.3 0 24-10.7 24-24s-10.7-24-24-24h-48v-49.5c94.7-11.8 168-92.6 168-190.5v-40c0-13.3-10.7-24-24-24s-24 10.7-24 24v40c0 79.5-64.5 144-144 144S48 303.5 48 224z\"/>",
+  "width": 384,
+  "height": 512,
+  "viewBox": "0 0 384 512"
+}
+
+export default microphone

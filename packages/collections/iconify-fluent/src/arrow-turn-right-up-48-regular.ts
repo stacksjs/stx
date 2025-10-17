@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const arrowTurnRightUp48Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7.25 35.5a1.25 1.25 0 1 0 0 2.5h18.5A7.25 7.25 0 0 0 33 30.75V12.582l6.854 7.04a1.25 1.25 0 0 0 1.792-1.744l-9.25-9.5a1.25 1.25 0 0 0-1.792 0l-9.25 9.5a1.25 1.25 0 0 0 1.792 1.744l7.354-7.553V30.75a4.75 4.75 0 0 1-4.75 4.75z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default arrowTurnRightUp48Regular

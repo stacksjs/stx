@@ -148,6 +148,27 @@ export function isInStyleTag(document: vscode.TextDocument, position: vscode.Pos
   return false
 }
 
+// Helper function to check if a position is inside a script tag
+export function isInScriptTag(document: vscode.TextDocument, position: vscode.Position): boolean {
+  const text = document.getText()
+  const offset = document.offsetAt(position)
+
+  // Find all script blocks in the document
+  const scriptBlockRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi
+  let match
+
+  while ((match = scriptBlockRegex.exec(text)) !== null) {
+    const scriptStart = match.index + match[0].indexOf('>') + 1
+    const scriptEnd = match.index + match[0].lastIndexOf('<')
+
+    if (offset >= scriptStart && offset <= scriptEnd) {
+      return true
+    }
+  }
+
+  return false
+}
+
 // Interface to return the position of a CSS class definition
 export interface CssDefinitionPosition {
   line: number

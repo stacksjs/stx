@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const ticket: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10 9H8a1 1 0 1 1 0-2h2V2.001a5 5 0 0 1-8 0V7h2a1 1 0 1 1 0 2H2v8.999a5 5 0 0 1 8 0zM0 20V0h3.17a3.001 3.001 0 0 0 5.66 0H12v20H8.83a3.001 3.001 0 0 0-5.66 0z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default ticket

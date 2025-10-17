@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const textColor16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M8.46 1.303a.5.5 0 0 0-.92 0l-3 7a.5.5 0 1 0 .92.394L6.187 7h3.626l.728 1.697a.5.5 0 1 0 .919-.394zM9.385 6h-2.77L8 2.77zM3.5 10A1.5 1.5 0 0 0 2 11.5v2A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5v-2a1.5 1.5 0 0 0-1.5-1.5zM3 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default textColor16Regular

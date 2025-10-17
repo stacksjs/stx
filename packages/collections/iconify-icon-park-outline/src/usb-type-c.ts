@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const usbTypeC: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"M15 15h18c15 0 15 18 0 18H15C0 33 0 15 15 15m6 12v-6m6 6v-6m6 6v-6m-18 6v-6m21 3H12\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default usbTypeC

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const rewind24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10.03 4.362c.974-.83 2.472-.137 2.472 1.142v3.99l6.027-5.13c.974-.83 2.473-.138 2.473 1.142v12.992c0 .879-.707 1.48-1.465 1.503h-.087a1.48 1.48 0 0 1-.92-.36l-6.028-5.13v3.986c0 1.279-1.498 1.971-2.472 1.142l-7.41-6.306a1.75 1.75 0 0 1 0-2.665zm-7.41 6.306l.486.57Z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default rewind24Filled

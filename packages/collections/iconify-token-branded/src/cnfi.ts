@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cnfi: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGJav5Oc5Y)\" d=\"M10.875 3C6.431 3.563 3 7.376 3 12s3.431 8.437 7.875 9v-2.346a6.75 6.75 0 0 1 0-13.308zm2.25 18C17.569 20.437 21 16.624 21 12s-3.431-8.437-7.875-9v2.346a6.75 6.75 0 0 1 4.523 2.958c.073.366.005.912-.45 1.221a1.24 1.24 0 0 1-1.43 0v.011a4.5 4.5 0 1 0-.1 5.074v.023a1.294 1.294 0 0 1 1.636-.231c.428.281.535.686.507 1.04a6.76 6.76 0 0 1-4.686 3.212zm5.062-9a1.125 1.125 0 1 1-2.25 0a1.125 1.125 0 0 1 2.25 0\"/><defs><linearGradient id=\"SVGJav5Oc5Y\" x1=\"5.627\" x2=\"19.054\" y1=\"5.323\" y2=\"16.207\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FF5300\"/><stop offset=\"1\" stop-color=\"#FBB705\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default cnfi

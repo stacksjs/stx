@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const mailArrowDoubleBack16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 10.793V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8.876l4.763 2.564a.5.5 0 0 0 .474 0l1.411-.76q-.587-.21-1.104-.54L7 10.431L2 7.74V7a1 1 0 0 1 1-1h2.022a5.6 5.6 0 0 1 0-1H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2.6a5.5 5.5 0 0 1-1 .393M10.5 10a4.5 4.5 0 1 0 0-9a4.5 4.5 0 0 0 0 9M9.354 3.646a.5.5 0 0 1 0 .708L8.207 5.5l1.147 1.146a.5.5 0 0 1-.708.708l-1.5-1.5a.5.5 0 0 1 0-.708l1.5-1.5a.5.5 0 0 1 .708 0m2.5.708L11.207 5H13a1 1 0 0 1 1 1v.5a.5.5 0 0 1-1 0V6h-1.793l.647.646a.5.5 0 0 1-.708.708l-1.5-1.5a.5.5 0 0 1 0-.708l1.5-1.5a.5.5 0 0 1 .708.708\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default mailArrowDoubleBack16Regular

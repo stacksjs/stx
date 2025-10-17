@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const combineColumnsOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 21V3h8v4H9V5H5v14h4v-2h2v4zm10 0v-4h2v2h4V5h-4v2h-2V3h8v18zm-2-6v-2H9v-2h2V9h2v2h2v2h-2v2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default combineColumnsOutlineSharp

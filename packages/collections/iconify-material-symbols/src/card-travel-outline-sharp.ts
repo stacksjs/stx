@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cardTravelOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 19h16v-2H4zm-2 2V6h5V2h10v4h5v15zm2-7h16V8h-3v2h-2V8H9v2H7V8H4zm5-8h6V4H9zM4 19V8v2v-2v2v-2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default cardTravelOutlineSharp

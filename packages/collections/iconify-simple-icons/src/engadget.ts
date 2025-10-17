@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const engadget: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M0 20.067a3.9 3.9 0 0 0 4 3.866h16v-4H4v-4h15.733A4.23 4.23 0 0 0 24 12.067V4.333A4.483 4.483 0 0 0 19.733.067H4a4.346 4.346 0 0 0-4 4.266Zm20-8.134H4v-8h16Z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default engadget

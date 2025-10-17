@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const buildingRetailMore20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 13a1 1 0 1 0 0-2a1 1 0 0 0 0 2m4-1a1 1 0 1 1-2 0a1 1 0 0 1 2 0m2 1a1 1 0 1 0 0-2a1 1 0 0 0 0 2M4 3.293A1 1 0 0 1 4.707 3h10.586a1 1 0 0 1 .707.293l2.642 2.641c.762.763.222 2.066-.856 2.066H17v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8h-.786C1.136 8 .597 6.697 1.36 5.934zM16 15V8H4v7a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1m1.786-8a.21.21 0 0 0 .149-.358L15.293 4H4.707L2.066 6.642A.21.21 0 0 0 2.214 7z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default buildingRetailMore20Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const barChartSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M496 496H16V16h32v448h448z\"/><path fill=\"currentColor\" d=\"M192 432H80V208h112Zm144 0H224V160h112Zm143.64 0h-112V96h112Z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default barChartSharp

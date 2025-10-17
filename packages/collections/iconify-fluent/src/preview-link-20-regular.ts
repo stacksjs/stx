@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const previewLink20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 5.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 .5.5v2.998a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5zM5 6v1.998h10V6zm6.498 4a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 0-.5-.5zm.5 4v-3h3v3zM4 11a.5.5 0 0 1 .5-.5h5.004a.5.5 0 0 1 0 1H4.5A.5.5 0 0 1 4 11m.5 2.5a.5.5 0 0 0 0 1h5.003a.5.5 0 0 0 0-1zM2 5.5A2.5 2.5 0 0 1 4.5 3h11A2.5 2.5 0 0 1 18 5.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 2 14.5zM4.5 4A1.5 1.5 0 0 0 3 5.5v9A1.5 1.5 0 0 0 4.5 16h11a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 15.5 4z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default previewLink20Regular

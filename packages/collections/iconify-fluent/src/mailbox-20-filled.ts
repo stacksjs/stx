@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const mailbox20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 2.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5V8h3.671A4.5 4.5 0 0 0 10 11.5V17c0 .364.097.706.268 1H3a1 1 0 0 1-1-1v-5.5A3.5 3.5 0 0 1 5.5 8H6v3.5a.5.5 0 0 0 1 0V5H3.5a.5.5 0 0 1-.5-.5zM14.5 8a3.5 3.5 0 0 0-3.5 3.5V17a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1v-5.5A3.5 3.5 0 0 0 14.5 8m-1.25 3.5a.5.5 0 0 1 .5-.5h1.5a.5.5 0 0 1 0 1h-1.5a.5.5 0 0 1-.5-.5\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default mailbox20Filled

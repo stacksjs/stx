@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const printErrorSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M19 21q-.425 0-.712-.288T18 20t.288-.712T19 19t.713.288T20 20t-.288.713T19 21m-1-4v-5h2v5zM6 21v-4H2V8h19.825v2H16v5H8v4h8v2zM6 7V3h12v4z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default printErrorSharp

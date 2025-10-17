@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const fileDottedLight: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M78 224a6 6 0 0 1-6 6H56a14 14 0 0 1-14-14v-32a6 6 0 0 1 12 0v32a2 2 0 0 0 2 2h16a6 6 0 0 1 6 6Zm2-198H56a14 14 0 0 0-14 14v24a6 6 0 0 0 12 0V40a2 2 0 0 1 2-2h24a6 6 0 0 0 0-12Zm134 62.2V136a6 6 0 0 1-12 0V94h-50a6 6 0 0 1-6-6V38h-26a6 6 0 0 1 0-12h34.2c.1 0 .1 0 .1.1a.5.5 0 0 1 .4.2h.1l.4.2h.1l.4.3h.1a.8.8 0 0 1 .4.4l56 55.9A6 6 0 0 1 214 88ZM158 82h35.5L158 46.5Zm50 88a6 6 0 0 0-6 6v40a2 2 0 0 1-2 2h-8a6 6 0 0 0 0 12h8a14 14 0 0 0 14-14v-40a6 6 0 0 0-6-6ZM48 150a6 6 0 0 0 6-6v-40a6 6 0 0 0-12 0v40a6 6 0 0 0 6 6Zm104 68h-40a6 6 0 0 0 0 12h40a6 6 0 0 0 0-12Z\"/>",
+  "width": 256,
+  "height": 256,
+  "viewBox": "0 0 256 256"
+}
+
+export default fileDottedLight

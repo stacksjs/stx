@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cheeseWedge: IconData = {
+  "body": "<path fill=\"#fcea2b\" d=\"M57 11.996c5.523 0 10 4.478 10 10v31a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-31a2 2 0 0 1 2-2l13-2.08z\"/><circle cx=\"16\" cy=\"43.996\" r=\"5\" fill=\"#f1b31c\"/><circle cx=\"56\" cy=\"29.996\" r=\"5\" fill=\"#f1b31c\"/><circle cx=\"49\" cy=\"44.996\" r=\"3\" fill=\"#f1b31c\"/><circle cx=\"40\" cy=\"31.996\" r=\"3\" fill=\"#f1b31c\"/><circle cx=\"32\" cy=\"40.996\" r=\"3\" fill=\"#f1b31c\"/><circle cx=\"21\" cy=\"28.996\" r=\"3\" fill=\"#f1b31c\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path d=\"M67 21.996v31a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-31a2 2 0 0 1 2-2l50-8\"/><path d=\"M57 11.996c5.523 0 10 4.478 10 10\"/><circle cx=\"16\" cy=\"43.996\" r=\"5\"/><circle cx=\"56\" cy=\"29.996\" r=\"5\"/><circle cx=\"49\" cy=\"44.996\" r=\"3\"/><circle cx=\"40\" cy=\"31.996\" r=\"3\"/><circle cx=\"32\" cy=\"40.996\" r=\"3\"/><circle cx=\"21\" cy=\"28.996\" r=\"3\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default cheeseWedge

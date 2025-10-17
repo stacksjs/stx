@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const firewallLine: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M32 6H4a2 2 0 0 0-2 2v20a2 2 0 0 0 2 2h28a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2M4 8h28v5.08h-8.2v-4H22v4h-8v-4h-2v4H4Zm0 7h28v6.08h-3.08v-4.81H27v4.81h-8.08v-4.81H17v4.81H8.9v-4.81H7v4.81H4Zm19.8 13v-3.73h-1.6V28H14v-3.73h-1.6V28H4v-5h28v5Z\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default firewallLine

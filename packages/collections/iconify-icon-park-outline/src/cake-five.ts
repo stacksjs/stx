@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cakeFive: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"4\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M9 27h30l-4.687 17H13.686zm30 0H9c0-5.5 5.5-8 5.5-8c0-2 2-8 9.5-8s9.5 6 9.5 8c0 0 5.5 2.5 5.5 8\"/><path stroke-linecap=\"round\" d=\"M6 27h36\"/><path d=\"M28 12a4 4 0 0 0-8 0\"/><path stroke-linecap=\"round\" d=\"m24 8l4-4\"/><path d=\"M20 27v17m8-17v17\"/></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default cakeFive

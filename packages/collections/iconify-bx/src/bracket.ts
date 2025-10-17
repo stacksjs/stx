@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const bracket: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10 4V2H4v20h6v-2H6V4zm4 16v2h6V2h-6v2h4v16z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default bracket

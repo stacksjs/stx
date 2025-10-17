@@ -9,7 +9,7 @@ async function getTsTestOutput(testFile: string) {
   await Bun.build({
     entrypoints: [testFile],
     outdir: OUTPUT_DIR,
-    plugins: [stxPlugin],
+    plugins: [stxPlugin()],
   })
 
   const outputFile = path.join(OUTPUT_DIR, path.basename(testFile).replace('.stx', '.html'))
@@ -81,7 +81,7 @@ describe('stx JavaScript and TypeScript Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)
@@ -219,7 +219,7 @@ describe('stx JavaScript and TypeScript Directives', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const outputHtml = await getHtmlOutput(result)

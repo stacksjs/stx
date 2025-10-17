@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const selfServiceKiosk: IconData = {
+  "body": "<path fill=\"#546E7A\" d=\"M44 30H4V11c0-2.2 1.8-4 4-4h32c2.2 0 4 1.8 4 4z\"/><path fill=\"#64B5F6\" d=\"M40 27H8c-.6 0-1-.4-1-1V11c0-.6.4-1 1-1h32c.6 0 1 .4 1 1v15c0 .6-.4 1-1 1\"/><path fill=\"#78909C\" d=\"M40 41H8c-2.2 0-4-1.8-4-4v-7h40v7c0 2.2-1.8 4-4 4\"/><g fill=\"#37474F\"><path d=\"M27 34h12v2H27zM9 34h12v2H9z\"/><path d=\"M18 35c0 1.1-1.3 2-3 2s-3-.9-3-2z\"/></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default selfServiceKiosk

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const documentTableArrowRight24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15.5 17.25V16h-2.674q.172.724.174 1.5h2.25a.25.25 0 0 0 .25-.25m0-2.75h-3.232a6.5 6.5 0 0 0-.768-1.154V13h3.75a.25.25 0 0 1 .25.25zm-9-3.5a6.5 6.5 0 0 1 2.504.5h6.246c.966 0 1.75.784 1.75 1.75v4A1.75 1.75 0 0 1 15.25 19h-2.424a6.5 6.5 0 0 1-1.636 3H18a2 2 0 0 0 2-2V10h-6a2 2 0 0 1-2-2V2H6a2 2 0 0 0-2 2v7.498A6.5 6.5 0 0 1 6.5 11m7-3V2.5l6 6H14a.5.5 0 0 1-.5-.5M12 17.5a5.5 5.5 0 1 1-11 0a5.5 5.5 0 0 1 11 0M3.5 17a.5.5 0 0 0 0 1h4.793l-1.647 1.646a.5.5 0 0 0 .708.708l2.5-2.5a.5.5 0 0 0 0-.708l-2.5-2.5a.5.5 0 0 0-.708.708L8.293 17z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default documentTableArrowRight24Filled

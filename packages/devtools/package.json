@@ -1,6 +1,6 @@
 {
-  "name": "@stx/devtools",
-  "version": "1.0.0",
+  "name": "@stacksjs/devtools",
+  "version": "0.1.15",
   "private": true,
   "description": "Development tools for stx templating engine",
   "main": "src/index.ts",
@@ -13,8 +13,5 @@
   },
   "dependencies": {
     "bun-plugin-stx": "workspace:*"
-  },
-  "devDependencies": {
-    "unocss": "^66.3.3"
   }
 }

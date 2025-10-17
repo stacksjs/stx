@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const accessibility1Solid: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14.77 31.94a7.31 7.31 0 0 1-5.7-11.88l-1.42-1.42a9.3 9.3 0 0 0 13.1 13.11l-1.42-1.42a7.3 7.3 0 0 1-4.56 1.61\" class=\"clr-i-solid clr-i-solid-path-1\"/><path fill=\"currentColor\" d=\"M26.65 2.1a3.12 3.12 0 1 0 3.11 3.12a3.12 3.12 0 0 0-3.11-3.12\" class=\"clr-i-solid clr-i-solid-path-2\"/><path fill=\"currentColor\" d=\"M26.81 18.18h-5.34q-.31-.33-.66-.63l4.38-4.86a2.14 2.14 0 0 0-.53-3.27L20.9 7.23l-3.85-2.16a1 1 0 0 0-1.11.08L11.15 8.9a1 1 0 0 0 1.23 1.58l4.27-3.34l2.87 1.63l-5.92 6.62a9.33 9.33 0 0 0-4.44 1.82l1.42 1.43a7.3 7.3 0 0 1 10.17 10.17l1.43 1.43A9.27 9.27 0 0 0 23 20.18h2.74l-.77 6.51a1 1 0 0 0 .87 1.11h.12a1 1 0 0 0 1-.88l.9-7.62a1 1 0 0 0-.25-.78a1 1 0 0 0-.8-.34\" class=\"clr-i-solid clr-i-solid-path-3\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default accessibility1Solid

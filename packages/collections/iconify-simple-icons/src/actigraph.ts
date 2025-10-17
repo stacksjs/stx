@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const actigraph: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10.189 0L.859 24H5.01L12 4.975h.03L18.96 24h4.181L14.187.916A1.43 1.43 0 0 0 12.854 0ZM12 13.714a2.47 2.47 0 0 0-2.472 2.472A2.47 2.47 0 0 0 12 18.66a2.47 2.47 0 0 0 2.472-2.473A2.47 2.47 0 0 0 12 13.714\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default actigraph

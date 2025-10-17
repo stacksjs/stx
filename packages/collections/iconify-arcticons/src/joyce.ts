@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const joyce: IconData = {
+  "body": "<circle cx=\"15.691\" cy=\"14.661\" r=\".75\" fill=\"currentColor\"/><circle cx=\"19.845\" cy=\"14.661\" r=\".75\" fill=\"currentColor\"/><circle cx=\"28.155\" cy=\"14.661\" r=\".75\" fill=\"currentColor\"/><circle cx=\"32.309\" cy=\"14.661\" r=\".75\" fill=\"currentColor\"/><circle cx=\"15.691\" cy=\"18.796\" r=\".75\" fill=\"currentColor\"/><circle cx=\"19.845\" cy=\"18.796\" r=\".75\" fill=\"currentColor\"/><circle cx=\"24\" cy=\"18.796\" r=\".7\" fill=\"currentColor\"/><circle cx=\"28.155\" cy=\"18.796\" r=\".75\" fill=\"currentColor\"/><circle cx=\"32.309\" cy=\"18.796\" r=\".75\" fill=\"currentColor\"/><circle cx=\"36.464\" cy=\"18.796\" r=\".75\" fill=\"currentColor\"/><circle cx=\"11.536\" cy=\"18.796\" r=\".75\" fill=\"currentColor\"/><circle cx=\"15.691\" cy=\"22.932\" r=\".75\" fill=\"currentColor\"/><circle cx=\"19.845\" cy=\"22.932\" r=\".75\" fill=\"currentColor\"/><circle cx=\"24\" cy=\"22.932\" r=\".7\" fill=\"currentColor\"/><circle cx=\"28.155\" cy=\"22.932\" r=\".75\" fill=\"currentColor\"/><circle cx=\"32.309\" cy=\"22.932\" r=\".75\" fill=\"currentColor\"/><circle cx=\"36.464\" cy=\"22.932\" r=\".75\" fill=\"currentColor\"/><circle cx=\"11.536\" cy=\"22.932\" r=\".75\" fill=\"currentColor\"/><circle cx=\"15.691\" cy=\"27.068\" r=\".75\" fill=\"currentColor\"/><circle cx=\"19.845\" cy=\"27.068\" r=\".75\" fill=\"currentColor\"/><circle cx=\"24\" cy=\"27.068\" r=\".7\" fill=\"currentColor\"/><circle cx=\"28.155\" cy=\"27.068\" r=\".75\" fill=\"currentColor\"/><circle cx=\"32.309\" cy=\"27.068\" r=\".75\" fill=\"currentColor\"/><circle cx=\"19.845\" cy=\"31.204\" r=\".75\" fill=\"currentColor\"/><circle cx=\"24\" cy=\"31.204\" r=\".75\" fill=\"currentColor\"/><circle cx=\"28.155\" cy=\"31.204\" r=\".75\" fill=\"currentColor\"/><circle cx=\"24\" cy=\"35.339\" r=\".75\" fill=\"currentColor\"/><circle cx=\"24\" cy=\"24\" r=\"21.5\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default joyce

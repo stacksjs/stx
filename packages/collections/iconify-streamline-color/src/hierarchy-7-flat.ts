@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const hierarchy7Flat: IconData = {
+  "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path fill=\"#2859c5\" d=\"M9 .5a.5.5 0 0 0-.854-.354l-2 2a.5.5 0 0 0 0 .708l2 2A.5.5 0 0 0 9 4.5V3.25h.75c.69 0 1.25.56 1.25 1.25v6a.75.75 0 0 0 1.5 0v-6a2.75 2.75 0 0 0-2.75-2.75H9zM2.25 2.75A.75.75 0 0 1 3 3.5v7a.75.75 0 0 1-1.5 0v-7a.75.75 0 0 1 .75-.75\"/><path fill=\"#8fbffa\" d=\"M1.5 0A1.5 1.5 0 0 0 0 1.5V3a1.5 1.5 0 0 0 1.5 1.5H3A1.5 1.5 0 0 0 4.5 3V1.5A1.5 1.5 0 0 0 3 0zm0 9.5A1.5 1.5 0 0 0 0 11v1.5A1.5 1.5 0 0 0 1.5 14H3a1.5 1.5 0 0 0 1.5-1.5V11A1.5 1.5 0 0 0 3 9.5zm8 1.5A1.5 1.5 0 0 1 11 9.5h1.5A1.5 1.5 0 0 1 14 11v1.5a1.5 1.5 0 0 1-1.5 1.5H11a1.5 1.5 0 0 1-1.5-1.5z\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default hierarchy7Flat

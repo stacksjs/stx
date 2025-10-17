@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tablet: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 5h0v14h0zM22 5h0v14h0z\"><animate fill=\"freeze\" attributeName=\"d\" begin=\"0.6s\" dur=\"0.2s\" values=\"M2 5h0v14h0zM22 5h0v14h0z;M2 5h3v14h-3zM22 5h-3v14h3z\"/></path><path fill=\"none\" stroke=\"currentColor\" stroke-dasharray=\"72\" stroke-dashoffset=\"72\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 5h9c0.55 0 1 0.45 1 1v12c0 0.55 -0.45 1 -1 1h-18c-0.55 0 -1 -0.45 -1 -1v-12c0 -0.55 0.45 -1 1 -1Z\"><animate fill=\"freeze\" attributeName=\"stroke-dashoffset\" dur=\"0.6s\" values=\"72;0\"/></path>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default tablet

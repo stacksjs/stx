@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const directions24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2.952 14.299a3.25 3.25 0 0 1 0-4.597l6.75-6.75a3.25 3.25 0 0 1 4.597 0l6.75 6.75a3.25 3.25 0 0 1 0 4.597l-6.75 6.75a3.25 3.25 0 0 1-4.597 0zm10.828-7.08a.75.75 0 1 0-1.06 1.061l.72.72h-1.69A2.75 2.75 0 0 0 9 11.75v3.5a.75.75 0 0 0 1.5 0v-3.5c0-.69.56-1.25 1.25-1.25h1.69l-.72.72a.75.75 0 1 0 1.06 1.06l2-2a.75.75 0 0 0 0-1.06z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default directions24Filled

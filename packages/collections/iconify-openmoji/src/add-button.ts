@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const addButton: IconData = {
+  "body": "<circle cx=\"36.073\" cy=\"35.952\" r=\"22.77\" fill=\"#B1CC33\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><path d=\"M36.073 22.327v27.25m13.625-13.625h-27.25\"/><circle cx=\"36.073\" cy=\"35.952\" r=\"23\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default addButton

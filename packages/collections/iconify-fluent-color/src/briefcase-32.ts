@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const briefcase32: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVG7wyfQdhz)\" fill-rule=\"evenodd\" d=\"M19 3a3 3 0 0 1 3 3v2h.314L16 10.5L9.79 8H10V6a3 3 0 0 1 3-3zm-6 2a1 1 0 0 0-1 1v2h8V6a1 1 0 0 0-1-1z\" clip-rule=\"evenodd\"/><path fill=\"url(#SVGEXVkkqaX)\" d=\"M3 14h26v9.5a4.5 4.5 0 0 1-4.5 4.5h-17A4.5 4.5 0 0 1 3 23.5z\"/><path fill=\"url(#SVGJcAetbfP)\" d=\"M3 14h26v9.5a4.5 4.5 0 0 1-4.5 4.5h-17A4.5 4.5 0 0 1 3 23.5z\"/><path fill=\"url(#SVGELmyjeRi)\" d=\"M3 12.5A4.5 4.5 0 0 1 7.5 8h17a4.5 4.5 0 0 1 4.5 4.5V16a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z\"/><path fill=\"url(#SVGWbIS9cba)\" d=\"M17.5 15h-3a1.5 1.5 0 0 0-1.5 1.5v3a1.5 1.5 0 0 0 1.5 1.5h3a1.5 1.5 0 0 0 1.5-1.5v-3a1.5 1.5 0 0 0-1.5-1.5\"/><defs><linearGradient id=\"SVG7wyfQdhz\" x1=\"9.221\" x2=\"11.409\" y1=\"3.75\" y2=\"12.001\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0094F0\"/><stop offset=\"1\" stop-color=\"#163697\"/></linearGradient><linearGradient id=\"SVGEXVkkqaX\" x1=\"3.929\" x2=\"11.971\" y1=\"16.625\" y2=\"42.091\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0FAFFF\"/><stop offset=\"1\" stop-color=\"#CC23D1\"/></linearGradient><linearGradient id=\"SVGELmyjeRi\" x1=\"5.6\" x2=\"17.64\" y1=\"8.457\" y2=\"22.854\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#80F1E6\"/><stop offset=\".552\" stop-color=\"#40C4F5\"/><stop offset=\"1\" stop-color=\"#00A2FA\"/></linearGradient><linearGradient id=\"SVGWbIS9cba\" x1=\"16\" x2=\"16\" y1=\"15\" y2=\"21\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#B8F5FF\"/><stop offset=\".844\" stop-color=\"#7CECFF\"/></linearGradient><radialGradient id=\"SVGJcAetbfP\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(0 14 -28.981 0 16 14)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".337\" stop-color=\"#194694\"/><stop offset=\".747\" stop-color=\"#367AF2\" stop-opacity=\"0\"/></radialGradient></defs></g>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default briefcase32

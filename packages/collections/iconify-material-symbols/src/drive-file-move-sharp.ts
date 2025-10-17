@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const driveFileMoveSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 20V4h8l2 2h10v14zm10.2-6l-1.625 1.625l1.4 1.4L16 13l-4.025-4.025l-1.4 1.4L12.2 12H8v2z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default driveFileMoveSharp

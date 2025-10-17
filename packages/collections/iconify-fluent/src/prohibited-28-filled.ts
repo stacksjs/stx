@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const prohibited28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M20.329 6.257c-3.928-3.219-9.734-2.995-13.4.672c-3.667 3.666-3.89 9.472-.672 13.4zm1.414 1.414L7.671 21.743c3.928 3.219 9.734 2.995 13.4-.672s3.89-9.472.672-13.4M5.515 5.515c4.686-4.687 12.284-4.687 16.97 0c4.687 4.686 4.687 12.284 0 16.97c-4.686 4.687-12.284 4.687-16.97 0c-4.687-4.686-4.687-12.284 0-16.97\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default prohibited28Filled

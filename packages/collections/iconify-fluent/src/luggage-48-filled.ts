@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const luggage48Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16 3.75c0-.69.56-1.25 1.25-1.25h13.5a1.25 1.25 0 1 1 0 2.5H29.5v2h4.25A6.25 6.25 0 0 1 40 13.25v22.5A6.25 6.25 0 0 1 33.75 42h-.275q.024.12.025.25v1.5a1.25 1.25 0 1 1-2.5 0v-1.5q0-.13.025-.25h-14.55q.024.12.025.25v1.5a1.25 1.25 0 1 1-2.5 0v-1.5q0-.13.026-.254A6.25 6.25 0 0 1 8 35.75v-22.5A6.25 6.25 0 0 1 14.25 7H18V5h-.75C16.56 5 16 4.44 16 3.75M20.5 5v2H27V5zm-4.25 13a1.25 1.25 0 1 0 0 2.5h15.5a1.25 1.25 0 1 0 0-2.5z\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default luggage48Filled

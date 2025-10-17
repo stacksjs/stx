@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const watchF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M7 10V7a1 1 0 1 0-2 0v4a1 1 0 0 0 1 1h3a1 1 0 0 0 0-2zm3-5.93A7.96 7.96 0 0 0 6 3c-1.457 0-2.823.39-4 1.07V3a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3zm0 13.86V19a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-1.07A7.96 7.96 0 0 0 6 19c1.457 0 2.823-.39 4-1.07M6 17A6 6 0 1 1 6 5a6 6 0 0 1 0 12\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default watchF

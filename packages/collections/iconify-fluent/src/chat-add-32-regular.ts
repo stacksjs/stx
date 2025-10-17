@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const chatAdd32Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M16 9a1 1 0 0 0-1 1v5h-5a1 1 0 1 0 0 2h5v5a1 1 0 1 0 2 0v-5h5a1 1 0 1 0 0-2h-5v-5a1 1 0 0 0-1-1m0-7C8.268 2 2 8.268 2 16c0 2.37.59 4.605 1.63 6.563L2.06 28.09a1.5 1.5 0 0 0 1.853 1.853l5.528-1.572A13.94 13.94 0 0 0 16 30c7.732 0 14-6.268 14-14S23.732 2 16 2M4 16C4 9.373 9.373 4 16 4c6.628 0 12 5.373 12 12s-5.372 12-12 12a11.94 11.94 0 0 1-5.942-1.572a1 1 0 0 0-.769-.093l-5.06 1.439l1.438-5.06a1 1 0 0 0-.094-.77A11.94 11.94 0 0 1 4 16\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default chatAdd32Regular

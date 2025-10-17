@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const rss: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2.88 16.88a3 3 0 0 0 0 4.24a3 3 0 0 0 4.24 0a3 3 0 0 0-4.24-4.24m2.83 2.83a1 1 0 0 1-1.42-1.42a1 1 0 0 1 1.42 0a1 1 0 0 1 0 1.42M5 12a1 1 0 0 0 0 2a5 5 0 0 1 5 5a1 1 0 0 0 2 0a7 7 0 0 0-7-7m0-4a1 1 0 0 0 0 2a9 9 0 0 1 9 9a1 1 0 0 0 2 0a11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8m10.61.39A15.1 15.1 0 0 0 5 4a1 1 0 0 0 0 2a13 13 0 0 1 13 13a1 1 0 0 0 2 0a15.1 15.1 0 0 0-4.39-10.61\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default rss

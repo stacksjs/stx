@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const rectangleTear: IconData = {
+  "body": "<defs><mask id=\"SVGkEHuie6j\"><g fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><path fill=\"#fff\" stroke=\"#fff\" d=\"M6 8v32a2 2 0 0 0 2 2h32a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2\"/><path stroke=\"#000\" d=\"m27 6l-6 6l6 6l-6 6l6 6l-6 6l6 6\"/><path stroke=\"#fff\" d=\"M18 6h16M18 42h16\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGkEHuie6j)\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default rectangleTear

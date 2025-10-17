@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const voicemail24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M19.749 4a2.25 2.25 0 0 1 2.25 2.25v11.505a2.25 2.25 0 0 1-2.25 2.25H4.25A2.25 2.25 0 0 1 2 17.755V6.25A2.25 2.25 0 0 1 4.25 4zm-4 5H8l-.176.005a3 3 0 1 0 2.877 1.689L10.6 10.5h2.8a3 3 0 1 0 2.775-1.495L16 9l-.17.004zM8 10.5a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3m8 0a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default voicemail24Filled

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const lockClosedKey16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9 9a1 1 0 1 1-2 0a1 1 0 0 1 2 0M5 4h-.5A2.5 2.5 0 0 0 2 6.5v5A2.5 2.5 0 0 0 4.5 14h1.543a2 2 0 0 1 .543-1H4.5A1.5 1.5 0 0 1 3 11.5v-5A1.5 1.5 0 0 1 4.5 5h7a1.5 1.5 0 0 1 1.415 1a4 4 0 0 1 1.056.119A2.5 2.5 0 0 0 11.5 4H11v-.5a3 3 0 0 0-6 0zm1-.5a2 2 0 1 1 4 0V4H6zm7 9.5a3 3 0 1 0-2.871-2.129l-2.836 2.836a1 1 0 0 0-.293.707V15.5a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5V15h.5a.5.5 0 0 0 .5-.5V14h.5a.5.5 0 0 0 .5-.5v-.67c.313.11.65.17 1 .17m.75-4.5a.75.75 0 1 1 0 1.5a.75.75 0 0 1 0-1.5\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default lockClosedKey16Regular

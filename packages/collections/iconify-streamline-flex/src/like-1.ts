@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const like1: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M4.113 11.323H3.5V5.6l3.02-4.297a1.303 1.303 0 0 1 2.356.93L8.65 3.861h1.99c.87 0 2.611.87 2.611 2.61s-1.75 5.722-3.601 5.722c-2.437 0-4.521-.58-5.536-.87M.75 5.375C.75 4.615 1.366 4 2.125 4v0c.76 0 1.375.616 1.375 1.375v5.75c0 .76-.616 1.375-1.375 1.375v0c-.76 0-1.375-.616-1.375-1.375z\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default like1

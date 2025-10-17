@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const rubleLine: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M20.57 20A8.23 8.23 0 0 0 29 12a8.23 8.23 0 0 0-8.43-8H12a1 1 0 0 0-1 1v13H9a1 1 0 0 0 0 2h2v2H9a1 1 0 0 0 0 2h2v7a1 1 0 0 0 2 0v-7h9a1 1 0 0 0 0-2h-9v-2ZM13 6h7.57A6.24 6.24 0 0 1 27 12a6.23 6.23 0 0 1-6.43 6H13Z\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default rubleLine

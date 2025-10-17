@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const ethereumEllipse: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m8 12l4-6l4 6m-8 0l4 6l4-6m-8 0l4 1.5l4-1.5\"/><circle cx=\"12\" cy=\"12\" r=\"10\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default ethereumEllipse

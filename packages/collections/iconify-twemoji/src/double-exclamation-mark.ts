@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const doubleExclamationMark: IconData = {
+  "body": "<circle cx=\"11\" cy=\"31\" r=\"3\" fill=\"#BE1931\"/><path fill=\"#BE1931\" d=\"M14 23a3 3 0 1 1-6 0V4a3 3 0 1 1 6 0z\"/><circle cx=\"25\" cy=\"31\" r=\"3\" fill=\"#BE1931\"/><path fill=\"#BE1931\" d=\"M28 23a3 3 0 0 1-6 0V4a3 3 0 0 1 6 0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default doubleExclamationMark

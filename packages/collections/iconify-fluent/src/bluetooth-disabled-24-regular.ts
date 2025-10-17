@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const bluetoothDisabled24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m16.5 17.56l4.22 4.22a.75.75 0 0 0 1.06-1.06L3.28 2.22a.75.75 0 1 0-1.06 1.06l8.56 8.56l-4.516 3.839a.75.75 0 1 0 .972 1.143l3.764-3.2v7.628a.75.75 0 0 0 1.28.53zm-3.594-3.593L15.44 16.5l-2.94 2.94v-5.818zm4.33-5.646l-3.099 2.634l-1.064-1.064l2.572-2.186L12.5 4.561v4.757l-1.5-1.5V2.75a.75.75 0 0 1 1.28-.53l5 5a.75.75 0 0 1-.044 1.101\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default bluetoothDisabled24Regular

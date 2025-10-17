@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const doughnut: IconData = {
+  "body": "<path fill=\"#fcea2b\" d=\"M36 7C19.983 7 7 19.984 7 36s12.983 29 29 29s29-12.984 29-29S52.017 7 36 7m0 39c-5.522 0-10-4.477-10-10s4.478-10 10-10s10 4.478 10 10s-4.477 10-10 10\"/><path fill=\"none\" d=\"M36 46c5.523 0 10-4.477 10-10s-4.477-10-10-10s-10 4.478-10 10a9.96 9.96 0 0 0 2.865 7h.479h-.479A9.96 9.96 0 0 0 36 46\"/><path fill=\"none\" d=\"M46 36c0-5.522-4.477-10-10-10s-10 4.478-10 10a9.96 9.96 0 0 0 2.865 7A9.96 9.96 0 0 0 36 46c5.523 0 10-4.477 10-10\"/><path fill=\"#f1b31c\" d=\"M36 7C19.983 7 7 19.984 7 36c0 1.706.156 3.375.439 5H10a5 5 0 0 1 5 5a5 5 0 0 0 10 0a3 3 0 0 1 3-3h.865A9.96 9.96 0 0 1 26 36c0-5.522 4.478-10 10-10s10 4.478 10 10s-4.477 10-10 10a5 5 0 0 1 5 5a5 5 0 0 0 10 0a3 3 0 0 1 6 0c0 1.222.842 2.321 1.895 2.79A28.87 28.87 0 0 0 65 36C65 19.984 52.017 7 36 7\"/><circle cx=\"14\" cy=\"31\" r=\"2\" fill=\"#FFF\"/><circle cx=\"20\" cy=\"39\" r=\"2\" fill=\"#FFF\"/><circle cx=\"52\" cy=\"40\" r=\"2\" fill=\"#FFF\"/><circle cx=\"58\" cy=\"32\" r=\"2\" fill=\"#FFF\"/><circle cx=\"50\" cy=\"25\" r=\"2\" fill=\"#FFF\"/><circle cx=\"42\" cy=\"14\" r=\"2\" fill=\"#FFF\"/><circle cx=\"33\" cy=\"20\" r=\"2\" fill=\"#FFF\"/><circle cx=\"21\" cy=\"20\" r=\"2\" fill=\"#FFF\"/><g fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\"><circle cx=\"14\" cy=\"31\" r=\"2\"/><circle cx=\"20\" cy=\"39\" r=\"2\"/><circle cx=\"52\" cy=\"40\" r=\"2\"/><circle cx=\"58\" cy=\"32\" r=\"2\"/><circle cx=\"50\" cy=\"25\" r=\"2\"/><circle cx=\"42\" cy=\"14\" r=\"2\"/><circle cx=\"33\" cy=\"20\" r=\"2\"/><circle cx=\"21\" cy=\"20\" r=\"2\"/><circle cx=\"36\" cy=\"36\" r=\"29\"/><circle cx=\"36\" cy=\"36\" r=\"10\"/><path d=\"M8 41h2a5 5 0 0 1 5 5a5 5 0 0 0 10 0a3 3 0 0 1 3-3h.667m30.158 10.76A3 3 0 0 1 57 51a3 3 0 0 0-6 0a5 5 0 0 1-10 0a5 5 0 0 0-5-5\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default doughnut

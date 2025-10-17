@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const qrCodeLine: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M20 18v2h-2m2-6h-1l-2 2m-1 2h-2v2M4 4h6v6H4zm10 0h6v6h-6zM4 14h6v6H4zm10 0v1h1v-1zm3-7h.001M7 7h.001M7 17h.001\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default qrCodeLine

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const invertModeSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M414.39 97.61A224 224 0 1 0 97.61 414.39A224 224 0 1 0 414.39 97.61M256 432v-96a80 80 0 0 1 0-160V80c97.05 0 176 79 176 176s-78.95 176-176 176\"/><path fill=\"currentColor\" d=\"M336 256a80 80 0 0 0-80-80v160a80 80 0 0 0 80-80\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default invertModeSharp

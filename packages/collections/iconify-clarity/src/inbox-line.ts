@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const inboxLine: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12.23 13.09a1 1 0 0 0 0 1.41L18 20.3l5.79-5.79a1 1 0 0 0-1.41-1.41L19 16.47V2a1 1 0 0 0-1-1a1 1 0 0 0-1 1v14.5l-3.38-3.38a1 1 0 0 0-1.39-.03\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"currentColor\" d=\"M29.5 5H22v2h7v14h-5.39l-.1.89a5.42 5.42 0 0 1-10.77 0l-.1-.89H7V7h7V5H6.5A1.5 1.5 0 0 0 5 6.5v25A1.5 1.5 0 0 0 6.5 33h23a1.5 1.5 0 0 0 1.5-1.5v-25A1.5 1.5 0 0 0 29.5 5M29 31H7v-8h3.91a7.42 7.42 0 0 0 14.44 0H29Z\" class=\"clr-i-outline clr-i-outline-path-2\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default inboxLine

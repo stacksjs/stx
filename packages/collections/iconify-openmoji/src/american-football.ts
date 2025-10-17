@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const americanFootball: IconData = {
+  "body": "<path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M36 4.2v63.5m2.9-31.8h-5.8m5.8-5h-5.8m5.8 10h-5.8m-7.5 17.7h20.9M23.6 16h24.8\"/><path fill=\"#A57939\" d=\"M35.9 4c-11 6.4-18.3 18.3-18.3 31.9S25 61.5 36 67.9h.1C47 61.5 54.4 49.6 54.4 36c0-13.7-7.4-25.6-18.5-32\"/><path fill=\"#6A462F\" d=\"M41.7 8.1c5.8 7.9 9.2 18.8 7.4 29.1c-2.1 11.7-9.5 21.2-19.2 26.3c1.9 1.7 3.9 3.2 6.1 4.5h.1c11-6.4 18.3-18.3 18.3-31.9c0-10.8-5.3-21.2-12.7-28\"/><path fill=\"none\" stroke=\"#FFF\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M36 4.2v63.5m2.9-31.8h-5.8m5.8-5h-5.8m5.8 10h-5.8m-7.5 17.7h20.9M23.6 16h24.8\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-miterlimit=\"10\" stroke-width=\"2\" d=\"M35.9 4c-11 6.4-18.3 18.3-18.3 31.9S25 61.5 36 67.9h.1C47 61.5 54.4 49.6 54.4 36c0-13.7-7.4-25.6-18.5-32\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default americanFootball

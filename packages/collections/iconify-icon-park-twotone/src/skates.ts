@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const skates: IconData = {
+  "body": "<defs><mask id=\"SVGo8p6gdyZ\"><g fill=\"none\" stroke=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><path d=\"M5 5h26v8H5z\"/><path fill=\"#555\" d=\"M9 36V13h18v10c14 0 14 9 14 13z\"/><path d=\"M7 36h36v6H7z\"/></g></mask></defs><path fill=\"currentColor\" d=\"M0 0h48v48H0z\" mask=\"url(#SVGo8p6gdyZ)\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default skates

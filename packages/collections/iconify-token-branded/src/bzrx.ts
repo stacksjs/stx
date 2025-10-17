@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const bzrx: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGo28vfc7w)\" d=\"M3 6.6A3.6 3.6 0 0 1 6.6 3h2.025v3.937h1.688V3H17.4A3.6 3.6 0 0 1 21 6.6v10.8a3.6 3.6 0 0 1-3.6 3.6H6.6A3.6 3.6 0 0 1 3 17.4v-7.087h10.239c.36 0 .448.236.448.597v2.215c0 .362-.2.563-.562.563h-2.271c-.362 0-.541-.285-.541-.646v-1.604H8.625V13.3c0 1.357.875 2.075 2.229 2.075h2.385c1.354 0 2.136-.718 2.136-2.075v-2.39c0-1.356-.783-2.285-2.136-2.285H3z\"/><defs><linearGradient id=\"SVGo28vfc7w\" x1=\"19.83\" x2=\"5.43\" y1=\"19.83\" y2=\"5.43\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".159\" stop-color=\"#003CDA\"/><stop offset=\"1\" stop-color=\"#33DFCC\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default bzrx

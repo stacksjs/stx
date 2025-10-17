@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const appsAddIn16Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M13 1.5a.5.5 0 0 0-1 0V3h-1.5a.5.5 0 0 0 0 1H12v1.5a.5.5 0 0 0 1 0V4h1.5a.5.5 0 0 0 0-1H13zM3.75 2A1.75 1.75 0 0 0 2 3.75v8.5c0 .966.784 1.75 1.75 1.75h8.5A1.75 1.75 0 0 0 14 12.25v-3a1.75 1.75 0 0 0-1.75-1.75H8.5V3.75A1.75 1.75 0 0 0 6.75 2zM7.5 8.5V13H3.75a.75.75 0 0 1-.75-.75V8.5zm0-4.75V7.5H3V3.75A.75.75 0 0 1 3.75 3h3a.75.75 0 0 1 .75.75M12.25 13H8.5V8.5h3.75a.75.75 0 0 1 .75.75v3a.75.75 0 0 1-.75.75\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default appsAddIn16Regular

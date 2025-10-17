@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const apertureSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m216 48l129.49 128.18V48zm-34.53 10.38L80 134h176zM336 344h128V216zm118-162L378 80v176zM48 166v128l128-128zm282 288l102-76H256zM58 330l76 102V256zm287.49-107.88l-55.55-55.46h-67.88l-55.55 55.46v67.76l55.62 55.52c.44 0 .88-.06 1.33-.06h66.48l55.55-55.46ZM165.98 336.09L166 464h128z\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default apertureSharp

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cellphoneOff: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2.38 1.73L1.11 3L5 6.89V21a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-.11l1.84 1.84l1.27-1.27M17 19H7V8.89l10 10zm0-14v8.8l2 2V3a2 2 0 0 0-2-2H7c-.72 0-1.4.37-1.76 1l3 3z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default cellphoneOff

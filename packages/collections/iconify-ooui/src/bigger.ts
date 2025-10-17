@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const bigger: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14 18h-1.57a.66.66 0 0 1-.44-.13a.9.9 0 0 1-.25-.34l-1-2.77H5.3l-1 2.77a.8.8 0 0 1-.24.32a.65.65 0 0 1-.44.15H2L7 5.47h2zm-3.85-4.7L8.42 8.72A13 13 0 0 1 8 7.37q-.1.41-.21.75t-.21.6L5.85 13.3zM15 2l3 4h-6z\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default bigger

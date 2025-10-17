@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const languageFrenchSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 17V7h7v2H6v2h4v2H6v4zm9 0V7h6l1 1v4l-1 1h-.85L20 17h-2.1l-1.875-4H15v4zm2-6h3V9h-3z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default languageFrenchSharp

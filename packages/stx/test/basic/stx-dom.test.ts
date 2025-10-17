@@ -8,7 +8,7 @@ const TEST_DIR = import.meta.dir
 const TEMPLATE_DIR = path.join(TEST_DIR, 'templates')
 const OUTPUT_DIR = path.join(TEST_DIR, 'out')
 
-// DOM globals are provided by happy-dom registration
+// DOM globals are provided by very-happy-dom registration
 
 describe('stx DOM Interaction Tests', () => {
   // Set up test environment
@@ -77,7 +77,7 @@ describe('stx DOM Interaction Tests', () => {
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     expect(result.success).toBe(true)
@@ -117,7 +117,7 @@ describe('stx DOM Interaction Tests', () => {
     const result = await Bun.build({
       entrypoints: [template],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const htmlOutput = result.outputs.find(o => o.path.endsWith('.html'))
@@ -192,7 +192,7 @@ describe('stx DOM Interaction Tests', () => {
     const result = await Bun.build({
       entrypoints: [eventTemplate],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin],
+      plugins: [stxPlugin()],
     })
 
     const htmlOutput = result.outputs.find(o => o.path.endsWith('.html'))

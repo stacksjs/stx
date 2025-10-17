@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const shieldCheckmark24: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGWTrRLAaE)\" d=\"M3 5.75A.75.75 0 0 1 3.75 5c2.663 0 5.258-.943 7.8-2.85a.75.75 0 0 1 .9 0C14.992 4.057 17.587 5 20.25 5a.75.75 0 0 1 .75.75V11c0 5.001-2.958 8.676-8.725 10.948a.75.75 0 0 1-.55 0C5.958 19.676 3 16 3 11z\"/><path fill=\"url(#SVGm9Fcjetd)\" fill-opacity=\".5\" d=\"M3 5.75A.75.75 0 0 1 3.75 5c2.663 0 5.258-.943 7.8-2.85a.75.75 0 0 1 .9 0C14.992 4.057 17.587 5 20.25 5a.75.75 0 0 1 .75.75V11c0 5.001-2.958 8.676-8.725 10.948a.75.75 0 0 1-.55 0C5.958 19.676 3 16 3 11z\"/><path fill=\"url(#SVGTvWcAdic)\" d=\"M17.5 12a5.5 5.5 0 1 1 0 11a5.5 5.5 0 0 1 0-11\"/><path fill=\"url(#SVGHo9Wicrx)\" fill-rule=\"evenodd\" d=\"M20.854 15.146a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708l1.646 1.647l3.646-3.647a.5.5 0 0 1 .708 0\" clip-rule=\"evenodd\"/><defs><radialGradient id=\"SVGWTrRLAaE\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(27.64308 38.74988 -34.23049 24.41907 -4.072 -9.25)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".338\" stop-color=\"#0FAFFF\"/><stop offset=\".529\" stop-color=\"#367AF2\"/><stop offset=\".682\" stop-color=\"#5750E2\"/><stop offset=\".861\" stop-color=\"#CC23D1\"/></radialGradient><radialGradient id=\"SVGm9Fcjetd\" cx=\"0\" cy=\"0\" r=\"1\" gradientTransform=\"matrix(0 8.125 -8.35714 0 17.786 18.875)\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".5\" stop-color=\"#1E1868\"/><stop offset=\"1\" stop-color=\"#1E1868\" stop-opacity=\"0\"/></radialGradient><linearGradient id=\"SVGTvWcAdic\" x1=\"12.393\" x2=\"19.984\" y1=\"14.063\" y2=\"21.95\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#52D17C\"/><stop offset=\"1\" stop-color=\"#22918B\"/></linearGradient><linearGradient id=\"SVGHo9Wicrx\" x1=\"15.313\" x2=\"16.45\" y1=\"15.51\" y2=\"21.13\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#fff\"/><stop offset=\"1\" stop-color=\"#E3FFD9\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default shieldCheckmark24

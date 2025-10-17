@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const chessBishopSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4 22v-5q1.375-.95 2.488-2.2T8.25 12H6v-2h1.8L6 7l6-6l6 6l-1.8 3H18v2h-2.25q.65 1.55 1.763 2.8T20 17v5zm8-14q.425 0 .713-.288T13 7t-.288-.712T12 6t-.712.288T11 7t.288.713T12 8\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default chessBishopSharp

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const shareScreenStart28Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.25 4.999A2.25 2.25 0 0 0 2 7.249v13.5A2.25 2.25 0 0 0 4.25 23h19.5A2.25 2.25 0 0 0 26 20.75V7.25A2.25 2.25 0 0 0 23.75 5zM14.528 8.84l3.255 3.255a.75.75 0 0 1-1.061 1.06l-1.974-1.974v7.447a.75.75 0 0 1-1.5 0v-7.445l-1.97 1.972a.75.75 0 1 1-1.061-1.06l3.25-3.254a.75.75 0 0 1 1.061 0\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default shareScreenStart28Filled

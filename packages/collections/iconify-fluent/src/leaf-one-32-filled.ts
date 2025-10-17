@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const leafOne32Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14.05 3.808a2.76 2.76 0 0 1 3.9 0l5.121 5.12q.732.736 1.281 1.57c2.563 3.881 2.136 9.156-1.28 12.573l-.08.079q-.281.275-.578.523A9.95 9.95 0 0 1 17 25.95V29a1 1 0 1 1-2 0v-3.05a9.96 9.96 0 0 1-6.071-2.88A9.97 9.97 0 0 1 6 15.966a9.96 9.96 0 0 1 2.93-7.037zm.95 20.13a8 8 0 0 0 2 0V15a1 1 0 1 0-2 0z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default leafOne32Filled

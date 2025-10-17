@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const coinMultiple20: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGnYYYdbGb)\" d=\"M16 15.5c0 1.933-2.686 3.5-6 3.5s-6-1.567-6-3.5v-2h12z\"/><path fill=\"url(#SVGKaJ0LcfU)\" d=\"M16 13.5c0 1.933-2.686 3.5-6 3.5s-6-1.567-6-3.5S6.686 10 10 10s6 1.567 6 3.5\"/><path fill=\"url(#SVGI4HkDbPC)\" d=\"M16 11.5c0 1.933-2.686 3.5-6 3.5s-6-1.567-6-3.5v-2h12z\"/><path fill=\"url(#SVGzC57Jcsx)\" d=\"M16 9.5c0 1.933-2.686 3.5-6 3.5s-6-1.567-6-3.5S6.686 6 10 6s6 1.567 6 3.5\"/><path fill=\"url(#SVGYBVgxera)\" d=\"M16 7.5c0 1.933-2.686 3.5-6 3.5S4 9.433 4 7.5v-2h12z\"/><path fill=\"url(#SVGEw2rbdea)\" d=\"M16 5.5C16 7.433 13.314 9 10 9S4 7.433 4 5.5S6.686 2 10 2s6 1.567 6 3.5\"/><defs><linearGradient id=\"SVGnYYYdbGb\" x1=\"7.183\" x2=\"9.223\" y1=\"14.85\" y2=\"19.306\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFA43D\"/><stop offset=\"1\" stop-color=\"#FB5937\"/></linearGradient><linearGradient id=\"SVGKaJ0LcfU\" x1=\"16.017\" x2=\"9.604\" y1=\"16.997\" y2=\"8.004\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FF8A69\"/><stop offset=\"1\" stop-color=\"#FFCD0F\"/></linearGradient><linearGradient id=\"SVGI4HkDbPC\" x1=\"7.183\" x2=\"9.223\" y1=\"10.85\" y2=\"15.306\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFA43D\"/><stop offset=\"1\" stop-color=\"#FB5937\"/></linearGradient><linearGradient id=\"SVGzC57Jcsx\" x1=\"16.017\" x2=\"9.604\" y1=\"12.997\" y2=\"4.004\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FF8A69\"/><stop offset=\"1\" stop-color=\"#FFCD0F\"/></linearGradient><linearGradient id=\"SVGYBVgxera\" x1=\"7.183\" x2=\"9.223\" y1=\"6.85\" y2=\"11.306\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FFA43D\"/><stop offset=\"1\" stop-color=\"#FB5937\"/></linearGradient><linearGradient id=\"SVGEw2rbdea\" x1=\"16.017\" x2=\"9.604\" y1=\"8.997\" y2=\".004\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#FF8A69\"/><stop offset=\"1\" stop-color=\"#FFCD0F\"/></linearGradient></defs></g>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default coinMultiple20

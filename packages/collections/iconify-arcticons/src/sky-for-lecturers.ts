@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const skyForLecturers: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M36.5 34.5v8h4m5-4a7 7 0 1 1-14 0a7 7 0 0 1 14 0\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M42.5 32.757V9.5a4 4 0 0 0-4-4h-29a4 4 0 0 0-4 4v29a4 4 0 0 0 4 4h23.259\"/><path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15.703 15.648v3.075c0 .87.697 1.566 1.51 1.566s1.508-.696 1.508-1.566v-3.076m6.255 3.021a1.56 1.56 0 0 1-1.566 1.567h0c-.87 0-1.567-.697-1.567-1.51V17.16c0-.872.696-1.567 1.567-1.509h0a1.5 1.5 0 0 1 1.509 1.487v.022h0M9.5 20.231v-4.583l2.32 4.642l2.322-4.642v4.642m6.14-4.642v4.642m15.965-.307v4.507m-2.254-2.254H38.5M23.446 32.353l-4.04-5.051m-1.262 1.516l5.302-6.565m-5.302 0v10.1m-8.519-1.231c.625.75 1.375 1.124 2.499 1.124h1.5a2.506 2.506 0 0 0 2.498-2.498h0a2.506 2.506 0 0 0-2.499-2.499h-1.625a2.506 2.506 0 0 1-2.497-2.498h0a2.506 2.506 0 0 1 2.498-2.498h1.5c1.123 0 1.873.25 2.497 1.124m12.706 8.824v-4.975m3.232-4.973l-3.232 4.974l-3.234-4.975\"/>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default skyForLecturers

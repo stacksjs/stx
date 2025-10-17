@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const folderOpenVertical16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11.5 1H6.533l1.717.991A3.5 3.5 0 0 1 10 5.022v7.928a2.5 2.5 0 0 0 2-2.45V7.207l1.56-1.56A1.5 1.5 0 0 0 14 4.585V3.5A2.5 2.5 0 0 0 11.5 1M9 5.022v7.973c0 1.54-1.667 2.502-3 1.732l-2.745-1.585a2.5 2.5 0 0 1-1.25-2.165V3.004c0-1.54 1.667-2.502 3-1.732L7.75 2.857A2.5 2.5 0 0 1 9 5.022\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default folderOpenVertical16Filled

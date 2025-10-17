@@ -33,7 +33,7 @@ This is a basic markdown file.
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -64,7 +64,7 @@ Written by: {{ author }}
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -108,7 +108,7 @@ const user: User = {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -135,7 +135,7 @@ This is a blog post content.
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -168,7 +168,7 @@ Just plain markdown content without any frontmatter.
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -196,15 +196,17 @@ This markdown has invalid frontmatter.
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
     const output = result.outputs[0]
     const content = await Bun.file(output.path).text()
 
-    // Should contain error message for malformed content
-    expect(content).toMatch(/Error.*markdown/i)
+    // Should gracefully handle malformed frontmatter by processing markdown content
+    expect(content).toMatch(/var content = /)
+    expect(content).toMatch(/var data = \{\}/)
+    expect(content).toContain('Malformed Markdown')
   })
 
   test('should preserve markdown formatting in HTML', async () => {
@@ -231,16 +233,16 @@ Here's a [link](https://example.com) and some \`inline code\`.
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
     const output = result.outputs[0]
     const content = await Bun.file(output.path).text()
 
-    // Check for proper HTML conversion
-    expect(content).toContain('<h1>Main Title</h1>')
-    expect(content).toContain('<h2>Subtitle</h2>')
+    // Check for proper HTML conversion (headings may have id attributes)
+    expect(content).toMatch(/<h1[^>]*>Main Title<\/h1>/)
+    expect(content).toMatch(/<h2[^>]*>Subtitle<\/h2>/)
     expect(content).toContain('<strong>bold text</strong>')
     expect(content).toContain('<em>italic text</em>')
     expect(content).toContain('<a href="https://example.com">link</a>')
@@ -257,7 +259,7 @@ Here's a [link](https://example.com) and some \`inline code\`.
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)
@@ -298,7 +300,7 @@ Views: {{ meta.views }}
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [plugin],
+      plugins: [plugin()],
     })
 
     expect(result.success).toBe(true)

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const ganttChart16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10 3H6v1h.5a1.5 1.5 0 0 1 1.415 2H10zm1 10v-2h1.5a1.5 1.5 0 0 0 .395-2.947q.104-.258.105-.553A1.5 1.5 0 0 0 11.5 6H11V3h1.5A2.5 2.5 0 0 1 15 5.5v5a2.5 2.5 0 0 1-2.5 2.5zM9 9.5q.001-.264.085-.5H7.5A1.5 1.5 0 0 1 6 7.5V13h4v-2.085A1.5 1.5 0 0 1 9 9.5M5 7H3.5a1.5 1.5 0 1 1 0-3H5V3H3.5A2.5 2.5 0 0 0 1 5.5v5A2.5 2.5 0 0 0 3.5 13H5zM3.5 5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1zm4 2a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1zm3 2a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1z\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default ganttChart16Filled

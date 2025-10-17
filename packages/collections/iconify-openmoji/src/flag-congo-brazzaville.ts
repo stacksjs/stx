@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const flagCongoBrazzaville: IconData = {
+  "body": "<path fill=\"#d22f27\" d=\"M5 17h62v38H5z\"/><path fill=\"#5c9e31\" d=\"M5 17v38l62-38z\"/><path fill=\"#f1b31c\" d=\"M67 17H54L5 55h13z\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 17h62v38H5z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default flagCongoBrazzaville

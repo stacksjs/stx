@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const circlepreviousempty: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M512 1024q-104 0-199-40.5t-163.5-109T40.5 711T0 512t40.5-199t109-163.5T313 40.5T512 0t199 40.5t163.5 109t109 163.5t40.5 199t-40.5 199t-109 163.5t-163.5 109t-199 40.5m0-960q-91 0-174 35.5T195 195T99.5 338T64 512t35.5 174T195 829t143 95.5T512 960t174-35.5T829 829t95.5-143T960 512t-35.5-174T829 195T686 99.5T512 64m192 704h-64q-27 0-45.5-18.5T576 704V320q0-26 18.5-45t45.5-19h64q26 0 45 19t19 45v384q0 27-19 45.5T704 768m-287-5L199 531q-7-7-7-18.5t7-19.5l218-231q13-14 31 6v488q-19 20-31 7\"/>",
+  "width": 1024,
+  "height": 1024,
+  "viewBox": "0 0 1024 1024"
+}
+
+export default circlepreviousempty

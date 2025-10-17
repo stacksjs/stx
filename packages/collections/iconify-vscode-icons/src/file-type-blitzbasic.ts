@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const fileTypeBlitzbasic: IconData = {
+  "body": "<path fill=\"#00ffae\" d=\"M4 9v3h1v7H4v3h10v-1h1v-1h1v-4h-1v-1h1v-4h-1v-1h-1V9zm6 3h2v2h-2zm0 5h2v2h-2z\"/><path fill=\"#00d8ff\" d=\"M16 9v3h1v7h-1v3h10v-1h1v-1h1v-4h-1v-1h1v-4h-1v-1h-1V9zm5 3h2v2h-2zm0 5h2v2h-2z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default fileTypeBlitzbasic

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const uw3s: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGLM3ZMdgW)\" d=\"M15.148 8.62H8.62v6.528a6.085 6.085 0 0 1-5.48-7.365a6.083 6.083 0 0 1 12.008.837\"/><path fill=\"url(#SVGYWwpWcfe)\" d=\"M8.835 15.047A6.207 6.207 0 0 0 15.04 8.62H21V21H8.62v-5.964z\"/><defs><linearGradient id=\"SVGLM3ZMdgW\" x1=\"19.749\" x2=\"2.991\" y1=\"11.245\" y2=\"15.33\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#C3F5E9\"/><stop offset=\".17\" stop-color=\"#C7C6E8\"/><stop offset=\".45\" stop-color=\"#D196E5\"/><stop offset=\".69\" stop-color=\"#7698EC\"/><stop offset=\".95\" stop-color=\"#5693F0\"/></linearGradient><linearGradient id=\"SVGYWwpWcfe\" x1=\"20.404\" x2=\"8.993\" y1=\"8.942\" y2=\"21\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#E9CFEB\"/><stop offset=\".2\" stop-color=\"#AC90F4\"/><stop offset=\".49\" stop-color=\"#7567F8\"/><stop offset=\"1\" stop-color=\"#3095F4\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default uw3s

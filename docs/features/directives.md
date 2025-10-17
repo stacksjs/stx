@@ -92,7 +92,62 @@ stx provides a powerful directive system for extending template functionality. T
 <!-- Yield sections -->
 @yield('content', 'Default content')
 @stack('scripts')
+
+<!-- Include markdown files -->
+@markdown-file('content.md')
+@markdown-file('docs/intro.md', {userName: 'Alice', role: 'Admin'})
 ```
+
+### Markdown Directives
+
+```stx
+<!-- Include markdown files with frontmatter support -->
+@markdown-file('content.md')
+
+<!-- Relative paths -->
+@markdown-file('./docs/getting-started.md')
+@markdown-file('../shared/readme.md')
+
+<!-- With additional context -->
+@markdown-file('template.md', {userName: 'Alice', role: 'Admin'})
+
+<!-- Inline markdown -->
+@markdown
+# This is a heading
+
+This is **bold** and this is *italic*.
+
+\`\`\`javascript
+const code = 'highlighted';
+\`\`\`
+@endmarkdown
+```
+
+**Markdown File with Frontmatter:**
+
+```markdown
+---
+title: "Getting Started"
+author: "stx Team"
+date: 2025-10-08
+---
+
+# {{ title }}
+
+Written by {{ author }}
+
+This guide will help you get started with stx.
+Variables from frontmatter and template context are available!
+```
+
+**Features:**
+- YAML frontmatter parsing
+- Variable substitution with `{{ variable }}`
+- Server-side syntax highlighting with Shiki
+- Supports GitHub Flavored Markdown (GFM)
+- Automatic caching for performance
+
+See [Markdown API](/api/markdown) for detailed documentation.
 
 ### Form Directives
 
@@ -473,7 +528,7 @@ Usage:
 ### Testing Custom Directives
 
 ```typescript
-import { mount } from '@stx/testing'
+import { mount } from '@stacksjs/testing'
 import { tooltip } from './directives/tooltip'
 
 describe('Tooltip Directive', () => {

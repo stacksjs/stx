@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const dataPie20Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m8.014 4.069l-.011.001a7 7 0 0 0-4.29 2.343a6.97 6.97 0 0 0-1.677 5.303a7 7 0 0 0 13.894.281v-.01a7 7 0 0 0 .05-.45a.5.5 0 0 0-.499-.537H10.5A1.5 1.5 0 0 1 9 9.5V4.519a.5.5 0 0 0-.538-.499q-.226.018-.448.049m9.985 5.067c-.01.498-.44.864-.937.864H11a1 1 0 0 1-1-1V2.938c0-.498.366-.927.864-.937L11 2a7 7 0 0 1 6.999 7.136\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default dataPie20Filled

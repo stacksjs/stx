@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const japaneseNotFreeOfChargeButton: IconData = {
+  "body": "<rect width=\"48.984\" height=\"48.984\" x=\"11.472\" y=\"11.042\" fill=\"#d0cfce\" rx=\"1.699\"/><g fill=\"none\" stroke=\"#000\" stroke-width=\"2\"><path stroke-linecap=\"round\" stroke-miterlimit=\"5\" d=\"M21.321 25.123h29.975m-16.863-5.126a46 46 0 0 1-5.197 10.875a25.4 25.4 0 0 1-8.562 8.415m19.63 12.017h5.89a.6.6 0 0 0 .661-.507V32.028a.6.6 0 0 0-.66-.507H30.606M29.85 37.9h17.005m-17.63-5.817v19.005\"/><path stroke-miterlimit=\"5\" d=\"M29.225 43.228h17.63\"/><rect width=\"48.984\" height=\"48.984\" x=\"11.472\" y=\"11.042\" stroke-miterlimit=\"10\" rx=\"1.699\"/></g>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default japaneseNotFreeOfChargeButton

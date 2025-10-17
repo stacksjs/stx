@@ -1,0 +1,21 @@
+<div class="relative bg-ocean-blue">
+  <div
+    class="px-4 py-10 mx-auto max-w-7xl sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between text-sky-800"
+  >
+    <h2 class="z-10 text-3xl font-extrabold tracking-tight text-blue-gray-900 md:text-4xl">
+      <span class="block text-white">Ready to dive in?</span>
+      <span class="block text-cyan-400">Start your free trial in less than a minute.</span>
+    </h2>
+
+    <div class="z-10 flex mt-8 lg:mt-0 lg:flex-shrink-0">
+      <div class="inline-flex rounded-md shadow">
+        <a
+          href="#"
+          class="items-center justify-center px-5 py-3 text-base font-medium text-white transition duration-150 ease-in-out border border-transparent rounded-md inline-flex bg-cyan-400 hover:bg-cyan-300"
+        >
+          Get started
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const lighthouse: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m768 192l256-128v320L768 256zm-64 128q0 23-15 41t-38 22l12 65H361l12-65q-23-4-38-22t-15-41V128h-64L512 0l256 128h-64zM512 160q0-13-9.5-22.5T480 128h-64q-13 0-22.5 9.5T384 160v128q0 13 9.5 22.5T416 320h64q13 0 22.5-9.5T512 288zm128 0q0-13-9.5-22.5T608 128t-22.5 9.5T576 160v128q0 13 9.5 22.5T608 320t22.5-9.5T640 288zm-384 96L0 384V64l256 128zm419 256l11 64H337l12-64zm35 192H314l12-64h372zM287 852l16-84h418l16 84q129 24 208 70t79 102H0q0-56 79-102t208-70\"/>",
+  "width": 1024,
+  "height": 1024,
+  "viewBox": "0 0 1024 1024"
+}
+
+export default lighthouse

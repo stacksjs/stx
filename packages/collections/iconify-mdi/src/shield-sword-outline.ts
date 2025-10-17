@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const shieldSwordOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m12 1l9 4v6c0 5.5-3.8 10.7-9 12c-5.2-1.3-9-6.5-9-12V5zm0 2.2L5 6.3v4.9c0 4.3 3.2 8.8 7 9.8c3.8-1 7-5.5 7-9.8V6.3zm0 2.3l2 1.6l-1 5.9h2v2h-2v3h-2v-3H9v-2h2l-1-5.9z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default shieldSwordOutline

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const stata: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M149.275 512H0V362.725h149.275zm0-330.638H0v149.276h149.275zm181.363 181.363H181.362V512h149.276zm0-181.363H181.362v149.276h149.276zm0-181.362H181.362v149.275h149.276zM512 0H362.725v149.275H512zm0 181.362H362.725v149.276H512z\" clip-rule=\"evenodd\"/>",
+  "width": 512,
+  "height": 512,
+  "viewBox": "0 0 512 512"
+}
+
+export default stata

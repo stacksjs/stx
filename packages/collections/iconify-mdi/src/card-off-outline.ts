@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cardOffOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"m9.2 6l-2-2H20c1.11 0 2 .89 2 2v12c0 .24-.04.47-.12.68L20 16.8V6zm12.91 15.46l-1.27 1.27L18.11 20H4a2 2 0 0 1-2-2V6c0-.58.25-1.1.65-1.46L1.11 3l1.28-1.27L6.66 6l11.99 12h.01l1.91 1.91h-.01zm-6-3.46l-12-12H4v12z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default cardOffOutline

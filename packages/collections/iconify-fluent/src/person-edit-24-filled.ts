@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const personEdit24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12.49 17.865L16.356 14H6.253a2.25 2.25 0 0 0-2.25 2.25v.919c0 .572.18 1.13.511 1.596c1.388 1.947 3.57 3.01 6.486 3.204q-.007-.274.064-.561l.457-1.83c.162-.649.497-1.24.97-1.713M12 2.005a5 5 0 1 1 0 10a5 5 0 0 1 0-10m7.1 10.665l-5.903 5.902a2.7 2.7 0 0 0-.706 1.247l-.458 1.831a1.087 1.087 0 0 0 1.319 1.318l1.83-.457a2.7 2.7 0 0 0 1.248-.707l5.902-5.902A2.286 2.286 0 0 0 19.1 12.67\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default personEdit24Filled

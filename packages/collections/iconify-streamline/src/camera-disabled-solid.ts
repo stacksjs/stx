@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const cameraDisabledSolid: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M.219.219a.75.75 0 0 0 0 1.06l.178.179q.027.022.051.046l12.328 12.328a.75.75 0 0 0 1.005-1.112l-.83-.829A1 1 0 0 0 13.5 11V5a1 1 0 0 0-1-1h-2L9 2H5l-.832 1.109L1.28.219a.75.75 0 0 0-1.061 0m8.957 11.78L1.217 4.04A1 1 0 0 0 .5 5v6a1 1 0 0 0 1 1zm.09-4.515q-.002.33-.09.632L6.368 5.307a2.267 2.267 0 0 1 2.898 2.177\" clip-rule=\"evenodd\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default cameraDisabledSolid

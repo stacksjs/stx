@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const nbt: IconData = {
+  "body": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M21 12a9 9 0 1 1-17.999 0A9 9 0 0 1 21 12m-1.059 0a7.942 7.942 0 1 1-15.883 0a7.942 7.942 0 0 1 15.883 0\" clip-rule=\"evenodd\"/><path fill=\"currentColor\" d=\"M16.235 13.98c0 .657-.62 1.197-1.324 1.197s-1.323-.54-1.323-1.197V9.883c0-.794-.46-1.588-1.525-1.588h-.127c-1.064 0-1.525.794-1.525 1.588v4.097c0 .657-.62 1.197-1.323 1.197c-.704 0-1.324-.54-1.324-1.197V9.353c0-2.112 1.906-3.706 4.15-3.706h.128c2.223 0 4.193 1.605 4.193 3.706z\"/><path fill=\"currentColor\" d=\"M9.088 8.295a1.323 1.323 0 1 0 0-2.647a1.323 1.323 0 0 0 0 2.647m-1.324 7.939h8.47v1.06h-8.47z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default nbt

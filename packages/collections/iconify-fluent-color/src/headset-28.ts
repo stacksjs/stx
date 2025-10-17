@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const headset28: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGM8AJ0bsx)\" fill-rule=\"evenodd\" d=\"M5 20v-1l1-1l1 1v1a2 2 0 0 0 2 2h5v2H9a4 4 0 0 1-4-4\" clip-rule=\"evenodd\"/><path fill=\"url(#SVG25ajqerp)\" d=\"M17 23a3 3 0 1 1-6 0a3 3 0 0 1 6 0\"/><path fill=\"url(#SVGj1UWVcal)\" fill-rule=\"evenodd\" d=\"M14 4a7 7 0 0 0-7 7v1.5l-1 1l-1-1V11a9 9 0 0 1 18 0v1.5l-1 1l-1-1V11a7 7 0 0 0-7-7\" clip-rule=\"evenodd\"/><path fill=\"url(#SVGrLaOodea)\" d=\"M10.5 12H5v7h5.5a1.5 1.5 0 0 0 1.5-1.5v-4a1.5 1.5 0 0 0-1.5-1.5\"/><path fill=\"url(#SVGrLaOodea)\" d=\"M17.5 12H23v4.5a2.5 2.5 0 0 1-2.5 2.5h-3a1.5 1.5 0 0 1-1.5-1.5v-4a1.5 1.5 0 0 1 1.5-1.5\"/><path fill=\"url(#SVGI58IedmU)\" d=\"M7 12v7H5v-7z\"/><path fill=\"url(#SVGI58IedmU)\" d=\"M21 12v6.95a2.5 2.5 0 0 0 2-2.45V12z\"/><defs><linearGradient id=\"SVGM8AJ0bsx\" x1=\"10.25\" x2=\"8.377\" y1=\"22.833\" y2=\"16.772\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#9CA5AD\"/><stop offset=\"1\" stop-color=\"#70777D\"/></linearGradient><linearGradient id=\"SVG25ajqerp\" x1=\"16.25\" x2=\"11.168\" y1=\"25.25\" y2=\"22.281\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#383B3D\"/><stop offset=\"1\" stop-color=\"#70777D\"/></linearGradient><linearGradient id=\"SVGj1UWVcal\" x1=\"-1.429\" x2=\"1.073\" y1=\"2\" y2=\"11.922\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#B9C0C7\"/><stop offset=\"1\" stop-color=\"#70777D\"/></linearGradient><linearGradient id=\"SVGrLaOodea\" x1=\"20.375\" x2=\"20.375\" y1=\"11\" y2=\"19\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0FAFFF\"/><stop offset=\"1\" stop-color=\"#0067BF\"/></linearGradient><linearGradient id=\"SVGI58IedmU\" x1=\"21.5\" x2=\"20.618\" y1=\"12\" y2=\"18.887\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#0078D4\"/><stop offset=\"1\" stop-color=\"#2052CB\"/></linearGradient></defs></g>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default headset28

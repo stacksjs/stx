@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const weatherCresentMoonStars: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M29.71 11.43h-1.52v1.52h-1.52v1.53h1.52V16h1.52v-1.52h1.53v-1.53h-1.53zM28.19 22.1h1.52v1.52h-1.52ZM26.67.76v1.53h-1.53v1.52h1.53v1.52h1.52V3.81h1.52V2.29h-1.52V.76zm-1.53 7.62h1.53v1.53h-1.53Zm0 18.29h-1.52v1.52h-1.53v1.53h1.53v1.52h1.52v-1.52h1.53v-1.53h-1.53zm-1.52-7.62h1.52v1.52h-1.52Zm-1.53 3.05h-9.14v1.52h7.62v1.52h1.52zM12.95 8.38v1.53h9.14V6.86h-1.52v1.52zm4.57 16.76h3.05v1.53h-3.05Zm1.53-6.09v-1.52h1.52V16h-1.52v-1.52h-1.53V16H16v1.53h1.52v1.52zM17.52 5.33h3.05v1.53h-3.05ZM9.9 26.67h7.62v1.52H9.9Zm1.53-6.1h1.52v1.53h-1.52Zm0-10.66h1.52v1.52h-1.52ZM9.9 3.81h7.62v1.52H9.9Zm0 7.62h1.53v9.14H9.9ZM6.86 25.14H9.9v1.53H6.86Zm0-19.81H9.9v1.53H6.86ZM5.33 23.62h1.53v1.52H5.33Zm0-16.76h1.53v1.52H5.33ZM3.81 20.57h1.52v3.05H3.81Zm0-12.19h1.52v3.05H3.81ZM2.29 29.72h1.52v1.52H2.29Zm0-18.29h1.52v9.14H2.29ZM.76 3.81h1.53v1.52H.76Z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default weatherCresentMoonStars

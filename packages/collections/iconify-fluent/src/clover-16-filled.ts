@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const clover16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M11 1a3 3 0 1 1 0 6H8.5a.5.5 0 0 1-.5-.5V4a3 3 0 0 1 3-3m-7 .02a3 3 0 1 0 0 6h2.5a.5.5 0 0 0 .5-.5v-2.5a3 3 0 0 0-3-3M4 14a3 3 0 1 1 0-6h2.5a.5.5 0 0 1 .5.5V11a3 3 0 0 1-3 3m7 0a3 3 0 1 0 0-6H8.5a.5.5 0 0 0-.5.5V11a3 3 0 0 0 3 3\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default clover16Filled

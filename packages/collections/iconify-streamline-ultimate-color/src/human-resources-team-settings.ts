@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const humanResourcesTeamSettings: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#c2f3ff\" d=\"M12 18.906a6.906 6.906 0 1 0 0-13.812a6.906 6.906 0 0 0 0 13.812\"/><path fill=\"#e3e3e3\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m12.812 9.739l.282.926a.634.634 0 0 0 .749.434l.938-.218a.854.854 0 0 1 .813 1.414l-.657.71a.64.64 0 0 0 0 .868l.657.709a.854.854 0 0 1-.813 1.414l-.938-.218a.634.634 0 0 0-.75.434l-.281.926a.848.848 0 0 1-1.626 0l-.283-.926a.635.635 0 0 0-.749-.434l-.938.218a.854.854 0 0 1-.813-1.414l.657-.708a.64.64 0 0 0 0-.869l-.657-.709a.854.854 0 0 1 .813-1.414l.938.218a.634.634 0 0 0 .75-.435l.282-.925a.848.848 0 0 1 1.626-.001\"/><path fill=\"#fff\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 14.391a.956.956 0 1 0 0-1.912a.956.956 0 0 0 0 1.912\"/><path fill=\"#ffdda1\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 4.348A1.674 1.674 0 1 0 12 1a1.674 1.674 0 0 0 0 3.347\"/><path fill=\"#78eb7b\" d=\"M15.348 7.696a3.454 3.454 0 0 0-6.696 0\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15.348 7.696a3.454 3.454 0 0 0-6.696 0\"/><path fill=\"#ffdda1\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19.652 19.652a1.674 1.674 0 1 0 0-3.348a1.674 1.674 0 0 0 0 3.348\"/><path fill=\"#78eb7b\" d=\"M23 23a3.456 3.456 0 0 0-6.696 0\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M23 23a3.456 3.456 0 0 0-6.696 0\"/><path fill=\"#ffdda1\" stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M4.348 19.652a1.674 1.674 0 1 0 0-3.348a1.674 1.674 0 0 0 0 3.348\"/><path fill=\"#78eb7b\" d=\"M7.696 23A3.455 3.455 0 0 0 1 23\"/><path stroke=\"#191919\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M7.696 23A3.455 3.455 0 0 0 1 23m13.917-2.391a9.13 9.13 0 0 1-5.834 0m6.98-16.739a9.1 9.1 0 0 1 4.91 9.565m-17.948 0A9.1 9.1 0 0 1 7.938 3.87\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default humanResourcesTeamSettings

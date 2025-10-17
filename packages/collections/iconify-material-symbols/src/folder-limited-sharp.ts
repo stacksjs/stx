@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const folderLimitedSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M2 20V4h8l2 2h10v14zm10-3q1.65 0 2.825-1.175T16 13t-1.175-2.825T12 9t-2.825 1.175T8 13t1.175 2.825T12 17m-1.15-6.2q.275-.125.55-.213t.6-.087q1.05 0 1.775.725T14.5 13q0 .325-.088.6t-.212.55zM12 15.5q-1.05 0-1.775-.725T9.5 13q0-.325.088-.6t.212-.55l3.35 3.35q-.275.125-.55.213t-.6.087\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default folderLimitedSharp

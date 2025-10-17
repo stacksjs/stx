@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const bqSa: IconData = {
+  "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path fill=\"#fff\" d=\"M0 0h32v24H0z\"/><path fill=\"#F00000\" d=\"M0 11.664V0h16zm32 0V0H16z\"/><path fill=\"#00268D\" d=\"M0 11.664V24h16zm32 0v12.672L16 24z\"/><path fill=\"#FEDA00\" d=\"m15.714 14.256l-3.517 2.507l1.29-4.141L10 10.087h4.345L15.714 6l1.452 4.087h4.226l-3.457 2.535l1.314 4.141z\"/></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default bqSa

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const editCalendarOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M3 22V4h3V2h2v2h8V2h2v2h3v7h-2v-1H5v10h7v2zM5 8h14V6H5zm0 0V6zm9 14v-3.075l6.575-6.55l3.075 3.05L17.075 22zm7.5-6.575l-.925-.925zm-6 5.075h.95l3.025-3.05l-.45-.475l-.475-.45l-3.05 3.025zm3.525-3.525l-.475-.45l.925.925z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default editCalendarOutlineSharp

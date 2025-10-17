@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const earbudRightOutlineSharp: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M12 22V12h-2v-2h4v10h2V10h3V6h-9V4h11v8h-3v10zm-3-8q-2.5 0-4.25-1.75T3 8t1.75-4.25T9 2h1v12zm-1-2.125v-7.75q-1.35.35-2.175 1.425T5 8t.825 2.45T8 11.875M8 8\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default earbudRightOutlineSharp

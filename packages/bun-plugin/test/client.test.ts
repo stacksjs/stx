@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test } from 'bun:test'
 // Import client functions
 import { hydrateIslands, initIslands, preloadIslandHandlers, version } from '../src/client'
 
-// Use happy-dom environment from shared config
+// Use very-happy-dom environment from shared config
 // The window and document globals are already set up by happy-dom.ts
 
 describe('BUN-PLUGIN: Client Module Tests', () => {

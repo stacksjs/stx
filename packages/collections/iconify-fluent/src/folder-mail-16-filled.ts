@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const folderMail16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M1 4.5A2.5 2.5 0 0 1 3.5 2h2.086a1.5 1.5 0 0 1 1.06.44L8 3.792l-2.06 2.06A.5.5 0 0 1 5.585 6H1zM1 7v4.5A2.5 2.5 0 0 0 3.5 14h2.55a2.5 2.5 0 0 1-.05-.5v-4A2.5 2.5 0 0 1 8.5 7h6q.257 0 .5.05V6.5A2.5 2.5 0 0 0 12.5 4H9.207l-2.56 2.56A1.5 1.5 0 0 1 5.585 7zm10.51 4.927L7.013 9.304A1.5 1.5 0 0 1 8.5 8h6A1.5 1.5 0 0 1 16 9.5v.01zm.227 1.013L16 10.645V13.5a1.5 1.5 0 0 1-1.5 1.5h-6A1.5 1.5 0 0 1 7 13.5v-3.046l4.248 2.478a.5.5 0 0 0 .49.008\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default folderMail16Filled

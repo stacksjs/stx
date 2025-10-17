@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tableInsertColumn24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.5 3.75v16.5a.75.75 0 0 1-1.5 0V3.75a.75.75 0 0 1 1.5 0M14.25 3a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 14.25 21h-4.5a2.25 2.25 0 0 1-2.25-2.25V5.25A2.25 2.25 0 0 1 9.75 3zM15 5.25a.75.75 0 0 0-.75-.75h-4.5a.75.75 0 0 0-.75.75V8.5h6zM9 14h6v-4H9zm0 1.5v3.25c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75V15.5zm12 4.75V3.75a.75.75 0 0 0-1.5 0v16.5a.75.75 0 0 0 1.5 0\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default tableInsertColumn24Regular

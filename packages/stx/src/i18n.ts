@@ -3,7 +3,6 @@
  */
 
 import type { I18nConfig, StxOptions } from './types'
-import fs from 'node:fs'
 import path from 'node:path'
 import { createDetailedErrorMessage } from './utils'
 
@@ -45,24 +44,9 @@ export async function loadTranslation(
   try {
     let translations: Record<string, any> = {}
 
-    if (i18nConfig.format === 'js') {
-      // For JS files, import them dynamically
-      const imported = await import(translationFile)
-      translations = imported.default || imported
-    }
-    else {
-      // For JSON or YAML files, read and parse
-      const content = await fs.promises.readFile(translationFile, 'utf-8')
-
-      if (i18nConfig.format === 'yaml' || i18nConfig.format === 'yml') {
-        // Parse YAML content
-        translations = await parseYaml(content)
-      }
-      else {
-        // Parse JSON content
-        translations = JSON.parse(content)
-      }
-    }
+    // Use dynamic imports for all formats - Bun supports JS, JSON, and YAML
+    const imported = await import(translationFile)
+    translations = imported.default || imported
 
     // Cache the translations if caching is enabled
     if (i18nConfig.cache) {
@@ -83,31 +67,6 @@ export async function loadTranslation(
 
     // Return empty object if default locale file is also not found
     return {}
-  }
-}
-
-/**
- * Parse YAML content
- */
-async function parseYaml(content: string): Promise<Record<string, any>> {
-  try {
-    // Dynamically import yaml library
-    const { parse } = await import('yaml')
-    return parse(content) || {}
-  }
-  catch (importError) {
-    console.error('Failed to import yaml parser:', importError)
-    try {
-      // Try using Bun's native parsing via .toJSON() if available
-      if (typeof Bun !== 'undefined') {
-        return (Bun.YAML?.parse?.(content)) || {}
-      }
-      throw new Error('No YAML parser available')
-    }
-    catch (error) {
-      console.error('Failed to parse YAML content:', error)
-      throw new Error('Could not parse YAML. Please install the "yaml" package or use JSON format instead.')
-    }
   }
 }
 

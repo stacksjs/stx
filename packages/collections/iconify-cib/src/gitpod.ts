@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const gitpod: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M4.802 22.667V10.136L2 8.532v15.734L15.599 32v-3.198zm10.797 2.932v-9.198l-8-4.667v9.333zM16 3.198l10.802 6.271l2.797-1.604L16 0L2.401 7.865l2.797 1.604zm8 7.87l-8-4.667l-8 4.667l8 4.667zm-7.599 14.666l8-4.667v-3.203l-5.469 3.203v-3.203l8.266-4.797v9.599l-10.797 6.135v3.198L30 24.265V8.531l-13.599 7.87z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default gitpod

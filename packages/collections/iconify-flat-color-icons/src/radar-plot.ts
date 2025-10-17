@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const radarPlot: IconData = {
+  "body": "<path fill=\"#CFD8DC\" d=\"M38.4 13L24.1 6.4L4.6 12.1l8.8 13.2l-2.2 15.1h22.7l6.6-13.3zm-6.3 24.5H14.7l1.8-12.9l-7.1-10.7l14.5-4.3L35.6 15l1.8 11.7z\"/><g fill=\"#00BCD4\"><circle cx=\"24\" cy=\"8\" r=\"4\"/><circle cx=\"37\" cy=\"14\" r=\"4\"/><circle cx=\"39\" cy=\"27\" r=\"4\"/><circle cx=\"7\" cy=\"13\" r=\"4\"/><circle cx=\"13\" cy=\"39\" r=\"4\"/><circle cx=\"15\" cy=\"25\" r=\"4\"/><circle cx=\"33\" cy=\"39\" r=\"4\"/></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default radarPlot

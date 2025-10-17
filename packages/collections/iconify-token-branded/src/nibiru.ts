@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const nibiru: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGvHYhje4I)\" d=\"M12.225 3L6.19 7.244l11.66 8.475V6.957zm4.52 10.504L8.156 7.26l4.09-2.878l4.5 3.165z\"/><path fill=\"url(#SVGvHYhje4I)\" d=\"M6.15 8.281v8.767L11.92 21l5.88-4.25zm1.146 8.167v-5.952l8.597 6.252l-3.97 2.87z\"/><defs><linearGradient id=\"SVGvHYhje4I\" x1=\"-.462\" x2=\"77.832\" y1=\"1.062\" y2=\"17.697\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#F29AC4\"/><stop offset=\".13\" stop-color=\"#F2A9CB\"/><stop offset=\".275\" stop-color=\"#F2BAD5\"/><stop offset=\".395\" stop-color=\"#CDC6D7\"/><stop offset=\".52\" stop-color=\"#82D1D9\"/><stop offset=\".66\" stop-color=\"#09D4D7\"/><stop offset=\".8\" stop-color=\"#11BBCA\"/><stop offset=\"1\" stop-color=\"#17A0BF\"/></linearGradient></defs></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default nibiru

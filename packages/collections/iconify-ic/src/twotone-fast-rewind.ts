@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const twotoneFastRewind: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M9 14.14V9.86L5.97 12zm9 0V9.86L14.97 12z\" opacity=\".3\"/><path fill=\"currentColor\" d=\"m11 6l-8.5 6l8.5 6zm-2 8.14L5.97 12L9 9.86zM20 6l-8.5 6l8.5 6zm-2 8.14L14.97 12L18 9.86z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default twotoneFastRewind

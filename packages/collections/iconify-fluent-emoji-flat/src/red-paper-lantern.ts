@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const redPaperLantern: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#635994\" d=\"M12 28.5a1.5 1.5 0 0 0 1.5 1.5h5a1.5 1.5 0 0 0 1.5-1.5V27h-8z\"/><path fill=\"#FF822D\" d=\"M11.873 5A9 9 0 0 0 7 13v6a9 9 0 0 0 4.873 8h8.254A9 9 0 0 0 25 19v-6a9 9 0 0 0-4.873-8z\"/><path fill=\"#CA0B4A\" d=\"M22.708 7H9.292A9 9 0 0 0 8 8.873V9h16v-.127A9 9 0 0 0 22.708 7m2.069 4H7.223A9 9 0 0 0 7 13h18c0-.687-.077-1.357-.223-2M25 15H7v2h18zm0 4H7c0 .687.077 1.357.223 2h17.554A9 9 0 0 0 25 19m-1 4.127V23H8v.127A9 9 0 0 0 9.292 25h13.416A9 9 0 0 0 24 23.127\"/><path fill=\"#635994\" d=\"M12 3.5A1.5 1.5 0 0 1 13.5 2h5A1.5 1.5 0 0 1 20 3.5V5h-8z\"/></g>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default redPaperLantern

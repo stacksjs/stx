@@ -2,7 +2,7 @@
   "publisher": "Stacks",
   "name": "vscode-stacks",
   "displayName": "Stacks",
-  "version": "0.70.25",
+  "version": "0.1.15",
   "description": "A modern Stacks development environment, including stx language support.",
   "license": "MIT",
   "funding": "https://github.com/sponsors/chrisbbreuer",
@@ -34,7 +34,7 @@
   "main": "./dist/extension.js",
   "icon": "logo.png",
   "engines": {
-    "vscode": "^1.102.0"
+    "vscode": "^1.80.0"
   },
   "activationEvents": [
     "workspaceContains:**/*.stx",
@@ -455,6 +455,61 @@
           "type": "boolean",
           "default": true,
           "description": "Enable TypeScript language features in stx files"
+        },
+        "stx.diagnostics.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable diagnostics (errors and warnings) for stx files"
+        },
+        "stx.diagnostics.validateUnclosedDirectives": {
+          "type": "boolean",
+          "default": true,
+          "description": "Validate unclosed directives like @if without @endif"
+        },
+        "stx.diagnostics.validateMismatchedDirectives": {
+          "type": "boolean",
+          "default": true,
+          "description": "Validate mismatched directives like @if closed with @endforeach"
+        },
+        "stx.diagnostics.validateTemplatePaths": {
+          "type": "boolean",
+          "default": true,
+          "description": "Validate that template paths in @include and @component directives exist"
+        },
+        "stx.completion.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable auto-completion for stx directives"
+        },
+        "stx.completion.showSnippets": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show snippet completions with placeholders for directive parameters"
+        },
+        "stx.hover.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable hover documentation for stx directives"
+        },
+        "stx.hover.showExamples": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show code examples in hover documentation"
+        },
+        "stx.codeActions.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable quick fixes and code actions"
+        },
+        "stx.folding.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable code folding for directive blocks"
+        },
+        "stx.semanticHighlighting.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable semantic syntax highlighting for directives"
         }
       }
     },
@@ -475,7 +530,7 @@
     "theme": "light"
   },
   "devDependencies": {
-    "@types/vscode": "^1.102.0",
+    "@types/vscode": "^1.80.0",
     "@vscode/vsce": "^3.6.0",
     "typescript": "^5.8.3",
     "vscode-html-languageservice": "^5.5.1",

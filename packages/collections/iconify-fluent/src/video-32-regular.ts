@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const video32Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.5 6A4.5 4.5 0 0 0 2 10.5v11A4.5 4.5 0 0 0 6.5 26h11a4.5 4.5 0 0 0 4.5-4.5v-.487l4.468 3.084c1.492 1.03 3.528-.037 3.528-1.851V9.754c0-1.814-2.036-2.882-3.528-1.852L22 10.987V10.5A4.5 4.5 0 0 0 17.5 6zM22 13.418l5.604-3.87a.25.25 0 0 1 .392.206v12.492a.25.25 0 0 1-.392.206L22 18.582zM4 10.5A2.5 2.5 0 0 1 6.5 8h11a2.5 2.5 0 0 1 2.5 2.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 21.5z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default video32Regular

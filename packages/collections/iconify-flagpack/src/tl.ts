@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tl: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"#E31D1C\" stroke=\"#F7FCFF\" stroke-width=\"2\" d=\"M0-1h-1v26h34V-1z\"/><path fill=\"#FECA00\" fill-rule=\"evenodd\" d=\"m0 0l24 12L0 24z\" clip-rule=\"evenodd\"/><path fill=\"#272727\" fill-rule=\"evenodd\" d=\"m0 0l16 12L0 24z\" clip-rule=\"evenodd\"/><path fill=\"#F7FCFF\" fill-rule=\"evenodd\" d=\"m6.648 14.409l-2.02 2.1l-.21-2.986l-2.576-1.586l2.686-.843l.44-2.958l1.859 2.342l2.712-.727l-1.402 2.776L9.5 15.203z\" clip-rule=\"evenodd\"/></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default tl

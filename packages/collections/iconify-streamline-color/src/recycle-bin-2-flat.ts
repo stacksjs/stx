@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const recycleBin2Flat: IconData = {
+  "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path fill=\"#8fbffa\" d=\"M2.5 2.823a.5.5 0 0 0-.5.5v9.145c0 .4.156.784.437 1.069c.28.285.663.447 1.063.447h7c.4 0 .783-.162 1.063-.447s.437-.67.437-1.07V3.324a.5.5 0 0 0-.5-.5z\"/><path fill=\"#2859c5\" d=\"M5.625 7.124a.625.625 0 1 0-1.25 0v4.002a.625.625 0 0 0 1.25 0zm4 0a.625.625 0 1 0-1.25 0v4.002a.625.625 0 0 0 1.25 0zM7 1.5a1.75 1.75 0 0 0-1.677 1.25h3.354A1.75 1.75 0 0 0 7 1.5m3.211 1.25a3.25 3.25 0 0 0-6.422 0H1a.75.75 0 0 0 0 1.5h12a.75.75 0 0 0 0-1.5z\"/></g>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default recycleBin2Flat

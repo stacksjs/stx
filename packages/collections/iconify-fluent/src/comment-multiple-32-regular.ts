@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const commentMultiple32Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M27.5 17.014V20.5q0 .123-.005.246A4.5 4.5 0 0 0 29.5 17v-5.5a8 8 0 0 0-8-8H11a4.5 4.5 0 0 0-3.746 2.005Q7.377 5.5 7.5 5.5h14q.53 0 1.036.09A6 6 0 0 1 27.5 11.5zM7.5 7A4.5 4.5 0 0 0 3 11.5v9A4.5 4.5 0 0 0 7.5 25H8v3.495c0 1.239 1.417 1.944 2.405 1.197L16.61 25h4.89a4.5 4.5 0 0 0 4.5-4.5v-9A4.5 4.5 0 0 0 21.5 7zM5 11.5A2.5 2.5 0 0 1 7.5 9h14a2.5 2.5 0 0 1 2.5 2.5v9a2.5 2.5 0 0 1-2.5 2.5h-5.561L10 27.49V23H7.5A2.5 2.5 0 0 1 5 20.5z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default commentMultiple32Regular

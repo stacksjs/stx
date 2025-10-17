@@ -1,5 +1,2 @@
-[install]
-registry = { url = "https://registry.npmjs.org/", token = "$BUN_AUTH_TOKEN" }
-
 [test]
-preload = "../../test-utils/happy-dom.ts"
+preload = "./happy-dom.ts"

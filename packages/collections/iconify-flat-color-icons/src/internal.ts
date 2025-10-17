@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const internal: IconData = {
+  "body": "<circle cx=\"24\" cy=\"30\" r=\"15\" fill=\"#B3E5FC\"/><g fill=\"#1565C0\"><path d=\"M24 38.7L15 28h18z\"/><path d=\"M21 5h6v26h-6z\"/></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default internal

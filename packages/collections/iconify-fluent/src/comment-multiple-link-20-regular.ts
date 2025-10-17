@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const commentMultipleLink20Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M14.39 4.114A3.5 3.5 0 0 1 17 7.5v3.535c.353.05.69.154 1 .302V7.5A4.5 4.5 0 0 0 13.5 3h-7c-.818 0-1.544.393-2 1h9a3.5 3.5 0 0 1 .89.114M16 7.5V11h-1V7.5A1.5 1.5 0 0 0 13.5 6h-9A1.5 1.5 0 0 0 3 7.5v6A1.5 1.5 0 0 0 4.5 15H6v1.995L8.73 15h.305c.051.353.154.69.302 1h-.28L6.59 17.803A1 1 0 0 1 5 16.995V16h-.5A2.5 2.5 0 0 1 2 13.5v-6A2.5 2.5 0 0 1 4.5 5h9A2.5 2.5 0 0 1 16 7.5M12.5 12a2.5 2.5 0 0 0 0 5h.5a.5.5 0 0 0 0-1h-.5a1.5 1.5 0 0 1 0-3h.5a.5.5 0 0 0 0-1zm3.5 0a.5.5 0 0 0 0 1h.5a1.5 1.5 0 0 1 0 3H16a.5.5 0 0 0 0 1h.5a2.5 2.5 0 0 0 0-5zm-4 2.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5\"/>",
+  "width": 20,
+  "height": 20,
+  "viewBox": "0 0 20 20"
+}
+
+export default commentMultipleLink20Regular

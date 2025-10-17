@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const dualScreen24Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M20.245 4.002c.967 0 1.75.784 1.75 1.75v12.496a1.75 1.75 0 0 1-1.75 1.75h-7.247q-.13 0-.256-.019V4.021q.125-.018.256-.019zM10.998 4q.125 0 .245.017v15.961a2 2 0 0 1-.245.017H3.75A1.75 1.75 0 0 1 2 18.245V5.75C2 4.784 2.784 4 3.75 4zM9.243 15.499H7.74l-.102.007a.75.75 0 0 0 0 1.486l.102.007h1.502l.102-.007a.75.75 0 0 0 0-1.486zm6.996 0h-1.5l-.102.007a.75.75 0 0 0 0 1.486l.102.007h1.5l.101-.007a.75.75 0 0 0 0-1.486z\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default dualScreen24Filled

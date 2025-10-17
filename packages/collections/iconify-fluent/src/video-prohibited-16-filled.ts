@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const videoProhibited16Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M1 5a2.5 2.5 0 0 1 2.5-2.5h5A2.5 2.5 0 0 1 11 5v1.022A5.5 5.5 0 0 0 6.375 13.5H3.5A2.5 2.5 0 0 1 1 11zm11 1.022a5.5 5.5 0 0 1 3 1.235V4.5a.5.5 0 0 0-.816-.387L12 5.892zM7 11.5a4.5 4.5 0 1 0 9 0a4.5 4.5 0 0 0-9 0m1 0a3.5 3.5 0 0 1 5.596-2.803l-4.9 4.9A3.5 3.5 0 0 1 8 11.5m3.5 3.5c-.786 0-1.512-.26-2.096-.697l4.9-4.9A3.5 3.5 0 0 1 11.5 15\"/>",
+  "width": 16,
+  "height": 16,
+  "viewBox": "0 0 16 16"
+}
+
+export default videoProhibited16Filled

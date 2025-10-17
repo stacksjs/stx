@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const fileTypeSolidity: IconData = {
+  "body": "<path fill=\"#c1c1c1\" d=\"m20.477 2l-4.5 8h-9l4.5-8zM11.52 30l4.5-8h9l-4.5 8z\" opacity=\".45\"/><path fill=\"#c1c1c1\" d=\"M15.975 10h9l-4.5-8h-9Zm.047 12h-9l4.5 8h9Z\" opacity=\".6\"/><path fill=\"#c1c1c1\" d=\"m11.477 18l4.5-8l-4.5-8l-4.5 8Zm9.043-4l-4.5 8l4.5 8l4.5-8Z\" opacity=\".8\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default fileTypeSolidity

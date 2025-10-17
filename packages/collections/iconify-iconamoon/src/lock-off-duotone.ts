@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const lockOffDuotone: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"currentColor\" d=\"M5 10h14v9a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z\" opacity=\".16\"/><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"2\" d=\"M8 10V7a4 4 0 0 1 7.874-1\"/><path stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 10h14v9a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z\"/><path stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"3\" d=\"M14.5 15.5h.01v.01h-.01z\"/></g>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default lockOffDuotone

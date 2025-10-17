@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const ci: IconData = {
+  "body": "<g fill=\"none\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path fill=\"#67BD38\" d=\"M22 0h10v24H22z\"/><path fill=\"#E47E00\" d=\"M0 0h10v24H0z\"/><path fill=\"#F7FCFF\" d=\"M10 0h12v24H10z\"/></g>",
+  "width": 32,
+  "height": 24,
+  "viewBox": "0 0 32 24"
+}
+
+export default ci

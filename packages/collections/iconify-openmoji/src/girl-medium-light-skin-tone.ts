@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const girlMediumLightSkinTone: IconData = {
+  "body": "<path fill=\"#92D3F5\" d=\"M18 60.9V57c0-5 3.8-9 8.8-9q9 7.5 18 0c5 0 9.2 4 9.2 9v3.9z\"/><path fill=\"#fcea2b\" d=\"M22.1 49.4c1.4-.9 3-1.4 4.7-1.4q9 7.5 18 0c1.7 0 3.3.5 4.7 1.3c1.2-.9 2.3-1.8 3.1-2.6c2.9-3.1 3.7-6.8 2-10.8c-2.4-5.7-3-5.6-3.4-12.8c0-4.2-3.2-7.7-7.4-8c0 0-2.6-3-8-3c-6.4 0-12.2 3.5-13.7 9c-1.5 5.6.3 7.8-1.3 12C19 37.8 15 41.5 19.5 47c.6.7 1.5 1.6 2.6 2.4\"/><path fill=\"#debb90\" d=\"M25 32c0 8 4.8 12.9 10.8 12.9S47 40 47 32c0-4-1-6-1-6l-4-4s-12 2-16 4c0 0-1 2-1 6\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M18 60v-3.1c0-5 3.8-9 8.8-9q9 7.5 18 0c5 0 9.2 4 9.2 9V60\"/><path d=\"M42 31c0 1.1-.9 2-2 2s-2-.9-2-2s.9-2 2-2s2 .9 2 2m-8 0c0 1.1-.9 2-2 2s-2-.9-2-2s.9-2 2-2s2 .9 2 2\"/><path fill=\"none\" stroke=\"#000\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M25 32c0 8 4.8 12.9 10.8 12.9S47 40 47 32c0-4-1-6-1-6l-4-4s-12 2-16 4c0 0-1 2-1 6z\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M32.8 38.2c1.9 1 4.1 1 6 0\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M20 46c-4-6-1.8-8.3.1-13c1.6-4.2-.2-6.5 1.3-12s7.3-9 13.7-9c5.4 0 8 3 8 3c4.2.4 7.4 3.9 7.4 8c.4 7.2 1 7.2 3.4 12.8c1.8 4.1 1 6.8-1.9 10.1\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default girlMediumLightSkinTone

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const partyPopper: IconData = {
+  "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M2.212 7.65c.42-.234.914-.305 1.384-.198m1.449-2.908a2 2 0 0 1-.313-1.375m2.835-2.121c-.264.81-.23 1.686.098 2.472m-.513 3.611c-.655.647-1.493 1.792-2.038 2.572a.944.944 0 0 0 .284 1.356c2.222 1.331 4.662 2.277 6.975 2.174a.847.847 0 0 0 .81-.8c.135-2.31-.778-4.763-2.08-7.003a.944.944 0 0 0-1.352-.302c-.787.534-1.943 1.356-2.599 2.003M2.046 4.156h-.5\"/>",
+  "width": 14,
+  "height": 14,
+  "viewBox": "0 0 14 14"
+}
+
+export default partyPopper

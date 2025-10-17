@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const maskF: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M10 1.878q2.64-1.02 4.5-1.02a5.5 5.5 0 0 1 0 11q-1.86 0-4.5-1.057q-2.64 1.057-4.5 1.057a5.5 5.5 0 0 1 0-11q1.86 0 4.5 1.02m-4 5.98c1.105 0 2-.672 2-1.5c0-.829-.895-1.5-2-1.5s-2 .671-2 1.5c0 .828.895 1.5 2 1.5m8 0c1.105 0 2-.672 2-1.5c0-.829-.895-1.5-2-1.5s-2 .671-2 1.5c0 .828.895 1.5 2 1.5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default maskF

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tableCellEdit28Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M5.75 19A2.75 2.75 0 0 1 3 16.25v-4.5A2.75 2.75 0 0 1 5.75 9h16.5c.862 0 1.63.396 2.135 1.017a3.3 3.3 0 0 0-1.594.606a1.24 1.24 0 0 0-.541-.123H18v4.856l-1.5 1.5V10.5h-5v7h4.356l-1.365 1.365a4 4 0 0 0-.128.135zM4.5 16.25c0 .69.56 1.25 1.25 1.25H10v-7H5.75c-.69 0-1.25.56-1.25 1.25zm18.6-4.58l-7.903 7.902a2.7 2.7 0 0 0-.706 1.247l-.458 1.831a1.087 1.087 0 0 0 1.319 1.318l1.83-.457a2.7 2.7 0 0 0 1.248-.707l7.902-7.902A2.286 2.286 0 0 0 23.1 11.67\"/>",
+  "width": 28,
+  "height": 28,
+  "viewBox": "0 0 28 28"
+}
+
+export default tableCellEdit28Regular

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const bookContacts24Regular: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M6.5 2A2.5 2.5 0 0 0 4 4.5v15A2.5 2.5 0 0 0 6.5 22h12.75a.75.75 0 0 0 0-1.5H6.5a1 1 0 0 1-1-1h13.75a.75.75 0 0 0 .75-.75V4.5A2.5 2.5 0 0 0 17.5 2zm-1 16V4.5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1V18zM14 8a2 2 0 1 1-4 0a2 2 0 0 1 4 0m1.5 4.5c0 1.245-1 2.5-3.5 2.5s-3.5-1.25-3.5-2.5A1.5 1.5 0 0 1 10 11h4a1.5 1.5 0 0 1 1.5 1.5\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default bookContacts24Regular

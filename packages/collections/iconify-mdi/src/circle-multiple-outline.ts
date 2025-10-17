@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const circleMultipleOutline: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M15 4a8 8 0 0 1 8 8a8 8 0 0 1-8 8a8 8 0 0 1-8-8a8 8 0 0 1 8-8m0 14a6 6 0 0 0 6-6a6 6 0 0 0-6-6a6 6 0 0 0-6 6a6 6 0 0 0 6 6M3 12a5.99 5.99 0 0 0 4 5.65v2.09c-3.45-.89-6-4.01-6-7.74s2.55-6.85 6-7.74v2.09C4.67 7.17 3 9.39 3 12\"/>",
+  "width": 24,
+  "height": 24,
+  "viewBox": "0 0 24 24"
+}
+
+export default circleMultipleOutline

@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const scanPerson48: IconData = {
+  "body": "<g fill=\"none\"><path fill=\"url(#SVGwCX47cDh)\" d=\"M37.5 43a1.5 1.5 0 0 0 1.5-1.5v-4.25A4.25 4.25 0 0 0 34.75 33h-21.5A4.25 4.25 0 0 0 9 37.25v4.25a1.5 1.5 0 0 0 1.5 1.5z\"/><path fill=\"url(#SVGnZiKxeOq)\" d=\"M37.5 43a1.5 1.5 0 0 0 1.5-1.5v-4.25A4.25 4.25 0 0 0 34.75 33h-21.5A4.25 4.25 0 0 0 9 37.25v4.25a1.5 1.5 0 0 0 1.5 1.5z\"/><path fill=\"url(#SVGFs6QRcrg)\" d=\"M24 29a9.5 9.5 0 1 0 0-19a9.5 9.5 0 0 0 0 19\"/><path fill=\"url(#SVGvNuuSdrT)\" d=\"M10.25 6.5a3.75 3.75 0 0 0-3.75 3.75v5.5a1.25 1.25 0 1 1-2.5 0v-5.5A6.25 6.25 0 0 1 10.25 4h5.5a1.25 1.25 0 1 1 0 2.5zm0 35q-.292 0-.571-.043l-.04-.007a3.75 3.75 0 0 1-3.139-3.7v-5.5a1.25 1.25 0 1 0-2.5 0v5.5A6.25 6.25 0 0 0 10.25 44h5.5a1.25 1.25 0 0 0 0-2.5zM41.5 10.25a3.75 3.75 0 0 0-3.75-3.75h-5.5a1.25 1.25 0 1 1 0-2.5h5.5A6.25 6.25 0 0 1 44 10.25v5.5a1.25 1.25 0 1 1-2.5 0zM37.75 41.5q.267 0 .524-.036l.032-.005A3.75 3.75 0 0 0 41.5 37.75v-5.5a1.25 1.25 0 1 1 2.5 0v5.5A6.25 6.25 0 0 1 37.75 44h-5.5a1.25 1.25 0 0 1 0-2.5z\"/><defs><linearGradient id=\"SVGwCX47cDh\" x1=\"16.134\" x2=\"18.622\" y1=\"34.396\" y2=\"45.746\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".125\" stop-color=\"#9C6CFE\"/><stop offset=\"1\" stop-color=\"#7A41DC\"/></linearGradient><linearGradient id=\"SVGnZiKxeOq\" x1=\"24\" x2=\"27.442\" y1=\"31.75\" y2=\"50.126\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#885EDB\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#E362F8\"/></linearGradient><linearGradient id=\"SVGFs6QRcrg\" x1=\"19.018\" x2=\"28.701\" y1=\"12.526\" y2=\"27.988\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".125\" stop-color=\"#9C6CFE\"/><stop offset=\"1\" stop-color=\"#7A41DC\"/></linearGradient><linearGradient id=\"SVGvNuuSdrT\" x1=\"2.421\" x2=\"33.786\" y1=\".651\" y2=\"51.318\" gradientUnits=\"userSpaceOnUse\"><stop offset=\".015\" stop-color=\"#3DCBFF\"/><stop offset=\"1\" stop-color=\"#0094F0\"/></linearGradient></defs></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default scanPerson48

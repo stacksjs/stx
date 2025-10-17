@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const flagTimorLeste: IconData = {
+  "body": "<path fill=\"#DC241F\" d=\"M32 5H4a4 4 0 0 0-4 4v18a4 4 0 0 0 4 4h28a4 4 0 0 0 4-4V9a4 4 0 0 0-4-4\"/><path fill=\"#FFC726\" d=\"M16 18L1.296 29.947q.118.108.244.207L23.667 18L1.54 5.846a4 4 0 0 0-.244.207z\"/><path fill=\"#141414\" d=\"m1.296 6.053l-.002.001A4 4 0 0 0 0 9v18c0 1.166.499 2.216 1.296 2.947L16 18z\"/><path fill=\"#FFF\" d=\"m4.761 19.01l.492 3.269l1.523-2.934l3.262.542l-2.32-2.355l1.523-2.934l-2.957 1.478l-2.32-2.355l.493 3.269L1.5 18.468z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default flagTimorLeste

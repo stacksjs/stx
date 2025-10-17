@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const flagUnitedStates: IconData = {
+  "body": "<path fill=\"#fff\" d=\"M5 17h62v38H5z\"/><path fill=\"#d22f27\" d=\"M5 17h62v5H5zm0 9h62v4H5zm0 8h62v4H5z\"/><path fill=\"#1e50a0\" d=\"M5 17h32v21H5z\"/><path fill=\"#d22f27\" d=\"M5 42h62v4H5z\"/><circle cx=\"9.5\" cy=\"22\" r=\"1.75\" fill=\"#fff\"/><circle cx=\"17.5\" cy=\"22\" r=\"1.75\" fill=\"#fff\"/><circle cx=\"25.5\" cy=\"22\" r=\"1.75\" fill=\"#fff\"/><circle cx=\"33.5\" cy=\"22\" r=\"1.75\" fill=\"#fff\"/><circle cx=\"29.5\" cy=\"26\" r=\"1.75\" fill=\"#fff\"/><circle cx=\"21.5\" cy=\"26\" r=\"1.75\" fill=\"#fff\"/><circle cx=\"13.5\" cy=\"26\" r=\"1.75\" fill=\"#fff\"/><circle cx=\"9.5\" cy=\"30\" r=\"1.75\" fill=\"#fff\"/><circle cx=\"17.5\" cy=\"30\" r=\"1.75\" fill=\"#fff\"/><circle cx=\"25.5\" cy=\"30\" r=\"1.75\" fill=\"#fff\"/><circle cx=\"33.5\" cy=\"30\" r=\"1.75\" fill=\"#fff\"/><circle cx=\"29.5\" cy=\"34\" r=\"1.75\" fill=\"#fff\"/><circle cx=\"21.5\" cy=\"34\" r=\"1.75\" fill=\"#fff\"/><circle cx=\"13.5\" cy=\"34\" r=\"1.75\" fill=\"#fff\"/><path fill=\"#d22f27\" d=\"M5 50h62v5H5z\"/><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 17h62v38H5z\"/>",
+  "width": 72,
+  "height": 72,
+  "viewBox": "0 0 72 72"
+}
+
+export default flagUnitedStates

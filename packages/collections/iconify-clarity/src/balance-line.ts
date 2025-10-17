@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const balanceLine: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M24 33H12a1 1 0 0 1 0-2h12a1 1 0 0 1 0 2\" class=\"clr-i-outline clr-i-outline-path-1\"/><path fill=\"currentColor\" d=\"M17 9h2v22.5h-2z\" class=\"clr-i-outline clr-i-outline-path-2\"/><path fill=\"currentColor\" d=\"M28 7H8a1 1 0 0 1 0-2h20a1 1 0 0 1 0 2\" class=\"clr-i-outline clr-i-outline-path-3\"/><path fill=\"currentColor\" d=\"M26.93 24.79a7.23 7.23 0 0 1-5.81-2.89l-.6-.8l1.59-1.21l.6.8a5.28 5.28 0 0 0 8.42 0l.6-.8l1.59 1.21l-.6.8a7.23 7.23 0 0 1-5.79 2.89\" class=\"clr-i-outline clr-i-outline-path-4\"/><path fill=\"currentColor\" d=\"M30.51 19.25a.8.8 0 0 1-.73-.48l-2.85-6.57l-2.85 6.57a.8.8 0 0 1-1.47-.64l3.59-8.26a.83.83 0 0 1 1.47 0l3.58 8.26a.8.8 0 0 1-.73 1.12Z\" class=\"clr-i-outline clr-i-outline-path-5\"/><path fill=\"currentColor\" d=\"M9.68 24.79a7.23 7.23 0 0 1-5.8-2.89l-.6-.8l1.58-1.2l.6.8a5.28 5.28 0 0 0 8.42 0l.6-.8l1.59 1.21l-.6.8a7.23 7.23 0 0 1-5.79 2.88\" class=\"clr-i-outline clr-i-outline-path-6\"/><path fill=\"currentColor\" d=\"M13.26 19.25a.8.8 0 0 1-.73-.48L9.68 12.2l-2.84 6.57a.8.8 0 0 1-1.47-.64l3.58-8.26a.83.83 0 0 1 1.47 0L14 18.13a.8.8 0 0 1-.73 1.12Z\" class=\"clr-i-outline clr-i-outline-path-7\"/><path fill=\"none\" d=\"M0 0h36v36H0z\"/>",
+  "width": 36,
+  "height": 36,
+  "viewBox": "0 0 36 36"
+}
+
+export default balanceLine

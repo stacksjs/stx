@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const tagAlt: IconData = {
+  "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"3\"><path d=\"M25.596 3.327c2.807-.209 8.968-.545 15.68-.128A3.76 3.76 0 0 1 44.8 6.725c.42 6.758.076 12.96-.132 15.738a5.2 5.2 0 0 1-1.046 2.777c-2.336 3.064-9.08 11.314-19.481 19.183c-1.35 1.021-3.075 1.286-4.485.351C17.892 43.604 15.07 41.343 11 37c-3.52-3.754-5.696-6.362-7.025-8.092c-1.325-1.726-1.18-4 .17-5.705C11.987 13.3 19.754 6.778 22.73 4.433a5.23 5.23 0 0 1 2.867-1.106Z\"/><path d=\"M34 11a3 3 0 1 0 6 0a3 3 0 1 0-6 0\"/></g>",
+  "width": 48,
+  "height": 48,
+  "viewBox": "0 0 48 48"
+}
+
+export default tagAlt

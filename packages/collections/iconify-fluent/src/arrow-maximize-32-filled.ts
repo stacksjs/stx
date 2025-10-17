@@ -1,0 +1,10 @@
+import type { IconData } from '@stacksjs/iconify-core'
+
+export const arrowMaximize32Filled: IconData = {
+  "body": "<path fill=\"currentColor\" d=\"M27.25 3.5c.69 0 1.25.56 1.25 1.25v10a1.25 1.25 0 1 1-2.5 0V7.768L7.768 26h6.982a1.25 1.25 0 1 1 0 2.5h-10c-.69 0-1.25-.56-1.25-1.25v-10a1.25 1.25 0 1 1 2.5 0v6.982L24.232 6H17.25a1.25 1.25 0 1 1 0-2.5z\"/>",
+  "width": 32,
+  "height": 32,
+  "viewBox": "0 0 32 32"
+}
+
+export default arrowMaximize32Filled
