@@ -4,6 +4,10 @@ import type { BunPlugin } from 'bun'
 import path from 'node:path'
 import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processDirectives, readMarkdownFile } from '@stacksjs/stx'
 
+// Re-export functions and types that consumers might need
+export { serve, createMiddleware, createRoute, readMarkdownFile } from '@stacksjs/stx'
+export type { StxOptions, ServeOptions, ServeResult } from '@stacksjs/stx'
+
 export function stxPlugin(userOptions?: StxOptions): BunPlugin {
   return {
     name: 'bun-plugin-stx',

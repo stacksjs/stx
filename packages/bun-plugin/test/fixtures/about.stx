@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>About Page</title>
+  <script>
+    export const pageName = "About Us";
+    export const team = [
+      { name: "Alice", role: "Developer" },
+      { name: "Bob", role: "Designer" },
+      { name: "Charlie", role: "Manager" }
+    ];
+  </script>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 2rem;
+    }
+    .team-member {
+      padding: 1rem;
+      margin: 0.5rem 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>{{ pageName }}</h1>
+  <p>Meet our amazing team:</p>
+
+  @foreach (team as member)
+    <div class="team-member">
+      <strong>{{ member.name }}</strong> - {{ member.role }}
+    </div>
+  @endforeach
+</body>
+</html>

@@ -2,11 +2,21 @@ import { dts } from 'bun-plugin-dtsx'
 
 // Build the main library
 await Bun.build({
-  entrypoints: ['./src/index.ts', './bin/cli.ts'],
-  splitting: true,
+  entrypoints: ['./src/index.ts'],
+  splitting: false,
   outdir: './dist',
   plugins: [dts()],
   target: 'bun',
+  minify: true,
+})
+
+// Build CLI separately
+await Bun.build({
+  entrypoints: ['./bin/cli.ts'],
+  splitting: false,
+  outdir: './dist',
+  target: 'bun',
+  minify: true,
 })
 
 // Build the client-side library

@@ -1,0 +1,13 @@
+{
+  "name": "stx-demo-project",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "bun run build.ts",
+    "dev": "bun run serve.ts",
+    "start": "bun run serve.ts"
+  },
+  "dependencies": {
+    "bun-plugin-stx": "workspace:*"
+  }
+}

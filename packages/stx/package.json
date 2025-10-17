@@ -26,16 +26,16 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/src/index.js"
+      "import": "./dist/index.js"
     },
     "./*": {
       "import": "./dist/*"
     }
   },
-  "module": "./dist/src/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "stx": "./dist/bin/cli.js"
+    "stx": "./dist/cli.js"
   },
   "files": [
     "LICENSE.md",
