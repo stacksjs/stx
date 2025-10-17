@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/benchmarks",
   "type": "module",
-  "version": "0.1.12",
+  "version": "0.1.15",
   "private": true,
   "description": "Performance benchmarks comparing @stacksjs/markdown and @stacksjs/sanitizer against competitors",
   "main": "./src/index.ts",

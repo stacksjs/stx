@@ -2,7 +2,7 @@
   "publisher": "Stacks",
   "name": "vscode-stacks",
   "displayName": "Stacks",
-  "version": "0.1.12",
+  "version": "0.1.15",
   "description": "A modern Stacks development environment, including stx language support.",
   "license": "MIT",
   "funding": "https://github.com/sponsors/chrisbbreuer",
@@ -532,7 +532,7 @@
   "devDependencies": {
     "@types/vscode": "^1.105.0",
     "@vscode/vsce": "^3.6.3-0",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "vscode-html-languageservice": "^5.5.2",
     "vscode-languageclient": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12",
