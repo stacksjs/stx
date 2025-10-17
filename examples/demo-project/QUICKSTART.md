@@ -1,162 +1,213 @@
-# Quick Start - Serving .stx Files
+# Quick Start - The Simplest Workflow ⚡
 
-## 🎉 YES! You Can Now Run: `bun serve *.stx`
+This is exactly what you wanted - the simplest possible way to use `.stx` files!
 
-Well, almost! Here's how:
+## 🎯 3-Step Workflow
 
-## Method 1: Simple CLI Command (Recommended)
+### 1. Install the plugin
 
 ```bash
-# Serve all .stx files in a directory
-bun ../packages/bun-plugin/dist/serve.js pages/*.stx
-
-# Or with custom port
-bun ../packages/bun-plugin/dist/serve.js pages/ --port 3000
-
-# Or specific files
-bun ../packages/bun-plugin/dist/serve.js pages/home.stx pages/about.stx
+bun add bun-plugin-stx
 ```
 
-**What you'll see:**
-```
-🚀 Starting stx development server...
-
-📄 Found 3 .stx files:
-   - pages/home.stx
-   - pages/about.stx
-   - pages/contact.stx
-
-🔨 Building...
-✅ Build complete
-
-🌐 Server running at: http://localhost:3456
-
-📚 Available routes:
-   http://localhost:3456/
-   http://localhost:3456/about
-   http://localhost:3456/contact
-```
-
-## Method 2: Using Package Scripts
-
-Add to `package.json`:
+### 2. Add script to package.json
 
 ```json
 {
   "scripts": {
-    "serve": "bun ../packages/bun-plugin/dist/serve.js pages/"
+    "dev": "bun serve pages/*.stx"
   }
 }
 ```
 
-Then just:
+> Note: `bun serve` here refers to the `serve` binary from `bun-plugin-stx`
+
+### 3. Run it!
+
 ```bash
-bun run serve
+bun run dev
 ```
 
-## Method 3: Using bunfig.toml (Advanced)
+That's it! 🎉 Visit http://localhost:3456
 
-Create `bunfig.toml`:
-```toml
-preload = ["bun-plugin-stx/preload"]
-```
+## 📝 Full Example from Scratch
 
-Then create a simple server:
-```typescript
-// my-server.ts
-import home from './pages/home.stx'
-import about from './pages/about.stx'
+```bash
+# 1. Create project
+mkdir my-site && cd my-site
+bun init -y
 
-const routes = {
-  '/': home,
-  '/about': about
-}
+# 2. Install plugin
+bun add bun-plugin-stx
 
-Bun.serve({
-  fetch(req) {
-    const path = new URL(req.url).pathname
-    return new Response(routes[path] || '404', {
-      headers: { 'Content-Type': 'text/html' }
-    })
+# 3. Create a page
+cat > home.stx << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ title }}</title>
+  <script>
+    export const title = "My Site";
+    export const message = "Hello World!";
+  </script>
+</head>
+<body>
+  <h1>{{ title }}</h1>
+  <p>{{ message }}</p>
+</body>
+</html>
+EOF
+
+# 4. Add serve script
+cat > package.json << 'EOF'
+{
+  "name": "my-site",
+  "type": "module",
+  "scripts": {
+    "dev": "bun ./node_modules/bun-plugin-stx/dist/serve.js *.stx"
+  },
+  "dependencies": {
+    "bun-plugin-stx": "latest"
   }
-})
+}
+EOF
+
+# 5. Serve it!
+bun run dev
 ```
 
-Run it:
+Visit http://localhost:3456 - Done! 🚀
+
+## 🌟 What You Get
+
+- ✅ **Zero config** - No bunfig.toml needed
+- ✅ **No build step** - Just serve
+- ✅ **Template features** - Variables, loops, conditionals
+- ✅ **Hot reload** - Changes reflect instantly
+- ✅ **Smart routing** - `home.stx` → `/`, `about.stx` → `/about`
+
+## 📦 Command Variations
+
 ```bash
-bun my-server.ts
+# Serve all .stx files in a folder
+bun serve pages/*.stx
+
+# Serve specific files
+bun serve home.stx about.stx
+
+# Serve a directory
+bun serve pages/
+
+# Custom port
+bun serve pages/*.stx --port 3000
+
+# Single file
+bun serve index.stx
 ```
 
-## 🚀 Try It Now!
+> **Note:** After `bun add bun-plugin-stx`, the `serve` command is available in your node_modules/.bin
+
+## 💡 Usage Patterns
+
+### Pattern 1: Package Scripts (Recommended)
+
+```json
+{
+  "scripts": {
+    "dev": "bun ./node_modules/bun-plugin-stx/dist/serve.js pages/*.stx",
+    "start": "bun ./node_modules/bun-plugin-stx/dist/serve.js pages/*.stx --port 8080"
+  }
+}
+```
+
+Then:
+```bash
+bun run dev
+bun run start
+```
+
+### Pattern 2: Direct Path
+
+```bash
+bun ./node_modules/bun-plugin-stx/dist/serve.js pages/*.stx
+```
+
+### Pattern 3: Global Install (After npm publish)
+
+```bash
+bun add -g bun-plugin-stx
+stx-serve pages/*.stx
+```
+
+## 🎨 Template Syntax Cheat Sheet
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    export const name = "World";
+    export const items = ["A", "B", "C"];
+    export const show = true;
+  </script>
+</head>
+<body>
+  <!-- Variables -->
+  <h1>Hello {{ name }}!</h1>
+
+  <!-- Loops -->
+  <ul>
+    @foreach (items as item)
+      <li>{{ item }}</li>
+    @endforeach
+  </ul>
+
+  <!-- Conditionals -->
+  @if (show)
+    <p>This is shown</p>
+  @endif
+</body>
+</html>
+```
+
+## ⚡ This Demo
 
 From this directory:
 
 ```bash
-# Option 1: Using the built-in serve.ts
+# Start dev server
 bun run dev
 
-# Option 2: Using the CLI directly
-bun ../packages/bun-plugin/dist/serve.js pages/
-
-# Option 3: Just build
-bun run build
+# Serves:
+# - http://localhost:3456/ (home.stx)
+# - http://localhost:3456/about (about.stx)
+# - http://localhost:3456/contact (contact.stx)
 ```
 
-Then visit:
-- http://localhost:3456/ (home)
-- http://localhost:3456/about
-- http://localhost:3456/contact
+## 📊 Before vs After
 
-## 📝 How It's Different from JSX
-
-### JSX (Traditional):
+### ❌ Before (Complex)
 ```bash
-# Bun can run JSX directly
-bun run app.tsx
+# Step 1: Configure bunfig.toml
+# Step 2: Create build script
+# Step 3: Create server script
+# Step 4: Run build
+# Step 5: Run server
 ```
 
-### STX (Now Available):
+### ✅ After (Simple)
 ```bash
-# Use the serve command
-bun-plugin-stx serve pages/*.stx
-
-# Or with bunfig.toml preload
-bun run your-server.ts
+bun add bun-plugin-stx
+bun run dev
 ```
 
-## ✨ What This Enables
-
-✅ **No build step** - Just serve directly
-✅ **Hot reload** - Use with `bun --watch`
-✅ **Simple deployment** - One command
-✅ **Fast development** - Instant feedback
-✅ **Import .stx** - Treat them like modules
-
-## 🎯 Real-World Usage
-
-### Development Server
-```bash
-# Start development with watch mode
-bun --watch ../packages/bun-plugin/dist/serve.js pages/
-```
-
-### Production
-```bash
-# Build to static files
-bun run build
-
-# Deploy the dist/ folder
-```
-
-### Docker
-```dockerfile
-FROM oven/bun:1
-WORKDIR /app
-COPY . .
-RUN bun install
-CMD ["bun", "../packages/bun-plugin/dist/serve.js", "pages/"]
-```
+**2 commands!** 🎉
 
 ---
 
-**You can now serve .stx files as easily as JSX!** 🎉
+**This is the workflow you asked for:**
+1. `bun add bun-plugin-stx`
+2. Add script to package.json
+3. `bun run dev`
+
+Done!

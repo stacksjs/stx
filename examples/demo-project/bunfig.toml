@@ -1,5 +1,6 @@
 # Bun configuration for stx project
+# This makes the 'serve' command available
 
-# Note: Bun's fullstack dev server expects HTML files in routes.
-# The stx plugin is used at build time to transform .stx -> .html
-# See server.ts for how this works.
+[install.scopes]
+# Expose the serve command from bun-plugin-stx
+"@" = "https://registry.npmjs.org/"

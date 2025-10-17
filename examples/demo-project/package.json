@@ -3,8 +3,10 @@
   "type": "module",
   "version": "1.0.0",
   "scripts": {
-    "dev": "bun server.ts",
-    "start": "bun server.ts",
+    "dev": "bun ../../packages/bun-plugin/dist/serve.js pages/*.stx",
+    "start": "bun ../../packages/bun-plugin/dist/serve.js pages/*.stx",
+    "serve": "bun ../../packages/bun-plugin/dist/serve.js",
+    "dev:custom": "bun server.ts",
     "api": "bun server-with-api.ts",
     "build": "bun build.ts"
   },

@@ -5,19 +5,22 @@
  * Serves .stx files directly without manual build step
  *
  * Usage:
- *   bun-plugin-stx serve pages/*.stx
- *   bun-plugin-stx serve pages/ --port 3000
+ *   serve pages/*.stx
+ *   serve pages/ --port 3000
+ *   serve pages/home.stx pages/about.stx
  */
 
-import { plugin } from 'bun'
+import { serve as bunServe } from 'bun'
 import { Glob } from 'bun'
 import stxPlugin from './index'
 
-// Register the plugin
-plugin(stxPlugin())
-
 // Parse command line arguments
 const args = process.argv.slice(2)
+
+// Remove 'serve' if it's the first argument (for compatibility)
+if (args[0] === 'serve') {
+  args.shift()
+}
 const portIndex = args.indexOf('--port')
 const port = portIndex !== -1 && args[portIndex + 1] ? Number.parseInt(args[portIndex + 1]) : 3456
 
@@ -25,11 +28,12 @@ const port = portIndex !== -1 && args[portIndex + 1] ? Number.parseInt(args[port
 const patterns = args.filter(arg => !arg.startsWith('--') && arg !== args[portIndex + 1])
 
 if (patterns.length === 0) {
-  console.error('Usage: bun-plugin-stx serve <files...> [--port 3000]')
+  console.error('Usage: serve <files...> [--port 3000]')
   console.error('\nExamples:')
-  console.error('  bun-plugin-stx serve pages/*.stx')
-  console.error('  bun-plugin-stx serve pages/ --port 3000')
-  console.error('  bun-plugin-stx serve index.stx about.stx')
+  console.error('  serve pages/*.stx')
+  console.error('  serve pages/ --port 3000')
+  console.error('  serve index.stx about.stx')
+  console.error('\nAfter installing: bun add bun-plugin-stx')
   process.exit(1)
 }
 
@@ -106,7 +110,7 @@ for (const output of result.outputs) {
 }
 
 // Start server
-const server = Bun.serve({
+const server = bunServe({
   port,
   async fetch(req) {
     const url = new URL(req.url)

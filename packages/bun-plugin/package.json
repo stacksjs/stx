@@ -45,7 +45,7 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "bun-plugin-stx": "./dist/serve.js",
+    "serve": "./dist/serve.js",
     "stx-serve": "./dist/serve.js"
   },
   "files": [

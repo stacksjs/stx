@@ -1,38 +1,188 @@
 # STX Demo Project
 
-This is a demo project showing how to use `bun-plugin-stx` in a real application.
+A complete demo showing the simplest way to use `.stx` files with the bun-plugin.
+
+## 🎯 The Simplest Workflow
+
+### 1. Install the plugin
+
+```bash
+bun add bun-plugin-stx
+```
+
+### 2. Serve your .stx files
+
+```bash
+# Using the serve command directly
+bun serve pages/*.stx
+
+# Or specific files
+bun serve pages/home.stx pages/about.stx
+
+# Or a directory
+bun serve pages/
+
+# Custom port
+bun serve pages/*.stx --port 3000
+```
+
+That's it! No configuration needed.
 
 ## 📁 Project Structure
 
 ```
 demo-project/
 ├── pages/
-│   ├── home.stx      # Home page
-│   ├── about.stx     # About page
-│   └── contact.stx   # Contact page
-├── dist/             # Build output (generated)
-├── build.ts          # Build script
-├── serve.ts          # Development server
+│   ├── home.stx      # Serves at /
+│   ├── about.stx     # Serves at /about
+│   └── contact.stx   # Serves at /contact
 └── package.json
 ```
 
 ## 🚀 Quick Start
 
-### The Simplest Way (Recommended)
-
-Just run the server:
+From this directory:
 
 ```bash
+# Option 1: Use package script
+bun run dev
+
+# Option 2: Direct command (after install)
+bun serve pages/*.stx
+
+# Option 3: Custom server (advanced)
 bun server.ts
 ```
 
-That's it! Your server is running at http://localhost:3000
+## 🎨 What `.stx` Files Look Like
 
-This uses Bun's native fullstack dev server with .stx files as routes, configured via `bunfig.toml`.
+```html
+<!-- pages/home.stx -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ title }}</title>
+  <script>
+    export const title = "My Site";
+    export const items = ["One", "Two", "Three"];
+  </script>
+</head>
+<body>
+  <h1>{{ title }}</h1>
+  <ul>
+    @foreach (items as item)
+      <li>{{ item }}</li>
+    @endforeach
+  </ul>
+</body>
+</html>
+```
 
-### How It Works
+## 📝 Available Commands
 
-The server builds .stx files on startup and serves them through Bun.serve():
+### Development
+
+```bash
+# Start dev server (watches for changes)
+bun run dev
+
+# Same as above
+bun run start
+```
+
+### Serve Specific Files
+
+```bash
+# Just home and about pages
+bun serve pages/home.stx pages/about.stx
+
+# All .stx files
+bun serve pages/*.stx
+
+# All files in directory
+bun serve pages/
+```
+
+### Build for Production
+
+```bash
+# Build static HTML files
+bun run build
+```
+
+## 🌐 How It Works
+
+When you run `bun serve pages/*.stx`:
+
+1. **Discovers files** - Finds all .stx files matching your pattern
+2. **Builds** - Processes each .stx file through the plugin
+3. **Serves** - Starts a development server with hot reloading
+4. **Routes** - Smart routing: `home.stx` → `/`, `about.stx` → `/about`
+
+## 📄 Available Pages
+
+Once the server is running at http://localhost:3456:
+
+- **Home** - http://localhost:3456/
+  - Features grid
+  - Navigation
+  - Styled layout
+
+- **About** - http://localhost:3456/about
+  - Team member cards
+  - Dynamic rendering with @foreach
+
+- **Contact** - http://localhost:3456/contact
+  - Contact information
+  - Variable interpolation
+
+## ⚡ Features
+
+✅ **Zero configuration** - Just install and serve
+✅ **Hot reloading** - Changes reflect immediately
+✅ **Smart routing** - Automatic route mapping
+✅ **Template features** - Variables, loops, conditionals
+✅ **Fast** - Powered by Bun
+✅ **Simple** - One command to serve
+
+## 📦 Installation in Your Project
+
+```bash
+# 1. Create a new project
+mkdir my-stx-project
+cd my-stx-project
+
+# 2. Initialize
+bun init -y
+
+# 3. Install the plugin
+bun add bun-plugin-stx
+
+# 4. Create a page
+cat > index.stx << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Site</title>
+  <script>
+    export const message = "Hello World!";
+  </script>
+</head>
+<body>
+  <h1>{{ message }}</h1>
+</body>
+</html>
+EOF
+
+# 5. Serve it!
+bun serve index.stx
+```
+
+Visit http://localhost:3456 and you're done!
+
+## 🔧 Advanced: Custom Server
+
+If you need more control (API routes, custom logic), see `server.ts` and `server-with-api.ts` for examples of building a custom server with `Bun.serve()`.
 
 ```typescript
 // server.ts
@@ -40,213 +190,72 @@ import { serve } from "bun"
 import { Glob } from "bun"
 import stxPlugin from "bun-plugin-stx"
 
-// 1. Build all .stx files
-const glob = new Glob("pages/**/*.stx")
-const stxFiles = await Array.fromAsync(glob.scan("."))
-
-const buildResult = await Bun.build({
-  entrypoints: stxFiles,
-  outdir: "./dist",
+// Build .stx files
+const result = await Bun.build({
+  entrypoints: await Array.fromAsync(new Glob("pages/*.stx").scan(".")),
   plugins: [stxPlugin()],
 })
 
-// 2. Create routes from built HTML
+// Create routes and serve
 const routes = {}
-for (const output of buildResult.outputs) {
-  if (output.path.endsWith(".html")) {
-    const filename = output.path.split("/").pop().replace(".html", "")
-    const route = filename === "home" ? "/" : `/${filename}`
-    const html = await output.text()
-    routes[route] = new Response(html, {
-      headers: { "Content-Type": "text/html" },
-    })
-  }
-}
+// ... route logic ...
 
-// 3. Serve with Bun
-serve({
-  routes,
-  development: true,
-})
+serve({ routes, development: true })
 ```
 
-This approach:
-- ✅ Builds .stx files once on startup
-- ✅ Uses standard Bun.serve() patterns
-- ✅ Works with development mode
-- ✅ Simple `bun server.ts` command
+## 🎯 Comparison with Other Tools
 
-### With API Endpoints
-
+### HTML (Static)
 ```bash
-bun server-with-api.ts
+bun --hot index.html  # Bun's static server
 ```
 
-This demonstrates combining .stx routes with API endpoints in one server.
-
-## 📄 Available Pages
-
-- **Home** - http://localhost:3456/
-- **About** - http://localhost:3456/about
-- **Contact** - http://localhost:3456/contact
-
-## 🎯 What This Demonstrates
-
-✅ **Direct serving** - Serve .stx files like JSX, no build step needed
-✅ **Automatic file discovery** - Finds all .stx files automatically
-✅ **Multi-page application** - Multiple routes from multiple .stx files
-✅ **Template directives** - @foreach, @if, variable interpolation
-✅ **Hot builds** - Build and serve in one command
-✅ **404 handling** - Custom 404 page with navigation
-✅ **Clean routing** - home.stx maps to /, about.stx to /about
-
-### HTML vs STX Comparison
-
-**HTML (Bun's native support):**
-```typescript
-import home from "./index.html"
-
-Bun.serve({
-  routes: { "/": home },
-  development: true,
-})
-```
-
-**STX (Now works the same way!):**
-```typescript
-import home from "./pages/home.stx"
-
-Bun.serve({
-  routes: { "/": home },
-  development: true,
-})
-```
-
-Configure the plugin once in `bunfig.toml` and it just works! 🎉
-
-## 🛠 How It Works
-
-1. **Build Process** (`build.ts`)
-   - Discovers all `.stx` files using Bun's Glob API
-   - Passes them to `Bun.build()` with the stx plugin
-   - Outputs compiled HTML to `dist/`
-
-2. **Development Server** (`serve.ts`)
-   - Builds the project first
-   - Creates a route map from the built HTML files
-   - Serves pages using `Bun.serve()`
-   - Provides 404 handling with navigation
-
-3. **Template Processing**
-   - Each `.stx` file has a `<script>` section with exports
-   - Variables are used in the template with `{{ variable }}`
-   - Directives like `@foreach` are processed
-   - Final output is clean HTML
-
-## 📝 Creating New Pages
-
-1. Create a new `.stx` file in `pages/`:
-
-```html
-<!-- pages/products.stx -->
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Products</title>
-  <script>
-    export const products = [
-      { name: "Product 1", price: 99 },
-      { name: "Product 2", price: 149 }
-    ];
-  </script>
-</head>
-<body>
-  <h1>Our Products</h1>
-  @foreach (products as product)
-    <div>{{ product.name }} - ${{ product.price }}</div>
-  @endforeach
-</body>
-</html>
-```
-
-2. Rebuild and restart the server:
-
+### STX (Dynamic Templates)
 ```bash
-bun run dev
-```
-
-3. Visit http://localhost:3456/products
-
-That's it! The new page is automatically discovered and served.
-
-## 🔧 Customization
-
-### Change the port
-
-Edit `serve.ts`:
-
-```typescript
-const server = Bun.serve({
-  port: 3000, // Change this
-  // ...
-})
-```
-
-### Add custom plugins
-
-Edit `build.ts` or `serve.ts`:
-
-```typescript
-const result = await Bun.build({
-  entrypoints,
-  outdir: './dist',
-  plugins: [
-    stxPlugin({
-      debug: true,
-      cache: true,
-      // ... other options
-    })
-  ],
-})
-```
-
-### Watch mode (auto-rebuild on changes)
-
-You can use Bun's file watcher:
-
-```typescript
-import { watch } from 'fs'
-
-watch('./pages', { recursive: true }, async (event, filename) => {
-  if (filename?.endsWith('.stx')) {
-    console.log(`🔄 Rebuilding ${filename}...`)
-    // Rebuild logic here
-  }
-})
+bun serve index.stx   # With templating features!
 ```
 
 ## 💡 Tips
 
-- Keep your `.stx` files in the `pages/` directory for organization
-- Use consistent naming: `home.stx` for `/`, `about.stx` for `/about`
-- Add shared components in a `components/` directory
-- Use the `@include()` directive to reuse components
-- Enable `debug: true` in the plugin options to see processing details
+- **File naming**: `home.stx` or `index.stx` will serve at `/`
+- **Custom port**: Add `--port 8080` to any serve command
+- **Watch mode**: Built-in with the serve command
+- **Production**: Use `bun run build` to generate static HTML
 
 ## 🐛 Troubleshooting
 
-**Build fails:**
-- Check syntax in your `.stx` files
-- Ensure script exports are valid JavaScript
-- Check the console for detailed error messages
+**Command not found: serve**
 
-**Page not loading:**
-- Make sure the route matches the filename (minus `.stx`)
-- Check that the file was built (look in `dist/`)
-- Verify the server is running on the expected port
+The `serve` command is provided by the `bun-plugin-stx` package. Make sure it's installed:
+```bash
+bun add bun-plugin-stx
+```
 
-**Styles not applying:**
-- Styles in `<style>` tags are included in the output
-- Check browser devtools for CSS errors
+Then use the full command:
+```bash
+bun ./node_modules/bun-plugin-stx/dist/serve.js pages/*.stx
+```
 
-Happy coding with stx! 🎉
+Or add to package.json scripts and use `bun run dev`.
+
+**Port in use**
+
+Change the port:
+```bash
+bun serve pages/*.stx --port 3001
+```
+
+**Files not found**
+
+Make sure your pattern is correct:
+```bash
+# Check what files exist
+ls pages/*.stx
+
+# Then serve them
+bun serve pages/*.stx
+```
+
+---
+
+**Super simple workflow:** Install → Serve → Done! 🎉
