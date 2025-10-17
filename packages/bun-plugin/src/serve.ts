@@ -105,14 +105,25 @@ console.log('✅ Build complete\n')
 // Create route map
 const routes = new Map<string, string>()
 
+console.log(`\n📦 Processing ${result.outputs.length} build outputs...`)
 for (const output of result.outputs) {
-  if (output.path.endsWith('.html')) {
+  try {
     const content = await output.text()
-    const filename = output.path.split('/').pop()?.replace('.html', '') || 'index'
+    // Get the base filename without any extension
+    const outputFile = output.path.split('/').pop() || 'index'
+    const filename = outputFile
+      .replace('.html', '')
+      .replace('.md', '')
+      .replace('.stx', '')
 
     // Smart routing: index/home -> /, others -> /filename
     const route = ['index', 'home'].includes(filename) ? '/' : `/${filename}`
+    console.log(`   ✓ ${outputFile} -> ${route}`)
     routes.set(route, content)
+  }
+  catch (error) {
+    // Skip outputs that can't be converted to text (e.g., binary files)
+    console.warn(`   ✗ Skipping output: ${output.path} (${error})`)
   }
 }
 
