@@ -5,4 +5,6 @@ await Bun.build({
   outdir: './dist',
   plugins: [dts()],
   target: 'bun',
+  splitting: true,
+  minify: true,
 })

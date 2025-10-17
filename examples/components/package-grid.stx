@@ -1,0 +1,9 @@
+<div class="package-grid">
+  @foreach(items as item)
+    <div class="package-item">
+      <div class="package-emoji">{{ item.emoji }}</div>
+      <div class="package-title">{{ item.title }}</div>
+      <div class="package-desc">{{ item.desc }}</div>
+    </div>
+  @endforeach
+</div>

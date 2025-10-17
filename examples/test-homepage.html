@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STACKS.JS Desktop - Test</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="homepage.css">
+</head>
+<body>
+  <div class="desktop">
+    <!-- Desktop Icons -->
+    <div class="desktop-icons">
+      <button class="desktop-icon" data-icon-id="about" data-icon-type="window" data-icon-section="about">
+        <div class="desktop-icon-image">📄</div>
+        <div class="desktop-icon-label">About Stacks</div>
+      </button>
+    </div>
+
+    <!-- Windows (sample) -->
+    <div class="window" id="window-about">
+      <div class="window-titlebar">
+        <div class="window-icon">📄</div>
+        <div class="window-title">About Stacks</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('about')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('about')">□</button>
+          <button class="window-control close" onclick="closeWindow('about')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <p>Test window content</p>
+      </div>
+    </div>
+
+    <!-- Start Menu -->
+    <div class="start-menu" id="start-menu">
+      <div class="start-menu-content">
+        <button class="start-menu-item" onclick="openWindow('about')">
+          <div class="start-menu-item-icon">📄</div>
+          <div>About</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Taskbar -->
+    <div class="taskbar">
+      <button class="start-button" id="start-button">
+        <span class="start-logo">🪟</span>
+        <span>start</span>
+      </button>
+      <div class="taskbar-tasks" id="taskbar-tasks"></div>
+      <div class="taskbar-clock" id="clock">12:00 PM</div>
+    </div>
+
+    <!-- Notification Popup -->
+    <div class="notification-popup" id="notification-popup">
+      <div class="notification-header">
+        <div class="notification-icon">⭐</div>
+        <div class="notification-title">Build Anything</div>
+        <button class="notification-close" onclick="closeNotification()">×</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div class="context-menu" id="context-menu" style="display: none;">
+    <button class="context-menu-item" onclick="window.location.reload()">
+      <div class="context-menu-item-icon">🔄</div>
+      <div>Refresh</div>
+    </button>
+  </div>
+
+  <script type="module" src="homepage.js"></script>
+</body>
+</html>
