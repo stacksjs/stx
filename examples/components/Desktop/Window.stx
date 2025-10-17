@@ -1,0 +1,18 @@
+<div
+  id="window-{{ id }}"
+  class="window"
+  style="left: {{ left }}px; top: {{ top }}px; width: {{ width }}px; height: {{ height }}px;"
+>
+  <div class="window-titlebar">
+    <div class="window-icon">{{ icon }}</div>
+    <div class="window-title">{{ title }}</div>
+    <div class="window-controls">
+      <button class="window-control minimize">_</button>
+      <button class="window-control maximize">□</button>
+      <button class="window-control close" onclick="closeWindow('{{ id }}')">×</button>
+    </div>
+  </div>
+  <div class="window-content">
+    <slot></slot>
+  </div>
+</div>

@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STACKS.JS Desktop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/packages/stx/examples/dist/styles.css">
+  <script>
+    module.exports = {
+      packages: [
+        { title: 'AI', emoji: '🤖', desc: 'Deep AI integrations for agentic workflows' },
+        { title: 'API', emoji: '🔌', desc: 'Build scalable REST & GraphQL APIs' },
+        { title: 'Auth', emoji: '🔐', desc: 'Authentication and authorization' },
+        { title: 'Cache', emoji: '⚡', desc: 'Multi-driver caching system' },
+        { title: 'CLI', emoji: '⌨️', desc: 'Beautiful command-line interfaces' },
+        { title: 'Cloud', emoji: '☁️', desc: 'Cloud infrastructure management' },
+        { title: 'Database', emoji: '🗄️', desc: 'Database connections & migrations' },
+        { title: 'ORM', emoji: '🗺️', desc: 'Elegant object-relational mapper' },
+        { title: 'Router', emoji: '🧭', desc: 'Fast & flexible routing' },
+        { title: 'Validation', emoji: '✅', desc: 'Type-safe validation' },
+        { title: 'Queue', emoji: '📬', desc: 'Background job processing' },
+        { title: 'Storage', emoji: '💾', desc: 'File storage abstraction' },
+        { title: 'Email', emoji: '📧', desc: 'Send emails with ease' },
+        { title: 'Events', emoji: '📡', desc: 'Event-driven architecture' },
+        { title: 'Notifications', emoji: '🔔', desc: 'Multi-channel notifications' },
+        { title: 'Testing', emoji: '🧪', desc: 'Testing utilities & helpers' },
+        { title: 'Search Engine', emoji: '🔍', desc: 'Full-text search capabilities' },
+        { title: 'Realtime', emoji: '⚡', desc: 'WebSocket & real-time features' },
+        { title: 'X-Ray', emoji: '🔬', desc: 'Debugging & monitoring tools' },
+        { title: 'Payments', emoji: '💳', desc: 'Payment processing integration' }
+      ],
+      desktopIcons: [
+        { id: 'about', title: 'About Stacks', icon: '📄', type: 'window', section: 'about' },
+        { id: 'ecosystem', title: 'Ecosystem', icon: '🌐', type: 'window', section: 'ecosystem' },
+        { id: 'backend', title: 'Backend', icon: '⚙️', type: 'window', section: 'backend' },
+        { id: 'frontend', title: 'Frontend', icon: '🎨', type: 'window', section: 'frontend' },
+        { id: 'cloud', title: 'Cloud', icon: '☁️', type: 'window', section: 'cloud' },
+        { id: 'docs', title: 'Documentation', icon: '📚', type: 'link', url: 'https://stacksjs.org/docs' },
+        { id: 'github', title: 'GitHub', icon: '💻', type: 'link', url: 'https://github.com/stacksjs/stacks' },
+        { id: 'discord', title: 'Discord', icon: '💬', type: 'link', url: 'https://discord.gg/stacksjs' }
+      ]
+    };
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Tahoma', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* Desktop Background */
+    .desktop {
+      width: 100%;
+      height: 100%;
+      background-image: url('./bg-img.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Desktop Icons Grid */
+    .desktop-icons {
+      flex: 1;
+      padding: 20px;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    .desktop-icon {
+      width: 100px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 8px !important;
+      cursor: pointer !important;
+      padding: 8px !important;
+      border: 2px solid transparent !important;
+      background: transparent !important;
+      transition: background 0.15s !important;
+      position: absolute !important;
+      user-select: none !important;
+      margin: 0 !important;
+      float: none !important;
+      transform: none !important;
+    }
+
+    .desktop-icon:hover {
+      background: rgba(51, 153, 255, 0.2);
+      border: 2px dotted rgba(51, 153, 255, 0.6);
+    }
+
+    .desktop-icon.selected {
+      background: rgba(51, 153, 255, 0.4) !important;
+      border: 2px dotted rgba(51, 153, 255, 1) !important;
+    }
+
+    .desktop-icon-image {
+      font-size: 48px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      position: relative;
+      display: inline-block;
+    }
+
+    /* Shortcut arrow overlay for link icons */
+    .desktop-icon[data-icon-type="link"] .desktop-icon-image::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border: 1px solid #666;
+      border-radius: 2px;
+      box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .desktop-icon[data-icon-type="link"] .desktop-icon-image::before {
+      content: '↗';
+      position: absolute;
+      bottom: 2px;
+      left: 4px;
+      font-size: 16px;
+      color: #0831d9;
+      font-weight: bold;
+      z-index: 1;
+      text-shadow: none;
+    }
+
+    .desktop-icon-label {
+      font-size: 12px;
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+      text-align: center;
+      word-wrap: break-word;
+      width: 100%;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+
+    .desktop-icon.selected .desktop-icon-label {
+      background: #0831d9;
+      color: white;
+    }
+
+    .desktop-icon-label-input {
+      font-size: 12px;
+      color: white;
+      background: #0831d9;
+      border: 1px solid white;
+      text-align: center;
+      width: 100%;
+      padding: 2px 4px;
+      font-family: 'Tahoma', sans-serif;
+      outline: none;
+    }
+
+    /* Taskbar */
+    .taskbar {
+      height: 40px;
+      background: linear-gradient(to bottom, #245edb 0%, #3f8cf3 9%, #245edb 18%, #245edb 92%, #1941a5 100%);
+      border-top: 1px solid #0831d9;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      position: relative;
+      z-index: 10000;
+    }
+
+    .start-button {
+      height: 32px;
+      background: linear-gradient(to bottom, #5eac56 0%, #3c873c 100%);
+      border: 1px solid #16591e;
+      border-radius: 4px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      font-weight: bold;
+      color: white;
+      font-size: 14px;
+      text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+      transition: all 0.1s;
+    }
+
+    .start-button:hover {
+      background: linear-gradient(to bottom, #6ec165 0%, #4a9d4a 100%);
+    }
+
+    .start-button:active {
+      box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .start-logo {
+      font-size: 20px;
+    }
+
+    .taskbar-tasks {
+      flex: 1;
+      display: flex;
+      gap: 4px;
+      margin-left: 12px;
+      overflow-x: auto;
+    }
+
+    .taskbar-task {
+      height: 32px;
+      min-width: 160px;
+      max-width: 200px;
+      background: linear-gradient(to bottom, #3f8cf3 0%, #245edb 100%);
+      border: 1px solid #0831d9;
+      border-radius: 3px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      color: white;
+      font-size: 12px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      transition: all 0.1s;
+    }
+
+    .taskbar-task:hover {
+      background: linear-gradient(to bottom, #4a9dff 0%, #2968e8 100%);
+    }
+
+    .taskbar-task.active {
+      background: linear-gradient(to bottom, #245edb 0%, #1941a5 100%);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .taskbar-task-icon {
+      font-size: 16px;
+    }
+
+    .taskbar-task-label {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .taskbar-clock {
+      height: 32px;
+      background: rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      border-radius: 3px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      color: white;
+      font-size: 12px;
+      margin-left: auto;
+    }
+
+    /* Window */
+    .window {
+      position: absolute;
+      background: white;
+      border: 1px solid #0831d9;
+      border-radius: 8px 8px 0 0;
+      box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+      min-width: 400px;
+      min-height: 300px;
+      display: none;
+      flex-direction: column;
+      z-index: 100;
+    }
+
+    .window.active {
+      display: flex;
+    }
+
+    .window-titlebar {
+      height: 32px;
+      background: linear-gradient(to bottom, #0997ff 0%, #0053ee 100%);
+      border-radius: 8px 8px 0 0;
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: move;
+      user-select: none;
+    }
+
+    .window-icon {
+      font-size: 16px;
+    }
+
+    .window-title {
+      flex: 1;
+      color: white;
+      font-size: 13px;
+      font-weight: bold;
+      text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 4px;
+    }
+
+    .window-control {
+      width: 21px;
+      height: 21px;
+      border: 1px solid #003c74;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: all 0.1s;
+      background: linear-gradient(to bottom, #0997ff 0%, #0053ee 100%);
+      color: white;
+    }
+
+    .window-control:hover {
+      background: linear-gradient(to bottom, #1ba1ff 0%, #0d65ff 100%);
+    }
+
+    .window-control.close {
+      background: linear-gradient(to bottom, #ff5f57 0%, #e81123 100%);
+      border-color: #c0392b;
+    }
+
+    .window-control.close:hover {
+      background: linear-gradient(to bottom, #ff6f67 0%, #f82133 100%);
+    }
+
+    .window-content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: white;
+      color: #000;
+    }
+
+    .window-content h2 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      color: #0831d9;
+    }
+
+    .window-content h3 {
+      font-size: 18px;
+      margin: 16px 0 8px;
+      color: #245edb;
+    }
+
+    .window-content p {
+      margin-bottom: 12px;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    /* Package Grid */
+    .package-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .package-item {
+      border: 2px solid #0831d9;
+      padding: 12px;
+      background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .package-item:hover {
+      background: linear-gradient(to bottom, #fff7e6 0%, #f0ead0 100%);
+      border-color: #245edb;
+      transform: translateY(-2px);
+      box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .package-emoji {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .package-title {
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: #0831d9;
+    }
+
+    .package-desc {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.4;
+    }
+
+    /* Feature Buttons */
+    .feature-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .feature-btn {
+      padding: 8px 16px;
+      background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+      border: 2px solid #0831d9;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+      font-family: 'Tahoma', sans-serif;
+    }
+
+    .feature-btn:hover {
+      background: linear-gradient(to bottom, #fff7e6 0%, #f0ead0 100%);
+      border-color: #245edb;
+    }
+
+    .feature-btn.active {
+      background: linear-gradient(to bottom, #0997ff 0%, #0053ee 100%);
+      color: white;
+      font-weight: bold;
+    }
+
+    .code-display {
+      background: #000;
+      color: #0f0;
+      padding: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      border: 2px solid #0831d9;
+      margin-top: 12px;
+    }
+
+    /* Draggable */
+    .dragging {
+      opacity: 0.8;
+      z-index: 10000;
+    }
+
+    /* Start Menu */
+    .start-menu {
+      position: absolute;
+      bottom: 40px;
+      left: 0;
+      width: 350px;
+      height: 500px;
+      background: linear-gradient(to right, #245edb 0px, #245edb 40px, #ece9d8 40px, #ece9d8 100%);
+      border: 2px solid #0831d9;
+      box-shadow: 2px -2px 8px rgba(0, 0, 0, 0.3);
+      display: none;
+      flex-direction: column;
+      z-index: 9999;
+    }
+
+    .start-menu.active {
+      display: flex;
+    }
+
+    .start-menu-header {
+      background: linear-gradient(to bottom, #0997ff 0%, #0053ee 100%);
+      padding: 8px 12px;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      border-bottom: 1px solid #0831d9;
+    }
+
+    .start-menu-user {
+      background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+      padding: 12px 50px 12px 12px;
+      border-bottom: 1px solid #b0b0b0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .start-menu-user-icon {
+      font-size: 32px;
+    }
+
+    .start-menu-items {
+      flex: 1;
+      overflow-y: auto;
+      background: #ece9d8;
+      padding: 8px 0;
+    }
+
+    .start-menu-item {
+      padding: 8px 50px 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      width: 100%;
+      text-align: left;
+      font-family: 'Tahoma', sans-serif;
+      font-size: 13px;
+      transition: background 0.15s;
+      position: relative;
+    }
+
+    .start-menu-item:hover {
+      background: linear-gradient(to right, #0997ff 0%, #0053ee 100%);
+      color: white;
+    }
+
+    .start-menu-item.has-submenu::after {
+      content: '▶';
+      position: absolute;
+      right: 12px;
+      font-size: 10px;
+    }
+
+    .start-submenu {
+      position: absolute;
+      left: 100%;
+      top: 0;
+      min-width: 200px;
+      background: #ece9d8;
+      border: 2px solid #0831d9;
+      box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+      display: none;
+      flex-direction: column;
+      z-index: 10000;
+    }
+
+    .start-menu-item:hover .start-submenu {
+      display: flex;
+    }
+
+    .start-menu-item-icon {
+      font-size: 24px;
+      width: 32px;
+      text-align: center;
+      position: relative;
+    }
+
+    /* Shortcut indicator for external links in start menu */
+    .start-menu-item[onclick*="window.open"] .start-menu-item-icon::after {
+      content: '↗';
+      position: absolute;
+      bottom: -2px;
+      right: 0;
+      font-size: 10px;
+      color: #0831d9;
+      font-weight: bold;
+      background: white;
+      border-radius: 2px;
+      padding: 1px 2px;
+      border: 1px solid #999;
+    }
+
+    .start-menu-separator {
+      height: 1px;
+      background: #b0b0b0;
+      margin: 4px 50px 4px 12px;
+    }
+
+    .start-menu-footer {
+      background: linear-gradient(to bottom, #0997ff 0%, #0053ee 100%);
+      padding: 8px 12px;
+      display: flex;
+      gap: 8px;
+      border-top: 1px solid #0831d9;
+    }
+
+    .start-menu-footer-btn {
+      flex: 1;
+      padding: 6px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 3px;
+      color: white;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: 'Tahoma', sans-serif;
+    }
+
+    .start-menu-footer-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="desktop">
+    <!-- Desktop Icons -->
+    <div class="desktop-icons">
+      @foreach(desktopIcons as icon)
+        <button
+          class="desktop-icon"
+          data-icon-id="{{ icon.id }}"
+          data-icon-type="{{ icon.type }}"
+          data-icon-section="{{ icon.section }}"
+          data-icon-url="{{ icon.url }}"
+        >
+          <div class="desktop-icon-image">{{ icon.icon }}</div>
+          <div class="desktop-icon-label">{{ icon.title }}</div>
+        </button>
+      @endforeach
+    </div>
+
+    <!-- Windows -->
+    <div id="window-about" class="window" style="left: 100px; top: 80px; width: 600px; height: 500px;">
+      <div class="window-titlebar">
+        <div class="window-icon">📄</div>
+        <div class="window-title">About Stacks</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('about')">_</button>
+          <button class="window-control maximize">□</button>
+          <button class="window-control close" onclick="closeWindow('about')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>STACKS.JS</h2>
+        <h3>Rapid Development Framework</h3>
+        <p>
+          A TypeScript framework for building modern web applications, APIs, and cloud infrastructure.
+        </p>
+        <p>
+          Stacks provides an elegant, opinionated solution for common development needs with a focus on
+          developer experience and productivity.
+        </p>
+        <p>
+          Built on <strong>Bun</strong>, <strong>TypeScript</strong>, and <strong>Tauri</strong>.
+        </p>
+        <div style="margin-top: 24px; padding: 12px; background: #fffacd; border: 2px solid #ffd700;">
+          <p style="margin: 0; font-weight: bold;">✨ Convention over configuration, while staying wholly configurable</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="window-ecosystem" class="window" style="left: 150px; top: 100px; width: 800px; height: 600px;">
+      <div class="window-titlebar">
+        <div class="window-icon">🌐</div>
+        <div class="window-title">Ecosystem</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('ecosystem')">_</button>
+          <button class="window-control maximize">□</button>
+          <button class="window-control close" onclick="closeWindow('ecosystem')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Ecosystem</h2>
+        <p>Out of the box, Stacks has elegant solutions for the common features needed by all modern applications.</p>
+
+        <div class="package-grid">
+          @foreach(packages as package)
+            <div class="package-item">
+              <div class="package-emoji">{{ package.emoji }}</div>
+              <div class="package-title">{{ package.title }}</div>
+              <div class="package-desc">{{ package.desc }}</div>
+            </div>
+          @endforeach
+        </div>
+      </div>
+    </div>
+
+    <div id="window-backend" class="window" style="left: 200px; top: 120px; width: 700px; height: 550px;">
+      <div class="window-titlebar">
+        <div class="window-icon">⚙️</div>
+        <div class="window-title">Backend Features</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('backend')">_</button>
+          <button class="window-control maximize">□</button>
+          <button class="window-control close" onclick="closeWindow('backend')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Backend</h2>
+        <p>Simple, elegant syntax powers amazing functionality.</p>
+
+        <div class="feature-buttons">
+          <button class="feature-btn active" onclick="showFeature('backend', 'auth')">Authentication</button>
+          <button class="feature-btn" onclick="showFeature('backend', 'orm')">ORM</button>
+          <button class="feature-btn" onclick="showFeature('backend', 'validation')">Validation</button>
+          <button class="feature-btn" onclick="showFeature('backend', 'storage')">Storage</button>
+          <button class="feature-btn" onclick="showFeature('backend', 'queue')">Queues</button>
+          <button class="feature-btn" onclick="showFeature('backend', 'events')">Events</button>
+        </div>
+
+        <div id="backend-feature-content">
+          <h3>Authentication</h3>
+          <div class="code-display">
+import { Auth } from '@stacksjs/auth'
+
+// Login user
+const user = await Auth.attempt({
+  email: 'user@example.com',
+  password: 'secret'
+})
+
+// Get authenticated user
+const current = await Auth.user()
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="window-frontend" class="window" style="left: 250px; top: 140px; width: 700px; height: 550px;">
+      <div class="window-titlebar">
+        <div class="window-icon">🎨</div>
+        <div class="window-title">Frontend Features</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('frontend')">_</button>
+          <button class="window-control maximize">□</button>
+          <button class="window-control close" onclick="closeWindow('frontend')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Frontend</h2>
+        <p>Develop dynamic UIs with helpers for atomic design, and much more.</p>
+        <p style="color: #666; font-size: 12px;">⚡️ Powered by Bun, Tauri, Headwind, Vite, VitePress and Vue</p>
+
+        <div class="feature-buttons">
+          <button class="feature-btn active" onclick="showFeature('frontend', 'components')">Components</button>
+          <button class="feature-btn" onclick="showFeature('frontend', 'ui-kit')">UI Kit</button>
+          <button class="feature-btn" onclick="showFeature('frontend', 'routing')">Routing</button>
+          <button class="feature-btn" onclick="showFeature('frontend', 'desktop')">Desktop</button>
+        </div>
+
+        <div id="frontend-feature-content">
+          <h3>Components</h3>
+          <div class="code-display">
+&lt;template&gt;
+  &lt;Card title="Hello"&gt;
+    &lt;p&gt;Reusable components&lt;/p&gt;
+  &lt;/Card&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+// Auto-imported
+&lt;/script&gt;
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="window-cloud" class="window" style="left: 300px; top: 160px; width: 700px; height: 550px;">
+      <div class="window-titlebar">
+        <div class="window-icon">☁️</div>
+        <div class="window-title">Cloud Features</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('cloud')">_</button>
+          <button class="window-control maximize">□</button>
+          <button class="window-control close" onclick="closeWindow('cloud')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Cloud</h2>
+        <p>Develop & maintain cloud infrastructure with ease.</p>
+        <p style="color: #666; font-size: 12px;">Imagine Vercel, Vapor and Forge having been unified.</p>
+
+        <div class="feature-buttons">
+          <button class="feature-btn active" onclick="showFeature('cloud', 'deployment')">Deployment</button>
+          <button class="feature-btn" onclick="showFeature('cloud', 'storage')">Storage</button>
+          <button class="feature-btn" onclick="showFeature('cloud', 'cdn')">CDN</button>
+          <button class="feature-btn" onclick="showFeature('cloud', 'dns')">DNS</button>
+        </div>
+
+        <div id="cloud-feature-content">
+          <h3>Deployment</h3>
+          <div class="code-display">
+export default {
+  provider: 'aws',
+  region: 'us-east-1',
+
+  compute: {
+    type: 'serverless',
+    memory: 1024
+  }
+}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Start Menu -->
+    <div class="start-menu" id="start-menu">
+      <div class="start-menu-header">
+        STACKS.JS
+      </div>
+      <div class="start-menu-user">
+        <div class="start-menu-user-icon">👤</div>
+        <div>Developer</div>
+      </div>
+      <div class="start-menu-items">
+        <button class="start-menu-item" onclick="openWindow('about')">
+          <div class="start-menu-item-icon">📄</div>
+          <div>About Stacks</div>
+        </button>
+        <div class="start-menu-item has-submenu">
+          <div class="start-menu-item-icon">📦</div>
+          <div>Features</div>
+          <div class="start-submenu">
+            <button class="start-menu-item" onclick="openWindow('ecosystem')">
+              <div class="start-menu-item-icon">🌐</div>
+              <div>Ecosystem</div>
+            </button>
+            <button class="start-menu-item" onclick="openWindow('backend')">
+              <div class="start-menu-item-icon">⚙️</div>
+              <div>Backend</div>
+            </button>
+            <button class="start-menu-item" onclick="openWindow('frontend')">
+              <div class="start-menu-item-icon">🎨</div>
+              <div>Frontend</div>
+            </button>
+            <button class="start-menu-item" onclick="openWindow('cloud')">
+              <div class="start-menu-item-icon">☁️</div>
+              <div>Cloud</div>
+            </button>
+          </div>
+        </div>
+        <div class="start-menu-separator"></div>
+        <div class="start-menu-item has-submenu">
+          <div class="start-menu-item-icon">🔗</div>
+          <div>Resources</div>
+          <div class="start-submenu">
+            <button class="start-menu-item" onclick="window.open('https://stacksjs.org/docs', '_blank')">
+              <div class="start-menu-item-icon">📚</div>
+              <div>Documentation</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank')">
+              <div class="start-menu-item-icon">💻</div>
+              <div>GitHub</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://discord.gg/stacksjs', '_blank')">
+              <div class="start-menu-item-icon">💬</div>
+              <div>Discord</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Taskbar -->
+    <div class="taskbar">
+      <button class="start-button" id="start-button">
+        <span class="start-logo">🪟</span>
+        <span>start</span>
+      </button>
+      <div class="taskbar-tasks" id="taskbar-tasks"></div>
+      <div class="taskbar-clock" id="clock">12:00 PM</div>
+    </div>
+  </div>
+
+  <script>
+    console.log('=== JAVASCRIPT STARTING ===');
+
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      const hours = now.getHours() % 12 || 12;
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+      document.getElementById('clock').textContent = `${hours}:${minutes} ${ampm}`;
+    }
+    updateClock();
+    setInterval(updateClock, 60000);
+
+    // Window Management
+    let activeWindow = null;
+    let draggedWindow = null;
+    let dragOffset = { x: 0, y: 0 };
+
+    function openWindow(windowId) {
+      const window = document.getElementById(`window-${windowId}`);
+      if (!window) return;
+
+      window.classList.add('active');
+      setActiveWindow(windowId);
+      addTaskbarItem(windowId);
+
+      // Close start menu when opening a window
+      const startMenu = document.getElementById('start-menu');
+      if (startMenu) {
+        startMenu.classList.remove('active');
+      }
+    }
+
+    // Start Menu
+    const startButton = document.getElementById('start-button');
+    const startMenu = document.getElementById('start-menu');
+
+    startButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startMenu.classList.toggle('active');
+    });
+
+    // Close start menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!startMenu.contains(e.target) && e.target !== startButton && !startButton.contains(e.target)) {
+        startMenu.classList.remove('active');
+      }
+    });
+
+    function closeWindow(windowId) {
+      const window = document.getElementById(`window-${windowId}`);
+      if (!window) return;
+
+      window.classList.remove('active');
+      removeTaskbarItem(windowId);
+
+      if (activeWindow === windowId) {
+        activeWindow = null;
+      }
+    }
+
+    function minimizeWindow(windowId) {
+      const window = document.getElementById(`window-${windowId}`);
+      if (!window) return;
+
+      window.classList.remove('active');
+
+      // Update taskbar to show window is minimized
+      const task = document.querySelector(`[data-window-id="${windowId}"]`);
+      if (task) {
+        task.classList.remove('active');
+      }
+
+      if (activeWindow === windowId) {
+        activeWindow = null;
+      }
+    }
+
+    function setActiveWindow(windowId) {
+      const windows = document.querySelectorAll('.window');
+      windows.forEach(w => {
+        w.style.zIndex = w.id === `window-${windowId}` ? 1000 : 100;
+      });
+      activeWindow = windowId;
+
+      // Update taskbar
+      const tasks = document.querySelectorAll('.taskbar-task');
+      tasks.forEach(t => {
+        t.classList.toggle('active', t.dataset.windowId === windowId);
+      });
+    }
+
+    function addTaskbarItem(windowId) {
+      if (document.querySelector(`[data-window-id="${windowId}"]`)) return;
+
+      const icon = document.querySelector(`[data-icon-id="${windowId}"]`);
+      if (!icon) return;
+
+      const task = document.createElement('button');
+      task.className = 'taskbar-task active';
+      task.dataset.windowId = windowId;
+      task.innerHTML = `
+        <span class="taskbar-task-icon">${icon.querySelector('.desktop-icon-image').textContent}</span>
+        <span class="taskbar-task-label">${icon.querySelector('.desktop-icon-label').textContent}</span>
+      `;
+      task.onclick = () => {
+        const window = document.getElementById(`window-${windowId}`);
+        if (window.classList.contains('active') && activeWindow === windowId) {
+          closeWindow(windowId);
+        } else {
+          openWindow(windowId);
+        }
+      };
+      document.getElementById('taskbar-tasks').appendChild(task);
+    }
+
+    function removeTaskbarItem(windowId) {
+      const task = document.querySelector(`[data-window-id="${windowId}"]`);
+      if (task) task.remove();
+    }
+
+    // Desktop Icon Positioning and Dragging
+    let draggedIcon = null;
+    let iconDragOffset = { x: 0, y: 0 };
+    let hasMove = false;
+    let selectedIcon = null;
+
+    // Position icons initially in a grid
+    console.log('About to position icons...');
+    console.log('DOM fully loaded?', document.readyState);
+    const icons = document.querySelectorAll('.desktop-icon');
+    console.log('Found', icons.length, 'desktop icons');
+
+    if (icons.length === 0) {
+      console.error('NO ICONS FOUND! The @foreach directive may not be working');
+    }
+
+    icons.forEach((icon, index) => {
+      const row = Math.floor(index / 6);
+      const col = index % 6;
+      const left = (col * 120 + 20) + 'px';
+      const top = (row * 120 + 20) + 'px';
+      icon.style.setProperty('left', left, 'important');
+      icon.style.setProperty('top', top, 'important');
+      console.log(`Icon ${index}: positioned at left=${left}, top=${top}`, icon);
+      console.log(`  Computed style:`, window.getComputedStyle(icon).left, window.getComputedStyle(icon).top);
+    });
+    console.log('Icon positioning complete');
+
+    // Deselect icons when clicking desktop
+    document.querySelector('.desktop-icons').addEventListener('click', (e) => {
+      if (e.target.classList.contains('desktop-icons')) {
+        if (selectedIcon) {
+          selectedIcon.classList.remove('selected');
+          selectedIcon = null;
+        }
+      }
+    });
+
+    // Desktop Icon Clicks and Drag
+    document.querySelectorAll('.desktop-icon').forEach(icon => {
+      let clickTimeout;
+      let clickCount = 0;
+
+      icon.addEventListener('mousedown', (e) => {
+        // Don't start drag if clicking on label input
+        if (e.target.tagName === 'INPUT') return;
+
+        if (e.target.closest('.desktop-icon-label') || e.target.closest('.desktop-icon-image')) {
+          draggedIcon = icon;
+          hasMove = false;
+
+          const rect = icon.getBoundingClientRect();
+          iconDragOffset.x = e.clientX - rect.left;
+          iconDragOffset.y = e.clientY - rect.top;
+
+          e.preventDefault();
+        }
+      });
+
+      icon.addEventListener('click', (e) => {
+        if (hasMove) return; // Don't trigger click if we were dragging
+        if (e.target.tagName === 'INPUT') return; // Don't interfere with input editing
+
+        clearTimeout(clickTimeout);
+        clickCount++;
+
+        clickTimeout = setTimeout(() => {
+          if (clickCount === 1) {
+            // Single click - select icon
+            if (selectedIcon && selectedIcon !== icon) {
+              selectedIcon.classList.remove('selected');
+            }
+            icon.classList.add('selected');
+            selectedIcon = icon;
+
+            // If clicking on already selected icon's label, make it editable
+            if (e.target.closest('.desktop-icon-label') && icon.classList.contains('selected')) {
+              makeIconLabelEditable(icon);
+            }
+          }
+          clickCount = 0;
+        }, 250);
+      });
+
+      icon.addEventListener('dblclick', (e) => {
+        clearTimeout(clickTimeout);
+        clickCount = 0;
+        e.preventDefault();
+
+        // Double click - open
+        const type = icon.dataset.iconType;
+        const section = icon.dataset.iconSection;
+        const url = icon.dataset.iconUrl;
+
+        if (type === 'window') {
+          openWindow(section);
+        } else if (type === 'link') {
+          window.open(url, '_blank');
+        }
+      });
+    });
+
+    function makeIconLabelEditable(icon) {
+      const label = icon.querySelector('.desktop-icon-label');
+      if (!label || label.querySelector('input')) return;
+
+      const originalText = label.textContent;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'desktop-icon-label-input';
+      input.value = originalText;
+
+      label.textContent = '';
+      label.appendChild(input);
+      input.focus();
+      input.select();
+
+      function finishEditing() {
+        const newText = input.value.trim() || originalText;
+        label.textContent = newText;
+      }
+
+      input.addEventListener('blur', finishEditing);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          finishEditing();
+        } else if (e.key === 'Escape') {
+          label.textContent = originalText;
+        }
+      });
+    }
+
+    // Icon drag move
+    document.addEventListener('mousemove', (e) => {
+      if (!draggedIcon) return;
+      hasMove = true;
+
+      const desktopIcons = document.querySelector('.desktop-icons');
+      const desktopRect = desktopIcons.getBoundingClientRect();
+
+      const x = e.clientX - desktopRect.left - iconDragOffset.x;
+      const y = e.clientY - desktopRect.top - iconDragOffset.y;
+
+      draggedIcon.style.left = Math.max(0, Math.min(x, desktopRect.width - 100)) + 'px';
+      draggedIcon.style.top = Math.max(0, Math.min(y, desktopRect.height - 100)) + 'px';
+    });
+
+    // Icon drag end
+    document.addEventListener('mouseup', () => {
+      if (draggedIcon) {
+        setTimeout(() => {
+          draggedIcon = null;
+          hasMove = false;
+        }, 100);
+      }
+    });
+
+    // Window Dragging
+    document.querySelectorAll('.window-titlebar').forEach(titlebar => {
+      titlebar.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.window-control')) return;
+
+        const window = titlebar.closest('.window');
+        draggedWindow = window;
+
+        const rect = window.getBoundingClientRect();
+        dragOffset.x = e.clientX - rect.left;
+        dragOffset.y = e.clientY - rect.top;
+
+        window.classList.add('dragging');
+        e.preventDefault();
+      });
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!draggedWindow) return;
+
+      const x = e.clientX - dragOffset.x;
+      const y = e.clientY - dragOffset.y;
+
+      draggedWindow.style.left = Math.max(0, Math.min(x, window.innerWidth - 200)) + 'px';
+      draggedWindow.style.top = Math.max(0, Math.min(y, window.innerHeight - 100)) + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (draggedWindow) {
+        draggedWindow.classList.remove('dragging');
+        draggedWindow = null;
+      }
+    });
+
+    // Feature Toggle
+    function showFeature(section, feature) {
+      const buttons = document.querySelectorAll(`#window-${section} .feature-btn`);
+      buttons.forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const contentMap = {
+        backend: {
+          auth: { title: 'Authentication', code: `import { Auth } from '@stacksjs/auth'
+
+// Login user
+const user = await Auth.attempt({
+  email: 'user@example.com',
+  password: 'secret'
+})
+
+// Get authenticated user
+const current = await Auth.user()` },
+          orm: { title: 'Eloquent ORM', code: `import { Model } from '@stacksjs/orm'
+
+class User extends Model {
+  posts() {
+    return this.hasMany(Post)
+  }
+}
+
+const users = await User
+  .with('posts')
+  .where('active', true)
+  .get()` },
+          validation: { title: 'Validation', code: `import { validate } from '@stacksjs/validation'
+
+const result = await validate(data, {
+  name: 'required|string|min:3',
+  email: 'required|email|unique:users',
+  age: 'required|number|min:18'
+})
+
+if (result.fails) {
+  return result.errors
+}` },
+          storage: { title: 'File Storage', code: `import { Storage } from '@stacksjs/storage'
+
+// Store file
+await Storage.put('avatar.jpg', file)
+
+// Get file URL
+const url = await Storage.url('avatar.jpg')
+
+// Delete file
+await Storage.delete('avatar.jpg')` },
+          queue: { title: 'Job Queues', code: `import { Queue } from '@stacksjs/queue'
+
+// Dispatch job
+await Queue.dispatch(new ProcessVideo(video))
+
+// Delayed job
+await Queue.dispatch(
+  new SendEmail(user)
+).delay(60)` },
+          events: { title: 'Events & WebSockets', code: `import { Event } from '@stacksjs/events'
+
+// Dispatch event
+await Event.dispatch('user.registered', user)
+
+// Listen to event
+Event.listen('user.registered', (user) => {
+  // Send welcome email
+})` }
+        },
+        frontend: {
+          components: { title: 'Components', code: '&lt;template&gt;\n  &lt;Card title="Hello"&gt;\n    &lt;p&gt;Reusable components&lt;/p&gt;\n  &lt;/Card&gt;\n&lt;/template&gt;\n\n&lt;script setup&gt;\n// Auto-imported\n&lt;/script&gt;' },
+          'ui-kit': { title: 'UI Kit', code: 'import { Button, Input, Modal } from \'@stacksjs/ui\'\n\n&lt;Modal v-model="show"&gt;\n  &lt;Input v-model="name" placeholder="Name" /&gt;\n  &lt;Button @click="submit"&gt;Submit&lt;/Button&gt;\n&lt;/Modal&gt;' },
+          routing: { title: 'Routing', code: `import { router } from '@stacksjs/router'
+
+router.get('/users/:id', async ({ params }) => {
+  const user = await User.find(params.id)
+  return view('user', { user })
+})` },
+          desktop: { title: 'Desktop', code: `import { app } from '@stacksjs/desktop'
+
+await app.start({
+  window: {
+    title: 'My App',
+    width: 1200,
+    height: 800
+  }
+})` }
+        },
+        cloud: {
+          deployment: { title: 'Deployment', code: `export default {
+  provider: 'aws',
+  region: 'us-east-1',
+
+  compute: {
+    type: 'serverless',
+    memory: 1024
+  }
+}` },
+          storage: { title: 'Storage', code: `export default {
+  storage: {
+    driver: 's3',
+    bucket: 'my-app-storage',
+    region: 'us-east-1'
+  }
+}` },
+          cdn: { title: 'CDN', code: `export default {
+  cdn: {
+    enabled: true,
+    compress: ['brotli', 'gzip'],
+    cache: {
+      ttl: 3600
+    }
+  }
+}` },
+          dns: { title: 'DNS', code: `export default {
+  domains: [
+    'app.example.com',
+    'api.example.com'
+  ],
+  ssl: true
+}` }
+        }
+      };
+
+      const content = contentMap[section][feature];
+      if (content) {
+        const contentDiv = document.getElementById(`${section}-feature-content`);
+        contentDiv.innerHTML = `
+          <h3>${content.title}</h3>
+          <div class="code-display">${content.code}</div>
+        `;
+      }
+    }
+
+    // Make windows clickable to bring to front
+    document.querySelectorAll('.window').forEach(window => {
+      window.addEventListener('mousedown', () => {
+        const windowId = window.id.replace('window-', '');
+        setActiveWindow(windowId);
+      });
+    });
+  </script>
+</body>
+</html>
