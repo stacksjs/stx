@@ -2,12 +2,14 @@
 
 /**
  * stx serve command
- * Serves .stx files directly without manual build step
+ * Serves .stx, .md, and .html files directly without manual build step
  *
  * Usage:
  *   serve pages/*.stx
+ *   serve pages/*.md
+ *   serve pages/*.html
  *   serve pages/ --port 3000
- *   serve pages/home.stx pages/about.stx
+ *   serve pages/home.stx pages/about.md pages/index.html
  */
 
 import { serve as bunServe } from 'bun'
@@ -31,16 +33,19 @@ if (patterns.length === 0) {
   console.error('Usage: serve <files...> [--port 3000]')
   console.error('\nExamples:')
   console.error('  serve pages/*.stx')
+  console.error('  serve pages/*.md')
+  console.error('  serve pages/*.html')
   console.error('  serve pages/ --port 3000')
-  console.error('  serve index.stx about.stx')
+  console.error('  serve index.stx about.md page.html')
   console.error('\nAfter installing: bun add bun-plugin-stx')
   process.exit(1)
 }
 
 console.log('🚀 Starting stx development server...\n')
 
-// Discover all .stx files
-const stxFiles: string[] = []
+// Discover all .stx, .md, and .html files
+const sourceFiles: string[] = []
+const supportedExtensions = ['.stx', '.md', '.html']
 
 for (const pattern of patterns) {
   try {
@@ -49,21 +54,23 @@ for (const pattern of patterns) {
     const stat = await fs.stat(pattern).catch(() => null)
 
     if (stat?.isDirectory()) {
-      // Scan directory for .stx files
-      const glob = new Glob('**/*.stx')
-      const files = await Array.fromAsync(glob.scan(pattern))
-      stxFiles.push(...files.map(f => `${pattern}/${f}`.replace(/\/+/g, '/')))
+      // Scan directory for supported files
+      for (const ext of ['.stx', '.md', '.html']) {
+        const glob = new Glob(`**/*${ext}`)
+        const files = await Array.fromAsync(glob.scan(pattern))
+        sourceFiles.push(...files.map(f => `${pattern}/${f}`.replace(/\/+/g, '/')))
+      }
     }
     else if (pattern.includes('*')) {
       // Handle glob patterns
       const glob = new Glob(pattern)
       const basePath = pattern.split('*')[0].replace(/\/$/, '')
       const files = await Array.fromAsync(glob.scan(basePath || '.'))
-      stxFiles.push(...files.map(f => basePath ? `${basePath}/${f}` : f))
+      sourceFiles.push(...files.map(f => basePath ? `${basePath}/${f}` : f))
     }
-    else if (pattern.endsWith('.stx')) {
-      // Single file
-      stxFiles.push(pattern)
+    else if (supportedExtensions.some(ext => pattern.endsWith(ext))) {
+      // Single file with supported extension
+      sourceFiles.push(pattern)
     }
   }
   catch (error) {
@@ -71,18 +78,18 @@ for (const pattern of patterns) {
   }
 }
 
-if (stxFiles.length === 0) {
-  console.error('❌ No .stx files found')
+if (sourceFiles.length === 0) {
+  console.error('❌ No .stx, .md, or .html files found')
   process.exit(1)
 }
 
-console.log(`📄 Found ${stxFiles.length} .stx files:`)
-stxFiles.forEach(file => console.log(`   - ${file}`))
+console.log(`📄 Found ${sourceFiles.length} file(s):`)
+sourceFiles.forEach(file => console.log(`   - ${file}`))
 
 // Build all files
 console.log('\n🔨 Building...')
 const result = await Bun.build({
-  entrypoints: stxFiles,
+  entrypoints: sourceFiles,
   outdir: './.stx-serve',
   plugins: [stxPlugin()],
 })

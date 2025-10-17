@@ -3,14 +3,16 @@
   "type": "module",
   "version": "1.0.0",
   "scripts": {
-    "dev": "bun ../../packages/bun-plugin/dist/serve.js pages/*.stx",
-    "start": "bun ../../packages/bun-plugin/dist/serve.js pages/*.stx",
-    "serve": "bun ../../packages/bun-plugin/dist/serve.js",
+    "dev": "bun serve pages/*.stx",
+    "dev:all": "bun serve pages/",
+    "dev:md": "bun serve pages/*.md",
+    "dev:html": "bun serve pages/*.html",
+    "start": "bun serve pages/*.stx",
     "dev:custom": "bun server.ts",
     "api": "bun server-with-api.ts",
     "build": "bun build.ts"
   },
   "dependencies": {
-    "bun-plugin-stx": "workspace:*"
+    "bun-plugin-stx": "link:bun-plugin-stx"
   }
 }
