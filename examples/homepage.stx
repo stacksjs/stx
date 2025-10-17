@@ -104,8 +104,10 @@
     }
 
     .desktop-icon.selected {
-      background: rgba(51, 153, 255, 0.4) !important;
-      border: 2px dotted rgba(51, 153, 255, 1) !important;
+      background: rgba(51, 153, 255, 0.35) !important;
+      border: 1px dotted rgba(51, 153, 255, 0.9) !important;
+      outline: 1px dotted rgba(255, 255, 255, 0.6);
+      outline-offset: -2px;
     }
 
     .desktop-icon-image {
@@ -119,26 +121,27 @@
     .desktop-icon[data-icon-type="link"] .desktop-icon-image::after {
       content: '';
       position: absolute;
-      bottom: 2px;
-      left: 2px;
-      width: 20px;
-      height: 20px;
-      background: white;
-      border: 1px solid #666;
+      bottom: 0;
+      left: 0;
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, transparent 0%, transparent 45%, white 45%, white 100%);
+      border: 1px solid rgba(0, 0, 0, 0.3);
       border-radius: 2px;
-      box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
     }
 
     .desktop-icon[data-icon-type="link"] .desktop-icon-image::before {
-      content: '↗';
+      content: '→';
       position: absolute;
-      bottom: 2px;
-      left: 4px;
-      font-size: 16px;
+      bottom: 1px;
+      left: 3px;
+      font-size: 12px;
       color: #0831d9;
       font-weight: bold;
       z-index: 1;
-      text-shadow: none;
+      text-shadow: 0 0 1px white;
+      transform: rotate(-45deg);
     }
 
     .desktop-icon-label {
@@ -153,8 +156,9 @@
     }
 
     .desktop-icon.selected .desktop-icon-label {
-      background: #0831d9;
+      background: rgba(8, 49, 217, 0.85);
       color: white;
+      text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.8);
     }
 
     .desktop-icon-label-input {
@@ -283,10 +287,33 @@
       display: none;
       flex-direction: column;
       z-index: 100;
+      resize: both;
+      overflow: hidden;
+    }
+
+    /* Resize cursors for window edges */
+    .window:not(.maximized) {
+      cursor: default;
+    }
+
+    .window:not(.maximized):hover {
+      cursor: default;
     }
 
     .window.active {
       display: flex;
+    }
+
+    .window.maximized {
+      left: 0 !important;
+      top: 0 !important;
+      width: 100% !important;
+      height: calc(100% - 40px) !important;
+      border-radius: 0 !important;
+    }
+
+    .window.maximized .window-titlebar {
+      border-radius: 0 !important;
     }
 
     .window-titlebar {
@@ -473,6 +500,7 @@
       display: none;
       flex-direction: column;
       z-index: 9999;
+      overflow: visible;
     }
 
     .start-menu.active {
@@ -503,7 +531,7 @@
 
     .start-menu-items {
       flex: 1;
-      overflow-y: auto;
+      overflow: visible;
       background: #ece9d8;
       padding: 8px 0;
     }
@@ -529,6 +557,10 @@
       color: white;
     }
 
+    .start-menu-item.has-submenu {
+      position: relative;
+    }
+
     .start-menu-item.has-submenu::after {
       content: '▶';
       position: absolute;
@@ -538,19 +570,30 @@
 
     .start-submenu {
       position: absolute;
-      left: 100%;
-      top: 0;
-      min-width: 200px;
+      left: calc(100% - 4px);
+      top: -2px;
+      min-width: 220px;
       background: #ece9d8;
       border: 2px solid #0831d9;
       box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
       display: none;
       flex-direction: column;
-      z-index: 10000;
+      z-index: 10001;
+      padding: 4px 0;
     }
 
-    .start-menu-item:hover .start-submenu {
+    .start-menu-item.has-submenu:hover > .start-submenu {
       display: flex;
+    }
+
+    .start-submenu .start-menu-item {
+      padding: 6px 12px 6px 8px;
+      color: #000;
+    }
+
+    .start-submenu .start-menu-item:hover {
+      background: linear-gradient(to right, #0997ff 0%, #0053ee 100%);
+      color: white;
     }
 
     .start-menu-item-icon {
@@ -605,6 +648,125 @@
     .start-menu-footer-btn:hover {
       background: rgba(255, 255, 255, 0.3);
     }
+
+    /* Notification Popup */
+    .notification-popup {
+      position: fixed;
+      bottom: 50px;
+      right: 20px;
+      width: 320px;
+      background: linear-gradient(to bottom, #ffffff 0%, #f5f5f5 100%);
+      border: 2px solid #0831d9;
+      border-radius: 8px;
+      box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3);
+      padding: 14px 16px;
+      z-index: 10002;
+      animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(360px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .notification-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #c0c0c0;
+    }
+
+    .notification-icon {
+      font-size: 22px;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .notification-title {
+      font-weight: bold;
+      font-size: 14px;
+      color: #0831d9;
+      flex: 1;
+    }
+
+    .notification-count {
+      background: #e8e8e8;
+      color: #555;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid #c0c0c0;
+      min-width: 22px;
+      text-align: center;
+      margin-right: 8px;
+    }
+
+    .notification-body {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #333;
+      margin-bottom: 12px;
+    }
+
+    .notification-features {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .notification-feature {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #333;
+    }
+
+    .notification-feature-icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+      border: 2px solid #999;
+      flex-shrink: 0;
+      background: white;
+    }
+
+    .notification-close {
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(to bottom, #ff5f57 0%, #e81123 100%);
+      border: 1px solid #c0392b;
+      border-radius: 3px;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.1s;
+      flex-shrink: 0;
+    }
+
+    .notification-close:hover {
+      background: linear-gradient(to bottom, #ff6f67 0%, #f82133 100%);
+    }
+
+    .notification-popup.hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -632,7 +794,7 @@
         <div class="window-title">About Stacks</div>
         <div class="window-controls">
           <button class="window-control minimize" onclick="minimizeWindow('about')">_</button>
-          <button class="window-control maximize">□</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('about')">□</button>
           <button class="window-control close" onclick="closeWindow('about')">×</button>
         </div>
       </div>
@@ -661,7 +823,7 @@
         <div class="window-title">Ecosystem</div>
         <div class="window-controls">
           <button class="window-control minimize" onclick="minimizeWindow('ecosystem')">_</button>
-          <button class="window-control maximize">□</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('ecosystem')">□</button>
           <button class="window-control close" onclick="closeWindow('ecosystem')">×</button>
         </div>
       </div>
@@ -687,7 +849,7 @@
         <div class="window-title">Backend Features</div>
         <div class="window-controls">
           <button class="window-control minimize" onclick="minimizeWindow('backend')">_</button>
-          <button class="window-control maximize">□</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('backend')">□</button>
           <button class="window-control close" onclick="closeWindow('backend')">×</button>
         </div>
       </div>
@@ -728,7 +890,7 @@ const current = await Auth.user()
         <div class="window-title">Frontend Features</div>
         <div class="window-controls">
           <button class="window-control minimize" onclick="minimizeWindow('frontend')">_</button>
-          <button class="window-control maximize">□</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('frontend')">□</button>
           <button class="window-control close" onclick="closeWindow('frontend')">×</button>
         </div>
       </div>
@@ -767,7 +929,7 @@ const current = await Auth.user()
         <div class="window-title">Cloud Features</div>
         <div class="window-controls">
           <button class="window-control minimize" onclick="minimizeWindow('cloud')">_</button>
-          <button class="window-control maximize">□</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('cloud')">□</button>
           <button class="window-control close" onclick="closeWindow('cloud')">×</button>
         </div>
       </div>
@@ -867,6 +1029,38 @@ export default {
       <div class="taskbar-tasks" id="taskbar-tasks"></div>
       <div class="taskbar-clock" id="clock">12:00 PM</div>
     </div>
+
+    <!-- Notification Popup -->
+    <div class="notification-popup" id="notification-popup">
+      <div class="notification-header">
+        <div class="notification-icon">⭐</div>
+        <div class="notification-title">Build Anything</div>
+        <div class="notification-count">5</div>
+        <button class="notification-close" onclick="closeNotification()">×</button>
+      </div>
+      <div class="notification-features">
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>Modern web applications & APIs</div>
+        </div>
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>Desktop apps with Tauri</div>
+        </div>
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>Cloud infrastructure & serverless</div>
+        </div>
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>Type-safe with TypeScript</div>
+        </div>
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>Lightning fast with Bun</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -948,6 +1142,19 @@ export default {
       }
     }
 
+    function toggleMaximizeWindow(windowId) {
+      const window = document.getElementById(`window-${windowId}`);
+      if (!window) return;
+
+      if (window.classList.contains('maximized')) {
+        // Restore to original size
+        window.classList.remove('maximized');
+      } else {
+        // Maximize
+        window.classList.add('maximized');
+      }
+    }
+
     function setActiveWindow(windowId) {
       const windows = document.querySelectorAll('.window');
       windows.forEach(w => {
@@ -994,8 +1201,12 @@ export default {
     // Desktop Icon Positioning and Dragging
     let draggedIcon = null;
     let iconDragOffset = { x: 0, y: 0 };
+    let iconDragStartX = 0;
+    let iconDragStartY = 0;
+    let iconDragThresholdMet = false;
     let hasMove = false;
     let selectedIcon = null;
+    const DRAG_THRESHOLD = 5; // pixels to move before drag starts
 
     // Position icons initially in a grid
     console.log('About to position icons...');
@@ -1041,6 +1252,9 @@ export default {
         if (e.target.closest('.desktop-icon-label') || e.target.closest('.desktop-icon-image')) {
           draggedIcon = icon;
           hasMove = false;
+          iconDragThresholdMet = false;
+          iconDragStartX = e.clientX;
+          iconDragStartY = e.clientY;
 
           const rect = icon.getBoundingClientRect();
           iconDragOffset.x = e.clientX - rect.left;
@@ -1057,17 +1271,20 @@ export default {
         clearTimeout(clickTimeout);
         clickCount++;
 
+        // Immediately show selection on first click (Windows XP behavior)
+        const wasAlreadySelected = selectedIcon === icon && icon.classList.contains('selected');
+
+        if (selectedIcon && selectedIcon !== icon) {
+          selectedIcon.classList.remove('selected');
+        }
+        icon.classList.add('selected');
+        selectedIcon = icon;
+
+        // Set timeout to check for label editing
         clickTimeout = setTimeout(() => {
           if (clickCount === 1) {
-            // Single click - select icon
-            if (selectedIcon && selectedIcon !== icon) {
-              selectedIcon.classList.remove('selected');
-            }
-            icon.classList.add('selected');
-            selectedIcon = icon;
-
-            // If clicking on already selected icon's label, make it editable
-            if (e.target.closest('.desktop-icon-label') && icon.classList.contains('selected')) {
+            // Only make editable if clicking label on already selected icon
+            if (wasAlreadySelected && e.target.closest('.desktop-icon-label')) {
               makeIconLabelEditable(icon);
             }
           }
@@ -1126,6 +1343,20 @@ export default {
     // Icon drag move
     document.addEventListener('mousemove', (e) => {
       if (!draggedIcon) return;
+
+      // Check if we've moved enough to start dragging
+      if (!iconDragThresholdMet) {
+        const deltaX = Math.abs(e.clientX - iconDragStartX);
+        const deltaY = Math.abs(e.clientY - iconDragStartY);
+
+        if (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD) {
+          iconDragThresholdMet = true;
+          hasMove = true;
+        } else {
+          return; // Don't drag yet, threshold not met
+        }
+      }
+
       hasMove = true;
 
       const desktopIcons = document.querySelector('.desktop-icons');
@@ -1143,17 +1374,102 @@ export default {
       if (draggedIcon) {
         setTimeout(() => {
           draggedIcon = null;
+          iconDragThresholdMet = false;
           hasMove = false;
         }, 100);
       }
     });
 
-    // Window Dragging
+    // Window Dragging and Resizing
+    let resizingWindow = null;
+    let resizeDirection = null;
+    let resizeStartX = 0;
+    let resizeStartY = 0;
+    let resizeStartWidth = 0;
+    let resizeStartHeight = 0;
+    let resizeStartLeft = 0;
+    let resizeStartTop = 0;
+
+    function getResizeDirection(window, e) {
+      if (window.classList.contains('maximized')) return null;
+
+      const rect = window.getBoundingClientRect();
+      const edge = 8; // pixels from edge to trigger resize
+
+      const isTop = e.clientY - rect.top < edge;
+      const isBottom = rect.bottom - e.clientY < edge;
+      const isLeft = e.clientX - rect.left < edge;
+      const isRight = rect.right - e.clientX < edge;
+
+      if (isTop && isLeft) return 'nw';
+      if (isTop && isRight) return 'ne';
+      if (isBottom && isLeft) return 'sw';
+      if (isBottom && isRight) return 'se';
+      if (isTop) return 'n';
+      if (isBottom) return 's';
+      if (isLeft) return 'w';
+      if (isRight) return 'e';
+
+      return null;
+    }
+
+    function setCursorForDirection(window, direction) {
+      const cursors = {
+        'n': 'ns-resize',
+        's': 'ns-resize',
+        'e': 'ew-resize',
+        'w': 'ew-resize',
+        'ne': 'nesw-resize',
+        'sw': 'nesw-resize',
+        'nw': 'nwse-resize',
+        'se': 'nwse-resize'
+      };
+      window.style.cursor = direction ? cursors[direction] : 'default';
+    }
+
+    document.querySelectorAll('.window').forEach(window => {
+      window.addEventListener('mousemove', (e) => {
+        if (resizingWindow || draggedWindow) return;
+
+        const direction = getResizeDirection(window, e);
+        setCursorForDirection(window, direction);
+      });
+
+      window.addEventListener('mouseleave', () => {
+        if (!resizingWindow) {
+          window.style.cursor = 'default';
+        }
+      });
+
+      window.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.window-titlebar') || e.target.closest('.window-control')) return;
+
+        const direction = getResizeDirection(window, e);
+        if (direction) {
+          resizingWindow = window;
+          resizeDirection = direction;
+          resizeStartX = e.clientX;
+          resizeStartY = e.clientY;
+
+          const rect = window.getBoundingClientRect();
+          resizeStartWidth = rect.width;
+          resizeStartHeight = rect.height;
+          resizeStartLeft = rect.left;
+          resizeStartTop = rect.top;
+
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+    });
+
     document.querySelectorAll('.window-titlebar').forEach(titlebar => {
       titlebar.addEventListener('mousedown', (e) => {
         if (e.target.closest('.window-control')) return;
 
         const window = titlebar.closest('.window');
+        if (window.classList.contains('maximized')) return;
+
         draggedWindow = window;
 
         const rect = window.getBoundingClientRect();
@@ -1166,6 +1482,38 @@ export default {
     });
 
     document.addEventListener('mousemove', (e) => {
+      if (resizingWindow) {
+        const deltaX = e.clientX - resizeStartX;
+        const deltaY = e.clientY - resizeStartY;
+
+        let newWidth = resizeStartWidth;
+        let newHeight = resizeStartHeight;
+        let newLeft = resizeStartLeft;
+        let newTop = resizeStartTop;
+
+        if (resizeDirection.includes('e')) {
+          newWidth = Math.max(400, resizeStartWidth + deltaX);
+        }
+        if (resizeDirection.includes('w')) {
+          newWidth = Math.max(400, resizeStartWidth - deltaX);
+          newLeft = resizeStartLeft + (resizeStartWidth - newWidth);
+        }
+        if (resizeDirection.includes('s')) {
+          newHeight = Math.max(300, resizeStartHeight + deltaY);
+        }
+        if (resizeDirection.includes('n')) {
+          newHeight = Math.max(300, resizeStartHeight - deltaY);
+          newTop = resizeStartTop + (resizeStartHeight - newHeight);
+        }
+
+        resizingWindow.style.width = newWidth + 'px';
+        resizingWindow.style.height = newHeight + 'px';
+        resizingWindow.style.left = newLeft + 'px';
+        resizingWindow.style.top = newTop + 'px';
+
+        return;
+      }
+
       if (!draggedWindow) return;
 
       const x = e.clientX - dragOffset.x;
@@ -1176,6 +1524,11 @@ export default {
     });
 
     document.addEventListener('mouseup', () => {
+      if (resizingWindow) {
+        resizingWindow = null;
+        resizeDirection = null;
+      }
+
       if (draggedWindow) {
         draggedWindow.classList.remove('dragging');
         draggedWindow = null;
@@ -1324,6 +1677,20 @@ await app.start({
         setActiveWindow(windowId);
       });
     });
+
+    // Notification popup
+    function closeNotification() {
+      const notification = document.getElementById('notification-popup');
+      notification.classList.add('hidden');
+    }
+
+    // Auto-show notification after 2 seconds
+    setTimeout(() => {
+      const notification = document.getElementById('notification-popup');
+      if (notification) {
+        notification.style.display = 'block';
+      }
+    }, 2000);
   </script>
 </body>
 </html>
