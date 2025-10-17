@@ -1,0 +1,6 @@
+# Bun configuration for stx project
+# This makes the 'serve' command available
+
+[install.scopes]
+# Expose the serve command from bun-plugin-stx
+"@" = "https://registry.npmjs.org/"

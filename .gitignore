@@ -39,3 +39,4 @@ examples/.stx/
 
 examples/.stx-output/
 packages/stx/test/performance/perf-temp
+examples/demo-project/.stx-serve/
