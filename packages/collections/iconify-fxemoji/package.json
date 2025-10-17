@@ -1,6 +1,6 @@
 {
   "name": "@stacksjs/iconify-fxemoji",
-  "version": "0.0.1",
+  "version": "0.1.15",
   "description": "Firefox OS Emoji icons for stx from Iconify",
   "author": "Mozilla",
   "license": "Apache-2.0",

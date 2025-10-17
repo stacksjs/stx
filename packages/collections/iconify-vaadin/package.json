@@ -1,6 +1,6 @@
 {
   "name": "@stacksjs/iconify-vaadin",
-  "version": "0.0.1",
+  "version": "0.1.15",
   "description": "Vaadin Icons icons for stx from Iconify",
   "author": "Vaadin",
   "license": "Apache-2.0",
