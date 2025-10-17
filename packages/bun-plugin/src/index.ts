@@ -4,6 +4,10 @@ import type { BunPlugin } from 'bun'
 import path from 'node:path'
 import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processDirectives, readMarkdownFile } from '@stacksjs/stx'
 
+// Re-export functions and types that consumers might need
+export { serve, createMiddleware, createRoute, readMarkdownFile } from '@stacksjs/stx'
+export type { StxOptions, ServeOptions, ServeResult } from '@stacksjs/stx'
+
 export function stxPlugin(userOptions?: StxOptions): BunPlugin {
   return {
     name: 'bun-plugin-stx',
@@ -40,28 +44,20 @@ export function stxPlugin(userOptions?: StxOptions): BunPlugin {
       // Handler for .md files
       build.onLoad({ filter: /\.md$/ }, async ({ path: filePath }) => {
         try {
-        // Process the markdown file with frontmatter
+          // Process the markdown file with frontmatter
           const { content: htmlContent, data: frontmatter } = await readMarkdownFile(filePath, options)
 
-          // Create a module that exports both the rendered HTML and the frontmatter data
-          const jsModule = `
-          export const content = ${JSON.stringify(htmlContent)};
-          export const data = ${JSON.stringify(frontmatter)};
-          export default content;
-        `
-
+          // Return HTML directly for serving
           return {
-            contents: jsModule,
-            loader: 'js',
+            contents: htmlContent,
+            loader: 'html',
           }
         }
         catch (error: any) {
           console.error('Markdown Processing Error:', error)
           return {
-            contents: `export const content = "Error processing markdown: ${error.message?.replace(/"/g, '\\"') || 'Unknown error'}";
-                    export const data = {};
-                    export default content;`,
-            loader: 'js',
+            contents: `<!DOCTYPE html><html><body><h1>Markdown Error</h1><pre>${error.message || 'Unknown error'}</pre></body></html>`,
+            loader: 'html',
           }
         }
       })

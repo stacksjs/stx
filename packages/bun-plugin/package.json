@@ -32,12 +32,22 @@
       "types": "./dist/client.d.ts",
       "import": "./dist/client.js"
     },
+    "./preload": {
+      "import": "./dist/preload.js"
+    },
+    "./serve": {
+      "import": "./dist/serve.js"
+    },
     "./*": {
       "import": "./dist/*"
     }
   },
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "serve": "./dist/serve.js",
+    "stx-serve": "./dist/serve.js"
+  },
   "files": [
     "LICENSE.md",
     "README.md",

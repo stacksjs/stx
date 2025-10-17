@@ -1,0 +1,18 @@
+{
+  "name": "stx-demo-project",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "bun serve pages/*.stx",
+    "dev:all": "bun serve pages/",
+    "dev:md": "bun serve pages/*.md",
+    "dev:html": "bun serve pages/*.html",
+    "start": "bun serve pages/*.stx",
+    "dev:custom": "bun server.ts",
+    "api": "bun server-with-api.ts",
+    "build": "bun build.ts"
+  },
+  "dependencies": {
+    "bun-plugin-stx": "link:bun-plugin-stx"
+  }
+}
