@@ -92,6 +92,7 @@ const result = await Bun.build({
   entrypoints: sourceFiles,
   outdir: './.stx-serve',
   plugins: [stxPlugin()],
+  splitting: false, // Disable code splitting - we're serving HTML, not JS bundles
 })
 
 if (!result.success) {
@@ -108,9 +109,16 @@ const routes = new Map<string, string>()
 console.log(`\n📦 Processing ${result.outputs.length} build outputs...`)
 for (const output of result.outputs) {
   try {
+    const outputFile = output.path.split('/').pop() || 'index'
+
+    // Only process .html files (skip any .js chunks)
+    if (!outputFile.endsWith('.html')) {
+      console.log(`   ⊘ Skipping ${outputFile} (not HTML)`)
+      continue
+    }
+
     const content = await output.text()
     // Get the base filename without any extension
-    const outputFile = output.path.split('/').pop() || 'index'
     const filename = outputFile
       .replace('.html', '')
       .replace('.md', '')
