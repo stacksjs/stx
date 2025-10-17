@@ -11,16 +11,16 @@
     },
     "packages/benchmarks": {
       "name": "@stacksjs/benchmarks",
-      "version": "0.1.14",
+      "version": "0.1.15",
       "dependencies": {
         "@stacksjs/markdown": "workspace:*",
         "@stacksjs/sanitizer": "workspace:*",
-        "dompurify": "^3.2.7",
+        "dompurify": "^3.3.0",
         "gray-matter": "^4.0.3",
-        "isomorphic-dompurify": "^2.28.0",
+        "isomorphic-dompurify": "^2.29.0",
         "js-yaml": "^4.1.0",
         "markdown-it": "^14.1.0",
-        "marked": "^16.4.0",
+        "marked": "^16.4.1",
         "remark": "^15.0.1",
         "remark-html": "^16.0.1",
         "sanitize-html": "^2.17.0",
@@ -37,25 +37,25 @@
     },
     "packages/bun-plugin": {
       "name": "bun-plugin-stx",
-      "version": "0.1.13",
+      "version": "0.1.15",
       "dependencies": {
         "@stacksjs/stx": "workspace:*",
       },
     },
     "packages/devtools": {
       "name": "@stacksjs/devtools",
-      "version": "0.1.14",
+      "version": "0.1.15",
       "dependencies": {
         "bun-plugin-stx": "workspace:*",
       },
     },
     "packages/iconify-core": {
       "name": "@stacksjs/iconify-core",
-      "version": "0.1.14",
+      "version": "0.1.15",
     },
     "packages/iconify-generator": {
       "name": "@stacksjs/iconify-generator",
-      "version": "0.1.14",
+      "version": "0.1.15",
       "bin": {
         "stx-iconify": "./dist/cli.js",
       },
@@ -65,24 +65,24 @@
     },
     "packages/markdown": {
       "name": "@stacksjs/markdown",
-      "version": "0.1.14",
+      "version": "0.1.15",
       "devDependencies": {
-        "@types/bun": "^1.2.18",
+        "@types/bun": "^1.3.0",
         "bun-plugin-dtsx": "^0.21.12",
-        "typescript": "^5.8.3",
+        "typescript": "^5.9.3",
       },
     },
     "packages/sanitizer": {
       "name": "@stacksjs/sanitizer",
-      "version": "0.1.14",
+      "version": "0.1.15",
       "devDependencies": {
-        "@types/bun": "^1.2.18",
+        "@types/bun": "^1.3.0",
         "happy-dom": "^18.0.1",
       },
     },
     "packages/stx": {
       "name": "@stacksjs/stx",
-      "version": "0.1.14",
+      "version": "0.1.15",
       "bin": {
         "stx": "./dist/bin/cli.js",
       },
@@ -1520,7 +1520,7 @@
 
     "markdownlint": ["markdownlint@0.38.0", "", { "dependencies": { "micromark": "4.0.2", "micromark-core-commonmark": "2.0.3", "micromark-extension-directive": "4.0.0", "micromark-extension-gfm-autolink-literal": "2.1.0", "micromark-extension-gfm-footnote": "2.1.0", "micromark-extension-gfm-table": "2.1.1", "micromark-extension-math": "3.1.0", "micromark-util-types": "2.0.2" } }, "sha512-xaSxkaU7wY/0852zGApM8LdlIfGCW8ETZ0Rr62IQtAnUMlMuifsg09vWJcNYeL4f0anvr8Vo4ZQar8jGpV0btQ=="],
 
-    "marked": ["marked@16.4.0", "", { "bin": { "marked": "bin/marked.js" } }, "sha512-CTPAcRBq57cn3R8n3hwc2REddc28hjR7RzDXQ+lXLmMJYqn20BaI2cGw6QjgZGIgVfp2Wdfw4aMzgNteQ6qJgQ=="],
+    "marked": ["marked@16.4.1", "", { "bin": { "marked": "bin/marked.js" } }, "sha512-ntROs7RaN3EvWfy3EZi14H4YxmT6A5YvywfhO+0pm+cH/dnSQRmdAmoFIc3B9aiwTehyk7pESH4ofyBY+V5hZg=="],
 
     "matcher": ["matcher@3.0.0", "", { "dependencies": { "escape-string-regexp": "^4.0.0" } }, "sha512-OkeDaAZ/bQCxeFAozM55PKcKU0yJMPGifLwV4Qgjitu+5MoAfSQN4lsLJeXZ1b8w0x+/Emda6MZgXS1jvsapng=="],
 
@@ -2307,6 +2307,8 @@
     "@types/cacheable-request/@types/node": ["@types/node@22.18.10", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-anNG/V/Efn/YZY4pRzbACnKxNKoBng2VTFydVu8RRs5hQjikP8CQfaeAV59VFSCzKNp90mXiVXW2QzV56rwMrg=="],
 
     "@types/keyv/@types/node": ["@types/node@22.18.10", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-anNG/V/Efn/YZY4pRzbACnKxNKoBng2VTFydVu8RRs5hQjikP8CQfaeAV59VFSCzKNp90mXiVXW2QzV56rwMrg=="],
+
+    "@types/marked/marked": ["marked@16.4.0", "", { "bin": { "marked": "bin/marked.js" } }, "sha512-CTPAcRBq57cn3R8n3hwc2REddc28hjR7RzDXQ+lXLmMJYqn20BaI2cGw6QjgZGIgVfp2Wdfw4aMzgNteQ6qJgQ=="],
 
     "@types/responselike/@types/node": ["@types/node@22.18.10", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-anNG/V/Efn/YZY4pRzbACnKxNKoBng2VTFydVu8RRs5hQjikP8CQfaeAV59VFSCzKNp90mXiVXW2QzV56rwMrg=="],
 
