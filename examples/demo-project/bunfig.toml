@@ -1,9 +1,5 @@
 # Bun configuration for stx project
-# This enables importing .stx files directly in your code
 
-[install]
-# Install dependencies
-peer = true
-
-# Preload the stx plugin so .stx files can be imported at runtime
-preload = ["bun-plugin-stx/preload"]
+# Note: Bun's fullstack dev server expects HTML files in routes.
+# The stx plugin is used at build time to transform .stx -> .html
+# See server.ts for how this works.

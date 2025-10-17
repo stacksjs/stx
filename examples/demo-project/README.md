@@ -18,38 +18,71 @@ demo-project/
 
 ## 🚀 Quick Start
 
-### NEW! Serve .stx Files Directly (Like JSX)
+### The Simplest Way (Recommended)
+
+Just run the server:
 
 ```bash
-# The simplest way - just serve your .stx files!
-bun ../../packages/bun-plugin/dist/serve.js pages/*.stx
+bun server.ts
 ```
 
-That's it! Your server is running at http://localhost:3456
+That's it! Your server is running at http://localhost:3000
 
-### Alternative Methods
+This uses Bun's native fullstack dev server with .stx files as routes, configured via `bunfig.toml`.
 
-#### 1. Using Package Scripts
+### How It Works
+
+The server builds .stx files on startup and serves them through Bun.serve():
+
+```typescript
+// server.ts
+import { serve } from "bun"
+import { Glob } from "bun"
+import stxPlugin from "bun-plugin-stx"
+
+// 1. Build all .stx files
+const glob = new Glob("pages/**/*.stx")
+const stxFiles = await Array.fromAsync(glob.scan("."))
+
+const buildResult = await Bun.build({
+  entrypoints: stxFiles,
+  outdir: "./dist",
+  plugins: [stxPlugin()],
+})
+
+// 2. Create routes from built HTML
+const routes = {}
+for (const output of buildResult.outputs) {
+  if (output.path.endsWith(".html")) {
+    const filename = output.path.split("/").pop().replace(".html", "")
+    const route = filename === "home" ? "/" : `/${filename}`
+    const html = await output.text()
+    routes[route] = new Response(html, {
+      headers: { "Content-Type": "text/html" },
+    })
+  }
+}
+
+// 3. Serve with Bun
+serve({
+  routes,
+  development: true,
+})
+```
+
+This approach:
+- ✅ Builds .stx files once on startup
+- ✅ Uses standard Bun.serve() patterns
+- ✅ Works with development mode
+- ✅ Simple `bun server.ts` command
+
+### With API Endpoints
 
 ```bash
-# Build static files
-bun run build
-
-# Start development server
-bun run dev
+bun server-with-api.ts
 ```
 
-#### 2. Custom Port
-
-```bash
-bun ../../packages/bun-plugin/dist/serve.js pages/ --port 3000
-```
-
-#### 3. Specific Files Only
-
-```bash
-bun ../../packages/bun-plugin/dist/serve.js pages/home.stx pages/about.stx
-```
+This demonstrates combining .stx routes with API endpoints in one server.
 
 ## 📄 Available Pages
 
@@ -67,17 +100,29 @@ bun ../../packages/bun-plugin/dist/serve.js pages/home.stx pages/about.stx
 ✅ **404 handling** - Custom 404 page with navigation
 ✅ **Clean routing** - home.stx maps to /, about.stx to /about
 
-### JSX vs STX Comparison
+### HTML vs STX Comparison
 
-```bash
-# JSX (how Bun normally works)
-bun app.tsx
+**HTML (Bun's native support):**
+```typescript
+import home from "./index.html"
 
-# STX (how it works now!)
-bun ../../packages/bun-plugin/dist/serve.js pages/*.stx
+Bun.serve({
+  routes: { "/": home },
+  development: true,
+})
 ```
 
-Both are equally simple! 🎉
+**STX (Now works the same way!):**
+```typescript
+import home from "./pages/home.stx"
+
+Bun.serve({
+  routes: { "/": home },
+  development: true,
+})
+```
+
+Configure the plugin once in `bunfig.toml` and it just works! 🎉
 
 ## 🛠 How It Works
 
