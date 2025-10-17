@@ -34,7 +34,7 @@
   "main": "./dist/extension.js",
   "icon": "logo.png",
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.105.1"
   },
   "activationEvents": [
     "workspaceContains:**/*.stx",
@@ -530,10 +530,10 @@
     "theme": "light"
   },
   "devDependencies": {
-    "@types/vscode": "^1.80.0",
-    "@vscode/vsce": "^3.6.0",
-    "typescript": "^5.8.3",
-    "vscode-html-languageservice": "^5.5.1",
+    "@types/vscode": "^1.105.0",
+    "@vscode/vsce": "^3.6.2",
+    "typescript": "^5.9.3",
+    "vscode-html-languageservice": "^5.6.0",
     "vscode-languageclient": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.17.5"
