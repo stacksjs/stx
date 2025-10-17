@@ -573,8 +573,9 @@
     .start-submenu {
       position: absolute;
       left: calc(100% - 4px);
-      top: -2px;
+      bottom: -2px;
       min-width: 220px;
+      max-height: 460px;
       background: #ece9d8;
       border: 2px solid #0831d9;
       box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
@@ -582,6 +583,7 @@
       flex-direction: column;
       z-index: 10001;
       padding: 4px 0;
+      overflow-y: auto;
     }
 
     .start-menu-item.has-submenu:hover > .start-submenu {
