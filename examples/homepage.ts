@@ -8,9 +8,12 @@ function updateClock() {
   const hours = now.getHours() % 12 || 12;
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  const year = now.getFullYear();
   const clockElement = document.getElementById('clock');
   if (clockElement) {
-    clockElement.textContent = `${hours}:${minutes} ${ampm}`;
+    clockElement.textContent = `${hours}:${minutes} ${ampm}\n${month}/${day}/${year}`;
   }
 }
 updateClock();
@@ -1182,6 +1185,22 @@ function purchaseLicense() {
       return;
     }
 
+    // Get selected edition (hobby or professional)
+    const selectedEdition = (window as any).selectedPlanType || 'professional';
+    const editionName = selectedEdition === 'hobby' ? 'Hobby Edition' : 'Professional Edition';
+
+    // Get selected pricing plan (monthly or lifetime)
+    const selectedInterval = (document.querySelector('input[name="pricing-plan"]:checked') as HTMLInputElement)?.value;
+    const intervalType = selectedInterval === 'lifetime' ? 'Lifetime License' : 'Monthly Subscription';
+
+    // Determine pricing based on edition and interval
+    let planAmount: string;
+    if (selectedEdition === 'hobby') {
+      planAmount = selectedInterval === 'lifetime' ? '$179' : '$9/month';
+    } else {
+      planAmount = selectedInterval === 'lifetime' ? '$279' : '$29/month';
+    }
+
     // Get payment details
     const cardNumber = (document.getElementById('card-number') as HTMLInputElement)?.value;
     const cardName = (document.getElementById('card-name') as HTMLInputElement)?.value;
@@ -1189,11 +1208,19 @@ function purchaseLicense() {
 
     // Show processing message
     const maskedCard = '****' + cardNumber.replace(/\s/g, '').slice(-4);
-    alert(`✅ Payment processing...\n\nCard: ${maskedCard}\nName: ${cardName}\nEmail: ${billingEmail}\n\nThis is a demo. In production, payment would be processed securely through Stripe or similar payment processor.`);
+    alert(`✅ Processing payment with Stripe...\n\nEdition: ${editionName}\nPlan: ${intervalType}\nAmount: ${planAmount}\nCard: ${maskedCard}\nName: ${cardName}\nEmail: ${billingEmail}\n\nThis is a demo. In production, your payment data would be securely processed by Stripe without ever touching our servers.`);
 
     // Clear form and show success
     setTimeout(() => {
-      alert('✅ Payment successful!\n\nYour license code has been sent to your email.\n\nLicense: STAC-KSJS-PROF-2025\nType: Professional Edition\nStatus: Activated');
+      const licenseCode = selectedInterval === 'lifetime'
+        ? `STAC-KSJS-${selectedEdition.toUpperCase().substring(0,4)}-LIFE-2025`
+        : `STAC-KSJS-${selectedEdition.toUpperCase().substring(0,4)}-MNTH-2025`;
+
+      const successMessage = selectedInterval === 'lifetime'
+        ? `✅ Payment successful!\n\nYou now have LIFETIME access to STACKS.JS ${editionName}!\n\nYour license code has been sent to your email.\n\nLicense: ${licenseCode}\nType: Lifetime - ${editionName}\nStatus: Activated`
+        : `✅ Payment successful!\n\nYour monthly subscription is now active!\n\nYou will be billed ${planAmount}. You can cancel anytime.\n\nLicense: ${licenseCode}\nType: Monthly - ${editionName}\nStatus: Active`;
+
+      alert(successMessage);
 
       // Clear payment form
       (document.getElementById('card-number') as HTMLInputElement).value = '';
@@ -1346,14 +1373,43 @@ function selectPlan(planType: string) {
   const licenseTypeSpan = document.querySelectorAll('#window-license .license-type');
   const licensePriceSpan = document.querySelector('#window-license .license-price');
 
+  // Update pricing in radio buttons
+  const lifetimeRadioLabel = document.querySelector('input[value="lifetime"]')?.parentElement;
+  const monthlyRadioLabel = document.querySelector('input[value="monthly"]')?.parentElement;
+
+  // Update features list
+  const featuresSpan = document.querySelector('#window-license .license-features');
+
   if (planType === 'hobby') {
     if (licenseTitle) licenseTitle.textContent = 'STACKS.JS Hobby Edition';
     licenseTypeSpan.forEach(el => el.textContent = 'Hobby Edition');
     if (licensePriceSpan) licensePriceSpan.textContent = '$9/mo or $179 lifetime';
+    if (featuresSpan) featuresSpan.innerHTML = 'Unlimited Projects<br>Priority Support<br>Lifetime Updates';
+
+    // Update radio button pricing for Hobby
+    if (lifetimeRadioLabel) {
+      const priceDiv = lifetimeRadioLabel.querySelector('div > div:first-child') as HTMLElement;
+      if (priceDiv) priceDiv.innerHTML = '🎉 Lifetime Access - $179';
+    }
+    if (monthlyRadioLabel) {
+      const priceDiv = monthlyRadioLabel.querySelector('div > div:first-child') as HTMLElement;
+      if (priceDiv) priceDiv.innerHTML = 'Monthly Subscription - $9/mo';
+    }
   } else {
     if (licenseTitle) licenseTitle.textContent = 'STACKS.JS Professional Edition';
     licenseTypeSpan.forEach(el => el.textContent = 'Professional Edition');
     if (licensePriceSpan) licensePriceSpan.textContent = '$29/mo or $279 lifetime';
+    if (featuresSpan) featuresSpan.innerHTML = 'Unlimited Projects<br>Unlimited Team Members<br>Priority Support<br>Lifetime Updates';
+
+    // Update radio button pricing for Professional
+    if (lifetimeRadioLabel) {
+      const priceDiv = lifetimeRadioLabel.querySelector('div > div:first-child') as HTMLElement;
+      if (priceDiv) priceDiv.innerHTML = '🎉 Lifetime Access - $279';
+    }
+    if (monthlyRadioLabel) {
+      const priceDiv = monthlyRadioLabel.querySelector('div > div:first-child') as HTMLElement;
+      if (priceDiv) priceDiv.innerHTML = 'Monthly Subscription - $29/mo';
+    }
   }
 
   // Store the selected plan type
