@@ -3,525 +3,406 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Coming Soon - Stacks</title>
+  <title>STACKS.JS - Coming Soon</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="homepage.css?v=6">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: white;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-
-    .page-container {
-      position: relative;
-      isolation: isolate;
-      overflow: hidden;
-      background-color: white;
-    }
-
-    .bg-pattern {
-      position: absolute;
-      inset: 0;
-      height: 100%;
-      width: 100%;
-      stroke: #e5e7eb;
-      z-index: -10;
-      mask-image: radial-gradient(100% 100% at top right, white, transparent);
-    }
-
-    .content-wrapper {
-      max-width: 80rem;
-      margin: 0 auto;
-      padding: 2.5rem 1.5rem 6rem;
-    }
-
-    @media (min-width: 1024px) {
-      .content-wrapper {
-        display: flex;
-        padding: 5rem 2rem;
-      }
-    }
-
-    @media (min-width: 640px) {
-      .content-wrapper {
-        padding-bottom: 8rem;
-      }
-    }
-
-    .text-section {
-      max-width: 42rem;
-      margin: 0 auto;
-    }
-
-    @media (min-width: 1024px) {
-      .text-section {
-        margin: 0;
-        max-width: 36rem;
-        flex-shrink: 0;
-        padding-top: 10rem;
-      }
-    }
-
-    .logo {
-      height: 2.75rem;
-      width: auto;
-    }
-
-    .badge-container {
-      margin-top: 6rem;
-    }
-
-    @media (min-width: 1024px) {
-      .badge-container {
-        margin-top: 4rem;
-      }
-    }
-
-    @media (min-width: 640px) {
-      .badge-container {
-        margin-top: 8rem;
-      }
-    }
-
-    .badge-link {
-      display: inline-flex;
-      gap: 1.5rem;
-      text-decoration: none;
-    }
-
-    .badge {
-      border-radius: 9999px;
-      background-color: rgba(37, 99, 235, 0.1);
-      padding: 0.25rem 0.75rem;
-      font-size: 0.875rem;
-      color: #2563eb;
-      font-weight: 600;
-      line-height: 1.5rem;
-      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.1);
-    }
-
-    .main-heading {
-      margin-top: 2.5rem;
-      font-size: 2.25rem;
-      color: #111827;
-      font-weight: 700;
-      letter-spacing: -0.025em;
-      line-height: 1.1;
-    }
-
-    @media (min-width: 640px) {
-      .main-heading {
-        font-size: 3.75rem;
-      }
-    }
-
-    .description {
-      margin-top: 1.5rem;
-      font-size: 1.125rem;
-      color: #4b5563;
-      line-height: 2rem;
-    }
-
-    .description-italic {
-      margin-top: 0.75rem;
-      color: #4b5563;
-      line-height: 2rem;
-      font-style: italic;
-    }
-
-    .form-container {
-      margin-top: 2.5rem;
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-    }
-
-    .email-wrapper {
-      width: 100%;
-      max-width: 380px;
-    }
-
-    .input-group {
-      display: flex;
-      border-radius: 0.375rem;
-      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    }
-
-    .input-container {
-      position: relative;
-      display: flex;
-      flex-grow: 1;
-      align-items: stretch;
-    }
-
-    .input-container:focus-within {
-      z-index: 10;
-    }
-
-    .input-icon {
-      position: absolute;
-      inset-y: 0;
-      left: 0;
-      display: flex;
-      align-items: center;
-      padding-left: 0.75rem;
-      pointer-events: none;
-    }
-
-    .icon {
-      height: 1.25rem;
-      width: 1.25rem;
-      color: #9ca3af;
-    }
-
-    .email-input {
-      display: block;
-      width: 100%;
-      border: 0;
-      border-radius: 0.375rem 0 0 0.375rem;
-      padding: 0.375rem 0.75rem 0.375rem 2.5rem;
-      color: #111827;
-      box-shadow: inset 0 0 0 1px #d1d5db;
-      font-size: 0.875rem;
-      line-height: 1.5rem;
-    }
-
-    .email-input::placeholder {
-      color: #9ca3af;
-    }
-
-    .email-input:focus {
-      outline: none;
-      box-shadow: inset 0 0 0 2px #2563eb;
-    }
-
-    .submit-button {
-      position: relative;
-      margin-left: -1px;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      border-radius: 0 0.375rem 0.375rem 0;
-      padding: 0.5rem 0.75rem;
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: #111827;
-      box-shadow: inset 0 0 0 1px #d1d5db;
-      width: 120px;
-      background-color: white;
-      border: none;
-      cursor: pointer;
-      justify-content: center;
-    }
-
-    .submit-button:hover {
-      background-color: #f9fafb;
-    }
-
-    .submit-button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .learn-more-link {
-      font-size: 0.875rem;
-      color: #111827;
-      font-weight: 600;
-      line-height: 1.5rem;
-      text-decoration: none;
-    }
-
-    .learn-more-link:hover {
-      color: #2563eb;
-    }
-
-    .error-message {
-      padding-top: 0.5rem;
-      font-size: 0.75rem;
-      color: #dc2626;
-    }
-
-    .success-message {
-      padding-top: 0.5rem;
-      font-size: 0.75rem;
-      color: #15803d;
-    }
-
-    .image-section {
-      max-width: 42rem;
-      margin: 0 auto;
-      margin-top: 4rem;
-      display: flex;
-    }
-
-    @media (min-width: 1024px) {
-      .image-section {
-        margin-left: 2.5rem;
-        margin-right: 0;
-        margin-top: 0;
-        max-width: none;
-        flex: none;
-      }
-    }
-
-    @media (min-width: 1280px) {
-      .image-section {
-        margin-left: 8rem;
-      }
-    }
-
-    @media (min-width: 640px) {
-      .image-section {
-        margin-top: 6rem;
-        max-width: 80rem;
-      }
-    }
-
-    .image-container {
-      max-width: 48rem;
-      flex: none;
-    }
-
-    @media (min-width: 1024px) {
-      .image-container {
-        max-width: none;
-      }
-    }
-
-    @media (min-width: 640px) {
-      .image-container {
-        max-width: 80rem;
-      }
-    }
-
-    .image-frame {
-      border-radius: 0.75rem;
-      background-color: rgba(17, 24, 39, 0.05);
-      padding: 0.5rem;
-      box-shadow: inset 0 0 0 1px rgba(17, 24, 39, 0.1);
-      margin: -0.5rem;
-    }
-
-    @media (min-width: 1024px) {
-      .image-frame {
-        border-radius: 1rem;
-        padding: 1rem;
-        margin: -1rem;
-      }
-    }
-
-    .screenshot {
-      width: 76rem;
-      border-radius: 0.375rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(17, 24, 39, 0.1);
-      max-width: 100%;
-      height: auto;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .spinner {
-      display: inline-block;
-      width: 1rem;
-      height: 1rem;
-      border: 2px solid #d1d5db;
-      border-top-color: #2563eb;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
+    /* Submenu positioning handled in CSS file */
   </style>
+  
 </head>
 <body>
+  <div class="desktop">
+    <!-- Desktop Icons -->
+    <div class="desktop-icons">
+        <button
+          class="desktop-icon"
+          data-icon-id="docs"
+          data-icon-type="link"
+          data-icon-section=""
+          data-icon-url="https://stacksjs.org/docs"
+          style="left: 20px; top: 20px;"
+        >
+          <div class="desktop-icon-image">📚</div>
+          <div class="desktop-icon-label">Documentation</div>
+        </button>
 
-  <div class="page-container">
-    <!-- Background Pattern -->
-    <svg class="bg-pattern" aria-hidden="true">
-      <defs>
-        <pattern id="pattern" width="200" height="200" x="50%" y="-1" patternUnits="userSpaceOnUse">
-          <path d="M.5 200V.5H200" fill="none" />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" stroke-width="0" fill="url(#pattern)" />
-    </svg>
+        <button
+          class="desktop-icon"
+          data-icon-id="github"
+          data-icon-type="link"
+          data-icon-section=""
+          data-icon-url="https://github.com/stacksjs/stacks"
+          style="left: 20px; top: 140px;"
+        >
+          <div class="desktop-icon-image">💻</div>
+          <div class="desktop-icon-label">GitHub</div>
+        </button>
 
-    <div class="content-wrapper">
-      <!-- Text Section -->
-      <div class="text-section">
-        <!-- Logo -->
-        <svg class="logo" viewBox="0 0 100 100" fill="#2563eb">
-          <rect width="100" height="100" rx="20" />
-          <text x="50" y="70" font-size="60" font-weight="bold" text-anchor="middle" fill="white">S</text>
-        </svg>
+        <button
+          class="desktop-icon"
+          data-icon-id="sponsor"
+          data-icon-type="link"
+          data-icon-section=""
+          data-icon-url="https://github.com/sponsors/chrisbbreuer"
+          style="left: 20px; top: 260px;"
+        >
+          <div class="desktop-icon-image">💖</div>
+          <div class="desktop-icon-label">Sponsor</div>
+        </button>
 
-        <!-- Badge -->
-        <div class="badge-container">
-          <a href="#" class="badge-link">
-            <span class="badge">Coming soon</span>
-          </a>
+        <button
+          class="desktop-icon"
+          data-icon-id="discord"
+          data-icon-type="link"
+          data-icon-section=""
+          data-icon-url="https://discord.gg/stacksjs"
+          style="left: 20px; top: 380px;"
+        >
+          <div class="desktop-icon-image">💬</div>
+          <div class="desktop-icon-label">Discord</div>
+        </button>
+    </div>
+
+    <!-- Windows -->
+    <div id="window-welcome" class="window active" style="left: 150px; top: 100px; width: 700px; height: 600px; z-index: 101;">
+      <div class="window-titlebar">
+        <div class="window-icon">📃</div>
+        <div class="window-title">Welcome.pdf - PDF Viewer</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('welcome')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('welcome')">□</button>
+          <button class="window-control close" onclick="closeWindow('welcome')">×</button>
         </div>
+      </div>
+      <div class="window-content" style="background: #525659; padding: 0;">
+        <div style="background: #323639; padding: 8px 12px; border-bottom: 1px solid #222; display: flex; gap: 8px; align-items: center;">
+          <button style="padding: 4px 12px; background: #3c3f41; border: 1px solid #555; color: #ccc; font-size: 11px; cursor: pointer;">Print</button>
+          <button style="padding: 4px 12px; background: #3c3f41; border: 1px solid #555; color: #ccc; font-size: 11px; cursor: pointer;">Download</button>
+          <div style="flex: 1;"></div>
+          <span style="color: #ccc; font-size: 11px;">Page 1 of 1</span>
+          <button style="padding: 4px 8px; background: #3c3f41; border: 1px solid #555; color: #ccc; font-size: 11px; cursor: pointer;">100%</button>
+        </div>
+        <div style="background: white; margin: 20px auto; width: 90%; min-height: 500px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); padding: 40px 50px;">
+          <div style="text-align: center; margin-bottom: 40px;">
+            <h1 style="color: #0831d9; font-size: 48px; margin: 0 0 10px 0; font-weight: bold;">STACKS.JS</h1>
+            <p style="color: #333; font-size: 18px; margin: 0;">The TypeScript Framework for Modern Development</p>
+            <p style="color: #4a4a4a; font-size: 14px; margin: 8px 0 0 0;">Version 1.0 • October 2025</p>
+          </div>
 
-        <!-- Heading -->
-        <h1 class="main-heading">
-          Develop modern apps, clouds & libraries. Faster.
-        </h1>
+          <h3 style="color: #0831d9; font-size: 24px; margin: 30px 0 16px 0; border-bottom: 2px solid #0831d9; padding-bottom: 8px;">What is Stacks?</h3>
+          <p style="line-height: 1.8; color: #333; margin-bottom: 16px;">
+            Stacks is a rapid development framework that enables you to build modern web applications, APIs, and cloud infrastructure with TypeScript.
+            It provides an elegant, opinionated solution for common development needs while maintaining complete configurability.
+          </p>
 
-        <!-- Description -->
-        <p class="description">
-          Stacks is a type-safe full-stack framework for Web Artisans. Rapid development, for the best full-stack teams, and individuals.
-        </p>
-
-        <p class="description-italic">
-          Enter your email below to stay in the loop.
-        </p>
-
-        <!-- Email Form -->
-        <div class="form-container">
-          <div class="email-wrapper">
-            <div class="input-group">
-              <div class="input-container">
-                <div class="input-icon">
-                  <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <input
-                  id="email"
-                  type="email"
-                  name="email"
-                  class="email-input"
-                  placeholder="may-we-ask@your-email.org"
-                >
+          <h3 style="color: #0831d9; font-size: 24px; margin: 30px 0 16px 0; border-bottom: 2px solid #0831d9; padding-bottom: 8px;">Key Features</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: start; gap: 12px;">
+              <span style="font-size: 24px;">⚡</span>
+              <div>
+                <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Ultra-Fast Runtime</strong>
+                <span style="font-size: 13px; color: #333;">Built on Bun for maximum performance</span>
               </div>
-              <button type="button" class="submit-button" onclick="submitEmail()">
-                <span id="button-text">Stay in Touch</span>
-                <span id="button-spinner" class="spinner hidden"></span>
-              </button>
+            </div>
+            <div style="display: flex; align-items: start; gap: 12px;">
+              <span style="font-size: 24px;">🎯</span>
+              <div>
+                <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Type-Safe Everything</strong>
+                <span style="font-size: 13px; color: #333;">Full TypeScript support throughout</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: start; gap: 12px;">
+              <span style="font-size: 24px;">🔋</span>
+              <div>
+                <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Batteries Included</strong>
+                <span style="font-size: 13px; color: #333;">ORM, Auth, Queue, Cache, and more</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: start; gap: 12px;">
+              <span style="font-size: 24px;">🖥️</span>
+              <div>
+                <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Cross-Platform</strong>
+                <span style="font-size: 13px; color: #333;">Web, Desktop & Mobile from one codebase</span>
+              </div>
             </div>
           </div>
 
-          <a href="https://stacksjs.org/docs" class="learn-more-link">
-            Learn more <span aria-hidden="true">→</span>
-          </a>
+          <div style="background: #fffacd; border-left: 4px solid #ffd700; padding: 16px 20px; margin: 24px 0;">
+            <strong style="color: #333; display: block; margin-bottom: 8px;">🚀 Quick Start</strong>
+            <code style="display: block; background: #fff; padding: 12px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 13px; color: #0831d9; margin-top: 8px;">
+              bunx stacks new my-project
+            </code>
+          </div>
+
+          <div style="text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid #ddd;">
+            <p style="color: #333; font-size: 12px; margin-bottom: 8px;">Learn more at <strong style="color: #0831d9;">stacksjs.org</strong></p>
+            <p style="color: #4a4a4a; font-size: 11px;">© 2025 Stacks. Open source under MIT License.</p>
+          </div>
         </div>
-
-        <!-- Messages -->
-        <div id="error-container"></div>
-        <p id="success-message" class="success-message hidden"></p>
       </div>
+    </div>
 
-      <!-- Image Section -->
-      <div class="image-section">
-        <div class="image-container">
-          <div class="image-frame">
-            <img
-              src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
-              alt="App screenshot"
-              class="screenshot"
-            >
+    <!-- Start Menu -->
+    <div class="start-menu" id="start-menu">
+      <div class="start-menu-header">
+        STACKS.JS
+      </div>
+      <div class="start-menu-user">
+        <div class="start-menu-user-icon">👤</div>
+        <div>Developer</div>
+      </div>
+      <div class="start-menu-items">
+        <div class="start-menu-item" style="opacity: 0.6; cursor: not-allowed;">
+          <div class="start-menu-item-icon">📄</div>
+          <div>About Stacks <span style="font-size: 10px; color: #999;">(Coming Soon)</span></div>
+        </div>
+        <div class="start-menu-item" style="opacity: 0.6; cursor: not-allowed;">
+          <div class="start-menu-item-icon">🌐</div>
+          <div>Ecosystem <span style="font-size: 10px; color: #999;">(Coming Soon)</span></div>
+        </div>
+        <div class="start-menu-item" style="opacity: 0.6; cursor: not-allowed;">
+          <div class="start-menu-item-icon">⚙️</div>
+          <div>Backend <span style="font-size: 10px; color: #999;">(Coming Soon)</span></div>
+        </div>
+        <div class="start-menu-item" style="opacity: 0.6; cursor: not-allowed;">
+          <div class="start-menu-item-icon">🎨</div>
+          <div>Frontend <span style="font-size: 10px; color: #999;">(Coming Soon)</span></div>
+        </div>
+        <div class="start-menu-item" style="opacity: 0.6; cursor: not-allowed;">
+          <div class="start-menu-item-icon">☁️</div>
+          <div>Cloud <span style="font-size: 10px; color: #999;">(Coming Soon)</span></div>
+        </div>
+        <div class="start-menu-item" style="opacity: 0.6; cursor: not-allowed;">
+          <div class="start-menu-item-icon">📊</div>
+          <div>Dashboard <span style="font-size: 10px; color: #999;">(Coming Soon)</span></div>
+        </div>
+        <div class="start-menu-separator"></div>
+        <div class="start-menu-item has-submenu">
+          <div class="start-menu-item-icon">🔗</div>
+          <div>Resources</div>
+          <div class="start-submenu">
+            <button class="start-menu-item" onclick="window.open('https://stacksjs.org/docs', '_blank')">
+              <div class="start-menu-item-icon">📚</div>
+              <div>Documentation</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank')">
+              <div class="start-menu-item-icon">💻</div>
+              <div>GitHub</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/sponsors/chrisbbreuer', '_blank')">
+              <div class="start-menu-item-icon">💖</div>
+              <div>Sponsor</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://discord.gg/stacksjs', '_blank')">
+              <div class="start-menu-item-icon">💬</div>
+              <div>Discord</div>
+            </button>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <!-- taskbar -->
+    <div class="taskbar">
+      <button class="start-button" id="start-button">
+        <span class="start-logo">🪟</span>
+        <span>start</span>
+      </button>
+      <div class="taskbar-tasks" id="taskbar-tasks"></div>
+      <div class="taskbar-clock" id="clock">12:00 PM</div>
+    </div>
+
+    <!-- Notification Popup -->
+    <div class="notification-popup" id="notification-popup">
+      <div class="notification-header">
+        <div class="notification-icon">⭐</div>
+        <div class="notification-title">Build Anything</div>
+        <div class="notification-count">5</div>
+        <button class="notification-close" onclick="closeNotification()">×</button>
+      </div>
+      <div class="notification-features">
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>Modern web applications & APIs</div>
+        </div>
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>One UI. 3 apps. <em>Web, Desktop & Mobile.</em></div>
+        </div>
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>Cloud infrastructure & serverless</div>
+        </div>
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>Type-safe with TypeScript</div>
+        </div>
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>Lightning fast with Bun</div>
+        </div>
+      </div>
+      <div class="notification-signup" id="notification-signup">
+        <div class="notification-separator"></div>
+        <div class="notification-signup-text">Get updates on new features & releases:</div>
+        <div class="notification-signup-form">
+          <input
+            type="email"
+            id="notification-email"
+            class="notification-email-input"
+            placeholder="your@email.com"
+            autocomplete="email"
+          />
+          <button class="notification-signup-btn" onclick="handleEmailSignup()">
+            Sign Up
+          </button>
+        </div>
+      </div>
+      <div class="notification-success" id="notification-success" style="display: none;">
+        <div class="notification-separator"></div>
+        <div class="notification-success-content">
+          <div class="notification-success-icon">✓</div>
+          <div class="notification-success-text">
+            <div class="notification-success-title">Thanks for subscribing!</div>
+            <div class="notification-success-subtitle">We'll keep you updated.</div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <script>
-    async function submitEmail() {
-      const emailInput = document.getElementById('email');
-      const buttonText = document.getElementById('button-text');
-      const buttonSpinner = document.getElementById('button-spinner');
-      const errorContainer = document.getElementById('error-container');
-      const successMessage = document.getElementById('success-message');
-      const submitButton = document.querySelector('.submit-button');
+  <!-- Context Menu (outside desktop div to avoid layout inheritance) -->
+  <div class="context-menu" id="context-menu" style="display: none;">
+    <button class="context-menu-item has-submenu">
+      <div class="context-menu-item-icon">📤</div>
+      <div>Share with a friend...</div>
+      <div class="context-submenu">
+        <button class="context-menu-item" onclick="shareVia('twitter')">
+          <div class="context-menu-item-icon">🐦</div>
+          <div>Share on Twitter</div>
+        </button>
+        <button class="context-menu-item" onclick="shareVia('bluesky')">
+          <div class="context-menu-item-icon">🦋</div>
+          <div>Share on Bluesky</div>
+        </button>
+        <button class="context-menu-item" onclick="shareVia('linkedin')">
+          <div class="context-menu-item-icon">💼</div>
+          <div>Share on LinkedIn</div>
+        </button>
+        <button class="context-menu-item" onclick="shareVia('email')">
+          <div class="context-menu-item-icon">📧</div>
+          <div>Share via Email</div>
+        </button>
+        <button class="context-menu-item" onclick="shareVia('copy')">
+          <div class="context-menu-item-icon">📋</div>
+          <div>Copy Link</div>
+        </button>
+      </div>
+    </button>
+    <div class="context-menu-separator"></div>
+    <button class="context-menu-item" onclick="copyLogoSVG()">
+      <div class="context-menu-item-icon">🎨</div>
+      <div>Copy Logo as SVG</div>
+    </button>
+    <button class="context-menu-item" onclick="copyWordmarkSVG()">
+      <div class="context-menu-item-icon">✏️</div>
+      <div>Copy Wordmark as SVG</div>
+    </button>
+    <button class="context-menu-item" onclick="window.open('https://stacksjs.org/brand', '_blank')">
+      <div class="context-menu-item-icon">📖</div>
+      <div>Brand Guidelines</div>
+    </button>
+    <div class="context-menu-separator"></div>
+    <button class="context-menu-item" onclick="window.open('https://stacksjs.org/docs', '_blank')">
+      <div class="context-menu-item-icon">📚</div>
+      <div>Documentation</div>
+    </button>
+    <button class="context-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank')">
+      <div class="context-menu-item-icon">💻</div>
+      <div>View on GitHub</div>
+    </button>
+    <div class="context-menu-separator"></div>
+    <button class="context-menu-item" onclick="window.location.reload()">
+      <div class="context-menu-item-icon">🔄</div>
+      <div>Refresh</div>
+    </button>
+  </div>
 
-      const email = emailInput.value.trim();
+  <!-- Icon Context Menu -->
+  <div class="context-menu" id="icon-context-menu" style="display: none;">
+    <button class="context-menu-item" onclick="openIconFromMenu()">
+      <div class="context-menu-item-icon">📂</div>
+      <div>Open</div>
+    </button>
+    <div class="context-menu-separator"></div>
+    <button class="context-menu-item" onclick="renameIcon()">
+      <div class="context-menu-item-icon">✏️</div>
+      <div>Rename</div>
+    </button>
+    <button class="context-menu-item" onclick="deleteIcon()">
+      <div class="context-menu-item-icon">🗑️</div>
+      <div>Delete</div>
+    </button>
+    <div class="context-menu-separator"></div>
+    <button class="context-menu-item has-submenu">
+      <div class="context-menu-item-icon">📤</div>
+      <div>Share with a friend...</div>
+      <div class="context-submenu">
+        <button class="context-menu-item" onclick="shareVia('twitter')">
+          <div class="context-menu-item-icon">🐦</div>
+          <div>Share on Twitter</div>
+        </button>
+        <button class="context-menu-item" onclick="shareVia('bluesky')">
+          <div class="context-menu-item-icon">🦋</div>
+          <div>Share on Bluesky</div>
+        </button>
+        <button class="context-menu-item" onclick="shareVia('linkedin')">
+          <div class="context-menu-item-icon">💼</div>
+          <div>Share on LinkedIn</div>
+        </button>
+        <button class="context-menu-item" onclick="shareVia('email')">
+          <div class="context-menu-item-icon">📧</div>
+          <div>Share via Email</div>
+        </button>
+        <button class="context-menu-item" onclick="shareVia('copy')">
+          <div class="context-menu-item-icon">📋</div>
+          <div>Copy Link</div>
+        </button>
+      </div>
+    </button>
+    <div class="context-menu-separator"></div>
+    <button class="context-menu-item" onclick="copyLogoSVG()">
+      <div class="context-menu-item-icon">🎨</div>
+      <div>Copy Logo as SVG</div>
+    </button>
+    <button class="context-menu-item" onclick="copyWordmarkSVG()">
+      <div class="context-menu-item-icon">✏️</div>
+      <div>Copy Wordmark as SVG</div>
+    </button>
+    <button class="context-menu-item" onclick="window.open('https://stacksjs.org/brand', '_blank')">
+      <div class="context-menu-item-icon">📖</div>
+      <div>Brand Guidelines</div>
+    </button>
+    <div class="context-menu-separator"></div>
+    <button class="context-menu-item" onclick="window.open('https://stacksjs.org/docs', '_blank')">
+      <div class="context-menu-item-icon">📚</div>
+      <div>Documentation</div>
+    </button>
+    <button class="context-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank')">
+      <div class="context-menu-item-icon">💻</div>
+      <div>View on GitHub</div>
+    </button>
+    <div class="context-menu-separator"></div>
+    <button class="context-menu-item" onclick="window.location.reload()">
+      <div class="context-menu-item-icon">🔄</div>
+      <div>Refresh</div>
+    </button>
+  </div>
 
-      // Clear previous messages
-      errorContainer.innerHTML = '';
-      successMessage.classList.add('hidden');
-
-      // Basic validation
-      if (!email) {
-        errorContainer.innerHTML = '<p class="error-message">Please enter your email address.</p>';
-        return;
-      }
-
-      if (!isValidEmail(email)) {
-        errorContainer.innerHTML = '<p class="error-message">Please enter a valid email address.</p>';
-        return;
-      }
-
-      // Show loading state
-      buttonText.classList.add('hidden');
-      buttonSpinner.classList.remove('hidden');
-      submitButton.disabled = true;
-
-      try {
-        const response = await fetch('http://localhost:3008/api/email/subscribe', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({ email }),
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          if (data.errors && Array.isArray(data.errors)) {
-            data.errors.forEach(error => {
-              const errorEl = document.createElement('p');
-              errorEl.className = 'error-message';
-              errorEl.textContent = error.message;
-              errorContainer.appendChild(errorEl);
-            });
-          } else {
-            errorContainer.innerHTML = '<p class="error-message">An error occurred. Please try again.</p>';
-          }
-        } else {
-          successMessage.textContent = 'Thanks! Stay tuned for more updates.';
-          successMessage.classList.remove('hidden');
-          emailInput.value = '';
-        }
-      } catch (error) {
-        errorContainer.innerHTML = '<p class="error-message">Network error. Please check your connection and try again.</p>';
-      } finally {
-        // Reset loading state
-        buttonText.classList.remove('hidden');
-        buttonSpinner.classList.add('hidden');
-        submitButton.disabled = false;
-      }
-    }
-
-    function isValidEmail(email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return emailRegex.test(email);
-    }
-
-    // Allow form submission with Enter key
-    document.getElementById('email').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        submitEmail();
-      }
-    });
-  </script>
-
+  <script type="module" src="homepage.ts"></script>
 </body>
 </html>

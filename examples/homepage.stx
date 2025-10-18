@@ -7,17 +7,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="homepage.css?v=6">
+  <link rel="stylesheet" href="homepage.css">
   <style>
     /* Submenu positioning handled in CSS file */
   </style>
-  
+
 </head>
 <body>
   <div class="desktop">
     <!-- Desktop Icons -->
     <div class="desktop-icons">
-      
+
         <button
           class="desktop-icon"
           data-icon-id="about"
@@ -366,7 +366,7 @@
             <h3 style="color: #0831d9; margin-bottom: 12px;">Frameworks</h3>
             <p style="margin-bottom: 16px; color: #333;">Powerful frameworks for modern development.</p>
             <div class="folder-list">
-              
+
                 <a href="https://github.com/stacksjs/bunpress" target="_blank" class="folder-item">
                   <div class="folder-item-icon">🏗️</div>
                   <div class="folder-item-content">
@@ -421,7 +421,7 @@
             <h3 style="color: #0831d9; margin-bottom: 12px;">Sponsorware</h3>
             <p style="margin-bottom: 16px; color: #333;">Premium tools & services for sponsors.</p>
             <div class="folder-list">
-              
+
                 <a href="https://github.com/stacksjs/bun-queue" target="_blank" class="folder-item">
                   <div class="folder-item-icon">💎</div>
                   <div class="folder-item-content">
@@ -468,7 +468,7 @@
             <h3 style="color: #0831d9; margin-bottom: 12px;">Apps</h3>
             <p style="margin-bottom: 16px; color: #333;">Useful macOS utilities built with Stacks.</p>
             <div class="folder-list">
-              
+
                 <a href="https://github.com/stacksjs/barista" target="_blank" class="folder-item">
                   <div class="folder-item-icon">📱</div>
                   <div class="folder-item-content">
@@ -839,7 +839,7 @@ export default {
         <h2>Libraries & CLIs</h2>
         <p style="margin-bottom: 16px;">Powerful TypeScript libraries and command-line tools for modern development.</p>
         <div class="folder-list">
-          
+
             <a href="https://github.com/stacksjs/aax" target="_blank" class="folder-item">
               <div class="folder-item-icon">📦</div>
               <div class="folder-item-content">
@@ -1305,7 +1305,7 @@ export default {
         <h2>Plugins & Actions</h2>
         <p style="margin-bottom: 16px;">Build plugins and GitHub Actions to enhance your development workflow.</p>
         <div class="folder-list">
-          
+
             <a href="https://github.com/stacksjs/launchpad" target="_blank" class="folder-item">
               <div class="folder-item-icon">🔌</div>
               <div class="folder-item-content">
@@ -1443,7 +1443,7 @@ export default {
         <h2>Templates</h2>
         <p style="margin-bottom: 16px;">Starter templates to jumpstart your TypeScript projects.</p>
         <div class="folder-list">
-          
+
             <a href="https://github.com/stacksjs/projects" target="_blank" class="folder-item">
               <div class="folder-item-icon">📋</div>
               <div class="folder-item-content">
