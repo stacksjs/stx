@@ -79,7 +79,7 @@
   "devDependencies": {
     "@stacksjs/docs": "^0.70.23",
     "@stacksjs/eslint-config": "^4.14.0-beta.3",
-    "better-dx": "^0.1.5"
+    "better-dx": "^0.1.7"
   },
   "git-hooks": {
     "pre-commit": {
