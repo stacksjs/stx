@@ -1,4 +1,4 @@
-import { desktopIcons, libraries, plugins, templates } from './data.ts';
+import { desktopIcons, libraries, plugins, templates, frameworks, sponsorware, apps } from './data.ts';
 
 // Read the homepage.stx template
 const template = await Bun.file('./homepage.stx').text();
@@ -67,6 +67,51 @@ html = html.replace(
   templatesHTML
 );
 
+// Generate and replace frameworks @foreach loop
+const frameworksHTML = frameworks.map(framework => `
+                <a href="${framework.url}" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">🏗️</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">${framework.name}</div>
+                    <div class="folder-item-desc">${framework.desc}</div>
+                  </div>
+                </a>`).join('\n');
+
+html = html.replace(
+  /@foreach\(frameworks as framework\)[\s\S]*?@endforeach/,
+  frameworksHTML
+);
+
+// Generate and replace sponsorware @foreach loop
+const sponsorwareHTML = sponsorware.map(item => `
+                <a href="${item.url}" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">💎</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">${item.name}</div>
+                    <div class="folder-item-desc">${item.desc}</div>
+                  </div>
+                </a>`).join('\n');
+
+html = html.replace(
+  /@foreach\(sponsorware as item\)[\s\S]*?@endforeach/,
+  sponsorwareHTML
+);
+
+// Generate and replace apps @foreach loop
+const appsHTML = apps.map(app => `
+                <a href="${app.url}" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">📱</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">${app.name}</div>
+                    <div class="folder-item-desc">${app.desc}</div>
+                  </div>
+                </a>`).join('\n');
+
+html = html.replace(
+  /@foreach\(apps as app\)[\s\S]*?@endforeach/,
+  appsHTML
+);
+
 // Remove the module.exports script block since data is now in data.js
 html = html.replace(
   /<script>[\s\S]*?module\.exports = \{[\s\S]*?\};[\s\S]*?<\/script>/,
@@ -74,11 +119,14 @@ html = html.replace(
 );
 
 // Write the output
-await Bun.write('./homepage-full.html', html);
+await Bun.write('./homepage.stx', html);
 
-console.log('✓ Built homepage-full.html');
+console.log('✓ Built homepage.stx');
 console.log(`  Desktop icons rendered: ${desktopIcons.length}`);
 console.log(`  Libraries rendered: ${libraries.length}`);
 console.log(`  Plugins rendered: ${plugins.length}`);
 console.log(`  Templates rendered: ${templates.length}`);
+console.log(`  Frameworks rendered: ${frameworks.length}`);
+console.log(`  Sponsorware rendered: ${sponsorware.length}`);
+console.log(`  Apps rendered: ${apps.length}`);
 console.log(`  File size: ${html.length} bytes`);

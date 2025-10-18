@@ -159,9 +159,15 @@ function initializeIcons() {
 
 // Call initialization when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeIcons);
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeIcons();
+    // Update taskbar to show welcome window
+    updateTaskbar();
+  });
 } else {
   initializeIcons();
+  // Update taskbar to show welcome window
+  updateTaskbar();
 }
 
 // window management
@@ -702,6 +708,72 @@ function deleteIcon() {
   }
 }
 
+// License window functions
+function closeLicenseWindow() {
+  closeWindow('license');
+}
+
+function purchaseLicense() {
+  const confirmed = confirm('This will open the Stacks.js sponsorship page in a new window. Continue?');
+  if (confirmed) {
+    window.open('https://github.com/sponsors/chrisbbreuer', '_blank');
+  }
+}
+
+function activateLicense() {
+  const input = document.getElementById('license-code-input') as HTMLInputElement;
+  const code = input.value.trim().toUpperCase();
+
+  if (!code) {
+    alert('Please enter a license code.');
+    return;
+  }
+
+  // Format the code with dashes if not already formatted
+  const formattedCode = code.replace(/-/g, '').match(/.{1,4}/g)?.join('-') || code;
+
+  // Check for special codes
+  if (formattedCode === 'OPEN-SOUR-CE4E-VER' || formattedCode === 'STAC-KSJS-FORE-VER') {
+    alert('✅ License activated successfully!\n\nThank you for using STACKS.JS Professional Edition.\n\nLicense: ' + formattedCode + '\nType: Professional Edition\nStatus: Activated');
+    input.value = '';
+    closeWindow('license');
+    return;
+  }
+
+  // Check for trial code
+  if (formattedCode === 'TRIAL-2025-STAC-KSJS') {
+    alert('✅ Trial license activated!\n\nYou have 30 days to evaluate STACKS.JS Professional Edition.\n\nLicense: ' + formattedCode + '\nType: 30-Day Trial\nStatus: Activated');
+    input.value = '';
+    closeWindow('license');
+    return;
+  }
+
+  // Invalid code
+  alert('❌ Invalid license code.\n\nPlease check your code and try again, or purchase a new license.\n\nTip: Try "OPEN-SOUR-CE4E-VER" or "TRIAL-2025-STAC-KSJS"');
+}
+
+// Ecosystem tab switching
+function showEcosystemTab(tabName) {
+  // Hide all tabs
+  const tabs = document.querySelectorAll('.ecosystem-tab');
+  tabs.forEach(tab => {
+    (tab as HTMLElement).style.display = 'none';
+  });
+
+  // Remove active class from all buttons
+  const buttons = document.querySelectorAll('#window-ecosystem .feature-btn');
+  buttons.forEach(btn => btn.classList.remove('active'));
+
+  // Show selected tab
+  const selectedTab = document.getElementById(`tab-${tabName}`);
+  if (selectedTab) {
+    selectedTab.style.display = 'block';
+  }
+
+  // Add active class to clicked button
+  event.target.classList.add('active');
+}
+
 // Make functions globally accessible for inline onclick handlers
 window.openWindow = openWindow;
 window.closeWindow = closeWindow;
@@ -716,3 +788,7 @@ window.copyWordmarkSVG = copyWordmarkSVG;
 window.openIconFromMenu = openIconFromMenu;
 window.renameIcon = renameIcon;
 window.deleteIcon = deleteIcon;
+window.closeLicenseWindow = closeLicenseWindow;
+window.purchaseLicense = purchaseLicense;
+window.activateLicense = activateLicense;
+window.showEcosystemTab = showEcosystemTab;

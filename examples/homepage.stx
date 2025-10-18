@@ -7,156 +7,181 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="homepage.css?v=4">
+  <link rel="stylesheet" href="homepage.css?v=6">
   <style>
-    /* Force submenu to be hidden by default */
-    .context-submenu {
-      display: none !important;
-    }
-    .context-menu-item:hover > .context-submenu {
-      display: flex !important;
-    }
+    /* Submenu positioning handled in CSS file */
   </style>
-  <script>
-    // Data for STX template processing
-    // Note: This data is also available in data.ts for client-side JavaScript with ES6 imports
-    module.exports = {
-      packages: [
-        { title: 'AI', emoji: '🤖', desc: 'Deep AI integrations for agentic workflows' },
-        { title: 'API', emoji: '🔌', desc: 'Build scalable REST & GraphQL APIs' },
-        { title: 'Auth', emoji: '🔐', desc: 'Authentication and authorization' },
-        { title: 'Cache', emoji: '⚡', desc: 'Multi-driver caching system' },
-        { title: 'CLI', emoji: '⌨️', desc: 'Beautiful command-line interfaces' },
-        { title: 'Cloud', emoji: '☁️', desc: 'Cloud infrastructure management' },
-        { title: 'Database', emoji: '🗄️', desc: 'Database connections & migrations' },
-        { title: 'ORM', emoji: '🗺️', desc: 'Elegant object-relational mapper' },
-        { title: 'Router', emoji: '🧭', desc: 'Fast & flexible routing' },
-        { title: 'Validation', emoji: '✅', desc: 'Type-safe validation' },
-        { title: 'Queue', emoji: '📬', desc: 'Background job processing' },
-        { title: 'Storage', emoji: '💾', desc: 'File storage abstraction' },
-        { title: 'Email', emoji: '📧', desc: 'Send emails with ease' },
-        { title: 'Events', emoji: '📡', desc: 'Event-driven architecture' },
-        { title: 'Notifications', emoji: '🔔', desc: 'Multi-channel notifications' },
-        { title: 'Testing', emoji: '🧪', desc: 'Testing utilities & helpers' },
-        { title: 'Search Engine', emoji: '🔍', desc: 'Full-text search capabilities' },
-        { title: 'Realtime', emoji: '⚡', desc: 'WebSocket & real-time features' },
-        { title: 'X-Ray', emoji: '🔬', desc: 'Debugging & monitoring tools' },
-        { title: 'Payments', emoji: '💳', desc: 'Payment processing integration' }
-      ],
-      desktopIcons: [
-        { id: 'about', title: 'About Stacks', icon: '📄', type: 'window', section: 'about' },
-        { id: 'ecosystem', title: 'Ecosystem', icon: '🌐', type: 'window', section: 'ecosystem' },
-        { id: 'backend', title: 'Backend', icon: '⚙️', type: 'window', section: 'backend' },
-        { id: 'frontend', title: 'Frontend', icon: '🎨', type: 'window', section: 'frontend' },
-        { id: 'cloud', title: 'Cloud', icon: '☁️', type: 'window', section: 'cloud' },
-        { id: 'dashboard', title: 'Dashboard', icon: '📊', type: 'window', section: 'dashboard' },
-        { id: 'libraries', title: 'Libraries & CLIs', icon: '📁', type: 'window', section: 'libraries' },
-        { id: 'plugins', title: 'Plugins & Actions', icon: '📁', type: 'window', section: 'plugins' },
-        { id: 'templates', title: 'Templates', icon: '📁', type: 'window', section: 'templates' },
-        { id: 'docs', title: 'Documentation', icon: '📚', type: 'link', url: 'https://stacksjs.org/docs' },
-        { id: 'github', title: 'GitHub', icon: '💻', type: 'link', url: 'https://github.com/stacksjs/stacks' },
-        { id: 'sponsor', title: 'Sponsor', icon: '💖', type: 'link', url: 'https://github.com/sponsors/chrisbbreuer' },
-        { id: 'discord', title: 'Discord', icon: '💬', type: 'link', url: 'https://discord.gg/stacksjs' }
-      ],
-      libraries: [
-        { name: 'aax', url: 'https://github.com/stacksjs/aax', desc: 'A library to work with Audible\'s .aax files.' },
-        { name: 'audiox', url: 'https://github.com/stacksjs/audiox', desc: 'Powerful audio processing for your workflows.' },
-        { name: 'backupx', url: 'https://github.com/stacksjs/backupx', desc: 'Comprehensive & performant database and file backup solution.' },
-        { name: 'besting', url: 'https://github.com/stacksjs/besting', desc: 'A modern & extremely performant testing framework.' },
-        { name: 'buddy-bot', url: 'https://github.com/stacksjs/buddy', desc: 'Just like Renovate and Dependabot, just open source & self-hosted.' },
-        { name: 'bumpx', url: 'https://github.com/stacksjs/bumpx', desc: 'Bump your version numbers automatically.' },
-        { name: 'bun-git-hooks', url: 'https://github.com/stacksjs/bun-git-hooks', desc: 'A simple git hooks manager for all-sized Bun projects.' },
-        { name: 'bun-query-builder', url: 'https://github.com/stacksjs/bun-query-builder', desc: 'A safe, performant & fully-typed query builder.' },
-        { name: 'bun-queue', url: 'https://github.com/stacksjs/queue', desc: 'A modern port of BullMQ. Optimized for Bun usage.' },
-        { name: 'bun-router', url: 'https://github.com/stacksjs/router', desc: 'A powerful yet lightweight router for your server.' },
-        { name: 'bunfig', url: 'https://github.com/stacksjs/bunfig', desc: 'Lightweight & smart Bun configuration loader.' },
-        { name: 'clarity', url: 'https://github.com/stacksjs/clarity', desc: 'Modern debugging & logging for browser & server.' },
-        { name: 'dtsx', url: 'https://github.com/stacksjs/dtsx', desc: 'Extremely fast & configurable DTS emitter.' },
-        { name: 'dnsx', url: 'https://github.com/stacksjs/dnsx', desc: 'A command-line & library DNS client.' },
-        { name: 'gitit', url: 'https://github.com/stacksjs/gitit', desc: 'A simple way to download templates stored using git.' },
-        { name: 'gitlint', url: 'https://github.com/stacksjs/gitlint', desc: 'Minimal & fast Git commit message linting & formatting.' },
-        { name: 'httx', url: 'https://github.com/stacksjs/httx', desc: 'A modern, user-friendly command-line & library HTTP client.' },
-        { name: 'imgx', url: 'https://github.com/stacksjs/imgx', desc: 'Make your images load faster.' },
-        { name: 'jpgx', url: 'https://github.com/stacksjs/jpgx', desc: 'A TypeScript JPEG encoder & decoder for Bun & Node.js.' },
-        { name: 'localtunnels', url: 'https://github.com/stacksjs/localtunnels', desc: 'A simple and smart tunneling alternative.' },
-        { name: 'logsmith', url: 'https://github.com/stacksjs/logsmith', desc: 'Forge beautiful changelogs from your commits.' },
-        { name: 'pickier', url: 'https://github.com/stacksjs/pickier', desc: 'Format, lint, and more—in a fraction of second.' },
-        { name: 'pngx', url: 'https://github.com/stacksjs/pngx', desc: 'Modern PNG encoder & decoder.' },
-        { name: 'post', url: 'https://github.com/stacksjs/post', desc: 'The Post. A modern mail server & utilities.' },
-        { name: 'qrx', url: 'https://github.com/stacksjs/qrx', desc: 'QR & Bar Code generating & reading.' },
-        { name: 'rpx', url: 'https://github.com/stacksjs/rpx', desc: 'A modern, fast reverse proxy.' },
-        { name: 'tlsx', url: 'https://github.com/stacksjs/tlsx', desc: 'A TLS library with automation & HTTPS by default.' },
-        { name: 'ts-avif', url: 'https://github.com/stacksjs/ts-avif', desc: 'High quality & small file sizes.' },
-        { name: 'ts-cache', url: 'https://github.com/stacksjs/ts-cache', desc: 'A fast, type-safe, and feature-rich caching library.' },
-        { name: 'ts-clone', url: 'https://github.com/stacksjs/ts-clone', desc: 'Deeply clone arbitrary objects using TypeScript.' },
-        { name: 'ts-collect', url: 'https://github.com/stacksjs/ts-collect', desc: 'A powerful, yet lightweight, Laravel-like Collections.' },
-        { name: 'ts-countries', url: 'https://github.com/stacksjs/ts-countries', desc: 'Modern, lightweight, elegant country data management.' },
-        { name: 'ts-datetime', url: 'https://github.com/stacksjs/ts-datetime', desc: 'Performant & powerful datetime library.' },
-        { name: 'ts-gif', url: 'https://github.com/stacksjs/ts-gif', desc: 'Performant TypeScript implementation of a GIF encoder & decoder.' },
-        { name: 'ts-i18n', url: 'https://github.com/stacksjs/ts-i18n', desc: 'A fully-typed i18n experience.' },
-        { name: 'ts-inputs', url: 'https://github.com/stacksjs/ts-inputs', desc: 'Modern input masking.' },
-        { name: 'ts-broadcasting', url: 'https://github.com/stacksjs/ts-broadcasting', desc: 'Realtime the simple & performant way.' },
-        { name: 'ts-maps', url: 'https://github.com/stacksjs/ts-maps', desc: 'Modern & lightweight library for creating interactive vector maps.' },
-        { name: 'ts-medium-editor', url: 'https://github.com/stacksjs/ts-medium-editor', desc: 'A modern, minimal & performant Medium-like rich text editor.' },
-        { name: 'ts-mocker', url: 'https://github.com/stacksjs/ts-mocker', desc: 'Performance-focused & lightweight TypeScript faker library.' },
-        { name: 'ts-ndarray', url: 'https://github.com/stacksjs/ts-ndarray', desc: 'Multidimensional arrays for JavaScript & TypeScript.' },
-        { name: 'ts-numbers', url: 'https://github.com/stacksjs/ts-numbers', desc: 'Lightweight currencies, weights, phone numbers, and more.' },
-        { name: 'ts-pkgx', url: 'https://github.com/stacksjs/ts-pkgx', desc: 'Automated Typed Pantry details.' },
-        { name: 'ts-prompts', url: 'https://github.com/stacksjs/ts-prompts', desc: 'Build modern & pretty CLI applications.' },
-        { name: 'ts-punycode', url: 'https://github.com/stacksjs/ts-punycode', desc: 'Lightweight Punycode converter.' },
-        { name: 'ts-rate-limiter', url: 'https://github.com/stacksjs/ts-rate-limiter', desc: 'High-performance, flexible rate limiting library.' },
-        { name: 'ts-security', url: 'https://github.com/stacksjs/ts-security', desc: 'Performant & lightweight cryptography tooling.' },
-        { name: 'ts-slug', url: 'https://github.com/stacksjs/ts-slug', desc: 'Lightweight slug generation.' },
-        { name: 'ts-spreadsheets', url: 'https://github.com/stacksjs/ts-spreadsheets', desc: 'Easily generate spreadsheets, like CSVs and Excel files.' },
-        { name: 'ts-svg', url: 'https://github.com/stacksjs/ts-svg', desc: 'Powerful developer toolkit for working with SVGs.' },
-        { name: 'ts-syntax-highlighter', url: 'https://github.com/stacksjs/ts-syntax-highlighter', desc: 'A syntax highlighter for the modern web.' },
-        { name: 'ts-validation', url: 'https://github.com/stacksjs/ts-validation', desc: 'Lightweight & performant form & request data validation library.' },
-        { name: 'ts-vat', url: 'https://github.com/stacksjs/ts-vat', desc: 'Simply handle EU MOSS tax & VAT regulations & calculations.' },
-        { name: 'ts-webp', url: 'https://github.com/stacksjs/ts-webp', desc: 'A modern image format for the Web.' },
-        { name: 'ts-web-scraper', url: 'https://github.com/stacksjs/ts-web-scraper', desc: 'Powerful, type-safe web scraping tooling.' },
-        { name: 'vidx', url: 'https://github.com/stacksjs/vidx', desc: 'Make your videos load faster.' }
-      ],
-      plugins: [
-        { name: 'action-launchpad', url: 'https://github.com/stacksjs/launchpad', desc: 'GitHub Action to install packages using Launchpad.' },
-        { name: 'action-logsmith', url: 'https://github.com/stacksjs/logsmith', desc: 'Forge beautiful changelogs from your commits.' },
-        { name: 'action-releaser', url: 'https://github.com/stacksjs/action-releaser', desc: 'Simply attach files, like binaries & distributables, to GitHub Releases.' },
-        { name: 'bun-plugin-auto-imports', url: 'https://github.com/stacksjs/bun-plugin-auto-imports', desc: 'Auto Imports support for Bun.' },
-        { name: 'bun-plugin-dotenvx', url: 'https://github.com/stacksjs/bun-plugin-dotenvx', desc: 'A Bun plugin to seamlessly work with dotenvx.' },
-        { name: 'bun-plugin-dtsx', url: 'https://github.com/stacksjs/bun-plugin-dtsx', desc: 'Automatically generate your TypeScript DTS files, using Bun\'s bundler.' },
-        { name: 'bun-plugin-rpx', url: 'https://github.com/stacksjs/bun-plugin-rpx', desc: 'A modern, fast reverse proxy.' },
-        { name: 'bun-plugin-tlsx', url: 'https://github.com/stacksjs/bun-plugin-tlsx', desc: 'Bun plugin for a modern TLS library with automation & HTTPS by default.' },
-        { name: 'bun-plugin-unocss', url: 'https://github.com/stacksjs/bun-plugin-unocss', desc: 'Instant On-demand Atomic CSS Engine - UnoCSS' },
-        { name: 'vite-plugin-dotenvx', url: 'https://github.com/stacksjs/vite-plugin-dotenvx', desc: 'A Vite plugin to seamlessly work with dotenvx.' },
-        { name: 'vite-plugin-layouts', url: 'https://github.com/stacksjs/vite-plugin-layouts', desc: 'Router-based layouts for your application.' },
-        { name: 'vite-plugin-local', url: 'https://github.com/stacksjs/vite-plugin-local', desc: 'Pretty development URLs, and HTTPS.' },
-        { name: 'vite-plugin-rpx', url: 'https://github.com/stacksjs/rpx', desc: 'A Vite plugin for a modern, fast reverse proxy.' },
-        { name: 'vite-plugin-tauri', url: 'https://github.com/stacksjs/vite-plugin-tauri', desc: 'Zero-setup, highly-configurable cross-platform development.' },
-        { name: 'vite-plugin-tlsx', url: 'https://github.com/stacksjs/tlsx', desc: 'Simple, yet powerful TLS library.' }
-      ],
-      templates: [
-        { name: 'projects', url: 'https://github.com/stacksjs/projects', desc: 'A minimal personal portfolio template.' },
-        { name: 'ts-starter', url: 'https://github.com/stacksjs/ts-starter', desc: 'A rather barebones Bun & TypeScript starting point for libraries & CLIs.' },
-        { name: 'ts-starter-monorepo', url: 'https://github.com/stacksjs/ts-starter-monorepo', desc: 'Like our ts-starter, but optimized for monorepos.' }
-      ]
-    };
-  </script>
+  
 </head>
 <body>
   <div class="desktop">
     <!-- Desktop Icons -->
     <div class="desktop-icons">
-      @foreach(desktopIcons as icon)
+      
         <button
           class="desktop-icon"
-          data-icon-id="{{ icon.id }}"
-          data-icon-type="{{ icon.type }}"
-          data-icon-section="{{ icon.section }}"
-          data-icon-url="{{ icon.url }}"
+          data-icon-id="about"
+          data-icon-type="window"
+          data-icon-section="about"
+          data-icon-url=""
         >
-          <div class="desktop-icon-image">{{ icon.icon }}</div>
-          <div class="desktop-icon-label">{{ icon.title }}</div>
+          <div class="desktop-icon-image">📄</div>
+          <div class="desktop-icon-label">About Stacks</div>
         </button>
-      @endforeach
+
+        <button
+          class="desktop-icon"
+          data-icon-id="ecosystem"
+          data-icon-type="window"
+          data-icon-section="ecosystem"
+          data-icon-url=""
+        >
+          <div class="desktop-icon-image">🌐</div>
+          <div class="desktop-icon-label">Ecosystem</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="backend"
+          data-icon-type="window"
+          data-icon-section="backend"
+          data-icon-url=""
+        >
+          <div class="desktop-icon-image">⚙️</div>
+          <div class="desktop-icon-label">Backend</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="frontend"
+          data-icon-type="window"
+          data-icon-section="frontend"
+          data-icon-url=""
+        >
+          <div class="desktop-icon-image">🎨</div>
+          <div class="desktop-icon-label">Frontend</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="cloud"
+          data-icon-type="window"
+          data-icon-section="cloud"
+          data-icon-url=""
+        >
+          <div class="desktop-icon-image">☁️</div>
+          <div class="desktop-icon-label">Cloud</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="dashboard"
+          data-icon-type="window"
+          data-icon-section="dashboard"
+          data-icon-url=""
+        >
+          <div class="desktop-icon-image">📊</div>
+          <div class="desktop-icon-label">Dashboard</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="license"
+          data-icon-type="window"
+          data-icon-section="license"
+          data-icon-url=""
+        >
+          <div class="desktop-icon-image">🔑</div>
+          <div class="desktop-icon-label">License</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="welcome"
+          data-icon-type="window"
+          data-icon-section="welcome"
+          data-icon-url=""
+        >
+          <div class="desktop-icon-image">📃</div>
+          <div class="desktop-icon-label">Welcome.pdf</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="libraries"
+          data-icon-type="window"
+          data-icon-section="libraries"
+          data-icon-url=""
+        >
+          <div class="desktop-icon-image">📁</div>
+          <div class="desktop-icon-label">Libraries & CLIs</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="plugins"
+          data-icon-type="window"
+          data-icon-section="plugins"
+          data-icon-url=""
+        >
+          <div class="desktop-icon-image">📁</div>
+          <div class="desktop-icon-label">Plugins & Actions</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="templates"
+          data-icon-type="window"
+          data-icon-section="templates"
+          data-icon-url=""
+        >
+          <div class="desktop-icon-image">📁</div>
+          <div class="desktop-icon-label">Templates</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="docs"
+          data-icon-type="link"
+          data-icon-section=""
+          data-icon-url="https://stacksjs.org/docs"
+        >
+          <div class="desktop-icon-image">📚</div>
+          <div class="desktop-icon-label">Documentation</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="github"
+          data-icon-type="link"
+          data-icon-section=""
+          data-icon-url="https://github.com/stacksjs/stacks"
+        >
+          <div class="desktop-icon-image">💻</div>
+          <div class="desktop-icon-label">GitHub</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="sponsor"
+          data-icon-type="link"
+          data-icon-section=""
+          data-icon-url="https://github.com/sponsors/chrisbbreuer"
+        >
+          <div class="desktop-icon-image">💖</div>
+          <div class="desktop-icon-label">Sponsor</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="discord"
+          data-icon-type="link"
+          data-icon-section=""
+          data-icon-url="https://discord.gg/stacksjs"
+        >
+          <div class="desktop-icon-image">💬</div>
+          <div class="desktop-icon-label">Discord</div>
+        </button>
     </div>
 
     <!-- Windows -->
@@ -189,7 +214,7 @@
       </div>
     </div>
 
-    <div id="window-ecosystem" class="window" style="left: 150px; top: 100px; width: 800px; height: 600px;">
+    <div id="window-ecosystem" class="window" style="left: 150px; top: 100px; width: 850px; height: 650px;">
       <div class="window-titlebar">
         <div class="window-icon">🌐</div>
         <div class="window-title">Ecosystem</div>
@@ -201,9 +226,154 @@
       </div>
       <div class="window-content">
         <h2>Ecosystem</h2>
-        <p>Out of the box, Stacks has elegant solutions for the common features needed by all modern applications.</p>
+        <p style="margin-bottom: 20px;">The complete Stacks.js ecosystem—all open source, all TypeScript.</p>
 
-        <PackageGrid items="{{ packages }}" />
+        <div class="feature-buttons" style="margin-bottom: 20px;">
+          <button class="feature-btn active" onclick="showEcosystemTab('core')">Core Packages</button>
+          <button class="feature-btn" onclick="showEcosystemTab('frameworks')">Frameworks</button>
+          <button class="feature-btn" onclick="showEcosystemTab('sponsorware')">Sponsorware</button>
+          <button class="feature-btn" onclick="showEcosystemTab('apps')">Apps</button>
+        </div>
+
+        <div id="ecosystem-tab-content" style="max-height: 450px; overflow-y: auto;">
+          <div id="tab-core" class="ecosystem-tab">
+            <h3>Core Packages</h3>
+            <PackageGrid items="{{ packages }}" />
+          </div>
+
+          <div id="tab-frameworks" class="ecosystem-tab" style="display: none;">
+            <h3 style="color: #0831d9; margin-bottom: 12px;">Frameworks</h3>
+            <p style="margin-bottom: 16px; color: #666;">Powerful frameworks for modern development.</p>
+            <div class="folder-list">
+              
+                <a href="https://github.com/stacksjs/bunpress" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">🏗️</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">BunPress</div>
+                    <div class="folder-item-desc">Modern documentation-needs covered. Coming soon.</div>
+                  </div>
+                </a>
+
+                <a href="https://github.com/stacksjs/clapp" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">🏗️</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">Clapp</div>
+                    <div class="folder-item-desc">A modern framework to build powerful & pretty CLI apps.</div>
+                  </div>
+                </a>
+
+                <a href="https://github.com/stacksjs/headwind" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">🏗️</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">Headwind</div>
+                    <div class="folder-item-desc">A Tailwind-like utility-first CSS framework. Powered by Bun.</div>
+                  </div>
+                </a>
+
+                <a href="https://github.com/stacksjs/launchpad" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">🏗️</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">Launchpad</div>
+                    <div class="folder-item-desc">Performant system & project dependency management. Similar to Homebrew, just faster.</div>
+                  </div>
+                </a>
+
+                <a href="https://github.com/stacksjs/stacks" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">🏗️</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">Stacks</div>
+                    <div class="folder-item-desc">Develop powerful apps, clouds & framework-agnostic libraries—faster.</div>
+                  </div>
+                </a>
+
+                <a href="https://github.com/stacksjs/stx" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">🏗️</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">stx</div>
+                    <div class="folder-item-desc">A fast & powerful UI framework. Templating inspired by Laravel Blade & Vue.</div>
+                  </div>
+                </a>
+            </div>
+          </div>
+
+          <div id="tab-sponsorware" class="ecosystem-tab" style="display: none;">
+            <h3 style="color: #0831d9; margin-bottom: 12px;">Sponsorware</h3>
+            <p style="margin-bottom: 16px; color: #666;">Premium tools & services for sponsors.</p>
+            <div class="folder-list">
+              
+                <a href="https://github.com/stacksjs/bun-queue" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">💎</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">bun-queue</div>
+                    <div class="folder-item-desc">A modern & powerful Queue / Messaging system. Optimized for Bun.</div>
+                  </div>
+                </a>
+
+                <a href="https://github.com/stacksjs/bun-router" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">💎</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">bun-router</div>
+                    <div class="folder-item-desc">Powerful routing. High-performance, feature-rich.</div>
+                  </div>
+                </a>
+
+                <a href="https://github.com/stacksjs/stacks" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">💎</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">Stacks Dashboard</div>
+                    <div class="folder-item-desc">The Stacks Dashboard. For developers, and their clients.</div>
+                  </div>
+                </a>
+
+                <a href="https://github.com/stacksjs/stacks" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">💎</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">Stacks ORM - DynamoDB</div>
+                    <div class="folder-item-desc">More than a driver—automated Single Table Design. Cheap, fast, endless scalability.</div>
+                  </div>
+                </a>
+
+                <a href="https://github.com/stacksjs/stacks" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">💎</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">Stacks Raycast</div>
+                    <div class="folder-item-desc">Stacks (and Buddy) integrated into Raycast.</div>
+                  </div>
+                </a>
+            </div>
+          </div>
+
+          <div id="tab-apps" class="ecosystem-tab" style="display: none;">
+            <h3 style="color: #0831d9; margin-bottom: 12px;">Apps</h3>
+            <p style="margin-bottom: 16px; color: #666;">Useful macOS utilities built with Stacks.</p>
+            <div class="folder-list">
+              
+                <a href="https://github.com/stacksjs/barista" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">📱</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">Barista</div>
+                    <div class="folder-item-desc">A lightweight macOS utility that serves up a perfectly organized menubar.</div>
+                  </div>
+                </a>
+
+                <a href="https://github.com/stacksjs/hush" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">📱</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">Hush</div>
+                    <div class="folder-item-desc">Lightweight macOS utility that ensures notifications are suppressed during meetings.</div>
+                  </div>
+                </a>
+
+                <a href="https://github.com/stacksjs/pomodoro" target="_blank" class="folder-item">
+                  <div class="folder-item-icon">📱</div>
+                  <div class="folder-item-content">
+                    <div class="folder-item-name">Pomodoro</div>
+                    <div class="folder-item-desc">Minimal, functional, yet simple Pomodoro menubar app, to help stay focussed. For Mac.</div>
+                  </div>
+                </a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -350,6 +520,190 @@ export default {
       </div>
     </div>
 
+    <div id="window-welcome" class="window active" style="left: 150px; top: 100px; width: 700px; height: 600px; z-index: 101;">
+      <div class="window-titlebar">
+        <div class="window-icon">📃</div>
+        <div class="window-title">Welcome.pdf - Adobe Acrobat Reader</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('welcome')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('welcome')">□</button>
+          <button class="window-control close" onclick="closeWindow('welcome')">×</button>
+        </div>
+      </div>
+      <div class="window-content" style="background: #525659; padding: 0;">
+        <div style="background: #323639; padding: 8px 12px; border-bottom: 1px solid #222; display: flex; gap: 8px; align-items: center;">
+          <button style="padding: 4px 12px; background: #3c3f41; border: 1px solid #555; color: #ccc; font-size: 11px; cursor: pointer;">Print</button>
+          <button style="padding: 4px 12px; background: #3c3f41; border: 1px solid #555; color: #ccc; font-size: 11px; cursor: pointer;">Download</button>
+          <div style="flex: 1;"></div>
+          <span style="color: #ccc; font-size: 11px;">Page 1 of 1</span>
+          <button style="padding: 4px 8px; background: #3c3f41; border: 1px solid #555; color: #ccc; font-size: 11px; cursor: pointer;">100%</button>
+        </div>
+        <div style="background: white; margin: 20px auto; width: 90%; min-height: 500px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); padding: 40px 50px;">
+          <div style="text-align: center; margin-bottom: 40px;">
+            <h1 style="color: #0831d9; font-size: 48px; margin: 0 0 10px 0; font-weight: bold;">STACKS.JS</h1>
+            <p style="color: #666; font-size: 18px; margin: 0;">The TypeScript Framework for Modern Development</p>
+            <p style="color: #999; font-size: 14px; margin: 8px 0 0 0;">Version 1.0 • October 2025</p>
+          </div>
+
+          <div style="background: linear-gradient(135deg, #0831d9 0%, #245edb 100%); color: white; padding: 30px; border-radius: 8px; margin-bottom: 30px; text-align: center;">
+            <h2 style="margin: 0 0 16px 0; font-size: 28px;">Lightning Fast Performance</h2>
+            <p style="margin: 0 0 20px 0; font-size: 16px; opacity: 0.95;">Built on Bun, the fastest JavaScript runtime</p>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px;">
+              <div style="background: rgba(255,255,255,0.15); padding: 20px; border-radius: 6px; backdrop-filter: blur(10px);">
+                <div style="font-size: 36px; font-weight: bold; margin-bottom: 8px;">4.2x</div>
+                <div style="font-size: 13px; opacity: 0.9;">Faster than Next.js</div>
+                <div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">Server startup time</div>
+              </div>
+              <div style="background: rgba(255,255,255,0.15); padding: 20px; border-radius: 6px; backdrop-filter: blur(10px);">
+                <div style="font-size: 36px; font-weight: bold; margin-bottom: 8px;">8.1x</div>
+                <div style="font-size: 13px; opacity: 0.9;">Faster than Express</div>
+                <div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">Request throughput</div>
+              </div>
+              <div style="background: rgba(255,255,255,0.15); padding: 20px; border-radius: 6px; backdrop-filter: blur(10px);">
+                <div style="font-size: 36px; font-weight: bold; margin-bottom: 8px;">15x</div>
+                <div style="font-size: 13px; opacity: 0.9;">Faster than Laravel</div>
+                <div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">Cold start time</div>
+              </div>
+            </div>
+          </div>
+
+          <h3 style="color: #0831d9; font-size: 24px; margin: 30px 0 16px 0; border-bottom: 2px solid #0831d9; padding-bottom: 8px;">What is Stacks?</h3>
+          <p style="line-height: 1.8; color: #333; margin-bottom: 16px;">
+            Stacks is a rapid development framework that enables you to build modern web applications, APIs, and cloud infrastructure with TypeScript.
+            It provides an elegant, opinionated solution for common development needs while maintaining complete configurability.
+          </p>
+
+          <h3 style="color: #0831d9; font-size: 24px; margin: 30px 0 16px 0; border-bottom: 2px solid #0831d9; padding-bottom: 8px;">Key Features</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: start; gap: 12px;">
+              <span style="font-size: 24px;">⚡</span>
+              <div>
+                <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Ultra-Fast Runtime</strong>
+                <span style="font-size: 13px; color: #666;">Built on Bun for maximum performance</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: start; gap: 12px;">
+              <span style="font-size: 24px;">🎯</span>
+              <div>
+                <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Type-Safe Everything</strong>
+                <span style="font-size: 13px; color: #666;">Full TypeScript support throughout</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: start; gap: 12px;">
+              <span style="font-size: 24px;">🔋</span>
+              <div>
+                <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Batteries Included</strong>
+                <span style="font-size: 13px; color: #666;">ORM, Auth, Queue, Cache, and more</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: start; gap: 12px;">
+              <span style="font-size: 24px;">🖥️</span>
+              <div>
+                <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Cross-Platform</strong>
+                <span style="font-size: 13px; color: #666;">Web, Desktop & Mobile from one codebase</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="background: #fffacd; border-left: 4px solid #ffd700; padding: 16px 20px; margin: 24px 0;">
+            <strong style="color: #333; display: block; margin-bottom: 8px;">🚀 Quick Start</strong>
+            <code style="display: block; background: #fff; padding: 12px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 13px; color: #0831d9; margin-top: 8px;">
+              bunx stacks new my-project
+            </code>
+          </div>
+
+          <div style="text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid #ddd;">
+            <p style="color: #666; font-size: 12px; margin-bottom: 8px;">Learn more at <strong style="color: #0831d9;">stacksjs.org</strong></p>
+            <p style="color: #999; font-size: 11px;">© 2025 Stacks. Open source under MIT License.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="window-license" class="window" style="left: 400px; top: 200px; width: 500px; height: 550px;">
+      <div class="window-titlebar">
+        <div class="window-icon">🔑</div>
+        <div class="window-title">Software License Registration</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('license')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('license')">□</button>
+          <button class="window-control close" onclick="closeLicenseWindow()">×</button>
+        </div>
+      </div>
+      <div class="window-content" style="background: #c0c0c0;">
+        <div style="background: white; padding: 20px; border: 2px inset #999; margin-bottom: 20px;">
+          <h2 style="text-align: center; color: #000080; margin: 0 0 10px 0; font-size: 20px;">STACKS.JS Professional Edition</h2>
+          <p style="text-align: center; color: #666; font-size: 11px; margin: 0;">Version 1.0 - Build 2025.1</p>
+        </div>
+
+        <div style="background: #ece9d8; padding: 16px; border: 2px groove #999; margin-bottom: 16px;">
+          <p style="margin: 0 0 12px 0; font-size: 12px; line-height: 1.6;">
+            Thank you for choosing STACKS.JS Professional Edition! To unlock all features and receive updates, please purchase a license code.
+          </p>
+
+          <div style="background: #fff; padding: 12px; border: 1px solid #808080; margin: 12px 0;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+              <span style="font-weight: bold;">License Type:</span>
+              <span>Professional Edition</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+              <span style="font-weight: bold;">Price:</span>
+              <span style="color: #0831d9; font-weight: bold;">$99.00 USD</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px;">
+              <span style="font-weight: bold;">Features:</span>
+              <span style="text-align: right;">Unlimited Projects<br>Priority Support<br>Lifetime Updates</span>
+            </div>
+          </div>
+
+          <div style="background: #fffacd; border: 2px solid #ffd700; padding: 10px; margin: 12px 0; font-size: 11px;">
+            <strong>✨ Limited Time Offer:</strong> Get 20% off with code <strong style="color: #0831d9;">EARLYBIRD2025</strong>
+          </div>
+        </div>
+
+        <div style="background: #ece9d8; padding: 16px; border: 2px groove #999; margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 6px; font-weight: bold; font-size: 12px;">Enter License Code:</label>
+          <input
+            type="text"
+            id="license-code-input"
+            placeholder="XXXX-XXXX-XXXX-XXXX"
+            style="width: 100%; padding: 6px; font-family: 'Courier New', monospace; font-size: 13px; border: 2px inset #999; text-transform: uppercase;"
+            maxlength="19"
+          />
+          <p style="margin: 8px 0 0 0; font-size: 11px; color: #666;">
+            Already have a license? Enter it above to activate.
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button
+            onclick="purchaseLicense()"
+            style="padding: 8px 24px; background: linear-gradient(to bottom, #5eac56 0%, #3c873c 100%); border: 2px outset #999; font-weight: bold; color: white; font-size: 13px; cursor: pointer; box-shadow: 1px 1px 2px rgba(0,0,0,0.3);"
+          >
+            💳 Purchase License
+          </button>
+          <button
+            onclick="activateLicense()"
+            style="padding: 8px 24px; background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%); border: 2px outset #999; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 1px 1px 2px rgba(0,0,0,0.3);"
+          >
+            Activate
+          </button>
+          <button
+            onclick="closeLicenseWindow()"
+            style="padding: 8px 24px; background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%); border: 2px outset #999; font-size: 13px; cursor: pointer; box-shadow: 1px 1px 2px rgba(0,0,0,0.3);"
+          >
+            Cancel
+          </button>
+        </div>
+
+        <div style="margin-top: 16px; text-align: center; font-size: 10px; color: #666;">
+          <p style="margin: 4px 0;">Need help? Contact support@stacksjs.org</p>
+          <p style="margin: 4px 0;">30-Day Money-Back Guarantee</p>
+        </div>
+      </div>
+    </div>
+
     <div id="window-libraries" class="window" style="left: 120px; top: 100px; width: 700px; height: 600px;">
       <div class="window-titlebar">
         <div class="window-icon">📁</div>
@@ -364,15 +718,454 @@ export default {
         <h2>Libraries & CLIs</h2>
         <p style="margin-bottom: 16px;">Powerful TypeScript libraries and command-line tools for modern development.</p>
         <div class="folder-list">
-          @foreach(libraries as library)
-            <a href="{{ library.url }}" target="_blank" class="folder-item">
+          
+            <a href="https://github.com/stacksjs/aax" target="_blank" class="folder-item">
               <div class="folder-item-icon">📦</div>
               <div class="folder-item-content">
-                <div class="folder-item-name">{{ library.name }}</div>
-                <div class="folder-item-desc">{{ library.desc }}</div>
+                <div class="folder-item-name">aax</div>
+                <div class="folder-item-desc">A library to work with Audible's .aax files. Cross-platform app coming soon.</div>
               </div>
             </a>
-          @endforeach
+
+            <a href="https://github.com/stacksjs/audiox" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">audiox</div>
+                <div class="folder-item-desc">Powerful audio processing for your workflows.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/backupx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">backupx</div>
+                <div class="folder-item-desc">Comprehensive & performant database and file backup solution.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/besting" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">besting</div>
+                <div class="folder-item-desc">A modern & extremely performant testing framework. Browser, CLI, API testing-ready.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/buddy" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">buddy-bot</div>
+                <div class="folder-item-desc">Just like Renovate and Dependabot, just open source & self-hosted.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/bumpx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">bumpx</div>
+                <div class="folder-item-desc">Bump your version numbers automatically.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/bun-git-hooks" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">bun-git-hooks</div>
+                <div class="folder-item-desc">A simple git hooks manager for all-sized Bun projects.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/bun-query-builder" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">bun-query-builder</div>
+                <div class="folder-item-desc">A safe, performant & fully-typed query builder.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/queue" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">bun-queue</div>
+                <div class="folder-item-desc">A modern port of BullMQ. Optimized for Bun usage.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/router" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">bun-router</div>
+                <div class="folder-item-desc">A powerful yet lightweight router for your server. Used by Stacks.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/bunfig" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">bunfig</div>
+                <div class="folder-item-desc">Lightweight & smart Bun configuration loader.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/clarity" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">clarity</div>
+                <div class="folder-item-desc">Modern debugging & logging for browser & server.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/dtsx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">dtsx</div>
+                <div class="folder-item-desc">Extremely fast & configurable DTS emitter.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/dnsx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">dnsx</div>
+                <div class="folder-item-desc">A command-line & library DNS client. Like dig & dog, but for TypeScript.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/gitit" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">gitit</div>
+                <div class="folder-item-desc">A simple way to download templates stored using git.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/gitlint" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">gitlint</div>
+                <div class="folder-item-desc">Minimal & fast Git commit message linting & formatting.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/httx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">httx</div>
+                <div class="folder-item-desc">A modern, user-friendly command-line & library HTTP client for the API era.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/imgx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">imgx</div>
+                <div class="folder-item-desc">Make your images load faster. A better save for the web.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/jpgx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">jpgx</div>
+                <div class="folder-item-desc">A TypeScript JPEG encoder & decoder for Bun & Node.js.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/localtunnels" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">localtunnels</div>
+                <div class="folder-item-desc">A simple and smart tunneling alternative. Without or with self-hosting.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/logsmith" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">logsmith</div>
+                <div class="folder-item-desc">Forge beautiful changelogs from your commits.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/pickier" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">pickier</div>
+                <div class="folder-item-desc">Format, lint, and more—in a fraction of second.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/pngx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">pngx</div>
+                <div class="folder-item-desc">Modern PNG encoder & decoder.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/post" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">post</div>
+                <div class="folder-item-desc">The Post. A modern mail server & utilities. Ships with a CLI, library, and UI.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/qrx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">qrx</div>
+                <div class="folder-item-desc">QR & Bar Code generating & reading. Lightweight & powerful.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/rpx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">rpx</div>
+                <div class="folder-item-desc">A modern, fast reverse proxy. For a better local development environment.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/tlsx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">tlsx</div>
+                <div class="folder-item-desc">A TLS library with automation & HTTPS by default.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-avif" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-avif</div>
+                <div class="folder-item-desc">High quality & small file sizes.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-cache" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-cache</div>
+                <div class="folder-item-desc">A fast, type-safe, and feature-rich caching library for modern applications.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-clone" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-clone</div>
+                <div class="folder-item-desc">Deeply clone arbitrary objects using TypeScript.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-collect" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-collect</div>
+                <div class="folder-item-desc">A powerful, yet lightweight, Laravel-like Collections written for TypeScript.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-countries" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-countries</div>
+                <div class="folder-item-desc">Modern, lightweight, elegant country data management.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-datetime" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-datetime</div>
+                <div class="folder-item-desc">Performant & powerful datetime library. Carbon-API inspired.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-gif" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-gif</div>
+                <div class="folder-item-desc">Performant TypeScript implementation of a GIF encoder & decoder.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-i18n" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-i18n</div>
+                <div class="folder-item-desc">A fully-typed i18n experience.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-inputs" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-inputs</div>
+                <div class="folder-item-desc">Modern input masking.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-broadcasting" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-broadcasting</div>
+                <div class="folder-item-desc">Realtime the simple & performant way.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-maps" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-maps</div>
+                <div class="folder-item-desc">Modern & lightweight library for creating interactive vector maps.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-medium-editor" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-medium-editor</div>
+                <div class="folder-item-desc">A modern, minimal & performant Medium-like rich text editor.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-mocker" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-mocker</div>
+                <div class="folder-item-desc">Performance-focused & lightweight TypeScript faker library. Comprehensive locale support.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-ndarray" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-ndarray</div>
+                <div class="folder-item-desc">Multidimensional arrays for JavaScript & TypeScript.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-numbers" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-numbers</div>
+                <div class="folder-item-desc">Lightweight currencies, weights, phone numbers, and more. Localized.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-pkgx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-pkgx</div>
+                <div class="folder-item-desc">Automated Typed Pantry details.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-prompts" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-prompts</div>
+                <div class="folder-item-desc">Build modern & pretty CLI applications.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-punycode" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-punycode</div>
+                <div class="folder-item-desc">Lightweight Punycode converter. RFC 3492 & RFC 5891 supported.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-rate-limiter" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-rate-limiter</div>
+                <div class="folder-item-desc">High-performance, flexible rate limiting library. For TypeScript.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-security" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-security</div>
+                <div class="folder-item-desc">Performant & lightweight cryptography tooling.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-slug" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-slug</div>
+                <div class="folder-item-desc">Lightweight slug generation. Browser & Bun / Node.js compatible.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-spreadsheets" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-spreadsheets</div>
+                <div class="folder-item-desc">Easily generate spreadsheets, like CSVs and Excel files.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-svg" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-svg</div>
+                <div class="folder-item-desc">Powerful developer toolkit for working with SVGs.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-syntax-highlighter" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-syntax-highlighter</div>
+                <div class="folder-item-desc">A syntax highlighter for the modern web. Built for performance.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-validation" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-validation</div>
+                <div class="folder-item-desc">Lightweight & performant form & request data validation library.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-vat" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-vat</div>
+                <div class="folder-item-desc">Simply handle EU MOSS tax & VAT regulations & calculations.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-webp" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-webp</div>
+                <div class="folder-item-desc">A modern image format for the Web.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-web-scraper" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-web-scraper</div>
+                <div class="folder-item-desc">Powerful, type-safe web scraping tooling.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/vidx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">vidx</div>
+                <div class="folder-item-desc">Make your videos load faster. A better save for the web.</div>
+              </div>
+            </a>
         </div>
       </div>
     </div>
@@ -391,15 +1184,126 @@ export default {
         <h2>Plugins & Actions</h2>
         <p style="margin-bottom: 16px;">Build plugins and GitHub Actions to enhance your development workflow.</p>
         <div class="folder-list">
-          @foreach(plugins as plugin)
-            <a href="{{ plugin.url }}" target="_blank" class="folder-item">
+          
+            <a href="https://github.com/stacksjs/launchpad" target="_blank" class="folder-item">
               <div class="folder-item-icon">🔌</div>
               <div class="folder-item-content">
-                <div class="folder-item-name">{{ plugin.name }}</div>
-                <div class="folder-item-desc">{{ plugin.desc }}</div>
+                <div class="folder-item-name">action-launchpad</div>
+                <div class="folder-item-desc">GitHub Action to install packages using Launchpad.</div>
               </div>
             </a>
-          @endforeach
+
+            <a href="https://github.com/stacksjs/logsmith" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">action-logsmith</div>
+                <div class="folder-item-desc">Forge beautiful changelogs from your commits.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/action-releaser" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">action-releaser</div>
+                <div class="folder-item-desc">Simply attach files, like binaries & distributables, to GitHub Releases.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/bun-plugin-auto-imports" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">bun-plugin-auto-imports</div>
+                <div class="folder-item-desc">Auto Imports support for Bun.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/bun-plugin-dotenvx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">bun-plugin-dotenvx</div>
+                <div class="folder-item-desc">A Bun plugin to seamlessly work with dotenvx.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/bun-plugin-dtsx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">bun-plugin-dtsx</div>
+                <div class="folder-item-desc">Automatically generate your TypeScript DTS files, using Bun's bundler.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/bun-plugin-rpx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">bun-plugin-rpx</div>
+                <div class="folder-item-desc">A modern, fast reverse proxy. For a better local development environment.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/bun-plugin-tlsx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">bun-plugin-tlsx</div>
+                <div class="folder-item-desc">Bun plugin for a modern TLS library with automation & HTTPS by default.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/bun-plugin-unocss" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">bun-plugin-unocss</div>
+                <div class="folder-item-desc">Instant On-demand Atomic CSS Engine - UnoCSS</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/vite-plugin-dotenvx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">vite-plugin-dotenvx</div>
+                <div class="folder-item-desc">A Vite plugin to seamlessly work with dotenvx.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/vite-plugin-layouts" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">vite-plugin-layouts</div>
+                <div class="folder-item-desc">Router-based layouts for your application.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/vite-plugin-local" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">vite-plugin-local</div>
+                <div class="folder-item-desc">Pretty development URLs, and HTTPS. Zero config, zero setup.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/rpx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">vite-plugin-rpx</div>
+                <div class="folder-item-desc">A Vite plugin for a modern, fast reverse proxy. For a better local development environment.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/vite-plugin-tauri" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">vite-plugin-tauri</div>
+                <div class="folder-item-desc">Zero-setup, highly-configurable cross-platform development.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/tlsx" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">vite-plugin-tlsx</div>
+                <div class="folder-item-desc">Simple, yet powerful TLS library. With automation & HTTPS by default.</div>
+              </div>
+            </a>
         </div>
       </div>
     </div>
@@ -418,15 +1322,30 @@ export default {
         <h2>Templates</h2>
         <p style="margin-bottom: 16px;">Starter templates to jumpstart your TypeScript projects.</p>
         <div class="folder-list">
-          @foreach(templates as template)
-            <a href="{{ template.url }}" target="_blank" class="folder-item">
+          
+            <a href="https://github.com/stacksjs/projects" target="_blank" class="folder-item">
               <div class="folder-item-icon">📋</div>
               <div class="folder-item-content">
-                <div class="folder-item-name">{{ template.name }}</div>
-                <div class="folder-item-desc">{{ template.desc }}</div>
+                <div class="folder-item-name">projects</div>
+                <div class="folder-item-desc">A minimal personal portfolio template.</div>
               </div>
             </a>
-          @endforeach
+
+            <a href="https://github.com/stacksjs/ts-starter" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📋</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-starter</div>
+                <div class="folder-item-desc">A rather barebones Bun & TypeScript starting point for libraries & CLIs.</div>
+              </div>
+            </a>
+
+            <a href="https://github.com/stacksjs/ts-starter-monorepo" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📋</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">ts-starter-monorepo</div>
+                <div class="folder-item-desc">Like our ts-starter, but optimized for monorepos.</div>
+              </div>
+            </a>
         </div>
       </div>
     </div>

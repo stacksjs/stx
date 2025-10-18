@@ -834,9 +834,6 @@ body {
   z-index: 10003;
   min-width: 200px;
   max-width: 280px;
-  max-height: calc(100vh - 60px);
-  overflow-y: auto;
-  overflow-x: hidden;
   padding: 2px;
 }
 
@@ -900,6 +897,10 @@ body {
   border-top: 1px solid #fff;
 }
 
+.context-menu-item.has-submenu {
+  position: relative;
+}
+
 .context-menu-item.has-submenu::after {
   content: '▶';
   position: absolute;
@@ -914,15 +915,15 @@ body {
   background: #ece9d8;
   border: 2px outset #fff;
   box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.4);
-  display: none !important;
+  display: none;
   flex-direction: column;
   min-width: 180px;
   padding: 2px;
   z-index: 10004;
 }
 
-.context-menu-item:hover > .context-submenu {
-  display: flex !important;
+.context-menu-item.has-submenu:hover > .context-submenu {
+  display: flex;
 }
 
 /* Folder Contents */

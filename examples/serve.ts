@@ -4,7 +4,7 @@ const server = Bun.serve({
   async fetch(req) {
     const url = new URL(req.url);
     let path = url.pathname;
-    if (path === '/') path = '/homepage-full.html';
+    if (path === '/') path = '/homepage.stx';
 
     try {
       const file = Bun.file('.' + path);
@@ -30,6 +30,18 @@ const server = Bun.serve({
         });
       }
 
+      // Serve .stx files as HTML
+      if (path.endsWith('.stx')) {
+        return new Response(file, {
+          headers: {
+            'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
+        });
+      }
+
       return new Response(file, {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate',
@@ -45,8 +57,7 @@ const server = Bun.serve({
 });
 
 console.log('✓ Server running at http://localhost:3000');
-console.log('✓ Full Homepage: http://localhost:3000/homepage-full.html');
-console.log('✓ Debug page: http://localhost:3000/debug-test.html');
+console.log('✓ Homepage: http://localhost:3000/homepage.stx');
 console.log('✓ Homepage CSS: http://localhost:3000/homepage.css');
-console.log('✓ Homepage JS: http://localhost:3000/homepage.js');
+console.log('✓ Homepage JS: http://localhost:3000/homepage.ts');
 console.log('Press Ctrl+C to stop');
