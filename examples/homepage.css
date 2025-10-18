@@ -51,6 +51,22 @@ body {
   transform: none !important;
 }
 
+#trash-icon {
+  bottom: 60px !important;
+  right: 20px !important;
+  left: auto !important;
+  top: auto !important;
+  z-index: 100 !important;
+}
+
+#sponsor-icon {
+  top: 20px !important;
+  right: 20px !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 100 !important;
+}
+
 .desktop-icon:hover {
   background: rgba(51, 153, 255, 0.2);
   border: 2px dotted rgba(51, 153, 255, 0.6);

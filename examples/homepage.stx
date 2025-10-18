@@ -196,37 +196,32 @@
     </div>
 
     <!-- Sponsor Ad Space -->
-    <a
-      href="https://github.com/sponsors/stacksjs"
-      target="_blank"
-      style="position: absolute; top: 20px; right: 20px; z-index: 100; width: 90px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: 8px; border: 2px solid transparent; background: transparent; text-decoration: none; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);"
-      onmouseover="this.style.background='rgba(255,255,255,0.1)'; this.style.border='2px solid rgba(255,255,255,0.3)';"
-      onmouseout="this.style.background='transparent'; this.style.border='2px solid transparent';"
+    <button
+      id="sponsor-icon"
+      class="desktop-icon"
+      data-icon-id="sponsor"
+      data-icon-type="link"
+      data-icon-section=""
+      data-icon-url="https://github.com/sponsors/stacksjs"
     >
-      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 52px; height: 52px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 3px 6px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.2);">
+      <div class="desktop-icon-image" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.2); font-size: 28px; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;">
         🏢
       </div>
-      <div style="font-size: 11px; line-height: 1.3; text-align: center; font-weight: bold;">
-        Your Brand
-      </div>
-      <div style="font-size: 9px; opacity: 0.9; text-align: center;">
-        Sponsor Here
-      </div>
-    </a>
+      <div class="desktop-icon-label" style="white-space: pre-line; line-height: 1.2; font-size: 10px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">Your Brand
+Sponsor Here</div>
+    </button>
 
     <!-- Trash Bin -->
     <button
-      onclick="openWindow('trash')"
-      style="position: absolute; bottom: 60px; right: 20px; z-index: 100; width: 90px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: 8px; border: 2px solid transparent; background: transparent; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);"
-      onmouseover="this.style.background='rgba(255,255,255,0.1)'; this.style.border='2px solid rgba(255,255,255,0.3)';"
-      onmouseout="this.style.background='transparent'; this.style.border='2px solid transparent';"
+      id="trash-icon"
+      class="desktop-icon"
+      data-icon-id="trash"
+      data-icon-type="window"
+      data-icon-section="trash"
+      data-icon-url=""
     >
-      <div style="width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; font-size: 48px;">
-        🗑️
-      </div>
-      <div style="font-size: 11px; line-height: 1.3; text-align: center; font-weight: bold;">
-        Recycle Bin
-      </div>
+      <div class="desktop-icon-image">🗑️</div>
+      <div class="desktop-icon-label">Recycle Bin</div>
     </button>
 
     <!-- Windows -->

@@ -938,13 +938,31 @@ document.addEventListener('contextmenu', (e) => {
 
     // Show icon context menu
     contextMenuIcon = icon;
-    iconContextMenu.style.left = `${e.clientX}px`;
+
+    // Check if icon is on the right side of the screen
+    const screenWidth = window.innerWidth;
+    const menuWidth = 200; // Approximate context menu width
+    const isRightSide = e.clientX > screenWidth / 2;
+
+    // Position menu to the left if icon is on right side
+    const menuLeft = isRightSide ? e.clientX - menuWidth : e.clientX;
+
+    iconContextMenu.style.left = `${menuLeft}px`;
     iconContextMenu.style.top = `${e.clientY}px`;
     iconContextMenu.style.display = 'flex';
   } else {
     // Show desktop context menu
     contextMenuIcon = null;
-    contextMenu.style.left = `${e.clientX}px`;
+
+    // Check if click is on the right side of the screen
+    const screenWidth = window.innerWidth;
+    const menuWidth = 200; // Approximate context menu width
+    const isRightSide = e.clientX > screenWidth / 2;
+
+    // Position menu to the left if on right side
+    const menuLeft = isRightSide ? e.clientX - menuWidth : e.clientX;
+
+    contextMenu.style.left = `${menuLeft}px`;
     contextMenu.style.top = `${e.clientY}px`;
     contextMenu.style.display = 'flex';
   }
