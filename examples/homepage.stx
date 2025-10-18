@@ -238,7 +238,128 @@
         <div id="ecosystem-tab-content" style="max-height: 450px; overflow-y: auto;">
           <div id="tab-core" class="ecosystem-tab">
             <h3>Core Packages</h3>
-            <PackageGrid items="{{ packages }}" />
+            <div class="package-grid">
+
+    <div class="package-item">
+      <div class="package-emoji">🤖</div>
+      <div class="package-title">AI</div>
+      <div class="package-desc">Deep AI integrations for agentic workflows</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">🔌</div>
+      <div class="package-title">API</div>
+      <div class="package-desc">Build scalable REST & GraphQL APIs</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">🔐</div>
+      <div class="package-title">Auth</div>
+      <div class="package-desc">Authentication and authorization</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">⚡</div>
+      <div class="package-title">Cache</div>
+      <div class="package-desc">Multi-driver caching system</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">⌨️</div>
+      <div class="package-title">CLI</div>
+      <div class="package-desc">Beautiful command-line interfaces</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">☁️</div>
+      <div class="package-title">Cloud</div>
+      <div class="package-desc">Cloud infrastructure management</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">🗄️</div>
+      <div class="package-title">Database</div>
+      <div class="package-desc">Database connections & migrations</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">🗺️</div>
+      <div class="package-title">ORM</div>
+      <div class="package-desc">Elegant object-relational mapper</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">🧭</div>
+      <div class="package-title">Router</div>
+      <div class="package-desc">Fast & flexible routing</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">✅</div>
+      <div class="package-title">Validation</div>
+      <div class="package-desc">Type-safe validation</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">📬</div>
+      <div class="package-title">Queue</div>
+      <div class="package-desc">Background job processing</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">💾</div>
+      <div class="package-title">Storage</div>
+      <div class="package-desc">File storage abstraction</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">📧</div>
+      <div class="package-title">Email</div>
+      <div class="package-desc">Send emails with ease</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">📡</div>
+      <div class="package-title">Events</div>
+      <div class="package-desc">Event-driven architecture</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">🔔</div>
+      <div class="package-title">Notifications</div>
+      <div class="package-desc">Multi-channel notifications</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">🧪</div>
+      <div class="package-title">Testing</div>
+      <div class="package-desc">Testing utilities & helpers</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">🔍</div>
+      <div class="package-title">Search Engine</div>
+      <div class="package-desc">Full-text search capabilities</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">⚡</div>
+      <div class="package-title">Realtime</div>
+      <div class="package-desc">WebSocket & real-time features</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">🔬</div>
+      <div class="package-title">X-Ray</div>
+      <div class="package-desc">Debugging & monitoring tools</div>
+    </div>
+
+    <div class="package-item">
+      <div class="package-emoji">💳</div>
+      <div class="package-title">Payments</div>
+      <div class="package-desc">Payment processing integration</div>
+    </div>
+  </div>
           </div>
 
           <div id="tab-frameworks" class="ecosystem-tab" style="display: none;">

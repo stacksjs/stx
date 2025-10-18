@@ -1,4 +1,4 @@
-import { desktopIcons, libraries, plugins, templates, frameworks, sponsorware, apps } from './data.ts';
+import { desktopIcons, libraries, plugins, templates, frameworks, sponsorware, apps, packages } from './data.ts';
 
 // Read the homepage.stx template
 const template = await Bun.file('./homepage.stx').text();
@@ -110,6 +110,21 @@ const appsHTML = apps.map(app => `
 html = html.replace(
   /@foreach\(apps as app\)[\s\S]*?@endforeach/,
   appsHTML
+);
+
+// Generate and replace PackageGrid component
+const packagesHTML = packages.map(pkg => `
+    <div class="package-item">
+      <div class="package-emoji">${pkg.emoji}</div>
+      <div class="package-title">${pkg.title}</div>
+      <div class="package-desc">${pkg.desc}</div>
+    </div>`).join('\n');
+
+const packageGridHTML = `<div class="package-grid">\n${packagesHTML}\n  </div>`;
+
+html = html.replace(
+  /<PackageGrid items="{{ packages }}" \/>/,
+  packageGridHTML
 );
 
 // Remove the module.exports script block since data is now in data.js
