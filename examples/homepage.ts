@@ -175,7 +175,7 @@ if (document.readyState === 'loading') {
 let activewindow = null;
 let windowZIndex = 100;
 
-function openWindow(windowId) {
+function openWindow(windowId, fromTaskbarButton = null) {
   console.log('Opening window:', windowId);
   const windowEl = document.getElementById(`window-${windowId}`);
   if (!windowEl) {
@@ -193,31 +193,75 @@ function openWindow(windowId) {
 
   // Add a smooth entry animation for first-time opens
   if (!wasMinimized && !windowEl.classList.contains('active')) {
-    windowEl.style.opacity = '0';
-    windowEl.style.transform = 'scale(0.95)';
-    windowEl.classList.add('active');
-    windowEl.style.zIndex = ++windowZIndex;
-    activewindow = windowEl;
+    // If opened from a specific location (like taskbar), animate from there
+    if (fromTaskbarButton) {
+      const buttonRect = fromTaskbarButton.getBoundingClientRect();
+      const windowRect = windowEl.getBoundingClientRect();
+      const windowCenterX = windowRect.left + windowRect.width / 2;
+      const windowCenterY = windowRect.top + windowRect.height / 2;
+      const buttonCenterX = buttonRect.left + buttonRect.width / 2;
+      const buttonCenterY = buttonRect.top + buttonRect.height / 2;
 
-    // Trigger animation
-    requestAnimationFrame(() => {
-      windowEl.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
-      windowEl.style.opacity = '1';
-      windowEl.style.transform = 'scale(1)';
+      const translateX = buttonCenterX - windowCenterX;
+      const translateY = buttonCenterY - windowCenterY;
 
-      setTimeout(() => {
-        windowEl.style.transition = '';
-        windowEl.style.transform = '';
-        windowEl.style.opacity = '';
-      }, 150);
-    });
+      // Start from button position
+      windowEl.classList.add('restoring');
+      windowEl.style.transformOrigin = 'center center';
+      windowEl.style.transform = `translate(${translateX}px, ${translateY}px) scale(0.1)`;
+      windowEl.style.opacity = '0';
+      windowEl.style.zIndex = ++windowZIndex;
+      activewindow = windowEl;
+
+      // Force reflow
+      windowEl.offsetHeight;
+
+      // Animate to window position
+      requestAnimationFrame(() => {
+        windowEl.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+        windowEl.style.transform = 'translate(0, 0) scale(1)';
+        windowEl.style.opacity = '1';
+
+        setTimeout(() => {
+          windowEl.classList.remove('restoring');
+          windowEl.classList.add('active');
+          windowEl.style.transition = '';
+          windowEl.style.transform = '';
+          windowEl.style.opacity = '';
+          windowEl.style.transformOrigin = '';
+          updateTaskbar();
+        }, 200);
+      });
+    } else {
+      // Simple fade-in for regular opens
+      windowEl.style.opacity = '0';
+      windowEl.style.transform = 'scale(0.95)';
+      windowEl.classList.add('active');
+      windowEl.style.zIndex = ++windowZIndex;
+      activewindow = windowEl;
+
+      // Trigger animation
+      requestAnimationFrame(() => {
+        windowEl.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+        windowEl.style.opacity = '1';
+        windowEl.style.transform = 'scale(1)';
+
+        setTimeout(() => {
+          windowEl.style.transition = '';
+          windowEl.style.transform = '';
+          windowEl.style.opacity = '';
+        }, 150);
+      });
+    }
   } else {
     windowEl.classList.add('active');
     windowEl.style.zIndex = ++windowZIndex;
     activewindow = windowEl;
   }
 
-  updateTaskbar();
+  if (!fromTaskbarButton) {
+    updateTaskbar();
+  }
 }
 
 function closeWindow(windowId) {
@@ -262,18 +306,25 @@ function minimizeWindow(windowId) {
       const windowRect = windowEl.getBoundingClientRect();
       const buttonRect = targetButton.getBoundingClientRect();
 
-      // Calculate translation
-      const translateX = buttonRect.left - windowRect.left;
-      const translateY = buttonRect.top - windowRect.top;
+      // Calculate translation to button center (from window center)
+      const windowCenterX = windowRect.left + windowRect.width / 2;
+      const windowCenterY = windowRect.top + windowRect.height / 2;
+      const buttonCenterX = buttonRect.left + buttonRect.width / 2;
+      const buttonCenterY = buttonRect.top + buttonRect.height / 2;
+
+      const translateX = buttonCenterX - windowCenterX;
+      const translateY = buttonCenterY - windowCenterY;
 
       // Set initial state (current position)
+      windowEl.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+      windowEl.style.transformOrigin = 'center center';
       windowEl.style.transform = 'translate(0, 0) scale(1)';
       windowEl.style.opacity = '1';
 
       // Force reflow
       windowEl.offsetHeight;
 
-      // Animate to taskbar
+      // Animate to taskbar button center
       windowEl.style.transform = `translate(${translateX}px, ${translateY}px) scale(0.1)`;
       windowEl.style.opacity = '0';
 
@@ -281,11 +332,14 @@ function minimizeWindow(windowId) {
       setTimeout(() => {
         windowEl.classList.remove('minimizing');
         windowEl.classList.add('minimized');
+        windowEl.style.transition = '';
         windowEl.style.transform = '';
         windowEl.style.opacity = '';
+        windowEl.style.transformOrigin = '';
       }, 200);
     } else {
       // Fallback - just fade out
+      windowEl.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
       windowEl.style.opacity = '1';
       windowEl.offsetHeight;
       windowEl.style.opacity = '0';
@@ -294,8 +348,10 @@ function minimizeWindow(windowId) {
       setTimeout(() => {
         windowEl.classList.remove('minimizing');
         windowEl.classList.add('minimized');
+        windowEl.style.transition = '';
         windowEl.style.transform = '';
         windowEl.style.opacity = '';
+        windowEl.style.transformOrigin = '';
       }, 200);
     }
   });
@@ -356,21 +412,29 @@ function updateTaskbar() {
         windowEl.classList.add('restoring');
         windowEl.style.zIndex = ++windowZIndex;
 
-        // Get button position
+        // Get button and window centers
         const buttonRect = taskBtn.getBoundingClientRect();
         const windowRect = windowEl.getBoundingClientRect();
-        const translateX = buttonRect.left - windowRect.left;
-        const translateY = buttonRect.top - windowRect.top;
+        const windowCenterX = windowRect.left + windowRect.width / 2;
+        const windowCenterY = windowRect.top + windowRect.height / 2;
+        const buttonCenterX = buttonRect.left + buttonRect.width / 2;
+        const buttonCenterY = buttonRect.top + buttonRect.height / 2;
 
-        // Start from button position
+        const translateX = buttonCenterX - windowCenterX;
+        const translateY = buttonCenterY - windowCenterY;
+
+        // Start from button position (no transition yet)
+        windowEl.style.transition = 'none';
+        windowEl.style.transformOrigin = 'center center';
         windowEl.style.transform = `translate(${translateX}px, ${translateY}px) scale(0.1)`;
         windowEl.style.opacity = '0';
 
         // Force reflow
         windowEl.offsetHeight;
 
-        // Animate to window position
+        // Enable transitions and animate to window position
         requestAnimationFrame(() => {
+          windowEl.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
           windowEl.style.transform = 'translate(0, 0) scale(1)';
           windowEl.style.opacity = '1';
 
@@ -378,8 +442,10 @@ function updateTaskbar() {
           setTimeout(() => {
             windowEl.classList.remove('restoring');
             windowEl.classList.add('active');
+            windowEl.style.transition = '';
             windowEl.style.transform = '';
             windowEl.style.opacity = '';
+            windowEl.style.transformOrigin = '';
             activewindow = windowEl;
             updateTaskbar();
           }, 200);
@@ -392,6 +458,12 @@ function updateTaskbar() {
         activewindow = windowEl;
         updateTaskbar();
       }
+    });
+
+    // Right-click context menu for taskbar buttons
+    taskBtn.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      showTaskbarContextMenu(e, windowId, windowEl);
     });
 
     taskbarTasks.appendChild(taskBtn);
@@ -1001,8 +1073,21 @@ function selectPlan(planType: string) {
   // Store the selected plan type
   (window as any).selectedPlanType = planType;
 
-  // Open the License window
-  openWindow('license');
+  // Wait for Welcome window to finish minimizing, then open License from its taskbar button
+  setTimeout(() => {
+    // Find the Welcome window's taskbar button
+    const taskbarButtons = document.querySelectorAll('.taskbar-task');
+    let welcomeButton = null;
+    taskbarButtons.forEach(btn => {
+      const btnText = btn.querySelector('.taskbar-task-label')?.textContent;
+      if (btnText && btnText.includes('Welcome')) {
+        welcomeButton = btn;
+      }
+    });
+
+    // Open License window with animation from the taskbar button
+    openWindow('license', welcomeButton);
+  }, 250); // Wait for minimize animation to complete
 }
 
 // Zoom functionality
@@ -1049,6 +1134,94 @@ function setZoom(zoomLevel: number) {
   }
 }
 
+// Taskbar context menu
+let taskbarContextMenu: HTMLElement | null = null;
+let taskbarContextWindowId: string | null = null;
+
+function showTaskbarContextMenu(e: MouseEvent, windowId: string, windowEl: HTMLElement) {
+  // Remove existing menu if any
+  if (taskbarContextMenu) {
+    taskbarContextMenu.remove();
+  }
+
+  taskbarContextWindowId = windowId;
+
+  // Create context menu
+  taskbarContextMenu = document.createElement('div');
+  taskbarContextMenu.className = 'taskbar-context-menu';
+  taskbarContextMenu.style.position = 'fixed';
+  taskbarContextMenu.style.left = `${e.clientX}px`;
+
+  // Position above the taskbar
+  const menuHeight = 120; // approximate
+  taskbarContextMenu.style.bottom = '45px'; // Just above taskbar
+
+  const isMinimized = windowEl.classList.contains('minimized');
+  const isMaximized = windowEl.classList.contains('maximized');
+
+  taskbarContextMenu.innerHTML = `
+    <button class="context-menu-item" onclick="taskbarContextRestore()">
+      <div class="context-menu-item-icon">🗗</div>
+      <div>${isMinimized ? 'Restore' : 'Minimize'}</div>
+    </button>
+    <button class="context-menu-item" onclick="taskbarContextMaximize()" ${isMinimized ? 'disabled' : ''}>
+      <div class="context-menu-item-icon">🗖</div>
+      <div>${isMaximized ? 'Restore Down' : 'Maximize'}</div>
+    </button>
+    <div style="height: 1px; background: #ccc; margin: 4px 0;"></div>
+    <button class="context-menu-item" onclick="taskbarContextClose()">
+      <div class="context-menu-item-icon">✕</div>
+      <div>Close</div>
+    </button>
+  `;
+
+  document.body.appendChild(taskbarContextMenu);
+
+  // Close menu on click outside
+  setTimeout(() => {
+    document.addEventListener('click', closeTaskbarContextMenu);
+  }, 0);
+}
+
+function closeTaskbarContextMenu() {
+  if (taskbarContextMenu) {
+    taskbarContextMenu.remove();
+    taskbarContextMenu = null;
+  }
+  document.removeEventListener('click', closeTaskbarContextMenu);
+}
+
+function taskbarContextRestore() {
+  if (!taskbarContextWindowId) return;
+  const windowEl = document.getElementById(`window-${taskbarContextWindowId}`);
+  if (!windowEl) return;
+
+  if (windowEl.classList.contains('minimized')) {
+    // Click the taskbar button to restore
+    const taskBtn = Array.from(document.querySelectorAll('.taskbar-task')).find(btn => {
+      const btnText = btn.querySelector('.taskbar-task-label')?.textContent;
+      const windowTitle = windowEl.querySelector('.window-title')?.textContent;
+      return btnText === windowTitle;
+    }) as HTMLElement;
+    if (taskBtn) taskBtn.click();
+  } else {
+    minimizeWindow(taskbarContextWindowId);
+  }
+  closeTaskbarContextMenu();
+}
+
+function taskbarContextMaximize() {
+  if (!taskbarContextWindowId) return;
+  toggleMaximizeWindow(taskbarContextWindowId);
+  closeTaskbarContextMenu();
+}
+
+function taskbarContextClose() {
+  if (!taskbarContextWindowId) return;
+  closeWindow(taskbarContextWindowId);
+  closeTaskbarContextMenu();
+}
+
 // Make functions globally accessible for inline onclick handlers
 window.openWindow = openWindow;
 window.closeWindow = closeWindow;
@@ -1072,3 +1245,6 @@ window.downloadWelcome = downloadWelcome;
 window.toggleZoomMenu = toggleZoomMenu;
 window.setZoom = setZoom;
 window.selectPlan = selectPlan;
+window.taskbarContextRestore = taskbarContextRestore;
+window.taskbarContextMaximize = taskbarContextMaximize;
+window.taskbarContextClose = taskbarContextClose;

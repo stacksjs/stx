@@ -844,7 +844,8 @@ body {
 }
 
 /* Context Menu */
-.context-menu {
+.context-menu,
+.taskbar-context-menu {
   position: fixed;
   background: #ece9d8;
   border: 2px outset #fff;
@@ -855,6 +856,10 @@ body {
   min-width: 200px;
   max-width: 280px;
   padding: 2px;
+}
+
+.taskbar-context-menu {
+  min-width: 180px;
 }
 
 .context-menu[hidden] {
@@ -900,6 +905,16 @@ body {
 .context-menu-item:hover {
   background: #316ac5;
   color: white;
+}
+
+.context-menu-item:disabled {
+  color: #808080;
+  cursor: default;
+}
+
+.context-menu-item:disabled:hover {
+  background: transparent;
+  color: #808080;
 }
 
 .context-menu-item-icon {
@@ -967,6 +982,16 @@ body {
 .context-submenu .context-menu-item:hover {
   background: #316ac5;
   color: white;
+}
+
+.context-menu-item:disabled {
+  color: #808080;
+  cursor: default;
+}
+
+.context-menu-item:disabled:hover {
+  background: transparent;
+  color: #808080;
 }
 
 .context-submenu .context-menu-item-icon {
