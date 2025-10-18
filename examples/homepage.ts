@@ -183,9 +183,39 @@ function openWindow(windowId) {
     return;
   }
 
-  windowEl.classList.add('active');
-  windowEl.style.zIndex = ++windowZIndex;
-  activewindow = windowEl;
+  // Check if window was previously minimized
+  const wasMinimized = windowEl.classList.contains('minimized');
+
+  if (wasMinimized) {
+    // If restoring from minimized, let the taskbar handler do the animation
+    windowEl.classList.remove('minimized');
+  }
+
+  // Add a smooth entry animation for first-time opens
+  if (!wasMinimized && !windowEl.classList.contains('active')) {
+    windowEl.style.opacity = '0';
+    windowEl.style.transform = 'scale(0.95)';
+    windowEl.classList.add('active');
+    windowEl.style.zIndex = ++windowZIndex;
+    activewindow = windowEl;
+
+    // Trigger animation
+    requestAnimationFrame(() => {
+      windowEl.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+      windowEl.style.opacity = '1';
+      windowEl.style.transform = 'scale(1)';
+
+      setTimeout(() => {
+        windowEl.style.transition = '';
+        windowEl.style.transform = '';
+        windowEl.style.opacity = '';
+      }, 150);
+    });
+  } else {
+    windowEl.classList.add('active');
+    windowEl.style.zIndex = ++windowZIndex;
+    activewindow = windowEl;
+  }
 
   updateTaskbar();
 }
@@ -208,10 +238,67 @@ function minimizeWindow(windowId) {
   const windowEl = document.getElementById(`window-${windowId}`);
   if (!windowEl) return;
 
-  windowEl.classList.add('minimized');
+  // Remove active, add minimizing to keep visible
   windowEl.classList.remove('active');
+  windowEl.classList.add('minimizing');
 
+  // Update taskbar first
   updateTaskbar();
+
+  // Find the taskbar button for this window after a small delay
+  requestAnimationFrame(() => {
+    const taskbarButtons = document.querySelectorAll('.taskbar-task');
+    let targetButton = null;
+    taskbarButtons.forEach(btn => {
+      const btnText = btn.querySelector('.taskbar-task-label')?.textContent;
+      const windowTitle = windowEl.querySelector('.window-title')?.textContent;
+      if (btnText === windowTitle) {
+        targetButton = btn;
+      }
+    });
+
+    if (targetButton) {
+      // Get positions
+      const windowRect = windowEl.getBoundingClientRect();
+      const buttonRect = targetButton.getBoundingClientRect();
+
+      // Calculate translation
+      const translateX = buttonRect.left - windowRect.left;
+      const translateY = buttonRect.top - windowRect.top;
+
+      // Set initial state (current position)
+      windowEl.style.transform = 'translate(0, 0) scale(1)';
+      windowEl.style.opacity = '1';
+
+      // Force reflow
+      windowEl.offsetHeight;
+
+      // Animate to taskbar
+      windowEl.style.transform = `translate(${translateX}px, ${translateY}px) scale(0.1)`;
+      windowEl.style.opacity = '0';
+
+      // After animation completes, hide window
+      setTimeout(() => {
+        windowEl.classList.remove('minimizing');
+        windowEl.classList.add('minimized');
+        windowEl.style.transform = '';
+        windowEl.style.opacity = '';
+      }, 200);
+    } else {
+      // Fallback - just fade out
+      windowEl.style.opacity = '1';
+      windowEl.offsetHeight;
+      windowEl.style.opacity = '0';
+      windowEl.style.transform = 'scale(0.8)';
+
+      setTimeout(() => {
+        windowEl.classList.remove('minimizing');
+        windowEl.classList.add('minimized');
+        windowEl.style.transform = '';
+        windowEl.style.opacity = '';
+      }, 200);
+    }
+  });
 }
 
 function toggleMaximizeWindow(windowId) {
@@ -219,7 +306,23 @@ function toggleMaximizeWindow(windowId) {
   const windowEl = document.getElementById(`window-${windowId}`);
   if (!windowEl) return;
 
+  // Store original position and size before maximizing
+  if (!windowEl.classList.contains('maximized')) {
+    windowEl.dataset.originalLeft = windowEl.style.left;
+    windowEl.dataset.originalTop = windowEl.style.top;
+    windowEl.dataset.originalWidth = windowEl.style.width;
+    windowEl.dataset.originalHeight = windowEl.style.height;
+  }
+
   windowEl.classList.toggle('maximized');
+
+  // Restore original position if unmaximizing
+  if (!windowEl.classList.contains('maximized')) {
+    if (windowEl.dataset.originalLeft) windowEl.style.left = windowEl.dataset.originalLeft;
+    if (windowEl.dataset.originalTop) windowEl.style.top = windowEl.dataset.originalTop;
+    if (windowEl.dataset.originalWidth) windowEl.style.width = windowEl.dataset.originalWidth;
+    if (windowEl.dataset.originalHeight) windowEl.style.height = windowEl.dataset.originalHeight;
+  }
 }
 
 function updateTaskbar() {
@@ -228,13 +331,16 @@ function updateTaskbar() {
 
   const windows = document.querySelectorAll('.window');
   windows.forEach(windowEl => {
-    const isOpen = windowEl.classList.contains('active') || windowEl.classList.contains('minimized');
+    const isOpen = windowEl.classList.contains('active')
+      || windowEl.classList.contains('minimized')
+      || windowEl.classList.contains('minimizing')
+      || windowEl.classList.contains('restoring');
     if (!isOpen) return;
 
     const windowId = windowEl.id.replace('window-', '');
     const icon = windowEl.querySelector('.window-icon').textContent;
     const title = windowEl.querySelector('.window-title').textContent;
-    const isActive = windowEl.classList.contains('active');
+    const isActive = windowEl.classList.contains('active') || windowEl.classList.contains('restoring');
 
     const taskBtn = document.createElement('button');
     taskBtn.className = `taskbar-task${isActive ? ' active' : ''}`;
@@ -245,18 +351,47 @@ function updateTaskbar() {
 
     taskBtn.addEventListener('click', () => {
       if (windowEl.classList.contains('minimized')) {
+        // Remove minimized and add restoring
         windowEl.classList.remove('minimized');
-        windowEl.classList.add('active');
+        windowEl.classList.add('restoring');
         windowEl.style.zIndex = ++windowZIndex;
-        activewindow = windowEl;
+
+        // Get button position
+        const buttonRect = taskBtn.getBoundingClientRect();
+        const windowRect = windowEl.getBoundingClientRect();
+        const translateX = buttonRect.left - windowRect.left;
+        const translateY = buttonRect.top - windowRect.top;
+
+        // Start from button position
+        windowEl.style.transform = `translate(${translateX}px, ${translateY}px) scale(0.1)`;
+        windowEl.style.opacity = '0';
+
+        // Force reflow
+        windowEl.offsetHeight;
+
+        // Animate to window position
+        requestAnimationFrame(() => {
+          windowEl.style.transform = 'translate(0, 0) scale(1)';
+          windowEl.style.opacity = '1';
+
+          // After animation, clean up
+          setTimeout(() => {
+            windowEl.classList.remove('restoring');
+            windowEl.classList.add('active');
+            windowEl.style.transform = '';
+            windowEl.style.opacity = '';
+            activewindow = windowEl;
+            updateTaskbar();
+          }, 200);
+        });
       } else if (windowEl.classList.contains('active')) {
         minimizeWindow(windowId);
       } else {
         windowEl.classList.add('active');
         windowEl.style.zIndex = ++windowZIndex;
         activewindow = windowEl;
+        updateTaskbar();
       }
-      updateTaskbar();
     });
 
     taskbarTasks.appendChild(taskBtn);
@@ -775,6 +910,145 @@ function showEcosystemTab(tabName) {
   event.target.classList.add('active');
 }
 
+// Print Welcome PDF
+function printWelcome() {
+  const welcomeContent = document.querySelector('#window-welcome .window-content');
+  if (!welcomeContent) return;
+
+  // Create a new window for printing
+  const printWindow = window.open('', '', 'width=800,height=600');
+  if (!printWindow) return;
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>STACKS.JS - Welcome</title>
+        <style>
+          body { font-family: 'Tahoma', sans-serif; margin: 0; padding: 20px; }
+          @media print {
+            button { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        ${welcomeContent.innerHTML}
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 250);
+}
+
+// Download Welcome PDF
+function downloadWelcome() {
+  const welcomeContent = document.querySelector('#window-welcome .window-content');
+  if (!welcomeContent) return;
+
+  // Create HTML content
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>STACKS.JS - Welcome</title>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: 'Tahoma', sans-serif; margin: 0; padding: 20px; }
+        </style>
+      </head>
+      <body>
+        ${welcomeContent.innerHTML}
+      </body>
+    </html>
+  `;
+
+  // Create blob and download
+  const blob = new Blob([htmlContent], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'STACKS.JS-Welcome.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Plan selection
+function selectPlan(planType: string) {
+  // Minimize the Welcome window
+  minimizeWindow('welcome');
+
+  // Update License window based on selected plan
+  const licenseTitle = document.querySelector('#window-license h2');
+  const licenseTypeSpan = document.querySelectorAll('#window-license .license-type');
+  const licensePriceSpan = document.querySelector('#window-license .license-price');
+
+  if (planType === 'hobby') {
+    if (licenseTitle) licenseTitle.textContent = 'STACKS.JS Hobby Edition';
+    licenseTypeSpan.forEach(el => el.textContent = 'Hobby Edition');
+    if (licensePriceSpan) licensePriceSpan.textContent = '$9/mo or $179 lifetime';
+  } else {
+    if (licenseTitle) licenseTitle.textContent = 'STACKS.JS Professional Edition';
+    licenseTypeSpan.forEach(el => el.textContent = 'Professional Edition');
+    if (licensePriceSpan) licensePriceSpan.textContent = '$29/mo or $279 lifetime';
+  }
+
+  // Store the selected plan type
+  (window as any).selectedPlanType = planType;
+
+  // Open the License window
+  openWindow('license');
+}
+
+// Zoom functionality
+let currentZoom = 100;
+
+function toggleZoomMenu() {
+  const menu = document.getElementById('zoom-menu');
+  if (!menu) return;
+
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+
+  // Close menu when clicking elsewhere
+  if (menu.style.display === 'block') {
+    setTimeout(() => {
+      document.addEventListener('click', function closeMenu(e) {
+        const zoomButton = document.getElementById('zoom-button');
+        if (zoomButton && !zoomButton.contains(e.target as Node)) {
+          menu.style.display = 'none';
+          document.removeEventListener('click', closeMenu);
+        }
+      });
+    }, 0);
+  }
+}
+
+function setZoom(zoomLevel: number) {
+  currentZoom = zoomLevel;
+  const content = document.getElementById('welcome-pdf-content');
+  const zoomLevelSpan = document.getElementById('zoom-level');
+  const menu = document.getElementById('zoom-menu');
+
+  if (content) {
+    const scale = zoomLevel / 100;
+    content.style.transform = `scale(${scale})`;
+    content.style.transformOrigin = 'top center';
+  }
+
+  if (zoomLevelSpan) {
+    zoomLevelSpan.textContent = `${zoomLevel}%`;
+  }
+
+  if (menu) {
+    menu.style.display = 'none';
+  }
+}
+
 // Make functions globally accessible for inline onclick handlers
 window.openWindow = openWindow;
 window.closeWindow = closeWindow;
@@ -793,3 +1067,8 @@ window.closeLicenseWindow = closeLicenseWindow;
 window.purchaseLicense = purchaseLicense;
 window.activateLicense = activateLicense;
 window.showEcosystemTab = showEcosystemTab;
+window.printWelcome = printWelcome;
+window.downloadWelcome = downloadWelcome;
+window.toggleZoomMenu = toggleZoomMenu;
+window.setZoom = setZoom;
+window.selectPlan = selectPlan;

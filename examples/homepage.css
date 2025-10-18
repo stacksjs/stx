@@ -254,15 +254,35 @@ body {
 }
 
 .window.active {
-  display: flex;
+  display: flex !important;
+}
+
+.window.minimizing {
+  display: flex !important;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.window.restoring {
+  display: flex !important;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.window.minimized {
+  display: none !important;
+  pointer-events: none;
 }
 
 .window.maximized {
+  transition: all 0.2s ease !important;
   left: 0 !important;
   top: 0 !important;
   width: 100% !important;
   height: calc(100% - 40px) !important;
   border-radius: 0 !important;
+}
+
+.window:not(.maximized) {
+  transition: all 0.2s ease;
 }
 
 .window.maximized .window-titlebar {
