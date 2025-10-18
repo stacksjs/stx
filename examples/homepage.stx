@@ -754,7 +754,6 @@ export default {
     </button>
   </div>
 
-      if (isRight) return 'e';
   <!-- Icon Context Menu -->
   <div class="context-menu" id="icon-context-menu" style="display: none;">
     <button class="context-menu-item" onclick="openIconFromMenu()">
