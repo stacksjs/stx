@@ -39,10 +39,93 @@
         { id: 'frontend', title: 'Frontend', icon: '🎨', type: 'window', section: 'frontend' },
         { id: 'cloud', title: 'Cloud', icon: '☁️', type: 'window', section: 'cloud' },
         { id: 'dashboard', title: 'Dashboard', icon: '📊', type: 'window', section: 'dashboard' },
+        { id: 'libraries', title: 'Libraries & CLIs', icon: '📁', type: 'window', section: 'libraries' },
+        { id: 'plugins', title: 'Plugins & Actions', icon: '📁', type: 'window', section: 'plugins' },
+        { id: 'templates', title: 'Templates', icon: '📁', type: 'window', section: 'templates' },
         { id: 'docs', title: 'Documentation', icon: '📚', type: 'link', url: 'https://stacksjs.org/docs' },
         { id: 'github', title: 'GitHub', icon: '💻', type: 'link', url: 'https://github.com/stacksjs/stacks' },
         { id: 'sponsor', title: 'Sponsor', icon: '💖', type: 'link', url: 'https://github.com/sponsors/chrisbbreuer' },
         { id: 'discord', title: 'Discord', icon: '💬', type: 'link', url: 'https://discord.gg/stacksjs' }
+      ],
+      libraries: [
+        { name: 'aax', url: 'https://github.com/stacksjs/aax', desc: 'A library to work with Audible\'s .aax files.' },
+        { name: 'audiox', url: 'https://github.com/stacksjs/audiox', desc: 'Powerful audio processing for your workflows.' },
+        { name: 'backupx', url: 'https://github.com/stacksjs/backupx', desc: 'Comprehensive & performant database and file backup solution.' },
+        { name: 'besting', url: 'https://github.com/stacksjs/besting', desc: 'A modern & extremely performant testing framework.' },
+        { name: 'buddy-bot', url: 'https://github.com/stacksjs/buddy', desc: 'Just like Renovate and Dependabot, just open source & self-hosted.' },
+        { name: 'bumpx', url: 'https://github.com/stacksjs/bumpx', desc: 'Bump your version numbers automatically.' },
+        { name: 'bun-git-hooks', url: 'https://github.com/stacksjs/bun-git-hooks', desc: 'A simple git hooks manager for all-sized Bun projects.' },
+        { name: 'bun-query-builder', url: 'https://github.com/stacksjs/bun-query-builder', desc: 'A safe, performant & fully-typed query builder.' },
+        { name: 'bun-queue', url: 'https://github.com/stacksjs/queue', desc: 'A modern port of BullMQ. Optimized for Bun usage.' },
+        { name: 'bun-router', url: 'https://github.com/stacksjs/router', desc: 'A powerful yet lightweight router for your server.' },
+        { name: 'bunfig', url: 'https://github.com/stacksjs/bunfig', desc: 'Lightweight & smart Bun configuration loader.' },
+        { name: 'clarity', url: 'https://github.com/stacksjs/clarity', desc: 'Modern debugging & logging for browser & server.' },
+        { name: 'dtsx', url: 'https://github.com/stacksjs/dtsx', desc: 'Extremely fast & configurable DTS emitter.' },
+        { name: 'dnsx', url: 'https://github.com/stacksjs/dnsx', desc: 'A command-line & library DNS client.' },
+        { name: 'gitit', url: 'https://github.com/stacksjs/gitit', desc: 'A simple way to download templates stored using git.' },
+        { name: 'gitlint', url: 'https://github.com/stacksjs/gitlint', desc: 'Minimal & fast Git commit message linting & formatting.' },
+        { name: 'httx', url: 'https://github.com/stacksjs/httx', desc: 'A modern, user-friendly command-line & library HTTP client.' },
+        { name: 'imgx', url: 'https://github.com/stacksjs/imgx', desc: 'Make your images load faster.' },
+        { name: 'jpgx', url: 'https://github.com/stacksjs/jpgx', desc: 'A TypeScript JPEG encoder & decoder for Bun & Node.js.' },
+        { name: 'localtunnels', url: 'https://github.com/stacksjs/localtunnels', desc: 'A simple and smart tunneling alternative.' },
+        { name: 'logsmith', url: 'https://github.com/stacksjs/logsmith', desc: 'Forge beautiful changelogs from your commits.' },
+        { name: 'pickier', url: 'https://github.com/stacksjs/pickier', desc: 'Format, lint, and more—in a fraction of second.' },
+        { name: 'pngx', url: 'https://github.com/stacksjs/pngx', desc: 'Modern PNG encoder & decoder.' },
+        { name: 'post', url: 'https://github.com/stacksjs/post', desc: 'The Post. A modern mail server & utilities.' },
+        { name: 'qrx', url: 'https://github.com/stacksjs/qrx', desc: 'QR & Bar Code generating & reading.' },
+        { name: 'rpx', url: 'https://github.com/stacksjs/rpx', desc: 'A modern, fast reverse proxy.' },
+        { name: 'tlsx', url: 'https://github.com/stacksjs/tlsx', desc: 'A TLS library with automation & HTTPS by default.' },
+        { name: 'ts-avif', url: 'https://github.com/stacksjs/ts-avif', desc: 'High quality & small file sizes.' },
+        { name: 'ts-cache', url: 'https://github.com/stacksjs/ts-cache', desc: 'A fast, type-safe, and feature-rich caching library.' },
+        { name: 'ts-clone', url: 'https://github.com/stacksjs/ts-clone', desc: 'Deeply clone arbitrary objects using TypeScript.' },
+        { name: 'ts-collect', url: 'https://github.com/stacksjs/ts-collect', desc: 'A powerful, yet lightweight, Laravel-like Collections.' },
+        { name: 'ts-countries', url: 'https://github.com/stacksjs/ts-countries', desc: 'Modern, lightweight, elegant country data management.' },
+        { name: 'ts-datetime', url: 'https://github.com/stacksjs/ts-datetime', desc: 'Performant & powerful datetime library.' },
+        { name: 'ts-gif', url: 'https://github.com/stacksjs/ts-gif', desc: 'Performant TypeScript implementation of a GIF encoder & decoder.' },
+        { name: 'ts-i18n', url: 'https://github.com/stacksjs/ts-i18n', desc: 'A fully-typed i18n experience.' },
+        { name: 'ts-inputs', url: 'https://github.com/stacksjs/ts-inputs', desc: 'Modern input masking.' },
+        { name: 'ts-broadcasting', url: 'https://github.com/stacksjs/ts-broadcasting', desc: 'Realtime the simple & performant way.' },
+        { name: 'ts-maps', url: 'https://github.com/stacksjs/ts-maps', desc: 'Modern & lightweight library for creating interactive vector maps.' },
+        { name: 'ts-medium-editor', url: 'https://github.com/stacksjs/ts-medium-editor', desc: 'A modern, minimal & performant Medium-like rich text editor.' },
+        { name: 'ts-mocker', url: 'https://github.com/stacksjs/ts-mocker', desc: 'Performance-focused & lightweight TypeScript faker library.' },
+        { name: 'ts-ndarray', url: 'https://github.com/stacksjs/ts-ndarray', desc: 'Multidimensional arrays for JavaScript & TypeScript.' },
+        { name: 'ts-numbers', url: 'https://github.com/stacksjs/ts-numbers', desc: 'Lightweight currencies, weights, phone numbers, and more.' },
+        { name: 'ts-pkgx', url: 'https://github.com/stacksjs/ts-pkgx', desc: 'Automated Typed Pantry details.' },
+        { name: 'ts-prompts', url: 'https://github.com/stacksjs/ts-prompts', desc: 'Build modern & pretty CLI applications.' },
+        { name: 'ts-punycode', url: 'https://github.com/stacksjs/ts-punycode', desc: 'Lightweight Punycode converter.' },
+        { name: 'ts-rate-limiter', url: 'https://github.com/stacksjs/ts-rate-limiter', desc: 'High-performance, flexible rate limiting library.' },
+        { name: 'ts-security', url: 'https://github.com/stacksjs/ts-security', desc: 'Performant & lightweight cryptography tooling.' },
+        { name: 'ts-slug', url: 'https://github.com/stacksjs/ts-slug', desc: 'Lightweight slug generation.' },
+        { name: 'ts-spreadsheets', url: 'https://github.com/stacksjs/ts-spreadsheets', desc: 'Easily generate spreadsheets, like CSVs and Excel files.' },
+        { name: 'ts-svg', url: 'https://github.com/stacksjs/ts-svg', desc: 'Powerful developer toolkit for working with SVGs.' },
+        { name: 'ts-syntax-highlighter', url: 'https://github.com/stacksjs/ts-syntax-highlighter', desc: 'A syntax highlighter for the modern web.' },
+        { name: 'ts-validation', url: 'https://github.com/stacksjs/ts-validation', desc: 'Lightweight & performant form & request data validation library.' },
+        { name: 'ts-vat', url: 'https://github.com/stacksjs/ts-vat', desc: 'Simply handle EU MOSS tax & VAT regulations & calculations.' },
+        { name: 'ts-webp', url: 'https://github.com/stacksjs/ts-webp', desc: 'A modern image format for the Web.' },
+        { name: 'ts-web-scraper', url: 'https://github.com/stacksjs/ts-web-scraper', desc: 'Powerful, type-safe web scraping tooling.' },
+        { name: 'vidx', url: 'https://github.com/stacksjs/vidx', desc: 'Make your videos load faster.' }
+      ],
+      plugins: [
+        { name: 'action-launchpad', url: 'https://github.com/stacksjs/launchpad', desc: 'GitHub Action to install packages using Launchpad.' },
+        { name: 'action-logsmith', url: 'https://github.com/stacksjs/logsmith', desc: 'Forge beautiful changelogs from your commits.' },
+        { name: 'action-releaser', url: 'https://github.com/stacksjs/action-releaser', desc: 'Simply attach files, like binaries & distributables, to GitHub Releases.' },
+        { name: 'bun-plugin-auto-imports', url: 'https://github.com/stacksjs/bun-plugin-auto-imports', desc: 'Auto Imports support for Bun.' },
+        { name: 'bun-plugin-dotenvx', url: 'https://github.com/stacksjs/bun-plugin-dotenvx', desc: 'A Bun plugin to seamlessly work with dotenvx.' },
+        { name: 'bun-plugin-dtsx', url: 'https://github.com/stacksjs/bun-plugin-dtsx', desc: 'Automatically generate your TypeScript DTS files, using Bun\'s bundler.' },
+        { name: 'bun-plugin-rpx', url: 'https://github.com/stacksjs/bun-plugin-rpx', desc: 'A modern, fast reverse proxy.' },
+        { name: 'bun-plugin-tlsx', url: 'https://github.com/stacksjs/bun-plugin-tlsx', desc: 'Bun plugin for a modern TLS library with automation & HTTPS by default.' },
+        { name: 'bun-plugin-unocss', url: 'https://github.com/stacksjs/bun-plugin-unocss', desc: 'Instant On-demand Atomic CSS Engine - UnoCSS' },
+        { name: 'vite-plugin-dotenvx', url: 'https://github.com/stacksjs/vite-plugin-dotenvx', desc: 'A Vite plugin to seamlessly work with dotenvx.' },
+        { name: 'vite-plugin-layouts', url: 'https://github.com/stacksjs/vite-plugin-layouts', desc: 'Router-based layouts for your application.' },
+        { name: 'vite-plugin-local', url: 'https://github.com/stacksjs/vite-plugin-local', desc: 'Pretty development URLs, and HTTPS.' },
+        { name: 'vite-plugin-rpx', url: 'https://github.com/stacksjs/rpx', desc: 'A Vite plugin for a modern, fast reverse proxy.' },
+        { name: 'vite-plugin-tauri', url: 'https://github.com/stacksjs/vite-plugin-tauri', desc: 'Zero-setup, highly-configurable cross-platform development.' },
+        { name: 'vite-plugin-tlsx', url: 'https://github.com/stacksjs/tlsx', desc: 'Simple, yet powerful TLS library.' }
+      ],
+      templates: [
+        { name: 'projects', url: 'https://github.com/stacksjs/projects', desc: 'A minimal personal portfolio template.' },
+        { name: 'ts-starter', url: 'https://github.com/stacksjs/ts-starter', desc: 'A rather barebones Bun & TypeScript starting point for libraries & CLIs.' },
+        { name: 'ts-starter-monorepo', url: 'https://github.com/stacksjs/ts-starter-monorepo', desc: 'Like our ts-starter, but optimized for monorepos.' }
       ]
     };
   </script>
@@ -495,7 +578,7 @@
       bottom: 40px;
       left: 0;
       width: 350px;
-      height: 500px;
+      max-height: calc(100vh - 60px);
       background: linear-gradient(to right, #245edb 0px, #245edb 40px, #ece9d8 40px, #ece9d8 100%);
       border: 2px solid #0831d9;
       box-shadow: 2px -2px 8px rgba(0, 0, 0, 0.3);
@@ -771,6 +854,233 @@
     .notification-popup.hidden {
       display: none;
     }
+
+    .notification-separator {
+      height: 1px;
+      background: #c0c0c0;
+      margin: 12px 0;
+    }
+
+    .notification-signup {
+      margin-top: 8px;
+    }
+
+    .notification-signup-text {
+      font-size: 12px;
+      color: #333;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .notification-signup-form {
+      display: flex;
+      gap: 6px;
+    }
+
+    .notification-email-input {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 12px;
+      font-family: 'Tahoma', sans-serif;
+      border: 1px solid #7f9db9;
+      background: white;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .notification-email-input:focus {
+      border-color: #0831d9;
+      box-shadow: inset 0 0 0 1px #0831d9;
+    }
+
+    .notification-signup-btn {
+      padding: 6px 16px;
+      background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+      border: 1px solid #0831d9;
+      border-radius: 2px;
+      font-size: 12px;
+      font-weight: bold;
+      font-family: 'Tahoma', sans-serif;
+      cursor: pointer;
+      color: #000;
+      transition: all 0.1s;
+      white-space: nowrap;
+    }
+
+    .notification-signup-btn:hover {
+      background: linear-gradient(to bottom, #fff7e6 0%, #f0ead0 100%);
+      border-color: #245edb;
+    }
+
+    .notification-signup-btn:active {
+      background: linear-gradient(to bottom, #ece9d8 0%, #ddd 100%);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .notification-success-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+    }
+
+    .notification-success-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(to bottom, #5eac56 0%, #3c873c 100%);
+      border: 2px solid #16591e;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .notification-success-text {
+      flex: 1;
+    }
+
+    .notification-success-title {
+      font-size: 13px;
+      font-weight: bold;
+      color: #0831d9;
+      margin-bottom: 2px;
+    }
+
+    .notification-success-subtitle {
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* Context Menu */
+    .context-menu {
+      position: fixed;
+      background: #ece9d8;
+      border: 2px outset #fff;
+      box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      z-index: 10003;
+      min-width: 200px;
+      padding: 2px;
+    }
+
+    .context-menu[hidden] {
+      display: none !important;
+    }
+
+    .context-menu-item {
+      padding: 4px 24px 4px 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      width: 100%;
+      text-align: left;
+      font-family: 'Tahoma', sans-serif;
+      font-size: 11px;
+      transition: background 0.1s;
+      position: relative;
+      color: #000;
+      white-space: nowrap;
+    }
+
+    .context-menu-item:hover {
+      background: #316ac5;
+      color: white;
+    }
+
+    .context-menu-item-icon {
+      position: absolute;
+      left: 4px;
+      font-size: 14px;
+      width: 20px;
+      text-align: center;
+    }
+
+    .context-menu-separator {
+      height: 1px;
+      background: #808080;
+      margin: 2px 2px;
+      border-top: 1px solid #fff;
+    }
+
+    .context-menu-item.has-submenu::after {
+      content: '▶';
+      position: absolute;
+      right: 8px;
+      font-size: 8px;
+    }
+
+    .context-submenu {
+      position: absolute;
+      left: calc(100% - 2px);
+      top: -2px;
+      background: #ece9d8;
+      border: 2px outset #fff;
+      box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.4);
+      display: none;
+      flex-direction: column;
+      min-width: 180px;
+      padding: 2px;
+      z-index: 10004;
+    }
+
+    .context-menu-item:hover > .context-submenu {
+      display: flex;
+    }
+
+    /* Folder Contents */
+    .folder-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .folder-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 8px 12px;
+      background: white;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .folder-item:hover {
+      background: linear-gradient(to bottom, #fff7e6 0%, #f0ead0 100%);
+      border: 1px solid #0831d9;
+    }
+
+    .folder-item-icon {
+      font-size: 16px;
+      min-width: 20px;
+      margin-top: 2px;
+    }
+
+    .folder-item-content {
+      flex: 1;
+    }
+
+    .folder-item-name {
+      font-weight: bold;
+      font-size: 13px;
+      color: #0831d9;
+      margin-bottom: 2px;
+    }
+
+    .folder-item-desc {
+      font-size: 11px;
+      color: #666;
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -901,7 +1211,7 @@ const current = await Auth.user()
       <div class="window-content">
         <h2>Frontend</h2>
         <p>Develop dynamic UIs with helpers for atomic design, and much more.</p>
-        <p style="color: #666; font-size: 12px;">⚡️ Powered by Bun, Tauri, Headwind, Vite, VitePress and Vue</p>
+        <p style="color: #666; font-size: 12px;">⚡️ Powered by TypeScript, Bun & Tauri</p>
 
         <div class="feature-buttons">
           <button class="feature-btn active" onclick="showFeature('frontend', 'components')">Components</button>
@@ -986,6 +1296,87 @@ export default {
           <div style="margin-top: 32px; padding: 16px; background: #fffacd; border: 2px solid #ffd700; border-radius: 4px; display: inline-block;">
             <p style="margin: 0; font-weight: bold; color: #333;">💡 Coming Soon: Real-time metrics, analytics, and insights</p>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="window-libraries" class="window" style="left: 120px; top: 100px; width: 700px; height: 600px;">
+      <div class="window-titlebar">
+        <div class="window-icon">📁</div>
+        <div class="window-title">Libraries & CLIs</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('libraries')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('libraries')">□</button>
+          <button class="window-control close" onclick="closeWindow('libraries')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Libraries & CLIs</h2>
+        <p style="margin-bottom: 16px;">Powerful TypeScript libraries and command-line tools for modern development.</p>
+        <div class="folder-list">
+          @foreach(libraries as library)
+            <a href="{{ library.url }}" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">{{ library.name }}</div>
+                <div class="folder-item-desc">{{ library.desc }}</div>
+              </div>
+            </a>
+          @endforeach
+        </div>
+      </div>
+    </div>
+
+    <div id="window-plugins" class="window" style="left: 170px; top: 120px; width: 700px; height: 550px;">
+      <div class="window-titlebar">
+        <div class="window-icon">📁</div>
+        <div class="window-title">Plugins & Actions</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('plugins')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('plugins')">□</button>
+          <button class="window-control close" onclick="closeWindow('plugins')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Plugins & Actions</h2>
+        <p style="margin-bottom: 16px;">Build plugins and GitHub Actions to enhance your development workflow.</p>
+        <div class="folder-list">
+          @foreach(plugins as plugin)
+            <a href="{{ plugin.url }}" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">{{ plugin.name }}</div>
+                <div class="folder-item-desc">{{ plugin.desc }}</div>
+              </div>
+            </a>
+          @endforeach
+        </div>
+      </div>
+    </div>
+
+    <div id="window-templates" class="window" style="left: 220px; top: 140px; width: 650px; height: 400px;">
+      <div class="window-titlebar">
+        <div class="window-icon">📁</div>
+        <div class="window-title">Templates</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('templates')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('templates')">□</button>
+          <button class="window-control close" onclick="closeWindow('templates')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Templates</h2>
+        <p style="margin-bottom: 16px;">Starter templates to jumpstart your TypeScript projects.</p>
+        <div class="folder-list">
+          @foreach(templates as template)
+            <a href="{{ template.url }}" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📋</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">{{ template.name }}</div>
+                <div class="folder-item-desc">{{ template.desc }}</div>
+              </div>
+            </a>
+          @endforeach
         </div>
       </div>
     </div>
@@ -1088,6 +1479,32 @@ export default {
         </button>
         <div class="start-menu-separator"></div>
         <div class="start-menu-item has-submenu">
+          <div class="start-menu-item-icon">💎</div>
+          <div>Sponsorware</div>
+          <div class="start-submenu">
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/bun-queue', '_blank')">
+              <div class="start-menu-item-icon">📬</div>
+              <div>bun-queue</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/bun-router', '_blank')">
+              <div class="start-menu-item-icon">🧭</div>
+              <div>bun-router</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/stacks-dashboard', '_blank')">
+              <div class="start-menu-item-icon">📊</div>
+              <div>Stacks Dashboard</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/stacks-orm-dynamodb', '_blank')">
+              <div class="start-menu-item-icon">🗄️</div>
+              <div>Stacks ORM - DynamoDB</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/stacks-raycast', '_blank')">
+              <div class="start-menu-item-icon">🔍</div>
+              <div>Stacks Raycast</div>
+            </button>
+          </div>
+        </div>
+        <div class="start-menu-item has-submenu">
           <div class="start-menu-item-icon">📱</div>
           <div>Apps</div>
           <div class="start-submenu">
@@ -1135,32 +1552,6 @@ export default {
             </button>
           </div>
         </div>
-        <div class="start-menu-item has-submenu">
-          <div class="start-menu-item-icon">💎</div>
-          <div>Sponsorware</div>
-          <div class="start-submenu">
-            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/bun-queue', '_blank')">
-              <div class="start-menu-item-icon">📬</div>
-              <div>bun-queue</div>
-            </button>
-            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/bun-router', '_blank')">
-              <div class="start-menu-item-icon">🧭</div>
-              <div>bun-router</div>
-            </button>
-            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/stacks-dashboard', '_blank')">
-              <div class="start-menu-item-icon">📊</div>
-              <div>Stacks Dashboard</div>
-            </button>
-            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/stacks-orm-dynamodb', '_blank')">
-              <div class="start-menu-item-icon">🗄️</div>
-              <div>Stacks ORM - DynamoDB</div>
-            </button>
-            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/stacks-raycast', '_blank')">
-              <div class="start-menu-item-icon">🔍</div>
-              <div>Stacks Raycast</div>
-            </button>
-          </div>
-        </div>
         <div class="start-menu-separator"></div>
         <div class="start-menu-item has-submenu">
           <div class="start-menu-item-icon">🔗</div>
@@ -1197,6 +1588,59 @@ export default {
       <div class="taskbar-clock" id="clock">12:00 PM</div>
     </div>
 
+    <!-- Context Menu -->
+    <div class="context-menu" id="context-menu" hidden>
+      <button class="context-menu-item has-submenu">
+        <div class="context-menu-item-icon">📤</div>
+        <div>Share with a friend...</div>
+        <div class="context-submenu">
+          <button class="context-menu-item" onclick="shareVia('twitter')">
+            <div class="context-menu-item-icon">🐦</div>
+            <div>Share on Twitter</div>
+          </button>
+          <button class="context-menu-item" onclick="shareVia('linkedin')">
+            <div class="context-menu-item-icon">💼</div>
+            <div>Share on LinkedIn</div>
+          </button>
+          <button class="context-menu-item" onclick="shareVia('email')">
+            <div class="context-menu-item-icon">📧</div>
+            <div>Share via Email</div>
+          </button>
+          <button class="context-menu-item" onclick="shareVia('copy')">
+            <div class="context-menu-item-icon">📋</div>
+            <div>Copy Link</div>
+          </button>
+        </div>
+      </button>
+      <div class="context-menu-separator"></div>
+      <button class="context-menu-item" onclick="copyLogoSVG()">
+        <div class="context-menu-item-icon">🎨</div>
+        <div>Copy Logo as SVG</div>
+      </button>
+      <button class="context-menu-item" onclick="copyWordmarkSVG()">
+        <div class="context-menu-item-icon">✏️</div>
+        <div>Copy Wordmark as SVG</div>
+      </button>
+      <button class="context-menu-item" onclick="window.open('https://stacksjs.org/brand', '_blank')">
+        <div class="context-menu-item-icon">📖</div>
+        <div>Brand Guidelines</div>
+      </button>
+      <div class="context-menu-separator"></div>
+      <button class="context-menu-item" onclick="window.open('https://stacksjs.org/docs', '_blank')">
+        <div class="context-menu-item-icon">📚</div>
+        <div>Documentation</div>
+      </button>
+      <button class="context-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank')">
+        <div class="context-menu-item-icon">💻</div>
+        <div>View on GitHub</div>
+      </button>
+      <div class="context-menu-separator"></div>
+      <button class="context-menu-item" onclick="window.location.reload()">
+        <div class="context-menu-item-icon">🔄</div>
+        <div>Refresh</div>
+      </button>
+    </div>
+
     <!-- Notification Popup -->
     <div class="notification-popup" id="notification-popup">
       <div class="notification-header">
@@ -1227,6 +1671,32 @@ export default {
           <div>Lightning fast with Bun</div>
         </div>
       </div>
+      <div class="notification-signup" id="notification-signup">
+        <div class="notification-separator"></div>
+        <div class="notification-signup-text">Get updates on new features & releases:</div>
+        <div class="notification-signup-form">
+          <input
+            type="email"
+            id="notification-email"
+            class="notification-email-input"
+            placeholder="your@email.com"
+            autocomplete="email"
+          />
+          <button class="notification-signup-btn" onclick="handleEmailSignup()">
+            Sign Up
+          </button>
+        </div>
+      </div>
+      <div class="notification-success" id="notification-success" style="display: none;">
+        <div class="notification-separator"></div>
+        <div class="notification-success-content">
+          <div class="notification-success-icon">✓</div>
+          <div class="notification-success-text">
+            <div class="notification-success-title">Thanks for subscribing!</div>
+            <div class="notification-success-subtitle">We'll keep you updated.</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1236,10 +1706,13 @@ export default {
     // Clock
     function updateClock() {
       const now = new Date();
+      const month = now.getMonth() + 1;
+      const day = now.getDate();
+      const year = now.getFullYear();
       const hours = now.getHours() % 12 || 12;
       const minutes = String(now.getMinutes()).padStart(2, '0');
       const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
-      document.getElementById('clock').textContent = `${hours}:${minutes} ${ampm}`;
+      document.getElementById('clock').textContent = `${month}/${day}/${year} ${hours}:${minutes} ${ampm}`;
     }
     updateClock();
     setInterval(updateClock, 60000);
@@ -1853,6 +2326,46 @@ await app.start({
       }
     }
 
+    // Email signup handler
+    function handleEmailSignup() {
+      const emailInput = document.getElementById('notification-email');
+      const email = emailInput.value.trim();
+
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email)) {
+        // XP-style alert
+        alert('Please enter a valid email address.');
+        emailInput.focus();
+        return;
+      }
+
+      // TODO: Send to API endpoint
+      // Example: fetch('/api/subscribe', { method: 'POST', body: JSON.stringify({ email }) })
+      console.log('Email signup:', email);
+
+      // Show success state
+      document.getElementById('notification-signup').style.display = 'none';
+      document.getElementById('notification-success').style.display = 'block';
+
+      // Optional: Auto-close after success
+      setTimeout(() => {
+        closeNotification();
+      }, 3000);
+    }
+
+    // Allow Enter key to submit email
+    document.addEventListener('DOMContentLoaded', () => {
+      const emailInput = document.getElementById('notification-email');
+      if (emailInput) {
+        emailInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            handleEmailSignup();
+          }
+        });
+      }
+    });
+
     // Auto-show notification after 2 seconds
     setTimeout(() => {
       const notification = document.getElementById('notification-popup');
@@ -1860,6 +2373,81 @@ await app.start({
         notification.style.display = 'block';
       }
     }, 2000);
+
+    // Context Menu
+    const contextMenu = document.getElementById('context-menu');
+
+    // Show context menu on right-click
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+
+      const x = e.clientX;
+      const y = e.clientY;
+
+      // Remove hidden attribute and position menu
+      contextMenu.removeAttribute('hidden');
+      contextMenu.style.left = `${x}px`;
+      contextMenu.style.top = `${y}px`;
+      contextMenu.classList.add('active');
+    });
+
+    // Hide context menu on click anywhere
+    document.addEventListener('click', () => {
+      contextMenu.setAttribute('hidden', '');
+      contextMenu.classList.remove('active');
+    });
+
+    // Share functions
+    function shareVia(platform) {
+      const url = encodeURIComponent(window.location.href);
+      const text = encodeURIComponent('Check out Stacks - A TypeScript framework for building modern applications!');
+
+      switch(platform) {
+        case 'twitter':
+          window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+          break;
+        case 'linkedin':
+          window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+          break;
+        case 'email':
+          window.location.href = `mailto:?subject=Check out Stacks&body=${text} ${url}`;
+          break;
+        case 'copy':
+          navigator.clipboard.writeText(window.location.href).then(() => {
+            alert('Link copied to clipboard!');
+          });
+          break;
+      }
+    }
+
+    // Copy Logo SVG
+    function copyLogoSVG() {
+      // Placeholder SVG - replace with actual logo
+      const logoSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <rect width="100" height="100" fill="#0831d9"/>
+        <text x="50" y="50" text-anchor="middle" dy=".3em" fill="white" font-size="40" font-weight="bold">S</text>
+      </svg>`;
+
+      navigator.clipboard.writeText(logoSVG).then(() => {
+        alert('Logo SVG copied to clipboard!');
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+      });
+    }
+
+    // Copy Wordmark SVG
+    function copyWordmarkSVG() {
+      // Placeholder SVG - replace with actual wordmark
+      const wordmarkSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50">
+        <text x="10" y="35" fill="#0831d9" font-size="30" font-weight="bold" font-family="Tahoma">STACKS</text>
+      </svg>`;
+
+      navigator.clipboard.writeText(wordmarkSVG).then(() => {
+        alert('Wordmark SVG copied to clipboard!');
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+      });
+    }
   </script>
 </body>
 </html>
