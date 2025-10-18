@@ -710,7 +710,7 @@
       </h2>
       <p class="text-xl mb-6 text-gray-300">Develop dynamic UIs with helpers for atomic design, and much more</p>
       <p class="text-gray-400 mb-12 max-w-3xl text-base leading-relaxed">
-        ⚡️ Powered by Bun, Tauri, Headwind, Vite, VitePress and Vue
+        ⚡️ Powered by TypeScript, Bun & Tauri
       </p>
 
       <div class="grid md:grid-cols-2 gap-12">

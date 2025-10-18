@@ -1,0 +1,11 @@
+<div class="folder-list">
+  @foreach(items as item)
+    <a href="{{ item.url }}" target="_blank" class="folder-item">
+      <div class="folder-item-icon">{{ icon }}</div>
+      <div class="folder-item-content">
+        <div class="folder-item-name">{{ item.name }}</div>
+        <div class="folder-item-desc">{{ item.desc }}</div>
+      </div>
+    </a>
+  @endforeach
+</div>
