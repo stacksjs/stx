@@ -1,0 +1,10 @@
+<button
+  class="desktop-icon"
+  data-icon-id="{{ id }}"
+  data-icon-type="{{ type }}"
+  data-icon-section="{{ section }}"
+  data-icon-url="{{ url }}"
+>
+  <div class="desktop-icon-image">{{ icon }}</div>
+  <div class="desktop-icon-label">{{ title }}</div>
+</button>

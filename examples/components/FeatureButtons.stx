@@ -1,0 +1,9 @@
+<div class="feature-buttons">
+  @foreach(features as feature, index)
+    <button
+      class="feature-btn{{ index === 0 ? ' active' : '' }}"
+      onclick="showFeature('{{ section }}', '{{ feature.id }}')">
+      {{ feature.label }}
+    </button>
+  @endforeach
+</div>

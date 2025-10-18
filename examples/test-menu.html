@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Test Context Menu</title>
+  <style>
+    .context-menu {
+      position: fixed;
+      background: #ece9d8;
+      border: 2px outset #fff;
+      box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      z-index: 10003;
+      min-width: 200px;
+      padding: 2px;
+    }
+
+    .context-menu-item {
+      padding: 4px 24px 4px 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      text-align: left;
+      position: relative;
+    }
+
+    .context-menu-item:hover {
+      background: #0831d9;
+      color: white;
+    }
+
+    .context-submenu {
+      position: absolute;
+      left: calc(100% - 2px);
+      top: -2px;
+      background: #ece9d8;
+      border: 2px outset #fff;
+      box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.4);
+      display: none !important;
+      flex-direction: column;
+      min-width: 180px;
+      padding: 2px;
+      z-index: 10004;
+    }
+
+    .context-menu-item:hover > .context-submenu {
+      display: flex !important;
+    }
+
+    .context-menu-item.has-submenu::after {
+      content: '▶';
+      position: absolute;
+      right: 8px;
+      font-size: 8px;
+    }
+  </style>
+</head>
+<body style="padding: 50px;">
+  <h1>Test Context Menu</h1>
+  <p>Right-click anywhere to see the menu</p>
+
+  <div class="context-menu" id="context-menu" style="display: none;">
+    <button class="context-menu-item has-submenu">
+      <div>Share with a friend...</div>
+      <div class="context-submenu">
+        <button class="context-menu-item">
+          <div>Share on Twitter</div>
+        </button>
+        <button class="context-menu-item">
+          <div>Share on LinkedIn</div>
+        </button>
+      </div>
+    </button>
+    <button class="context-menu-item">
+      <div>Copy Logo</div>
+    </button>
+    <button class="context-menu-item">
+      <div>Refresh</div>
+    </button>
+  </div>
+
+  <script>
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const menu = document.getElementById('context-menu');
+      menu.style.left = e.clientX + 'px';
+      menu.style.top = e.clientY + 'px';
+      menu.style.display = 'flex';
+    });
+
+    document.addEventListener('click', () => {
+      document.getElementById('context-menu').style.display = 'none';
+    });
+  </script>
+</body>
+</html>

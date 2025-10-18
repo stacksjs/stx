@@ -1,0 +1,2690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STACKS.JS Desktop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/packages/stx/examples/dist/styles.css">
+  <script>
+    module.exports = {
+      packages: [
+        { title: 'AI', emoji: '🤖', desc: 'Deep AI integrations for agentic workflows' },
+        { title: 'API', emoji: '🔌', desc: 'Build scalable REST & GraphQL APIs' },
+        { title: 'Auth', emoji: '🔐', desc: 'Authentication and authorization' },
+        { title: 'Cache', emoji: '⚡', desc: 'Multi-driver caching system' },
+        { title: 'CLI', emoji: '⌨️', desc: 'Beautiful command-line interfaces' },
+        { title: 'Cloud', emoji: '☁️', desc: 'Cloud infrastructure management' },
+        { title: 'Database', emoji: '🗄️', desc: 'Database connections & migrations' },
+        { title: 'ORM', emoji: '🗺️', desc: 'Elegant object-relational mapper' },
+        { title: 'Router', emoji: '🧭', desc: 'Fast & flexible routing' },
+        { title: 'Validation', emoji: '✅', desc: 'Type-safe validation' },
+        { title: 'Queue', emoji: '📬', desc: 'Background job processing' },
+        { title: 'Storage', emoji: '💾', desc: 'File storage abstraction' },
+        { title: 'Email', emoji: '📧', desc: 'Send emails with ease' },
+        { title: 'Events', emoji: '📡', desc: 'Event-driven architecture' },
+        { title: 'Notifications', emoji: '🔔', desc: 'Multi-channel notifications' },
+        { title: 'Testing', emoji: '🧪', desc: 'Testing utilities & helpers' },
+        { title: 'Search Engine', emoji: '🔍', desc: 'Full-text search capabilities' },
+        { title: 'Realtime', emoji: '⚡', desc: 'WebSocket & real-time features' },
+        { title: 'X-Ray', emoji: '🔬', desc: 'Debugging & monitoring tools' },
+        { title: 'Payments', emoji: '💳', desc: 'Payment processing integration' }
+      ],
+      desktopIcons: [
+        { id: 'about', title: 'About Stacks', icon: '📄', type: 'window', section: 'about' },
+        { id: 'ecosystem', title: 'Ecosystem', icon: '🌐', type: 'window', section: 'ecosystem' },
+        { id: 'backend', title: 'Backend', icon: '⚙️', type: 'window', section: 'backend' },
+        { id: 'frontend', title: 'Frontend', icon: '🎨', type: 'window', section: 'frontend' },
+        { id: 'cloud', title: 'Cloud', icon: '☁️', type: 'window', section: 'cloud' },
+        { id: 'dashboard', title: 'Dashboard', icon: '📊', type: 'window', section: 'dashboard' },
+        { id: 'libraries', title: 'Libraries & CLIs', icon: '📁', type: 'window', section: 'libraries' },
+        { id: 'plugins', title: 'Plugins & Actions', icon: '📁', type: 'window', section: 'plugins' },
+        { id: 'templates', title: 'Templates', icon: '📁', type: 'window', section: 'templates' },
+        { id: 'docs', title: 'Documentation', icon: '📚', type: 'link', url: 'https://stacksjs.org/docs' },
+        { id: 'github', title: 'GitHub', icon: '💻', type: 'link', url: 'https://github.com/stacksjs/stacks' },
+        { id: 'sponsor', title: 'Sponsor', icon: '💖', type: 'link', url: 'https://github.com/sponsors/chrisbbreuer' },
+        { id: 'discord', title: 'Discord', icon: '💬', type: 'link', url: 'https://discord.gg/stacksjs' }
+      ],
+      libraries: [
+        { name: 'aax', url: 'https://github.com/stacksjs/aax', desc: 'A library to work with Audible\'s .aax files.' },
+        { name: 'audiox', url: 'https://github.com/stacksjs/audiox', desc: 'Powerful audio processing for your workflows.' },
+        { name: 'backupx', url: 'https://github.com/stacksjs/backupx', desc: 'Comprehensive & performant database and file backup solution.' },
+        { name: 'besting', url: 'https://github.com/stacksjs/besting', desc: 'A modern & extremely performant testing framework.' },
+        { name: 'buddy-bot', url: 'https://github.com/stacksjs/buddy', desc: 'Just like Renovate and Dependabot, just open source & self-hosted.' },
+        { name: 'bumpx', url: 'https://github.com/stacksjs/bumpx', desc: 'Bump your version numbers automatically.' },
+        { name: 'bun-git-hooks', url: 'https://github.com/stacksjs/bun-git-hooks', desc: 'A simple git hooks manager for all-sized Bun projects.' },
+        { name: 'bun-query-builder', url: 'https://github.com/stacksjs/bun-query-builder', desc: 'A safe, performant & fully-typed query builder.' },
+        { name: 'bun-queue', url: 'https://github.com/stacksjs/queue', desc: 'A modern port of BullMQ. Optimized for Bun usage.' },
+        { name: 'bun-router', url: 'https://github.com/stacksjs/router', desc: 'A powerful yet lightweight router for your server.' },
+        { name: 'bunfig', url: 'https://github.com/stacksjs/bunfig', desc: 'Lightweight & smart Bun configuration loader.' },
+        { name: 'clarity', url: 'https://github.com/stacksjs/clarity', desc: 'Modern debugging & logging for browser & server.' },
+        { name: 'dtsx', url: 'https://github.com/stacksjs/dtsx', desc: 'Extremely fast & configurable DTS emitter.' },
+        { name: 'dnsx', url: 'https://github.com/stacksjs/dnsx', desc: 'A command-line & library DNS client.' },
+        { name: 'gitit', url: 'https://github.com/stacksjs/gitit', desc: 'A simple way to download templates stored using git.' },
+        { name: 'gitlint', url: 'https://github.com/stacksjs/gitlint', desc: 'Minimal & fast Git commit message linting & formatting.' },
+        { name: 'httx', url: 'https://github.com/stacksjs/httx', desc: 'A modern, user-friendly command-line & library HTTP client.' },
+        { name: 'imgx', url: 'https://github.com/stacksjs/imgx', desc: 'Make your images load faster.' },
+        { name: 'jpgx', url: 'https://github.com/stacksjs/jpgx', desc: 'A TypeScript JPEG encoder & decoder for Bun & Node.js.' },
+        { name: 'localtunnels', url: 'https://github.com/stacksjs/localtunnels', desc: 'A simple and smart tunneling alternative.' },
+        { name: 'logsmith', url: 'https://github.com/stacksjs/logsmith', desc: 'Forge beautiful changelogs from your commits.' },
+        { name: 'pickier', url: 'https://github.com/stacksjs/pickier', desc: 'Format, lint, and more—in a fraction of second.' },
+        { name: 'pngx', url: 'https://github.com/stacksjs/pngx', desc: 'Modern PNG encoder & decoder.' },
+        { name: 'post', url: 'https://github.com/stacksjs/post', desc: 'The Post. A modern mail server & utilities.' },
+        { name: 'qrx', url: 'https://github.com/stacksjs/qrx', desc: 'QR & Bar Code generating & reading.' },
+        { name: 'rpx', url: 'https://github.com/stacksjs/rpx', desc: 'A modern, fast reverse proxy.' },
+        { name: 'tlsx', url: 'https://github.com/stacksjs/tlsx', desc: 'A TLS library with automation & HTTPS by default.' },
+        { name: 'ts-avif', url: 'https://github.com/stacksjs/ts-avif', desc: 'High quality & small file sizes.' },
+        { name: 'ts-cache', url: 'https://github.com/stacksjs/ts-cache', desc: 'A fast, type-safe, and feature-rich caching library.' },
+        { name: 'ts-clone', url: 'https://github.com/stacksjs/ts-clone', desc: 'Deeply clone arbitrary objects using TypeScript.' },
+        { name: 'ts-collect', url: 'https://github.com/stacksjs/ts-collect', desc: 'A powerful, yet lightweight, Laravel-like Collections.' },
+        { name: 'ts-countries', url: 'https://github.com/stacksjs/ts-countries', desc: 'Modern, lightweight, elegant country data management.' },
+        { name: 'ts-datetime', url: 'https://github.com/stacksjs/ts-datetime', desc: 'Performant & powerful datetime library.' },
+        { name: 'ts-gif', url: 'https://github.com/stacksjs/ts-gif', desc: 'Performant TypeScript implementation of a GIF encoder & decoder.' },
+        { name: 'ts-i18n', url: 'https://github.com/stacksjs/ts-i18n', desc: 'A fully-typed i18n experience.' },
+        { name: 'ts-inputs', url: 'https://github.com/stacksjs/ts-inputs', desc: 'Modern input masking.' },
+        { name: 'ts-broadcasting', url: 'https://github.com/stacksjs/ts-broadcasting', desc: 'Realtime the simple & performant way.' },
+        { name: 'ts-maps', url: 'https://github.com/stacksjs/ts-maps', desc: 'Modern & lightweight library for creating interactive vector maps.' },
+        { name: 'ts-medium-editor', url: 'https://github.com/stacksjs/ts-medium-editor', desc: 'A modern, minimal & performant Medium-like rich text editor.' },
+        { name: 'ts-mocker', url: 'https://github.com/stacksjs/ts-mocker', desc: 'Performance-focused & lightweight TypeScript faker library.' },
+        { name: 'ts-ndarray', url: 'https://github.com/stacksjs/ts-ndarray', desc: 'Multidimensional arrays for JavaScript & TypeScript.' },
+        { name: 'ts-numbers', url: 'https://github.com/stacksjs/ts-numbers', desc: 'Lightweight currencies, weights, phone numbers, and more.' },
+        { name: 'ts-pkgx', url: 'https://github.com/stacksjs/ts-pkgx', desc: 'Automated Typed Pantry details.' },
+        { name: 'ts-prompts', url: 'https://github.com/stacksjs/ts-prompts', desc: 'Build modern & pretty CLI applications.' },
+        { name: 'ts-punycode', url: 'https://github.com/stacksjs/ts-punycode', desc: 'Lightweight Punycode converter.' },
+        { name: 'ts-rate-limiter', url: 'https://github.com/stacksjs/ts-rate-limiter', desc: 'High-performance, flexible rate limiting library.' },
+        { name: 'ts-security', url: 'https://github.com/stacksjs/ts-security', desc: 'Performant & lightweight cryptography tooling.' },
+        { name: 'ts-slug', url: 'https://github.com/stacksjs/ts-slug', desc: 'Lightweight slug generation.' },
+        { name: 'ts-spreadsheets', url: 'https://github.com/stacksjs/ts-spreadsheets', desc: 'Easily generate spreadsheets, like CSVs and Excel files.' },
+        { name: 'ts-svg', url: 'https://github.com/stacksjs/ts-svg', desc: 'Powerful developer toolkit for working with SVGs.' },
+        { name: 'ts-syntax-highlighter', url: 'https://github.com/stacksjs/ts-syntax-highlighter', desc: 'A syntax highlighter for the modern web.' },
+        { name: 'ts-validation', url: 'https://github.com/stacksjs/ts-validation', desc: 'Lightweight & performant form & request data validation library.' },
+        { name: 'ts-vat', url: 'https://github.com/stacksjs/ts-vat', desc: 'Simply handle EU MOSS tax & VAT regulations & calculations.' },
+        { name: 'ts-webp', url: 'https://github.com/stacksjs/ts-webp', desc: 'A modern image format for the Web.' },
+        { name: 'ts-web-scraper', url: 'https://github.com/stacksjs/ts-web-scraper', desc: 'Powerful, type-safe web scraping tooling.' },
+        { name: 'vidx', url: 'https://github.com/stacksjs/vidx', desc: 'Make your videos load faster.' }
+      ],
+      plugins: [
+        { name: 'action-launchpad', url: 'https://github.com/stacksjs/launchpad', desc: 'GitHub Action to install packages using Launchpad.' },
+        { name: 'action-logsmith', url: 'https://github.com/stacksjs/logsmith', desc: 'Forge beautiful changelogs from your commits.' },
+        { name: 'action-releaser', url: 'https://github.com/stacksjs/action-releaser', desc: 'Simply attach files, like binaries & distributables, to GitHub Releases.' },
+        { name: 'bun-plugin-auto-imports', url: 'https://github.com/stacksjs/bun-plugin-auto-imports', desc: 'Auto Imports support for Bun.' },
+        { name: 'bun-plugin-dotenvx', url: 'https://github.com/stacksjs/bun-plugin-dotenvx', desc: 'A Bun plugin to seamlessly work with dotenvx.' },
+        { name: 'bun-plugin-dtsx', url: 'https://github.com/stacksjs/bun-plugin-dtsx', desc: 'Automatically generate your TypeScript DTS files, using Bun\'s bundler.' },
+        { name: 'bun-plugin-rpx', url: 'https://github.com/stacksjs/bun-plugin-rpx', desc: 'A modern, fast reverse proxy.' },
+        { name: 'bun-plugin-tlsx', url: 'https://github.com/stacksjs/bun-plugin-tlsx', desc: 'Bun plugin for a modern TLS library with automation & HTTPS by default.' },
+        { name: 'bun-plugin-unocss', url: 'https://github.com/stacksjs/bun-plugin-unocss', desc: 'Instant On-demand Atomic CSS Engine - UnoCSS' },
+        { name: 'vite-plugin-dotenvx', url: 'https://github.com/stacksjs/vite-plugin-dotenvx', desc: 'A Vite plugin to seamlessly work with dotenvx.' },
+        { name: 'vite-plugin-layouts', url: 'https://github.com/stacksjs/vite-plugin-layouts', desc: 'Router-based layouts for your application.' },
+        { name: 'vite-plugin-local', url: 'https://github.com/stacksjs/vite-plugin-local', desc: 'Pretty development URLs, and HTTPS.' },
+        { name: 'vite-plugin-rpx', url: 'https://github.com/stacksjs/rpx', desc: 'A Vite plugin for a modern, fast reverse proxy.' },
+        { name: 'vite-plugin-tauri', url: 'https://github.com/stacksjs/vite-plugin-tauri', desc: 'Zero-setup, highly-configurable cross-platform development.' },
+        { name: 'vite-plugin-tlsx', url: 'https://github.com/stacksjs/tlsx', desc: 'Simple, yet powerful TLS library.' }
+      ],
+      templates: [
+        { name: 'projects', url: 'https://github.com/stacksjs/projects', desc: 'A minimal personal portfolio template.' },
+        { name: 'ts-starter', url: 'https://github.com/stacksjs/ts-starter', desc: 'A rather barebones Bun & TypeScript starting point for libraries & CLIs.' },
+        { name: 'ts-starter-monorepo', url: 'https://github.com/stacksjs/ts-starter-monorepo', desc: 'Like our ts-starter, but optimized for monorepos.' }
+      ]
+    };
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Tahoma', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* Desktop Background */
+    .desktop {
+      width: 100%;
+      height: 100%;
+      background-image: url('./bg-img.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Desktop Icons Grid */
+    .desktop-icons {
+      flex: 1;
+      padding: 20px;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    .desktop-icon {
+      width: 100px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 8px !important;
+      cursor: pointer !important;
+      padding: 8px !important;
+      border: 2px solid transparent !important;
+      background: transparent !important;
+      transition: background 0.15s !important;
+      position: absolute !important;
+      user-select: none !important;
+      margin: 0 !important;
+      float: none !important;
+      transform: none !important;
+    }
+
+    .desktop-icon:hover {
+      background: rgba(51, 153, 255, 0.2);
+      border: 2px dotted rgba(51, 153, 255, 0.6);
+    }
+
+    .desktop-icon.selected {
+      background: rgba(51, 153, 255, 0.35) !important;
+      border: 1px dotted rgba(51, 153, 255, 0.9) !important;
+      outline: 1px dotted rgba(255, 255, 255, 0.6);
+      outline-offset: -2px;
+    }
+
+    .desktop-icon-image {
+      font-size: 48px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      position: relative;
+      display: inline-block;
+    }
+
+    /* Shortcut arrow overlay for link icons */
+    .desktop-icon[data-icon-type="link"] .desktop-icon-image::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, transparent 0%, transparent 45%, white 45%, white 100%);
+      border: 1px solid rgba(0, 0, 0, 0.3);
+      border-radius: 2px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    .desktop-icon[data-icon-type="link"] .desktop-icon-image::before {
+      content: '→';
+      position: absolute;
+      bottom: 1px;
+      left: 3px;
+      font-size: 12px;
+      color: #0831d9;
+      font-weight: bold;
+      z-index: 1;
+      text-shadow: 0 0 1px white;
+      transform: rotate(-45deg);
+    }
+
+    .desktop-icon-label {
+      font-size: 12px;
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+      text-align: center;
+      word-wrap: break-word;
+      width: 100%;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+
+    .desktop-icon.selected .desktop-icon-label {
+      background: rgba(8, 49, 217, 0.85);
+      color: white;
+      text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.8);
+    }
+
+    .desktop-icon-label-input {
+      font-size: 12px;
+      color: white;
+      background: #0831d9;
+      border: 1px solid white;
+      text-align: center;
+      width: 100%;
+      padding: 2px 4px;
+      font-family: 'Tahoma', sans-serif;
+      outline: none;
+    }
+
+    /* Taskbar */
+    .taskbar {
+      height: 40px;
+      background: linear-gradient(to bottom, #245edb 0%, #3f8cf3 9%, #245edb 18%, #245edb 92%, #1941a5 100%);
+      border-top: 1px solid #0831d9;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      position: relative;
+      z-index: 10000;
+    }
+
+    .start-button {
+      height: 32px;
+      background: linear-gradient(to bottom, #5eac56 0%, #3c873c 100%);
+      border: 1px solid #16591e;
+      border-radius: 4px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      font-weight: bold;
+      color: white;
+      font-size: 14px;
+      text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+      transition: all 0.1s;
+    }
+
+    .start-button:hover {
+      background: linear-gradient(to bottom, #6ec165 0%, #4a9d4a 100%);
+    }
+
+    .start-button:active {
+      box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .start-logo {
+      font-size: 20px;
+    }
+
+    .taskbar-tasks {
+      flex: 1;
+      display: flex;
+      gap: 4px;
+      margin-left: 12px;
+      overflow-x: auto;
+    }
+
+    .taskbar-task {
+      height: 32px;
+      min-width: 160px;
+      max-width: 200px;
+      background: linear-gradient(to bottom, #3f8cf3 0%, #245edb 100%);
+      border: 1px solid #0831d9;
+      border-radius: 3px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      color: white;
+      font-size: 12px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      transition: all 0.1s;
+    }
+
+    .taskbar-task:hover {
+      background: linear-gradient(to bottom, #4a9dff 0%, #2968e8 100%);
+    }
+
+    .taskbar-task.active {
+      background: linear-gradient(to bottom, #245edb 0%, #1941a5 100%);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .taskbar-task-icon {
+      font-size: 16px;
+    }
+
+    .taskbar-task-label {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .taskbar-clock {
+      height: 32px;
+      background: rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      border-radius: 3px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      color: white;
+      font-size: 12px;
+      margin-left: auto;
+    }
+
+    /* Window */
+    .window {
+      position: absolute;
+      background: white;
+      border: 1px solid #0831d9;
+      border-radius: 8px 8px 0 0;
+      box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+      min-width: 400px;
+      min-height: 300px;
+      display: none;
+      flex-direction: column;
+      z-index: 100;
+      resize: both;
+      overflow: hidden;
+    }
+
+    /* Resize cursors for window edges */
+    .window:not(.maximized) {
+      cursor: default;
+    }
+
+    .window:not(.maximized):hover {
+      cursor: default;
+    }
+
+    .window.active {
+      display: flex;
+    }
+
+    .window.maximized {
+      left: 0 !important;
+      top: 0 !important;
+      width: 100% !important;
+      height: calc(100% - 40px) !important;
+      border-radius: 0 !important;
+    }
+
+    .window.maximized .window-titlebar {
+      border-radius: 0 !important;
+    }
+
+    .window-titlebar {
+      height: 32px;
+      background: linear-gradient(to bottom, #0997ff 0%, #0053ee 100%);
+      border-radius: 8px 8px 0 0;
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: move;
+      user-select: none;
+    }
+
+    .window-icon {
+      font-size: 16px;
+    }
+
+    .window-title {
+      flex: 1;
+      color: white;
+      font-size: 13px;
+      font-weight: bold;
+      text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 4px;
+    }
+
+    .window-control {
+      width: 21px;
+      height: 21px;
+      border: 1px solid #003c74;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: all 0.1s;
+      background: linear-gradient(to bottom, #0997ff 0%, #0053ee 100%);
+      color: white;
+    }
+
+    .window-control:hover {
+      background: linear-gradient(to bottom, #1ba1ff 0%, #0d65ff 100%);
+    }
+
+    .window-control.close {
+      background: linear-gradient(to bottom, #ff5f57 0%, #e81123 100%);
+      border-color: #c0392b;
+    }
+
+    .window-control.close:hover {
+      background: linear-gradient(to bottom, #ff6f67 0%, #f82133 100%);
+    }
+
+    .window-content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: white;
+      color: #000;
+    }
+
+    .window-content h2 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      color: #0831d9;
+    }
+
+    .window-content h3 {
+      font-size: 18px;
+      margin: 16px 0 8px;
+      color: #245edb;
+    }
+
+    .window-content p {
+      margin-bottom: 12px;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    /* Package Grid */
+    .package-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .package-item {
+      border: 2px solid #0831d9;
+      padding: 12px;
+      background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .package-item:hover {
+      background: linear-gradient(to bottom, #fff7e6 0%, #f0ead0 100%);
+      border-color: #245edb;
+      transform: translateY(-2px);
+      box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .package-emoji {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .package-title {
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: #0831d9;
+    }
+
+    .package-desc {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.4;
+    }
+
+    /* Feature Buttons */
+    .feature-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .feature-btn {
+      padding: 8px 16px;
+      background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+      border: 2px solid #0831d9;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+      font-family: 'Tahoma', sans-serif;
+    }
+
+    .feature-btn:hover {
+      background: linear-gradient(to bottom, #fff7e6 0%, #f0ead0 100%);
+      border-color: #245edb;
+    }
+
+    .feature-btn.active {
+      background: linear-gradient(to bottom, #0997ff 0%, #0053ee 100%);
+      color: white;
+      font-weight: bold;
+    }
+
+    .code-display {
+      background: #000;
+      color: #0f0;
+      padding: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      border: 2px solid #0831d9;
+      margin-top: 12px;
+    }
+
+    /* Draggable */
+    .dragging {
+      opacity: 0.8;
+      z-index: 10000;
+    }
+
+    /* Start Menu */
+    .start-menu {
+      position: absolute;
+      bottom: 40px;
+      left: 0;
+      width: 350px;
+      max-height: calc(100vh - 60px);
+      background: linear-gradient(to right, #245edb 0px, #245edb 40px, #ece9d8 40px, #ece9d8 100%);
+      border: 2px solid #0831d9;
+      box-shadow: 2px -2px 8px rgba(0, 0, 0, 0.3);
+      display: none;
+      flex-direction: column;
+      z-index: 9999;
+      overflow: visible;
+    }
+
+    .start-menu.active {
+      display: flex;
+    }
+
+    .start-menu-header {
+      background: linear-gradient(to bottom, #0997ff 0%, #0053ee 100%);
+      padding: 8px 12px;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      border-bottom: 1px solid #0831d9;
+    }
+
+    .start-menu-user {
+      background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+      padding: 12px 50px 12px 12px;
+      border-bottom: 1px solid #b0b0b0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .start-menu-user-icon {
+      font-size: 32px;
+    }
+
+    .start-menu-items {
+      flex: 1;
+      overflow: visible;
+      background: #ece9d8;
+      padding: 8px 0;
+    }
+
+    .start-menu-item {
+      padding: 8px 50px 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      width: 100%;
+      text-align: left;
+      font-family: 'Tahoma', sans-serif;
+      font-size: 13px;
+      transition: background 0.15s;
+      position: relative;
+    }
+
+    .start-menu-item:hover {
+      background: linear-gradient(to right, #0997ff 0%, #0053ee 100%);
+      color: white;
+    }
+
+    .start-menu-item.has-submenu {
+      position: relative;
+    }
+
+    .start-menu-item.has-submenu::after {
+      content: '▶';
+      position: absolute;
+      right: 12px;
+      font-size: 10px;
+    }
+
+    .start-submenu {
+      position: absolute;
+      left: calc(100% - 4px);
+      bottom: -2px;
+      min-width: 220px;
+      max-height: 460px;
+      background: #ece9d8;
+      border: 2px solid #0831d9;
+      box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+      display: none;
+      flex-direction: column;
+      z-index: 10001;
+      padding: 4px 0;
+      overflow-y: auto;
+    }
+
+    .start-menu-item.has-submenu:hover > .start-submenu {
+      display: flex;
+    }
+
+    .start-submenu .start-menu-item {
+      padding: 6px 12px 6px 8px;
+      color: #000;
+    }
+
+    .start-submenu .start-menu-item:hover {
+      background: linear-gradient(to right, #0997ff 0%, #0053ee 100%);
+      color: white;
+    }
+
+    .start-menu-item-icon {
+      font-size: 24px;
+      width: 32px;
+      text-align: center;
+      position: relative;
+    }
+
+    /* Shortcut indicator for external links in start menu */
+    .start-menu-item[onclick*="window.open"] .start-menu-item-icon::after {
+      content: '↗';
+      position: absolute;
+      bottom: -2px;
+      right: 0;
+      font-size: 10px;
+      color: #0831d9;
+      font-weight: bold;
+      background: white;
+      border-radius: 2px;
+      padding: 1px 2px;
+      border: 1px solid #999;
+    }
+
+    .start-menu-separator {
+      height: 1px;
+      background: #b0b0b0;
+      margin: 4px 50px 4px 12px;
+    }
+
+    .start-menu-footer {
+      background: linear-gradient(to bottom, #0997ff 0%, #0053ee 100%);
+      padding: 8px 12px;
+      display: flex;
+      gap: 8px;
+      border-top: 1px solid #0831d9;
+    }
+
+    .start-menu-footer-btn {
+      flex: 1;
+      padding: 6px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 3px;
+      color: white;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: 'Tahoma', sans-serif;
+    }
+
+    .start-menu-footer-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Notification Popup */
+    .notification-popup {
+      position: fixed;
+      bottom: 50px;
+      right: 20px;
+      width: 320px;
+      background: linear-gradient(to bottom, #ffffff 0%, #f5f5f5 100%);
+      border: 2px solid #0831d9;
+      border-radius: 8px;
+      box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3);
+      padding: 14px 16px;
+      z-index: 10002;
+      animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(360px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .notification-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #c0c0c0;
+    }
+
+    .notification-icon {
+      font-size: 22px;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .notification-title {
+      font-weight: bold;
+      font-size: 14px;
+      color: #0831d9;
+      flex: 1;
+    }
+
+    .notification-count {
+      background: #e8e8e8;
+      color: #555;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid #c0c0c0;
+      min-width: 22px;
+      text-align: center;
+      margin-right: 8px;
+    }
+
+    .notification-body {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #333;
+      margin-bottom: 12px;
+    }
+
+    .notification-features {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .notification-feature {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #333;
+    }
+
+    .notification-feature-icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+      border: 2px solid #999;
+      flex-shrink: 0;
+      background: white;
+    }
+
+    .notification-close {
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(to bottom, #ff5f57 0%, #e81123 100%);
+      border: 1px solid #c0392b;
+      border-radius: 3px;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.1s;
+      flex-shrink: 0;
+    }
+
+    .notification-close:hover {
+      background: linear-gradient(to bottom, #ff6f67 0%, #f82133 100%);
+    }
+
+    .notification-popup.hidden {
+      display: none;
+    }
+
+    .notification-separator {
+      height: 1px;
+      background: #c0c0c0;
+      margin: 12px 0;
+    }
+
+    .notification-signup {
+      margin-top: 8px;
+    }
+
+    .notification-signup-text {
+      font-size: 12px;
+      color: #333;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .notification-signup-form {
+      display: flex;
+      gap: 6px;
+    }
+
+    .notification-email-input {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 12px;
+      font-family: 'Tahoma', sans-serif;
+      border: 1px solid #7f9db9;
+      background: white;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .notification-email-input:focus {
+      border-color: #0831d9;
+      box-shadow: inset 0 0 0 1px #0831d9;
+    }
+
+    .notification-signup-btn {
+      padding: 6px 16px;
+      background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+      border: 1px solid #0831d9;
+      border-radius: 2px;
+      font-size: 12px;
+      font-weight: bold;
+      font-family: 'Tahoma', sans-serif;
+      cursor: pointer;
+      color: #000;
+      transition: all 0.1s;
+      white-space: nowrap;
+    }
+
+    .notification-signup-btn:hover {
+      background: linear-gradient(to bottom, #fff7e6 0%, #f0ead0 100%);
+      border-color: #245edb;
+    }
+
+    .notification-signup-btn:active {
+      background: linear-gradient(to bottom, #ece9d8 0%, #ddd 100%);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .notification-success-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+    }
+
+    .notification-success-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(to bottom, #5eac56 0%, #3c873c 100%);
+      border: 2px solid #16591e;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .notification-success-text {
+      flex: 1;
+    }
+
+    .notification-success-title {
+      font-size: 13px;
+      font-weight: bold;
+      color: #0831d9;
+      margin-bottom: 2px;
+    }
+
+    .notification-success-subtitle {
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* Context Menu */
+    .context-menu {
+      position: fixed;
+      background: #ece9d8;
+      border: 2px outset #fff;
+      box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      z-index: 10003;
+      min-width: 200px;
+      max-width: 280px;
+      max-height: calc(100vh - 60px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 2px;
+    }
+
+    .context-menu[hidden] {
+      display: none !important;
+    }
+
+    /* Scrollbar styling for context menu */
+    .context-menu::-webkit-scrollbar {
+      width: 16px;
+    }
+
+    .context-menu::-webkit-scrollbar-track {
+      background: #d4d0c8;
+    }
+
+    .context-menu::-webkit-scrollbar-thumb {
+      background: #888;
+      border: 1px solid #666;
+    }
+
+    .context-menu::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    .context-menu-item {
+      padding: 4px 24px 4px 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      width: 100%;
+      text-align: left;
+      font-family: 'Tahoma', sans-serif;
+      font-size: 11px;
+      transition: background 0.1s;
+      position: relative;
+      color: #000;
+      white-space: nowrap;
+    }
+
+    .context-menu-item:hover {
+      background: #316ac5;
+      color: white;
+    }
+
+    .context-menu-item-icon {
+      position: absolute;
+      left: 4px;
+      font-size: 14px;
+      width: 20px;
+      text-align: center;
+    }
+
+    .context-menu-separator {
+      height: 1px;
+      background: #808080;
+      margin: 2px 2px;
+      border-top: 1px solid #fff;
+    }
+
+    .context-menu-item.has-submenu::after {
+      content: '▶';
+      position: absolute;
+      right: 8px;
+      font-size: 8px;
+    }
+
+    .context-submenu {
+      position: absolute;
+      left: calc(100% - 2px);
+      top: -2px;
+      background: #ece9d8;
+      border: 2px outset #fff;
+      box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.4);
+      display: none;
+      flex-direction: column;
+      min-width: 180px;
+      padding: 2px;
+      z-index: 10004;
+    }
+
+    .context-menu-item:hover > .context-submenu {
+      display: flex;
+    }
+
+    /* Folder Contents */
+    .folder-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .folder-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 8px 12px;
+      background: white;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .folder-item:hover {
+      background: linear-gradient(to bottom, #fff7e6 0%, #f0ead0 100%);
+      border: 1px solid #0831d9;
+    }
+
+    .folder-item-icon {
+      font-size: 16px;
+      min-width: 20px;
+      margin-top: 2px;
+    }
+
+    .folder-item-content {
+      flex: 1;
+    }
+
+    .folder-item-name {
+      font-weight: bold;
+      font-size: 13px;
+      color: #0831d9;
+      margin-bottom: 2px;
+    }
+
+    .folder-item-desc {
+      font-size: 11px;
+      color: #666;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="desktop">
+    <!-- Desktop Icons -->
+    <div class="desktop-icons">
+      @foreach(desktopIcons as icon)
+        <button
+          class="desktop-icon"
+          data-icon-id="{{ icon.id }}"
+          data-icon-type="{{ icon.type }}"
+          data-icon-section="{{ icon.section }}"
+          data-icon-url="{{ icon.url }}"
+        >
+          <div class="desktop-icon-image">{{ icon.icon }}</div>
+          <div class="desktop-icon-label">{{ icon.title }}</div>
+        </button>
+      @endforeach
+    </div>
+
+    <!-- Windows -->
+    <div id="window-about" class="window" style="left: 100px; top: 80px; width: 600px; height: 500px;">
+      <div class="window-titlebar">
+        <div class="window-icon">📄</div>
+        <div class="window-title">About Stacks</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('about')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('about')">□</button>
+          <button class="window-control close" onclick="closeWindow('about')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>STACKS.JS</h2>
+        <h3>Rapid Development Framework</h3>
+        <p>
+          A TypeScript framework for building modern web applications, APIs, and cloud infrastructure.
+        </p>
+        <p>
+          Stacks provides an elegant, opinionated solution for common development needs with a focus on
+          developer experience and productivity.
+        </p>
+        <p>
+          Built on <strong>Bun</strong>, <strong>TypeScript</strong>, and <strong>Tauri</strong>.
+        </p>
+        <div style="margin-top: 24px; padding: 12px; background: #fffacd; border: 2px solid #ffd700;">
+          <p style="margin: 0; font-weight: bold;">✨ Convention over configuration, while staying wholly configurable</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="window-ecosystem" class="window" style="left: 150px; top: 100px; width: 800px; height: 600px;">
+      <div class="window-titlebar">
+        <div class="window-icon">🌐</div>
+        <div class="window-title">Ecosystem</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('ecosystem')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('ecosystem')">□</button>
+          <button class="window-control close" onclick="closeWindow('ecosystem')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Ecosystem</h2>
+        <p>Out of the box, Stacks has elegant solutions for the common features needed by all modern applications.</p>
+
+        <div class="package-grid">
+          @foreach(packages as package)
+            <div class="package-item">
+              <div class="package-emoji">{{ package.emoji }}</div>
+              <div class="package-title">{{ package.title }}</div>
+              <div class="package-desc">{{ package.desc }}</div>
+            </div>
+          @endforeach
+        </div>
+      </div>
+    </div>
+
+    <div id="window-backend" class="window" style="left: 200px; top: 120px; width: 700px; height: 550px;">
+      <div class="window-titlebar">
+        <div class="window-icon">⚙️</div>
+        <div class="window-title">Backend Features</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('backend')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('backend')">□</button>
+          <button class="window-control close" onclick="closeWindow('backend')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Backend</h2>
+        <p>Simple, elegant syntax powers amazing functionality.</p>
+
+        <div class="feature-buttons">
+          <button class="feature-btn active" onclick="showFeature('backend', 'auth')">Authentication</button>
+          <button class="feature-btn" onclick="showFeature('backend', 'orm')">ORM</button>
+          <button class="feature-btn" onclick="showFeature('backend', 'validation')">Validation</button>
+          <button class="feature-btn" onclick="showFeature('backend', 'storage')">Storage</button>
+          <button class="feature-btn" onclick="showFeature('backend', 'queue')">Queues</button>
+          <button class="feature-btn" onclick="showFeature('backend', 'events')">Events</button>
+        </div>
+
+        <div id="backend-feature-content">
+          <h3>Authentication</h3>
+          <div class="code-display">
+import { Auth } from '@stacksjs/auth'
+
+// Login user
+const user = await Auth.attempt({
+  email: 'user@example.com',
+  password: 'secret'
+})
+
+// Get authenticated user
+const current = await Auth.user()
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="window-frontend" class="window" style="left: 250px; top: 140px; width: 700px; height: 550px;">
+      <div class="window-titlebar">
+        <div class="window-icon">🎨</div>
+        <div class="window-title">Frontend Features</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('frontend')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('frontend')">□</button>
+          <button class="window-control close" onclick="closeWindow('frontend')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Frontend</h2>
+        <p>Develop dynamic UIs with helpers for atomic design, and much more.</p>
+        <p style="color: #666; font-size: 12px;">⚡️ Powered by TypeScript, Bun & Tauri</p>
+
+        <div class="feature-buttons">
+          <button class="feature-btn active" onclick="showFeature('frontend', 'components')">Components</button>
+          <button class="feature-btn" onclick="showFeature('frontend', 'ui-kit')">UI Kit</button>
+          <button class="feature-btn" onclick="showFeature('frontend', 'routing')">Routing</button>
+          <button class="feature-btn" onclick="showFeature('frontend', 'desktop')">Desktop</button>
+        </div>
+
+        <div id="frontend-feature-content">
+          <h3>Components</h3>
+          <div class="code-display">
+&lt;template&gt;
+  &lt;Card title="Hello"&gt;
+    &lt;p&gt;Reusable components&lt;/p&gt;
+  &lt;/Card&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+// Auto-imported
+&lt;/script&gt;
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="window-cloud" class="window" style="left: 300px; top: 160px; width: 700px; height: 550px;">
+      <div class="window-titlebar">
+        <div class="window-icon">☁️</div>
+        <div class="window-title">Cloud Features</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('cloud')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('cloud')">□</button>
+          <button class="window-control close" onclick="closeWindow('cloud')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Cloud</h2>
+        <p>Develop & maintain cloud infrastructure with ease.</p>
+        <p style="color: #666; font-size: 12px;">Imagine Vercel, Vapor and Forge having been unified.</p>
+
+        <div class="feature-buttons">
+          <button class="feature-btn active" onclick="showFeature('cloud', 'deployment')">Deployment</button>
+          <button class="feature-btn" onclick="showFeature('cloud', 'storage')">Storage</button>
+          <button class="feature-btn" onclick="showFeature('cloud', 'cdn')">CDN</button>
+          <button class="feature-btn" onclick="showFeature('cloud', 'dns')">DNS</button>
+        </div>
+
+        <div id="cloud-feature-content">
+          <h3>Deployment</h3>
+          <div class="code-display">
+export default {
+  provider: 'aws',
+  region: 'us-east-1',
+
+  compute: {
+    type: 'serverless',
+    memory: 1024
+  }
+}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="window-dashboard" class="window" style="left: 350px; top: 180px; width: 600px; height: 400px;">
+      <div class="window-titlebar">
+        <div class="window-icon">📊</div>
+        <div class="window-title">Dashboard</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('dashboard')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('dashboard')">□</button>
+          <button class="window-control close" onclick="closeWindow('dashboard')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Dashboard</h2>
+        <div style="margin-top: 40px; text-align: center;">
+          <div style="font-size: 64px; margin-bottom: 20px;">🚧</div>
+          <h3 style="color: #0831d9; margin-bottom: 12px;">Work in Progress</h3>
+          <p style="color: #666;">The Stacks Dashboard is currently under development.</p>
+          <p style="color: #666; margin-top: 8px;">Check back soon for exciting new features!</p>
+          <div style="margin-top: 32px; padding: 16px; background: #fffacd; border: 2px solid #ffd700; border-radius: 4px; display: inline-block;">
+            <p style="margin: 0; font-weight: bold; color: #333;">💡 Coming Soon: Real-time metrics, analytics, and insights</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="window-libraries" class="window" style="left: 120px; top: 100px; width: 700px; height: 600px;">
+      <div class="window-titlebar">
+        <div class="window-icon">📁</div>
+        <div class="window-title">Libraries & CLIs</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('libraries')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('libraries')">□</button>
+          <button class="window-control close" onclick="closeWindow('libraries')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Libraries & CLIs</h2>
+        <p style="margin-bottom: 16px;">Powerful TypeScript libraries and command-line tools for modern development.</p>
+        <div class="folder-list">
+          @foreach(libraries as library)
+            <a href="{{ library.url }}" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📦</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">{{ library.name }}</div>
+                <div class="folder-item-desc">{{ library.desc }}</div>
+              </div>
+            </a>
+          @endforeach
+        </div>
+      </div>
+    </div>
+
+    <div id="window-plugins" class="window" style="left: 170px; top: 120px; width: 700px; height: 550px;">
+      <div class="window-titlebar">
+        <div class="window-icon">📁</div>
+        <div class="window-title">Plugins & Actions</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('plugins')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('plugins')">□</button>
+          <button class="window-control close" onclick="closeWindow('plugins')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Plugins & Actions</h2>
+        <p style="margin-bottom: 16px;">Build plugins and GitHub Actions to enhance your development workflow.</p>
+        <div class="folder-list">
+          @foreach(plugins as plugin)
+            <a href="{{ plugin.url }}" target="_blank" class="folder-item">
+              <div class="folder-item-icon">🔌</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">{{ plugin.name }}</div>
+                <div class="folder-item-desc">{{ plugin.desc }}</div>
+              </div>
+            </a>
+          @endforeach
+        </div>
+      </div>
+    </div>
+
+    <div id="window-templates" class="window" style="left: 220px; top: 140px; width: 650px; height: 400px;">
+      <div class="window-titlebar">
+        <div class="window-icon">📁</div>
+        <div class="window-title">Templates</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('templates')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('templates')">□</button>
+          <button class="window-control close" onclick="closeWindow('templates')">×</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <h2>Templates</h2>
+        <p style="margin-bottom: 16px;">Starter templates to jumpstart your TypeScript projects.</p>
+        <div class="folder-list">
+          @foreach(templates as template)
+            <a href="{{ template.url }}" target="_blank" class="folder-item">
+              <div class="folder-item-icon">📋</div>
+              <div class="folder-item-content">
+                <div class="folder-item-name">{{ template.name }}</div>
+                <div class="folder-item-desc">{{ template.desc }}</div>
+              </div>
+            </a>
+          @endforeach
+        </div>
+      </div>
+    </div>
+
+    <!-- Start Menu -->
+    <div class="start-menu" id="start-menu">
+      <div class="start-menu-header">
+        STACKS.JS
+      </div>
+      <div class="start-menu-user">
+        <div class="start-menu-user-icon">👤</div>
+        <div>Developer</div>
+      </div>
+      <div class="start-menu-items">
+        <button class="start-menu-item" onclick="openWindow('about')">
+          <div class="start-menu-item-icon">📄</div>
+          <div>About Stacks</div>
+        </button>
+        <button class="start-menu-item" onclick="openWindow('ecosystem')">
+          <div class="start-menu-item-icon">🌐</div>
+          <div>Ecosystem</div>
+        </button>
+        <div class="start-menu-item has-submenu">
+          <div class="start-menu-item-icon">⚙️</div>
+          <div>Backend</div>
+          <div class="start-submenu">
+            <button class="start-menu-item" onclick="openWindow('backend'); setTimeout(() => showFeature('backend', 'auth'), 100)">
+              <div class="start-menu-item-icon">🔐</div>
+              <div>Authentication</div>
+            </button>
+            <button class="start-menu-item" onclick="openWindow('backend'); setTimeout(() => showFeature('backend', 'orm'), 100)">
+              <div class="start-menu-item-icon">🗺️</div>
+              <div>ORM</div>
+            </button>
+            <button class="start-menu-item" onclick="openWindow('backend'); setTimeout(() => showFeature('backend', 'validation'), 100)">
+              <div class="start-menu-item-icon">✅</div>
+              <div>Validation</div>
+            </button>
+            <button class="start-menu-item" onclick="openWindow('backend'); setTimeout(() => showFeature('backend', 'storage'), 100)">
+              <div class="start-menu-item-icon">💾</div>
+              <div>Storage</div>
+            </button>
+            <button class="start-menu-item" onclick="openWindow('backend'); setTimeout(() => showFeature('backend', 'queue'), 100)">
+              <div class="start-menu-item-icon">📬</div>
+              <div>Queues</div>
+            </button>
+            <button class="start-menu-item" onclick="openWindow('backend'); setTimeout(() => showFeature('backend', 'events'), 100)">
+              <div class="start-menu-item-icon">📡</div>
+              <div>Events</div>
+            </button>
+          </div>
+        </div>
+        <div class="start-menu-item has-submenu">
+          <div class="start-menu-item-icon">🎨</div>
+          <div>Frontend</div>
+          <div class="start-submenu">
+            <button class="start-menu-item" onclick="openWindow('frontend'); setTimeout(() => showFeature('frontend', 'components'), 100)">
+              <div class="start-menu-item-icon">🧩</div>
+              <div>Components</div>
+            </button>
+            <button class="start-menu-item" onclick="openWindow('frontend'); setTimeout(() => showFeature('frontend', 'ui-kit'), 100)">
+              <div class="start-menu-item-icon">🎨</div>
+              <div>UI Kit</div>
+            </button>
+            <button class="start-menu-item" onclick="openWindow('frontend'); setTimeout(() => showFeature('frontend', 'routing'), 100)">
+              <div class="start-menu-item-icon">🧭</div>
+              <div>Routing</div>
+            </button>
+            <button class="start-menu-item" onclick="openWindow('frontend'); setTimeout(() => showFeature('frontend', 'desktop'), 100)">
+              <div class="start-menu-item-icon">🖥️</div>
+              <div>Desktop</div>
+            </button>
+          </div>
+        </div>
+        <div class="start-menu-item has-submenu">
+          <div class="start-menu-item-icon">☁️</div>
+          <div>Cloud</div>
+          <div class="start-submenu">
+            <button class="start-menu-item" onclick="openWindow('cloud'); setTimeout(() => showFeature('cloud', 'deployment'), 100)">
+              <div class="start-menu-item-icon">🚀</div>
+              <div>Deployment</div>
+            </button>
+            <button class="start-menu-item" onclick="openWindow('cloud'); setTimeout(() => showFeature('cloud', 'storage'), 100)">
+              <div class="start-menu-item-icon">💾</div>
+              <div>Storage</div>
+            </button>
+            <button class="start-menu-item" onclick="openWindow('cloud'); setTimeout(() => showFeature('cloud', 'cdn'), 100)">
+              <div class="start-menu-item-icon">🌍</div>
+              <div>CDN</div>
+            </button>
+            <button class="start-menu-item" onclick="openWindow('cloud'); setTimeout(() => showFeature('cloud', 'dns'), 100)">
+              <div class="start-menu-item-icon">🔗</div>
+              <div>DNS</div>
+            </button>
+          </div>
+        </div>
+        <button class="start-menu-item" onclick="openWindow('dashboard')">
+          <div class="start-menu-item-icon">📊</div>
+          <div>Dashboard</div>
+        </button>
+        <div class="start-menu-separator"></div>
+        <div class="start-menu-item has-submenu">
+          <div class="start-menu-item-icon">💎</div>
+          <div>Sponsorware</div>
+          <div class="start-submenu">
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/bun-queue', '_blank')">
+              <div class="start-menu-item-icon">📬</div>
+              <div>bun-queue</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/bun-router', '_blank')">
+              <div class="start-menu-item-icon">🧭</div>
+              <div>bun-router</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/stacks-dashboard', '_blank')">
+              <div class="start-menu-item-icon">📊</div>
+              <div>Stacks Dashboard</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/stacks-orm-dynamodb', '_blank')">
+              <div class="start-menu-item-icon">🗄️</div>
+              <div>Stacks ORM - DynamoDB</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/stacks-raycast', '_blank')">
+              <div class="start-menu-item-icon">🔍</div>
+              <div>Stacks Raycast</div>
+            </button>
+          </div>
+        </div>
+        <div class="start-menu-item has-submenu">
+          <div class="start-menu-item-icon">📱</div>
+          <div>Apps</div>
+          <div class="start-submenu">
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/barista', '_blank')">
+              <div class="start-menu-item-icon">☕</div>
+              <div>Barista</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/hush', '_blank')">
+              <div class="start-menu-item-icon">🤫</div>
+              <div>Hush</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/pomodoro', '_blank')">
+              <div class="start-menu-item-icon">🍅</div>
+              <div>Pomodoro</div>
+            </button>
+          </div>
+        </div>
+        <div class="start-menu-item has-submenu">
+          <div class="start-menu-item-icon">🏗️</div>
+          <div>Frameworks</div>
+          <div class="start-submenu">
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/bunpress', '_blank')">
+              <div class="start-menu-item-icon">📚</div>
+              <div>BunPress</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/clapp', '_blank')">
+              <div class="start-menu-item-icon">⌨️</div>
+              <div>Clapp</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/headwind', '_blank')">
+              <div class="start-menu-item-icon">💨</div>
+              <div>Headwind</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/launchpad', '_blank')">
+              <div class="start-menu-item-icon">🚀</div>
+              <div>Launchpad</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank')">
+              <div class="start-menu-item-icon">📚</div>
+              <div>Stacks</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/stx', '_blank')">
+              <div class="start-menu-item-icon">⚡</div>
+              <div>stx</div>
+            </button>
+          </div>
+        </div>
+        <div class="start-menu-separator"></div>
+        <div class="start-menu-item has-submenu">
+          <div class="start-menu-item-icon">🔗</div>
+          <div>Resources</div>
+          <div class="start-submenu">
+            <button class="start-menu-item" onclick="window.open('https://stacksjs.org/docs', '_blank')">
+              <div class="start-menu-item-icon">📚</div>
+              <div>Documentation</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank')">
+              <div class="start-menu-item-icon">💻</div>
+              <div>GitHub</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://github.com/sponsors/chrisbbreuer', '_blank')">
+              <div class="start-menu-item-icon">💖</div>
+              <div>Sponsor</div>
+            </button>
+            <button class="start-menu-item" onclick="window.open('https://discord.gg/stacksjs', '_blank')">
+              <div class="start-menu-item-icon">💬</div>
+              <div>Discord</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Taskbar -->
+    <div class="taskbar">
+      <button class="start-button" id="start-button">
+        <span class="start-logo">🪟</span>
+        <span>start</span>
+      </button>
+      <div class="taskbar-tasks" id="taskbar-tasks"></div>
+      <div class="taskbar-clock" id="clock">12:00 PM</div>
+    </div>
+
+    <!-- Notification Popup -->
+    <div class="notification-popup" id="notification-popup">
+      <div class="notification-header">
+        <div class="notification-icon">⭐</div>
+        <div class="notification-title">Build Anything</div>
+        <div class="notification-count">5</div>
+        <button class="notification-close" onclick="closeNotification()">×</button>
+      </div>
+      <div class="notification-features">
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>Modern web applications & APIs</div>
+        </div>
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>Desktop apps with Tauri</div>
+        </div>
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>Cloud infrastructure & serverless</div>
+        </div>
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>Type-safe with TypeScript</div>
+        </div>
+        <div class="notification-feature">
+          <div class="notification-feature-icon"></div>
+          <div>Lightning fast with Bun</div>
+        </div>
+      </div>
+      <div class="notification-signup" id="notification-signup">
+        <div class="notification-separator"></div>
+        <div class="notification-signup-text">Get updates on new features & releases:</div>
+        <div class="notification-signup-form">
+          <input
+            type="email"
+            id="notification-email"
+            class="notification-email-input"
+            placeholder="your@email.com"
+            autocomplete="email"
+          />
+          <button class="notification-signup-btn" onclick="handleEmailSignup()">
+            Sign Up
+          </button>
+        </div>
+      </div>
+      <div class="notification-success" id="notification-success" style="display: none;">
+        <div class="notification-separator"></div>
+        <div class="notification-success-content">
+          <div class="notification-success-icon">✓</div>
+          <div class="notification-success-text">
+            <div class="notification-success-title">Thanks for subscribing!</div>
+            <div class="notification-success-subtitle">We'll keep you updated.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context Menu (outside desktop div to avoid layout inheritance) -->
+  <div class="context-menu" id="context-menu" style="display: none;">
+    <button class="context-menu-item has-submenu">
+      <div class="context-menu-item-icon">📤</div>
+      <div>Share with a friend...</div>
+      <div class="context-submenu">
+        <button class="context-menu-item" onclick="shareVia('twitter')">
+          <div class="context-menu-item-icon">🐦</div>
+          <div>Share on Twitter</div>
+        </button>
+        <button class="context-menu-item" onclick="shareVia('linkedin')">
+          <div class="context-menu-item-icon">💼</div>
+          <div>Share on LinkedIn</div>
+        </button>
+        <button class="context-menu-item" onclick="shareVia('email')">
+          <div class="context-menu-item-icon">📧</div>
+          <div>Share via Email</div>
+        </button>
+        <button class="context-menu-item" onclick="shareVia('copy')">
+          <div class="context-menu-item-icon">📋</div>
+          <div>Copy Link</div>
+        </button>
+      </div>
+    </button>
+    <div class="context-menu-separator"></div>
+    <button class="context-menu-item" onclick="copyLogoSVG()">
+      <div class="context-menu-item-icon">🎨</div>
+      <div>Copy Logo as SVG</div>
+    </button>
+    <button class="context-menu-item" onclick="copyWordmarkSVG()">
+      <div class="context-menu-item-icon">✏️</div>
+      <div>Copy Wordmark as SVG</div>
+    </button>
+    <button class="context-menu-item" onclick="window.open('https://stacksjs.org/brand', '_blank')">
+      <div class="context-menu-item-icon">📖</div>
+      <div>Brand Guidelines</div>
+    </button>
+    <div class="context-menu-separator"></div>
+    <button class="context-menu-item" onclick="window.open('https://stacksjs.org/docs', '_blank')">
+      <div class="context-menu-item-icon">📚</div>
+      <div>Documentation</div>
+    </button>
+    <button class="context-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank')">
+      <div class="context-menu-item-icon">💻</div>
+      <div>View on GitHub</div>
+    </button>
+    <div class="context-menu-separator"></div>
+    <button class="context-menu-item" onclick="window.location.reload()">
+      <div class="context-menu-item-icon">🔄</div>
+      <div>Refresh</div>
+    </button>
+  </div>
+
+  <script>
+    console.log('=== JAVASCRIPT STARTING ===');
+
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      const month = now.getMonth() + 1;
+      const day = now.getDate();
+      const year = now.getFullYear();
+      const hours = now.getHours() % 12 || 12;
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+      document.getElementById('clock').textContent = `${month}/${day}/${year} ${hours}:${minutes} ${ampm}`;
+    }
+    updateClock();
+    setInterval(updateClock, 60000);
+
+    // Window Management
+    let activeWindow = null;
+    let draggedWindow = null;
+    let dragOffset = { x: 0, y: 0 };
+
+    function openWindow(windowId) {
+      const window = document.getElementById(`window-${windowId}`);
+      if (!window) return;
+
+      window.classList.add('active');
+      setActiveWindow(windowId);
+      addTaskbarItem(windowId);
+
+      // Close start menu when opening a window
+      const startMenu = document.getElementById('start-menu');
+      if (startMenu) {
+        startMenu.classList.remove('active');
+      }
+    }
+
+    // Start Menu
+    const startButton = document.getElementById('start-button');
+    const startMenu = document.getElementById('start-menu');
+
+    startButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startMenu.classList.toggle('active');
+    });
+
+    // Close start menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!startMenu.contains(e.target) && e.target !== startButton && !startButton.contains(e.target)) {
+        startMenu.classList.remove('active');
+      }
+    });
+
+    function closeWindow(windowId) {
+      const window = document.getElementById(`window-${windowId}`);
+      if (!window) return;
+
+      window.classList.remove('active');
+      removeTaskbarItem(windowId);
+
+      if (activeWindow === windowId) {
+        activeWindow = null;
+      }
+    }
+
+    function minimizeWindow(windowId) {
+      const window = document.getElementById(`window-${windowId}`);
+      if (!window) return;
+
+      window.classList.remove('active');
+
+      // Update taskbar to show window is minimized
+      const task = document.querySelector(`[data-window-id="${windowId}"]`);
+      if (task) {
+        task.classList.remove('active');
+      }
+
+      if (activeWindow === windowId) {
+        activeWindow = null;
+      }
+    }
+
+    function toggleMaximizeWindow(windowId) {
+      const window = document.getElementById(`window-${windowId}`);
+      if (!window) return;
+
+      if (window.classList.contains('maximized')) {
+        // Restore to original size
+        window.classList.remove('maximized');
+      } else {
+        // Maximize
+        window.classList.add('maximized');
+      }
+    }
+
+    function setActiveWindow(windowId) {
+      const windows = document.querySelectorAll('.window');
+      windows.forEach(w => {
+        w.style.zIndex = w.id === `window-${windowId}` ? 1000 : 100;
+      });
+      activeWindow = windowId;
+
+      // Update taskbar
+      const tasks = document.querySelectorAll('.taskbar-task');
+      tasks.forEach(t => {
+        t.classList.toggle('active', t.dataset.windowId === windowId);
+      });
+    }
+
+    function addTaskbarItem(windowId) {
+      if (document.querySelector(`[data-window-id="${windowId}"]`)) return;
+
+      const icon = document.querySelector(`[data-icon-id="${windowId}"]`);
+      if (!icon) return;
+
+      const task = document.createElement('button');
+      task.className = 'taskbar-task active';
+      task.dataset.windowId = windowId;
+      task.innerHTML = `
+        <span class="taskbar-task-icon">${icon.querySelector('.desktop-icon-image').textContent}</span>
+        <span class="taskbar-task-label">${icon.querySelector('.desktop-icon-label').textContent}</span>
+      `;
+      task.onclick = () => {
+        const window = document.getElementById(`window-${windowId}`);
+        if (window.classList.contains('active') && activeWindow === windowId) {
+          closeWindow(windowId);
+        } else {
+          openWindow(windowId);
+        }
+      };
+      document.getElementById('taskbar-tasks').appendChild(task);
+    }
+
+    function removeTaskbarItem(windowId) {
+      const task = document.querySelector(`[data-window-id="${windowId}"]`);
+      if (task) task.remove();
+    }
+
+    // Desktop Icon Positioning and Dragging
+    let draggedIcon = null;
+    let iconDragOffset = { x: 0, y: 0 };
+    let iconDragStartX = 0;
+    let iconDragStartY = 0;
+    let iconDragThresholdMet = false;
+    let hasMove = false;
+    let selectedIcon = null;
+    const DRAG_THRESHOLD = 5; // pixels to move before drag starts
+
+    // Position icons initially in a grid
+    console.log('About to position icons...');
+    console.log('DOM fully loaded?', document.readyState);
+    const icons = document.querySelectorAll('.desktop-icon');
+    console.log('Found', icons.length, 'desktop icons');
+
+    if (icons.length === 0) {
+      console.error('NO ICONS FOUND! The @foreach directive may not be working');
+    }
+
+    icons.forEach((icon, index) => {
+      const row = Math.floor(index / 6);
+      const col = index % 6;
+      const left = (col * 120 + 20) + 'px';
+      const top = (row * 120 + 20) + 'px';
+      icon.style.setProperty('left', left, 'important');
+      icon.style.setProperty('top', top, 'important');
+      console.log(`Icon ${index}: positioned at left=${left}, top=${top}`, icon);
+      console.log(`  Computed style:`, window.getComputedStyle(icon).left, window.getComputedStyle(icon).top);
+    });
+    console.log('Icon positioning complete');
+
+    // Deselect icons when clicking desktop
+    document.querySelector('.desktop-icons').addEventListener('click', (e) => {
+      if (e.target.classList.contains('desktop-icons')) {
+        if (selectedIcon) {
+          selectedIcon.classList.remove('selected');
+          selectedIcon = null;
+        }
+      }
+    });
+
+    // Desktop Icon Clicks and Drag
+    document.querySelectorAll('.desktop-icon').forEach(icon => {
+      let clickTimeout;
+      let clickCount = 0;
+
+      icon.addEventListener('mousedown', (e) => {
+        // Don't start drag if clicking on label input
+        if (e.target.tagName === 'INPUT') return;
+
+        if (e.target.closest('.desktop-icon-label') || e.target.closest('.desktop-icon-image')) {
+          draggedIcon = icon;
+          hasMove = false;
+          iconDragThresholdMet = false;
+          iconDragStartX = e.clientX;
+          iconDragStartY = e.clientY;
+
+          const rect = icon.getBoundingClientRect();
+          iconDragOffset.x = e.clientX - rect.left;
+          iconDragOffset.y = e.clientY - rect.top;
+
+          e.preventDefault();
+        }
+      });
+
+      icon.addEventListener('click', (e) => {
+        if (hasMove) return; // Don't trigger click if we were dragging
+        if (e.target.tagName === 'INPUT') return; // Don't interfere with input editing
+
+        clearTimeout(clickTimeout);
+        clickCount++;
+
+        // Immediately show selection on first click (Windows XP behavior)
+        const wasAlreadySelected = selectedIcon === icon && icon.classList.contains('selected');
+
+        if (selectedIcon && selectedIcon !== icon) {
+          selectedIcon.classList.remove('selected');
+        }
+        icon.classList.add('selected');
+        selectedIcon = icon;
+
+        // Set timeout to check for label editing
+        clickTimeout = setTimeout(() => {
+          if (clickCount === 1) {
+            // Only make editable if clicking label on already selected icon
+            if (wasAlreadySelected && e.target.closest('.desktop-icon-label')) {
+              makeIconLabelEditable(icon);
+            }
+          }
+          clickCount = 0;
+        }, 250);
+      });
+
+      icon.addEventListener('dblclick', (e) => {
+        clearTimeout(clickTimeout);
+        clickCount = 0;
+        e.preventDefault();
+
+        // Double click - open
+        const type = icon.dataset.iconType;
+        const section = icon.dataset.iconSection;
+        const url = icon.dataset.iconUrl;
+
+        if (type === 'window') {
+          openWindow(section);
+        } else if (type === 'link') {
+          window.open(url, '_blank');
+        }
+      });
+    });
+
+    function makeIconLabelEditable(icon) {
+      const label = icon.querySelector('.desktop-icon-label');
+      if (!label || label.querySelector('input')) return;
+
+      const originalText = label.textContent;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'desktop-icon-label-input';
+      input.value = originalText;
+
+      label.textContent = '';
+      label.appendChild(input);
+      input.focus();
+      input.select();
+
+      function finishEditing() {
+        const newText = input.value.trim() || originalText;
+        label.textContent = newText;
+      }
+
+      input.addEventListener('blur', finishEditing);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          finishEditing();
+        } else if (e.key === 'Escape') {
+          label.textContent = originalText;
+        }
+      });
+    }
+
+    // Icon drag move
+    document.addEventListener('mousemove', (e) => {
+      if (!draggedIcon) return;
+
+      // Check if we've moved enough to start dragging
+      if (!iconDragThresholdMet) {
+        const deltaX = Math.abs(e.clientX - iconDragStartX);
+        const deltaY = Math.abs(e.clientY - iconDragStartY);
+
+        if (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD) {
+          iconDragThresholdMet = true;
+          hasMove = true;
+        } else {
+          return; // Don't drag yet, threshold not met
+        }
+      }
+
+      hasMove = true;
+
+      const desktopIcons = document.querySelector('.desktop-icons');
+      const desktopRect = desktopIcons.getBoundingClientRect();
+
+      const x = e.clientX - desktopRect.left - iconDragOffset.x;
+      const y = e.clientY - desktopRect.top - iconDragOffset.y;
+
+      draggedIcon.style.left = Math.max(0, Math.min(x, desktopRect.width - 100)) + 'px';
+      draggedIcon.style.top = Math.max(0, Math.min(y, desktopRect.height - 100)) + 'px';
+    });
+
+    // Icon drag end
+    document.addEventListener('mouseup', () => {
+      if (draggedIcon) {
+        setTimeout(() => {
+          draggedIcon = null;
+          iconDragThresholdMet = false;
+          hasMove = false;
+        }, 100);
+      }
+    });
+
+    // Window Dragging and Resizing
+    let resizingWindow = null;
+    let resizeDirection = null;
+    let resizeStartX = 0;
+    let resizeStartY = 0;
+    let resizeStartWidth = 0;
+    let resizeStartHeight = 0;
+    let resizeStartLeft = 0;
+    let resizeStartTop = 0;
+
+    function getResizeDirection(window, e) {
+      if (window.classList.contains('maximized')) return null;
+
+      const rect = window.getBoundingClientRect();
+      const edge = 8; // pixels from edge to trigger resize
+
+      const isTop = e.clientY - rect.top < edge;
+      const isBottom = rect.bottom - e.clientY < edge;
+      const isLeft = e.clientX - rect.left < edge;
+      const isRight = rect.right - e.clientX < edge;
+
+      if (isTop && isLeft) return 'nw';
+      if (isTop && isRight) return 'ne';
+      if (isBottom && isLeft) return 'sw';
+      if (isBottom && isRight) return 'se';
+      if (isTop) return 'n';
+      if (isBottom) return 's';
+      if (isLeft) return 'w';
+      if (isRight) return 'e';
+
+      return null;
+    }
+
+    function setCursorForDirection(window, direction) {
+      const cursors = {
+        'n': 'ns-resize',
+        's': 'ns-resize',
+        'e': 'ew-resize',
+        'w': 'ew-resize',
+        'ne': 'nesw-resize',
+        'sw': 'nesw-resize',
+        'nw': 'nwse-resize',
+        'se': 'nwse-resize'
+      };
+      window.style.cursor = direction ? cursors[direction] : 'default';
+    }
+
+    document.querySelectorAll('.window').forEach(window => {
+      window.addEventListener('mousemove', (e) => {
+        if (resizingWindow || draggedWindow) return;
+
+        const direction = getResizeDirection(window, e);
+        setCursorForDirection(window, direction);
+      });
+
+      window.addEventListener('mouseleave', () => {
+        if (!resizingWindow) {
+          window.style.cursor = 'default';
+        }
+      });
+
+      window.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.window-titlebar') || e.target.closest('.window-control')) return;
+
+        const direction = getResizeDirection(window, e);
+        if (direction) {
+          resizingWindow = window;
+          resizeDirection = direction;
+          resizeStartX = e.clientX;
+          resizeStartY = e.clientY;
+
+          const rect = window.getBoundingClientRect();
+          resizeStartWidth = rect.width;
+          resizeStartHeight = rect.height;
+          resizeStartLeft = rect.left;
+          resizeStartTop = rect.top;
+
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+    });
+
+    document.querySelectorAll('.window-titlebar').forEach(titlebar => {
+      titlebar.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.window-control')) return;
+
+        const window = titlebar.closest('.window');
+        if (window.classList.contains('maximized')) return;
+
+        draggedWindow = window;
+
+        const rect = window.getBoundingClientRect();
+        dragOffset.x = e.clientX - rect.left;
+        dragOffset.y = e.clientY - rect.top;
+
+        window.classList.add('dragging');
+        e.preventDefault();
+      });
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (resizingWindow) {
+        const deltaX = e.clientX - resizeStartX;
+        const deltaY = e.clientY - resizeStartY;
+
+        let newWidth = resizeStartWidth;
+        let newHeight = resizeStartHeight;
+        let newLeft = resizeStartLeft;
+        let newTop = resizeStartTop;
+
+        if (resizeDirection.includes('e')) {
+          newWidth = Math.max(400, resizeStartWidth + deltaX);
+        }
+        if (resizeDirection.includes('w')) {
+          newWidth = Math.max(400, resizeStartWidth - deltaX);
+          newLeft = resizeStartLeft + (resizeStartWidth - newWidth);
+        }
+        if (resizeDirection.includes('s')) {
+          newHeight = Math.max(300, resizeStartHeight + deltaY);
+        }
+        if (resizeDirection.includes('n')) {
+          newHeight = Math.max(300, resizeStartHeight - deltaY);
+          newTop = resizeStartTop + (resizeStartHeight - newHeight);
+        }
+
+        resizingWindow.style.width = newWidth + 'px';
+        resizingWindow.style.height = newHeight + 'px';
+        resizingWindow.style.left = newLeft + 'px';
+        resizingWindow.style.top = newTop + 'px';
+
+        return;
+      }
+
+      if (!draggedWindow) return;
+
+      const x = e.clientX - dragOffset.x;
+      const y = e.clientY - dragOffset.y;
+
+      draggedWindow.style.left = Math.max(0, Math.min(x, window.innerWidth - 200)) + 'px';
+      draggedWindow.style.top = Math.max(0, Math.min(y, window.innerHeight - 100)) + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (resizingWindow) {
+        resizingWindow = null;
+        resizeDirection = null;
+      }
+
+      if (draggedWindow) {
+        draggedWindow.classList.remove('dragging');
+        draggedWindow = null;
+      }
+    });
+
+    // Feature Toggle
+    function showFeature(section, feature) {
+      const buttons = document.querySelectorAll(`#window-${section} .feature-btn`);
+      buttons.forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const contentMap = {
+        backend: {
+          auth: { title: 'Authentication', code: `import { Auth } from '@stacksjs/auth'
+
+// Login user
+const user = await Auth.attempt({
+  email: 'user@example.com',
+  password: 'secret'
+})
+
+// Get authenticated user
+const current = await Auth.user()` },
+          orm: { title: 'Eloquent ORM', code: `import { Model } from '@stacksjs/orm'
+
+class User extends Model {
+  posts() {
+    return this.hasMany(Post)
+  }
+}
+
+const users = await User
+  .with('posts')
+  .where('active', true)
+  .get()` },
+          validation: { title: 'Validation', code: `import { validate } from '@stacksjs/validation'
+
+const result = await validate(data, {
+  name: 'required|string|min:3',
+  email: 'required|email|unique:users',
+  age: 'required|number|min:18'
+})
+
+if (result.fails) {
+  return result.errors
+}` },
+          storage: { title: 'File Storage', code: `import { Storage } from '@stacksjs/storage'
+
+// Store file
+await Storage.put('avatar.jpg', file)
+
+// Get file URL
+const url = await Storage.url('avatar.jpg')
+
+// Delete file
+await Storage.delete('avatar.jpg')` },
+          queue: { title: 'Job Queues', code: `import { Queue } from '@stacksjs/queue'
+
+// Dispatch job
+await Queue.dispatch(new ProcessVideo(video))
+
+// Delayed job
+await Queue.dispatch(
+  new SendEmail(user)
+).delay(60)` },
+          events: { title: 'Events & WebSockets', code: `import { Event } from '@stacksjs/events'
+
+// Dispatch event
+await Event.dispatch('user.registered', user)
+
+// Listen to event
+Event.listen('user.registered', (user) => {
+  // Send welcome email
+})` }
+        },
+        frontend: {
+          components: { title: 'Components', code: '&lt;template&gt;\n  &lt;Card title="Hello"&gt;\n    &lt;p&gt;Reusable components&lt;/p&gt;\n  &lt;/Card&gt;\n&lt;/template&gt;\n\n&lt;script setup&gt;\n// Auto-imported\n&lt;/script&gt;' },
+          'ui-kit': { title: 'UI Kit', code: 'import { Button, Input, Modal } from \'@stacksjs/ui\'\n\n&lt;Modal v-model="show"&gt;\n  &lt;Input v-model="name" placeholder="Name" /&gt;\n  &lt;Button @click="submit"&gt;Submit&lt;/Button&gt;\n&lt;/Modal&gt;' },
+          routing: { title: 'Routing', code: `import { router } from '@stacksjs/router'
+
+router.get('/users/:id', async ({ params }) => {
+  const user = await User.find(params.id)
+  return view('user', { user })
+})` },
+          desktop: { title: 'Desktop', code: `import { app } from '@stacksjs/desktop'
+
+await app.start({
+  window: {
+    title: 'My App',
+    width: 1200,
+    height: 800
+  }
+})` }
+        },
+        cloud: {
+          deployment: { title: 'Deployment', code: `export default {
+  provider: 'aws',
+  region: 'us-east-1',
+
+  compute: {
+    type: 'serverless',
+    memory: 1024
+  }
+}` },
+          storage: { title: 'Storage', code: `export default {
+  storage: {
+    driver: 's3',
+    bucket: 'my-app-storage',
+    region: 'us-east-1'
+  }
+}` },
+          cdn: { title: 'CDN', code: `export default {
+  cdn: {
+    enabled: true,
+    compress: ['brotli', 'gzip'],
+    cache: {
+      ttl: 3600
+    }
+  }
+}` },
+          dns: { title: 'DNS', code: `export default {
+  domains: [
+    'app.example.com',
+    'api.example.com'
+  ],
+  ssl: true
+}` }
+        }
+      };
+
+      const content = contentMap[section][feature];
+      if (content) {
+        const contentDiv = document.getElementById(`${section}-feature-content`);
+        contentDiv.innerHTML = `
+          <h3>${content.title}</h3>
+          <div class="code-display">${content.code}</div>
+        `;
+      }
+    }
+
+    // Make windows clickable to bring to front
+    document.querySelectorAll('.window').forEach(window => {
+      window.addEventListener('mousedown', () => {
+        const windowId = window.id.replace('window-', '');
+        setActiveWindow(windowId);
+      });
+    });
+
+    // Notification popup
+    function closeNotification() {
+      const notification = document.getElementById('notification-popup');
+      if (notification) {
+        notification.classList.add('hidden');
+      }
+    }
+
+    // Email signup handler
+    function handleEmailSignup() {
+      const emailInput = document.getElementById('notification-email');
+      const email = emailInput.value.trim();
+
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email)) {
+        // XP-style alert
+        alert('Please enter a valid email address.');
+        emailInput.focus();
+        return;
+      }
+
+      // TODO: Send to API endpoint
+      // Example: fetch('/api/subscribe', { method: 'POST', body: JSON.stringify({ email }) })
+      console.log('Email signup:', email);
+
+      // Show success state
+      document.getElementById('notification-signup').style.display = 'none';
+      document.getElementById('notification-success').style.display = 'block';
+
+      // Optional: Auto-close after success
+      setTimeout(() => {
+        closeNotification();
+      }, 3000);
+    }
+
+    // Allow Enter key to submit email
+    document.addEventListener('DOMContentLoaded', () => {
+      const emailInput = document.getElementById('notification-email');
+      if (emailInput) {
+        emailInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            handleEmailSignup();
+          }
+        });
+      }
+    });
+
+    // Auto-show notification after 2 seconds
+    setTimeout(() => {
+      const notification = document.getElementById('notification-popup');
+      if (notification) {
+        notification.style.display = 'block';
+      }
+    }, 2000);
+
+    // Context Menu
+    const contextMenu = document.getElementById('context-menu');
+    let contextMenuTarget = null;
+
+    // Show context menu on right-click
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+
+      let x = e.clientX;
+      let y = e.clientY;
+
+      // Check if right-clicking on a desktop icon
+      const icon = e.target.closest('.desktop-icon');
+      contextMenuTarget = icon;
+
+      // Select the icon if right-clicking on it
+      if (icon) {
+        // Deselect previously selected icon
+        if (selectedIcon && selectedIcon !== icon) {
+          selectedIcon.classList.remove('selected');
+        }
+        // Select the right-clicked icon
+        icon.classList.add('selected');
+        selectedIcon = icon;
+
+        buildIconContextMenu(icon);
+      } else {
+        buildDesktopContextMenu();
+      }
+
+      // Show menu temporarily to get dimensions
+      contextMenu.style.display = 'flex';
+      contextMenu.style.left = `${x}px`;
+      contextMenu.style.top = `${y}px`;
+
+      // Get menu dimensions
+      const menuRect = contextMenu.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // Adjust position if menu goes off-screen
+      if (x + menuRect.width > viewportWidth) {
+        x = viewportWidth - menuRect.width - 10;
+      }
+      if (y + menuRect.height > viewportHeight) {
+        y = viewportHeight - menuRect.height - 10;
+      }
+
+      // Apply adjusted position
+      contextMenu.style.left = `${Math.max(10, x)}px`;
+      contextMenu.style.top = `${Math.max(10, y)}px`;
+      contextMenu.classList.add('active');
+    });
+
+    // Hide context menu on click anywhere (except on menu items)
+    document.addEventListener('click', (e) => {
+      // Don't hide if clicking inside the context menu
+      if (!contextMenu.contains(e.target)) {
+        contextMenu.style.display = 'none';
+        contextMenu.classList.remove('active');
+      }
+    });
+
+    // Close menu after clicking a menu item (not submenu parent)
+    contextMenu.addEventListener('click', (e) => {
+      const clickedItem = e.target.closest('.context-menu-item');
+      // Only close if it's not a submenu parent
+      if (clickedItem && !clickedItem.classList.contains('has-submenu')) {
+        // Delay slightly to allow onclick handlers to execute
+        setTimeout(() => {
+          contextMenu.style.display = 'none';
+          contextMenu.classList.remove('active');
+        }, 50);
+      }
+    });
+
+    // Build context menu for desktop icons
+    function buildIconContextMenu(icon) {
+      const iconType = icon.dataset.iconType;
+      const iconSection = icon.dataset.iconSection;
+      const iconUrl = icon.dataset.iconUrl;
+      const iconTitle = icon.querySelector('.desktop-icon-label').textContent;
+
+      let menuHTML = '';
+
+      // Open option
+      if (iconType === 'window') {
+        menuHTML += `
+          <button class="context-menu-item" onclick="openWindow('${iconSection}'); contextMenu.style.display = 'none';">
+            <div class="context-menu-item-icon">📂</div>
+            <div>Open</div>
+          </button>
+        `;
+      } else if (iconType === 'link') {
+        menuHTML += `
+          <button class="context-menu-item" onclick="window.open('${iconUrl}', '_blank'); contextMenu.style.display = 'none';">
+            <div class="context-menu-item-icon">🔗</div>
+            <div>Open Link</div>
+          </button>
+        `;
+      }
+
+      // Rename option
+      menuHTML += `
+        <button class="context-menu-item" onclick="renameIconFromContextMenu()">
+          <div class="context-menu-item-icon">✏️</div>
+          <div>Rename</div>
+        </button>
+        <div class="context-menu-separator"></div>
+      `;
+
+      // Share submenu
+      menuHTML += `
+        <button class="context-menu-item has-submenu">
+          <div class="context-menu-item-icon">📤</div>
+          <div>Share with a friend...</div>
+          <div class="context-submenu">
+            <button class="context-menu-item" onclick="shareVia('twitter')">
+              <div class="context-menu-item-icon">🐦</div>
+              <div>Share on Twitter</div>
+            </button>
+            <button class="context-menu-item" onclick="shareVia('linkedin')">
+              <div class="context-menu-item-icon">💼</div>
+              <div>Share on LinkedIn</div>
+            </button>
+            <button class="context-menu-item" onclick="shareVia('email')">
+              <div class="context-menu-item-icon">📧</div>
+              <div>Share via Email</div>
+            </button>
+            <button class="context-menu-item" onclick="shareVia('copy')">
+              <div class="context-menu-item-icon">📋</div>
+              <div>Copy Link</div>
+            </button>
+          </div>
+        </button>
+        <div class="context-menu-separator"></div>
+      `;
+
+      // Brand options
+      menuHTML += `
+        <button class="context-menu-item" onclick="copyLogoSVG()">
+          <div class="context-menu-item-icon">🎨</div>
+          <div>Copy Logo as SVG</div>
+        </button>
+        <button class="context-menu-item" onclick="copyWordmarkSVG()">
+          <div class="context-menu-item-icon">✏️</div>
+          <div>Copy Wordmark as SVG</div>
+        </button>
+        <button class="context-menu-item" onclick="window.open('https://stacksjs.org/brand', '_blank'); contextMenu.style.display = 'none';">
+          <div class="context-menu-item-icon">📖</div>
+          <div>Brand Guidelines</div>
+        </button>
+        <div class="context-menu-separator"></div>
+      `;
+
+      // General options
+      menuHTML += `
+        <button class="context-menu-item" onclick="window.open('https://stacksjs.org/docs', '_blank'); contextMenu.style.display = 'none';">
+          <div class="context-menu-item-icon">📚</div>
+          <div>Documentation</div>
+        </button>
+        <button class="context-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank'); contextMenu.style.display = 'none';">
+          <div class="context-menu-item-icon">💻</div>
+          <div>View on GitHub</div>
+        </button>
+        <div class="context-menu-separator"></div>
+        <button class="context-menu-item" onclick="window.location.reload(); contextMenu.style.display = 'none';">
+          <div class="context-menu-item-icon">🔄</div>
+          <div>Refresh</div>
+        </button>
+      `;
+
+      contextMenu.innerHTML = menuHTML;
+    }
+
+    // Build context menu for desktop background
+    function buildDesktopContextMenu() {
+      contextMenu.innerHTML = `
+        <button class="context-menu-item has-submenu">
+          <div class="context-menu-item-icon">📤</div>
+          <div>Share with a friend...</div>
+          <div class="context-submenu">
+            <button class="context-menu-item" onclick="shareVia('twitter')">
+              <div class="context-menu-item-icon">🐦</div>
+              <div>Share on Twitter</div>
+            </button>
+            <button class="context-menu-item" onclick="shareVia('linkedin')">
+              <div class="context-menu-item-icon">💼</div>
+              <div>Share on LinkedIn</div>
+            </button>
+            <button class="context-menu-item" onclick="shareVia('email')">
+              <div class="context-menu-item-icon">📧</div>
+              <div>Share via Email</div>
+            </button>
+            <button class="context-menu-item" onclick="shareVia('copy')">
+              <div class="context-menu-item-icon">📋</div>
+              <div>Copy Link</div>
+            </button>
+          </div>
+        </button>
+        <div class="context-menu-separator"></div>
+        <button class="context-menu-item" onclick="copyLogoSVG()">
+          <div class="context-menu-item-icon">🎨</div>
+          <div>Copy Logo as SVG</div>
+        </button>
+        <button class="context-menu-item" onclick="copyWordmarkSVG()">
+          <div class="context-menu-item-icon">✏️</div>
+          <div>Copy Wordmark as SVG</div>
+        </button>
+        <button class="context-menu-item" onclick="window.open('https://stacksjs.org/brand', '_blank')">
+          <div class="context-menu-item-icon">📖</div>
+          <div>Brand Guidelines</div>
+        </button>
+        <div class="context-menu-separator"></div>
+        <button class="context-menu-item" onclick="window.open('https://stacksjs.org/docs', '_blank')">
+          <div class="context-menu-item-icon">📚</div>
+          <div>Documentation</div>
+        </button>
+        <button class="context-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank')">
+          <div class="context-menu-item-icon">💻</div>
+          <div>View on GitHub</div>
+        </button>
+        <div class="context-menu-separator"></div>
+        <button class="context-menu-item" onclick="window.location.reload()">
+          <div class="context-menu-item-icon">🔄</div>
+          <div>Refresh</div>
+        </button>
+      `;
+    }
+
+    // Rename icon from context menu
+    function renameIconFromContextMenu() {
+      if (contextMenuTarget) {
+        contextMenu.style.display = 'none';
+        makeIconLabelEditable(contextMenuTarget);
+      }
+    }
+
+    // Share functions
+    function shareVia(platform) {
+      const url = encodeURIComponent(window.location.href);
+      const text = encodeURIComponent('Check out Stacks - A TypeScript framework for building modern applications!');
+
+      switch(platform) {
+        case 'twitter':
+          window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+          break;
+        case 'linkedin':
+          window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+          break;
+        case 'email':
+          window.location.href = `mailto:?subject=Check out Stacks&body=${text} ${url}`;
+          break;
+        case 'copy':
+          navigator.clipboard.writeText(window.location.href).then(() => {
+            alert('Link copied to clipboard!');
+          });
+          break;
+      }
+    }
+
+    // Copy Logo SVG
+    function copyLogoSVG() {
+      // Placeholder SVG - replace with actual logo
+      const logoSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <rect width="100" height="100" fill="#0831d9"/>
+        <text x="50" y="50" text-anchor="middle" dy=".3em" fill="white" font-size="40" font-weight="bold">S</text>
+      </svg>`;
+
+      navigator.clipboard.writeText(logoSVG).then(() => {
+        alert('Logo SVG copied to clipboard!');
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+      });
+    }
+
+    // Copy Wordmark SVG
+    function copyWordmarkSVG() {
+      // Placeholder SVG - replace with actual wordmark
+      const wordmarkSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50">
+        <text x="10" y="35" fill="#0831d9" font-size="30" font-weight="bold" font-family="Tahoma">STACKS</text>
+      </svg>`;
+
+      navigator.clipboard.writeText(wordmarkSVG).then(() => {
+        alert('Wordmark SVG copied to clipboard!');
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+      });
+    }
+  </script>
+</body>
+</html>

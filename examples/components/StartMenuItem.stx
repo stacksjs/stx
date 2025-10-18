@@ -1,0 +1,14 @@
+@if(hasSubmenu)
+  <div class="start-menu-item has-submenu">
+    <div class="start-menu-item-icon">{{ icon }}</div>
+    <div>{{ label }}</div>
+    <div class="start-submenu">
+      <slot></slot>
+    </div>
+  </div>
+@else
+  <button class="start-menu-item" onclick="{{ onclick }}">
+    <div class="start-menu-item-icon">{{ icon }}</div>
+    <div>{{ label }}</div>
+  </button>
+@endif

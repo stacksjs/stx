@@ -1,0 +1,56 @@
+<div class="notification-popup" id="notification-popup">
+  <div class="notification-header">
+    <div class="notification-icon">⭐</div>
+    <div class="notification-title">Build Anything</div>
+    <div class="notification-count">5</div>
+    <button class="notification-close" onclick="closeNotification()">×</button>
+  </div>
+  <div class="notification-features">
+    <div class="notification-feature">
+      <div class="notification-feature-icon"></div>
+      <div>Modern web applications & APIs</div>
+    </div>
+    <div class="notification-feature">
+      <div class="notification-feature-icon"></div>
+      <div>One UI. 3 apps. <em>Web, Desktop & Mobile.</em></div>
+    </div>
+    <div class="notification-feature">
+      <div class="notification-feature-icon"></div>
+      <div>Cloud infrastructure & serverless</div>
+    </div>
+    <div class="notification-feature">
+      <div class="notification-feature-icon"></div>
+      <div>Type-safe with TypeScript</div>
+    </div>
+    <div class="notification-feature">
+      <div class="notification-feature-icon"></div>
+      <div>Lightning fast with Bun</div>
+    </div>
+  </div>
+  <div class="notification-signup" id="notification-signup">
+    <div class="notification-separator"></div>
+    <div class="notification-signup-text">Get updates on new features & releases:</div>
+    <div class="notification-signup-form">
+      <input
+        type="email"
+        id="notification-email"
+        class="notification-email-input"
+        placeholder="your@email.com"
+        autocomplete="email"
+      />
+      <button class="notification-signup-btn" onclick="handleEmailSignup()">
+        Sign Up
+      </button>
+    </div>
+  </div>
+  <div class="notification-success" id="notification-success" style="display: none;">
+    <div class="notification-separator"></div>
+    <div class="notification-success-content">
+      <div class="notification-success-icon">✓</div>
+      <div class="notification-success-text">
+        <div class="notification-success-title">Thanks for subscribing!</div>
+        <div class="notification-success-subtitle">We'll keep you updated.</div>
+      </div>
+    </div>
+  </div>
+</div>
