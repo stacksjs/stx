@@ -23,6 +23,12 @@ let hasMove = false;
 let selectedIcon: HTMLElement | null = null;
 const DRAG_THRESHOLD = 5; // pixels to move before drag starts
 
+// Selection rectangle
+let selectionRect: HTMLElement | null = null;
+let isSelecting = false;
+let selectionStartX = 0;
+let selectionStartY = 0;
+
 // Initialize icons when DOM is ready
 function initializeIcons() {
   // Position icons initially in a grid
@@ -40,11 +46,106 @@ function initializeIcons() {
   });
 
   // Deselect icons when clicking desktop
-  document.querySelector('.desktop-icons')?.addEventListener('click', (e) => {
+  const desktopIcons = document.querySelector('.desktop-icons');
+  desktopIcons?.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).classList.contains('desktop-icons')) {
       if (selectedIcon) {
         selectedIcon.classList.remove('selected');
         selectedIcon = null;
+      }
+    }
+  });
+
+  // Desktop selection rectangle
+  desktopIcons?.addEventListener('mousedown', (e) => {
+    const event = e as MouseEvent;
+    // Only start selection if clicking directly on desktop (not on icon)
+    if ((event.target as HTMLElement).classList.contains('desktop-icons')) {
+      isSelecting = true;
+      const rect = desktopIcons.getBoundingClientRect();
+      selectionStartX = event.clientX - rect.left;
+      selectionStartY = event.clientY - rect.top;
+
+      // Clear previous selections
+      document.querySelectorAll('.desktop-icon.selected').forEach(icon => {
+        icon.classList.remove('selected');
+      });
+      selectedIcon = null;
+
+      // Create selection rectangle
+      if (!selectionRect) {
+        selectionRect = document.createElement('div');
+        selectionRect.className = 'selection-rectangle';
+        desktopIcons.appendChild(selectionRect);
+      }
+
+      selectionRect.style.left = selectionStartX + 'px';
+      selectionRect.style.top = selectionStartY + 'px';
+      selectionRect.style.width = '0px';
+      selectionRect.style.height = '0px';
+      selectionRect.style.display = 'block';
+
+      event.preventDefault();
+    }
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isSelecting || !selectionRect || !desktopIcons) return;
+
+    const rect = desktopIcons.getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+
+    const left = Math.min(selectionStartX, currentX);
+    const top = Math.min(selectionStartY, currentY);
+    const width = Math.abs(currentX - selectionStartX);
+    const height = Math.abs(currentY - selectionStartY);
+
+    selectionRect.style.left = left + 'px';
+    selectionRect.style.top = top + 'px';
+    selectionRect.style.width = width + 'px';
+    selectionRect.style.height = height + 'px';
+
+    // Check which icons are in the selection
+    const selectionRectBounds = {
+      left,
+      top,
+      right: left + width,
+      bottom: top + height
+    };
+
+    document.querySelectorAll('.desktop-icon').forEach(icon => {
+      const iconEl = icon as HTMLElement;
+      const iconLeft = parseFloat(iconEl.style.left || '0');
+      const iconTop = parseFloat(iconEl.style.top || '0');
+      const iconRight = iconLeft + iconEl.offsetWidth;
+      const iconBottom = iconTop + iconEl.offsetHeight;
+
+      // Check if icon intersects with selection rectangle
+      const intersects = !(
+        iconRight < selectionRectBounds.left ||
+        iconLeft > selectionRectBounds.right ||
+        iconBottom < selectionRectBounds.top ||
+        iconTop > selectionRectBounds.bottom
+      );
+
+      if (intersects) {
+        iconEl.classList.add('selected');
+      } else {
+        iconEl.classList.remove('selected');
+      }
+    });
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (isSelecting && selectionRect) {
+      isSelecting = false;
+      selectionRect.style.display = 'none';
+
+      // Update selectedIcon to last selected if any
+      const selected = document.querySelectorAll('.desktop-icon.selected');
+      if (selected.length > 0) {
+        selectedIcon = selected[selected.length - 1] as HTMLElement;
       }
     }
   });
@@ -788,15 +889,29 @@ const iconContextMenu = document.getElementById('icon-context-menu');
 let contextMenuIcon: HTMLElement | null = null;
 
 document.addEventListener('contextmenu', (e) => {
+  // Check if right-click is on a taskbar button
+  const target = e.target as HTMLElement;
+  const isTaskbarButton = target.closest('.taskbar-task');
+
+  // If it's a taskbar button, let its own handler deal with it
+  if (isTaskbarButton) {
+    return;
+  }
+
   e.preventDefault();
 
   // Check if right-click is on an icon
-  const target = e.target as HTMLElement;
   const icon = target.closest('.desktop-icon') as HTMLElement;
 
   // Hide both menus first
   contextMenu.style.display = 'none';
   iconContextMenu.style.display = 'none';
+
+  // Also hide taskbar context menu
+  if (taskbarContextMenu) {
+    taskbarContextMenu.remove();
+    taskbarContextMenu = null;
+  }
 
   if (icon) {
     // Select the icon first if it's not already selected
@@ -1093,31 +1208,13 @@ function selectPlan(planType: string) {
 // Zoom functionality
 let currentZoom = 100;
 
-function toggleZoomMenu() {
-  const menu = document.getElementById('zoom-menu');
-  if (!menu) return;
-
-  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-
-  // Close menu when clicking elsewhere
-  if (menu.style.display === 'block') {
-    setTimeout(() => {
-      document.addEventListener('click', function closeMenu(e) {
-        const zoomButton = document.getElementById('zoom-button');
-        if (zoomButton && !zoomButton.contains(e.target as Node)) {
-          menu.style.display = 'none';
-          document.removeEventListener('click', closeMenu);
-        }
-      });
-    }, 0);
-  }
-}
-
 function setZoom(zoomLevel: number) {
+  // Clamp zoom between 25 and 400
+  zoomLevel = Math.max(25, Math.min(400, zoomLevel));
   currentZoom = zoomLevel;
+
   const content = document.getElementById('welcome-pdf-content');
-  const zoomLevelSpan = document.getElementById('zoom-level');
-  const menu = document.getElementById('zoom-menu');
+  const zoomInput = document.getElementById('zoom-level') as HTMLInputElement;
 
   if (content) {
     const scale = zoomLevel / 100;
@@ -1125,12 +1222,26 @@ function setZoom(zoomLevel: number) {
     content.style.transformOrigin = 'top center';
   }
 
-  if (zoomLevelSpan) {
-    zoomLevelSpan.textContent = `${zoomLevel}%`;
+  if (zoomInput) {
+    zoomInput.value = zoomLevel.toString();
   }
+}
 
-  if (menu) {
-    menu.style.display = 'none';
+function increaseZoom() {
+  setZoom(currentZoom + 25);
+}
+
+function decreaseZoom() {
+  setZoom(currentZoom - 25);
+}
+
+function setZoomFromInput() {
+  const zoomInput = document.getElementById('zoom-level') as HTMLInputElement;
+  if (zoomInput) {
+    const value = parseInt(zoomInput.value);
+    if (!isNaN(value)) {
+      setZoom(value);
+    }
   }
 }
 
@@ -1143,6 +1254,12 @@ function showTaskbarContextMenu(e: MouseEvent, windowId: string, windowEl: HTMLE
   if (taskbarContextMenu) {
     taskbarContextMenu.remove();
   }
+
+  // Hide desktop context menus
+  const contextMenu = document.getElementById('context-menu');
+  const iconContextMenu = document.getElementById('icon-context-menu');
+  if (contextMenu) contextMenu.style.display = 'none';
+  if (iconContextMenu) iconContextMenu.style.display = 'none';
 
   taskbarContextWindowId = windowId;
 
@@ -1242,8 +1359,10 @@ window.activateLicense = activateLicense;
 window.showEcosystemTab = showEcosystemTab;
 window.printWelcome = printWelcome;
 window.downloadWelcome = downloadWelcome;
-window.toggleZoomMenu = toggleZoomMenu;
 window.setZoom = setZoom;
+window.increaseZoom = increaseZoom;
+window.decreaseZoom = decreaseZoom;
+window.setZoomFromInput = setZoomFromInput;
 window.selectPlan = selectPlan;
 window.taskbarContextRestore = taskbarContextRestore;
 window.taskbarContextMaximize = taskbarContextMaximize;

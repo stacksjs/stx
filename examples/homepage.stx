@@ -657,17 +657,11 @@ export default {
           <button onclick="downloadWelcome()" style="padding: 4px 12px; background: #3c3f41; border: 1px solid #555; color: #ccc; font-size: 11px; cursor: pointer;">Download</button>
           <div style="flex: 1;"></div>
           <span style="color: #ccc; font-size: 11px;">Page 1 of 1</span>
-          <button id="zoom-button" onclick="toggleZoomMenu()" style="padding: 4px 8px; background: #3c3f41; border: 1px solid #555; color: #ccc; font-size: 11px; cursor: pointer; position: relative;">
-            <span id="zoom-level">100%</span>
-            <div id="zoom-menu" style="display: none; position: absolute; bottom: 100%; right: 0; background: #3c3f41; border: 1px solid #555; margin-bottom: 4px; min-width: 80px;">
-              <div onclick="setZoom(50); event.stopPropagation();" style="padding: 4px 8px; cursor: pointer; color: #ccc; font-size: 11px;" onmouseover="this.style.background='#555'" onmouseout="this.style.background='transparent'">50%</div>
-              <div onclick="setZoom(75); event.stopPropagation();" style="padding: 4px 8px; cursor: pointer; color: #ccc; font-size: 11px;" onmouseover="this.style.background='#555'" onmouseout="this.style.background='transparent'">75%</div>
-              <div onclick="setZoom(100); event.stopPropagation();" style="padding: 4px 8px; cursor: pointer; color: #ccc; font-size: 11px;" onmouseover="this.style.background='#555'" onmouseout="this.style.background='transparent'">100%</div>
-              <div onclick="setZoom(125); event.stopPropagation();" style="padding: 4px 8px; cursor: pointer; color: #ccc; font-size: 11px;" onmouseover="this.style.background='#555'" onmouseout="this.style.background='transparent'">125%</div>
-              <div onclick="setZoom(150); event.stopPropagation();" style="padding: 4px 8px; cursor: pointer; color: #ccc; font-size: 11px;" onmouseover="this.style.background='#555'" onmouseout="this.style.background='transparent'">150%</div>
-              <div onclick="setZoom(200); event.stopPropagation();" style="padding: 4px 8px; cursor: pointer; color: #ccc; font-size: 11px;" onmouseover="this.style.background='#555'" onmouseout="this.style.background='transparent'">200%</div>
-            </div>
-          </button>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button onclick="decreaseZoom()" style="padding: 4px 10px; background: #3c3f41; border: 1px solid #555; color: #ccc; font-size: 14px; cursor: pointer; font-weight: bold;">−</button>
+            <input id="zoom-level" type="number" min="25" max="400" step="25" value="100" onchange="setZoomFromInput()" style="width: 60px; padding: 4px 6px; background: #3c3f41; border: 1px solid #555; color: #ccc; font-size: 11px; text-align: center;">
+            <button onclick="increaseZoom()" style="padding: 4px 10px; background: #3c3f41; border: 1px solid #555; color: #ccc; font-size: 14px; cursor: pointer; font-weight: bold;">+</button>
+          </div>
         </div>
         <div id="welcome-pdf-content" style="background: white; margin: 20px auto; width: 90%; min-height: 500px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); padding: 40px 50px; transition: transform 0.2s ease;">
           <div style="text-align: center; margin-bottom: 40px;">

@@ -1048,3 +1048,29 @@ body {
   color: #333;
   line-height: 1.4;
 }
+
+/* Zoom controls */
+#zoom-level {
+  -moz-appearance: textfield;
+}
+
+#zoom-level::-webkit-outer-spin-button,
+#zoom-level::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#zoom-level:focus {
+  outline: 1px solid #777;
+  background: #2c2f31;
+}
+
+/* Selection rectangle */
+.selection-rectangle {
+  position: absolute;
+  border: 1px solid #0831d9;
+  background: rgba(8, 49, 217, 0.15);
+  pointer-events: none;
+  z-index: 1000;
+  display: none;
+}
