@@ -296,6 +296,14 @@ function openWindow(windowId, fromTaskbarButton = null) {
   if (!wasMinimized && !windowEl.classList.contains('active')) {
     // If opened from a specific location (like taskbar), animate from there
     if (fromTaskbarButton) {
+      // Make window visible but transparent to get correct position
+      windowEl.classList.add('restoring');
+      windowEl.style.opacity = '0';
+      windowEl.style.visibility = 'visible';
+
+      // Force reflow to get actual position
+      windowEl.offsetHeight;
+
       const buttonRect = fromTaskbarButton.getBoundingClientRect();
       const windowRect = windowEl.getBoundingClientRect();
       const windowCenterX = windowRect.left + windowRect.width / 2;
@@ -307,7 +315,7 @@ function openWindow(windowId, fromTaskbarButton = null) {
       const translateY = buttonCenterY - windowCenterY;
 
       // Start from button position
-      windowEl.classList.add('restoring');
+      windowEl.style.transition = 'none';
       windowEl.style.transformOrigin = 'center center';
       windowEl.style.transform = `translate(${translateX}px, ${translateY}px) scale(0.1)`;
       windowEl.style.opacity = '0';
@@ -329,6 +337,7 @@ function openWindow(windowId, fromTaskbarButton = null) {
           windowEl.style.transition = '';
           windowEl.style.transform = '';
           windowEl.style.opacity = '';
+          windowEl.style.visibility = '';
           windowEl.style.transformOrigin = '';
           updateTaskbar();
         }, 200);
@@ -1188,20 +1197,36 @@ function selectPlan(planType: string) {
   // Store the selected plan type
   (window as any).selectedPlanType = planType;
 
-  // Wait for Welcome window to finish minimizing, then open License from its taskbar button
+  // Wait for Welcome window to finish minimizing, then open License from the taskbar
   setTimeout(() => {
-    // Find the Welcome window's taskbar button
-    const taskbarButtons = document.querySelectorAll('.taskbar-task');
-    let welcomeButton = null;
-    taskbarButtons.forEach(btn => {
-      const btnText = btn.querySelector('.taskbar-task-label')?.textContent;
-      if (btnText && btnText.includes('Welcome')) {
-        welcomeButton = btn;
-      }
-    });
+    // The License window will get a taskbar button, so we need to open it first
+    // to create the button, then animate it
+    const licenseWindow = document.getElementById('window-license');
+    if (!licenseWindow) return;
 
-    // Open License window with animation from the taskbar button
-    openWindow('license', welcomeButton);
+    // Temporarily mark as minimized to create taskbar button
+    licenseWindow.classList.add('minimized');
+    updateTaskbar();
+
+    // Find the newly created License taskbar button
+    setTimeout(() => {
+      const taskbarButtons = document.querySelectorAll('.taskbar-task');
+      let licenseButton = null;
+      taskbarButtons.forEach(btn => {
+        const btnText = btn.querySelector('.taskbar-task-label')?.textContent;
+        if (btnText && btnText.includes('License')) {
+          licenseButton = btn;
+        }
+      });
+
+      // Now remove minimized and open with animation from the button
+      licenseWindow.classList.remove('minimized');
+      if (licenseButton) {
+        openWindow('license', licenseButton);
+      } else {
+        openWindow('license');
+      }
+    }, 10);
   }, 250); // Wait for minimize animation to complete
 }
 
