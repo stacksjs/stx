@@ -66,84 +66,6 @@
         </button>
     </div>
 
-    <!-- Windows -->
-    <div id="window-welcome" class="window active" style="left: 150px; top: 100px; width: 700px; height: 600px; z-index: 101;">
-      <div class="window-titlebar">
-        <div class="window-icon">📃</div>
-        <div class="window-title">Welcome.pdf - PDF Viewer</div>
-        <div class="window-controls">
-          <button class="window-control minimize" onclick="minimizeWindow('welcome')">_</button>
-          <button class="window-control maximize" onclick="toggleMaximizeWindow('welcome')">□</button>
-          <button class="window-control close" onclick="closeWindow('welcome')">×</button>
-        </div>
-      </div>
-      <div class="window-content" style="background: #525659; padding: 0;">
-        <div style="background: #323639; padding: 8px 12px; border-bottom: 1px solid #222; display: flex; gap: 8px; align-items: center;">
-          <button style="padding: 4px 12px; background: #3c3f41; border: 1px solid #555; color: #ccc; font-size: 11px; cursor: pointer;">Print</button>
-          <button style="padding: 4px 12px; background: #3c3f41; border: 1px solid #555; color: #ccc; font-size: 11px; cursor: pointer;">Download</button>
-          <div style="flex: 1;"></div>
-          <span style="color: #ccc; font-size: 11px;">Page 1 of 1</span>
-          <button style="padding: 4px 8px; background: #3c3f41; border: 1px solid #555; color: #ccc; font-size: 11px; cursor: pointer;">100%</button>
-        </div>
-        <div style="background: white; margin: 20px auto; width: 90%; min-height: 500px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); padding: 40px 50px;">
-          <div style="text-align: center; margin-bottom: 40px;">
-            <h1 style="color: #0831d9; font-size: 48px; margin: 0 0 10px 0; font-weight: bold;">STACKS.JS</h1>
-            <p style="color: #333; font-size: 18px; margin: 0;">The TypeScript Framework for Modern Development</p>
-            <p style="color: #4a4a4a; font-size: 14px; margin: 8px 0 0 0;">Version 1.0 • October 2025</p>
-          </div>
-
-          <h3 style="color: #0831d9; font-size: 24px; margin: 30px 0 16px 0; border-bottom: 2px solid #0831d9; padding-bottom: 8px;">What is Stacks?</h3>
-          <p style="line-height: 1.8; color: #333; margin-bottom: 16px;">
-            Stacks is a rapid development framework that enables you to build modern web applications, APIs, and cloud infrastructure with TypeScript.
-            It provides an elegant, opinionated solution for common development needs while maintaining complete configurability.
-          </p>
-
-          <h3 style="color: #0831d9; font-size: 24px; margin: 30px 0 16px 0; border-bottom: 2px solid #0831d9; padding-bottom: 8px;">Key Features</h3>
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
-            <div style="display: flex; align-items: start; gap: 12px;">
-              <span style="font-size: 24px;">⚡</span>
-              <div>
-                <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Ultra-Fast Runtime</strong>
-                <span style="font-size: 13px; color: #333;">Built on Bun for maximum performance</span>
-              </div>
-            </div>
-            <div style="display: flex; align-items: start; gap: 12px;">
-              <span style="font-size: 24px;">🎯</span>
-              <div>
-                <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Type-Safe Everything</strong>
-                <span style="font-size: 13px; color: #333;">Full TypeScript support throughout</span>
-              </div>
-            </div>
-            <div style="display: flex; align-items: start; gap: 12px;">
-              <span style="font-size: 24px;">🔋</span>
-              <div>
-                <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Batteries Included</strong>
-                <span style="font-size: 13px; color: #333;">ORM, Auth, Queue, Cache, and more</span>
-              </div>
-            </div>
-            <div style="display: flex; align-items: start; gap: 12px;">
-              <span style="font-size: 24px;">🖥️</span>
-              <div>
-                <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Cross-Platform</strong>
-                <span style="font-size: 13px; color: #333;">Web, Desktop & Mobile from one codebase</span>
-              </div>
-            </div>
-          </div>
-
-          <div style="background: #fffacd; border-left: 4px solid #ffd700; padding: 16px 20px; margin: 24px 0;">
-            <strong style="color: #333; display: block; margin-bottom: 8px;">🚀 Quick Start</strong>
-            <code style="display: block; background: #fff; padding: 12px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 13px; color: #0831d9; margin-top: 8px;">
-              bunx stacks new my-project
-            </code>
-          </div>
-
-          <div style="text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid #ddd;">
-            <p style="color: #333; font-size: 12px; margin-bottom: 8px;">Learn more at <strong style="color: #0831d9;">stacksjs.org</strong></p>
-            <p style="color: #4a4a4a; font-size: 11px;">© 2025 Stacks. Open source under MIT License.</p>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Start Menu -->
     <div class="start-menu" id="start-menu">
@@ -202,7 +124,6 @@
             </button>
           </div>
         </div>
-      </div>
       </div>
     </div>
 
