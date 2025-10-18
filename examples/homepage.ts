@@ -13,7 +13,7 @@ function updateClock() {
   const year = now.getFullYear();
   const clockElement = document.getElementById('clock');
   if (clockElement) {
-    clockElement.textContent = `${hours}:${minutes} ${ampm}\n${month}/${day}/${year}`;
+    clockElement.textContent = `${hours}:${minutes} ${ampm} ${month}/${day}/${year}`;
   }
 }
 updateClock();

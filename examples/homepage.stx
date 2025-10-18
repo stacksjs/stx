@@ -216,15 +216,17 @@
 
     <!-- Trash Bin -->
     <button
-      class="desktop-icon"
-      data-icon-id="trash"
-      data-icon-type="window"
-      data-icon-section="trash"
-      data-icon-url=""
-      style="position: absolute !important; bottom: 60px !important; right: 20px !important; left: auto !important; top: auto !important;"
+      onclick="openWindow('trash')"
+      style="position: absolute; bottom: 60px; right: 20px; z-index: 100; width: 90px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: 8px; border: 2px solid transparent; background: transparent; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);"
+      onmouseover="this.style.background='rgba(255,255,255,0.1)'; this.style.border='2px solid rgba(255,255,255,0.3)';"
+      onmouseout="this.style.background='transparent'; this.style.border='2px solid transparent';"
     >
-      <div class="desktop-icon-image">🗑️</div>
-      <div class="desktop-icon-label">Recycle Bin</div>
+      <div style="width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; font-size: 48px;">
+        🗑️
+      </div>
+      <div style="font-size: 11px; line-height: 1.3; text-align: center; font-weight: bold;">
+        Recycle Bin
+      </div>
     </button>
 
     <!-- Windows -->
@@ -1277,9 +1279,101 @@ export default {
             Support on OpenCollective
           </a>
         </div>
+      </div>
+    </div>
 
-        <div style="background: #fffbeb; border: 2px solid #fbbf24; padding: 12px; border-radius: 4px; text-align: center; font-size: 11px; color: #78350f;">
-          <em>Thanks to Vue.js for the inspiration of this sponsorship page</em>
+    <div id="window-trash" class="window" style="left: 300px; top: 120px; width: 500px; height: 550px;">
+      <div class="window-titlebar">
+        <div class="window-icon">🗑️</div>
+        <div class="window-title">Recycle Bin</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('trash')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('trash')">□</button>
+          <button class="window-control close" onclick="closeWindow('trash')">×</button>
+        </div>
+      </div>
+      <div class="window-content" style="padding: 16px;">
+        <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 12px; margin-bottom: 16px; border-radius: 4px; font-size: 11px;">
+          <strong>⚠️ Note:</strong> These items are in the Recycle Bin. Stacks has native tooling built-in, to self-host a maintainable, performant, and secure environment.
+        </div>
+
+        <div style="background: white; border: 2px inset #999; padding: 12px; height: 420px; overflow-y: auto;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #ece9d8; border-bottom: 2px solid #999;">
+                <th style="text-align: left; padding: 8px; font-size: 11px; border-right: 1px solid #ccc;">Name</th>
+                <th style="text-align: left; padding: 8px; font-size: 11px; border-right: 1px solid #ccc;">Type</th>
+                <th style="text-align: right; padding: 8px; font-size: 11px;">Date Deleted</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #e0e0e0;">
+                <td style="padding: 8px; font-size: 11px;">🚂 Laravel</td>
+                <td style="padding: 8px; font-size: 11px; color: #666;">PHP Framework</td>
+                <td style="padding: 8px; font-size: 11px; color: #666; text-align: right;">10/15/2025</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e0e0e0;">
+                <td style="padding: 8px; font-size: 11px;">💎 Ruby on Rails</td>
+                <td style="padding: 8px; font-size: 11px; color: #666;">Ruby Framework</td>
+                <td style="padding: 8px; font-size: 11px; color: #666; text-align: right;">10/14/2025</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e0e0e0;">
+                <td style="padding: 8px; font-size: 11px;">🍺 Homebrew</td>
+                <td style="padding: 8px; font-size: 11px; color: #666;">Package Manager</td>
+                <td style="padding: 8px; font-size: 11px; color: #666; text-align: right;">10/13/2025</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e0e0e0;">
+                <td style="padding: 8px; font-size: 11px;">🔭 Laravel Horizon</td>
+                <td style="padding: 8px; font-size: 11px; color: #666;">Queue Dashboard</td>
+                <td style="padding: 8px; font-size: 11px; color: #666; text-align: right;">10/12/2025</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e0e0e0;">
+                <td style="padding: 8px; font-size: 11px;">🔬 Laravel Telescope</td>
+                <td style="padding: 8px; font-size: 11px; color: #666;">Debug Assistant</td>
+                <td style="padding: 8px; font-size: 11px; color: #666; text-align: right;">10/11/2025</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e0e0e0;">
+                <td style="padding: 8px; font-size: 11px;">⚒️ Laravel Forge</td>
+                <td style="padding: 8px; font-size: 11px; color: #666;">Server Management</td>
+                <td style="padding: 8px; font-size: 11px; color: #666; text-align: right;">10/10/2025</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e0e0e0;">
+                <td style="padding: 8px; font-size: 11px;">☁️ Laravel Vapor</td>
+                <td style="padding: 8px; font-size: 11px; color: #666;">Serverless Platform</td>
+                <td style="padding: 8px; font-size: 11px; color: #666; text-align: right;">10/09/2025</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e0e0e0;">
+                <td style="padding: 8px; font-size: 11px;">🌥️ Laravel Cloud</td>
+                <td style="padding: 8px; font-size: 11px; color: #666;">Cloud Platform</td>
+                <td style="padding: 8px; font-size: 11px; color: #666; text-align: right;">10/08/2025</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e0e0e0;">
+                <td style="padding: 8px; font-size: 11px;">▲ Vercel</td>
+                <td style="padding: 8px; font-size: 11px; color: #666;">Hosting Platform</td>
+                <td style="padding: 8px; font-size: 11px; color: #666; text-align: right;">10/07/2025</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e0e0e0;">
+                <td style="padding: 8px; font-size: 11px;">🎯 Netlify</td>
+                <td style="padding: 8px; font-size: 11px; color: #666;">Hosting Platform</td>
+                <td style="padding: 8px; font-size: 11px; color: #666; text-align: right;">10/06/2025</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e0e0e0;">
+                <td style="padding: 8px; font-size: 11px;">📦 Composer</td>
+                <td style="padding: 8px; font-size: 11px; color: #666;">PHP Package Manager</td>
+                <td style="padding: 8px; font-size: 11px; color: #666; text-align: right;">10/05/2025</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e0e0e0;">
+                <td style="padding: 8px; font-size: 11px;">🐳 Docker Desktop</td>
+                <td style="padding: 8px; font-size: 11px; color: #666;">Container Platform</td>
+                <td style="padding: 8px; font-size: 11px; color: #666; text-align: right;">10/04/2025</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e0e0e0;">
+                <td style="padding: 8px; font-size: 11px;">🟢 Node.js</td>
+                <td style="padding: 8px; font-size: 11px; color: #666;">JavaScript Runtime</td>
+                <td style="padding: 8px; font-size: 11px; color: #666; text-align: right;">10/03/2025</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
