@@ -965,11 +965,33 @@
       flex-direction: column;
       z-index: 10003;
       min-width: 200px;
+      max-width: 280px;
+      max-height: calc(100vh - 60px);
+      overflow-y: auto;
+      overflow-x: hidden;
       padding: 2px;
     }
 
     .context-menu[hidden] {
       display: none !important;
+    }
+
+    /* Scrollbar styling for context menu */
+    .context-menu::-webkit-scrollbar {
+      width: 16px;
+    }
+
+    .context-menu::-webkit-scrollbar-track {
+      background: #d4d0c8;
+    }
+
+    .context-menu::-webkit-scrollbar-thumb {
+      background: #888;
+      border: 1px solid #666;
+    }
+
+    .context-menu::-webkit-scrollbar-thumb:hover {
+      background: #555;
     }
 
     .context-menu-item {
@@ -1588,59 +1610,6 @@ export default {
       <div class="taskbar-clock" id="clock">12:00 PM</div>
     </div>
 
-    <!-- Context Menu -->
-    <div class="context-menu" id="context-menu" hidden>
-      <button class="context-menu-item has-submenu">
-        <div class="context-menu-item-icon">📤</div>
-        <div>Share with a friend...</div>
-        <div class="context-submenu">
-          <button class="context-menu-item" onclick="shareVia('twitter')">
-            <div class="context-menu-item-icon">🐦</div>
-            <div>Share on Twitter</div>
-          </button>
-          <button class="context-menu-item" onclick="shareVia('linkedin')">
-            <div class="context-menu-item-icon">💼</div>
-            <div>Share on LinkedIn</div>
-          </button>
-          <button class="context-menu-item" onclick="shareVia('email')">
-            <div class="context-menu-item-icon">📧</div>
-            <div>Share via Email</div>
-          </button>
-          <button class="context-menu-item" onclick="shareVia('copy')">
-            <div class="context-menu-item-icon">📋</div>
-            <div>Copy Link</div>
-          </button>
-        </div>
-      </button>
-      <div class="context-menu-separator"></div>
-      <button class="context-menu-item" onclick="copyLogoSVG()">
-        <div class="context-menu-item-icon">🎨</div>
-        <div>Copy Logo as SVG</div>
-      </button>
-      <button class="context-menu-item" onclick="copyWordmarkSVG()">
-        <div class="context-menu-item-icon">✏️</div>
-        <div>Copy Wordmark as SVG</div>
-      </button>
-      <button class="context-menu-item" onclick="window.open('https://stacksjs.org/brand', '_blank')">
-        <div class="context-menu-item-icon">📖</div>
-        <div>Brand Guidelines</div>
-      </button>
-      <div class="context-menu-separator"></div>
-      <button class="context-menu-item" onclick="window.open('https://stacksjs.org/docs', '_blank')">
-        <div class="context-menu-item-icon">📚</div>
-        <div>Documentation</div>
-      </button>
-      <button class="context-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank')">
-        <div class="context-menu-item-icon">💻</div>
-        <div>View on GitHub</div>
-      </button>
-      <div class="context-menu-separator"></div>
-      <button class="context-menu-item" onclick="window.location.reload()">
-        <div class="context-menu-item-icon">🔄</div>
-        <div>Refresh</div>
-      </button>
-    </div>
-
     <!-- Notification Popup -->
     <div class="notification-popup" id="notification-popup">
       <div class="notification-header">
@@ -1698,6 +1667,59 @@ export default {
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Context Menu (outside desktop div to avoid layout inheritance) -->
+  <div class="context-menu" id="context-menu" style="display: none;">
+    <button class="context-menu-item has-submenu">
+      <div class="context-menu-item-icon">📤</div>
+      <div>Share with a friend...</div>
+      <div class="context-submenu">
+        <button class="context-menu-item" onclick="shareVia('twitter')">
+          <div class="context-menu-item-icon">🐦</div>
+          <div>Share on Twitter</div>
+        </button>
+        <button class="context-menu-item" onclick="shareVia('linkedin')">
+          <div class="context-menu-item-icon">💼</div>
+          <div>Share on LinkedIn</div>
+        </button>
+        <button class="context-menu-item" onclick="shareVia('email')">
+          <div class="context-menu-item-icon">📧</div>
+          <div>Share via Email</div>
+        </button>
+        <button class="context-menu-item" onclick="shareVia('copy')">
+          <div class="context-menu-item-icon">📋</div>
+          <div>Copy Link</div>
+        </button>
+      </div>
+    </button>
+    <div class="context-menu-separator"></div>
+    <button class="context-menu-item" onclick="copyLogoSVG()">
+      <div class="context-menu-item-icon">🎨</div>
+      <div>Copy Logo as SVG</div>
+    </button>
+    <button class="context-menu-item" onclick="copyWordmarkSVG()">
+      <div class="context-menu-item-icon">✏️</div>
+      <div>Copy Wordmark as SVG</div>
+    </button>
+    <button class="context-menu-item" onclick="window.open('https://stacksjs.org/brand', '_blank')">
+      <div class="context-menu-item-icon">📖</div>
+      <div>Brand Guidelines</div>
+    </button>
+    <div class="context-menu-separator"></div>
+    <button class="context-menu-item" onclick="window.open('https://stacksjs.org/docs', '_blank')">
+      <div class="context-menu-item-icon">📚</div>
+      <div>Documentation</div>
+    </button>
+    <button class="context-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank')">
+      <div class="context-menu-item-icon">💻</div>
+      <div>View on GitHub</div>
+    </button>
+    <div class="context-menu-separator"></div>
+    <button class="context-menu-item" onclick="window.location.reload()">
+      <div class="context-menu-item-icon">🔄</div>
+      <div>Refresh</div>
+    </button>
   </div>
 
   <script>
@@ -2376,26 +2398,241 @@ await app.start({
 
     // Context Menu
     const contextMenu = document.getElementById('context-menu');
+    let contextMenuTarget = null;
 
     // Show context menu on right-click
     document.addEventListener('contextmenu', (e) => {
       e.preventDefault();
 
-      const x = e.clientX;
-      const y = e.clientY;
+      let x = e.clientX;
+      let y = e.clientY;
 
-      // Remove hidden attribute and position menu
-      contextMenu.removeAttribute('hidden');
+      // Check if right-clicking on a desktop icon
+      const icon = e.target.closest('.desktop-icon');
+      contextMenuTarget = icon;
+
+      // Select the icon if right-clicking on it
+      if (icon) {
+        // Deselect previously selected icon
+        if (selectedIcon && selectedIcon !== icon) {
+          selectedIcon.classList.remove('selected');
+        }
+        // Select the right-clicked icon
+        icon.classList.add('selected');
+        selectedIcon = icon;
+
+        buildIconContextMenu(icon);
+      } else {
+        buildDesktopContextMenu();
+      }
+
+      // Show menu temporarily to get dimensions
+      contextMenu.style.display = 'flex';
       contextMenu.style.left = `${x}px`;
       contextMenu.style.top = `${y}px`;
+
+      // Get menu dimensions
+      const menuRect = contextMenu.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // Adjust position if menu goes off-screen
+      if (x + menuRect.width > viewportWidth) {
+        x = viewportWidth - menuRect.width - 10;
+      }
+      if (y + menuRect.height > viewportHeight) {
+        y = viewportHeight - menuRect.height - 10;
+      }
+
+      // Apply adjusted position
+      contextMenu.style.left = `${Math.max(10, x)}px`;
+      contextMenu.style.top = `${Math.max(10, y)}px`;
       contextMenu.classList.add('active');
     });
 
-    // Hide context menu on click anywhere
-    document.addEventListener('click', () => {
-      contextMenu.setAttribute('hidden', '');
-      contextMenu.classList.remove('active');
+    // Hide context menu on click anywhere (except on menu items)
+    document.addEventListener('click', (e) => {
+      // Don't hide if clicking inside the context menu
+      if (!contextMenu.contains(e.target)) {
+        contextMenu.style.display = 'none';
+        contextMenu.classList.remove('active');
+      }
     });
+
+    // Close menu after clicking a menu item (not submenu parent)
+    contextMenu.addEventListener('click', (e) => {
+      const clickedItem = e.target.closest('.context-menu-item');
+      // Only close if it's not a submenu parent
+      if (clickedItem && !clickedItem.classList.contains('has-submenu')) {
+        // Delay slightly to allow onclick handlers to execute
+        setTimeout(() => {
+          contextMenu.style.display = 'none';
+          contextMenu.classList.remove('active');
+        }, 50);
+      }
+    });
+
+    // Build context menu for desktop icons
+    function buildIconContextMenu(icon) {
+      const iconType = icon.dataset.iconType;
+      const iconSection = icon.dataset.iconSection;
+      const iconUrl = icon.dataset.iconUrl;
+      const iconTitle = icon.querySelector('.desktop-icon-label').textContent;
+
+      let menuHTML = '';
+
+      // Open option
+      if (iconType === 'window') {
+        menuHTML += `
+          <button class="context-menu-item" onclick="openWindow('${iconSection}'); contextMenu.style.display = 'none';">
+            <div class="context-menu-item-icon">📂</div>
+            <div>Open</div>
+          </button>
+        `;
+      } else if (iconType === 'link') {
+        menuHTML += `
+          <button class="context-menu-item" onclick="window.open('${iconUrl}', '_blank'); contextMenu.style.display = 'none';">
+            <div class="context-menu-item-icon">🔗</div>
+            <div>Open Link</div>
+          </button>
+        `;
+      }
+
+      // Rename option
+      menuHTML += `
+        <button class="context-menu-item" onclick="renameIconFromContextMenu()">
+          <div class="context-menu-item-icon">✏️</div>
+          <div>Rename</div>
+        </button>
+        <div class="context-menu-separator"></div>
+      `;
+
+      // Share submenu
+      menuHTML += `
+        <button class="context-menu-item has-submenu">
+          <div class="context-menu-item-icon">📤</div>
+          <div>Share with a friend...</div>
+          <div class="context-submenu">
+            <button class="context-menu-item" onclick="shareVia('twitter')">
+              <div class="context-menu-item-icon">🐦</div>
+              <div>Share on Twitter</div>
+            </button>
+            <button class="context-menu-item" onclick="shareVia('linkedin')">
+              <div class="context-menu-item-icon">💼</div>
+              <div>Share on LinkedIn</div>
+            </button>
+            <button class="context-menu-item" onclick="shareVia('email')">
+              <div class="context-menu-item-icon">📧</div>
+              <div>Share via Email</div>
+            </button>
+            <button class="context-menu-item" onclick="shareVia('copy')">
+              <div class="context-menu-item-icon">📋</div>
+              <div>Copy Link</div>
+            </button>
+          </div>
+        </button>
+        <div class="context-menu-separator"></div>
+      `;
+
+      // Brand options
+      menuHTML += `
+        <button class="context-menu-item" onclick="copyLogoSVG()">
+          <div class="context-menu-item-icon">🎨</div>
+          <div>Copy Logo as SVG</div>
+        </button>
+        <button class="context-menu-item" onclick="copyWordmarkSVG()">
+          <div class="context-menu-item-icon">✏️</div>
+          <div>Copy Wordmark as SVG</div>
+        </button>
+        <button class="context-menu-item" onclick="window.open('https://stacksjs.org/brand', '_blank'); contextMenu.style.display = 'none';">
+          <div class="context-menu-item-icon">📖</div>
+          <div>Brand Guidelines</div>
+        </button>
+        <div class="context-menu-separator"></div>
+      `;
+
+      // General options
+      menuHTML += `
+        <button class="context-menu-item" onclick="window.open('https://stacksjs.org/docs', '_blank'); contextMenu.style.display = 'none';">
+          <div class="context-menu-item-icon">📚</div>
+          <div>Documentation</div>
+        </button>
+        <button class="context-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank'); contextMenu.style.display = 'none';">
+          <div class="context-menu-item-icon">💻</div>
+          <div>View on GitHub</div>
+        </button>
+        <div class="context-menu-separator"></div>
+        <button class="context-menu-item" onclick="window.location.reload(); contextMenu.style.display = 'none';">
+          <div class="context-menu-item-icon">🔄</div>
+          <div>Refresh</div>
+        </button>
+      `;
+
+      contextMenu.innerHTML = menuHTML;
+    }
+
+    // Build context menu for desktop background
+    function buildDesktopContextMenu() {
+      contextMenu.innerHTML = `
+        <button class="context-menu-item has-submenu">
+          <div class="context-menu-item-icon">📤</div>
+          <div>Share with a friend...</div>
+          <div class="context-submenu">
+            <button class="context-menu-item" onclick="shareVia('twitter')">
+              <div class="context-menu-item-icon">🐦</div>
+              <div>Share on Twitter</div>
+            </button>
+            <button class="context-menu-item" onclick="shareVia('linkedin')">
+              <div class="context-menu-item-icon">💼</div>
+              <div>Share on LinkedIn</div>
+            </button>
+            <button class="context-menu-item" onclick="shareVia('email')">
+              <div class="context-menu-item-icon">📧</div>
+              <div>Share via Email</div>
+            </button>
+            <button class="context-menu-item" onclick="shareVia('copy')">
+              <div class="context-menu-item-icon">📋</div>
+              <div>Copy Link</div>
+            </button>
+          </div>
+        </button>
+        <div class="context-menu-separator"></div>
+        <button class="context-menu-item" onclick="copyLogoSVG()">
+          <div class="context-menu-item-icon">🎨</div>
+          <div>Copy Logo as SVG</div>
+        </button>
+        <button class="context-menu-item" onclick="copyWordmarkSVG()">
+          <div class="context-menu-item-icon">✏️</div>
+          <div>Copy Wordmark as SVG</div>
+        </button>
+        <button class="context-menu-item" onclick="window.open('https://stacksjs.org/brand', '_blank')">
+          <div class="context-menu-item-icon">📖</div>
+          <div>Brand Guidelines</div>
+        </button>
+        <div class="context-menu-separator"></div>
+        <button class="context-menu-item" onclick="window.open('https://stacksjs.org/docs', '_blank')">
+          <div class="context-menu-item-icon">📚</div>
+          <div>Documentation</div>
+        </button>
+        <button class="context-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank')">
+          <div class="context-menu-item-icon">💻</div>
+          <div>View on GitHub</div>
+        </button>
+        <div class="context-menu-separator"></div>
+        <button class="context-menu-item" onclick="window.location.reload()">
+          <div class="context-menu-item-icon">🔄</div>
+          <div>Refresh</div>
+        </button>
+      `;
+    }
+
+    // Rename icon from context menu
+    function renameIconFromContextMenu() {
+      if (contextMenuTarget) {
+        contextMenu.style.display = 'none';
+        makeIconLabelEditable(contextMenuTarget);
+      }
+    }
 
     // Share functions
     function shareVia(platform) {
