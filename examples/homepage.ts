@@ -1045,10 +1045,169 @@ function closeLicenseWindow() {
   closeWindow('license');
 }
 
+// Payment form formatting and validation
+function formatCardNumber(input: HTMLInputElement) {
+  let value = input.value.replace(/\s/g, '').replace(/\D/g, '');
+  let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+  input.value = formattedValue;
+}
+
+function formatExpiry(input: HTMLInputElement) {
+  let value = input.value.replace(/\D/g, '');
+
+  if (value.length >= 2) {
+    let month = value.substring(0, 2);
+    let year = value.substring(2, 4);
+
+    // Validate month
+    const monthNum = parseInt(month);
+    if (monthNum > 12) {
+      month = '12';
+    }
+    if (monthNum < 1 && month.length === 2) {
+      month = '01';
+    }
+    if (monthNum === 0 && month.length === 2) {
+      month = '01';
+    }
+
+    input.value = month + (year ? '/' + year : '');
+  } else {
+    input.value = value;
+  }
+}
+
+function formatCVV(input: HTMLInputElement) {
+  input.value = input.value.replace(/\D/g, '');
+}
+
+function togglePaymentSection() {
+  const paymentForm = document.getElementById('payment-form');
+  if (paymentForm) {
+    paymentForm.style.display = paymentForm.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+function validatePaymentForm(): boolean {
+  const cardNumber = (document.getElementById('card-number') as HTMLInputElement)?.value.replace(/\s/g, '');
+  const cardExpiry = (document.getElementById('card-expiry') as HTMLInputElement)?.value;
+  const cardCVV = (document.getElementById('card-cvv') as HTMLInputElement)?.value;
+  const cardName = (document.getElementById('card-name') as HTMLInputElement)?.value;
+  const billingEmail = (document.getElementById('billing-email') as HTMLInputElement)?.value;
+  const termsAgree = (document.getElementById('terms-agree') as HTMLInputElement)?.checked;
+
+  if (!cardNumber || cardNumber.length < 13 || cardNumber.length > 19) {
+    alert('❌ Please enter a valid card number.');
+    return false;
+  }
+
+  if (!cardExpiry || !/^\d{2}\/\d{2}$/.test(cardExpiry)) {
+    alert('❌ Please enter a valid expiration date (MM/YY).');
+    return false;
+  }
+
+  // Validate expiry date is in the future
+  const [month, year] = cardExpiry.split('/').map(num => parseInt(num));
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear() % 100; // Last 2 digits of current year
+  const currentMonth = currentDate.getMonth() + 1;
+  const fullCurrentYear = currentDate.getFullYear();
+
+  // Check if month is valid
+  if (month < 1 || month > 12) {
+    alert('❌ Invalid month. Please enter a month between 01 and 12.');
+    return false;
+  }
+
+  // Determine if the year is meant to be 20XX or 19XX
+  // Assume years 00-49 are 2000-2049, and 50-99 are 1950-1999
+  let fullYear = year;
+  if (year >= 0 && year <= 49) {
+    fullYear = 2000 + year;
+  } else if (year >= 50 && year <= 99) {
+    fullYear = 1900 + year;
+  }
+
+  // Check if card is expired
+  if (fullYear < fullCurrentYear) {
+    alert(`❌ Card expired in ${month.toString().padStart(2, '0')}/${year.toString().padStart(2, '0')}. Please use a valid card.`);
+    return false;
+  }
+
+  if (fullYear === fullCurrentYear && month < currentMonth) {
+    alert(`❌ Card expired in ${month.toString().padStart(2, '0')}/${year.toString().padStart(2, '0')}. Please use a valid card.`);
+    return false;
+  }
+
+  // Warn about cards expiring too far in the future (likely a typo)
+  if (fullYear > fullCurrentYear + 20) {
+    alert(`❌ Expiration date seems invalid (${month.toString().padStart(2, '0')}/${year.toString().padStart(2, '0')}). Please check and try again.`);
+    return false;
+  }
+
+  if (!cardCVV || cardCVV.length < 3 || cardCVV.length > 4) {
+    alert('❌ Please enter a valid CVV code (3-4 digits).');
+    return false;
+  }
+
+  if (!cardName || cardName.trim().length < 3) {
+    alert('❌ Please enter the cardholder name.');
+    return false;
+  }
+
+  if (!billingEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(billingEmail)) {
+    alert('❌ Please enter a valid email address.');
+    return false;
+  }
+
+  if (!termsAgree) {
+    alert('❌ Please agree to the terms and conditions to continue.');
+    return false;
+  }
+
+  return true;
+}
+
 function purchaseLicense() {
-  const confirmed = confirm('This will open the Stacks.js sponsorship page in a new window. Continue?');
-  if (confirmed) {
-    window.open('https://github.com/sponsors/chrisbbreuer', '_blank');
+  // Check if payment form is visible
+  const paymentForm = document.getElementById('payment-form');
+  const isPaymentVisible = paymentForm && paymentForm.style.display !== 'none';
+
+  if (isPaymentVisible) {
+    // Validate payment form
+    if (!validatePaymentForm()) {
+      return;
+    }
+
+    // Get payment details
+    const cardNumber = (document.getElementById('card-number') as HTMLInputElement)?.value;
+    const cardName = (document.getElementById('card-name') as HTMLInputElement)?.value;
+    const billingEmail = (document.getElementById('billing-email') as HTMLInputElement)?.value;
+
+    // Show processing message
+    const maskedCard = '****' + cardNumber.replace(/\s/g, '').slice(-4);
+    alert(`✅ Payment processing...\n\nCard: ${maskedCard}\nName: ${cardName}\nEmail: ${billingEmail}\n\nThis is a demo. In production, payment would be processed securely through Stripe or similar payment processor.`);
+
+    // Clear form and show success
+    setTimeout(() => {
+      alert('✅ Payment successful!\n\nYour license code has been sent to your email.\n\nLicense: STAC-KSJS-PROF-2025\nType: Professional Edition\nStatus: Activated');
+
+      // Clear payment form
+      (document.getElementById('card-number') as HTMLInputElement).value = '';
+      (document.getElementById('card-expiry') as HTMLInputElement).value = '';
+      (document.getElementById('card-cvv') as HTMLInputElement).value = '';
+      (document.getElementById('card-name') as HTMLInputElement).value = '';
+      (document.getElementById('billing-email') as HTMLInputElement).value = '';
+      (document.getElementById('terms-agree') as HTMLInputElement).checked = false;
+
+      closeWindow('license');
+    }, 1000);
+  } else {
+    // Fall back to sponsorship page
+    const confirmed = confirm('This will open the Stacks.js sponsorship page in a new window. Continue?');
+    if (confirmed) {
+      window.open('https://github.com/sponsors/chrisbbreuer', '_blank');
+    }
   }
 }
 
@@ -1381,6 +1540,10 @@ window.deleteIcon = deleteIcon;
 window.closeLicenseWindow = closeLicenseWindow;
 window.purchaseLicense = purchaseLicense;
 window.activateLicense = activateLicense;
+window.formatCardNumber = formatCardNumber;
+window.formatExpiry = formatExpiry;
+window.formatCVV = formatCVV;
+window.togglePaymentSection = togglePaymentSection;
 window.showEcosystemTab = showEcosystemTab;
 window.printWelcome = printWelcome;
 window.downloadWelcome = downloadWelcome;

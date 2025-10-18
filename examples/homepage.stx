@@ -790,7 +790,7 @@ export default {
       </div>
     </div>
 
-    <div id="window-license" class="window" style="left: 400px; top: 200px; width: 500px; height: 550px;">
+    <div id="window-license" class="window" style="left: 400px; top: 180px; width: 520px; height: 600px;">
       <div class="window-titlebar">
         <div class="window-icon">🔑</div>
         <div class="window-title">Software License Registration</div>
@@ -831,18 +831,77 @@ export default {
           </div>
         </div>
 
-        <div style="background: #ece9d8; padding: 16px; border: 2px groove #999; margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 6px; font-weight: bold; font-size: 12px;">Enter License Code:</label>
-          <input
-            type="text"
-            id="license-code-input"
-            placeholder="XXXX-XXXX-XXXX-XXXX"
-            style="width: 100%; padding: 6px; font-family: 'Courier New', monospace; font-size: 13px; border: 2px inset #999; text-transform: uppercase;"
-            maxlength="19"
-          />
-          <p style="margin: 8px 0 0 0; font-size: 11px; color: #333;">
-            Already have a license? Enter it above to activate.
-          </p>
+        <div id="payment-section" style="background: #ece9d8; padding: 16px; border: 2px groove #999; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <label style="font-weight: bold; font-size: 12px; margin: 0;">💳 Payment Information</label>
+            <button onclick="togglePaymentSection()" style="background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%); border: 2px outset #999; padding: 2px 8px; font-size: 11px; cursor: pointer;">
+              Toggle
+            </button>
+          </div>
+
+          <div id="payment-form" style="display: block;">
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-size: 11px; font-weight: bold;">Card Number</label>
+              <input
+                type="text"
+                id="card-number"
+                placeholder="1234 5678 9012 3456"
+                maxlength="19"
+                style="width: 100%; padding: 6px; font-size: 13px; border: 2px inset #999; font-family: 'Courier New', monospace;"
+                oninput="formatCardNumber(this)"
+              />
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+              <div style="flex: 1;">
+                <label style="display: block; margin-bottom: 4px; font-size: 11px; font-weight: bold;">Expiration Date</label>
+                <input
+                  type="text"
+                  id="card-expiry"
+                  placeholder="MM/YY"
+                  maxlength="5"
+                  style="width: 100%; padding: 6px; font-size: 13px; border: 2px inset #999; font-family: 'Courier New', monospace;"
+                  oninput="formatExpiry(this)"
+                />
+              </div>
+              <div style="flex: 1;">
+                <label style="display: block; margin-bottom: 4px; font-size: 11px; font-weight: bold;">CVV</label>
+                <input
+                  type="text"
+                  id="card-cvv"
+                  placeholder="123"
+                  maxlength="4"
+                  style="width: 100%; padding: 6px; font-size: 13px; border: 2px inset #999; font-family: 'Courier New', monospace;"
+                  oninput="formatCVV(this)"
+                />
+              </div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-size: 11px; font-weight: bold;">Cardholder Name</label>
+              <input
+                type="text"
+                id="card-name"
+                placeholder="JOHN DOE"
+                style="width: 100%; padding: 6px; font-size: 13px; border: 2px inset #999; text-transform: uppercase;"
+              />
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-size: 11px; font-weight: bold;">Billing Email</label>
+              <input
+                type="email"
+                id="billing-email"
+                placeholder="john@example.com"
+                style="width: 100%; padding: 6px; font-size: 13px; border: 2px inset #999;"
+              />
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 12px;">
+              <input type="checkbox" id="terms-agree" style="width: 14px; height: 14px;" />
+              <label for="terms-agree" style="font-size: 11px; margin: 0;">I agree to the terms and conditions</label>
+            </div>
+          </div>
         </div>
 
         <div style="display: flex; gap: 12px; justify-content: center;">
@@ -851,12 +910,6 @@ export default {
             style="padding: 8px 24px; background: linear-gradient(to bottom, #5eac56 0%, #3c873c 100%); border: 2px outset #999; font-weight: bold; color: white; font-size: 13px; cursor: pointer; box-shadow: 1px 1px 2px rgba(0,0,0,0.3);"
           >
             💳 Purchase License
-          </button>
-          <button
-            onclick="activateLicense()"
-            style="padding: 8px 24px; background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%); border: 2px outset #999; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 1px 1px 2px rgba(0,0,0,0.3);"
-          >
-            Activate
           </button>
           <button
             onclick="closeLicenseWindow()"
