@@ -34,7 +34,7 @@ body {
 }
 
 .desktop-icon {
-  position: absolute !important;
+  position: absolute;
   width: 100px !important;
   display: flex !important;
   flex-direction: column !important;

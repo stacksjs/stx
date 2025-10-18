@@ -32,10 +32,11 @@ function initializeIcons() {
   icons.forEach((icon, index) => {
     const row = Math.floor(index / 6);
     const col = index % 6;
-    const left = (col * 120 + 20) + 'px';
-    const top = (row * 120 + 20) + 'px';
-    (icon as HTMLElement).style.setProperty('left', left, 'important');
-    (icon as HTMLElement).style.setProperty('top', top, 'important');
+    const left = col * 120 + 20;
+    const top = row * 120 + 20;
+    (icon as HTMLElement).style.left = left + 'px';
+    (icon as HTMLElement).style.top = top + 'px';
+    console.log(`Icon ${index} positioned at (${left}, ${top})`);
   });
 
   // Deselect icons when clicking desktop
