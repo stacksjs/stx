@@ -1739,7 +1739,7 @@ export default {
 
   <!-- Context Menu (outside desktop div to avoid layout inheritance) -->
   <div class="context-menu" id="context-menu" style="display: none;">
-    <button class="context-menu-item has-submenu">
+    <div class="context-menu-item has-submenu">
       <div class="context-menu-item-icon">📤</div>
       <div>Share with a friend...</div>
       <div class="context-submenu">
@@ -1764,7 +1764,7 @@ export default {
           <div>Copy Link</div>
         </button>
       </div>
-    </button>
+    </div>
     <div class="context-menu-separator"></div>
     <button class="context-menu-item" onclick="copyLogoSVG()">
       <div class="context-menu-item-icon">🎨</div>
@@ -1810,7 +1810,7 @@ export default {
       <div>Delete</div>
     </button>
     <div class="context-menu-separator"></div>
-    <button class="context-menu-item has-submenu">
+    <div class="context-menu-item has-submenu">
       <div class="context-menu-item-icon">📤</div>
       <div>Share with a friend...</div>
       <div class="context-submenu">
@@ -1835,7 +1835,7 @@ export default {
           <div>Copy Link</div>
         </button>
       </div>
-    </button>
+    </div>
     <div class="context-menu-separator"></div>
     <button class="context-menu-item" onclick="copyLogoSVG()">
       <div class="context-menu-item-icon">🎨</div>

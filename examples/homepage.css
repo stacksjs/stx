@@ -926,6 +926,37 @@ body {
   display: flex;
 }
 
+.context-submenu .context-menu-item {
+  padding: 4px 24px 4px 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: 'Tahoma', sans-serif;
+  font-size: 11px;
+  transition: background 0.1s;
+  position: relative;
+  color: #000;
+  white-space: nowrap;
+}
+
+.context-submenu .context-menu-item:hover {
+  background: #316ac5;
+  color: white;
+}
+
+.context-submenu .context-menu-item-icon {
+  position: absolute;
+  left: 4px;
+  font-size: 14px;
+  width: 20px;
+  text-align: center;
+}
+
 /* Folder Contents */
 .folder-list {
   display: flex;
