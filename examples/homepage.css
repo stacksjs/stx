@@ -390,7 +390,7 @@ body {
 
 .package-desc {
   font-size: 12px;
-  color: #666;
+  color: #333;
   line-height: 1.4;
 }
 
@@ -657,7 +657,7 @@ body {
 
 .notification-count {
   background: #e8e8e8;
-  color: #555;
+  color: #2a2a2a;
   font-size: 12px;
   font-weight: bold;
   padding: 2px 7px;
@@ -820,7 +820,7 @@ body {
 
 .notification-success-subtitle {
   font-size: 12px;
-  color: #666;
+  color: #333;
 }
 
 /* Context Menu */
@@ -969,6 +969,6 @@ body {
 
 .folder-item-desc {
   font-size: 11px;
-  color: #666;
+  color: #333;
   line-height: 1.4;
 }

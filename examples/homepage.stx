@@ -364,7 +364,7 @@
 
           <div id="tab-frameworks" class="ecosystem-tab" style="display: none;">
             <h3 style="color: #0831d9; margin-bottom: 12px;">Frameworks</h3>
-            <p style="margin-bottom: 16px; color: #666;">Powerful frameworks for modern development.</p>
+            <p style="margin-bottom: 16px; color: #333;">Powerful frameworks for modern development.</p>
             <div class="folder-list">
               
                 <a href="https://github.com/stacksjs/bunpress" target="_blank" class="folder-item">
@@ -419,7 +419,7 @@
 
           <div id="tab-sponsorware" class="ecosystem-tab" style="display: none;">
             <h3 style="color: #0831d9; margin-bottom: 12px;">Sponsorware</h3>
-            <p style="margin-bottom: 16px; color: #666;">Premium tools & services for sponsors.</p>
+            <p style="margin-bottom: 16px; color: #333;">Premium tools & services for sponsors.</p>
             <div class="folder-list">
               
                 <a href="https://github.com/stacksjs/bun-queue" target="_blank" class="folder-item">
@@ -466,7 +466,7 @@
 
           <div id="tab-apps" class="ecosystem-tab" style="display: none;">
             <h3 style="color: #0831d9; margin-bottom: 12px;">Apps</h3>
-            <p style="margin-bottom: 16px; color: #666;">Useful macOS utilities built with Stacks.</p>
+            <p style="margin-bottom: 16px; color: #333;">Useful macOS utilities built with Stacks.</p>
             <div class="folder-list">
               
                 <a href="https://github.com/stacksjs/barista" target="_blank" class="folder-item">
@@ -552,7 +552,7 @@ const current = await Auth.user()
       <div class="window-content">
         <h2>Frontend</h2>
         <p>Develop dynamic UIs with helpers for atomic design, and much more.</p>
-        <p style="color: #666; font-size: 12px;">⚡️ Powered by TypeScript, Bun & Tauri</p>
+        <p style="color: #333; font-size: 12px;">⚡️ Powered by TypeScript, Bun & Tauri</p>
 
         <div class="feature-buttons">
           <button class="feature-btn active" onclick="showFeature('frontend', 'components')">Components</button>
@@ -591,7 +591,7 @@ const current = await Auth.user()
       <div class="window-content">
         <h2>Cloud</h2>
         <p>Develop & maintain cloud infrastructure with ease.</p>
-        <p style="color: #666; font-size: 12px;">Imagine Vercel, Vapor and Forge having been unified.</p>
+        <p style="color: #333; font-size: 12px;">Imagine Vercel, Vapor and Forge having been unified.</p>
 
         <div class="feature-buttons">
           <button class="feature-btn active" onclick="showFeature('cloud', 'deployment')">Deployment</button>
@@ -632,8 +632,8 @@ export default {
         <div style="margin-top: 40px; text-align: center;">
           <div style="font-size: 64px; margin-bottom: 20px;">🚧</div>
           <h3 style="color: #0831d9; margin-bottom: 12px;">Work in Progress</h3>
-          <p style="color: #666;">The Stacks Dashboard is currently under development.</p>
-          <p style="color: #666; margin-top: 8px;">Check back soon for exciting new features!</p>
+          <p style="color: #333;">The Stacks Dashboard is currently under development.</p>
+          <p style="color: #333; margin-top: 8px;">Check back soon for exciting new features!</p>
           <div style="margin-top: 32px; padding: 16px; background: #fffacd; border: 2px solid #ffd700; border-radius: 4px; display: inline-block;">
             <p style="margin: 0; font-weight: bold; color: #333;">💡 Coming Soon: Real-time metrics, analytics, and insights</p>
           </div>
@@ -644,7 +644,7 @@ export default {
     <div id="window-welcome" class="window active" style="left: 150px; top: 100px; width: 700px; height: 600px; z-index: 101;">
       <div class="window-titlebar">
         <div class="window-icon">📃</div>
-        <div class="window-title">Welcome.pdf - Adobe Acrobat Reader</div>
+        <div class="window-title">Welcome.pdf - PDF Viewer</div>
         <div class="window-controls">
           <button class="window-control minimize" onclick="minimizeWindow('welcome')">_</button>
           <button class="window-control maximize" onclick="toggleMaximizeWindow('welcome')">□</button>
@@ -662,13 +662,13 @@ export default {
         <div style="background: white; margin: 20px auto; width: 90%; min-height: 500px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); padding: 40px 50px;">
           <div style="text-align: center; margin-bottom: 40px;">
             <h1 style="color: #0831d9; font-size: 48px; margin: 0 0 10px 0; font-weight: bold;">STACKS.JS</h1>
-            <p style="color: #666; font-size: 18px; margin: 0;">The TypeScript Framework for Modern Development</p>
-            <p style="color: #999; font-size: 14px; margin: 8px 0 0 0;">Version 1.0 • October 2025</p>
+            <p style="color: #333; font-size: 18px; margin: 0;">The TypeScript Framework for Modern Development</p>
+            <p style="color: #4a4a4a; font-size: 14px; margin: 8px 0 0 0;">Version 1.0 • October 2025</p>
           </div>
 
           <div style="background: linear-gradient(135deg, #0831d9 0%, #245edb 100%); color: white; padding: 30px; border-radius: 8px; margin-bottom: 30px; text-align: center;">
-            <h2 style="margin: 0 0 16px 0; font-size: 28px;">Lightning Fast Performance</h2>
-            <p style="margin: 0 0 20px 0; font-size: 16px; opacity: 0.95;">Built on Bun, the fastest JavaScript runtime</p>
+            <h2 style="margin: 0 0 16px 0; font-size: 28px; font-weight: bold; text-shadow: 0 2px 8px rgba(0,0,0,0.6), 0 0 20px rgba(0,0,0,0.4);">Lightning Fast Performance</h2>
+            <p style="margin: 0 0 20px 0; font-size: 16px; font-weight: 500; text-shadow: 0 2px 6px rgba(0,0,0,0.6), 0 0 15px rgba(0,0,0,0.3);">Built on Bun, the fastest JavaScript runtime</p>
 
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px;">
               <div style="background: rgba(255,255,255,0.15); padding: 20px; border-radius: 6px; backdrop-filter: blur(10px);">
@@ -701,28 +701,28 @@ export default {
               <span style="font-size: 24px;">⚡</span>
               <div>
                 <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Ultra-Fast Runtime</strong>
-                <span style="font-size: 13px; color: #666;">Built on Bun for maximum performance</span>
+                <span style="font-size: 13px; color: #333;">Built on Bun for maximum performance</span>
               </div>
             </div>
             <div style="display: flex; align-items: start; gap: 12px;">
               <span style="font-size: 24px;">🎯</span>
               <div>
                 <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Type-Safe Everything</strong>
-                <span style="font-size: 13px; color: #666;">Full TypeScript support throughout</span>
+                <span style="font-size: 13px; color: #333;">Full TypeScript support throughout</span>
               </div>
             </div>
             <div style="display: flex; align-items: start; gap: 12px;">
               <span style="font-size: 24px;">🔋</span>
               <div>
                 <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Batteries Included</strong>
-                <span style="font-size: 13px; color: #666;">ORM, Auth, Queue, Cache, and more</span>
+                <span style="font-size: 13px; color: #333;">ORM, Auth, Queue, Cache, and more</span>
               </div>
             </div>
             <div style="display: flex; align-items: start; gap: 12px;">
               <span style="font-size: 24px;">🖥️</span>
               <div>
                 <strong style="color: #0831d9; display: block; margin-bottom: 4px;">Cross-Platform</strong>
-                <span style="font-size: 13px; color: #666;">Web, Desktop & Mobile from one codebase</span>
+                <span style="font-size: 13px; color: #333;">Web, Desktop & Mobile from one codebase</span>
               </div>
             </div>
           </div>
@@ -735,8 +735,8 @@ export default {
           </div>
 
           <div style="text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid #ddd;">
-            <p style="color: #666; font-size: 12px; margin-bottom: 8px;">Learn more at <strong style="color: #0831d9;">stacksjs.org</strong></p>
-            <p style="color: #999; font-size: 11px;">© 2025 Stacks. Open source under MIT License.</p>
+            <p style="color: #333; font-size: 12px; margin-bottom: 8px;">Learn more at <strong style="color: #0831d9;">stacksjs.org</strong></p>
+            <p style="color: #4a4a4a; font-size: 11px;">© 2025 Stacks. Open source under MIT License.</p>
           </div>
         </div>
       </div>
@@ -755,7 +755,7 @@ export default {
       <div class="window-content" style="background: #c0c0c0;">
         <div style="background: white; padding: 20px; border: 2px inset #999; margin-bottom: 20px;">
           <h2 style="text-align: center; color: #000080; margin: 0 0 10px 0; font-size: 20px;">STACKS.JS Professional Edition</h2>
-          <p style="text-align: center; color: #666; font-size: 11px; margin: 0;">Version 1.0 - Build 2025.1</p>
+          <p style="text-align: center; color: #333; font-size: 11px; margin: 0;">Version 1.0 - Build 2025.1</p>
         </div>
 
         <div style="background: #ece9d8; padding: 16px; border: 2px groove #999; margin-bottom: 16px;">
@@ -792,7 +792,7 @@ export default {
             style="width: 100%; padding: 6px; font-family: 'Courier New', monospace; font-size: 13px; border: 2px inset #999; text-transform: uppercase;"
             maxlength="19"
           />
-          <p style="margin: 8px 0 0 0; font-size: 11px; color: #666;">
+          <p style="margin: 8px 0 0 0; font-size: 11px; color: #333;">
             Already have a license? Enter it above to activate.
           </p>
         </div>
@@ -818,7 +818,7 @@ export default {
           </button>
         </div>
 
-        <div style="margin-top: 16px; text-align: center; font-size: 10px; color: #666;">
+        <div style="margin-top: 16px; text-align: center; font-size: 10px; color: #333;">
           <p style="margin: 4px 0;">Need help? Contact support@stacksjs.org</p>
           <p style="margin: 4px 0;">30-Day Money-Back Guarantee</p>
         </div>
