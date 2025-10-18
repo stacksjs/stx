@@ -108,6 +108,17 @@
 
         <button
           class="desktop-icon"
+          data-icon-id="blog"
+          data-icon-type="window"
+          data-icon-section="blog"
+          data-icon-url=""
+        >
+          <div class="desktop-icon-image">📝</div>
+          <div class="desktop-icon-label">Blog</div>
+        </button>
+
+        <button
+          class="desktop-icon"
           data-icon-id="libraries"
           data-icon-type="window"
           data-icon-section="libraries"
@@ -922,6 +933,128 @@ export default {
         <div style="margin-top: 16px; text-align: center; font-size: 10px; color: #333;">
           <p style="margin: 4px 0;">Need help? Contact support@stacksjs.org</p>
           <p style="margin: 4px 0;">30-Day Money-Back Guarantee</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="window-blog" class="window" style="left: 300px; top: 120px; width: 750px; height: 650px;">
+      <div class="window-titlebar">
+        <div class="window-icon">📝</div>
+        <div class="window-title">Stacks Blog - Coming Soon</div>
+        <div class="window-controls">
+          <button class="window-control minimize" onclick="minimizeWindow('blog')">_</button>
+          <button class="window-control maximize" onclick="toggleMaximizeWindow('blog')">□</button>
+          <button class="window-control close" onclick="closeWindow('blog')">×</button>
+        </div>
+      </div>
+      <div class="window-content" style="overflow-y: auto;">
+        <div style="background: linear-gradient(to bottom, #0831d9 0%, #1c4ed8 100%); color: white; padding: 24px; margin: -16px -16px 20px -16px;">
+          <h1 style="margin: 0 0 8px 0; font-size: 32px; font-weight: bold;">Stacks Blog</h1>
+          <p style="margin: 0; font-size: 14px; opacity: 0.9;">Updates, tutorials, and insights from the Stacks team</p>
+        </div>
+
+        <!-- Blog Post 1 -->
+        <article style="background: white; padding: 20px; border: 2px groove #999; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+            <h2 style="margin: 0; color: #0831d9; font-size: 20px;">Introducing Stacks 1.0: The Future of Full-Stack TypeScript</h2>
+            <span style="background: #0831d9; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; white-space: nowrap;">Coming Soon</span>
+          </div>
+          <div style="color: #666; font-size: 12px; margin-bottom: 12px;">
+            📅 December 2025 • ✍️ Chris Breuer • 🏷️ Release, TypeScript, Framework
+          </div>
+          <p style="line-height: 1.6; color: #333;">
+            We're thrilled to announce that Stacks 1.0 is on the horizon! After months of development and community feedback,
+            we're ready to unveil a revolutionary full-stack TypeScript framework that makes building modern applications faster,
+            safer, and more enjoyable than ever before.
+          </p>
+          <p style="line-height: 1.6; color: #333;">
+            Stacks 1.0 brings together the best parts of modern web development: type-safe APIs, lightning-fast build times with Bun,
+            powerful CLI tools, and a batteries-included ecosystem that just works. Whether you're building a SaaS application,
+            a desktop app with Tauri, or a high-performance API, Stacks has you covered.
+          </p>
+          <a href="#" style="color: #0831d9; text-decoration: none; font-weight: bold; font-size: 13px;">Read more →</a>
+        </article>
+
+        <!-- Blog Post 2 -->
+        <article style="background: white; padding: 20px; border: 2px groove #999; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+            <h2 style="margin: 0; color: #0831d9; font-size: 20px;">Building Type-Safe APIs with Stacks Router</h2>
+            <span style="background: #22c55e; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; white-space: nowrap;">Tutorial</span>
+          </div>
+          <div style="color: #666; font-size: 12px; margin-bottom: 12px;">
+            📅 November 2025 • ✍️ Engineering Team • 🏷️ Tutorial, API, TypeScript
+          </div>
+          <p style="line-height: 1.6; color: #333;">
+            Learn how to build fully type-safe REST and RPC APIs using Stacks Router. In this comprehensive tutorial,
+            we'll walk through creating endpoints, validating requests, handling errors, and leveraging TypeScript's
+            type system to catch bugs before they reach production.
+          </p>
+          <p style="line-height: 1.6; color: #333;">
+            Stacks Router provides automatic OpenAPI documentation, built-in validation with Zod, and seamless integration
+            with your database models. Plus, with intelligent type inference, your frontend automatically knows about your
+            API's exact shape—no manual synchronization needed!
+          </p>
+          <a href="#" style="color: #0831d9; text-decoration: none; font-weight: bold; font-size: 13px;">Read more →</a>
+        </article>
+
+        <!-- Blog Post 3 -->
+        <article style="background: white; padding: 20px; border: 2px groove #999; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+            <h2 style="margin: 0; color: #0831d9; font-size: 20px;">From Idea to Production in 10 Minutes</h2>
+            <span style="background: #f59e0b; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; white-space: nowrap;">Guide</span>
+          </div>
+          <div style="color: #666; font-size: 12px; margin-bottom: 12px;">
+            📅 October 2025 • ✍️ Developer Advocate • 🏷️ Getting Started, Deployment
+          </div>
+          <p style="line-height: 1.6; color: #333;">
+            See how Stacks streamlines your development workflow from local development to production deployment.
+            With built-in database migrations, automatic TypeScript compilation, hot module reloading, and one-command
+            deployments, you'll ship faster than ever.
+          </p>
+          <p style="line-height: 1.6; color: #333;">
+            This guide covers scaffolding a new project, setting up your database, building your first API, creating
+            a frontend component, running tests, and deploying to your preferred hosting provider—all in under 10 minutes!
+          </p>
+          <a href="#" style="color: #0831d9; text-decoration: none; font-weight: bold; font-size: 13px;">Read more →</a>
+        </article>
+
+        <!-- Blog Post 4 -->
+        <article style="background: white; padding: 20px; border: 2px groove #999; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+            <h2 style="margin: 0; color: #0831d9; font-size: 20px;">Meet the Ecosystem: 50+ Libraries & CLIs</h2>
+            <span style="background: #8b5cf6; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; white-space: nowrap;">Ecosystem</span>
+          </div>
+          <div style="color: #666; font-size: 12px; margin-bottom: 12px;">
+            📅 September 2025 • ✍️ Chris Breuer • 🏷️ Ecosystem, Tools, Libraries
+          </div>
+          <p style="line-height: 1.6; color: #333;">
+            Explore the growing Stacks ecosystem with over 50 carefully crafted libraries and CLI tools. From image optimization
+            with imgx and pngx, to DNS management with dnsx, to queue processing with bun-queue—every tool is designed to work
+            seamlessly together while remaining independently useful.
+          </p>
+          <p style="line-height: 1.6; color: #333;">
+            Each package follows our core principles: type-safe, performant, well-documented, and developer-friendly.
+            Whether you need HTTP utilities, logging, testing, or deployment tools, the Stacks ecosystem has you covered.
+          </p>
+          <a href="#" style="color: #0831d9; text-decoration: none; font-weight: bold; font-size: 13px;">Read more →</a>
+        </article>
+
+        <!-- Newsletter Signup -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 8px; border: 2px solid #5a67d8; text-align: center;">
+          <h3 style="margin: 0 0 8px 0; font-size: 20px;">Stay Updated</h3>
+          <p style="margin: 0 0 16px 0; font-size: 13px; opacity: 0.95;">
+            Subscribe to our newsletter for the latest updates, tutorials, and community highlights.
+          </p>
+          <div style="display: flex; gap: 8px; max-width: 400px; margin: 0 auto;">
+            <input
+              type="email"
+              placeholder="your@email.com"
+              style="flex: 1; padding: 10px 14px; border: 2px inset #999; border-radius: 4px; font-size: 13px;"
+            />
+            <button style="padding: 10px 20px; background: white; color: #667eea; border: 2px outset #999; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px;">
+              Subscribe
+            </button>
+          </div>
         </div>
       </div>
     </div>

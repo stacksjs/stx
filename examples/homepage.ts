@@ -8,10 +8,13 @@ function updateClock() {
   const hours = now.getHours() % 12 || 12;
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
-  document.getElementById('clock').textContent = `${hours}:${minutes} ${ampm}`;
+  const clockElement = document.getElementById('clock');
+  if (clockElement) {
+    clockElement.textContent = `${hours}:${minutes} ${ampm}`;
+  }
 }
 updateClock();
-setInterval(updateClock, 60000);
+setInterval(updateClock, 1000); // Update every second
 
 // Desktop Icon Positioning and Dragging
 let draggedIcon: HTMLElement | null = null;
