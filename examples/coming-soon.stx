@@ -11,7 +11,7 @@
   <style>
     /* Submenu positioning handled in CSS file */
   </style>
-  
+
 </head>
 <body>
   <div class="desktop">
@@ -215,7 +215,7 @@
           <div>Share on LinkedIn</div>
         </button>
         <button class="context-menu-item" onclick="shareVia('email')">
-          <div class="context-menu-item-icon">📧</div>
+          <div class="context-menu-item-icon">📫</div>
           <div>Share via Email</div>
         </button>
         <button class="context-menu-item" onclick="shareVia('copy')">
@@ -286,7 +286,7 @@
           <div>Share on LinkedIn</div>
         </button>
         <button class="context-menu-item" onclick="shareVia('email')">
-          <div class="context-menu-item-icon">📧</div>
+          <div class="context-menu-item-icon">📫</div>
           <div>Share via Email</div>
         </button>
         <button class="context-menu-item" onclick="shareVia('copy')">

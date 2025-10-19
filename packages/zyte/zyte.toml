@@ -1,0 +1,23 @@
+# Zyte Configuration File
+# This file demonstrates all available configuration options
+
+[window]
+# Window title
+title = "My Zyte App"
+
+# Window dimensions
+width = 1200
+height = 800
+
+# Window behavior
+resizable = true
+frameless = false
+transparent = false
+always_on_top = false
+
+[webview]
+# Enable WebKit Developer Tools (right-click > Inspect Element)
+dev_tools = true
+
+# Custom user agent (optional)
+# user_agent = "MyApp/1.0"

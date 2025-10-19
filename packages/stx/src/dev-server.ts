@@ -36,6 +36,43 @@ async function findAvailablePort(startPort: number, maxAttempts = 10): Promise<n
   throw new Error(`Could not find an available port between ${startPort} and ${startPort + maxAttempts - 1}`)
 }
 
+// Helper function to open native window with Zyte
+async function openNativeWindow(port: number) {
+  const { spawn } = await import('node:child_process')
+  const zyteDir = path.resolve(__dirname, '../../zyte')
+  const url = `http://localhost:${port}/`
+
+  try {
+    // Check if zyte is built
+    if (!fs.existsSync(path.join(zyteDir, 'zig-out/bin/zyte-minimal'))) {
+      console.log(`${colors.yellow}⚠${colors.reset}  Zyte not built. Building now...`)
+      const { execSync } = await import('node:child_process')
+      execSync(`cd ${zyteDir} && zig build`, { stdio: 'inherit' })
+    }
+
+    // Open Zyte with the dev server URL
+    console.log(`${colors.magenta}⚡ Opening native window...${colors.reset}`)
+
+    const zyteProcess = spawn(
+      path.join(zyteDir, 'zig-out/bin/zyte-minimal'),
+      [url],
+      {
+        detached: true,
+        stdio: 'ignore',
+      }
+    )
+    zyteProcess.unref()
+
+    console.log(`${colors.green}✓${colors.reset} Native window opened with URL: ${colors.cyan}${url}${colors.reset}`)
+
+    return true
+  } catch (error) {
+    console.log(`${colors.red}✗${colors.reset} Could not open native window:`, error)
+    console.log(`${colors.dim}  You can manually run: cd ${zyteDir} && ./zig-out/bin/zyte-minimal ${url}${colors.reset}`)
+    return false
+  }
+}
+
 // ANSI color codes for terminal output
 const colors = {
   reset: '\x1B[0m',
@@ -71,6 +108,7 @@ const colors = {
 export interface DevServerOptions {
   port?: number
   watch?: boolean
+  native?: boolean
   stxOptions?: any
   markdown?: {
     syntaxHighlighting?: {
@@ -520,6 +558,11 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
     server.stop()
   })
 
+  // Open native window if requested
+  if (options.native) {
+    await openNativeWindow(actualPort)
+  }
+
   // Set up file watching if enabled
   if (watch) {
     const dirToWatch = path.dirname(absolutePath)
@@ -715,6 +758,11 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     }
     server.stop()
   })
+
+  // Open native window if requested
+  if (options.native) {
+    await openNativeWindow(actualPort)
+  }
 
   // Set up file watching if enabled
   if (watch) {

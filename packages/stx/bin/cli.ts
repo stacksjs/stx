@@ -319,6 +319,9 @@ if (isDirectMode) {
     else if (arg === '--no-cache') {
       options.cache = false
     }
+    else if (arg === '--native') {
+      options.native = true
+    }
   }
 
   // Check if we're dealing with a glob pattern
@@ -457,6 +460,7 @@ else {
     .command('dev <file>', 'Start a development server for an STX file')
     .option('--port <port>', 'Port to use for the dev server', { default: 3000 })
     .option('--no-watch', 'Disable file watching and auto-reload')
+    .option('--native', 'Open in a native desktop window using Zyte')
     .option('--highlight-theme <theme>', 'Syntax highlighting theme for Markdown code blocks', { default: 'github-dark' })
     .option('--no-highlight', 'Disable syntax highlighting for Markdown code blocks')
     .option('--no-highlight-unknown', 'Disable syntax highlighting for unknown languages in Markdown')
@@ -467,6 +471,7 @@ else {
     .example('stx dev docs/guide.md')
     .example('stx dev **/*.md')
     .example('stx dev docs/guide.md --highlight-theme atom-one-dark')
+    .example('stx dev template.stx --native')
     .action(async (filePattern, options) => {
       try {
         // Validate port if provided
@@ -523,6 +528,7 @@ else {
           const success = await serveMultipleStxFiles(supportedFiles, {
             port: options.port,
             watch: options.watch !== false,
+            native: options.native || false,
             markdown: markdownOptions,
             cache: options.cache !== false,
           } as DevServerOptions)
@@ -544,6 +550,7 @@ else {
           const success = await serveStxFile(filePattern, {
             port: options.port,
             watch: options.watch !== false,
+            native: options.native || false,
             markdown: markdownOptions,
             cache: options.cache !== false,
           } as DevServerOptions)

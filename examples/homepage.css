@@ -12,6 +12,289 @@ body {
   position: relative;
 }
 
+/* Login Screen */
+.login-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  background: linear-gradient(to bottom, #5a7fbe 0%, #305ca8 50%, #1e4a8a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-screen.hidden {
+  display: none;
+}
+
+.login-background {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-container {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  padding: 40px;
+  min-width: 400px;
+  text-align: center;
+  position: relative;
+}
+
+.login-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #999;
+  background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Arial, sans-serif;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.login-close-btn:hover {
+  background: linear-gradient(to bottom, #e74c3c 0%, #c0392b 100%);
+  color: white;
+  border-color: #c0392b;
+}
+
+.login-header {
+  margin-bottom: 30px;
+}
+
+.login-logo {
+  font-size: 36px;
+  font-weight: bold;
+  color: #0831d9;
+  margin-bottom: 10px;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  letter-spacing: 2px;
+}
+
+.login-subtitle {
+  font-size: 14px;
+  color: #374151;
+}
+
+.login-users {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.login-user-button {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 20px;
+  background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+  border: 2px solid #003c74;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Tahoma', sans-serif;
+  font-size: 14px;
+}
+
+.login-user-button:hover {
+  background: linear-gradient(to bottom, #e3f2fd 0%, #bbdefb 100%);
+  border-color: #0066cc;
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+}
+
+.login-user-button:active {
+  background: linear-gradient(to bottom, #bbdefb 0%, #90caf9 100%);
+}
+
+.login-user-icon {
+  font-size: 32px;
+}
+
+.login-user-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #1e293b;
+}
+
+.login-footer {
+  padding-top: 20px;
+  border-top: 1px solid #cbd5e1;
+}
+
+.login-footer-text {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Login Forms */
+.login-form {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10001;
+  background: linear-gradient(to bottom, #5a7fbe 0%, #305ca8 50%, #1e4a8a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-form.hidden {
+  display: none;
+}
+
+.login-form-background {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-form-container {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  padding: 30px;
+  min-width: 450px;
+  max-width: 500px;
+  position: relative;
+}
+
+.login-form-header {
+  margin-bottom: 25px;
+}
+
+.login-back-button {
+  background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+  border: 1px solid #003c74;
+  padding: 6px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: 'Tahoma', sans-serif;
+  font-size: 12px;
+  margin-bottom: 15px;
+  transition: all 0.2s;
+}
+
+.login-back-button:hover {
+  background: linear-gradient(to bottom, #e3f2fd 0%, #bbdefb 100%);
+  border-color: #0066cc;
+}
+
+.login-form-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.login-form-icon {
+  font-size: 32px;
+}
+
+.login-form-title h2 {
+  font-size: 24px;
+  color: #0831d9;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+.login-form-content {
+  text-align: left;
+}
+
+.login-form-prompt {
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.login-input-group {
+  margin-bottom: 15px;
+}
+
+.login-input-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: bold;
+  color: #1e293b;
+  margin-bottom: 6px;
+}
+
+.login-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #cbd5e1;
+  border-radius: 3px;
+  font-family: 'Tahoma', sans-serif;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.login-actions {
+  margin-top: 25px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.login-submit-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(to bottom, #3b82f6 0%, #2563eb 100%);
+  border: 1px solid #1e40af;
+  border-radius: 4px;
+  color: white;
+  font-family: 'Tahoma', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.login-submit-btn:hover {
+  background: linear-gradient(to bottom, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.login-submit-btn:active {
+  background: linear-gradient(to bottom, #1d4ed8 0%, #1e40af 100%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transform: translateY(1px);
+}
+
+.login-btn-icon {
+  font-size: 16px;
+}
+
 /* Desktop Background */
 .desktop {
   width: 100%;
@@ -34,8 +317,8 @@ body {
 }
 
 .desktop-icon {
-  position: absolute !important;
-  width: 100px !important;
+  position: absolute;
+  width: 120px !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
@@ -49,6 +332,22 @@ body {
   margin: 0 !important;
   float: none !important;
   transform: none !important;
+}
+
+#trash-icon {
+  bottom: 60px !important;
+  right: 20px !important;
+  left: auto !important;
+  top: auto !important;
+  z-index: 100 !important;
+}
+
+#sponsor-icon {
+  top: 20px !important;
+  right: 20px !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 100 !important;
 }
 
 .desktop-icon:hover {
@@ -224,8 +523,9 @@ body {
   display: flex;
   align-items: center;
   color: white;
-  font-size: 12px;
+  font-size: 11px;
   margin-left: auto;
+  white-space: nowrap;
 }
 
 /* window */
@@ -254,15 +554,35 @@ body {
 }
 
 .window.active {
-  display: flex;
+  display: flex !important;
+}
+
+.window.minimizing {
+  display: flex !important;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.window.restoring {
+  display: flex !important;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.window.minimized {
+  display: none !important;
+  pointer-events: none;
 }
 
 .window.maximized {
+  transition: all 0.2s ease !important;
   left: 0 !important;
   top: 0 !important;
   width: 100% !important;
   height: calc(100% - 40px) !important;
   border-radius: 0 !important;
+}
+
+.window:not(.maximized) {
+  transition: all 0.2s ease;
 }
 
 .window.maximized .window-titlebar {
@@ -525,7 +845,7 @@ body {
   position: absolute;
   left: calc(100% - 4px);
   bottom: -2px;
-  min-width: 220px;
+  min-width: 280px;
   max-height: 460px;
   background: #ece9d8;
   border: 2px solid #0831d9;
@@ -535,6 +855,7 @@ body {
   z-index: 10001;
   padding: 4px 0;
   overflow-y: auto;
+  white-space: nowrap;
 }
 
 .start-menu-item.has-submenu:hover > .start-submenu {
@@ -824,7 +1145,8 @@ body {
 }
 
 /* Context Menu */
-.context-menu {
+.context-menu,
+.taskbar-context-menu {
   position: fixed;
   background: #ece9d8;
   border: 2px outset #fff;
@@ -835,6 +1157,10 @@ body {
   min-width: 200px;
   max-width: 280px;
   padding: 2px;
+}
+
+.taskbar-context-menu {
+  min-width: 180px;
 }
 
 .context-menu[hidden] {
@@ -882,6 +1208,16 @@ body {
   color: white;
 }
 
+.context-menu-item:disabled {
+  color: #808080;
+  cursor: default;
+}
+
+.context-menu-item:disabled:hover {
+  background: transparent;
+  color: #808080;
+}
+
 .context-menu-item-icon {
   position: absolute;
   left: 4px;
@@ -924,6 +1260,47 @@ body {
 
 .context-menu-item.has-submenu:hover > .context-submenu {
   display: flex;
+}
+
+.context-submenu .context-menu-item {
+  padding: 4px 24px 4px 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: 'Tahoma', sans-serif;
+  font-size: 11px;
+  transition: background 0.1s;
+  position: relative;
+  color: #000;
+  white-space: nowrap;
+}
+
+.context-submenu .context-menu-item:hover {
+  background: #316ac5;
+  color: white;
+}
+
+.context-menu-item:disabled {
+  color: #808080;
+  cursor: default;
+}
+
+.context-menu-item:disabled:hover {
+  background: transparent;
+  color: #808080;
+}
+
+.context-submenu .context-menu-item-icon {
+  position: absolute;
+  left: 4px;
+  font-size: 14px;
+  width: 20px;
+  text-align: center;
 }
 
 /* Folder Contents */
@@ -971,4 +1348,72 @@ body {
   font-size: 11px;
   color: #333;
   line-height: 1.4;
+}
+
+/* Zoom controls */
+#zoom-level {
+  -moz-appearance: textfield;
+}
+
+#zoom-level::-webkit-outer-spin-button,
+#zoom-level::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#zoom-level:focus {
+  outline: 1px solid #777;
+  background: #2c2f31;
+}
+
+/* Selection rectangle */
+.selection-rectangle {
+  position: absolute;
+  border: 1px solid #0831d9;
+  background: rgba(8, 49, 217, 0.15);
+  pointer-events: none;
+  z-index: 1000;
+  display: none;
+}
+
+/* Quick Launch */
+.taskbar-divider {
+  width: 1px;
+  height: 32px;
+  background: linear-gradient(to bottom,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(0, 0, 0, 0.2) 50%,
+    rgba(255, 255, 255, 0.2) 100%);
+  margin: 0 4px;
+}
+
+.quick-launch {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.quick-launch-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.1s;
+  color: white;
+  text-decoration: none;
+}
+
+.quick-launch-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.quick-launch-icon:active {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.3);
 }

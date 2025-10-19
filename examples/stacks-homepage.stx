@@ -23,7 +23,7 @@
         { title: 'Validation', emoji: '✅', desc: 'Type-safe validation' },
         { title: 'Queue', emoji: '📬', desc: 'Background job processing' },
         { title: 'Storage', emoji: '💾', desc: 'File storage abstraction' },
-        { title: 'Email', emoji: '📧', desc: 'Send emails with ease' },
+        { title: 'Email', emoji: '📫', desc: 'Send emails with ease' },
         { title: 'Events', emoji: '📡', desc: 'Event-driven architecture' },
         { title: 'Notifications', emoji: '🔔', desc: 'Multi-channel notifications' },
         { title: 'Testing', emoji: '🧪', desc: 'Testing utilities & helpers' },
