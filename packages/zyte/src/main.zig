@@ -74,14 +74,14 @@ pub const App = struct {
     pub fn init(allocator: std.mem.Allocator) Self {
         return .{
             .allocator = allocator,
-            .windows = std.ArrayList(*Window).init(allocator),
+            .windows = .{},
         };
     }
 
     pub fn createWindow(self: *Self, title: []const u8, width: u32, height: u32, html: []const u8) !*Window {
         const window = try self.allocator.create(Window);
         window.* = Window.init(title, width, height, html);
-        try self.windows.append(window);
+        try self.windows.append(self.allocator, window);
         return window;
     }
 
@@ -124,7 +124,7 @@ pub const App = struct {
             window.deinit();
             self.allocator.destroy(window);
         }
-        self.windows.deinit();
+        self.windows.deinit(self.allocator);
     }
 };
 

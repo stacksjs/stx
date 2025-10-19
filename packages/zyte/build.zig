@@ -4,46 +4,26 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // Library
-    const lib = b.addStaticLibrary(.{
-        .name = "zyte",
+    // Create the zyte module
+    const zyte_module = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
     });
-
-    // Add system libraries based on platform
-    const target_os = target.result.os.tag;
-    switch (target_os) {
-        .macos => {
-            lib.linkFramework("Cocoa");
-            lib.linkFramework("WebKit");
-        },
-        .linux => {
-            lib.linkSystemLibrary("gtk+-3.0");
-            lib.linkSystemLibrary("webkit2gtk-4.0");
-        },
-        .windows => {
-            lib.linkSystemLibrary("ole32");
-            lib.linkSystemLibrary("user32");
-            lib.linkSystemLibrary("gdi32");
-        },
-        else => {},
-    }
-
-    lib.linkLibC();
-    b.installArtifact(lib);
 
     // Example executable
     const exe = b.addExecutable(.{
         .name = "zyte-example",
-        .root_source_file = b.path("src/example.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/example.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zyte", .module = zyte_module },
+            },
+        }),
     });
 
-    exe.root_module.addImport("zyte", &lib.root_module);
-
+    // Add system libraries based on platform
+    const target_os = target.result.os.tag;
     switch (target_os) {
         .macos => {
             exe.linkFramework("Cocoa");
@@ -76,9 +56,11 @@ pub fn build(b: *std.Build) void {
 
     // Tests
     const lib_unit_tests = b.addTest(.{
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);

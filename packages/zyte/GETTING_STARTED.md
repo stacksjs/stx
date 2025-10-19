@@ -7,22 +7,25 @@
 First, you need to install Zig. Visit [ziglang.org](https://ziglang.org/download/) or use a package manager:
 
 **macOS (Homebrew):**
+
 ```bash
 brew install zig
 ```
 
 **Linux (Snap):**
+
 ```bash
 snap install zig --classic --beta
 ```
 
 **Windows (Chocolatey):**
+
 ```bash
 choco install zig
 ```
 
 **Or download directly:**
-Visit https://ziglang.org/download/ and download the binary for your platform.
+Visit <https://ziglang.org/download/> and download the binary for your platform.
 
 ### 2. Verify Installation
 
@@ -153,16 +156,19 @@ On macOS, Zyte uses WebKit framework which is included by default. No additional
 Install required dependencies:
 
 **Ubuntu/Debian:**
+
 ```bash
 sudo apt-get install libgtk-3-dev libwebkit2gtk-4.0-dev
 ```
 
 **Fedora:**
+
 ```bash
 sudo dnf install gtk3-devel webkit2gtk3-devel
 ```
 
 **Arch:**
+
 ```bash
 sudo pacman -S gtk3 webkit2gtk
 ```
@@ -201,6 +207,7 @@ my-zyte-app/
 ### "command not found: zig"
 
 Make sure Zig is installed and in your PATH. Try:
+
 ```bash
 which zig  # macOS/Linux
 where zig  # Windows
@@ -209,6 +216,7 @@ where zig  # Windows
 ### Build errors on Linux
 
 Make sure you have the required development libraries:
+
 ```bash
 # Ubuntu/Debian
 sudo apt-get install build-essential libgtk-3-dev libwebkit2gtk-4.0-dev
