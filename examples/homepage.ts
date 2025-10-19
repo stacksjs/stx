@@ -32,11 +32,41 @@ let activeEditLabel: HTMLElement | null = null;
 let activeEditOriginalName: string = '';
 const DRAG_THRESHOLD = 5; // pixels to move before drag starts
 
+// Grid settings for icon snapping
+const GRID_SIZE = 120; // spacing between icons
+const GRID_OFFSET = 20; // offset from edge
+
+// Background images collection
+const BACKGROUND_IMAGES = [
+  'bg-img.png', // Original
+  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80', // Mountain landscape
+  'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80', // Mountain peaks
+  'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80', // Foggy forest
+  'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1920&q=80', // Nature path
+  'https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=1920&q=80', // Lake and mountains
+  'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1920&q=80', // Rolling hills
+  'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1920&q=80', // Tropical beach
+  'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1920&q=80', // Ocean waves
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80', // Beach sunset
+];
+let currentBackgroundIndex = 0;
+
 // Selection rectangle
 let selectionRect: HTMLElement | null = null;
 let isSelecting = false;
 let selectionStartX = 0;
 let selectionStartY = 0;
+
+// Snap icon to grid
+function snapToGrid(x: number, y: number): { x: number; y: number } {
+  const col = Math.round((x - GRID_OFFSET) / GRID_SIZE);
+  const row = Math.round((y - GRID_OFFSET) / GRID_SIZE);
+
+  return {
+    x: col * GRID_SIZE + GRID_OFFSET,
+    y: row * GRID_SIZE + GRID_OFFSET
+  };
+}
 
 // Initialize icons when DOM is ready
 function initializeIcons() {
@@ -47,8 +77,8 @@ function initializeIcons() {
   icons.forEach((icon, index) => {
     const row = Math.floor(index / 6);
     const col = index % 6;
-    const left = col * 120 + 20;
-    const top = row * 120 + 20;
+    const left = col * GRID_SIZE + GRID_OFFSET;
+    const top = row * GRID_SIZE + GRID_OFFSET;
     (icon as HTMLElement).style.left = left + 'px';
     (icon as HTMLElement).style.top = top + 'px';
     console.log(`Icon ${index} positioned at (${left}, ${top})`);
@@ -273,9 +303,23 @@ function initializeIcons() {
   // Icon drag end
   document.addEventListener('mouseup', () => {
     if (draggedIcon) {
+      // Snap to grid if icon was moved
+      if (iconDragThresholdMet || hasMove) {
+        const currentX = parseInt(draggedIcon.style.left || '0');
+        const currentY = parseInt(draggedIcon.style.top || '0');
+
+        const snapped = snapToGrid(currentX, currentY);
+
+        draggedIcon.style.left = snapped.x + 'px';
+        draggedIcon.style.top = snapped.y + 'px';
+      }
+
+      // Reset drag state immediately (not in timeout)
+      draggedIcon = null;
+      iconDragThresholdMet = false;
+
+      // Only delay hasMove reset to prevent click after drag
       setTimeout(() => {
-        draggedIcon = null;
-        iconDragThresholdMet = false;
         hasMove = false;
       }, 100);
     }
@@ -1058,6 +1102,24 @@ function copyWordmarkSVG() {
   });
 }
 
+function changeBackgroundImage() {
+  // Move to next background
+  currentBackgroundIndex = (currentBackgroundIndex + 1) % BACKGROUND_IMAGES.length;
+  const newBackground = BACKGROUND_IMAGES[currentBackgroundIndex];
+
+  // Get the desktop element
+  const desktop = document.querySelector('.desktop') as HTMLElement;
+  if (desktop) {
+    desktop.style.backgroundImage = `url('${newBackground}')`;
+  }
+
+  // Close context menu
+  const contextMenu = document.getElementById('context-menu');
+  if (contextMenu) {
+    contextMenu.style.display = 'none';
+  }
+}
+
 function submitContactForm(event: Event) {
   event.preventDefault();
 
@@ -1741,6 +1803,7 @@ window.handleEmailSignup = handleEmailSignup;
 window.shareVia = shareVia;
 window.copyLogoSVG = copyLogoSVG;
 window.copyWordmarkSVG = copyWordmarkSVG;
+window.changeBackgroundImage = changeBackgroundImage;
 window.openIconFromMenu = openIconFromMenu;
 window.renameIcon = renameIcon;
 window.deleteIcon = deleteIcon;

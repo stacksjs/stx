@@ -2536,6 +2536,11 @@ export default {
       <div>View on GitHub</div>
     </button>
     <div class="context-menu-separator"></div>
+    <button class="context-menu-item" onclick="changeBackgroundImage()">
+      <div class="context-menu-item-icon">🖼️</div>
+      <div>Change Background Image</div>
+    </button>
+    <div class="context-menu-separator"></div>
     <button class="context-menu-item" onclick="window.location.reload()">
       <div class="context-menu-item-icon">🔄</div>
       <div>Refresh</div>
