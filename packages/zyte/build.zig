@@ -54,6 +54,49 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the example app");
     run_step.dependOn(&run_cmd.step);
 
+    // Minimal app executable
+    const minimal_exe = b.addExecutable(.{
+        .name = "zyte-minimal",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/minimal.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zyte", .module = zyte_module },
+            },
+        }),
+    });
+
+    switch (target_os) {
+        .macos => {
+            minimal_exe.linkFramework("Cocoa");
+            minimal_exe.linkFramework("WebKit");
+        },
+        .linux => {
+            minimal_exe.linkSystemLibrary("gtk+-3.0");
+            minimal_exe.linkSystemLibrary("webkit2gtk-4.0");
+        },
+        .windows => {
+            minimal_exe.linkSystemLibrary("ole32");
+            minimal_exe.linkSystemLibrary("user32");
+            minimal_exe.linkSystemLibrary("gdi32");
+        },
+        else => {},
+    }
+
+    minimal_exe.linkLibC();
+    b.installArtifact(minimal_exe);
+
+    const run_minimal_cmd = b.addRunArtifact(minimal_exe);
+    run_minimal_cmd.step.dependOn(b.getInstallStep());
+
+    if (b.args) |args| {
+        run_minimal_cmd.addArgs(args);
+    }
+
+    const run_minimal_step = b.step("run-minimal", "Run the minimal app");
+    run_minimal_step.dependOn(&run_minimal_cmd.step);
+
     // Tests
     const lib_unit_tests = b.addTest(.{
         .root_module = b.createModule(.{

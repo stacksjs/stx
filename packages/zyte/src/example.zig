@@ -69,12 +69,9 @@ pub fn main() !void {
         \\</html>
     ;
 
-    const window = try app.createWindow("Zyte Example App", 800, 600, html);
-    _ = window;
+    _ = try app.createWindow("Zyte Example App", 800, 600, html);
 
     std.debug.print("Starting Zyte desktop app...\n", .{});
-    std.debug.print("Note: Full webview implementation requires platform-specific bindings.\n", .{});
-    std.debug.print("This example demonstrates the API structure.\n", .{});
 
-    // try app.run();
+    try app.run();
 }

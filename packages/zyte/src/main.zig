@@ -1,5 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const macos = if (builtin.os.tag == .macos) @import("macos.zig") else struct {};
 
 pub const Window = struct {
     title: []const u8,
@@ -29,10 +30,12 @@ pub const Window = struct {
     }
 
     fn showMacOS(self: *Self) !void {
-        // macOS implementation using Cocoa and WebKit
-        // This is a placeholder - actual implementation would use objc runtime
-        _ = self;
-        @panic("macOS implementation requires Objective-C runtime bindings");
+        if (builtin.os.tag == .macos) {
+            const window = try macos.createWindow(self.title, self.width, self.height, self.html);
+            self.native_handle = @ptrCast(window);
+        } else {
+            return error.UnsupportedPlatform;
+        }
     }
 
     fn showLinux(self: *Self) !void {
@@ -106,7 +109,9 @@ pub const App = struct {
 
     fn runMacOS(self: *Self) !void {
         _ = self;
-        std.debug.print("macOS event loop (not yet implemented)\n", .{});
+        if (builtin.os.tag == .macos) {
+            macos.runApp();
+        }
     }
 
     fn runLinux(self: *Self) !void {
