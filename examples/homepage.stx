@@ -14,6 +14,104 @@
 
 </head>
 <body>
+  <!-- Windows XP Login Screen -->
+  <div id="login-screen" class="login-screen hidden">
+    <div class="login-background">
+      <div class="login-container">
+        <button class="login-close-btn" onclick="closeLoginScreens()">×</button>
+        <div class="login-header">
+          <div class="login-logo">STACKS</div>
+          <div class="login-subtitle">To begin, click your user name</div>
+        </div>
+
+        <div class="login-users">
+          <button class="login-user-button" id="email-login-btn">
+            <div class="login-user-icon">👤</div>
+            <div class="login-user-name">Email Login</div>
+          </button>
+
+          <button class="login-user-button" id="license-login-btn">
+            <div class="login-user-icon">🔑</div>
+            <div class="login-user-name">License Key</div>
+          </button>
+        </div>
+
+        <div class="login-footer">
+          <div class="login-footer-text">After you log in, you can access the STACKS Desktop</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email/Password Login Form -->
+  <div id="email-login-form" class="login-form hidden">
+    <div class="login-form-background">
+      <div class="login-form-container">
+        <button class="login-close-btn" onclick="closeLoginScreens()">×</button>
+        <div class="login-form-header">
+          <button class="login-back-button" onclick="hideLoginForms()">← Back</button>
+          <div class="login-form-title">
+            <div class="login-form-icon">👤</div>
+            <h2>Email Login</h2>
+          </div>
+        </div>
+
+        <div class="login-form-content">
+          <div class="login-form-prompt">Type your email and password</div>
+
+          <div class="login-input-group">
+            <label>Email:</label>
+            <input type="email" id="email-input" class="login-input" placeholder="user@example.com">
+          </div>
+
+          <div class="login-input-group">
+            <label>Password:</label>
+            <input type="password" id="password-input" class="login-input" placeholder="Enter your password">
+          </div>
+
+          <div class="login-actions">
+            <button class="login-submit-btn" onclick="handleEmailLogin()">
+              <span class="login-btn-icon">→</span>
+              <span>Log In</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- License Key Login Form -->
+  <div id="license-login-form" class="login-form hidden">
+    <div class="login-form-background">
+      <div class="login-form-container">
+        <button class="login-close-btn" onclick="closeLoginScreens()">×</button>
+        <div class="login-form-header">
+          <button class="login-back-button" onclick="hideLoginForms()">← Back</button>
+          <div class="login-form-title">
+            <div class="login-form-icon">🔑</div>
+            <h2>License Key Login</h2>
+          </div>
+        </div>
+
+        <div class="login-form-content">
+          <div class="login-form-prompt">Enter your STACKS license key</div>
+
+          <div class="login-input-group">
+            <label>License Key:</label>
+            <input type="text" id="license-input" class="login-input" placeholder="XXXX-XXXX-XXXX-XXXX">
+          </div>
+
+          <div class="login-actions">
+            <button class="login-submit-btn" onclick="handleLicenseLogin()">
+              <span class="login-btn-icon">→</span>
+              <span>Log In</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="desktop">
     <!-- Desktop Icons -->
     <div class="desktop-icons">
@@ -103,6 +201,18 @@
         >
           <div class="desktop-icon-image">🔑</div>
           <div class="desktop-icon-label">License</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="login"
+          data-icon-type="action"
+          data-icon-section=""
+          data-icon-url=""
+          onclick="showLoginScreen()"
+        >
+          <div class="desktop-icon-image">🔐</div>
+          <div class="desktop-icon-label">Login</div>
         </button>
 
         <button

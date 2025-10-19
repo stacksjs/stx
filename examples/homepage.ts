@@ -2,6 +2,138 @@ import { packages, desktopIcons, libraries, plugins, templates } from './data.ts
 
 console.log('=== JAVASCRIPT STARTING ===');
 
+// Login System
+const loginScreen = document.getElementById('login-screen');
+const emailLoginForm = document.getElementById('email-login-form');
+const licenseLoginForm = document.getElementById('license-login-form');
+
+// Show login screen when Login app is clicked
+function showLoginScreen() {
+  if (loginScreen) loginScreen.classList.remove('hidden');
+}
+
+// Show email login form
+const emailLoginBtn = document.getElementById('email-login-btn');
+if (emailLoginBtn) {
+  emailLoginBtn.addEventListener('click', () => {
+    if (loginScreen) loginScreen.classList.add('hidden');
+    if (emailLoginForm) emailLoginForm.classList.remove('hidden');
+    // Focus email input
+    setTimeout(() => {
+      const emailInput = document.getElementById('email-input') as HTMLInputElement;
+      if (emailInput) emailInput.focus();
+    }, 100);
+  });
+}
+
+// Show license login form
+const licenseLoginBtn = document.getElementById('license-login-btn');
+if (licenseLoginBtn) {
+  licenseLoginBtn.addEventListener('click', () => {
+    if (loginScreen) loginScreen.classList.add('hidden');
+    if (licenseLoginForm) licenseLoginForm.classList.remove('hidden');
+    // Focus license input
+    setTimeout(() => {
+      const licenseInput = document.getElementById('license-input') as HTMLInputElement;
+      if (licenseInput) licenseInput.focus();
+    }, 100);
+  });
+}
+
+// Hide login forms and show user selection
+function hideLoginForms() {
+  if (emailLoginForm) emailLoginForm.classList.add('hidden');
+  if (licenseLoginForm) licenseLoginForm.classList.add('hidden');
+  if (loginScreen) loginScreen.classList.remove('hidden');
+}
+
+// Close login screens
+function closeLoginScreens() {
+  if (loginScreen) loginScreen.classList.add('hidden');
+  if (emailLoginForm) emailLoginForm.classList.add('hidden');
+  if (licenseLoginForm) licenseLoginForm.classList.add('hidden');
+}
+
+// Handle email/password login
+function handleEmailLogin() {
+  const emailInput = document.getElementById('email-input') as HTMLInputElement;
+  const passwordInput = document.getElementById('password-input') as HTMLInputElement;
+
+  const email = emailInput?.value.trim();
+  const password = passwordInput?.value.trim();
+
+  if (!email || !password) {
+    alert('Please enter both email and password');
+    return;
+  }
+
+  // For demo purposes, accept any non-empty credentials
+  // In production, this would validate against a backend
+  console.log('Email login successful:', email);
+  alert(`Login successful! Welcome ${email}`);
+
+  // Close login screens
+  closeLoginScreens();
+
+  // Clear form
+  emailInput.value = '';
+  passwordInput.value = '';
+}
+
+// Handle license key login
+function handleLicenseLogin() {
+  const licenseInput = document.getElementById('license-input') as HTMLInputElement;
+  const licenseKey = licenseInput?.value.trim();
+
+  if (!licenseKey) {
+    alert('Please enter a license key');
+    return;
+  }
+
+  // For demo purposes, accept any non-empty license key
+  // In production, this would validate against a backend
+  console.log('License login successful:', licenseKey);
+  alert(`License key activated successfully!`);
+
+  // Close login screens
+  closeLoginScreens();
+
+  // Clear form
+  licenseInput.value = '';
+}
+
+// Make functions available globally for onclick handlers
+(window as any).showLoginScreen = showLoginScreen;
+(window as any).hideLoginForms = hideLoginForms;
+(window as any).closeLoginScreens = closeLoginScreens;
+(window as any).handleEmailLogin = handleEmailLogin;
+(window as any).handleLicenseLogin = handleLicenseLogin;
+
+// Enter key handlers for login forms
+document.addEventListener('DOMContentLoaded', () => {
+  const emailInput = document.getElementById('email-input');
+  const passwordInput = document.getElementById('password-input');
+  const licenseInput = document.getElementById('license-input');
+
+  if (emailInput || passwordInput) {
+    [emailInput, passwordInput].forEach(input => {
+      input?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          handleEmailLogin();
+        }
+      });
+    });
+  }
+
+  if (licenseInput) {
+    licenseInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        handleLicenseLogin();
+      }
+    });
+  }
+});
+
 // Clock
 function updateClock() {
   const now = new Date();
