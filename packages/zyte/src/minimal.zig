@@ -43,6 +43,9 @@ pub fn main() !void {
                 .transparent = options.transparent,
                 .always_on_top = options.always_on_top,
                 .resizable = options.resizable,
+                .fullscreen = options.fullscreen,
+                .x = options.x,
+                .y = options.y,
             },
         );
     } else if (options.html) |html| {

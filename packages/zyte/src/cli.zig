@@ -6,10 +6,13 @@ pub const WindowOptions = struct {
     title: []const u8 = "Zyte App",
     width: u32 = 1200,
     height: u32 = 800,
+    x: ?i32 = null,
+    y: ?i32 = null,
     frameless: bool = false,
     transparent: bool = false,
     always_on_top: bool = false,
     resizable: bool = true,
+    fullscreen: bool = false,
     dev_tools: bool = true,
 };
 
@@ -55,12 +58,22 @@ pub fn parseArgs(allocator: std.mem.Allocator) !WindowOptions {
             i += 1;
             if (i >= args.len) return CliError.MissingValue;
             options.height = std.fmt.parseInt(u32, args[i], 10) catch return CliError.InvalidNumber;
+        } else if (std.mem.eql(u8, arg, "--x") or std.mem.eql(u8, arg, "-x")) {
+            i += 1;
+            if (i >= args.len) return CliError.MissingValue;
+            options.x = std.fmt.parseInt(i32, args[i], 10) catch return CliError.InvalidNumber;
+        } else if (std.mem.eql(u8, arg, "--y") or std.mem.eql(u8, arg, "-y")) {
+            i += 1;
+            if (i >= args.len) return CliError.MissingValue;
+            options.y = std.fmt.parseInt(i32, args[i], 10) catch return CliError.InvalidNumber;
         } else if (std.mem.eql(u8, arg, "--frameless")) {
             options.frameless = true;
         } else if (std.mem.eql(u8, arg, "--transparent")) {
             options.transparent = true;
         } else if (std.mem.eql(u8, arg, "--always-on-top")) {
             options.always_on_top = true;
+        } else if (std.mem.eql(u8, arg, "--fullscreen") or std.mem.eql(u8, arg, "-f")) {
+            options.fullscreen = true;
         } else if (std.mem.eql(u8, arg, "--no-resize")) {
             options.resizable = false;
         } else if (std.mem.eql(u8, arg, "--no-devtools")) {
@@ -89,9 +102,12 @@ fn printHelp() void {
         \\  -t, --title <TITLE>      Window title (default: "Zyte App")
         \\  -w, --width <WIDTH>      Window width (default: 1200)
         \\      --height <HEIGHT>    Window height (default: 800)
+        \\  -x, --x <X>              Window x position (default: centered)
+        \\  -y, --y <Y>              Window y position (default: centered)
         \\      --frameless          Create frameless window
         \\      --transparent        Make window transparent
         \\      --always-on-top      Keep window always on top
+        \\  -f, --fullscreen         Start in fullscreen mode
         \\      --no-resize          Disable window resizing
         \\      --no-devtools        Disable WebKit DevTools
         \\  -h, --help               Show this help message
@@ -102,6 +118,8 @@ fn printHelp() void {
         \\  zyte --url http://example.com --width 800 --height 600
         \\  zyte --url http://localhost:3000 --title "My App" --frameless
         \\  zyte --html "<h1>Hello, World!</h1>" --width 400 --height 300
+        \\  zyte http://localhost:3000 --x 100 --y 100 --fullscreen
+        \\  zyte http://localhost:3000 --transparent --always-on-top
         \\
         \\For more information, visit: https://github.com/stacksjs/zyte
         \\

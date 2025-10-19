@@ -30,6 +30,9 @@ pub const WindowStyle = struct {
     resizable: bool = true,
     closable: bool = true,
     miniaturizable: bool = true,
+    fullscreen: bool = false,
+    x: ?i32 = null,  // Window x position (null = center)
+    y: ?i32 = null,  // Window y position (null = center)
 };
 
 // Helper functions for Objective-C runtime
@@ -105,7 +108,10 @@ pub fn createWindowWithStyle(title: []const u8, width: u32, height: u32, html: ?
 
     // Create window frame
     const frame = NSRect{
-        .origin = .{ .x = 100, .y = 100 },
+        .origin = .{
+            .x = if (style.x) |x| @as(f64, @floatFromInt(x)) else 100,
+            .y = if (style.y) |y| @as(f64, @floatFromInt(y)) else 100,
+        },
         .size = .{ .width = @as(f64, @floatFromInt(width)), .height = @as(f64, @floatFromInt(height)) },
     };
 
@@ -189,8 +195,17 @@ pub fn createWindowWithStyle(title: []const u8, width: u32, height: u32, html: ?
     // Set webview as content view
     _ = msgSend1(window, "setContentView:", webview);
 
-    // Center and show window
-    msgSendVoid0(window, "center");
+    // Center window if no custom position specified
+    if (style.x == null or style.y == null) {
+        msgSendVoid0(window, "center");
+    }
+
+    // Enter fullscreen if requested
+    if (style.fullscreen) {
+        msgSendVoid0(window, "toggleFullScreen:");
+    }
+
+    // Show window
     _ = msgSend1(window, "makeKeyAndOrderFront:", @as(?*anyopaque, null));
 
     return window;
@@ -304,6 +319,70 @@ pub fn showSaveDialog(title: []const u8, default_name: ?[]const u8) !?[]const u8
     const cstr: [*:0]const u8 = @ptrCast(msgSend0(path, "UTF8String"));
 
     return std.heap.c_allocator.dupe(u8, std.mem.span(cstr));
+}
+
+// Window control functions
+pub fn minimizeWindow(window: objc.id) void {
+    msgSendVoid0(window, "miniaturize:");
+}
+
+pub fn maximizeWindow(window: objc.id) void {
+    msgSendVoid0(window, "zoom:");
+}
+
+pub fn toggleFullscreen(window: objc.id) void {
+    msgSendVoid0(window, "toggleFullScreen:");
+}
+
+pub fn closeWindow(window: objc.id) void {
+    msgSendVoid0(window, "close");
+}
+
+pub fn hideWindow(window: objc.id) void {
+    msgSendVoid0(window, "orderOut:");
+}
+
+pub fn showWindow(window: objc.id) void {
+    _ = msgSend1(window, "makeKeyAndOrderFront:", @as(?*anyopaque, null));
+}
+
+pub fn setWindowPosition(window: objc.id, x: i32, y: i32) void {
+    const point = NSPoint{ .x = @as(f64, @floatFromInt(x)), .y = @as(f64, @floatFromInt(y)) };
+    msgSendVoid1(window, "setFrameTopLeftPoint:", point);
+}
+
+pub fn setWindowSize(window: objc.id, width: u32, height: u32) void {
+    const frame = msgSend0(window, "frame");
+    var new_frame = @as(NSRect, @bitCast(frame));
+    new_frame.size.width = @as(f64, @floatFromInt(width));
+    new_frame.size.height = @as(f64, @floatFromInt(height));
+    msgSendVoid2(window, "setFrame:display:", new_frame, true);
+}
+
+// Notification support
+pub fn showNotification(title: []const u8, message: []const u8) !void {
+    const NSUserNotification = getClass("NSUserNotification");
+    const NSUserNotificationCenter = getClass("NSUserNotificationCenter");
+
+    const notification = msgSend0(msgSend0(NSUserNotification, "alloc"), "init");
+
+    // Set title
+    const title_cstr = try std.heap.c_allocator.dupeZ(u8, title);
+    defer std.heap.c_allocator.free(title_cstr);
+    const title_str_alloc = msgSend0(getClass("NSString"), "alloc");
+    const title_str = msgSend1(title_str_alloc, "initWithUTF8String:", title_cstr.ptr);
+    _ = msgSend1(notification, "setTitle:", title_str);
+
+    // Set message
+    const msg_cstr = try std.heap.c_allocator.dupeZ(u8, message);
+    defer std.heap.c_allocator.free(msg_cstr);
+    const msg_str_alloc = msgSend0(getClass("NSString"), "alloc");
+    const msg_str = msgSend1(msg_str_alloc, "initWithUTF8String:", msg_cstr.ptr);
+    _ = msgSend1(notification, "setInformativeText:", msg_str);
+
+    // Deliver notification
+    const center = msgSend0(NSUserNotificationCenter, "defaultUserNotificationCenter");
+    msgSendVoid1(center, "deliverNotification:", notification);
 }
 
 pub fn runApp() void {

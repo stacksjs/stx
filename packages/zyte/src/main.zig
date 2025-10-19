@@ -10,6 +10,9 @@ pub const WindowStyle = if (builtin.os.tag == .macos) macos.WindowStyle else str
     resizable: bool = true,
     closable: bool = true,
     miniaturizable: bool = true,
+    fullscreen: bool = false,
+    x: ?i32 = null,
+    y: ?i32 = null,
 };
 
 pub const Window = struct {
