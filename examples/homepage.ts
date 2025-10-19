@@ -57,15 +57,77 @@ let isSelecting = false;
 let selectionStartX = 0;
 let selectionStartY = 0;
 
+// Check if a grid position is occupied by another icon
+function isGridPositionOccupied(x: number, y: number, excludeIcon?: HTMLElement): boolean {
+  const icons = document.querySelectorAll('.desktop-icon');
+  const tolerance = 10; // pixels of tolerance for position comparison
+
+  for (const icon of icons) {
+    if (excludeIcon && icon === excludeIcon) continue;
+
+    const iconX = parseInt((icon as HTMLElement).style.left || '0');
+    const iconY = parseInt((icon as HTMLElement).style.top || '0');
+
+    if (Math.abs(iconX - x) < tolerance && Math.abs(iconY - y) < tolerance) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// Find next available grid position
+function findNextAvailableGridPosition(startX: number, startY: number, excludeIcon?: HTMLElement): { x: number; y: number } {
+  const startCol = Math.round((startX - GRID_OFFSET) / GRID_SIZE);
+  const startRow = Math.round((startY - GRID_OFFSET) / GRID_SIZE);
+
+  // Search in a spiral pattern from the starting position
+  const maxSearch = 100; // Maximum positions to check
+
+  for (let distance = 0; distance < maxSearch; distance++) {
+    // Try positions at increasing distances from the start
+    for (let rowOffset = -distance; rowOffset <= distance; rowOffset++) {
+      for (let colOffset = -distance; colOffset <= distance; colOffset++) {
+        // Only check positions on the perimeter of the current distance
+        if (Math.abs(rowOffset) !== distance && Math.abs(colOffset) !== distance) {
+          continue;
+        }
+
+        const col = startCol + colOffset;
+        const row = startRow + rowOffset;
+
+        // Skip negative positions
+        if (col < 0 || row < 0) continue;
+
+        const x = col * GRID_SIZE + GRID_OFFSET;
+        const y = row * GRID_SIZE + GRID_OFFSET;
+
+        if (!isGridPositionOccupied(x, y, excludeIcon)) {
+          return { x, y };
+        }
+      }
+    }
+  }
+
+  // Fallback to original position if no space found
+  return { x: startX, y: startY };
+}
+
 // Snap icon to grid
-function snapToGrid(x: number, y: number): { x: number; y: number } {
+function snapToGrid(x: number, y: number, icon?: HTMLElement): { x: number; y: number } {
   const col = Math.round((x - GRID_OFFSET) / GRID_SIZE);
   const row = Math.round((y - GRID_OFFSET) / GRID_SIZE);
 
-  return {
-    x: col * GRID_SIZE + GRID_OFFSET,
-    y: row * GRID_SIZE + GRID_OFFSET
-  };
+  const targetX = col * GRID_SIZE + GRID_OFFSET;
+  const targetY = row * GRID_SIZE + GRID_OFFSET;
+
+  // Check if target position is occupied
+  if (isGridPositionOccupied(targetX, targetY, icon)) {
+    // Find next available position
+    return findNextAvailableGridPosition(targetX, targetY, icon);
+  }
+
+  return { x: targetX, y: targetY };
 }
 
 // Initialize icons when DOM is ready
@@ -308,7 +370,7 @@ function initializeIcons() {
         const currentX = parseInt(draggedIcon.style.left || '0');
         const currentY = parseInt(draggedIcon.style.top || '0');
 
-        const snapped = snapToGrid(currentX, currentY);
+        const snapped = snapToGrid(currentX, currentY, draggedIcon);
 
         draggedIcon.style.left = snapped.x + 'px';
         draggedIcon.style.top = snapped.y + 'px';
