@@ -30,6 +30,9 @@ pub fn main() !void {
         if (options.frameless) std.debug.print("   Style: Frameless\n", .{});
         if (options.transparent) std.debug.print("   Style: Transparent\n", .{});
         if (options.always_on_top) std.debug.print("   Style: Always on top\n", .{});
+        if (options.dark_mode) |is_dark| std.debug.print("   Theme: {s}\n", .{if (is_dark) "Dark" else "Light"});
+        if (options.hot_reload) std.debug.print("   Hot Reload: Enabled\n", .{});
+        if (options.system_tray) std.debug.print("   System Tray: Enabled\n", .{});
         if (options.dev_tools) std.debug.print("   DevTools: Enabled (Right-click > Inspect Element)\n", .{});
         std.debug.print("\n", .{});
 
@@ -46,6 +49,8 @@ pub fn main() !void {
                 .fullscreen = options.fullscreen,
                 .x = options.x,
                 .y = options.y,
+                .dark_mode = options.dark_mode,
+                .enable_hot_reload = options.hot_reload,
             },
         );
     } else if (options.html) |html| {

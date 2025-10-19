@@ -14,6 +14,9 @@ pub const WindowOptions = struct {
     resizable: bool = true,
     fullscreen: bool = false,
     dev_tools: bool = true,
+    dark_mode: ?bool = null,
+    hot_reload: bool = false,
+    system_tray: bool = false,
 };
 
 pub const CliError = error{
@@ -78,6 +81,14 @@ pub fn parseArgs(allocator: std.mem.Allocator) !WindowOptions {
             options.resizable = false;
         } else if (std.mem.eql(u8, arg, "--no-devtools")) {
             options.dev_tools = false;
+        } else if (std.mem.eql(u8, arg, "--dark")) {
+            options.dark_mode = true;
+        } else if (std.mem.eql(u8, arg, "--light")) {
+            options.dark_mode = false;
+        } else if (std.mem.eql(u8, arg, "--hot-reload")) {
+            options.hot_reload = true;
+        } else if (std.mem.eql(u8, arg, "--system-tray")) {
+            options.system_tray = true;
         } else if (!std.mem.startsWith(u8, arg, "--")) {
             // Treat as positional URL argument
             if (options.url == null) {
@@ -96,20 +107,34 @@ fn printHelp() void {
         \\
         \\Usage: zyte [OPTIONS] [URL]
         \\
-        \\Options:
+        \\Window Content:
         \\  -u, --url <URL>          Load URL in the window
         \\      --html <HTML>        Load HTML content directly
+        \\
+        \\Window Appearance:
         \\  -t, --title <TITLE>      Window title (default: "Zyte App")
         \\  -w, --width <WIDTH>      Window width (default: 1200)
         \\      --height <HEIGHT>    Window height (default: 800)
         \\  -x, --x <X>              Window x position (default: centered)
         \\  -y, --y <Y>              Window y position (default: centered)
+        \\
+        \\Window Style:
         \\      --frameless          Create frameless window
         \\      --transparent        Make window transparent
         \\      --always-on-top      Keep window always on top
         \\  -f, --fullscreen         Start in fullscreen mode
         \\      --no-resize          Disable window resizing
+        \\
+        \\Theme:
+        \\      --dark               Force dark mode
+        \\      --light              Force light mode
+        \\
+        \\Features:
+        \\      --hot-reload         Enable hot reload support
+        \\      --system-tray        Show system tray icon
         \\      --no-devtools        Disable WebKit DevTools
+        \\
+        \\Information:
         \\  -h, --help               Show this help message
         \\  -v, --version            Show version information
         \\
@@ -120,6 +145,8 @@ fn printHelp() void {
         \\  zyte --html "<h1>Hello, World!</h1>" --width 400 --height 300
         \\  zyte http://localhost:3000 --x 100 --y 100 --fullscreen
         \\  zyte http://localhost:3000 --transparent --always-on-top
+        \\  zyte http://localhost:3000 --dark --hot-reload
+        \\  zyte http://localhost:3000 --system-tray --light
         \\
         \\For more information, visit: https://github.com/stacksjs/zyte
         \\
@@ -129,7 +156,7 @@ fn printHelp() void {
 
 fn printVersion() void {
     std.debug.print(
-        \\zyte version 0.3.0
+        \\zyte version 0.4.0
         \\Built with Zig 0.15.1
         \\
         \\

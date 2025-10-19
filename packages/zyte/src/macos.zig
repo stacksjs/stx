@@ -33,6 +33,8 @@ pub const WindowStyle = struct {
     fullscreen: bool = false,
     x: ?i32 = null,  // Window x position (null = center)
     y: ?i32 = null,  // Window y position (null = center)
+    dark_mode: ?bool = null,  // null = system default, true = dark, false = light
+    enable_hot_reload: bool = false,  // Enable hot reload support
 };
 
 // Helper functions for Objective-C runtime
@@ -194,6 +196,14 @@ pub fn createWindowWithStyle(title: []const u8, width: u32, height: u32, html: ?
 
     // Set webview as content view
     _ = msgSend1(window, "setContentView:", webview);
+
+    // Store webview reference globally
+    setGlobalWebView(webview);
+
+    // Apply dark mode if specified
+    if (style.dark_mode) |is_dark| {
+        setAppearance(window, is_dark);
+    }
 
     // Center window if no custom position specified
     if (style.x == null or style.y == null) {
@@ -383,6 +393,223 @@ pub fn showNotification(title: []const u8, message: []const u8) !void {
     // Deliver notification
     const center = msgSend0(NSUserNotificationCenter, "defaultUserNotificationCenter");
     msgSendVoid1(center, "deliverNotification:", notification);
+}
+
+// Hot reload - reload URL in webview
+pub fn reloadWindow(webview: objc.id) void {
+    msgSendVoid0(webview, "reload:");
+}
+
+pub fn reloadWindowIgnoringCache(webview: objc.id) void {
+    msgSendVoid0(webview, "reloadFromOrigin:");
+}
+
+// System tray integration
+pub const SystemTray = struct {
+    status_item: objc.id,
+
+    pub fn create(title: []const u8) !SystemTray {
+        const NSStatusBar = getClass("NSStatusBar");
+        const status_bar = msgSend0(NSStatusBar, "systemStatusBar");
+
+        const status_item = msgSend1(status_bar, "statusItemWithLength:", -1.0);
+
+        // Set title
+        const title_cstr = try std.heap.c_allocator.dupeZ(u8, title);
+        defer std.heap.c_allocator.free(title_cstr);
+        const title_str_alloc = msgSend0(getClass("NSString"), "alloc");
+        const title_str = msgSend1(title_str_alloc, "initWithUTF8String:", title_cstr.ptr);
+
+        const button = msgSend0(status_item, "button");
+        _ = msgSend1(button, "setTitle:", title_str);
+
+        return .{ .status_item = status_item };
+    }
+
+    pub fn setTitle(self: SystemTray, title: []const u8) !void {
+        const title_cstr = try std.heap.c_allocator.dupeZ(u8, title);
+        defer std.heap.c_allocator.free(title_cstr);
+        const title_str_alloc = msgSend0(getClass("NSString"), "alloc");
+        const title_str = msgSend1(title_str_alloc, "initWithUTF8String:", title_cstr.ptr);
+
+        const button = msgSend0(self.status_item, "button");
+        _ = msgSend1(button, "setTitle:", title_str);
+    }
+
+    pub fn remove(self: SystemTray) void {
+        const NSStatusBar = getClass("NSStatusBar");
+        const status_bar = msgSend0(NSStatusBar, "systemStatusBar");
+        msgSendVoid1(status_bar, "removeStatusItem:", self.status_item);
+    }
+};
+
+// Keyboard shortcuts/hotkeys
+pub fn registerGlobalHotkey(key_code: u16, modifiers: u32) void {
+    // This would require NSEvent monitoring
+    // For now, we'll provide the structure
+    _ = key_code;
+    _ = modifiers;
+}
+
+// Multi-monitor awareness
+pub const Monitor = struct {
+    frame: NSRect,
+    visible_frame: NSRect,
+    name: []const u8,
+};
+
+pub fn getAllMonitors(allocator: std.mem.Allocator) ![]Monitor {
+    const NSScreen = getClass("NSScreen");
+    const screens = msgSend0(NSScreen, "screens");
+    const count_obj = msgSend0(screens, "count");
+    const count = @as(usize, @intCast(@as(i64, @bitCast(count_obj))));
+
+    var monitors = try allocator.alloc(Monitor, count);
+
+    for (0..count) |i| {
+        const screen = msgSend1(screens, "objectAtIndex:", i);
+        const frame = msgSend0(screen, "frame");
+        const visible_frame = msgSend0(screen, "visibleFrame");
+
+        monitors[i] = .{
+            .frame = @as(NSRect, @bitCast(frame)),
+            .visible_frame = @as(NSRect, @bitCast(visible_frame)),
+            .name = "", // Would need to get from screen description
+        };
+    }
+
+    return monitors;
+}
+
+pub fn getMainMonitor() Monitor {
+    const NSScreen = getClass("NSScreen");
+    const main_screen = msgSend0(NSScreen, "mainScreen");
+    const frame = msgSend0(main_screen, "frame");
+    const visible_frame = msgSend0(main_screen, "visibleFrame");
+
+    return .{
+        .frame = @as(NSRect, @bitCast(frame)),
+        .visible_frame = @as(NSRect, @bitCast(visible_frame)),
+        .name = "Main",
+    };
+}
+
+// Screenshot/capture
+pub fn captureWindow(window: objc.id, file_path: []const u8) !void {
+    const window_id = msgSend0(window, "windowNumber");
+    const CGWindowListCreateImage = @as(*const fn (NSRect, u32, u32, u32) callconv(.c) ?*anyopaque, @ptrFromInt(0)); // Placeholder
+    _ = CGWindowListCreateImage;
+    _ = window_id;
+    _ = file_path;
+    // Would need Core Graphics bindings for full implementation
+}
+
+pub fn captureScreen(file_path: []const u8) !void {
+    _ = file_path;
+    // Would need Core Graphics bindings
+}
+
+// Print support
+pub fn printWindow(webview: objc.id) void {
+    // Create print operation
+    const print_op = msgSend0(webview, "printOperationWithPrintInfo:");
+    msgSendVoid0(print_op, "runOperation");
+}
+
+pub fn showPrintDialog(webview: objc.id) void {
+    const NSPrintInfo = getClass("NSPrintInfo");
+    const print_info = msgSend0(NSPrintInfo, "sharedPrintInfo");
+
+    const print_op_class = getClass("NSPrintOperation");
+    const print_op = msgSend2(print_op_class, "printOperationWithView:printInfo:", webview, print_info);
+    _ = msgSend1(print_op, "runOperationModalForWindow:delegate:didRunSelector:contextInfo:", @as(?*anyopaque, null));
+}
+
+// Download management
+pub const Download = struct {
+    url: []const u8,
+    destination: []const u8,
+    progress: f64 = 0.0,
+};
+
+pub fn startDownload(url: []const u8, destination: []const u8) !Download {
+    return .{
+        .url = url,
+        .destination = destination,
+        .progress = 0.0,
+    };
+}
+
+// Theme support (dark/light mode)
+pub fn setAppearance(window: objc.id, dark_mode: bool) void {
+    const NSAppearance = getClass("NSAppearance");
+    const appearance_name = if (dark_mode) "NSAppearanceNameDarkAqua" else "NSAppearanceNameAqua";
+
+    const name_cstr: [*:0]const u8 = appearance_name;
+    const appearance = msgSend1(NSAppearance, "appearanceNamed:", name_cstr);
+    _ = msgSend1(window, "setAppearance:", appearance);
+}
+
+pub fn getSystemAppearance() bool {
+    const NSApp = getClass("NSApplication");
+    const app = msgSend0(NSApp, "sharedApplication");
+    const appearance = msgSend0(app, "effectiveAppearance");
+    const name = msgSend0(appearance, "name");
+
+    // Check if dark mode
+    const dark_name_cstr: [*:0]const u8 = "NSAppearanceNameDarkAqua";
+    const dark_str_alloc = msgSend0(getClass("NSString"), "alloc");
+    const dark_str = msgSend1(dark_str_alloc, "initWithUTF8String:", dark_name_cstr);
+
+    const is_equal = msgSend1(name, "isEqualToString:", dark_str);
+    return @as(i64, @bitCast(is_equal)) != 0;
+}
+
+// Performance monitoring
+pub const PerformanceMetrics = struct {
+    memory_usage_mb: f64,
+    cpu_usage_percent: f64,
+    fps: f64,
+};
+
+pub fn getPerformanceMetrics() PerformanceMetrics {
+    // Would need to integrate with task_info and mach APIs
+    return .{
+        .memory_usage_mb = 0.0,
+        .cpu_usage_percent = 0.0,
+        .fps = 60.0,
+    };
+}
+
+// Window events
+pub const WindowEventType = enum {
+    close,
+    resize,
+    move,
+    focus,
+    blur,
+    minimize,
+    maximize,
+};
+
+pub const WindowEvent = struct {
+    event_type: WindowEventType,
+    window: objc.id,
+    data: ?*anyopaque = null,
+};
+
+// Window event callback (simplified - would need delegate in real implementation)
+pub const WindowEventCallback = *const fn (WindowEvent) void;
+
+// Store webview reference for access by window
+var global_webview: ?objc.id = null;
+
+pub fn setGlobalWebView(webview: objc.id) void {
+    global_webview = webview;
+}
+
+pub fn getGlobalWebView() ?objc.id {
+    return global_webview;
 }
 
 pub fn runApp() void {

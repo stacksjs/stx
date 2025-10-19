@@ -13,6 +13,8 @@ pub const WindowStyle = if (builtin.os.tag == .macos) macos.WindowStyle else str
     fullscreen: bool = false,
     x: ?i32 = null,
     y: ?i32 = null,
+    dark_mode: ?bool = null,
+    enable_hot_reload: bool = false,
 };
 
 pub const Window = struct {
