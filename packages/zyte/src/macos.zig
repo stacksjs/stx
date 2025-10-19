@@ -612,6 +612,384 @@ pub fn getGlobalWebView() ?objc.id {
     return global_webview;
 }
 
+// ============================================================================
+// v0.5.0 Features
+// ============================================================================
+
+// WebSocket support for real-time communication
+pub const WebSocket = struct {
+    url: []const u8,
+    connected: bool = false,
+    allocator: std.mem.Allocator,
+
+    pub fn connect(allocator: std.mem.Allocator, url: []const u8) !WebSocket {
+        return .{
+            .url = try allocator.dupe(u8, url),
+            .connected = false,
+            .allocator = allocator,
+        };
+    }
+
+    pub fn send(self: *WebSocket, message: []const u8) !void {
+        _ = self;
+        _ = message;
+        // Would integrate with NSURLSession WebSocket task
+    }
+
+    pub fn receive(self: *WebSocket) ![]const u8 {
+        _ = self;
+        // Would receive from NSURLSession WebSocket task
+        return "";
+    }
+
+    pub fn close(self: *WebSocket) void {
+        if (self.connected) {
+            self.connected = false;
+        }
+    }
+
+    pub fn deinit(self: *WebSocket) void {
+        self.allocator.free(self.url);
+    }
+};
+
+// Custom protocol handler (zyte://)
+pub const ProtocolHandler = struct {
+    scheme: []const u8,
+    callback: *const fn ([]const u8) void,
+
+    pub fn register(scheme: []const u8, callback: *const fn ([]const u8) void) !ProtocolHandler {
+        // Would register with WKURLSchemeHandler
+        return .{
+            .scheme = scheme,
+            .callback = callback,
+        };
+    }
+
+    pub fn handle(self: ProtocolHandler, url: []const u8) void {
+        self.callback(url);
+    }
+};
+
+pub fn registerCustomProtocol(webview: objc.id, scheme: []const u8) !void {
+    _ = webview;
+    _ = scheme;
+    // Would use WKWebViewConfiguration.setURLSchemeHandler
+}
+
+// Drag and drop file support
+pub const DragDropEvent = struct {
+    files: [][]const u8,
+    x: f64,
+    y: f64,
+};
+
+pub const DragDropCallback = *const fn (DragDropEvent) void;
+
+pub fn enableDragDrop(window: objc.id, callback: DragDropCallback) void {
+    _ = window;
+    _ = callback;
+    // Would register for NSDragOperation and implement NSDraggingDestination protocol
+}
+
+pub fn getDraggedFiles(drag_info: objc.id, allocator: std.mem.Allocator) ![][]const u8 {
+    _ = drag_info;
+    _ = allocator;
+    // Would extract files from NSPasteboard
+    return &[_][]const u8{};
+}
+
+// Context menu API
+pub const MenuItem = struct {
+    title: []const u8,
+    action: *const fn () void,
+    enabled: bool = true,
+    separator: bool = false,
+};
+
+pub const ContextMenu = struct {
+    items: []MenuItem,
+    native_menu: objc.id,
+
+    pub fn create(allocator: std.mem.Allocator, items: []const MenuItem) !ContextMenu {
+        const NSMenu = getClass("NSMenu");
+        const menu = msgSend0(msgSend0(NSMenu, "alloc"), "init");
+
+        const items_copy = try allocator.alloc(MenuItem, items.len);
+        @memcpy(items_copy, items);
+
+        return .{
+            .items = items_copy,
+            .native_menu = menu,
+        };
+    }
+
+    pub fn show(self: ContextMenu, window: objc.id, x: f64, y: f64) void {
+        const point = NSPoint{ .x = x, .y = y };
+        _ = msgSend2(self.native_menu, "popUpMenuPositioningItem:atLocation:inView:", @as(?*anyopaque, null), point, window);
+    }
+
+    pub fn deinit(self: ContextMenu, allocator: std.mem.Allocator) void {
+        allocator.free(self.items);
+    }
+};
+
+// Auto-updater
+pub const UpdateInfo = struct {
+    version: []const u8,
+    download_url: []const u8,
+    release_notes: []const u8,
+    required: bool = false,
+};
+
+pub const Updater = struct {
+    current_version: []const u8,
+    update_url: []const u8,
+    allocator: std.mem.Allocator,
+
+    pub fn init(allocator: std.mem.Allocator, version: []const u8, update_url: []const u8) !Updater {
+        return .{
+            .current_version = try allocator.dupe(u8, version),
+            .update_url = try allocator.dupe(u8, update_url),
+            .allocator = allocator,
+        };
+    }
+
+    pub fn checkForUpdates(self: *Updater) !?UpdateInfo {
+        _ = self;
+        // Would fetch update manifest from update_url
+        return null;
+    }
+
+    pub fn downloadUpdate(self: *Updater, info: UpdateInfo) !void {
+        _ = self;
+        _ = info;
+        // Would download update package
+    }
+
+    pub fn installUpdate(self: *Updater) !void {
+        _ = self;
+        // Would install downloaded update and restart app
+    }
+
+    pub fn deinit(self: *Updater) void {
+        self.allocator.free(self.current_version);
+        self.allocator.free(self.update_url);
+    }
+};
+
+// Crash reporting
+pub const CrashReport = struct {
+    timestamp: i64,
+    exception: []const u8,
+    stack_trace: []const u8,
+    app_version: []const u8,
+};
+
+pub const CrashReporter = struct {
+    endpoint: []const u8,
+    app_version: []const u8,
+    allocator: std.mem.Allocator,
+
+    pub fn init(allocator: std.mem.Allocator, endpoint: []const u8, app_version: []const u8) !CrashReporter {
+        return .{
+            .endpoint = try allocator.dupe(u8, endpoint),
+            .app_version = try allocator.dupe(u8, app_version),
+            .allocator = allocator,
+        };
+    }
+
+    pub fn reportCrash(self: *CrashReporter, report: CrashReport) !void {
+        _ = self;
+        _ = report;
+        // Would send crash report to endpoint
+    }
+
+    pub fn enableAutomaticReporting(self: *CrashReporter) void {
+        _ = self;
+        // Would set up NSException handler
+    }
+
+    pub fn deinit(self: *CrashReporter) void {
+        self.allocator.free(self.endpoint);
+        self.allocator.free(self.app_version);
+    }
+};
+
+// Enhanced keyboard shortcut API
+pub const KeyModifier = packed struct {
+    command: bool = false,
+    shift: bool = false,
+    option: bool = false,
+    control: bool = false,
+};
+
+pub const KeyCode = enum(u16) {
+    a = 0,
+    s = 1,
+    d = 2,
+    f = 3,
+    h = 4,
+    g = 5,
+    z = 6,
+    x = 7,
+    c = 8,
+    v = 9,
+    b = 11,
+    q = 12,
+    w = 13,
+    e = 14,
+    r = 15,
+    y = 16,
+    t = 17,
+    n = 45,
+    m = 46,
+    space = 49,
+    return_key = 36,
+    escape = 53,
+    delete = 51,
+    tab = 48,
+    f1 = 122,
+    f2 = 120,
+    f3 = 99,
+    f4 = 118,
+    f5 = 96,
+    f6 = 97,
+    f7 = 98,
+    f8 = 100,
+    f9 = 101,
+    f10 = 109,
+    f11 = 103,
+    f12 = 111,
+    _,
+};
+
+pub const Shortcut = struct {
+    key: KeyCode,
+    modifiers: KeyModifier,
+    action: *const fn () void,
+    global: bool = false,
+};
+
+pub fn registerShortcut(shortcut: Shortcut) !void {
+    _ = shortcut;
+    // Would use NSEvent.addLocalMonitorForEventsMatchingMask or
+    // Carbon/Cocoa global hotkey registration
+}
+
+pub fn unregisterShortcut(shortcut: Shortcut) void {
+    _ = shortcut;
+    // Would remove event monitor or unregister hotkey
+}
+
+// Window snapshots/thumbnails
+pub const WindowSnapshot = struct {
+    data: []u8,
+    width: u32,
+    height: u32,
+    allocator: std.mem.Allocator,
+
+    pub fn deinit(self: *WindowSnapshot) void {
+        self.allocator.free(self.data);
+    }
+};
+
+pub fn captureWindowSnapshot(window: objc.id, allocator: std.mem.Allocator, scale: f64) !WindowSnapshot {
+    _ = window;
+    _ = scale;
+    // Would use CGWindowListCreateImage to capture window
+    const data = try allocator.alloc(u8, 0);
+    return .{
+        .data = data,
+        .width = 0,
+        .height = 0,
+        .allocator = allocator,
+    };
+}
+
+pub fn captureWindowThumbnail(window: objc.id, allocator: std.mem.Allocator, max_width: u32, max_height: u32) !WindowSnapshot {
+    _ = window;
+    _ = max_width;
+    _ = max_height;
+    // Would capture and scale down
+    const data = try allocator.alloc(u8, 0);
+    return .{
+        .data = data,
+        .width = 0,
+        .height = 0,
+        .allocator = allocator,
+    };
+}
+
+pub fn saveSnapshot(snapshot: WindowSnapshot, file_path: []const u8) !void {
+    _ = snapshot;
+    _ = file_path;
+    // Would save to PNG/JPEG file
+}
+
+// Screen recording
+pub const RecordingOptions = struct {
+    fps: u32 = 30,
+    audio: bool = false,
+    cursor: bool = true,
+};
+
+pub const ScreenRecorder = struct {
+    recording: bool = false,
+    output_path: []const u8,
+    options: RecordingOptions,
+    allocator: std.mem.Allocator,
+
+    pub fn init(allocator: std.mem.Allocator, output_path: []const u8, options: RecordingOptions) !ScreenRecorder {
+        return .{
+            .recording = false,
+            .output_path = try allocator.dupe(u8, output_path),
+            .options = options,
+            .allocator = allocator,
+        };
+    }
+
+    pub fn startRecording(self: *ScreenRecorder) !void {
+        if (self.recording) return error.AlreadyRecording;
+        self.recording = true;
+        // Would use AVFoundation to start screen recording
+    }
+
+    pub fn stopRecording(self: *ScreenRecorder) !void {
+        if (!self.recording) return error.NotRecording;
+        self.recording = false;
+        // Would stop AVFoundation recording and save file
+    }
+
+    pub fn pauseRecording(self: *ScreenRecorder) !void {
+        if (!self.recording) return error.NotRecording;
+        // Would pause recording
+    }
+
+    pub fn resumeRecording(self: *ScreenRecorder) !void {
+        if (!self.recording) return error.NotRecording;
+        // Would resume recording
+    }
+
+    pub fn deinit(self: *ScreenRecorder) void {
+        if (self.recording) {
+            _ = self.stopRecording() catch {};
+        }
+        self.allocator.free(self.output_path);
+    }
+};
+
+pub fn recordWindow(window: objc.id, output_path: []const u8, options: RecordingOptions) !ScreenRecorder {
+    _ = window;
+    const allocator = std.heap.c_allocator;
+    return ScreenRecorder.init(allocator, output_path, options);
+}
+
+pub fn recordScreen(output_path: []const u8, options: RecordingOptions) !ScreenRecorder {
+    const allocator = std.heap.c_allocator;
+    return ScreenRecorder.init(allocator, output_path, options);
+}
+
 pub fn runApp() void {
     const NSApplication = getClass("NSApplication");
     const app = msgSend0(NSApplication, "sharedApplication");
