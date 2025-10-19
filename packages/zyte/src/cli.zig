@@ -164,10 +164,10 @@ fn printVersion() void {
     };
 
     std.debug.print(
-        \\zyte version 1.1.0
+        \\zyte version 1.3.0
         \\Built with Zig 0.15.1
         \\Platform: {s}
-        \\Features: 72
+        \\Features: 79
         \\
         \\
     , .{platform_name});
