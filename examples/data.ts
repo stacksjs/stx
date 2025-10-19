@@ -1,6 +1,6 @@
 export const packages = [
   { title: 'AI', emoji: '🤖', desc: 'Deep AI integrations for agentic workflows' },
-  { title: 'API', emoji: '🔌', desc: 'Build scalable REST & GraphQL APIs' },
+  { title: 'API', emoji: '🔌', desc: 'Build scalable REST APIs' },
   { title: 'Auth', emoji: '🔐', desc: 'Authentication and authorization' },
   { title: 'Cache', emoji: '⚡', desc: 'Multi-driver caching system' },
   { title: 'CLI', emoji: '⌨️', desc: 'Beautiful command-line interfaces' },
