@@ -8,24 +8,23 @@
  *   bun server.ts
  */
 
-import { serve } from "bun"
-import { Glob } from "bun"
-import stxPlugin from "bun-plugin-stx"
+import { Glob, serve } from 'bun'
+import stxPlugin from 'bun-plugin-stx'
 
-console.log("🔨 Building .stx files...")
+console.log('🔨 Building .stx files...')
 
 // Build all .stx files to HTML
-const glob = new Glob("pages/**/*.stx")
-const stxFiles = await Array.fromAsync(glob.scan("."))
+const glob = new Glob('pages/**/*.stx')
+const stxFiles = await Array.fromAsync(glob.scan('.'))
 
 const buildResult = await Bun.build({
   entrypoints: stxFiles,
-  outdir: "./dist",
+  outdir: './dist',
   plugins: [stxPlugin()],
 })
 
 if (!buildResult.success) {
-  console.error("❌ Build failed!")
+  console.error('❌ Build failed!')
   process.exit(1)
 }
 
@@ -35,16 +34,16 @@ console.log(`✅ Built ${buildResult.outputs.length} files\n`)
 const routes: Record<string, any> = {}
 
 for (const output of buildResult.outputs) {
-  if (output.path.endsWith(".html")) {
-    const filename = output.path.split("/").pop()?.replace(".html", "")
-    const route = filename === "home" ? "/" : `/${filename}`
+  if (output.path.endsWith('.html')) {
+    const filename = output.path.split('/').pop()?.replace('.html', '')
+    const route = filename === 'home' ? '/' : `/${filename}`
 
     // Read the HTML content
     const html = await output.text()
 
     // Create a Response for this route
     routes[route] = new Response(html, {
-      headers: { "Content-Type": "text/html" },
+      headers: { 'Content-Type': 'text/html' },
     })
   }
 }
@@ -61,7 +60,7 @@ const server = serve({
   fetch(req) {
     const availableRoutes = Object.keys(routes)
       .map(route => `<li><a href="${route}">${route}</a></li>`)
-      .join("\n")
+      .join('\n')
 
     return new Response(
       `
@@ -79,16 +78,16 @@ const server = serve({
     `,
       {
         status: 404,
-        headers: { "Content-Type": "text/html" },
+        headers: { 'Content-Type': 'text/html' },
       },
     )
   },
 })
 
 console.log(`🚀 Server running at ${server.url}`)
-console.log("\n📚 Available routes:")
-Object.keys(routes).forEach(route => {
-  const url = `${server.url}`.replace(/\/$/, "")
+console.log('\n📚 Available routes:')
+Object.keys(routes).forEach((route) => {
+  const url = `${server.url}`.replace(/\/$/, '')
   console.log(`   ${url}${route}`)
 })
-console.log("\n💡 Press Ctrl+C to stop\n")
+console.log('\n💡 Press Ctrl+C to stop\n')

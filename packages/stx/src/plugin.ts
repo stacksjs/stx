@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import type { BunPlugin } from 'bun'
 import type { StxOptions } from './'
 import path from 'node:path'

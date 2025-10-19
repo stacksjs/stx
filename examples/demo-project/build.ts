@@ -1,5 +1,5 @@
-import stxPlugin from 'bun-plugin-stx'
 import { Glob } from 'bun'
+import stxPlugin from 'bun-plugin-stx'
 
 console.log('🔨 Building stx files...\n')
 
@@ -16,8 +16,8 @@ const result = await Bun.build({
   outdir: './dist',
   plugins: [stxPlugin()],
   naming: {
-    entry: '[dir]/[name].[ext]'
-  }
+    entry: '[dir]/[name].[ext]',
+  },
 })
 
 if (!result.success) {

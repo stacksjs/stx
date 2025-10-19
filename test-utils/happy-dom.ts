@@ -307,8 +307,8 @@ if (elementProto) {
 
   // Add closest method if not present
   if (!elementProto.closest) {
-    elementProto.closest = function (this: Element, selector: string): Element | null {
-      let element: Element | null = this
+    elementProto.closest = function (selector: string): Element | null {
+      let element: Element | null = this as Element
       while (element) {
         if (element.matches && element.matches(selector)) {
           return element
@@ -344,15 +344,15 @@ if (elementProto) {
 // Mock IntersectionObserver for tests (if not implemented in very-happy-dom)
 if (typeof globalThis.IntersectionObserver === 'undefined') {
   class MockIntersectionObserver {
-    constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+    constructor(_callback: IntersectionObserverCallback, _options?: IntersectionObserverInit) {
       // Store callback and options if needed for testing
     }
 
-    observe(target: Element) {
+    observe(_target: Element) {
       // Mock implementation - immediately call callback as if element is visible
     }
 
-    unobserve(target: Element) {
+    unobserve(_target: Element) {
       // Mock implementation
     }
 

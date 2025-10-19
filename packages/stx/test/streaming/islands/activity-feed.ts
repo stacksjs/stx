@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 /**
  * Activity Feed Island Component
  * This adds interactive functionality to the server-rendered activity feed

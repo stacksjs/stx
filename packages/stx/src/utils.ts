@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 /**
  * Utility functions for the stx compiler
  */

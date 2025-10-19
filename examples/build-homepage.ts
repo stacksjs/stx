@@ -1,7 +1,7 @@
-import { desktopIcons, libraries, plugins, templates, frameworks, sponsorware, apps, packages } from './data.ts';
+import { apps, desktopIcons, frameworks, libraries, packages, plugins, sponsorware, templates } from './data.ts'
 
 // Read the homepage.stx template
-const template = await Bun.file('./homepage.stx').text();
+const template = await Bun.file('./homepage.stx').text()
 
 // Find and replace the @foreach loop for desktop icons
 const desktopIconsHTML = desktopIcons.map(icon => `
@@ -14,13 +14,13 @@ const desktopIconsHTML = desktopIcons.map(icon => `
         >
           <div class="desktop-icon-image">${icon.icon}</div>
           <div class="desktop-icon-label">${icon.title}</div>
-        </button>`).join('\n');
+        </button>`).join('\n')
 
 // Replace desktop icons @foreach loop
 let html = template.replace(
   /@foreach\(desktopIcons as icon\)[\s\S]*?@endforeach/,
-  desktopIconsHTML
-);
+  desktopIconsHTML,
+)
 
 // Generate and replace libraries @foreach loop
 const librariesHTML = libraries.map(library => `
@@ -30,12 +30,12 @@ const librariesHTML = libraries.map(library => `
                 <div class="folder-item-name">${library.name}</div>
                 <div class="folder-item-desc">${library.desc}</div>
               </div>
-            </a>`).join('\n');
+            </a>`).join('\n')
 
 html = html.replace(
   /@foreach\(libraries as library\)[\s\S]*?@endforeach/,
-  librariesHTML
-);
+  librariesHTML,
+)
 
 // Generate and replace plugins @foreach loop
 const pluginsHTML = plugins.map(plugin => `
@@ -45,12 +45,12 @@ const pluginsHTML = plugins.map(plugin => `
                 <div class="folder-item-name">${plugin.name}</div>
                 <div class="folder-item-desc">${plugin.desc}</div>
               </div>
-            </a>`).join('\n');
+            </a>`).join('\n')
 
 html = html.replace(
   /@foreach\(plugins as plugin\)[\s\S]*?@endforeach/,
-  pluginsHTML
-);
+  pluginsHTML,
+)
 
 // Generate and replace templates @foreach loop
 const templatesHTML = templates.map(template => `
@@ -60,12 +60,12 @@ const templatesHTML = templates.map(template => `
                 <div class="folder-item-name">${template.name}</div>
                 <div class="folder-item-desc">${template.desc}</div>
               </div>
-            </a>`).join('\n');
+            </a>`).join('\n')
 
 html = html.replace(
   /@foreach\(templates as template\)[\s\S]*?@endforeach/,
-  templatesHTML
-);
+  templatesHTML,
+)
 
 // Generate and replace frameworks @foreach loop
 const frameworksHTML = frameworks.map(framework => `
@@ -75,12 +75,12 @@ const frameworksHTML = frameworks.map(framework => `
                     <div class="folder-item-name">${framework.name}</div>
                     <div class="folder-item-desc">${framework.desc}</div>
                   </div>
-                </a>`).join('\n');
+                </a>`).join('\n')
 
 html = html.replace(
   /@foreach\(frameworks as framework\)[\s\S]*?@endforeach/,
-  frameworksHTML
-);
+  frameworksHTML,
+)
 
 // Generate and replace sponsorware @foreach loop
 const sponsorwareHTML = sponsorware.map(item => `
@@ -90,12 +90,12 @@ const sponsorwareHTML = sponsorware.map(item => `
                     <div class="folder-item-name">${item.name}</div>
                     <div class="folder-item-desc">${item.desc}</div>
                   </div>
-                </a>`).join('\n');
+                </a>`).join('\n')
 
 html = html.replace(
   /@foreach\(sponsorware as item\)[\s\S]*?@endforeach/,
-  sponsorwareHTML
-);
+  sponsorwareHTML,
+)
 
 // Generate and replace apps @foreach loop
 const appsHTML = apps.map(app => `
@@ -105,12 +105,12 @@ const appsHTML = apps.map(app => `
                     <div class="folder-item-name">${app.name}</div>
                     <div class="folder-item-desc">${app.desc}</div>
                   </div>
-                </a>`).join('\n');
+                </a>`).join('\n')
 
 html = html.replace(
   /@foreach\(apps as app\)[\s\S]*?@endforeach/,
-  appsHTML
-);
+  appsHTML,
+)
 
 // Generate and replace PackageGrid component
 const packagesHTML = packages.map(pkg => `
@@ -118,30 +118,30 @@ const packagesHTML = packages.map(pkg => `
       <div class="package-emoji">${pkg.emoji}</div>
       <div class="package-title">${pkg.title}</div>
       <div class="package-desc">${pkg.desc}</div>
-    </div>`).join('\n');
+    </div>`).join('\n')
 
-const packageGridHTML = `<div class="package-grid">\n${packagesHTML}\n  </div>`;
+const packageGridHTML = `<div class="package-grid">\n${packagesHTML}\n  </div>`
 
 html = html.replace(
-  /<PackageGrid items="{{ packages }}" \/>/,
-  packageGridHTML
-);
+  /<PackageGrid items="\{\{ packages \}\}" \/>/,
+  packageGridHTML,
+)
 
 // Remove the module.exports script block since data is now in data.js
 html = html.replace(
   /<script>[\s\S]*?module\.exports = \{[\s\S]*?\};[\s\S]*?<\/script>/,
-  ''
-);
+  '',
+)
 
 // Write the output
-await Bun.write('./homepage.stx', html);
+await Bun.write('./homepage.stx', html)
 
-console.log('✓ Built homepage.stx');
-console.log(`  Desktop icons rendered: ${desktopIcons.length}`);
-console.log(`  Libraries rendered: ${libraries.length}`);
-console.log(`  Plugins rendered: ${plugins.length}`);
-console.log(`  Templates rendered: ${templates.length}`);
-console.log(`  Frameworks rendered: ${frameworks.length}`);
-console.log(`  Sponsorware rendered: ${sponsorware.length}`);
-console.log(`  Apps rendered: ${apps.length}`);
-console.log(`  File size: ${html.length} bytes`);
+console.log('✓ Built homepage.stx')
+console.log(`  Desktop icons rendered: ${desktopIcons.length}`)
+console.log(`  Libraries rendered: ${libraries.length}`)
+console.log(`  Plugins rendered: ${plugins.length}`)
+console.log(`  Templates rendered: ${templates.length}`)
+console.log(`  Frameworks rendered: ${frameworks.length}`)
+console.log(`  Sponsorware rendered: ${sponsorware.length}`)
+console.log(`  Apps rendered: ${apps.length}`)
+console.log(`  File size: ${html.length} bytes`)

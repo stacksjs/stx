@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 /**
  * Stats Panel Island Component
  * This adds interactive functionality to the server-rendered stats panel

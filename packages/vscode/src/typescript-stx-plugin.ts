@@ -9,18 +9,22 @@ function extractTypeScriptFromStx(content: string): string {
   // Extract @ts blocks
   const tsBlockRegex = /@ts\s+([\s\S]*?)@endts/g
   let match
-  while ((match = tsBlockRegex.exec(content)) !== null) {
-    tsContent += match[1] + '\n'
+  match = tsBlockRegex.exec(content)
+  while (match !== null) {
+    tsContent += `${match[1]}\n`
+    match = tsBlockRegex.exec(content)
   }
 
   // Extract {{ }} expressions and create variable declarations
   const exprRegex = /\{\{([\s\S]*?)\}\}/g
   let exprCounter = 0
-  while ((match = exprRegex.exec(content)) !== null) {
+  match = exprRegex.exec(content)
+  while (match !== null) {
     const expr = match[1].trim()
     // Create a type-preserving expression
     tsContent += `const __expr${exprCounter} = ${expr};\n`
     exprCounter++
+    match = exprRegex.exec(content)
   }
 
   return tsContent || '// No TypeScript content found'

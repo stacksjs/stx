@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import type { SyntaxHighlightTheme } from './types'
 import { serve } from 'bun'
 import fs from 'node:fs'
@@ -8,6 +7,37 @@ import { readMarkdownFile } from './assets'
 import { config } from './config'
 // TODO: import this from `bun-plugin-stx`. Oddly, there seemingly are issues right now
 import { plugin as stxPlugin } from './plugin'
+
+// ANSI color codes for terminal output
+const colors = {
+  reset: '\x1B[0m',
+  bright: '\x1B[1m',
+  dim: '\x1B[2m',
+  underscore: '\x1B[4m',
+  blink: '\x1B[5m',
+  reverse: '\x1B[7m',
+  hidden: '\x1B[8m',
+
+  black: '\x1B[30m',
+  red: '\x1B[31m',
+  green: '\x1B[32m',
+  yellow: '\x1B[33m',
+  blue: '\x1B[34m',
+  magenta: '\x1B[35m',
+  cyan: '\x1B[36m',
+  white: '\x1B[37m',
+  gray: '\x1B[90m',
+
+  bgBlack: '\x1B[40m',
+  bgRed: '\x1B[41m',
+  bgGreen: '\x1B[42m',
+  bgYellow: '\x1B[43m',
+  bgBlue: '\x1B[44m',
+  bgMagenta: '\x1B[45m',
+  bgCyan: '\x1B[46m',
+  bgWhite: '\x1B[47m',
+  bgGray: '\x1B[100m',
+}
 
 /**
  * Find an available port starting from the given port
@@ -59,49 +89,19 @@ async function openNativeWindow(port: number) {
       {
         detached: true,
         stdio: 'ignore',
-      }
+      },
     )
     zyteProcess.unref()
 
     console.log(`${colors.green}✓${colors.reset} Native window opened with URL: ${colors.cyan}${url}${colors.reset}`)
 
     return true
-  } catch (error) {
+  }
+  catch (error) {
     console.log(`${colors.red}✗${colors.reset} Could not open native window:`, error)
     console.log(`${colors.dim}  You can manually run: cd ${zyteDir} && ./zig-out/bin/zyte-minimal ${url}${colors.reset}`)
     return false
   }
-}
-
-// ANSI color codes for terminal output
-const colors = {
-  reset: '\x1B[0m',
-  bright: '\x1B[1m',
-  dim: '\x1B[2m',
-  underscore: '\x1B[4m',
-  blink: '\x1B[5m',
-  reverse: '\x1B[7m',
-  hidden: '\x1B[8m',
-
-  black: '\x1B[30m',
-  red: '\x1B[31m',
-  green: '\x1B[32m',
-  yellow: '\x1B[33m',
-  blue: '\x1B[34m',
-  magenta: '\x1B[35m',
-  cyan: '\x1B[36m',
-  white: '\x1B[37m',
-  gray: '\x1B[90m',
-
-  bgBlack: '\x1B[40m',
-  bgRed: '\x1B[41m',
-  bgGreen: '\x1B[42m',
-  bgYellow: '\x1B[43m',
-  bgBlue: '\x1B[44m',
-  bgMagenta: '\x1B[45m',
-  bgCyan: '\x1B[46m',
-  bgWhite: '\x1B[47m',
-  bgGray: '\x1B[100m',
 }
 
 // Define types for dev server options

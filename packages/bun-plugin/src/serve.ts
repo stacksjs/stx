@@ -12,8 +12,7 @@
  *   serve pages/home.stx pages/about.md pages/index.html
  */
 
-import { serve as bunServe } from 'bun'
-import { Glob } from 'bun'
+import { serve as bunServe, Glob } from 'bun'
 import stxPlugin from './index'
 
 // Parse command line arguments
@@ -143,7 +142,8 @@ const server = bunServe({
     let path = url.pathname
 
     // Normalize path
-    if (path === '/index') path = '/'
+    if (path === '/index')
+      path = '/'
 
     // Try to serve the requested page
     if (routes.has(path)) {

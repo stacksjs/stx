@@ -1,5 +1,5 @@
-import stxPlugin from 'bun-plugin-stx'
 import { Glob } from 'bun'
+import stxPlugin from 'bun-plugin-stx'
 
 console.log('🚀 Starting development server...\n')
 
@@ -12,8 +12,8 @@ const result = await Bun.build({
   outdir: './dist',
   plugins: [stxPlugin()],
   naming: {
-    entry: '[dir]/[name].[ext]'
-  }
+    entry: '[dir]/[name].[ext]',
+  },
 })
 
 if (!result.success) {
@@ -48,16 +48,19 @@ const server = Bun.serve({
     let path = url.pathname
 
     // Normalize path
-    if (path === '/') path = '/'
-    if (path === '/index') path = '/'
-    if (!path.startsWith('/')) path = `/${path}`
+    if (path === '/')
+      path = '/'
+    if (path === '/index')
+      path = '/'
+    if (!path.startsWith('/'))
+      path = `/${path}`
 
     // Serve the page
     if (routes.has(path)) {
       return new Response(routes.get(path), {
         headers: {
           'Content-Type': 'text/html',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
         },
       })
     }

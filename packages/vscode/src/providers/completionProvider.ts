@@ -1,4 +1,4 @@
-/* eslint-disable no-console, no-template-curly-in-string */
+/* eslint-disable no-template-curly-in-string */
 import * as vscode from 'vscode'
 import { TransitionDirection, TransitionEase, TransitionType } from '../interfaces/animation-types'
 
