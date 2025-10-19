@@ -44,7 +44,7 @@ export function stxPlugin(userOptions?: StxOptions): BunPlugin {
       build.onLoad({ filter: /\.md$/ }, async ({ path: filePath }) => {
         try {
           // Process the markdown file with frontmatter
-          const { content: htmlContent, data: frontmatter } = await readMarkdownFile(filePath, options)
+          const { content: htmlContent, data: _frontmatter } = await readMarkdownFile(filePath, options)
 
           // Return HTML directly for serving
           return {

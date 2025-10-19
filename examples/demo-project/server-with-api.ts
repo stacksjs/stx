@@ -27,7 +27,7 @@ const server = serve({
 
     // ** API endpoints **
     '/api/users': {
-      async GET(req) {
+      async GET(_req) {
         return Response.json(users)
       },
       async POST(req) {
@@ -55,7 +55,7 @@ const server = serve({
 
   development: true,
 
-  fetch(req) {
+  fetch(_req) {
     return new Response('Not Found', { status: 404 })
   },
 })

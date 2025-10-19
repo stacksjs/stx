@@ -13,6 +13,7 @@ const config: ESLintConfig = stacks({
 
   rules: {
     'no-console': 'off',
+    'no-alert': 'off',
   },
 
   ignores: [

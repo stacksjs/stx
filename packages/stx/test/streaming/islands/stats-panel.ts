@@ -147,7 +147,7 @@ function showStatDetails(statItem: Element): void {
   console.log(`Showing detailed view for: ${label} (${value})`)
 
   // In a real implementation, this might show a modal or expanded view
-  // eslint-disable-next-line no-alert
+
   alert(`${label}: ${value}\nClick OK to close`)
 }
 

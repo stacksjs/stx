@@ -1,4 +1,4 @@
-const server = Bun.serve({
+const _server = Bun.serve({
   port: 3000,
   development: true,
   async fetch(req) {

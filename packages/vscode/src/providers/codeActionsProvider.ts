@@ -59,7 +59,7 @@ export function createCodeActionsProvider(): vscode.CodeActionProvider {
       for (const diagnostic of context.diagnostics) {
         // Handle unclosed directives
         if (diagnostic.message.includes('Unclosed @')) {
-          const match = diagnostic.message.match(/Unclosed @(\w+).*Expected @(\w+)/)
+          const match = diagnostic.message.match(/Unclosed @(\w).*Expected @(\w+)/)
           if (match) {
             const _directiveName = match[1]
             const endDirective = match[2]
@@ -156,7 +156,7 @@ export function createCodeActionsProvider(): vscode.CodeActionProvider {
       const lineText = line.text
 
       // Suggest converting @if to @unless (and vice versa)
-      const ifMatch = lineText.match(/@if\s*\(\s*!\s*([^)]+)\s*\)/)
+      const ifMatch = lineText.match(/@if\s*\(\s*!\s*([^)]+)\)/)
       if (ifMatch && range.start.character <= lineText.indexOf('@if') + 3) {
         const condition = ifMatch[1]
         const convertAction = new vscode.CodeAction(

@@ -1,5 +1,9 @@
 console.log('=== JAVASCRIPT STARTING ===')
 
+// Global variables
+let taskbarContextMenu: HTMLElement | null = null
+let taskbarContextWindowId: string | null = null
+
 // Login System
 const loginScreen = document.getElementById('login-screen')
 const emailLoginForm = document.getElementById('email-login-form')
@@ -404,7 +408,7 @@ function initializeIcons() {
   // Desktop Icon Clicks and Drag
   document.querySelectorAll('.desktop-icon').forEach((icon) => {
     let clickTimeout: number
-    let clickCount = 0
+    let _clickCount = 0
 
     icon.addEventListener('mousedown', (e) => {
       const event = e as MouseEvent
@@ -435,7 +439,7 @@ function initializeIcons() {
         return // Don't interfere with input editing
 
       clearTimeout(clickTimeout)
-      clickCount++
+      _clickCount++
 
       // Immediately show selection on first click
       const wasAlreadySelected = selectedIcon === icon && icon.classList.contains('selected')
@@ -453,13 +457,13 @@ function initializeIcons() {
       if (wasAlreadySelected) {
         clickTimeout = window.setTimeout(() => {
           enterEditMode(icon as HTMLElement)
-          clickCount = 0
+          _clickCount = 0
         }, 500)
       }
       else {
       // Set timeout to reset click count
         clickTimeout = window.setTimeout(() => {
-          clickCount = 0
+          _clickCount = 0
         }, 250)
       }
     })
@@ -467,7 +471,7 @@ function initializeIcons() {
     icon.addEventListener('dblclick', (e) => {
       const event = e as MouseEvent
       clearTimeout(clickTimeout)
-      clickCount = 0
+      _clickCount = 0
       event.preventDefault()
 
       // Double click - open
@@ -591,7 +595,7 @@ function openWindow(windowId, fromTaskbarButton = null) {
       windowEl.style.visibility = 'visible'
 
       // Force reflow to get actual position
-      windowEl.offsetHeight
+      void windowEl.offsetHeight
 
       const buttonRect = fromTaskbarButton.getBoundingClientRect()
       const windowRect = windowEl.getBoundingClientRect()
@@ -612,7 +616,7 @@ function openWindow(windowId, fromTaskbarButton = null) {
       activewindow = windowEl
 
       // Force reflow
-      windowEl.offsetHeight
+      void windowEl.offsetHeight
 
       // Animate to window position
       requestAnimationFrame(() => {
@@ -730,7 +734,7 @@ function minimizeWindow(windowId) {
       windowEl.style.opacity = '1'
 
       // Force reflow
-      windowEl.offsetHeight
+      void windowEl.offsetHeight
 
       // Animate to taskbar button center
       windowEl.style.transform = `translate(${translateX}px, ${translateY}px) scale(0.1)`
@@ -750,7 +754,7 @@ function minimizeWindow(windowId) {
       // Fallback - just fade out
       windowEl.style.transition = 'opacity 0.2s ease, transform 0.2s ease'
       windowEl.style.opacity = '1'
-      windowEl.offsetHeight
+      void windowEl.offsetHeight
       windowEl.style.opacity = '0'
       windowEl.style.transform = 'scale(0.8)'
 
@@ -850,7 +854,7 @@ function updateTaskbar() {
         windowEl.style.opacity = '0'
 
         // Force reflow
-        windowEl.offsetHeight
+        void windowEl.offsetHeight
 
         // Enable transitions and animate to window position
         requestAnimationFrame(() => {
@@ -1358,7 +1362,7 @@ function changeBackgroundImage() {
   }
 }
 
-function submitContactForm(event: Event) {
+function _submitContactForm(event: Event) {
   event.preventDefault()
 
   const nameInput = document.getElementById('contact-name') as HTMLInputElement
@@ -1369,7 +1373,7 @@ function submitContactForm(event: Event) {
   const name = nameInput.value
   const email = emailInput.value
   const subject = subjectInput.value
-  const message = messageInput.value
+  const _message = messageInput.value
 
   // Simulate form submission
   alert(`✅ Thank you, ${name}!\n\nYour message has been received. We'll get back to you at ${email} soon.\n\nSubject: ${subject}\n\nThis is a demo - in production, this would send your message to our team.`)
@@ -1490,7 +1494,7 @@ function deleteIcon() {
   if (!contextMenuIcon)
     return
 
-  const iconId = contextMenuIcon.dataset.iconId
+  const _iconId = contextMenuIcon.dataset.iconId
   const confirmed = confirm(`Are you sure you want to delete this icon?`)
 
   if (confirmed) {
@@ -1569,7 +1573,7 @@ function validatePaymentForm(): boolean {
   // Validate expiry date is in the future
   const [month, year] = cardExpiry.split('/').map(num => Number.parseInt(num))
   const currentDate = new Date()
-  const currentYear = currentDate.getFullYear() % 100 // Last 2 digits of current year
+  const _currentYear = currentDate.getFullYear() % 100 // Last 2 digits of current year
   const currentMonth = currentDate.getMonth() + 1
   const fullCurrentYear = currentDate.getFullYear()
 
@@ -1958,15 +1962,13 @@ function setZoomFromInput() {
   const zoomInput = document.getElementById('zoom-level') as HTMLInputElement
   if (zoomInput) {
     const value = Number.parseInt(zoomInput.value)
-    if (!isNaN(value)) {
+    if (!Number.isNaN(value)) {
       setZoom(value)
     }
   }
 }
 
 // Taskbar context menu
-let taskbarContextMenu: HTMLElement | null = null
-let taskbarContextWindowId: string | null = null
 
 function showTaskbarContextMenu(e: MouseEvent, windowId: string, windowEl: HTMLElement) {
   // Remove existing menu if any
@@ -1991,7 +1993,7 @@ function showTaskbarContextMenu(e: MouseEvent, windowId: string, windowEl: HTMLE
   taskbarContextMenu.style.left = `${e.clientX}px`
 
   // Position above the taskbar
-  const menuHeight = 120 // approximate
+  const _menuHeight = 120 // approximate
   taskbarContextMenu.style.bottom = '45px' // Just above taskbar
 
   const isMinimized = windowEl.classList.contains('minimized')

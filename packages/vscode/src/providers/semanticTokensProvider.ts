@@ -146,6 +146,7 @@ export function createSemanticTokensProvider(): vscode.DocumentSemanticTokensPro
             )
             varMatch = variableRegex.exec(content)
           }
+          exprMatch = expressionRegex.exec(text)
         }
 
         // Highlight directive parameters in parentheses
@@ -174,6 +175,7 @@ export function createSemanticTokensProvider(): vscode.DocumentSemanticTokensPro
             )
             stringMatch = stringRegex.exec(params)
           }
+          paramMatch = directiveWithParamsRegex.exec(text)
         }
       }
 
