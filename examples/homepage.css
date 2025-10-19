@@ -35,7 +35,7 @@ body {
 
 .desktop-icon {
   position: absolute;
-  width: 100px !important;
+  width: 120px !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
@@ -562,7 +562,7 @@ body {
   position: absolute;
   left: calc(100% - 4px);
   bottom: -2px;
-  min-width: 220px;
+  min-width: 280px;
   max-height: 460px;
   background: #ece9d8;
   border: 2px solid #0831d9;
@@ -572,6 +572,7 @@ body {
   z-index: 10001;
   padding: 4px 0;
   overflow-y: auto;
+  white-space: nowrap;
 }
 
 .start-menu-item.has-submenu:hover > .start-submenu {
