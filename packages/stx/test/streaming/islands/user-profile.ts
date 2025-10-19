@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * User Profile Island Component
  * Enhances server-rendered user profile with client-side interactivity

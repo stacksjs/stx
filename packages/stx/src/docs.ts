@@ -1,4 +1,3 @@
-/* eslint-disable regexp/no-super-linear-backtracking */
 /**
  * stx Documentation Generator
  * Generate documentation for components, templates, and directives
@@ -728,7 +727,7 @@ export async function generateDocs(options: {
     await fs.promises.mkdir(outputDir, { recursive: true })
 
     // Log the directories we're using for debugging
-    /* eslint-disable no-console */
+
     console.log(`Generating documentation...`)
     if (componentsDir)
       console.log(`Components directory: ${componentsDir}`)

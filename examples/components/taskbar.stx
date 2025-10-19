@@ -1,0 +1,8 @@
+<div class="taskbar">
+  <button class="start-button">
+    <span class="start-logo">🪟</span>
+    <span>start</span>
+  </button>
+  <div class="taskbar-tasks" id="taskbar-tasks"></div>
+  <div class="taskbar-clock" id="clock">12:00 PM</div>
+</div>

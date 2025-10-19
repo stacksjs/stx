@@ -1,4 +1,4 @@
-/* eslint-disable regexp/no-super-linear-backtracking, no-cond-assign */
+/* eslint-disable no-cond-assign */
 // Format JSDoc comment for hover display
 export function formatJSDoc(comment: string): string {
   // First, clean up the comment by removing asterisks and extra whitespace

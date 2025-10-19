@@ -11,6 +11,12 @@ const config: ESLintConfig = stacks({
   jsonc: true,
   yaml: true,
 
+  rules: {
+    'no-console': 'off',
+    'no-alert': 'off',
+    'regexp/no-super-linear-backtracking': 'off',
+  },
+
   ignores: [
     'docs/**',
     'fixtures/**',

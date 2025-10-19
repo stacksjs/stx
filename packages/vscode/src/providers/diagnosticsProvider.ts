@@ -123,7 +123,8 @@ function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: 
     // Find all directives in the line
     let match: RegExpExecArray | null
     directiveRegex.lastIndex = 0
-    while ((match = directiveRegex.exec(text)) !== null) {
+    match = directiveRegex.exec(text)
+    while (match !== null) {
       const directiveName = match[1]
       const position = match.index + 1 // +1 to skip the @
 
@@ -188,6 +189,7 @@ function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: 
           }
         }
       }
+      match = directiveRegex.exec(text)
     }
   }
 
@@ -250,8 +252,9 @@ function validateTemplatePaths(document: vscode.TextDocument, diagnostics: vscod
 
     let match: RegExpExecArray | null
     pathDirectiveRegex.lastIndex = 0
+    match = pathDirectiveRegex.exec(text)
 
-    while ((match = pathDirectiveRegex.exec(text)) !== null) {
+    while (match !== null) {
       const directiveName = match[1]
       const templatePath = match[2]
       const pathStart = match.index + match[0].indexOf(templatePath)
@@ -301,6 +304,7 @@ function validateTemplatePaths(document: vscode.TextDocument, diagnostics: vscod
         diagnostic.source = 'stx'
         diagnostics.push(diagnostic)
       }
+      match = pathDirectiveRegex.exec(text)
     }
   }
 }

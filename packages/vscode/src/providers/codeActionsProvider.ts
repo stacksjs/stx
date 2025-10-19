@@ -5,7 +5,7 @@ import * as vscode from 'vscode'
  */
 export function createCodeActionsProvider(): vscode.CodeActionProvider {
   return {
-    provideCodeActions(document, range, context, token) {
+    provideCodeActions(document, range, context, _token) {
       // Check configuration
       const config = vscode.workspace.getConfiguration('stx.codeActions')
       const codeActionsEnabled = config.get<boolean>('enable', true)
@@ -16,8 +16,8 @@ export function createCodeActionsProvider(): vscode.CodeActionProvider {
 
       const actions: vscode.CodeAction[] = []
 
-      // Directive pairs
-      const directivePairs: Record<string, string> = {
+      // Directive pairs (unused but kept for potential future use)
+      const _directivePairs: Record<string, string> = {
         if: 'endif',
         unless: 'endunless',
         for: 'endfor',
@@ -59,9 +59,9 @@ export function createCodeActionsProvider(): vscode.CodeActionProvider {
       for (const diagnostic of context.diagnostics) {
         // Handle unclosed directives
         if (diagnostic.message.includes('Unclosed @')) {
-          const match = diagnostic.message.match(/Unclosed @(\w+).*Expected @(\w+)/)
+          const match = diagnostic.message.match(/Unclosed @(\w).*Expected @(\w+)/)
           if (match) {
-            const directiveName = match[1]
+            const _directiveName = match[1]
             const endDirective = match[2]
 
             // Create a quick fix to add the closing directive
@@ -105,7 +105,7 @@ export function createCodeActionsProvider(): vscode.CodeActionProvider {
           const match = diagnostic.message.match(/Expected @(\w+) but found @(\w+)/)
           if (match) {
             const expectedEnd = match[1]
-            const foundEnd = match[2]
+            const _foundEnd = match[2]
 
             // Create a quick fix to replace with correct directive
             const fix = new vscode.CodeAction(
@@ -156,7 +156,7 @@ export function createCodeActionsProvider(): vscode.CodeActionProvider {
       const lineText = line.text
 
       // Suggest converting @if to @unless (and vice versa)
-      const ifMatch = lineText.match(/@if\s*\(\s*!\s*(.+?)\s*\)/)
+      const ifMatch = lineText.match(/@if\s*\(\s*!\s+([^)]+)\)/)
       if (ifMatch && range.start.character <= lineText.indexOf('@if') + 3) {
         const condition = ifMatch[1]
         const convertAction = new vscode.CodeAction(
@@ -175,7 +175,7 @@ export function createCodeActionsProvider(): vscode.CodeActionProvider {
         actions.push(convertAction)
       }
 
-      const unlessMatch = lineText.match(/@unless\s*\((.+?)\)/)
+      const unlessMatch = lineText.match(/@unless\s*\(([^)]+)\)/)
       if (unlessMatch && range.start.character <= lineText.indexOf('@unless') + 7) {
         const condition = unlessMatch[1]
         const convertAction = new vscode.CodeAction(

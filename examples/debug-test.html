@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug Test</title>
+  <link rel="stylesheet" href="homepage.css">
+  <style>
+    .debug {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: white;
+      border: 2px solid red;
+      padding: 10px;
+      z-index: 99999;
+      font-family: monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="debug" id="debug">
+    <div>Script loaded: <span id="script-loaded">NO</span></div>
+    <div>Clock element: <span id="clock-exists">?</span></div>
+    <div>Taskbar element: <span id="taskbar-exists">?</span></div>
+    <div>Context menu: <span id="context-exists">?</span></div>
+    <div>Start button: <span id="start-exists">?</span></div>
+  </div>
+
+  <div class="desktop">
+    <div class="desktop-icons">
+      <button class="desktop-icon" data-icon-id="test" data-icon-type="window">
+        <div class="desktop-icon-image">📄</div>
+        <div class="desktop-icon-label">Test Icon</div>
+      </button>
+    </div>
+
+    <!-- Taskbar -->
+    <div class="taskbar">
+      <button class="start-button" id="start-button">
+        <span class="start-logo">🪟</span>
+        <span>start</span>
+      </button>
+      <div class="taskbar-tasks" id="taskbar-tasks"></div>
+      <div class="taskbar-clock" id="clock">12:00 PM</div>
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div class="context-menu" id="context-menu" style="display: none;">
+    <button class="context-menu-item">
+      <div class="context-menu-item-icon">🔄</div>
+      <div>Refresh</div>
+    </button>
+  </div>
+
+  <script type="module">
+    console.log('=== DEBUG SCRIPT STARTING ===');
+    document.getElementById('script-loaded').textContent = 'YES';
+
+    // Check elements
+    const clock = document.getElementById('clock');
+    const taskbar = document.querySelector('.taskbar');
+    const contextMenu = document.getElementById('context-menu');
+    const startButton = document.getElementById('start-button');
+
+    document.getElementById('clock-exists').textContent = clock ? 'YES' : 'NO';
+    document.getElementById('taskbar-exists').textContent = taskbar ? 'YES' : 'NO';
+    document.getElementById('context-exists').textContent = contextMenu ? 'YES' : 'NO';
+    document.getElementById('start-exists').textContent = startButton ? 'YES' : 'NO';
+
+    console.log('Clock element:', clock);
+    console.log('Taskbar element:', taskbar);
+    console.log('Context menu:', contextMenu);
+    console.log('Start button:', startButton);
+
+    // Test context menu
+    if (contextMenu) {
+      document.addEventListener('contextmenu', (e) => {
+        console.log('Right click detected!', e.clientX, e.clientY);
+        e.preventDefault();
+        contextMenu.style.left = `${e.clientX}px`;
+        contextMenu.style.top = `${e.clientY}px`;
+        contextMenu.style.display = 'flex';
+        console.log('Context menu should be visible now');
+      });
+
+      document.addEventListener('click', () => {
+        console.log('Click detected, hiding context menu');
+        contextMenu.style.display = 'none';
+      });
+    }
+
+    // Test start menu
+    if (startButton) {
+      startButton.addEventListener('click', (e) => {
+        console.log('Start button clicked!');
+        e.stopPropagation();
+        alert('Start button works!');
+      });
+    }
+  </script>
+</body>
+</html>

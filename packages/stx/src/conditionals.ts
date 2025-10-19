@@ -1,4 +1,3 @@
-/* eslint-disable regexp/no-super-linear-backtracking */
 /**
  * Module for processing conditional directives (@if, @elseif, @else, @unless)
  */

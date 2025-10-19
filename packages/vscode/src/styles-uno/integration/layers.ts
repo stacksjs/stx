@@ -31,7 +31,7 @@ export function resolveLayer(id: string): string | undefined {
  * 2 - escape-view
  *                                                                   111                             222
  */
-// eslint-disable-next-line regexp/no-super-linear-backtracking
+
 export const LAYER_PLACEHOLDER_RE: RegExp = /#--unocss--\s*\{\s*layer\s*:\s*(.+?)\s*(?:;\s*escape-view\s*:\s*(.+?)\s*)?;?\s*\}/g
 export function getLayerPlaceholder(layer: string): string {
   // escape view is to determine how many backslashes will be prepended to special symbols in this scope.

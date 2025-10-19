@@ -1,4 +1,4 @@
-/* eslint-disable regexp/no-super-linear-backtracking, regexp/no-misleading-capturing-group, regexp/optimal-quantifier-concatenation */
+/* eslint-disable regexp/no-misleading-capturing-group, regexp/optimal-quantifier-concatenation */
 import type * as vscode from 'vscode'
 
 // Helper function to find the line number of a @foreach declaration for a given variable

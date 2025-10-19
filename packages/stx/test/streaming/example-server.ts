@@ -144,7 +144,6 @@ async function startServer(): Promise<void> {
     },
   })
 
-  /* eslint-disable no-console */
   console.log(`stx streaming example server running at ${server.url}`)
 }
 

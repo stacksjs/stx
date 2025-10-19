@@ -61,7 +61,6 @@ function _setupManualHydration(): void {
       island.addEventListener('click', () => {
         const name = island.getAttribute('data-island')
         if (name && islands[name]) {
-          /* eslint-disable no-console */
           console.log(`Hydrating ${name} on user interaction`)
           import(`./islands/${name}`).then((module) => {
             const hydrate = module.default || module.hydrate

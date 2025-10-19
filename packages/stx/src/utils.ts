@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 /**
  * Utility functions for the stx compiler
  */
@@ -292,12 +290,11 @@ function parseVariableDeclaration(lines: string[], startIndex: number): {
   const firstLine = lines[startIndex].trim()
 
   // Extract type and check for different declaration patterns
-  // eslint-disable-next-line regexp/no-super-linear-backtracking
+
   const match = firstLine.match(/^(?:export\s+)?(const|let|var)\s+(\w+)\s*=\s*(.*)$/)
 
   // If simple pattern doesn't match, try destructuring pattern
   if (!match) {
-    // eslint-disable-next-line regexp/no-super-linear-backtracking
     const destructuringMatch = firstLine.match(/^(?:export\s+)?(const|let|var)\s+(\{[^}]+\}|\[[^\]]+\])\s*=\s*(.*)$/)
     if (destructuringMatch) {
       const [, type, destructuringPattern, initialValue] = destructuringMatch
@@ -469,7 +466,7 @@ function readMultilineFunction(lines: string[], startIndex: number, initialFunct
  */
 async function fallbackVariableExtraction(scriptContent: string, context: Record<string, any>, _filePath: string): Promise<void> {
   // Approach 1: Try evaluating individual export statements
-  // eslint-disable-next-line regexp/no-super-linear-backtracking, regexp/optimal-lookaround-quantifier
+  // eslint-disable-next-line regexp/optimal-lookaround-quantifier
   const exportMatches = scriptContent.matchAll(/export\s+(const|let|var)\s+(\w+)\s*=\s*([\s\S]*?)(?=\s*(?:export\s+|$))/g)
 
   for (const match of exportMatches) {
@@ -496,7 +493,7 @@ async function fallbackVariableExtraction(scriptContent: string, context: Record
   }
 
   // Approach 2: Try evaluating regular variable declarations
-  // eslint-disable-next-line regexp/no-super-linear-backtracking, regexp/optimal-lookaround-quantifier
+  // eslint-disable-next-line regexp/optimal-lookaround-quantifier
   const varMatches = scriptContent.matchAll(/(?:^|\n)\s*(const|let|var)\s+(\w+)\s*=\s*([\s\S]*?)(?=\s*(?:(?:const|let|var|function|export)\s+|$))/g)
 
   for (const match of varMatches) {

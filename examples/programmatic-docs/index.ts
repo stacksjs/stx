@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Example: Using stx programmatically for a documentation system
  * This example shows how to build a VitePress-like documentation system using stx

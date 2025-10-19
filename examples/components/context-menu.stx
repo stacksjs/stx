@@ -1,0 +1,51 @@
+<div class="context-menu" id="context-menu" style="display: none;">
+  <button class="context-menu-item has-submenu">
+    <div class="context-menu-item-icon">📤</div>
+    <div>Share with a friend...</div>
+    <div class="context-submenu">
+      <button class="context-menu-item" onclick="shareVia('twitter')">
+        <div class="context-menu-item-icon">🐦</div>
+        <div>Share on Twitter</div>
+      </button>
+      <button class="context-menu-item" onclick="shareVia('linkedin')">
+        <div class="context-menu-item-icon">💼</div>
+        <div>Share on LinkedIn</div>
+      </button>
+      <button class="context-menu-item" onclick="shareVia('email')">
+        <div class="context-menu-item-icon">📫</div>
+        <div>Share via Email</div>
+      </button>
+      <button class="context-menu-item" onclick="shareVia('copy')">
+        <div class="context-menu-item-icon">📋</div>
+        <div>Copy Link</div>
+      </button>
+    </div>
+  </button>
+  <div class="context-menu-separator"></div>
+  <button class="context-menu-item" onclick="copyLogoSVG()">
+    <div class="context-menu-item-icon">🎨</div>
+    <div>Copy Logo as SVG</div>
+  </button>
+  <button class="context-menu-item" onclick="copyWordmarkSVG()">
+    <div class="context-menu-item-icon">✏️</div>
+    <div>Copy Wordmark as SVG</div>
+  </button>
+  <button class="context-menu-item" onclick="window.open('https://stacksjs.org/brand', '_blank')">
+    <div class="context-menu-item-icon">📖</div>
+    <div>Brand Guidelines</div>
+  </button>
+  <div class="context-menu-separator"></div>
+  <button class="context-menu-item" onclick="window.open('https://stacksjs.org/docs', '_blank')">
+    <div class="context-menu-item-icon">📚</div>
+    <div>Documentation</div>
+  </button>
+  <button class="context-menu-item" onclick="window.open('https://github.com/stacksjs/stacks', '_blank')">
+    <div class="context-menu-item-icon">💻</div>
+    <div>View on GitHub</div>
+  </button>
+  <div class="context-menu-separator"></div>
+  <button class="context-menu-item" onclick="window.location.reload()">
+    <div class="context-menu-item-icon">🔄</div>
+    <div>Refresh</div>
+  </button>
+</div>

@@ -27,7 +27,7 @@ export const legend = new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers
  */
 export function createSemanticTokensProvider(): vscode.DocumentSemanticTokensProvider {
   return {
-    provideDocumentSemanticTokens(document, token) {
+    provideDocumentSemanticTokens(document, _token) {
       // Check configuration
       const config = vscode.workspace.getConfiguration('stx.semanticHighlighting')
       const semanticEnabled = config.get<boolean>('enable', true)
@@ -53,7 +53,8 @@ export function createSemanticTokensProvider(): vscode.DocumentSemanticTokensPro
         const directiveRegex = /@(\w+)/g
         let match: RegExpExecArray | null
 
-        while ((match = directiveRegex.exec(text)) !== null) {
+        match = directiveRegex.exec(text)
+        while (match !== null) {
           const directiveName = match[1]
           const startChar = match.index
           const length = match[0].length
@@ -90,13 +91,15 @@ export function createSemanticTokensProvider(): vscode.DocumentSemanticTokensPro
               tokenType,
             )
           }
+          match = directiveRegex.exec(text)
         }
 
         // Highlight stx comments {{-- --}}
         const commentRegex = /\{\{--.*?--\}\}/g
         let commentMatch: RegExpExecArray | null
 
-        while ((commentMatch = commentRegex.exec(text)) !== null) {
+        commentMatch = commentRegex.exec(text)
+        while (commentMatch !== null) {
           const startChar = commentMatch.index
           const length = commentMatch[0].length
 
@@ -107,13 +110,15 @@ export function createSemanticTokensProvider(): vscode.DocumentSemanticTokensPro
             ),
             'comment',
           )
+          commentMatch = commentRegex.exec(text)
         }
 
         // Highlight stx expressions {{ }}
-        const expressionRegex = /\{\{(?!--)(.+?)\}\}/g
+        const expressionRegex = /\{\{(?!--)(.+?)\}\}/
         let exprMatch: RegExpExecArray | null
 
-        while ((exprMatch = expressionRegex.exec(text)) !== null) {
+        exprMatch = expressionRegex.exec(text)
+        while (exprMatch !== null) {
           const content = exprMatch[1]
           const startChar = exprMatch.index + 2 // Skip {{
 
@@ -122,7 +127,8 @@ export function createSemanticTokensProvider(): vscode.DocumentSemanticTokensPro
           const variableRegex = /\b([a-z_$][\w$]*)\b/gi
           let varMatch: RegExpExecArray | null
 
-          while ((varMatch = variableRegex.exec(content)) !== null) {
+          varMatch = variableRegex.exec(content)
+          while (varMatch !== null) {
             const varName = varMatch[1]
             const varStartChar = startChar + varMatch.index
 
@@ -138,22 +144,26 @@ export function createSemanticTokensProvider(): vscode.DocumentSemanticTokensPro
               ),
               'variable',
             )
+            varMatch = variableRegex.exec(content)
           }
+          exprMatch = expressionRegex.exec(text)
         }
 
         // Highlight directive parameters in parentheses
-        const directiveWithParamsRegex = /@\w+\s*\(([^)]+)\)/g
+        const directiveWithParamsRegex = /@\w+\s*\(([^)]+)\)/
         let paramMatch: RegExpExecArray | null
 
-        while ((paramMatch = directiveWithParamsRegex.exec(text)) !== null) {
+        paramMatch = directiveWithParamsRegex.exec(text)
+        while (paramMatch !== null) {
           const params = paramMatch[1]
           const paramsStart = paramMatch.index + paramMatch[0].indexOf('(') + 1
 
           // Tokenize string literals in parameters
-          const stringRegex = /(['"`])(?:(?=(\\?))\2.)*?\1/g
+          const stringRegex = /(['"`])(?:[^\\]|\\.)*?\1/g
           let stringMatch: RegExpExecArray | null
 
-          while ((stringMatch = stringRegex.exec(params)) !== null) {
+          stringMatch = stringRegex.exec(params)
+          while (stringMatch !== null) {
             const stringStart = paramsStart + stringMatch.index
 
             tokensBuilder.push(
@@ -163,7 +173,9 @@ export function createSemanticTokensProvider(): vscode.DocumentSemanticTokensPro
               ),
               'string',
             )
+            stringMatch = stringRegex.exec(params)
           }
+          paramMatch = directiveWithParamsRegex.exec(text)
         }
       }
 

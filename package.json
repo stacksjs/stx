@@ -76,11 +76,6 @@
     "preview:docs": "bun --bun vitepress preview docs",
     "typecheck": "bun tsc --noEmit"
   },
-  "devDependencies": {
-    "@stacksjs/docs": "^0.70.23",
-    "@stacksjs/eslint-config": "^4.14.0-beta.3",
-    "better-dx": "^0.1.5"
-  },
   "git-hooks": {
     "pre-commit": {
       "staged-lint": {
@@ -91,5 +86,13 @@
   "workspaces": [
     "packages/**",
     "!packages/vscode"
-  ]
+  ],
+  "dependencies": {
+    "very-happy-dom": "^0.0.9"
+  },
+  "devDependencies": {
+    "@stacksjs/docs": "^0.70.23",
+    "@stacksjs/eslint-config": "^4.14.0-beta.3",
+    "better-dx": "^0.1.7"
+  }
 }

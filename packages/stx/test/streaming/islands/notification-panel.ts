@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Notification Panel Island Component
  * This adds interactive functionality to the server-rendered notification panel
