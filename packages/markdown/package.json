@@ -45,10 +45,5 @@
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
     "typecheck": "bun tsc --noEmit"
-  },
-  "devDependencies": {
-    "@types/bun": "^1.2.18",
-    "bun-plugin-dtsx": "^0.21.12",
-    "typescript": "^5.8.3"
   }
 }
