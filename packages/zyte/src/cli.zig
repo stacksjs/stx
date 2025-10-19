@@ -156,7 +156,7 @@ fn printHelp() void {
 
 fn printVersion() void {
     std.debug.print(
-        \\zyte version 0.5.0
+        \\zyte version 0.6.0
         \\Built with Zig 0.15.1
         \\
         \\

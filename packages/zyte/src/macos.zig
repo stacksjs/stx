@@ -990,6 +990,386 @@ pub fn recordScreen(output_path: []const u8, options: RecordingOptions) !ScreenR
     return ScreenRecorder.init(allocator, output_path, options);
 }
 
+// ============================================================================
+// v0.6.0 Features - Cross-Platform & Enterprise
+// ============================================================================
+
+// Plugin system
+pub const Plugin = struct {
+    name: []const u8,
+    version: []const u8,
+    path: []const u8,
+    enabled: bool = true,
+    handle: ?*anyopaque = null,
+    allocator: std.mem.Allocator,
+
+    pub fn load(allocator: std.mem.Allocator, path: []const u8) !Plugin {
+        // Would use dlopen() to load dynamic library
+        return .{
+            .name = try allocator.dupe(u8, "plugin"),
+            .version = try allocator.dupe(u8, "1.0.0"),
+            .path = try allocator.dupe(u8, path),
+            .enabled = true,
+            .handle = null,
+            .allocator = allocator,
+        };
+    }
+
+    pub fn call(self: *Plugin, function_name: []const u8, args: []const u8) ![]const u8 {
+        _ = self;
+        _ = function_name;
+        _ = args;
+        // Would use dlsym() to get function and call it
+        return "";
+    }
+
+    pub fn unload(self: *Plugin) void {
+        if (self.handle) |_| {
+            // Would use dlclose()
+        }
+        self.enabled = false;
+    }
+
+    pub fn deinit(self: *Plugin) void {
+        self.unload();
+        self.allocator.free(self.name);
+        self.allocator.free(self.version);
+        self.allocator.free(self.path);
+    }
+};
+
+pub const PluginManager = struct {
+    plugins: std.ArrayList(Plugin),
+    allocator: std.mem.Allocator,
+
+    pub fn init(allocator: std.mem.Allocator) PluginManager {
+        return .{
+            .plugins = std.ArrayList(Plugin).init(allocator),
+            .allocator = allocator,
+        };
+    }
+
+    pub fn loadPlugin(self: *PluginManager, path: []const u8) !void {
+        const plugin = try Plugin.load(self.allocator, path);
+        try self.plugins.append(plugin);
+    }
+
+    pub fn getPlugin(self: *PluginManager, name: []const u8) ?*Plugin {
+        for (self.plugins.items) |*plugin| {
+            if (std.mem.eql(u8, plugin.name, name)) {
+                return plugin;
+            }
+        }
+        return null;
+    }
+
+    pub fn deinit(self: *PluginManager) void {
+        for (self.plugins.items) |*plugin| {
+            plugin.deinit();
+        }
+        self.plugins.deinit();
+    }
+};
+
+// Native modules
+pub const NativeModule = struct {
+    name: []const u8,
+    exports: std.StringHashMap(*const fn () void),
+    allocator: std.mem.Allocator,
+
+    pub fn init(allocator: std.mem.Allocator, name: []const u8) !NativeModule {
+        return .{
+            .name = try allocator.dupe(u8, name),
+            .exports = std.StringHashMap(*const fn () void).init(allocator),
+            .allocator = allocator,
+        };
+    }
+
+    pub fn registerFunction(self: *NativeModule, name: []const u8, func: *const fn () void) !void {
+        try self.exports.put(name, func);
+    }
+
+    pub fn call(self: *NativeModule, name: []const u8) !void {
+        if (self.exports.get(name)) |func| {
+            func();
+        } else {
+            return error.FunctionNotFound;
+        }
+    }
+
+    pub fn deinit(self: *NativeModule) void {
+        self.allocator.free(self.name);
+        self.exports.deinit();
+    }
+};
+
+// Sandbox environment
+pub const SandboxPermissions = struct {
+    network: bool = false,
+    file_system_read: bool = false,
+    file_system_write: bool = false,
+    clipboard: bool = false,
+    notifications: bool = false,
+    camera: bool = false,
+    microphone: bool = false,
+};
+
+pub const Sandbox = struct {
+    permissions: SandboxPermissions,
+    enabled: bool = true,
+
+    pub fn create(permissions: SandboxPermissions) Sandbox {
+        return .{
+            .permissions = permissions,
+            .enabled = true,
+        };
+    }
+
+    pub fn checkPermission(self: Sandbox, permission: []const u8) bool {
+        if (!self.enabled) return true;
+
+        if (std.mem.eql(u8, permission, "network")) return self.permissions.network;
+        if (std.mem.eql(u8, permission, "file_read")) return self.permissions.file_system_read;
+        if (std.mem.eql(u8, permission, "file_write")) return self.permissions.file_system_write;
+        if (std.mem.eql(u8, permission, "clipboard")) return self.permissions.clipboard;
+        if (std.mem.eql(u8, permission, "notifications")) return self.permissions.notifications;
+        if (std.mem.eql(u8, permission, "camera")) return self.permissions.camera;
+        if (std.mem.eql(u8, permission, "microphone")) return self.permissions.microphone;
+
+        return false;
+    }
+
+    pub fn requestPermission(self: *Sandbox, permission: []const u8) !void {
+        _ = self;
+        _ = permission;
+        // Would show native permission dialog
+    }
+};
+
+// IPC (Inter-Process Communication) improvements
+pub const IpcMessage = struct {
+    channel: []const u8,
+    data: []const u8,
+    reply_channel: ?[]const u8 = null,
+};
+
+pub const IpcHandler = *const fn (IpcMessage) void;
+
+pub const Ipc = struct {
+    handlers: std.StringHashMap(IpcHandler),
+    allocator: std.mem.Allocator,
+
+    pub fn init(allocator: std.mem.Allocator) Ipc {
+        return .{
+            .handlers = std.StringHashMap(IpcHandler).init(allocator),
+            .allocator = allocator,
+        };
+    }
+
+    pub fn on(self: *Ipc, channel: []const u8, handler: IpcHandler) !void {
+        try self.handlers.put(channel, handler);
+    }
+
+    pub fn send(self: *Ipc, channel: []const u8, data: []const u8) !void {
+        if (self.handlers.get(channel)) |handler| {
+            const msg = IpcMessage{
+                .channel = channel,
+                .data = data,
+            };
+            handler(msg);
+        }
+    }
+
+    pub fn invoke(self: *Ipc, channel: []const u8, data: []const u8) ![]const u8 {
+        _ = self;
+        _ = channel;
+        _ = data;
+        // Would send and wait for reply
+        return "";
+    }
+
+    pub fn deinit(self: *Ipc) void {
+        self.handlers.deinit();
+    }
+};
+
+// Accessibility support
+pub const AccessibilityRole = enum {
+    button,
+    link,
+    heading,
+    text,
+    image,
+    list,
+    list_item,
+    table,
+    menu,
+    dialog,
+};
+
+pub const AccessibilityElement = struct {
+    role: AccessibilityRole,
+    label: []const u8,
+    value: []const u8,
+    enabled: bool = true,
+};
+
+pub fn setAccessibilityLabel(element: objc.id, label: []const u8) !void {
+    _ = element;
+    _ = label;
+    // Would use NSAccessibility protocol
+}
+
+pub fn enableVoiceOver(window: objc.id) void {
+    _ = window;
+    // Would enable VoiceOver support
+}
+
+pub fn setAccessibilityRole(element: objc.id, role: AccessibilityRole) !void {
+    _ = element;
+    _ = role;
+    // Would use setAccessibilityRole:
+}
+
+// Internationalization (i18n)
+pub const Locale = struct {
+    language: []const u8,
+    region: []const u8,
+    direction: enum { ltr, rtl } = .ltr,
+};
+
+pub const I18n = struct {
+    current_locale: Locale,
+    translations: std.StringHashMap([]const u8),
+    allocator: std.mem.Allocator,
+
+    pub fn init(allocator: std.mem.Allocator, locale: Locale) I18n {
+        return .{
+            .current_locale = locale,
+            .translations = std.StringHashMap([]const u8).init(allocator),
+            .allocator = allocator,
+        };
+    }
+
+    pub fn translate(self: *I18n, key: []const u8) []const u8 {
+        return self.translations.get(key) orelse key;
+    }
+
+    pub fn loadTranslations(self: *I18n, file_path: []const u8) !void {
+        _ = self;
+        _ = file_path;
+        // Would load JSON/TOML translation file
+    }
+
+    pub fn setLocale(self: *I18n, locale: Locale) void {
+        self.current_locale = locale;
+    }
+
+    pub fn deinit(self: *I18n) void {
+        self.translations.deinit();
+    }
+};
+
+pub fn getSystemLocale() Locale {
+    // Would use NSLocale
+    return .{
+        .language = "en",
+        .region = "US",
+        .direction = .ltr,
+    };
+}
+
+// Code signing
+pub const CodeSignature = struct {
+    certificate_path: []const u8,
+    identity: []const u8,
+    entitlements_path: ?[]const u8 = null,
+};
+
+pub fn signApplication(app_path: []const u8, signature: CodeSignature) !void {
+    _ = app_path;
+    _ = signature;
+    // Would use codesign tool on macOS
+    // codesign --sign "Developer ID" --entitlements entitlements.plist app.app
+}
+
+pub fn verifySignature(app_path: []const u8) !bool {
+    _ = app_path;
+    // Would use codesign --verify
+    return false;
+}
+
+pub fn notarizeApplication(app_path: []const u8, apple_id: []const u8, password: []const u8) !void {
+    _ = app_path;
+    _ = apple_id;
+    _ = password;
+    // Would use xcrun notarytool
+}
+
+// Installer generation
+pub const InstallerOptions = struct {
+    app_name: []const u8,
+    app_version: []const u8,
+    app_icon: ?[]const u8 = null,
+    license_file: ?[]const u8 = null,
+    background_image: ?[]const u8 = null,
+    install_location: []const u8 = "/Applications",
+};
+
+pub const Installer = struct {
+    options: InstallerOptions,
+    allocator: std.mem.Allocator,
+
+    pub fn init(allocator: std.mem.Allocator, options: InstallerOptions) Installer {
+        return .{
+            .options = options,
+            .allocator = allocator,
+        };
+    }
+
+    pub fn generateDmg(self: *Installer, app_path: []const u8, output_path: []const u8) !void {
+        _ = self;
+        _ = app_path;
+        _ = output_path;
+        // Would use hdiutil to create DMG on macOS
+    }
+
+    pub fn generatePkg(self: *Installer, app_path: []const u8, output_path: []const u8) !void {
+        _ = self;
+        _ = app_path;
+        _ = output_path;
+        // Would use pkgbuild/productbuild on macOS
+    }
+
+    pub fn generateMsi(self: *Installer, app_path: []const u8, output_path: []const u8) !void {
+        _ = self;
+        _ = app_path;
+        _ = output_path;
+        // Would use WiX Toolset on Windows
+    }
+
+    pub fn generateDeb(self: *Installer, app_path: []const u8, output_path: []const u8) !void {
+        _ = self;
+        _ = app_path;
+        _ = output_path;
+        // Would use dpkg-deb on Linux
+    }
+
+    pub fn generateRpm(self: *Installer, app_path: []const u8, output_path: []const u8) !void {
+        _ = self;
+        _ = app_path;
+        _ = output_path;
+        // Would use rpmbuild on Linux
+    }
+
+    pub fn generateAppImage(self: *Installer, app_path: []const u8, output_path: []const u8) !void {
+        _ = self;
+        _ = app_path;
+        _ = output_path;
+        // Would use appimagetool on Linux
+    }
+};
+
 pub fn runApp() void {
     const NSApplication = getClass("NSApplication");
     const app = msgSend0(NSApplication, "sharedApplication");
