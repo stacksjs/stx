@@ -155,10 +155,20 @@ fn printHelp() void {
 }
 
 fn printVersion() void {
+    const target = @import("builtin").target;
+    const platform_name = switch (target.os.tag) {
+        .macos => "macOS",
+        .linux => "Linux",
+        .windows => "Windows",
+        else => "Unknown",
+    };
+
     std.debug.print(
-        \\zyte version 0.9.0
+        \\zyte version 1.3.0
         \\Built with Zig 0.15.1
+        \\Platform: {s}
+        \\Features: 79
         \\
         \\
-    , .{});
+    , .{platform_name});
 }

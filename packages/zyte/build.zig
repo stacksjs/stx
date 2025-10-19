@@ -109,4 +109,88 @@ pub fn build(b: *std.Build) void {
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_lib_unit_tests.step);
+
+    // Cross-compilation helpers
+    const build_linux = b.step("build-linux", "Build for Linux");
+    const build_windows = b.step("build-windows", "Build for Windows");
+    const build_macos = b.step("build-macos", "Build for macOS");
+    const build_all = b.step("build-all", "Build for all platforms");
+
+    // Linux target
+    const linux_target = b.resolveTargetQuery(.{
+        .cpu_arch = .x86_64,
+        .os_tag = .linux,
+        .abi = .gnu,
+    });
+
+    const linux_exe = b.addExecutable(.{
+        .name = "zyte-linux",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/minimal.zig"),
+            .target = linux_target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zyte", .module = zyte_module },
+            },
+        }),
+    });
+    linux_exe.linkSystemLibrary("gtk+-3.0");
+    linux_exe.linkSystemLibrary("webkit2gtk-4.0");
+    linux_exe.linkLibC();
+
+    const linux_install = b.addInstallArtifact(linux_exe, .{});
+    build_linux.dependOn(&linux_install.step);
+    build_all.dependOn(&linux_install.step);
+
+    // Windows target
+    const windows_target = b.resolveTargetQuery(.{
+        .cpu_arch = .x86_64,
+        .os_tag = .windows,
+        .abi = .gnu,
+    });
+
+    const windows_exe = b.addExecutable(.{
+        .name = "zyte-windows",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/minimal.zig"),
+            .target = windows_target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zyte", .module = zyte_module },
+            },
+        }),
+    });
+    windows_exe.linkSystemLibrary("ole32");
+    windows_exe.linkSystemLibrary("user32");
+    windows_exe.linkSystemLibrary("gdi32");
+    windows_exe.linkLibC();
+
+    const windows_install = b.addInstallArtifact(windows_exe, .{});
+    build_windows.dependOn(&windows_install.step);
+    build_all.dependOn(&windows_install.step);
+
+    // macOS target
+    const macos_target = b.resolveTargetQuery(.{
+        .cpu_arch = .aarch64,
+        .os_tag = .macos,
+    });
+
+    const macos_exe = b.addExecutable(.{
+        .name = "zyte-macos",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/minimal.zig"),
+            .target = macos_target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zyte", .module = zyte_module },
+            },
+        }),
+    });
+    macos_exe.linkFramework("Cocoa");
+    macos_exe.linkFramework("WebKit");
+    macos_exe.linkLibC();
+
+    const macos_install = b.addInstallArtifact(macos_exe, .{});
+    build_macos.dependOn(&macos_install.step);
+    build_all.dependOn(&macos_install.step);
 }
