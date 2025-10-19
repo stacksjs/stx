@@ -85,7 +85,7 @@ export function sanitizeWithInfo(
   }
 
   // Parse and sanitize tags
-  // eslint-disable-next-line regexp/no-super-linear-backtracking, regexp/use-ignore-case
+  // eslint-disable-next-line regexp/use-ignore-case
   const tagRegex = /<(\/?)([a-zA-Z][\w-]*)([^>]*)>/g
   result = result.replace(tagRegex, (match, closing, tagName, attributesStr) => {
     const lowerTag = tagName.toLowerCase()

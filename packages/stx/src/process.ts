@@ -1,4 +1,3 @@
-/* eslint-disable regexp/no-super-linear-backtracking */
 import type { StxOptions } from './types'
 import path from 'node:path'
 import { processA11yDirectives } from './a11y'

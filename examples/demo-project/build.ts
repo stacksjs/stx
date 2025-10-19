@@ -1,4 +1,5 @@
 import { Glob } from 'bun'
+import process from 'node:process'
 import stxPlugin from 'bun-plugin-stx'
 
 console.log('🔨 Building stx files...\n')

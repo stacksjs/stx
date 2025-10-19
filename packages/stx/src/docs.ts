@@ -1,4 +1,3 @@
-/* eslint-disable regexp/no-super-linear-backtracking */
 /**
  * stx Documentation Generator
  * Generate documentation for components, templates, and directives

@@ -7,7 +7,7 @@ function extractTypeScriptFromStx(content: string): string {
   let tsContent = ''
 
   // Extract @ts blocks
-  const tsBlockRegex = /@ts\s+([\s\S]*?)@endts/g
+  const tsBlockRegex = /@ts\s+([^@]*)@endts/g
   let match
   match = tsBlockRegex.exec(content)
   while (match !== null) {

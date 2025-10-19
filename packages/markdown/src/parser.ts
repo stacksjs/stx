@@ -1,4 +1,3 @@
-/* eslint-disable regexp/no-super-linear-backtracking */
 import type { MarkdownOptions } from './types'
 
 /**

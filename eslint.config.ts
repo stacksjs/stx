@@ -14,6 +14,7 @@ const config: ESLintConfig = stacks({
   rules: {
     'no-console': 'off',
     'no-alert': 'off',
+    'regexp/no-super-linear-backtracking': 'off',
   },
 
   ignores: [

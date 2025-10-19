@@ -156,7 +156,7 @@ export function createCodeActionsProvider(): vscode.CodeActionProvider {
       const lineText = line.text
 
       // Suggest converting @if to @unless (and vice versa)
-      const ifMatch = lineText.match(/@if\s*\(\s*!\s*([^)]+)\)/)
+      const ifMatch = lineText.match(/@if\s*\(\s*!\s+([^)]+)\)/)
       if (ifMatch && range.start.character <= lineText.indexOf('@if') + 3) {
         const condition = ifMatch[1]
         const convertAction = new vscode.CodeAction(
