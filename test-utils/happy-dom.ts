@@ -13,10 +13,10 @@ const document = window.document
 globalThis.window = window as any
 globalThis.document = document as any
 globalThis.navigator = window.navigator as any
-globalThis.location = window.location as any
-globalThis.HTMLElement = window.HTMLElement as any
+globalThis.location = (window as any).location as any
+globalThis.HTMLElement = (window as any).HTMLElement as any
 globalThis.Element = VirtualElement as any
-globalThis.Node = window.Node as any
+globalThis.Node = (window as any).Node as any
 
 // Use VirtualEvent as Event polyfill since very-happy-dom doesn't expose window.Event
 globalThis.Event = VirtualEvent as any
@@ -369,7 +369,7 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
 }
 
 // Add getComputedStyle if not implemented
-if (typeof window.getComputedStyle === 'undefined') {
+if (typeof (window as any).getComputedStyle === 'undefined') {
   ;(window as any).getComputedStyle = function (element: Element): CSSStyleDeclaration {
     // very-happy-dom stores inline styles in _internalStyles Map
     const internalStyles = (element as any)._internalStyles as Map<string, string> | undefined
