@@ -2,6 +2,16 @@ const std = @import("std");
 const builtin = @import("builtin");
 const macos = if (builtin.os.tag == .macos) @import("macos.zig") else struct {};
 
+// Re-export platform types
+pub const WindowStyle = if (builtin.os.tag == .macos) macos.WindowStyle else struct {
+    frameless: bool = false,
+    transparent: bool = false,
+    always_on_top: bool = false,
+    resizable: bool = true,
+    closable: bool = true,
+    miniaturizable: bool = true,
+};
+
 pub const Window = struct {
     title: []const u8,
     width: u32,
@@ -86,6 +96,19 @@ pub const App = struct {
         window.* = Window.init(title, width, height, html);
         try self.windows.append(self.allocator, window);
         return window;
+    }
+
+    pub fn createWindowWithURL(self: *Self, title: []const u8, width: u32, height: u32, url: []const u8, style: WindowStyle) !*Window {
+        if (builtin.os.tag == .macos) {
+            const native_window = try macos.createWindowWithURL(title, width, height, url, style);
+            const window = try self.allocator.create(Window);
+            window.* = Window.init(title, width, height, "");
+            window.native_handle = @ptrCast(native_window);
+            try self.windows.append(self.allocator, window);
+            return window;
+        } else {
+            return error.UnsupportedPlatform;
+        }
     }
 
     pub fn run(self: *Self) !void {
