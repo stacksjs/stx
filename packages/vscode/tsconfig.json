@@ -5,13 +5,13 @@
     "rootDir": "src",
     "module": "commonjs",
     "strict": false,
+    "strictNullChecks": false,
     "noImplicitAny": false,
     "outDir": "dist",
     "sourceMap": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "strictNullChecks": false
+    "skipLibCheck": true
   },
   "include": ["src"],
   "exclude": ["node_modules", ".vscode-test"]

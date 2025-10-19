@@ -26,16 +26,16 @@
     "app-framework",
     "stacks"
   ],
-  "scripts": {
-    "build": "zig build",
-    "test": "zig build test",
-    "run": "zig build run",
-    "clean": "rm -rf zig-cache zig-out"
-  },
   "files": [
     "LICENSE.md",
     "README.md",
     "build.zig",
     "src"
-  ]
+  ],
+  "scripts": {
+    "build": "zig build",
+    "test": "zig build test",
+    "run": "zig build run",
+    "clean": "rm -rf zig-cache zig-out"
+  }
 }

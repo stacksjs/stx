@@ -5,7 +5,7 @@ import * as vscode from 'vscode'
  */
 export function createFoldingRangeProvider(): vscode.FoldingRangeProvider {
   return {
-    provideFoldingRanges(document, context, token) {
+    provideFoldingRanges(document, _context, _token) {
       // Check configuration
       const config = vscode.workspace.getConfiguration('stx.folding')
       const foldingEnabled = config.get<boolean>('enable', true)
@@ -88,7 +88,8 @@ export function createFoldingRangeProvider(): vscode.FoldingRangeProvider {
         // Find all directives in the line
         let match: RegExpExecArray | null
         directiveRegex.lastIndex = 0
-        while ((match = directiveRegex.exec(text)) !== null) {
+        match = directiveRegex.exec(text)
+        while (match !== null) {
           const directiveName = match[1]
 
           // Check if it's an opening directive
@@ -126,15 +127,17 @@ export function createFoldingRangeProvider(): vscode.FoldingRangeProvider {
               }
             }
           }
+          match = directiveRegex.exec(text)
         }
       }
 
       // Also fold HTML-style tags
-      const htmlTagRegex = /<(\w+)[^>]*>[\s\S]*?<\/\1>/g
+      const htmlTagRegex = /<([a-z][^>]*)>[\s\S]*?<\/\1>/gi
       const fullText = document.getText()
       let htmlMatch: RegExpExecArray | null
+      htmlMatch = htmlTagRegex.exec(fullText)
 
-      while ((htmlMatch = htmlTagRegex.exec(fullText)) !== null) {
+      while (htmlMatch !== null) {
         const startPos = document.positionAt(htmlMatch.index)
         const endPos = document.positionAt(htmlMatch.index + htmlMatch[0].length)
 
@@ -148,13 +151,15 @@ export function createFoldingRangeProvider(): vscode.FoldingRangeProvider {
             ),
           )
         }
+        htmlMatch = htmlTagRegex.exec(fullText)
       }
 
       // Fold comment blocks {{-- --}}
       const commentRegex = /\{\{--[\s\S]*?--\}\}/g
       let commentMatch: RegExpExecArray | null
+      commentMatch = commentRegex.exec(fullText)
 
-      while ((commentMatch = commentRegex.exec(fullText)) !== null) {
+      while (commentMatch !== null) {
         const startPos = document.positionAt(commentMatch.index)
         const endPos = document.positionAt(commentMatch.index + commentMatch[0].length)
 
@@ -168,6 +173,7 @@ export function createFoldingRangeProvider(): vscode.FoldingRangeProvider {
             ),
           )
         }
+        commentMatch = commentRegex.exec(fullText)
       }
 
       return foldingRanges

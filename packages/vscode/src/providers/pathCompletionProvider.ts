@@ -7,7 +7,7 @@ import * as vscode from 'vscode'
  */
 export function createPathCompletionProvider(): vscode.CompletionItemProvider {
   return {
-    provideCompletionItems(document, position, token, context) {
+    provideCompletionItems(document, position, _token, _context) {
       const line = document.lineAt(position.line).text
       const linePrefix = line.substring(0, position.character)
 

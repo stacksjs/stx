@@ -1,4 +1,4 @@
-/* eslint-disable no-console, no-template-curly-in-string, no-cond-assign, unused-imports/no-unused-vars, regexp/no-unused-capturing-group, no-case-declarations */
+/* eslint-disable no-template-curly-in-string, no-cond-assign, unused-imports/no-unused-vars, regexp/no-unused-capturing-group, no-case-declarations */
 import type { VirtualTsDocumentProvider } from './virtualTsDocumentProvider'
 import * as vscode from 'vscode'
 import { TransitionDirection, TransitionEase, TransitionType } from '../interfaces/animation-types'
@@ -2883,7 +2883,7 @@ interface ${typeInfo} {
               || /^-?\d+(\.\d+)?$/.test(variableValue) // numbers
               || variableValue === 'true' || variableValue === 'false' // booleans
               || variableValue === 'null' || variableValue === 'undefined' // null/undefined
-              || /^\[.*\]$/.test(variableValue) && variableValue.length < 50 // short arrays
+              || (/^\[.*\]$/.test(variableValue) && variableValue.length < 50) // short arrays
             )
 
           if (isSimpleValue) {

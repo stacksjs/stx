@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import type { IconData } from '@stacksjs/iconify-core'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'

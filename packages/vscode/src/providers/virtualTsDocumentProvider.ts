@@ -1,4 +1,4 @@
-/* eslint-disable no-cond-assign, no-console, regexp/no-super-linear-backtracking, regexp/no-unused-capturing-group, regexp/no-useless-quantifier */
+/* eslint-disable no-cond-assign, regexp/no-unused-capturing-group, regexp/no-useless-quantifier */
 import type { JSDocInfo, PositionMapping } from '../interfaces'
 import * as vscode from 'vscode'
 import { TransitionEase, TransitionType } from '../interfaces/animation-types'

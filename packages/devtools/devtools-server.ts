@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { serve } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'

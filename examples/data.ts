@@ -18,8 +18,8 @@ export const packages = [
   { title: 'Search Engine', emoji: '🔍', desc: 'Full-text search capabilities' },
   { title: 'Realtime', emoji: '⚡', desc: 'WebSocket & real-time features' },
   { title: 'X-Ray', emoji: '🔬', desc: 'Debugging & monitoring tools' },
-  { title: 'Payments', emoji: '💳', desc: 'Payment processing integration' }
-];
+  { title: 'Payments', emoji: '💳', desc: 'Payment processing integration' },
+]
 
 export const desktopIcons = [
   { id: 'about', title: 'About Stacks', icon: '📄', type: 'window', section: 'about' },
@@ -36,8 +36,8 @@ export const desktopIcons = [
   { id: 'docs', title: 'Documentation', icon: '📚', type: 'link', url: 'https://stacksjs.org/docs' },
   { id: 'github', title: 'GitHub', icon: '💻', type: 'link', url: 'https://github.com/stacksjs/stacks' },
   { id: 'sponsor', title: 'Sponsor', icon: '💖', type: 'link', url: 'https://github.com/sponsors/chrisbbreuer' },
-  { id: 'discord', title: 'Discord', icon: '💬', type: 'link', url: 'https://discord.gg/stacksjs' }
-];
+  { id: 'discord', title: 'Discord', icon: '💬', type: 'link', url: 'https://discord.gg/stacksjs' },
+]
 
 export const libraries = [
   { name: 'aax', url: 'https://github.com/stacksjs/aax', desc: 'A library to work with Audible\'s .aax files. Cross-platform app coming soon.' },
@@ -95,8 +95,8 @@ export const libraries = [
   { name: 'ts-vat', url: 'https://github.com/stacksjs/ts-vat', desc: 'Simply handle EU MOSS tax & VAT regulations & calculations.' },
   { name: 'ts-webp', url: 'https://github.com/stacksjs/ts-webp', desc: 'A modern image format for the Web.' },
   { name: 'ts-web-scraper', url: 'https://github.com/stacksjs/ts-web-scraper', desc: 'Powerful, type-safe web scraping tooling.' },
-  { name: 'vidx', url: 'https://github.com/stacksjs/vidx', desc: 'Make your videos load faster. A better save for the web.' }
-];
+  { name: 'vidx', url: 'https://github.com/stacksjs/vidx', desc: 'Make your videos load faster. A better save for the web.' },
+]
 
 export const plugins = [
   { name: 'action-launchpad', url: 'https://github.com/stacksjs/launchpad', desc: 'GitHub Action to install packages using Launchpad.' },
@@ -113,14 +113,14 @@ export const plugins = [
   { name: 'vite-plugin-local', url: 'https://github.com/stacksjs/vite-plugin-local', desc: 'Pretty development URLs, and HTTPS. Zero config, zero setup.' },
   { name: 'vite-plugin-rpx', url: 'https://github.com/stacksjs/rpx', desc: 'A Vite plugin for a modern, fast reverse proxy. For a better local development environment.' },
   { name: 'vite-plugin-tauri', url: 'https://github.com/stacksjs/vite-plugin-tauri', desc: 'Zero-setup, highly-configurable cross-platform development.' },
-  { name: 'vite-plugin-tlsx', url: 'https://github.com/stacksjs/tlsx', desc: 'Simple, yet powerful TLS library. With automation & HTTPS by default.' }
-];
+  { name: 'vite-plugin-tlsx', url: 'https://github.com/stacksjs/tlsx', desc: 'Simple, yet powerful TLS library. With automation & HTTPS by default.' },
+]
 
 export const templates = [
   { name: 'projects', url: 'https://github.com/stacksjs/projects', desc: 'A minimal personal portfolio template.' },
   { name: 'ts-starter', url: 'https://github.com/stacksjs/ts-starter', desc: 'A rather barebones Bun & TypeScript starting point for libraries & CLIs.' },
-  { name: 'ts-starter-monorepo', url: 'https://github.com/stacksjs/ts-starter-monorepo', desc: 'Like our ts-starter, but optimized for monorepos.' }
-];
+  { name: 'ts-starter-monorepo', url: 'https://github.com/stacksjs/ts-starter-monorepo', desc: 'Like our ts-starter, but optimized for monorepos.' },
+]
 
 export const frameworks = [
   { name: 'BunPress', url: 'https://github.com/stacksjs/bunpress', desc: 'Modern documentation-needs covered. Coming soon.' },
@@ -128,19 +128,19 @@ export const frameworks = [
   { name: 'Headwind', url: 'https://github.com/stacksjs/headwind', desc: 'A Tailwind-like utility-first CSS framework. Powered by Bun.' },
   { name: 'Launchpad', url: 'https://github.com/stacksjs/launchpad', desc: 'Performant system & project dependency management. Similar to Homebrew, just faster.' },
   { name: 'Stacks', url: 'https://github.com/stacksjs/stacks', desc: 'Develop powerful apps, clouds & framework-agnostic libraries—faster.' },
-  { name: 'stx', url: 'https://github.com/stacksjs/stx', desc: 'A fast & powerful UI framework. Templating inspired by Laravel Blade & Vue.' }
-];
+  { name: 'stx', url: 'https://github.com/stacksjs/stx', desc: 'A fast & powerful UI framework. Templating inspired by Laravel Blade & Vue.' },
+]
 
 export const sponsorware = [
   { name: 'bun-queue', url: 'https://github.com/stacksjs/bun-queue', desc: 'A modern & powerful Queue / Messaging system. Optimized for Bun.' },
   { name: 'bun-router', url: 'https://github.com/stacksjs/bun-router', desc: 'Powerful routing. High-performance, feature-rich.' },
   { name: 'Stacks Dashboard', url: 'https://github.com/stacksjs/stacks', desc: 'The Stacks Dashboard. For developers, and their clients.' },
   { name: 'Stacks ORM - DynamoDB', url: 'https://github.com/stacksjs/stacks', desc: 'More than a driver—automated Single Table Design. Cheap, fast, endless scalability.' },
-  { name: 'Stacks Raycast', url: 'https://github.com/stacksjs/stacks', desc: 'Stacks (and Buddy) integrated into Raycast.' }
-];
+  { name: 'Stacks Raycast', url: 'https://github.com/stacksjs/stacks', desc: 'Stacks (and Buddy) integrated into Raycast.' },
+]
 
 export const apps = [
   { name: 'Barista', url: 'https://github.com/stacksjs/barista', desc: 'A lightweight macOS utility that serves up a perfectly organized menubar.' },
   { name: 'Hush', url: 'https://github.com/stacksjs/hush', desc: 'Lightweight macOS utility that ensures notifications are suppressed during meetings.' },
-  { name: 'Pomodoro', url: 'https://github.com/stacksjs/pomodoro', desc: 'Minimal, functional, yet simple Pomodoro menubar app, to help stay focussed. For Mac.' }
-];
+  { name: 'Pomodoro', url: 'https://github.com/stacksjs/pomodoro', desc: 'Minimal, functional, yet simple Pomodoro menubar app, to help stay focussed. For Mac.' },
+]

@@ -1,4 +1,3 @@
-/* eslint-disable regexp/no-super-linear-backtracking */
 /**
  * stx file formatter for automatically formatting .stx files
  */
