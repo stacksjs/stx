@@ -19,7 +19,7 @@
     "@stacksjs/sanitizer": "workspace:*",
     "dompurify": "^3.3.0",
     "gray-matter": "^4.0.3",
-    "isomorphic-dompurify": "^2.29.0",
+    "isomorphic-dompurify": "^2.30.0",
     "js-yaml": "^4.1.0",
     "markdown-it": "^14.1.0",
     "marked": "^16.4.1",
