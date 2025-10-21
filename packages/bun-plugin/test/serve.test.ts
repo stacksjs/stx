@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'bun:test'
+import path from 'node:path'
 import stxPlugin from '../src/index'
+
+const TEST_DIR = import.meta.dir
+const FIXTURES_DIR = path.join(TEST_DIR, 'fixtures')
 
 describe('bun-plugin-stx serving', () => {
   it('should build a single .stx file', async () => {
     const result = await Bun.build({
-      entrypoints: ['./test/fixtures/basic.stx'],
+      entrypoints: [path.join(FIXTURES_DIR, 'basic.stx')],
       outdir: './test/dist',
       plugins: [stxPlugin()],
     })
@@ -15,7 +19,7 @@ describe('bun-plugin-stx serving', () => {
 
   it('should process stx directives correctly', async () => {
     const result = await Bun.build({
-      entrypoints: ['./test/fixtures/basic.stx'],
+      entrypoints: [path.join(FIXTURES_DIR, 'basic.stx')],
       outdir: './test/dist',
       plugins: [stxPlugin()],
     })
@@ -51,7 +55,7 @@ describe('bun-plugin-stx serving', () => {
 
   it('should build multiple .stx files', async () => {
     const result = await Bun.build({
-      entrypoints: ['./test/fixtures/basic.stx', './test/fixtures/about.stx'],
+      entrypoints: [path.join(FIXTURES_DIR, 'basic.stx'), path.join(FIXTURES_DIR, 'about.stx')],
       outdir: './test/dist',
       plugins: [stxPlugin()],
     })
@@ -62,7 +66,7 @@ describe('bun-plugin-stx serving', () => {
 
   it('should process team list in about page', async () => {
     const result = await Bun.build({
-      entrypoints: ['./test/fixtures/about.stx'],
+      entrypoints: [path.join(FIXTURES_DIR, 'about.stx')],
       outdir: './test/dist',
       plugins: [stxPlugin()],
     })
@@ -90,7 +94,7 @@ describe('bun-plugin-stx serving', () => {
 
   it('should add SEO meta tags automatically', async () => {
     const result = await Bun.build({
-      entrypoints: ['./test/fixtures/basic.stx'],
+      entrypoints: [path.join(FIXTURES_DIR, 'basic.stx')],
       outdir: './test/dist',
       plugins: [stxPlugin()],
     })
