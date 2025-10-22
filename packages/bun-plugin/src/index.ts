@@ -44,19 +44,35 @@ export function stxPlugin(userOptions?: StxOptions): BunPlugin {
       build.onLoad({ filter: /\.md$/ }, async ({ path: filePath }) => {
         try {
           // Process the markdown file with frontmatter
-          const { content: htmlContent, data: _frontmatter } = await readMarkdownFile(filePath, options)
+          const { content: htmlContent, data: frontmatter } = await readMarkdownFile(filePath, options)
 
-          // Return HTML directly for serving
+          // Generate JavaScript module exports
+          const jsContent = `// ${filePath}
+var content = ${JSON.stringify(htmlContent)};
+var data = ${JSON.stringify(frontmatter)};
+
+export { content, data };
+export { content as default };
+`
+
           return {
-            contents: htmlContent,
-            loader: 'html',
+            contents: jsContent,
+            loader: 'js',
           }
         }
         catch (error: any) {
           console.error('Markdown Processing Error:', error)
+          const errorContent = `<!DOCTYPE html><html><body><h1>Markdown Error</h1><pre>${error.message || 'Unknown error'}</pre></body></html>`
+          const jsContent = `// ${filePath}
+var content = ${JSON.stringify(errorContent)};
+var data = {};
+
+export { content, data };
+export { content as default };
+`
           return {
-            contents: `<!DOCTYPE html><html><body><h1>Markdown Error</h1><pre>${error.message || 'Unknown error'}</pre></body></html>`,
-            loader: 'html',
+            contents: jsContent,
+            loader: 'js',
           }
         }
       })
