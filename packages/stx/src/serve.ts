@@ -80,11 +80,10 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     // Extract script and template sections
     const scriptMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
     const scriptContent = scriptMatch ? scriptMatch[1] : ''
-    
+
     // Extract all script tags (both inline and external)
     const allScriptMatches = content.match(/<script\b[^>]*>[\s\S]*?<\/script>/gi) || []
-    const externalScriptMatches = content.match(/<script\b[^>]*src\s*=\s*["'][^"']*["'][^>]*><\/script>/gi) || []
-    
+
     const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
     // Create context
@@ -102,7 +101,7 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
 
     // Preserve all script content in final output
     let output = processedTemplate
-    
+
     // Add all script tags back to the output
     const allScripts = [...allScriptMatches]
     if (allScripts.length > 0) {
@@ -111,7 +110,8 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
       if (bodyEndMatch) {
         const scriptsHtml = allScripts.join('\n')
         output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
-      } else {
+      }
+      else {
         // If no </body> tag, append scripts at the end
         output += `\n${allScripts.join('\n')}`
       }

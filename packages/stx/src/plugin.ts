@@ -79,10 +79,10 @@ export const plugin: BunPlugin = {
         const { scriptContent, templateContent, allScripts } = performanceMonitor.time('script-extraction', () => {
           const scriptMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
           const scriptContent = scriptMatch ? scriptMatch[1] : ''
-          
+
           // Extract all script tags (both inline and external)
           const allScriptMatches = content.match(/<script\b[^>]*>[\s\S]*?<\/script>/gi) || []
-          
+
           const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
           return { scriptContent, templateContent, allScripts: allScriptMatches }
         })
@@ -127,7 +127,7 @@ export const plugin: BunPlugin = {
 
         // Preserve all script content in final output
         let output = processedTemplate
-        
+
         // Add all script tags back to the output
         if (allScripts.length > 0) {
           // Find the closing </body> tag and insert scripts before it
@@ -135,7 +135,8 @@ export const plugin: BunPlugin = {
           if (bodyEndMatch) {
             const scriptsHtml = allScripts.join('\n')
             output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
-          } else {
+          }
+          else {
             // If no </body> tag, append scripts at the end
             output += `\n${allScripts.join('\n')}`
           }
