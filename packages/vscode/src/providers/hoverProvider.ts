@@ -66,7 +66,7 @@ function createHoverWithDiagnostics(hover: vscode.MarkdownString, document: vsco
   if (range) {
     return new vscode.Hover(hover, range)
   }
-  return createHoverWithDiagnostics(hover, document, position)
+  return new vscode.Hover(hover)
 }
 
 export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocumentProvider): vscode.HoverProvider {
@@ -150,6 +150,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
       // Check if word appears in an actual code context or looks like a variable
       const isInCodeExpression = line.includes('{{') && line.includes('}}')
       const isInAtExpression = line.includes('@') && (line.includes('(') || line.includes(')'))
+      const isDirective = word.startsWith('@') || line.includes(`@${word}`) // Check if word is a directive
       const looksLikeVariable = /^[a-z][a-zA-Z0-9]*$/.test(word) && word.length > 1 // camelCase pattern
       const looksLikeConstant = /^[A-Z][A-Z0-9_]*$/.test(word) // CONSTANT_CASE pattern
 
@@ -166,7 +167,7 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
 
       // Combined check: if it's plain text and NOT in a code context or special case, skip the hover
       if ((isPlainTextWord
-        && !(isInCodeExpression || isInAtExpression || looksLikeVariable || looksLikeConstant || isTypescriptKeyword))
+        && !(isInCodeExpression || isInAtExpression || isDirective || looksLikeVariable || looksLikeConstant || isTypescriptKeyword))
       // Special case for file paths in code tags - only show hover if it's a code-like item
       || (isInCodeTag && !shouldShowHoverInCodeTag)) {
         return null
