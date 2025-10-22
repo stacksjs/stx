@@ -217,19 +217,20 @@ export async function activate(context: vscode.ExtensionContext) {
     semanticTokensProvider,
   )
 
-  // Activate UnoCSS features for utility class highlighting and color previews
-  // NOTE: UnoCSS features require additional dependencies (@unocss/core, @unocss/preset-uno, etc.)
-  // Uncomment the following code block to enable UnoCSS features after installing dependencies:
-  /*
-  try {
-    const unocssModule = await import('./styles-uno/index')
-    await unocssModule.activate(context)
-    console.log('stx Extension - UnoCSS features activated')
+  // Activate Headwind utility class features
+  const utilityClassesEnabled = vscode.workspace.getConfiguration('stx.utilityClasses').get<boolean>('enable', true)
+
+  if (utilityClassesEnabled) {
+    try {
+      const { activateHeadwind } = await import('./headwind/index')
+      await activateHeadwind(context)
+      console.log('stx Extension - Headwind utility class features activated')
+    }
+    catch (error) {
+      console.error('stx Extension - Failed to activate Headwind features:', error)
+      vscode.window.showErrorMessage(`Failed to activate Headwind: ${error}`)
+    }
   }
-  catch (error) {
-    console.log('stx Extension - UnoCSS features not available:', error)
-  }
-  */
 
   console.log('stx language support activated (with Markdown frontmatter support)')
 }

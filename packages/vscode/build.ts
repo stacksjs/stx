@@ -11,11 +11,8 @@ try {
     format: 'cjs',
     external: [
       'vscode',
-      // External UnoCSS dependencies (optional feature)
-      '@unocss/core',
-      '@unocss/preset-uno',
-      'find-up',
-      'unplugin-utils',
+      '@stacksjs/headwind',
+      'prettier',
     ],
     minify: false, // Disable minification for easier debugging
     sourcemap: 'external',

@@ -58,6 +58,14 @@
       {
         "command": "stx.setLanguageMode",
         "title": "Set Language Mode to stx"
+      },
+      {
+        "command": "stx.sortClasses",
+        "title": "Stacks: Sort Utility Classes"
+      },
+      {
+        "command": "headwind.reload",
+        "title": "Headwind: Reload Configuration"
       }
     ],
     "grammars": [
@@ -510,6 +518,57 @@
           "type": "boolean",
           "default": true,
           "description": "Enable semantic syntax highlighting for directives"
+        },
+        "stx.utilityClasses.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable utility class features (tooltips, color previews, sorting)"
+        },
+        "stx.utilityClasses.framework": {
+          "type": "string",
+          "enum": ["tailwind", "unocss", "auto"],
+          "default": "auto",
+          "markdownDescription": "Utility CSS framework to use. `auto` will detect from config files"
+        },
+        "stx.utilityClasses.colorPreview": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show inline color decorations for color utility classes"
+        },
+        "stx.utilityClasses.hoverPreview": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show CSS output when hovering over utility classes"
+        },
+        "stx.utilityClasses.underline": {
+          "type": "boolean",
+          "default": true,
+          "description": "Underline matched utility classes"
+        },
+        "stx.utilityClasses.sortOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically sort utility classes on file save"
+        },
+        "stx.utilityClasses.colorPreviewRadius": {
+          "type": "string",
+          "default": "0",
+          "description": "Border radius for color preview blocks ('0' for square like Tailwind, '50%' for circle)"
+        },
+        "stx.utilityClasses.selectionStyle": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show CSS preview for selected utility classes"
+        },
+        "stx.utilityClasses.autocomplete": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable autocomplete for utility classes"
+        },
+        "headwind.remToPxRatio": {
+          "type": "number",
+          "default": 16,
+          "description": "Rem to px conversion ratio for hover previews"
         }
       }
     },
@@ -528,6 +587,10 @@
   "galleryBanner": {
     "color": "#d7e4f5",
     "theme": "light"
+  },
+  "dependencies": {
+    "@stacksjs/headwind": "^0.1.3",
+    "prettier": "^3.4.2"
   },
   "devDependencies": {
     "@types/vscode": "^1.80.0",

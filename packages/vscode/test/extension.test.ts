@@ -54,8 +54,10 @@ const mockVscode = {
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp-vscode')
 
+// Get the correct package root - test file is in /packages/vscode/test/
+const PACKAGE_ROOT = path.join(import.meta.dir, '..')
+
 describe('VSCODE: Extension Tests', () => {
-  const PACKAGE_ROOT = path.join(process.cwd(), 'packages/vscode')
 
   beforeEach(async () => {
     await fs.promises.mkdir(TEMP_DIR, { recursive: true })
@@ -194,22 +196,11 @@ describe('VSCODE: Extension Tests', () => {
     }
   })
 
-  test('should have UnoCSS integration', async () => {
-    const unoFiles = [
-      'src/styles-uno/index.ts',
-      'src/styles-uno/config.ts',
-      'src/styles-uno/rules.ts',
-      'src/styles-uno/shortcuts.ts',
-      'src/styles-uno/configs.ts',
-    ].map(p => path.join(PACKAGE_ROOT, p))
-
-    for (const unoPath of unoFiles) {
-      const exists = await Bun.file(unoPath).exists()
-      expect(exists).toBe(true)
-
-      const content = await Bun.file(unoPath).text()
-      expect(content.length).toBeGreaterThan(0)
-    }
+  // UnoCSS has been replaced with Headwind - see headwind.test.ts for Headwind tests
+  test('should NOT have UnoCSS integration (migrated to Headwind)', async () => {
+    const unoIndexPath = path.join(PACKAGE_ROOT, 'src/styles-uno/index.ts')
+    const exists = await Bun.file(unoIndexPath).exists()
+    expect(exists).toBe(false)
   })
 
   test('should have snippet files', async () => {
