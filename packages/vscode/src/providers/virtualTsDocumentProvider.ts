@@ -222,9 +222,9 @@ declare const history: History;
           const symbolName = jsDocMatch[3]
 
           // Clean up JSDoc comment - make sure we're not including properties in the comment
-          let cleanedComment = jsDocComment
+          let cleanedComment = jsDocComment || ''
           // Remove nested interface properties from the comment if they're coming through
-          if (symbolType === 'function' && cleanedComment.includes('id:') && cleanedComment.includes('user:')) {
+          if (symbolType === 'function' && cleanedComment && cleanedComment.includes('id:') && cleanedComment.includes('user:')) {
             // This indicates we might have order properties in the comment - clean it up
             cleanedComment = cleanedComment.replace(/.*?id:\s*number.*?date:\s*Date.*?\}/s, '')
           }
@@ -377,6 +377,11 @@ declare const history: History;
    */
   private extractInterfaceTypeInfo(content: string, jsDocComments: JSDocInfo[]): void {
     try {
+      // Guard against undefined or null content
+      if (!content || typeof content !== 'string') {
+        return
+      }
+
       // Extract function return types - handle both function declarations and arrow functions
       // Regular function format: function name(...) : ReturnType { ... }
       const functionRegex = /function\s+(\w+)\s*\(([^)]*)\)\s*:\s*([\w[\]<>]+)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)?\}/g
@@ -496,6 +501,11 @@ declare const history: History;
         const returnType = arrowMatch[2]
         const functionBody = arrowMatch[3] || arrowMatch[4] || ''
 
+        // Skip if no function name or return type
+        if (!functionName || !returnType) {
+          continue
+        }
+
         // Add function info
         jsDocComments.push({
           comment: `Arrow function returning ${returnType}`,
@@ -571,7 +581,7 @@ declare const history: History;
         }
 
         // Check if this is a union type
-        if (returnType.includes('|')) {
+        if (returnType && returnType.includes('|')) {
           const baseTypes = returnType.split('|').map(t => t.trim())
 
           // For types like "User | null", focus on the non-null type
@@ -628,7 +638,7 @@ declare const history: History;
 
             // Process union types like "User | null" to focus on the main type
             let mainType = returnType
-            if (returnType.includes('|')) {
+            if (returnType && returnType.includes('|')) {
               const types = returnType.split('|').map(t => t.trim())
               const nonNullTypes = types.filter(t => t !== 'null' && t !== 'undefined')
               if (nonNullTypes.length > 0) {
