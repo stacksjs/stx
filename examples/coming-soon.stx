@@ -64,6 +64,17 @@
           <div class="desktop-icon-image">💬</div>
           <div class="desktop-icon-label">Discord</div>
         </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="licenses"
+          data-icon-type="window"
+          data-icon-section="licenses"
+          style="left: 20px; top: 500px;"
+        >
+          <div class="desktop-icon-image">🔑</div>
+          <div class="desktop-icon-label">License Manager</div>
+        </button>
     </div>
 
 

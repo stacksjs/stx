@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STACKS.JS - License Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="homepage.css?v=6">
+  <style>
+    /* License-specific styles */
+    .license-window {
+      width: 800px;
+      height: 600px;
+      left: 100px;
+      top: 50px;
+    }
+
+    .license-toolbar {
+      background: linear-gradient(to bottom, #ece9d8 0%, #d4d0c8 100%);
+      border-bottom: 1px solid #808080;
+      padding: 4px 8px;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .license-toolbar-btn {
+      padding: 4px 12px;
+      background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+      border: 1px outset #ffffff;
+      border-radius: 2px;
+      cursor: pointer;
+      font-family: 'Tahoma', sans-serif;
+      font-size: 11px;
+      transition: all 0.1s;
+    }
+
+    .license-toolbar-btn:hover {
+      background: linear-gradient(to bottom, #f0f0f0 0%, #e0e0e0 100%);
+    }
+
+    .license-toolbar-btn:active {
+      border: 1px inset #ffffff;
+      background: linear-gradient(to bottom, #d4d0c8 0%, #ece9d8 100%);
+    }
+
+    .license-toolbar-separator {
+      width: 1px;
+      height: 20px;
+      background: #808080;
+      margin: 0 4px;
+    }
+
+    .license-content {
+      padding: 16px;
+      background: white;
+      overflow-y: auto;
+      height: calc(100% - 80px);
+    }
+
+    .license-section {
+      margin-bottom: 24px;
+    }
+
+    .license-section-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #0831d9;
+      margin-bottom: 12px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #0831d9;
+    }
+
+    .license-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border: 2px solid #0831d9;
+      font-family: 'Tahoma', sans-serif;
+      font-size: 12px;
+    }
+
+    .license-table th {
+      background: linear-gradient(to bottom, #0831d9 0%, #0053ee 100%);
+      color: white;
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: bold;
+      border: 1px solid #003c74;
+    }
+
+    .license-table td {
+      padding: 8px 12px;
+      border: 1px solid #c0c0c0;
+      background: white;
+    }
+
+    .license-table tr:nth-child(even) td {
+      background: #f8f8f8;
+    }
+
+    .license-table tr:hover td {
+      background: #e6f3ff;
+    }
+
+    .license-key {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border: 1px solid #c0c0c0;
+      border-radius: 2px;
+      letter-spacing: 1px;
+    }
+
+    .license-status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 2px;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .license-status.active {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .license-status.expired {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .license-status.pending {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+
+    .license-form {
+      background: #f8f8f8;
+      border: 2px solid #c0c0c0;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .license-form-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+
+    .license-form-label {
+      min-width: 120px;
+      font-weight: bold;
+      font-size: 12px;
+      color: #333;
+    }
+
+    .license-form-input {
+      flex: 1;
+      padding: 4px 8px;
+      border: 1px solid #7f9db9;
+      background: white;
+      font-family: 'Tahoma', sans-serif;
+      font-size: 12px;
+    }
+
+    .license-form-input:focus {
+      border-color: #0831d9;
+      outline: none;
+    }
+
+    .license-form-btn {
+      padding: 6px 16px;
+      background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+      border: 1px outset #ffffff;
+      cursor: pointer;
+      font-family: 'Tahoma', sans-serif;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .license-form-btn:hover {
+      background: linear-gradient(to bottom, #f0f0f0 0%, #e0e0e0 100%);
+    }
+
+    .license-form-btn:active {
+      border: 1px inset #ffffff;
+    }
+
+    .license-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .license-stat-card {
+      background: linear-gradient(to bottom, #ffffff 0%, #f8f8f8 100%);
+      border: 2px solid #c0c0c0;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .license-stat-number {
+      font-size: 24px;
+      font-weight: bold;
+      color: #0831d9;
+      margin-bottom: 4px;
+    }
+
+    .license-stat-label {
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+    }
+
+    .license-search {
+      margin-bottom: 16px;
+    }
+
+    .license-search-input {
+      width: 100%;
+      padding: 6px 12px;
+      border: 2px solid #c0c0c0;
+      background: white;
+      font-family: 'Tahoma', sans-serif;
+      font-size: 12px;
+    }
+
+    .license-search-input:focus {
+      border-color: #0831d9;
+      outline: none;
+    }
+
+    .license-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .license-action-btn {
+      padding: 6px 12px;
+      background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+      border: 1px outset #ffffff;
+      cursor: pointer;
+      font-family: 'Tahoma', sans-serif;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .license-action-btn:hover {
+      background: linear-gradient(to bottom, #f0f0f0 0%, #e0e0e0 100%);
+    }
+
+    .license-action-btn:active {
+      border: 1px inset #ffffff;
+    }
+
+    .license-action-btn.primary {
+      background: linear-gradient(to bottom, #0831d9 0%, #0053ee 100%);
+      color: white;
+      border: 1px solid #003c74;
+    }
+
+    .license-action-btn.primary:hover {
+      background: linear-gradient(to bottom, #0d65ff 0%, #0831d9 100%);
+    }
+
+    .license-dialog {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #ece9d8;
+      border: 2px outset #ffffff;
+      box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+      padding: 16px;
+      z-index: 10005;
+      min-width: 400px;
+      display: none;
+    }
+
+    .license-dialog.active {
+      display: block;
+    }
+
+    .license-dialog-header {
+      background: linear-gradient(to bottom, #0831d9 0%, #0053ee 100%);
+      color: white;
+      padding: 8px 12px;
+      margin: -16px -16px 16px -16px;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .license-dialog-content {
+      margin-bottom: 16px;
+    }
+
+    .license-dialog-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .license-dialog-btn {
+      padding: 6px 16px;
+      background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+      border: 1px outset #ffffff;
+      cursor: pointer;
+      font-family: 'Tahoma', sans-serif;
+      font-size: 11px;
+    }
+
+    .license-dialog-btn:hover {
+      background: linear-gradient(to bottom, #f0f0f0 0%, #e0e0e0 100%);
+    }
+
+    .license-dialog-btn:active {
+      border: 1px inset #ffffff;
+    }
+
+    .license-dialog-btn.primary {
+      background: linear-gradient(to bottom, #0831d9 0%, #0053ee 100%);
+      color: white;
+      border: 1px solid #003c74;
+    }
+
+    .license-dialog-btn.primary:hover {
+      background: linear-gradient(to bottom, #0d65ff 0%, #0831d9 100%);
+    }
+  </style>
+</head>
+<body>
+  <div class="desktop">
+    <!-- Desktop Icons -->
+    <div class="desktop-icons">
+        <button
+          class="desktop-icon"
+          data-icon-id="licenses"
+          data-icon-type="window"
+          data-icon-section="licenses"
+          style="left: 20px; top: 20px;"
+        >
+          <div class="desktop-icon-image">🔑</div>
+          <div class="desktop-icon-label">License Manager</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="docs"
+          data-icon-type="link"
+          data-icon-section=""
+          data-icon-url="https://stacksjs.org/docs"
+          style="left: 20px; top: 140px;"
+        >
+          <div class="desktop-icon-image">📚</div>
+          <div class="desktop-icon-label">Documentation</div>
+        </button>
+
+        <button
+          class="desktop-icon"
+          data-icon-id="github"
+          data-icon-type="link"
+          data-icon-section=""
+          data-icon-url="https://github.com/stacksjs/stacks"
+          style="left: 20px; top: 260px;"
+        >
+          <div class="desktop-icon-image">💻</div>
+          <div class="desktop-icon-label">GitHub</div>
+        </button>
+    </div>
+
+    <!-- License Manager Window -->
+    <div class="window license-window active" id="license-window">
+      <div class="window-titlebar">
+        <div class="window-icon">🔑</div>
+        <div class="window-title">STACKS.JS License Manager v2.1</div>
+        <div class="window-controls">
+          <div class="window-control minimize" onclick="minimizeWindow('license-window')">_</div>
+          <div class="window-control maximize" onclick="maximizeWindow('license-window')">□</div>
+          <div class="window-control close" onclick="closeWindow('license-window')">×</div>
+        </div>
+      </div>
+      
+      <div class="license-toolbar">
+        <button class="license-toolbar-btn" onclick="generateLicense()">
+          📝 Generate New
+        </button>
+        <button class="license-toolbar-btn" onclick="importLicenses()">
+          📁 Import
+        </button>
+        <button class="license-toolbar-btn" onclick="exportLicenses()">
+          💾 Export
+        </button>
+        <div class="license-toolbar-separator"></div>
+        <button class="license-toolbar-btn" onclick="refreshLicenses()">
+          🔄 Refresh
+        </button>
+        <button class="license-toolbar-btn" onclick="showSettings()">
+          ⚙️ Settings
+        </button>
+      </div>
+
+      <div class="license-content">
+        <!-- Statistics Cards -->
+        <div class="license-stats">
+          <div class="license-stat-card">
+            <div class="license-stat-number">247</div>
+            <div class="license-stat-label">Total Licenses</div>
+          </div>
+          <div class="license-stat-card">
+            <div class="license-stat-number">198</div>
+            <div class="license-stat-label">Active</div>
+          </div>
+          <div class="license-stat-card">
+            <div class="license-stat-number">23</div>
+            <div class="license-stat-label">Expired</div>
+          </div>
+          <div class="license-stat-card">
+            <div class="license-stat-number">26</div>
+            <div class="license-stat-label">Pending</div>
+          </div>
+        </div>
+
+        <!-- Search and Actions -->
+        <div class="license-search">
+          <input 
+            type="text" 
+            class="license-search-input" 
+            placeholder="Search licenses by key, email, or company..."
+            id="license-search"
+          >
+        </div>
+
+        <div class="license-actions">
+          <button class="license-action-btn primary" onclick="generateLicense()">
+            ➕ Generate License
+          </button>
+          <button class="license-action-btn" onclick="bulkActions()">
+            📋 Bulk Actions
+          </button>
+          <button class="license-action-btn" onclick="viewReports()">
+            📊 Reports
+          </button>
+          <button class="license-action-btn" onclick="showHelp()">
+            ❓ Help
+          </button>
+        </div>
+
+        <!-- License Table -->
+        <div class="license-section">
+          <div class="license-section-title">License Database</div>
+          <table class="license-table">
+            <thead>
+              <tr>
+                <th>License Key</th>
+                <th>Customer</th>
+                <th>Email</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Expires</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="license-key">STX-2024-ABC123-XYZ789</span></td>
+                <td>Acme Corp</td>
+                <td>john@acme.com</td>
+                <td>Enterprise</td>
+                <td><span class="license-status active">Active</span></td>
+                <td>2024-01-15</td>
+                <td>2025-01-15</td>
+                <td>
+                  <button class="license-action-btn" onclick="editLicense('STX-2024-ABC123-XYZ789')">✏️</button>
+                  <button class="license-action-btn" onclick="revokeLicense('STX-2024-ABC123-XYZ789')">🚫</button>
+                </td>
+              </tr>
+              <tr>
+                <td><span class="license-key">STX-2024-DEF456-UVW012</span></td>
+                <td>TechStart Inc</td>
+                <td>sarah@techstart.com</td>
+                <td>Professional</td>
+                <td><span class="license-status active">Active</span></td>
+                <td>2024-02-03</td>
+                <td>2025-02-03</td>
+                <td>
+                  <button class="license-action-btn" onclick="editLicense('STX-2024-DEF456-UVW012')">✏️</button>
+                  <button class="license-action-btn" onclick="revokeLicense('STX-2024-DEF456-UVW012')">🚫</button>
+                </td>
+              </tr>
+              <tr>
+                <td><span class="license-key">STX-2023-GHI789-RST345</span></td>
+                <td>OldCompany LLC</td>
+                <td>admin@oldcompany.com</td>
+                <td>Basic</td>
+                <td><span class="license-status expired">Expired</span></td>
+                <td>2023-06-10</td>
+                <td>2024-06-10</td>
+                <td>
+                  <button class="license-action-btn" onclick="renewLicense('STX-2023-GHI789-RST345')">🔄</button>
+                  <button class="license-action-btn" onclick="deleteLicense('STX-2023-GHI789-RST345')">🗑️</button>
+                </td>
+              </tr>
+              <tr>
+                <td><span class="license-key">STX-2024-JKL012-MNO678</span></td>
+                <td>NewStartup Co</td>
+                <td>founder@newstartup.com</td>
+                <td>Startup</td>
+                <td><span class="license-status pending">Pending</span></td>
+                <td>2024-03-20</td>
+                <td>2025-03-20</td>
+                <td>
+                  <button class="license-action-btn" onclick="approveLicense('STX-2024-JKL012-MNO678')">✅</button>
+                  <button class="license-action-btn" onclick="rejectLicense('STX-2024-JKL012-MNO678')">❌</button>
+                </td>
+              </tr>
+              <tr>
+                <td><span class="license-key">STX-2024-PQR345-TUV901</span></td>
+                <td>Enterprise Solutions</td>
+                <td>license@enterprise.com</td>
+                <td>Enterprise</td>
+                <td><span class="license-status active">Active</span></td>
+                <td>2024-01-28</td>
+                <td>2025-01-28</td>
+                <td>
+                  <button class="license-action-btn" onclick="editLicense('STX-2024-PQR345-TUV901')">✏️</button>
+                  <button class="license-action-btn" onclick="revokeLicense('STX-2024-PQR345-TUV901')">🚫</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Generate License Form -->
+        <div class="license-section">
+          <div class="license-section-title">Generate New License</div>
+          <div class="license-form">
+            <div class="license-form-row">
+              <div class="license-form-label">Customer Name:</div>
+              <input type="text" class="license-form-input" id="customer-name" placeholder="Enter customer name">
+            </div>
+            <div class="license-form-row">
+              <div class="license-form-label">Email Address:</div>
+              <input type="email" class="license-form-input" id="customer-email" placeholder="customer@company.com">
+            </div>
+            <div class="license-form-row">
+              <div class="license-form-label">License Type:</div>
+              <select class="license-form-input" id="license-type">
+                <option value="basic">Basic - $99/year</option>
+                <option value="professional">Professional - $299/year</option>
+                <option value="enterprise">Enterprise - $999/year</option>
+                <option value="startup">Startup - $49/year</option>
+              </select>
+            </div>
+            <div class="license-form-row">
+              <div class="license-form-label">Duration (months):</div>
+              <input type="number" class="license-form-input" id="license-duration" value="12" min="1" max="60">
+            </div>
+            <div class="license-form-row">
+              <button class="license-form-btn primary" onclick="generateNewLicense()">
+                🔑 Generate License Key
+              </button>
+              <button class="license-form-btn" onclick="clearForm()">
+                🗑️ Clear Form
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- License Generation Dialog -->
+    <div class="license-dialog" id="license-dialog">
+      <div class="license-dialog-header">
+        🎉 License Generated Successfully!
+      </div>
+      <div class="license-dialog-content">
+        <p><strong>License Key:</strong></p>
+        <div class="license-key" style="font-size: 14px; padding: 8px; margin: 8px 0; text-align: center;">
+          STX-2024-<span id="generated-key">NEW123-ABC456</span>
+        </div>
+        <p><strong>Customer:</strong> <span id="generated-customer">New Customer</span></p>
+        <p><strong>Type:</strong> <span id="generated-type">Professional</span></p>
+        <p><strong>Expires:</strong> <span id="generated-expiry">2025-12-31</span></p>
+        <br>
+        <p style="font-size: 11px; color: #666;">
+          This license key has been automatically added to your database and can be sent to the customer.
+        </p>
+      </div>
+      <div class="license-dialog-actions">
+        <button class="license-dialog-btn" onclick="closeDialog()">Close</button>
+        <button class="license-dialog-btn primary" onclick="copyLicenseKey()">📋 Copy Key</button>
+        <button class="license-dialog-btn primary" onclick="emailLicense()">📧 Email Customer</button>
+      </div>
+    </div>
+
+    <!-- taskbar -->
+    <div class="taskbar">
+      <button class="start-button" id="start-button">
+        <span class="start-logo">🪟</span>
+        <span>start</span>
+      </button>
+      <div class="taskbar-tasks" id="taskbar-tasks">
+        <div class="taskbar-task active">
+          <div class="taskbar-task-icon">🔑</div>
+          <div class="taskbar-task-label">License Manager</div>
+        </div>
+      </div>
+      <div class="taskbar-clock" id="clock">12:00 PM</div>
+    </div>
+  </div>
+
+  <script>
+    // License Manager JavaScript
+    let licenses = [
+      {
+        key: 'STX-2024-ABC123-XYZ789',
+        customer: 'Acme Corp',
+        email: 'john@acme.com',
+        type: 'Enterprise',
+        status: 'active',
+        created: '2024-01-15',
+        expires: '2025-01-15'
+      },
+      {
+        key: 'STX-2024-DEF456-UVW012',
+        customer: 'TechStart Inc',
+        email: 'sarah@techstart.com',
+        type: 'Professional',
+        status: 'active',
+        created: '2024-02-03',
+        expires: '2025-02-03'
+      },
+      {
+        key: 'STX-2023-GHI789-RST345',
+        customer: 'OldCompany LLC',
+        email: 'admin@oldcompany.com',
+        type: 'Basic',
+        status: 'expired',
+        created: '2023-06-10',
+        expires: '2024-06-10'
+      },
+      {
+        key: 'STX-2024-JKL012-MNO678',
+        customer: 'NewStartup Co',
+        email: 'founder@newstartup.com',
+        type: 'Startup',
+        status: 'pending',
+        created: '2024-03-20',
+        expires: '2025-03-20'
+      },
+      {
+        key: 'STX-2024-PQR345-TUV901',
+        customer: 'Enterprise Solutions',
+        email: 'license@enterprise.com',
+        type: 'Enterprise',
+        status: 'active',
+        created: '2024-01-28',
+        expires: '2025-01-28'
+      }
+    ];
+
+    function generateNewLicense() {
+      const customer = document.getElementById('customer-name').value;
+      const email = document.getElementById('customer-email').value;
+      const type = document.getElementById('license-type').value;
+      const duration = parseInt(document.getElementById('license-duration').value);
+      
+      if (!customer || !email) {
+        alert('Please fill in customer name and email address.');
+        return;
+      }
+
+      // Generate a random license key
+      const randomPart1 = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const randomPart2 = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const newKey = `STX-2024-${randomPart1}-${randomPart2}`;
+      
+      // Calculate expiry date
+      const expiryDate = new Date();
+      expiryDate.setMonth(expiryDate.getMonth() + duration);
+      const expiryString = expiryDate.toISOString().split('T')[0];
+      
+      // Update dialog content
+      document.getElementById('generated-key').textContent = newKey;
+      document.getElementById('generated-customer').textContent = customer;
+      document.getElementById('generated-type').textContent = type.charAt(0).toUpperCase() + type.slice(1);
+      document.getElementById('generated-expiry').textContent = expiryString;
+      
+      // Show dialog
+      document.getElementById('license-dialog').classList.add('active');
+      
+      // Add to licenses array
+      licenses.push({
+        key: newKey,
+        customer: customer,
+        email: email,
+        type: type.charAt(0).toUpperCase() + type.slice(1),
+        status: 'active',
+        created: new Date().toISOString().split('T')[0],
+        expires: expiryString
+      });
+    }
+
+    function closeDialog() {
+      document.getElementById('license-dialog').classList.remove('active');
+    }
+
+    function copyLicenseKey() {
+      const key = document.getElementById('generated-key').textContent;
+      navigator.clipboard.writeText(`STX-2024-${key}`).then(() => {
+        alert('License key copied to clipboard!');
+      });
+    }
+
+    function emailLicense() {
+      const customer = document.getElementById('generated-customer').textContent;
+      const key = document.getElementById('generated-key').textContent;
+      const type = document.getElementById('generated-type').textContent;
+      const expiry = document.getElementById('generated-expiry').textContent;
+      
+      const subject = `Your STACKS.JS License Key - ${type}`;
+      const body = `Dear ${customer},\n\nYour STACKS.JS license has been generated successfully!\n\nLicense Key: STX-2024-${key}\nType: ${type}\nExpires: ${expiry}\n\nThank you for choosing STACKS.JS!\n\nBest regards,\nThe STACKS.JS Team`;
+      
+      window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+    }
+
+    function clearForm() {
+      document.getElementById('customer-name').value = '';
+      document.getElementById('customer-email').value = '';
+      document.getElementById('license-type').value = 'basic';
+      document.getElementById('license-duration').value = '12';
+    }
+
+    function generateLicense() {
+      document.getElementById('customer-name').focus();
+    }
+
+    function importLicenses() {
+      alert('Import functionality would open a file dialog to select a CSV/JSON file.');
+    }
+
+    function exportLicenses() {
+      const csv = 'License Key,Customer,Email,Type,Status,Created,Expires\n' +
+        licenses.map(license => 
+          `${license.key},${license.customer},${license.email},${license.type},${license.status},${license.created},${license.expires}`
+        ).join('\n');
+      
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'stacks-licenses.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }
+
+    function refreshLicenses() {
+      alert('Refreshing license database...');
+      // In a real app, this would reload data from server
+    }
+
+    function showSettings() {
+      alert('Settings dialog would open here.');
+    }
+
+    function bulkActions() {
+      alert('Bulk actions menu would open here.');
+    }
+
+    function viewReports() {
+      alert('Reports window would open here.');
+    }
+
+    function showHelp() {
+      alert('Help documentation would open here.');
+    }
+
+    function editLicense(key) {
+      alert(`Edit license: ${key}`);
+    }
+
+    function revokeLicense(key) {
+      if (confirm(`Are you sure you want to revoke license ${key}?`)) {
+        alert(`License ${key} has been revoked.`);
+      }
+    }
+
+    function renewLicense(key) {
+      alert(`Renew license: ${key}`);
+    }
+
+    function deleteLicense(key) {
+      if (confirm(`Are you sure you want to delete license ${key}? This action cannot be undone.`)) {
+        alert(`License ${key} has been deleted.`);
+      }
+    }
+
+    function approveLicense(key) {
+      alert(`License ${key} has been approved.`);
+    }
+
+    function rejectLicense(key) {
+      if (confirm(`Are you sure you want to reject license ${key}?`)) {
+        alert(`License ${key} has been rejected.`);
+      }
+    }
+
+    // Search functionality
+    document.getElementById('license-search').addEventListener('input', function(e) {
+      const searchTerm = e.target.value.toLowerCase();
+      const rows = document.querySelectorAll('.license-table tbody tr');
+      
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+
+    // Window management functions
+    function minimizeWindow(windowId) {
+      document.getElementById(windowId).classList.add('minimized');
+    }
+
+    function maximizeWindow(windowId) {
+      const window = document.getElementById(windowId);
+      window.classList.toggle('maximized');
+    }
+
+    function closeWindow(windowId) {
+      document.getElementById(windowId).classList.add('minimized');
+    }
+
+    // Update clock
+    function updateClock() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      });
+      document.getElementById('clock').textContent = timeString;
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Desktop icon click handlers
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.desktop-icon')) {
+        const icon = e.target.closest('.desktop-icon');
+        const iconType = icon.getAttribute('data-icon-type');
+        
+        if (iconType === 'window') {
+          const windowId = icon.getAttribute('data-icon-id') + '-window';
+          const window = document.getElementById(windowId);
+          if (window) {
+            window.classList.remove('minimized');
+            window.classList.add('active');
+          }
+        } else if (iconType === 'link') {
+          const url = icon.getAttribute('data-icon-url');
+          if (url) {
+            window.open(url, '_blank');
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
