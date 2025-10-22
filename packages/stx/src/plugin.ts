@@ -117,9 +117,23 @@ export const plugin: BunPlugin = {
         )
 
         // Process template directives with performance monitoring
-        const output = await performanceMonitor.timeAsync('directive-processing', async () => {
+        const processedTemplate = await performanceMonitor.timeAsync('directive-processing', async () => {
           return await processDirectives(templateContent, context, filePath, options, dependencies)
         })
+
+        // Preserve script content in final output
+        let output = processedTemplate
+        if (scriptContent.trim()) {
+          // Find the closing </body> tag and insert script before it
+          const bodyEndMatch = output.match(/(<\/body>)/i)
+          if (bodyEndMatch) {
+            const scriptTag = `<script>\n${scriptContent}\n</script>`
+            output = output.replace(/(<\/body>)/i, `${scriptTag}\n$1`)
+          } else {
+            // If no </body> tag, append script at the end
+            output += `\n<script>\n${scriptContent}\n</script>`
+          }
+        }
 
         // Track dependencies for this file
         dependencies.forEach(dep => allDependencies.add(dep))

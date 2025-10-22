@@ -93,7 +93,21 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
 
     // Process template
     const dependencies = new Set<string>()
-    const output = await processDirectives(templateContent, context, filePath, stxOptions, dependencies)
+    const processedTemplate = await processDirectives(templateContent, context, filePath, stxOptions, dependencies)
+
+    // Preserve script content in final output
+    let output = processedTemplate
+    if (scriptContent.trim()) {
+      // Find the closing </body> tag and insert script before it
+      const bodyEndMatch = output.match(/(<\/body>)/i)
+      if (bodyEndMatch) {
+        const scriptTag = `<script>\n${scriptContent}\n</script>`
+        output = output.replace(/(<\/body>)/i, `${scriptTag}\n$1`)
+      } else {
+        // If no </body> tag, append script at the end
+        output += `\n<script>\n${scriptContent}\n</script>`
+      }
+    }
 
     // Cache result
     fileCache.set(cacheKey, { content: output, mtime: stats.mtimeMs })

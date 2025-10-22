@@ -625,6 +625,8 @@
 
   <script>
     // License Manager JavaScript
+    console.log('License Manager script loaded');
+    
     let licenses = [
       {
         key: 'STX-2024-ABC123-XYZ789',
@@ -836,17 +838,27 @@
 
     // Window management functions
     function minimizeWindow(windowId) {
+      console.log('minimizeWindow called with:', windowId);
       document.getElementById(windowId).classList.add('minimized');
     }
 
     function maximizeWindow(windowId) {
+      console.log('maximizeWindow called with:', windowId);
       const window = document.getElementById(windowId);
       window.classList.toggle('maximized');
     }
 
     function closeWindow(windowId) {
+      console.log('closeWindow called with:', windowId);
       document.getElementById(windowId).classList.add('minimized');
     }
+    
+    // Test if functions are defined
+    console.log('Functions defined:', {
+      minimizeWindow: typeof minimizeWindow,
+      maximizeWindow: typeof maximizeWindow,
+      closeWindow: typeof closeWindow
+    });
 
     // Update clock
     function updateClock() {
