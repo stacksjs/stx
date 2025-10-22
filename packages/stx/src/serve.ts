@@ -80,7 +80,12 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     // Extract script and template sections
     const scriptMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
     const scriptContent = scriptMatch ? scriptMatch[1] : ''
-    const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i, '')
+    
+    // Extract all script tags (both inline and external)
+    const allScriptMatches = content.match(/<script\b[^>]*>[\s\S]*?<\/script>/gi) || []
+    const externalScriptMatches = content.match(/<script\b[^>]*src\s*=\s*["'][^"']*["'][^>]*><\/script>/gi) || []
+    
+    const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
     // Create context
     const context: Record<string, any> = {
@@ -88,24 +93,27 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
       __dirname: path.dirname(filePath),
     }
 
-    // Extract variables from script
+    // Extract variables from inline script content
     await extractVariables(scriptContent, context, filePath)
 
     // Process template
     const dependencies = new Set<string>()
     const processedTemplate = await processDirectives(templateContent, context, filePath, stxOptions, dependencies)
 
-    // Preserve script content in final output
+    // Preserve all script content in final output
     let output = processedTemplate
-    if (scriptContent.trim()) {
-      // Find the closing </body> tag and insert script before it
+    
+    // Add all script tags back to the output
+    const allScripts = [...allScriptMatches]
+    if (allScripts.length > 0) {
+      // Find the closing </body> tag and insert scripts before it
       const bodyEndMatch = output.match(/(<\/body>)/i)
       if (bodyEndMatch) {
-        const scriptTag = `<script>\n${scriptContent}\n</script>`
-        output = output.replace(/(<\/body>)/i, `${scriptTag}\n$1`)
+        const scriptsHtml = allScripts.join('\n')
+        output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
       } else {
-        // If no </body> tag, append script at the end
-        output += `\n<script>\n${scriptContent}\n</script>`
+        // If no </body> tag, append scripts at the end
+        output += `\n${allScripts.join('\n')}`
       }
     }
 

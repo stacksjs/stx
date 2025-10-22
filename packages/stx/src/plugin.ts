@@ -76,11 +76,15 @@ export const plugin: BunPlugin = {
         }
 
         // Extract script and template sections with performance monitoring
-        const { scriptContent, templateContent } = performanceMonitor.time('script-extraction', () => {
+        const { scriptContent, templateContent, allScripts } = performanceMonitor.time('script-extraction', () => {
           const scriptMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
           const scriptContent = scriptMatch ? scriptMatch[1] : ''
-          const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i, '')
-          return { scriptContent, templateContent }
+          
+          // Extract all script tags (both inline and external)
+          const allScriptMatches = content.match(/<script\b[^>]*>[\s\S]*?<\/script>/gi) || []
+          
+          const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+          return { scriptContent, templateContent, allScripts: allScriptMatches }
         })
 
         // Create a sandbox environment to execute the script
@@ -121,17 +125,19 @@ export const plugin: BunPlugin = {
           return await processDirectives(templateContent, context, filePath, options, dependencies)
         })
 
-        // Preserve script content in final output
+        // Preserve all script content in final output
         let output = processedTemplate
-        if (scriptContent.trim()) {
-          // Find the closing </body> tag and insert script before it
+        
+        // Add all script tags back to the output
+        if (allScripts.length > 0) {
+          // Find the closing </body> tag and insert scripts before it
           const bodyEndMatch = output.match(/(<\/body>)/i)
           if (bodyEndMatch) {
-            const scriptTag = `<script>\n${scriptContent}\n</script>`
-            output = output.replace(/(<\/body>)/i, `${scriptTag}\n$1`)
+            const scriptsHtml = allScripts.join('\n')
+            output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
           } else {
-            // If no </body> tag, append script at the end
-            output += `\n<script>\n${scriptContent}\n</script>`
+            // If no </body> tag, append scripts at the end
+            output += `\n${allScripts.join('\n')}`
           }
         }
 
