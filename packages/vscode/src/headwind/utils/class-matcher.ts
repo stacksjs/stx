@@ -21,9 +21,9 @@ export function extractClassesFromDocument(
 
   // Match class="..." or className="..."
   const classRegex = /class(?:Name)?=["']([^"']*)["']/g
-  let match
+  let match = classRegex.exec(text)
 
-  while ((match = classRegex.exec(text)) !== null) {
+  while (match !== null) {
     const classContent = match[1]
     const classStartOffset = match.index + match[0].indexOf(classContent)
 
@@ -51,6 +51,8 @@ export function extractClassesFromDocument(
         currentOffset = classIndex + className.length
       }
     }
+
+    match = classRegex.exec(text)
   }
 
   return matches
@@ -78,7 +80,7 @@ export function getClassAtPosition(
  * Extract classes from a line of text
  */
 export function extractClassesFromLine(line: string): string[] {
-  const classRegex = /class(?:Name)?=["']([^"']*)["']/g
+  const classRegex = /class(?:Name)?=["']([^"']*)["']/
   const match = classRegex.exec(line)
 
   if (match && match[1]) {

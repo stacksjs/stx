@@ -30,7 +30,7 @@ const mockVscode = {
     activeTextEditor: null,
   },
   commands: {
-    registerCommand: (command: string, callback: Function) => ({
+    registerCommand: (command: string, callback: (...args: any[]) => any) => ({
       dispose: () => {},
       command,
       callback,
@@ -96,8 +96,7 @@ describe('Headwind Integration Tests', () => {
   })
 
   afterEach(() => {
-    // @ts-expect-error - vscode is not defined in global scope during cleanup
-    delete globalThis.vscode
+    delete (globalThis as any).vscode
   })
 
   test('should have headwind directory structure', async () => {
@@ -119,7 +118,7 @@ describe('Headwind Integration Tests', () => {
     for (const modulePath of requiredModules) {
       const fullPath = path.join(PACKAGE_ROOT, modulePath)
       const exists = await Bun.file(fullPath).exists()
-      expect(exists).toBe(true, `Expected ${modulePath} to exist`)
+      expect(exists).toBe(true)
     }
   })
 
@@ -133,7 +132,7 @@ describe('Headwind Integration Tests', () => {
     for (const modulePath of utilityModules) {
       const fullPath = path.join(PACKAGE_ROOT, modulePath)
       const exists = await Bun.file(fullPath).exists()
-      expect(exists).toBe(true, `Expected ${modulePath} to exist`)
+      expect(exists).toBe(true)
     }
   })
 
@@ -208,8 +207,8 @@ describe('Headwind Integration Tests', () => {
     // Should use dynamic import for @stacksjs/headwind
     expect(content).toContain('await import(\'@stacksjs/headwind\')')
     expect(content).toContain('async function loadHeadwind()')
-    // Should have require fallback for CommonJS bundled context
-    expect(content).toContain('require(\'@stacksjs/headwind\')')
+    // Should have dynamic import fallback for CommonJS bundled context
+    expect(content).toContain('const headwind = await import(\'@stacksjs/headwind\')')
   })
 
   test('should have proper async initialization pattern', async () => {
@@ -365,7 +364,7 @@ describe('Headwind Integration Tests', () => {
   test('should NOT have styles-uno directory', async () => {
     const unoPath = path.join(PACKAGE_ROOT, 'src/styles-uno')
     const indexExists = await Bun.file(path.join(unoPath, 'index.ts')).exists()
-    expect(indexExists).toBe(false, 'styles-uno directory should be removed')
+    expect(indexExists).toBe(false)
   })
 
   test('should handle multiple language selectors', async () => {

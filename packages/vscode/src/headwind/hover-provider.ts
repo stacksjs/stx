@@ -8,7 +8,7 @@ import { addRemToPxComment, prettifyCSS } from './utils/css-parser'
  */
 export function createHeadwindHoverProvider(vscodeModule: typeof vscode, context: HeadwindContext): vscode.HoverProvider {
   return {
-    async provideHover(document, position, token) {
+    async provideHover(document, position, _token) {
       const config = vscodeModule.workspace.getConfiguration('stx.utilityClasses')
       const hoverEnabled = config.get<boolean>('hoverPreview', true)
 

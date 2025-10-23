@@ -43,10 +43,6 @@ describe('VirtualTsDocumentProvider Tests', () => {
   })
 
   test('should handle null content without crashing', () => {
-    // Direct test without dynamic import since module is already mocked
-    const jsDocComments: any[] = []
-
-    // This should not throw an error
     expect(() => {
       // Just test the logic - the function will check for null
       const content: any = null

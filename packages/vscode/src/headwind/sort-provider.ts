@@ -6,7 +6,7 @@ import type * as vscode from 'vscode'
 export async function sortClasses(classes: string[]): Promise<string[]> {
   try {
     // Load headwind - works after fixing package.json exports
-    const headwind = require('@stacksjs/headwind')
+    const headwind = await import('@stacksjs/headwind')
     const { builtInRules, parseClass } = headwind
 
     // Calculate priority for each class
@@ -60,10 +60,10 @@ export function createSortClassesCommand(vscodeModule: typeof vscode): vscode.Di
 
     // Find all class attributes
     const classRegex = /class(?:Name)?=["']([^"']*)["']/g
-    let match
+    let match = classRegex.exec(text)
     const edits: { range: any, newText: string }[] = []
 
-    while ((match = classRegex.exec(text)) !== null) {
+    while (match !== null) {
       const classContent = match[1]
       const classes = classContent.split(/\s+/).filter(Boolean)
 
@@ -87,6 +87,8 @@ export function createSortClassesCommand(vscodeModule: typeof vscode): vscode.Di
           newText: sortedContent,
         })
       }
+
+      match = classRegex.exec(text)
     }
 
     if (edits.length === 0) {
