@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 describe('Word Pattern Tests', () => {
   // The word pattern from stx.configuration.json
-  const wordPattern = /(@[a-zA-Z_][a-zA-Z0-9_]*)|([a-zA-Z_][a-zA-Z0-9_]*)/g
+  const wordPattern = /(@[a-z_]\w*)|([a-z_]\w*)/gi
 
   test('should match directives with @ prefix', () => {
     const text = '@if @foreach @endif @component'

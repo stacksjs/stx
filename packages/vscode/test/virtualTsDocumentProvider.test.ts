@@ -1,5 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { mock } from 'bun:test'
+import { describe, expect, mock, test } from 'bun:test'
 
 // Mock VSCode module before any imports
 mock.module('vscode', () => ({
@@ -52,7 +51,7 @@ describe('VirtualTsDocumentProvider Tests', () => {
       // Just test the logic - the function will check for null
       const content: any = null
       if (!content || typeof content !== 'string') {
-        return // This is what the guard does
+        // This is what the guard does
       }
     }).not.toThrow()
   })

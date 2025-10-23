@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
-import { HeadwindContext, loadHeadwindConfig } from './context'
 import { registerColorDecorations } from './color-provider'
 import { createHeadwindCompletionProvider } from './completion-provider'
+import { HeadwindContext, loadHeadwindConfig } from './context'
 import { createHeadwindHoverProvider } from './hover-provider'
 import { createSortClassesCommand } from './sort-provider'
 
@@ -32,7 +32,9 @@ export async function activateHeadwind(extensionContext: vscode.ExtensionContext
     const completionProvider = vscode.languages.registerCompletionItemProvider(
       ['stx', 'html', 'typescript', 'typescriptreact', 'javascript', 'javascriptreact', 'vue'],
       createHeadwindCompletionProvider(vscode, headwindContext),
-      '"', "'", ' ', // Trigger characters
+      '"',
+      '\'',
+      ' ', // Trigger characters
     )
     extensionContext.subscriptions.push(completionProvider)
 

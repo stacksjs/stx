@@ -9,7 +9,7 @@ function setupBunPolyfill() {
       // Glob is used by Scanner class which we don't use in VSCode
       Glob: class FakeGlob {
         constructor(_pattern: string) {}
-        async *scan(_dir: string): AsyncIterableIterator<string> {
+        async* scan(_dir: string): AsyncIterableIterator<string> {
           // No-op: We don't use Scanner in VSCode extension
         }
       },
@@ -29,7 +29,8 @@ let builtInRules: any
 let headwindLoaded = false
 
 async function loadHeadwind() {
-  if (headwindLoaded) return
+  if (headwindLoaded)
+    return
 
   // Setup Bun polyfill before importing headwind
   setupBunPolyfill()
@@ -41,16 +42,18 @@ async function loadHeadwind() {
     parseClass = headwind.parseClass
     builtInRules = headwind.builtInRules
     headwindLoaded = true
-  } catch (error) {
+  }
+  catch (error) {
     // Fallback to require for CommonJS bundled context
     try {
-      const headwind = require('@stacksjs/headwind')
+      const headwind = await import('@stacksjs/headwind')
       CSSGenerator = headwind.CSSGenerator
       parseClass = headwind.parseClass
       builtInRules = headwind.builtInRules
       headwindLoaded = true
-    } catch (requireError) {
-      console.error('[Headwind] Failed to load @stacksjs/headwind:', error)
+    }
+    catch (requireError) {
+      console.error('[Headwind] Failed to load @stacksjs/headwind:', requireError)
       throw new Error(`Cannot load @stacksjs/headwind: ${error}`)
     }
   }

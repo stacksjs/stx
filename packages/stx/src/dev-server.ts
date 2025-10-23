@@ -726,6 +726,51 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         })
       }
 
+      // Check if it's a static file in the source directory (for JS, CSS, etc.)
+      const sourceDir = path.dirname(absolutePath)
+      const sourcePath = path.join(sourceDir, url.pathname)
+      if (fs.existsSync(sourcePath) && fs.statSync(sourcePath).isFile()) {
+        const file = Bun.file(sourcePath)
+        // Determine content type based on extension
+        const ext = path.extname(sourcePath).toLowerCase()
+        let contentType = 'text/plain'
+
+        switch (ext) {
+          case '.html':
+            contentType = 'text/html'
+            break
+          case '.css':
+            contentType = 'text/css'
+            break
+          case '.js':
+            contentType = 'text/javascript'
+            break
+          case '.json':
+            contentType = 'application/json'
+            break
+          case '.png':
+            contentType = 'image/png'
+            break
+          case '.jpg':
+          case '.jpeg':
+            contentType = 'image/jpeg'
+            break
+          case '.gif':
+            contentType = 'image/gif'
+            break
+          case '.svg':
+            contentType = 'image/svg+xml'
+            break
+          case '.ico':
+            contentType = 'image/x-icon'
+            break
+        }
+
+        return new Response(file, {
+          headers: { 'Content-Type': contentType },
+        })
+      }
+
       // Fallback 404 response
       return new Response('Not Found', { status: 404 })
     },

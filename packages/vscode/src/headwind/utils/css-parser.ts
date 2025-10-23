@@ -1,5 +1,5 @@
-import prettier from 'prettier/standalone'
 import parserCSS from 'prettier/parser-postcss'
+import prettier from 'prettier/standalone'
 
 /**
  * Parse and prettify CSS output

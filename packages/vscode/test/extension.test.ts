@@ -58,7 +58,6 @@ const TEMP_DIR = path.join(TEST_DIR, 'temp-vscode')
 const PACKAGE_ROOT = path.join(import.meta.dir, '..')
 
 describe('VSCODE: Extension Tests', () => {
-
   beforeEach(async () => {
     await fs.promises.mkdir(TEMP_DIR, { recursive: true })
     // Mock the VSCode module

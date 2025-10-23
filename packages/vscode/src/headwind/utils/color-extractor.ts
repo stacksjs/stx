@@ -8,7 +8,7 @@ export function extractColorFromCSS(css: string): string | null {
     return `rgb${rgbMatch[0].includes('rgba') ? 'a' : ''}(${rgbMatch[1]})`
 
   // Hex colors
-  const hexMatch = css.match(/#([0-9a-fA-F]{3,8})\b/)
+  const hexMatch = css.match(/#([0-9a-f]{3,8})\b/i)
   if (hexMatch)
     return `#${hexMatch[1]}`
 
@@ -24,8 +24,19 @@ export function extractColorFromCSS(css: string): string | null {
 
   // Color keywords
   const colorKeywords = [
-    'red', 'blue', 'green', 'yellow', 'purple', 'pink', 'orange',
-    'black', 'white', 'gray', 'grey', 'transparent', 'current',
+    'red',
+    'blue',
+    'green',
+    'yellow',
+    'purple',
+    'pink',
+    'orange',
+    'black',
+    'white',
+    'gray',
+    'grey',
+    'transparent',
+    'current',
   ]
 
   for (const keyword of colorKeywords) {

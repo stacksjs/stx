@@ -206,10 +206,10 @@ describe('Headwind Integration Tests', () => {
     const content = await Bun.file(contextPath).text()
 
     // Should use dynamic import for @stacksjs/headwind
-    expect(content).toContain("await import('@stacksjs/headwind')")
+    expect(content).toContain('await import(\'@stacksjs/headwind\')')
     expect(content).toContain('async function loadHeadwind()')
     // Should have require fallback for CommonJS bundled context
-    expect(content).toContain("require('@stacksjs/headwind')")
+    expect(content).toContain('require(\'@stacksjs/headwind\')')
   })
 
   test('should have proper async initialization pattern', async () => {
@@ -345,7 +345,7 @@ describe('Headwind Integration Tests', () => {
     const extensionPath = path.join(PACKAGE_ROOT, 'src/extension.ts')
     const content = await Bun.file(extensionPath).text()
 
-    expect(content).toContain("import('./headwind/index')")
+    expect(content).toContain('import(\'./headwind/index\')')
     expect(content).toContain('activateHeadwind')
     expect(content).toContain('await activateHeadwind(context)')
   })
@@ -373,9 +373,9 @@ describe('Headwind Integration Tests', () => {
     const content = await Bun.file(indexPath).text()
 
     // Should register providers for multiple languages
-    expect(content).toContain("'stx'")
-    expect(content).toContain("'html'")
-    expect(content).toContain("'typescript'")
+    expect(content).toContain('\'stx\'')
+    expect(content).toContain('\'html\'')
+    expect(content).toContain('\'typescript\'')
   })
 
   test('should register trigger characters for completion', async () => {
@@ -390,7 +390,7 @@ describe('Headwind Integration Tests', () => {
     const indexPath = path.join(PACKAGE_ROOT, 'src/headwind/index.ts')
     const content = await Bun.file(indexPath).text()
 
-    expect(content).toContain("vscode.commands.registerCommand('headwind.reload'")
+    expect(content).toContain('vscode.commands.registerCommand(\'headwind.reload\'')
     expect(content).toContain('headwindContext?.reload')
   })
 })
