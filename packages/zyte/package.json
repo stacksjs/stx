@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/zyte",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.16",
   "description": "Build desktop apps with web languages, powered by Zig",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",

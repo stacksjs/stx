@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/iconify-academicons",
   "type": "module",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "Academicons icons for stx from Iconify",
   "author": "James Walsh",
   "license": "OFL-1.1",

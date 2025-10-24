@@ -1,4 +1,330 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.1.15...v0.1.16)
+
+### 🧹 Chores
+
+- release v0.1.16 ([410f869](https://github.com/stacksjs/stx/commit/410f869)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([4dca7bc](https://github.com/stacksjs/stx/commit/4dca7bc)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([6a9d78a](https://github.com/stacksjs/stx/commit/6a9d78a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([d1f3cb0](https://github.com/stacksjs/stx/commit/d1f3cb0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([7f183a5](https://github.com/stacksjs/stx/commit/7f183a5)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([86b4218](https://github.com/stacksjs/stx/commit/86b4218)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- update documentation ([4c7802f](https://github.com/stacksjs/stx/commit/4c7802f)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- fix hover on directives ([9439acd](https://github.com/stacksjs/stx/commit/9439acd)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([ed25065](https://github.com/stacksjs/stx/commit/ed25065)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([ceb8c51](https://github.com/stacksjs/stx/commit/ceb8c51)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([50545e9](https://github.com/stacksjs/stx/commit/50545e9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([9d8050e](https://github.com/stacksjs/stx/commit/9d8050e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([803dbef](https://github.com/stacksjs/stx/commit/803dbef)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update dependency happy-dom to 20.0.8 (#307) ([01816a1](https://github.com/stacksjs/stx/commit/01816a1)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#307](https://github.com/stacksjs/stx/issues/307), [#307](https://github.com/stacksjs/stx/issues/307))
+- wip ([0b76ba0](https://github.com/stacksjs/stx/commit/0b76ba0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([d327d34](https://github.com/stacksjs/stx/commit/d327d34)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([71693ea](https://github.com/stacksjs/stx/commit/71693ea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([7a83e60](https://github.com/stacksjs/stx/commit/7a83e60)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([e143b15](https://github.com/stacksjs/stx/commit/e143b15)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4ca3ff5](https://github.com/stacksjs/stx/commit/4ca3ff5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([7260697](https://github.com/stacksjs/stx/commit/7260697)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([71300c8](https://github.com/stacksjs/stx/commit/71300c8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([4ef7b0a](https://github.com/stacksjs/stx/commit/4ef7b0a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([475197d](https://github.com/stacksjs/stx/commit/475197d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([53bc581](https://github.com/stacksjs/stx/commit/53bc581)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([6d4d4b3](https://github.com/stacksjs/stx/commit/6d4d4b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([9ad74bf](https://github.com/stacksjs/stx/commit/9ad74bf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4b552b3](https://github.com/stacksjs/stx/commit/4b552b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([b3fcd49](https://github.com/stacksjs/stx/commit/b3fcd49)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([1ad3da7](https://github.com/stacksjs/stx/commit/1ad3da7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([ab23db0](https://github.com/stacksjs/stx/commit/ab23db0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([3580e99](https://github.com/stacksjs/stx/commit/3580e99)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([45796fc](https://github.com/stacksjs/stx/commit/45796fc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([a87bfac](https://github.com/stacksjs/stx/commit/a87bfac)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([841bd01](https://github.com/stacksjs/stx/commit/841bd01)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f27f1ed](https://github.com/stacksjs/stx/commit/f27f1ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([1277d8a](https://github.com/stacksjs/stx/commit/1277d8a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([56dcdab](https://github.com/stacksjs/stx/commit/56dcdab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([42ad74e](https://github.com/stacksjs/stx/commit/42ad74e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4ef456d](https://github.com/stacksjs/stx/commit/4ef456d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([d3f3fe4](https://github.com/stacksjs/stx/commit/d3f3fe4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([1afb124](https://github.com/stacksjs/stx/commit/1afb124)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([10617f3](https://github.com/stacksjs/stx/commit/10617f3)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([a633ac4](https://github.com/stacksjs/stx/commit/a633ac4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([563e4f1](https://github.com/stacksjs/stx/commit/563e4f1)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([fe026e4](https://github.com/stacksjs/stx/commit/fe026e4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([699a543](https://github.com/stacksjs/stx/commit/699a543)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([17abd56](https://github.com/stacksjs/stx/commit/17abd56)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([9ba537b](https://github.com/stacksjs/stx/commit/9ba537b)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([9290902](https://github.com/stacksjs/stx/commit/9290902)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📄 Miscellaneous
+
+- Merge pull request #27 from stacksjs/renovate/actions-checkout-5.x ([a43943c](https://github.com/stacksjs/stx/commit/a43943c)) _(by [renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot]))_ ([#27](https://github.com/stacksjs/stx/issues/27), [#27](https://github.com/stacksjs/stx/issues/27))
+
+### Contributors
+
+- _Adelino Ngomacha <adelinob335@gmail.com>_
+- _Chris <chrisbreuer93@gmail.com>_
+- _[renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot])_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.1.15...HEAD)
+
+### 🧹 Chores
+
+- wip ([4dca7bc](https://github.com/stacksjs/stx/commit/4dca7bc)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([6a9d78a](https://github.com/stacksjs/stx/commit/6a9d78a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([d1f3cb0](https://github.com/stacksjs/stx/commit/d1f3cb0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([7f183a5](https://github.com/stacksjs/stx/commit/7f183a5)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([86b4218](https://github.com/stacksjs/stx/commit/86b4218)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- update documentation ([4c7802f](https://github.com/stacksjs/stx/commit/4c7802f)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- fix hover on directives ([9439acd](https://github.com/stacksjs/stx/commit/9439acd)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([ed25065](https://github.com/stacksjs/stx/commit/ed25065)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([ceb8c51](https://github.com/stacksjs/stx/commit/ceb8c51)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([50545e9](https://github.com/stacksjs/stx/commit/50545e9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([9d8050e](https://github.com/stacksjs/stx/commit/9d8050e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([803dbef](https://github.com/stacksjs/stx/commit/803dbef)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update dependency happy-dom to 20.0.8 (#307) ([01816a1](https://github.com/stacksjs/stx/commit/01816a1)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#307](https://github.com/stacksjs/stx/issues/307), [#307](https://github.com/stacksjs/stx/issues/307))
+- wip ([0b76ba0](https://github.com/stacksjs/stx/commit/0b76ba0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([d327d34](https://github.com/stacksjs/stx/commit/d327d34)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([71693ea](https://github.com/stacksjs/stx/commit/71693ea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([7a83e60](https://github.com/stacksjs/stx/commit/7a83e60)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([e143b15](https://github.com/stacksjs/stx/commit/e143b15)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4ca3ff5](https://github.com/stacksjs/stx/commit/4ca3ff5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([7260697](https://github.com/stacksjs/stx/commit/7260697)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([71300c8](https://github.com/stacksjs/stx/commit/71300c8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([4ef7b0a](https://github.com/stacksjs/stx/commit/4ef7b0a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([475197d](https://github.com/stacksjs/stx/commit/475197d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([53bc581](https://github.com/stacksjs/stx/commit/53bc581)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([6d4d4b3](https://github.com/stacksjs/stx/commit/6d4d4b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([9ad74bf](https://github.com/stacksjs/stx/commit/9ad74bf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4b552b3](https://github.com/stacksjs/stx/commit/4b552b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([b3fcd49](https://github.com/stacksjs/stx/commit/b3fcd49)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([1ad3da7](https://github.com/stacksjs/stx/commit/1ad3da7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([ab23db0](https://github.com/stacksjs/stx/commit/ab23db0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([3580e99](https://github.com/stacksjs/stx/commit/3580e99)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([45796fc](https://github.com/stacksjs/stx/commit/45796fc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([a87bfac](https://github.com/stacksjs/stx/commit/a87bfac)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([841bd01](https://github.com/stacksjs/stx/commit/841bd01)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f27f1ed](https://github.com/stacksjs/stx/commit/f27f1ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([1277d8a](https://github.com/stacksjs/stx/commit/1277d8a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([56dcdab](https://github.com/stacksjs/stx/commit/56dcdab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([42ad74e](https://github.com/stacksjs/stx/commit/42ad74e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4ef456d](https://github.com/stacksjs/stx/commit/4ef456d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([d3f3fe4](https://github.com/stacksjs/stx/commit/d3f3fe4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([1afb124](https://github.com/stacksjs/stx/commit/1afb124)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([10617f3](https://github.com/stacksjs/stx/commit/10617f3)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([a633ac4](https://github.com/stacksjs/stx/commit/a633ac4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([563e4f1](https://github.com/stacksjs/stx/commit/563e4f1)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([fe026e4](https://github.com/stacksjs/stx/commit/fe026e4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([699a543](https://github.com/stacksjs/stx/commit/699a543)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([17abd56](https://github.com/stacksjs/stx/commit/17abd56)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([9ba537b](https://github.com/stacksjs/stx/commit/9ba537b)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([9290902](https://github.com/stacksjs/stx/commit/9290902)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📄 Miscellaneous
+
+- Merge pull request #27 from stacksjs/renovate/actions-checkout-5.x ([a43943c](https://github.com/stacksjs/stx/commit/a43943c)) _(by [renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot]))_ ([#27](https://github.com/stacksjs/stx/issues/27), [#27](https://github.com/stacksjs/stx/issues/27))
+
+### Contributors
+
+- _Adelino Ngomacha <adelinob335@gmail.com>_
+- _Chris <chrisbreuer93@gmail.com>_
+- _[renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot])_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.1.15...HEAD)
+
+### 🧹 Chores
+
+- wip ([4dca7bc](https://github.com/stacksjs/stx/commit/4dca7bc)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([6a9d78a](https://github.com/stacksjs/stx/commit/6a9d78a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([d1f3cb0](https://github.com/stacksjs/stx/commit/d1f3cb0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([7f183a5](https://github.com/stacksjs/stx/commit/7f183a5)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([86b4218](https://github.com/stacksjs/stx/commit/86b4218)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- update documentation ([4c7802f](https://github.com/stacksjs/stx/commit/4c7802f)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- fix hover on directives ([9439acd](https://github.com/stacksjs/stx/commit/9439acd)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([ed25065](https://github.com/stacksjs/stx/commit/ed25065)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([ceb8c51](https://github.com/stacksjs/stx/commit/ceb8c51)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([50545e9](https://github.com/stacksjs/stx/commit/50545e9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([9d8050e](https://github.com/stacksjs/stx/commit/9d8050e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([803dbef](https://github.com/stacksjs/stx/commit/803dbef)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update dependency happy-dom to 20.0.8 (#307) ([01816a1](https://github.com/stacksjs/stx/commit/01816a1)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#307](https://github.com/stacksjs/stx/issues/307), [#307](https://github.com/stacksjs/stx/issues/307))
+- wip ([0b76ba0](https://github.com/stacksjs/stx/commit/0b76ba0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([d327d34](https://github.com/stacksjs/stx/commit/d327d34)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([71693ea](https://github.com/stacksjs/stx/commit/71693ea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([7a83e60](https://github.com/stacksjs/stx/commit/7a83e60)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([e143b15](https://github.com/stacksjs/stx/commit/e143b15)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4ca3ff5](https://github.com/stacksjs/stx/commit/4ca3ff5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([7260697](https://github.com/stacksjs/stx/commit/7260697)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([71300c8](https://github.com/stacksjs/stx/commit/71300c8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([4ef7b0a](https://github.com/stacksjs/stx/commit/4ef7b0a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([475197d](https://github.com/stacksjs/stx/commit/475197d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([53bc581](https://github.com/stacksjs/stx/commit/53bc581)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([6d4d4b3](https://github.com/stacksjs/stx/commit/6d4d4b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([9ad74bf](https://github.com/stacksjs/stx/commit/9ad74bf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4b552b3](https://github.com/stacksjs/stx/commit/4b552b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([b3fcd49](https://github.com/stacksjs/stx/commit/b3fcd49)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([1ad3da7](https://github.com/stacksjs/stx/commit/1ad3da7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([ab23db0](https://github.com/stacksjs/stx/commit/ab23db0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([3580e99](https://github.com/stacksjs/stx/commit/3580e99)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([45796fc](https://github.com/stacksjs/stx/commit/45796fc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([a87bfac](https://github.com/stacksjs/stx/commit/a87bfac)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([841bd01](https://github.com/stacksjs/stx/commit/841bd01)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f27f1ed](https://github.com/stacksjs/stx/commit/f27f1ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([1277d8a](https://github.com/stacksjs/stx/commit/1277d8a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([56dcdab](https://github.com/stacksjs/stx/commit/56dcdab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([42ad74e](https://github.com/stacksjs/stx/commit/42ad74e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4ef456d](https://github.com/stacksjs/stx/commit/4ef456d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([d3f3fe4](https://github.com/stacksjs/stx/commit/d3f3fe4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([1afb124](https://github.com/stacksjs/stx/commit/1afb124)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([10617f3](https://github.com/stacksjs/stx/commit/10617f3)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([a633ac4](https://github.com/stacksjs/stx/commit/a633ac4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([563e4f1](https://github.com/stacksjs/stx/commit/563e4f1)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([fe026e4](https://github.com/stacksjs/stx/commit/fe026e4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([699a543](https://github.com/stacksjs/stx/commit/699a543)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([17abd56](https://github.com/stacksjs/stx/commit/17abd56)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([9ba537b](https://github.com/stacksjs/stx/commit/9ba537b)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([9290902](https://github.com/stacksjs/stx/commit/9290902)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📄 Miscellaneous
+
+- Merge pull request #27 from stacksjs/renovate/actions-checkout-5.x ([a43943c](https://github.com/stacksjs/stx/commit/a43943c)) _(by [renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot]))_ ([#27](https://github.com/stacksjs/stx/issues/27), [#27](https://github.com/stacksjs/stx/issues/27))
+
+### Contributors
+
+- _Adelino Ngomacha <adelinob335@gmail.com>_
+- _Chris <chrisbreuer93@gmail.com>_
+- _[renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot])_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.1.15...HEAD)
+
+### 🧹 Chores
+
+- wip ([4dca7bc](https://github.com/stacksjs/stx/commit/4dca7bc)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([6a9d78a](https://github.com/stacksjs/stx/commit/6a9d78a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([d1f3cb0](https://github.com/stacksjs/stx/commit/d1f3cb0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([7f183a5](https://github.com/stacksjs/stx/commit/7f183a5)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([86b4218](https://github.com/stacksjs/stx/commit/86b4218)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- update documentation ([4c7802f](https://github.com/stacksjs/stx/commit/4c7802f)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- fix hover on directives ([9439acd](https://github.com/stacksjs/stx/commit/9439acd)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([ed25065](https://github.com/stacksjs/stx/commit/ed25065)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([ceb8c51](https://github.com/stacksjs/stx/commit/ceb8c51)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([50545e9](https://github.com/stacksjs/stx/commit/50545e9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([9d8050e](https://github.com/stacksjs/stx/commit/9d8050e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([803dbef](https://github.com/stacksjs/stx/commit/803dbef)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update dependency happy-dom to 20.0.8 (#307) ([01816a1](https://github.com/stacksjs/stx/commit/01816a1)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#307](https://github.com/stacksjs/stx/issues/307), [#307](https://github.com/stacksjs/stx/issues/307))
+- wip ([0b76ba0](https://github.com/stacksjs/stx/commit/0b76ba0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([d327d34](https://github.com/stacksjs/stx/commit/d327d34)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([71693ea](https://github.com/stacksjs/stx/commit/71693ea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([7a83e60](https://github.com/stacksjs/stx/commit/7a83e60)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([e143b15](https://github.com/stacksjs/stx/commit/e143b15)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4ca3ff5](https://github.com/stacksjs/stx/commit/4ca3ff5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([7260697](https://github.com/stacksjs/stx/commit/7260697)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([71300c8](https://github.com/stacksjs/stx/commit/71300c8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([4ef7b0a](https://github.com/stacksjs/stx/commit/4ef7b0a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([475197d](https://github.com/stacksjs/stx/commit/475197d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([53bc581](https://github.com/stacksjs/stx/commit/53bc581)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([6d4d4b3](https://github.com/stacksjs/stx/commit/6d4d4b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([9ad74bf](https://github.com/stacksjs/stx/commit/9ad74bf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4b552b3](https://github.com/stacksjs/stx/commit/4b552b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([b3fcd49](https://github.com/stacksjs/stx/commit/b3fcd49)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([1ad3da7](https://github.com/stacksjs/stx/commit/1ad3da7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([ab23db0](https://github.com/stacksjs/stx/commit/ab23db0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([3580e99](https://github.com/stacksjs/stx/commit/3580e99)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([45796fc](https://github.com/stacksjs/stx/commit/45796fc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([a87bfac](https://github.com/stacksjs/stx/commit/a87bfac)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([841bd01](https://github.com/stacksjs/stx/commit/841bd01)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f27f1ed](https://github.com/stacksjs/stx/commit/f27f1ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([1277d8a](https://github.com/stacksjs/stx/commit/1277d8a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([56dcdab](https://github.com/stacksjs/stx/commit/56dcdab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([42ad74e](https://github.com/stacksjs/stx/commit/42ad74e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4ef456d](https://github.com/stacksjs/stx/commit/4ef456d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([d3f3fe4](https://github.com/stacksjs/stx/commit/d3f3fe4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([1afb124](https://github.com/stacksjs/stx/commit/1afb124)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([10617f3](https://github.com/stacksjs/stx/commit/10617f3)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([a633ac4](https://github.com/stacksjs/stx/commit/a633ac4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([563e4f1](https://github.com/stacksjs/stx/commit/563e4f1)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([fe026e4](https://github.com/stacksjs/stx/commit/fe026e4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([699a543](https://github.com/stacksjs/stx/commit/699a543)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([17abd56](https://github.com/stacksjs/stx/commit/17abd56)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([9ba537b](https://github.com/stacksjs/stx/commit/9ba537b)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([9290902](https://github.com/stacksjs/stx/commit/9290902)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📄 Miscellaneous
+
+- Merge pull request #27 from stacksjs/renovate/actions-checkout-5.x ([a43943c](https://github.com/stacksjs/stx/commit/a43943c)) _(by [renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot]))_ ([#27](https://github.com/stacksjs/stx/issues/27), [#27](https://github.com/stacksjs/stx/issues/27))
+
+### Contributors
+
+- _Adelino Ngomacha <adelinob335@gmail.com>_
+- _Chris <chrisbreuer93@gmail.com>_
+- _[renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot])_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.1.15...HEAD)
+
+### 🧹 Chores
+
+- wip ([4dca7bc](https://github.com/stacksjs/stx/commit/4dca7bc)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([6a9d78a](https://github.com/stacksjs/stx/commit/6a9d78a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([d1f3cb0](https://github.com/stacksjs/stx/commit/d1f3cb0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([7f183a5](https://github.com/stacksjs/stx/commit/7f183a5)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([86b4218](https://github.com/stacksjs/stx/commit/86b4218)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- update documentation ([4c7802f](https://github.com/stacksjs/stx/commit/4c7802f)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- fix hover on directives ([9439acd](https://github.com/stacksjs/stx/commit/9439acd)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([ed25065](https://github.com/stacksjs/stx/commit/ed25065)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([ceb8c51](https://github.com/stacksjs/stx/commit/ceb8c51)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([50545e9](https://github.com/stacksjs/stx/commit/50545e9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([9d8050e](https://github.com/stacksjs/stx/commit/9d8050e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([803dbef](https://github.com/stacksjs/stx/commit/803dbef)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: update dependency happy-dom to 20.0.8 (#307) ([01816a1](https://github.com/stacksjs/stx/commit/01816a1)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#307](https://github.com/stacksjs/stx/issues/307), [#307](https://github.com/stacksjs/stx/issues/307))
+- wip ([0b76ba0](https://github.com/stacksjs/stx/commit/0b76ba0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([d327d34](https://github.com/stacksjs/stx/commit/d327d34)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([71693ea](https://github.com/stacksjs/stx/commit/71693ea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([7a83e60](https://github.com/stacksjs/stx/commit/7a83e60)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([e143b15](https://github.com/stacksjs/stx/commit/e143b15)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4ca3ff5](https://github.com/stacksjs/stx/commit/4ca3ff5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([7260697](https://github.com/stacksjs/stx/commit/7260697)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([71300c8](https://github.com/stacksjs/stx/commit/71300c8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([4ef7b0a](https://github.com/stacksjs/stx/commit/4ef7b0a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([475197d](https://github.com/stacksjs/stx/commit/475197d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([53bc581](https://github.com/stacksjs/stx/commit/53bc581)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([6d4d4b3](https://github.com/stacksjs/stx/commit/6d4d4b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([9ad74bf](https://github.com/stacksjs/stx/commit/9ad74bf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4b552b3](https://github.com/stacksjs/stx/commit/4b552b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([b3fcd49](https://github.com/stacksjs/stx/commit/b3fcd49)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([1ad3da7](https://github.com/stacksjs/stx/commit/1ad3da7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([ab23db0](https://github.com/stacksjs/stx/commit/ab23db0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([3580e99](https://github.com/stacksjs/stx/commit/3580e99)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([45796fc](https://github.com/stacksjs/stx/commit/45796fc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([a87bfac](https://github.com/stacksjs/stx/commit/a87bfac)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([841bd01](https://github.com/stacksjs/stx/commit/841bd01)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f27f1ed](https://github.com/stacksjs/stx/commit/f27f1ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([1277d8a](https://github.com/stacksjs/stx/commit/1277d8a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([56dcdab](https://github.com/stacksjs/stx/commit/56dcdab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([42ad74e](https://github.com/stacksjs/stx/commit/42ad74e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4ef456d](https://github.com/stacksjs/stx/commit/4ef456d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([d3f3fe4](https://github.com/stacksjs/stx/commit/d3f3fe4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([1afb124](https://github.com/stacksjs/stx/commit/1afb124)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([10617f3](https://github.com/stacksjs/stx/commit/10617f3)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([a633ac4](https://github.com/stacksjs/stx/commit/a633ac4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([563e4f1](https://github.com/stacksjs/stx/commit/563e4f1)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([fe026e4](https://github.com/stacksjs/stx/commit/fe026e4)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([699a543](https://github.com/stacksjs/stx/commit/699a543)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([17abd56](https://github.com/stacksjs/stx/commit/17abd56)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([9ba537b](https://github.com/stacksjs/stx/commit/9ba537b)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([9290902](https://github.com/stacksjs/stx/commit/9290902)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📄 Miscellaneous
+
+- Merge pull request #27 from stacksjs/renovate/actions-checkout-5.x ([a43943c](https://github.com/stacksjs/stx/commit/a43943c)) _(by [renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot]))_ ([#27](https://github.com/stacksjs/stx/issues/27), [#27](https://github.com/stacksjs/stx/issues/27))
+
+### Contributors
+
+- _Adelino Ngomacha <adelinob335@gmail.com>_
+- _Chris <chrisbreuer93@gmail.com>_
+- _[renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot])_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.1.14...v0.1.15)
 
 ### 🧹 Chores

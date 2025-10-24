@@ -2,7 +2,7 @@
   "publisher": "Stacks",
   "name": "vscode-stacks",
   "displayName": "Stacks",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "A modern Stacks development environment, including stx language support.",
   "license": "MIT",
   "funding": "https://github.com/sponsors/chrisbbreuer",
@@ -526,7 +526,11 @@
         },
         "stx.utilityClasses.framework": {
           "type": "string",
-          "enum": ["tailwind", "unocss", "auto"],
+          "enum": [
+            "tailwind",
+            "unocss",
+            "auto"
+          ],
           "default": "auto",
           "markdownDescription": "Utility CSS framework to use. `auto` will detect from config files"
         },
