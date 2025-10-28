@@ -23,24 +23,24 @@
       "dependencies": {
         "@stacksjs/markdown": "workspace:*",
         "@stacksjs/sanitizer": "workspace:*",
-        "dompurify": "^3.2.7",
+        "dompurify": "^3.3.0",
         "gray-matter": "^4.0.3",
-        "isomorphic-dompurify": "^2.28.0",
+        "isomorphic-dompurify": "^2.30.1",
         "js-yaml": "^4.1.0",
         "markdown-it": "^14.1.0",
-        "marked": "^16.4.0",
+        "marked": "^16.4.1",
         "remark": "^15.0.1",
         "remark-html": "^16.0.1",
         "sanitize-html": "^2.17.0",
         "showdown": "^2.1.0",
-        "tinybench": "^5.0.1",
+        "tinybench": "^5.1.0",
         "xss": "^1.0.15",
       },
       "devDependencies": {
         "@types/dompurify": "^3.2.0",
         "@types/marked": "^6.0.0",
         "@types/sanitize-html": "^2.16.0",
-        "jsdom": "^27.0.0",
+        "jsdom": "^27.0.1",
       },
     },
     "packages/benchmarks/js-framework-benchmark": {
@@ -1590,9 +1590,12 @@
     "packages/desktop": {
       "name": "@stacksjs/desktop",
       "version": "0.1.0",
-      "dependencies": {
-        "@stacksjs/zyte": "workspace:*",
+      "peerDependencies": {
+        "ts-zyte": "*",
       },
+      "optionalPeers": [
+        "ts-zyte",
+      ],
     },
     "packages/devtools": {
       "name": "@stacksjs/devtools",
@@ -1637,12 +1640,8 @@
         "@stacksjs/sanitizer": "workspace:*",
         "bun-plugin-stx": "workspace:*",
         "bunfig": "^0.15.0",
-        "ts-syntax-highlighter": "^0.1.0",
+        "ts-syntax-highlighter": "^0.2.1",
       },
-    },
-    "packages/zyte": {
-      "name": "@stacksjs/zyte",
-      "version": "0.1.16",
     },
   },
   "packages": {
@@ -2617,8 +2616,6 @@
     "@stacksjs/sanitizer": ["@stacksjs/sanitizer@workspace:packages/sanitizer"],
 
     "@stacksjs/stx": ["@stacksjs/stx@workspace:packages/stx"],
-
-    "@stacksjs/zyte": ["@stacksjs/zyte@workspace:packages/zyte"],
 
     "@stylistic/eslint-plugin": ["@stylistic/eslint-plugin@4.4.1", "", { "dependencies": { "@typescript-eslint/utils": "^8.32.1", "eslint-visitor-keys": "^4.2.0", "espree": "^10.3.0", "estraverse": "^5.3.0", "picomatch": "^4.0.2" }, "peerDependencies": { "eslint": ">=9.0.0" } }, "sha512-CEigAk7eOLyHvdgmpZsKFwtiqS2wFwI1fn4j09IU9GmD4euFM4jEBAViWeCqaNLlbX2k2+A/Fq9cje4HQBXuJQ=="],
 
@@ -3860,7 +3857,7 @@
 
     "terser": ["terser@5.44.0", "", { "dependencies": { "@jridgewell/source-map": "^0.3.3", "acorn": "^8.15.0", "commander": "^2.20.0", "source-map-support": "~0.5.20" }, "bin": { "terser": "bin/terser" } }, "sha512-nIVck8DK+GM/0Frwd+nIhZ84pR/BX7rmXMfYwyg+Sri5oGVE99/E3KvXqpC2xHFxyqXyGHTKBSioxxplrO4I4w=="],
 
-    "tinybench": ["tinybench@5.0.1", "", {}, "sha512-aNVgWQZY4veCZLQJRftDA1X9OoLUIjDWNfC90nledkX7Lx205IpSEFYnsu4slyofoPGpJ+NIQj+BNSt4U5edMg=="],
+    "tinybench": ["tinybench@5.1.0", "", {}, "sha512-LXKNtFualiKOm6gADe1UXPtf8+Nfn1CtPMEHAT33Fd2YjQatrujkDcK0+4wRC1X6t7fxUDXUs6BsvuIgfkDgDg=="],
 
     "tinyexec": ["tinyexec@1.0.1", "", {}, "sha512-5uC6DDlmeqiOwCPmK9jMSdOuZTh8bU39Ys6yidB+UTt5hfZUPGAypSgFRiEp+jbi9qH40BLDvy85jIU88wKSqw=="],
 
@@ -3894,7 +3891,7 @@
 
     "ts-pkgx": ["ts-pkgx@0.4.106", "", { "dependencies": { "ts-web-scraper": "^0.1.1" }, "bin": { "ts-pkgx": "dist/bin/cli.js" } }, "sha512-oX9kmcdQjR+RVHOD+Jh60rZY0yWKBIR77i/hoPyiPOVdauLZcI9VR2pL5O7U2DBM36PAPaca2+h/dPoqSK+Daw=="],
 
-    "ts-syntax-highlighter": ["ts-syntax-highlighter@0.1.0", "", { "bin": { "ts-syntax-highlighter": "dist/bin/cli.js" } }, "sha512-IF2QmmHyFb5zioh2s+XaNKGNi0PwhITVk+lwdSfto0rdtDVpz+RRViEg1/LGYzX466XGnOjNk3Vh6sFSQMMzQg=="],
+    "ts-syntax-highlighter": ["ts-syntax-highlighter@0.2.1", "", { "bin": { "ts-syntax-highlighter": "dist/bin/cli.js" } }, "sha512-HEfxaVKifwvnX0NaOE8nfs4VFdZo6WdREj1KRehelfYsO1N+m9vOIj5exhlOqFpxOPWd4BlalU8y0WWS7yPWjw=="],
 
     "ts-web-scraper": ["ts-web-scraper@0.1.1", "", { "bin": { "scraper": "dist/bin/cli.js" } }, "sha512-js+gSRe95yDD9U3+GmjvIKBYLAN9WoZKV84x7HcSI7dqdWEIoZSeSGR/Jbr8f5hCeV9FD70KdTPIS2LQwviQXQ=="],
 
