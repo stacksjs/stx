@@ -1,10 +1,10 @@
 /**
  * @stacksjs/desktop
  *
- * Native desktop application wrapper for stx using Zyte framework
+ * Native desktop application framework for stx
  *
  * This package provides a TypeScript API for creating native desktop applications
- * with the stx framework, powered by the Zyte webview framework.
+ * with the stx framework. Designed to work with ts-zyte or other webview implementations.
  */
 
 // Export all types
@@ -24,10 +24,9 @@ export type {
 
 // Export window management
 export {
-  buildZyte,
   createWindow,
   createWindowWithHTML,
-  isZyteBuilt,
+  isWebviewAvailable,
   openDevWindow,
 } from './window'
 

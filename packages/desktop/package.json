@@ -2,7 +2,7 @@
   "name": "@stacksjs/desktop",
   "type": "module",
   "version": "0.1.0",
-  "description": "Native desktop application wrapper for stx using Zyte framework",
+  "description": "Native desktop application framework for stx (ready for ts-zyte integration)",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
   "homepage": "https://github.com/stacksjs/stx#readme",
@@ -17,7 +17,7 @@
     "desktop",
     "native",
     "window",
-    "zyte",
+    "ts-zyte",
     "electron-alternative",
     "webview",
     "cross-platform",
@@ -50,8 +50,14 @@
     "test:coverage": "bun test --coverage --preload ../../test-utils/happy-dom.ts",
     "typecheck": "bun tsc --noEmit"
   },
-  "dependencies": {
-    "@stacksjs/zyte": "workspace:*"
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {
+    "ts-zyte": "*"
   },
-  "devDependencies": {}
+  "peerDependenciesMeta": {
+    "ts-zyte": {
+      "optional": true
+    }
+  }
 }

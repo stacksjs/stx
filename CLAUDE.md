@@ -224,10 +224,12 @@ The `@stacksjs/desktop` package provides native desktop application support:
 ```
 @stacksjs/desktop (TypeScript API)
     ↓
-@stacksjs/zyte (Zig-based native webview)
+ts-zyte (optional webview implementation)
     ↓
 Native APIs (WebKit/GTK/WebView2)
 ```
+
+**Note**: The desktop package is webview-agnostic and ready for ts-zyte integration. It provides a clean API that will work with ts-zyte or other webview implementations once integrated.
 
 ### Usage
 
@@ -236,7 +238,7 @@ Native APIs (WebKit/GTK/WebView2)
 stx dev examples/homepage.stx --native
 ```
 
-This internally calls `openDevWindow()` from the desktop package, creating a lightweight native window (<100ms startup, 1.4MB binary).
+This internally calls `openDevWindow()` from the desktop package. When ts-zyte is integrated, it will create a lightweight native window.
 
 ### Key Features
 
@@ -285,7 +287,7 @@ bun test              # Run all tests
 bun test --coverage   # With coverage report
 ```
 
-All desktop functionality is fully tested with proper mocking of Zyte binary interactions.
+All desktop functionality is fully tested. The package is ready for ts-zyte integration when available.
 
 ## Error Handling
 

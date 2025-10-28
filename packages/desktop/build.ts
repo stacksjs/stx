@@ -10,7 +10,6 @@ await Bun.build({
   sourcemap: 'external',
   minify: false,
   plugins: [dts()],
-  external: ['@stacksjs/zyte'],
 })
 
 console.log('Build complete!')

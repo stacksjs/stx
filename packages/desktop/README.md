@@ -1,10 +1,12 @@
 # @stacksjs/desktop
 
-Native desktop application wrapper for stx using the Zyte framework.
+Native desktop application framework for stx (ready for ts-zyte integration).
 
 ## Overview
 
-`@stacksjs/desktop` provides a TypeScript API for creating native desktop applications with stx. It wraps the powerful Zyte webview framework to deliver lightweight, fast native apps using web technologies.
+`@stacksjs/desktop` provides a TypeScript API for creating native desktop applications with stx. It's designed to work with ts-zyte or other webview implementations to deliver lightweight, fast native apps using web technologies.
+
+**Note**: This package currently provides placeholder implementations with helpful warnings. To enable native windows, integrate ts-zyte or another webview library.
 
 ## Features
 
@@ -24,23 +26,10 @@ bun add @stacksjs/desktop
 
 ## Requirements
 
-- **Zig 0.15.1+** - Required for building Zyte
+- **ts-zyte** (optional) - For native window support
 - **macOS** - WebKit framework (built-in)
 - **Linux** - `libgtk-3-dev` and `libwebkit2gtk-4.0-dev`
 - **Windows** - WebView2 Runtime
-
-### Install Zig
-
-```bash
-# macOS
-brew install zig
-
-# Linux (from https://ziglang.org)
-wget https://ziglang.org/download/0.15.1/zig-linux-x86_64-0.15.1.tar.xz
-tar -xf zig-linux-x86_64-0.15.1.tar.xz
-sudo mv zig-linux-x86_64-0.15.1 /usr/local/zig
-export PATH=$PATH:/usr/local/zig
-```
 
 ## Usage
 
@@ -170,27 +159,18 @@ await openDevWindow(3000, {
 
 **Returns:** `boolean`
 
-#### `isZyteBuilt()`
+#### `isWebviewAvailable()`
 
-Check if Zyte is built.
+Check if a webview implementation is available.
 
 ```typescript
-if (!isZyteBuilt()) {
-  console.log('Zyte needs to be built')
+if (!isWebviewAvailable()) {
+  console.log('No webview implementation configured')
+  console.log('Install ts-zyte or another webview library')
 }
 ```
 
 **Returns:** `boolean`
-
-#### `buildZyte()`
-
-Build Zyte if not already built.
-
-```typescript
-const success = await buildZyte()
-```
-
-**Returns:** `Promise<boolean>`
 
 ### System Tray
 
@@ -370,5 +350,5 @@ MIT License - see [LICENSE.md](../../LICENSE.md)
 
 ## Credits
 
-- Built with [Zyte](https://github.com/stacksjs/stx/tree/main/packages/zyte)
+- Ready for [ts-zyte](https://github.com/stacksjs/ts-zyte) integration
 - Part of the [stx](https://github.com/stacksjs/stx) ecosystem
