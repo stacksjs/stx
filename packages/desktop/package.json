@@ -1,0 +1,57 @@
+{
+  "name": "@stacksjs/desktop",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Native desktop application wrapper for stx using Zyte framework",
+  "author": "Chris Breuer <chris@stacksjs.org>",
+  "license": "MIT",
+  "homepage": "https://github.com/stacksjs/stx#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stacksjs/stx.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stacksjs/stx/issues"
+  },
+  "keywords": [
+    "desktop",
+    "native",
+    "window",
+    "zyte",
+    "electron-alternative",
+    "webview",
+    "cross-platform",
+    "stx"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "import": "./dist/*"
+    }
+  },
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "LICENSE.md",
+    "README.md",
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun --bun build.ts",
+    "lint": "bunx eslint .",
+    "lint:fix": "bunx eslint . --fix",
+    "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
+    "prepublishOnly": "bun run build",
+    "test": "bun test --preload ../../test-utils/happy-dom.ts",
+    "test:watch": "bun test --watch --preload ../../test-utils/happy-dom.ts",
+    "test:coverage": "bun test --coverage --preload ../../test-utils/happy-dom.ts",
+    "typecheck": "bun tsc --noEmit"
+  },
+  "dependencies": {
+    "@stacksjs/zyte": "workspace:*"
+  },
+  "devDependencies": {}
+}

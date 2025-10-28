@@ -9,6 +9,7 @@
     "paths": {
       "stx": ["./packages/stx/src/index.ts"],
       "@stacksjs/stx": ["./packages/stx/src/index.ts"],
+      "@stacksjs/desktop": ["./packages/desktop/src/index.ts"],
       "@stacksjs/markdown": ["./packages/markdown/src/index.ts"],
       "@stacksjs/sanitizer": ["./packages/sanitizer/src/index.ts"],
       "@stacksjs/iconify-core": ["./packages/iconify-core/src/index.ts"],
