@@ -75,9 +75,9 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
     )
     zyteProcess.unref()
 
-    // Create window instance
+    // Create window instance with unique ID
     const windowInstance: WindowInstance = {
-      id: `window-${Date.now()}`,
+      id: `window-${Date.now()}-${Math.random().toString(36).substring(7)}`,
       show: () => {
         // Zyte windows are shown by default
         console.log('Window shown')

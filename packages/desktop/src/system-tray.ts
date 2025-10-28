@@ -14,7 +14,7 @@ export async function createSystemTray(options: SystemTrayOptions = {}): Promise
   // - Windows: Shell_NotifyIcon
 
   const instance: SystemTrayInstance = {
-    id: `tray-${Date.now()}`,
+    id: `tray-${Date.now()}-${Math.random().toString(36).substring(7)}`,
     setIcon: (icon: string) => {
       console.warn('setIcon not implemented', icon)
     },

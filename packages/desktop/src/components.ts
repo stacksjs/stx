@@ -11,7 +11,7 @@ import type { ComponentProps } from './types'
  * - Display: Label, ImageView, ProgressBar, Avatar, Badge, Chip, Card, Tooltip, Toast
  * - Layout: ScrollView, SplitView, Accordion, Stepper, Modal, Tabs, Dropdown
  * - Data: ListView, Table, TreeView, DataGrid, Chart
- * - Advanced: Rating, CodeEditor, MediaPlayer
+ * - Advanced: Rating, CodeEditor, MediaPlayer, FileExplorer, WebView
  */
 
 /**
@@ -121,6 +121,8 @@ export const AVAILABLE_COMPONENTS = [
   'Rating',
   'CodeEditor',
   'MediaPlayer',
+  'FileExplorer',
+  'WebView',
 ] as const
 
 export type ComponentName = typeof AVAILABLE_COMPONENTS[number]
