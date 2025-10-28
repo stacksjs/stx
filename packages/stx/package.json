@@ -77,6 +77,6 @@
     "@stacksjs/sanitizer": "workspace:*",
     "bun-plugin-stx": "workspace:*",
     "bunfig": "^0.15.0",
-    "ts-syntax-highlighter": "^0.1.0"
+    "ts-syntax-highlighter": "^0.2.1"
   }
 }
