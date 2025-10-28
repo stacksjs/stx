@@ -72,6 +72,7 @@
   },
   "dependencies": {
     "@stacksjs/clapp": "^0.2.0",
+    "@stacksjs/desktop": "workspace:*",
     "@stacksjs/headwind": "^0.1.3",
     "@stacksjs/markdown": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",
