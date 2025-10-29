@@ -1,12 +1,10 @@
 # @stacksjs/desktop
 
-Native desktop application framework for stx (ready for ts-zyte integration).
+Native desktop application framework for stx powered by craft.
 
 ## Overview
 
-`@stacksjs/desktop` provides a TypeScript API for creating native desktop applications with stx. It's designed to work with ts-zyte or other webview implementations to deliver lightweight, fast native apps using web technologies.
-
-**Note**: This package currently provides placeholder implementations with helpful warnings. To enable native windows, integrate ts-zyte or another webview library.
+`@stacksjs/desktop` provides a TypeScript API for creating native desktop applications with stx. It uses [craft](https://github.com/stacksjs/craft) (formerly ts-zyte) to deliver lightweight, fast native apps using web technologies and native WebKit views.
 
 ## Features
 
@@ -26,68 +24,261 @@ bun add @stacksjs/desktop
 
 ## Requirements
 
-- **ts-zyte** (optional) - For native window support
+- **craft** - For native window support (linked locally or via npm)
 - **macOS** - WebKit framework (built-in)
 - **Linux** - `libgtk-3-dev` and `libwebkit2gtk-4.0-dev`
 - **Windows** - WebView2 Runtime
 
+### Setup craft Integration
+
+For local development with craft:
+
+```bash
+# Clone craft repository
+cd /path/to/your/repos
+git clone https://github.com/stacksjs/craft
+
+# Build craft
+cd craft
+bun install
+zig build
+
+# Link ts-craft package
+cd packages/typescript
+bun link
+
+# Link to desktop package
+cd /path/to/stx/packages/desktop
+bun link ts-craft
+```
+
 ## Usage
 
-### Basic Window
+### Quick Start with stx Dev Server
+
+The easiest way to test native windows:
+
+```bash
+# Start dev server with native window
+stx dev examples/homepage.stx --native
+```
+
+This opens a menubar application. Look for "stx Development" in your macOS menubar and click it to show the window.
+
+### Basic Window with craft
 
 ```typescript
-import { createWindow } from '@stacksjs/desktop'
+import { createApp } from 'ts-craft'
 
-// Create a window with a URL
-const window = await createWindow('http://localhost:3000', {
-  title: 'My App',
-  width: 1200,
-  height: 800,
-  darkMode: true
+const app = createApp({
+  url: 'http://localhost:3000',
+  window: {
+    title: 'My App',
+    width: 1200,
+    height: 800,
+    systemTray: true,  // Required for craft
+    darkMode: true,
+    hotReload: true,
+    devTools: true,
+  },
+})
+
+await app.show()
+console.log('Window created! Look for "My App" in your menubar')
+```
+
+### Display HTML Content
+
+```typescript
+import { show } from 'ts-craft'
+
+const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: system-ui;
+    }
+    h1 {
+      color: white;
+      font-size: 48px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Hello from craft!</h1>
+</body>
+</html>
+`
+
+await show(html, {
+  title: 'HTML Demo',
+  width: 800,
+  height: 600,
 })
 ```
 
-### With stx Dev Server (--native flag)
+### Using with stx Desktop Package
 
-The `--native` flag in stx automatically uses this package:
+The `@stacksjs/desktop` package provides a clean wrapper:
+
+```typescript
+import { openDevWindow } from '@stacksjs/desktop'
+
+// Open dev server in native window
+const success = await openDevWindow(3000, {
+  title: 'My Dev Server',
+  width: 1400,
+  height: 900,
+  hotReload: true,
+})
+
+if (success) {
+  console.log('Native window opened!')
+} else {
+  console.log('Fell back to browser')
+}
+```
+
+### Advanced Window Options
+
+```typescript
+import { createApp } from 'ts-craft'
+
+const app = createApp({
+  url: 'http://localhost:3000',
+  window: {
+    title: 'Advanced Window',
+    width: 1000,
+    height: 700,
+
+    // Window style
+    frameless: false,           // No title bar (default: false)
+    transparent: false,          // Transparent window (default: false)
+    resizable: true,             // Allow resizing (default: true)
+    alwaysOnTop: false,          // Stay on top (default: false)
+    fullscreen: false,           // Start fullscreen (default: false)
+
+    // Position (optional)
+    x: 100,                      // X coordinate
+    y: 100,                      // Y coordinate
+
+    // Appearance
+    darkMode: true,              // Force dark mode
+
+    // Development
+    hotReload: true,             // Enable hot reload
+    devTools: true,              // Enable DevTools (right-click > Inspect)
+
+    // System integration
+    systemTray: true,            // Show menubar icon (required for craft)
+    hideDockIcon: false,         // Hide from dock (default: false)
+  },
+})
+
+await app.show()
+```
+
+### Controlling the Window from Web Content
+
+craft provides a bridge API accessible from your web content:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>craft Bridge Demo</title>
+</head>
+<body>
+  <h1>craft Bridge API</h1>
+
+  <button onclick="hideWindow()">Hide Window</button>
+  <button onclick="showWindow()">Show Window</button>
+  <button onclick="quitApp()">Quit App</button>
+  <button onclick="updateTray()">Update Tray Title</button>
+
+  <script>
+    // Access craft bridge API
+    const craft = window.craft
+
+    function hideWindow() {
+      craft.window.hide()
+    }
+
+    function showWindow() {
+      craft.window.show()
+    }
+
+    function quitApp() {
+      craft.app.quit()
+    }
+
+    function updateTray() {
+      craft.tray.setTitle('Updated!')
+    }
+
+    // Listen for tray icon clicks
+    craft.tray.onClick(() => {
+      console.log('Tray icon clicked!')
+      craft.window.toggle()
+    })
+  </script>
+</body>
+</html>
+```
+
+### Menubar App Pattern
+
+craft is designed for menubar applications. Here's a complete example:
+
+```typescript
+import { createApp } from 'ts-craft'
+
+const app = createApp({
+  url: 'http://localhost:3000',
+  window: {
+    title: 'My Menubar App',
+    width: 400,
+    height: 500,
+    resizable: false,
+    systemTray: true,      // Creates menubar icon
+    darkMode: true,
+  },
+})
+
+await app.show()
+
+// The window is hidden by default
+// Click the menubar icon to show/hide the window
+// This is the standard macOS menubar app behavior
+```
+
+### Integration with stx CLI
+
+When you use the `--native` flag with stx dev server:
 
 ```bash
 stx dev examples/homepage.stx --native
 ```
 
-This internally calls:
+It internally calls:
 
 ```typescript
 import { openDevWindow } from '@stacksjs/desktop'
 
-// Opens a native window at the dev server port
-await openDevWindow(3000)
-```
-
-### System Tray App
-
-```typescript
-import { createSystemTray } from '@stacksjs/desktop'
-
-const tray = await createSystemTray({
-  icon: './icon.png',
-  tooltip: 'My App',
-  menu: [
-    {
-      label: 'Open',
-      onClick: () => console.log('Opening...')
-    },
-    {
-      label: 'Settings',
-      accelerator: 'Cmd+,',
-      onClick: () => console.log('Settings...')
-    },
-    { type: 'separator' },
-    {
-      label: 'Quit',
-      onClick: () => process.exit(0)
-    }
-  ]
+const success = await openDevWindow(3000, {
+  title: 'stx Development',
+  width: 1400,
+  height: 900,
+  hotReload: true,
+  devTools: true,
 })
 ```
 
@@ -161,12 +352,12 @@ await openDevWindow(3000, {
 
 #### `isWebviewAvailable()`
 
-Check if a webview implementation is available.
+Check if craft is available for native windows.
 
 ```typescript
 if (!isWebviewAvailable()) {
-  console.log('No webview implementation configured')
-  console.log('Install ts-zyte or another webview library')
+  console.log('craft not available')
+  console.log('Ensure ts-craft is installed and craft binary is built')
 }
 ```
 
@@ -348,7 +539,25 @@ Contributions are welcome! Please see the [Contributing Guide](../../CONTRIBUTIN
 
 MIT License - see [LICENSE.md](../../LICENSE.md)
 
+## Implementation Status
+
+### ✅ Working
+- Native window creation with craft/ts-craft
+- URL loading in native windows
+- HTML content rendering
+- `stx dev --native` flag integration
+- Browser fallback when craft unavailable
+- Hot reload and dev tools support
+
+### 🚧 Placeholder (Coming Soon)
+- System tray applications
+- Modal dialogs
+- Alerts and toasts
+- Native UI components (35 total)
+
+The package is fully functional for basic native windows using craft. System tray and other features are planned for future releases.
+
 ## Credits
 
-- Ready for [ts-zyte](https://github.com/stacksjs/ts-zyte) integration
+- Powered by [craft](https://github.com/stacksjs/craft) (formerly ts-zyte)
 - Part of the [stx](https://github.com/stacksjs/stx) ecosystem

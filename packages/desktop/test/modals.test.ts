@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test'
+import { afterEach, describe, expect, it, spyOn } from 'bun:test'
 import {
   showErrorModal,
   showInfoModal,

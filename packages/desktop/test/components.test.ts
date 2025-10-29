@@ -28,7 +28,7 @@ describe('Components', () => {
         'DatePicker',
         'TimePicker',
         'Autocomplete',
-      ]
+      ] as const
 
       for (const component of inputComponents) {
         expect(AVAILABLE_COMPONENTS).toContain(component)
@@ -46,7 +46,7 @@ describe('Components', () => {
         'Card',
         'Tooltip',
         'Toast',
-      ]
+      ] as const
 
       for (const component of displayComponents) {
         expect(AVAILABLE_COMPONENTS).toContain(component)
@@ -62,7 +62,7 @@ describe('Components', () => {
         'Modal',
         'Tabs',
         'Dropdown',
-      ]
+      ] as const
 
       for (const component of layoutComponents) {
         expect(AVAILABLE_COMPONENTS).toContain(component)
@@ -76,7 +76,7 @@ describe('Components', () => {
         'TreeView',
         'DataGrid',
         'Chart',
-      ]
+      ] as const
 
       for (const component of dataComponents) {
         expect(AVAILABLE_COMPONENTS).toContain(component)
@@ -90,7 +90,7 @@ describe('Components', () => {
         'MediaPlayer',
         'FileExplorer',
         'WebView',
-      ]
+      ] as const
 
       for (const component of advancedComponents) {
         expect(AVAILABLE_COMPONENTS).toContain(component)

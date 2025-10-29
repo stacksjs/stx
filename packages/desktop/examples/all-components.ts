@@ -49,7 +49,7 @@ async function main() {
   const textInput = createTextInput({
     placeholder: 'Enter your name...',
     type: 'text',
-    onChange: (value) => console.log(`Input changed: ${value}`),
+    onChange: value => console.log(`Input changed: ${value}`),
   })
   console.log(`   ${textInput}\n`)
 
@@ -58,7 +58,7 @@ async function main() {
   const checkbox = createCheckbox({
     label: 'Accept terms and conditions',
     checked: false,
-    onChange: (checked) => console.log(`Checkbox: ${checked}`),
+    onChange: checked => console.log(`Checkbox: ${checked}`),
   })
   console.log(`   ${checkbox}\n`)
 

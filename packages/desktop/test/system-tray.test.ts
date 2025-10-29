@@ -6,7 +6,7 @@ describe('System Tray', () => {
     it('should warn that feature is not yet implemented', async () => {
       const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
 
-      const tray = await createSystemTray()
+      const _tray = await createSystemTray()
 
       expect(consoleWarnSpy).toHaveBeenCalledWith('System tray functionality not yet implemented')
 

@@ -11,7 +11,7 @@
  *   bun run examples/system-tray.ts
  */
 
-import { createSystemTray, createMenubar } from '../src/index'
+import { createSystemTray } from '../src/index'
 
 async function main() {
   console.log('🔔 Creating a system tray application...\n')
@@ -23,21 +23,22 @@ async function main() {
     menu: [
       {
         label: 'Open Dashboard',
-        action: () => {
+        onClick: () => {
           console.log('Opening dashboard...')
         },
       },
       {
         label: 'Settings',
-        action: () => {
+        onClick: () => {
           console.log('Opening settings...')
         },
       },
       { type: 'separator' },
       {
         label: 'Quit',
-        action: () => {
+        onClick: () => {
           console.log('Quitting application...')
+          // eslint-disable-next-line node/prefer-global/process
           process.exit(0)
         },
       },

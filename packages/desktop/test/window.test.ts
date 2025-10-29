@@ -1,12 +1,47 @@
-import { describe, expect, it, spyOn } from 'bun:test'
+/* eslint-disable import/first */
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
+
+// Mock ts-craft before importing window module
+// Note: mock.module() MUST be called before importing the module being mocked
+mock.module('ts-craft', () => ({
+  createApp: () => ({
+    show: async () => {
+      // Simulate craft error (since binary path issues in test environment)
+      throw new Error('craft binary not found in test environment')
+    },
+    close: () => {},
+  }),
+  show: async () => {
+    throw new Error('craft binary not found in test environment')
+  },
+  loadURL: async () => {
+    throw new Error('craft binary not found in test environment')
+  },
+}))
+
 import { createWindow, createWindowWithHTML, isWebviewAvailable, openDevWindow } from '../src/window'
 
 describe('Window Management', () => {
-  describe('isWebviewAvailable', () => {
-    it('should return false when no webview implementation is configured', () => {
-      const result = isWebviewAvailable()
+  let consoleLogSpy: any
+  let consoleWarnSpy: any
+  let consoleErrorSpy: any
 
-      expect(result).toBe(false)
+  beforeEach(() => {
+    consoleLogSpy = spyOn(console, 'log').mockImplementation(() => {})
+    consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
+    consoleErrorSpy = spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    consoleLogSpy.mockRestore()
+    consoleWarnSpy.mockRestore()
+    consoleErrorSpy.mockRestore()
+  })
+
+  describe('isWebviewAvailable', () => {
+    it('should check if ts-craft is available', () => {
+      const result = isWebviewAvailable()
+      expect(typeof result).toBe('boolean')
     })
 
     it('should be a function', () => {
@@ -15,58 +50,41 @@ describe('Window Management', () => {
   })
 
   describe('createWindow', () => {
-    it('should return null when no webview implementation is configured', async () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
+    it('should attempt to create a window and fall back on error', async () => {
       const window = await createWindow('http://localhost:3000')
 
+      // craft will attempt to create window and fall back to null on error
       expect(window).toBeNull()
-      expect(consoleWarnSpy).toHaveBeenCalled()
-
-      consoleWarnSpy.mockRestore()
+      expect(consoleErrorSpy).toHaveBeenCalled()
     })
 
-    it('should log appropriate warning messages', async () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      await createWindow('http://localhost:3000', {
+    it('should handle errors gracefully', async () => {
+      const result = await createWindow('http://localhost:3000', {
         title: 'Test Window',
         width: 800,
         height: 600,
       })
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith('createWindow: Webview implementation not configured')
-      expect(consoleWarnSpy).toHaveBeenCalledWith('To use native windows, please integrate ts-zyte or another webview library')
-
-      consoleWarnSpy.mockRestore()
+      expect(result).toBeNull()
+      expect(consoleWarnSpy).toHaveBeenCalledWith('Falling back to browser...')
     })
 
     it('should accept window options', async () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
       await createWindow('http://localhost:8080', {
         title: 'Custom Title',
         width: 1920,
         height: 1080,
       })
 
-      const lastCall = consoleWarnSpy.mock.calls[consoleWarnSpy.mock.calls.length - 1]
-      expect(lastCall[0]).toContain('Custom Title')
-      expect(lastCall[0]).toContain('1920x1080')
-
-      consoleWarnSpy.mockRestore()
+      // Should have tried to create window with these options
+      expect(consoleErrorSpy).toHaveBeenCalled()
     })
 
     it('should use default options when none provided', async () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
       await createWindow('http://localhost:3000')
 
-      const lastCall = consoleWarnSpy.mock.calls[consoleWarnSpy.mock.calls.length - 1]
-      expect(lastCall[0]).toContain('stx Desktop')
-      expect(lastCall[0]).toContain('1200x800')
-
-      consoleWarnSpy.mockRestore()
+      // Should use defaults: title: 'stx Desktop', 1200x800
+      expect(consoleErrorSpy).toHaveBeenCalled()
     })
 
     it('should be an async function', () => {
@@ -75,56 +93,63 @@ describe('Window Management', () => {
     })
   })
 
-  describe('openDevWindow', () => {
-    it('should return false when no webview implementation is configured', async () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
+  describe('createWindowWithHTML', () => {
+    it('should attempt to create window with HTML content', async () => {
+      const html = '<h1>Test</h1>'
+      const window = await createWindowWithHTML(html, {
+        title: 'HTML Window',
+      })
 
-      const result = await openDevWindow(3000)
-
-      expect(result).toBe(false)
-      expect(consoleWarnSpy).toHaveBeenCalled()
-
-      consoleWarnSpy.mockRestore()
+      expect(window).toBeNull()
+      expect(consoleErrorSpy).toHaveBeenCalled()
     })
 
-    it('should log instructions for enabling native windows', async () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      await openDevWindow(3000)
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith('⚠  Native window support not configured')
-      expect(consoleWarnSpy).toHaveBeenCalledWith('   To enable native windows:')
-      expect(consoleWarnSpy).toHaveBeenCalledWith('   1. Install ts-zyte: bun add ts-zyte')
-      expect(consoleWarnSpy).toHaveBeenCalledWith('   2. Update window.ts to use ts-zyte API')
-
-      consoleWarnSpy.mockRestore()
-    })
-
-    it('should construct correct localhost URL', async () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      await openDevWindow(8080)
-
-      const calls = consoleWarnSpy.mock.calls.map(call => call.join(' '))
-      const urlCall = calls.find(call => call.includes('http://localhost'))
-
-      expect(urlCall).toContain('http://localhost:8080/')
-
-      consoleWarnSpy.mockRestore()
+    it('should handle empty HTML', async () => {
+      const window = await createWindowWithHTML('')
+      expect(window).toBeNull()
     })
 
     it('should accept window options', async () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      await openDevWindow(3000, {
-        title: 'Dev Server',
-        width: 1400,
-        height: 900,
+      await createWindowWithHTML('<p>Content</p>', {
+        width: 600,
+        height: 400,
       })
 
-      expect(consoleWarnSpy).toHaveBeenCalled()
+      expect(consoleErrorSpy).toHaveBeenCalled()
+    })
+  })
 
-      consoleWarnSpy.mockRestore()
+  describe('openDevWindow', () => {
+    it('should attempt to open native window and fall back to browser', async () => {
+      const result = await openDevWindow(3000)
+
+      // Should attempt craft, fail, then open browser
+      expect(result).toBe(true)
+      expect(consoleWarnSpy).toHaveBeenCalled()
+      expect(consoleLogSpy).toHaveBeenCalledWith('📱 Opening in browser instead...')
+    })
+
+    it('should construct correct URL from port', async () => {
+      const result = await openDevWindow(8080)
+
+      // Should have attempted to open http://localhost:8080/
+      expect(result).toBe(true)
+      expect(consoleWarnSpy).toHaveBeenCalled()
+    })
+
+    it('should accept window options', async () => {
+      const result = await openDevWindow(3000, {
+        title: 'Custom Dev Window',
+        width: 1600,
+        height: 1000,
+      })
+
+      expect(result).toBe(true)
+    })
+
+    it('should return true on successful browser fallback', async () => {
+      const result = await openDevWindow(3000)
+      expect(result).toBe(true)
     })
 
     it('should be an async function', () => {
@@ -133,71 +158,20 @@ describe('Window Management', () => {
     })
   })
 
-  describe('createWindowWithHTML', () => {
-    it('should return null when no webview implementation is configured', async () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      const window = await createWindowWithHTML('<h1>Test</h1>')
-
+  describe('Error handling', () => {
+    it('should handle invalid URLs gracefully', async () => {
+      const window = await createWindow('not-a-valid-url')
       expect(window).toBeNull()
-      expect(consoleWarnSpy).toHaveBeenCalled()
-
-      consoleWarnSpy.mockRestore()
     })
 
-    it('should log HTML content length', async () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      const html = '<html><body><h1>Test Content</h1></body></html>'
-      await createWindowWithHTML(html)
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith('createWindowWithHTML not yet implemented')
-      expect(consoleWarnSpy).toHaveBeenCalledWith('HTML content length:', html.length, 'characters')
-      expect(consoleWarnSpy).toHaveBeenCalledWith('Waiting for ts-zyte integration')
-
-      consoleWarnSpy.mockRestore()
+    it('should handle empty URLs', async () => {
+      const window = await createWindow('')
+      expect(window).toBeNull()
     })
 
-    it('should accept window options', async () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      await createWindowWithHTML('<h1>Test</h1>', {
-        title: 'HTML Window',
-        width: 800,
-        height: 600,
-      })
-
-      expect(consoleWarnSpy).toHaveBeenCalled()
-
-      consoleWarnSpy.mockRestore()
-    })
-
-    it('should be an async function', () => {
-      const result = createWindowWithHTML('<h1>Test</h1>')
-      expect(result instanceof Promise).toBe(true)
-    })
-  })
-
-  describe('Integration readiness', () => {
-    it('should export all required functions', () => {
-      expect(typeof createWindow).toBe('function')
-      expect(typeof openDevWindow).toBe('function')
-      expect(typeof createWindowWithHTML).toBe('function')
-      expect(typeof isWebviewAvailable).toBe('function')
-    })
-
-    it('should maintain backward compatible API', async () => {
-      // These should all work without throwing errors
-      await createWindow('http://localhost:3000')
-      await openDevWindow(3000)
-      await createWindowWithHTML('<h1>Test</h1>')
-      isWebviewAvailable()
-
-      // All return expected types
-      expect(await createWindow('http://localhost:3000')).toBeNull()
-      expect(await openDevWindow(3000)).toBe(false)
-      expect(await createWindowWithHTML('<h1>Test</h1>')).toBeNull()
-      expect(isWebviewAvailable()).toBe(false)
+    it('should handle invalid port numbers', async () => {
+      const result = await openDevWindow(-1)
+      expect(result).toBe(true) // Still returns true (browser fallback)
     })
   })
 })

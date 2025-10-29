@@ -50,8 +50,6 @@
     "test:coverage": "bun test --coverage --preload ../../test-utils/happy-dom.ts",
     "typecheck": "bun tsc --noEmit"
   },
-  "dependencies": {},
-  "devDependencies": {},
   "peerDependencies": {
     "ts-zyte": "*"
   },
@@ -59,5 +57,7 @@
     "ts-zyte": {
       "optional": true
     }
-  }
+  },
+  "dependencies": {},
+  "devDependencies": {}
 }

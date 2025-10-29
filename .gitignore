@@ -41,3 +41,7 @@ examples/.stx-output/
 packages/stx/test/performance/perf-temp
 examples/demo-project/.stx-serve/
 /packages/zyte/.zig-cache
+
+packages/desktop/.stx/
+
+packages/desktop/.stx-output/

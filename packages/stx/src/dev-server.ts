@@ -3,11 +3,11 @@ import { serve } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { openDevWindow } from '@stacksjs/desktop'
 import { readMarkdownFile } from './assets'
 import { config } from './config'
 // TODO: import this from `bun-plugin-stx`. Oddly, there seemingly are issues right now
 import { plugin as stxPlugin } from './plugin'
-import { openDevWindow } from '@stacksjs/desktop'
 
 // ANSI color codes for terminal output
 const colors = {
