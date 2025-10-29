@@ -1,11 +1,10 @@
 /**
  * Modal Dialog Examples
  *
- * This example demonstrates different types of modal dialogs
+ * This example demonstrates different types of native modal dialogs
  * that can be displayed in your desktop application.
  *
- * Note: This is a placeholder implementation. Full modal functionality
- * will be available in a future release.
+ * Uses macOS native dialogs via osascript.
  *
  * To run this example:
  *   bun run examples/modal-demo.ts
@@ -93,8 +92,8 @@ async function main() {
   console.log(`   Cancelled: ${customResult.cancelled}\n`)
 
   console.log('✓ All modal examples completed!')
-  console.log('\n💡 Note: These are placeholder implementations.')
-  console.log('   Full modal functionality coming in a future release.')
+  console.log('\n💡 These modals use macOS native dialogs via osascript.')
+  console.log('   Future versions will integrate with craft for cross-platform support.')
 }
 
 // Run the example
