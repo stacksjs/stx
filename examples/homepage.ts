@@ -555,6 +555,7 @@ let windowZIndex = 100
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     initializeIcons()
+    initializeWindowDragging()
     // Set the welcome window as active initially
     activewindow = document.getElementById('window-welcome')
     // Update taskbar to show welcome window
@@ -563,6 +564,7 @@ if (document.readyState === 'loading') {
 }
 else {
   initializeIcons()
+  initializeWindowDragging()
   // Set the welcome window as active initially
   activewindow = document.getElementById('window-welcome')
   // Update taskbar to show welcome window
@@ -915,41 +917,43 @@ let draggedwindow = null
 let dragOffsetX = 0
 let dragOffsetY = 0
 
-document.querySelectorAll('.window').forEach((windowEl) => {
-  const titlebar = windowEl.querySelector('.window-titlebar')
+function initializeWindowDragging() {
+  document.querySelectorAll('.window').forEach((windowEl) => {
+    const titlebar = windowEl.querySelector('.window-titlebar')
 
-  titlebar.addEventListener('mousedown', (e) => {
-    if (e.target.classList.contains('window-control'))
-      return
-    if (windowEl.classList.contains('maximized'))
-      return
+    titlebar.addEventListener('mousedown', (e) => {
+      if (e.target.classList.contains('window-control'))
+        return
+      if (windowEl.classList.contains('maximized'))
+        return
 
-    draggedwindow = windowEl
-    dragOffsetX = e.clientX - windowEl.offsetLeft
-    dragOffsetY = e.clientY - windowEl.offsetTop
+      draggedwindow = windowEl
+      dragOffsetX = e.clientX - windowEl.offsetLeft
+      dragOffsetY = e.clientY - windowEl.offsetTop
 
-    windowEl.style.zIndex = ++windowZIndex
-    windowEl.classList.add('active')
-    activewindow = windowEl
+      windowEl.style.zIndex = ++windowZIndex
+      windowEl.classList.add('active')
+      activewindow = windowEl
 
-    updateTaskbar()
+      updateTaskbar()
+    })
   })
-})
 
-document.addEventListener('mousemove', (e) => {
-  if (!draggedwindow)
-    return
+  document.addEventListener('mousemove', (e) => {
+    if (!draggedwindow)
+      return
 
-  const newX = e.clientX - dragOffsetX
-  const newY = e.clientY - dragOffsetY
+    const newX = e.clientX - dragOffsetX
+    const newY = e.clientY - dragOffsetY
 
-  draggedwindow.style.left = `${newX}px`
-  draggedwindow.style.top = `${newY}px`
-})
+    draggedwindow.style.left = `${newX}px`
+    draggedwindow.style.top = `${newY}px`
+  })
 
-document.addEventListener('mouseup', () => {
-  draggedwindow = null
-})
+  document.addEventListener('mouseup', () => {
+    draggedwindow = null
+  })
+}
 
 // Feature switching
 const featureContent = {

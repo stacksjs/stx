@@ -392,7 +392,7 @@
           <div class="window-control close" onclick="closeWindow('license-window')">×</div>
         </div>
       </div>
-      
+
       <div class="license-toolbar">
         <button class="license-toolbar-btn" onclick="generateLicense()">
           📝 Generate New
@@ -435,9 +435,9 @@
 
         <!-- Search and Actions -->
         <div class="license-search">
-          <input 
-            type="text" 
-            class="license-search-input" 
+          <input
+            type="text"
+            class="license-search-input"
             placeholder="Search licenses by key, email, or company..."
             id="license-search"
           >
@@ -626,7 +626,7 @@
   <script>
     // License Manager JavaScript
     console.log('License Manager script loaded');
-    
+
     let licenses = [
       {
         key: 'STX-2024-ABC123-XYZ789',
@@ -680,7 +680,7 @@
       const email = document.getElementById('customer-email').value;
       const type = document.getElementById('license-type').value;
       const duration = parseInt(document.getElementById('license-duration').value);
-      
+
       if (!customer || !email) {
         alert('Please fill in customer name and email address.');
         return;
@@ -690,21 +690,21 @@
       const randomPart1 = Math.random().toString(36).substring(2, 8).toUpperCase();
       const randomPart2 = Math.random().toString(36).substring(2, 8).toUpperCase();
       const newKey = `STX-2024-${randomPart1}-${randomPart2}`;
-      
+
       // Calculate expiry date
       const expiryDate = new Date();
       expiryDate.setMonth(expiryDate.getMonth() + duration);
       const expiryString = expiryDate.toISOString().split('T')[0];
-      
+
       // Update dialog content
       document.getElementById('generated-key').textContent = newKey;
       document.getElementById('generated-customer').textContent = customer;
       document.getElementById('generated-type').textContent = type.charAt(0).toUpperCase() + type.slice(1);
       document.getElementById('generated-expiry').textContent = expiryString;
-      
+
       // Show dialog
       document.getElementById('license-dialog').classList.add('active');
-      
+
       // Add to licenses array
       licenses.push({
         key: newKey,
@@ -733,10 +733,10 @@
       const key = document.getElementById('generated-key').textContent;
       const type = document.getElementById('generated-type').textContent;
       const expiry = document.getElementById('generated-expiry').textContent;
-      
+
       const subject = `Your STACKS.JS License Key - ${type}`;
       const body = `Dear ${customer},\n\nYour STACKS.JS license has been generated successfully!\n\nLicense Key: STX-2024-${key}\nType: ${type}\nExpires: ${expiry}\n\nThank you for choosing STACKS.JS!\n\nBest regards,\nThe STACKS.JS Team`;
-      
+
       window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
     }
 
@@ -757,10 +757,10 @@
 
     function exportLicenses() {
       const csv = 'License Key,Customer,Email,Type,Status,Created,Expires\n' +
-        licenses.map(license => 
+        licenses.map(license =>
           `${license.key},${license.customer},${license.email},${license.type},${license.status},${license.created},${license.expires}`
         ).join('\n');
-      
+
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -825,7 +825,7 @@
     document.getElementById('license-search').addEventListener('input', function(e) {
       const searchTerm = e.target.value.toLowerCase();
       const rows = document.querySelectorAll('.license-table tbody tr');
-      
+
       rows.forEach(row => {
         const text = row.textContent.toLowerCase();
         if (text.includes(searchTerm)) {
@@ -852,7 +852,7 @@
       console.log('closeWindow called with:', windowId);
       document.getElementById(windowId).classList.add('minimized');
     }
-    
+
     // Test if functions are defined
     console.log('Functions defined:', {
       minimizeWindow: typeof minimizeWindow,
@@ -863,10 +863,10 @@
     // Update clock
     function updateClock() {
       const now = new Date();
-      const timeString = now.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
+      const timeString = now.toLocaleTimeString('en-US', {
+        hour: 'numeric',
         minute: '2-digit',
-        hour12: true 
+        hour12: true
       });
       document.getElementById('clock').textContent = timeString;
     }
@@ -879,7 +879,7 @@
       if (e.target.closest('.desktop-icon')) {
         const icon = e.target.closest('.desktop-icon');
         const iconType = icon.getAttribute('data-icon-type');
-        
+
         if (iconType === 'window') {
           const windowId = icon.getAttribute('data-icon-id') + '-window';
           const window = document.getElementById(windowId);

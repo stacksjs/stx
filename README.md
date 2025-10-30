@@ -225,13 +225,13 @@ export default {
     <h1>{{ title }}</h1>
 
     <ul>
-      @foreach (items as item)
-      <li>{{ item }}</li>
+      @foreach(items as item)
+        <li>{{ item }}</li>
       @endforeach
     </ul>
 
-    @if (showFooter)
-    <footer>Copyright 2023</footer>
+    @if(showFooter)
+      <footer>Copyright 2023</footer>
     @endif
   </body>
 </html>
@@ -323,7 +323,7 @@ Then use them in your templates:
 
 <!-- Block directive with content and optional parameter -->
 @wrap(highlight)
-<p>This content will be wrapped in a div with class "highlight"</p>
+  <p>This content will be wrapped in a div with class "highlight"</p>
 @endwrap
 ```
 
@@ -348,12 +348,12 @@ Display content with double curly braces:
 Use `@if`, `@elseif`, and `@else` for conditional rendering:
 
 ```html
-@if (user.isAdmin)
-<div class="admin-panel">Admin content</div>
-@elseif (user.isEditor)
-<div class="editor-tools">Editor tools</div>
+@if(user.isAdmin)
+  <div class="admin-panel">Admin content</div>
+@elseif(user.isEditor)
+  <div class="editor-tools">Editor tools</div>
 @else
-<div class="user-view">Regular user view</div>
+  <div class="user-view">Regular user view</div>
 @endif
 ```
 
@@ -363,8 +363,8 @@ Iterate over arrays with `@foreach`:
 
 ```html
 <ul>
-  @foreach (items as item)
-  <li>{{ item }}</li>
+  @foreach(items as item)
+    <li>{{ item }}</li>
   @endforeach
 </ul>
 ```
@@ -373,8 +373,8 @@ Use `@for` for numeric loops:
 
 ```html
 <ol>
-  @for (let i = 1; i <= 5; i++)
-  <li>Item {{ i }}</li>
+  @for(let i = 1; i <= 5; i++)
+    <li>Item {{ i }}</li>
   @endfor
 </ol>
 ```
@@ -436,8 +436,8 @@ displayName: `User ${user.id}: ${user.name}` })); } // Store the processed data
 in the context global.processedUsers = processUsers(users); @endts
 
 <ul>
-  @foreach (processedUsers as user)
-  <li>{{ user.displayName }}</li>
+  @foreach(processedUsers as user)
+    <li>{{ user.displayName }}</li>
   @endforeach
 </ul>
 ```

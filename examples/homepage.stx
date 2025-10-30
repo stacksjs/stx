@@ -121,6 +121,7 @@
           data-icon-type="window"
           data-icon-section="welcome"
           data-icon-url=""
+          style="left: 20px; top: 20px;"
         >
           <div class="desktop-icon-image">📃</div>
           <div class="desktop-icon-label">Welcome.pdf</div>
@@ -132,6 +133,7 @@
           data-icon-type="window"
           data-icon-section="about"
           data-icon-url=""
+          style="left: 140px; top: 20px;"
         >
           <div class="desktop-icon-image">📄</div>
           <div class="desktop-icon-label">About</div>
@@ -143,6 +145,7 @@
           data-icon-type="window"
           data-icon-section="ecosystem"
           data-icon-url=""
+          style="left: 260px; top: 20px;"
         >
           <div class="desktop-icon-image">🌐</div>
           <div class="desktop-icon-label">Ecosystem</div>
@@ -154,6 +157,7 @@
           data-icon-type="window"
           data-icon-section="backend"
           data-icon-url=""
+          style="left: 380px; top: 20px;"
         >
           <div class="desktop-icon-image">⚙️</div>
           <div class="desktop-icon-label">Backend</div>
@@ -165,6 +169,7 @@
           data-icon-type="window"
           data-icon-section="frontend"
           data-icon-url=""
+          style="left: 500px; top: 20px;"
         >
           <div class="desktop-icon-image">🎨</div>
           <div class="desktop-icon-label">Frontend</div>
@@ -176,6 +181,7 @@
           data-icon-type="window"
           data-icon-section="cloud"
           data-icon-url=""
+          style="left: 620px; top: 20px;"
         >
           <div class="desktop-icon-image">☁️</div>
           <div class="desktop-icon-label">Cloud</div>
@@ -187,6 +193,7 @@
           data-icon-type="window"
           data-icon-section="dashboard"
           data-icon-url=""
+          style="left: 20px; top: 140px;"
         >
           <div class="desktop-icon-image">📊</div>
           <div class="desktop-icon-label">Dashboard</div>
@@ -198,6 +205,7 @@
           data-icon-type="window"
           data-icon-section="license"
           data-icon-url=""
+          style="left: 140px; top: 140px;"
         >
           <div class="desktop-icon-image">🔑</div>
           <div class="desktop-icon-label">License</div>
@@ -210,6 +218,7 @@
           data-icon-section=""
           data-icon-url=""
           onclick="showLoginScreen()"
+          style="left: 260px; top: 140px;"
         >
           <div class="desktop-icon-image">🔐</div>
           <div class="desktop-icon-label">Login</div>
@@ -221,6 +230,7 @@
           data-icon-type="window"
           data-icon-section="benchmarks"
           data-icon-url=""
+          style="left: 380px; top: 140px;"
         >
           <div class="desktop-icon-image">📁</div>
           <div class="desktop-icon-label">Benchmarks</div>
@@ -232,6 +242,7 @@
           data-icon-type="window"
           data-icon-section="libraries"
           data-icon-url=""
+          style="left: 500px; top: 140px;"
         >
           <div class="desktop-icon-image">📁</div>
           <div class="desktop-icon-label">Libraries & CLIs</div>
@@ -243,6 +254,7 @@
           data-icon-type="window"
           data-icon-section="plugins"
           data-icon-url=""
+          style="left: 620px; top: 140px;"
         >
           <div class="desktop-icon-image">📁</div>
           <div class="desktop-icon-label">Plugins & Actions</div>
@@ -254,6 +266,7 @@
           data-icon-type="window"
           data-icon-section="templates"
           data-icon-url=""
+          style="left: 20px; top: 260px;"
         >
           <div class="desktop-icon-image">📁</div>
           <div class="desktop-icon-label">Templates</div>
@@ -265,6 +278,7 @@
           data-icon-type="link"
           data-icon-section=""
           data-icon-url="https://stacksjs.org/docs"
+          style="left: 140px; top: 260px;"
         >
           <div class="desktop-icon-image">📚</div>
           <div class="desktop-icon-label">Documentation</div>
@@ -276,6 +290,7 @@
           data-icon-type="window"
           data-icon-section="blog"
           data-icon-url=""
+          style="left: 260px; top: 260px;"
         >
           <div class="desktop-icon-image">📝</div>
           <div class="desktop-icon-label">Blog</div>
@@ -287,6 +302,7 @@
           data-icon-type="link"
           data-icon-section=""
           data-icon-url="https://github.com/stacksjs/stacks"
+          style="left: 380px; top: 260px;"
         >
           <div class="desktop-icon-image">💻</div>
           <div class="desktop-icon-label">GitHub</div>
@@ -298,6 +314,7 @@
           data-icon-type="window"
           data-icon-section="sponsors"
           data-icon-url=""
+          style="left: 500px; top: 260px;"
         >
           <div class="desktop-icon-image">💖</div>
           <div class="desktop-icon-label">Sponsors</div>
@@ -309,6 +326,7 @@
           data-icon-type="link"
           data-icon-section=""
           data-icon-url="https://discord.gg/stacksjs"
+          style="left: 620px; top: 260px;"
         >
           <div class="desktop-icon-image">💬</div>
           <div class="desktop-icon-label">Discord</div>
@@ -320,6 +338,7 @@
           data-icon-type="link"
           data-icon-section=""
           data-icon-url="https://github.com/stacksjs/white-paper"
+          style="left: 20px; top: 380px;"
         >
           <div class="desktop-icon-image">📄</div>
           <div class="desktop-icon-label">White Paper</div>
@@ -331,6 +350,7 @@
           data-icon-type="window"
           data-icon-section="contact"
           data-icon-url=""
+          style="left: 140px; top: 380px;"
         >
           <div class="desktop-icon-image">📫</div>
           <div class="desktop-icon-label">Contact</div>

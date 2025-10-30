@@ -477,7 +477,7 @@ public function boot() {
                 </div>
                 <div class="flex items-baseline mt-4 text-6xl font-extrabold">
                   $19
-                  <span class="ml-1 text-2xl font-medium text-blue-gray-500"> /mo </span>
+                  <span class="ml-1 text-2xl font-medium text-blue-gray-500"> /mo</span>
                 </div>
                 <p class="mt-5 text-lg text-blue-gray-500">
                   Everything your heart desires to manage your own personal media.
@@ -557,7 +557,7 @@ public function boot() {
                 </div>
                 <div class="flex items-baseline mt-4 text-6xl font-extrabold">
                   $39
-                  <span class="ml-1 text-2xl font-medium text-blue-gray-500"> /mo </span>
+                  <span class="ml-1 text-2xl font-medium text-blue-gray-500"> /mo</span>
                 </div>
                 <p class="mt-5 text-lg text-blue-gray-500">
                   Scale up the the way your work with media. Ideal for use at work &amp; when working in teams.

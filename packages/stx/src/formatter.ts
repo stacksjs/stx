@@ -44,16 +44,16 @@ export function formatStxContent(content: string, options: FormatterOptions = {}
     formatted = formatted.replace(/[ \t]+$/gm, '')
   }
 
-  // Normalize script tag formatting
-  formatted = formatScriptTags(formatted, opts)
+  // Skip script tag formatting - it breaks existing code
+  // formatted = formatScriptTags(formatted, opts)
 
-  // Format HTML structure
+  // Format HTML structure (only indentation inside directives)
   formatted = formatHtml(formatted, opts)
 
-  // Format attributes
-  formatted = formatAttributes(formatted, opts)
+  // Skip attribute formatting to avoid breaking existing code
+  // formatted = formatAttributes(formatted, opts)
 
-  // Format stx directives
+  // Normalize directive spacing (but don't modify structure)
   formatted = formatStxDirectives(formatted, opts)
 
   // Final pass: remove any trailing whitespace that might have been introduced
@@ -61,6 +61,70 @@ export function formatStxContent(content: string, options: FormatterOptions = {}
     formatted = formatted.replace(/[ \t]+$/gm, '')
     // Also remove whitespace before closing tags (but only when there's content before it on the same line)
     formatted = formatted.replace(/(\S)[ \t]+(<\/[^>]+>)/g, '$1$2')
+  }
+
+  // Normalize line endings and ensure file ends with newline
+  formatted = formatted.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  if (!formatted.endsWith('\n')) {
+    formatted += '\n'
+  }
+
+  return formatted
+}
+
+/**
+ * Format markdown file content, processing stx code blocks
+ */
+export function formatMarkdownContent(content: string, options: FormatterOptions = {}): string {
+  const opts = { ...DEFAULT_OPTIONS, ...options }
+
+  // Handle empty or whitespace-only content
+  if (content.trim() === '') {
+    return '\n'
+  }
+
+  let formatted = content
+
+  // Find and format code blocks that contain html or stx
+  // Match: ```html or ```stx code blocks, preserving the indentation of the fence
+  formatted = formatted.replace(/^( *)```(html|stx)\n([\s\S]*?)^( *)```/gm, (match, startIndent, lang, code, endIndent) => {
+    // Detect the base indentation from the code block content
+    const lines = code.split('\n')
+    const nonEmptyLines = lines.filter(line => line.trim().length > 0)
+
+    if (nonEmptyLines.length === 0) {
+      return match // Keep empty code blocks as-is
+    }
+
+    // Find minimum indentation in the code block
+    const minIndent = Math.min(
+      ...nonEmptyLines.map(line => {
+        const match = line.match(/^( *)/)
+        return match ? match[1].length : 0
+      })
+    )
+
+    // Remove the base indentation, format, then restore with fence indentation
+    const dedented = lines.map(line => {
+      if (line.trim().length === 0) return ''
+      return line.substring(minIndent)
+    }).join('\n')
+
+    // Format the dedented code
+    const formattedCode = formatStxContent(dedented, opts).trimEnd()
+
+    // Re-indent to match the fence indentation
+    const reindented = formattedCode.split('\n').map(line => {
+      if (line.trim().length === 0) return ''
+      return startIndent + line
+    }).join('\n')
+
+    return `${startIndent}\`\`\`${lang}\n${reindented}\n${startIndent}\`\`\``
+  })
+
+  // Remove trailing whitespace from all lines
+  if (opts.trimTrailingWhitespace) {
+    formatted = formatted.replace(/[ \t]+$/gm, '')
   }
 
   // Normalize line endings and ensure file ends with newline
@@ -92,10 +156,17 @@ function formatScriptTags(content: string, options: Required<FormatterOptions>):
       if (index === lines.length - 1 && line.trim() === '')
         return '' // Empty last line
 
-      // Add consistent indentation
+      // Preserve comment formatting (including JSDoc)
       const lineTrimmed = line.trim()
       if (lineTrimmed === '')
         return ''
+
+      // Check if this is part of a multi-line comment
+      if (lineTrimmed.startsWith('/**') || lineTrimmed.startsWith('/*') || lineTrimmed.startsWith('*') || lineTrimmed.startsWith('*/')) {
+        // Preserve comment indentation relative to base indentation
+        const indent = options.useTabs ? '\t' : ' '.repeat(options.indentSize)
+        return `${indent}${lineTrimmed}`
+      }
 
       const indent = options.useTabs ? '\t' : ' '.repeat(options.indentSize)
       return `${indent}${lineTrimmed}`
@@ -116,189 +187,121 @@ function formatScriptTags(content: string, options: Required<FormatterOptions>):
 
 /**
  * Format HTML structure with proper indentation
+ * Tracks both directive depth AND HTML nesting depth
  */
 function formatHtml(content: string, options: Required<FormatterOptions>): string {
-  // Pre-process: Split inline nested HTML elements and directives into separate lines
-  let preprocessed = content
-
-  // First, protect whitespace-sensitive tags from formatting (pre, code, textarea, style)
-  const whitespaceSensitivePlaceholders: string[] = []
-  const whitespaceTags = ['pre', 'code', 'textarea', 'style']
-  for (const tag of whitespaceTags) {
-    const regex = new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, 'gi')
-    preprocessed = preprocessed.replace(regex, (match) => {
-      const placeholder = `__WHITESPACE_TAG_${whitespaceSensitivePlaceholders.length}__`
-      whitespaceSensitivePlaceholders.push(match)
-      return placeholder
-    })
-  }
-
-  // Then protect empty tags from being split (e.g., <script></script>, <div></div>)
-  const emptyTagPlaceholders: string[] = []
-  preprocessed = preprocessed.replace(/<(\w+)([^>]*)><\/\1>/g, (match) => {
-    const placeholder = `__EMPTY_TAG_${emptyTagPlaceholders.length}__`
-    emptyTagPlaceholders.push(match)
-    return placeholder
-  })
-
-  // Extract embedded directives from HTML tags
-  // Match: <tag ... @directive(...) ... @enddirective>
-  preprocessed = preprocessed.replace(/<(\w+)([^>]*?)(@\w+\([^)]*\))([^>]*?)(@end\w+)([^>]*)>/g, (match, tagName, beforeDirective, openDirective, betweenDirectives, closeDirective, afterDirective) => {
-    // Split into separate lines: tag opening, directive, content between, close directive, tag continuation
-    return `<${tagName}${beforeDirective}\n${openDirective}\n${betweenDirectives.trim()}\n${closeDirective}${afterDirective}>`
-  })
-
-  // Split between HTML tags: ><  → >\n<
-  // But preserve inline elements when both tags are inline-level elements with text
-  preprocessed = preprocessed.replace(/>(\s*)</g, (match, whitespace, offset, string) => {
-    // If there's already whitespace including newlines, keep it
-    if (whitespace.includes('\n')) {
-      return match
-    }
-
-    // Check the tags on both sides of this split point
-    const before = string.substring(Math.max(0, offset - 50), offset + 1)
-    const after = string.substring(offset + match.length - 1, Math.min(string.length, offset + match.length + 50))
-
-    // Extract tag names
-    const closingTagMatch = before.match(/<\/(\w+)>$/)
-    const openingTagMatch = after.match(/^<(\w+)/)
-
-    // List of inline-level HTML elements
-    const inlineTags = ['span', 'a', 'strong', 'em', 'b', 'i', 'u', 'small', 'mark', 'del', 'ins', 'sub', 'sup', 'code', 'kbd', 'samp', 'var', 'abbr', 'cite', 'q', 'dfn', 'time']
-
-    if (closingTagMatch && openingTagMatch) {
-      const closingTag = closingTagMatch[1].toLowerCase()
-      const openingTag = openingTagMatch[1].toLowerCase()
-
-      // If both are inline tags, check for text content on the line
-      if (inlineTags.includes(closingTag) && inlineTags.includes(openingTag)) {
-        // Find the line boundaries
-        const beforeMatch = string.substring(0, offset)
-        const lastNewline = beforeMatch.lastIndexOf('\n')
-        const lineStart = lastNewline + 1
-        const afterMatch = string.substring(offset + match.length)
-        const nextNewline = afterMatch.indexOf('\n')
-        const lineEnd = nextNewline === -1 ? string.length : offset + match.length + nextNewline
-
-        // Get the full current line
-        const currentLine = string.substring(lineStart, lineEnd)
-
-        // Check if line has text content mixed with tags
-        const withoutTags = currentLine.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
-
-        // If there's text content, preserve inline formatting
-        if (withoutTags.length > 0) {
-          return match
-        }
-      }
-    }
-
-    // Otherwise add a newline between tags
-    return '>\n<'
-  })
-
-  // Split before directives: >@ → >\n@
-  preprocessed = preprocessed.replace(/>(\s*)@/g, (match, whitespace) => {
-    if (whitespace.includes('\n')) {
-      return match
-    }
-    return '>\n@'
-  })
-
-  // Split after closing directives before tags: @endif< → @endif\n<
-  preprocessed = preprocessed.replace(/(@end\w+)(\s*)</g, (match, directive, whitespace) => {
-    if (whitespace.includes('\n')) {
-      return match
-    }
-    return `${directive}\n<`
-  })
-
-  // Split after directive statements before other directives: )@ → )\n@
-  preprocessed = preprocessed.replace(/\)(\s*)@/g, (match, whitespace) => {
-    if (whitespace.includes('\n')) {
-      return match
-    }
-    return ')\n@'
-  })
-
-  // Split after directive statements before tags: )<tag> → )\n<tag>
-  preprocessed = preprocessed.replace(/\)(\s*)</g, (match, whitespace) => {
-    if (whitespace.includes('\n')) {
-      return match
-    }
-    return ')\n<'
-  })
-
-  // Split between closing directives: @endif@endif → @endif\n@endif
-  preprocessed = preprocessed.replace(/(@end\w+)(\s*)@/g, (match, directive, whitespace) => {
-    if (whitespace.includes('\n')) {
-      return match
-    }
-    return `${directive}\n@`
-  })
-
-  // Split standalone directives (no parens) from tags: @csrf< → @csrf\n<, @endif< → @endif\n<
-  // Match @directive< where there's no ( between @ and <
-  preprocessed = preprocessed.replace(/(@\w+)(?!\s*\()(\s*)</g, (match, directive, whitespace) => {
-    if (whitespace.includes('\n')) {
-      return match
-    }
-    return `${directive}\n<`
-  })
-
-  const lines = preprocessed.split('\n')
+  const lines = content.split('\n')
   const formattedLines: string[] = []
-  let indentLevel = 0
+  const directiveStack: number[] = [] // Track base indentation for each directive level
+  let htmlDepth = 0 // Track HTML element nesting inside directives
+  let inScriptTag = false // Track if we're inside a <script> tag
   const indent = options.useTabs ? '\t' : ' '.repeat(options.indentSize)
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim()
+    const line = lines[i]
+    const trimmed = line.trim()
 
-    if (line === '') {
-      formattedLines.push('')
+    // Empty lines pass through as-is
+    if (trimmed === '') {
+      formattedLines.push(line)
       continue
     }
 
-    // Handle closing tags
-    if (line.startsWith('</') || line.startsWith('@end')) {
-      indentLevel = Math.max(0, indentLevel - 1)
+    // Get current line indentation
+    const currentIndent = line.match(/^(\s*)/)?.[1] || ''
+    const currentIndentLevel = Math.floor(currentIndent.length / options.indentSize)
+
+    // Track script tag state
+    if (trimmed.match(/<script\b/i)) {
+      inScriptTag = true
+    }
+    if (trimmed.match(/<\/script>/i)) {
+      inScriptTag = false
     }
 
-    // Add the line with proper indentation
-    const indentedLine = indentLevel > 0 ? indent.repeat(indentLevel) + line : line
-    formattedLines.push(indentedLine)
+    // Handle closing directives
+    if (trimmed.startsWith('@end')) {
+      directiveStack.pop()
+      htmlDepth = 0 // Reset HTML depth when exiting directive
+      inScriptTag = false // Reset script tag state
+      formattedLines.push(line)
+      continue
+    }
 
-    // Handle opening tags (but not self-closing)
-    if (line.startsWith('<') && !line.includes('/>') && !line.startsWith('</')) {
-      // Check if it's not a self-closing tag or comment
-      // Also check if the line contains both opening and closing tags (e.g., <title>Text</title>)
-      // eslint-disable-next-line regexp/optimal-quantifier-concatenation
-      const hasMatchingClosingTag = line.match(/<(\w+)[^>]*>.*<\/\1>/)
-      if (!line.includes('<!') && !isSelfClosingTag(line) && !hasMatchingClosingTag) {
-        indentLevel++
+    // Handle middle directives (@else, @elseif) - these are at the same level as @if
+    if (trimmed.startsWith('@else') || trimmed.startsWith('@elseif')) {
+      // These should be at the same level as the opening @if
+      htmlDepth = 0 // Reset HTML depth for new branch
+      inScriptTag = false // Reset script tag state
+      if (directiveStack.length > 0) {
+        const baseIndentLevel = directiveStack[directiveStack.length - 1]
+        const expectedIndent = indent.repeat(baseIndentLevel)
+        formattedLines.push(expectedIndent + trimmed)
+      } else {
+        formattedLines.push(line)
       }
+      continue
     }
 
-    // Handle stx directives that open blocks
-    if (line.startsWith('@') && isOpeningDirective(line)) {
-      indentLevel++
+    // Handle opening directives
+    if (trimmed.startsWith('@') && isOpeningDirective(trimmed)) {
+      // Remember the indentation level of this directive
+      directiveStack.push(currentIndentLevel)
+      htmlDepth = 0 // Reset HTML depth
+      // Don't reset inScriptTag - we might be inside a script tag with directives
+      formattedLines.push(line)
+      continue
+    }
+
+    // For content inside directives, ensure proper indentation
+    if (directiveStack.length > 0) {
+      // If we're inside a script tag, preserve the original formatting
+      if (inScriptTag) {
+        formattedLines.push(line)
+        continue
+      }
+
+      // Check if this line is just a closing tag marker (like a lone ">")
+      const isJustClosingBracket = trimmed === '>'
+
+      // Check if this line closes an HTML tag
+      const isClosingTag = trimmed.startsWith('</')
+      const isOpeningTag = trimmed.startsWith('<') && !isClosingTag && !trimmed.startsWith('<!--')
+      const isSelfClosing = trimmed.includes('/>') || isSelfClosingTag(trimmed)
+      const hasCompleteTag = hasCompleteElement(trimmed)
+
+      // Decrease depth BEFORE formatting if this is a closing tag
+      if (isClosingTag) {
+        htmlDepth = Math.max(0, htmlDepth - 1)
+      }
+
+      // Get the base indentation from the last directive
+      const baseIndentLevel = directiveStack[directiveStack.length - 1]
+
+      // For a closing bracket on its own line (multi-line tag), keep original indentation
+      if (isJustClosingBracket) {
+        formattedLines.push(line)
+      } else {
+        // Total indentation = directive base + 1 (for being inside directive) + HTML depth
+        const expectedIndentLevel = baseIndentLevel + 1 + htmlDepth
+        const expectedIndent = indent.repeat(expectedIndentLevel)
+
+        // Apply the indentation
+        formattedLines.push(expectedIndent + trimmed)
+      }
+
+      // Increase depth AFTER formatting if this is an opening tag (but not self-closing or complete)
+      // Don't increase depth for multi-line tags (when the line is just ">")
+      if (isOpeningTag && !isSelfClosing && !hasCompleteTag && !isJustClosingBracket) {
+        htmlDepth++
+      }
+    } else {
+      // Outside directives, keep as-is
+      formattedLines.push(line)
     }
   }
 
-  let result = formattedLines.join('\n')
-
-  // Restore whitespace-sensitive tag placeholders first
-  whitespaceSensitivePlaceholders.forEach((tag, index) => {
-    result = result.replace(`__WHITESPACE_TAG_${index}__`, tag)
-  })
-
-  // Then restore empty tag placeholders
-  emptyTagPlaceholders.forEach((tag, index) => {
-    result = result.replace(`__EMPTY_TAG_${index}__`, tag)
-  })
-
-  return result
+  return formattedLines.join('\n')
 }
 
 /**
@@ -349,11 +352,20 @@ function isSelfClosingTag(line: string): boolean {
 
   const tagMatch = line.match(/<(\w+)/)
   if (tagMatch) {
-    const tagName = tagMatch[1].toLowerCase()
-    return selfClosingTags.includes(tagName)
+    const tagName = tagMatch[1]
+    return selfClosingTags.includes(tagName.toLowerCase())
   }
 
   return false
+}
+
+/**
+ * Check if a line contains a complete element (opening and closing tag on same line)
+ */
+function hasCompleteElement(line: string): boolean {
+  // Match patterns like <tag>...</tag> or <tag attr="value">...</tag>
+  const completeElementRegex = /<(\w+)(?:\s[^>]*)?>[\s\S]*?<\/\1>/
+  return completeElementRegex.test(line)
 }
 
 /**

@@ -14,7 +14,7 @@ import { initFile } from '../src/init'
 import { plugin as stxPlugin } from '../src/plugin'
 import { gitHash } from '../src/release'
 import { performanceMonitor } from '../src/performance-utils'
-import { formatStxContent } from '../src/formatter'
+import { formatMarkdownContent, formatStxContent } from '../src/formatter'
 import { analyzeProject } from '../src/analyzer'
 
 const cli = new CLI('stx')
@@ -1391,13 +1391,15 @@ else {
     })
 
   cli
-    .command('format [patterns...]', 'Format STX files automatically')
+    .command('format [patterns...]', 'Format STX and Markdown files automatically')
     .option('--check', 'Check if files are formatted (exit with error if not)')
     .option('--write', 'Write formatted files back to disk (default)')
     .option('--diff', 'Show diff of changes that would be made')
     .option('--ignore <patterns>', 'Comma-separated patterns to ignore')
     .example('stx format')
     .example('stx format **/*.stx')
+    .example('stx format **/*.md')
+    .example('stx format **/*.{stx,md}')
     .example('stx format --check')
     .example('stx format --diff --ignore node_modules/**')
     .action(async (patterns: string[], options: {
@@ -1414,28 +1416,35 @@ else {
           process.exit(1)
         }
 
-        const patternArray = patterns && patterns.length > 0 ? patterns : ['**/*.stx']
-        const ignorePatterns = options.ignore ? options.ignore.split(',').map(p => p.trim()) : []
+        const patternArray = patterns && patterns.length > 0 ? patterns : ['**/*.stx', '**/*.md']
+        const ignorePatterns = options.ignore ? options.ignore.split(',').map(p => p.trim()) : ['node_modules/**', 'dist/**', '.git/**']
 
         let allFiles: string[] = []
 
         // Expand all patterns
         for (const pattern of patternArray) {
           const files = await Array.fromAsync(new Bun.Glob(pattern).scan({ onlyFiles: true, absolute: true }))
-          allFiles.push(...files.filter(f => f.endsWith('.stx')))
+          allFiles.push(...files.filter(f => f.endsWith('.stx') || f.endsWith('.md')))
         }
 
         // Remove ignored files
         allFiles = allFiles.filter(file => {
-          return !ignorePatterns.some(ignore => file.includes(ignore))
+          return !ignorePatterns.some(ignore => {
+            // Convert glob pattern to regex for matching
+            const regexPattern = ignore.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*')
+            return new RegExp(regexPattern).test(file)
+          })
         })
 
         if (allFiles.length === 0) {
-          console.log('No STX files found to format.')
+          console.log('No STX or Markdown files found to format.')
           return
         }
 
-        console.log(`Formatting ${allFiles.length} STX files...`)
+        const stxFiles = allFiles.filter(f => f.endsWith('.stx'))
+        const mdFiles = allFiles.filter(f => f.endsWith('.md'))
+
+        console.log(`Formatting ${allFiles.length} files (${stxFiles.length} .stx, ${mdFiles.length} .md)...`)
 
         let formattedCount = 0
         let errorCount = 0
@@ -1443,7 +1452,8 @@ else {
         for (const file of allFiles) {
           try {
             const content = await Bun.file(file).text()
-            const formatted = formatStxContent(content)
+            const isMarkdown = file.endsWith('.md')
+            const formatted = isMarkdown ? formatMarkdownContent(content) : formatStxContent(content)
 
             if (content !== formatted) {
               if (options.check) {

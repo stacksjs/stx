@@ -113,13 +113,13 @@
   <p>Click a color to change the theme:</p>
 
   <div class="color-options">
-    @for (color of colors)
+    @for(color of colors)
       <div
         class="color-option {{ color.value === themeColor ? 'active' : '' }}"
         style="background-color: {{ color.value }}"
         onclick="changeThemeColor('{{ color.value }}')"
         title="{{ color.name }}"
-      ></div>
+        ></div>
     @endfor
   </div>
 </div>
