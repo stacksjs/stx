@@ -3,16 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STACKS.JS - Coming Soon</title>
+  <title>Stacks.js - Coming Soon</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="homepage.css?v=6">
-  <style>
-    /* Submenu positioning handled in CSS file */
-  </style>
-
+  <link rel="stylesheet" href="homepage.css">
 </head>
+
 <body>
   <div class="desktop">
     <!-- Desktop Icons -->
@@ -63,17 +60,6 @@
         >
           <div class="desktop-icon-image">💬</div>
           <div class="desktop-icon-label">Discord</div>
-        </button>
-
-        <button
-          class="desktop-icon"
-          data-icon-id="licenses"
-          data-icon-type="window"
-          data-icon-section="licenses"
-          style="left: 20px; top: 500px;"
-        >
-          <div class="desktop-icon-image">🔑</div>
-          <div class="desktop-icon-label">License Manager</div>
         </button>
     </div>
 
