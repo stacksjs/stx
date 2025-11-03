@@ -90,7 +90,7 @@ export function formatMarkdownContent(content: string, options: FormatterOptions
   formatted = formatted.replace(/^( *)```(html|stx)\n([\s\S]*?)^( *)```/gm, (match, startIndent, lang, code, _endIndent) => {
     // Detect the base indentation from the code block content
     const lines = code.split('\n')
-    const nonEmptyLines = lines.filter(line => line.trim().length > 0)
+    const nonEmptyLines = lines.filter((line: string) => line.trim().length > 0)
 
     if (nonEmptyLines.length === 0) {
       return match // Keep empty code blocks as-is
@@ -98,14 +98,14 @@ export function formatMarkdownContent(content: string, options: FormatterOptions
 
     // Find minimum indentation in the code block
     const minIndent = Math.min(
-      ...nonEmptyLines.map((line) => {
+      ...nonEmptyLines.map((line: string) => {
         const match = line.match(/^( *)/)
         return match ? match[1].length : 0
       }),
     )
 
     // Remove the base indentation, format, then restore with fence indentation
-    const dedented = lines.map((line) => {
+    const dedented = lines.map((line: string) => {
       if (line.trim().length === 0)
         return ''
       return line.substring(minIndent)
