@@ -50,8 +50,8 @@ export function formatStxContent(content: string, options: FormatterOptions = {}
   // Format HTML structure (only indentation inside directives)
   formatted = formatHtml(formatted, opts)
 
-  // Skip attribute formatting to avoid breaking existing code
-  // formatted = formatAttributes(formatted, opts)
+  // Format attributes if enabled
+  formatted = formatAttributes(formatted, opts)
 
   // Normalize directive spacing (but don't modify structure)
   formatted = formatStxDirectives(formatted, opts)
@@ -188,11 +188,66 @@ function _formatScriptTags(content: string, options: Required<FormatterOptions>)
 }
 
 /**
+ * Split inline tags onto separate lines
+ * But preserve mixed text content (text + tags on same line)
+ */
+function splitInlineTags(content: string): string {
+  // Split on tags, but keep mixed text/tag content together
+  let result = content
+
+  // Split directives onto their own lines FIRST (before other processing)
+  // Split opening block directives
+  result = result.replace(/(@(?:if|foreach|for|while|unless|section|component|slot|push|prepend)(?:\([^)]*\))?)/g, '\n$1\n')
+  // Split closing directives
+  result = result.replace(/(@end\w+)/g, '\n$1\n')
+  // Split middle directives
+  result = result.replace(/(@(?:else|elseif)(?:\([^)]*\))?)/g, '\n$1\n')
+
+  // Split opening tags onto new lines (unless there's text before them)
+  result = result.replace(/(?<=>)(<(?!\/)[^>]+>)/g, '\n$1')
+
+  // Split closing tags onto new lines (unless there's text after them on same line)
+  result = result.replace(/(<\/[^>]+>)(?=<)/g, '$1\n')
+
+  // Also split before closing tags if there's an opening tag before
+  // BUT don't split when it's an empty element (opening immediately followed by closing)
+  result = result.replace(/(>)(<\/)(?![\w\s]*>$)/g, (match, gt, closeTag, offset, string) => {
+    // Check if this is part of an empty element pattern like <tag></tag>
+    const before = string.substring(Math.max(0, offset - 50), offset)
+    const after = string.substring(offset + match.length, Math.min(string.length, offset + match.length + 20))
+
+    // If the closing tag immediately follows opening (empty element), don't split
+    if (before.match(/<\w+[^>]*>$/) && after.match(/^\w+>/)) {
+      const openTagName = before.match(/<(\w+)[^>]*>$/)?.[1]
+      const closeTagName = after.match(/^(\w+)>/)?.[1]
+      if (openTagName === closeTagName) {
+        return match // Keep empty elements together
+      }
+    }
+    return gt + '\n' + closeTag
+  })
+
+  // Clean up multiple consecutive newlines
+  result = result.replace(/\n\n+/g, '\n')
+
+  // Remove leading/trailing newlines from each line
+  result = result.split('\n').map((line: string) => line.trim()).join('\n')
+
+  // Remove empty lines at start/end
+  result = result.replace(/^\n+/, '').replace(/\n+$/, '')
+
+  return result
+}
+
+/**
  * Format HTML structure with proper indentation
  * Tracks total indentation level for both HTML and directives
  */
 function formatHtml(content: string, options: Required<FormatterOptions>): string {
-  const lines = content.split('\n')
+  // First, split inline tags onto separate lines
+  const preprocessed = splitInlineTags(content)
+
+  const lines = preprocessed.split('\n')
   const formattedLines: string[] = []
   let indentLevel = 0 // Track current indentation level
   let inScriptTag = false // Track if we're inside a <script> tag
@@ -355,7 +410,7 @@ function isOpeningDirective(line: string): boolean {
 /**
  * Format attributes in HTML tags
  */
-function _formatAttributes(content: string, options: Required<FormatterOptions>): string {
+function formatAttributes(content: string, options: Required<FormatterOptions>): string {
   if (!options.sortAttributes)
     return content
 
