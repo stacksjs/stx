@@ -1,6 +1,6 @@
+import type { ModalOptions, ModalResult } from './types'
 import { spawn } from 'node:child_process'
 import process from 'node:process'
-import type { ModalOptions, ModalResult } from './types'
 
 /**
  * Show a native modal dialog
@@ -54,7 +54,7 @@ export async function showModal(options: ModalOptions): Promise<ModalResult> {
       cancelled,
     }
   }
-  catch (error) {
+  catch {
     // User cancelled the dialog
     return {
       buttonIndex: options.cancelButton !== undefined ? options.cancelButton : 0,

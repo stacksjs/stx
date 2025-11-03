@@ -87,7 +87,7 @@ export function formatMarkdownContent(content: string, options: FormatterOptions
 
   // Find and format code blocks that contain html or stx
   // Match: ```html or ```stx code blocks, preserving the indentation of the fence
-  formatted = formatted.replace(/^( *)```(html|stx)\n([\s\S]*?)^( *)```/gm, (match, startIndent, lang, code, endIndent) => {
+  formatted = formatted.replace(/^( *)```(html|stx)\n([\s\S]*?)^( *)```/gm, (match, startIndent, lang, code, _endIndent) => {
     // Detect the base indentation from the code block content
     const lines = code.split('\n')
     const nonEmptyLines = lines.filter(line => line.trim().length > 0)
@@ -98,15 +98,16 @@ export function formatMarkdownContent(content: string, options: FormatterOptions
 
     // Find minimum indentation in the code block
     const minIndent = Math.min(
-      ...nonEmptyLines.map(line => {
+      ...nonEmptyLines.map((line) => {
         const match = line.match(/^( *)/)
         return match ? match[1].length : 0
-      })
+      }),
     )
 
     // Remove the base indentation, format, then restore with fence indentation
-    const dedented = lines.map(line => {
-      if (line.trim().length === 0) return ''
+    const dedented = lines.map((line) => {
+      if (line.trim().length === 0)
+        return ''
       return line.substring(minIndent)
     }).join('\n')
 
@@ -114,8 +115,9 @@ export function formatMarkdownContent(content: string, options: FormatterOptions
     const formattedCode = formatStxContent(dedented, opts).trimEnd()
 
     // Re-indent to match the fence indentation
-    const reindented = formattedCode.split('\n').map(line => {
-      if (line.trim().length === 0) return ''
+    const reindented = formattedCode.split('\n').map((line) => {
+      if (line.trim().length === 0)
+        return ''
       return startIndent + line
     }).join('\n')
 
@@ -139,7 +141,7 @@ export function formatMarkdownContent(content: string, options: FormatterOptions
 /**
  * Format script tags within stx files
  */
-function formatScriptTags(content: string, options: Required<FormatterOptions>): string {
+function _formatScriptTags(content: string, options: Required<FormatterOptions>): string {
   return content.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, (match, scriptContent) => {
     const trimmed = scriptContent.trim()
 
@@ -237,7 +239,8 @@ function formatHtml(content: string, options: Required<FormatterOptions>): strin
         const baseIndentLevel = directiveStack[directiveStack.length - 1]
         const expectedIndent = indent.repeat(baseIndentLevel)
         formattedLines.push(expectedIndent + trimmed)
-      } else {
+      }
+      else {
         formattedLines.push(line)
       }
       continue
@@ -281,7 +284,8 @@ function formatHtml(content: string, options: Required<FormatterOptions>): strin
       // For a closing bracket on its own line (multi-line tag), keep original indentation
       if (isJustClosingBracket) {
         formattedLines.push(line)
-      } else {
+      }
+      else {
         // Total indentation = directive base + 1 (for being inside directive) + HTML depth
         const expectedIndentLevel = baseIndentLevel + 1 + htmlDepth
         const expectedIndent = indent.repeat(expectedIndentLevel)
@@ -295,7 +299,8 @@ function formatHtml(content: string, options: Required<FormatterOptions>): strin
       if (isOpeningTag && !isSelfClosing && !hasCompleteTag && !isJustClosingBracket) {
         htmlDepth++
       }
-    } else {
+    }
+    else {
       // Outside directives, keep as-is
       formattedLines.push(line)
     }
@@ -386,7 +391,7 @@ function isOpeningDirective(line: string): boolean {
 /**
  * Format attributes in HTML tags
  */
-function formatAttributes(content: string, options: Required<FormatterOptions>): string {
+function _formatAttributes(content: string, options: Required<FormatterOptions>): string {
   if (!options.sortAttributes)
     return content
 
