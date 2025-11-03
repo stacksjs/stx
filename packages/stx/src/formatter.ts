@@ -189,13 +189,12 @@ function _formatScriptTags(content: string, options: Required<FormatterOptions>)
 
 /**
  * Format HTML structure with proper indentation
- * Tracks both directive depth AND HTML nesting depth
+ * Tracks total indentation level for both HTML and directives
  */
 function formatHtml(content: string, options: Required<FormatterOptions>): string {
   const lines = content.split('\n')
   const formattedLines: string[] = []
-  const directiveStack: number[] = [] // Track base indentation for each directive level
-  let htmlDepth = 0 // Track HTML element nesting inside directives
+  let indentLevel = 0 // Track current indentation level
   let inScriptTag = false // Track if we're inside a <script> tag
   const indent = options.useTabs ? '\t' : ' '.repeat(options.indentSize)
 
@@ -205,104 +204,69 @@ function formatHtml(content: string, options: Required<FormatterOptions>): strin
 
     // Empty lines pass through as-is
     if (trimmed === '') {
+      formattedLines.push('')
+      continue
+    }
+
+    // Track script tag state - but handle opening/closing script tags normally first
+    const hasScriptOpen = trimmed.match(/<script\b/i)
+    const hasScriptClose = trimmed.match(/<\/script>/i)
+
+    // If we're inside a script tag content (not the opening/closing tags), preserve formatting
+    if (inScriptTag && !hasScriptClose) {
       formattedLines.push(line)
       continue
     }
 
-    // Get current line indentation
-    const currentIndent = line.match(/^(\s*)/)?.[1] || ''
-    const currentIndentLevel = Math.floor(currentIndent.length / options.indentSize)
+    // Check if this line is just a closing tag marker (like a lone ">")
+    const isJustClosingBracket = trimmed === '>'
 
-    // Track script tag state
-    if (trimmed.match(/<script\b/i)) {
-      inScriptTag = true
-    }
-    if (trimmed.match(/<\/script>/i)) {
-      inScriptTag = false
+    // Handle mixed inline content (text + tags on same line) - keep inline
+    if (hasCompleteElement(trimmed) && !trimmed.startsWith('<') && !trimmed.startsWith('@')) {
+      formattedLines.push(indent.repeat(indentLevel) + trimmed)
+      continue
     }
 
-    // Handle closing directives
-    if (trimmed.startsWith('@end')) {
-      directiveStack.pop()
-      htmlDepth = 0 // Reset HTML depth when exiting directive
-      inScriptTag = false // Reset script tag state
+    // Check what kind of line this is
+    const isClosingDirective = trimmed.startsWith('@end')
+    const isMiddleDirective = trimmed.startsWith('@else') || trimmed.startsWith('@elseif')
+    const isDirectiveOpening = trimmed.startsWith('@') && isOpeningDirective(trimmed)
+    const isDocType = trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<!doctype')
+    const isComment = trimmed.startsWith('<!--')
+    const isClosingTag = trimmed.startsWith('</')
+    const isOpeningTag = trimmed.startsWith('<') && !isClosingTag && !isComment && !isDocType
+    const isSelfClosing = trimmed.includes('/>') || isSelfClosingTag(trimmed)
+    const hasCompleteTag = hasCompleteElement(trimmed)
+
+    // Decrease indent BEFORE printing closing tags/directives
+    if (isClosingTag || isClosingDirective) {
+      indentLevel = Math.max(0, indentLevel - 1)
+    }
+
+    // Middle directives stay at same level as their opening directive
+    const currentIndent = isMiddleDirective
+      ? Math.max(0, indentLevel - 1)
+      : indentLevel
+
+    // Print the line with proper indentation (unless it's just a closing bracket)
+    if (isJustClosingBracket) {
       formattedLines.push(line)
-      continue
-    }
-
-    // Handle middle directives (@else, @elseif) - these are at the same level as @if
-    if (trimmed.startsWith('@else') || trimmed.startsWith('@elseif')) {
-      // These should be at the same level as the opening @if
-      htmlDepth = 0 // Reset HTML depth for new branch
-      inScriptTag = false // Reset script tag state
-      if (directiveStack.length > 0) {
-        const baseIndentLevel = directiveStack[directiveStack.length - 1]
-        const expectedIndent = indent.repeat(baseIndentLevel)
-        formattedLines.push(expectedIndent + trimmed)
-      }
-      else {
-        formattedLines.push(line)
-      }
-      continue
-    }
-
-    // Handle opening directives
-    if (trimmed.startsWith('@') && isOpeningDirective(trimmed)) {
-      // Remember the indentation level of this directive
-      directiveStack.push(currentIndentLevel)
-      htmlDepth = 0 // Reset HTML depth
-      // Don't reset inScriptTag - we might be inside a script tag with directives
-      formattedLines.push(line)
-      continue
-    }
-
-    // For content inside directives, ensure proper indentation
-    if (directiveStack.length > 0) {
-      // If we're inside a script tag, preserve the original formatting
-      if (inScriptTag) {
-        formattedLines.push(line)
-        continue
-      }
-
-      // Check if this line is just a closing tag marker (like a lone ">")
-      const isJustClosingBracket = trimmed === '>'
-
-      // Check if this line closes an HTML tag
-      const isClosingTag = trimmed.startsWith('</')
-      const isOpeningTag = trimmed.startsWith('<') && !isClosingTag && !trimmed.startsWith('<!--')
-      const isSelfClosing = trimmed.includes('/>') || isSelfClosingTag(trimmed)
-      const hasCompleteTag = hasCompleteElement(trimmed)
-
-      // Decrease depth BEFORE formatting if this is a closing tag
-      if (isClosingTag) {
-        htmlDepth = Math.max(0, htmlDepth - 1)
-      }
-
-      // Get the base indentation from the last directive
-      const baseIndentLevel = directiveStack[directiveStack.length - 1]
-
-      // For a closing bracket on its own line (multi-line tag), keep original indentation
-      if (isJustClosingBracket) {
-        formattedLines.push(line)
-      }
-      else {
-        // Total indentation = directive base + 1 (for being inside directive) + HTML depth
-        const expectedIndentLevel = baseIndentLevel + 1 + htmlDepth
-        const expectedIndent = indent.repeat(expectedIndentLevel)
-
-        // Apply the indentation
-        formattedLines.push(expectedIndent + trimmed)
-      }
-
-      // Increase depth AFTER formatting if this is an opening tag (but not self-closing or complete)
-      // Don't increase depth for multi-line tags (when the line is just ">")
-      if (isOpeningTag && !isSelfClosing && !hasCompleteTag && !isJustClosingBracket) {
-        htmlDepth++
-      }
     }
     else {
-      // Outside directives, keep as-is
-      formattedLines.push(line)
+      formattedLines.push(indent.repeat(currentIndent) + trimmed)
+    }
+
+    // Increase indent AFTER printing opening tags/directives
+    if ((isOpeningTag && !isSelfClosing && !hasCompleteTag && !isJustClosingBracket) || isDirectiveOpening) {
+      indentLevel++
+    }
+
+    // Update script tag state AFTER processing the line
+    if (hasScriptOpen) {
+      inScriptTag = true
+    }
+    if (hasScriptClose) {
+      inScriptTag = false
     }
   }
 
