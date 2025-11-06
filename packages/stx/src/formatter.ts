@@ -217,18 +217,19 @@ function splitInlineTags(content: string): string {
     const after = string.substring(offset + match.length, Math.min(string.length, offset + match.length + 20))
 
     // If the closing tag immediately follows opening (empty element), don't split
-    if (before.match(/<\w+[^>]*>$/) && after.match(/^\w+>/)) {
+    if (before.match(/<\w[^>]*>$/) && after.match(/^\w[^>]*>/)) {
+      // eslint-disable-next-line regexp/optimal-quantifier-concatenation
       const openTagName = before.match(/<(\w+)[^>]*>$/)?.[1]
       const closeTagName = after.match(/^(\w+)>/)?.[1]
       if (openTagName === closeTagName) {
         return match // Keep empty elements together
       }
     }
-    return gt + '\n' + closeTag
+    return `${gt}\n${closeTag}`
   })
 
   // Clean up multiple consecutive newlines
-  result = result.replace(/\n\n+/g, '\n')
+  result = result.replace(/\n{2,}/g, '\n')
 
   // Remove leading/trailing newlines from each line
   result = result.split('\n').map((line: string) => line.trim()).join('\n')
