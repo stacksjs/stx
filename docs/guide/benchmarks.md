@@ -357,6 +357,5 @@ While raw template rendering is slower than pre-compiled alternatives, STX deliv
 
 - Explore [Performance Optimization](/guide/performance)
 - Learn about [Template Caching](/api/caching)
-- Understand [Streaming SSR](/guide/streaming)
 - Review [Configuration Options](/api/config)
 - Check out [Best Practices](/guide/best-practices)

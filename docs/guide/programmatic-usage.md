@@ -360,7 +360,7 @@ Process stx directives in a template.
 
 ## Examples
 
-See [`examples/programmatic-docs`](./examples/programmatic-docs/) for a complete working example.
+See the [examples directory](https://github.com/stacksjs/stx/tree/main/examples) for complete working examples.
 
 ## Building BunPress
 
@@ -376,6 +376,6 @@ To build a complete BunPress system, combine these features:
 
 ## Next Steps
 
-- See [examples/programmatic-docs](./examples/programmatic-docs/) for full example
-- Check [API documentation](./docs/api/) for detailed reference
-- Read [package source](./packages/stx/src/serve.ts) for implementation details
+- See [examples](https://github.com/stacksjs/stx/tree/main/examples) for full examples
+- Check [API documentation](/api/index) for detailed reference
+- Read [package source](https://github.com/stacksjs/stx/blob/main/packages/stx/src/serve.ts) for implementation details

@@ -176,7 +176,7 @@ import {
 
 **Use with STX**: `stx dev examples/homepage.stx --native`
 
-**Learn More**: [Desktop Guide](/guide/desktop) | [Desktop API](/api/desktop)
+**Learn More**: [Desktop Guide](/guide/desktop)
 
 ---
 
@@ -205,7 +205,7 @@ import {
 } from '@stacksjs/iconify-core'
 ```
 
-**Learn More**: [Iconify Guide](/guide/iconify)
+**Learn More**: [Iconify](/iconify)
 
 ---
 
@@ -244,7 +244,7 @@ import {
 } from '@stacksjs/iconify-generator'
 ```
 
-**Learn More**: [Iconify Guide](/guide/iconify)
+**Learn More**: [Iconify](/iconify)
 
 ---
 
@@ -270,7 +270,7 @@ bun install
 - `PerformanceChart` - Performance visualization
 - Views: Dashboard, Templates, Performance, Config
 
-**Learn More**: [DevTools Documentation](/guide/devtools)
+**Learn More**: [DevTools source](https://github.com/stacksjs/stx/tree/main/packages/devtools)
 
 ---
 
@@ -313,7 +313,7 @@ bun run bench:all
 
 **Install**: Search for "stx" or "stacks" in VS Code Extensions
 
-**Learn More**: [VS Code Extension Documentation](/guide/vscode)
+**Learn More**: [VS Code Extension](/guide/tools/vscode)
 
 ---
 
@@ -346,7 +346,7 @@ import { HeartIcon } from '@stacksjs/iconify-lucide'
 <HeartIcon size="24" color="red" />
 ```
 
-**Learn More**: [Iconify Guide](/guide/iconify) | [Icon Collections](/collections)
+**Learn More**: [Iconify](/iconify)
 
 ---
 
@@ -525,7 +525,7 @@ cd packages/iconify-generator
 bun run dev
 ```
 
-See [Contributing Guide](/guide/contributing) for more details.
+See [Contributing Guide](/community/contributing) for more details.
 
 ---
 
@@ -534,6 +534,6 @@ See [Contributing Guide](/guide/contributing) for more details.
 - Start with the [Getting Started Guide](/guide/intro)
 - Review [Template Directives](/guide/directives)
 - Explore [Benchmark Results](/guide/benchmarks)
-- Check out [API Reference](/api)
+- Check out [API Reference](/api/reference)
 - Try [Desktop Applications](/guide/desktop)
-- Browse [Icon Collections](/collections)
+- Browse [Iconify](/iconify)

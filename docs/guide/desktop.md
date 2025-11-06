@@ -395,7 +395,7 @@ console.log(AVAILABLE_COMPONENTS)
 //  'Table', 'List', 'Tree', 'Timeline', 'Stepper']
 ```
 
-See the [Component API Reference](/api/desktop-components) for complete component documentation.
+See the [Component source code](https://github.com/stacksjs/stx/blob/main/packages/desktop/src/components.ts) for complete component documentation.
 
 ---
 
@@ -585,12 +585,12 @@ process.on('SIGINT', async () => {
 
 ## API Reference
 
-See the complete [Desktop API Reference](/api/desktop) for detailed documentation of all methods and types.
+See the [Desktop source code](https://github.com/stacksjs/stx/tree/main/packages/desktop/src) for detailed documentation of all methods and types.
 
 ## Next Steps
 
-- Explore [Desktop API Reference](/api/desktop)
-- Review [Component Documentation](/api/desktop-components)
+- Review [Desktop source code](https://github.com/stacksjs/stx/tree/main/packages/desktop/src)
+- Review [Component implementation](https://github.com/stacksjs/stx/blob/main/packages/desktop/src/components.ts)
 - Check out [Examples](https://github.com/stacksjs/stx/tree/main/packages/desktop/examples)
 - Learn about [STX CLI](/api/cli)
 - Understand [Configuration](/api/config)

@@ -147,7 +147,7 @@ await cacheTemplate(
 **Parameters:**
 - `filePath` (string): Path to the template file
 - `output` (string): Processed template output
-- `dependencies` (Set<string>): Set of dependency file paths
+- `dependencies` (Set\<string\>): Set of dependency file paths
 - `options` (StxOptions): Configuration options
 
 **Returns:** `Promise<void>`
