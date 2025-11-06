@@ -23,6 +23,7 @@ const config: ESLintConfig = stacks({
     '**/*.md',
     'packages/benchmarks/**',
     'packages/collections/**',
+    '**/.stx/cache/**',
   ],
 })
 

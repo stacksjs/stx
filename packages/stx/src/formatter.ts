@@ -195,37 +195,75 @@ function splitInlineTags(content: string): string {
   // Split on tags, but keep mixed text/tag content together
   let result = content
 
+  // Protect whitespace-preserving tags (pre, code, textarea) from splitting
+  const protectedBlocks: string[] = []
+  const placeholder = '__PROTECTED_BLOCK_'
+  result = result.replace(/(<(?:pre|code|textarea)[^>]*>)([\s\S]*?)(<\/(?:pre|code|textarea)>)/gi, (match) => {
+    const index = protectedBlocks.length
+    protectedBlocks.push(match)
+    return `${placeholder}${index}__`
+  })
+
   // Split directives onto their own lines FIRST (before other processing)
-  // Split opening block directives
-  result = result.replace(/(@(?:if|foreach|for|while|unless|section|component|slot|push|prepend)(?:\([^)]*\))?)/g, '\n$1\n')
+  // Split opening block directives - need to handle nested parentheses and quotes
+  result = result.replace(/(@(?:if|foreach|for|while|unless|section|component|slot|push|prepend|error|auth|guest|can)(?:\((?:[^()'"]|'[^']*'|"[^"]*"|\((?:[^()'"]|'[^']*'|"[^"]*")*\))*\))?)/g, '\n$1\n')
   // Split closing directives
   result = result.replace(/(@end\w+)/g, '\n$1\n')
-  // Split middle directives
-  result = result.replace(/(@(?:else|elseif)(?:\([^)]*\))?)/g, '\n$1\n')
+  // Split middle directives - same pattern for nested parens/quotes
+  result = result.replace(/(@(?:else|elseif|empty)(?:\((?:[^()'"]|'[^']*'|"[^"]*"|\((?:[^()'"]|'[^']*'|"[^"]*")*\))*\))?)/g, '\n$1\n')
+  // Split standalone directives (csrf, method, etc.)
+  result = result.replace(/(@(?:csrf|method|include|extends|yield|stack|vite|asset)(?:\([^)]*\))?)/g, '\n$1\n')
 
   // Split opening tags onto new lines (unless there's text before them)
-  result = result.replace(/(?<=>)(<(?!\/)[^>]+>)/g, '\n$1')
-
-  // Split closing tags onto new lines (unless there's text after them on same line)
-  result = result.replace(/(<\/[^>]+>)(?=<)/g, '$1\n')
+  // But not for empty self-closing elements
+  result = result.replace(/(?<=>)(<(?!\/)[^>]+>)/g, (match, _p1, offset, string) => {
+    // Don't split if this is immediately followed by its closing tag (empty element)
+    const after = string.substring(offset + match.length, Math.min(string.length, offset + match.length + 20))
+    const tagName = match.match(/<(\w+)/)?.[1]
+    if (tagName && after.match(new RegExp(`^<\/${tagName}>`))) {
+      return match // Keep empty elements together
+    }
+    return `\n${match}`
+  })
 
   // Also split before closing tags if there's an opening tag before
   // BUT don't split when it's an empty element (opening immediately followed by closing)
-  result = result.replace(/(>)(<\/)(?![\w\s]*>$)/g, (match, gt, closeTag, offset, string) => {
+  result = result.replace(/(>)(<\/)/g, (match, gt, closeTag, offset, string) => {
     // Check if this is part of an empty element pattern like <tag></tag>
     const before = string.substring(Math.max(0, offset - 50), offset)
     const after = string.substring(offset + match.length, Math.min(string.length, offset + match.length + 20))
 
-    // If the closing tag immediately follows opening (empty element), don't split
-    if (before.match(/<\w[^>]*>$/) && after.match(/^\w[^>]*>/)) {
-      // eslint-disable-next-line regexp/optimal-quantifier-concatenation
-      const openTagName = before.match(/<(\w+)[^>]*>$/)?.[1]
-      const closeTagName = after.match(/^(\w+)>/)?.[1]
-      if (openTagName === closeTagName) {
-        return match // Keep empty elements together
-      }
+    // Extract tag name from the part after >< /
+    // after looks like "script>" or "div>" etc (without the </)
+    const closeTagName = after.match(/^(\w+)>/)?.[1]
+    // Extract tag name from the opening tag immediately before > (before doesn't include the >)
+    // eslint-disable-next-line regexp/optimal-quantifier-concatenation
+    const openTagName = before.match(/<(\w+)[^>]*$/)?.[1]
+
+    // If the closing tag immediately follows opening tag with same name (empty element), don't split
+    if (openTagName && closeTagName && openTagName === closeTagName) {
+      return match // Keep empty elements together
     }
     return `${gt}\n${closeTag}`
+  })
+
+  // Split closing tags onto new lines (when followed by another tag or at end of content)
+  // But skip empty elements (opening tag immediately followed by closing with no content)
+  result = result.replace(/(<\/[^>]+>)(?=<|$)/g, (match, _p1, offset, string) => {
+    // Check if this closing tag is part of an empty element (e.g., <script></script>)
+    const before = string.substring(Math.max(0, offset - 20), offset)
+    const tagName = match.match(/<\/(\w+)>/)?.[1]
+    // Only skip newline if opening tag is immediately before closing tag (empty element)
+    const emptyPattern = new RegExp(`<${tagName}[^>]*>$`)
+    if (tagName && before.match(emptyPattern)) {
+      return match // Don't add newline for empty elements
+    }
+    return `${match}\n`
+  })
+
+  // Restore protected blocks
+  result = result.replace(new RegExp(`${placeholder}(\\d+)__`, 'g'), (_match, index) => {
+    return protectedBlocks[Number.parseInt(index, 10)]
   })
 
   // Clean up multiple consecutive newlines
