@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ title }}</title>
+  <meta name="description" content="{{ description }}">
+</head>
+<body>
+  <header>
+    <nav>
+      @foreach(navItems as item)
+        <a href="{{ item.url }}">{{ item.label }}</a>
+      @endforeach
+    </nav>
+  </header>
+
+  <main>
+    <h1>{{ heading }}</h1>
+
+    @if(user)
+      <div class="user-info">
+        <p>Welcome, {{ user.name }}!</p>
+        @if(user.isAdmin)
+          <span class="badge">Admin</span>
+        @endif
+      </div>
+    @else
+      <p>Please log in.</p>
+    @endif
+
+    <section class="products">
+      @foreach(products as product)
+        <article class="product">
+          <h2>{{ product.name }}</h2>
+          <p>{{ product.description }}</p>
+          <div class="price">
+            @if(product.onSale)
+              <span class="original">${{ product.originalPrice }}</span>
+              <span class="sale">${{ product.price }}</span>
+            @else
+              <span>${{ product.price }}</span>
+            @endif
+          </div>
+          @if(product.inStock)
+            <button>Add to Cart</button>
+          @else
+            <button disabled>Out of Stock</button>
+          @endif
+        </article>
+      @endforeach
+    </section>
+
+    @if(showTestimonials)
+      <section class="testimonials">
+        <h2>Customer Reviews</h2>
+        @foreach(testimonials as testimonial)
+          <blockquote>
+            <p>{{ testimonial.text }}</p>
+            <footer>— {{ testimonial.author }}</footer>
+          </blockquote>
+        @endforeach
+      </section>
+    @endif
+  </main>
+
+  <footer>
+    <p>{{ footer }}</p>
+    <p>&copy; {{ year }} {{ company }}</p>
+  </footer>
+</body>
+</html>

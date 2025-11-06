@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{title}}</title>
+  <meta name="description" content="{{description}}">
+</head>
+<body>
+  <header>
+    <nav>
+      {{#each navItems}}
+        <a href="{{url}}">{{label}}</a>
+      {{/each}}
+    </nav>
+  </header>
+
+  <main>
+    <h1>{{heading}}</h1>
+
+    {{#if user}}
+      <div class="user-info">
+        <p>Welcome, {{user.name}}!</p>
+        {{#if user.isAdmin}}
+          <span class="badge">Admin</span>
+        {{/if}}
+      </div>
+    {{else}}
+      <p>Please log in.</p>
+    {{/if}}
+
+    <section class="products">
+      {{#each products}}
+        <article class="product">
+          <h2>{{name}}</h2>
+          <p>{{description}}</p>
+          <div class="price">
+            {{#if onSale}}
+              <span class="original">${{originalPrice}}</span>
+              <span class="sale">${{price}}</span>
+            {{else}}
+              <span>${{price}}</span>
+            {{/if}}
+          </div>
+          {{#if inStock}}
+            <button>Add to Cart</button>
+          {{else}}
+            <button disabled>Out of Stock</button>
+          {{/if}}
+        </article>
+      {{/each}}
+    </section>
+
+    {{#if showTestimonials}}
+      <section class="testimonials">
+        <h2>Customer Reviews</h2>
+        {{#each testimonials}}
+          <blockquote>
+            <p>{{text}}</p>
+            <footer>— {{author}}</footer>
+          </blockquote>
+        {{/each}}
+      </section>
+    {{/if}}
+  </main>
+
+  <footer>
+    <p>{{footer}}</p>
+    <p>&copy; {{year}} {{company}}</p>
+  </footer>
+</body>
+</html>

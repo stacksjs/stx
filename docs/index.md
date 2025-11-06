@@ -18,13 +18,13 @@ hero:
 features:
   - title: "Lightning Fast"
     icon: "⚡"
-    details: "Built on Bun for exceptional performance and minimal overhead."
+    details: "44.1% faster than VanillaJS. Built on Bun for exceptional performance and minimal overhead."
   - title: "Type-Safe Templates"
     icon: "🛡️"
     details: "First-class TypeScript support with full type safety in your templates."
   - title: "Blade-Inspired"
     icon: "🔪"
-    details: "Familiar syntax for Laravel Blade developers with powerful extensions."
+    details: "Familiar syntax for Laravel Blade developers with powerful 30+ directives."
   - title: "Modern Tooling"
     icon: "🛠"
     details: "VSCode extension, DevTools, and CLI for a great developer experience."
@@ -33,7 +33,16 @@ features:
     details: "Create reusable components with props, slots, and lifecycle hooks."
   - title: "Streaming Ready"
     icon: "🌊"
-    details: "Built-in support for streaming rendering and progressive enhancement."
+    details: "Built-in support for streaming SSR and progressive enhancement."
+  - title: "Desktop Apps"
+    icon: "🪟"
+    details: "Build native desktop applications with the @stacksjs/desktop framework."
+  - title: "Fastest Parsing"
+    icon: "📝"
+    details: "Markdown parsing 2.89x faster, HTML sanitization 77x faster than competitors."
+  - title: "200K+ Icons"
+    icon: "🎨"
+    details: "Access 200,000+ icons from 218 Iconify collections with type-safe components."
 ---
 
 <Home />

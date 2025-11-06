@@ -14,6 +14,15 @@ This package provides comprehensive benchmarks to measure the performance of our
 - Key optimizations: WeakMap for IDs, template cloning, innerHTML hybrid, optimized RNG
 - See `js-framework-benchmark/OPTIMIZATION_HISTORY.md` for the complete optimization journey
 
+### Template Engine Performance
+- **@stacksjs/stx** (our implementation - Blade-like syntax on Bun)
+- EJS
+- Pug
+- Handlebars
+- Nunjucks
+- Liquid
+- Laravel Blade (PHP)
+
 ### Markdown Parsing
 - **@stacksjs/markdown** (our implementation)
 - marked
@@ -43,6 +52,7 @@ bun run bench
 
 # Run specific benchmarks
 bun run bench:js-framework  # STX framework benchmark
+bun run bench:templating    # Template engine comparison
 bun run bench:markdown      # Markdown parsing only
 bun run bench:frontmatter   # Frontmatter parsing only
 bun run bench:yaml          # YAML parsing only
@@ -75,6 +85,23 @@ Each benchmark reports:
 ### Benchmark Results
 
 Latest benchmark results (January 2025):
+
+#### Template Engine Performance
+
+**Using Mitata** - Modern benchmarking with statistical analysis
+
+The templating benchmark compares STX against popular JavaScript/TypeScript templating engines and Laravel Blade (PHP). Tests include:
+- Simple templates: Basic variable interpolation and conditionals
+- Complex templates: Nested loops, conditionals, and data structures
+
+All templates are pre-compiled where supported for fair comparison. STX benefits from Bun's native performance, while Laravel Blade includes PHP CLI overhead.
+
+Run the benchmark:
+```bash
+bun run bench:templating
+```
+
+**Note**: PHP must be installed to include Laravel Blade in comparisons.
 
 #### Markdown Parsing
 

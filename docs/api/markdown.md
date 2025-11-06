@@ -1,11 +1,214 @@
 # Markdown API Reference
 
-This document covers stx's markdown processing capabilities, including the `@markdown-file` directive for including markdown files with frontmatter support.
+This document covers the `@stacksjs/markdown` package - a fast, Bun-native markdown parser with frontmatter support.
 
 ## Overview
 
-stx provides powerful markdown processing features that allow you to:
-- Include markdown files in templates with the `@markdown-file` directive
+`@stacksjs/markdown` is a high-performance markdown parser built specifically for Bun, providing:
+
+- **Fast Markdown Parsing**: 1.45-2.89x faster than markdown-it
+- **Frontmatter Support**: YAML, TOML, and JSON frontmatter parsing
+- **GitHub Flavored Markdown (GFM)**: Tables, task lists, strikethrough, and more
+- **Syntax Highlighting**: Server-side code highlighting with Shiki
+- **Native YAML**: Bun's native YAML parser (1.5-2.7x faster than js-yaml)
+- **Template Integration**: Built-in `@markdown-file` directive for STX templates
+
+### Performance Highlights
+
+- **2.89x faster** than markdown-it on small documents (< 1KB)
+- **1.96x faster** on medium documents (~3KB)
+- **1.45x faster** on large documents (~50KB)
+- Position-based parsing with flat token stream architecture
+
+See [Benchmark Results](/guide/benchmarks#markdown-parsing-performance) for detailed performance comparisons.
+
+---
+
+## Installation
+
+```bash
+bun add @stacksjs/markdown
+```
+
+Or use it directly in STX templates (already included in `@stacksjs/stx`).
+
+---
+
+## Markdown Parsing
+
+### parseMarkdown()
+
+Parse markdown to HTML.
+
+```typescript
+import { parseMarkdown } from '@stacksjs/markdown'
+
+const html = parseMarkdown('# Hello World\n\nThis is **bold** text.')
+// Output: <h1 id="hello-world">Hello World</h1>\n<p>This is <strong>bold</strong> text.</p>
+
+// With options
+const html = parseMarkdown(markdown, {
+  gfm: true,              // GitHub Flavored Markdown (default: true)
+  breaks: false,          // Convert \n to <br> (default: false)
+  headerIds: true,        // Generate header IDs (default: true)
+  sanitize: false,        // Sanitize HTML (default: false)
+  highlight: true,        // Enable syntax highlighting (default: false)
+  highlightTheme: 'github-dark' // Shiki theme (default: 'github-dark')
+})
+```
+
+### parseMarkdownSync()
+
+Synchronous markdown parsing (for non-async contexts).
+
+```typescript
+import { parseMarkdownSync } from '@stacksjs/markdown'
+
+const html = parseMarkdownSync('# Sync Parsing\n\nThis is synchronous.')
+```
+
+---
+
+## Frontmatter Parsing
+
+### parseFrontmatter()
+
+Extract and parse frontmatter from markdown.
+
+```typescript
+import { parseFrontmatter } from '@stacksjs/markdown'
+
+const markdown = `---
+title: My Post
+author: John Doe
+tags: [typescript, bun]
+---
+# Content here
+`
+
+const { data, content } = parseFrontmatter(markdown)
+
+console.log(data)
+// { title: 'My Post', author: 'John Doe', tags: ['typescript', 'bun'] }
+
+console.log(content)
+// # Content here
+```
+
+### Supported Formats
+
+**YAML (default)**:
+```yaml
+---
+title: My Post
+date: 2025-01-01
+---
+```
+
+**TOML**:
+```toml
++++
+title = "My Post"
+date = 2025-01-01
++++
+```
+
+**JSON**:
+```json
+;;;
+{
+  "title": "My Post",
+  "date": "2025-01-01"
+}
+;;;
+```
+
+### parseMarkdownWithFrontmatter()
+
+Parse both frontmatter and markdown content in one call.
+
+```typescript
+import { parseMarkdownWithFrontmatter } from '@stacksjs/markdown'
+
+const { data, content, html } = parseMarkdownWithFrontmatter(markdown)
+
+console.log(data)    // Parsed frontmatter
+console.log(content) // Raw markdown content
+console.log(html)    // Rendered HTML
+```
+
+### stringifyFrontmatter()
+
+Convert data back to frontmatter format.
+
+```typescript
+import { stringifyFrontmatter } from '@stacksjs/markdown'
+
+const frontmatter = stringifyFrontmatter({
+  title: 'My Post',
+  tags: ['typescript', 'bun']
+})
+
+console.log(frontmatter)
+// ---
+// title: My Post
+// tags:
+//   - typescript
+//   - bun
+// ---
+```
+
+---
+
+## YAML Utilities
+
+### parseYaml()
+
+Parse YAML using Bun's native parser (1.5-2.7x faster than js-yaml).
+
+```typescript
+import { parseYaml } from '@stacksjs/markdown'
+
+const data = parseYaml(`
+name: John Doe
+age: 30
+tags:
+  - developer
+  - bun
+`)
+
+console.log(data)
+// { name: 'John Doe', age: 30, tags: ['developer', 'bun'] }
+```
+
+### stringifyYaml()
+
+Convert data to YAML format.
+
+```typescript
+import { stringifyYaml } from '@stacksjs/markdown'
+
+const yaml = stringifyYaml({
+  name: 'John Doe',
+  age: 30,
+  tags: ['developer', 'bun']
+})
+
+console.log(yaml)
+// name: John Doe
+// age: 30
+// tags:
+//   - developer
+//   - bun
+```
+
+---
+
+## STX Template Integration
+
+stx provides powerful markdown processing features for templates:
+
+- Include markdown files with the `@markdown-file` directive
 - Parse YAML frontmatter from markdown files
 - Apply server-side syntax highlighting with Shiki
 - Substitute template variables in markdown content

@@ -1,6 +1,41 @@
 # Performance Optimization
 
-stx is built with performance in mind, but there are several techniques and best practices you can use to further optimize your application. This guide covers various performance optimization strategies.
+stx is built with performance in mind, leveraging Bun's native speed and optimized template processing. This guide covers performance characteristics, benchmark results, and optimization strategies.
+
+## Performance Benchmarks
+
+stx has been extensively benchmarked against popular competitors. See our [comprehensive benchmark results](/guide/benchmarks) for detailed comparisons.
+
+### Key Performance Highlights
+
+**Template Engine Performance:**
+- Optimized for Bun runtime with native performance
+- Laravel Blade syntax with comprehensive directive system
+- Template caching enabled by default in production
+- Streaming SSR for large pages
+
+**Framework Performance:**
+- **44.1% faster than VanillaJS** in js-framework-benchmark
+- 0.57ms geometric mean (VanillaJS: 1.02ms)
+- Faster than VanillaJS in 8 of 9 operations
+- Industry-leading optimizations
+
+**Markdown Parsing:**
+- **2.89x faster than markdown-it** on small documents
+- **1.96x faster** on medium documents
+- **1.45x faster** on large documents
+- Position-based parsing with flat token stream
+
+**HTML Sanitization:**
+- **77.93x faster than DOMPurify**
+- **1.70-1.99x faster** than other competitors
+- Fastest in all benchmark categories
+
+**YAML Parsing:**
+- **1.5-2.7x faster than js-yaml**
+- Native Bun YAML implementation
+
+---
 
 ## Build Optimization
 
@@ -411,35 +446,103 @@ class PerformanceMonitor {
 @endcomponent
 ```
 
+## Template Performance Optimization
+
+### Enable Production Caching
+
+stx caches compiled templates by default in production:
+
+```ts
+// stx.config.ts
+export default {
+  cache: true, // Enabled by default
+  cachePath: '.stx/cache',
+  cacheVersion: '1.0.0'
+}
+```
+
+### Use Streaming for Large Pages
+
+Enable streaming SSR for better perceived performance:
+
+```ts
+// stx.config.ts
+export default {
+  streaming: {
+    enabled: true,
+    bufferSize: 16384,
+    strategy: 'auto', // 'auto', 'eager', or 'lazy'
+    timeout: 30000
+  }
+}
+```
+
+### Selective Directive Processing
+
+Disable unused directives to reduce processing overhead:
+
+```ts
+// stx.config.ts
+export default {
+  animation: { enabled: false }, // If not using animations
+  a11y: { enabled: false },      // If not using a11y features
+  seo: { enabled: false }        // If SEO is handled elsewhere
+}
+```
+
 ## Best Practices
 
-1. **Build Optimization**
+1. **Template Optimization**
+   - Enable caching in production
+   - Use streaming for large pages
+   - Disable unused directive processors
+   - Minimize dynamic includes
+
+2. **Build Optimization**
    - Enable tree shaking
    - Use code splitting
    - Optimize assets
    - Configure proper chunks
 
-2. **Component Design**
+3. **Component Design**
    - Use lazy loading
    - Implement virtual scrolling
    - Cache expensive computations
    - Optimize re-renders
 
-3. **State Management**
+4. **State Management**
    - Use shallow reactivity
    - Batch updates
    - Implement proper caching
    - Monitor performance
 
-4. **Asset Loading**
+5. **Asset Loading**
    - Optimize images
    - Use proper formats
    - Implement lazy loading
    - Configure caching
 
+## Performance Trade-offs
+
+stx prioritizes **developer experience and features over raw speed**:
+
+✅ **Advantages:**
+- Laravel Blade familiarity
+- Comprehensive directive system
+- Runtime flexibility
+- Excellent Bun integration
+
+⚠️ **Considerations:**
+- Slower than pre-compiled engines (Pug, Handlebars) for simple templates
+- Rich directive processing adds overhead
+- Still excellent for real-world applications (microseconds, not milliseconds)
+
+See [Benchmark Results](/guide/benchmarks) for detailed comparisons.
+
 ## Next Steps
 
-- Learn about [Testing](/features/testing)
-- Explore [Deployment](/features/deployment)
-- Understand [Security](/features/security)
-- Check out [Monitoring](/features/monitoring)
+- Review [Benchmark Results](/guide/benchmarks)
+- Learn about [Testing](/guide/testing)
+- Explore [Deployment](/guide/deployment)
+- Understand [Security](/guide/security)
+- Check out [Monitoring](/guide/monitoring)
