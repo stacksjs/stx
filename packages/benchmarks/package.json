@@ -27,7 +27,7 @@
     "js-yaml": "^4.1.0",
     "liquidjs": "^10.24.0",
     "markdown-it": "^14.1.0",
-    "marked": "^16.4.0",
+    "marked": "^17.0.0",
     "mitata": "^1.0.34",
     "nunjucks": "^3.2.4",
     "pug": "^3.0.3",
