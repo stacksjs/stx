@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/benchmarks",
   "type": "module",
-  "version": "0.1.16",
+  "version": "0.2.0",
   "private": true,
   "description": "Performance benchmarks comparing STX framework components (@stacksjs/stx, @stacksjs/markdown, @stacksjs/sanitizer) against competitors",
   "main": "./src/index.ts",

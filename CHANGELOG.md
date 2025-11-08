@@ -1,4 +1,69 @@
 # Changelog
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.1.16...v0.2.0)
+
+### 🧹 Chores
+
+- release v0.2.0 ([0f08671](https://github.com/stacksjs/stx/commit/0f08671)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([cb12e46](https://github.com/stacksjs/stx/commit/cb12e46)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([cc722a3](https://github.com/stacksjs/stx/commit/cc722a3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: update dependency marked to 17.0.0 (#973) ([252d35a](https://github.com/stacksjs/stx/commit/252d35a)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#973](https://github.com/stacksjs/stx/issues/973), [#973](https://github.com/stacksjs/stx/issues/973))
+- wip ([c418feb](https://github.com/stacksjs/stx/commit/c418feb)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([0a9072e](https://github.com/stacksjs/stx/commit/0a9072e)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- fix docs ([644b780](https://github.com/stacksjs/stx/commit/644b780)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- update docs ([4c05739](https://github.com/stacksjs/stx/commit/4c05739)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([990b32b](https://github.com/stacksjs/stx/commit/990b32b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([8debe0f](https://github.com/stacksjs/stx/commit/8debe0f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([75c2f4d](https://github.com/stacksjs/stx/commit/75c2f4d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([28a5fb5](https://github.com/stacksjs/stx/commit/28a5fb5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([e4ef8cf](https://github.com/stacksjs/stx/commit/e4ef8cf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([003f377](https://github.com/stacksjs/stx/commit/003f377)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([9123afa](https://github.com/stacksjs/stx/commit/9123afa)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([904cf3e](https://github.com/stacksjs/stx/commit/904cf3e)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([8d5bc57](https://github.com/stacksjs/stx/commit/8d5bc57)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([5378bad](https://github.com/stacksjs/stx/commit/5378bad)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([1c7106b](https://github.com/stacksjs/stx/commit/1c7106b)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([2b4bd46](https://github.com/stacksjs/stx/commit/2b4bd46)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([d1816db](https://github.com/stacksjs/stx/commit/d1816db)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([cb6ce18](https://github.com/stacksjs/stx/commit/cb6ce18)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+
+### Contributors
+
+- _Adelino Ngomacha <adelinob335@gmail.com>_
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.1.16...HEAD)
+
+### 🧹 Chores
+
+- wip ([cb12e46](https://github.com/stacksjs/stx/commit/cb12e46)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([cc722a3](https://github.com/stacksjs/stx/commit/cc722a3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: update dependency marked to 17.0.0 (#973) ([252d35a](https://github.com/stacksjs/stx/commit/252d35a)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#973](https://github.com/stacksjs/stx/issues/973), [#973](https://github.com/stacksjs/stx/issues/973))
+- wip ([c418feb](https://github.com/stacksjs/stx/commit/c418feb)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([0a9072e](https://github.com/stacksjs/stx/commit/0a9072e)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- fix docs ([644b780](https://github.com/stacksjs/stx/commit/644b780)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- update docs ([4c05739](https://github.com/stacksjs/stx/commit/4c05739)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([990b32b](https://github.com/stacksjs/stx/commit/990b32b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([8debe0f](https://github.com/stacksjs/stx/commit/8debe0f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([75c2f4d](https://github.com/stacksjs/stx/commit/75c2f4d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([28a5fb5](https://github.com/stacksjs/stx/commit/28a5fb5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([e4ef8cf](https://github.com/stacksjs/stx/commit/e4ef8cf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([003f377](https://github.com/stacksjs/stx/commit/003f377)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([9123afa](https://github.com/stacksjs/stx/commit/9123afa)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([904cf3e](https://github.com/stacksjs/stx/commit/904cf3e)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([8d5bc57](https://github.com/stacksjs/stx/commit/8d5bc57)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([5378bad](https://github.com/stacksjs/stx/commit/5378bad)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([1c7106b](https://github.com/stacksjs/stx/commit/1c7106b)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([2b4bd46](https://github.com/stacksjs/stx/commit/2b4bd46)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([d1816db](https://github.com/stacksjs/stx/commit/d1816db)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+- wip ([cb6ce18](https://github.com/stacksjs/stx/commit/cb6ce18)) _(by Adelino Ngomacha <adelinob335@gmail.com>)_
+
+### Contributors
+
+- _Adelino Ngomacha <adelinob335@gmail.com>_
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.1.15...v0.1.16)
 
 ### 🧹 Chores
