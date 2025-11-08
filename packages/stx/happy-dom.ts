@@ -4,4 +4,4 @@
  */
 
 // Import the shared very-happy-dom configuration
-import '../../test-utils/happy-dom'
+import './test-utils/happy-dom'

@@ -1,6 +1,5 @@
 [install]
 registry = { url = "https://registry.npmjs.org/", token = "$BUN_AUTH_TOKEN" }
-linker = "isolated"
 
 [test]
-preload = "./test-utils/happy-dom.ts"
+preload = "./packages/stx/test-utils/happy-dom.ts"
