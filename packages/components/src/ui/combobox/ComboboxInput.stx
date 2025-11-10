@@ -1,0 +1,25 @@
+<script>
+export const displayValue = $props.displayValue
+export const onChange = $props.onChange
+export const className = $props.className || ''
+export const placeholder = $props.placeholder || ''
+export const disabled = $props.disabled || false
+
+const baseClasses = 'w-full rounded-lg border-none bg-white dark:bg-neutral-800 py-2 pl-3 pr-10 text-sm leading-5 text-neutral-900 dark:text-white focus:ring-0 focus:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2'
+const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : ''
+const inputClasses = `${baseClasses} ${disabledClasses} ${className}`.trim()
+
+export function handleChange(e) {
+  onChange?.(e.target.value)
+}
+</script>
+
+<input
+  type="text"
+  class="{{ inputClasses }}"
+  placeholder="{{ placeholder }}"
+  value="{{ displayValue }}"
+  @if(disabled)disabled@endif
+  @input="handleChange"
+  autocomplete="off"
+/>

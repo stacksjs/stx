@@ -131,15 +131,15 @@ Migrate and refactor 23+ Vue components from `/Users/chrisbreuer/Code/stacks/sto
 - [ ] Generate component documentation
 
 ### 3.5 Combobox Component
-- [ ] Analyze Vue component structure and dependencies
-- [ ] Convert Vue templates to STX syntax
-- [ ] Replace CSS with headwind utility classes
-- [ ] Convert Vue script setup to STX script blocks
-- [ ] Migrate search/filter logic
-- [ ] Implement keyboard navigation
-- [ ] Create component examples
+- [x] Analyze Vue component structure and dependencies
+- [x] Convert Vue templates to STX syntax
+- [x] Replace CSS with headwind utility classes
+- [x] Convert Vue script setup to STX script blocks
+- [x] Migrate search/filter logic
+- [x] Implement keyboard navigation
+- [x] Create component examples
 - [ ] Write component tests
-- [ ] Generate component documentation
+- [x] Generate component documentation
 
 ### 3.6 Command Palette Component
 - [ ] Analyze Vue component structure and dependencies
@@ -153,15 +153,15 @@ Migrate and refactor 23+ Vue components from `/Users/chrisbreuer/Code/stacks/sto
 - [ ] Generate component documentation
 
 ### 3.7 Dialog Component
-- [ ] Analyze Vue component structure and dependencies
-- [ ] Convert Vue templates to STX syntax
-- [ ] Replace CSS with headwind utility classes
-- [ ] Convert Vue script setup to STX script blocks
-- [ ] Migrate modal/dialog logic
-- [ ] Implement focus trap and accessibility
-- [ ] Create component examples (alert, confirm, custom)
+- [x] Analyze Vue component structure and dependencies
+- [x] Convert Vue templates to STX syntax
+- [x] Replace CSS with headwind utility classes
+- [x] Convert Vue script setup to STX script blocks
+- [x] Migrate modal/dialog logic
+- [x] Implement focus trap and accessibility
+- [x] Create component examples (alert, confirm, custom)
 - [ ] Write component tests
-- [ ] Generate component documentation
+- [x] Generate component documentation
 
 ### 3.8 Drawer Component
 - [ ] Analyze Vue component structure and dependencies
@@ -175,15 +175,15 @@ Migrate and refactor 23+ Vue components from `/Users/chrisbreuer/Code/stacks/sto
 - [ ] Generate component documentation
 
 ### 3.9 Dropdown Component
-- [ ] Analyze Vue component structure and dependencies
-- [ ] Convert Vue templates to STX syntax
-- [ ] Replace CSS with headwind utility classes
-- [ ] Convert Vue script setup to STX script blocks
-- [ ] Migrate dropdown menu logic
-- [ ] Implement keyboard navigation
-- [ ] Create component examples
+- [x] Analyze Vue component structure and dependencies
+- [x] Convert Vue templates to STX syntax
+- [x] Replace CSS with headwind utility classes
+- [x] Convert Vue script setup to STX script blocks
+- [x] Migrate dropdown menu logic
+- [x] Implement keyboard navigation
+- [x] Create component examples
 - [ ] Write component tests
-- [ ] Generate component documentation
+- [x] Generate component documentation
 
 ### 3.10 Image Component
 - [ ] Analyze Vue component structure and dependencies
@@ -221,16 +221,16 @@ Migrate and refactor 23+ Vue components from `/Users/chrisbreuer/Code/stacks/sto
 - [ ] Generate component documentation
 
 ### 3.13 Notification Component
-- [ ] Analyze Vue component structure and dependencies
-- [ ] Convert Vue templates to STX syntax
-- [ ] Replace CSS with headwind utility classes
-- [ ] Convert Vue script setup to STX script blocks
-- [ ] Migrate toast/notification system
-- [ ] Implement position variants
-- [ ] Add animation/transitions
-- [ ] Create component examples
+- [x] Analyze Vue component structure and dependencies
+- [x] Convert Vue templates to STX syntax
+- [x] Replace CSS with headwind utility classes
+- [x] Convert Vue script setup to STX script blocks
+- [x] Migrate toast/notification system
+- [x] Implement position variants
+- [x] Add animation/transitions
+- [x] Create component examples
 - [ ] Write component tests
-- [ ] Generate component documentation
+- [x] Generate component documentation
 
 ### 3.14 Payment Component
 - [ ] Analyze Vue component structure and dependencies
@@ -245,27 +245,27 @@ Migrate and refactor 23+ Vue components from `/Users/chrisbreuer/Code/stacks/sto
 - [ ] Generate component documentation
 
 ### 3.15 Popover Component
-- [ ] Analyze Vue component structure and dependencies
-- [ ] Convert Vue templates to STX syntax
-- [ ] Replace CSS with headwind utility classes
-- [ ] Convert Vue script setup to STX script blocks
-- [ ] Migrate popover positioning logic
-- [ ] Implement auto-positioning
-- [ ] Add arrow/pointer support
-- [ ] Create component examples
+- [x] Analyze Vue component structure and dependencies
+- [x] Convert Vue templates to STX syntax
+- [x] Replace CSS with headwind utility classes
+- [x] Convert Vue script setup to STX script blocks
+- [x] Migrate popover positioning logic
+- [x] Implement auto-positioning
+- [x] Add arrow/pointer support
+- [x] Create component examples
 - [ ] Write component tests
-- [ ] Generate component documentation
+- [x] Generate component documentation
 
 ### 3.16 Radio Group Component
-- [ ] Analyze Vue component structure and dependencies
-- [ ] Convert Vue templates to STX syntax
-- [ ] Replace CSS with headwind utility classes
-- [ ] Convert Vue script setup to STX script blocks
-- [ ] Migrate radio selection logic
-- [ ] Implement keyboard navigation
-- [ ] Create component examples
+- [x] Analyze Vue component structure and dependencies
+- [x] Convert Vue templates to STX syntax
+- [x] Replace CSS with headwind utility classes
+- [x] Convert Vue script setup to STX script blocks
+- [x] Migrate radio selection logic
+- [x] Implement keyboard navigation
+- [x] Create component examples
 - [ ] Write component tests
-- [ ] Generate component documentation
+- [x] Generate component documentation
 
 ### 3.17 Select Component
 - [ ] Analyze Vue component structure and dependencies

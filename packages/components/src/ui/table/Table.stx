@@ -1,0 +1,14 @@
+<script>
+export const className = $props.className || ''
+export const striped = $props.striped || false
+export const hoverable = $props.hoverable !== false
+
+const baseClasses = 'min-w-full divide-y divide-neutral-200 dark:divide-neutral-700'
+const tableClasses = `${baseClasses} ${className}`.trim()
+</script>
+
+<div class="overflow-x-auto">
+  <table class="{{ tableClasses }}">
+    <slot :striped="striped" :hoverable="hoverable" />
+  </table>
+</div>

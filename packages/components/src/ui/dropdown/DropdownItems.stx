@@ -1,0 +1,18 @@
+<script>
+export const className = $props.className || ''
+export const as = $props.as || 'div'
+export const static_ = $props.static || false
+
+const baseClasses = 'absolute z-10 mt-2 origin-top-right divide-y divide-neutral-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-neutral-800 dark:divide-neutral-700 dark:ring-neutral-600'
+const itemsClasses = `${baseClasses} ${className}`.trim()
+</script>
+
+<component
+  :is="{{ as }}"
+  class="{{ itemsClasses }}"
+  role="menu"
+  aria-orientation="vertical"
+  tabindex="-1"
+>
+  <slot />
+</component>

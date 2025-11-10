@@ -1,0 +1,57 @@
+<script>
+export const value = $props.value
+export const disabled = $props.disabled || false
+export const className = $props.className || ''
+export const as = $props.as || 'li'
+export const currentValue = $props.currentValue
+export const onChange = $props.onChange
+
+export let active = false
+export const selected = Array.isArray(currentValue)
+  ? currentValue.includes(value)
+  : currentValue === value
+
+const baseClasses = 'relative cursor-pointer select-none py-2 pl-10 pr-4'
+const stateClasses = active
+  ? 'bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100'
+  : 'text-neutral-900 dark:text-neutral-100'
+const disabledClasses = disabled
+  ? 'opacity-50 cursor-not-allowed'
+  : ''
+
+const optionClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${className}`.trim()
+
+export function handleClick() {
+  if (disabled) return
+  onChange?.(value)
+}
+
+export function handleMouseEnter() {
+  if (!disabled) active = true
+}
+
+export function handleMouseLeave() {
+  active = false
+}
+</script>
+
+<component
+  :is="{{ as }}"
+  class="{{ optionClasses }}"
+  role="option"
+  aria-selected="{{ selected ? 'true' : 'false' }}"
+  @if(disabled)aria-disabled="true"@endif
+  @click="handleClick"
+  @mouseenter="handleMouseEnter"
+  @mouseleave="handleMouseLeave"
+>
+  @if(selected)
+    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600 dark:text-blue-400">
+      <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+      </svg>
+    </span>
+  @endif
+
+  <slot :active="active" :selected="selected" :disabled="disabled" />
+</component>

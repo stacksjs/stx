@@ -33,6 +33,13 @@ yarn add @stacksjs/components
 
 - **Button** - Versatile button with multiple variants and sizes
 - **Switch** - Modern toggle switch component
+- **Dropdown** - Menu dropdown component with keyboard navigation
+- **Dialog** - Modal dialog component with backdrop
+- **Radio Group** - Radio button group with single selection
+- **Popover** - Floating panel component with positioning
+- **Listbox** - Custom select component with keyboard support
+- **Combobox** - Searchable select with filtering
+- **Notification** - Toast notifications with auto-hide
 
 ### Utility Components
 
@@ -43,7 +50,7 @@ yarn add @stacksjs/components
 
 ### More Coming Soon!
 
-We're actively migrating and building 21 more components including:
+We're actively migrating 12 more components including:
 - Dropdown
 - Dialog/Modal
 - Radio Group
@@ -270,11 +277,10 @@ This library is actively being migrated from Vue to STX. Check our [TODO.md](../
 - ✅ Infrastructure setup
 - ✅ Composables (useDarkMode, useCopyCode, useSEO)
 - ✅ Base components (CodeBlock, Hero, Footer, Installation)
-- ✅ Button component
-- ✅ Switch component
+- ✅ 9 UI Components (Button, Switch, Dropdown, Dialog, Radio Group, Popover, Listbox, Combobox, Notification)
 
 **In Progress:**
-- 🔄 Migrating 21 more components from Vue
+- 🔄 Migrating 12 more components from Vue
 
 ## License
 

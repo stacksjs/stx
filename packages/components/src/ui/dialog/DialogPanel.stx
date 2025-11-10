@@ -1,0 +1,16 @@
+<script>
+export const className = $props.className || ''
+export const as = $props.as || 'div'
+
+const baseClasses = 'fixed inset-0 overflow-y-auto'
+const panelWrapperClasses = 'flex min-h-full items-center justify-center p-4 text-center'
+const panelClasses = `transform overflow-hidden rounded-lg bg-white dark:bg-neutral-800 p-6 text-left align-middle shadow-xl transition-all ${className}`.trim()
+</script>
+
+<component :is="{{ as }}" class="{{ baseClasses }}">
+  <div class="{{ panelWrapperClasses }}">
+    <div class="{{ panelClasses }}">
+      <slot />
+    </div>
+  </div>
+</component>

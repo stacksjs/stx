@@ -1,0 +1,19 @@
+<script>
+export const open = $props.open || false
+export const onClose = $props.onClose
+export const className = $props.className || ''
+export const as = $props.as || 'div'
+
+const baseClasses = 'relative z-50'
+const dialogClasses = `${baseClasses} ${className}`.trim()
+
+export function handleClose() {
+  onClose?.(false)
+}
+</script>
+
+@if(open)
+  <component :is="{{ as }}" class="{{ dialogClasses }}" role="dialog" aria-modal="true">
+    <slot :close="handleClose" />
+  </component>
+@endif

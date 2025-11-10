@@ -1,0 +1,13 @@
+<script>
+export const className = $props.className || ''
+export const sortable = $props.sortable || false
+export const onClick = $props.onClick
+
+const baseClasses = 'px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider dark:text-neutral-400'
+const sortableClasses = sortable ? 'cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-200' : ''
+const headerClasses = `${baseClasses} ${sortableClasses} ${className}`.trim()
+</script>
+
+<th class="{{ headerClasses }}" @if(sortable)@click="onClick"@endif>
+  <slot />
+</th>

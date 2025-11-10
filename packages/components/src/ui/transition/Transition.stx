@@ -1,0 +1,46 @@
+<script>
+export const show = $props.show !== false
+export const enter = $props.enter || 'transition-opacity duration-300'
+export const enterFrom = $props.enterFrom || 'opacity-0'
+export const enterTo = $props.enterTo || 'opacity-100'
+export const leave = $props.leave || 'transition-opacity duration-200'
+export const leaveFrom = $props.leaveFrom || 'opacity-100'
+export const leaveTo = $props.leaveTo || 'opacity-0'
+export const className = $props.className || ''
+export const as = $props.as || 'div'
+
+export let isEntering = false
+export let isLeaving = false
+export let shouldRender = show
+
+const transitionClasses = show
+  ? isEntering
+    ? `${enter} ${enterFrom}`
+    : `${enterTo}`
+  : isLeaving
+    ? `${leave} ${leaveFrom}`
+    : `${leaveTo}`
+
+const componentClasses = `${transitionClasses} ${className}`.trim()
+
+// Handle transitions
+if (show && !shouldRender) {
+  shouldRender = true
+  isEntering = true
+  setTimeout(() => {
+    isEntering = false
+  }, 300)
+} else if (!show && shouldRender) {
+  isLeaving = true
+  setTimeout(() => {
+    isLeaving = false
+    shouldRender = false
+  }, 200)
+}
+</script>
+
+@if(shouldRender)
+  <component :is="{{ as }}" class="{{ componentClasses }}">
+    <slot />
+  </component>
+@endif

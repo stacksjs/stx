@@ -1,0 +1,13 @@
+<script>
+export const className = $props.className || ''
+export const as = $props.as || 'button'
+
+const baseClasses = 'absolute inset-y-0 right-0 flex items-center pr-2'
+const buttonClasses = `${baseClasses} ${className}`.trim()
+</script>
+
+<component :is="{{ as }}" class="{{ buttonClasses }}" tabindex="-1">
+  <svg class="h-5 w-5 text-neutral-400" viewBox="0 0 20 20" fill="none" stroke="currentColor">
+    <path d="M7 7l3-3 3 3m0 6l-3 3-3-3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+</component>

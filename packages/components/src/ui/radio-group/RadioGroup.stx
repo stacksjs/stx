@@ -1,0 +1,13 @@
+<script>
+export const value = $props.value
+export const onChange = $props.onChange
+export const className = $props.className || ''
+export const as = $props.as || 'div'
+
+const baseClasses = 'w-full'
+const groupClasses = `${baseClasses} ${className}`.trim()
+</script>
+
+<component :is="{{ as }}" class="{{ groupClasses }}" role="radiogroup">
+  <slot :value="value" :onChange="onChange" />
+</component>

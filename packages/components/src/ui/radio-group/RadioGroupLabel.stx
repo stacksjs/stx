@@ -1,0 +1,11 @@
+<script>
+export const className = $props.className || ''
+export const as = $props.as || 'label'
+
+const baseClasses = 'block text-sm font-medium text-neutral-900 dark:text-white'
+const labelClasses = `${baseClasses} ${className}`.trim()
+</script>
+
+<component :is="{{ as }}" class="{{ labelClasses }}">
+  <slot />
+</component>

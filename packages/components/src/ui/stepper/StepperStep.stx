@@ -1,0 +1,53 @@
+<script>
+export const stepNumber = $props.stepNumber
+export const currentStep = $props.currentStep || 0
+export const label = $props.label || ''
+export const description = $props.description || ''
+export const className = $props.className || ''
+export const as = $props.as || 'div'
+export const onClick = $props.onClick
+
+export const isComplete = stepNumber < currentStep
+export const isCurrent = stepNumber === currentStep
+export const isUpcoming = stepNumber > currentStep
+
+const baseClasses = 'flex items-center'
+const stepClasses = `${baseClasses} ${className}`.trim()
+
+export function handleClick() {
+  onClick?.(stepNumber)
+}
+</script>
+
+<component :is="{{ as }}" class="{{ stepClasses }}">
+  <button
+    type="button"
+    @click="handleClick"
+    class="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-2"
+  >
+    <div class="{{ isComplete ? 'bg-blue-600 dark:bg-blue-500' : isCurrent ? 'bg-blue-600 dark:bg-blue-500 ring-4 ring-blue-200 dark:ring-blue-800' : 'bg-neutral-300 dark:bg-neutral-600' }} w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold transition-all">
+      @if(isComplete)
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+      @else
+        {{ stepNumber + 1 }}
+      @endif
+    </div>
+
+    @if(label)
+      <div class="text-left">
+        <div class="text-sm font-medium {{ isCurrent ? 'text-blue-600 dark:text-blue-400' : 'text-neutral-900 dark:text-white' }}">
+          {{ label }}
+        </div>
+        @if(description)
+          <div class="text-xs text-neutral-500 dark:text-neutral-400">
+            {{ description }}
+          </div>
+        @endif
+      </div>
+    @endif
+  </button>
+
+  <slot :isComplete="isComplete" :isCurrent="isCurrent" :isUpcoming="isUpcoming" />
+</component>

@@ -1,0 +1,11 @@
+<script>
+export const className = $props.className || ''
+export const as = $props.as || 'h3'
+
+const baseClasses = 'text-lg font-medium leading-6 text-neutral-900 dark:text-white'
+const titleClasses = `${baseClasses} ${className}`.trim()
+</script>
+
+<component :is="{{ as }}" class="{{ titleClasses }}">
+  <slot />
+</component>

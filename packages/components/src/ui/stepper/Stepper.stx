@@ -1,0 +1,17 @@
+<script>
+export const currentStep = $props.currentStep || 0
+export const orientation = $props.orientation || 'horizontal'
+export const className = $props.className || ''
+export const as = $props.as || 'div'
+
+const orientationClasses = orientation === 'horizontal'
+  ? 'flex flex-row'
+  : 'flex flex-col'
+
+const baseClasses = 'w-full'
+const stepperClasses = `${baseClasses} ${orientationClasses} ${className}`.trim()
+</script>
+
+<component :is="{{ as }}" class="{{ stepperClasses }}">
+  <slot :currentStep="currentStep" />
+</component>

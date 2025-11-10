@@ -1,0 +1,32 @@
+<script>
+export const className = $props.className || ''
+export const onClick = $props.onClick
+export let active = false
+
+const baseClasses = 'flex cursor-pointer select-none items-center px-4 py-2'
+const activeClasses = active
+  ? 'bg-blue-600 text-white'
+  : 'text-neutral-900 dark:text-neutral-100'
+const itemClasses = `${baseClasses} ${activeClasses} ${className}`.trim()
+
+export function handleClick() {
+  onClick?.()
+}
+
+export function handleMouseEnter() {
+  active = true
+}
+
+export function handleMouseLeave() {
+  active = false
+}
+</script>
+
+<div
+  class="{{ itemClasses }}"
+  @click="handleClick"
+  @mouseenter="handleMouseEnter"
+  @mouseleave="handleMouseLeave"
+>
+  <slot :active="active" />
+</div>

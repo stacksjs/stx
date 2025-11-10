@@ -1,0 +1,23 @@
+<script>
+export const className = $props.className || ''
+export const as = $props.as || 'button'
+export const disabled = $props.disabled || false
+export const onClick = $props.onClick
+
+const baseClasses = 'inline-flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75'
+const buttonClasses = `${baseClasses} ${className}`.trim()
+
+export function handleClick(e) {
+  if (disabled) return
+  onClick?.(e)
+}
+</script>
+
+<component
+  :is="{{ as }}"
+  class="{{ buttonClasses }}"
+  @if(disabled)disabled aria-disabled="true"@endif
+  @click="handleClick"
+>
+  <slot />
+</component>

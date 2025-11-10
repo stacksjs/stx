@@ -1,0 +1,9 @@
+<script>
+export const className = $props.className || ''
+export const as = $props.as || 'div'
+
+const baseClasses = 'fixed inset-0 bg-black bg-opacity-25 dark:bg-opacity-50 transition-opacity'
+const backdropClasses = `${baseClasses} ${className}`.trim()
+</script>
+
+<component :is="{{ as }}" class="{{ backdropClasses }}" aria-hidden="true" />

@@ -1,0 +1,14 @@
+<script>
+export const value = $props.value
+export const onChange = $props.onChange
+export const multiple = $props.multiple || false
+export const className = $props.className || ''
+export const as = $props.as || 'div'
+
+const baseClasses = 'relative'
+const listboxClasses = `${baseClasses} ${className}`.trim()
+</script>
+
+<component :is="{{ as }}" class="{{ listboxClasses }}">
+  <slot :value="value" :onChange="onChange" :multiple="multiple" />
+</component>

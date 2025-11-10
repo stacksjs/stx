@@ -1,0 +1,10 @@
+<script>
+export const className = $props.className || ''
+
+const baseClasses = 'bg-neutral-50 dark:bg-neutral-800'
+const headClasses = `${baseClasses} ${className}`.trim()
+</script>
+
+<thead class="{{ headClasses }}">
+  <slot />
+</thead>

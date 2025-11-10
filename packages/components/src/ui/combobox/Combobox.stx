@@ -1,0 +1,13 @@
+<script>
+export const value = $props.value
+export const onChange = $props.onChange
+export const className = $props.className || ''
+export const as = $props.as || 'div'
+
+const baseClasses = 'relative'
+const comboboxClasses = `${baseClasses} ${className}`.trim()
+</script>
+
+<component :is="{{ as }}" class="{{ comboboxClasses }}">
+  <slot :value="value" :onChange="onChange" />
+</component>

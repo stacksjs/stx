@@ -1,0 +1,23 @@
+<script>
+export const className = $props.className || ''
+export const as = $props.as || 'div'
+export const static_ = $props.static || false
+export const position = $props.position || 'bottom'
+
+const positionClasses = {
+  'top': 'bottom-full mb-2',
+  'bottom': 'top-full mt-2',
+  'left': 'right-full mr-2',
+  'right': 'left-full ml-2',
+}
+
+const baseClasses = 'absolute z-10 rounded-lg bg-white dark:bg-neutral-800 p-4 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none'
+const panelClasses = `${baseClasses} ${positionClasses[position]} ${className}`.trim()
+</script>
+
+<component
+  :is="{{ as }}"
+  class="{{ panelClasses }}"
+>
+  <slot />
+</component>

@@ -1,0 +1,51 @@
+<script>
+export const value = $props.value
+export const disabled = $props.disabled || false
+export const className = $props.className || ''
+export const as = $props.as || 'div'
+export const currentValue = $props.currentValue
+export const onChange = $props.onChange
+
+export let active = false
+export const checked = currentValue === value
+
+const baseClasses = 'relative flex cursor-pointer rounded-lg px-5 py-4 shadow-md focus:outline-none transition-all'
+const stateClasses = checked
+  ? 'bg-blue-900 bg-opacity-75 text-white dark:bg-blue-800'
+  : 'bg-white dark:bg-neutral-800'
+const activeClasses = active
+  ? 'ring-2 ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-300 dark:ring-offset-blue-700'
+  : ''
+const disabledClasses = disabled
+  ? 'opacity-50 cursor-not-allowed'
+  : ''
+
+const optionClasses = `${baseClasses} ${stateClasses} ${activeClasses} ${disabledClasses} ${className}`.trim()
+
+export function handleClick() {
+  if (disabled) return
+  onChange?.(value)
+}
+
+export function handleFocus() {
+  if (!disabled) active = true
+}
+
+export function handleBlur() {
+  active = false
+}
+</script>
+
+<component
+  :is="{{ as }}"
+  class="{{ optionClasses }}"
+  role="radio"
+  aria-checked="{{ checked ? 'true' : 'false' }}"
+  @if(disabled)aria-disabled="true"@endif
+  tabindex="{{ disabled ? '-1' : '0' }}"
+  @click="handleClick"
+  @focus="handleFocus"
+  @blur="handleBlur"
+>
+  <slot :active="active" :checked="checked" :disabled="disabled" />
+</component>

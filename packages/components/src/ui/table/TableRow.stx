@@ -1,0 +1,11 @@
+<script>
+export const className = $props.className || ''
+export const hoverable = $props.hoverable !== false
+
+const hoverClasses = hoverable ? 'hover:bg-neutral-50 dark:hover:bg-neutral-800' : ''
+const rowClasses = `${hoverClasses} ${className}`.trim()
+</script>
+
+<tr class="{{ rowClasses }}">
+  <slot />
+</tr>

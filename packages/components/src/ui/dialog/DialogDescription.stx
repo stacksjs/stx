@@ -1,0 +1,11 @@
+<script>
+export const className = $props.className || ''
+export const as = $props.as || 'p'
+
+const baseClasses = 'mt-2 text-sm text-neutral-500 dark:text-neutral-400'
+const descriptionClasses = `${baseClasses} ${className}`.trim()
+</script>
+
+<component :is="{{ as }}" class="{{ descriptionClasses }}">
+  <slot />
+</component>

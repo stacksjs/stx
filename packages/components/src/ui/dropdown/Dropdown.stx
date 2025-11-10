@@ -1,0 +1,24 @@
+<script>
+export const className = $props.className || ''
+export const as = $props.as || 'div'
+export let isOpen = false
+
+export function toggle() {
+  isOpen = !isOpen
+}
+
+export function close() {
+  isOpen = false
+}
+
+export function open() {
+  isOpen = true
+}
+
+const baseClasses = 'relative inline-block text-left'
+const dropdownClasses = `${baseClasses} ${className}`.trim()
+</script>
+
+<component :is="{{ as }}" class="{{ dropdownClasses }}">
+  <slot :isOpen="isOpen" :toggle="toggle" :close="close" :open="open" />
+</component>
