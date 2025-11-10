@@ -1,0 +1,123 @@
+<script>
+export const src = $props.src || ''
+export const alt = $props.alt || ''
+export const width = $props.width
+export const height = $props.height
+export const lazy = $props.lazy ?? true
+export const placeholder = $props.placeholder || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3C/svg%3E'
+export const onLoad = $props.onLoad
+export const onError = $props.onError
+export const aspectRatio = $props.aspectRatio
+export const objectFit = $props.objectFit || 'cover'
+export const rounded = $props.rounded ?? false
+export const className = $props.className || ''
+
+// Object fit classes
+const objectFitClasses = {
+  contain: 'object-contain',
+  cover: 'object-cover',
+  fill: 'object-fill',
+  none: 'object-none',
+  'scale-down': 'object-scale-down',
+}
+
+// Rounded classes
+const roundedClass = rounded === true ? 'rounded-lg' : rounded === 'full' ? 'rounded-full' : rounded ? `rounded-${rounded}` : ''
+
+export const containerClasses = `relative overflow-hidden ${roundedClass} ${className}`.trim()
+export const imageClasses = `w-full h-full transition-opacity duration-300 ${objectFitClasses[objectFit]}`.trim()
+export const placeholderClasses = `absolute inset-0 bg-gray-200 dark:bg-gray-700 ${roundedClass}`.trim()
+
+// Generate aspect ratio padding if provided
+export const paddingBottom = aspectRatio ? `${(1 / aspectRatio) * 100}%` : undefined
+</script>
+
+<div class="{{ containerClasses }}" style="{{ paddingBottom ? `padding-bottom: ${paddingBottom}` : '' }}">
+  @if(lazy)
+    <!-- Lazy-loaded image -->
+    <img
+      src="{{ placeholder }}"
+      data-src="{{ src }}"
+      alt="{{ alt }}"
+      class="{{ imageClasses }} lazy-image opacity-0"
+      width="{{ width }}"
+      height="{{ height }}"
+      loading="lazy"
+      onload="handleImageLoad(event)"
+      onerror="handleImageError(event)"
+    />
+  @else
+    <!-- Regular image -->
+    <img
+      src="{{ src }}"
+      alt="{{ alt }}"
+      class="{{ imageClasses }}"
+      width="{{ width }}"
+      height="{{ height }}"
+      onload="handleImageLoad(event)"
+      onerror="handleImageError(event)"
+    />
+  @endif
+
+  <!-- Loading skeleton -->
+  <div class="{{ placeholderClasses }} skeleton" style="display: none;">
+    <div class="animate-pulse w-full h-full bg-gray-300 dark:bg-gray-600"></div>
+  </div>
+</div>
+
+<script>
+// Intersection Observer for lazy loading
+if (lazy && typeof window !== 'undefined' && 'IntersectionObserver' in window) {
+  const lazyImages = document.querySelectorAll('.lazy-image')
+
+  const imageObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target
+        const realSrc = img.getAttribute('data-src')
+
+        if (realSrc) {
+          // Load the real image
+          const tempImg = new Image()
+          tempImg.onload = () => {
+            img.src = realSrc
+            img.classList.remove('opacity-0')
+            img.classList.add('opacity-100')
+            observer.unobserve(img)
+          }
+          tempImg.onerror = () => {
+            handleImageError({ target: img })
+            observer.unobserve(img)
+          }
+          tempImg.src = realSrc
+        }
+      }
+    })
+  }, {
+    rootMargin: '50px', // Start loading 50px before entering viewport
+  })
+
+  lazyImages.forEach(img => imageObserver.observe(img))
+}
+
+function handleImageLoad(event) {
+  const img = event.target
+  img.classList.remove('opacity-0')
+  img.classList.add('opacity-100')
+
+  if (onLoad) {
+    onLoad(event)
+  }
+}
+
+function handleImageError(event) {
+  const img = event.target
+
+  // Show a broken image placeholder
+  img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" fill="%239ca3af" font-size="16" text-anchor="middle" dominant-baseline="middle"%3EImage not found%3C/text%3E%3C/svg%3E'
+
+  if (onError) {
+    onError(event)
+  }
+}
+</script>

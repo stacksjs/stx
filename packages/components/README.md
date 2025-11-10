@@ -29,11 +29,17 @@ yarn add @stacksjs/components
 
 ## Components
 
-### UI Components (14)
+### UI Components (20)
 
 - **Auth** - Login, Signup, and 2FA components
+- **Audio** - Audio player with waveform visualization
 - **Button** - Versatile button with multiple variants and sizes
+- **Drawer** - Slide-out panel from any direction
+- **Image** - Optimized images with lazy loading
+- **Select** - Native-style select dropdown
+- **Storage** - localStorage/sessionStorage utilities
 - **Switch** - Modern toggle switch component
+- **Video** - Video player with aspect ratio support
 - **Dropdown** - Menu dropdown component with keyboard navigation
 - **Dialog** - Modal dialog component with backdrop
 - **Radio Group** - Radio button group with single selection

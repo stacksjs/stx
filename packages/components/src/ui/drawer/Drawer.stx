@@ -1,0 +1,137 @@
+<script>
+export const open = $props.open ?? false
+export const onClose = $props.onClose || (() => {})
+export const position = $props.position || 'right'
+export const title = $props.title || ''
+export const className = $props.className || ''
+
+// Position classes
+const positionClasses = {
+  right: 'inset-y-0 right-0 pl-10 sm:pl-16',
+  left: 'inset-y-0 left-0 pr-10 sm:pr-16',
+  top: 'inset-x-0 top-0 pb-10',
+  bottom: 'inset-x-0 bottom-0 pt-10',
+}
+
+// Slide animation classes
+const slideClasses = {
+  right: {
+    enter: 'translate-x-full',
+    leave: 'translate-x-0',
+  },
+  left: {
+    enter: '-translate-x-full',
+    leave: 'translate-x-0',
+  },
+  top: {
+    enter: '-translate-y-full',
+    leave: 'translate-y-0',
+  },
+  bottom: {
+    enter: 'translate-y-full',
+    leave: 'translate-y-0',
+  },
+}
+
+// Size classes based on position
+const sizeClasses = {
+  right: 'max-w-md w-screen',
+  left: 'max-w-md w-screen',
+  top: 'max-h-[90vh] w-full',
+  bottom: 'max-h-[90vh] w-full',
+}
+
+// Close button position
+const closeButtonPosition = {
+  right: 'left-0 -ml-8 sm:-ml-10',
+  left: 'right-0 -mr-8 sm:-mr-10',
+  top: 'right-0 -mr-8',
+  bottom: 'right-0 -mr-8',
+}
+
+export const containerClasses = `pointer-events-none fixed ${positionClasses[position]} flex max-w-full`.trim()
+export const panelClasses = `pointer-events-auto relative ${sizeClasses[position]} ${className}`.trim()
+export const slideAnimation = slideClasses[position]
+export const closeButtonClasses = `absolute top-0 ${closeButtonPosition[position]} flex pt-4 pr-2 sm:pr-4`.trim()
+</script>
+
+@if(open)
+  <!-- Backdrop -->
+  <div
+    class="fixed inset-0 z-50 bg-gray-500/75 dark:bg-gray-900/75 transition-opacity duration-500"
+    style="animation: fadeIn 0.5s ease-in-out"
+    onclick="handleBackdropClick()"
+  ></div>
+
+  <!-- Drawer Container -->
+  <div class="fixed inset-0 z-50 overflow-hidden">
+    <div class="absolute inset-0 overflow-hidden">
+      <div class="{{ containerClasses }}">
+        <!-- Drawer Panel -->
+        <div
+          class="{{ panelClasses }}"
+          style="animation: slideIn 0.5s ease-in-out"
+        >
+          <!-- Close Button -->
+          <div class="{{ closeButtonClasses }}">
+            <button
+              type="button"
+              class="relative rounded-md text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              onclick="handleClose()"
+            >
+              <span class="absolute -inset-2.5"></span>
+              <span class="sr-only">Close panel</span>
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Drawer Content -->
+          <div class="relative flex h-full flex-col overflow-y-auto bg-white dark:bg-blue-gray-800 py-6 shadow-xl">
+            @if(title)
+              <div class="px-4 sm:px-6">
+                <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  {{ title }}
+                </h2>
+              </div>
+            @endif
+            <div class="relative mt-6 flex-1 px-4 sm:px-6">
+              <slot />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+@endif
+
+<style>
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    transform: {{ position === 'right' ? 'translateX(100%)' : position === 'left' ? 'translateX(-100%)' : position === 'top' ? 'translateY(-100%)' : 'translateY(100%)' }};
+  }
+  to {
+    transform: translate(0, 0);
+  }
+}
+</style>
+
+<script>
+function handleClose() {
+  if (onClose) {
+    onClose()
+  }
+}
+
+function handleBackdropClick() {
+  if (onClose) {
+    onClose()
+  }
+}
+</script>

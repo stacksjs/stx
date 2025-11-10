@@ -1,0 +1,45 @@
+<script>
+export const src = $props.src || ''
+export const poster = $props.poster || ''
+export const autoplay = $props.autoplay || false
+export const loop = $props.loop || false
+export const muted = $props.muted || false
+export const controls = $props.controls ?? true
+export const preload = $props.preload || 'metadata'
+export const width = $props.width
+export const height = $props.height
+export const aspectRatio = $props.aspectRatio || '16/9'
+export const className = $props.className || ''
+export const title = $props.title || ''
+
+export const containerClasses = `relative w-full overflow-hidden rounded-lg ${className}`.trim()
+export const videoClasses = 'w-full h-full object-cover bg-gray-900 dark:bg-gray-950'
+export const aspectRatioClass = aspectRatio === '16/9' ? 'aspect-video' : aspectRatio === '4/3' ? 'aspect-[4/3]' : aspectRatio === '1/1' ? 'aspect-square' : ''
+</script>
+
+<div class="{{ containerClasses }}">
+  @if(title)
+    <div class="mb-2 px-1">
+      <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">
+        {{ title }}
+      </h3>
+    </div>
+  @endif
+
+  <div class="{{ aspectRatioClass }}">
+    <video
+      class="{{ videoClasses }}"
+      src="{{ src }}"
+      poster="{{ poster }}"
+      controls="{{ controls }}"
+      autoplay="{{ autoplay }}"
+      loop="{{ loop }}"
+      muted="{{ muted }}"
+      preload="{{ preload }}"
+      width="{{ width }}"
+      height="{{ height }}"
+    >
+      Your browser does not support the video element.
+    </video>
+  </div>
+</div>

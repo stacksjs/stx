@@ -1,0 +1,50 @@
+<script>
+export const src = $props.src || ''
+export const autoplay = $props.autoplay || false
+export const loop = $props.loop || false
+export const muted = $props.muted || false
+export const controls = $props.controls ?? true
+export const preload = $props.preload || 'metadata'
+export const className = $props.className || ''
+export const showWaveform = $props.showWaveform || false
+export const title = $props.title || ''
+
+export const containerClasses = `relative w-full ${className}`.trim()
+export const audioClasses = 'w-full rounded-md bg-gray-100 dark:bg-gray-800'
+</script>
+
+<div class="{{ containerClasses }}">
+  @if(title)
+    <div class="mb-2 px-1">
+      <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">
+        {{ title }}
+      </h3>
+    </div>
+  @endif
+
+  <audio
+    class="{{ audioClasses }}"
+    src="{{ src }}"
+    controls="{{ controls }}"
+    autoplay="{{ autoplay }}"
+    loop="{{ loop }}"
+    muted="{{ muted }}"
+    preload="{{ preload }}"
+  >
+    Your browser does not support the audio element.
+  </audio>
+
+  @if(showWaveform)
+    <div class="mt-2 h-16 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
+      <svg class="w-full h-full px-4" viewBox="0 0 100 40" preserveAspectRatio="none">
+        <path
+          d="M 0,20 L 10,15 L 20,10 L 30,5 L 40,15 L 50,20 L 60,25 L 70,30 L 80,20 L 90,15 L 100,20"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          class="text-indigo-500 dark:text-indigo-400"
+        />
+      </svg>
+    </div>
+  @endif
+</div>
