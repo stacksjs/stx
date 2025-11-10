@@ -1,0 +1,74 @@
+<script>
+export const checked = $props.checked || false
+export const disabled = $props.disabled || false
+export const size = $props.size || 'md'
+export const className = $props.className || ''
+export const onChange = $props.onChange
+export const label = $props.label || ''
+
+// Size configurations using headwind
+const sizeConfig = {
+  sm: {
+    track: 'h-5 w-9',
+    thumb: 'h-4 w-4',
+    translate: 'translate-x-4',
+  },
+  md: {
+    track: 'h-[38px] w-[74px]',
+    thumb: 'h-[34px] w-[34px]',
+    translate: 'translate-x-9',
+  },
+  lg: {
+    track: 'h-12 w-24',
+    thumb: 'h-11 w-11',
+    translate: 'translate-x-12',
+  },
+}
+
+const config = sizeConfig[size]
+
+// Track classes
+const trackBaseClasses = 'relative inline-flex shrink-0 cursor-pointer border-2 border-transparent rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-300 dark:focus-visible:ring-offset-neutral-700'
+const trackStateClasses = checked
+  ? 'bg-blue-500 dark:bg-blue-600'
+  : 'bg-neutral-400 dark:bg-neutral-600'
+const trackDisabledClasses = disabled
+  ? 'opacity-50 cursor-not-allowed pointer-events-none'
+  : ''
+
+export const trackClasses = `${trackBaseClasses} ${trackStateClasses} ${trackDisabledClasses} ${config.track} ${className}`.trim()
+
+// Thumb classes
+const thumbBaseClasses = 'pointer-events-none inline-block transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out'
+const thumbPositionClasses = checked ? config.translate : 'translate-x-0'
+export const thumbClasses = `${thumbBaseClasses} ${thumbPositionClasses} ${config.thumb}`.trim()
+
+// Toggle function
+export function toggle() {
+  if (disabled) return
+  onChange?.(!checked)
+}
+</script>
+
+<label class="inline-flex items-center gap-3 cursor-pointer">
+  @if(label)
+    <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+      {{ label }}
+    </span>
+  @endif
+
+  <button
+    type="button"
+    role="switch"
+    aria-checked="{{ checked ? 'true' : 'false' }}"
+    class="{{ trackClasses }}"
+    @if(disabled)disabled aria-disabled="true"@endif
+    @click="toggle"
+  >
+    <span class="sr-only">@if(label){{ label }}@else Toggle switch@endif</span>
+    <span
+      aria-hidden="true"
+      class="{{ thumbClasses }}"
+    />
+  </button>
+</label>

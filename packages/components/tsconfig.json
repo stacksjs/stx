@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["esnext", "dom"],
+    "paths": {
+      "@stacksjs/stx": ["../stx/src/index.ts"],
+      "@stacksjs/headwind": ["../../../headwind/packages/headwind/src/index.ts"],
+      "ts-syntax-highlighter": ["../../../ts-syntax-highlighter/packages/ts-syntax-highlighter/src/index.ts"],
+      "bun-plugin-stx": ["../bun-plugin/src/index.ts"]
+    },
+    "outDir": "dist"
+  },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

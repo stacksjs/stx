@@ -1,0 +1,39 @@
+<script>
+import { CodeBlock } from './CodeBlock.stx'
+
+export const packageName = $props.packageName || '@stacksjs/component'
+export const installCode = `bun add ${packageName}`
+export const npmCode = `npm install ${packageName}`
+export const pnpmCode = `pnpm add ${packageName}`
+export const yarnCode = `yarn add ${packageName}`
+</script>
+
+<div class="installation">
+  <h2 class="my-2 text-lg font-semibold">Installation</h2>
+
+  <p class="my-3 text-base">
+    Install the component using your preferred package manager:
+  </p>
+
+  <div class="space-y-4">
+    <div>
+      <h3 class="text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">Bun (recommended)</h3>
+      @component('CodeBlock', { code: installCode, language: 'bash' })
+    </div>
+
+    <div>
+      <h3 class="text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">npm</h3>
+      @component('CodeBlock', { code: npmCode, language: 'bash' })
+    </div>
+
+    <div>
+      <h3 class="text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">pnpm</h3>
+      @component('CodeBlock', { code: pnpmCode, language: 'bash' })
+    </div>
+
+    <div>
+      <h3 class="text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">Yarn</h3>
+      @component('CodeBlock', { code: yarnCode, language: 'bash' })
+    </div>
+  </div>
+</div>
