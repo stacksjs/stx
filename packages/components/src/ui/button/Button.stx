@@ -2,7 +2,11 @@
 export const variant = $props.variant || 'primary'
 export const size = $props.size || 'md'
 export const disabled = $props.disabled || false
+export const loading = $props.loading || false
 export const type = $props.type || 'button'
+export const fullWidth = $props.fullWidth || false
+export const leftIcon = $props.leftIcon || ''
+export const rightIcon = $props.rightIcon || ''
 export const className = $props.className || ''
 export const onClick = $props.onClick
 
@@ -17,30 +21,68 @@ const variantClasses = {
 
 // Size styles using headwind
 const sizeClasses = {
-  sm: 'px-3 py-1.5 text-sm h-8',
-  md: 'px-4 py-2 text-base h-10',
-  lg: 'px-6 py-3 text-lg h-12',
+  xs: 'px-2.5 py-1 text-xs h-7 gap-1',
+  sm: 'px-3 py-1.5 text-sm h-8 gap-1.5',
+  md: 'px-4 py-2 text-base h-10 gap-2',
+  lg: 'px-6 py-3 text-lg h-12 gap-2.5',
+  xl: 'px-8 py-4 text-xl h-14 gap-3',
+}
+
+// Icon size styles
+const iconSizeClasses = {
+  xs: 'h-3 w-3',
+  sm: 'h-4 w-4',
+  md: 'h-5 w-5',
+  lg: 'h-6 w-6',
+  xl: 'h-7 w-7',
 }
 
 // Base classes
 const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none'
 
+// Width classes
+const widthClasses = fullWidth ? 'w-full' : ''
+
+// Loading state disables interactions
+const isDisabled = disabled || loading
+
 // Combine classes
-export const buttonClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`.trim()
+export const buttonClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${widthClasses} ${className}`.trim()
+export const iconClasses = iconSizeClasses[size]
+export const spinnerClasses = `animate-spin ${iconClasses}`.trim()
 </script>
 
 <button
   type="{{ type }}"
   class="{{ buttonClasses }}"
-  @if(disabled)disabled@endif
+  @if(isDisabled)disabled@endif
   @if(onClick)onclick="handleClick(event)"@endif
+  aria-busy="{{ loading ? 'true' : 'false' }}"
 >
+  @if(loading)
+    <!-- Loading spinner -->
+    <svg class="{{ spinnerClasses }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+  @else
+    @if(leftIcon)
+      <!-- Left icon -->
+      <span class="{{ iconClasses }}" innerHTML="{!! leftIcon !!}"></span>
+    @endif
+  @endif
+
   <slot />
+
+  @if(!loading && rightIcon)
+    <!-- Right icon -->
+    <span class="{{ iconClasses }}" innerHTML="{!! rightIcon !!}"></span>
+  @endif
 </button>
 
 <script>
 function handleClick(event) {
-  if (!disabled && onClick) {
+  if (!isDisabled && onClick) {
     onClick(event)
   }
 }

@@ -1,0 +1,146 @@
+<script>
+export const value = $props.value || ''
+export const onChange = $props.onChange || (() => {})
+export const placeholder = $props.placeholder || ''
+export const disabled = $props.disabled || false
+export const readonly = $props.readonly || false
+export const size = $props.size || 'md'
+export const error = $props.error || false
+export const label = $props.label || ''
+export const helperText = $props.helperText || ''
+export const required = $props.required || false
+export const leftIcon = $props.leftIcon || ''
+export const rightIcon = $props.rightIcon || ''
+export const clearable = $props.clearable || false
+export const maxLength = $props.maxLength
+export const showCount = $props.showCount || false
+export const className = $props.className || ''
+export const inputClassName = $props.inputClassName || ''
+
+// Size classes
+const sizeClasses = {
+  sm: 'px-3 py-1.5 text-sm h-8',
+  md: 'px-4 py-2 text-base h-10',
+  lg: 'px-5 py-3 text-lg h-12',
+}
+
+// Icon size classes
+const iconSizeClasses = {
+  sm: 'h-4 w-4',
+  md: 'h-5 w-5',
+  lg: 'h-6 w-6',
+}
+
+// Base and state classes
+const baseClasses = 'block w-full border-0 rounded-md shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset dark:bg-blue-gray-700 dark:text-gray-100'
+
+const stateClasses = error
+  ? 'ring-red-300 dark:ring-red-600 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-500 focus:ring-red-500 dark:focus:ring-red-400'
+  : 'ring-gray-300 dark:ring-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-indigo-600 dark:focus:ring-indigo-400'
+
+const disabledClasses = disabled
+  ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
+  : readonly
+    ? 'bg-gray-50 dark:bg-gray-800 cursor-default'
+    : 'bg-white dark:bg-blue-gray-700'
+
+const paddingClasses = leftIcon ? 'pl-10' : rightIcon || clearable ? 'pr-10' : ''
+
+export const inputClasses = `${baseClasses} ${sizeClasses[size]} ${stateClasses} ${disabledClasses} ${paddingClasses} ${inputClassName}`.trim()
+export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'}`.trim()
+export const helperClasses = `mt-2 text-sm ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`.trim()
+export const iconClasses = iconSizeClasses[size]
+export const hasValue = value && value.length > 0
+</script>
+
+<div class="w-full {{ className }}">
+  @if(label)
+    <label for="input-{{ label }}" class="{{ labelClasses }}">
+      {{ label }}
+      @if(required)
+        <span class="text-red-500 ml-1">*</span>
+      @endif
+    </label>
+  @endif
+
+  <div class="relative">
+    @if(leftIcon)
+      <!-- Left icon -->
+      <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+        <span class="{{ iconClasses }} text-gray-400 dark:text-gray-500" innerHTML="{!! leftIcon !!}"></span>
+      </div>
+    @endif
+
+    <input
+      type="text"
+      id="input-{{ label }}"
+      class="{{ inputClasses }}"
+      value="{{ value }}"
+      placeholder="{{ placeholder }}"
+      disabled="{{ disabled }}"
+      readonly="{{ readonly }}"
+      required="{{ required }}"
+      @if(maxLength)maxlength="{{ maxLength }}"@endif
+      oninput="handleInput(event)"
+      aria-invalid="{{ error ? 'true' : 'false' }}"
+      @if(helperText)aria-describedby="helper-text"@endif
+    />
+
+    @if(clearable && hasValue && !disabled && !readonly)
+      <!-- Clear button -->
+      <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+        <button
+          type="button"
+          onclick="handleClear()"
+          class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
+          aria-label="Clear input"
+        >
+          <svg class="{{ iconClasses }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    @else
+      @if(rightIcon && !clearable)
+        <!-- Right icon -->
+        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+          <span class="{{ iconClasses }} text-gray-400 dark:text-gray-500" innerHTML="{!! rightIcon !!}"></span>
+        </div>
+      @endif
+    @endif
+  </div>
+
+  @if(helperText || (showCount && maxLength))
+    <div class="flex items-center justify-between mt-2">
+      @if(helperText)
+        <p id="helper-text" class="{{ helperClasses }}">
+          {{ helperText }}
+        </p>
+      @else
+        <span></span>
+      @endif
+
+      @if(showCount && maxLength)
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          {{ value.length }} / {{ maxLength }}
+        </p>
+      @endif
+    </div>
+  @endif
+</div>
+
+<script>
+function handleInput(event) {
+  const newValue = event.target.value
+
+  if (onChange) {
+    onChange(newValue)
+  }
+}
+
+function handleClear() {
+  if (onChange) {
+    onChange('')
+  }
+}
+</script>

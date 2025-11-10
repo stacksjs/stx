@@ -1,0 +1,138 @@
+<script>
+export const value = $props.value || ''
+export const onChange = $props.onChange || (() => {})
+export const placeholder = $props.placeholder || '0'
+export const disabled = $props.disabled || false
+export const readonly = $props.readonly || false
+export const size = $props.size || 'md'
+export const error = $props.error || false
+export const label = $props.label || ''
+export const helperText = $props.helperText || ''
+export const required = $props.required || false
+export const min = $props.min
+export const max = $props.max
+export const step = $props.step || 1
+export const showControls = $props.showControls ?? true
+export const className = $props.className || ''
+export const inputClassName = $props.inputClassName || ''
+
+// Size classes
+const sizeClasses = {
+  sm: 'px-3 py-1.5 text-sm h-8',
+  md: 'px-4 py-2 text-base h-10',
+  lg: 'px-5 py-3 text-lg h-12',
+}
+
+// Base and state classes
+const baseClasses = 'block w-full border-0 rounded-md shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset dark:bg-blue-gray-700 dark:text-gray-100'
+
+const stateClasses = error
+  ? 'ring-red-300 dark:ring-red-600 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-500 focus:ring-red-500 dark:focus:ring-red-400'
+  : 'ring-gray-300 dark:ring-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-indigo-600 dark:focus:ring-indigo-400'
+
+const disabledClasses = disabled
+  ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
+  : readonly
+    ? 'bg-gray-50 dark:bg-gray-800 cursor-default'
+    : 'bg-white dark:bg-blue-gray-700'
+
+const paddingClasses = showControls ? 'pr-10' : ''
+
+export const inputClasses = `${baseClasses} ${sizeClasses[size]} ${stateClasses} ${disabledClasses} ${paddingClasses} ${inputClassName}`.trim()
+export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'}`.trim()
+export const helperClasses = `mt-2 text-sm ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`.trim()
+</script>
+
+<div class="w-full {{ className }}">
+  @if(label)
+    <label for="number-input" class="{{ labelClasses }}">
+      {{ label }}
+      @if(required)
+        <span class="text-red-500 ml-1">*</span>
+      @endif
+    </label>
+  @endif
+
+  <div class="relative">
+    <input
+      type="number"
+      id="number-input"
+      class="{{ inputClasses }}"
+      value="{{ value }}"
+      placeholder="{{ placeholder }}"
+      disabled="{{ disabled }}"
+      readonly="{{ readonly }}"
+      required="{{ required }}"
+      @if(min !== undefined)min="{{ min }}"@endif
+      @if(max !== undefined)max="{{ max }}"@endif
+      step="{{ step }}"
+      oninput="handleInput(event)"
+      aria-invalid="{{ error ? 'true' : 'false' }}"
+      @if(helperText)aria-describedby="helper-text"@endif
+    />
+
+    @if(showControls && !disabled && !readonly)
+      <!-- Increment/Decrement controls -->
+      <div class="absolute inset-y-0 right-0 flex flex-col">
+        <button
+          type="button"
+          onclick="handleIncrement()"
+          class="flex items-center justify-center w-8 h-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none border-b border-gray-300 dark:border-gray-600"
+          aria-label="Increment"
+        >
+          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onclick="handleDecrement()"
+          class="flex items-center justify-center w-8 h-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
+          aria-label="Decrement"
+        >
+          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+    @endif
+  </div>
+
+  @if(helperText)
+    <p id="helper-text" class="{{ helperClasses }}">
+      {{ helperText }}
+    </p>
+  @endif
+</div>
+
+<script>
+function handleInput(event) {
+  const newValue = event.target.value
+
+  if (onChange) {
+    onChange(newValue)
+  }
+}
+
+function handleIncrement() {
+  const currentValue = parseFloat(value) || 0
+  const newValue = currentValue + step
+
+  if (max !== undefined && newValue > max) return
+
+  if (onChange) {
+    onChange(String(newValue))
+  }
+}
+
+function handleDecrement() {
+  const currentValue = parseFloat(value) || 0
+  const newValue = currentValue - step
+
+  if (min !== undefined && newValue < min) return
+
+  if (onChange) {
+    onChange(String(newValue))
+  }
+}
+</script>
