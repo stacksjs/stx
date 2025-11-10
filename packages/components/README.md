@@ -77,6 +77,84 @@ We're actively migrating 12 more components including:
 - Transition
 - And more...
 
+## Component Syntax
+
+stx provides multiple ways to use components, giving you flexibility to choose the syntax that best fits your project:
+
+### 1. @component Directive with Object Shorthand (Recommended)
+
+The most concise syntax using ES6 object shorthand:
+
+```stx
+<script>
+export const title = 'Welcome'
+export const variant = 'primary'
+export const onClick = () => console.log('clicked')
+</script>
+
+@component('Button', {
+  title,
+  variant,
+  onClick
+})
+@endcomponent
+```
+
+### 2. @component Directive with Full Props
+
+Traditional explicit prop mapping:
+
+```stx
+@component('Button', {
+  title: title,
+  variant: variant,
+  onClick: onClick
+})
+@endcomponent
+```
+
+### 3. PascalCase Component Tags with Dynamic Binding (Vue-like)
+
+Use `:prop` syntax for dynamic values from context:
+
+```stx
+<script>
+export const title = 'Welcome'
+export const variant = 'primary'
+</script>
+
+<Button
+  :title="title"
+  :variant="variant"
+  :onClick="onClick"
+/>
+```
+
+### 4. PascalCase Component Tags with Static Values
+
+Use regular attributes for static strings:
+
+```stx
+<Button
+  title="Welcome"
+  variant="primary"
+/>
+```
+
+### 5. Mixed Static and Dynamic Props
+
+Combine static strings and dynamic bindings:
+
+```stx
+<Button
+  title="Static Title"
+  :variant="dynamicVariant"
+  size="large"
+/>
+```
+
+All these syntaxes are equivalent and fully interchangeable. Choose the one that fits your coding style!
+
 ## Usage
 
 ### Basic Example

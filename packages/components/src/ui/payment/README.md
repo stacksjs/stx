@@ -2,6 +2,50 @@
 
 Comprehensive payment components for Stripe integration, including payment method management and checkout flows.
 
+## Component Syntax
+
+stx supports multiple ways to use components:
+
+### 1. @component Directive with Object Shorthand (Recommended)
+```stx
+@component('Checkout', {
+  products,
+  stripePublicKey,
+  apiUrl
+})
+@endcomponent
+```
+
+### 2. @component Directive with Full Props
+```stx
+@component('Checkout', {
+  products: products,
+  stripePublicKey: stripePublicKey,
+  apiUrl: apiUrl
+})
+@endcomponent
+```
+
+### 3. PascalCase Component Tags (Vue-like)
+```stx
+<Checkout
+  :products="products"
+  :stripePublicKey="stripePublicKey"
+  :apiUrl="apiUrl"
+/>
+```
+
+### 4. PascalCase with Static Values
+```stx
+<Checkout
+  products="[]"
+  stripePublicKey="pk_test_..."
+  apiUrl="https://api.example.com"
+/>
+```
+
+All syntaxes are equivalent and can be used interchangeably based on your preference.
+
 ## Installation
 
 ```bash
@@ -26,9 +70,11 @@ Display the default payment method with a badge.
 
 ### Checkout Component (Recommended)
 
+**Using @component directive with object shorthand:**
+
 ```stx
 <script>
-export const cartProducts = [
+export const products = [
   {
     id: 1,
     name: 'Premium Subscription',
@@ -38,31 +84,61 @@ export const cartProducts = [
   }
 ]
 
-export const handleCheckoutComplete = (result) => {
+export const mode = 'subscription'
+export const stripePublicKey = 'pk_test_...'
+export const apiUrl = 'https://api.example.com'
+export const redirectUrl = '/thank-you'
+export const shipping = 4500
+export const taxes = 552
+
+export const onSubmit = (result) => {
   if (result.success) {
     console.log('Payment successful!')
-    // Redirect to success page
+    window.location.href = redirectUrl
   }
 }
 
-export const handleRemove = (productId) => {
+export const onRemoveProduct = (productId) => {
   console.log('Remove product:', productId)
   // Update cart state
 }
 </script>
 
 @component('Checkout', {
-  products: cartProducts,
-  mode: 'subscription',
-  stripePublicKey: 'pk_test_...',
-  apiUrl: 'https://api.example.com',
-  redirectUrl: '/thank-you',
-  shipping: 4500,
-  taxes: 552,
-  onSubmit: handleCheckoutComplete,
-  onRemoveProduct: handleRemove
+  products,
+  mode,
+  stripePublicKey,
+  apiUrl,
+  redirectUrl,
+  shipping,
+  taxes,
+  onSubmit,
+  onRemoveProduct
 })
 @endcomponent
+```
+
+**Or using Vue-like PascalCase syntax:**
+
+```stx
+<script>
+export const products = [...]
+export const stripePublicKey = 'pk_test_...'
+export const apiUrl = 'https://api.example.com'
+// ... other exports
+</script>
+
+<Checkout
+  :products="products"
+  mode="subscription"
+  :stripePublicKey="stripePublicKey"
+  :apiUrl="apiUrl"
+  redirectUrl="/thank-you"
+  :shipping="4500"
+  :taxes="552"
+  :onSubmit="onSubmit"
+  :onRemoveProduct="onRemoveProduct"
+/>
 ```
 
 ### PaymentMethods Component

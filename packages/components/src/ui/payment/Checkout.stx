@@ -17,14 +17,14 @@ export const isOneTime = mode === 'one-time'
 
 @if(isSubscription)
   @component('SubscriptionCheckout', {
-    products: products,
-    stripePublicKey: stripePublicKey,
-    apiUrl: apiUrl,
-    onSubmit: onSubmit,
-    onRemoveProduct: onRemoveProduct,
-    shipping: shipping,
-    taxes: taxes,
-    className: className
+    products,
+    stripePublicKey,
+    apiUrl,
+    onSubmit,
+    onRemoveProduct,
+    shipping,
+    taxes,
+    className
   })
   @endcomponent
 @endif
