@@ -13,7 +13,7 @@ export function handleClose() {
 </script>
 
 @if(open)
-  <component :is="{{ as }}" class="{{ dialogClasses }}" role="dialog" aria-modal="true">
-    <slot :close="handleClose" />
-  </component>
+  <div class="{{ dialogClasses }}" role="dialog" aria-modal="true">
+    <slot />
+  </div>
 @endif

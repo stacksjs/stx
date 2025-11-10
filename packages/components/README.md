@@ -59,24 +59,6 @@ yarn add @stacksjs/components
 - **Footer** - Footer component with social links
 - **Installation** - Installation instructions component
 
-### More Coming Soon!
-
-We're actively migrating 12 more components including:
-- Dropdown
-- Dialog/Modal
-- Radio Group
-- Select
-- Combobox
-- Command Palette
-- Popover
-- Notification/Toast
-- Table
-- Calendar
-- Stepper
-- Listbox
-- Transition
-- And more...
-
 ## Component Syntax
 
 stx provides multiple ways to use components, giving you flexibility to choose the syntax that best fits your project:
@@ -363,13 +345,11 @@ Contributions are welcome! Please read our [contributing guidelines](../../CONTR
 This library is actively being migrated from Vue to STX. Check our [TODO.md](../../TODO.md) for the complete migration roadmap and progress.
 
 **Completed:**
+
 - ✅ Infrastructure setup
 - ✅ Composables (useDarkMode, useCopyCode, useSEO)
 - ✅ Base components (CodeBlock, Hero, Footer, Installation)
-- ✅ 9 UI Components (Button, Switch, Dropdown, Dialog, Radio Group, Popover, Listbox, Combobox, Notification)
-
-**In Progress:**
-- 🔄 Migrating 12 more components from Vue
+- ✅ 20 UI Components (Auth, Audio, Button, Drawer, Image, Payment, Select, Storage, Switch, Video, Dropdown, Dialog, Radio Group, Popover, Listbox, Combobox, Notification, Stepper, Transition, Table, Command Palette)
 
 ## License
 

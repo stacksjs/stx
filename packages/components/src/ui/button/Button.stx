@@ -33,7 +33,15 @@ export const buttonClasses = `${baseClasses} ${variantClasses[variant]} ${sizeCl
   type="{{ type }}"
   class="{{ buttonClasses }}"
   @if(disabled)disabled@endif
-  @if(onClick)@click="onClick"@endif
+  @if(onClick)onclick="handleClick(event)"@endif
 >
   <slot />
 </button>
+
+<script>
+function handleClick(event) {
+  if (!disabled && onClick) {
+    onClick(event)
+  }
+}
+</script>

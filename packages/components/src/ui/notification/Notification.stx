@@ -30,13 +30,6 @@ const notificationClasses = `${baseClasses} ${typeColors[type]} ${positions[posi
 export function handleClose() {
   onClose?.()
 }
-
-// Auto-hide after duration
-if (duration > 0 && show) {
-  setTimeout(() => {
-    handleClose()
-  }, duration)
-}
 </script>
 
 @if(show)
@@ -66,4 +59,13 @@ if (duration > 0 && show) {
       </button>
     </div>
   </div>
+
+  <script>
+  // Auto-hide after duration (client-side only)
+  if (typeof window !== 'undefined' && duration > 0) {
+    setTimeout(() => {
+      handleClose()
+    }, duration)
+  }
+  </script>
 @endif
