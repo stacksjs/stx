@@ -12,8 +12,8 @@ import { $ } from 'bun'
 console.log(`\n${'='.repeat(70)}`)
 console.log('🚀 STX FRAMEWORK PERFORMANCE BENCHMARKS')
 console.log('='.repeat(70))
-console.log('\nComparing STX framework components (@stacksjs/stx, @stacksjs/markdown,')
-console.log('@stacksjs/sanitizer) against popular competitors in the ecosystem.')
+console.log('\nComparing STX framework components (@stacksjs/stx, @stacksjs/sanitizer)')
+console.log('against popular competitors in the ecosystem.')
 console.log(`\nRuntime: Bun v${Bun.version}`)
 console.log('Platform:', process.platform, process.arch)
 console.log('Node version:', process.version)
@@ -22,9 +22,6 @@ console.log(`\n${'='.repeat(70)}`)
 // Run all benchmarks sequentially
 const benchmarks = [
   { name: 'Template Engine Performance', file: 'templating-bench.ts' },
-  { name: 'Markdown Parsing', file: 'markdown-bench.ts' },
-  { name: 'Frontmatter Parsing', file: 'frontmatter-bench.ts' },
-  { name: 'YAML Parsing', file: 'yaml-bench.ts' },
   { name: 'HTML Sanitization', file: 'sanitizer-bench.ts' },
 ]
 

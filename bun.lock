@@ -23,7 +23,7 @@
       "version": "0.1.16",
       "dependencies": {
         "@11ty/eleventy": "^3.1.2",
-        "@stacksjs/markdown": "workspace:*",
+        "@stacksjs/ts-markdown": "workspace:*",
         "@stacksjs/sanitizer": "workspace:*",
         "dompurify": "^3.2.7",
         "ejs": "^3.1.10",
@@ -1627,7 +1627,7 @@
       },
     },
     "packages/markdown": {
-      "name": "@stacksjs/markdown",
+      "name": "@stacksjs/ts-markdown",
       "version": "0.1.16",
     },
     "packages/sanitizer": {
@@ -1644,7 +1644,7 @@
         "@stacksjs/clapp": "^0.2.0",
         "@stacksjs/desktop": "workspace:*",
         "@stacksjs/headwind": "^0.1.3",
-        "@stacksjs/markdown": "workspace:*",
+        "@stacksjs/ts-markdown": "workspace:*",
         "@stacksjs/sanitizer": "workspace:*",
         "bun-plugin-stx": "workspace:*",
         "bunfig": "^0.15.0",
@@ -2639,7 +2639,7 @@
 
     "@stacksjs/logsmith": ["@stacksjs/logsmith@0.2.1", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.6", "pickier": "^0.1.7" }, "bin": { "@stacksjs/logsmith": "dist/bin/cli.js", "logsmith": "dist/bin/cli.js" } }, "sha512-JbAnn0dWZDEBjks7qRd/L0kWbsD3Qi0uSFmCPkEU9fH0+eP6Fdl7mtnok2oVDUaNitWu97OJZHlFe/MV2ilgnA=="],
 
-    "@stacksjs/markdown": ["@stacksjs/markdown@workspace:packages/markdown"],
+    "@stacksjs/ts-markdown": ["@stacksjs/ts-markdown@workspace:packages/markdown"],
 
     "@stacksjs/path": ["@stacksjs/path@0.70.23", "", {}, "sha512-HqgtHcnhIVGahTR2OdzZxe0iSZwR+yKm/kwCeyjQHkW5hBhPrwcpuuVvIrJDoZ2CusC/vS7hSr5U6L8BEU+0vw=="],
 

@@ -137,14 +137,14 @@ export { content as default };
 
           return {
             contents: output,
-            loader: 'html',
+            loader: 'file',
           }
         }
         catch (error: any) {
           console.error('stx Plugin Error:', error)
           return {
             contents: `<!DOCTYPE html><html><body><h1>stx Rendering Error</h1><pre>${error.message || String(error)}</pre></body></html>`,
-            loader: 'html',
+            loader: 'file',
           }
         }
       })

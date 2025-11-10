@@ -6,7 +6,7 @@ stx packages are built for performance. This page documents comprehensive benchm
 
 We benchmark two core packages:
 
-- **@stacksjs/markdown** - High-performance markdown parser
+- **@stacksjs/ts-markdown** - High-performance markdown parser
 - **@stacksjs/sanitizer** - Fast HTML sanitizer
 
 All benchmarks are run on Bun runtime using [tinybench](https://github.com/tinylibs/tinybench) for accurate measurements. Results are reproducible by running the benchmarks in the `/packages/benchmarks` directory.
@@ -33,7 +33,7 @@ The markdown parser is tested against three document sizes:
 
 | Library | Operations/sec | Speedup |
 |---------|---------------|---------|
-| **@stacksjs/markdown** | **324B ops/sec** | **Baseline** |
+| **@stacksjs/ts-markdown** | **324B ops/sec** | **Baseline** |
 | markdown-it | 112B ops/sec | 2.89x slower |
 | marked | 26B ops/sec | 12.5x slower |
 | showdown | 14B ops/sec | 23.1x slower |
@@ -42,7 +42,7 @@ The markdown parser is tested against three document sizes:
 
 | Library | Operations/sec | Speedup |
 |---------|---------------|---------|
-| **@stacksjs/markdown** | **34.7B ops/sec** | **Baseline** |
+| **@stacksjs/ts-markdown** | **34.7B ops/sec** | **Baseline** |
 | markdown-it | 17.7B ops/sec | 1.96x slower |
 | marked | 2.8B ops/sec | 12.4x slower |
 | showdown | 2.8B ops/sec | 12.4x slower |
@@ -51,14 +51,14 @@ The markdown parser is tested against three document sizes:
 
 | Library | Operations/sec | Speedup |
 |---------|---------------|---------|
-| **@stacksjs/markdown** | **1.81B ops/sec** | **Baseline** |
+| **@stacksjs/ts-markdown** | **1.81B ops/sec** | **Baseline** |
 | markdown-it | 1.25B ops/sec | 1.45x slower |
 | showdown | 135M ops/sec | 13.4x slower |
 | marked | 16M ops/sec | 113x slower |
 
 ### Markdown Performance Summary
 
-@stacksjs/markdown consistently outperforms all competitors:
+@stacksjs/ts-markdown consistently outperforms all competitors:
 
 - **2.83x faster** than markdown-it on small documents
 - **2.03x faster** than markdown-it on medium documents

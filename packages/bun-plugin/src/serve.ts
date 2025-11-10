@@ -87,54 +87,72 @@ async function main() {
   console.log(`📄 Found ${sourceFiles.length} file(s):`)
   sourceFiles.forEach(file => console.log(`   - ${file}`))
 
-  // Build all files
-  console.log('\n🔨 Building...')
-  const result = await Bun.build({
-    entrypoints: sourceFiles,
-    outdir: './.stx-serve',
-    plugins: [stxPlugin()],
-    splitting: false, // Disable code splitting - we're serving HTML, not JS bundles
-  })
+  // Copy assets directory to build output so they're available during build
+  console.log('\n📦 Copying assets...')
+  const fs = await import('node:fs/promises')
+  const path = await import('node:path')
+  const assetsDir = './resources/assets'
+  const targetAssetsDir = './.stx/assets'
 
-  if (!result.success) {
-    console.error('\n❌ Build failed!')
-    console.error(result.logs)
-    process.exit(1)
+  try {
+    const assetsExist = await fs.stat(assetsDir).then(() => true).catch(() => false)
+    if (assetsExist) {
+      // Remove existing assets dir in build output
+      await fs.rm(targetAssetsDir, { recursive: true, force: true })
+      // Copy assets recursively
+      await fs.cp(assetsDir, targetAssetsDir, { recursive: true })
+      console.log('✓ Assets copied')
+    }
+  }
+  catch (error) {
+    console.log('⚠ No assets directory found, skipping copy')
   }
 
-  console.log('✅ Build complete\n')
-
-  // Create route map
+  // Process files directly without using Bun.build to avoid path resolution
+  console.log('\n🔨 Processing templates...')
   const routes = new Map<string, string>()
 
-  console.log(`\n📦 Processing ${result.outputs.length} build outputs...`)
-  for (const output of result.outputs) {
-    try {
-      const outputFile = output.path.split('/').pop() || 'index'
+  // Import stx processing functions
+  const { processDirectives, extractVariables, defaultConfig } = await import('@stacksjs/stx')
 
-      // Only process .html files (skip any .js chunks)
-      if (!outputFile.endsWith('.html')) {
-        console.log(`   ⊘ Skipping ${outputFile} (not HTML)`)
-        continue
+  for (const filePath of sourceFiles) {
+    try {
+      const content = await Bun.file(filePath).text()
+
+      // Extract inline script (without src attribute) for variable extraction
+      // This should match <script> or <script type="..."> but NOT <script src="...">
+      const inlineScriptMatch = content.match(/<script(?!\s+[^>]*src=)\b[^>]*>([\s\S]*?)<\/script>/i)
+      const scriptContent = inlineScriptMatch ? inlineScriptMatch[1] : ''
+      // Only remove the inline script tag if it exists
+      const templateContent = inlineScriptMatch ? content.replace(/<script(?!\s+[^>]*src=)\b[^>]*>[\s\S]*?<\/script>/i, '') : content
+
+      // Create execution context
+      const context: Record<string, any> = {
+        __filename: filePath,
+        __dirname: path.dirname(filePath),
       }
 
-      const content = await output.text()
-      // Get the base filename without any extension
-      const filename = outputFile
-        .replace('.html', '')
-        .replace('.md', '')
-        .replace('.stx', '')
+      // Execute script to extract variables
+      await extractVariables(scriptContent, context, filePath)
 
-      // Smart routing: index/home -> /, others -> /filename
+      // Process template directives
+      let output = templateContent
+      const dependencies = new Set<string>()
+      output = await processDirectives(output, context, filePath, defaultConfig, dependencies)
+
+      // Determine route from filename
+      const filename = path.basename(filePath, path.extname(filePath))
       const route = ['index', 'home'].includes(filename) ? '/' : `/${filename}`
-      console.log(`   ✓ ${outputFile} -> ${route}`)
-      routes.set(route, content)
+
+      console.log(`   ✓ ${filePath} -> ${route}`)
+      routes.set(route, output)
     }
     catch (error) {
-      // Skip outputs that can't be converted to text (e.g., binary files)
-      console.warn(`   ✗ Skipping output: ${output.path} (${error})`)
+      console.error(`   ✗ Error processing ${filePath}:`, error)
     }
   }
+
+  console.log('✅ Processing complete\n')
 
   // Start server
   const _server = bunServe({
@@ -165,6 +183,123 @@ async function main() {
             'Cache-Control': 'no-cache',
           },
         })
+      }
+
+      // Try to serve build artifacts (chunk files, CSS, etc.) from .stx
+      if (path.startsWith('/chunk-') || path.endsWith('.js') || path.endsWith('.css')) {
+        try {
+          const buildFile = Bun.file(`.stx${path}`)
+          if (await buildFile.exists()) {
+            const ext = path.split('.').pop()?.toLowerCase()
+            const contentType = ext === 'css' ? 'text/css' : ext === 'js' ? 'application/javascript' : 'text/plain'
+
+            return new Response(buildFile, {
+              headers: {
+                'Content-Type': contentType,
+                'Cache-Control': 'no-cache', // Build artifacts change during dev
+              },
+            })
+          }
+        }
+        catch {
+          // Continue to other handlers
+        }
+      }
+
+      // Smart asset serving - Laravel-style path resolution
+      // Supports both /assets/* and /resources/assets/* paths
+      if (path.startsWith('/assets/') || path.startsWith('/resources/assets/')) {
+        // Try multiple possible paths (like Laravel does)
+        const possiblePaths = [
+          path, // Original path
+          path.replace(/^\/assets\//, '/resources/assets/'), // /assets/* -> /resources/assets/*
+          path.replace(/^\/resources\/assets\//, '/assets/'), // /resources/assets/* -> /assets/*
+        ]
+
+        for (const assetPath of possiblePaths) {
+          try {
+            const filePath = `.${assetPath}`
+            const file = Bun.file(filePath)
+
+            if (await file.exists()) {
+              // Determine content type based on file extension
+              const ext = assetPath.split('.').pop()?.toLowerCase()
+
+              // Handle TypeScript files - transpile to JavaScript
+              if (ext === 'ts') {
+                const transpiler = new Bun.Transpiler({
+                  loader: 'ts',
+                })
+                const code = await file.text()
+                const transpiled = transpiler.transformSync(code)
+
+                return new Response(transpiled, {
+                  headers: {
+                    'Content-Type': 'application/javascript',
+                    'Cache-Control': 'no-cache', // Dev mode - no caching for TS
+                  },
+                })
+              }
+
+              const contentTypes: Record<string, string> = {
+                'css': 'text/css',
+                'js': 'application/javascript',
+                'json': 'application/json',
+                'png': 'image/png',
+                'jpg': 'image/jpeg',
+                'jpeg': 'image/jpeg',
+                'gif': 'image/gif',
+                'svg': 'image/svg+xml',
+                'ico': 'image/x-icon',
+                'woff': 'font/woff',
+                'woff2': 'font/woff2',
+                'ttf': 'font/ttf',
+                'eot': 'application/vnd.ms-fontobject',
+              }
+
+              return new Response(file, {
+                headers: {
+                  'Content-Type': contentTypes[ext || ''] || 'application/octet-stream',
+                  'Cache-Control': 'public, max-age=31536000',
+                },
+              })
+            }
+          }
+          catch {
+            // Continue to next path
+            continue
+          }
+        }
+      }
+
+      // Handle favicon.ico requests
+      if (path === '/favicon.ico') {
+        // Try common favicon locations
+        const faviconPaths = [
+          './public/favicon.ico',
+          './resources/assets/favicon.ico',
+          './favicon.ico',
+        ]
+
+        for (const faviconPath of faviconPaths) {
+          try {
+            const favicon = Bun.file(faviconPath)
+            if (await favicon.exists()) {
+              return new Response(favicon, {
+                headers: {
+                  'Content-Type': 'image/x-icon',
+                  'Cache-Control': 'public, max-age=86400',
+                },
+              })
+            }
+          }
+          catch {
+            continue
+          }
+        }
+
+        // Return empty 204 if no favicon found
+        return new Response(null, { status: 204 })
       }
 
       // 404 page

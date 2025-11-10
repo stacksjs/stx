@@ -13,6 +13,7 @@ bun add @stacksjs/stx
 ```
 
 **Features**:
+
 - 30+ template directives (`@foreach`, `@if`, `@include`, `@component`, etc.)
 - Template processing pipeline with caching
 - Hot reload development server
@@ -25,6 +26,7 @@ bun add @stacksjs/stx
 - CLI commands (init, docs, serve, iconify)
 
 **Main Exports**:
+
 - Template processing: `processDirectives()`
 - Configuration: `defaultConfig`, `defineConfig()`
 - Components: `renderComponent()`, `resolveComponent()`
@@ -45,6 +47,7 @@ bun add bun-plugin-stx
 ```
 
 **Features**:
+
 - `.stx` file loader with template processing
 - `.md` file loader with frontmatter support
 - Cache integration
@@ -53,6 +56,7 @@ bun add bun-plugin-stx
 - Development server with hot reload
 
 **Usage**:
+
 ```typescript
 // bunfig.toml or bun.config.ts
 import { stxPlugin } from 'bun-plugin-stx'
@@ -66,15 +70,16 @@ export default {
 
 ---
 
-### @stacksjs/markdown
+### @stacksjs/ts-markdown
 
 **Fast markdown parser** with frontmatter support - **1.45-2.89x faster** than markdown-it.
 
 ```bash
-bun add @stacksjs/markdown
+bun add @stacksjs/ts-markdown
 ```
 
 **Features**:
+
 - GitHub Flavored Markdown (GFM)
 - YAML/TOML/JSON frontmatter parsing
 - Syntax highlighting with Shiki
@@ -82,6 +87,7 @@ bun add @stacksjs/markdown
 - Position-based parsing optimization
 
 **Main Exports**:
+
 ```typescript
 import {
   parseMarkdown,
@@ -91,7 +97,7 @@ import {
   stringifyFrontmatter,
   parseYaml,
   stringifyYaml
-} from '@stacksjs/markdown'
+} from '@stacksjs/ts-markdown'
 ```
 
 **Performance**: 2.89x faster (small), 1.96x faster (medium), 1.45x faster (large)
@@ -109,6 +115,7 @@ bun add @stacksjs/sanitizer
 ```
 
 **Features**:
+
 - XSS protection
 - 4 security presets (strict, basic, markdown, relaxed)
 - Configurable allowed tags and attributes
@@ -116,6 +123,7 @@ bun add @stacksjs/sanitizer
 - DOMPurify-compatible API
 
 **Main Exports**:
+
 ```typescript
 import {
   sanitize,
@@ -147,6 +155,7 @@ bun install
 ```
 
 **Features**:
+
 - Window management (create, control native windows)
 - System tray and menubar applications
 - Modals and alerts
@@ -156,6 +165,7 @@ bun install
 - Webview-agnostic architecture
 
 **Main Exports**:
+
 ```typescript
 import {
   createWindow,
@@ -189,6 +199,7 @@ bun add @stacksjs/iconify-core
 ```
 
 **Features**:
+
 - SVG generation from icon data
 - Size, color, rotation, flip transformations
 - currentColor support
@@ -196,6 +207,7 @@ bun add @stacksjs/iconify-core
 - Zero runtime dependencies
 
 **Main Exports**:
+
 ```typescript
 import {
   renderIcon,
@@ -218,6 +230,7 @@ bun add @stacksjs/iconify-generator
 ```
 
 **Features**:
+
 - Fetches from Iconify API or @iconify/json
 - Generates TypeScript data files
 - Generates .stx component files
@@ -225,6 +238,7 @@ bun add @stacksjs/iconify-generator
 - 218 collections with 200,000+ icons
 
 **CLI Usage**:
+
 ```bash
 # List available collections
 stx iconify list
@@ -234,6 +248,7 @@ stx iconify generate lucide
 ```
 
 **Main Exports**:
+
 ```typescript
 import {
   fetchCollections,
@@ -258,6 +273,7 @@ bun install
 ```
 
 **Features**:
+
 - Template inspection
 - Performance monitoring
 - Configuration viewer
@@ -266,6 +282,7 @@ bun install
 - Built entirely with STX
 
 **Components**:
+
 - `TemplateDetails` - Template detail view
 - `PerformanceChart` - Performance visualization
 - Views: Dashboard, Templates, Performance, Config
@@ -284,6 +301,7 @@ bun run bench:all
 ```
 
 **Benchmarks**:
+
 - Template engines: EJS, Pug, Handlebars, Nunjucks, LiquidJS
 - Markdown: markdown-it, marked, showdown, remark
 - Sanitizer: DOMPurify, sanitize-html, xss
@@ -302,6 +320,7 @@ bun run bench:all
 **VS Code extension** providing STX language support.
 
 **Features**:
+
 - Syntax highlighting for `.stx` files
 - IntelliSense (completion, hover, go-to-definition)
 - Diagnostics (errors/warnings)
@@ -330,6 +349,7 @@ bun add @stacksjs/iconify-heroicons # 1,288 icons
 ```
 
 **Popular Collections**:
+
 - `iconify-lucide` - Modern icon set (1,661 icons)
 - `iconify-mdi` - Material Design Icons (7,638 icons)
 - `iconify-tabler` - Clean, minimal icons (6,011 icons)
@@ -339,6 +359,7 @@ bun add @stacksjs/iconify-heroicons # 1,288 icons
 - And 212 more...
 
 **Usage**:
+
 ```typescript
 import { HeartIcon } from '@stacksjs/iconify-lucide'
 
@@ -355,7 +376,7 @@ import { HeartIcon } from '@stacksjs/iconify-lucide'
 ```
 @stacksjs/stx (core)
 ├── @stacksjs/desktop
-├── @stacksjs/markdown
+├── @stacksjs/ts-markdown
 ├── @stacksjs/sanitizer
 └── bun-plugin-stx
 
@@ -372,7 +393,7 @@ bun-plugin-stx
 └── bun-plugin-stx
 
 @stacksjs/benchmarks
-├── @stacksjs/markdown
+├── @stacksjs/ts-markdown
 └── @stacksjs/sanitizer
 ```
 
@@ -404,7 +425,7 @@ Install specific packages as needed:
 
 ```bash
 # Markdown parsing
-bun add @stacksjs/markdown
+bun add @stacksjs/ts-markdown
 
 # HTML sanitization
 bun add @stacksjs/sanitizer
@@ -433,26 +454,31 @@ cd packages/desktop && bun install
 ## Performance Highlights
 
 ### Framework Performance
+
 - **44.1% faster than VanillaJS** in js-framework-benchmark
 - 0.57ms geometric mean (VanillaJS: 1.02ms)
 - Winner in 8 of 9 operations
 
 ### Template Engine
+
 - Pug: 92ns (fastest for simple templates)
 - Handlebars: 3.85µs (fastest for complex templates)
 - **STX: 26.83µs simple, 167.41µs complex** (feature-rich)
 
 ### Markdown Parsing
+
 - **2.89x faster** than markdown-it (small documents)
 - **1.96x faster** (medium documents)
 - **1.45x faster** (large documents)
 
 ### HTML Sanitization
+
 - **77.93x faster** than DOMPurify
 - **1.70-1.99x faster** than xss/sanitize-html
 - Fastest in all categories
 
 ### YAML Parsing
+
 - **1.5-2.7x faster** than js-yaml
 - Native Bun implementation
 
@@ -465,15 +491,17 @@ See [Benchmark Results](/guide/benchmarks) for complete performance analysis.
 ### For Web Applications
 
 **Full Stack**:
+
 ```bash
 @stacksjs/stx           # Core templating
-@stacksjs/markdown      # Content parsing
+@stacksjs/ts-markdown      # Content parsing
 @stacksjs/sanitizer     # Security
 @stacksjs/iconify-*     # Icons
 bun-plugin-stx          # Build integration
 ```
 
 **Minimal**:
+
 ```bash
 @stacksjs/stx           # Just the core
 ```
@@ -489,7 +517,7 @@ bun-plugin-stx          # Build integration
 ### For Static Sites
 
 ```bash
-@stacksjs/markdown      # Markdown → HTML
+@stacksjs/ts-markdown      # Markdown → HTML
 @stacksjs/sanitizer     # Content security
 bun-plugin-stx          # Build tool
 ```
@@ -497,7 +525,7 @@ bun-plugin-stx          # Build tool
 ### For Content Processing
 
 ```bash
-@stacksjs/markdown      # Markdown parsing
+@stacksjs/ts-markdown      # Markdown parsing
 @stacksjs/sanitizer     # HTML cleaning
 ```
 

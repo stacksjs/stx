@@ -1,10 +1,10 @@
 # Markdown API Reference
 
-This document covers the `@stacksjs/markdown` package - a fast, Bun-native markdown parser with frontmatter support.
+This document covers the `@stacksjs/ts-markdown` package - a fast, Bun-native markdown parser with frontmatter support.
 
 ## Overview
 
-`@stacksjs/markdown` is a high-performance markdown parser built specifically for Bun, providing:
+`@stacksjs/ts-markdown` is a high-performance markdown parser built specifically for Bun, providing:
 
 - **Fast Markdown Parsing**: 1.45-2.89x faster than markdown-it
 - **Frontmatter Support**: YAML, TOML, and JSON frontmatter parsing
@@ -27,7 +27,7 @@ See [Benchmark Results](/guide/benchmarks#markdown-parsing-performance) for deta
 ## Installation
 
 ```bash
-bun add @stacksjs/markdown
+bun add @stacksjs/ts-markdown
 ```
 
 Or use it directly in STX templates (already included in `@stacksjs/stx`).
@@ -41,7 +41,7 @@ Or use it directly in STX templates (already included in `@stacksjs/stx`).
 Parse markdown to HTML.
 
 ```typescript
-import { parseMarkdown } from '@stacksjs/markdown'
+import { parseMarkdown } from '@stacksjs/ts-markdown'
 
 const html = parseMarkdown('# Hello World\n\nThis is **bold** text.')
 // Output: <h1 id="hello-world">Hello World</h1>\n<p>This is <strong>bold</strong> text.</p>
@@ -62,7 +62,7 @@ const html = parseMarkdown(markdown, {
 Synchronous markdown parsing (for non-async contexts).
 
 ```typescript
-import { parseMarkdownSync } from '@stacksjs/markdown'
+import { parseMarkdownSync } from '@stacksjs/ts-markdown'
 
 const html = parseMarkdownSync('# Sync Parsing\n\nThis is synchronous.')
 ```
@@ -76,7 +76,7 @@ const html = parseMarkdownSync('# Sync Parsing\n\nThis is synchronous.')
 Extract and parse frontmatter from markdown.
 
 ```typescript
-import { parseFrontmatter } from '@stacksjs/markdown'
+import { parseFrontmatter } from '@stacksjs/ts-markdown'
 
 const markdown = `---
 title: My Post
@@ -98,6 +98,7 @@ console.log(content)
 ### Supported Formats
 
 **YAML (default)**:
+
 ```yaml
 ---
 title: My Post
@@ -106,6 +107,7 @@ date: 2025-01-01
 ```
 
 **TOML**:
+
 ```toml
 +++
 title = "My Post"
@@ -114,6 +116,7 @@ date = 2025-01-01
 ```
 
 **JSON**:
+
 ```json
 ;;;
 {
@@ -128,7 +131,7 @@ date = 2025-01-01
 Parse both frontmatter and markdown content in one call.
 
 ```typescript
-import { parseMarkdownWithFrontmatter } from '@stacksjs/markdown'
+import { parseMarkdownWithFrontmatter } from '@stacksjs/ts-markdown'
 
 const { data, content, html } = parseMarkdownWithFrontmatter(markdown)
 
@@ -142,7 +145,7 @@ console.log(html)    // Rendered HTML
 Convert data back to frontmatter format.
 
 ```typescript
-import { stringifyFrontmatter } from '@stacksjs/markdown'
+import { stringifyFrontmatter } from '@stacksjs/ts-markdown'
 
 const frontmatter = stringifyFrontmatter({
   title: 'My Post',
@@ -167,7 +170,7 @@ console.log(frontmatter)
 Parse YAML using Bun's native parser (1.5-2.7x faster than js-yaml).
 
 ```typescript
-import { parseYaml } from '@stacksjs/markdown'
+import { parseYaml } from '@stacksjs/ts-markdown'
 
 const data = parseYaml(`
 name: John Doe
@@ -186,7 +189,7 @@ console.log(data)
 Convert data to YAML format.
 
 ```typescript
-import { stringifyYaml } from '@stacksjs/markdown'
+import { stringifyYaml } from '@stacksjs/ts-markdown'
 
 const yaml = stringifyYaml({
   name: 'John Doe',
@@ -303,6 +306,7 @@ You can pass context variables to markdown files that will be substituted using 
 ```
 
 **welcome.md:**
+
 ```markdown
 # Welcome to {{ siteName }}!
 
@@ -322,6 +326,7 @@ Pass additional context directly to the directive:
 ```
 
 **template.md:**
+
 ```markdown
 ---
 title: "User Profile"
@@ -422,10 +427,12 @@ console.log(data)    // Frontmatter data object
 ```
 
 **Parameters:**
+
 - `filePath` (string): Path to the markdown file
 - `options` (StxOptions): Configuration options
 
 **Returns:**
+
 ```typescript
 {
   content: string,        // Rendered HTML content
@@ -457,6 +464,7 @@ console.log(result) // Template with markdown files included
 ```
 
 **Parameters:**
+
 - `template` (string): Template content
 - `context` (Record<string, any>): Template context variables
 - `filePath` (string): Path to the template file
@@ -689,6 +697,7 @@ export default {
 ```
 
 **posts/my-first-post.md:**
+
 ```markdown
 ---
 title: "My First Post"

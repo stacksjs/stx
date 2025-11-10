@@ -4,13 +4,13 @@ stx is built for speed and provides comprehensive performance optimization featu
 
 ## Markdown Parser Performance
 
-The `@stacksjs/markdown` package implements a high-performance markdown parser built specifically for Bun. The parser uses a flat token stream architecture inspired by markdown-it, combined with aggressive optimization techniques.
+The `@stacksjs/ts-markdown` package implements a high-performance markdown parser built specifically for Bun. The parser uses a flat token stream architecture inspired by markdown-it, combined with aggressive optimization techniques.
 
 ### Benchmark Results
 
 Performance comparison against popular markdown parsers:
 
-| Document Size | @stacksjs/markdown | markdown-it | Speedup |
+| Document Size | @stacksjs/ts-markdown | markdown-it | Speedup |
 |--------------|-------------------|-------------|---------|
 | Small (< 1KB) | 324B ops/sec | 112B ops/sec | 2.89x |
 | Medium (~3KB) | 34.7B ops/sec | 17.7B ops/sec | 1.96x |
@@ -29,7 +29,7 @@ The parser achieves this performance through several key design decisions:
 ### Usage
 
 ```typescript
-import { parseMarkdown } from '@stacksjs/markdown'
+import { parseMarkdown } from '@stacksjs/ts-markdown'
 
 const html = parseMarkdown('# Hello **world**')
 // <h1 id="hello-world">Hello <strong>world</strong></h1>
