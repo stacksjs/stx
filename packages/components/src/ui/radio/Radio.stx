@@ -1,0 +1,81 @@
+<script>
+export const checked = $props.checked || false
+export const onChange = $props.onChange || (() => {})
+export const disabled = $props.disabled || false
+export const size = $props.size || 'md'
+export const label = $props.label || ''
+export const description = $props.description || ''
+export const error = $props.error || false
+export const required = $props.required || false
+export const value = $props.value || ''
+export const name = $props.name || ''
+export const className = $props.className || ''
+
+// Size classes
+const sizeClasses = {
+  sm: 'h-4 w-4',
+  md: 'h-5 w-5',
+  lg: 'h-6 w-6',
+}
+
+// Base classes for radio
+const baseClasses = 'border-gray-300 dark:border-gray-600 text-indigo-600 dark:text-indigo-500 focus:ring-indigo-600 dark:focus:ring-indigo-500 focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-colors'
+
+const stateClasses = error
+  ? 'border-red-300 dark:border-red-600 text-red-600 dark:text-red-500 focus:ring-red-500 dark:focus:ring-red-400'
+  : ''
+
+const disabledClasses = disabled
+  ? 'opacity-50 cursor-not-allowed'
+  : 'cursor-pointer'
+
+export const radioClasses = `${baseClasses} ${sizeClasses[size]} ${stateClasses} ${disabledClasses}`.trim()
+export const labelClasses = `text-sm font-medium ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`.trim()
+export const descriptionClasses = `text-sm ${error ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`.trim()
+</script>
+
+<div class="relative flex items-start {{ className }}">
+  <div class="flex h-6 items-center">
+    <input
+      id="radio-{{ value || label }}"
+      type="radio"
+      name="{{ name }}"
+      value="{{ value }}"
+      checked="{{ checked }}"
+      disabled="{{ disabled }}"
+      required="{{ required }}"
+      class="{{ radioClasses }}"
+      onchange="handleChange(event)"
+      aria-invalid="{{ error ? 'true' : 'false' }}"
+      @if(description)aria-describedby="radio-description"@endif
+    />
+  </div>
+
+  @if(label || description)
+    <div class="ml-3 text-sm leading-6">
+      @if(label)
+        <label for="radio-{{ value || label }}" class="{{ labelClasses }}">
+          {{ label }}
+          @if(required)
+            <span class="text-red-500 ml-1">*</span>
+          @endif
+        </label>
+      @endif
+      @if(description)
+        <p id="radio-description" class="{{ descriptionClasses }}">
+          {{ description }}
+        </p>
+      @endif
+    </div>
+  @endif
+</div>
+
+<script>
+function handleChange(event) {
+  const isChecked = event.target.checked
+
+  if (!disabled && onChange) {
+    onChange(value, isChecked)
+  }
+}
+</script>

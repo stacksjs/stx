@@ -12,12 +12,12 @@ This document tracks all improvements and enhancements for the @stacksjs/compone
   - [✅] Add size variants: xs, sm, md, lg, xl
   - [✅] Add full-width variant
 
-- [ ] Enhance Image Component
-  - [ ] Add srcset/sizes for responsive images
-  - [ ] Add WebP fallback support
-  - [ ] Implement blur-up placeholder technique
-  - [ ] Add aspect ratio presets (1:1, 4:3, 16:9, 21:9)
-  - [ ] Add zoom on hover option
+- [✅] Enhance Image Component
+  - [✅] Add srcset/sizes for responsive images
+  - [✅] Add WebP fallback support
+  - [✅] Implement blur-up placeholder technique
+  - [✅] Add aspect ratio presets (existing + custom)
+  - [✅] Add zoom on hover option
 
 - [ ] Storage Component Enhancements
   - [ ] Add `watch()` method for reactive storage changes
@@ -41,20 +41,20 @@ This document tracks all improvements and enhancements for the @stacksjs/compone
   - [ ] Submit handling
   - [ ] Loading states
 
-- [ ] Create Textarea component
-  - [ ] Auto-resize option
-  - [ ] Character counter
-  - [ ] Max length validation
+- [✅] Create Textarea component
+  - [✅] Auto-resize option
+  - [✅] Character counter
+  - [✅] Max length validation
 
-- [ ] Create Checkbox component
-  - [ ] Standalone checkbox
-  - [ ] Indeterminate state
-  - [ ] Custom styling
+- [✅] Create Checkbox component
+  - [✅] Standalone checkbox
+  - [✅] Indeterminate state
+  - [✅] Custom styling
 
-- [ ] Create Radio component
-  - [ ] Standalone radio button
-  - [ ] Group coordination
-  - [ ] Custom styling
+- [✅] Create Radio component
+  - [✅] Standalone radio button
+  - [✅] Group coordination
+  - [✅] Custom styling
 
 ## 🟡 Medium Priority
 
@@ -267,6 +267,17 @@ Focus on High Priority items first, then move to Medium Priority.
 - ✅ NumberInput - Number input with increment/decrement controls
 - ✅ SearchInput - Search input with debounced search callback
 
-**Total Component Count: 25 UI Components + 5 Input Components = 30 Components**
+**Form Components (3 new components):**
+- ✅ Textarea - Multi-line text input with auto-resize, character counter
+- ✅ Checkbox - Checkbox with indeterminate state, descriptions
+- ✅ Radio - Radio button with descriptions and custom styling
+
+**Image Component Enhancements:**
+- ✅ Responsive images with srcset/sizes
+- ✅ WebP support with picture element
+- ✅ Blur-up placeholder technique
+- ✅ Zoom on hover effect
+
+**Total Component Count: 25 UI + 5 Input + 3 Form = 33 Components**
 
 Last Updated: 2025-11-10

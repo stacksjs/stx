@@ -1,0 +1,119 @@
+<script>
+export const value = $props.value || ''
+export const onChange = $props.onChange || (() => {})
+export const placeholder = $props.placeholder || ''
+export const disabled = $props.disabled || false
+export const readonly = $props.readonly || false
+export const rows = $props.rows || 4
+export const autoResize = $props.autoResize || false
+export const maxRows = $props.maxRows || 10
+export const error = $props.error || false
+export const label = $props.label || ''
+export const helperText = $props.helperText || ''
+export const required = $props.required || false
+export const maxLength = $props.maxLength
+export const showCount = $props.showCount || false
+export const resize = $props.resize || 'vertical' // 'none' | 'vertical' | 'horizontal' | 'both'
+export const className = $props.className || ''
+
+// Resize classes
+const resizeClasses = {
+  none: 'resize-none',
+  vertical: 'resize-y',
+  horizontal: 'resize-x',
+  both: 'resize',
+}
+
+// Base and state classes
+const baseClasses = 'block w-full border-0 rounded-md shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset px-4 py-2 text-base dark:bg-blue-gray-700 dark:text-gray-100'
+
+const stateClasses = error
+  ? 'ring-red-300 dark:ring-red-600 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-500 focus:ring-red-500 dark:focus:ring-red-400'
+  : 'ring-gray-300 dark:ring-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-indigo-600 dark:focus:ring-indigo-400'
+
+const disabledClasses = disabled
+  ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
+  : readonly
+    ? 'bg-gray-50 dark:bg-gray-800 cursor-default'
+    : 'bg-white dark:bg-blue-gray-700'
+
+export const textareaClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${resizeClasses[resize]} ${className}`.trim()
+export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'}`.trim()
+export const helperClasses = `mt-2 text-sm ${error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`.trim()
+</script>
+
+<div class="w-full">
+  @if(label)
+    <label for="textarea-input" class="{{ labelClasses }}">
+      {{ label }}
+      @if(required)
+        <span class="text-red-500 ml-1">*</span>
+      @endif
+    </label>
+  @endif
+
+  <textarea
+    id="textarea-input"
+    class="{{ textareaClasses }}"
+    rows="{{ rows }}"
+    placeholder="{{ placeholder }}"
+    disabled="{{ disabled }}"
+    readonly="{{ readonly }}"
+    required="{{ required }}"
+    @if(maxLength)maxlength="{{ maxLength }}"@endif
+    oninput="handleInput(event)"
+    aria-invalid="{{ error ? 'true' : 'false' }}"
+    @if(helperText)aria-describedby="helper-text"@endif
+  >{{ value }}</textarea>
+
+  @if(helperText || (showCount && maxLength))
+    <div class="flex items-center justify-between mt-2">
+      @if(helperText)
+        <p id="helper-text" class="{{ helperClasses }}">
+          {{ helperText }}
+        </p>
+      @else
+        <span></span>
+      @endif
+
+      @if(showCount && maxLength)
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          {{ value.length }} / {{ maxLength }}
+        </p>
+      @endif
+    </div>
+  @endif
+</div>
+
+<script>
+function handleInput(event) {
+  const textarea = event.target
+  const newValue = textarea.value
+
+  if (autoResize && typeof window !== 'undefined') {
+    // Auto-resize functionality
+    textarea.style.height = 'auto'
+    const scrollHeight = textarea.scrollHeight
+    const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight)
+    const maxHeight = lineHeight * maxRows
+
+    textarea.style.height = Math.min(scrollHeight, maxHeight) + 'px'
+    textarea.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden'
+  }
+
+  if (onChange) {
+    onChange(newValue)
+  }
+}
+
+// Initialize auto-resize on mount
+if (autoResize && typeof window !== 'undefined') {
+  window.addEventListener('DOMContentLoaded', () => {
+    const textarea = document.getElementById('textarea-input')
+    if (textarea && value) {
+      // Trigger initial resize
+      textarea.dispatchEvent(new Event('input'))
+    }
+  })
+}
+</script>

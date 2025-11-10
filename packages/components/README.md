@@ -33,9 +33,10 @@ yarn add @stacksjs/components
 
 - **Auth** - Login, Signup, and 2FA components
 - **Audio** - Audio player with waveform visualization
-- **Button** - Versatile button with multiple variants and sizes
+- **Button** - Versatile button with loading, icons, 5 sizes (xs-xl), full-width
 - **Drawer** - Slide-out panel from any direction
-- **Image** - Optimized images with lazy loading
+- **Image** - Optimized images with lazy loading, srcset, WebP, blur placeholder
+- **Payment** - Stripe checkout and payment management (3 components)
 - **Select** - Native-style select dropdown
 - **Storage** - localStorage/sessionStorage utilities
 - **Switch** - Modern toggle switch component
@@ -51,6 +52,20 @@ yarn add @stacksjs/components
 - **Transition** - Enter/leave animations
 - **Table** - Responsive table with sorting/filtering
 - **Command Palette** - Searchable command menu
+
+### Input Components (5)
+
+- **TextInput** - Base input with icons, clear button, character counter
+- **EmailInput** - Email input with validation
+- **PasswordInput** - Password input with show/hide toggle & strength indicator
+- **NumberInput** - Number input with increment/decrement controls
+- **SearchInput** - Search with debounced callback
+
+### Form Components (3)
+
+- **Textarea** - Multi-line input with auto-resize
+- **Checkbox** - Checkbox with indeterminate state
+- **Radio** - Radio button with descriptions
 
 ### Utility Components
 
@@ -350,6 +365,9 @@ This library is actively being migrated from Vue to STX. Check our [TODO.md](../
 - ✅ Composables (useDarkMode, useCopyCode, useSEO)
 - ✅ Base components (CodeBlock, Hero, Footer, Installation)
 - ✅ 20 UI Components (Auth, Audio, Button, Drawer, Image, Payment, Select, Storage, Switch, Video, Dropdown, Dialog, Radio Group, Popover, Listbox, Combobox, Notification, Stepper, Transition, Table, Command Palette)
+- ✅ 5 Input Components (TextInput, EmailInput, PasswordInput, NumberInput, SearchInput)
+- ✅ 3 Form Components (Textarea, Checkbox, Radio)
+- ✅ **Total: 33 Components**
 
 ## License
 
