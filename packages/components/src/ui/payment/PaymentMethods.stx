@@ -1,0 +1,113 @@
+<script>
+export const paymentMethods = $props.paymentMethods || []
+export const onDeletePaymentMethod = $props.onDeletePaymentMethod
+export const onMakeDefault = $props.onMakeDefault
+export const isLoading = $props.isLoading || false
+export const className = $props.className || ''
+
+// Card brand icon mapping
+const brandIcons = {
+  visa: '💳',
+  mastercard: '💳',
+  amex: '💳',
+  discover: '💳',
+  default: '💳',
+}
+
+export const containerClasses = `mt-4 ${className}`.trim()
+</script>
+
+<div class="{{ containerClasses }}">
+  @if(isLoading)
+    <!-- Loading state -->
+    <div class="animate-pulse">
+      <div class="h-24 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+    </div>
+  @else
+    @if(paymentMethods.length > 0)
+      <ul role="list" class="grid grid-cols-1 gap-6 lg:grid-cols-1 sm:grid-cols-1">
+        @foreach(method in paymentMethods)
+          <li class="col-span-1 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-blue-gray-800 shadow divide-y divide-gray-200 dark:divide-gray-700">
+            <div class="w-full p-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                  <!-- Card Brand Icon -->
+                  <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-md">
+                    <span class="text-2xl">{{ brandIcons[method.brand.toLowerCase()] || brandIcons.default }}</span>
+                  </div>
+
+                  <!-- Card Details -->
+                  <div>
+                    <h2 class="text-sm text-gray-600 dark:text-gray-300">
+                      {{ method.brand }} •••• {{ method.last_four }}
+                    </h2>
+                    <span class="text-xs text-gray-500 dark:text-gray-400 italic">
+                      Expires {{ method.exp_month }} / {{ method.exp_year }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                  <!-- Make Default Button -->
+                  @if(onMakeDefault)
+                    <button
+                      type="button"
+                      class="border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-blue-gray-700 px-2 py-1 text-sm text-gray-700 dark:text-gray-300 font-semibold shadow-sm hover:bg-gray-50 dark:hover:bg-blue-gray-600 focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onclick="handleMakeDefault('{{ method.id }}')"
+                      title="Make default"
+                    >
+                      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                      </svg>
+                    </button>
+                  @endif
+
+                  <!-- Delete Button -->
+                  @if(onDeletePaymentMethod)
+                    <button
+                      type="button"
+                      class="border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-blue-gray-700 px-2 py-1 text-sm text-red-600 dark:text-red-400 font-semibold shadow-sm hover:bg-red-50 dark:hover:bg-red-900/20 focus-visible:outline-2 focus-visible:outline-red-600 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onclick="handleDelete('{{ method.id }}')"
+                      title="Delete payment method"
+                    >
+                      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  @endif
+                </div>
+              </div>
+            </div>
+          </li>
+        @endforeach
+      </ul>
+    @else
+      <!-- Empty state -->
+      <div class="text-center py-12 bg-white dark:bg-blue-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        </svg>
+        <h3 class="mt-2 text-sm text-gray-900 dark:text-gray-100 font-medium">No payment methods</h3>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          You haven't added any payment methods yet.
+        </p>
+      </div>
+    @endif
+  @endif
+</div>
+
+<script>
+function handleMakeDefault(methodId) {
+  if (onMakeDefault) {
+    onMakeDefault(methodId)
+  }
+}
+
+function handleDelete(methodId) {
+  if (onDeletePaymentMethod) {
+    if (confirm('Are you sure you want to delete this payment method?')) {
+      onDeletePaymentMethod(methodId)
+    }
+  }
+}
+</script>

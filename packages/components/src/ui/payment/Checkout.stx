@@ -1,0 +1,39 @@
+<script>
+export const products = $props.products || []
+export const redirectUrl = $props.redirectUrl || ''
+export const mode = $props.mode || 'subscription'
+export const stripePublicKey = $props.stripePublicKey || ''
+export const apiUrl = $props.apiUrl || ''
+export const onSubmit = $props.onSubmit
+export const onRemoveProduct = $props.onRemoveProduct
+export const shipping = $props.shipping || 0
+export const taxes = $props.taxes || 0
+export const className = $props.className || ''
+
+// For future expansion - one-time payment support
+export const isSubscription = mode === 'subscription'
+export const isOneTime = mode === 'one-time'
+</script>
+
+@if(isSubscription)
+  @component('SubscriptionCheckout', {
+    products: products,
+    stripePublicKey: stripePublicKey,
+    apiUrl: apiUrl,
+    onSubmit: onSubmit,
+    onRemoveProduct: onRemoveProduct,
+    shipping: shipping,
+    taxes: taxes,
+    className: className
+  })
+  @endcomponent
+@endif
+
+@if(isOneTime)
+  <!-- One-time payment component can be implemented here in the future -->
+  <div class="p-8 text-center">
+    <p class="text-gray-600 dark:text-gray-400">
+      One-time payment mode is not yet implemented.
+    </p>
+  </div>
+@endif

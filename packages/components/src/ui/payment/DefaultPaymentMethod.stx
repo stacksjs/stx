@@ -1,0 +1,62 @@
+<script>
+export const paymentMethod = $props.paymentMethod
+export const isLoading = $props.isLoading || false
+export const className = $props.className || ''
+
+const brandIcons = {
+  visa: '💳',
+  mastercard: '💳',
+  amex: '💳',
+  discover: '💳',
+  default: '💳',
+}
+
+export const containerClasses = `mt-16 w-2/3 bg-white dark:bg-blue-gray-800 px-8 py-6 shadow ring-1 ring-black dark:ring-gray-700 ring-opacity-5 sm:rounded-lg ${className}`.trim()
+</script>
+
+<div class="{{ containerClasses }}">
+  <h2 class="text-lg text-gray-900 dark:text-gray-100 font-medium">
+    Payment Info
+  </h2>
+
+  @if(isLoading)
+    <!-- Loading skeleton -->
+    <div class="mt-8 animate-pulse">
+      <div class="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+    </div>
+  @else
+    @if(paymentMethod)
+      <div class="col-span-1 mt-8 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-blue-gray-800 shadow divide-y divide-gray-200 dark:divide-gray-700">
+        <div class="w-full p-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <!-- Card Brand Icon -->
+              <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-md">
+                <span class="text-2xl">{{ brandIcons[paymentMethod.brand.toLowerCase()] || brandIcons.default }}</span>
+              </div>
+
+              <!-- Card Details -->
+              <div>
+                <h2 class="text-sm text-gray-600 dark:text-gray-300">
+                  {{ paymentMethod.brand }} •••• {{ paymentMethod.last_four }}
+                  <span class="ml-4 inline-flex items-center rounded-md bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 text-xs text-indigo-700 dark:text-indigo-300 font-medium ring-1 ring-indigo-700/10 dark:ring-indigo-300/20 ring-inset">Default</span>
+                  <br>
+                  <span class="text-xs text-gray-500 dark:text-gray-400 italic">Expires {{ paymentMethod.exp_month }} / {{ paymentMethod.exp_year }}</span>
+                </h2>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    @else
+      <!-- Empty state -->
+      <div class="col-span-1 mt-8 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-blue-gray-800 shadow divide-y divide-gray-200 dark:divide-gray-700">
+        <div class="w-full px-4 py-5">
+          <h2 class="text-center text-sm text-gray-600 dark:text-gray-300">
+            You haven't added any payment methods yet.
+          </h2>
+        </div>
+      </div>
+    @endif
+  @endif
+</div>

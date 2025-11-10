@@ -1,0 +1,353 @@
+<script>
+export const products = $props.products || []
+export const stripePublicKey = $props.stripePublicKey || ''
+export const apiUrl = $props.apiUrl || ''
+export const onSubmit = $props.onSubmit
+export const onRemoveProduct = $props.onRemoveProduct
+export const shipping = $props.shipping || 0
+export const taxes = $props.taxes || 0
+export const className = $props.className || ''
+
+// Calculate totals
+export const calculateSubtotal = () => {
+  return products.reduce((sum, product) => sum + (product.price * (product.quantity || 1)), 0)
+}
+
+export const total = calculateSubtotal() + shipping + taxes
+
+export const containerClasses = `bg-gray-50 dark:bg-blue-gray-900 ${className}`.trim()
+</script>
+
+<div class="{{ containerClasses }}">
+  <div class="mx-auto max-w-2xl px-4 pb-24 pt-16 lg:max-w-7xl lg:px-8 sm:px-6">
+    <h2 class="sr-only">Checkout</h2>
+
+    <form class="lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16" onsubmit="event.preventDefault(); handleCheckoutSubmit(event)">
+      <!-- Left Column - Contact & Payment -->
+      <div>
+        <!-- Contact Information -->
+        <div>
+          <h2 class="text-lg text-gray-900 dark:text-gray-100 font-medium">
+            Contact information
+          </h2>
+
+          <div class="mt-4">
+            <label for="email-address" class="block text-sm text-gray-700 dark:text-gray-300 font-medium">
+              Email address
+            </label>
+            <div class="mt-1">
+              <input
+                id="email-address"
+                type="email"
+                name="email-address"
+                autocomplete="email"
+                required
+                class="block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 shadow-sm bg-white dark:bg-blue-gray-700 text-gray-900 dark:text-gray-100 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm focus:ring-indigo-500 dark:focus:ring-indigo-400"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Billing Information -->
+        <div class="mt-10 border-t border-gray-200 dark:border-gray-700 pt-10">
+          <h2 class="text-lg text-gray-900 dark:text-gray-100 font-medium">
+            Billing information
+          </h2>
+
+          <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+            <div class="sm:col-span-2">
+              <label for="card-name" class="block text-sm text-gray-700 dark:text-gray-300 font-medium">
+                Name on card
+              </label>
+              <div class="mt-1">
+                <input
+                  type="text"
+                  id="card-name"
+                  name="card-name"
+                  autocomplete="cc-name"
+                  required
+                  class="block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 shadow-sm bg-white dark:bg-blue-gray-700 text-gray-900 dark:text-gray-100 focus:border-indigo-500 sm:text-sm focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+
+            <!-- Stripe Element Mount Point -->
+            <div class="sm:col-span-2">
+              <div id="payment-element" class="mt-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-blue-gray-700 p-3"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Type -->
+        <div class="mt-10 border-t border-gray-200 dark:border-gray-700 pt-10">
+          <h2 class="text-lg text-gray-900 dark:text-gray-100 font-medium">
+            Payment
+          </h2>
+
+          <fieldset class="mt-4">
+            <legend class="sr-only">Payment type</legend>
+            <div class="sm:flex sm:items-center space-y-4 sm:space-x-10 sm:space-y-0">
+              <div class="flex items-center">
+                <input
+                  id="credit-card"
+                  name="payment-type"
+                  type="radio"
+                  checked
+                  class="h-4 w-4 border-gray-300 dark:border-gray-600 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                />
+                <label for="credit-card" class="ml-3 block text-sm text-gray-700 dark:text-gray-300 font-medium">
+                  Credit card
+                </label>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+
+      <!-- Right Column - Order Summary -->
+      <div class="mt-10 lg:mt-0">
+        <h2 class="text-lg text-gray-900 dark:text-gray-100 font-medium">
+          Order summary
+        </h2>
+
+        <div class="mt-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-blue-gray-800 shadow-sm">
+          <h3 class="sr-only">Items in your cart</h3>
+
+          <!-- Product List -->
+          <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+            @foreach(product in products)
+              <li class="flex px-4 py-6 sm:px-6">
+                <div class="flex-shrink-0">
+                  @if(product.images)
+                    <img src="{{ product.images }}" alt="{{ product.name }}" class="w-20 rounded-md" />
+                  @else
+                    <div class="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-md flex items-center justify-center">
+                      <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  @endif
+                </div>
+
+                <div class="ml-6 flex flex-1 flex-col">
+                  <div class="flex">
+                    <div class="min-w-0 flex-1">
+                      <h4 class="text-sm">
+                        <a href="#" class="text-gray-700 dark:text-gray-300 font-medium hover:text-gray-800 dark:hover:text-gray-200">
+                          {{ product.name }}
+                        </a>
+                      </h4>
+                    </div>
+
+                    @if(onRemoveProduct)
+                      <div class="ml-4 flow-root flex-shrink-0">
+                        <button
+                          type="button"
+                          class="flex items-center justify-center bg-white dark:bg-blue-gray-700 p-2.5 text-gray-400 dark:text-gray-500 -m-2.5 hover:text-gray-500 dark:hover:text-gray-400"
+                          onclick="handleRemoveProduct('{{ product.id }}')"
+                          title="Remove"
+                        >
+                          <span class="sr-only">Remove</span>
+                          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                    @endif
+                  </div>
+
+                  <div class="flex flex-1 items-end justify-between pt-2">
+                    <p class="mt-1 text-sm text-gray-900 dark:text-gray-100 font-medium">
+                      ${{ (product.price / 100).toFixed(2) }}
+                    </p>
+
+                    <div class="ml-4">
+                      <label for="quantity-{{ product.id }}" class="sr-only">Quantity</label>
+                      <select
+                        id="quantity-{{ product.id }}"
+                        name="quantity"
+                        class="border border-gray-300 dark:border-gray-600 rounded-md text-left text-base text-gray-700 dark:text-gray-300 font-medium shadow-sm bg-white dark:bg-blue-gray-700 focus:border-indigo-500 sm:text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      >
+                        <option value="1" {{ (product.quantity || 1) === 1 ? 'selected' : '' }}>1</option>
+                        <option value="2" {{ (product.quantity || 1) === 2 ? 'selected' : '' }}>2</option>
+                        <option value="3" {{ (product.quantity || 1) === 3 ? 'selected' : '' }}>3</option>
+                        <option value="4" {{ (product.quantity || 1) === 4 ? 'selected' : '' }}>4</option>
+                        <option value="5" {{ (product.quantity || 1) === 5 ? 'selected' : '' }}>5</option>
+                        <option value="6" {{ (product.quantity || 1) === 6 ? 'selected' : '' }}>6</option>
+                        <option value="7" {{ (product.quantity || 1) === 7 ? 'selected' : '' }}>7</option>
+                        <option value="8" {{ (product.quantity || 1) === 8 ? 'selected' : '' }}>8</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            @endforeach
+          </ul>
+
+          <!-- Summary Totals -->
+          <dl class="border-t border-gray-200 dark:border-gray-700 px-4 py-6 space-y-6 sm:px-6">
+            <div class="flex items-center justify-between">
+              <dt class="text-sm text-gray-600 dark:text-gray-400">Subtotal</dt>
+              <dd class="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                ${{ (calculateSubtotal() / 100).toFixed(2) }}
+              </dd>
+            </div>
+
+            @if(shipping > 0)
+              <div class="flex items-center justify-between">
+                <dt class="text-sm text-gray-600 dark:text-gray-400">Shipping</dt>
+                <dd class="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                  ${{ (shipping / 100).toFixed(2) }}
+                </dd>
+              </div>
+            @endif
+
+            @if(taxes > 0)
+              <div class="flex items-center justify-between">
+                <dt class="text-sm text-gray-600 dark:text-gray-400">Taxes</dt>
+                <dd class="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                  ${{ (taxes / 100).toFixed(2) }}
+                </dd>
+              </div>
+            @endif
+
+            <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-6">
+              <dt class="text-base text-gray-900 dark:text-gray-100 font-medium">Total</dt>
+              <dd class="text-base text-gray-900 dark:text-gray-100 font-medium">
+                ${{ (total / 100).toFixed(2) }}
+              </dd>
+            </div>
+          </dl>
+
+          <!-- Submit Button -->
+          <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-6 sm:px-6">
+            <button
+              type="submit"
+              class="w-full border border-transparent rounded-md bg-indigo-600 dark:bg-indigo-500 px-4 py-3 text-base text-white font-medium shadow-sm hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-900"
+            >
+              Confirm order
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// Stripe integration
+let stripe = null
+let elements = null
+let paymentElement = null
+
+function handleRemoveProduct(productId) {
+  if (onRemoveProduct) {
+    onRemoveProduct(productId)
+  }
+}
+
+async function initializeStripe() {
+  if (!stripePublicKey) {
+    console.error('Stripe public key is required')
+    return
+  }
+
+  try {
+    // Load Stripe.js
+    if (typeof window !== 'undefined' && window.Stripe) {
+      stripe = window.Stripe(stripePublicKey)
+    } else {
+      // Dynamically load Stripe.js
+      const script = document.createElement('script')
+      script.src = 'https://js.stripe.com/v3/'
+      script.async = true
+      script.onload = () => {
+        stripe = window.Stripe(stripePublicKey)
+        setupStripeElements()
+      }
+      document.head.appendChild(script)
+    }
+
+    if (stripe) {
+      await setupStripeElements()
+    }
+  } catch (error) {
+    console.error('Error initializing Stripe:', error)
+  }
+}
+
+async function setupStripeElements() {
+  if (!stripe || !apiUrl) return
+
+  try {
+    // Create payment intent for subscription
+    const response = await fetch(`${apiUrl}/stripe/create-subscription`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        amount: total,
+        quantity: products.reduce((sum, p) => sum + (p.quantity || 1), 0),
+      }),
+    })
+
+    const paymentIntent = await response.json()
+    const { clientSecret } = paymentIntent
+    if (!clientSecret) {
+      console.error('No client secret returned from API')
+      return
+    }
+
+    // Create elements instance
+    elements = stripe.elements({
+      clientSecret,
+      appearance: {
+        theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
+      },
+    })
+
+    // Create and mount payment element
+    paymentElement = elements.create('payment')
+    paymentElement.mount('#payment-element')
+  } catch (error) {
+    console.error('Error setting up Stripe elements:', error)
+  }
+}
+
+async function handleCheckoutSubmit(event) {
+  if (!stripe || !elements) {
+    console.error('Stripe not initialized')
+    return
+  }
+
+  try {
+    const { error } = await stripe.confirmPayment({
+      elements,
+      redirect: 'if_required',
+      confirmParams: {
+        return_url: window.location.href,
+      },
+    })
+
+    if (error) {
+      console.error('Payment error:', error)
+      alert(error.message)
+    } else {
+      // Success!
+      if (onSubmit) {
+        onSubmit({ success: true })
+      }
+    }
+  } catch (error) {
+    console.error('Checkout error:', error)
+    alert('An error occurred during checkout')
+  }
+}
+
+// Initialize on component mount
+if (typeof window !== 'undefined') {
+  initializeStripe()
+}
+</script>
