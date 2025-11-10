@@ -29,8 +29,9 @@ yarn add @stacksjs/components
 
 ## Components
 
-### UI Components
+### UI Components (14)
 
+- **Auth** - Login, Signup, and 2FA components
 - **Button** - Versatile button with multiple variants and sizes
 - **Switch** - Modern toggle switch component
 - **Dropdown** - Menu dropdown component with keyboard navigation
@@ -40,6 +41,10 @@ yarn add @stacksjs/components
 - **Listbox** - Custom select component with keyboard support
 - **Combobox** - Searchable select with filtering
 - **Notification** - Toast notifications with auto-hide
+- **Stepper** - Multi-step progress indicator
+- **Transition** - Enter/leave animations
+- **Table** - Responsive table with sorting/filtering
+- **Command Palette** - Searchable command menu
 
 ### Utility Components
 

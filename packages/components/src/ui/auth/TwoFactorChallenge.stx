@@ -1,0 +1,125 @@
+<script>
+export const headingText = $props.headingText || 'Two Factor Authentication'
+export const labelText = $props.labelText || 'Authentication code'
+export const instructionText = $props.instructionText || 'Open your Symantec 2FA app to view your authentication code.'
+export const codeLength = $props.codeLength || 6
+export const onSubmit = $props.onSubmit || (() => {})
+export const onUseRecoveryCode = $props.onUseRecoveryCode
+export const className = $props.className || ''
+
+export const containerClasses = `py-32 dark:bg-blue-gray-900 ${className}`.trim()
+export const codes = Array(codeLength).fill('')
+</script>
+
+<div class="{{ containerClasses }}">
+  <div class="mx-auto max-w-sm rounded-md px-8 py-4 shadow-md bg-white dark:bg-blue-gray-800">
+    <div class="card-body">
+      <div>
+        <h3 class="text-center text-sm text-gray-900 dark:text-gray-100 font-semibold">
+          {{ headingText }}
+        </h3>
+        <label for="code-0" class="mt-4 block text-sm text-gray-900 dark:text-gray-100 font-medium leading-6">
+          {{ labelText }}
+        </label>
+        <form onsubmit="event.preventDefault(); handleSubmit(event)">
+          <div class="mt-2 flex rounded-md shadow-sm space-x-2">
+            @for(i in Array(codeLength).keys())
+              <input
+                id="code-{{ i }}"
+                type="text"
+                maxlength="1"
+                name="code-{{ i }}"
+                placeholder="-"
+                class="block w-full border-0 rounded-md px-2 py-2 text-center text-gray-900 dark:text-gray-100 ring-1 ring-gray-300 dark:ring-gray-600 ring-inset sm:text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 sm:leading-6 focus:ring-2 focus:ring-indigo-600 focus:ring-inset dark:bg-blue-gray-700"
+                oninput="handleCodeInput(event, {{ i }})"
+                onkeydown="handleKeyDown(event, {{ i }})"
+              />
+            @endfor
+          </div>
+          <div class="py-4">
+            <button
+              type="submit"
+              class="relative h-8 w-full flex items-center justify-center rounded-full bg-teal-600 px-4 text-white font-semibold hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2"
+            >
+              Verify
+            </button>
+          </div>
+        </form>
+        <div>
+          <p class="text-xs text-gray-700 dark:text-gray-300 font-semibold">
+            {{ instructionText }}
+          </p>
+        </div>
+        @if(onUseRecoveryCode)
+          <div class="mt-4">
+            <p class="text-xs text-gray-700 dark:text-gray-300 font-semibold">
+              Having Problems?
+            </p>
+            <a
+              href="#"
+              onclick="event.preventDefault(); handleRecoveryCode()"
+              class="text-xs text-blue-500 hover:underline"
+            >
+              Use recovery code instead
+            </a>
+          </div>
+        @endif
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function handleCodeInput(event, index) {
+  const input = event.target
+  const value = input.value
+
+  // Only allow digits
+  if (!/^\d*$/.test(value)) {
+    input.value = ''
+    return
+  }
+
+  // Auto-focus next input
+  if (value.length === 1 && index < codeLength - 1) {
+    const nextInput = document.getElementById(`code-${index + 1}`)
+    if (nextInput) {
+      nextInput.focus()
+    }
+  }
+}
+
+function handleKeyDown(event, index) {
+  // Handle backspace to move to previous input
+  if (event.key === 'Backspace' && !event.target.value && index > 0) {
+    const prevInput = document.getElementById(`code-${index - 1}`)
+    if (prevInput) {
+      prevInput.focus()
+    }
+  }
+}
+
+function handleSubmit(event) {
+  const code = []
+  for (let i = 0; i < codeLength; i++) {
+    const input = document.getElementById(`code-${i}`)
+    if (input && input.value) {
+      code.push(input.value)
+    }
+  }
+
+  if (code.length === codeLength) {
+    if (onSubmit) {
+      onSubmit(code.join(''))
+    }
+  } else {
+    alert('Please enter all digits')
+  }
+}
+
+function handleRecoveryCode() {
+  if (onUseRecoveryCode) {
+    onUseRecoveryCode()
+  }
+}
+</script>

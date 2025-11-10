@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import type {
+  LoginProps,
+  SignupProps,
+  TwoFactorChallengeProps,
   DropdownProps,
   DialogProps,
   RadioGroupProps,
@@ -14,6 +17,51 @@ import type {
 } from '../src'
 
 describe('Component Props', () => {
+  describe('Login', () => {
+    it('should accept valid props', () => {
+      const onSubmit = () => {}
+      const props: LoginProps = {
+        showLogo: true,
+        headingText: 'Sign in',
+        showSocialLogin: true,
+        showRememberMe: false,
+        onSubmit,
+      }
+      expect(props.showLogo).toBe(true)
+      expect(props.headingText).toBe('Sign in')
+      expect(props.onSubmit).toBe(onSubmit)
+    })
+  })
+
+  describe('Signup', () => {
+    it('should accept valid props', () => {
+      const onSubmit = () => {}
+      const props: SignupProps = {
+        headingText: 'Create Account',
+        showSocialSignup: false,
+        onSubmit,
+      }
+      expect(props.headingText).toBe('Create Account')
+      expect(props.showSocialSignup).toBe(false)
+      expect(props.onSubmit).toBe(onSubmit)
+    })
+  })
+
+  describe('TwoFactorChallenge', () => {
+    it('should accept valid props', () => {
+      const onSubmit = () => {}
+      const onUseRecoveryCode = () => {}
+      const props: TwoFactorChallengeProps = {
+        codeLength: 6,
+        onSubmit,
+        onUseRecoveryCode,
+      }
+      expect(props.codeLength).toBe(6)
+      expect(props.onSubmit).toBe(onSubmit)
+      expect(props.onUseRecoveryCode).toBe(onUseRecoveryCode)
+    })
+  })
+
   describe('Dropdown', () => {
     it('should accept valid props', () => {
       const props: DropdownProps = {

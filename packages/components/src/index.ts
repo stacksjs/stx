@@ -11,6 +11,7 @@ export { default as Footer } from './components/Footer.stx'
 export { default as Installation } from './components/Installation.stx'
 
 // Export UI components
+export * from './ui/auth'
 export * from './ui/button'
 export * from './ui/switch'
 export * from './ui/dropdown'
