@@ -1,0 +1,109 @@
+<script>
+export const variant = $props.variant || 'circle'
+export const size = $props.size || 'md'
+export const color = $props.color || 'primary'
+export const label = $props.label || ''
+export const className = $props.className || ''
+
+// Size classes
+const sizeClasses = {
+  xs: 'w-3 h-3',
+  sm: 'w-4 h-4',
+  md: 'w-6 h-6',
+  lg: 'w-8 h-8',
+  xl: 'w-12 h-12',
+}
+
+// Color classes
+const colorClasses = {
+  primary: 'text-blue-600 dark:text-blue-500',
+  secondary: 'text-purple-600 dark:text-purple-500',
+  success: 'text-green-600 dark:text-green-500',
+  warning: 'text-yellow-600 dark:text-yellow-500',
+  danger: 'text-red-600 dark:text-red-500',
+  info: 'text-cyan-600 dark:text-cyan-500',
+  white: 'text-white',
+  gray: 'text-gray-600 dark:text-gray-400',
+}
+
+export const containerClasses = `inline-flex flex-col items-center gap-2 ${className}`.trim()
+export const spinnerClasses = `${sizeClasses[size]} ${colorClasses[color]} animate-spin`.trim()
+export const labelClasses = `text-sm font-medium text-gray-700 dark:text-gray-300`.trim()
+
+// Dots size classes
+const dotsSizeClasses = {
+  xs: 'w-1 h-1',
+  sm: 'w-1.5 h-1.5',
+  md: 'w-2 h-2',
+  lg: 'w-2.5 h-2.5',
+  xl: 'w-3 h-3',
+}
+
+const dotsColorClasses = {
+  primary: 'bg-blue-600 dark:bg-blue-500',
+  secondary: 'bg-purple-600 dark:bg-purple-500',
+  success: 'bg-green-600 dark:bg-green-500',
+  warning: 'bg-yellow-600 dark:bg-yellow-500',
+  danger: 'bg-red-600 dark:bg-red-500',
+  info: 'bg-cyan-600 dark:bg-cyan-500',
+  white: 'bg-white',
+  gray: 'bg-gray-600 dark:bg-gray-400',
+}
+
+export const dotClasses = `${dotsSizeClasses[size]} ${dotsColorClasses[color]} rounded-full`.trim()
+</script>
+
+<div class="{{ containerClasses }}" role="status" aria-live="polite" aria-busy="true">
+  @if(variant === 'circle')
+    <!-- Circle spinner (default) -->
+    <svg class="{{ spinnerClasses }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+  @elseif(variant === 'dots')
+    <!-- Dots spinner -->
+    <div class="flex items-center gap-1">
+      <div class="{{ dotClasses }}" style="animation: bounce 1.4s infinite ease-in-out both; animation-delay: -0.32s"></div>
+      <div class="{{ dotClasses }}" style="animation: bounce 1.4s infinite ease-in-out both; animation-delay: -0.16s"></div>
+      <div class="{{ dotClasses }}" style="animation: bounce 1.4s infinite ease-in-out both"></div>
+    </div>
+  @elseif(variant === 'bars')
+    <!-- Bars spinner -->
+    <div class="flex items-center gap-1">
+      <div class="w-1 bg-current rounded-full" style="height: {{ size === 'xs' ? '8px' : size === 'sm' ? '12px' : size === 'md' ? '16px' : size === 'lg' ? '20px' : '24px' }}; animation: bars 1.2s infinite ease-in-out; animation-delay: -0.24s"></div>
+      <div class="w-1 bg-current rounded-full" style="height: {{ size === 'xs' ? '8px' : size === 'sm' ? '12px' : size === 'md' ? '16px' : size === 'lg' ? '20px' : '24px' }}; animation: bars 1.2s infinite ease-in-out; animation-delay: -0.12s"></div>
+      <div class="w-1 bg-current rounded-full" style="height: {{ size === 'xs' ? '8px' : size === 'sm' ? '12px' : size === 'md' ? '16px' : size === 'lg' ? '20px' : '24px' }}; animation: bars 1.2s infinite ease-in-out"></div>
+    </div>
+  @elseif(variant === 'ring')
+    <!-- Ring spinner -->
+    <div class="{{ spinnerClasses }}" style="border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%;"></div>
+  @endif
+
+  @if(label)
+    <span class="{{ labelClasses }}">{{ label }}</span>
+  @endif
+
+  <span class="sr-only">{{ label || 'Loading...' }}</span>
+</div>
+
+<style>
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes bars {
+  0%, 40%, 100% {
+    transform: scaleY(0.4);
+  }
+  20% {
+    transform: scaleY(1);
+  }
+}
+</style>

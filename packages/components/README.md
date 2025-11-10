@@ -29,17 +29,28 @@ yarn add @stacksjs/components
 
 ## Components
 
-### UI Components (20)
+### UI Components (29)
 
+- **Accordion** - Expandable content sections with keyboard navigation
 - **Auth** - Login, Signup, and 2FA components
 - **Audio** - Audio player with waveform visualization
+- **Avatar** - User avatars with fallback initials and status indicators
+- **Badge** - Labels and tags with color variants and removable option
+- **Breadcrumb** - Navigation breadcrumbs with collapse support
 - **Button** - Versatile button with loading, icons, 5 sizes (xs-xl), full-width
+- **Card** - Content cards with images, variants, and hover effects
 - **Drawer** - Slide-out panel from any direction
 - **Image** - Optimized images with lazy loading, srcset, WebP, blur placeholder
+- **Pagination** - Page navigation with customizable display
 - **Payment** - Stripe checkout and payment management (3 components)
+- **Progress** - Linear and circular progress indicators
 - **Select** - Native-style select dropdown
+- **Skeleton** - Loading placeholders with multiple variants
+- **Spinner** - Loading spinners with multiple styles (circle, dots, bars, ring)
 - **Storage** - localStorage/sessionStorage utilities
 - **Switch** - Modern toggle switch component
+- **Tabs** - Tabbed content with horizontal/vertical layouts and multiple variants
+- **Tooltip** - Contextual tooltips with positioning options
 - **Video** - Video player with aspect ratio support
 - **Dropdown** - Menu dropdown component with keyboard navigation
 - **Dialog** - Modal dialog component with backdrop
@@ -364,10 +375,10 @@ This library is actively being migrated from Vue to STX. Check our [TODO.md](../
 - ✅ Infrastructure setup
 - ✅ Composables (useDarkMode, useCopyCode, useSEO)
 - ✅ Base components (CodeBlock, Hero, Footer, Installation)
-- ✅ 20 UI Components (Auth, Audio, Button, Drawer, Image, Payment, Select, Storage, Switch, Video, Dropdown, Dialog, Radio Group, Popover, Listbox, Combobox, Notification, Stepper, Transition, Table, Command Palette)
+- ✅ 29 UI Components (Accordion, Auth, Audio, Avatar, Badge, Breadcrumb, Button, Card, Drawer, Image, Pagination, Payment, Progress, Select, Skeleton, Spinner, Storage, Switch, Tabs, Tooltip, Video, Dropdown, Dialog, Radio Group, Popover, Listbox, Combobox, Notification, Stepper, Transition, Table, Command Palette)
 - ✅ 5 Input Components (TextInput, EmailInput, PasswordInput, NumberInput, SearchInput)
 - ✅ 3 Form Components (Textarea, Checkbox, Radio)
-- ✅ **Total: 33 Components**
+- ✅ **Total: 41 Components**
 
 ## License
 

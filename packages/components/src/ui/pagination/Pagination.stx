@@ -1,0 +1,183 @@
+<script>
+export const currentPage = $props.currentPage || 1
+export const totalPages = $props.totalPages || 1
+export const siblingCount = $props.siblingCount || 1
+export const showFirstLast = $props.showFirstLast ?? true
+export const showPrevNext = $props.showPrevNext ?? true
+export const className = $props.className || ''
+export const onChange = $props.onChange
+
+// Generate page numbers to display
+function generatePageNumbers() {
+  const pages = []
+  const totalNumbers = siblingCount * 2 + 3 // siblings on each side + current + first + last
+  const totalBlocks = totalNumbers + 2 // + 2 for ellipsis
+
+  if (totalPages <= totalBlocks) {
+    // Show all pages
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i)
+    }
+  } else {
+    const leftSiblingIndex = Math.max(currentPage - siblingCount, 1)
+    const rightSiblingIndex = Math.min(currentPage + siblingCount, totalPages)
+
+    const showLeftEllipsis = leftSiblingIndex > 2
+    const showRightEllipsis = rightSiblingIndex < totalPages - 1
+
+    if (!showLeftEllipsis && showRightEllipsis) {
+      // Show left pages + ellipsis + last
+      const leftCount = 3 + 2 * siblingCount
+      for (let i = 1; i <= leftCount; i++) {
+        pages.push(i)
+      }
+      pages.push('ellipsis-right')
+      pages.push(totalPages)
+    } else if (showLeftEllipsis && !showRightEllipsis) {
+      // Show first + ellipsis + right pages
+      pages.push(1)
+      pages.push('ellipsis-left')
+      const rightCount = 3 + 2 * siblingCount
+      for (let i = totalPages - rightCount + 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      // Show first + ellipsis + middle + ellipsis + last
+      pages.push(1)
+      pages.push('ellipsis-left')
+      for (let i = leftSiblingIndex; i <= rightSiblingIndex; i++) {
+        pages.push(i)
+      }
+      pages.push('ellipsis-right')
+      pages.push(totalPages)
+    }
+  }
+
+  return pages
+}
+
+const pageNumbers = generatePageNumbers()
+
+function goToPage(page) {
+  if (page >= 1 && page <= totalPages && page !== currentPage) {
+    if (onChange) {
+      onChange(page)
+    }
+  }
+}
+
+function goToPrevious() {
+  goToPage(currentPage - 1)
+}
+
+function goToNext() {
+  goToPage(currentPage + 1)
+}
+
+function goToFirst() {
+  goToPage(1)
+}
+
+function goToLast() {
+  goToPage(totalPages)
+}
+
+export const paginationClasses = `flex items-center gap-1 ${className}`.trim()
+export const buttonClasses = `px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-800 transition-colors duration-150`.trim()
+export const activeButtonClasses = `px-3 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 border border-blue-600 dark:border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900`.trim()
+export const ellipsisClasses = `px-3 py-2 text-sm font-medium text-gray-400 dark:text-gray-600`.trim()
+export const iconClasses = `w-5 h-5`.trim()
+</script>
+
+<nav class="{{ paginationClasses }}" role="navigation" aria-label="Pagination">
+  <!-- First page button -->
+  @if(showFirstLast)
+    <button
+      type="button"
+      onclick="goToFirst()"
+      class="{{ buttonClasses }}"
+      aria-label="Go to first page"
+      disabled="{{ currentPage === 1 }}"
+    >
+      <svg class="{{ iconClasses }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+      </svg>
+    </button>
+  @endif
+
+  <!-- Previous button -->
+  @if(showPrevNext)
+    <button
+      type="button"
+      onclick="goToPrevious()"
+      class="{{ buttonClasses }}"
+      aria-label="Go to previous page"
+      disabled="{{ currentPage === 1 }}"
+    >
+      <svg class="{{ iconClasses }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
+  @endif
+
+  <!-- Page numbers -->
+  @foreach(page in pageNumbers)
+    @if(typeof page === 'string')
+      <!-- Ellipsis -->
+      <span class="{{ ellipsisClasses }}" aria-hidden="true">...</span>
+    @else
+      @if(page === currentPage)
+        <!-- Current page -->
+        <button
+          type="button"
+          class="{{ activeButtonClasses }}"
+          aria-label="Page {{ page }}"
+          aria-current="page"
+          disabled
+        >
+          {{ page }}
+        </button>
+      @else
+        <!-- Other pages -->
+        <button
+          type="button"
+          onclick="goToPage({{ page }})"
+          class="{{ buttonClasses }}"
+          aria-label="Go to page {{ page }}"
+        >
+          {{ page }}
+        </button>
+      @endif
+    @endif
+  @endforeach
+
+  <!-- Next button -->
+  @if(showPrevNext)
+    <button
+      type="button"
+      onclick="goToNext()"
+      class="{{ buttonClasses }}"
+      aria-label="Go to next page"
+      disabled="{{ currentPage === totalPages }}"
+    >
+      <svg class="{{ iconClasses }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+  @endif
+
+  <!-- Last page button -->
+  @if(showFirstLast)
+    <button
+      type="button"
+      onclick="goToLast()"
+      class="{{ buttonClasses }}"
+      aria-label="Go to last page"
+      disabled="{{ currentPage === totalPages }}"
+    >
+      <svg class="{{ iconClasses }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+      </svg>
+    </button>
+  @endif
+</nav>

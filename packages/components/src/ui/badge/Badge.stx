@@ -1,0 +1,70 @@
+<script>
+export const variant = $props.variant || 'default'
+export const size = $props.size || 'md'
+export const dot = $props.dot || false
+export const removable = $props.removable || false
+export const className = $props.className || ''
+export const onRemove = $props.onRemove
+
+// Variant classes
+const variantClasses = {
+  default: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+  primary: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  secondary: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  success: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  danger: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  info: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
+}
+
+// Size classes
+const sizeClasses = {
+  sm: 'px-2 py-0.5 text-xs',
+  md: 'px-2.5 py-0.5 text-sm',
+  lg: 'px-3 py-1 text-base',
+}
+
+// Dot color classes
+const dotColorClasses = {
+  default: 'bg-gray-500 dark:bg-gray-400',
+  primary: 'bg-blue-500 dark:bg-blue-400',
+  secondary: 'bg-purple-500 dark:bg-purple-400',
+  success: 'bg-green-500 dark:bg-green-400',
+  warning: 'bg-yellow-500 dark:bg-yellow-400',
+  danger: 'bg-red-500 dark:bg-red-400',
+  info: 'bg-cyan-500 dark:bg-cyan-400',
+}
+
+export const badgeClasses = `inline-flex items-center gap-1.5 font-medium rounded-full ${variantClasses[variant]} ${sizeClasses[size]} ${className}`.trim()
+export const dotClasses = `w-2 h-2 rounded-full ${dotColorClasses[variant]}`.trim()
+export const removeButtonClasses = `ml-0.5 -mr-1 text-current hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 rounded-full p-0.5 transition-colors duration-150`.trim()
+</script>
+
+<span class="{{ badgeClasses }}" role="status">
+  @if(dot)
+    <span class="{{ dotClasses }}" aria-hidden="true"></span>
+  @endif
+
+  <slot />
+
+  @if(removable && onRemove)
+    <button
+      type="button"
+      onclick="handleRemove()"
+      class="{{ removeButtonClasses }}"
+      aria-label="Remove"
+    >
+      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  @endif
+</span>
+
+<script>
+function handleRemove() {
+  if (onRemove) {
+    onRemove()
+  }
+}
+</script>

@@ -1,0 +1,142 @@
+<script>
+export const value = $props.value || 0
+export const max = $props.max || 100
+export const variant = $props.variant || 'linear'
+export const size = $props.size || 'md'
+export const color = $props.color || 'primary'
+export const showLabel = $props.showLabel ?? false
+export const indeterminate = $props.indeterminate || false
+export const className = $props.className || ''
+
+// Calculate percentage
+const percentage = Math.min(Math.max((value / max) * 100, 0), 100)
+
+// Size classes for linear
+const linearSizeClasses = {
+  sm: 'h-1',
+  md: 'h-2',
+  lg: 'h-3',
+}
+
+// Size classes for circular
+const circularSizeClasses = {
+  sm: 'w-12 h-12',
+  md: 'w-16 h-16',
+  lg: 'w-24 h-24',
+}
+
+// Color classes
+const colorClasses = {
+  primary: 'bg-blue-600 dark:bg-blue-500',
+  secondary: 'bg-purple-600 dark:bg-purple-500',
+  success: 'bg-green-600 dark:bg-green-500',
+  warning: 'bg-yellow-600 dark:bg-yellow-500',
+  danger: 'bg-red-600 dark:bg-red-500',
+  info: 'bg-cyan-600 dark:bg-cyan-500',
+}
+
+// Circular SVG values
+const circularSize = size === 'sm' ? 48 : size === 'md' ? 64 : 96
+const strokeWidth = size === 'sm' ? 4 : size === 'md' ? 6 : 8
+const radius = (circularSize - strokeWidth) / 2
+const circumference = 2 * Math.PI * radius
+const strokeDashoffset = indeterminate ? 0 : circumference - (percentage / 100) * circumference
+
+export const containerClasses = variant === 'linear'
+  ? `w-full ${className}`.trim()
+  : `inline-flex items-center justify-center ${className}`.trim()
+
+export const linearTrackClasses = `w-full ${linearSizeClasses[size]} bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden`.trim()
+export const linearBarClasses = `h-full ${colorClasses[color]} transition-all duration-300 ease-in-out ${indeterminate ? 'animate-progress-indeterminate' : ''}`.trim()
+export const labelClasses = `text-sm font-medium text-gray-700 dark:text-gray-300 mb-2`.trim()
+export const circularTrackColor = 'stroke-gray-200 dark:stroke-gray-700'
+export const circularBarColor = color === 'primary' ? 'stroke-blue-600 dark:stroke-blue-500' :
+  color === 'secondary' ? 'stroke-purple-600 dark:stroke-purple-500' :
+  color === 'success' ? 'stroke-green-600 dark:stroke-green-500' :
+  color === 'warning' ? 'stroke-yellow-600 dark:stroke-yellow-500' :
+  color === 'danger' ? 'stroke-red-600 dark:stroke-red-500' :
+  'stroke-cyan-600 dark:stroke-cyan-500'
+</script>
+
+@if(variant === 'linear')
+  <div class="{{ containerClasses }}">
+    @if(showLabel)
+      <div class="flex items-center justify-between mb-2">
+        <span class="{{ labelClasses }}">{{ Math.round(percentage) }}%</span>
+      </div>
+    @endif
+
+    <div
+      class="{{ linearTrackClasses }}"
+      role="progressbar"
+      aria-valuenow="{{ value }}"
+      aria-valuemin="0"
+      aria-valuemax="{{ max }}"
+    >
+      <div
+        class="{{ linearBarClasses }}"
+        style="width: {{ indeterminate ? '30%' : percentage + '%' }}"
+      ></div>
+    </div>
+  </div>
+@else
+  <!-- Circular Progress -->
+  <div class="{{ containerClasses }}">
+    <div class="{{ circularSizeClasses[size] }} relative">
+      <svg
+        class="transform -rotate-90"
+        width="{{ circularSize }}"
+        height="{{ circularSize }}"
+        role="progressbar"
+        aria-valuenow="{{ value }}"
+        aria-valuemin="0"
+        aria-valuemax="{{ max }}"
+      >
+        <!-- Background circle -->
+        <circle
+          class="{{ circularTrackColor }}"
+          cx="{{ circularSize / 2 }}"
+          cy="{{ circularSize / 2 }}"
+          r="{{ radius }}"
+          stroke-width="{{ strokeWidth }}"
+          fill="none"
+        />
+        <!-- Progress circle -->
+        <circle
+          class="{{ circularBarColor }} transition-all duration-300 ease-in-out {{ indeterminate ? 'animate-spin' : '' }}"
+          cx="{{ circularSize / 2 }}"
+          cy="{{ circularSize / 2 }}"
+          r="{{ radius }}"
+          stroke-width="{{ strokeWidth }}"
+          fill="none"
+          stroke-dasharray="{{ circumference }}"
+          stroke-dashoffset="{{ strokeDashoffset }}"
+          stroke-linecap="round"
+        />
+      </svg>
+
+      @if(showLabel)
+        <div class="absolute inset-0 flex items-center justify-center">
+          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            {{ Math.round(percentage) }}%
+          </span>
+        </div>
+      @endif
+    </div>
+  </div>
+@endif
+
+<style>
+@keyframes progress-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.animate-progress-indeterminate {
+  animation: progress-indeterminate 1.5s ease-in-out infinite;
+}
+</style>

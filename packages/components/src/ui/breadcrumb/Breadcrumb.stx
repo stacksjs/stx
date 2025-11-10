@@ -1,0 +1,79 @@
+<script>
+export const items = $props.items || []
+export const separator = $props.separator || '/'
+export const maxItems = $props.maxItems || 0
+export const className = $props.className || ''
+
+// Handle collapse if maxItems is set
+let displayItems = items
+if (maxItems > 0 && items.length > maxItems) {
+  const firstItems = items.slice(0, 1)
+  const lastItems = items.slice(-(maxItems - 1))
+  displayItems = [...firstItems, { label: '...', href: '#', collapsed: true }, ...lastItems]
+}
+
+// Separator element
+const separatorElement = separator === '/' ? '/' :
+  separator === '>' ? '›' :
+  separator === 'arrow' ? `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>` :
+  separator
+
+export const breadcrumbClasses = `flex items-center flex-wrap gap-2 text-sm ${className}`.trim()
+export const itemClasses = `text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors duration-150`.trim()
+export const activeItemClasses = `text-gray-900 dark:text-gray-100 font-medium`.trim()
+export const separatorClasses = `text-gray-400 dark:text-gray-600 select-none`.trim()
+export const collapsedClasses = `text-gray-400 dark:text-gray-600 cursor-default`.trim()
+</script>
+
+<nav class="{{ breadcrumbClasses }}" aria-label="Breadcrumb">
+  <ol class="flex items-center gap-2">
+    @foreach(item in displayItems)
+      <li class="flex items-center gap-2">
+        @if(item.collapsed)
+          <!-- Collapsed indicator -->
+          <span class="{{ collapsedClasses }}">{{ item.label }}</span>
+        @else
+          @if($loop.last)
+            <!-- Last item (current page) -->
+            <span class="{{ activeItemClasses }}" aria-current="page">
+              @if(item.icon)
+                <span class="inline-flex items-center gap-1.5">
+                  <span innerHTML="{!! item.icon !!}"></span>
+                  <span>{{ item.label }}</span>
+                </span>
+              @else
+                {{ item.label }}
+              @endif
+            </span>
+          @else
+            <!-- Link item -->
+            <a
+              href="{{ item.href }}"
+              class="{{ itemClasses }}"
+            >
+              @if(item.icon)
+                <span class="inline-flex items-center gap-1.5">
+                  <span innerHTML="{!! item.icon !!}"></span>
+                  <span>{{ item.label }}</span>
+                </span>
+              @else
+                {{ item.label }}
+              @endif
+            </a>
+          @endif
+        @endif
+
+        <!-- Separator (not after last item) -->
+        @if(!$loop.last)
+          <span class="{{ separatorClasses }}" aria-hidden="true">
+            @if(separator === 'arrow')
+              {!! separatorElement !!}
+            @else
+              {{ separatorElement }}
+            @endif
+          </span>
+        @endif
+      </li>
+    @endforeach
+  </ol>
+</nav>

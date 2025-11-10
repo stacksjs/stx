@@ -1,0 +1,145 @@
+<script>
+export const tabs = $props.tabs || []
+export const defaultTab = $props.defaultTab || 0
+export const orientation = $props.orientation || 'horizontal'
+export const variant = $props.variant || 'line'
+export const className = $props.className || ''
+export const onChange = $props.onChange
+
+let activeTab = defaultTab
+
+function selectTab(index) {
+  activeTab = index
+  if (onChange) {
+    onChange(index, tabs[index])
+  }
+}
+
+// Orientation classes
+const orientationClasses = {
+  horizontal: 'flex-col',
+  vertical: 'flex-row',
+}
+
+// Tab list orientation classes
+const tabListOrientationClasses = {
+  horizontal: 'flex-row border-b',
+  vertical: 'flex-col border-r',
+}
+
+// Variant classes for tab list
+const variantClasses = {
+  line: 'border-gray-200 dark:border-gray-700',
+  pills: 'gap-2 border-0 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg',
+  enclosed: 'border-gray-200 dark:border-gray-700',
+}
+
+// Tab button classes based on variant
+function getTabClasses(index, variant, orientation) {
+  const isActive = index === activeTab
+  const baseClasses = 'px-4 py-2 font-medium text-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
+
+  if (variant === 'line') {
+    const borderPosition = orientation === 'horizontal' ? 'border-b-2' : 'border-r-2'
+    return `${baseClasses} ${borderPosition} ${isActive ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'}`
+  } else if (variant === 'pills') {
+    return `${baseClasses} rounded-md ${isActive ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`
+  } else if (variant === 'enclosed') {
+    const borderClasses = orientation === 'horizontal' ? 'border-t border-l border-r rounded-t-md' : 'border-t border-l border-b rounded-l-md'
+    return `${baseClasses} ${borderClasses} ${isActive ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 -mb-px' : 'bg-gray-50 dark:bg-gray-900 border-transparent hover:border-gray-200 dark:hover:border-gray-700'}`
+  }
+}
+
+export const containerClasses = `flex ${orientationClasses[orientation]} ${className}`.trim()
+export const tabListClasses = `flex ${tabListOrientationClasses[orientation]} ${variantClasses[variant]}`.trim()
+export const tabPanelClasses = `p-4 focus:outline-none`.trim()
+</script>
+
+<div class="{{ containerClasses }}">
+  <!-- Tab List -->
+  <div
+    class="{{ tabListClasses }}"
+    role="tablist"
+    aria-orientation="{{ orientation }}"
+  >
+    @foreach(tab in tabs)
+      <button
+        type="button"
+        class="{{ getTabClasses($loop.index, variant, orientation) }}"
+        role="tab"
+        aria-selected="{{ activeTab === $loop.index ? 'true' : 'false' }}"
+        aria-controls="tab-panel-{{ $loop.index }}"
+        id="tab-{{ $loop.index }}"
+        tabindex="{{ activeTab === $loop.index ? '0' : '-1' }}"
+        onclick="selectTab({{ $loop.index }})"
+        onkeydown="handleKeyDown(event, {{ $loop.index }})"
+      >
+        @if(tab.icon)
+          <span class="inline-flex items-center gap-2">
+            <span innerHTML="{!! tab.icon !!}"></span>
+            <span>{{ tab.label }}</span>
+          </span>
+        @else
+          {{ tab.label }}
+        @endif
+      </button>
+    @endforeach
+  </div>
+
+  <!-- Tab Panels -->
+  @foreach(tab in tabs)
+    @if(activeTab === $loop.index)
+      <div
+        id="tab-panel-{{ $loop.index }}"
+        class="{{ tabPanelClasses }}"
+        role="tabpanel"
+        aria-labelledby="tab-{{ $loop.index }}"
+        tabindex="0"
+      >
+        {!! tab.content !!}
+      </div>
+    @endif
+  @endforeach
+</div>
+
+<script>
+function handleKeyDown(event, currentIndex) {
+  const tabCount = tabs.length
+  let newIndex = currentIndex
+
+  if (orientation === 'horizontal') {
+    if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      newIndex = (currentIndex + 1) % tabCount
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      newIndex = (currentIndex - 1 + tabCount) % tabCount
+    }
+  } else {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      newIndex = (currentIndex + 1) % tabCount
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      newIndex = (currentIndex - 1 + tabCount) % tabCount
+    }
+  }
+
+  if (event.key === 'Home') {
+    event.preventDefault()
+    newIndex = 0
+  } else if (event.key === 'End') {
+    event.preventDefault()
+    newIndex = tabCount - 1
+  }
+
+  if (newIndex !== currentIndex) {
+    selectTab(newIndex)
+    // Focus the new tab
+    if (typeof window !== 'undefined') {
+      const newTab = document.getElementById(`tab-${newIndex}`)
+      if (newTab) newTab.focus()
+    }
+  }
+}
+</script>

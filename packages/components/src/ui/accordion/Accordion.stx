@@ -1,0 +1,108 @@
+<script>
+export const items = $props.items || []
+export const allowMultiple = $props.allowMultiple || false
+export const defaultOpen = $props.defaultOpen || []
+export const className = $props.className || ''
+export const onChange = $props.onChange
+
+// Track which items are open
+let openItems = defaultOpen
+
+// Toggle an item
+function toggleItem(index) {
+  if (allowMultiple) {
+    // Multiple items can be open
+    if (openItems.includes(index)) {
+      openItems = openItems.filter(i => i !== index)
+    } else {
+      openItems = [...openItems, index]
+    }
+  } else {
+    // Only one item can be open
+    if (openItems.includes(index)) {
+      openItems = []
+    } else {
+      openItems = [index]
+    }
+  }
+
+  if (onChange) {
+    onChange(openItems)
+  }
+}
+
+// Check if item is open
+function isOpen(index) {
+  return openItems.includes(index)
+}
+
+export const accordionClasses = `divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg ${className}`.trim()
+export const itemClasses = ``.trim()
+export const headerClasses = `w-full flex items-center justify-between px-4 py-3 text-left font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900`.trim()
+export const iconClasses = `w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200`.trim()
+export const contentClasses = `px-4 py-3 text-gray-700 dark:text-gray-300`.trim()
+</script>
+
+<div class="{{ accordionClasses }}" role="region">
+  @foreach(item in items)
+    <div class="{{ itemClasses }}">
+      <button
+        type="button"
+        class="{{ headerClasses }}"
+        onclick="toggleItem({{ $loop.index }})"
+        aria-expanded="{{ isOpen($loop.index) ? 'true' : 'false' }}"
+        aria-controls="accordion-content-{{ $loop.index }}"
+      >
+        <span>{{ item.title }}</span>
+        <svg
+          class="{{ iconClasses }}"
+          style="transform: rotate({{ isOpen($loop.index) ? '180' : '0' }}deg)"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      @if(isOpen($loop.index))
+        <div
+          id="accordion-content-{{ $loop.index }}"
+          class="{{ contentClasses }}"
+          role="region"
+        >
+          {!! item.content !!}
+        </div>
+      @endif
+    </div>
+  @endforeach
+</div>
+
+<script>
+// Keyboard navigation
+if (typeof window !== 'undefined') {
+  window.addEventListener('DOMContentLoaded', () => {
+    const buttons = document.querySelectorAll('[aria-expanded]')
+
+    buttons.forEach((button, index) => {
+      button.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowDown') {
+          event.preventDefault()
+          const nextButton = buttons[index + 1]
+          if (nextButton) nextButton.focus()
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault()
+          const prevButton = buttons[index - 1]
+          if (prevButton) prevButton.focus()
+        } else if (event.key === 'Home') {
+          event.preventDefault()
+          buttons[0].focus()
+        } else if (event.key === 'End') {
+          event.preventDefault()
+          buttons[buttons.length - 1].focus()
+        }
+      })
+    })
+  })
+}
+</script>

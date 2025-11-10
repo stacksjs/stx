@@ -1,0 +1,48 @@
+<script>
+export const variant = $props.variant || 'text'
+export const count = $props.count || 1
+export const width = $props.width || ''
+export const height = $props.height || ''
+export const circle = $props.circle || false
+export const className = $props.className || ''
+export const animate = $props.animate ?? true
+
+// Variant classes
+const variantClasses = {
+  text: 'h-4 rounded',
+  title: 'h-8 rounded',
+  avatar: 'w-10 h-10 rounded-full',
+  thumbnail: 'w-24 h-24 rounded-md',
+  button: 'h-10 w-32 rounded-md',
+  card: 'h-64 rounded-lg',
+  rect: 'rounded-md',
+}
+
+// Animation classes
+const animationClasses = animate ? 'animate-pulse' : ''
+
+// Build base classes
+const baseClasses = circle ? 'rounded-full' : variantClasses[variant]
+
+// Build style object
+let styleString = ''
+if (width) {
+  styleString += `width: ${typeof width === 'number' ? width + 'px' : width};`
+}
+if (height) {
+  styleString += `height: ${typeof height === 'number' ? height + 'px' : height};`
+}
+
+export const skeletonClasses = `bg-gray-200 dark:bg-gray-700 ${baseClasses} ${animationClasses} ${className}`.trim()
+export const containerClasses = count > 1 ? 'space-y-3' : ''
+</script>
+
+@if(count > 1)
+  <div class="{{ containerClasses }}">
+    @for(i = 0; i < count; i++)
+      <div class="{{ skeletonClasses }}" style="{{ styleString }}" aria-busy="true" aria-live="polite"></div>
+    @endfor
+  </div>
+@else
+  <div class="{{ skeletonClasses }}" style="{{ styleString }}" aria-busy="true" aria-live="polite"></div>
+@endif

@@ -1,0 +1,74 @@
+<script>
+export const variant = $props.variant || 'default'
+export const padding = $props.padding || 'default'
+export const hover = $props.hover || false
+export const clickable = $props.clickable || false
+export const image = $props.image || ''
+export const imageAlt = $props.imageAlt || ''
+export const imagePosition = $props.imagePosition || 'top'
+export const className = $props.className || ''
+export const onClick = $props.onClick
+
+// Variant classes
+const variantClasses = {
+  default: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+  outlined: 'bg-transparent border-2 border-gray-300 dark:border-gray-600',
+  elevated: 'bg-white dark:bg-gray-800 shadow-lg border-0',
+  flat: 'bg-gray-50 dark:bg-gray-900 border-0',
+}
+
+// Padding classes
+const paddingClasses = {
+  none: 'p-0',
+  sm: 'p-3',
+  default: 'p-6',
+  lg: 'p-8',
+}
+
+// Hover effect classes
+const hoverClasses = hover ? 'transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5' : ''
+
+// Clickable classes
+const clickableClasses = clickable ? 'cursor-pointer' : ''
+
+export const cardClasses = `rounded-lg overflow-hidden ${variantClasses[variant]} ${paddingClasses[image ? 'none' : padding]} ${hoverClasses} ${clickableClasses} ${className}`.trim()
+export const imageClasses = `w-full h-48 object-cover`.trim()
+export const contentClasses = `${image ? paddingClasses[padding] : ''}`.trim()
+</script>
+
+@if(onClick)
+  <div class="{{ cardClasses }}" onclick="handleClick(event)" role="button" tabindex="0" onkeydown="handleKeyDown(event)">
+    @if(image)
+      <img src="{{ image }}" alt="{{ imageAlt }}" class="{{ imageClasses }}" />
+    @endif
+
+    <div class="{{ contentClasses }}">
+      <slot />
+    </div>
+  </div>
+@else
+  <div class="{{ cardClasses }}">
+    @if(image)
+      <img src="{{ image }}" alt="{{ imageAlt }}" class="{{ imageClasses }}" />
+    @endif
+
+    <div class="{{ contentClasses }}">
+      <slot />
+    </div>
+  </div>
+@endif
+
+<script>
+function handleClick(event) {
+  if (clickable && onClick) {
+    onClick(event)
+  }
+}
+
+function handleKeyDown(event) {
+  if ((event.key === 'Enter' || event.key === ' ') && clickable && onClick) {
+    event.preventDefault()
+    onClick(event)
+  }
+}
+</script>
