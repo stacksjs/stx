@@ -10,6 +10,7 @@ export * from './utils/error-handling'
 export * from './utils/lazy-loading'
 export * from './utils/i18n'
 export * from './utils/accessibility'
+export * from './utils/keep-alive'
 
 // Export shared components (these will be imported as .stx files)
 export { default as CodeBlock } from './components/CodeBlock.stx'
