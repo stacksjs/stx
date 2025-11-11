@@ -1,4 +1,5 @@
 import { createPropValidator, PropTypes } from '../../utils/prop-validation'
+import { ErrorTypes, wrapErrorHandler } from '../../utils/error-handling'
 
 export { default as Button } from './Button.stx'
 
@@ -36,3 +37,48 @@ export const buttonPropSchema = {
  * Only runs in development mode
  */
 export const validateButtonProps = createPropValidator('Button', buttonPropSchema)
+
+/**
+ * Create a safe onClick handler that catches and reports errors
+ *
+ * @param handler - Click handler function
+ * @returns Wrapped handler with error handling
+ *
+ * @example
+ * ```ts
+ * const safeHandler = createSafeClickHandler(() => {
+ *   // Your click logic
+ * })
+ * ```
+ */
+export function createSafeClickHandler(handler: (event: Event) => void) {
+  return wrapErrorHandler(handler, 'Button', 'onClick')
+}
+
+/**
+ * Helper to validate button variant
+ */
+export function validateVariant(variant?: string): void {
+  if (variant && !['primary', 'secondary', 'outline', 'ghost', 'danger'].includes(variant)) {
+    throw ErrorTypes.invalidProp(
+      'Button',
+      'variant',
+      variant,
+      ['primary', 'secondary', 'outline', 'ghost', 'danger'],
+    )
+  }
+}
+
+/**
+ * Helper to validate button size
+ */
+export function validateSize(size?: string): void {
+  if (size && !['xs', 'sm', 'md', 'lg', 'xl'].includes(size)) {
+    throw ErrorTypes.invalidProp(
+      'Button',
+      'size',
+      size,
+      ['xs', 'sm', 'md', 'lg', 'xl'],
+    )
+  }
+}

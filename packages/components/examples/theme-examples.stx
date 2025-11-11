@@ -1,0 +1,320 @@
+<script>
+const title = 'Theme System Examples'
+const description = 'Demonstrate the theme system with live theme switching and customization'
+
+let currentThemeName = 'default'
+</script>
+
+<div class="max-w-6xl mx-auto p-8 space-y-12">
+  <header class="space-y-2">
+    <h1 class="text-4xl font-bold" style="color: var(--color-primary)">{{ title }}</h1>
+    <p class="text-lg" style="color: var(--color-gray)">{{ description }}</p>
+  </header>
+
+  <!-- Theme Selector -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold">Select Theme</h2>
+    <div class="flex flex-wrap gap-4">
+      <Button onClick="switchTheme('default')" variant="primary">
+        Default (Blue)
+      </Button>
+      <Button onClick="switchTheme('purple')" variant="secondary">
+        Purple
+      </Button>
+      <Button onClick="switchTheme('green')" variant="outline">
+        Green
+      </Button>
+      <Button onClick="switchTheme('orange')" variant="outline">
+        Orange
+      </Button>
+      <Button onClick="switchTheme('dark')" variant="ghost">
+        Dark
+      </Button>
+      <Button onClick="switchTheme('minimal')" variant="ghost">
+        Minimal
+      </Button>
+    </div>
+    <p class="text-sm" style="color: var(--color-gray)">
+      Current theme: <span id="currentTheme" class="font-semibold">{{ currentThemeName }}</span>
+    </p>
+  </section>
+
+  <!-- Color Palette -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold">Color Palette</h2>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div class="space-y-2">
+        <div class="h-20 rounded-lg" style="background-color: var(--color-primary)"></div>
+        <p class="text-sm font-medium">Primary</p>
+      </div>
+      <div class="space-y-2">
+        <div class="h-20 rounded-lg" style="background-color: var(--color-secondary)"></div>
+        <p class="text-sm font-medium">Secondary</p>
+      </div>
+      <div class="space-y-2">
+        <div class="h-20 rounded-lg" style="background-color: var(--color-success)"></div>
+        <p class="text-sm font-medium">Success</p>
+      </div>
+      <div class="space-y-2">
+        <div class="h-20 rounded-lg" style="background-color: var(--color-warning)"></div>
+        <p class="text-sm font-medium">Warning</p>
+      </div>
+      <div class="space-y-2">
+        <div class="h-20 rounded-lg" style="background-color: var(--color-danger)"></div>
+        <p class="text-sm font-medium">Danger</p>
+      </div>
+      <div class="space-y-2">
+        <div class="h-20 rounded-lg" style="background-color: var(--color-info)"></div>
+        <p class="text-sm font-medium">Info</p>
+      </div>
+      <div class="space-y-2">
+        <div class="h-20 rounded-lg" style="background-color: var(--color-gray)"></div>
+        <p class="text-sm font-medium">Gray</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Typography -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold">Typography</h2>
+    <div class="space-y-3">
+      <p style="font-size: var(--text-4xl); font-weight: var(--font-weight-bold)">
+        Heading 4xl
+      </p>
+      <p style="font-size: var(--text-3xl); font-weight: var(--font-weight-semibold)">
+        Heading 3xl
+      </p>
+      <p style="font-size: var(--text-2xl); font-weight: var(--font-weight-semibold)">
+        Heading 2xl
+      </p>
+      <p style="font-size: var(--text-xl); font-weight: var(--font-weight-medium)">
+        Heading xl
+      </p>
+      <p style="font-size: var(--text-lg)">
+        Large text
+      </p>
+      <p style="font-size: var(--text-base)">
+        Base text (default)
+      </p>
+      <p style="font-size: var(--text-sm)">
+        Small text
+      </p>
+      <p style="font-size: var(--text-xs)">
+        Extra small text
+      </p>
+    </div>
+  </section>
+
+  <!-- Spacing -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold">Spacing Scale</h2>
+    <div class="space-y-3">
+      <div>
+        <p class="text-sm mb-2">xs</p>
+        <div class="h-4" style="width: var(--spacing-xs); background-color: var(--color-primary)"></div>
+      </div>
+      <div>
+        <p class="text-sm mb-2">sm</p>
+        <div class="h-4" style="width: var(--spacing-sm); background-color: var(--color-primary)"></div>
+      </div>
+      <div>
+        <p class="text-sm mb-2">md</p>
+        <div class="h-4" style="width: var(--spacing-md); background-color: var(--color-primary)"></div>
+      </div>
+      <div>
+        <p class="text-sm mb-2">lg</p>
+        <div class="h-4" style="width: var(--spacing-lg); background-color: var(--color-primary)"></div>
+      </div>
+      <div>
+        <p class="text-sm mb-2">xl</p>
+        <div class="h-4" style="width: var(--spacing-xl); background-color: var(--color-primary)"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Border Radius -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold">Border Radius</h2>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div class="space-y-2">
+        <div class="h-20" style="background-color: var(--color-primary); border-radius: var(--radius-none)"></div>
+        <p class="text-sm">None</p>
+      </div>
+      <div class="space-y-2">
+        <div class="h-20" style="background-color: var(--color-primary); border-radius: var(--radius-sm)"></div>
+        <p class="text-sm">Small</p>
+      </div>
+      <div class="space-y-2">
+        <div class="h-20" style="background-color: var(--color-primary); border-radius: var(--radius-md)"></div>
+        <p class="text-sm">Medium</p>
+      </div>
+      <div class="space-y-2">
+        <div class="h-20" style="background-color: var(--color-primary); border-radius: var(--radius-lg)"></div>
+        <p class="text-sm">Large</p>
+      </div>
+      <div class="space-y-2">
+        <div class="h-20" style="background-color: var(--color-primary); border-radius: var(--radius-full)"></div>
+        <p class="text-sm">Full</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Shadows -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold">Shadows</h2>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+      <div class="space-y-2">
+        <div class="h-20 bg-white" style="box-shadow: var(--shadow-sm)"></div>
+        <p class="text-sm">Small</p>
+      </div>
+      <div class="space-y-2">
+        <div class="h-20 bg-white" style="box-shadow: var(--shadow-md)"></div>
+        <p class="text-sm">Medium</p>
+      </div>
+      <div class="space-y-2">
+        <div class="h-20 bg-white" style="box-shadow: var(--shadow-lg)"></div>
+        <p class="text-sm">Large</p>
+      </div>
+      <div class="space-y-2">
+        <div class="h-20 bg-white" style="box-shadow: var(--shadow-xl)"></div>
+        <p class="text-sm">XL</p>
+      </div>
+      <div class="space-y-2">
+        <div class="h-20 bg-white" style="box-shadow: var(--shadow-2xl)"></div>
+        <p class="text-sm">2XL</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Themed Components -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold">Themed Components</h2>
+
+    <!-- Buttons -->
+    <div class="space-y-3">
+      <h3 class="text-lg font-medium">Buttons</h3>
+      <div class="flex flex-wrap gap-3">
+        <Button variant="primary">Primary Button</Button>
+        <Button variant="secondary">Secondary Button</Button>
+        <Button variant="outline">Outline Button</Button>
+        <Button variant="ghost">Ghost Button</Button>
+        <Button variant="danger">Danger Button</Button>
+      </div>
+    </div>
+
+    <!-- Inputs -->
+    <div class="space-y-3 max-w-md">
+      <h3 class="text-lg font-medium">Inputs</h3>
+      <TextInput
+        label="Text Input"
+        placeholder="Enter text..."
+      />
+      <TextInput
+        label="Input with Icon"
+        placeholder="Search..."
+        leftIcon="search"
+      />
+    </div>
+
+    <!-- Cards -->
+    <div class="space-y-3">
+      <h3 class="text-lg font-medium">Cards</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card variant="default">
+          <h4 class="text-lg font-semibold mb-2" style="color: var(--color-primary)">Default Card</h4>
+          <p style="color: var(--color-gray)">This card uses theme variables for consistent styling.</p>
+        </Card>
+        <Card variant="outlined">
+          <h4 class="text-lg font-semibold mb-2" style="color: var(--color-secondary)">Outlined Card</h4>
+          <p style="color: var(--color-gray)">Outlined variant with theme colors.</p>
+        </Card>
+        <Card variant="elevated">
+          <h4 class="text-lg font-semibold mb-2" style="color: var(--color-success)">Elevated Card</h4>
+          <p style="color: var(--color-gray)">Elevated card with theme shadow.</p>
+        </Card>
+      </div>
+    </div>
+  </section>
+
+  <!-- Custom Theme Creator -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold">Create Custom Theme</h2>
+    <div class="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-4 max-w-2xl">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Primary Color</label>
+          <input type="color" id="primaryColor" value="#3b82f6" class="w-full h-10 rounded cursor-pointer">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Secondary Color</label>
+          <input type="color" id="secondaryColor" value="#8b5cf6" class="w-full h-10 rounded cursor-pointer">
+        </div>
+      </div>
+      <Button onClick="applyCustomTheme()" variant="primary" fullWidth>
+        Apply Custom Theme
+      </Button>
+      <p class="text-sm" style="color: var(--color-gray)">
+        Choose your colors and click to apply your custom theme
+      </p>
+    </div>
+  </section>
+
+  <!-- Code Example -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold">Code Example</h2>
+    <pre class="p-4 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto"><code>import { createTheme, applyTheme } from '@stacksjs/components'
+
+// Create a custom theme
+const myTheme = createTheme({
+  colors: {
+    primary: '#3b82f6',
+    secondary: '#8b5cf6'
+  },
+  typography: {
+    fontFamily: {
+      sans: 'Inter, sans-serif'
+    }
+  },
+  borderRadius: {
+    md: '0.5rem'
+  }
+})
+
+// Apply the theme
+applyTheme(myTheme)
+
+// Use theme colors in CSS
+&lt;div style="color: var(--color-primary)"&gt;
+  Themed content
+&lt;/div&gt;</code></pre>
+  </section>
+</div>
+
+<script>
+// Import theme system (this would be from @stacksjs/components in a real app)
+function switchTheme(themeName) {
+  currentThemeName = themeName
+  document.getElementById('currentTheme').textContent = themeName
+
+  // In a real implementation, this would call:
+  // import { themePresets, applyTheme } from '@stacksjs/components'
+  // applyTheme(themePresets[themeName])
+
+  console.log(`Switched to ${themeName} theme`)
+  alert(`Theme switched to: ${themeName}\n\n(In production, this would apply the ${themeName} theme from themePresets)`)
+}
+
+function applyCustomTheme() {
+  const primary = document.getElementById('primaryColor').value
+  const secondary = document.getElementById('secondaryColor').value
+
+  // In a real implementation:
+  // const customTheme = createTheme({
+  //   colors: { primary, secondary }
+  // })
+  // applyTheme(customTheme)
+
+  console.log('Custom theme:', { primary, secondary })
+  alert(`Custom theme created!\n\nPrimary: ${primary}\nSecondary: ${secondary}\n\n(In production, this would create and apply a custom theme)`)
+}
+</script>

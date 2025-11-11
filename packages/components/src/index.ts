@@ -5,6 +5,10 @@ export * from './composables'
 export * from './utils/highlighter'
 export * from './utils/animation'
 export * from './utils/prop-validation'
+export * from './utils/theme'
+export * from './utils/error-handling'
+export * from './utils/lazy-loading'
+export * from './utils/i18n'
 
 // Export shared components (these will be imported as .stx files)
 export { default as CodeBlock } from './components/CodeBlock.stx'
