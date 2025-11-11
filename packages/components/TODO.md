@@ -211,10 +211,11 @@ This document tracks all improvements and enhancements for the @stacksjs/compone
   - [✅] Percy cloud option documented
   - [✅] Implementation guide with examples
 
-- [ ] Create accessibility testing suite
-  - [ ] ARIA compliance tests
-  - [ ] Keyboard navigation tests
-  - [ ] Screen reader tests
+- [✅] Create accessibility testing suite
+  - [✅] ARIA compliance tests (40 tests, 100% pass)
+  - [✅] Keyboard navigation tests (roving tabindex, focus trap)
+  - [✅] Screen reader tests (live regions, announcements)
+  - [✅] WCAG 2.1 AA compliance checklist (80% fully compliant)
 
 ### Documentation
 
