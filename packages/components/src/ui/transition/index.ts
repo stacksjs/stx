@@ -8,6 +8,18 @@ export interface TransitionProps {
   leave?: string
   leaveFrom?: string
   leaveTo?: string
+  appear?: boolean
+  appearFrom?: string
+  appearTo?: string
+  mode?: 'in-out' | 'out-in' | 'default'
+  duration?: number
+  delay?: number
+  preset?: 'fade' | 'slide' | 'slideLeft' | 'slideRight' | 'scale' | 'rotate' | 'zoom' | ''
+  onBeforeEnter?: () => void
+  onEnter?: () => void
+  onAfterEnter?: () => void
+  onBeforeLeave?: () => void
+  onLeave?: () => void
+  onAfterLeave?: () => void
   className?: string
-  as?: string
 }

@@ -1,0 +1,209 @@
+<script>
+export const action = $props.action || ''
+export const method = $props.method || 'POST'
+export const validationSchema = $props.validationSchema || {}
+export const initialValues = $props.initialValues || {}
+export const validateOnChange = $props.validateOnChange ?? true
+export const validateOnBlur = $props.validateOnBlur ?? true
+export const onSubmit = $props.onSubmit
+export const onError = $props.onError
+export const className = $props.className || ''
+
+let values = { ...initialValues }
+let errors = {}
+let touched = {}
+let isSubmitting = false
+let isValidating = false
+let submitCount = 0
+
+// Validate a single field
+function validateField(name, value) {
+  const fieldSchema = validationSchema[name]
+  if (!fieldSchema)
+    return null
+
+  // Required validation
+  if (fieldSchema.required && !value) {
+    return fieldSchema.requiredMessage || `${name} is required`
+  }
+
+  // Min length validation
+  if (fieldSchema.minLength && value.length < fieldSchema.minLength) {
+    return fieldSchema.minLengthMessage || `${name} must be at least ${fieldSchema.minLength} characters`
+  }
+
+  // Max length validation
+  if (fieldSchema.maxLength && value.length > fieldSchema.maxLength) {
+    return fieldSchema.maxLengthMessage || `${name} must be at most ${fieldSchema.maxLength} characters`
+  }
+
+  // Pattern validation
+  if (fieldSchema.pattern && !fieldSchema.pattern.test(value)) {
+    return fieldSchema.patternMessage || `${name} is invalid`
+  }
+
+  // Custom validation
+  if (fieldSchema.validate && typeof fieldSchema.validate === 'function') {
+    return fieldSchema.validate(value, values)
+  }
+
+  return null
+}
+
+// Validate all fields
+function validateForm() {
+  const newErrors = {}
+  let isValid = true
+
+  Object.keys(validationSchema).forEach((name) => {
+    const error = validateField(name, values[name])
+    if (error) {
+      newErrors[name] = error
+      isValid = false
+    }
+  })
+
+  errors = newErrors
+  return isValid
+}
+
+// Handle field change
+function handleChange(event) {
+  const { name, value } = event.target
+  values[name] = value
+
+  if (validateOnChange && touched[name]) {
+    const error = validateField(name, value)
+    if (error) {
+      errors[name] = error
+    }
+    else {
+      delete errors[name]
+    }
+  }
+}
+
+// Handle field blur
+function handleBlur(event) {
+  const { name } = event.target
+  touched[name] = true
+
+  if (validateOnBlur) {
+    const error = validateField(name, values[name])
+    if (error) {
+      errors[name] = error
+    }
+    else {
+      delete errors[name]
+    }
+  }
+}
+
+// Handle form submission
+async function handleSubmit(event) {
+  event.preventDefault()
+  submitCount++
+
+  // Mark all fields as touched
+  Object.keys(validationSchema).forEach((name) => {
+    touched[name] = true
+  })
+
+  // Validate
+  isValidating = true
+  const isValid = validateForm()
+  isValidating = false
+
+  if (!isValid) {
+    if (onError) {
+      onError(errors)
+    }
+    return
+  }
+
+  // Submit
+  isSubmitting = true
+
+  try {
+    if (onSubmit) {
+      await onSubmit(values, { setErrors, setValues, resetForm })
+    }
+  }
+  catch (error) {
+    if (onError) {
+      onError(error)
+    }
+  }
+  finally {
+    isSubmitting = false
+  }
+}
+
+// Helper functions
+function setErrors(newErrors) {
+  errors = { ...errors, ...newErrors }
+}
+
+function setValues(newValues) {
+  values = { ...values, ...newValues }
+}
+
+function resetForm() {
+  values = { ...initialValues }
+  errors = {}
+  touched = {}
+  isSubmitting = false
+  submitCount = 0
+}
+
+function getFieldProps(name) {
+  return {
+    name,
+    value: values[name] || '',
+    error: errors[name],
+    touched: touched[name],
+    onChange: handleChange,
+    onBlur: handleBlur,
+  }
+}
+
+export const formClasses = `space-y-6 ${className}`.trim()
+export const errorClasses = `mt-1 text-sm text-red-600 dark:text-red-400`.trim()
+</script>
+
+<form
+  class="{{ formClasses }}"
+  @if(action)action="{{ action }}"@endif
+  method="{{ method }}"
+  onsubmit="handleSubmit(event)"
+  novalidate
+>
+  <slot
+    values="{{ values }}"
+    errors="{{ errors }}"
+    touched="{{ touched }}"
+    isSubmitting="{{ isSubmitting }}"
+    isValidating="{{ isValidating }}"
+    submitCount="{{ submitCount }}"
+    getFieldProps="{{ getFieldProps }}"
+    setErrors="{{ setErrors }}"
+    setValues="{{ setValues }}"
+    resetForm="{{ resetForm }}"
+  />
+</form>
+
+<script>
+// Export context for child components
+if (typeof window !== 'undefined') {
+  window.__formContext = {
+    values,
+    errors,
+    touched,
+    isSubmitting,
+    isValidating,
+    getFieldProps,
+    handleChange,
+    handleBlur,
+  }
+}
+</script>

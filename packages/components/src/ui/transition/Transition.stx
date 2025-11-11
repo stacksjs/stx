@@ -6,41 +6,169 @@ export const enterTo = $props.enterTo || 'opacity-100'
 export const leave = $props.leave || 'transition-opacity duration-200'
 export const leaveFrom = $props.leaveFrom || 'opacity-100'
 export const leaveTo = $props.leaveTo || 'opacity-0'
+export const appear = $props.appear || false
+export const appearFrom = $props.appearFrom || enterFrom
+export const appearTo = $props.appearTo || enterTo
+export const mode = $props.mode || 'in-out' // 'in-out' | 'out-in' | 'default'
+export const duration = $props.duration || 300
+export const delay = $props.delay || 0
+export const preset = $props.preset || ''
+export const onBeforeEnter = $props.onBeforeEnter
+export const onEnter = $props.onEnter
+export const onAfterEnter = $props.onAfterEnter
+export const onBeforeLeave = $props.onBeforeLeave
+export const onLeave = $props.onLeave
+export const onAfterLeave = $props.onAfterLeave
 export const className = $props.className || ''
-export const as = $props.as || 'div'
+
+// Preset transitions
+const presets = {
+  fade: {
+    enter: 'transition-opacity',
+    enterFrom: 'opacity-0',
+    enterTo: 'opacity-100',
+    leave: 'transition-opacity',
+    leaveFrom: 'opacity-100',
+    leaveTo: 'opacity-0',
+  },
+  slide: {
+    enter: 'transition-transform',
+    enterFrom: 'translate-y-2',
+    enterTo: 'translate-y-0',
+    leave: 'transition-transform',
+    leaveFrom: 'translate-y-0',
+    leaveTo: 'translate-y-2',
+  },
+  slideLeft: {
+    enter: 'transition-transform',
+    enterFrom: 'translate-x-full',
+    enterTo: 'translate-x-0',
+    leave: 'transition-transform',
+    leaveFrom: 'translate-x-0',
+    leaveTo: '-translate-x-full',
+  },
+  slideRight: {
+    enter: 'transition-transform',
+    enterFrom: '-translate-x-full',
+    enterTo: 'translate-x-0',
+    leave: 'transition-transform',
+    leaveFrom: 'translate-x-0',
+    leaveTo: 'translate-x-full',
+  },
+  scale: {
+    enter: 'transition-transform',
+    enterFrom: 'scale-95',
+    enterTo: 'scale-100',
+    leave: 'transition-transform',
+    leaveFrom: 'scale-100',
+    leaveTo: 'scale-95',
+  },
+  rotate: {
+    enter: 'transition-transform',
+    enterFrom: 'rotate-12 scale-95',
+    enterTo: 'rotate-0 scale-100',
+    leave: 'transition-transform',
+    leaveFrom: 'rotate-0 scale-100',
+    leaveTo: '-rotate-12 scale-95',
+  },
+  zoom: {
+    enter: 'transition-all',
+    enterFrom: 'scale-0 opacity-0',
+    enterTo: 'scale-100 opacity-100',
+    leave: 'transition-all',
+    leaveFrom: 'scale-100 opacity-100',
+    leaveTo: 'scale-0 opacity-0',
+  },
+}
+
+// Apply preset if specified
+const presetTransition = preset && presets[preset] ? presets[preset] : {}
+const finalEnter = presetTransition.enter || enter
+const finalEnterFrom = presetTransition.enterFrom || enterFrom
+const finalEnterTo = presetTransition.enterTo || enterTo
+const finalLeave = presetTransition.leave || leave
+const finalLeaveFrom = presetTransition.leaveFrom || leaveFrom
+const finalLeaveTo = presetTransition.leaveTo || leaveTo
 
 export let isEntering = false
 export let isLeaving = false
 export let shouldRender = show
+export let hasAppeared = false
 
 const transitionClasses = show
   ? isEntering
-    ? `${enter} ${enterFrom}`
-    : `${enterTo}`
+    ? `${finalEnter} ${finalEnterFrom}`
+    : `${finalEnterTo}`
   : isLeaving
-    ? `${leave} ${leaveFrom}`
-    : `${leaveTo}`
+    ? `${finalLeave} ${finalLeaveFrom}`
+    : `${finalLeaveTo}`
 
 const componentClasses = `${transitionClasses} ${className}`.trim()
-
-// Handle transitions
-if (show && !shouldRender) {
-  shouldRender = true
-  isEntering = true
-  setTimeout(() => {
-    isEntering = false
-  }, 300)
-} else if (!show && shouldRender) {
-  isLeaving = true
-  setTimeout(() => {
-    isLeaving = false
-    shouldRender = false
-  }, 200)
-}
+const durationStyle = `transition-duration: ${duration}ms; transition-delay: ${delay}ms;`
 </script>
 
 @if(shouldRender)
-  <component :is="{{ as }}" class="{{ componentClasses }}">
+  <div class="{{ componentClasses }}" style="{{ durationStyle }}">
     <slot />
-  </component>
+  </div>
 @endif
+
+<script>
+// Handle transitions with lifecycle callbacks
+if (typeof window !== 'undefined') {
+  let previousShow = show
+
+  // Watch for show changes
+  function checkTransition() {
+    if (show !== previousShow) {
+      if (show && !shouldRender) {
+        // Entering
+        if (onBeforeEnter) onBeforeEnter()
+
+        shouldRender = true
+        isEntering = true
+
+        setTimeout(() => {
+          if (onEnter) onEnter()
+        }, delay)
+
+        setTimeout(() => {
+          isEntering = false
+          if (onAfterEnter) onAfterEnter()
+        }, duration + delay)
+
+      } else if (!show && shouldRender) {
+        // Leaving
+        if (onBeforeLeave) onBeforeLeave()
+
+        isLeaving = true
+
+        setTimeout(() => {
+          if (onLeave) onLeave()
+        }, delay)
+
+        setTimeout(() => {
+          isLeaving = false
+          shouldRender = false
+          if (onAfterLeave) onAfterLeave()
+        }, duration + delay)
+      }
+
+      previousShow = show
+    }
+
+    requestAnimationFrame(checkTransition)
+  }
+
+  requestAnimationFrame(checkTransition)
+
+  // Handle initial appear
+  if (appear && show && !hasAppeared) {
+    hasAppeared = true
+    isEntering = true
+    setTimeout(() => {
+      isEntering = false
+    }, duration + delay)
+  }
+}
+</script>

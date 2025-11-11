@@ -1,0 +1,101 @@
+<script>
+export const to = $props.to || 'body'
+export const disabled = $props.disabled || false
+export const defer = $props.defer || false
+
+let teleportContainer = null
+let teleportId = `teleport-${Math.random().toString(36).substr(2, 9)}`
+
+// Teleport content to target
+function teleport() {
+  if (typeof window === 'undefined' || disabled)
+    return
+
+  // Get target element
+  const targetElement = typeof to === 'string'
+    ? document.querySelector(to)
+    : to
+
+  if (!targetElement) {
+    console.warn(`Teleport target "${to}" not found`)
+    return
+  }
+
+  // Get source element
+  const sourceElement = document.getElementById(teleportId)
+  if (!sourceElement)
+    return
+
+  // Create teleport container if needed
+  if (!teleportContainer) {
+    teleportContainer = document.createElement('div')
+    teleportContainer.setAttribute('data-teleport-id', teleportId)
+  }
+
+  // Move all child nodes to container
+  while (sourceElement.firstChild) {
+    teleportContainer.appendChild(sourceElement.firstChild)
+  }
+
+  // Append to target
+  targetElement.appendChild(teleportContainer)
+}
+
+// Return content back to original location
+function returnContent() {
+  if (!teleportContainer || !teleportContainer.parentNode)
+    return
+
+  const sourceElement = document.getElementById(teleportId)
+  if (!sourceElement)
+    return
+
+  // Move content back
+  while (teleportContainer.firstChild) {
+    sourceElement.appendChild(teleportContainer.firstChild)
+  }
+
+  // Remove container
+  teleportContainer.parentNode.removeChild(teleportContainer)
+  teleportContainer = null
+}
+
+// Initialize teleport
+if (typeof window !== 'undefined') {
+  if (defer) {
+    // Defer until next tick
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(teleport, 0)
+    })
+  }
+  else {
+    // Immediate
+    window.addEventListener('DOMContentLoaded', teleport)
+  }
+
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', returnContent)
+}
+</script>
+
+@if(disabled)
+  <!-- Render in place if disabled -->
+  <slot />
+@else
+  <!-- Source container -->
+  <div id="{{ teleportId }}" data-teleport-source="true">
+    <slot />
+  </div>
+@endif
+
+<script>
+// Trigger teleport after render
+if (typeof window !== 'undefined' && document.readyState === 'complete') {
+  if (defer) {
+    setTimeout(teleport, 0)
+  }
+  else {
+    teleport()
+  }
+}
+</script>
