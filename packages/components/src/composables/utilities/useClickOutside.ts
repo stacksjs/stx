@@ -1,10 +1,34 @@
-// Hook to detect clicks outside an element
+/**
+ * Detects clicks outside a specified element
+ *
+ * @example
+ * ```ts
+ * const cleanup = useClickOutside(
+ *   modalRef,
+ *   () => closeModal(),
+ *   { enabled: isOpen, ignore: ['.tooltip'] }
+ * )
+ * ```
+ */
 
+/**
+ * Options for useClickOutside hook
+ */
 export interface UseClickOutsideOptions {
+  /** Whether the hook is enabled */
   enabled?: boolean
-  ignore?: string[] // CSS selectors to ignore
+  /** CSS selectors to ignore (clicks on these elements won't trigger callback) */
+  ignore?: string[]
 }
 
+/**
+ * Hook to detect clicks outside an element
+ *
+ * @param elementRef - The element to detect clicks outside of
+ * @param callback - Function to call when click occurs outside element
+ * @param options - Configuration options
+ * @returns Cleanup function to remove event listeners
+ */
 export function useClickOutside(
   elementRef: HTMLElement | null,
   callback: (event: MouseEvent | TouchEvent) => void,

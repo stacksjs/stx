@@ -1,12 +1,42 @@
-// Hook to trap focus within an element (for modals, dialogs, etc.)
+/**
+ * Traps focus within a container element (useful for modals, dialogs, dropdowns)
+ *
+ * @example
+ * ```ts
+ * const { activate, deactivate } = useFocusTrap(modalRef, {
+ *   initialFocus: firstInputRef,
+ *   returnFocus: true
+ * })
+ *
+ * // When modal opens
+ * activate()
+ *
+ * // When modal closes
+ * deactivate()
+ * ```
+ */
 
+/**
+ * Options for useFocusTrap hook
+ */
 export interface UseFocusTrapOptions {
+  /** Whether the focus trap is enabled */
   enabled?: boolean
+  /** Element to focus initially (defaults to first focusable element) */
   initialFocus?: HTMLElement | null
+  /** Whether to return focus to previously focused element on deactivate */
   returnFocus?: boolean
+  /** Fallback element to focus if no focusable elements found */
   fallbackFocus?: HTMLElement | null
 }
 
+/**
+ * Hook to trap focus within an element
+ *
+ * @param containerRef - The container element to trap focus within
+ * @param options - Configuration options
+ * @returns Object with activate and deactivate functions
+ */
 export function useFocusTrap(
   containerRef: HTMLElement | null,
   options: UseFocusTrapOptions = {},

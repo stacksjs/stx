@@ -1,9 +1,29 @@
-// Hook for responsive media queries
+/**
+ * Hook for responsive media queries
+ *
+ * @example
+ * ```ts
+ * const { matches } = useMediaQuery('(min-width: 768px)')
+ * const { matches: isDark } = useIsDarkMode()
+ * const { matches: isMobile } = useIsMobile()
+ * ```
+ */
 
+/**
+ * Options for useMediaQuery hook
+ */
 export interface UseMediaQueryOptions {
+  /** Default value when window.matchMedia is not available */
   defaultValue?: boolean
 }
 
+/**
+ * Hook for responsive media queries
+ *
+ * @param query - Media query string
+ * @param options - Configuration options
+ * @returns Object with matches boolean and updateMatches function
+ */
 export function useMediaQuery(
   query: string,
   options: UseMediaQueryOptions = {},
@@ -41,7 +61,9 @@ export function useMediaQuery(
   return { matches, updateMatches }
 }
 
-// Common breakpoints
+/**
+ * Common responsive breakpoints
+ */
 export const Breakpoints = {
   xs: '(min-width: 320px)',
   sm: '(min-width: 640px)',
@@ -59,23 +81,38 @@ export const Breakpoints = {
   landscape: '(orientation: landscape)',
 } as const
 
-// Convenience functions
+/**
+ * Use a predefined breakpoint
+ * @param breakpoint - Breakpoint name from Breakpoints constant
+ */
 export function useBreakpoint(breakpoint: keyof typeof Breakpoints) {
   return useMediaQuery(Breakpoints[breakpoint])
 }
 
+/**
+ * Check if viewport is mobile (max-width: 767px)
+ */
 export function useIsMobile() {
   return useMediaQuery(Breakpoints.mobile)
 }
 
+/**
+ * Check if viewport is desktop (min-width: 1024px)
+ */
 export function useIsDesktop() {
   return useMediaQuery(Breakpoints.desktop)
 }
 
+/**
+ * Check if user prefers dark color scheme
+ */
 export function useIsDarkMode() {
   return useMediaQuery(Breakpoints.dark)
 }
 
+/**
+ * Check if user prefers reduced motion
+ */
 export function usePrefersReducedMotion() {
   return useMediaQuery(Breakpoints.reducedMotion)
 }

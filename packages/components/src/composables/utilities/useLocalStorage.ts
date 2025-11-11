@@ -1,11 +1,36 @@
-// Reactive localStorage hook
+/**
+ * Reactive localStorage hook with cross-tab synchronization
+ *
+ * @example
+ * ```ts
+ * const { value, setValue, removeValue } = useLocalStorage('user', { name: 'John' })
+ *
+ * setValue({ name: 'Jane' })
+ * setValue(prev => ({ ...prev, age: 30 }))
+ * removeValue()
+ * ```
+ */
 
+/**
+ * Options for useLocalStorage hook
+ */
 export interface UseLocalStorageOptions<T> {
+  /** Custom serializer function (defaults to JSON.stringify) */
   serializer?: (value: T) => string
+  /** Custom deserializer function (defaults to JSON.parse) */
   deserializer?: (value: string) => T
+  /** Error handler function */
   onError?: (error: Error) => void
 }
 
+/**
+ * Hook for reactive localStorage with cross-tab sync
+ *
+ * @param key - Storage key
+ * @param initialValue - Initial value if key doesn't exist
+ * @param options - Configuration options
+ * @returns Object with value, setValue, and removeValue
+ */
 export function useLocalStorage<T>(
   key: string,
   initialValue: T,

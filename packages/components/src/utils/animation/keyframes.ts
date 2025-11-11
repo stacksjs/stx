@@ -1,19 +1,57 @@
-// Keyframe animation utilities
+/**
+ * Keyframe animation utilities using Web Animations API
+ *
+ * @example
+ * ```ts
+ * import { animate, KeyframeAnimations } from '@stacksjs/components'
+ *
+ * // Use predefined animation
+ * animate(element, 'fadeIn', { duration: 500 })
+ *
+ * // Custom keyframes
+ * createKeyframeAnimation(element, [
+ *   { offset: 0, opacity: 0, transform: 'scale(0.5)' },
+ *   { offset: 1, opacity: 1, transform: 'scale(1)' }
+ * ], { duration: 300 })
+ * ```
+ */
 
+/**
+ * Single keyframe definition
+ */
 export interface Keyframe {
-  offset: number // 0 to 1
+  /** Keyframe position (0 to 1) */
+  offset: number
+  /** CSS properties to animate */
   [property: string]: any
 }
 
+/**
+ * Animation configuration options
+ */
 export interface AnimationOptions {
+  /** Animation duration in milliseconds */
   duration?: number
+  /** Easing function (CSS easing string) */
   easing?: string
+  /** Delay before animation starts in milliseconds */
   delay?: number
+  /** Number of iterations (Infinity for infinite) */
   iterations?: number
+  /** Animation direction */
   direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse'
+  /** Fill mode */
   fill?: 'none' | 'forwards' | 'backwards' | 'both'
 }
 
+/**
+ * Create a keyframe animation using Web Animations API
+ *
+ * @param element - Target HTML element
+ * @param keyframes - Array of keyframe definitions
+ * @param options - Animation options
+ * @returns Animation instance or null if not supported
+ */
 export function createKeyframeAnimation(
   element: HTMLElement,
   keyframes: Keyframe[],
@@ -43,7 +81,16 @@ export function createKeyframeAnimation(
   })
 }
 
-// Predefined keyframe animations
+/**
+ * Predefined keyframe animation presets
+ *
+ * Available animations:
+ * - fadeIn/fadeOut
+ * - slideInUp/Down/Left/Right, slideOutUp/Down/Left/Right
+ * - zoomIn/Out
+ * - rotate, bounce, pulse, shake, swing
+ * - flip, rubberBand, heartbeat
+ */
 export const KeyframeAnimations = {
   fadeIn: [
     { offset: 0, opacity: 0 },
@@ -161,9 +208,19 @@ export const KeyframeAnimations = {
   ],
 } as const
 
+/**
+ * Type for predefined animation names
+ */
 export type KeyframeAnimationName = keyof typeof KeyframeAnimations
 
-// Helper to animate element with predefined animation
+/**
+ * Animate an element with a predefined animation
+ *
+ * @param element - Target HTML element
+ * @param animationName - Name of predefined animation
+ * @param options - Animation options
+ * @returns Animation instance or null if not supported
+ */
 export function animate(
   element: HTMLElement,
   animationName: KeyframeAnimationName,

@@ -1,16 +1,45 @@
-// CSS Animation helpers
+/**
+ * CSS Animation helper utilities
+ *
+ * @example
+ * ```ts
+ * import { applyAnimation, staggerAnimation } from '@stacksjs/components'
+ *
+ * // Apply animation
+ * applyAnimation(element, 'fade-in', { duration: '300ms' })
+ *
+ * // Stagger multiple elements
+ * staggerAnimation(elements, 'slide-in', { stagger: 100 })
+ * ```
+ */
 
+/**
+ * CSS animation configuration options
+ */
 export interface CSSAnimationOptions {
+  /** Animation duration (e.g., '300ms', '1s') */
   duration?: string
+  /** Timing function (e.g., 'ease', 'linear', 'cubic-bezier(...)') */
   timing?: string
+  /** Delay before animation (e.g., '100ms') */
   delay?: string
+  /** Number of iterations (e.g., '1', 'infinite') */
   iteration?: string
+  /** Animation direction */
   direction?: string
+  /** Fill mode */
   fill?: string
+  /** Play state */
   playState?: string
 }
 
-// Generate CSS animation string
+/**
+ * Generate CSS animation string
+ *
+ * @param name - Animation name
+ * @param options - Animation options
+ * @returns CSS animation string
+ */
 export function cssAnimation(name: string, options: CSSAnimationOptions = {}): string {
   const {
     duration = '1s',
@@ -25,7 +54,13 @@ export function cssAnimation(name: string, options: CSSAnimationOptions = {}): s
   return `${name} ${duration} ${timing} ${delay} ${iteration} ${direction} ${fill} ${playState}`
 }
 
-// Apply animation to element
+/**
+ * Apply CSS animation to an element
+ *
+ * @param element - Target element
+ * @param animationName - Name of CSS animation
+ * @param options - Animation options
+ */
 export function applyAnimation(
   element: HTMLElement,
   animationName: string,
@@ -34,12 +69,21 @@ export function applyAnimation(
   element.style.animation = cssAnimation(animationName, options)
 }
 
-// Remove animation from element
+/**
+ * Remove animation from an element
+ *
+ * @param element - Target element
+ */
 export function removeAnimation(element: HTMLElement): void {
   element.style.animation = ''
 }
 
-// Wait for animation to complete
+/**
+ * Wait for animation to complete
+ *
+ * @param element - Target element
+ * @returns Promise that resolves when animation ends
+ */
 export function waitForAnimation(element: HTMLElement): Promise<void> {
   return new Promise((resolve) => {
     const handleAnimationEnd = () => {
@@ -51,7 +95,13 @@ export function waitForAnimation(element: HTMLElement): Promise<void> {
   })
 }
 
-// Stagger animations for multiple elements
+/**
+ * Stagger animations across multiple elements
+ *
+ * @param elements - Array of elements to animate
+ * @param animationName - Name of CSS animation
+ * @param options - Animation options with stagger delay in ms
+ */
 export function staggerAnimation(
   elements: HTMLElement[],
   animationName: string,
@@ -68,7 +118,13 @@ export function staggerAnimation(
   })
 }
 
-// Sequence animations
+/**
+ * Run animations in sequence
+ *
+ * @param element - Target element
+ * @param animations - Array of animations to run in order
+ * @returns Promise that resolves when all animations complete
+ */
 export async function sequenceAnimations(
   element: HTMLElement,
   animations: Array<{ name: string; options?: CSSAnimationOptions }>,
@@ -79,7 +135,9 @@ export async function sequenceAnimations(
   }
 }
 
-// Predefined CSS animation classes (for use with Tailwind/headwind)
+/**
+ * Predefined CSS animation class names (compatible with Tailwind/headwind)
+ */
 export const AnimationClasses = {
   // Fade
   fadeIn: 'animate-fade-in',
@@ -108,7 +166,14 @@ export const AnimationClasses = {
   pulse: 'animate-pulse',
 } as const
 
-// Utility to add animation class with auto-removal
+/**
+ * Add animation class with automatic removal
+ *
+ * @param element - Target element
+ * @param animationClass - CSS class name
+ * @param duration - Duration in milliseconds before removing class
+ * @returns Promise that resolves when animation completes
+ */
 export function animateWithClass(
   element: HTMLElement,
   animationClass: string,
@@ -124,7 +189,20 @@ export function animateWithClass(
   })
 }
 
-// Create custom CSS keyframes dynamically
+/**
+ * Create custom CSS @keyframes rule dynamically
+ *
+ * @param name - Animation name
+ * @param frames - Keyframe definitions (percentage -> styles)
+ *
+ * @example
+ * ```ts
+ * createKeyframes('custom-fade', {
+ *   '0%': { opacity: '0' },
+ *   '100%': { opacity: '1' }
+ * })
+ * ```
+ */
 export function createKeyframes(name: string, frames: Record<string, Record<string, string>>): void {
   const keyframesRule = `
     @keyframes ${name} {

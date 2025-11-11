@@ -1,21 +1,55 @@
-// Hook for keyboard event handling
+/**
+ * Hook for keyboard event handling with support for shortcuts and modifiers
+ *
+ * @example
+ * ```ts
+ * useKeyboard([
+ *   { key: 'Escape', handler: () => closeModal() },
+ *   { key: 's', ctrl: true, handler: () => save() },
+ *   { key: ['ArrowUp', 'ArrowDown'], handler: (e) => navigate(e.key) }
+ * ])
+ * ```
+ */
 
+/**
+ * Options for useKeyboard hook
+ */
 export interface UseKeyboardOptions {
+  /** Whether the hook is enabled */
   enabled?: boolean
+  /** Whether to prevent default browser behavior */
   preventDefault?: boolean
+  /** Whether to stop event propagation */
   stopPropagation?: boolean
+  /** Target element for event listener (defaults to document) */
   target?: HTMLElement | Document | Window | null
 }
 
+/**
+ * Keyboard event handler configuration
+ */
 export interface KeyboardHandler {
+  /** Key or keys to listen for */
   key: string | string[]
+  /** Handler function to execute */
   handler: (event: KeyboardEvent) => void
+  /** Whether Ctrl key must be pressed */
   ctrl?: boolean
+  /** Whether Shift key must be pressed */
   shift?: boolean
+  /** Whether Alt key must be pressed */
   alt?: boolean
+  /** Whether Meta (Command on Mac) key must be pressed */
   meta?: boolean
 }
 
+/**
+ * Hook for keyboard event handling
+ *
+ * @param handlers - Single handler or array of keyboard handlers
+ * @param options - Configuration options
+ * @returns Cleanup function to remove event listeners
+ */
 export function useKeyboard(
   handlers: KeyboardHandler | KeyboardHandler[],
   options: UseKeyboardOptions = {},

@@ -1,24 +1,52 @@
-// Easing functions for animations
-// t: current time, b: start value, c: change in value, d: duration
+/**
+ * Easing functions for smooth animations
+ *
+ * All easing functions follow the signature:
+ * @param t - Current time (0 to duration)
+ * @param b - Start value
+ * @param c - Change in value (end - start)
+ * @param d - Duration
+ * @returns Current value at time t
+ *
+ * @example
+ * ```ts
+ * import { Easing } from '@stacksjs/components'
+ *
+ * const value = Easing.easeInOutCubic(currentTime, startValue, changeInValue, duration)
+ * ```
+ */
 
+/**
+ * Easing function type signature
+ */
 export type EasingFunction = (t: number, b: number, c: number, d: number) => number
 
-// Linear
+/**
+ * Linear easing - no acceleration
+ */
 export const linear: EasingFunction = (t, b, c, d) => {
   return (c * t) / d + b
 }
 
-// Quadratic
+/**
+ * Quadratic ease-in - accelerating from zero velocity
+ */
 export const easeInQuad: EasingFunction = (t, b, c, d) => {
   t /= d
   return c * t * t + b
 }
 
+/**
+ * Quadratic ease-out - decelerating to zero velocity
+ */
 export const easeOutQuad: EasingFunction = (t, b, c, d) => {
   t /= d
   return -c * t * (t - 2) + b
 }
 
+/**
+ * Quadratic ease-in-out - acceleration until halfway, then deceleration
+ */
 export const easeInOutQuad: EasingFunction = (t, b, c, d) => {
   t /= d / 2
   if (t < 1)
@@ -267,7 +295,12 @@ export const easeInOutBounce: EasingFunction = (t, b, c, d) => {
   return easeOutBounce(t * 2 - d, 0, c, d) * 0.5 + c * 0.5 + b
 }
 
-// Export all easing functions
+/**
+ * Object containing all easing functions
+ *
+ * Available easings: Linear, Quad, Cubic, Quart, Quint, Sine, Expo, Circ, Elastic, Back, Bounce
+ * Each with In, Out, InOut variants (except Linear)
+ */
 export const Easing = {
   linear,
   easeInQuad,
