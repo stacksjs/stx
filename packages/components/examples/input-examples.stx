@@ -1,0 +1,282 @@
+<script>
+const title = 'Input Component Examples'
+const description = 'Complete examples of input components including TextInput, EmailInput, PasswordInput, NumberInput, and SearchInput'
+</script>
+
+<div class="max-w-4xl mx-auto p-8 space-y-12">
+  <header class="space-y-2">
+    <h1 class="text-4xl font-bold text-gray-900 dark:text-white">{{ title }}</h1>
+    <p class="text-lg text-gray-600 dark:text-gray-300">{{ description }}</p>
+  </header>
+
+  <!-- Text Input -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Text Input</h2>
+    <div class="space-y-4 max-w-md">
+      <TextInput
+        label="Username"
+        placeholder="Enter your username"
+        helperText="Choose a unique username"
+      />
+
+      <TextInput
+        label="Bio"
+        placeholder="Tell us about yourself"
+        maxLength={200}
+        showCount={true}
+      />
+
+      <TextInput
+        label="Website"
+        placeholder="https://example.com"
+        leftIcon="globe"
+        clearable={true}
+      />
+
+      <TextInput
+        label="Email"
+        value="user@example.com"
+        error={true}
+        helperText="This email is already taken"
+      />
+
+      <TextInput
+        label="Read Only"
+        value="Cannot edit this"
+        readonly={true}
+      />
+
+      <TextInput
+        label="Disabled"
+        placeholder="This is disabled"
+        disabled={true}
+      />
+    </div>
+  </section>
+
+  <!-- Email Input -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Email Input</h2>
+    <div class="space-y-4 max-w-md">
+      <EmailInput
+        label="Email Address"
+        placeholder="name@example.com"
+        required={true}
+      />
+
+      <EmailInput
+        label="Work Email"
+        placeholder="name@company.com"
+        helperText="Use your company email address"
+      />
+    </div>
+  </section>
+
+  <!-- Password Input -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Password Input</h2>
+    <div class="space-y-4 max-w-md">
+      <PasswordInput
+        label="Password"
+        placeholder="Enter your password"
+        required={true}
+      />
+
+      <PasswordInput
+        label="New Password"
+        placeholder="Create a strong password"
+        showStrength={true}
+        helperText="Password must be at least 8 characters"
+      />
+    </div>
+  </section>
+
+  <!-- Number Input -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Number Input</h2>
+    <div class="space-y-4 max-w-md">
+      <NumberInput
+        label="Age"
+        placeholder="Enter your age"
+        min={0}
+        max={120}
+      />
+
+      <NumberInput
+        label="Quantity"
+        value={1}
+        min={1}
+        max={99}
+        showControls={true}
+      />
+
+      <NumberInput
+        label="Price"
+        placeholder="0.00"
+        step={0.01}
+        showControls={true}
+      />
+    </div>
+  </section>
+
+  <!-- Search Input -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Search Input</h2>
+    <div class="space-y-4 max-w-md">
+      <SearchInput
+        placeholder="Search..."
+        onSearch={handleSearch}
+      />
+
+      <SearchInput
+        placeholder="Search users..."
+        loading={true}
+      />
+    </div>
+  </section>
+
+  <!-- Sizes -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Sizes</h2>
+    <div class="space-y-4 max-w-md">
+      <TextInput
+        label="Small"
+        placeholder="Small input"
+        size="sm"
+      />
+
+      <TextInput
+        label="Medium (default)"
+        placeholder="Medium input"
+        size="md"
+      />
+
+      <TextInput
+        label="Large"
+        placeholder="Large input"
+        size="lg"
+      />
+    </div>
+  </section>
+
+  <!-- With Icons -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">With Icons</h2>
+    <div class="space-y-4 max-w-md">
+      <TextInput
+        label="Search"
+        placeholder="Search..."
+        leftIcon="search"
+      />
+
+      <TextInput
+        label="Email"
+        placeholder="name@example.com"
+        leftIcon="mail"
+        rightIcon="check"
+      />
+
+      <TextInput
+        label="Location"
+        placeholder="Enter location"
+        leftIcon="map-pin"
+        clearable={true}
+      />
+    </div>
+  </section>
+
+  <!-- Interactive Form Example -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Interactive Form Example</h2>
+    <form class="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-4 max-w-md" onSubmit="handleFormSubmit(event)">
+      <TextInput
+        label="Full Name"
+        placeholder="John Doe"
+        required={true}
+        id="fullName"
+      />
+
+      <EmailInput
+        label="Email"
+        placeholder="john@example.com"
+        required={true}
+        id="email"
+      />
+
+      <PasswordInput
+        label="Password"
+        placeholder="••••••••"
+        required={true}
+        showStrength={true}
+        id="password"
+      />
+
+      <NumberInput
+        label="Age"
+        min={18}
+        max={120}
+        showControls={true}
+        id="age"
+      />
+
+      <Button type="submit" variant="primary" fullWidth>
+        Submit Form
+      </Button>
+    </form>
+  </section>
+
+  <!-- Code Example -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Code Example</h2>
+    <pre class="p-4 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto"><code>&lt;TextInput
+  label="Username"
+  placeholder="Enter your username"
+  leftIcon="user"
+  clearable={true}
+  maxLength={50}
+  showCount={true}
+/&gt;
+
+&lt;EmailInput
+  label="Email Address"
+  placeholder="name@example.com"
+  required={true}
+/&gt;
+
+&lt;PasswordInput
+  label="Password"
+  showStrength={true}
+  required={true}
+/&gt;
+
+&lt;NumberInput
+  label="Quantity"
+  min={1}
+  max={99}
+  showControls={true}
+/&gt;
+
+&lt;SearchInput
+  placeholder="Search..."
+  onSearch={handleSearch}
+/&gt;</code></pre>
+  </section>
+</div>
+
+<script>
+function handleSearch(query) {
+  console.log('Searching for:', query)
+}
+
+function handleFormSubmit(event) {
+  event.preventDefault()
+  const formData = {
+    fullName: document.getElementById('fullName').value,
+    email: document.getElementById('email').value,
+    password: document.getElementById('password').value,
+    age: document.getElementById('age').value
+  }
+  console.log('Form submitted:', formData)
+  alert('Form submitted successfully! Check console for data.')
+}
+</script>

@@ -1,3 +1,5 @@
+import { createPropValidator, PropTypes } from '../../utils/prop-validation'
+
 export { default as Form } from './Form.stx'
 
 export interface FieldSchema {
@@ -42,3 +44,23 @@ export interface FieldProps {
   onChange: (event: Event) => void
   onBlur: (event: Event) => void
 }
+
+/**
+ * Form prop validation schema
+ */
+export const formPropSchema = {
+  action: PropTypes.string,
+  method: PropTypes.oneOf(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']),
+  validationSchema: PropTypes.object,
+  initialValues: PropTypes.object,
+  validateOnChange: PropTypes.boolean,
+  validateOnBlur: PropTypes.boolean,
+  onSubmit: PropTypes.func,
+  onError: PropTypes.func,
+  className: PropTypes.string,
+}
+
+/**
+ * Validate Form component props
+ */
+export const validateFormProps = createPropValidator('Form', formPropSchema)

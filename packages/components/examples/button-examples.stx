@@ -1,0 +1,119 @@
+<script>
+const title = 'Button Component Examples'
+const description = 'Complete examples of the Button component with all variants, sizes, and states'
+</script>
+
+<div class="max-w-4xl mx-auto p-8 space-y-12">
+  <header class="space-y-2">
+    <h1 class="text-4xl font-bold text-gray-900 dark:text-white">{{ title }}</h1>
+    <p class="text-lg text-gray-600 dark:text-gray-300">{{ description }}</p>
+  </header>
+
+  <!-- Variants -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Variants</h2>
+    <div class="flex flex-wrap gap-4">
+      <Button variant="primary">Primary Button</Button>
+      <Button variant="secondary">Secondary Button</Button>
+      <Button variant="outline">Outline Button</Button>
+      <Button variant="ghost">Ghost Button</Button>
+      <Button variant="danger">Danger Button</Button>
+    </div>
+  </section>
+
+  <!-- Sizes -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Sizes</h2>
+    <div class="flex flex-wrap items-center gap-4">
+      <Button size="xs">Extra Small</Button>
+      <Button size="sm">Small</Button>
+      <Button size="md">Medium</Button>
+      <Button size="lg">Large</Button>
+      <Button size="xl">Extra Large</Button>
+    </div>
+  </section>
+
+  <!-- States -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">States</h2>
+    <div class="flex flex-wrap gap-4">
+      <Button>Normal State</Button>
+      <Button disabled>Disabled State</Button>
+      <Button loading>Loading State</Button>
+    </div>
+  </section>
+
+  <!-- With Icons -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">With Icons</h2>
+    <div class="flex flex-wrap gap-4">
+      <Button leftIcon="download">Download</Button>
+      <Button rightIcon="arrow-right">Next</Button>
+      <Button leftIcon="save" rightIcon="check">Save Changes</Button>
+    </div>
+  </section>
+
+  <!-- Full Width -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Full Width</h2>
+    <Button fullWidth>Full Width Button</Button>
+  </section>
+
+  <!-- Combinations -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Combinations</h2>
+    <div class="space-y-4">
+      <div class="flex flex-wrap gap-4">
+        <Button variant="primary" size="lg" leftIcon="rocket">Get Started</Button>
+        <Button variant="secondary" size="lg" rightIcon="arrow-right">Learn More</Button>
+      </div>
+      <div class="flex flex-wrap gap-4">
+        <Button variant="outline" size="sm" leftIcon="edit">Edit</Button>
+        <Button variant="danger" size="sm" leftIcon="trash">Delete</Button>
+      </div>
+      <Button variant="primary" fullWidth loading>Processing...</Button>
+    </div>
+  </section>
+
+  <!-- Interactive Example -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Interactive Example</h2>
+    <div class="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-4">
+      <p class="text-gray-700 dark:text-gray-300">Click count: <span id="count" class="font-bold">0</span></p>
+      <div class="flex gap-4">
+        <Button onClick="incrementCount()">Click Me!</Button>
+        <Button variant="outline" onClick="resetCount()">Reset</Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Code Example -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Code Example</h2>
+    <pre class="p-4 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto"><code>&lt;Button variant="primary" size="lg" leftIcon="rocket"&gt;
+  Get Started
+&lt;/Button&gt;
+
+&lt;Button variant="danger" loading&gt;
+  Processing...
+&lt;/Button&gt;
+
+&lt;Button fullWidth onClick={handleClick}&gt;
+  Full Width Button
+&lt;/Button&gt;</code></pre>
+  </section>
+</div>
+
+<script>
+let clickCount = 0
+
+function incrementCount() {
+  clickCount++
+  document.getElementById('count').textContent = clickCount
+}
+
+function resetCount() {
+  clickCount = 0
+  document.getElementById('count').textContent = clickCount
+}
+</script>

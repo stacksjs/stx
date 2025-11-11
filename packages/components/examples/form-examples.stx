@@ -1,0 +1,395 @@
+<script>
+const title = 'Form Component Examples'
+const description = 'Complete examples of the Form component with validation, error handling, and various field types'
+</script>
+
+<div class="max-w-4xl mx-auto p-8 space-y-12">
+  <header class="space-y-2">
+    <h1 class="text-4xl font-bold text-gray-900 dark:text-white">{{ title }}</h1>
+    <p class="text-lg text-gray-600 dark:text-gray-300">{{ description }}</p>
+  </header>
+
+  <!-- Basic Form -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Basic Form</h2>
+    <div class="max-w-md">
+      <Form onSubmit={handleBasicSubmit} className="space-y-4">
+        <TextInput
+          name="username"
+          label="Username"
+          placeholder="Enter your username"
+        />
+
+        <EmailInput
+          name="email"
+          label="Email"
+          placeholder="name@example.com"
+        />
+
+        <Button type="submit" variant="primary" fullWidth>
+          Submit
+        </Button>
+      </Form>
+    </div>
+  </section>
+
+  <!-- Form with Validation -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Form with Validation</h2>
+    <div class="max-w-md">
+      <Form
+        validationSchema={{
+          username: {
+            required: true,
+            requiredMessage: 'Username is required',
+            minLength: 3,
+            minLengthMessage: 'Username must be at least 3 characters',
+            maxLength: 20,
+            maxLengthMessage: 'Username cannot exceed 20 characters'
+          },
+          email: {
+            required: true,
+            requiredMessage: 'Email is required',
+            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+            patternMessage: 'Please enter a valid email address'
+          },
+          password: {
+            required: true,
+            requiredMessage: 'Password is required',
+            minLength: 8,
+            minLengthMessage: 'Password must be at least 8 characters',
+            validate: (value) => {
+              if (!/[A-Z]/.test(value)) return 'Password must contain at least one uppercase letter'
+              if (!/[a-z]/.test(value)) return 'Password must contain at least one lowercase letter'
+              if (!/[0-9]/.test(value)) return 'Password must contain at least one number'
+              return null
+            }
+          },
+          age: {
+            required: true,
+            requiredMessage: 'Age is required',
+            validate: (value) => {
+              const age = parseInt(value)
+              if (age < 18) return 'You must be at least 18 years old'
+              if (age > 120) return 'Please enter a valid age'
+              return null
+            }
+          }
+        }}
+        onSubmit={handleValidatedSubmit}
+        onError={handleValidationError}
+        validateOnChange={true}
+        validateOnBlur={true}
+        className="space-y-4"
+      >
+        <TextInput
+          name="username"
+          label="Username"
+          placeholder="Choose a username"
+        />
+
+        <EmailInput
+          name="email"
+          label="Email Address"
+          placeholder="name@example.com"
+        />
+
+        <PasswordInput
+          name="password"
+          label="Password"
+          showStrength={true}
+        />
+
+        <NumberInput
+          name="age"
+          label="Age"
+          min={18}
+          max={120}
+          showControls={true}
+        />
+
+        <Button type="submit" variant="primary" fullWidth>
+          Create Account
+        </Button>
+      </Form>
+    </div>
+  </section>
+
+  <!-- Form with Initial Values -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Form with Initial Values</h2>
+    <div class="max-w-md">
+      <Form
+        initialValues={{
+          name: 'John Doe',
+          email: 'john@example.com',
+          bio: 'Web developer and designer',
+          notifications: true
+        }}
+        onSubmit={handleEditProfile}
+        className="space-y-4"
+      >
+        <TextInput
+          name="name"
+          label="Full Name"
+          placeholder="Enter your name"
+        />
+
+        <EmailInput
+          name="email"
+          label="Email"
+          placeholder="name@example.com"
+        />
+
+        <Textarea
+          name="bio"
+          label="Bio"
+          placeholder="Tell us about yourself"
+          maxLength={200}
+          autoResize={true}
+        />
+
+        <Checkbox
+          name="notifications"
+          label="Email Notifications"
+          description="Receive email notifications about updates"
+        />
+
+        <div class="flex gap-4">
+          <Button type="submit" variant="primary" className="flex-1">
+            Save Changes
+          </Button>
+          <Button type="button" variant="outline" className="flex-1" onClick={handleCancel}>
+            Cancel
+          </Button>
+        </div>
+      </Form>
+    </div>
+  </section>
+
+  <!-- Multi-Step Form -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Multi-Step Form</h2>
+    <div class="max-w-md">
+      <div id="multiStepForm" class="space-y-6">
+        <!-- Step Indicator -->
+        <div class="flex items-center justify-between">
+          <div class="step-item active">
+            <div class="step-number">1</div>
+            <span class="text-sm">Account</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step-item">
+            <div class="step-number">2</div>
+            <span class="text-sm">Profile</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step-item">
+            <div class="step-number">3</div>
+            <span class="text-sm">Preferences</span>
+          </div>
+        </div>
+
+        <!-- Step 1: Account -->
+        <div id="step1" class="step-content">
+          <Form id="accountForm" className="space-y-4">
+            <h3 class="text-lg font-semibold">Account Information</h3>
+            <TextInput name="username" label="Username" required={true} />
+            <EmailInput name="email" label="Email" required={true} />
+            <PasswordInput name="password" label="Password" required={true} showStrength={true} />
+            <Button type="button" variant="primary" fullWidth onClick="nextStep()">
+              Next
+            </Button>
+          </Form>
+        </div>
+
+        <!-- Step 2: Profile -->
+        <div id="step2" class="step-content hidden">
+          <Form id="profileForm" className="space-y-4">
+            <h3 class="text-lg font-semibold">Profile Information</h3>
+            <TextInput name="firstName" label="First Name" required={true} />
+            <TextInput name="lastName" label="Last Name" required={true} />
+            <NumberInput name="age" label="Age" min={18} max={120} />
+            <div class="flex gap-4">
+              <Button type="button" variant="outline" className="flex-1" onClick="previousStep()">
+                Back
+              </Button>
+              <Button type="button" variant="primary" className="flex-1" onClick="nextStep()">
+                Next
+              </Button>
+            </div>
+          </Form>
+        </div>
+
+        <!-- Step 3: Preferences -->
+        <div id="step3" class="step-content hidden">
+          <Form id="preferencesForm" onSubmit={handleMultiStepSubmit} className="space-y-4">
+            <h3 class="text-lg font-semibold">Preferences</h3>
+            <Checkbox name="newsletter" label="Subscribe to newsletter" />
+            <Checkbox name="notifications" label="Enable notifications" />
+            <Checkbox name="terms" label="I agree to the terms and conditions" required={true} />
+            <div class="flex gap-4">
+              <Button type="button" variant="outline" className="flex-1" onClick="previousStep()">
+                Back
+              </Button>
+              <Button type="submit" variant="primary" className="flex-1">
+                Complete
+              </Button>
+            </div>
+          </Form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Code Example -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Code Example</h2>
+    <pre class="p-4 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto"><code>&lt;Form
+  validationSchema={{
+    username: {
+      required: true,
+      minLength: 3,
+      maxLength: 20
+    },
+    email: {
+      required: true,
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    },
+    password: {
+      required: true,
+      minLength: 8,
+      validate: (value) => {
+        if (!/[A-Z]/.test(value)) return 'Must contain uppercase'
+        return null
+      }
+    }
+  }}
+  onSubmit={handleSubmit}
+  onError={handleError}
+  validateOnChange={true}
+  className="space-y-4"
+&gt;
+  &lt;TextInput name="username" label="Username" /&gt;
+  &lt;EmailInput name="email" label="Email" /&gt;
+  &lt;PasswordInput name="password" label="Password" /&gt;
+  &lt;Button type="submit" variant="primary"&gt;Submit&lt;/Button&gt;
+&lt;/Form&gt;</code></pre>
+  </section>
+</div>
+
+<script>
+let currentStep = 1
+
+function nextStep() {
+  if (currentStep < 3) {
+    document.getElementById(`step${currentStep}`).classList.add('hidden')
+    document.querySelectorAll('.step-item')[currentStep - 1].classList.remove('active')
+
+    currentStep++
+
+    document.getElementById(`step${currentStep}`).classList.remove('hidden')
+    document.querySelectorAll('.step-item')[currentStep - 1].classList.add('active')
+  }
+}
+
+function previousStep() {
+  if (currentStep > 1) {
+    document.getElementById(`step${currentStep}`).classList.add('hidden')
+    document.querySelectorAll('.step-item')[currentStep - 1].classList.remove('active')
+
+    currentStep--
+
+    document.getElementById(`step${currentStep}`).classList.remove('hidden')
+    document.querySelectorAll('.step-item')[currentStep - 1].classList.add('active')
+  }
+}
+
+function handleBasicSubmit(values, helpers) {
+  console.log('Basic form submitted:', values)
+  alert('Form submitted! Check console for values.')
+  helpers.resetForm()
+}
+
+function handleValidatedSubmit(values, helpers) {
+  console.log('Validated form submitted:', values)
+  alert('Account created successfully!')
+  helpers.resetForm()
+}
+
+function handleValidationError(errors) {
+  console.error('Validation errors:', errors)
+}
+
+function handleEditProfile(values) {
+  console.log('Profile updated:', values)
+  alert('Profile saved successfully!')
+}
+
+function handleCancel() {
+  console.log('Edit cancelled')
+}
+
+function handleMultiStepSubmit(values) {
+  // Collect all form values from all steps
+  const accountData = new FormData(document.getElementById('accountForm'))
+  const profileData = new FormData(document.getElementById('profileForm'))
+  const preferencesData = new FormData(document.getElementById('preferencesForm'))
+
+  const allData = {
+    ...Object.fromEntries(accountData),
+    ...Object.fromEntries(profileData),
+    ...Object.fromEntries(preferencesData)
+  }
+
+  console.log('Multi-step form completed:', allData)
+  alert('Registration completed successfully!')
+
+  // Reset to step 1
+  currentStep = 1
+  document.getElementById('step1').classList.remove('hidden')
+  document.getElementById('step2').classList.add('hidden')
+  document.getElementById('step3').classList.add('hidden')
+  document.querySelectorAll('.step-item').forEach((item, index) => {
+    if (index === 0) item.classList.add('active')
+    else item.classList.remove('active')
+  })
+}
+</script>
+
+<style>
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0.5;
+}
+
+.step-item.active {
+  opacity: 1;
+}
+
+.step-number {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.step-item.active .step-number {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background-color: #e5e7eb;
+}
+</style>

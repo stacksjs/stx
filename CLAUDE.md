@@ -117,11 +117,29 @@ stx-serve pages/ --port 3000
 ### Context and Variables
 
 Templates execute in an isolated context. Variables are extracted from:
-1. `<script>` tags with `module.exports` or `export` statements
+1. `<script>` tags - Variables can be declared with or without `export` keyword
 2. Parent component/layout context
 3. Props passed to components
 
-See `packages/stx/src/utils.ts` `extractVariables()` for implementation.
+**Important**: The `export` keyword is **optional** in `<script>` tags. All variable declarations (`const`, `let`, `var`) and function declarations are automatically made available to the template, whether exported or not.
+
+```html
+<script>
+// Both styles work identically:
+const title = 'Hello'           // ✅ Works (auto-exported)
+export const subtitle = 'World' // ✅ Works (explicitly exported)
+
+function greet(name) {           // ✅ Works (auto-exported)
+  return `Hello, ${name}!`
+}
+</script>
+
+<h1>{{ title }}</h1>
+<h2>{{ subtitle }}</h2>
+<p>{{ greet('Alice') }}</p>
+```
+
+See `packages/stx/src/utils.ts` `extractVariables()` and `convertToCommonJS()` for implementation details.
 
 ### Directive Registration
 

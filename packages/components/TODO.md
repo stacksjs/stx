@@ -167,10 +167,10 @@ This document tracks all improvements and enhancements for the @stacksjs/compone
 
 ### Developer Experience
 
-- [ ] Add prop validation warnings
-  - [ ] Development-only warnings
-  - [ ] TypeScript compile-time checks
-  - [ ] Runtime validation
+- [✅] Add prop validation warnings
+  - [✅] Development-only warnings
+  - [✅] TypeScript compile-time checks
+  - [✅] Runtime validation
 
 - [ ] Improve error messages
   - [ ] Clear, actionable messages
