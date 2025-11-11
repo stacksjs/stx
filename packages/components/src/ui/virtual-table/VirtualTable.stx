@@ -1,0 +1,113 @@
+<script>
+export const columns = $props.columns || []
+export const data = $props.data || []
+export const rowHeight = $props.rowHeight || 48
+export const height = $props.height || 600
+export const headerHeight = $props.headerHeight || 56
+export const overscan = $props.overscan || 5
+export const striped = $props.striped || false
+export const hoverable = $props.hoverable ?? true
+export const className = $props.className || ''
+
+// Calculate visible range
+let scrollTop = 0
+const visibleCount = Math.ceil((height - headerHeight) / rowHeight)
+const totalHeight = data.length * rowHeight
+
+function getVisibleRange() {
+  const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan)
+  const endIndex = Math.min(data.length - 1, Math.floor((scrollTop + height - headerHeight) / rowHeight) + overscan)
+  return { startIndex, endIndex }
+}
+
+const { startIndex, endIndex } = getVisibleRange()
+const visibleRows = data.slice(startIndex, endIndex + 1)
+const offsetY = startIndex * rowHeight
+
+function handleScroll(event) {
+  const target = event.target
+  scrollTop = target.scrollTop
+}
+
+// Get cell value
+function getCellValue(row, column) {
+  if (column.render) {
+    return column.render(row[column.key], row)
+  }
+  return row[column.key]
+}
+
+export const containerClasses = `border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden ${className}`.trim()
+export const headerClasses = `bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex`.trim()
+export const headerCellClasses = `px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider`.trim()
+export const bodyClasses = `overflow-auto bg-white dark:bg-gray-900`.trim()
+export const innerClasses = `relative`.trim()
+export const rowClasses = `absolute left-0 right-0 flex border-b border-gray-200 dark:border-gray-700 ${hoverable ? 'hover:bg-gray-50 dark:hover:bg-gray-800' : ''}`.trim()
+export const cellClasses = `px-6 py-4 text-sm text-gray-900 dark:text-gray-100`.trim()
+</script>
+
+<div class="{{ containerClasses }}">
+  <!-- Header -->
+  <div class="{{ headerClasses }}" style="height: {{ headerHeight }}px">
+    @foreach(column in columns)
+      <div
+        class="{{ headerCellClasses }}"
+        style="flex: {{ column.width || 1 }}; min-width: {{ column.minWidth || 'auto' }}"
+      >
+        {{ column.label || column.key }}
+      </div>
+    @endforeach
+  </div>
+
+  <!-- Body -->
+  <div
+    class="{{ bodyClasses }}"
+    style="height: {{ height - headerHeight }}px"
+    onscroll="handleScroll(event)"
+  >
+    <div
+      class="{{ innerClasses }}"
+      style="height: {{ totalHeight }}px"
+    >
+      @foreach(row in visibleRows)
+        <div
+          class="{{ rowClasses }} {{ striped && ($loop.index % 2 === 1) ? 'bg-gray-50 dark:bg-gray-800' : '' }}"
+          style="top: {{ (startIndex + $loop.index) * rowHeight }}px; height: {{ rowHeight }}px"
+          data-index="{{ startIndex + $loop.index }}"
+        >
+          @foreach(column in columns)
+            <div
+              class="{{ cellClasses }}"
+              style="flex: {{ column.width || 1 }}; min-width: {{ column.minWidth || 'auto' }}"
+            >
+              {!! getCellValue(row, column) !!}
+            </div>
+          @endforeach
+        </div>
+      @endforeach
+    </div>
+  </div>
+</div>
+
+<script>
+// Re-render on scroll (simplified reactivity)
+if (typeof window !== 'undefined') {
+  let ticking = false
+
+  function updateVisibleRows() {
+    const range = getVisibleRange()
+    // Trigger re-render
+    ticking = false
+  }
+
+  const bodyContainer = document.querySelector('.overflow-auto')
+  if (bodyContainer) {
+    bodyContainer.addEventListener('scroll', () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateVisibleRows)
+        ticking = true
+      }
+    })
+  }
+}
+</script>

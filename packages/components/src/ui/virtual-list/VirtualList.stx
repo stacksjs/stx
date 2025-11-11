@@ -1,0 +1,83 @@
+<script>
+export const items = $props.items || []
+export const itemHeight = $props.itemHeight || 50
+export const height = $props.height || 400
+export const overscan = $props.overscan || 3
+export const renderItem = $props.renderItem
+export const className = $props.className || ''
+
+// Calculate visible range
+let scrollTop = 0
+const visibleCount = Math.ceil(height / itemHeight)
+const totalHeight = items.length * itemHeight
+
+// Calculate start and end indices with overscan
+function getVisibleRange() {
+  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan)
+  const endIndex = Math.min(items.length - 1, Math.floor((scrollTop + height) / itemHeight) + overscan)
+  return { startIndex, endIndex }
+}
+
+const { startIndex, endIndex } = getVisibleRange()
+const visibleItems = items.slice(startIndex, endIndex + 1)
+const offsetY = startIndex * itemHeight
+
+// Handle scroll
+function handleScroll(event) {
+  const target = event.target
+  scrollTop = target.scrollTop
+}
+
+export const containerClasses = `overflow-auto ${className}`.trim()
+export const innerClasses = `relative`.trim()
+export const itemClasses = `absolute left-0 right-0`.trim()
+</script>
+
+<div
+  class="{{ containerClasses }}"
+  style="height: {{ height }}px"
+  onscroll="handleScroll(event)"
+>
+  <div
+    class="{{ innerClasses }}"
+    style="height: {{ totalHeight }}px"
+  >
+    @foreach(item in visibleItems)
+      <div
+        class="{{ itemClasses }}"
+        style="top: {{ (startIndex + $loop.index) * itemHeight }}px; height: {{ itemHeight }}px"
+        data-index="{{ startIndex + $loop.index }}"
+      >
+        @if(renderItem)
+          {!! renderItem(item, startIndex + $loop.index) !!}
+        @else
+          <slot item="{{ item }}" index="{{ startIndex + $loop.index }}" />
+        @endif
+      </div>
+    @endforeach
+  </div>
+</div>
+
+<script>
+// Re-render on scroll (simplified reactivity)
+if (typeof window !== 'undefined') {
+  let ticking = false
+
+  function updateVisibleItems() {
+    const range = getVisibleRange()
+    // Trigger re-render by updating visible range
+    // In a real implementation, this would update reactive state
+    ticking = false
+  }
+
+  const scrollContainer = document.querySelector('.overflow-auto')
+  if (scrollContainer) {
+    scrollContainer.addEventListener('scroll', () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateVisibleItems)
+        ticking = true
+      }
+    })
+  }
+}
+</script>

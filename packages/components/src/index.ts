@@ -3,6 +3,7 @@ export * from './composables'
 
 // Export utilities
 export * from './utils/highlighter'
+export * from './utils/animation'
 
 // Export shared components (these will be imported as .stx files)
 export { default as CodeBlock } from './components/CodeBlock.stx'
@@ -33,6 +34,8 @@ export * from './ui/storage'
 export * from './ui/switch'
 export * from './ui/textarea'
 export * from './ui/video'
+export * from './ui/virtual-list'
+export * from './ui/virtual-table'
 export * from './ui/dropdown'
 export * from './ui/dialog'
 export * from './ui/radio-group'

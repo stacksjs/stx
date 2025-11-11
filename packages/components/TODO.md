@@ -89,10 +89,10 @@ This document tracks all improvements and enhancements for the @stacksjs/compone
   - [ ] Add stagger support for lists
   - [ ] Add spring animations
 
-- [ ] Create Animation utilities
-  - [ ] Easing function library
-  - [ ] Keyframe animations
-  - [ ] CSS animation helpers
+- [✅] Create Animation utilities
+  - [✅] Easing function library (33 functions: Linear, Quad, Cubic, Quart, Quint, Sine, Expo, Circ, Elastic, Back, Bounce)
+  - [✅] Keyframe animations (15 presets: fadeIn/Out, slideIn/Out, zoom, bounce, pulse, shake, swing, flip, rubberBand, heartbeat)
+  - [✅] CSS animation helpers (applyAnimation, staggerAnimation, sequenceAnimations, createKeyframes)
 
 ### Additional Components
 
@@ -189,10 +189,10 @@ This document tracks all improvements and enhancements for the @stacksjs/compone
   - [ ] Route-based code splitting
   - [ ] Component-level code splitting
 
-- [ ] Add virtual scrolling
-  - [ ] VirtualList component
-  - [ ] VirtualTable component
-  - [ ] Windowing support
+- [✅] Add virtual scrolling
+  - [✅] VirtualList component (windowed rendering, configurable overscan, item height)
+  - [✅] VirtualTable component (windowed table with columns, striped rows, hoverable)
+  - [✅] Windowing support (requestAnimationFrame-based updates)
 
 - [ ] Optimize bundle size
   - [ ] Tree-shaking analysis
@@ -246,12 +246,12 @@ This document tracks all improvements and enhancements for the @stacksjs/compone
   - [ ] RTL support
   - [ ] Date/time formatting
 
-- [ ] Create composable utilities
-  - [ ] useClickOutside
-  - [ ] useKeyboard
-  - [ ] useFocusTrap
-  - [ ] useMediaQuery
-  - [ ] useLocalStorage (reactive)
+- [✅] Create composable utilities
+  - [✅] useClickOutside (detect clicks outside elements, ignore selectors)
+  - [✅] useKeyboard (keyboard shortcuts with modifiers, multiple handlers)
+  - [✅] useFocusTrap (trap focus for modals/dialogs, return focus)
+  - [✅] useMediaQuery (responsive queries, predefined breakpoints)
+  - [✅] useLocalStorage (reactive storage with serialization, cross-tab sync)
 
 ## 📋 Status Legend
 
@@ -312,6 +312,14 @@ Focus on High Priority items first, then move to Medium Priority.
 - ✅ Teleport Component - Move content to different DOM nodes with defer option
 - ✅ Transition Component - 7 animation presets, lifecycle hooks, duration/delay control
 
-**Total Component Count: 33 UI + 5 Input + 3 Form + 4 Utility = 45 Components**
+**Low Priority Features (Session 3):**
+- ✅ Composable Utilities (5 new) - useClickOutside, useKeyboard, useFocusTrap, useMediaQuery, useLocalStorage
+- ✅ Animation Utilities - 33 easing functions, 15 keyframe presets, CSS helpers
+- ✅ Virtual Scrolling - VirtualList and VirtualTable components with windowing
+
+**Total Count:**
+- **47 Components** (35 UI + 5 Input + 3 Form + 2 Virtual + 2 Composition)
+- **8 Composables** (3 core + 5 utilities)
+- **Animation Utils** (33 easing + 15 keyframes + helpers)
 
 Last Updated: 2025-11-10

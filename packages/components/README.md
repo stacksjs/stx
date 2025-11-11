@@ -29,7 +29,7 @@ yarn add @stacksjs/components
 
 ## Components
 
-### UI Components (33)
+### UI Components (35)
 
 - **Accordion** - Expandable content sections with keyboard navigation
 - **Auth** - Login, Signup, and 2FA components
@@ -55,6 +55,8 @@ yarn add @stacksjs/components
 - **Tabs** - Tabbed content with horizontal/vertical layouts and multiple variants
 - **Tooltip** - Contextual tooltips with positioning options
 - **Video** - Video player with aspect ratio support
+- **VirtualList** - Windowed list for rendering large datasets efficiently
+- **VirtualTable** - Windowed table with columns for large datasets
 - **Dropdown** - Menu dropdown component with keyboard navigation
 - **Dialog** - Modal dialog component with backdrop
 - **Radio Group** - Radio button group with single selection
@@ -320,7 +322,9 @@ interface CodeBlockProps {
 
 ## Composables
 
-### useDarkMode
+### Core Composables
+
+#### useDarkMode
 
 ```typescript
 const { isDark, theme, toggle, setTheme } = useDarkMode({
@@ -329,7 +333,7 @@ const { isDark, theme, toggle, setTheme } = useDarkMode({
 })
 ```
 
-### useCopyCode
+#### useCopyCode
 
 ```typescript
 const { copied, copy, reset } = useCopyCode({
@@ -339,7 +343,7 @@ const { copied, copy, reset } = useCopyCode({
 })
 ```
 
-### useSEO
+#### useSEO
 
 ```typescript
 useSEO({
@@ -347,6 +351,80 @@ useSEO({
   description: 'Page description',
   ogImage: 'https://example.com/og.png',
 })
+```
+
+### Utility Composables (5 new)
+
+#### useClickOutside
+
+```typescript
+const cleanup = useClickOutside(
+  elementRef,
+  () => console.log('Clicked outside!'),
+  { enabled: true, ignore: ['.modal'] }
+)
+```
+
+#### useKeyboard
+
+```typescript
+useKeyboard([
+  { key: 'Escape', handler: () => closeModal() },
+  { key: 's', ctrl: true, handler: () => save() },
+])
+```
+
+#### useFocusTrap
+
+```typescript
+const { activate, deactivate } = useFocusTrap(containerRef, {
+  initialFocus: firstInputRef,
+  returnFocus: true,
+})
+```
+
+#### useMediaQuery
+
+```typescript
+const { matches } = useMediaQuery('(min-width: 768px)')
+const { matches: isDark } = useIsDarkMode()
+const { matches: isMobile } = useIsMobile()
+```
+
+#### useLocalStorage
+
+```typescript
+const { value, setValue, removeValue } = useLocalStorage('key', 'initial')
+setValue('new value')
+```
+
+## Animation Utilities (3 modules)
+
+### Easing Functions (33 functions)
+
+```typescript
+import { Easing } from '@stacksjs/components'
+
+// Linear, Quad, Cubic, Quart, Quint, Sine, Expo, Circ, Elastic, Back, Bounce
+const value = Easing.easeInOutCubic(time, start, change, duration)
+```
+
+### Keyframe Animations (15 presets)
+
+```typescript
+import { animate, KeyframeAnimations } from '@stacksjs/components'
+
+// Predefined animations: fadeIn, fadeOut, slideInUp, slideInDown, zoom, bounce, pulse, shake, etc.
+animate(element, 'fadeIn', { duration: 500 })
+```
+
+### CSS Animation Helpers
+
+```typescript
+import { applyAnimation, staggerAnimation, sequenceAnimations } from '@stacksjs/components'
+
+applyAnimation(element, 'slide-in', { duration: '300ms' })
+staggerAnimation(elements, 'fade-in', { stagger: 100 })
 ```
 
 ## Development
@@ -378,10 +456,12 @@ This library is actively being migrated from Vue to STX. Check our [TODO.md](../
 - ✅ Infrastructure setup
 - ✅ Composables (useDarkMode, useCopyCode, useSEO)
 - ✅ Base components (CodeBlock, Hero, Footer, Installation)
-- ✅ 33 UI Components (Accordion, Auth, Audio, Avatar, Badge, Breadcrumb, Button, Card, Drawer, Form, Image, Pagination, Portal, Teleport, Payment, Progress, Select, Skeleton, Spinner, Storage, Switch, Tabs, Tooltip, Video, Dropdown, Dialog, Radio Group, Popover, Listbox, Combobox, Notification, Stepper, Transition, Table, Command Palette)
+- ✅ 35 UI Components (Accordion, Auth, Audio, Avatar, Badge, Breadcrumb, Button, Card, Drawer, Form, Image, Pagination, Portal, Teleport, Payment, Progress, Select, Skeleton, Spinner, Storage, Switch, Tabs, Tooltip, Video, VirtualList, VirtualTable, Dropdown, Dialog, Radio Group, Popover, Listbox, Combobox, Notification, Stepper, Transition, Table, Command Palette)
 - ✅ 5 Input Components (TextInput, EmailInput, PasswordInput, NumberInput, SearchInput)
 - ✅ 3 Form Components (Textarea, Checkbox, Radio)
-- ✅ **Total: 45 Components**
+- ✅ 8 Composables (useDarkMode, useCopyCode, useSEO, useClickOutside, useKeyboard, useFocusTrap, useMediaQuery, useLocalStorage)
+- ✅ Animation Utilities (33 easing functions, 15 keyframe presets, CSS helpers)
+- ✅ **Total: 47 Components + 8 Composables + Animation Utils**
 
 ## License
 
