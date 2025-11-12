@@ -190,6 +190,46 @@ import {
 
 ---
 
+### @stacksjs/components
+
+**Modern UI component library** built with STX and headwind utility CSS.
+
+```bash
+bun add @stacksjs/components
+```
+
+**Features**:
+
+- 35+ accessible UI components
+- Dark mode support
+- WAI-ARIA compliance
+- Tree-shakeable exports
+- TypeScript syntax highlighting integration
+- Headwind utility-first CSS styling
+- Performance optimized
+
+**Component Categories**:
+
+- **Layout**: Accordion, Breadcrumb, Card, Drawer, Pagination, Tabs
+- **Input**: Button, Checkbox, Radio, Select, Switch, TextInput, EmailInput, PasswordInput, NumberInput, SearchInput, Combobox
+- **Display**: Avatar, Badge, Progress, Skeleton, Spinner, Tooltip
+- **Data**: Table, VirtualList, VirtualTable, DataGrid
+- **Feedback**: Dialog, Modal, Notification, Toast, Alert
+- **Media**: Audio, Video, Image
+- **Advanced**: CodeBlock, CommandPalette, Transition
+
+**Usage**:
+
+```typescript
+import { Button, Card, Dialog } from '@stacksjs/components'
+
+// Components are ready to use in your STX templates
+```
+
+**Learn More**: [Component API](/api/component) | [Components Reference](/api/components)
+
+---
+
 ### @stacksjs/iconify-core
 
 **Core utilities** for Iconify SVG icons in STX.

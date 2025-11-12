@@ -35,6 +35,7 @@ export default defineConfig({
 
     nav: [
       { text: 'Guide', link: '/guide/intro', activeMatch: '/guide/' },
+      { text: 'Features', link: '/features/performance', activeMatch: '/features/' },
       { text: 'API', link: '/api/reference', activeMatch: '/api/' },
       { text: 'Iconify', link: '/iconify', activeMatch: '/iconify|/collections/' },
       { text: 'Examples', link: '/guide/examples', activeMatch: '/examples' },
@@ -52,7 +53,7 @@ export default defineConfig({
     sidebar: {
       '/guide/': [
         {
-          text: '🚀 Getting Started',
+          text: 'Getting Started',
           collapsed: false,
           items: [
             { text: 'Introduction', link: '/guide/intro' },
@@ -61,7 +62,7 @@ export default defineConfig({
           ]
         },
         {
-          text: '📚 Core Concepts',
+          text: 'Core Concepts',
           collapsed: false,
           items: [
             { text: 'Components', link: '/guide/components' },
@@ -71,9 +72,10 @@ export default defineConfig({
           ]
         },
         {
-          text: '⚡ Advanced Features',
+          text: 'Advanced Features',
           collapsed: false,
           items: [
+            { text: 'Desktop Applications', link: '/guide/desktop' },
             { text: 'Performance', link: '/guide/performance' },
             { text: 'Deployment', link: '/guide/deployment' },
             { text: 'Configuration', link: '/guide/config' },
@@ -83,7 +85,7 @@ export default defineConfig({
           ]
         },
         {
-          text: '📖 Examples & Guides',
+          text: 'Examples & Guides',
           collapsed: false,
           items: [
             { text: 'Best Practices', link: '/guide/best-practices' },
@@ -91,10 +93,12 @@ export default defineConfig({
             { text: 'Templates', link: '/guide/templates' },
             { text: 'Testing', link: '/guide/testing' },
             { text: 'Programmatic Usage', link: '/guide/programmatic-usage' },
+            { text: 'Packages', link: '/guide/packages' },
+            { text: 'Benchmarks', link: '/guide/benchmarks' },
           ]
         },
         {
-          text: '🛠️ Tools',
+          text: 'Tools',
           collapsed: false,
           items: [
             { text: 'VSCode Extension', link: '/guide/tools/vscode' },
@@ -103,14 +107,14 @@ export default defineConfig({
       ],
       '/api/': [
         {
-          text: '📖 API Reference',
+          text: 'API Reference',
           items: [
             { text: 'Overview', link: '/api/reference' },
             { text: 'API Index', link: '/api/index' },
           ]
         },
         {
-          text: '🎯 Core APIs',
+          text: 'Core APIs',
           collapsed: false,
           items: [
             { text: 'Template Syntax', link: '/api/template-syntax' },
@@ -124,17 +128,18 @@ export default defineConfig({
           ]
         },
         {
-          text: '📦 Package APIs',
+          text: 'Package APIs',
           collapsed: false,
           items: [
             { text: 'Markdown', link: '/api/markdown' },
+            { text: 'Sanitizer', link: '/api/sanitizer' },
             { text: 'Caching', link: '/api/caching' },
             { text: 'Error Handling', link: '/api/error-handling' },
             { text: 'i18n', link: '/api/i18n' },
           ]
         },
         {
-          text: '🔧 Development',
+          text: 'Development',
           collapsed: false,
           items: [
             { text: 'Configuration', link: '/api/config' },
@@ -148,7 +153,7 @@ export default defineConfig({
       ],
       '/features/': [
         {
-          text: '⚡ Features',
+          text: 'Features',
           items: [
             { text: 'Performance', link: '/features/performance' },
             { text: 'Benchmarks', link: '/features/benchmarks' },
@@ -162,11 +167,34 @@ export default defineConfig({
             { text: 'Monitoring', link: '/features/monitoring' },
             { text: 'Deployment', link: '/features/deployment' },
           ]
+        },
+        {
+          text: 'Advanced',
+          collapsed: true,
+          items: [
+            { text: 'Custom Directives', link: '/advanced/custom-directives' },
+            { text: 'Plugins', link: '/advanced/plugins' },
+            { text: 'State Management', link: '/advanced/state' },
+            { text: 'Testing', link: '/advanced/testing' },
+            { text: 'Build Process', link: '/advanced/build' },
+          ]
+        }
+      ],
+      '/advanced/': [
+        {
+          text: 'Advanced Topics',
+          items: [
+            { text: 'Custom Directives', link: '/advanced/custom-directives' },
+            { text: 'Plugins', link: '/advanced/plugins' },
+            { text: 'State Management', link: '/advanced/state' },
+            { text: 'Testing', link: '/advanced/testing' },
+            { text: 'Build Process', link: '/advanced/build' },
+          ]
         }
       ],
       '/community/': [
         {
-          text: '👥 Community',
+          text: 'Community',
           items: [
             { text: 'Overview', link: '/community/' },
             { text: 'Team', link: '/community/team' },
@@ -178,7 +206,7 @@ export default defineConfig({
           ]
         },
         {
-          text: '🔧 Resources',
+          text: 'Resources',
           items: [
             { text: 'Learning Resources', link: '/community/learning' },
             { text: 'Support', link: '/community/support' },
@@ -192,14 +220,14 @@ export default defineConfig({
       ],
       '/collections/': [
         {
-          text: '🎨 Icon Collections',
+          text: 'Icon Collections',
           collapsed: false,
           items: [
             { text: 'Overview', link: '/iconify' },
           ]
         },
         {
-          text: '📦 Available Collections',
+          text: 'Available Collections',
           collapsed: true,
           items: [
             { text: 'Academicons', link: '/collections/iconify-academicons' },
