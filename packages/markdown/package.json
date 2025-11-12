@@ -1,0 +1,49 @@
+{
+  "name": "@stacksjs/markdown",
+  "type": "module",
+  "version": "0.2.0",
+  "description": "Fast markdown parser with frontmatter support for stx",
+  "author": "Chris Breuer <chris@stacksjs.org>",
+  "license": "MIT",
+  "homepage": "https://github.com/stacksjs/stx#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stacksjs/stx.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stacksjs/stx/issues"
+  },
+  "keywords": [
+    "markdown",
+    "parser",
+    "frontmatter",
+    "yaml",
+    "gfm",
+    "stx"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "import": "./dist/*"
+    }
+  },
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "LICENSE.md",
+    "README.md",
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun --bun build.ts",
+    "lint": "bunx eslint .",
+    "lint:fix": "bunx eslint . --fix",
+    "test": "bun test",
+    "typecheck": "bun tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
