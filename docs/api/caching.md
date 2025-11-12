@@ -400,7 +400,7 @@ const output2 = await processTemplate('template.stx', {}, {
   cache: true,
   cachePath: '.stx/cache'
 })
-// Takes: ~2ms ⚡
+// Takes: ~2ms (fast)
 ```
 
 ### Cache with Dependencies

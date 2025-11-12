@@ -586,9 +586,9 @@ stx supports GitHub Flavored Markdown (GFM) with the following features:
 ```markdown
 | Feature | Support | Notes |
 |---------|---------|-------|
-| Tables  | ✓       | Full  |
-| Lists   | ✓       | Full  |
-| Code    | ✓       | Highlighted |
+| Tables  | Yes     | Full  |
+| Lists   | Yes     | Full  |
+| Code    | Yes     | Highlighted |
 ```
 
 ### Task Lists

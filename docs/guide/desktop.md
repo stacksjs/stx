@@ -8,13 +8,13 @@ The `@stacksjs/desktop` package provides a complete API for building native desk
 
 ### Features
 
-- 🪟 **Window Management** - Create and control native windows
-- 🔔 **System Tray** - Build menubar applications
-- 💬 **Modals & Alerts** - Native dialogs and notifications
-- 🎨 **35 UI Components** - Complete component library
-- 🔥 **Hot Reload** - Development mode support
-- ✅ **100% Test Coverage** - 132 tests, 96.77% line coverage
-- 🏗️ **Webview-Agnostic** - Ready for ts-zyte/craft integration
+- **Window Management** - Create and control native windows
+- **System Tray** - Build menubar applications
+- **Modals & Alerts** - Native dialogs and notifications
+- **35 UI Components** - Complete component library
+- **Hot Reload** - Development mode support
+- **100% Test Coverage** - 132 tests, 96.77% line coverage
+- **Webview-Agnostic** - Ready for ts-zyte/craft integration
 
 ## Quick Start
 
@@ -405,10 +405,10 @@ The desktop package is designed to be webview-agnostic and ready for integration
 
 ### Current Status
 
-- ✅ **API Complete**: All APIs are defined with TypeScript types
-- ✅ **Tests**: 100% test coverage (132 tests, 96.77% line coverage)
-- ✅ **Documentation**: Complete API documentation
-- ⏳ **Implementation**: Placeholder implementations ready for ts-zyte
+- **API Complete**: All APIs are defined with TypeScript types
+- **Tests**: 100% test coverage (132 tests, 96.77% line coverage)
+- **Documentation**: Complete API documentation
+- **Implementation**: Placeholder implementations ready for ts-zyte
 
 ### Integration Points
 

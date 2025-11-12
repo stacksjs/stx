@@ -526,13 +526,13 @@ export default {
 
 stx prioritizes **developer experience and features over raw speed**:
 
-✅ **Advantages:**
+**Advantages:**
 - Laravel Blade familiarity
 - Comprehensive directive system
 - Runtime flexibility
 - Excellent Bun integration
 
-⚠️ **Considerations:**
+**Considerations:**
 - Slower than pre-compiled engines (Pug, Handlebars) for simple templates
 - Rich directive processing adds overhead
 - Still excellent for real-world applications (microseconds, not milliseconds)

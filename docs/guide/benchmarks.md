@@ -29,7 +29,7 @@ Performance comparison of STX framework components against popular competitors i
 - **1.45x faster** on large documents
 
 ### HTML Sanitization
-- **🏆 Fastest in all categories**
+- **Fastest in all categories**
 - **77.93x faster** than DOMPurify
 - **1.70-1.99x faster** than other competitors
 
@@ -45,7 +45,7 @@ Performance comparison of STX framework components against popular competitors i
 
 | Engine | Avg Time/Iteration | Relative to Fastest |
 |--------|-------------------|---------------------|
-| **Pug** | 92.12 ns | ⚡️ Baseline (fastest) |
+| **Pug** | 92.12 ns | Baseline (fastest) |
 | Nunjucks | 398.25 ns | 4.3x slower |
 | Handlebars | 783.46 ns | 8.5x slower |
 | EJS | 991.16 ns | 10.8x slower |
@@ -58,7 +58,7 @@ Performance comparison of STX framework components against popular competitors i
 
 | Engine | Avg Time/Iteration | Relative to Fastest |
 |--------|-------------------|---------------------|
-| **Handlebars** | 3.85 µs | ⚡️ Baseline (fastest) |
+| **Handlebars** | 3.85 µs | Baseline (fastest) |
 | EJS | 7.48 µs | 1.9x slower |
 | **@stacksjs/stx** | 167.41 µs | 43.5x slower |
 
@@ -137,9 +137,9 @@ See `packages/benchmarks/js-framework-benchmark/OPTIMIZATION_HISTORY.md` for the
 
 ### Performance vs markdown-it
 
-- Small documents: **2.89x faster** ⚡️
-- Medium documents: **1.96x faster** ⚡️
-- Large documents: **1.45x faster** ⚡️
+- Small documents: **2.89x faster**
+- Medium documents: **1.96x faster**
+- Large documents: **1.45x faster**
 
 ### Architecture
 
@@ -165,7 +165,7 @@ See `packages/benchmarks/js-framework-benchmark/OPTIMIZATION_HISTORY.md` for the
 
 | Library | ops/sec | Relative Performance |
 |---------|---------|----------------------|
-| **@stacksjs/sanitizer** | 180.2B ops/sec | ⚡️ Fastest |
+| **@stacksjs/sanitizer** | 180.2B ops/sec | Fastest |
 | xss | 105.8B ops/sec | 1.70x slower |
 | sanitize-html | 99.5B ops/sec | 1.81x slower |
 | DOMPurify | 2.3B ops/sec | 77.93x slower |
@@ -174,7 +174,7 @@ See `packages/benchmarks/js-framework-benchmark/OPTIMIZATION_HISTORY.md` for the
 
 | Library | ops/sec | Relative Performance |
 |---------|---------|----------------------|
-| **@stacksjs/sanitizer** | 173.3B ops/sec | ⚡️ Fastest |
+| **@stacksjs/sanitizer** | 173.3B ops/sec | Fastest |
 | sanitize-html | 87.1B ops/sec | 1.99x slower |
 | xss | 78.9B ops/sec | 2.20x slower |
 | DOMPurify | 1.1B ops/sec | 164.96x slower |
@@ -183,7 +183,7 @@ See `packages/benchmarks/js-framework-benchmark/OPTIMIZATION_HISTORY.md` for the
 
 | Library | ops/sec | Relative Performance |
 |---------|---------|----------------------|
-| **@stacksjs/sanitizer** | 2.1B ops/sec | ⚡️ Fastest |
+| **@stacksjs/sanitizer** | 2.1B ops/sec | Fastest |
 | sanitize-html | 1.1B ops/sec | 1.87x slower |
 | xss | 1.1B ops/sec | 1.95x slower |
 | DOMPurify | 59M ops/sec | 35.86x slower |
@@ -206,21 +206,21 @@ See `packages/benchmarks/js-framework-benchmark/OPTIMIZATION_HISTORY.md` for the
 
 | Library | ops/sec | Relative Performance |
 |---------|---------|----------------------|
-| **@stacksjs/markdown (Bun)** | 94.7B ops/sec | ⚡️ Baseline |
+| **@stacksjs/markdown (Bun)** | 94.7B ops/sec | Baseline |
 | js-yaml | 62.5B ops/sec | 1.52x slower |
 
 ### Large YAML (500 objects, ~20KB)
 
 | Library | ops/sec | Relative Performance |
 |---------|---------|----------------------|
-| **@stacksjs/markdown (Bun)** | 887.8M ops/sec | ⚡️ Baseline |
+| **@stacksjs/markdown (Bun)** | 887.8M ops/sec | Baseline |
 | js-yaml | 566.3M ops/sec | 1.57x slower |
 
 ### YAML Stringify (500 objects)
 
 | Library | ops/sec | Relative Performance |
 |---------|---------|----------------------|
-| **@stacksjs/markdown (Bun)** | 945.9M ops/sec | ⚡️ Baseline |
+| **@stacksjs/markdown (Bun)** | 945.9M ops/sec | Baseline |
 | js-yaml | 349.6M ops/sec | 2.71x slower |
 
 ### Benefits
@@ -238,14 +238,14 @@ See `packages/benchmarks/js-framework-benchmark/OPTIMIZATION_HISTORY.md` for the
 
 | Library | ops/sec | Relative Performance |
 |---------|---------|----------------------|
-| gray-matter | 2,188.3B ops/sec | ⚡️ Fastest |
+| gray-matter | 2,188.3B ops/sec | Fastest |
 | **@stacksjs/markdown** | 217.5B ops/sec | 10.06x slower |
 
 ### Large Frontmatter (100+ fields)
 
 | Library | ops/sec | Relative Performance |
 |---------|---------|----------------------|
-| gray-matter | 1,295.6B ops/sec | ⚡️ Fastest |
+| gray-matter | 1,295.6B ops/sec | Fastest |
 | **@stacksjs/markdown** | 10.8B ops/sec | 119.48x slower |
 
 ### Notes

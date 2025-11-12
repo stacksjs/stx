@@ -14,7 +14,7 @@
 
 ## Why `stx`?
 
-### ⚡ Performance-Optimized
+### Performance-Optimized
 
 `stx` packages consistently outperform industry-standard alternatives:
 
@@ -32,7 +32,7 @@
 
 [View detailed benchmarks](/features/benchmarks)
 
-### 🦋 Familiar Syntax
+### Familiar Syntax
 
 If you know Laravel Blade, you already know `stx`:
 
@@ -48,7 +48,7 @@ If you know Laravel Blade, you already know `stx`:
 @endforeach
 ```
 
-### 🚀 Built for Bun
+### Built for Bun
 
 Optimized specifically for Bun's runtime:
 
@@ -57,7 +57,7 @@ Optimized specifically for Bun's runtime:
 - Direct integration with Bun's bundler
 - No complex build configuration needed
 
-### 🎯 Developer Experience
+### Developer Experience
 
 - Familiar Blade-like syntax
 - Hot reload with dev server
@@ -164,7 +164,7 @@ This is **markdown** content.
 
 ## Key Features
 
-### 📦 Modular Packages
+### Modular Packages
 
 `stx` is built from high-performance packages:
 
@@ -177,7 +177,7 @@ bun add @stacksjs/sanitizer     # Secure HTML sanitizer
 bun add bun-plugin-stx
 ```
 
-### 🌐 Internationalization
+### Internationalization
 
 Built-in i18n support with YAML/JSON translations:
 
@@ -186,7 +186,7 @@ Built-in i18n support with YAML/JSON translations:
 <p>{{ 'greeting' | t({ name: user.name }) }}</p>
 ```
 
-### ♿ Accessibility
+### Accessibility
 
 Automatic accessibility checking and helpers:
 
@@ -200,7 +200,7 @@ Automatic accessibility checking and helpers:
 @endscreenReader
 ```
 
-### 🎨 Animation
+### Animation
 
 Built-in animation directives:
 
@@ -214,7 +214,7 @@ Built-in animation directives:
 @endmotion
 ```
 
-### 🔍 SEO
+### SEO
 
 SEO helpers and metadata:
 
@@ -229,7 +229,7 @@ SEO helpers and metadata:
 })
 ```
 
-### 🧩 Web Components
+### Web Components
 
 Convert stx templates to Web Components:
 
@@ -249,7 +249,7 @@ export default {
 }
 ```
 
-### 📊 Performance Monitoring
+### Performance Monitoring
 
 Built-in performance tracking:
 

@@ -364,10 +364,10 @@ export default {
 ### 1. Use Specific Error Types
 
 ```typescript
-// ❌ Bad - Generic error
+// Bad - Generic error
 throw new Error('Template not found')
 
-// ✅ Good - Specific error type
+// Good - Specific error type
 throw new StxFileError(
   'Template not found: user-profile.stx',
   'user-profile.stx'
@@ -377,10 +377,10 @@ throw new StxFileError(
 ### 2. Include Context
 
 ```typescript
-// ❌ Bad - No context
+// Bad - No context
 throw new StxSyntaxError('Invalid directive')
 
-// ✅ Good - With context
+// Good - With context
 throw new StxSyntaxError(
   'Invalid @if directive: missing closing parenthesis',
   'template.stx',

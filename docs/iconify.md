@@ -4,12 +4,12 @@ stx provides seamless integration with [Iconify](https://iconify.design/), givin
 
 ## Features
 
-- 🎨 **200+ Icon Collections** - Access Material Design Icons, Lucide, Tabler, Font Awesome, and many more
-- 📦 **On-Demand Generation** - Generate only the icon packages you need
-- 🌲 **Tree-Shakeable** - Import only the icons you use
-- ⚡ **Lightweight** - Pure SVG with zero runtime dependencies
-- 🎯 **TypeScript Support** - Full type safety and autocomplete
-- 🔧 **Customizable** - Size, color, rotation, and flip transformations
+- **200+ Icon Collections** - Access Material Design Icons, Lucide, Tabler, Font Awesome, and many more
+- **On-Demand Generation** - Generate only the icon packages you need
+- **Tree-Shakeable** - Import only the icons you use
+- **Lightweight** - Pure SVG with zero runtime dependencies
+- **TypeScript Support** - Full type safety and autocomplete
+- **Customizable** - Size, color, rotation, and flip transformations
 
 ## Installation
 

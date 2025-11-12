@@ -61,25 +61,25 @@ When you commit to the `main` branch, a post-commit hook automatically:
 ### Example Output
 
 ```bash
-🔍 Analyzing conventional commits for semantic versioning...
-📋 Analyzing commits since last tag: v1.2.3
-📊 Found 3 commits to analyze:
-  ✅ feat(auth): add OAuth2 support
-  ✅ fix(api): resolve user validation bug
-  ⚠️  Non-conventional: update readme
+Analyzing conventional commits for semantic versioning...
+Analyzing commits since last tag: v1.2.3
+Found 3 commits to analyze:
+  [OK] feat(auth): add OAuth2 support
+  [OK] fix(api): resolve user validation bug
+  [!] Non-conventional: update readme
 
-⚠️  Warning: 1 non-conventional commits found.
+[!] Warning: 1 non-conventional commits found.
    These commits will not influence semantic versioning.
 
-🎯 Semantic Version Bump Decision: MINOR
-📋 Reason:
+Semantic Version Bump Decision: MINOR
+Reason:
 New features detected:
   • feat(auth): add OAuth2 support
 
-🚀 Running @stacksjs/bumpx minor...
-📝 Generating changelog with @stacksjs/logsmith...
-✅ Version bump and changelog update completed successfully!
-💡 Run "git push --follow-tags" to push changes to remote
+Running @stacksjs/bumpx minor...
+Generating changelog with @stacksjs/logsmith...
+Version bump and changelog update completed successfully!
+Run "git push --follow-tags" to push changes to remote
 ```
 
 ## Manual Release Commands
@@ -101,7 +101,7 @@ bun run release
 
 ## Commit Message Examples
 
-### ✅ Good Examples
+### Good Examples
 ```bash
 feat: add user authentication
 feat(api): implement rate limiting
@@ -123,7 +123,7 @@ feat(core)!: redesign plugin architecture
 BREAKING CHANGE: The plugin interface has changed completely
 ```
 
-### ❌ Bad Examples
+### Bad Examples
 ```bash
 updated stuff
 fixes
@@ -142,25 +142,25 @@ The system is configured via:
 
 ## Features
 
-### 🔍 **Smart Analysis**
+### Smart Analysis
 - Parses conventional commit messages with regex
 - Detects breaking changes via `!` or `BREAKING CHANGE:`
 - Handles commit scopes properly
 - Warns about non-conventional commits
 
-### 📊 **Comprehensive Reporting**
+### Comprehensive Reporting
 - Shows all analyzed commits
 - Explains version bump decisions
 - Lists specific commits affecting the version
 - Highlights non-conventional commits
 
-### 🛡️ **Safety Features**
+### Safety Features
 - Only runs on `main` branch
 - Validates commit message formats
 - Skips if no version bump is needed
 - Provides clear error messages
 
-### 🎯 **Semantic Versioning Compliance**
+### Semantic Versioning Compliance
 - **MAJOR**: Breaking changes (`feat!:`, `fix!:`, `BREAKING CHANGE:`)
 - **MINOR**: New features (`feat:`)
 - **PATCH**: Everything else (`fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`, `perf:`)
@@ -171,7 +171,7 @@ The system is configured via:
 If commits don't follow the conventional format, they'll be flagged but won't prevent version bumping:
 
 ```bash
-⚠️  Warning: 2 non-conventional commits found.
+[!] Warning: 2 non-conventional commits found.
    These commits will not influence semantic versioning.
 ```
 
@@ -179,7 +179,7 @@ If commits don't follow the conventional format, they'll be flagged but won't pr
 If no conventional commits are found, no version bump occurs:
 
 ```bash
-📝 No conventional commits found. No version bump needed.
+No conventional commits found. No version bump needed.
 ```
 
 ### Manual Override

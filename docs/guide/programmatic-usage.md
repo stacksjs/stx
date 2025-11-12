@@ -287,30 +287,30 @@ const { server, url } = await serve({
   watch: config.server.watch,
 })
 
-console.log(`📚 Documentation at ${url}`)
+console.log(`Documentation at ${url}`)
 ```
 
 ## Features Available
 
 ### Core Features
 
-✅ Markdown processing with frontmatter
-✅ Syntax highlighting (Shiki)
-✅ stx template directives
-✅ Component system
-✅ i18n support
-✅ Caching system
-✅ Error handling
-✅ File watching
+- Markdown processing with frontmatter
+- Syntax highlighting (Shiki)
+- stx template directives
+- Component system
+- i18n support
+- Caching system
+- Error handling
+- File watching
 
 ### Programmatic Features
 
-✅ Custom middleware
-✅ Custom routes
-✅ Configuration loading
-✅ Auto-discovery
-✅ Layout system
-✅ Build-time processing
+- Custom middleware
+- Custom routes
+- Configuration loading
+- Auto-discovery
+- Layout system
+- Build-time processing
 
 ## API Reference
 

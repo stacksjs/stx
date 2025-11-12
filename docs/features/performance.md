@@ -438,18 +438,18 @@ const localizedContent = await getLocalizedContent(userLocation)
 
 ```typescript
 // Efficient loops
-// ❌ Slow
+// Slow
 for (let i = 0; i < items.length; i++) {
   processItem(items[i])
 }
 
-// ✅ Fast
+// Fast
 const length = items.length
 for (let i = 0; i < length; i++) {
   processItem(items[i])
 }
 
-// ✅ Even faster for simple operations
+// Even faster for simple operations
 items.forEach(processItem)
 ```
 
