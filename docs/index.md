@@ -45,4 +45,13 @@ features:
     details: "Access 200,000+ icons from 218 Iconify collections with type-safe components."
 ---
 
-<Home />
+## Meet the Team
+
+<script setup>
+import { VPTeamMembers } from 'vitepress/theme'
+import { core } from './_data/team.js'
+</script>
+
+<VPTeamMembers size="small" :members="core" />
+
+[Learn more about our team →](/community/team)
