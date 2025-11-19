@@ -1,0 +1,221 @@
+<script>
+import { Calendar } from '../src/ui/calendar'
+
+let basicDate = new Date()
+let rangeStartDate = new Date()
+let birthdayDate = null
+
+const today = new Date()
+const minDate = new Date(today.getFullYear(), today.getMonth(), 1)
+const maxDate = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+
+// Disabled dates (weekends for meeting example)
+function getNextNDays(n) {
+  const dates = []
+  for (let i = 0; i < n; i++) {
+    const date = new Date(today)
+    date.setDate(today.getDate() + i)
+    dates.push(date)
+  }
+  return dates
+}
+
+function getWeekends(days) {
+  return days.filter(date => date.getDay() === 0 || date.getDay() === 6)
+}
+
+const next30Days = getNextNDays(30)
+const weekends = getWeekends(next30Days)
+
+// Birthday constraints
+const birthdayMin = new Date(today.getFullYear() - 120, 0, 1)
+const birthdayMax = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate())
+
+function handleBasicDateChange(date) {
+  basicDate = date
+  console.log('Basic date selected:', date)
+}
+
+function handleRangeStartChange(date) {
+  rangeStartDate = date
+  console.log('Range start date selected:', date)
+}
+
+function handleBirthdayChange(date) {
+  birthdayDate = date
+  console.log('Birthday selected:', date)
+}
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar Component Examples</title>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen p-8">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-8">
+      Calendar Component Examples
+    </h1>
+
+    <!-- Basic Calendar -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Basic Calendar
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        A simple calendar with date selection.
+      </p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 inline-block">
+        <Calendar value={basicDate} onChange={handleBasicDateChange} />
+        <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+          Selected: {{ basicDate.toLocaleDateString() }}
+        </div>
+      </div>
+    </section>
+
+    <!-- Calendar with Date Range -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Calendar with Date Range
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Limited to current month only.
+      </p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 inline-block">
+        <Calendar
+          value={rangeStartDate}
+          minDate={minDate}
+          maxDate={maxDate}
+          onChange={handleRangeStartChange}
+        />
+        <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+          Selected: {{ rangeStartDate.toLocaleDateString() }}
+        </div>
+      </div>
+    </section>
+
+    <!-- Meeting Scheduler (No Weekends) -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Meeting Scheduler
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Calendar with weekends disabled for scheduling meetings.
+      </p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 inline-block">
+        <Calendar
+          minDate={today}
+          disabledDates={weekends}
+          onChange={(date) => console.log('Meeting date:', date)}
+        />
+      </div>
+    </section>
+
+    <!-- Birthday Picker -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Birthday Picker (18+ Only)
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Calendar constrained for selecting birthdays (must be 18+ years old).
+      </p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 inline-block">
+        <Calendar
+          value={birthdayDate}
+          minDate={birthdayMin}
+          maxDate={birthdayMax}
+          onChange={handleBirthdayChange}
+        />
+        @if(birthdayDate)
+          <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+            Selected: {{ birthdayDate.toLocaleDateString() }}
+          </div>
+        @endif
+      </div>
+    </section>
+
+    <!-- Localized Calendars -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Localized Calendars
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Calendars with different locales and first day of week settings.
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- US English (Sunday first) -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+            US English
+          </h3>
+          <Calendar
+            locale="en-US"
+            firstDayOfWeek={0}
+            onChange={(date) => console.log('US date:', date)}
+          />
+        </div>
+
+        <!-- Spanish (Monday first) -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+            Spanish
+          </h3>
+          <Calendar
+            locale="es-ES"
+            firstDayOfWeek={1}
+            onChange={(date) => console.log('ES date:', date)}
+          />
+        </div>
+
+        <!-- French (Monday first) -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+            French
+          </h3>
+          <Calendar
+            locale="fr-FR"
+            firstDayOfWeek={1}
+            onChange={(date) => console.log('FR date:', date)}
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- Without Today Button -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Minimal Calendar
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Calendar without today button and today highlighting.
+      </p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 inline-block">
+        <Calendar
+          showToday={false}
+          highlightToday={false}
+          onChange={(date) => console.log('Minimal date:', date)}
+        />
+      </div>
+    </section>
+
+    <!-- Custom Styled -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Custom Styled Calendar
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Calendar with custom border and shadow styling.
+      </p>
+      <div class="inline-block">
+        <Calendar
+          className="border-4 border-blue-500 shadow-2xl"
+          onChange={(date) => console.log('Custom date:', date)}
+        />
+      </div>
+    </section>
+  </div>
+</body>
+</html>

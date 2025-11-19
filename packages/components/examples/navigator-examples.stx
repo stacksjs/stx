@@ -1,0 +1,271 @@
+<script>
+import { Navigator } from '../src/ui/navigator'
+
+// Basic horizontal navigation
+const basicItems = [
+  { id: 'home', label: 'Home', href: '/' },
+  { id: 'about', label: 'About', href: '/about' },
+  { id: 'services', label: 'Services', href: '/services' },
+  { id: 'contact', label: 'Contact', href: '/contact' },
+]
+
+// Sidebar navigation with icons
+const sidebarItems = [
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    href: '/dashboard',
+    icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>',
+  },
+  {
+    id: 'projects',
+    label: 'Projects',
+    href: '/projects',
+    badge: '5',
+    icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>',
+  },
+  {
+    id: 'team',
+    label: 'Team',
+    href: '/team',
+    icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>',
+  },
+  {
+    id: 'analytics',
+    label: 'Analytics',
+    href: '/analytics',
+    icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>',
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    href: '/settings',
+    icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>',
+  },
+]
+
+// Tabs navigation
+const tabItems = [
+  { id: 'overview', label: 'Overview', href: '#overview' },
+  { id: 'analytics', label: 'Analytics', href: '#analytics' },
+  { id: 'reports', label: 'Reports', href: '#reports' },
+  { id: 'notifications', label: 'Notifications', href: '#notifications' },
+]
+
+// Pills navigation
+const pillsItems = [
+  { id: 'all', label: 'All', href: '#all' },
+  { id: 'active', label: 'Active', href: '#active', badge: '12' },
+  { id: 'pending', label: 'Pending', href: '#pending', badge: '3' },
+  { id: 'completed', label: 'Completed', href: '#completed' },
+]
+
+// Navigation with disabled items
+const mixedItems = [
+  { id: 'enabled1', label: 'Enabled', href: '/enabled1' },
+  { id: 'enabled2', label: 'Another Link', href: '/enabled2' },
+  { id: 'disabled', label: 'Coming Soon', href: '/disabled', disabled: true },
+  { id: 'enabled3', label: 'Final Link', href: '/enabled3' },
+]
+
+// State
+let activeBasic = 'home'
+let activeSidebar = 'dashboard'
+let activeTab = 'overview'
+let activePill = 'all'
+let activeMixed = 'enabled1'
+let activeCustom = 'tab1'
+
+// Custom tab items (no href, use handler)
+const customTabs = [
+  { id: 'tab1', label: 'Tab 1' },
+  { id: 'tab2', label: 'Tab 2' },
+  { id: 'tab3', label: 'Tab 3' },
+]
+
+function handleCustomNavigate(item) {
+  activeCustom = item.id
+  console.log('Custom navigation to:', item.label)
+}
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Navigator Component Examples</title>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen p-8">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-8">
+      Navigator Component Examples
+    </h1>
+
+    <!-- Basic Horizontal Navigation -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Basic Horizontal Navigation
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Default horizontal navigation with simple links.
+      </p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
+        <Navigator items={basicItems} active={activeBasic} />
+      </div>
+    </section>
+
+    <!-- Pills Navigation -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Pills Navigation
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Rounded pill-style navigation with badges.
+      </p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
+        <Navigator items={pillsItems} active={activePill} variant="pills" />
+      </div>
+    </section>
+
+    <!-- Underline Tabs -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Underline Tabs
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Tab-style navigation with bottom border indicator.
+      </p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border-b border-gray-200 dark:border-gray-700">
+        <Navigator items={tabItems} active={activeTab} variant="underline" />
+      </div>
+    </section>
+
+    <!-- Vertical Sidebar Navigation -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Vertical Sidebar Navigation
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Sidebar-style navigation with icons and badges.
+      </p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-4 w-64">
+        <Navigator
+          items={sidebarItems}
+          active={activeSidebar}
+          orientation="vertical"
+          variant="sidebar"
+        />
+      </div>
+    </section>
+
+    <!-- Size Variations -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Size Variations
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Navigation in different sizes: small, medium, and large.
+      </p>
+      <div class="space-y-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
+          <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Small</h3>
+          <Navigator items={basicItems} active="home" size="sm" />
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
+          <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Medium (Default)</h3>
+          <Navigator items={basicItems} active="home" size="md" />
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
+          <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Large</h3>
+          <Navigator items={basicItems} active="home" size="lg" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Disabled Items -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        With Disabled Items
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Navigation with some items disabled (e.g., "Coming Soon" features).
+      </p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
+        <Navigator items={mixedItems} active={activeMixed} variant="pills" />
+      </div>
+    </section>
+
+    <!-- Custom Handler -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        With Custom Navigation Handler
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Navigation using custom handler instead of href links.
+      </p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
+        <Navigator
+          items={customTabs}
+          active={activeCustom}
+          onNavigate={handleCustomNavigate}
+          variant="underline"
+        />
+        <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-md">
+          <p class="text-sm text-gray-700 dark:text-gray-300">
+            Active tab: <strong>{{ activeCustom }}</strong>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- All Variants Comparison -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        All Variants Comparison
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Side-by-side comparison of all navigation variants.
+      </p>
+      <div class="space-y-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
+          <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Default</h3>
+          <Navigator items={basicItems} active="home" variant="default" />
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
+          <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Pills</h3>
+          <Navigator items={basicItems} active="home" variant="pills" />
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border-b border-gray-200 dark:border-gray-700">
+          <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Underline</h3>
+          <Navigator items={basicItems} active="home" variant="underline" />
+        </div>
+        <div class="flex gap-6">
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-64">
+            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Sidebar (Vertical)</h3>
+            <Navigator items={basicItems} active="home" variant="sidebar" orientation="vertical" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Custom Styled -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        Custom Styled Navigation
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Navigation with custom styling applied.
+      </p>
+      <div class="inline-block">
+        <Navigator
+          items={basicItems}
+          active="home"
+          variant="pills"
+          className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-3 rounded-xl"
+        />
+      </div>
+    </section>
+  </div>
+</body>
+</html>
