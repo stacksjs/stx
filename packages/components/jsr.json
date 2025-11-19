@@ -1,0 +1,25 @@
+{
+  "name": "@stacksjs/components",
+  "version": "0.2.0",
+  "exports": {
+    ".": "./src/index.ts",
+    "./ui/*": "./src/ui/*/index.ts",
+    "./composables": "./src/composables/index.ts",
+    "./utils": "./src/utils/index.ts"
+  },
+  "publish": {
+    "include": [
+      "src/**/*.ts",
+      "src/**/*.stx",
+      "README.md",
+      "LICENSE"
+    ],
+    "exclude": [
+      "**/*.test.ts",
+      "test/**",
+      "examples/**",
+      "dist/**",
+      "node_modules/**"
+    ]
+  }
+}

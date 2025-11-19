@@ -83,6 +83,14 @@ jobs:
       - name: Unit Test
         run: bun test
 
+      - name: Component Tests with Coverage
+        working-directory: ./packages/components
+        run: bun test --coverage
+
+      - name: Integration Tests
+        working-directory: ./packages/components
+        run: bun test test/integration/
+
   publish-commit:
     runs-on: ubuntu-latest
     steps:
@@ -106,4 +114,4 @@ jobs:
         run: bun run build
 
       - name: Publish Commit
-        run: bunx pkg-pr-new publish './packages/stx' './packages/bun-plugin'
+        run: bunx pkg-pr-new publish './packages/stx' './packages/bun-plugin' './packages/components'
