@@ -38,6 +38,7 @@ yarn add @stacksjs/components
 - **Badge** - Labels and tags with color variants and removable option
 - **Breadcrumb** - Navigation breadcrumbs with collapse support
 - **Button** - Versatile button with loading, icons, 5 sizes (xs-xl), full-width
+- **Calendar** - Date picker with localization, min/max dates, disabled dates, dark mode ✨ NEW
 - **Card** - Content cards with images, variants, and hover effects
 - **Drawer** - Slide-out panel from any direction
 - **Form** - Form wrapper with validation, error handling, and submit management
@@ -63,6 +64,7 @@ yarn add @stacksjs/components
 - **Popover** - Floating panel component with positioning
 - **Listbox** - Custom select component with keyboard support
 - **Combobox** - Searchable select with filtering
+- **Navigator** - Navigation component with 4 variants (default, pills, underline, sidebar), icons, badges ✨ NEW
 - **Notification** - Toast notifications with auto-hide
 - **Stepper** - Multi-step progress indicator
 - **Transition** - Enter/leave animations with 7 presets, lifecycle hooks, and custom timing

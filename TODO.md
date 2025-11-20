@@ -491,7 +491,8 @@ Migrate and refactor 23+ Vue components from `/Users/chrisbreuer/Code/stacks/sto
 - [x] Create release notes
 - [x] Update version numbers
 - [x] Tag release
-- [ ] Publish to package registry
+- [x] Test package installation
+- [ ] Publish to package registry (Ready to publish!)
 - [ ] Announce release
 - [ ] Update main repository
 
