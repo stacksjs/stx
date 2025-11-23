@@ -4,7 +4,7 @@
  * Native desktop application framework for stx
  *
  * This package provides a TypeScript API for creating native desktop applications
- * with the stx framework. Designed to work with ts-zyte or other webview implementations.
+ * with the stx framework. Powered by Craft (~/Code/craft).
  */
 
 // Export alerts/toasts

@@ -4,7 +4,7 @@ Native desktop application framework for stx powered by craft.
 
 ## Overview
 
-`@stacksjs/desktop` provides a TypeScript API for creating native desktop applications with stx. It uses [craft](https://github.com/stacksjs/craft) (formerly ts-zyte) to deliver lightweight, fast native apps using web technologies and native WebKit views.
+`@stacksjs/desktop` provides a TypeScript API for creating native desktop applications with stx. It uses [Craft](https://github.com/stacksjs/craft) to deliver lightweight, fast native apps using web technologies and native WebKit views.
 
 ## Features
 
@@ -559,5 +559,5 @@ The package is fully functional for basic native windows using craft. System tra
 
 ## Credits
 
-- Powered by [craft](https://github.com/stacksjs/craft) (formerly ts-zyte)
+- Powered by [Craft](https://github.com/stacksjs/craft)
 - Part of the [stx](https://github.com/stacksjs/stx) ecosystem

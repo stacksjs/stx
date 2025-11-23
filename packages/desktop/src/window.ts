@@ -30,7 +30,7 @@ function getCraftBinaryPath(): string | undefined {
 /**
  * Create a native window with URL
  *
- * Uses ts-craft (formerly ts-zyte) to create native desktop windows.
+ * Uses Craft to create native desktop windows.
  */
 export async function createWindow(url: string, options: WindowOptions = {}): Promise<WindowInstance | null> {
   const {

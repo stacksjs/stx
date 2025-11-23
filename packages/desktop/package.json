@@ -2,7 +2,7 @@
   "name": "@stacksjs/desktop",
   "type": "module",
   "version": "0.2.0",
-  "description": "Native desktop application framework for stx (ready for ts-zyte integration)",
+  "description": "Native desktop application framework for stx (powered by Craft)",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
   "homepage": "https://github.com/stacksjs/stx#readme",
@@ -17,7 +17,7 @@
     "desktop",
     "native",
     "window",
-    "ts-zyte",
+    "craft",
     "electron-alternative",
     "webview",
     "cross-platform",
@@ -51,10 +51,10 @@
     "typecheck": "bun tsc --noEmit"
   },
   "peerDependencies": {
-    "ts-zyte": "*"
+    "craft": "*"
   },
   "peerDependenciesMeta": {
-    "ts-zyte": {
+    "craft": {
       "optional": true
     }
   },

@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>Buddy - Voice AI Code Assistant</title>
+  <style>
+    :root {
+      --bg-primary: #1a1a2e;
+      --bg-secondary: #16213e;
+      --bg-tertiary: #0f0f23;
+      --accent-primary: #e94560;
+      --accent-secondary: #0f3460;
+      --text-primary: #eaeaea;
+      --text-secondary: #a0a0a0;
+      --text-muted: #666;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --error: #ef4444;
+      --border: #2d2d4a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent-primary), #ff6b6b);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .logo-text {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .driver-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .driver-selector label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .driver-selector select {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .github-account {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .github-account:hover {
+      border-color: var(--accent-primary);
+    }
+
+    .github-account.connected {
+      border-color: var(--success);
+    }
+
+    .github-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--bg-tertiary);
+    }
+
+    .github-info {
+      display: flex;
+      flex-direction: column;
+      font-size: 11px;
+    }
+
+    .github-username {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .github-status {
+      color: var(--text-secondary);
+    }
+
+    .github-icon {
+      font-size: 16px;
+    }
+
+    /* GitHub Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      width: 400px;
+      max-width: 90%;
+      transform: translateY(-20px);
+      transition: transform 0.3s;
+    }
+
+    .modal-overlay.active .modal {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    .form-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .form-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .form-hint a {
+      color: var(--accent-primary);
+      text-decoration: none;
+    }
+
+    .form-hint a:hover {
+      text-decoration: underline;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .btn-github {
+      background: #238636;
+      border-color: #238636;
+    }
+
+    .btn-github:hover {
+      background: #2ea043;
+      border-color: #2ea043;
+    }
+
+    .btn-disconnect {
+      background: var(--error);
+      border-color: var(--error);
+    }
+
+    .btn-disconnect:hover {
+      background: #dc2626;
+      border-color: #dc2626;
+    }
+
+    .repo-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .repo-input {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 13px;
+      width: 280px;
+    }
+
+    .repo-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .btn {
+      background: var(--accent-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 16px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+    }
+
+    /* Main content */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      gap: 20px;
+      overflow: hidden;
+    }
+
+    /* Terminal output */
+    .terminal {
+      flex: 1;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot.red { background: #ff5f56; }
+    .terminal-dot.yellow { background: #ffbd2e; }
+    .terminal-dot.green { background: #27ca40; }
+
+    .terminal-title {
+      flex: 1;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .terminal-output {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .message {
+      margin-bottom: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      background: var(--accent-secondary);
+      border-left: 3px solid var(--accent-primary);
+    }
+
+    .message.assistant {
+      background: var(--bg-secondary);
+      border-left: 3px solid var(--success);
+    }
+
+    .message.system {
+      background: transparent;
+      border-left: 3px solid var(--warning);
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .message.error {
+      background: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid var(--error);
+    }
+
+    .message-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .message-content {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message-content code {
+      background: var(--bg-tertiary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .message-content pre {
+      background: var(--bg-tertiary);
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+
+    /* Voice control */
+    .voice-control {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 20px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .mic-button {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
+      border: 3px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .mic-button:hover {
+      border-color: var(--accent-primary);
+      transform: scale(1.05);
+    }
+
+    .mic-button.recording {
+      border-color: var(--accent-primary);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.4); }
+      50% { box-shadow: 0 0 0 20px rgba(233, 69, 96, 0); }
+    }
+
+    .mic-icon {
+      font-size: 32px;
+    }
+
+    .voice-status {
+      flex: 1;
+    }
+
+    .status-text {
+      font-size: 14px;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .status-hint {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .transcript-preview {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      min-height: 40px;
+    }
+
+    .transcript-preview.active {
+      border-color: var(--accent-primary);
+      color: var(--text-primary);
+    }
+
+    /* Text input fallback */
+    .text-input-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .text-input {
+      flex: 1;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    .text-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* Action buttons */
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-commit {
+      background: var(--success);
+      border-color: var(--success);
+      color: var(--bg-primary);
+    }
+
+    .btn-commit:hover:not(:disabled) {
+      background: #22c55e;
+    }
+
+    /* Loading indicator */
+    .loading {
+      display: inline-flex;
+      gap: 4px;
+    }
+
+    .loading span {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-primary);
+      border-radius: 50%;
+      animation: bounce 0.6s infinite alternate;
+    }
+
+    .loading span:nth-child(2) { animation-delay: 0.2s; }
+    .loading span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      to { transform: translateY(-8px); }
+    }
+
+    /* Footer */
+    .footer {
+      padding: 10px 20px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-tertiary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    /* Mobile & iOS Safe Area Support */
+    @supports (padding: env(safe-area-inset-top)) {
+      .header {
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+      }
+      .footer {
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+      }
+      .main {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+      }
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .header {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px 15px;
+      }
+      .header-controls {
+        flex-wrap: wrap;
+        gap: 10px;
+        width: 100%;
+        justify-content: center;
+      }
+      .driver-selector {
+        order: 1;
+      }
+      .repo-selector {
+        order: 3;
+        width: 100%;
+      }
+      .github-account {
+        order: 2;
+      }
+      .repo-input {
+        flex: 1;
+        min-width: 150px;
+      }
+      .voice-control {
+        flex-wrap: wrap;
+        gap: 15px;
+        padding: 15px;
+      }
+      .mic-button {
+        width: 70px;
+        height: 70px;
+      }
+      .voice-status {
+        width: 100%;
+        text-align: center;
+      }
+      .actions {
+        width: 100%;
+        justify-content: center;
+      }
+      .modal {
+        width: 95%;
+        margin: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .logo-text {
+        font-size: 14px;
+      }
+      .driver-selector label {
+        display: none;
+      }
+      .terminal-output {
+        font-size: 12px;
+        padding: 12px;
+      }
+      .message {
+        padding: 10px;
+        margin-bottom: 12px;
+      }
+      .mic-button {
+        width: 60px;
+        height: 60px;
+      }
+      .mic-icon {
+        font-size: 24px;
+      }
+      .btn {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      .text-input-container {
+        flex-direction: column;
+      }
+      .text-input {
+        width: 100%;
+      }
+    }
+
+    /* Prevent iOS text size adjustment */
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
+    /* Better touch targets for mobile */
+    @media (pointer: coarse) {
+      .btn {
+        min-height: 44px;
+        min-width: 44px;
+      }
+      .mic-button {
+        min-width: 60px;
+        min-height: 60px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">🤖</div>
+      <span class="logo-text" id="appTitle">Buddy</span>
+    </div>
+
+    <div class="header-controls">
+      <div class="driver-selector">
+        <label for="aiDriver">AI Driver:</label>
+        <select id="aiDriver">
+          <option value="claude">Claude</option>
+          <option value="openai">OpenAI</option>
+          <option value="ollama">Ollama (Local)</option>
+          <option value="mock">Mock (Demo)</option>
+        </select>
+      </div>
+
+      <div class="repo-selector">
+        <input
+          type="text"
+          class="repo-input"
+          id="repoInput"
+          placeholder="github.com/owner/repo or local path..."
+        />
+        <button class="btn" id="cloneBtn">Clone / Open</button>
+      </div>
+
+      <div class="github-account" id="githubAccount" title="Connect GitHub account">
+        <span class="github-icon">🐙</span>
+        <div class="github-info">
+          <span class="github-username" id="githubUsername">Not connected</span>
+          <span class="github-status" id="githubStatus">Click to connect</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- GitHub Connection Modal -->
+  <div class="modal-overlay" id="githubModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🐙</span>
+          GitHub Connection
+        </div>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <div id="connectForm">
+          <div class="form-group">
+            <label class="form-label">GitHub Personal Access Token</label>
+            <input
+              type="password"
+              class="form-input"
+              id="githubToken"
+              placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+            />
+            <div class="form-hint">
+              Generate a token at <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a>
+              <br>Required scopes: <code>repo</code>, <code>user:email</code>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Git Commit Name (optional)</label>
+            <input
+              type="text"
+              class="form-input"
+              id="gitName"
+              placeholder="Your Name"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Git Commit Email (optional)</label>
+            <input
+              type="email"
+              class="form-input"
+              id="gitEmail"
+              placeholder="you@example.com"
+            />
+            <div class="form-hint">
+              Leave blank to use your GitHub email
+            </div>
+          </div>
+        </div>
+        <div id="connectedInfo" style="display: none;">
+          <div style="text-align: center; padding: 20px 0;">
+            <img id="connectedAvatar" class="github-avatar" style="width: 64px; height: 64px; margin-bottom: 12px;" />
+            <div style="font-size: 18px; font-weight: 600; margin-bottom: 4px;" id="connectedName"></div>
+            <div style="color: var(--text-secondary); margin-bottom: 8px;" id="connectedUsername"></div>
+            <div style="color: var(--success); font-size: 12px;">✓ Connected</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="modalCancel">Cancel</button>
+        <button class="btn btn-github" id="connectBtn">Connect</button>
+        <button class="btn btn-disconnect" id="disconnectBtn" style="display: none;">Disconnect</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="main">
+    <div class="terminal">
+      <div class="terminal-header">
+        <div class="terminal-dot red"></div>
+        <div class="terminal-dot yellow"></div>
+        <div class="terminal-dot green"></div>
+        <span class="terminal-title" id="terminalTitle">Buddy - Ready</span>
+      </div>
+      <div class="terminal-output" id="output">
+        <div class="message system">
+          <div class="message-content" id="welcomeMessage">Welcome to Buddy - your voice-controlled AI code assistant.
+
+Instructions:
+1. Select your preferred AI driver above
+2. Enter a GitHub repo URL or local path
+3. Click the microphone button or type your command
+4. The AI will analyze, implement, and commit changes
+
+Example commands:
+- "Update the README to include installation instructions"
+- "Fix the bug in the login function"
+- "Add a new endpoint for user profiles"
+- "Refactor the database module to use async/await"</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="voice-control">
+      <button class="mic-button" id="micButton" title="Hold to record (or press Space)">
+        <span class="mic-icon" id="micIcon">🎤</span>
+      </button>
+
+      <div class="voice-status">
+        <div class="status-text" id="statusText">Click microphone or type below</div>
+        <div class="status-hint" id="statusHint">Hold to record, release to send</div>
+        <div class="transcript-preview" id="transcriptPreview">
+          Your voice command will appear here...
+        </div>
+        <div class="text-input-container">
+          <input
+            type="text"
+            class="text-input"
+            id="textInput"
+            placeholder="Or type your command here..."
+          />
+          <button class="btn btn-primary" id="sendBtn">Send</button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-commit" id="commitBtn" disabled>
+          Commit Changes
+        </button>
+        <button class="btn" id="pushBtn" disabled>
+          Push
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer">
+    Buddy v1.0.0 - Voice AI Code Assistant
+  </footer>
+
+  <script>
+    // Configuration
+    const config = {
+      title: 'Buddy',
+      version: '1.0.0',
+      drivers: {
+        claude: { name: 'Claude', requiresKey: 'ANTHROPIC_API_KEY' },
+        openai: { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
+        ollama: { name: 'Ollama', requiresKey: null },
+        mock: { name: 'Mock', requiresKey: null }
+      }
+    };
+
+    // State management
+    const state = {
+      isRecording: false,
+      isProcessing: false,
+      transcript: '',
+      messages: [],
+      repoPath: '',
+      hasChanges: false,
+      recognition: null,
+      speechSupported: false,
+      currentDriver: 'claude',
+      isNativeApp: false,
+      github: {
+        connected: false,
+        token: null,
+        username: null,
+        name: null,
+        email: null,
+        avatarUrl: null
+      }
+    };
+
+    // DOM elements
+    const elements = {
+      output: document.getElementById('output'),
+      micButton: document.getElementById('micButton'),
+      micIcon: document.getElementById('micIcon'),
+      statusText: document.getElementById('statusText'),
+      statusHint: document.getElementById('statusHint'),
+      transcriptPreview: document.getElementById('transcriptPreview'),
+      repoInput: document.getElementById('repoInput'),
+      cloneBtn: document.getElementById('cloneBtn'),
+      commitBtn: document.getElementById('commitBtn'),
+      pushBtn: document.getElementById('pushBtn'),
+      terminalTitle: document.getElementById('terminalTitle'),
+      aiDriver: document.getElementById('aiDriver'),
+      textInput: document.getElementById('textInput'),
+      sendBtn: document.getElementById('sendBtn'),
+      footer: document.getElementById('footer'),
+      appTitle: document.getElementById('appTitle'),
+      // GitHub elements
+      githubAccount: document.getElementById('githubAccount'),
+      githubUsername: document.getElementById('githubUsername'),
+      githubStatus: document.getElementById('githubStatus'),
+      githubModal: document.getElementById('githubModal'),
+      githubToken: document.getElementById('githubToken'),
+      gitName: document.getElementById('gitName'),
+      gitEmail: document.getElementById('gitEmail'),
+      modalClose: document.getElementById('modalClose'),
+      modalCancel: document.getElementById('modalCancel'),
+      connectBtn: document.getElementById('connectBtn'),
+      disconnectBtn: document.getElementById('disconnectBtn'),
+      connectForm: document.getElementById('connectForm'),
+      connectedInfo: document.getElementById('connectedInfo'),
+      connectedAvatar: document.getElementById('connectedAvatar'),
+      connectedName: document.getElementById('connectedName'),
+      connectedUsername: document.getElementById('connectedUsername')
+    };
+
+    // Initialize UI
+    function initUI() {
+      elements.appTitle.textContent = config.title;
+      elements.footer.textContent = `${config.title} v${config.version} - Voice AI Code Assistant`;
+
+      // Check if running in Craft native app
+      if (window.craft) {
+        state.isNativeApp = true;
+        initNativeFeatures();
+      }
+    }
+
+    // Initialize native Craft features
+    async function initNativeFeatures() {
+      if (!window.craft) return;
+
+      try {
+        // Set up system tray
+        await window.craft.tray.setTitle('Buddy');
+        await window.craft.tray.setTooltip('Buddy - Voice AI Code Assistant');
+
+        // Set up tray menu
+        await window.craft.tray.setMenu([
+          { id: 'show', label: 'Show Buddy', action: 'show' },
+          { id: 'hide', label: 'Hide Window', action: 'hide' },
+          { type: 'separator' },
+          { id: 'recording', label: 'Start Recording', action: 'startRecording' },
+          { type: 'separator' },
+          { id: 'quit', label: 'Quit Buddy', action: 'quit', shortcut: 'Cmd+Q' }
+        ]);
+
+        // Toggle window on tray click
+        window.craft.tray.onClickToggleWindow();
+
+        addMessage('system', 'Running as native app - system tray enabled');
+      } catch (e) {
+        console.log('Native features not fully available:', e);
+      }
+    }
+
+    // Update tray status
+    async function updateTrayStatus(status) {
+      if (!state.isNativeApp || !window.craft) return;
+
+      try {
+        const icons = {
+          ready: '🤖',
+          recording: '🔴',
+          processing: '⏳',
+          success: '✅',
+          error: '❌'
+        };
+        await window.craft.tray.setTitle(`${icons[status] || '🤖'} Buddy`);
+      } catch (e) {
+        // Ignore tray errors
+      }
+    }
+
+    // Send native notification
+    async function sendNotification(title, body, sound = 'default') {
+      if (!state.isNativeApp || !window.craft) return;
+
+      try {
+        await window.craft.app.notify({
+          title,
+          body,
+          sound
+        });
+      } catch (e) {
+        console.log('Notification failed:', e);
+      }
+    }
+
+    // Initialize Speech Recognition
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        state.speechSupported = false;
+        elements.statusText.textContent = 'Voice not supported - use text input';
+        elements.statusHint.textContent = 'Type your command below';
+        elements.micButton.style.opacity = '0.5';
+        elements.micButton.style.cursor = 'not-allowed';
+        addMessage('system', 'Speech recognition not available in this browser. Please use the text input below, or try Chrome/Edge.');
+        return false;
+      }
+
+      state.recognition = new SpeechRecognition();
+      state.recognition.continuous = false; // Single utterance mode is more reliable
+      state.recognition.interimResults = true;
+      state.recognition.lang = 'en-US';
+      state.recognition.maxAlternatives = 1;
+
+      state.recognition.onstart = () => {
+        state.isRecording = true;
+        elements.micButton.classList.add('recording');
+        elements.micIcon.textContent = '🔴';
+        elements.statusText.textContent = 'Listening...';
+        elements.statusHint.textContent = 'Speak your command clearly';
+        elements.transcriptPreview.classList.add('active');
+        elements.transcriptPreview.textContent = 'Listening...';
+        updateTrayStatus('recording');
+      };
+
+      state.recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        state.transcript = transcript;
+        elements.transcriptPreview.textContent = transcript || 'Listening...';
+      };
+
+      state.recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        stopRecording();
+
+        if (event.error === 'not-allowed') {
+          addMessage('error', 'Microphone access denied. Please enable microphone permissions in your browser settings.');
+        } else if (event.error === 'network') {
+          addMessage('error', 'Speech recognition requires an internet connection. Please use the text input below instead.');
+          elements.statusText.textContent = 'Network error - use text input';
+        } else if (event.error === 'no-speech') {
+          elements.statusText.textContent = 'No speech detected - try again';
+        } else if (event.error !== 'aborted') {
+          addMessage('error', `Speech recognition error: ${event.error}. Try using the text input.`);
+        }
+      };
+
+      state.recognition.onend = () => {
+        if (state.isRecording) {
+          // Process what we have
+          const transcript = state.transcript.trim();
+          stopRecording();
+          if (transcript) {
+            processCommand(transcript);
+          }
+        }
+      };
+
+      state.speechSupported = true;
+      return true;
+    }
+
+    // Start recording
+    function startRecording() {
+      if (!state.speechSupported) {
+        elements.textInput.focus();
+        return;
+      }
+
+      if (state.isRecording) return;
+
+      state.transcript = '';
+      elements.transcriptPreview.textContent = 'Initializing...';
+
+      try {
+        state.recognition.start();
+      } catch (e) {
+        console.error('Failed to start recognition:', e);
+        addMessage('error', 'Failed to start voice recognition. Please use text input.');
+      }
+    }
+
+    // Stop recording
+    function stopRecording() {
+      state.isRecording = false;
+      elements.micButton.classList.remove('recording');
+      elements.micIcon.textContent = '🎤';
+      elements.statusText.textContent = 'Click microphone or type below';
+      elements.statusHint.textContent = 'Hold to record, release to send';
+      elements.transcriptPreview.classList.remove('active');
+      updateTrayStatus('ready');
+
+      if (state.recognition) {
+        try {
+          state.recognition.stop();
+        } catch (e) {
+          // Ignore
+        }
+      }
+    }
+
+    // Add message to output
+    function addMessage(type, content, header = null) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${type}`;
+
+      const driverName = config.drivers[state.currentDriver]?.name || 'AI';
+      const headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error');
+
+      messageDiv.innerHTML = `
+        <div class="message-header">${headerText}</div>
+        <div class="message-content">${escapeHtml(content)}</div>
+      `;
+
+      elements.output.appendChild(messageDiv);
+      elements.output.scrollTop = elements.output.scrollHeight;
+
+      state.messages.push({ type, content, timestamp: Date.now() });
+    }
+
+    // Add loading message
+    function addLoadingMessage() {
+      const driverName = config.drivers[state.currentDriver]?.name || 'AI';
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'message assistant';
+      loadingDiv.id = 'loadingMessage';
+      loadingDiv.innerHTML = `
+        <div class="message-header">${driverName}</div>
+        <div class="message-content">
+          <div class="loading">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          Processing your request...
+        </div>
+      `;
+      elements.output.appendChild(loadingDiv);
+      elements.output.scrollTop = elements.output.scrollHeight;
+    }
+
+    // Remove loading message
+    function removeLoadingMessage() {
+      const loading = document.getElementById('loadingMessage');
+      if (loading) loading.remove();
+    }
+
+    // Escape HTML
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Check if backend API is available
+    async function checkBackendAPI() {
+      try {
+        const response = await fetch('/api/state');
+        return response.ok;
+      } catch {
+        return false;
+      }
+    }
+
+    // Process command (from voice or text)
+    async function processCommand(command) {
+      if (!command.trim()) return;
+
+      addMessage('user', command);
+      elements.terminalTitle.textContent = 'Processing...';
+
+      if (!state.repoPath) {
+        addMessage('error', 'Please enter a repository URL or path first.');
+        elements.terminalTitle.textContent = `${config.title} - Ready`;
+        return;
+      }
+
+      state.isProcessing = true;
+      addLoadingMessage();
+      updateTrayStatus('processing');
+
+      try {
+        let response;
+
+        // Try to use real backend API first
+        const hasBackend = await checkBackendAPI();
+        if (hasBackend) {
+          const apiResponse = await fetch('/api/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command, driver: state.currentDriver })
+          });
+
+          if (!apiResponse.ok) {
+            throw new Error(await apiResponse.text());
+          }
+
+          response = await apiResponse.json();
+        } else {
+          // Fall back to mock response
+          response = await getMockResponse(command);
+        }
+
+        removeLoadingMessage();
+        addMessage('assistant', response.message);
+        updateTrayStatus('success');
+
+        if (response.hasChanges) {
+          state.hasChanges = true;
+          elements.commitBtn.disabled = false;
+          elements.pushBtn.disabled = false;
+          addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.');
+          sendNotification('Changes Ready', 'Code changes are staged and ready to commit.');
+        }
+
+        elements.terminalTitle.textContent = `${config.title} - Ready`;
+
+        // Reset tray after brief success indicator
+        setTimeout(() => updateTrayStatus('ready'), 2000);
+      } catch (error) {
+        removeLoadingMessage();
+        addMessage('error', `Failed to process command: ${error.message}`);
+        elements.terminalTitle.textContent = `${config.title} - Error`;
+        updateTrayStatus('error');
+        sendNotification('Error', error.message, 'Basso');
+        setTimeout(() => updateTrayStatus('ready'), 3000);
+      } finally {
+        state.isProcessing = false;
+      }
+    }
+
+    // Mock response for demo mode
+    async function getMockResponse(command) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const lowerCommand = command.toLowerCase();
+      let response = { message: '', hasChanges: false };
+
+      if (lowerCommand.includes('readme') || lowerCommand.includes('documentation')) {
+        response.message = `I'll update the README.md file for you.
+
+Analyzing the repository structure...
+
+Changes to be made:
+\`\`\`diff
++ ## Installation
++
++ \`\`\`bash
++ npm install
++ # or
++ bun install
++ \`\`\`
++
++ ## Usage
++
++ \`\`\`bash
++ npm run start
++ \`\`\`
+\`\`\`
+
+File modified: README.md
+Lines added: 12
+Lines removed: 0`;
+        response.hasChanges = true;
+      } else if (lowerCommand.includes('fix') || lowerCommand.includes('bug')) {
+        response.message = `I'll analyze and fix the issue.
+
+Scanning for potential bugs...
+
+Found issue in src/utils.ts:
+- Missing null check on line 45
+- Potential race condition on line 78
+
+Applying fixes:
+\`\`\`diff
+- const result = data.value;
++ const result = data?.value ?? defaultValue;
+
+- async function fetchData() {
++ async function fetchData() {
++   if (isFetching) return;
++   isFetching = true;
+\`\`\`
+
+Files modified: src/utils.ts
+Lines added: 4
+Lines removed: 2`;
+        response.hasChanges = true;
+      } else if (lowerCommand.includes('add') || lowerCommand.includes('create') || lowerCommand.includes('new')) {
+        response.message = `I'll create the new functionality for you.
+
+Planning implementation...
+
+New files to create:
+- src/features/new-feature.ts
+- src/features/new-feature.test.ts
+
+\`\`\`typescript
+// src/features/new-feature.ts
+export function newFeature(input: string): string {
+  return input.trim().toLowerCase();
+}
+\`\`\`
+
+Files created: 2
+Lines added: 25`;
+        response.hasChanges = true;
+      } else if (lowerCommand.includes('refactor')) {
+        response.message = `I'll refactor the code for better maintainability.
+
+Analyzing code structure...
+
+Refactoring plan:
+1. Extract common logic into utilities
+2. Convert callbacks to async/await
+3. Add proper TypeScript types
+
+\`\`\`diff
+- function processData(data, callback) {
+-   doSomething(data, (err, result) => {
+-     callback(err, result);
+-   });
+- }
++ async function processData(data: DataType): Promise<ResultType> {
++   return await doSomething(data);
++ }
+\`\`\`
+
+Files modified: 3
+Lines added: 45
+Lines removed: 67`;
+        response.hasChanges = true;
+      } else {
+        response.message = `I understand you want to: "${command}"
+
+I'll analyze the repository and implement this change.
+
+Scanning codebase...
+Identifying relevant files...
+Planning implementation...
+
+This would require modifying the following files:
+- src/main.ts
+- src/config.ts
+
+Would you like me to proceed with these changes?`;
+        response.hasChanges = true;
+      }
+
+      return response;
+    }
+
+    // Clone or open repository
+    async function handleRepoAction() {
+      const input = elements.repoInput.value.trim();
+
+      if (!input) {
+        addMessage('error', 'Please enter a repository URL or path.');
+        return;
+      }
+
+      addMessage('system', `Opening repository: ${input}`);
+
+      try {
+        const hasBackend = await checkBackendAPI();
+        if (hasBackend) {
+          const apiResponse = await fetch('/api/repo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ input })
+          });
+
+          if (!apiResponse.ok) {
+            const error = await apiResponse.json();
+            throw new Error(error.error || 'Failed to open repository');
+          }
+
+          const data = await apiResponse.json();
+          state.repoPath = data.repo.path;
+
+          addMessage('system', `Repository "${data.repo.name}" opened successfully.
+Working directory: ${data.repo.path}
+Branch: ${data.repo.branch}
+Last commit: ${data.repo.lastCommit || 'N/A'}
+Has changes: ${data.repo.hasChanges ? 'Yes' : 'No'}`);
+        } else {
+          // Simulated repo opening
+          await new Promise(resolve => setTimeout(resolve, 800));
+          state.repoPath = input;
+
+          if (input.includes('github.com')) {
+            const repoName = input.split('/').pop()?.replace('.git', '') || 'repository';
+            addMessage('system', `Repository "${repoName}" cloned successfully.
+Working directory: ~/Code/${repoName}
+Branch: main
+Files: 47 | Commits: 234`);
+          } else {
+            addMessage('system', `Opened local repository at ${input}
+Branch: main
+Status: Clean working tree`);
+          }
+        }
+
+        elements.terminalTitle.textContent = `${config.title} - ${input.split('/').pop()}`;
+      } catch (error) {
+        addMessage('error', `Failed to open repository: ${error.message}`);
+      }
+    }
+
+    // Commit changes
+    async function commitChanges() {
+      if (!state.hasChanges) return;
+
+      addMessage('system', 'Creating commit...');
+      updateTrayStatus('processing');
+
+      try {
+        let commitHash;
+        const hasBackend = await checkBackendAPI();
+        if (hasBackend) {
+          const apiResponse = await fetch('/api/commit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+          if (!apiResponse.ok) {
+            const error = await apiResponse.json();
+            throw new Error(error.error || 'Failed to commit');
+          }
+
+          const data = await apiResponse.json();
+          commitHash = data.hash;
+          addMessage('system', `Committed: ${data.hash}
+Message: ${data.message}
+
+Changes committed successfully.`);
+        } else {
+          // Simulated commit
+          await new Promise(resolve => setTimeout(resolve, 500));
+          commitHash = Math.random().toString(16).substr(2, 7);
+          addMessage('system', `Committed: ${commitHash}
+Message: chore: wip
+
+Changes committed successfully.`);
+        }
+
+        state.hasChanges = false;
+        elements.commitBtn.disabled = true;
+        updateTrayStatus('success');
+        sendNotification('Commit Created', `Changes committed: ${commitHash}`, 'Glass');
+        setTimeout(() => updateTrayStatus('ready'), 2000);
+      } catch (error) {
+        addMessage('error', `Failed to commit: ${error.message}`);
+        updateTrayStatus('error');
+        setTimeout(() => updateTrayStatus('ready'), 3000);
+      }
+    }
+
+    // Push changes
+    async function pushChanges() {
+      addMessage('system', 'Pushing to remote...');
+      updateTrayStatus('processing');
+
+      try {
+        const hasBackend = await checkBackendAPI();
+        if (hasBackend) {
+          const apiResponse = await fetch('/api/push', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+          if (!apiResponse.ok) {
+            const error = await apiResponse.json();
+            throw new Error(error.error || 'Failed to push');
+          }
+
+          addMessage('system', `Pushed to remote successfully.`);
+        } else {
+          // Simulated push
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          addMessage('system', `Pushed to origin/main
+Remote: https://github.com/...
+Objects: 3 | Bytes: 1.2 KB`);
+        }
+
+        elements.pushBtn.disabled = true;
+        updateTrayStatus('success');
+        sendNotification('Push Complete', 'Changes pushed to remote repository.', 'Glass');
+        setTimeout(() => updateTrayStatus('ready'), 2000);
+      } catch (error) {
+        updateTrayStatus('error');
+        setTimeout(() => updateTrayStatus('ready'), 3000);
+        addMessage('error', `Failed to push: ${error.message}`);
+      }
+    }
+
+    // Handle driver change
+    function handleDriverChange() {
+      state.currentDriver = elements.aiDriver.value;
+      const driverInfo = config.drivers[state.currentDriver];
+      addMessage('system', `Switched to ${driverInfo.name} driver.${driverInfo.requiresKey ? ` (Requires ${driverInfo.requiresKey})` : ''}`);
+    }
+
+    // Handle text input submit
+    function handleTextSubmit() {
+      const text = elements.textInput.value.trim();
+      if (text && !state.isProcessing) {
+        elements.textInput.value = '';
+        processCommand(text);
+      }
+    }
+
+    // ==================== GitHub Connection ====================
+
+    // Open GitHub modal
+    function openGithubModal() {
+      elements.githubModal.classList.add('active');
+      if (state.github.connected) {
+        showConnectedState();
+      } else {
+        showConnectForm();
+      }
+    }
+
+    // Close GitHub modal
+    function closeGithubModal() {
+      elements.githubModal.classList.remove('active');
+    }
+
+    // Show connect form
+    function showConnectForm() {
+      elements.connectForm.style.display = 'block';
+      elements.connectedInfo.style.display = 'none';
+      elements.connectBtn.style.display = 'inline-block';
+      elements.disconnectBtn.style.display = 'none';
+    }
+
+    // Show connected state
+    function showConnectedState() {
+      elements.connectForm.style.display = 'none';
+      elements.connectedInfo.style.display = 'block';
+      elements.connectBtn.style.display = 'none';
+      elements.disconnectBtn.style.display = 'inline-block';
+
+      elements.connectedAvatar.src = state.github.avatarUrl || '';
+      elements.connectedName.textContent = state.github.name || state.github.username;
+      elements.connectedUsername.textContent = `@${state.github.username}`;
+    }
+
+    // Update GitHub UI
+    function updateGithubUI() {
+      if (state.github.connected) {
+        elements.githubAccount.classList.add('connected');
+        elements.githubUsername.textContent = state.github.username;
+        elements.githubStatus.textContent = 'Connected';
+      } else {
+        elements.githubAccount.classList.remove('connected');
+        elements.githubUsername.textContent = 'Not connected';
+        elements.githubStatus.textContent = 'Click to connect';
+      }
+    }
+
+    // Connect to GitHub
+    async function connectGithub() {
+      const token = elements.githubToken.value.trim();
+      const name = elements.gitName.value.trim();
+      const email = elements.gitEmail.value.trim();
+
+      if (!token) {
+        addMessage('error', 'Please enter a GitHub Personal Access Token.');
+        return;
+      }
+
+      if (!token.startsWith('ghp_') && !token.startsWith('github_pat_')) {
+        addMessage('error', 'Invalid token format. Token should start with "ghp_" or "github_pat_".');
+        return;
+      }
+
+      elements.connectBtn.disabled = true;
+      elements.connectBtn.textContent = 'Connecting...';
+
+      try {
+        // Verify token by fetching user info
+        const userResponse = await fetch('https://api.github.com/user', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        if (!userResponse.ok) {
+          throw new Error('Invalid token or insufficient permissions');
+        }
+
+        const userData = await userResponse.json();
+
+        // Get user email if not provided
+        let userEmail = email;
+        if (!userEmail) {
+          const emailResponse = await fetch('https://api.github.com/user/emails', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          });
+
+          if (emailResponse.ok) {
+            const emails = await emailResponse.json();
+            const primaryEmail = emails.find(e => e.primary) || emails[0];
+            userEmail = primaryEmail?.email || `${userData.login}@users.noreply.github.com`;
+          } else {
+            userEmail = `${userData.login}@users.noreply.github.com`;
+          }
+        }
+
+        // Store credentials
+        state.github = {
+          connected: true,
+          token: token,
+          username: userData.login,
+          name: name || userData.name || userData.login,
+          email: userEmail,
+          avatarUrl: userData.avatar_url
+        };
+
+        // Save to localStorage for persistence
+        localStorage.setItem('buddy_github', JSON.stringify({
+          token: token,
+          username: userData.login,
+          name: state.github.name,
+          email: state.github.email,
+          avatarUrl: userData.avatar_url
+        }));
+
+        // Send to backend if available
+        const hasBackend = await checkBackendAPI();
+        if (hasBackend) {
+          await fetch('/api/github/connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token: token,
+              username: userData.login,
+              name: state.github.name,
+              email: state.github.email
+            })
+          });
+        }
+
+        updateGithubUI();
+        showConnectedState();
+        addMessage('system', `GitHub connected as @${userData.login}
+Email: ${state.github.email}
+Commits will be authored by: ${state.github.name} <${state.github.email}>`);
+
+        sendNotification('GitHub Connected', `Connected as @${userData.login}`);
+
+      } catch (error) {
+        addMessage('error', `GitHub connection failed: ${error.message}`);
+      } finally {
+        elements.connectBtn.disabled = false;
+        elements.connectBtn.textContent = 'Connect';
+      }
+    }
+
+    // Disconnect GitHub
+    async function disconnectGithub() {
+      state.github = {
+        connected: false,
+        token: null,
+        username: null,
+        name: null,
+        email: null,
+        avatarUrl: null
+      };
+
+      localStorage.removeItem('buddy_github');
+
+      // Notify backend
+      const hasBackend = await checkBackendAPI();
+      if (hasBackend) {
+        await fetch('/api/github/disconnect', { method: 'POST' });
+      }
+
+      updateGithubUI();
+      showConnectForm();
+      elements.githubToken.value = '';
+      elements.gitName.value = '';
+      elements.gitEmail.value = '';
+
+      addMessage('system', 'GitHub disconnected.');
+      closeGithubModal();
+    }
+
+    // Load saved GitHub credentials
+    function loadSavedGithub() {
+      try {
+        const saved = localStorage.getItem('buddy_github');
+        if (saved) {
+          const data = JSON.parse(saved);
+          state.github = {
+            connected: true,
+            token: data.token,
+            username: data.username,
+            name: data.name,
+            email: data.email,
+            avatarUrl: data.avatarUrl
+          };
+          updateGithubUI();
+
+          // Sync with backend
+          checkBackendAPI().then(hasBackend => {
+            if (hasBackend) {
+              fetch('/api/github/connect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  token: data.token,
+                  username: data.username,
+                  name: data.name,
+                  email: data.email
+                })
+              });
+            }
+          });
+
+          addMessage('system', `GitHub: Connected as @${data.username}`);
+        }
+      } catch (e) {
+        console.error('Failed to load GitHub credentials:', e);
+      }
+    }
+
+    // ==================== End GitHub Connection ====================
+
+    // Event listeners - Voice
+    elements.micButton.addEventListener('mousedown', startRecording);
+    elements.micButton.addEventListener('mouseup', stopRecording);
+    elements.micButton.addEventListener('mouseleave', () => {
+      if (state.isRecording) stopRecording();
+    });
+
+    // Touch support
+    elements.micButton.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      startRecording();
+    });
+    elements.micButton.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      stopRecording();
+    });
+
+    // Keyboard shortcut (hold space to record, but not when in text input)
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !e.repeat &&
+          document.activeElement !== elements.repoInput &&
+          document.activeElement !== elements.textInput) {
+        e.preventDefault();
+        startRecording();
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.code === 'Space' && state.isRecording) {
+        e.preventDefault();
+        stopRecording();
+      }
+    });
+
+    // Event listeners - Text input
+    elements.textInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleTextSubmit();
+    });
+    elements.sendBtn.addEventListener('click', handleTextSubmit);
+
+    // Event listeners - Other buttons
+    elements.cloneBtn.addEventListener('click', handleRepoAction);
+    elements.repoInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleRepoAction();
+    });
+    elements.commitBtn.addEventListener('click', commitChanges);
+    elements.pushBtn.addEventListener('click', pushChanges);
+    elements.aiDriver.addEventListener('change', handleDriverChange);
+
+    // Event listeners - GitHub
+    elements.githubAccount.addEventListener('click', openGithubModal);
+    elements.modalClose.addEventListener('click', closeGithubModal);
+    elements.modalCancel.addEventListener('click', closeGithubModal);
+    elements.connectBtn.addEventListener('click', connectGithub);
+    elements.disconnectBtn.addEventListener('click', disconnectGithub);
+    elements.githubModal.addEventListener('click', (e) => {
+      if (e.target === elements.githubModal) closeGithubModal();
+    });
+
+    // Close modal on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && elements.githubModal.classList.contains('active')) {
+        closeGithubModal();
+      }
+    });
+
+    // Initialize
+    initUI();
+    initSpeechRecognition();
+    loadSavedGithub();
+  </script>
+</body>
+</html>

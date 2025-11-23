@@ -147,7 +147,7 @@ import {
 
 ### @stacksjs/desktop
 
-**Native desktop application framework** ready for ts-zyte/craft integration.
+**Native desktop application framework** powered by [Craft](https://github.com/stacksjs/craft).
 
 ```bash
 cd packages/desktop

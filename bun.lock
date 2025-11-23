@@ -22,7 +22,6 @@
       "version": "0.2.0",
       "dependencies": {
         "@11ty/eleventy": "^3.1.2",
-        "@stacksjs/markdown": "workspace:*",
         "@stacksjs/sanitizer": "workspace:*",
         "dompurify": "^3.2.7",
         "ejs": "^3.1.10",
@@ -41,6 +40,7 @@
         "sanitize-html": "^2.17.0",
         "showdown": "^2.1.0",
         "tinybench": "^5.0.1",
+        "ts-md": "link:ts-md",
         "xss": "^1.0.15",
       },
       "devDependencies": {
@@ -1614,10 +1614,10 @@
       "name": "@stacksjs/desktop",
       "version": "0.2.0",
       "peerDependencies": {
-        "ts-zyte": "*",
+        "craft": "*",
       },
       "optionalPeers": [
-        "ts-zyte",
+        "craft",
       ],
     },
     "packages/devtools": {
@@ -1659,10 +1659,10 @@
         "@stacksjs/clapp": "^0.2.0",
         "@stacksjs/desktop": "workspace:*",
         "@stacksjs/headwind": "^0.1.3",
-        "@stacksjs/markdown": "workspace:*",
         "@stacksjs/sanitizer": "workspace:*",
         "bun-plugin-stx": "workspace:*",
         "bunfig": "^0.15.0",
+        "ts-md": "link:ts-md",
         "ts-syntax-highlighter": "^0.1.0",
       },
     },
@@ -4103,6 +4103,8 @@
     "ts-declaration-location": ["ts-declaration-location@1.0.7", "", { "dependencies": { "picomatch": "^4.0.2" }, "peerDependencies": { "typescript": ">=4.0.0" } }, "sha512-EDyGAwH1gO0Ausm9gV6T2nUvBgXT5kGoCMJPllOaooZ+4VvJiKBdZE7wK18N1deEowhcUptS+5GXZK8U/fvpwA=="],
 
     "ts-error-handling": ["ts-error-handling@0.1.0", "", {}, "sha512-v0t9+8PBJkyQoOG2SY/PGKJLPrahsRA/4ZbU/C7+RWVviXtUrXRyGKkHa+2+UwgVFJVdI//D9PINuSfciqNKOQ=="],
+
+    "ts-md": ["ts-md@link:ts-md", { "bin": { "md": "./bin/cli.ts" } }],
 
     "ts-pkgx": ["ts-pkgx@0.4.122", "", { "dependencies": { "ts-web-scraper": "^0.1.1" }, "bin": { "ts-pkgx": "dist/bin/cli.js" } }, "sha512-z7z/1e3OaArw0T+Wrfi1PvDJHSpL8/R+yD/6dOSbbgLYpJkCTqmPS8xiYNL+AQu7pYP2fOetwTDi8Na7+EKGow=="],
 

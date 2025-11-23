@@ -1,0 +1,12 @@
+{
+  "name": "buddy-ios",
+  "version": "1.0.0",
+  "description": "Buddy - Voice AI Code Assistant for iOS",
+  "private": true,
+  "scripts": {
+    "init": "bun scripts/init.ts",
+    "build": "bun scripts/build.ts",
+    "open": "bun /Users/chrisbreuer/Code/craft/packages/typescript/bin/cli.ts ios open -o .",
+    "run:sim": "bun /Users/chrisbreuer/Code/craft/packages/typescript/bin/cli.ts ios run -o . --simulator"
+  }
+}

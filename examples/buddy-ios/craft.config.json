@@ -1,0 +1,13 @@
+{
+  "appName": "Buddy",
+  "bundleId": "com.stacksjs.buddy",
+  "version": "1.0.0",
+  "buildNumber": "1",
+  "darkMode": true,
+  "backgroundColor": "#1a1a2e",
+  "enableSpeechRecognition": true,
+  "enableHaptics": true,
+  "enableShare": true,
+  "iosVersion": "15.0",
+  "teamId": ""
+}

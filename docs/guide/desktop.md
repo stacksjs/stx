@@ -1,10 +1,10 @@
 # Desktop Applications
 
-Build native desktop applications with STX using `@stacksjs/desktop` - a webview-agnostic framework ready for integration with ts-zyte/craft or other native webview implementations.
+Build native desktop applications with STX using `@stacksjs/desktop` - powered by [Craft](https://github.com/stacksjs/craft).
 
 ## Overview
 
-The `@stacksjs/desktop` package provides a complete API for building native desktop applications with STX templates. It's designed to be webview-agnostic and is ready for integration with native webview solutions like **ts-zyte** (Zig-based webview) or **craft**.
+The `@stacksjs/desktop` package provides a complete API for building native desktop applications with STX templates. It uses **Craft** (Zig-based webview at `~/Code/craft`) for native rendering.
 
 ### Features
 
@@ -14,7 +14,7 @@ The `@stacksjs/desktop` package provides a complete API for building native desk
 - **35 UI Components** - Complete component library
 - **Hot Reload** - Development mode support
 - **100% Test Coverage** - 132 tests, 96.77% line coverage
-- **Webview-Agnostic** - Ready for ts-zyte/craft integration
+- **Craft-Powered** - Native webview via Craft
 
 ## Quick Start
 
@@ -134,7 +134,7 @@ import { isWebviewAvailable } from '@stacksjs/desktop'
 if (await isWebviewAvailable()) {
   console.log('Webview is available!')
 } else {
-  console.log('Webview not found. Install ts-zyte or craft.')
+  console.log('Webview not found. Install Craft.')
 }
 ```
 
@@ -399,41 +399,39 @@ See the [Component source code](https://github.com/stacksjs/stx/blob/main/packag
 
 ---
 
-## Integration with ts-zyte / craft
+## Integration with Craft
 
-The desktop package is designed to be webview-agnostic and ready for integration with native webview implementations.
+The desktop package uses [Craft](https://github.com/stacksjs/craft) for native webview rendering.
 
 ### Current Status
 
 - **API Complete**: All APIs are defined with TypeScript types
 - **Tests**: 100% test coverage (132 tests, 96.77% line coverage)
 - **Documentation**: Complete API documentation
-- **Implementation**: Placeholder implementations ready for ts-zyte
+- **Implementation**: Powered by Craft (~/Code/craft)
 
 ### Integration Points
 
-When ts-zyte or craft is integrated, the desktop package will:
+With Craft integrated, the desktop package:
 
-1. **Detect Native Webview**: `isWebviewAvailable()` will check for ts-zyte/craft
-2. **Create Native Windows**: `createWindow()` will use native webview
-3. **System Integration**: System tray and native modals will work
-4. **Component Rendering**: UI components will render natively
+1. **Detects Native Webview**: `isWebviewAvailable()` checks for Craft
+2. **Creates Native Windows**: `createWindow()` uses native webview
+3. **System Integration**: System tray and native modals work
+4. **Component Rendering**: UI components render natively
 
-### Example Integration
+### Example Usage
 
 ```typescript
-// Future ts-zyte integration (conceptual)
 import { openDevWindow } from '@stacksjs/desktop'
-import { createWebview } from 'ts-zyte' // When available
 
-// Desktop package will automatically use ts-zyte
+// Desktop package uses Craft under the hood
 const window = await openDevWindow(3000, {
-  title: 'STX with ts-zyte',
+  title: 'STX with Craft',
   width: 1200,
   height: 800
 })
 
-// Under the hood, this creates a native webview
+// Creates a native webview window
 ```
 
 ---
@@ -490,7 +488,7 @@ The desktop package is designed to work with any native webview implementation:
                │
                ▼
 ┌─────────────────────────────────────┐
-│  ts-zyte / craft (Native Webview)   │
+│  Craft (Native Webview)             │
 │  - Zig-based webview                │
 │  - GTK/WebKit/WebView2              │
 │  - Native APIs                      │

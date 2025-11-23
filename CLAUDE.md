@@ -22,7 +22,8 @@ This is a Bun workspace monorepo with packages in `packages/`:
 - **`packages/vscode`** - VS Code extension for `.stx` syntax
 - **`packages/devtools`** - Development tooling
 - **`packages/benchmarks`** - Performance benchmarks
-- **`packages/zyte`** - Zig-based native webview framework
+
+**External dependency**: Craft (~/Code/craft) - Zig-based native webview framework for desktop/mobile apps
 
 ### Template Processing Pipeline
 
@@ -242,12 +243,12 @@ The `@stacksjs/desktop` package provides native desktop application support:
 ```
 @stacksjs/desktop (TypeScript API)
     ↓
-ts-zyte (optional webview implementation)
+Craft (~/Code/craft - Zig webview implementation)
     ↓
 Native APIs (WebKit/GTK/WebView2)
 ```
 
-**Note**: The desktop package is webview-agnostic and ready for ts-zyte integration. It provides a clean API that will work with ts-zyte or other webview implementations once integrated.
+**Note**: The desktop package uses Craft for native webview rendering. Craft source lives at `~/Code/craft`.
 
 ### Usage
 
@@ -256,7 +257,7 @@ Native APIs (WebKit/GTK/WebView2)
 stx dev examples/homepage.stx --native
 ```
 
-This internally calls `openDevWindow()` from the desktop package. When ts-zyte is integrated, it will create a lightweight native window.
+This internally calls `openDevWindow()` from the desktop package, which uses Craft to create a lightweight native window.
 
 ### Key Features
 
@@ -305,7 +306,7 @@ bun test              # Run all tests
 bun test --coverage   # With coverage report
 ```
 
-All desktop functionality is fully tested. The package is ready for ts-zyte integration when available.
+All desktop functionality is fully tested. The package uses Craft (`~/Code/craft`) for native rendering.
 
 ## Error Handling
 
