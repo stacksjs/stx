@@ -98,38 +98,50 @@ async function processCodeBlocks(
       const keys = Object.keys(context)
       const values = Object.values(context)
 
-      // Initialize a global object that will be used to collect changes
-      const global = { ...context }
-
-      // Create code that assigns values to global context
-      const code = `
-        ${content.trim()}
-        return global;
-      `
-
-      // For TypeScript, strip the TypeScript-specific syntax
-      // This is a simplified approach; a full transpiler would be more robust
-      let processedCode = code
+      // For TypeScript, strip the TypeScript-specific syntax first
+      let strippedContent = content.trim()
       if (startTag === '@ts') {
-        processedCode = code
+        strippedContent = strippedContent
           // Remove interface declarations completely
-          .replace(/interface\s[^{]+\{[^}]*\}/g, '')
-          // Remove type annotations, but be careful with string literals containing colons
-          .replace(/(?<!["']):[\w<>|&[\],\s]+(?=[=,);{}])/g, '')
+          .replace(/interface\s+\w+\s*\{[^}]*\}/g, '')
+          // Remove type declarations completely
+          .replace(/type\s+\w+\s*=\s*[^;]+;/g, '')
+          // Remove type annotations from const/let/var declarations
+          .replace(/(const|let|var)\s+(\w+)\s*:\s*[^=]+=/g, '$1 $2 =')
+          // Remove function parameter type annotations
+          .replace(/(\w+)\s*:\s*[\w<>|&[\],\s]+(?=[,)])/g, '$1')
           // Remove function return type annotations
-          .replace(/\)\s*:[\w<>|&[\],\s]+(?=[{=])/g, ')')
+          .replace(/\)\s*:\s*[\w<>|&[\],\s]+\s*(?=[{=>])/g, ') ')
           // Remove generic type parameters
           .replace(/<[\w<>|&[\],\s]+>/g, '')
+          // Remove 'as' type assertions
+          .replace(/\s+as\s+[\w<>|&[\],\s]+/g, '')
       }
+
+      // Extract all variable declarations to capture them
+      // Match: const/let/var name = value
+      const varDeclarations = strippedContent.match(/(?:const|let|var)\s+(\w+)\s*=/g) || []
+      const declaredVars = varDeclarations.map(d => d.match(/(?:const|let|var)\s+(\w+)/)?.[1]).filter(Boolean) as string[]
+
+      // Create code that executes user code and returns declared variables
+      // We wrap in an IIFE to capture the variables, then return them
+      const returnStatement = declaredVars.length > 0
+        ? `return { ${declaredVars.join(', ')} };`
+        : 'return {};'
+
+      const processedCode = `
+        ${strippedContent}
+        ${returnStatement}
+      `
 
       // Execute the code
       // eslint-disable-next-line no-new-func
-      const evalFn = new Function(...keys, 'global', processedCode)
+      const evalFn = new Function(...keys, processedCode)
 
-      // Pass the global object to collect changes
-      const result = evalFn(...values, global)
+      // Execute and get declared variables
+      const result = evalFn(...values)
 
-      // Update the context with any values set on global
+      // Update the context with any declared variables
       if (result && typeof result === 'object') {
         Object.assign(context, result)
       }

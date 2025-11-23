@@ -16,19 +16,17 @@ import { serve as bunServe, Glob } from 'bun'
 import process from 'node:process'
 import stxPlugin from './index'
 
-async function main() {
-  // Parse command line arguments
-  const args = process.argv.slice(2)
+export interface ServeOptions {
+  patterns: string[]
+  port?: number
+}
 
-  // Remove 'serve' if it's the first argument (for compatibility)
-  if (args[0] === 'serve') {
-    args.shift()
-  }
-  const portIndex = args.indexOf('--port')
-  const port = portIndex !== -1 && args[portIndex + 1] ? Number.parseInt(args[portIndex + 1]) : 3456
-
-  // Get file patterns (everything that's not a flag)
-  const patterns = args.filter(arg => !arg.startsWith('--') && arg !== args[portIndex + 1])
+/**
+ * Start the STX development server
+ * @param options Server options with patterns and port
+ */
+export async function serve(options: ServeOptions): Promise<void> {
+  const { patterns, port = 3456 } = options
 
   if (patterns.length === 0) {
     console.error('Usage: serve <files...> [--port 3000]')
@@ -39,122 +37,131 @@ async function main() {
     console.error('  serve pages/ --port 3000')
     console.error('  serve index.stx about.md page.html')
     console.error('\nAfter installing: bun add bun-plugin-stx')
-    process.exit(1)
+    throw new Error('No file patterns provided')
   }
 
-  console.log('🚀 Starting stx development server...\n')
+  // Lazy-load: Cache for processed templates
+  const routes = new Map<string, string>()
+  let sourceFiles: string[] | null = null
+  let assetsInitialized = false
 
-  // Discover all .stx, .md, and .html files
-  const sourceFiles: string[] = []
-  const supportedExtensions = ['.stx', '.md', '.html']
+  // Lazy file discovery function
+  async function discoverFiles() {
+    if (sourceFiles !== null)
+      return sourceFiles
 
-  for (const pattern of patterns) {
-    try {
-      // Check if it's a directory using fs.stat
-      const fs = await import('node:fs/promises')
-      const stat = await fs.stat(pattern).catch(() => null)
+    const files: string[] = []
+    const supportedExtensions = ['.stx', '.md', '.html']
 
-      if (stat?.isDirectory()) {
-        // Scan directory for supported files
-        for (const ext of ['.stx', '.md', '.html']) {
-          const glob = new Glob(`**/*${ext}`)
-          const files = await Array.fromAsync(glob.scan(pattern))
-          sourceFiles.push(...files.map(f => `${pattern}/${f}`.replace(/\/+/g, '/')))
+    for (const pattern of patterns) {
+      try {
+        const fs = await import('node:fs/promises')
+        const stat = await fs.stat(pattern).catch(() => null)
+
+        if (stat?.isDirectory()) {
+          for (const ext of ['.stx', '.md', '.html']) {
+            const glob = new Glob(`**/*${ext}`)
+            const discovered = await Array.fromAsync(glob.scan(pattern))
+            files.push(...discovered.map(f => `${pattern}/${f}`.replace(/\/+/g, '/')))
+          }
+        }
+        else if (pattern.includes('*')) {
+          const glob = new Glob(pattern)
+          const basePath = pattern.split('*')[0].replace(/\/$/, '')
+          const discovered = await Array.fromAsync(glob.scan(basePath || '.'))
+          files.push(...discovered.map(f => basePath ? `${basePath}/${f}` : f))
+        }
+        else if (supportedExtensions.some(ext => pattern.endsWith(ext))) {
+          files.push(pattern)
         }
       }
-      else if (pattern.includes('*')) {
-        // Handle glob patterns
-        const glob = new Glob(pattern)
-        const basePath = pattern.split('*')[0].replace(/\/$/, '')
-        const files = await Array.fromAsync(glob.scan(basePath || '.'))
-        sourceFiles.push(...files.map(f => basePath ? `${basePath}/${f}` : f))
+      catch (error) {
+        console.error(`Error processing pattern "${pattern}":`, error)
       }
-      else if (supportedExtensions.some(ext => pattern.endsWith(ext))) {
-        // Single file with supported extension
-        sourceFiles.push(pattern)
+    }
+
+    sourceFiles = files
+    return files
+  }
+
+  // Lazy asset copy function
+  async function ensureAssets() {
+    if (assetsInitialized)
+      return
+
+    assetsInitialized = true
+    const fs = await import('node:fs/promises')
+    const assetsDir = './resources/assets'
+    const targetAssetsDir = './.stx/assets'
+
+    try {
+      const assetsExist = await fs.stat(assetsDir).then(() => true).catch(() => false)
+      if (assetsExist) {
+        await fs.rm(targetAssetsDir, { recursive: true, force: true })
+        await fs.cp(assetsDir, targetAssetsDir, { recursive: true })
       }
     }
     catch (error) {
-      console.error(`Error processing pattern "${pattern}":`, error)
+      // Silently ignore
     }
   }
 
-  if (sourceFiles.length === 0) {
-    console.error('❌ No .stx, .md, or .html files found')
-    process.exit(1)
-  }
+  // Lazy template processing function
+  async function processTemplate(filePath: string): Promise<string> {
+    const path = await import('node:path')
+    const content = await Bun.file(filePath).text()
 
-  console.log(`📄 Found ${sourceFiles.length} file(s):`)
-  sourceFiles.forEach(file => console.log(`   - ${file}`))
+    const inlineScriptMatch = content.match(/<script(?!\s+[^>]*src=)\b[^>]*>([\s\S]*?)<\/script>/i)
+    const scriptContent = inlineScriptMatch ? inlineScriptMatch[1] : ''
+    const templateContent = inlineScriptMatch
+      ? content.replace(/<script(?!\s+[^>]*src=)\b[^>]*>[\s\S]*?<\/script>/i, '')
+      : content
 
-  // Copy assets directory to build output so they're available during build
-  console.log('\n📦 Copying assets...')
-  const fs = await import('node:fs/promises')
-  const path = await import('node:path')
-  const assetsDir = './resources/assets'
-  const targetAssetsDir = './.stx/assets'
-
-  try {
-    const assetsExist = await fs.stat(assetsDir).then(() => true).catch(() => false)
-    if (assetsExist) {
-      // Remove existing assets dir in build output
-      await fs.rm(targetAssetsDir, { recursive: true, force: true })
-      // Copy assets recursively
-      await fs.cp(assetsDir, targetAssetsDir, { recursive: true })
-      console.log('✓ Assets copied')
+    const context: Record<string, any> = {
+      __filename: filePath,
+      __dirname: path.dirname(filePath),
     }
+
+    const { processDirectives, extractVariables, defaultConfig } = await import('@stacksjs/stx')
+    await extractVariables(scriptContent, context, filePath)
+
+    let output = templateContent
+    const dependencies = new Set<string>()
+    output = await processDirectives(output, context, filePath, defaultConfig, dependencies)
+
+    return output
   }
-  catch (error) {
-    console.log('⚠ No assets directory found, skipping copy')
-  }
 
-  // Process files directly without using Bun.build to avoid path resolution
-  console.log('\n🔨 Processing templates...')
-  const routes = new Map<string, string>()
+  // Function to get or create route
+  async function getRoute(path: string): Promise<string | null> {
+    // Check cache first
+    if (routes.has(path))
+      return routes.get(path)!
 
-  // Import stx processing functions
-  const { processDirectives, extractVariables, defaultConfig } = await import('@stacksjs/stx')
+    // Discover files if needed
+    const files = await discoverFiles()
+    const nodePath = await import('node:path')
 
-  for (const filePath of sourceFiles) {
-    try {
-      const content = await Bun.file(filePath).text()
-
-      // Extract inline script (without src attribute) for variable extraction
-      // This should match <script> or <script type="..."> but NOT <script src="...">
-      const inlineScriptMatch = content.match(/<script(?!\s+[^>]*src=)\b[^>]*>([\s\S]*?)<\/script>/i)
-      const scriptContent = inlineScriptMatch ? inlineScriptMatch[1] : ''
-      // Only remove the inline script tag if it exists
-      const templateContent = inlineScriptMatch ? content.replace(/<script(?!\s+[^>]*src=)\b[^>]*>[\s\S]*?<\/script>/i, '') : content
-
-      // Create execution context
-      const context: Record<string, any> = {
-        __filename: filePath,
-        __dirname: path.dirname(filePath),
-      }
-
-      // Execute script to extract variables
-      await extractVariables(scriptContent, context, filePath)
-
-      // Process template directives
-      let output = templateContent
-      const dependencies = new Set<string>()
-      output = await processDirectives(output, context, filePath, defaultConfig, dependencies)
-
-      // Determine route from filename
-      const filename = path.basename(filePath, path.extname(filePath))
+    // Find matching file
+    for (const filePath of files) {
+      const filename = nodePath.basename(filePath, nodePath.extname(filePath))
       const route = ['index', 'home'].includes(filename) ? '/' : `/${filename}`
 
-      console.log(`   ✓ ${filePath} -> ${route}`)
-      routes.set(route, output)
+      if (route === path) {
+        // Process and cache
+        const output = await processTemplate(filePath)
+        routes.set(route, output)
+        return output
+      }
     }
-    catch (error) {
-      console.error(`   ✗ Error processing ${filePath}:`, error)
-    }
+
+    return null
   }
 
-  console.log('✅ Processing complete\n')
+  // Start server immediately - processing happens on-demand
+  console.log(`🌐 Server running at: http://localhost:${port}`)
+  console.log(`💡 Templates will be processed on first request\n`)
 
-  // Start server
   const _server = bunServe({
     port,
     async fetch(req) {
@@ -165,9 +172,10 @@ async function main() {
       if (path === '/index')
         path = '/'
 
-      // Try to serve the requested page
-      if (routes.has(path)) {
-        return new Response(routes.get(path), {
+      // Try to serve the requested page (lazy load on demand)
+      const content = await getRoute(path)
+      if (content) {
+        return new Response(content, {
           headers: {
             'Content-Type': 'text/html',
             'Cache-Control': 'no-cache',
@@ -176,8 +184,9 @@ async function main() {
       }
 
       // Try without extension
-      if (routes.has(`${path}.html`)) {
-        return new Response(routes.get(`${path}.html`), {
+      const contentWithExt = await getRoute(`${path}.html`)
+      if (contentWithExt) {
+        return new Response(contentWithExt, {
           headers: {
             'Content-Type': 'text/html',
             'Cache-Control': 'no-cache',
@@ -209,6 +218,8 @@ async function main() {
       // Smart asset serving - Laravel-style path resolution
       // Supports both /assets/* and /resources/assets/* paths
       if (path.startsWith('/assets/') || path.startsWith('/resources/assets/')) {
+        // Ensure assets are copied on first request
+        await ensureAssets()
         // Try multiple possible paths (like Laravel does)
         const possiblePaths = [
           path, // Original path
@@ -302,10 +313,18 @@ async function main() {
         return new Response(null, { status: 204 })
       }
 
-      // 404 page
-      const availableRoutes = Array.from(routes.keys())
-        .map(route => `<li><a href="${route}">${route}</a></li>`)
-        .join('\n')
+      // 404 page - discover files to show available routes
+      const files = await discoverFiles()
+      const nodePath = await import('node:path')
+      const availableRoutes: string[] = []
+
+      for (const filePath of files) {
+        const filename = nodePath.basename(filePath, nodePath.extname(filePath))
+        const route = ['index', 'home'].includes(filename) ? '/' : `/${filename}`
+        availableRoutes.push(`<li><a href="${route}">${route}</a></li>`)
+      }
+
+      const routesList = availableRoutes.join('\n')
 
       return new Response(`
         <!DOCTYPE html>
@@ -331,7 +350,7 @@ async function main() {
             <h1>404 - Page Not Found</h1>
             <p>The page "${path}" doesn't exist.</p>
             <h2>Available pages:</h2>
-            <ul>${availableRoutes}</ul>
+            <ul>${routesList}</ul>
           </body>
         </html>
       `, {
@@ -341,15 +360,29 @@ async function main() {
     },
   })
 
-  console.log(`🌐 Server running at: http://localhost:${port}\n`)
-  console.log('📚 Available routes:')
-  routes.forEach((_, route) => {
-    console.log(`   http://localhost:${port}${route}`)
-  })
-  console.log('\n💡 Press Ctrl+C to stop\n')
-
   // Keep the process running
   await Bun.sleep(Number.POSITIVE_INFINITY)
 }
 
-main().catch(console.error)
+async function main() {
+  // Parse command line arguments
+  const args = process.argv.slice(2)
+
+  // Remove 'serve' if it's the first argument (for compatibility)
+  if (args[0] === 'serve') {
+    args.shift()
+  }
+  const portIndex = args.indexOf('--port')
+  const port = portIndex !== -1 && args[portIndex + 1] ? Number.parseInt(args[portIndex + 1]) : 3456
+
+  // Get file patterns (everything that's not a flag)
+  const patterns = args.filter(arg => !arg.startsWith('--') && arg !== args[portIndex + 1])
+
+  // Call the exported serve function
+  await serve({ patterns, port })
+}
+
+// Only run main() if this file is being executed directly (not imported)
+if (import.meta.main) {
+  main().catch(console.error)
+}

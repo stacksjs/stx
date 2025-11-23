@@ -77,14 +77,36 @@ export const plugin: BunPlugin = {
 
         // Extract script and template sections with performance monitoring
         const { scriptContent, templateContent, allScripts } = performanceMonitor.time('script-extraction', () => {
-          const scriptMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
-          const scriptContent = scriptMatch ? scriptMatch[1] : ''
-
           // Extract all script tags (both inline and external)
           const allScriptMatches = content.match(/<script\b[^>]*>[\s\S]*?<\/script>/gi) || []
 
+          // Find server-side script (for variable extraction)
+          // Server-side scripts typically have: module.exports, export const, or simple variable declarations
+          // Client-side scripts have: document, window, addEventListener, etc.
+          let serverScriptContent = ''
+          const clientScripts: string[] = []
+
+          for (const scriptTag of allScriptMatches) {
+            const innerContent = scriptTag.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)?.[1] || ''
+
+            // Check if this is a client-side script (has browser APIs)
+            const isClientScript = /\b(document|window|addEventListener|querySelector|getElementById|fetch\(|localStorage|sessionStorage)\b/.test(innerContent)
+
+            // Check if this looks like a server-side data script
+            const isServerScript = /\b(module\.exports|export\s+(const|let|var|function|default))\b/.test(innerContent)
+              || (/^[\s\n]*(const|let|var)\s+\w+\s*=/.test(innerContent) && !isClientScript)
+
+            if (isServerScript && !isClientScript) {
+              serverScriptContent = innerContent
+            }
+            else {
+              // Keep client scripts to add back to output
+              clientScripts.push(scriptTag)
+            }
+          }
+
           const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
-          return { scriptContent, templateContent, allScripts: allScriptMatches }
+          return { scriptContent: serverScriptContent, templateContent, allScripts: clientScripts }
         })
 
         // Create a sandbox environment to execute the script

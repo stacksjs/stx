@@ -299,7 +299,12 @@ async function processOtherDirectives(
     },
   )
 
-  // Process custom directives first
+  // Process JS/TS directives FIRST - these define variables needed by other directives
+  // These execute server-side code and populate the context with variables
+  output = await processJsDirectives(output, context, filePath)
+  output = await processTsDirectives(output, context, filePath)
+
+  // Process custom directives
   output = await processCustomDirectives(output, context, filePath, options)
 
   // Process component directives
@@ -347,9 +352,8 @@ async function processOtherDirectives(
   // Process error directive
   output = processErrorDirective(output, context)
 
-  // Process JS/TS directives
-  output = await processJsDirectives(output, context, filePath)
-  output = await processTsDirectives(output, context, filePath)
+  // Note: JS/TS directives are processed at the beginning of processOtherDirectives
+  // to ensure variables are available for conditionals, loops, and expressions
 
   // Process markdown files - new directive for including .md files with frontmatter
   output = await processMarkdownFileDirectives(output, context, filePath, options)

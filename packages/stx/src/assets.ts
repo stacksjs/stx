@@ -1,7 +1,7 @@
 import type { StxOptions, SyntaxHighlightTheme } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
-import { parseFrontmatter, parseMarkdown } from '@stacksjs/markdown'
+import { parseFrontmatter, parseMarkdown } from 'ts-md'
 import { createHighlighter } from 'ts-syntax-highlighter'
 import { config } from './config'
 import { createDetailedErrorMessage, fileExists } from './utils'

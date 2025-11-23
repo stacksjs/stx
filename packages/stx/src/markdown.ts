@@ -1,4 +1,4 @@
-import { parseMarkdown } from '@stacksjs/markdown'
+import { parseMarkdown } from 'ts-md'
 import { createDetailedErrorMessage } from './utils'
 
 /**

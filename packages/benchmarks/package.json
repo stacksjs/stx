@@ -17,8 +17,8 @@
   },
   "dependencies": {
     "@11ty/eleventy": "^3.1.2",
-    "@stacksjs/markdown": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",
+    "ts-md": "link:ts-md",
     "dompurify": "^3.2.7",
     "ejs": "^3.1.10",
     "gray-matter": "^4.0.3",
