@@ -223,7 +223,7 @@ export async function processIncludes(
     includeFirstRegex.lastIndex = 0
   }
 
-  // Helper function to resolve paths
+  // Helper function to resolve paths with path traversal protection
   function resolvePath(includePath: string, partialsDir: string, filePath: string): string | null {
     try {
       // Determine the actual file path
@@ -234,16 +234,39 @@ export async function processIncludes(
         includeFilePath = `${includePath}.stx`
       }
 
+      // Normalize the partials directory and template directory for comparison
+      const normalizedPartialsDir = path.resolve(partialsDir)
+      const templateDir = path.resolve(path.dirname(filePath))
+
+      let resolvedPath: string
+
       // If it's a relative path without ./ or ../, assume it's in the partials directory
       if (!includeFilePath.startsWith('./') && !includeFilePath.startsWith('../')) {
-        includeFilePath = path.join(partialsDir, includeFilePath)
+        resolvedPath = path.resolve(partialsDir, includeFilePath)
       }
       else {
         // Otherwise, resolve from the current template directory
-        includeFilePath = path.resolve(path.dirname(filePath), includeFilePath)
+        resolvedPath = path.resolve(templateDir, includeFilePath)
       }
 
-      return includeFilePath
+      // Normalize the resolved path
+      const normalizedResolvedPath = path.normalize(resolvedPath)
+
+      // Security: Prevent path traversal attacks
+      // The resolved path must be within the partials directory or the template directory
+      const isWithinPartialsDir = normalizedResolvedPath.startsWith(normalizedPartialsDir + path.sep)
+        || normalizedResolvedPath === normalizedPartialsDir
+      const isWithinTemplateDir = normalizedResolvedPath.startsWith(templateDir + path.sep)
+        || normalizedResolvedPath === templateDir
+
+      if (!isWithinPartialsDir && !isWithinTemplateDir) {
+        console.error(`Security: Path traversal attempt blocked for include path: ${includePath}`)
+        console.error(`  Resolved to: ${normalizedResolvedPath}`)
+        console.error(`  Allowed dirs: ${normalizedPartialsDir}, ${templateDir}`)
+        return null
+      }
+
+      return normalizedResolvedPath
     }
     catch (error) {
       console.error(`Error resolving path ${includePath}: ${error}`)

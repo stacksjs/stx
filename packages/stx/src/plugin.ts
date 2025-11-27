@@ -3,6 +3,7 @@ import type { StxOptions } from './'
 import path from 'node:path'
 import { buildWebComponents, cacheTemplate, checkCache, config, extractVariables, processDirectives } from './'
 import { devHelpers, errorLogger, safeExecuteAsync, StxFileError, StxRuntimeError } from './error-handling'
+import { escapeHtml } from './expressions'
 import { performanceMonitor } from './performance-utils'
 
 export const plugin: BunPlugin = {
@@ -221,17 +222,17 @@ export const plugin: BunPlugin = {
 
   <div class="error-details">
     <h3>Error Details</h3>
-    <p><strong>File:</strong> <span class="file-path">${filePath}</span></p>
-    <p><strong>Error:</strong> ${enhancedError.message}</p>
-    ${errorLine ? `<p><strong>Line:</strong> ${errorLine}</p>` : ''}
-    ${errorContext ? `<p><strong>Context:</strong> ${errorContext}</p>` : ''}
+    <p><strong>File:</strong> <span class="file-path">${escapeHtml(filePath)}</span></p>
+    <p><strong>Error:</strong> ${escapeHtml(enhancedError.message)}</p>
+    ${errorLine ? `<p><strong>Line:</strong> ${escapeHtml(String(errorLine))}</p>` : ''}
+    ${errorContext ? `<p><strong>Context:</strong> ${escapeHtml(String(errorContext))}</p>` : ''}
   </div>
 
   ${enhancedError.stack
     ? `
   <div class="error-details">
     <h3>Stack Trace</h3>
-    <pre class="error-code">${enhancedError.stack}</pre>
+    <pre class="error-code">${escapeHtml(enhancedError.stack)}</pre>
   </div>`
     : ''}
 
@@ -241,7 +242,7 @@ export const plugin: BunPlugin = {
       <li>Check the syntax of your stx directives (e.g., @if, @foreach)</li>
       <li>Verify that all variables used in the template are properly defined</li>
       <li>Ensure script tags have valid JavaScript/TypeScript syntax</li>
-      <li>Run <code>stx debug ${path.basename(filePath)}</code> for detailed analysis</li>
+      <li>Run <code>stx debug ${escapeHtml(path.basename(filePath))}</code> for detailed analysis</li>
       <li>Enable debug mode in your stx config for more detailed error messages</li>
     </ul>
   </div>

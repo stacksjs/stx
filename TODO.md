@@ -289,17 +289,20 @@ This document contains all identified issues, improvements, and enhancements for
   - Potential for code injection if user input reaches these
   - Implement proper sandboxing
 
-- [ ] **Path traversal in includes** (`includes.ts:227-252`)
+- [x] **Path traversal in includes** (`includes.ts:227-252`)
   - `resolvePath` doesn't fully prevent `../` traversal
   - Add strict path validation
+  - **Status**: FIXED - Added path normalization, resolved path validation to ensure files are within allowed directories (partialsDir or templateDir). Logs security warnings for blocked attempts.
 
-- [ ] **HTML injection in error messages**
+- [x] **HTML injection in error messages**
   - Error messages include user input without escaping
   - Escape all user input in error output
+  - **Status**: FIXED - Added `escapeHtml` to error outputs in: `plugin.ts` (error page), `middleware.ts` (inline error div), `streaming.ts` (section not found message).
 
-- [ ] **CSRF token generation is weak** (`forms.ts:9-11`)
+- [x] **CSRF token generation is weak** (`forms.ts:9-11`)
   - Uses `Math.random().toString(36)` which is not cryptographically secure
   - Use `crypto.randomUUID()` or similar
+  - **Status**: FIXED - Now uses `crypto.randomUUID()` for cryptographically secure CSRF tokens.
 
 - [ ] **No Content Security Policy support**
   - Generated HTML doesn't include CSP headers
@@ -311,9 +314,10 @@ This document contains all identified issues, improvements, and enhancements for
   - User input in directive params goes directly to evaluation
   - Add input sanitization layer
 
-- [ ] **File path validation is incomplete** (`error-handling.ts:150-162`)
+- [x] **File path validation is incomplete** (`error-handling.ts:150-162`)
   - `isValidFilePath` checks are basic
   - Add more comprehensive path validation
+  - **Status**: FIXED - Enhanced validation to check for: null bytes, multiple path traversal patterns, protocol handlers. Added optional `allowedDir` parameter for strict directory containment validation.
 
 ---
 

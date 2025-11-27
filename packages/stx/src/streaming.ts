@@ -1,6 +1,7 @@
 import type { CustomDirective, StreamingConfig, StreamRenderer, StxOptions } from './types'
 import path from 'node:path'
 import { defaultConfig } from './config'
+import { escapeHtml } from './expressions'
 import { processDirectives } from './process'
 import { createDetailedErrorMessage, extractVariables } from './utils'
 
@@ -148,7 +149,7 @@ export async function createStreamRenderer(
     renderSection: async (sectionName: string, data: Record<string, any> = {}): Promise<string> => {
       try {
         if (!sections[sectionName]) {
-          return `<div class="error-message">Section "${sectionName}" not found in template "${templatePath}"</div>`
+          return `<div class="error-message">Section "${escapeHtml(sectionName)}" not found in template "${escapeHtml(templatePath)}"</div>`
         }
 
         // Create context with data

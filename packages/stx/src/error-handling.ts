@@ -145,17 +145,49 @@ export async function safeExecuteAsync<T>(
  */
 export const validators = {
   /**
-   * Validate file path is safe
+   * Validate file path is safe and doesn't escape the allowed directory
+   * @param filePath - The file path to validate
+   * @param allowedDir - Optional allowed directory (defaults to cwd)
+   * @returns true if the path is safe
    */
-  isValidFilePath(filePath: string): boolean {
-    // Check for path traversal attempts
-    if (filePath.includes('../') || filePath.includes('..\\')) {
+  isValidFilePath(filePath: string, allowedDir?: string): boolean {
+    // Normalize the path to handle different separators
+    const normalizedPath = filePath.replace(/\\/g, '/')
+
+    // Check for null bytes (can bypass security checks)
+    if (normalizedPath.includes('\0')) {
       return false
     }
 
-    // Check for absolute paths that might escape sandboxing
-    if (filePath.startsWith('/') && !filePath.startsWith(process.cwd())) {
+    // Check for path traversal attempts in various forms
+    if (normalizedPath.includes('../')
+      || normalizedPath.includes('..\\')
+      || normalizedPath === '..'
+      || normalizedPath.startsWith('../')
+      || normalizedPath.endsWith('/..')
+      || normalizedPath.includes('/..\\')
+      || normalizedPath.includes('\\../')
+    ) {
       return false
+    }
+
+    // Check for protocol handlers that could be exploited
+    const protocolPattern = /^[a-z][a-z0-9+.-]*:/i
+    if (protocolPattern.test(normalizedPath)) {
+      return false
+    }
+
+    // If allowedDir is provided, validate the resolved path is within it
+    if (allowedDir) {
+      const path = require('node:path')
+      const resolvedPath = path.resolve(allowedDir, filePath)
+      const normalizedAllowedDir = path.resolve(allowedDir)
+
+      // Ensure the resolved path starts with the allowed directory
+      if (!resolvedPath.startsWith(normalizedAllowedDir + path.sep)
+        && resolvedPath !== normalizedAllowedDir) {
+        return false
+      }
     }
 
     return true

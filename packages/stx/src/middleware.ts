@@ -1,4 +1,5 @@
 import type { StxOptions } from './types'
+import { escapeHtml } from './expressions'
 import { createDetailedErrorMessage } from './utils'
 
 /**
@@ -59,8 +60,8 @@ export async function processMiddleware(
           template,
         )
 
-        // Add a visible error message to the template
-        output = output.replace(/<body[^>]*>/, `$&\n<div style="color:red;background:#ffeeee;padding:10px;border:1px solid #ff0000;margin:10px 0;font-family:monospace;white-space:pre-wrap;">${errorMessage}</div>\n`)
+        // Add a visible error message to the template (escape HTML to prevent XSS)
+        output = output.replace(/<body[^>]*>/, `$&\n<div style="color:red;background:#ffeeee;padding:10px;border:1px solid #ff0000;margin:10px 0;font-family:monospace;white-space:pre-wrap;">${escapeHtml(errorMessage)}</div>\n`)
       }
 
       // Continue with other middleware even if one fails

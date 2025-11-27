@@ -2,12 +2,14 @@
  * Module for processing form-related directives
  */
 import type { StxOptions } from './types'
+import crypto from 'node:crypto'
 
 /**
- * Generate a random ID
+ * Generate a cryptographically secure random ID for CSRF tokens
+ * Uses crypto.randomUUID() for security instead of Math.random()
  */
 function genId(): string {
-  return Math.random().toString(36).substring(2, 15)
+  return crypto.randomUUID()
 }
 
 /**
