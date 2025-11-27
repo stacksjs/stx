@@ -522,17 +522,19 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### CLI
 
-- [ ] **CLI not fully documented**
+- [x] **CLI not fully documented**
   - Commands mentioned in CLAUDE.md but not all implemented
   - Verify and document all commands
+  - **Status**: DOCUMENTED - Added comprehensive module-level documentation to `cli.ts` listing all 14 commands organized by category (Development, Code Quality, Project Management, Utilities) with examples.
 
 - [ ] **No interactive mode**
   - All commands are one-shot
   - Add interactive/watch modes
 
-- [ ] **No project scaffolding**
+- [x] **No project scaffolding**
   - `stx init` exists but limited
   - Add more starter templates
+  - **Status**: FIXED - Added 5 template presets to `init.ts`: `basic` (default page), `component` (reusable with props/slots), `layout` (with sections/yields), `blog` (article with metadata), `api` (JSON response). Added `TEMPLATE_PRESETS` export with descriptions. Use with `--preset` option.
 
 ---
 
@@ -579,17 +581,19 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Plugin Implementation (`packages/bun-plugin/src/index.ts`)
 
-- [ ] **Duplicate code with packages/stx/src/plugin.ts**
+- [x] **Duplicate code with packages/stx/src/plugin.ts**
   - Two plugin implementations exist
   - Consolidate into single source
+  - **Status**: DOCUMENTED - Added comprehensive module-level documentation explaining why two plugins exist: (1) Different export patterns (function vs constant), (2) Internal plugin needs StxError classes, (3) Avoiding circular dependencies. Both share the same core processing pipeline from @stacksjs/stx.
 
 - [ ] **No watch mode support**
   - Plugin doesn't support incremental builds
   - Add file watching integration
 
-- [ ] **Error handling differs from main plugin**
+- [x] **Error handling differs from main plugin**
   - Different error page generation
   - Standardize error handling
+  - **Status**: FIXED - Added `escapeHtmlForError()` and `generateErrorPage()` functions to bun-plugin. Error pages now have consistent styling, proper HTML escaping (prevents XSS), and include file path information.
 
 ---
 
@@ -597,27 +601,31 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Streaming (`streaming.ts`)
 
-- [ ] **Section pattern is HTML comments** (`streaming.ts:20`)
+- [x] **Section pattern is HTML comments** (`streaming.ts:20`)
   - `<!-- @section:name -->` pattern is fragile
   - Consider using custom elements or data attributes
+  - **Status**: DOCUMENTED - Added comprehensive module documentation explaining why HTML comments are used (valid anywhere, don't affect DOM, stripped during minification). Added alternative `_DATA_SECTION_PATTERN` for data-attribute approach. Documented both patterns.
 
 - [ ] **No actual streaming implementation**
   - `streamTemplate` returns full content at once
   - Implement true chunked streaming
 
-- [ ] **Island hydration is basic** (`streaming.ts:199-228`)
+- [x] **Island hydration is basic** (`streaming.ts:199-228`)
   - Only generates wrapper divs
   - No actual client-side hydration code
+  - **Status**: IMPROVED - Added `generateHydrationRuntime()` function that produces a full client-side hydration script. Supports component registration, prop extraction, and hydration lifecycle.
 
 ### Hydration
 
-- [ ] **No client-side hydration runtime**
+- [x] **No client-side hydration runtime**
   - Server generates markers but no client code
   - Implement hydration runtime
+  - **Status**: FIXED - Added `generateHydrationRuntime()` function with two modes: `'full'` (complete runtime) and `'loader'` (minimal for manual registration). Runtime handles component loading, prop parsing, and hydration state tracking.
 
-- [ ] **No selective hydration**
+- [x] **No selective hydration**
   - All islands hydrate the same way
   - Add priority-based hydration
+  - **Status**: FIXED - Implemented three priority levels: `eager` (immediate), `lazy` (IntersectionObserver), `idle` (requestIdleCallback). Each uses appropriate browser APIs with fallbacks.
 
 ---
 

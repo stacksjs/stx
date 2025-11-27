@@ -1,3 +1,49 @@
+/**
+ * stx CLI
+ *
+ * Command-line interface for the stx templating framework.
+ *
+ * ## Available Commands
+ *
+ * ### Development
+ * - `stx dev <file>` - Start development server for .stx or .md file
+ * - `stx build [files...]` - Bundle STX files using Bun's bundler
+ * - `stx watch [patterns...]` - Watch files for changes
+ * - `stx debug <file>` - Debug template processing step by step
+ *
+ * ### Code Quality
+ * - `stx format [patterns...]` - Format STX and Markdown files
+ * - `stx a11y [directory]` - Scan for accessibility issues
+ * - `stx analyze [patterns...]` - Analyze templates for performance/best practices
+ * - `stx test [patterns...]` - Run tests with Bun test runner
+ *
+ * ### Project Management
+ * - `stx init [file]` - Create a new STX file
+ * - `stx status [directory]` - Show project status
+ * - `stx docs` - Generate documentation
+ *
+ * ### Utilities
+ * - `stx iconify <command>` - Generate Iconify icon packages
+ * - `stx perf [command...]` - Show performance statistics
+ * - `stx version` - Show CLI version
+ *
+ * ## Examples
+ *
+ * ```bash
+ * # Start dev server
+ * stx dev pages/home.stx --port 3000
+ *
+ * # Format all templates
+ * stx format "src/**\/*.stx"
+ *
+ * # Check accessibility
+ * stx a11y ./components
+ *
+ * # Build for production
+ * stx build ./src/index.stx --outdir dist
+ * ```
+ */
+
 import type { DevServerOptions } from '../src/dev-server'
 import type { SyntaxHighlightTheme } from '../src/types'
 import { spawn } from 'node:child_process'
