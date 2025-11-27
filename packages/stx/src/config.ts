@@ -121,8 +121,10 @@ let _config: StxConfig | null = null
 let _configPromise: Promise<StxConfig> | null = null
 
 async function loadStxConfig(): Promise<StxConfig> {
-  if (_config) return _config
-  if (_configPromise) return _configPromise
+  if (_config)
+    return _config
+  if (_configPromise)
+    return _configPromise
 
   _configPromise = (async () => {
     const configResult = await loadConfigWithResult({

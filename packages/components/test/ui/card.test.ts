@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach } from 'bun:test'
 import type { CardProps } from '../../src/ui/card'
+import { beforeEach, describe, expect, it } from 'bun:test'
 
 describe('Card Component - DOM Tests', () => {
   let container: HTMLElement

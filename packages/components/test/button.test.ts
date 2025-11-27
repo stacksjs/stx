@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'bun:test'
 import type { ButtonProps } from '../src/ui/button'
+import { describe, expect, it } from 'bun:test'
 
 describe('Button Component', () => {
   describe('Props', () => {

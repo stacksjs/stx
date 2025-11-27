@@ -759,7 +759,7 @@ export function createStateManager() {
  */
 export function createComponentPool<T>(
   factory: () => T,
-  options: { maxSize?: number; reset?: (instance: T) => void } = {},
+  options: { maxSize?: number, reset?: (instance: T) => void } = {},
 ) {
   const { maxSize = 100, reset } = options
   const pool: T[] = []

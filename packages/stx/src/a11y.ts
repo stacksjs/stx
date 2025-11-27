@@ -1,4 +1,3 @@
-/* eslint-disable unused-imports/no-unused-vars */
 import type { CustomDirective, StxOptions } from './types'
 import path from 'node:path'
 // Note: Using very-happy-dom for DOM parsing in tests

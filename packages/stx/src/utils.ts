@@ -8,10 +8,11 @@ import process from 'node:process'
 
 // Import from expressions
 import { unescapeHtml } from './expressions'
+import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
 
-// Cache for components to avoid repeated file reads
-const componentsCache = new Map<string, string>()
+// Cache for components to avoid repeated file reads (LRU with max 500 entries)
+const componentsCache = new LRUCache<string, string>(500)
 
 /**
  * Shared function to render a component with props and slot content

@@ -32,7 +32,7 @@ const isDevelopment = typeof process !== 'undefined' && process.env.NODE_ENV !==
 /**
  * Prop validator function type
  */
-export type PropValidator<T = any> = {
+export interface PropValidator<T = any> {
   /** Validator function */
   validate: (value: any, propName: string, componentName: string) => boolean
   /** Error message generator */
@@ -67,7 +67,7 @@ export const PropTypes = {
    * String type validator
    */
   string: new Validator(
-    (value) => typeof value === 'string',
+    value => typeof value === 'string',
     (value, propName, componentName) =>
       `Invalid prop \`${propName}\` of type \`${typeof value}\` supplied to \`${componentName}\`, expected \`string\`.`,
   ),
@@ -76,7 +76,7 @@ export const PropTypes = {
    * Number type validator
    */
   number: new Validator(
-    (value) => typeof value === 'number' && !Number.isNaN(value),
+    value => typeof value === 'number' && !Number.isNaN(value),
     (value, propName, componentName) =>
       `Invalid prop \`${propName}\` of type \`${typeof value}\` supplied to \`${componentName}\`, expected \`number\`.`,
   ),
@@ -85,7 +85,7 @@ export const PropTypes = {
    * Boolean type validator
    */
   boolean: new Validator(
-    (value) => typeof value === 'boolean',
+    value => typeof value === 'boolean',
     (value, propName, componentName) =>
       `Invalid prop \`${propName}\` of type \`${typeof value}\` supplied to \`${componentName}\`, expected \`boolean\`.`,
   ),
@@ -94,7 +94,7 @@ export const PropTypes = {
    * Function type validator
    */
   func: new Validator(
-    (value) => typeof value === 'function',
+    value => typeof value === 'function',
     (value, propName, componentName) =>
       `Invalid prop \`${propName}\` of type \`${typeof value}\` supplied to \`${componentName}\`, expected \`function\`.`,
   ),
@@ -103,7 +103,7 @@ export const PropTypes = {
    * Object type validator
    */
   object: new Validator(
-    (value) => typeof value === 'object' && value !== null && !Array.isArray(value),
+    value => typeof value === 'object' && value !== null && !Array.isArray(value),
     (value, propName, componentName) =>
       `Invalid prop \`${propName}\` of type \`${typeof value}\` supplied to \`${componentName}\`, expected \`object\`.`,
   ),
@@ -112,7 +112,7 @@ export const PropTypes = {
    * Array type validator
    */
   array: new Validator(
-    (value) => Array.isArray(value),
+    value => Array.isArray(value),
     (value, propName, componentName) =>
       `Invalid prop \`${propName}\` of type \`${typeof value}\` supplied to \`${componentName}\`, expected \`array\`.`,
   ),
@@ -132,7 +132,7 @@ export const PropTypes = {
    */
   oneOf<T>(validValues: T[]): Validator<T> {
     return new Validator(
-      (value) => validValues.includes(value),
+      value => validValues.includes(value),
       (value, propName, componentName) =>
         `Invalid prop \`${propName}\` of value \`${value}\` supplied to \`${componentName}\`, expected one of [${validValues.map(v => JSON.stringify(v)).join(', ')}].`,
     )
@@ -203,7 +203,7 @@ export const PropTypes = {
    */
   instanceOf<T>(expectedClass: new (...args: any[]) => T): Validator<T> {
     return new Validator(
-      (value) => value instanceof expectedClass,
+      value => value instanceof expectedClass,
       (value, propName, componentName) =>
         `Invalid prop \`${propName}\` supplied to \`${componentName}\`, expected instance of \`${expectedClass.name}\`.`,
     )
@@ -233,7 +233,7 @@ export const PropTypes = {
    */
   min(min: number): Validator<number> {
     return new Validator(
-      (value) => typeof value === 'number' && value >= min,
+      value => typeof value === 'number' && value >= min,
       (value, propName, componentName) =>
         `Invalid prop \`${propName}\` of value \`${value}\` supplied to \`${componentName}\`, expected value >= ${min}.`,
     )
@@ -246,7 +246,7 @@ export const PropTypes = {
    */
   max(max: number): Validator<number> {
     return new Validator(
-      (value) => typeof value === 'number' && value <= max,
+      value => typeof value === 'number' && value <= max,
       (value, propName, componentName) =>
         `Invalid prop \`${propName}\` of value \`${value}\` supplied to \`${componentName}\`, expected value <= ${max}.`,
     )
@@ -260,7 +260,7 @@ export const PropTypes = {
    */
   range(min: number, max: number): Validator<number> {
     return new Validator(
-      (value) => typeof value === 'number' && value >= min && value <= max,
+      value => typeof value === 'number' && value >= min && value <= max,
       (value, propName, componentName) =>
         `Invalid prop \`${propName}\` of value \`${value}\` supplied to \`${componentName}\`, expected value between ${min} and ${max}.`,
     )
@@ -273,7 +273,7 @@ export const PropTypes = {
    */
   pattern(pattern: RegExp): Validator<string> {
     return new Validator(
-      (value) => typeof value === 'string' && pattern.test(value),
+      value => typeof value === 'string' && pattern.test(value),
       (value, propName, componentName) =>
         `Invalid prop \`${propName}\` of value \`${value}\` supplied to \`${componentName}\`, expected value matching pattern ${pattern}.`,
     )
@@ -283,7 +283,7 @@ export const PropTypes = {
    * Email validator
    */
   email: new Validator(
-    (value) => typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+    value => typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
     (value, propName, componentName) =>
       `Invalid prop \`${propName}\` of value \`${value}\` supplied to \`${componentName}\`, expected valid email address.`,
   ),
@@ -415,7 +415,7 @@ export function validateProps(
 export function createPropValidator(
   componentName: string,
   schema: PropSchema,
-  options?: { throwOnError?: boolean; logWarnings?: boolean },
+  options?: { throwOnError?: boolean, logWarnings?: boolean },
 ) {
   return (props: Record<string, any>) => validateProps(componentName, props, schema, options)
 }

@@ -146,7 +146,7 @@ export function parseMarkdown(content: string, options: MarkdownOptions = {}): s
   html = html.replace(/<\/blockquote>\n<blockquote>/g, '\n')
 
   // Unordered lists
-  html = html.replace(/^[\*\-\+]\s+(.*)$/gm, '<li>$1</li>')
+  html = html.replace(/^[*\-+]\s+(.*)$/gm, '<li>$1</li>')
   html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
   html = html.replace(/<\/ul>\n<ul>/g, '')
 

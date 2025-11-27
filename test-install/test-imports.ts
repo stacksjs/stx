@@ -1,20 +1,17 @@
 // Test importing components
-import type { 
-  CalendarProps, 
+import type {
+  CalendarProps,
   NavigatorProps,
-  ButtonProps,
-  DialogProps 
 } from '@stacksjs/components'
 
 // Test importing composables
-import type { useCopyCode, useDarkMode, useSEO } from '@stacksjs/components'
 
 console.log('✅ All imports successful!')
 
 // Test type usage
 const calendarProps: CalendarProps = {
   value: new Date(),
-  onChange: (date) => console.log('Date changed:', date),
+  onChange: date => console.log('Date changed:', date),
 }
 
 const navigatorProps: NavigatorProps = {

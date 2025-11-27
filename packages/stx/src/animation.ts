@@ -1,4 +1,4 @@
-/* eslint-disable unused-imports/no-unused-vars, no-case-declarations,  */
+/* eslint-disable no-case-declarations -- const declarations in case blocks are intentional, each case returns immediately */
 import type { CustomDirective, StxOptions } from './types'
 
 /**

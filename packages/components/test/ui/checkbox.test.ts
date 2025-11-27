@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach } from 'bun:test'
 import type { CheckboxProps } from '../../src/ui/checkbox'
+import { beforeEach, describe, expect, it } from 'bun:test'
 
 describe('Checkbox Component - DOM Tests', () => {
   let container: HTMLElement

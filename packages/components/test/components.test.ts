@@ -1,20 +1,20 @@
-import { describe, expect, it } from 'bun:test'
 import type {
-  LoginProps,
-  SignupProps,
-  TwoFactorChallengeProps,
-  DropdownProps,
-  DialogProps,
-  RadioGroupProps,
-  PopoverProps,
-  ListboxProps,
   ComboboxProps,
-  NotificationProps,
-  StepperProps,
-  TransitionProps,
-  TableProps,
   CommandPaletteProps,
+  DialogProps,
+  DropdownProps,
+  ListboxProps,
+  LoginProps,
+  NotificationProps,
+  PopoverProps,
+  RadioGroupProps,
+  SignupProps,
+  StepperProps,
+  TableProps,
+  TransitionProps,
+  TwoFactorChallengeProps,
 } from '../src'
+import { describe, expect, it } from 'bun:test'
 
 describe('Component Props', () => {
   describe('Login', () => {

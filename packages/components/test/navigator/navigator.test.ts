@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'bun:test'
 import type { NavigatorItem, NavigatorProps } from '../../src/ui/navigator'
+import { describe, expect, it } from 'bun:test'
 
 describe('navigator Component', () => {
   describe('type exports', () => {

@@ -6,10 +6,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { processConditionals } from './conditionals'
 import { processExpressions } from './expressions'
+import { LRUCache } from './performance-utils'
 import { createDetailedErrorMessage, fileExists } from './utils'
 
-// Cache for partials to avoid repeated file reads
-export const partialsCache: Map<string, string> = new Map()
+// Cache for partials to avoid repeated file reads (LRU with max 500 entries)
+export const partialsCache = new LRUCache<string, string>(500)
 
 // Global store to track what has been included via @once
 export const onceStore: Set<string> = new Set()

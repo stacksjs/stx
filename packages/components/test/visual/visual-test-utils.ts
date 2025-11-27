@@ -37,12 +37,12 @@ export function extractClasses(template: string): string[] {
 
   // Extract from JavaScript string literals (for dynamic class definitions)
   // Match patterns like: 'class-name' or "class-name" in JS code
-  const jsStringRegex = /['"]([a-z0-9\-:]+(?:\s+[a-z0-9\-:]+)*)['"](?:\s*[,:\+]|\s*\})/gi
+  const jsStringRegex = /['"]([a-z0-9\-:]+(?:\s+[a-z0-9\-:]+)*)['"](?:\s*[,:+]|\s*\})/gi
   while ((match = jsStringRegex.exec(template)) !== null) {
     const classString = match[1]
     // Filter to only include valid Tailwind-like class patterns
     const potentialClasses = classString.split(/\s+/).filter((c) => {
-      return /^[a-z]+[a-z0-9\-]*(?::[a-z0-9\-]+)*$/i.test(c)
+      return /^[a-z][a-z0-9\-]*(?::[a-z0-9\-]+)*$/i.test(c)
         || /^dark:[a-z0-9\-]+$/i.test(c)
         || /^(sm|md|lg|xl|2xl):[a-z0-9\-]+$/i.test(c)
     })
@@ -55,7 +55,7 @@ export function extractClasses(template: string): string[] {
     const classString = match[1]
     // Split and filter valid classes
     const potentialClasses = classString.split(/\s+/).filter((c) => {
-      return /^[a-z\-]+[a-z0-9\-]*(?::[a-z0-9\-]+)*$/i.test(c)
+      return /^[a-z\-][a-z0-9\-]*(?::[a-z0-9\-]+)*$/i.test(c)
     })
     classes.push(...potentialClasses)
   }

@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach } from 'bun:test'
-import type { TextInputProps, EmailInputProps, PasswordInputProps, NumberInputProps, SearchInputProps } from '../../src/ui/input'
+import type { TextInputProps } from '../../src/ui/input'
+import { beforeEach, describe, expect, it } from 'bun:test'
 
 describe('Input Components - DOM Tests', () => {
   let container: HTMLElement

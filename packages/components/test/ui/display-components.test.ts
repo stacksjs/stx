@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
 
 describe('Display Components - DOM Tests', () => {
   let container: HTMLElement

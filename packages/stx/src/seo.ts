@@ -1,4 +1,3 @@
-/* eslint-disable unused-imports/no-unused-vars */
 import type { CustomDirective, SeoConfig, StxOptions } from './types'
 import { createDetailedErrorMessage } from './utils'
 

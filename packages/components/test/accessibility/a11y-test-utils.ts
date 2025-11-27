@@ -5,8 +5,6 @@
  * for auditing components' accessibility.
  */
 
-import { join } from 'node:path'
-
 /**
  * WCAG 2.1 Level AA conformance requirements
  */
@@ -64,27 +62,27 @@ export interface A11yAuditResult {
  * Required ARIA attributes for specific roles
  */
 const REQUIRED_ARIA_BY_ROLE: Record<string, string[]> = {
-  'button': [],
-  'checkbox': ['aria-checked'],
-  'combobox': ['aria-expanded'],
-  'dialog': ['aria-labelledby', 'aria-modal'],
-  'listbox': [],
-  'menu': [],
-  'menuitem': [],
-  'option': ['aria-selected'],
-  'progressbar': ['aria-valuenow', 'aria-valuemin', 'aria-valuemax'],
-  'radio': ['aria-checked'],
-  'radiogroup': [],
-  'slider': ['aria-valuenow', 'aria-valuemin', 'aria-valuemax'],
-  'spinbutton': ['aria-valuenow', 'aria-valuemin', 'aria-valuemax'],
-  'switch': ['aria-checked'],
-  'tab': ['aria-selected', 'aria-controls'],
-  'tablist': [],
-  'tabpanel': ['aria-labelledby'],
-  'textbox': [],
-  'tooltip': [],
-  'tree': [],
-  'treeitem': [],
+  button: [],
+  checkbox: ['aria-checked'],
+  combobox: ['aria-expanded'],
+  dialog: ['aria-labelledby', 'aria-modal'],
+  listbox: [],
+  menu: [],
+  menuitem: [],
+  option: ['aria-selected'],
+  progressbar: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax'],
+  radio: ['aria-checked'],
+  radiogroup: [],
+  slider: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax'],
+  spinbutton: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax'],
+  switch: ['aria-checked'],
+  tab: ['aria-selected', 'aria-controls'],
+  tablist: [],
+  tabpanel: ['aria-labelledby'],
+  textbox: [],
+  tooltip: [],
+  tree: [],
+  treeitem: [],
 }
 
 /**
@@ -256,7 +254,7 @@ export function checkKeyboardAccessibility(template: string): A11yIssue[] {
   }
 
   // Check for tabindex values
-  const negativeTabindex = /tabindex="-[2-9]|tabindex="-1[0-9]/gi
+  const negativeTabindex = /tabindex="-[2-9]|tabindex="-1\d/gi
   if (negativeTabindex.test(template)) {
     issues.push({
       severity: 'info',
@@ -304,7 +302,7 @@ export function checkScreenReaderSupport(template: string): A11yIssue[] {
   const issues: A11yIssue[] = []
 
   // Check for sr-only classes for icon-only buttons
-  const hasSvgInButton = /<button[^>]*>[\s\S]*<svg[\s\S]*<\/button>/gi.test(template)
+  const hasSvgInButton = /<button[^>]*>[\s\S]*<svg[\s\S]*<\/button>/i.test(template)
   const hasSrOnly = /sr-only|visually-hidden/i.test(template)
 
   if (hasSvgInButton && !hasSrOnly) {
