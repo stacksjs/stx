@@ -13,13 +13,49 @@ import { createDetailedErrorMessage, fileExists } from './utils'
 export const partialsCache = new LRUCache<string, string>(500)
 
 // Global store to track what has been included via @once
+// WARNING: This persists across requests in long-running servers!
+// Use clearOnceStore() at the start of each request, or use request-scoped tracking via context.__onceStore
 export const onceStore: Set<string> = new Set()
 
 /**
  * Clear the @once store - useful for testing and resetting state
+ *
+ * IMPORTANT: In server environments, call this at the start of each request
+ * to prevent @once content from being incorrectly skipped across requests.
+ *
+ * Alternatively, use request-scoped tracking by setting `context.__onceStore = new Set()`
+ * before processing templates. The processor will use context.__onceStore if available.
+ *
+ * @example
+ * ```typescript
+ * // Option 1: Clear global store per request
+ * app.use((req, res, next) => {
+ *   clearOnceStore()
+ *   next()
+ * })
+ *
+ * // Option 2: Use request-scoped store (preferred)
+ * const context = {
+ *   __onceStore: new Set<string>(),
+ *   ...otherData
+ * }
+ * await processDirectives(template, context, filePath, options)
+ * ```
  */
 export function clearOnceStore(): void {
   onceStore.clear()
+}
+
+/**
+ * Get the @once store to use - prefers request-scoped if available
+ */
+function getOnceStore(context: Record<string, any>): Set<string> {
+  // Prefer request-scoped store if available
+  if (context.__onceStore instanceof Set) {
+    return context.__onceStore
+  }
+  // Fall back to global store (with warning in debug mode)
+  return onceStore
 }
 
 /**
@@ -46,19 +82,22 @@ export async function processIncludes(
   // First handle partial alias (replace @partial with @include)
   let output = template.replace(/@partial\s*\(['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (_, includePath, varsString) => `@include('${includePath}'${varsString ? `, ${varsString}` : ''})`)
 
-  // Process @once directive - content that should only be included once globally
+  // Process @once directive - content that should only be included once per request
+  // Uses request-scoped store if available (context.__onceStore), otherwise falls back to global
+  const activeOnceStore = getOnceStore(context)
+
   output = output.replace(/@once([\s\S]*?)@endonce/g, (match, content, _offset) => {
     // Create a unique key for this @once block based on content hash
     const contentHash = content.trim()
     const onceKey = `${filePath}:${contentHash}`
 
-    if (onceStore.has(onceKey)) {
+    if (activeOnceStore.has(onceKey)) {
       // Already included, return empty string
       return ''
     }
 
     // Mark as included and return the content
-    onceStore.add(onceKey)
+    activeOnceStore.add(onceKey)
     return content
   })
 
@@ -136,12 +175,13 @@ export async function processIncludes(
 
   // Process @includeFirst directive
   // This tries multiple includes and uses the first one that exists
-  const includeFirstRegex = /@includeFirst\s*\(\s*(\[[^\]]+\])\s*(?:,\s*(\{[^}]+\})\s*)?\)/g
+  // Supports optional fallback: @includeFirst(['a', 'b'], {}, 'fallback content')
+  const includeFirstRegex = /@includeFirst\s*\(\s*(\[[^\]]+\])\s*(?:,\s*(\{[^}]*\})\s*)?(?:,\s*['"]([^'"]*)['"]\s*)?\)/g
   let includeFirstMatch
 
   // eslint-disable-next-line no-cond-assign
   while (includeFirstMatch = includeFirstRegex.exec(output)) {
-    const [fullMatch, pathArrayString, varsString] = includeFirstMatch
+    const [fullMatch, pathArrayString, varsString, fallbackContent] = includeFirstMatch
     const matchOffset = includeFirstMatch.index
 
     try {
@@ -157,17 +197,23 @@ export async function processIncludes(
           localVars = varsFn()
         }
         catch (error: any) {
-          output = output.replace(
-            fullMatch,
-            createDetailedErrorMessage(
-              'Include',
-              `Error parsing includeFirst variables: ${error.message}`,
-              filePath,
-              template,
-              matchOffset,
+          // In production, use fallback; in debug mode, show error
+          if (options.debug) {
+            output = output.replace(
               fullMatch,
-            ),
-          )
+              createDetailedErrorMessage(
+                'Include',
+                `Error parsing includeFirst variables: ${error.message}`,
+                filePath,
+                template,
+                matchOffset,
+                fullMatch,
+              ),
+            )
+          }
+          else {
+            output = output.replace(fullMatch, fallbackContent || '')
+          }
           continue
         }
       }
@@ -191,19 +237,31 @@ export async function processIncludes(
         }
       }
 
-      // No valid include found
+      // No valid include found - use fallback or show error based on debug mode
       if (!foundValidPath) {
-        output = output.replace(
-          fullMatch,
-          createDetailedErrorMessage(
-            'Include',
-            `None of the includeFirst paths exist: ${pathArrayString}`,
-            filePath,
-            template,
-            matchOffset,
+        if (fallbackContent !== undefined) {
+          // Use provided fallback content
+          output = output.replace(fullMatch, fallbackContent)
+        }
+        else if (options.debug) {
+          // Show detailed error in debug mode
+          output = output.replace(
             fullMatch,
-          ),
-        )
+            createDetailedErrorMessage(
+              'Include',
+              `None of the includeFirst paths exist: ${pathArrayString}`,
+              filePath,
+              template,
+              matchOffset,
+              fullMatch,
+            ),
+          )
+        }
+        else {
+          // In production without fallback, silently remove the directive
+          // to prevent breaking the page layout
+          output = output.replace(fullMatch, '')
+        }
       }
     }
     catch (error: any) {

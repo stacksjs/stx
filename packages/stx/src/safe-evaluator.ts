@@ -2,6 +2,66 @@
  * Safe expression evaluator that reduces security risks from using new Function()
  */
 
+// =============================================================================
+// Configuration
+// =============================================================================
+
+/**
+ * Safe evaluator configuration options
+ */
+export interface SafeEvaluatorConfig {
+  /** Maximum depth for object sanitization (default: 10) */
+  maxSanitizeDepth: number
+  /** Allow bracket notation with string literals like obj["key"] (default: false) */
+  allowBracketNotation: boolean
+}
+
+/**
+ * Default configuration
+ */
+const defaultConfig: SafeEvaluatorConfig = {
+  maxSanitizeDepth: 10,
+  allowBracketNotation: false,
+}
+
+/**
+ * Current configuration (can be modified via configureSafeEvaluator)
+ */
+let currentConfig: SafeEvaluatorConfig = { ...defaultConfig }
+
+/**
+ * Configure the safe evaluator
+ *
+ * @example
+ * ```typescript
+ * configureSafeEvaluator({
+ *   maxSanitizeDepth: 20,
+ *   allowBracketNotation: true
+ * })
+ * ```
+ */
+export function configureSafeEvaluator(config: Partial<SafeEvaluatorConfig>): void {
+  currentConfig = { ...currentConfig, ...config }
+}
+
+/**
+ * Reset configuration to defaults
+ */
+export function resetSafeEvaluatorConfig(): void {
+  currentConfig = { ...defaultConfig }
+}
+
+/**
+ * Get current configuration
+ */
+export function getSafeEvaluatorConfig(): SafeEvaluatorConfig {
+  return { ...currentConfig }
+}
+
+// =============================================================================
+// Allowed Globals
+// =============================================================================
+
 /**
  * List of allowed global functions and methods for expression evaluation
  */
@@ -28,17 +88,50 @@ const _ALLOWED_GLOBALS = new Set([
   'Boolean',
 ])
 
+// =============================================================================
+// Dangerous Patterns
+// =============================================================================
+
 /**
  * List of dangerous patterns that should never be allowed
+ *
+ * Categories:
+ * 1. Code execution: eval, Function, timers
+ * 2. Module system: process, require, import
+ * 3. Global access: window, document, global
+ * 4. Prototype manipulation: constructor, prototype, __proto__
+ * 5. Reflection/Metaprogramming: Reflect, Proxy, Symbol
+ * 6. Weak references: WeakMap, WeakSet (can bypass GC, hide data)
+ * 7. Generators/Iterators: potential for infinite loops
+ * 8. Dunder methods: __anything__
  */
 const DANGEROUS_PATTERNS = [
+  // Code execution
   /\b(eval|Function|setTimeout|setInterval|setImmediate)\b/,
+  // Module system access
   /\b(process|require|import|exports|module)\b/,
+  // Global object access
   /\b(window|document|global|globalThis)\b/,
+  // Prototype manipulation
   /\b(constructor|prototype|__proto__)\b/,
-  /__\w+__/, // Dunder methods
-  /\[\s*['"]/, // Bracket notation with strings (potential injection)
+  // Reflection and metaprogramming APIs
+  /\b(Reflect|Proxy)\b/,
+  // Symbol (can create hidden properties)
+  /\bSymbol\b/,
+  // Weak references (can hide data, bypass sanitization)
+  /\b(WeakMap|WeakSet|WeakRef|FinalizationRegistry)\b/,
+  // Generators (potential for infinite loops, state persistence)
+  /\b(Generator|AsyncGenerator)\b/,
+  // Dunder methods
+  /__\w+__/,
+  // Bind/call/apply (can change execution context)
+  /\.(bind|call|apply)\s*\(/,
 ]
+
+/**
+ * Pattern for bracket notation with strings - checked separately based on config
+ */
+const BRACKET_NOTATION_PATTERN = /\[\s*['"]/
 
 /**
  * Sanitize an expression by checking for dangerous patterns
@@ -51,6 +144,11 @@ export function sanitizeExpression(expression: string): string {
     if (pattern.test(trimmed)) {
       throw new Error(`Potentially unsafe expression: ${trimmed}`)
     }
+  }
+
+  // Check bracket notation based on configuration
+  if (!currentConfig.allowBracketNotation && BRACKET_NOTATION_PATTERN.test(trimmed)) {
+    throw new Error(`Bracket notation with strings not allowed: ${trimmed}. Enable with configureSafeEvaluator({ allowBracketNotation: true })`)
   }
 
   return trimmed
@@ -98,10 +196,11 @@ export function createSafeContext(context: Record<string, any>): Record<string, 
 
 /**
  * Recursively sanitize an object by removing dangerous properties
+ * Uses configurable maxSanitizeDepth from configuration
  */
 function sanitizeObject(obj: any, depth = 0): any {
-  // Prevent infinite recursion
-  if (depth > 10) {
+  // Prevent infinite recursion - use configurable depth
+  if (depth > currentConfig.maxSanitizeDepth) {
     return '[Object too deep]'
   }
 

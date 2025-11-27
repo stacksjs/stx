@@ -487,6 +487,69 @@ export interface LoopConfig {
   useAltLoopVariable: boolean
 }
 
+// =============================================================================
+// Component System Types
+// =============================================================================
+
+/**
+ * Prop type definition for component prop validation
+ */
+export type PropType = 'string' | 'number' | 'boolean' | 'array' | 'object' | 'function' | 'any'
+
+/**
+ * Component prop definition for validation
+ */
+export interface PropDefinition {
+  /** Type of the prop */
+  type: PropType | PropType[]
+  /** Whether the prop is required */
+  required?: boolean
+  /** Default value if not provided */
+  default?: any
+  /** Custom validator function */
+  validator?: (value: any) => boolean
+}
+
+/**
+ * Component props schema for validation
+ *
+ * @example
+ * ```typescript
+ * const alertProps: ComponentPropsSchema = {
+ *   title: { type: 'string', required: true },
+ *   type: { type: 'string', default: 'info' },
+ *   dismissible: { type: 'boolean', default: false }
+ * }
+ * ```
+ */
+export interface ComponentPropsSchema {
+  [propName: string]: PropDefinition
+}
+
+/**
+ * Component definition with metadata
+ */
+export interface ComponentDefinition {
+  /** Component name */
+  name: string
+  /** Path to component file */
+  path?: string
+  /** Props schema for validation */
+  props?: ComponentPropsSchema
+  /** Component description for documentation */
+  description?: string
+}
+
+/**
+ * Component configuration
+ */
+export interface ComponentConfig {
+  /** Enable prop validation */
+  validateProps?: boolean
+  /** Component definitions for prop validation */
+  components?: Record<string, ComponentDefinition>
+}
+
 /**
  * Available syntax highlighting themes
  */
