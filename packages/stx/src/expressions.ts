@@ -1,5 +1,34 @@
 /**
  * Module for processing template expressions and filters
+ *
+ * Expression Syntax:
+ * ==================
+ * - `{{ expression }}` - Escaped output (HTML entities escaped)
+ * - `{!! expression !!}` - Raw/unescaped output
+ * - `{{ expression | filter }}` - Apply filter to expression
+ * - `{{ expression | filter:arg1,arg2 }}` - Filter with arguments
+ * - `{{ expression | filter1 | filter2 }}` - Filter chain
+ *
+ * Filter Parsing:
+ * ===============
+ * The filter parser uses character-by-character parsing to handle:
+ * - Pipe `|` as filter separator (but not `||` logical OR)
+ * - Colon `:` as argument separator
+ * - Quoted strings with proper escape handling
+ * - Nested parentheses in expressions
+ *
+ * Key parsing rules:
+ * - `||` (double pipe) is preserved as logical OR, not filter separator
+ * - Arguments after `:` are split by `,` respecting quotes and parens
+ * - Filter names must be alphanumeric with underscores
+ *
+ * Available Built-in Filters:
+ * ===========================
+ * String: uppercase, lowercase, capitalize, truncate, replace, stripTags
+ * Number: number, currency, abs, round
+ * Array: join, first, last, length, reverse, slice
+ * Utility: escape, json, default, urlencode
+ * i18n: translate, pluralize, date
  */
 
 import { isExpressionSafe, safeEvaluate } from './safe-evaluator'

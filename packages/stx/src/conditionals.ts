@@ -1,19 +1,64 @@
 /**
  * Module for processing conditional directives (@if, @elseif, @else, @unless)
+ *
+ * Regex Pattern Reference:
+ * ========================
+ *
+ * NESTED_PARENS_PATTERN: `(?:[^()]|\([^()]*\))*`
+ *   - Matches content with one level of nested parentheses
+ *   - `[^()]` - Match any character except parentheses
+ *   - `\([^()]*\)` - OR match balanced parentheses (one level deep)
+ *   - Used in: @switch, @case, @if expressions to handle function calls
+ *   - Example matches: `user.role`, `getRole()`, `check(a, b)`
+ *   - Limitation: Only handles ONE level of nesting. `fn(a(b))` won't work correctly.
+ *
+ * DIRECTIVE_WITH_CONTENT: `@directive\s*\(EXPR\)([\s\S]*?)@enddirective`
+ *   - `\s*` - Optional whitespace after directive name
+ *   - `\(EXPR\)` - Parenthesized expression
+ *   - `[\s\S]*?` - Non-greedy match of ANY content (including newlines)
+ *   - `?` makes it non-greedy to match shortest possible content
+ *
+ * IF_ELSEIF_ELSE: Complex multi-branch matching
+ *   - Processes from inside-out to handle nesting
+ *   - Each @elseif/@else creates a branch in the condition chain
  */
 
 import process from 'node:process'
 import { evaluateAuthExpression } from './auth'
 import { createDetailedErrorMessage } from './utils'
 
+// =============================================================================
+// Regex Patterns
+// =============================================================================
+
+/**
+ * Pattern for matching content with one level of nested parentheses.
+ * Used throughout conditionals for expression parsing.
+ *
+ * Structure: `(?:[^()]|\([^()]*\))*`
+ * - `(?:...)` - Non-capturing group
+ * - `[^()]` - Any char except parens
+ * - `|` - OR
+ * - `\([^()]*\)` - Balanced parens with no nested parens inside
+ * - `*` - Zero or more of either option
+ */
+const NESTED_PARENS_PATTERN = '(?:[^()]|\\([^()]*\\))*'
+
 /**
  * Helper function to find balanced @switch/@endswitch pairs
+ *
+ * Uses depth-tracking algorithm:
+ * 1. Start with depth=1 (we're inside a @switch)
+ * 2. Increment depth for each nested @switch found
+ * 3. Decrement depth for each @endswitch found
+ * 4. Return when depth reaches 0 (found matching @endswitch)
  */
 function findBalancedSwitch(content: string, startIndex: number): { end: number, switchContent: string } | null {
   let depth = 1
   let currentIndex = startIndex
 
   while (currentIndex < content.length && depth > 0) {
+    // Uses NESTED_PARENS_PATTERN - see module documentation for regex explanation
     const switchMatch = content.substring(currentIndex).match(/@switch\s*\(((?:[^()]|\([^()]*\))*)\)/)
     const endSwitchMatch = content.substring(currentIndex).match(/@endswitch/)
 
@@ -53,7 +98,8 @@ export function processSwitchStatements(template: string, context: Record<string
   while (processedAny) {
     processedAny = false
 
-    // Find the first @switch statement - improved regex to handle nested parentheses
+    // Find the first @switch statement
+    // Uses NESTED_PARENS_PATTERN - see module documentation for regex explanation
     const switchRegex = /@switch\s*\(((?:[^()]|\([^()]*\))*)\)/
     const switchMatch = output.match(switchRegex)
     if (!switchMatch || switchMatch.index === undefined) {

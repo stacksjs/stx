@@ -3,34 +3,160 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 
+// =============================================================================
+// Configuration
+// =============================================================================
+
 /**
- * Find craft binary in common locations
+ * Desktop window configuration.
+ * Can be set via environment variables or setDesktopConfig().
+ */
+export interface DesktopConfig {
+  /**
+   * Custom path to craft binary.
+   * Set via CRAFT_BINARY_PATH env var or setDesktopConfig().
+   */
+  craftBinaryPath?: string
+  /**
+   * Additional search paths for craft binary.
+   * Searched after craftBinaryPath if set.
+   */
+  additionalSearchPaths?: string[]
+  /**
+   * Maximum retries when opening native window fails.
+   * Default: 1 (no retries)
+   */
+  maxRetries?: number
+  /**
+   * Delay between retries in milliseconds.
+   * Default: 1000
+   */
+  retryDelay?: number
+}
+
+/**
+ * Current desktop configuration
+ */
+let currentConfig: DesktopConfig = {}
+
+/**
+ * Configure desktop window settings
+ *
+ * @example
+ * ```typescript
+ * setDesktopConfig({
+ *   craftBinaryPath: '/custom/path/to/craft',
+ *   maxRetries: 3,
+ *   retryDelay: 2000
+ * })
+ * ```
+ */
+export function setDesktopConfig(config: Partial<DesktopConfig>): void {
+  currentConfig = { ...currentConfig, ...config }
+}
+
+/**
+ * Get current desktop configuration
+ */
+export function getDesktopConfig(): DesktopConfig {
+  return { ...currentConfig }
+}
+
+/**
+ * Reset desktop configuration to defaults
+ */
+export function resetDesktopConfig(): void {
+  currentConfig = {}
+}
+
+// =============================================================================
+// Binary Resolution
+// =============================================================================
+
+/**
+ * Default paths to search for craft binary.
+ * Used when CRAFT_BINARY_PATH is not set.
+ */
+const DEFAULT_SEARCH_PATHS = [
+  // From linked ts-craft in monorepo
+  join(process.cwd(), '../../craft/packages/zig/zig-out/bin/craft-minimal'),
+  join(process.cwd(), '../../../craft/packages/zig/zig-out/bin/craft-minimal'),
+  // If running from stx repo root
+  join(process.cwd(), '../craft/packages/zig/zig-out/bin/craft-minimal'),
+]
+
+/**
+ * Find craft binary in configured locations.
+ *
+ * Resolution order:
+ * 1. CRAFT_BINARY_PATH environment variable
+ * 2. config.craftBinaryPath (set via setDesktopConfig)
+ * 3. config.additionalSearchPaths
+ * 4. DEFAULT_SEARCH_PATHS (monorepo locations)
+ *
+ * @returns Path to craft binary or undefined if not found
  */
 function getCraftBinaryPath(): string | undefined {
-  // Common paths where craft binary might be located
-  const possiblePaths = [
-    // From linked ts-craft in monorepo
-    join(process.cwd(), '../../craft/packages/zig/zig-out/bin/craft-minimal'),
-    join(process.cwd(), '../../../craft/packages/zig/zig-out/bin/craft-minimal'),
-    // If running from stx repo root
-    join(process.cwd(), '../craft/packages/zig/zig-out/bin/craft-minimal'),
-    // Common system locations
-    '/Users/mac/repos/stacks-org/craft/packages/zig/zig-out/bin/craft-minimal',
-  ]
+  // 1. Check environment variable first (highest priority)
+  const envPath = process.env.CRAFT_BINARY_PATH
+  if (envPath && existsSync(envPath)) {
+    return envPath
+  }
 
-  for (const path of possiblePaths) {
-    if (existsSync(path)) {
-      return path
+  // 2. Check configured path
+  if (currentConfig.craftBinaryPath && existsSync(currentConfig.craftBinaryPath)) {
+    return currentConfig.craftBinaryPath
+  }
+
+  // 3. Check additional configured paths
+  const additionalPaths = currentConfig.additionalSearchPaths || []
+  for (const searchPath of additionalPaths) {
+    if (existsSync(searchPath)) {
+      return searchPath
+    }
+  }
+
+  // 4. Check default paths
+  for (const searchPath of DEFAULT_SEARCH_PATHS) {
+    if (existsSync(searchPath)) {
+      return searchPath
     }
   }
 
   return undefined
 }
 
+// =============================================================================
+// Window Creation
+// =============================================================================
+
 /**
  * Create a native window with URL
  *
- * Uses Craft to create native desktop windows.
+ * Uses ts-craft to create native desktop windows. Falls back to returning null
+ * if ts-craft is not available.
+ *
+ * ## WindowInstance Methods
+ *
+ * The returned WindowInstance provides limited functionality due to ts-craft's
+ * architecture. Currently supported:
+ *
+ * - `show()` - Shows the window (logged only)
+ *
+ * The following methods are stubs that log warnings (awaiting ts-craft support):
+ * - `hide()` - Hide the window
+ * - `close()` - Close the window
+ * - `focus()` - Focus the window
+ * - `minimize()` / `maximize()` / `restore()` - Window state management
+ * - `setTitle()` - Change window title
+ * - `loadURL()` - Navigate to different URL
+ * - `reload()` - Reload current page
+ *
+ * These will be implemented when ts-craft exposes window handle APIs.
+ *
+ * @param url - URL to load in the window
+ * @param options - Window configuration options
+ * @returns WindowInstance if successful, null if ts-craft unavailable
  */
 export async function createWindow(url: string, options: WindowOptions = {}): Promise<WindowInstance | null> {
   const {
@@ -54,38 +180,41 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
       hotReload,
     })
 
-    // Return a WindowInstance stub (ts-craft doesn't return a handle)
+    // Return a WindowInstance with stub methods
+    // Note: ts-craft doesn't return a window handle, so most methods are stubs
+    // that log warnings until ts-craft exposes these APIs
     return {
       id: `craft-window-${Date.now()}`,
       show: () => {
         console.log('Window shown')
       },
+      // Stub methods - awaiting ts-craft window handle support
       hide: () => {
-        console.warn('Hide not implemented')
+        console.warn('[stx/desktop] hide() not yet supported by ts-craft')
       },
       close: () => {
-        console.warn('Close not implemented')
+        console.warn('[stx/desktop] close() not yet supported by ts-craft')
       },
       focus: () => {
-        console.warn('Focus not implemented')
+        console.warn('[stx/desktop] focus() not yet supported by ts-craft')
       },
       minimize: () => {
-        console.warn('Minimize not implemented')
+        console.warn('[stx/desktop] minimize() not yet supported by ts-craft')
       },
       maximize: () => {
-        console.warn('Maximize not implemented')
+        console.warn('[stx/desktop] maximize() not yet supported by ts-craft')
       },
       restore: () => {
-        console.warn('Restore not implemented')
+        console.warn('[stx/desktop] restore() not yet supported by ts-craft')
       },
       setTitle: (_title: string) => {
-        console.warn('SetTitle not implemented')
+        console.warn('[stx/desktop] setTitle() not yet supported by ts-craft')
       },
       loadURL: (_url: string) => {
-        console.warn('LoadURL not implemented')
+        console.warn('[stx/desktop] loadURL() not yet supported by ts-craft')
       },
       reload: () => {
-        console.warn('Reload not implemented')
+        console.warn('[stx/desktop] reload() not yet supported by ts-craft')
       },
     }
   }
