@@ -1,36 +1,135 @@
 /**
- * Module for processing form-related directives
+ * Module for processing form-related directives.
+ *
+ * Provides directives for building accessible, validated forms:
+ * - `@csrf` - CSRF token hidden input
+ * - `@method('PUT')` - HTTP method spoofing
+ * - `@form` / `@endform` - Form wrapper with auto CSRF
+ * - `@input`, `@textarea`, `@select` - Form controls with validation
+ * - `@checkbox`, `@radio` - Check inputs with state binding
+ * - `@label` - Associated labels
+ * - `@error` / `@enderror` - Validation error display
+ *
+ * ## Configuration
+ *
+ * CSS class names can be customized via `stx.config.ts`:
+ * ```typescript
+ * export default {
+ *   forms: {
+ *     classes: {
+ *       input: 'my-input',
+ *       inputError: 'my-input--error',
+ *       // ...
+ *     }
+ *   }
+ * }
+ * ```
  */
 import type { StxOptions } from './types'
 import crypto from 'node:crypto'
 
+// =============================================================================
+// Configuration
+// =============================================================================
+
 /**
- * Generate a cryptographically secure random ID for CSRF tokens
- * Uses crypto.randomUUID() for security instead of Math.random()
+ * Default CSS class names for form elements.
+ * Based on Bootstrap conventions but fully customizable.
+ */
+export interface FormClassConfig {
+  /** Class for text inputs, textareas, and selects (default: 'form-control') */
+  input: string
+  /** Class added to inputs with validation errors (default: 'is-invalid') */
+  inputError: string
+  /** Class for checkboxes and radios (default: 'form-check-input') */
+  checkInput: string
+  /** Class for labels (default: 'form-label') */
+  label: string
+  /** Class for error message containers (default: 'invalid-feedback') */
+  errorFeedback: string
+}
+
+/**
+ * Default form class configuration (Bootstrap-compatible)
+ */
+export const defaultFormClasses: FormClassConfig = {
+  input: 'form-control',
+  inputError: 'is-invalid',
+  checkInput: 'form-check-input',
+  label: 'form-label',
+  errorFeedback: 'invalid-feedback',
+}
+
+/**
+ * Get merged form class configuration from options
+ */
+function getFormClasses(options: StxOptions): FormClassConfig {
+  return {
+    ...defaultFormClasses,
+    ...(options.forms?.classes as Partial<FormClassConfig>),
+  }
+}
+
+/**
+ * Build class string with error state handling.
+ *
+ * @param existingClass - Class from user attributes
+ * @param defaultClass - Default class to use if no existing class
+ * @param hasError - Whether the field has a validation error
+ * @param errorClass - Class to add when there's an error
+ * @returns Combined class string
+ */
+function buildClassString(
+  existingClass: string,
+  defaultClass: string,
+  hasError: boolean,
+  errorClass: string,
+): string {
+  const baseClass = existingClass || defaultClass
+  return hasError ? `${baseClass} ${errorClass}` : baseClass
+}
+
+// =============================================================================
+// CSRF Token Generation
+// =============================================================================
+
+/**
+ * Generate a cryptographically secure random ID for CSRF tokens.
+ * Uses crypto.randomUUID() for security instead of Math.random().
  */
 function genId(): string {
   return crypto.randomUUID()
 }
 
+// =============================================================================
+// Main Entry Point
+// =============================================================================
+
 /**
- * Process all form-related directives
+ * Process all form-related directives.
+ *
+ * Processing order:
+ * 1. Basic directives (@csrf, @method)
+ * 2. Form input directives (@form, @input, @textarea, etc.)
+ * 3. Validation directives (@error)
  */
 export function processForms(
   template: string,
   context: Record<string, any>,
   _filePath: string,
-  _options: StxOptions,
+  options: StxOptions,
 ): string {
+  const classes = getFormClasses(options)
   let output = template
 
   // Process basic form directives (@csrf, @method)
   output = processBasicFormDirectives(output, context)
 
   // Process form input directives (@form, @input, @textarea, etc)
-  output = processFormInputDirectives(output, context)
+  output = processFormInputDirectives(output, context, classes)
 
   // Process form validation directives (@error)
-  output = processErrorDirective(output, context)
+  output = processErrorDirective(output, context, classes)
 
   return output
 }
@@ -77,16 +176,25 @@ export function processBasicFormDirectives(template: string, context: Record<str
   return result
 }
 
+// =============================================================================
+// Form Input Directives
+// =============================================================================
+
 /**
- * Process form input directives
+ * Process form input directives.
+ * Handles @form, @input, @textarea, @select, @checkbox, @radio, @label.
  */
-export function processFormInputDirectives(template: string, context: Record<string, any>): string {
+export function processFormInputDirectives(
+  template: string,
+  context: Record<string, any>,
+  classes: FormClassConfig = defaultFormClasses,
+): string {
   let result = template
 
   // Process @form directive
   result = result.replace(
     /@form\(\s*(?:(?:'([^']+)'|"([^"]+)")\s*)?(?:,\s*(?:'([^']+)'|"([^"]+)")?)?\s*(?:,\s*\{([^}]+)\}\s*)?\)/g,
-    (match, singleQuoteMethod, doubleQuoteMethod, singleQuoteAction, doubleQuoteAction, attributes = '') => {
+    (_match, singleQuoteMethod, doubleQuoteMethod, singleQuoteAction, doubleQuoteAction, attributes = '') => {
       const method = singleQuoteMethod || doubleQuoteMethod || 'POST'
       const action = singleQuoteAction || doubleQuoteAction || ''
 
@@ -114,7 +222,7 @@ export function processFormInputDirectives(template: string, context: Record<str
   // Process @input directive
   result = result.replace(
     /@input\(\s*(?:'([^']+)'|"([^"]+)")\s*(?:,\s*(?:(?:'([^']*)'|"([^"]*)")\s*)?)?(?:,\s*\{([^}]+)\})?\s*\)/g,
-    (match, singleQuoteName, doubleQuoteName, singleQuoteValue, doubleQuoteValue, attributes = '') => {
+    (_match, singleQuoteName, doubleQuoteName, singleQuoteValue, doubleQuoteValue, attributes = '') => {
       const name = singleQuoteName || doubleQuoteName || ''
       const value = singleQuoteValue || doubleQuoteValue || ''
 
@@ -125,18 +233,10 @@ export function processFormInputDirectives(template: string, context: Record<str
       const typeMatch = attrs.match(/type=['"]([^'"]+)['"]/i)
       const type = typeMatch ? typeMatch[1] : 'text'
 
-      // Check if this field has an error
+      // Check if this field has an error and build class string
       const hasError = hasFieldError(name, context)
-      const errorClass = hasError ? ' is-invalid' : ''
-
-      // Parse existing class attribute
       const classMatch = attrs.match(/class=['"]([^'"]+)['"]/i)
-      const existingClass = classMatch ? classMatch[1] : ''
-
-      // Create combined class attribute
-      const className = existingClass
-        ? `${existingClass}${errorClass}`
-        : `form-control${errorClass}`
+      const className = buildClassString(classMatch ? classMatch[1] : '', classes.input, hasError, classes.inputError)
 
       // Remove existing class and type to avoid duplication
       let attrsWithoutClassAndType = attrs.replace(/class=['"][^'"]+['"]/i, '')
@@ -149,22 +249,14 @@ export function processFormInputDirectives(template: string, context: Record<str
   // Process @textarea directive
   result = result.replace(
     /@textarea\(\s*['"]([^'"]+)['"]\s*(?:,\s*\{([^}]+)\})?\)([\s\S]*?)@endtextarea/g,
-    (match, name, attributes = '', content = '') => {
+    (_match, name, attributes = '', content = '') => {
       const attrs = parseAttributes(attributes)
       const oldValue = getOldValue(name, context) || content.trim()
 
-      // Check if this field has an error
+      // Check if this field has an error and build class string
       const hasError = hasFieldError(name, context)
-      const errorClass = hasError ? ' is-invalid' : ''
-
-      // Parse existing class attribute
       const classMatch = attrs.match(/class=['"]([^'"]+)['"]/i)
-      const existingClass = classMatch ? classMatch[1] : ''
-
-      // Create combined class attribute
-      const className = existingClass
-        ? `${existingClass}${errorClass}`
-        : `form-control${errorClass}`
+      const className = buildClassString(classMatch ? classMatch[1] : '', classes.input, hasError, classes.inputError)
 
       // Remove existing class to avoid duplication
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
@@ -176,22 +268,14 @@ export function processFormInputDirectives(template: string, context: Record<str
   // Process @select directive
   result = result.replace(
     /@select\(\s*['"]([^'"]+)['"]\s*(?:,\s*\{([^}]+)\})?\)([\s\S]*?)@endselect/g,
-    (match, name, attributes = '', content) => {
+    (_match, name, attributes = '', content) => {
       const attrs = parseAttributes(attributes)
       const oldValue = getOldValue(name, context)
 
-      // Check if this field has an error
+      // Check if this field has an error and build class string
       const hasError = hasFieldError(name, context)
-      const errorClass = hasError ? ' is-invalid' : ''
-
-      // Parse existing class attribute
       const classMatch = attrs.match(/class=['"]([^'"]+)['"]/i)
-      const existingClass = classMatch ? classMatch[1] : ''
-
-      // Create combined class attribute
-      const className = existingClass
-        ? `${existingClass}${errorClass}`
-        : `form-control${errorClass}`
+      const className = buildClassString(classMatch ? classMatch[1] : '', classes.input, hasError, classes.inputError)
 
       // Remove existing class to avoid duplication
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
@@ -222,7 +306,7 @@ export function processFormInputDirectives(template: string, context: Record<str
   // Process @checkbox directive
   result = result.replace(
     /@checkbox\(\s*['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"]\s*)?(?:,\s*\{([^}]+)\})?\)/g,
-    (match, name, value = '1', attributes = '') => {
+    (_match, name, value = '1', attributes = '') => {
       const attrs = parseAttributes(attributes)
       const oldValues = getOldValue(name, context)
 
@@ -235,10 +319,7 @@ export function processFormInputDirectives(template: string, context: Record<str
 
       // Parse existing class attribute
       const classMatch = attrs.match(/class=['"]([^'"]+)['"]/i)
-      const existingClass = classMatch ? classMatch[1] : ''
-
-      // Create class attribute
-      const className = existingClass || 'form-check-input'
+      const className = classMatch ? classMatch[1] : classes.checkInput
 
       // Remove existing class to avoid duplication
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
@@ -250,7 +331,7 @@ export function processFormInputDirectives(template: string, context: Record<str
   // Process @radio directive
   result = result.replace(
     /@radio\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*(?:,\s*\{([^}]+)\})?\)/g,
-    (match, name, value, attributes = '') => {
+    (_match, name, value, attributes = '') => {
       const attrs = parseAttributes(attributes)
       const oldValue = getOldValue(name, context)
 
@@ -259,10 +340,7 @@ export function processFormInputDirectives(template: string, context: Record<str
 
       // Parse existing class attribute
       const classMatch = attrs.match(/class=['"]([^'"]+)['"]/i)
-      const existingClass = classMatch ? classMatch[1] : ''
-
-      // Create class attribute
-      const className = existingClass || 'form-check-input'
+      const className = classMatch ? classMatch[1] : classes.checkInput
 
       // Remove existing class to avoid duplication
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
@@ -274,15 +352,12 @@ export function processFormInputDirectives(template: string, context: Record<str
   // Process @label directive
   result = result.replace(
     /@label\(\s*['"]([^'"]+)['"]\s*(?:,\s*\{([^}]+)\})?\)([\s\S]*?)@endlabel/g,
-    (match, forAttr, attributes = '', content) => {
+    (_match, forAttr, attributes = '', content) => {
       const attrs = parseAttributes(attributes)
 
       // Parse existing class attribute
       const classMatch = attrs.match(/class=['"]([^'"]+)['"]/i)
-      const existingClass = classMatch ? classMatch[1] : ''
-
-      // Create class attribute
-      const className = existingClass || 'form-label'
+      const className = classMatch ? classMatch[1] : classes.label
 
       // Remove existing class to avoid duplication
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
@@ -294,10 +369,26 @@ export function processFormInputDirectives(template: string, context: Record<str
   return result
 }
 
+// =============================================================================
+// Validation Directives
+// =============================================================================
+
 /**
- * Process @error directive for form validation
+ * Process @error directive for form validation.
+ * Renders content only when the specified field has validation errors.
+ *
+ * @example
+ * ```html
+ * @error('email')
+ *   <span class="error">{{ $message }}</span>
+ * @enderror
+ * ```
  */
-export function processErrorDirective(template: string, context: Record<string, any>): string {
+export function processErrorDirective(
+  template: string,
+  context: Record<string, any>,
+  _classes: FormClassConfig = defaultFormClasses,
+): string {
   // Process @error('field') directives
   return template.replace(/@error\(['"]([^'"]+)['"]\)([\s\S]*?)@enderror/g, (match, field, content) => {
     try {
@@ -433,42 +524,4 @@ function parseAttributes(attributesStr: string): string {
   }
 
   return attrs.join(' ')
-}
-
-/**
- * Process @form directives for forms
- */
-export function processFormDirectives(template: string, context: Record<string, any>): string {
-  let result = template
-
-  // Process @csrf directive
-  result = result.replace(/@csrf/g, () => {
-    if (context.csrf && typeof context.csrf === 'object') {
-      // Check if field is provided directly
-      if (context.csrf.field) {
-        return context.csrf.field
-      }
-
-      // Use token if available
-      if (context.csrf.token) {
-        return `<input type="hidden" name="_token" value="${context.csrf.token}">`
-      }
-    }
-
-    // Default fallback with empty token
-    return '<input type="hidden" name="_token" value="">'
-  })
-
-  // Process @method directive
-  result = result.replace(/@method\(['"]([^'"]+)['"]\)/g, (match, method) => {
-    // Method spoofing for non-GET/POST methods
-    if (method && ['PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
-      return `<input type="hidden" name="_method" value="${method.toUpperCase()}">`
-    }
-
-    // Return unchanged if not a supported method
-    return match
-  })
-
-  return result
 }

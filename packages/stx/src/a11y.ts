@@ -1,6 +1,29 @@
+/**
+ * Accessibility (A11y) Module
+ *
+ * Provides directives and utilities for accessibility compliance:
+ * - `@a11y('type', 'message')` - Add accessibility hints as HTML comments
+ * - `@screenReader(...)@endScreenReader` - Screen reader only content
+ * - `@ariaDescribe('id', 'description')` - Connect elements with descriptions
+ *
+ * Also provides automated accessibility checking via `checkA11y()` and
+ * directory scanning via `scanA11yIssues()`.
+ *
+ * ## Accessibility Checks
+ *
+ * The automated checker validates:
+ * - Images have alt attributes
+ * - Interactive elements have accessible names
+ * - Form inputs have associated labels
+ * - Heading hierarchy is maintained
+ * - Document has lang attribute
+ */
 import type { CustomDirective, StxOptions } from './types'
 import path from 'node:path'
-// Note: Using very-happy-dom for DOM parsing in tests
+
+// =============================================================================
+// Types
+// =============================================================================
 
 /**
  * Accessibility violation found during a11y checks
@@ -20,14 +43,19 @@ export interface A11yViolation {
   helpUrl?: string
 }
 
+// =============================================================================
+// Directive Processing
+// =============================================================================
+
 /**
- * Process accessibility directives
+ * Process accessibility directives.
+ * Handles @a11y hints, @screenReader content, and @ariaDescribe.
  */
 export function processA11yDirectives(
   template: string,
-  context: Record<string, any>,
-  filePath: string,
-  options: StxOptions,
+  _context: Record<string, any>,
+  _filePath: string,
+  _options: StxOptions,
 ): string {
   let output = template
 
@@ -73,8 +101,13 @@ export function processA11yDirectives(
   return output
 }
 
+// =============================================================================
+// Utilities
+// =============================================================================
+
 /**
- * Create the screen reader only style
+ * Create the screen reader only CSS style.
+ * Add this to your stylesheet or inject via `<style>` tag.
  */
 export function getScreenReaderOnlyStyle(): string {
   return `
@@ -92,8 +125,13 @@ export function getScreenReaderOnlyStyle(): string {
 `.trim()
 }
 
+// =============================================================================
+// Accessibility Checker
+// =============================================================================
+
 /**
- * Automatically check template for accessibility issues
+ * Automatically check template for accessibility issues.
+ * Requires a DOM environment (e.g., happy-dom setup).
  */
 export async function checkA11y(html: string, filePath: string): Promise<A11yViolation[]> {
   const violations: A11yViolation[] = []
@@ -257,8 +295,13 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
   return violations
 }
 
+// =============================================================================
+// Directory Scanner
+// =============================================================================
+
 /**
- * Scan a directory of stx files for accessibility issues
+ * Scan a directory of stx files for accessibility issues.
+ * Returns a map of file paths to their violations.
  */
 export async function scanA11yIssues(
   directory: string,
@@ -309,12 +352,16 @@ export async function scanA11yIssues(
   return results
 }
 
+// =============================================================================
+// Custom Directives
+// =============================================================================
+
 /**
  * A11y directive for adding accessibility hints
  */
 export const a11yDirective: CustomDirective = {
   name: 'a11y',
-  handler: (content, params, context, filePath) => {
+  handler: (content, params, _context, _filePath) => {
     if (!params.length) {
       return content
     }

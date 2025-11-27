@@ -689,6 +689,27 @@ export interface StxConfig {
   markdown?: Partial<MarkdownConfig>
   /** Loop directive configuration */
   loops?: Partial<LoopConfig>
+  /** Form directives configuration */
+  forms?: Partial<FormConfig>
+}
+
+/**
+ * Configuration for form directives
+ */
+export interface FormConfig {
+  /** CSS class names for form elements */
+  classes?: {
+    /** Class for text inputs, textareas, and selects */
+    input?: string
+    /** Class added to inputs with validation errors */
+    inputError?: string
+    /** Class for checkboxes and radios */
+    checkInput?: string
+    /** Class for labels */
+    label?: string
+    /** Class for error message containers */
+    errorFeedback?: string
+  }
 }
 
 export type StxOptions = Partial<StxConfig>
