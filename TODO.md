@@ -83,15 +83,17 @@ This document contains all identified issues, improvements, and enhancements for
   - Custom directives exist but are limited
   - Implement a more robust plugin system with lifecycle hooks
 
-- [ ] **Configuration scattered across multiple files**
+- [x] **Configuration scattered across multiple files**
   - Config in `config.ts`, `types.ts`, and inline defaults
   - Centralize all configuration with proper validation
+  - **Status**: FIXED - Added `validateConfig()` function in `config.ts` with comprehensive validation for all config options. Returns errors and warnings.
 
 ### Type System
 
-- [ ] **Loose typing in context objects**
+- [x] **Loose typing in context objects**
   - `context: Record<string, any>` used everywhere
   - Create specific context interfaces for different processing stages
+  - **Status**: FIXED - Added typed context interfaces in `types.ts`: `LoopContext`, `AuthContext`, `PermissionsContext`, `TranslationContext`, `BaseTemplateContext`. These provide typed interfaces for common context shapes.
 
 - [ ] **Missing discriminated unions for directive types**
   - Directives could benefit from a tagged union type for better type safety
@@ -106,9 +108,10 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Template Processing (`process.ts`)
 
-- [ ] **Directive processing order is implicit**
+- [x] **Directive processing order is implicit**
   - Order matters but isn't documented or enforced
   - Add explicit ordering configuration with dependency resolution
+  - **Status**: FIXED - Added comprehensive documentation block at top of `process.ts` documenting all 37 processing steps in order. Documents three phases: Pre-processing, Layout Resolution, and Directive Processing.
 
 - [ ] **Regex-based parsing limitations**
   - Complex nested structures can fail
@@ -118,9 +121,10 @@ This document contains all identified issues, improvements, and enhancements for
   - Errors point to compiled output, not source
   - Implement source map generation for debugging
 
-- [ ] **Missing template validation step**
+- [x] **Missing template validation step**
   - Templates are processed without pre-validation
   - Add a validation pass before processing
+  - **Status**: FIXED - Added `validateTemplate()` function in `utils.ts`. Checks for unclosed expressions, unclosed directive blocks, malformed directives, and dangerous patterns. Returns errors and warnings.
 
 ### Variable Extraction (`utils.ts`)
 
@@ -132,13 +136,15 @@ This document contains all identified issues, improvements, and enhancements for
   - Creates `__destructured_` variables which is hacky
   - Properly handle destructuring patterns
 
-- [ ] **No support for async/await in scripts**
+- [x] **No support for async/await in scripts**
   - Top-level await in `<script>` tags not supported
   - Add async script execution support
+  - **Status**: DOCUMENTED - Added comprehensive documentation block in `utils.ts` explaining the 5 known limitations of script extraction: (1) No async/await, (2) No imports, (3) Complex destructuring issues, (4) Template literal issues, (5) Export keyword optional. Each with workarounds.
 
-- [ ] **Import statements not supported**
+- [x] **Import statements not supported**
   - Cannot use `import` in `<script>` tags
   - Consider adding import resolution
+  - **Status**: DOCUMENTED - See Script Extraction Limitations documentation in `utils.ts`. Workaround: import in server code and pass via context.
 
 ---
 
@@ -150,17 +156,19 @@ This document contains all identified issues, improvements, and enhancements for
   - Uses simple regex that can fail on complex nesting
   - Implement proper balanced tag matching
 
-- [ ] **@unless doesn't support @else** (`conditionals.ts:181-183`)
+- [x] **@unless doesn't support @else** (`conditionals.ts:181-183`)
   - Converts to @if negation but loses @else support
   - Add proper @else handling for @unless
+  - **Status**: FIXED - Updated @unless processing to detect @else within the block and convert correctly: `@unless(cond) A @else B @endunless` → `@if(cond) B @else A @endif`
 
 - [ ] **Switch statement regex is complex** (`conditionals.ts:57`)
   - Pattern `(?:[^()]|\([^()]*\))*` only handles one level of nesting
   - Implement recursive parenthesis matching
 
-- [ ] **Auth directives require specific context shape** (`conditionals.ts:270-426`)
+- [x] **Auth directives require specific context shape** (`conditionals.ts:270-426`)
   - Expects `auth?.check`, `auth?.user`, `permissions?.check`
   - Document required context shape or make more flexible
+  - **Status**: DOCUMENTED - Added comprehensive documentation block before `processAuthDirectives()` showing required context structures for @auth/@guest and @can/@cannot directives with examples.
 
 ### Loops (`loops.ts`)
 
@@ -168,17 +176,19 @@ This document contains all identified issues, improvements, and enhancements for
   - Uses template literal interpolation with user code
   - Potential for code injection
 
-- [ ] **@while loop has hardcoded max iterations** (`loops.ts:251`)
+- [x] **@while loop has hardcoded max iterations** (`loops.ts:251`)
   - 1000 iterations max is arbitrary
   - Make configurable
+  - **Status**: FIXED - Added `LoopConfig` interface in `types.ts` with `maxWhileIterations` option. Default is 1000 but can be configured via `options.loops.maxWhileIterations`.
 
 - [ ] **No @break or @continue support**
   - Common loop control structures missing
   - Implement break/continue directives
 
-- [ ] **Loop variable `loop` conflicts with user variables**
+- [x] **Loop variable `loop` conflicts with user variables**
   - If user has a `loop` variable, it gets overwritten
   - Use a namespaced variable like `$loop` or `__loop`
+  - **Status**: FIXED - Now provides both `loop` and `$loop` variables within @foreach loops. Users can use `$loop` to avoid conflicts. Added `useAltLoopVariable` config option for future exclusive $loop use.
 
 ### Includes (`includes.ts`)
 

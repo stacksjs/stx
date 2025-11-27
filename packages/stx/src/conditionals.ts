@@ -176,9 +176,24 @@ export function processConditionals(template: string, context: Record<string, an
   // Process @switch statements first
   output = processSwitchStatements(output, context, filePath)
 
-  // Process @unless directives (convert to @if negation)
-  output = output.replace(/@unless\s*\(([^)]+)\)([\s\S]*?)@endunless/g, (_, condition, content) => {
-    return `@if (!(${condition}))${content}@endif`
+  // Process @unless directives with @else support
+  // @unless is the inverse of @if - renders content when condition is FALSE
+  // Supports @else for content when condition is TRUE
+  output = output.replace(/@unless\s*\(([^)]+)\)([\s\S]*?)@endunless/g, (match, condition, content) => {
+    // Check if there's an @else within the @unless block
+    const elseMatch = content.match(/^([\s\S]*?)@else([\s\S]*)$/)
+
+    if (elseMatch) {
+      // Has @else - convert to @if with swapped content
+      // @unless(cond) A @else B @endunless -> @if(cond) B @else A @endif
+      const unlessContent = elseMatch[1]
+      const elseContent = elseMatch[2]
+      return `@if (${condition})${elseContent}@else${unlessContent}@endif`
+    }
+    else {
+      // No @else - simple negation
+      return `@if (!(${condition}))${content}@endif`
+    }
   })
 
   // Process @isset and @empty directives separately
@@ -263,8 +278,86 @@ export function processConditionals(template: string, context: Record<string, an
   return output
 }
 
+// =============================================================================
+// Authentication Directive Documentation
+// =============================================================================
+//
+// Auth directives require specific context shapes to work correctly.
+//
+// REQUIRED CONTEXT STRUCTURE:
+// ---------------------------
+//
+// For @auth / @guest directives:
+// ```typescript
+// const context = {
+//   auth: {
+//     check: true,  // Boolean: is user authenticated?
+//     user: {       // User object or null
+//       id: 1,
+//       name: 'John',
+//       email: 'john@example.com',
+//       // ... any other user properties
+//     }
+//   }
+// }
+// ```
+//
+// For @can / @cannot directives (Option 1 - Simple boolean map):
+// ```typescript
+// const context = {
+//   userCan: {
+//     'edit-posts': true,
+//     'delete-posts': false,
+//     'manage-users': true,
+//   }
+// }
+// ```
+//
+// For @can / @cannot directives (Option 2 - Function-based):
+// ```typescript
+// const context = {
+//   permissions: {
+//     check: (ability: string, type?: string, id?: any) => {
+//       // Return true/false based on user's permissions
+//       return userHasAbility(ability, type, id)
+//     }
+//   }
+// }
+// ```
+//
+// DIRECTIVE USAGE:
+// ----------------
+//
+// @auth / @endauth - Show content only to authenticated users
+//   @auth
+//     Welcome, {{ auth.user.name }}!
+//   @else
+//     Please log in.
+//   @endauth
+//
+// @guest / @endguest - Show content only to unauthenticated users
+//   @guest
+//     Please log in to continue.
+//   @endguest
+//
+// @can('ability') / @endcan - Show content if user has permission
+//   @can('edit-posts')
+//     <button>Edit</button>
+//   @else
+//     <span>Read-only</span>
+//   @endcan
+//
+// @cannot('ability') / @endcannot - Show content if user lacks permission
+//   @cannot('delete-posts')
+//     <span>Deletion disabled</span>
+//   @endcannot
+//
+// =============================================================================
+
 /**
  * Process @auth and permissions directives
+ *
+ * @see Authentication Directive Documentation above for required context shapes
  */
 export function processAuthDirectives(template: string, context: Record<string, any>): string {
   let output = template
