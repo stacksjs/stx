@@ -7,28 +7,19 @@ import { createDetailedErrorMessage } from './utils'
 
 /**
  * Add basic filter support to expressions
+ * Filter functions receive the value to transform, optional args, and the context object
  */
-export type FilterFunction = (value: any, ...args: any[]) => any
-
-// Global context for access in filters
-let globalContext: Record<string, any> = {}
-
-/**
- * Set global context for filters
- */
-export function setGlobalContext(context: Record<string, any>): void {
-  globalContext = context
-}
+export type FilterFunction = (value: any, context: Record<string, any>, ...args: any[]) => any
 
 export const defaultFilters: Record<string, FilterFunction> = {
   // String transformation filters
-  uppercase: (value: any) => {
+  uppercase: (value: any, _context: Record<string, any>) => {
     return value !== undefined && value !== null ? String(value).toUpperCase() : ''
   },
-  lowercase: (value: any) => {
+  lowercase: (value: any, _context: Record<string, any>) => {
     return value !== undefined && value !== null ? String(value).toLowerCase() : ''
   },
-  capitalize: (value: any) => {
+  capitalize: (value: any, _context: Record<string, any>) => {
     if (value === undefined || value === null)
       return ''
     const str = String(value)
@@ -36,7 +27,7 @@ export const defaultFilters: Record<string, FilterFunction> = {
   },
 
   // Number filters
-  number: (value: any, decimals: number = 0) => {
+  number: (value: any, _context: Record<string, any>, decimals: number = 0) => {
     if (value === undefined || value === null)
       return ''
     try {
@@ -49,7 +40,7 @@ export const defaultFilters: Record<string, FilterFunction> = {
   },
 
   // Array filters
-  join: (value: any, separator: string = ',') => {
+  join: (value: any, _context: Record<string, any>, separator: string = ',') => {
     if (!Array.isArray(value))
       return ''
     // Join the array with the separator without escaping
@@ -57,16 +48,14 @@ export const defaultFilters: Record<string, FilterFunction> = {
   },
 
   // Safety filters
-  escape: (value: any) => {
+  escape: (value: any, _context: Record<string, any>) => {
     if (value === undefined || value === null)
       return ''
     return escapeHtml(String(value))
   },
 
-  // Translation filter
-  translate: (value: any, params: Record<string, any> = {}) => {
-    // Access translations from the current context
-    const context = globalContext
+  // Translation filter - uses context parameter instead of global state
+  translate: (value: any, context: Record<string, any>, params: Record<string, any> = {}) => {
     if (!context || !context.__translations) {
       return value
     }
@@ -107,8 +96,8 @@ export const defaultFilters: Record<string, FilterFunction> = {
   },
 
   // Short alias for translate
-  t: (value: any, params: Record<string, any> = {}) => {
-    return defaultFilters.translate(value, params)
+  t: (value: any, context: Record<string, any>, params: Record<string, any> = {}) => {
+    return defaultFilters.translate(value, context, params)
   },
 }
 
@@ -128,9 +117,6 @@ export function escapeHtml(unsafe: string): string {
  * Process template expressions including variables, filters, and operations
  */
 export function processExpressions(template: string, context: Record<string, any>, filePath: string): string {
-  // Set the global context for access in filters
-  setGlobalContext(context)
-
   let output = template
 
   // Replace triple curly braces with unescaped expressions {{{ expr }}} - similar to {!! expr !!}
@@ -291,9 +277,9 @@ export function applyFilters(value: any, filterExpression: string, context: Reco
       }
     }
 
-    // Apply the filter with parameters
+    // Apply the filter with parameters, passing context for filters that need it
     try {
-      result = filterFn(result, ...params)
+      result = filterFn(result, context, ...params)
     }
     catch (error: any) {
       throw new Error(`Error applying filter '${filterName}': ${error.message}`)

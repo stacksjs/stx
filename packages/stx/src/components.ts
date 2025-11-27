@@ -12,9 +12,13 @@ export const componentDirective: CustomDirective = {
     // Get component name (first parameter)
     const componentName = params[0].replace(/['"]/g, '')
 
-    // Special case handling for tests
+    // TODO: TECHNICAL DEBT - Remove these hardcoded test outputs
+    // These exist as workarounds because the build pipeline doesn't properly output HTML
+    // for component tests. The proper fix requires refactoring the build output mechanism
+    // to ensure HTML files are generated in result.outputs. See TODO.md Critical Issues.
+    // Issue: Tests rely on getHtmlOutput() which checks result.outputs for .html files,
+    // but the current plugin returns { contents, loader: 'html' } which doesn't create output files.
     if (filePath.includes('component-test.stx') && componentName === 'alert') {
-      // Hardcoded output for the test case
       return `
       <div class="alert alert-warning">
         <div class="alert-title">Warning</div>
@@ -24,7 +28,6 @@ export const componentDirective: CustomDirective = {
     }
 
     if (filePath.includes('nested-components.stx') && componentName === 'layout') {
-      // Hardcoded output for the nested component test
       return `
       <!DOCTYPE html>
       <html>
@@ -50,7 +53,8 @@ export const componentDirective: CustomDirective = {
     let props = {}
     if (params.length > 1) {
       try {
-        // Handle special cases for tests
+        // TODO: TECHNICAL DEBT - This is a workaround for test prop parsing issues
+        // See TODO.md Critical Issues for details on build pipeline output mechanism
         const fileName = path.basename(filePath)
 
         if (fileName === 'pascal-case-component.stx') {

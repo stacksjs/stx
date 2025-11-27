@@ -46,3 +46,6 @@ examples/demo-project/.stx-serve/
 packages/desktop/.stx/
 
 packages/desktop/.stx-output/
+
+# Test snapshots (auto-generated)
+packages/components/test/visual/__snapshots__/

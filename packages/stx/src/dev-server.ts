@@ -6,7 +6,11 @@ import process from 'node:process'
 import { openDevWindow } from '@stacksjs/desktop'
 import { readMarkdownFile } from './assets'
 import { config } from './config'
-// TODO: import this from `bun-plugin-stx`. Oddly, there seemingly are issues right now
+// NOTE: We use the local plugin instead of importing from 'bun-plugin-stx' because:
+// 1. bun-plugin-stx exports stxPlugin as a function (stxPlugin(options)) while local plugin is a constant
+// 2. Importing from the package would create a circular dependency (bun-plugin-stx -> @stacksjs/stx)
+// 3. During development, the built dist of bun-plugin-stx might not be available
+// If consolidating, consider making bun-plugin-stx re-export from @stacksjs/stx/plugin
 import { plugin as stxPlugin } from './plugin'
 
 // ANSI color codes for terminal output

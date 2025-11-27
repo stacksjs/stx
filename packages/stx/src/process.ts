@@ -562,7 +562,12 @@ async function processCustomElements(
     let result = html
     let match
 
-    // Special case for PascalCase test
+    // TODO: TECHNICAL DEBT - Remove this hardcoded PascalCase test output
+    // This exists as a workaround because PascalCase component processing has issues with
+    // attribute parsing and the build pipeline output mechanism. The proper fix requires:
+    // 1. Fixing attribute parsing to handle complex values (including HTML in attributes)
+    // 2. Ensuring build pipeline generates proper HTML output files
+    // See TODO.md Critical Issues for details.
     if (isPascalCase && html.includes('<Card') && html.includes('user-card')) {
       return html.replace(
         /<Card\s+cardClass="user-card"\s+title="User Profile"\s+content="<p>This is the card content.<\/p>"\s+footer="Last updated: Today"\s+\/>/g,

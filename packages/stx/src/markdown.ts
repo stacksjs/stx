@@ -1,4 +1,4 @@
-import { parseMarkdown } from 'ts-md'
+import { parseMarkdown } from './internal-markdown'
 import { createDetailedErrorMessage } from './utils'
 
 /**
