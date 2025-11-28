@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach } from 'bun:test'
 import type { ButtonProps } from '../../src/ui/button'
+import { beforeEach, describe, expect, it } from 'bun:test'
 
 describe('Button Component - DOM Tests', () => {
   let container: HTMLElement

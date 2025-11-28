@@ -2,14 +2,39 @@
  * Module for processing loop directives (@foreach, @for, @while, @forelse)
  */
 
+import type { StxOptions } from './types'
 import { processConditionals } from './conditionals'
 import { processExpressions } from './expressions'
 import { createDetailedErrorMessage } from './utils'
 
+// Default loop configuration
+const DEFAULT_MAX_WHILE_ITERATIONS = 1000
+const DEFAULT_USE_ALT_LOOP_VARIABLE = false
+
 /**
  * Process loops (@foreach, @for, @while, @forelse)
+ *
+ * Loop Configuration (via options.loops):
+ * - maxWhileIterations: Safety limit for @while loops (default: 1000)
+ * - useAltLoopVariable: Use $loop instead of loop (default: false)
+ *
+ * Loop Context Variables:
+ * Within @foreach loops, a loop context object is available:
+ * - loop.index: Current zero-based index
+ * - loop.iteration: Current one-based iteration count
+ * - loop.first: Boolean, true if first iteration
+ * - loop.last: Boolean, true if last iteration
+ * - loop.count: Total number of items
+ *
+ * If options.loops.useAltLoopVariable is true, use $loop instead of loop
+ * to avoid conflicts with user variables named 'loop'.
+ *
+ * @param template - Template string to process
+ * @param context - Template context with variables
+ * @param filePath - Path to template file for error messages
+ * @param options - Optional stx configuration
  */
-export function processLoops(template: string, context: Record<string, any>, filePath: string): string {
+export function processLoops(template: string, context: Record<string, any>, filePath: string, options?: StxOptions): string {
   let output = template
 
   // Process @forelse loops (combine foreach with an empty check)
@@ -156,22 +181,30 @@ export function processLoops(template: string, context: Record<string, any>, fil
           continue
         }
 
+        // Get loop configuration (useAltLoopVar reserved for future use when exclusively using $loop)
+        const _useAltLoopVar = options?.loops?.useAltLoopVariable ?? DEFAULT_USE_ALT_LOOP_VARIABLE
+
         let loopResult = ''
         for (let index = 0; index < array.length; index++) {
           const item = array[index]
           const itemName = itemVar.trim()
 
+          // Create loop context object
+          const loopContext = {
+            index,
+            iteration: index + 1,
+            first: index === 0,
+            last: index === array.length - 1,
+            count: array.length,
+          }
+
           // Create a new context with loop variable for this iteration
+          // Always provide both loop and $loop for maximum compatibility
           const itemContext = {
             ...ctx,
             [itemName]: item,
-            loop: {
-              index,
-              iteration: index + 1,
-              first: index === 0,
-              last: index === array.length - 1,
-              count: array.length,
-            },
+            loop: loopContext,
+            $loop: loopContext, // Alternative name to avoid conflicts with user's 'loop' variable
           }
 
           // Recursively process nested loops with the new context
@@ -240,6 +273,9 @@ export function processLoops(template: string, context: Record<string, any>, fil
   })
 
   // Process @while loops
+  // Get configurable max iterations (default: 1000)
+  const maxWhileIterations = options?.loops?.maxWhileIterations ?? DEFAULT_MAX_WHILE_ITERATIONS
+
   output = output.replace(/@while\s*\(([^)]+)\)([\s\S]*?)@endwhile/g, (match, condition, content, offset) => {
     try {
       const loopKeys = Object.keys(context)
@@ -248,7 +284,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
       // eslint-disable-next-line no-new-func
       const whileFn = new Function(...loopKeys, `
         let result = '';
-        let maxIterations = 1000; // Safety limit
+        let maxIterations = ${maxWhileIterations}; // Configurable safety limit
         let counter = 0;
         while (${condition} && counter < maxIterations) {
           counter++;
@@ -257,7 +293,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
           })}\`;
         }
         if (counter >= maxIterations) {
-          result += '[Error: Maximum iterations exceeded in while loop]';
+          result += '[Error: Maximum iterations (${maxWhileIterations}) exceeded in while loop. Configure via options.loops.maxWhileIterations]';
         }
         return result;
       `)

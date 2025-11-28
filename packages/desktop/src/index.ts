@@ -65,6 +65,12 @@ export type {
 export {
   createWindow,
   createWindowWithHTML,
+  getDesktopConfig,
   isWebviewAvailable,
   openDevWindow,
+  resetDesktopConfig,
+  setDesktopConfig,
 } from './window'
+
+// Export desktop configuration type
+export type { DesktopConfig } from './window'

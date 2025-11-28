@@ -124,15 +124,15 @@ describe('calendar Component', () => {
       const testDate2 = new Date(2024, 0, 10)
 
       const isDisabled1 = disabledDates.some(d =>
-        d.getFullYear() === testDate1.getFullYear() &&
-        d.getMonth() === testDate1.getMonth() &&
-        d.getDate() === testDate1.getDate()
+        d.getFullYear() === testDate1.getFullYear()
+        && d.getMonth() === testDate1.getMonth()
+        && d.getDate() === testDate1.getDate(),
       )
 
       const isDisabled2 = disabledDates.some(d =>
-        d.getFullYear() === testDate2.getFullYear() &&
-        d.getMonth() === testDate2.getMonth() &&
-        d.getDate() === testDate2.getDate()
+        d.getFullYear() === testDate2.getFullYear()
+        && d.getMonth() === testDate2.getMonth()
+        && d.getDate() === testDate2.getDate(),
       )
 
       expect(isDisabled1).toBe(true)
@@ -205,9 +205,9 @@ describe('calendar Component', () => {
       const today = new Date()
       const testDate = new Date()
 
-      const isSameDay = today.getFullYear() === testDate.getFullYear() &&
-                       today.getMonth() === testDate.getMonth() &&
-                       today.getDate() === testDate.getDate()
+      const isSameDay = today.getFullYear() === testDate.getFullYear()
+        && today.getMonth() === testDate.getMonth()
+        && today.getDate() === testDate.getDate()
 
       expect(isSameDay).toBe(true)
     })
@@ -217,9 +217,9 @@ describe('calendar Component', () => {
       const tomorrow = new Date(today)
       tomorrow.setDate(tomorrow.getDate() + 1)
 
-      const isSameDay = today.getFullYear() === tomorrow.getFullYear() &&
-                       today.getMonth() === tomorrow.getMonth() &&
-                       today.getDate() === tomorrow.getDate()
+      const isSameDay = today.getFullYear() === tomorrow.getFullYear()
+        && today.getMonth() === tomorrow.getMonth()
+        && today.getDate() === tomorrow.getDate()
 
       expect(isSameDay).toBe(false)
     })

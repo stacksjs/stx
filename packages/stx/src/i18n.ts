@@ -1,10 +1,40 @@
 /**
  * Module for internationalization (i18n) support
+ *
+ * Features:
+ * - Translation file loading (JSON, YAML, JS)
+ * - Nested key access (e.g., 'messages.welcome')
+ * - Parameter replacement (e.g., ':name' → 'John')
+ * - Basic pluralization support
+ * - Translation caching with invalidation
+ *
+ * ## Pluralization
+ *
+ * Use the `|` separator to define plural forms:
+ * ```yaml
+ * items: "One item|:count items"
+ * ```
+ *
+ * Or for more complex pluralization:
+ * ```yaml
+ * apples: "{0} No apples|{1} One apple|[2,*] :count apples"
+ * ```
+ *
+ * ## Cache Management
+ *
+ * The translation cache can be managed via:
+ * - `clearTranslationCache()` - Clear all cached translations
+ * - `clearTranslationCache('en')` - Clear specific locale
+ * - `getTranslationCacheStats()` - Get cache statistics
  */
 
 import type { I18nConfig, StxOptions } from './types'
 import path from 'node:path'
 import { createDetailedErrorMessage } from './utils'
+
+// =============================================================================
+// Configuration
+// =============================================================================
 
 // Default i18n configuration
 export const defaultI18nConfig: I18nConfig = {
@@ -16,11 +46,92 @@ export const defaultI18nConfig: I18nConfig = {
   cache: true,
 }
 
-// Cache for translation files
-const translationsCache: Record<string, Record<string, any>> = {}
+// =============================================================================
+// Cache Management
+// =============================================================================
+
+/**
+ * Cache entry with metadata
+ */
+interface TranslationCacheEntry {
+  translations: Record<string, any>
+  loadedAt: number
+  locale: string
+}
+
+/**
+ * Cache for translation files with metadata
+ */
+const translationsCache: Record<string, TranslationCacheEntry> = {}
+
+/**
+ * Clear the translation cache
+ * @param locale - Optional locale to clear. If not provided, clears all.
+ */
+export function clearTranslationCache(locale?: string): void {
+  if (locale) {
+    delete translationsCache[locale]
+  }
+  else {
+    // Clear all entries
+    for (const key of Object.keys(translationsCache)) {
+      delete translationsCache[key]
+    }
+  }
+}
+
+/**
+ * Get translation cache statistics
+ */
+export function getTranslationCacheStats(): {
+  size: number
+  locales: string[]
+  entries: Array<{ locale: string, loadedAt: Date, keyCount: number }>
+} {
+  const entries = Object.entries(translationsCache).map(([locale, entry]) => ({
+    locale,
+    loadedAt: new Date(entry.loadedAt),
+    keyCount: countKeys(entry.translations),
+  }))
+
+  return {
+    size: Object.keys(translationsCache).length,
+    locales: Object.keys(translationsCache),
+    entries,
+  }
+}
+
+/**
+ * Count total keys in a nested object
+ */
+function countKeys(obj: Record<string, any>, count = 0): number {
+  for (const value of Object.values(obj)) {
+    count++
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      count = countKeys(value, count)
+    }
+  }
+  return count
+}
+
+/**
+ * Check if a cache entry is stale (older than maxAge milliseconds)
+ */
+function isCacheStale(entry: TranslationCacheEntry, maxAge: number = 0): boolean {
+  if (maxAge <= 0) return false // No max age, never stale
+  return Date.now() - entry.loadedAt > maxAge
+}
+
+// =============================================================================
+// Translation Loading
+// =============================================================================
 
 /**
  * Load a translation file
+ *
+ * @param locale - Locale code (e.g., 'en', 'fr', 'de')
+ * @param options - stx options with i18n configuration
+ * @returns Translation dictionary
  */
 export async function loadTranslation(
   locale: string,
@@ -33,7 +144,13 @@ export async function loadTranslation(
 
   // Check cache first if enabled
   if (i18nConfig.cache && translationsCache[locale]) {
-    return translationsCache[locale]
+    const entry = translationsCache[locale]
+    // Check if cache is stale (if maxAge is configured)
+    const maxAge = (options.i18n as any)?.cacheMaxAge ?? 0
+    if (!isCacheStale(entry, maxAge)) {
+      return entry.translations
+    }
+    // Cache is stale, will reload below
   }
 
   // Determine the path to the translation file
@@ -50,7 +167,11 @@ export async function loadTranslation(
 
     // Cache the translations if caching is enabled
     if (i18nConfig.cache) {
-      translationsCache[locale] = translations
+      translationsCache[locale] = {
+        translations,
+        loadedAt: Date.now(),
+        locale,
+      }
     }
 
     return translations
@@ -88,7 +209,77 @@ function getFileExtension(format: string): string {
 }
 
 /**
- * Get a translation by key
+ * Select the appropriate plural form based on count.
+ *
+ * Supports two formats:
+ * 1. Simple: "One item|:count items" (index 0 for count=1, index 1 otherwise)
+ * 2. Complex: "{0} No apples|{1} One apple|[2,*] :count apples"
+ *    - {n} matches exact count
+ *    - [min,max] matches range (use * for infinity)
+ *
+ * @param forms - Array of plural form strings
+ * @param count - The count to use for selection
+ * @returns The selected plural form
+ */
+function selectPluralForm(forms: string[], count: number): string {
+  // Check for complex format with explicit ranges/exact matches
+  for (const form of forms) {
+    const trimmed = form.trim()
+
+    // Check for exact match: {n}
+    const exactMatch = trimmed.match(/^\{(\d+)\}\s*(.*)$/)
+    if (exactMatch) {
+      const exactCount = Number.parseInt(exactMatch[1], 10)
+      if (count === exactCount) {
+        return exactMatch[2]
+      }
+      continue
+    }
+
+    // Check for range match: [min,max] or [min,*]
+    const rangeMatch = trimmed.match(/^\[(\d+),(\d+|\*)\]\s*(.*)$/)
+    if (rangeMatch) {
+      const min = Number.parseInt(rangeMatch[1], 10)
+      const max = rangeMatch[2] === '*' ? Number.POSITIVE_INFINITY : Number.parseInt(rangeMatch[2], 10)
+      if (count >= min && count <= max) {
+        return rangeMatch[3]
+      }
+      continue
+    }
+  }
+
+  // Simple format: first form for count=1, second form otherwise
+  if (forms.length === 2) {
+    return count === 1 ? forms[0].trim() : forms[1].trim()
+  }
+
+  // For more than 2 forms without explicit ranges, use index-based selection
+  // Index 0 = 0, Index 1 = 1, Index 2 = 2+
+  if (count < forms.length) {
+    return forms[count].trim()
+  }
+
+  return forms[forms.length - 1].trim()
+}
+
+/**
+ * Get a translation by key with parameter replacement and pluralization.
+ *
+ * @param key - Dot-notation key (e.g., 'messages.welcome')
+ * @param translations - Translation dictionary
+ * @param fallbackToKey - Return key if translation not found
+ * @param params - Parameters for replacement (use 'count' for pluralization)
+ * @returns The translated string
+ *
+ * @example
+ * // Simple parameter replacement
+ * getTranslation('greeting', { greeting: 'Hello :name' }, true, { name: 'John' })
+ * // => 'Hello John'
+ *
+ * @example
+ * // Pluralization
+ * getTranslation('items', { items: 'One item|:count items' }, true, { count: 5 })
+ * // => '5 items'
  */
 export function getTranslation(
   key: string,
@@ -113,16 +304,22 @@ export function getTranslation(
     return fallbackToKey ? key : ''
   }
 
-  // Replace parameters in the translation string
   let result = String(value)
 
+  // Handle pluralization if value contains | separator and count is provided
+  if (result.includes('|') && 'count' in params) {
+    const count = Number(params.count)
+    const forms = result.split('|')
+    result = selectPluralForm(forms, count)
+  }
+
   // Replace :parameter style placeholders
-  Object.entries(params).forEach(([paramKey, paramValue]) => {
+  for (const [paramKey, paramValue] of Object.entries(params)) {
     result = result.replace(
       new RegExp(`:${paramKey}`, 'g'),
       String(paramValue),
     )
-  })
+  }
 
   return result
 }

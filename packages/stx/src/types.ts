@@ -2,6 +2,109 @@
  * stx Config
  */
 
+// =============================================================================
+// Context Types - Typed interfaces for template context objects
+// =============================================================================
+
+/**
+ * Loop context object available within @foreach loops
+ * Provides iteration metadata for template logic
+ */
+export interface LoopContext {
+  /** Current zero-based index */
+  index: number
+  /** Current one-based iteration count */
+  iteration: number
+  /** Whether this is the first iteration */
+  first: boolean
+  /** Whether this is the last iteration */
+  last: boolean
+  /** Total number of items in the array */
+  count: number
+}
+
+/**
+ * Authentication context for @auth, @guest, @can directives
+ * Required shape for auth-related template directives
+ *
+ * @example
+ * ```typescript
+ * const authContext: AuthContext = {
+ *   check: true,
+ *   user: { id: 1, name: 'John', role: 'admin' }
+ * }
+ * ```
+ */
+export interface AuthContext {
+  /** Whether the user is authenticated */
+  check: boolean
+  /** User object (null if not authenticated) */
+  user: Record<string, any> | null
+}
+
+/**
+ * Permissions context for @can, @cannot directives
+ *
+ * @example
+ * ```typescript
+ * const permissions: PermissionsContext = {
+ *   check: (ability, type?, id?) => {
+ *     // Check if user has the ability
+ *     return user.abilities.includes(ability)
+ *   }
+ * }
+ * ```
+ */
+export interface PermissionsContext {
+  /** Function to check if user has a specific permission */
+  check: (ability: string, type?: string, id?: any) => boolean
+}
+
+/**
+ * Translation context for @translate, @t directives
+ */
+export interface TranslationContext {
+  /** Translation lookup object keyed by locale */
+  [locale: string]: Record<string, string>
+}
+
+/**
+ * Base template context with common properties
+ * Extend this interface for specific template contexts
+ */
+export interface BaseTemplateContext {
+  /** Authentication context (optional) */
+  auth?: AuthContext
+  /** Permissions context (optional) */
+  permissions?: PermissionsContext
+  /** User permissions map for simple boolean checks */
+  userCan?: Record<string, boolean>
+  /** Translations for i18n */
+  __translations?: TranslationContext
+  /** Internal sections storage (set by layout processing) */
+  __sections?: Record<string, string>
+  /** Internal stx options reference */
+  __stx_options?: StxOptions
+  /** Loop context (available within @foreach) */
+  loop?: LoopContext
+  /** Alias for loop context to avoid conflicts with user variables */
+  $loop?: LoopContext
+  /** Slot content for components */
+  slot?: string
+  /** Allow additional properties */
+  [key: string]: any
+}
+
+/**
+ * Template context type alias for backward compatibility
+ * Use BaseTemplateContext for new code
+ */
+export type TemplateContext = BaseTemplateContext
+
+// =============================================================================
+// Directive Types
+// =============================================================================
+
 /**
  * Custom directive handler function
  */
@@ -368,6 +471,86 @@ export interface AnimationConfig {
 }
 
 /**
+ * Loop directive configuration
+ */
+export interface LoopConfig {
+  /**
+   * Maximum iterations for @while loops (safety limit to prevent infinite loops)
+   * @default 1000
+   */
+  maxWhileIterations: number
+  /**
+   * Use $loop instead of loop for loop context variable
+   * Set to true to avoid conflicts if you have a variable named 'loop'
+   * @default false
+   */
+  useAltLoopVariable: boolean
+}
+
+// =============================================================================
+// Component System Types
+// =============================================================================
+
+/**
+ * Prop type definition for component prop validation
+ */
+export type PropType = 'string' | 'number' | 'boolean' | 'array' | 'object' | 'function' | 'any'
+
+/**
+ * Component prop definition for validation
+ */
+export interface PropDefinition {
+  /** Type of the prop */
+  type: PropType | PropType[]
+  /** Whether the prop is required */
+  required?: boolean
+  /** Default value if not provided */
+  default?: any
+  /** Custom validator function */
+  validator?: (value: any) => boolean
+}
+
+/**
+ * Component props schema for validation
+ *
+ * @example
+ * ```typescript
+ * const alertProps: ComponentPropsSchema = {
+ *   title: { type: 'string', required: true },
+ *   type: { type: 'string', default: 'info' },
+ *   dismissible: { type: 'boolean', default: false }
+ * }
+ * ```
+ */
+export interface ComponentPropsSchema {
+  [propName: string]: PropDefinition
+}
+
+/**
+ * Component definition with metadata
+ */
+export interface ComponentDefinition {
+  /** Component name */
+  name: string
+  /** Path to component file */
+  path?: string
+  /** Props schema for validation */
+  props?: ComponentPropsSchema
+  /** Component description for documentation */
+  description?: string
+}
+
+/**
+ * Component configuration
+ */
+export interface ComponentConfig {
+  /** Enable prop validation */
+  validateProps?: boolean
+  /** Component definitions for prop validation */
+  components?: Record<string, ComponentDefinition>
+}
+
+/**
  * Available syntax highlighting themes
  */
 export type SyntaxHighlightTheme =
@@ -504,6 +687,29 @@ export interface StxConfig {
   skipDefaultSeoTags?: boolean
   /** Markdown configuration */
   markdown?: Partial<MarkdownConfig>
+  /** Loop directive configuration */
+  loops?: Partial<LoopConfig>
+  /** Form directives configuration */
+  forms?: Partial<FormConfig>
+}
+
+/**
+ * Configuration for form directives
+ */
+export interface FormConfig {
+  /** CSS class names for form elements */
+  classes?: {
+    /** Class for text inputs, textareas, and selects */
+    input?: string
+    /** Class added to inputs with validation errors */
+    inputError?: string
+    /** Class for checkboxes and radios */
+    checkInput?: string
+    /** Class for labels */
+    label?: string
+    /** Class for error message containers */
+    errorFeedback?: string
+  }
 }
 
 export type StxOptions = Partial<StxConfig>

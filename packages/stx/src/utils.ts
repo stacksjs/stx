@@ -8,10 +8,165 @@ import process from 'node:process'
 
 // Import from expressions
 import { unescapeHtml } from './expressions'
+import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
 
-// Cache for components to avoid repeated file reads
-const componentsCache = new Map<string, string>()
+// Cache for components to avoid repeated file reads (LRU with max 500 entries)
+const componentsCache = new LRUCache<string, string>(500)
+
+// =============================================================================
+// Template Validation
+// =============================================================================
+
+/**
+ * Template validation error
+ */
+export interface TemplateValidationError {
+  type: 'syntax' | 'directive' | 'expression' | 'structure'
+  message: string
+  line?: number
+  column?: number
+  suggestion?: string
+}
+
+/**
+ * Template validation result
+ */
+export interface TemplateValidationResult {
+  valid: boolean
+  errors: TemplateValidationError[]
+  warnings: TemplateValidationError[]
+}
+
+/**
+ * Validate a template before processing
+ *
+ * Checks for common syntax errors and structural issues:
+ * - Unclosed directive blocks (@if without @endif)
+ * - Unclosed expression brackets
+ * - Invalid directive syntax
+ * - Nested quote issues
+ *
+ * @param template - The template string to validate
+ * @returns Validation result with errors and warnings
+ *
+ * @example
+ * ```typescript
+ * const result = validateTemplate(templateString)
+ * if (!result.valid) {
+ *   console.error('Template errors:', result.errors)
+ * }
+ * ```
+ */
+export function validateTemplate(template: string): TemplateValidationResult {
+  const errors: TemplateValidationError[] = []
+  const warnings: TemplateValidationError[] = []
+
+  // Check for unclosed expression brackets
+  const expressionOpens = (template.match(/\{\{/g) || []).length
+  const expressionCloses = (template.match(/\}\}/g) || []).length
+  if (expressionOpens !== expressionCloses) {
+    errors.push({
+      type: 'expression',
+      message: `Unclosed expression brackets: found ${expressionOpens} opening '{{' and ${expressionCloses} closing '}}'`,
+      suggestion: 'Ensure every {{ has a matching }}',
+    })
+  }
+
+  // Directive pairs to check
+  const directivePairs = [
+    { open: '@if', close: '@endif', name: 'if' },
+    { open: '@unless', close: '@endunless', name: 'unless' },
+    { open: '@foreach', close: '@endforeach', name: 'foreach' },
+    { open: '@for', close: '@endfor', name: 'for' },
+    { open: '@while', close: '@endwhile', name: 'while' },
+    { open: '@forelse', close: '@endforelse', name: 'forelse' },
+    { open: '@switch', close: '@endswitch', name: 'switch' },
+    { open: '@isset', close: '@endisset', name: 'isset' },
+    { open: '@empty', close: '@endempty', name: 'empty' },
+    { open: '@auth', close: '@endauth', name: 'auth' },
+    { open: '@guest', close: '@endguest', name: 'guest' },
+    { open: '@can', close: '@endcan', name: 'can' },
+    { open: '@cannot', close: '@endcannot', name: 'cannot' },
+    { open: '@section', close: '@endsection', name: 'section', altClose: '@show' },
+    { open: '@push', close: '@endpush', name: 'push' },
+    { open: '@prepend', close: '@endprepend', name: 'prepend' },
+    { open: '@once', close: '@endonce', name: 'once' },
+    { open: '@markdown', close: '@endmarkdown', name: 'markdown' },
+    { open: '@component', close: '@endcomponent', name: 'component' },
+  ]
+
+  for (const pair of directivePairs) {
+    const openRegex = new RegExp(`${pair.open}(?:\\s|\\()`, 'g')
+    const closeRegex = new RegExp(pair.close, 'g')
+
+    const openCount = (template.match(openRegex) || []).length
+    let closeCount = (template.match(closeRegex) || []).length
+
+    // Check for alternate close tags
+    if (pair.altClose) {
+      const altCloseRegex = new RegExp(pair.altClose, 'g')
+      closeCount += (template.match(altCloseRegex) || []).length
+    }
+
+    if (openCount > closeCount) {
+      errors.push({
+        type: 'directive',
+        message: `Unclosed @${pair.name} directive: found ${openCount} opening and ${closeCount} closing`,
+        suggestion: `Add ${openCount - closeCount} missing ${pair.close} tag(s)`,
+      })
+    }
+    else if (closeCount > openCount) {
+      warnings.push({
+        type: 'directive',
+        message: `Extra ${pair.close} found: ${closeCount - openCount} more closing than opening`,
+        suggestion: `Check for orphaned ${pair.close} tags`,
+      })
+    }
+  }
+
+  // Check for common directive syntax errors
+  const malformedDirectives = [
+    { pattern: /@if\s*[^(]/, message: '@if directive missing parentheses', suggestion: 'Use @if(condition)' },
+    { pattern: /@foreach\s*[^(]/, message: '@foreach directive missing parentheses', suggestion: 'Use @foreach(items as item)' },
+    { pattern: /@foreach\([^)]*\)\s*[^@\n<]/, message: '@foreach may have content on same line', suggestion: 'Put content on new line after @foreach()' },
+    { pattern: /@include\s*[^(]/, message: '@include directive missing parentheses', suggestion: 'Use @include(\'partial-name\')' },
+    { pattern: /@extends\s*[^(]/, message: '@extends directive missing parentheses', suggestion: 'Use @extends(\'layout-name\')' },
+  ]
+
+  for (const check of malformedDirectives) {
+    if (check.pattern.test(template)) {
+      warnings.push({
+        type: 'syntax',
+        message: check.message,
+        suggestion: check.suggestion,
+      })
+    }
+  }
+
+  // Check for potentially dangerous patterns
+  const dangerousPatterns = [
+    { pattern: /\{\{\s*constructor\s*\}\}/, message: 'Attempting to access constructor property' },
+    { pattern: /\{\{\s*__proto__\s*\}\}/, message: 'Attempting to access __proto__ property' },
+    { pattern: /\{\{\s*eval\s*\(/, message: 'Attempting to use eval in expression' },
+  ]
+
+  for (const check of dangerousPatterns) {
+    if (check.pattern.test(template)) {
+      errors.push({
+        type: 'expression',
+        message: `Security warning: ${check.message}`,
+        suggestion: 'Remove dangerous code from template expressions',
+      })
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+  }
+}
 
 /**
  * Shared function to render a component with props and slot content
@@ -171,8 +326,87 @@ export async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
+// =============================================================================
+// Script Extraction - Limitations & Known Issues
+// =============================================================================
+//
+// The script extraction system has the following KNOWN LIMITATIONS:
+//
+// 1. NO ASYNC/AWAIT SUPPORT
+//    Top-level await is NOT supported in <script> tags.
+//    Workaround: Use synchronous data or pass async data via context.
+//
+//    ❌ WILL NOT WORK:
+//    <script>
+//      const data = await fetchData()  // Error!
+//    </script>
+//
+//    ✅ WORKS:
+//    <script>
+//      // Data passed from server via context
+//      const data = context.data
+//    </script>
+//
+// 2. NO IMPORT STATEMENTS
+//    ES module imports are not supported in <script> tags.
+//    Workaround: Import in server code and pass via context.
+//
+//    ❌ WILL NOT WORK:
+//    <script>
+//      import { helper } from './utils'  // Error!
+//    </script>
+//
+//    ✅ WORKS:
+//    <script>
+//      // Helper passed via context from server
+//      const result = helper(data)
+//    </script>
+//
+// 3. COMPLEX DESTRUCTURING MAY FAIL
+//    Deeply nested destructuring patterns may not parse correctly.
+//    The system creates __destructured_ temporary variables as a workaround.
+//
+//    ⚠️ MAY HAVE ISSUES:
+//    <script>
+//      const { a: { b: { c } } } = complexObject  // May fail
+//    </script>
+//
+//    ✅ BETTER:
+//    <script>
+//      const obj = complexObject
+//      const c = obj.a.b.c
+//    </script>
+//
+// 4. TEMPLATE LITERALS WITH EXPRESSIONS
+//    Complex template literals with nested expressions may not parse correctly.
+//
+//    ⚠️ MAY HAVE ISSUES:
+//    <script>
+//      const msg = `Hello ${users.map(u => `${u.name}`).join(', ')}`
+//    </script>
+//
+//    ✅ BETTER:
+//    <script>
+//      const names = users.map(u => u.name).join(', ')
+//      const msg = `Hello ${names}`
+//    </script>
+//
+// 5. EXPORT KEYWORD IS OPTIONAL
+//    Both exported and non-exported variables are made available to templates.
+//    This is intentional for developer convenience.
+//
+//    ✅ BOTH WORK:
+//    <script>
+//      const title = 'Hello'           // Available in template
+//      export const subtitle = 'World' // Also available
+//    </script>
+//
+// =============================================================================
+
 /**
  * Extract variables from script content
+ *
+ * @see Script Extraction Limitations above for known issues
  */
 export async function extractVariables(scriptContent: string, context: Record<string, any>, filePath: string): Promise<void> {
   if (!scriptContent.trim())

@@ -1,5 +1,34 @@
 /**
  * Module for processing template expressions and filters
+ *
+ * Expression Syntax:
+ * ==================
+ * - `{{ expression }}` - Escaped output (HTML entities escaped)
+ * - `{!! expression !!}` - Raw/unescaped output
+ * - `{{ expression | filter }}` - Apply filter to expression
+ * - `{{ expression | filter:arg1,arg2 }}` - Filter with arguments
+ * - `{{ expression | filter1 | filter2 }}` - Filter chain
+ *
+ * Filter Parsing:
+ * ===============
+ * The filter parser uses character-by-character parsing to handle:
+ * - Pipe `|` as filter separator (but not `||` logical OR)
+ * - Colon `:` as argument separator
+ * - Quoted strings with proper escape handling
+ * - Nested parentheses in expressions
+ *
+ * Key parsing rules:
+ * - `||` (double pipe) is preserved as logical OR, not filter separator
+ * - Arguments after `:` are split by `,` respecting quotes and parens
+ * - Filter names must be alphanumeric with underscores
+ *
+ * Available Built-in Filters:
+ * ===========================
+ * String: uppercase, lowercase, capitalize, truncate, replace, stripTags
+ * Number: number, currency, abs, round
+ * Array: join, first, last, length, reverse, slice
+ * Utility: escape, json, default, urlencode
+ * i18n: translate, pluralize, date
  */
 
 import { isExpressionSafe, safeEvaluate } from './safe-evaluator'
@@ -10,6 +39,16 @@ import { createDetailedErrorMessage } from './utils'
  * Filter functions receive the value to transform, optional args, and the context object
  */
 export type FilterFunction = (value: any, context: Record<string, any>, ...args: any[]) => any
+
+/**
+ * Registry of custom filters added by users
+ * Use registerFilter() to add custom filters
+ */
+const customFilters: Record<string, FilterFunction> = {}
+
+// =============================================================================
+// Built-in Filters
+// =============================================================================
 
 export const defaultFilters: Record<string, FilterFunction> = {
   // String transformation filters
@@ -99,6 +138,243 @@ export const defaultFilters: Record<string, FilterFunction> = {
   t: (value: any, context: Record<string, any>, params: Record<string, any> = {}) => {
     return defaultFilters.translate(value, context, params)
   },
+
+  // =========================================================================
+  // Additional Utility Filters
+  // =========================================================================
+
+  // Truncate string to specified length with ellipsis
+  truncate: (value: any, _context: Record<string, any>, length: number = 50, suffix: string = '...') => {
+    if (value === undefined || value === null)
+      return ''
+    const str = String(value)
+    if (str.length <= length)
+      return str
+    return str.substring(0, length - suffix.length) + suffix
+  },
+
+  // Format date using Intl.DateTimeFormat
+  date: (value: any, _context: Record<string, any>, format: string = 'short', locale: string = 'en-US') => {
+    if (value === undefined || value === null)
+      return ''
+    try {
+      const date = value instanceof Date ? value : new Date(value)
+      if (Number.isNaN(date.getTime()))
+        return String(value)
+
+      // Support common format presets
+      const formatOptions: Record<string, Intl.DateTimeFormatOptions> = {
+        short: { dateStyle: 'short' },
+        medium: { dateStyle: 'medium' },
+        long: { dateStyle: 'long' },
+        full: { dateStyle: 'full' },
+        time: { timeStyle: 'short' },
+        datetime: { dateStyle: 'short', timeStyle: 'short' },
+        iso: {}, // handled separately
+      }
+
+      if (format === 'iso') {
+        return date.toISOString()
+      }
+
+      return new Intl.DateTimeFormat(locale, formatOptions[format] || formatOptions.short).format(date)
+    }
+    catch {
+      return String(value)
+    }
+  },
+
+  // Format number as currency
+  currency: (value: any, _context: Record<string, any>, currencyCode: string = 'USD', locale: string = 'en-US') => {
+    if (value === undefined || value === null)
+      return ''
+    try {
+      const num = Number(value)
+      if (Number.isNaN(num))
+        return String(value)
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: currencyCode,
+      }).format(num)
+    }
+    catch {
+      return String(value)
+    }
+  },
+
+  // Pluralize word based on count
+  pluralize: (value: any, _context: Record<string, any>, singular: string, plural?: string) => {
+    const count = Number(value)
+    if (Number.isNaN(count))
+      return singular
+    const pluralForm = plural || `${singular}s`
+    return count === 1 ? singular : pluralForm
+  },
+
+  // Get first item from array or first character from string
+  first: (value: any, _context: Record<string, any>) => {
+    if (value === undefined || value === null)
+      return ''
+    if (Array.isArray(value))
+      return value[0]
+    return String(value).charAt(0)
+  },
+
+  // Get last item from array or last character from string
+  last: (value: any, _context: Record<string, any>) => {
+    if (value === undefined || value === null)
+      return ''
+    if (Array.isArray(value))
+      return value[value.length - 1]
+    const str = String(value)
+    return str.charAt(str.length - 1)
+  },
+
+  // Get length of array or string
+  length: (value: any, _context: Record<string, any>) => {
+    if (value === undefined || value === null)
+      return 0
+    if (Array.isArray(value) || typeof value === 'string')
+      return value.length
+    if (typeof value === 'object')
+      return Object.keys(value).length
+    return 0
+  },
+
+  // Convert to JSON string
+  json: (value: any, _context: Record<string, any>, pretty: boolean = false) => {
+    if (value === undefined)
+      return 'undefined'
+    if (value === null)
+      return 'null'
+    try {
+      return pretty ? JSON.stringify(value, null, 2) : JSON.stringify(value)
+    }
+    catch {
+      return String(value)
+    }
+  },
+
+  // Default value if null/undefined
+  default: (value: any, _context: Record<string, any>, defaultValue: any = '') => {
+    return (value === undefined || value === null || value === '') ? defaultValue : value
+  },
+
+  // Reverse string or array
+  reverse: (value: any, _context: Record<string, any>) => {
+    if (value === undefined || value === null)
+      return ''
+    if (Array.isArray(value))
+      return [...value].reverse()
+    return String(value).split('').reverse().join('')
+  },
+
+  // Slice array or string
+  slice: (value: any, _context: Record<string, any>, start: number = 0, end?: number) => {
+    if (value === undefined || value === null)
+      return ''
+    if (Array.isArray(value) || typeof value === 'string')
+      return value.slice(start, end)
+    return value
+  },
+
+  // Replace text
+  replace: (value: any, _context: Record<string, any>, search: string, replacement: string = '') => {
+    if (value === undefined || value === null)
+      return ''
+    return String(value).replace(new RegExp(search, 'g'), replacement)
+  },
+
+  // Strip HTML tags
+  stripTags: (value: any, _context: Record<string, any>) => {
+    if (value === undefined || value === null)
+      return ''
+    return String(value).replace(/<[^>]*>/g, '')
+  },
+
+  // URL encode
+  urlencode: (value: any, _context: Record<string, any>) => {
+    if (value === undefined || value === null)
+      return ''
+    return encodeURIComponent(String(value))
+  },
+
+  // Absolute value
+  abs: (value: any, _context: Record<string, any>) => {
+    const num = Number(value)
+    return Number.isNaN(num) ? 0 : Math.abs(num)
+  },
+
+  // Round number
+  round: (value: any, _context: Record<string, any>, decimals: number = 0) => {
+    const num = Number(value)
+    if (Number.isNaN(num))
+      return 0
+    const factor = 10 ** decimals
+    return Math.round(num * factor) / factor
+  },
+}
+
+// =============================================================================
+// Custom Filter Registry API
+// =============================================================================
+
+/**
+ * Register a custom filter
+ *
+ * @param name - Filter name (used in templates as {{ value | filterName }})
+ * @param fn - Filter function
+ *
+ * @example
+ * ```typescript
+ * // Register a custom filter
+ * registerFilter('reverse', (value) => {
+ *   return String(value).split('').reverse().join('')
+ * })
+ *
+ * // Use in template: {{ name | reverse }}
+ * ```
+ */
+export function registerFilter(name: string, fn: FilterFunction): void {
+  if (name in defaultFilters) {
+    console.warn(`Filter "${name}" already exists as a built-in filter. Custom filter will take precedence.`)
+  }
+  customFilters[name] = fn
+}
+
+/**
+ * Register multiple custom filters at once
+ *
+ * @param filters - Object mapping filter names to functions
+ *
+ * @example
+ * ```typescript
+ * registerFilters({
+ *   reverse: (value) => String(value).split('').reverse().join(''),
+ *   double: (value) => Number(value) * 2,
+ * })
+ * ```
+ */
+export function registerFilters(filters: Record<string, FilterFunction>): void {
+  for (const [name, fn] of Object.entries(filters)) {
+    registerFilter(name, fn)
+  }
+}
+
+/**
+ * Get all available filters (built-in + custom)
+ */
+export function getAllFilters(): Record<string, FilterFunction> {
+  return { ...defaultFilters, ...customFilters }
+}
+
+/**
+ * Clear all custom filters (useful for testing)
+ */
+export function clearCustomFilters(): void {
+  for (const key of Object.keys(customFilters)) {
+    delete customFilters[key]
+  }
 }
 
 /**
@@ -205,10 +481,10 @@ export function applyFilters(value: any, filterExpression: string, context: Reco
     // Remove the filter name from the remaining expression
     remainingExpression = remainingExpression.substring(filterName.length).trim()
 
-    // Find the filter function
-    const filterFn = defaultFilters[filterName]
+    // Find the filter function - check custom filters first, then default
+    const filterFn = customFilters[filterName] || defaultFilters[filterName]
     if (!filterFn) {
-      throw new Error(`Filter not found: ${filterName}`)
+      throw new Error(`Filter not found: ${filterName}. Available filters: ${Object.keys(getAllFilters()).join(', ')}`)
     }
 
     // Check if there are parameters (starting with parenthesis)

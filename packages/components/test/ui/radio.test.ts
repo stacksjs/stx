@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach } from 'bun:test'
 import type { RadioProps } from '../../src/ui/radio'
+import { beforeEach, describe, expect, it } from 'bun:test'
 
 describe('Radio Component - DOM Tests', () => {
   let container: HTMLElement

@@ -376,7 +376,7 @@ export function clearModuleCache(cacheKey?: string): void {
  *
  * @returns Cache size and keys
  */
-export function getCacheStats(): { size: number; keys: string[] } {
+export function getCacheStats(): { size: number, keys: string[] } {
   return {
     size: moduleCache.size,
     keys: Array.from(moduleCache.keys()),

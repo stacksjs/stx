@@ -39,7 +39,7 @@ export function useLocalStorage<T>(
     value: T
     setValue: (newValue: T | ((prev: T) => T)) => void
     removeValue: () => void
-    } {
+  } {
   const {
     serializer = JSON.stringify,
     deserializer = JSON.parse,
@@ -68,7 +68,7 @@ export function useLocalStorage<T>(
   function setValue(newValue: T | ((prev: T) => T)) {
     try {
       // Allow value to be a function for same API as useState
-      const valueToStore = newValue instanceof Function ? newValue(value) : newValue
+      const valueToStore = typeof newValue === 'function' ? newValue(value) : newValue
 
       value = valueToStore
 

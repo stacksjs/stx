@@ -3,6 +3,95 @@
  */
 
 /**
+ * Generic LRU (Least Recently Used) cache implementation
+ * Automatically evicts least recently used items when capacity is reached
+ */
+export class LRUCache<K, V> {
+  private cache = new Map<K, V>()
+  private readonly maxSize: number
+
+  constructor(maxSize: number = 100) {
+    this.maxSize = maxSize
+  }
+
+  /**
+   * Get a value from the cache, moving it to most recently used
+   */
+  get(key: K): V | undefined {
+    if (!this.cache.has(key)) {
+      return undefined
+    }
+
+    // Move to end (most recently used) by deleting and re-adding
+    const value = this.cache.get(key)!
+    this.cache.delete(key)
+    this.cache.set(key, value)
+    return value
+  }
+
+  /**
+   * Set a value in the cache
+   */
+  set(key: K, value: V): void {
+    // If key exists, delete it first to update position
+    if (this.cache.has(key)) {
+      this.cache.delete(key)
+    }
+    // If at capacity, delete the oldest (first) entry
+    else if (this.cache.size >= this.maxSize) {
+      const oldestKey = this.cache.keys().next().value
+      if (oldestKey !== undefined) {
+        this.cache.delete(oldestKey)
+      }
+    }
+
+    this.cache.set(key, value)
+  }
+
+  /**
+   * Check if key exists in cache
+   */
+  has(key: K): boolean {
+    return this.cache.has(key)
+  }
+
+  /**
+   * Delete a key from the cache
+   */
+  delete(key: K): boolean {
+    return this.cache.delete(key)
+  }
+
+  /**
+   * Clear all entries from the cache
+   */
+  clear(): void {
+    this.cache.clear()
+  }
+
+  /**
+   * Get the current size of the cache
+   */
+  get size(): number {
+    return this.cache.size
+  }
+
+  /**
+   * Get all keys in the cache (oldest to newest)
+   */
+  keys(): IterableIterator<K> {
+    return this.cache.keys()
+  }
+
+  /**
+   * Get all values in the cache (oldest to newest)
+   */
+  values(): IterableIterator<V> {
+    return this.cache.values()
+  }
+}
+
+/**
  * Cache for compiled regex patterns to avoid recompilation
  */
 const REGEX_CACHE = new Map<string, RegExp>()

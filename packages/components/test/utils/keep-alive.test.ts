@@ -1,11 +1,12 @@
-import { describe, expect, it, beforeEach } from 'bun:test'
+import type { ComponentInstance, KeepAlive } from '../../src/utils/keep-alive'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import {
+
+  createComponentPool,
   createKeepAlive,
   createLRUCache,
   createStateManager,
-  createComponentPool,
-  type ComponentInstance,
-  type KeepAlive,
+
 } from '../../src/utils/keep-alive'
 
 describe('KeepAlive', () => {
@@ -300,7 +301,7 @@ describe('KeepAlive', () => {
         createdAt: Date.now(),
         lastAccessedAt: Date.now(),
       }, {
-        onSave: (instance) => ({ count: 10 }),
+        onSave: instance => ({ count: 10 }),
       })
 
       keepAlive.deactivate('comp-1')

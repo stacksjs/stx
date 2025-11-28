@@ -269,10 +269,10 @@ describe('Component Accessibility Tests', () => {
       const roles = extractRoles(template)
       const ariaAttrs = extractAriaAttributes(template)
 
-      const hasAccessibility = roles.includes('status') ||
-        roles.includes('progressbar') ||
-        ariaAttrs['aria-label'] ||
-        template.includes('sr-only')
+      const hasAccessibility = roles.includes('status')
+        || roles.includes('progressbar')
+        || ariaAttrs['aria-label']
+        || template.includes('sr-only')
 
       expect(hasAccessibility).toBe(true)
     })

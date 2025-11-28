@@ -22,6 +22,66 @@ import { injectSeoTags, processMetaDirectives, processSeoDirective, processStruc
 import { renderComponent, resolveTemplatePath } from './utils'
 import { runComposers } from './view-composers'
 
+// =============================================================================
+// DIRECTIVE PROCESSING ORDER
+// =============================================================================
+//
+// The order in which directives are processed is CRITICAL for correct template
+// rendering. Directives are processed in a specific sequence to ensure that:
+//
+// 1. Variables are defined before they're used
+// 2. Layouts are resolved before content directives
+// 3. Loop variables are available within conditionals
+// 4. Expressions are evaluated after all directives generate their output
+//
+// PROCESSING ORDER (processDirectivesInternal):
+// ---------------------------------------------
+// Phase 1: Pre-processing
+//   1. Remove comments: {{-- ... --}}
+//   2. Process escaped directives: @@ -> @
+//   3. Process escaped expressions: @{{ }} -> {{ }}
+//   4. Process @push/@prepend (collect stack content)
+//
+// Phase 2: Layout Resolution
+//   5. Extract @extends directive (layout path)
+//   6. Extract @section directives (including @parent handling)
+//   7. Replace @yield with section content
+//   8. Replace @stack with collected content
+//   9. If layout exists: recursively process layout with sections
+//
+// Phase 3: Directive Processing (processOtherDirectives):
+//   10. Run view composers
+//   11. Run pre-processing middleware
+//   12. @js, @ts directives (FIRST - defines variables for other directives)
+//   13. Custom directives (user-registered)
+//   14. @component directives
+//   15. Custom element components (PascalCase/kebab-case tags)
+//   16. @transition, @animationGroup, etc.
+//   17. @route directives
+//   18. @auth, @guest, @can, @cannot directives
+//   19. @csrf directives
+//   20. @method directives
+//   21. @include, @partial, @includeIf, etc.
+//   22. @foreach, @for, @while, @forelse (BEFORE conditionals)
+//   23. @if, @unless, @switch (AFTER loops - loop vars in scope)
+//   24. @isset, @empty directives
+//   25. @env, @production, @development, etc.
+//   26. @form directives
+//   27. @error directives
+//   28. @markdown file directives
+//   29. @markdown block directives
+//   30. @translate, @t directives
+//   31. @a11y, @screenReader directives
+//   32. @meta, @seo, @structuredData directives
+//   33. @json directive
+//   34. @once directive
+//   35. {{ }} expressions (LAST - after all directive output)
+//   36. Run post-processing middleware
+//   37. Auto-inject SEO tags (if enabled)
+//
+// IMPORTANT: Changing this order may break template rendering!
+// =============================================================================
+
 /**
  * Process all template directives with enhanced error handling and performance monitoring
  */
@@ -335,7 +395,7 @@ async function processOtherDirectives(
   output = await processIncludes(output, context, filePath, options, dependencies)
 
   // Process loops (@foreach, @for, etc.) - BEFORE conditionals to handle nested scope properly
-  output = processLoops(output, context, filePath)
+  output = processLoops(output, context, filePath, options)
 
   // Process conditionals (@if, @unless, etc.) - AFTER loops to allow loop variables in scope
   output = processConditionals(output, context, filePath)

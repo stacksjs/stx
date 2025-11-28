@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-import { useCopyCode, copyToClipboard } from '../src/composables/useCopyCode'
-import { getSystemTheme, getEffectiveTheme } from '../src/composables/useDarkMode'
+import { useCopyCode } from '../src/composables/useCopyCode'
+import { getEffectiveTheme, getSystemTheme } from '../src/composables/useDarkMode'
 
 describe('Composables', () => {
   describe('useCopyCode', () => {

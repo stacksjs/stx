@@ -38,11 +38,13 @@ async function launchWithCraft() {
 
     console.log('Launching Buddy...')
     await app.show()
-  } catch (error) {
+  }
+  catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND') {
       console.log('Craft (ts-craft) not found. Running in browser mode...')
       await launchInBrowser()
-    } else {
+    }
+    else {
       throw error
     }
   }
@@ -70,9 +72,11 @@ async function launchInBrowser() {
 
   if (platform === 'darwin') {
     exec(`open http://localhost:${server.port}`)
-  } else if (platform === 'win32') {
+  }
+  else if (platform === 'win32') {
     exec(`start http://localhost:${server.port}`)
-  } else {
+  }
+  else {
     exec(`xdg-open http://localhost:${server.port}`)
   }
 }

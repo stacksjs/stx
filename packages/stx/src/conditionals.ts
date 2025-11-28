@@ -1,19 +1,64 @@
 /**
  * Module for processing conditional directives (@if, @elseif, @else, @unless)
+ *
+ * Regex Pattern Reference:
+ * ========================
+ *
+ * NESTED_PARENS_PATTERN: `(?:[^()]|\([^()]*\))*`
+ *   - Matches content with one level of nested parentheses
+ *   - `[^()]` - Match any character except parentheses
+ *   - `\([^()]*\)` - OR match balanced parentheses (one level deep)
+ *   - Used in: @switch, @case, @if expressions to handle function calls
+ *   - Example matches: `user.role`, `getRole()`, `check(a, b)`
+ *   - Limitation: Only handles ONE level of nesting. `fn(a(b))` won't work correctly.
+ *
+ * DIRECTIVE_WITH_CONTENT: `@directive\s*\(EXPR\)([\s\S]*?)@enddirective`
+ *   - `\s*` - Optional whitespace after directive name
+ *   - `\(EXPR\)` - Parenthesized expression
+ *   - `[\s\S]*?` - Non-greedy match of ANY content (including newlines)
+ *   - `?` makes it non-greedy to match shortest possible content
+ *
+ * IF_ELSEIF_ELSE: Complex multi-branch matching
+ *   - Processes from inside-out to handle nesting
+ *   - Each @elseif/@else creates a branch in the condition chain
  */
 
 import process from 'node:process'
 import { evaluateAuthExpression } from './auth'
 import { createDetailedErrorMessage } from './utils'
 
+// =============================================================================
+// Regex Patterns
+// =============================================================================
+
+/**
+ * Pattern for matching content with one level of nested parentheses.
+ * Used throughout conditionals for expression parsing.
+ *
+ * Structure: `(?:[^()]|\([^()]*\))*`
+ * - `(?:...)` - Non-capturing group
+ * - `[^()]` - Any char except parens
+ * - `|` - OR
+ * - `\([^()]*\)` - Balanced parens with no nested parens inside
+ * - `*` - Zero or more of either option
+ */
+const NESTED_PARENS_PATTERN = '(?:[^()]|\\([^()]*\\))*'
+
 /**
  * Helper function to find balanced @switch/@endswitch pairs
+ *
+ * Uses depth-tracking algorithm:
+ * 1. Start with depth=1 (we're inside a @switch)
+ * 2. Increment depth for each nested @switch found
+ * 3. Decrement depth for each @endswitch found
+ * 4. Return when depth reaches 0 (found matching @endswitch)
  */
 function findBalancedSwitch(content: string, startIndex: number): { end: number, switchContent: string } | null {
   let depth = 1
   let currentIndex = startIndex
 
   while (currentIndex < content.length && depth > 0) {
+    // Uses NESTED_PARENS_PATTERN - see module documentation for regex explanation
     const switchMatch = content.substring(currentIndex).match(/@switch\s*\(((?:[^()]|\([^()]*\))*)\)/)
     const endSwitchMatch = content.substring(currentIndex).match(/@endswitch/)
 
@@ -53,7 +98,8 @@ export function processSwitchStatements(template: string, context: Record<string
   while (processedAny) {
     processedAny = false
 
-    // Find the first @switch statement - improved regex to handle nested parentheses
+    // Find the first @switch statement
+    // Uses NESTED_PARENS_PATTERN - see module documentation for regex explanation
     const switchRegex = /@switch\s*\(((?:[^()]|\([^()]*\))*)\)/
     const switchMatch = output.match(switchRegex)
     if (!switchMatch || switchMatch.index === undefined) {
@@ -88,8 +134,7 @@ export function processSwitchStatements(template: string, context: Record<string
       const casePositions: Array<{ pos: number, value: string, directive: string }> = []
       let caseMatch
 
-      // biome-ignore lint/suspicious/noAssignInExpressions: needed for regex matching
-      // eslint-disable-next-line no-cond-assign
+      // eslint-disable-next-line no-cond-assign -- needed for regex matching
       while ((caseMatch = caseRegex.exec(switchContent)) !== null) {
         casePositions.push({
           pos: caseMatch.index,
@@ -177,9 +222,24 @@ export function processConditionals(template: string, context: Record<string, an
   // Process @switch statements first
   output = processSwitchStatements(output, context, filePath)
 
-  // Process @unless directives (convert to @if negation)
-  output = output.replace(/@unless\s*\(([^)]+)\)([\s\S]*?)@endunless/g, (_, condition, content) => {
-    return `@if (!(${condition}))${content}@endif`
+  // Process @unless directives with @else support
+  // @unless is the inverse of @if - renders content when condition is FALSE
+  // Supports @else for content when condition is TRUE
+  output = output.replace(/@unless\s*\(([^)]+)\)([\s\S]*?)@endunless/g, (match, condition, content) => {
+    // Check if there's an @else within the @unless block
+    const elseMatch = content.match(/^([\s\S]*?)@else([\s\S]*)$/)
+
+    if (elseMatch) {
+      // Has @else - convert to @if with swapped content
+      // @unless(cond) A @else B @endunless -> @if(cond) B @else A @endif
+      const unlessContent = elseMatch[1]
+      const elseContent = elseMatch[2]
+      return `@if (${condition})${elseContent}@else${unlessContent}@endif`
+    }
+    else {
+      // No @else - simple negation
+      return `@if (!(${condition}))${content}@endif`
+    }
   })
 
   // Process @isset and @empty directives separately
@@ -264,8 +324,86 @@ export function processConditionals(template: string, context: Record<string, an
   return output
 }
 
+// =============================================================================
+// Authentication Directive Documentation
+// =============================================================================
+//
+// Auth directives require specific context shapes to work correctly.
+//
+// REQUIRED CONTEXT STRUCTURE:
+// ---------------------------
+//
+// For @auth / @guest directives:
+// ```typescript
+// const context = {
+//   auth: {
+//     check: true,  // Boolean: is user authenticated?
+//     user: {       // User object or null
+//       id: 1,
+//       name: 'John',
+//       email: 'john@example.com',
+//       // ... any other user properties
+//     }
+//   }
+// }
+// ```
+//
+// For @can / @cannot directives (Option 1 - Simple boolean map):
+// ```typescript
+// const context = {
+//   userCan: {
+//     'edit-posts': true,
+//     'delete-posts': false,
+//     'manage-users': true,
+//   }
+// }
+// ```
+//
+// For @can / @cannot directives (Option 2 - Function-based):
+// ```typescript
+// const context = {
+//   permissions: {
+//     check: (ability: string, type?: string, id?: any) => {
+//       // Return true/false based on user's permissions
+//       return userHasAbility(ability, type, id)
+//     }
+//   }
+// }
+// ```
+//
+// DIRECTIVE USAGE:
+// ----------------
+//
+// @auth / @endauth - Show content only to authenticated users
+//   @auth
+//     Welcome, {{ auth.user.name }}!
+//   @else
+//     Please log in.
+//   @endauth
+//
+// @guest / @endguest - Show content only to unauthenticated users
+//   @guest
+//     Please log in to continue.
+//   @endguest
+//
+// @can('ability') / @endcan - Show content if user has permission
+//   @can('edit-posts')
+//     <button>Edit</button>
+//   @else
+//     <span>Read-only</span>
+//   @endcan
+//
+// @cannot('ability') / @endcannot - Show content if user lacks permission
+//   @cannot('delete-posts')
+//     <span>Deletion disabled</span>
+//   @endcannot
+//
+// =============================================================================
+
 /**
  * Process @auth and permissions directives
+ *
+ * @see Authentication Directive Documentation above for required context shapes
  */
 export function processAuthDirectives(template: string, context: Record<string, any>): string {
   let output = template

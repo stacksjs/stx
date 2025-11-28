@@ -112,9 +112,25 @@ export async function cacheTemplate(
 }
 
 /**
+ * Hash length for cache filenames.
+ * 16 hex characters = 64 bits of entropy, providing:
+ * - Sufficient collision resistance for typical project sizes (millions of files)
+ * - Short enough for readable cache filenames
+ * - Fast lookup in filesystem
+ */
+const CACHE_HASH_LENGTH = 16
+
+/**
  * Create a hash of the file path for cache filenames
+ *
+ * Uses SHA-1 (fast, collision-resistant enough for cache keys) truncated to
+ * CACHE_HASH_LENGTH characters. The truncated hash still provides strong
+ * uniqueness guarantees for cache file identification.
+ *
+ * @param filePath - Absolute path to the template file
+ * @returns A 16-character hex string suitable for use as a filename
  */
 export function hashFilePath(filePath: string): string {
   const hash = new Bun.CryptoHasher('sha1').update(filePath).digest('hex')
-  return hash.substring(0, 16)
+  return hash.substring(0, CACHE_HASH_LENGTH)
 }

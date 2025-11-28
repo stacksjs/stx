@@ -49,10 +49,10 @@
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
-    "@stacksjs/stx": "workspace:*",
     "@stacksjs/headwind": "^0.1.3",
-    "ts-syntax-highlighter": "^0.2.1",
-    "bun-plugin-stx": "workspace:*"
+    "@stacksjs/stx": "workspace:*",
+    "bun-plugin-stx": "workspace:*",
+    "ts-syntax-highlighter": "^0.2.1"
   },
   "devDependencies": {
     "@stacksjs/eslint-config": "^4.14.0-beta.3",

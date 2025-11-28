@@ -15,10 +15,10 @@
  *   OLLAMA_HOST - For Ollama driver (default: http://localhost:11434)
  */
 
-import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { join, dirname } from 'node:path'
-import { homedir } from 'node:os'
 import { $ } from 'bun'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { dirname, join } from 'node:path'
 
 // Types
 interface AIMessage {
@@ -125,7 +125,7 @@ const drivers: Record<string, AIDriver> = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           model: 'gpt-4o',
@@ -180,7 +180,7 @@ const drivers: Record<string, AIDriver> = {
   mock: {
     name: 'Mock',
     async process(command: string): Promise<string> {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, 1000))
 
       const lowerCommand = command.toLowerCase()
 
@@ -249,11 +249,13 @@ Files modified: 1`
 function buildSystemPrompt(context: string): string {
   return `You are Buddy, an AI code assistant that helps users modify codebases through voice commands.
 
-${state.repo ? `You are working on the repository: ${state.repo.name}
+${state.repo
+  ? `You are working on the repository: ${state.repo.name}
 Branch: ${state.repo.branch}
 Path: ${state.repo.path}
 
-${context}` : 'No repository is currently open.'}
+${context}`
+  : 'No repository is currently open.'}
 
 When the user gives you a command:
 1. Analyze what they want to do
@@ -287,11 +289,13 @@ async function openRepository(input: string): Promise<RepoState> {
     if (existsSync(repoPath)) {
       console.log(`Repository already exists, pulling latest...`)
       await $`cd ${repoPath} && git pull --rebase`.quiet()
-    } else {
+    }
+    else {
       console.log(`Cloning ${input}...`)
       await $`git clone ${input} ${repoPath}`.quiet()
     }
-  } else {
+  }
+  else {
     repoPath = input.startsWith('~') ? input.replace('~', homedir()) : input
 
     if (!existsSync(repoPath)) {
@@ -331,8 +335,8 @@ async function openRepository(input: string): Promise<RepoState> {
  * Get repository structure for context
  */
 async function getRepoContext(repoPath: string): Promise<string> {
-  const treeResult =
-    await $`cd ${repoPath} && find . -type f -not -path "*/node_modules/*" -not -path "*/.git/*" -not -name "*.lock" | head -50`.quiet()
+  const treeResult
+    = await $`cd ${repoPath} && find . -type f -not -path "*/node_modules/*" -not -path "*/.git/*" -not -name "*.lock" | head -50`.quiet()
   const files = treeResult.text().trim()
 
   let readme = ''
@@ -392,7 +396,7 @@ async function applyChanges(response: string): Promise<string[]> {
   }
 
   const modifiedFiles: string[] = []
-  const filePattern = /FILE:\s*([^\n]+)\n```[\w]*\n([\s\S]*?)```/g
+  const filePattern = /FILE:\s*([^\n]+)\n```\w*\n([\s\S]*?)```/g
   let match
 
   while ((match = filePattern.exec(response)) !== null) {
@@ -422,7 +426,8 @@ async function applyChanges(response: string): Promise<string[]> {
  * Configure git user for commits
  */
 async function configureGitUser(): Promise<void> {
-  if (!state.repo || !state.github) return
+  if (!state.repo || !state.github)
+    return
 
   const { name, email } = state.github
 
@@ -492,7 +497,8 @@ const server = Bun.serve({
         const { input } = (await req.json()) as { input: string }
         const repo = await openRepository(input)
         return Response.json({ success: true, repo })
-      } catch (error) {
+      }
+      catch (error) {
         return Response.json({ success: false, error: (error as Error).message }, { status: 400 })
       }
     }
@@ -500,7 +506,7 @@ const server = Bun.serve({
     // API: Process command
     if (url.pathname === '/api/process' && req.method === 'POST') {
       try {
-        const { command, driver } = (await req.json()) as { command: string; driver?: string }
+        const { command, driver } = (await req.json()) as { command: string, driver?: string }
 
         const response = await processCommand(command, driver)
         const modifiedFiles = await applyChanges(response)
@@ -511,7 +517,8 @@ const server = Bun.serve({
           hasChanges: modifiedFiles.length > 0,
           modifiedFiles,
         })
-      } catch (error) {
+      }
+      catch (error) {
         return Response.json({ success: false, error: (error as Error).message }, { status: 400 })
       }
     }
@@ -521,7 +528,8 @@ const server = Bun.serve({
       try {
         const hash = await commitChanges()
         return Response.json({ success: true, hash, message: CONFIG.commitMessage })
-      } catch (error) {
+      }
+      catch (error) {
         return Response.json({ success: false, error: (error as Error).message }, { status: 400 })
       }
     }
@@ -531,7 +539,8 @@ const server = Bun.serve({
       try {
         await pushChanges()
         return Response.json({ success: true })
-      } catch (error) {
+      }
+      catch (error) {
         return Response.json({ success: false, error: (error as Error).message }, { status: 400 })
       }
     }
@@ -554,7 +563,8 @@ const server = Bun.serve({
         state.github = { token, username, name, email }
         console.log(`GitHub connected: ${username} <${email}>`)
         return Response.json({ success: true, username, name, email })
-      } catch (error) {
+      }
+      catch (error) {
         return Response.json({ success: false, error: (error as Error).message }, { status: 400 })
       }
     }
@@ -599,8 +609,10 @@ console.log(`
 const { exec } = await import('node:child_process')
 if (process.platform === 'darwin') {
   exec(`open http://localhost:${server.port}`)
-} else if (process.platform === 'win32') {
+}
+else if (process.platform === 'win32') {
   exec(`start http://localhost:${server.port}`)
-} else {
+}
+else {
   exec(`xdg-open http://localhost:${server.port}`)
 }

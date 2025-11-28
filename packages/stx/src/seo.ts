@@ -1,6 +1,35 @@
-/* eslint-disable unused-imports/no-unused-vars */
+/**
+ * SEO (Search Engine Optimization) Module
+ *
+ * Provides directives and utilities for generating SEO-related HTML:
+ * - `@meta('name', 'content')` - Generate meta tags
+ * - `@metaTag({ name, property, content })` - Meta tags with full control
+ * - `@structuredData({ ... })` - JSON-LD structured data
+ * - `@seo({ title, description, ... })` - Comprehensive SEO generation
+ *
+ * Also provides automatic SEO tag injection for templates without explicit
+ * SEO directives via `injectSeoTags()`.
+ *
+ * ## Configuration
+ *
+ * Default SEO values can be set in `stx.config.ts`:
+ * ```typescript
+ * export default {
+ *   defaultTitle: 'My Site',
+ *   defaultDescription: 'Site description',
+ *   seo: {
+ *     enabled: true,
+ *     defaultConfig: { ... }
+ *   }
+ * }
+ * ```
+ */
 import type { CustomDirective, SeoConfig, StxOptions } from './types'
 import { createDetailedErrorMessage } from './utils'
+
+// =============================================================================
+// Types
+// =============================================================================
 
 interface MetaTag {
   name?: string
@@ -15,14 +44,20 @@ interface StructuredData {
   [key: string]: any
 }
 
+// =============================================================================
+// Meta Tag Processing
+// =============================================================================
+
 /**
- * Process @meta directive for generating meta tags
+ * Process @meta directive for generating meta tags.
+ * Supports both simple `@meta('name', 'content')` and
+ * OpenGraph `@meta('og:title')` formats.
  */
 export function processMetaDirectives(
   template: string,
   context: Record<string, any>,
-  filePath: string,
-  options: StxOptions,
+  _filePath: string,
+  _options: StxOptions,
 ): string {
   let output = template
 
@@ -88,13 +123,18 @@ export function processMetaDirectives(
   return output
 }
 
+// =============================================================================
+// Structured Data
+// =============================================================================
+
 /**
- * Process @structuredData directive for JSON-LD
+ * Process @structuredData directive for JSON-LD.
+ * Automatically adds schema.org context if not provided.
  */
 export function processStructuredData(
   template: string,
   context: Record<string, any>,
-  filePath: string,
+  _filePath: string,
 ): string {
   let output = template
 
@@ -126,14 +166,19 @@ export function processStructuredData(
   return output
 }
 
+// =============================================================================
+// SEO Directive
+// =============================================================================
+
 /**
- * Process @seo directive for automatic meta tag generation
+ * Process @seo directive for automatic meta tag generation.
+ * Generates title, description, Open Graph, Twitter, and structured data tags.
  */
 export function processSeoDirective(
   template: string,
   context: Record<string, any>,
   filePath: string,
-  options: StxOptions,
+  _options: StxOptions,
 ): string {
   let output = template
 
@@ -269,8 +314,13 @@ export function processSeoDirective(
   return output
 }
 
+// =============================================================================
+// Auto-Injection
+// =============================================================================
+
 /**
- * Injects default SEO tags if no @seo directive is used
+ * Injects default SEO tags if no @seo directive is used.
+ * Respects seo.enabled config and skipDefaultSeoTags option.
  */
 export function injectSeoTags(
   html: string,
@@ -375,8 +425,13 @@ export function injectSeoTags(
   return result.replace(/<head[^>]*>/, `$&\n${seoTagsMinimal}\n`)
 }
 
+// =============================================================================
+// Utilities
+// =============================================================================
+
 /**
- * Escape HTML entities in a string
+ * Escape HTML entities in a string.
+ * Local copy to avoid circular dependencies with expressions module.
  */
 function escapeHtml(str: string): string {
   return str
@@ -387,12 +442,16 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;')
 }
 
+// =============================================================================
+// Custom Directives
+// =============================================================================
+
 /**
  * SEO meta directive for basic meta tag generation
  */
 export const metaDirective: CustomDirective = {
   name: 'meta',
-  handler: (content, params, context, filePath) => {
+  handler: (_content, params, _context, _filePath) => {
     if (params.length < 1) {
       return '[Error: meta directive requires at least the meta name]'
     }
@@ -410,7 +469,7 @@ export const metaDirective: CustomDirective = {
  */
 export const structuredDataDirective: CustomDirective = {
   name: 'structuredData',
-  handler: (content, params, context, filePath) => {
+  handler: (content, _params, _context, _filePath) => {
     if (content.trim() === '') {
       return '[Error: structuredData directive requires JSON-LD content]'
     }

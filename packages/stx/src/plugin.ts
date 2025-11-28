@@ -95,7 +95,7 @@ export const plugin: BunPlugin = {
 
             // Check if this looks like a server-side data script
             const isServerScript = /\b(module\.exports|export\s+(const|let|var|function|default))\b/.test(innerContent)
-              || (/^[\s\n]*(const|let|var)\s+\w+\s*=/.test(innerContent) && !isClientScript)
+              || (/^\s*(const|let|var)\s+\w+\s*=/.test(innerContent) && !isClientScript)
 
             if (isServerScript && !isClientScript) {
               serverScriptContent = innerContent

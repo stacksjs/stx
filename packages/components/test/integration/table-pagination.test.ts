@@ -97,15 +97,17 @@ describe('table Pagination Integration', () => {
         items: typeof data,
         field: SortField,
         direction: SortDirection,
-        page: number
+        page: number,
       ) => {
         // Sort data
         const sorted = [...items].sort((a, b) => {
           const aVal = a[field]
           const bVal = b[field]
 
-          if (aVal < bVal) return direction === 'asc' ? -1 : 1
-          if (aVal > bVal) return direction === 'asc' ? 1 : -1
+          if (aVal < bVal)
+            return direction === 'asc' ? -1 : 1
+          if (aVal > bVal)
+            return direction === 'asc' ? 1 : -1
           return 0
         })
 
@@ -142,7 +144,7 @@ describe('table Pagination Integration', () => {
       const filterAndPaginate = (
         items: typeof data,
         filterFn: (item: typeof data[0]) => boolean,
-        page: number
+        page: number,
       ) => {
         const filtered = items.filter(filterFn)
         const start = (page - 1) * pageSize
@@ -159,7 +161,7 @@ describe('table Pagination Integration', () => {
       let result = filterAndPaginate(
         data,
         item => item.status === 'active',
-        1
+        1,
       )
       expect(result.totalFiltered).toBe(50) // Half are active
       expect(result.totalPages).toBe(5)
@@ -169,7 +171,7 @@ describe('table Pagination Integration', () => {
       result = filterAndPaginate(
         data,
         item => item.status === 'inactive',
-        1
+        1,
       )
       expect(result.totalFiltered).toBe(50)
       expect(result.data.every(item => item.status === 'inactive')).toBe(true)
@@ -178,7 +180,7 @@ describe('table Pagination Integration', () => {
       result = filterAndPaginate(
         data,
         item => item.name.includes('1'),
-        1
+        1,
       )
       expect(result.totalFiltered).toBeGreaterThan(0)
     })
@@ -258,7 +260,8 @@ describe('table Pagination Integration', () => {
       const toggleSelection = (id: number) => {
         if (selectedIds.has(id)) {
           selectedIds.delete(id)
-        } else {
+        }
+        else {
           selectedIds.add(id)
         }
       }

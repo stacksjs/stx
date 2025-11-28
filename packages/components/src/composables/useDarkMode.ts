@@ -18,7 +18,8 @@ export interface DarkModeResult {
  * Check if system prefers dark mode
  */
 export function getSystemTheme(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'light'
+  if (typeof window === 'undefined')
+    return 'light'
 
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
@@ -41,7 +42,8 @@ export function useDarkMode(options: DarkModeOptions = {}): DarkModeResult {
 
   if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
     const stored = localStorage.getItem(storageKey) as 'light' | 'dark' | 'system' | null
-    if (stored) theme = stored
+    if (stored)
+      theme = stored
   }
 
   const isDark = getEffectiveTheme(theme) === 'dark'
@@ -53,7 +55,8 @@ export function useDarkMode(options: DarkModeOptions = {}): DarkModeResult {
     if (typeof document !== 'undefined') {
       if (effective === 'dark') {
         document.documentElement.classList.add('dark')
-      } else {
+      }
+      else {
         document.documentElement.classList.remove('dark')
       }
     }

@@ -1,19 +1,19 @@
-import { describe, expect, it, beforeEach, afterEach } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import {
-  generateId,
-  createAriaLabel,
-  createAriaDescription,
   announceToScreenReader,
-  getFocusableElements,
+  aria,
+  createAriaDescription,
+  createAriaLabel,
   createFocusTrap,
   createRovingTabindex,
-  aria,
   createScreenReaderText,
-  prefersReducedMotion,
   createSkipLink,
-  validateAriaRelationships,
+  generateId,
+  getFocusableElements,
   hasFocus,
   isVisibleToScreenReader,
+  prefersReducedMotion,
+  validateAriaRelationships,
 } from '../../src/utils/accessibility'
 
 describe('Accessibility Utilities', () => {

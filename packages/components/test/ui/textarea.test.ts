@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach } from 'bun:test'
 import type { TextareaProps } from '../../src/ui/textarea'
+import { beforeEach, describe, expect, it } from 'bun:test'
 
 describe('Textarea Component - DOM Tests', () => {
   let container: HTMLElement

@@ -1,8 +1,8 @@
 {
   "name": "buddy-mobile",
   "version": "1.0.0",
-  "description": "Buddy - Voice AI Code Assistant for iOS and Android",
   "private": true,
+  "description": "Buddy - Voice AI Code Assistant for iOS and Android",
   "scripts": {
     "build": "bun run build:web && bun run build:ios",
     "build:web": "bun scripts/build-web.ts",

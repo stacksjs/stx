@@ -151,7 +151,7 @@ export function generateId(prefix = 'a11y'): string {
 export function createAriaLabel(
   text: string,
   element?: HTMLElement | null,
-  options: { visible?: boolean; id?: string } = {},
+  options: { visible?: boolean, id?: string } = {},
 ): string {
   const { visible = false, id = generateId('label') } = options
 
