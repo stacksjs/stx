@@ -4,6 +4,7 @@ import { processA11yDirectives } from './a11y'
 import { processAnimationDirectives } from './animation'
 import { processMarkdownFileDirectives } from './assets'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
+import { injectCspMetaTag, processCspDirectives } from './csp'
 import { processCsrfDirectives } from './csrf'
 import { processCustomDirectives } from './custom-directives'
 import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeError } from './error-handling'
@@ -460,6 +461,9 @@ async function processOtherDirectives(
   output = processStructuredData(output, context, filePath)
   output = processSeoDirective(output, context, filePath, options)
 
+  // Process CSP directives (@csp, @cspNonce)
+  output = processCspDirectives(output, context, filePath, options)
+
   // Process @json directive
   output = processJsonDirective(output, context)
 
@@ -475,6 +479,11 @@ async function processOtherDirectives(
   // Auto-inject SEO tags if enabled
   if (options.seo?.enabled) {
     output = injectSeoTags(output, context, options)
+  }
+
+  // Auto-inject CSP meta tag if enabled
+  if (options.csp?.enabled && options.csp.addMetaTag) {
+    output = injectCspMetaTag(output, options.csp as any, context)
   }
 
   return output

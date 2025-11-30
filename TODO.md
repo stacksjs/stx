@@ -331,9 +331,19 @@ This document contains all identified issues, improvements, and enhancements for
   - Use `crypto.randomUUID()` or similar
   - **Status**: FIXED - Now uses `crypto.randomUUID()` for cryptographically secure CSRF tokens.
 
-- [ ] **No Content Security Policy support**
+- [x] **No Content Security Policy support**
   - Generated HTML doesn't include CSP headers
-  - Add CSP configuration option
+  - Add CSP configuration option and directives
+  - **Status**: FIXED - Added comprehensive CSP module in `csp.ts` with:
+    - Types: `CspConfig`, `CspDirectives`, `CspSourceValue`, `CspPreset`
+    - Nonce generation: `generateNonce()`, `getNonce()` (request-scoped)
+    - Header generation: `generateCspHeader()`, `generateCspMetaTag()`
+    - Presets: `strict`, `moderate`, `relaxed`, `api` via `getCspPreset()`
+    - Merging: `mergeCspDirectives()` for combining configurations
+    - Injection: `injectCspMetaTag()`, `addNonceToInlineContent()`
+    - Directives: `@csp` (meta tag), `@cspNonce` (nonce value)
+    - Validation: `validateCspDirectives()` for security warnings
+    - HTTP helpers: `createCspHeaders()`, `getCspHeaderName()`
 
 ### Input Validation
 
@@ -698,13 +708,15 @@ This document contains all identified issues, improvements, and enhancements for
   - Extract to shared utility
   - **Status**: DOCUMENTED - Added comment explaining escapeHtml is a local copy to avoid circular dependencies with expressions module. Added comprehensive module-level documentation with configuration examples and section headers throughout.
 
-- [ ] **No sitemap generation**
+- [x] **No sitemap generation**
   - SEO features but no sitemap
   - Add sitemap generation
+  - **Status**: FIXED - Added comprehensive sitemap generation in `seo.ts`: `generateSitemap()` for XML sitemap from entry array, `generateSitemapIndex()` for sitemap index files, `scanForSitemapEntries()` for automatic directory scanning. Supports lastmod, changefreq, priority, base URL, and file filtering.
 
-- [ ] **No robots.txt generation**
+- [x] **No robots.txt generation**
   - Only meta robots tag
   - Add robots.txt support
+  - **Status**: FIXED - Added robots.txt generation in `seo.ts`: `generateRobotsTxt()` with full rule support (User-agent, Allow, Disallow, Crawl-delay), multiple sitemaps, and Host directive. `generateDefaultRobotsTxt()` helper for simple cases.
 
 - [x] **Unused parameters in function signatures**
   - Several functions have unused filePath/options params
