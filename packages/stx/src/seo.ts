@@ -55,7 +55,7 @@
  * ```
  */
 import type { CustomDirective, SeoConfig, StxOptions } from './types'
-import { createDetailedErrorMessage } from './utils'
+import { ErrorCodes, inlineError } from './error-handling'
 
 // =============================================================================
 // Types
@@ -146,7 +146,7 @@ export function processMetaDirectives(
     }
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      return `<!-- Error in @metaTag: ${errorMessage} -->`
+      return inlineError('MetaTag', errorMessage, ErrorCodes.EVALUATION_ERROR)
     }
   })
 
@@ -189,7 +189,7 @@ export function processStructuredData(
     }
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      return `<!-- Error in @structuredData: ${errorMessage} -->`
+      return inlineError('StructuredData', errorMessage, ErrorCodes.EVALUATION_ERROR)
     }
   })
 
@@ -207,7 +207,7 @@ export function processStructuredData(
 export function processSeoDirective(
   template: string,
   context: Record<string, any>,
-  filePath: string,
+  _filePath: string,
   _options: StxOptions,
 ): string {
   let output = template
@@ -330,14 +330,7 @@ export function processSeoDirective(
     }
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      return createDetailedErrorMessage(
-        'SEO Directive',
-        `Error processing @seo directive: ${errorMessage}`,
-        filePath,
-        template,
-        template.indexOf('@seo'),
-        seoConfig,
-      )
+      return inlineError('SEO', `Error processing @seo directive: ${errorMessage}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
 
@@ -483,7 +476,7 @@ export const metaDirective: CustomDirective = {
   name: 'meta',
   handler: (_content, params, _context, _filePath) => {
     if (params.length < 1) {
-      return '[Error: meta directive requires at least the meta name]'
+      return inlineError('Meta', 'meta directive requires at least the meta name', ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
     }
 
     const name = params[0].replace(/['"]/g, '')
@@ -501,7 +494,7 @@ export const structuredDataDirective: CustomDirective = {
   name: 'structuredData',
   handler: (content, _params, _context, _filePath) => {
     if (content.trim() === '') {
-      return '[Error: structuredData directive requires JSON-LD content]'
+      return inlineError('StructuredData', 'structuredData directive requires JSON-LD content', ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
     }
 
     try {
@@ -514,7 +507,7 @@ export const structuredDataDirective: CustomDirective = {
       }
 
       if (!data['@type']) {
-        return '[Error: structuredData requires @type property]'
+        return inlineError('StructuredData', 'structuredData requires @type property', ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
       }
 
       // Return JSON-LD script tag
@@ -522,7 +515,7 @@ export const structuredDataDirective: CustomDirective = {
     }
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      return `<!-- Error in structuredData directive: ${errorMessage} -->`
+      return inlineError('StructuredData', errorMessage, ErrorCodes.EVALUATION_ERROR)
     }
   },
   hasEndTag: true,

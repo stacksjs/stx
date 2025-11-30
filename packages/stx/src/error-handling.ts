@@ -207,6 +207,366 @@ export interface ErrorContext {
   match: string
 }
 
+// =============================================================================
+// Standardized Error Formatting
+// =============================================================================
+
+/**
+ * Error output format options
+ */
+export type ErrorOutputFormat = 'html' | 'text' | 'json' | 'console'
+
+/**
+ * Standardized error message options
+ */
+export interface ErrorMessageOptions {
+  /** Error type/category (e.g., 'Directive', 'Expression', 'Syntax') */
+  type: string
+  /** The error message */
+  message: string
+  /** Numeric error code */
+  code?: ErrorCode
+  /** File path where error occurred */
+  filePath?: string
+  /** Line number */
+  line?: number
+  /** Column number */
+  column?: number
+  /** Template content for context */
+  template?: string
+  /** Position offset in template */
+  offset?: number
+  /** The problematic code snippet */
+  snippet?: string
+  /** Suggestion for fixing the error */
+  suggestion?: string
+  /** Output format */
+  format?: ErrorOutputFormat
+}
+
+/**
+ * Standardized error message result
+ */
+export interface StandardizedError {
+  /** Formatted error message for display */
+  formatted: string
+  /** Raw error data */
+  data: {
+    type: string
+    code: number | undefined
+    codeName: string | undefined
+    message: string
+    filePath: string | undefined
+    line: number | undefined
+    column: number | undefined
+    snippet: string | undefined
+    suggestion: string | undefined
+    timestamp: string
+  }
+}
+
+/**
+ * Create a standardized error message in any format
+ *
+ * This is the primary function for creating consistent error messages across
+ * the entire codebase. Use this instead of ad-hoc error string formatting.
+ *
+ * @example
+ * ```typescript
+ * // For directive errors
+ * const error = formatError({
+ *   type: 'Directive',
+ *   message: 'Unknown directive @foo',
+ *   code: ErrorCodes.INVALID_DIRECTIVE_SYNTAX,
+ *   filePath: 'template.stx',
+ *   line: 10,
+ *   format: 'html'
+ * })
+ *
+ * // For expression errors
+ * const error = formatError({
+ *   type: 'Expression',
+ *   message: 'Cannot read property "name" of undefined',
+ *   code: ErrorCodes.UNDEFINED_VARIABLE,
+ *   template: templateContent,
+ *   offset: 150,
+ *   format: 'console'
+ * })
+ * ```
+ */
+export function formatError(options: ErrorMessageOptions): StandardizedError {
+  const {
+    type,
+    message,
+    code,
+    filePath,
+    line,
+    column,
+    template,
+    offset,
+    snippet,
+    suggestion,
+    format = 'text',
+  } = options
+
+  // Calculate line/column from offset if not provided
+  let actualLine = line
+  let actualColumn = column
+  if (!actualLine && template && offset !== undefined) {
+    const position = getLineAndColumn(template, offset)
+    actualLine = position.line
+    actualColumn = position.column
+  }
+
+  // Format file path based on configuration
+  const displayPath = filePath ? formatFilePath(filePath) : undefined
+
+  // Get code name
+  const codeName = code ? getErrorCodeName(code) : undefined
+
+  // Build raw data
+  const data = {
+    type,
+    code,
+    codeName,
+    message,
+    filePath: displayPath,
+    line: actualLine,
+    column: actualColumn,
+    snippet,
+    suggestion,
+    timestamp: new Date().toISOString(),
+  }
+
+  // Format based on output type
+  let formatted: string
+
+  switch (format) {
+    case 'html':
+      formatted = formatErrorAsHtml(data, template, offset)
+      break
+    case 'json':
+      formatted = JSON.stringify(data, null, 2)
+      break
+    case 'console':
+      formatted = formatErrorAsConsole(data, template, offset)
+      break
+    case 'text':
+    default:
+      formatted = formatErrorAsText(data, template, offset)
+      break
+  }
+
+  return { formatted, data }
+}
+
+/**
+ * Format error as plain text
+ */
+function formatErrorAsText(
+  data: StandardizedError['data'],
+  template?: string,
+  offset?: number,
+): string {
+  const parts: string[] = []
+
+  // Header
+  const codeStr = data.code ? ` [${data.codeName || data.code}]` : ''
+  parts.push(`[${data.type} Error${codeStr}]`)
+
+  // Location
+  if (data.filePath) {
+    let location = data.filePath
+    if (data.line) {
+      location += `:${data.line}`
+      if (data.column) {
+        location += `:${data.column}`
+      }
+    }
+    parts.push(`at ${location}`)
+  }
+
+  // Message
+  parts.push(`\n${data.message}`)
+
+  // Context from template
+  if (template && offset !== undefined && data.line) {
+    const contextLines = getContextLines(template, data.line, 2)
+    if (contextLines) {
+      parts.push(`\n${contextLines}`)
+    }
+  }
+
+  // Snippet
+  if (data.snippet) {
+    parts.push(`\nSnippet: ${data.snippet}`)
+  }
+
+  // Suggestion
+  if (data.suggestion) {
+    parts.push(`\nSuggestion: ${data.suggestion}`)
+  }
+
+  return parts.join(' ')
+}
+
+/**
+ * Format error as HTML comment (for template output)
+ */
+function formatErrorAsHtml(
+  data: StandardizedError['data'],
+  _template?: string,
+  _offset?: number,
+): string {
+  const codeStr = data.code ? ` [${data.code}]` : ''
+  const locationStr = data.filePath
+    ? ` in ${data.filePath}${data.line ? `:${data.line}` : ''}`
+    : ''
+
+  let html = `<!-- [${data.type} Error${codeStr}]${locationStr}: ${escapeHtmlComment(data.message)}`
+
+  if (data.suggestion) {
+    html += ` | Suggestion: ${escapeHtmlComment(data.suggestion)}`
+  }
+
+  html += ' -->'
+  return html
+}
+
+/**
+ * Format error for console output with colors
+ */
+function formatErrorAsConsole(
+  data: StandardizedError['data'],
+  template?: string,
+  offset?: number,
+): string {
+  const red = '\x1B[31m'
+  const yellow = '\x1B[33m'
+  const cyan = '\x1B[36m'
+  const gray = '\x1B[90m'
+  const bold = '\x1B[1m'
+  const reset = '\x1B[0m'
+
+  const parts: string[] = []
+
+  // Header with box
+  const codeStr = data.code ? ` [${data.codeName || data.code}]` : ''
+  parts.push(`${bold}${red}━━━ ${data.type} Error${codeStr} ━━━${reset}`)
+
+  // Location
+  if (data.filePath) {
+    let location = `${cyan}${data.filePath}${reset}`
+    if (data.line) {
+      location += `${gray}:${data.line}${reset}`
+      if (data.column) {
+        location += `${gray}:${data.column}${reset}`
+      }
+    }
+    parts.push(`\n${gray}at${reset} ${location}`)
+  }
+
+  // Message
+  parts.push(`\n\n${data.message}`)
+
+  // Context from template
+  if (template && offset !== undefined && data.line) {
+    const contextLines = getContextLinesColored(template, data.line, 2)
+    if (contextLines) {
+      parts.push(`\n\n${gray}Context:${reset}\n${contextLines}`)
+    }
+  }
+
+  // Suggestion
+  if (data.suggestion) {
+    parts.push(`\n\n${yellow}Suggestion:${reset} ${data.suggestion}`)
+  }
+
+  parts.push(`\n${red}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${reset}`)
+
+  return parts.join('')
+}
+
+/**
+ * Get context lines around error location
+ */
+function getContextLines(template: string, errorLine: number, contextSize: number): string {
+  const lines = template.split('\n')
+  const startLine = Math.max(0, errorLine - contextSize - 1)
+  const endLine = Math.min(lines.length - 1, errorLine + contextSize - 1)
+
+  const result: string[] = []
+  for (let i = startLine; i <= endLine; i++) {
+    const lineNum = (i + 1).toString().padStart(4)
+    const indicator = i === errorLine - 1 ? '>' : ' '
+    result.push(`${indicator}${lineNum} | ${lines[i]}`)
+  }
+
+  return result.join('\n')
+}
+
+/**
+ * Get context lines with color highlighting
+ */
+function getContextLinesColored(template: string, errorLine: number, contextSize: number): string {
+  const lines = template.split('\n')
+  const startLine = Math.max(0, errorLine - contextSize - 1)
+  const endLine = Math.min(lines.length - 1, errorLine + contextSize - 1)
+
+  const gray = '\x1B[90m'
+  const red = '\x1B[31m'
+  const reset = '\x1B[0m'
+
+  const result: string[] = []
+  for (let i = startLine; i <= endLine; i++) {
+    const lineNum = (i + 1).toString().padStart(4)
+    const isErrorLine = i === errorLine - 1
+    const indicator = isErrorLine ? `${red}>${reset}` : ' '
+    const lineContent = isErrorLine ? `${red}${lines[i]}${reset}` : `${gray}${lines[i]}${reset}`
+    result.push(`${indicator}${gray}${lineNum}${reset} | ${lineContent}`)
+  }
+
+  return result.join('\n')
+}
+
+/**
+ * Escape content for use in HTML comments
+ */
+function escapeHtmlComment(str: string): string {
+  return str.replace(/--/g, '- -').replace(/>/g, '&gt;')
+}
+
+/**
+ * Quick helper for creating inline error messages (for template output)
+ *
+ * @example
+ * ```typescript
+ * return inlineError('Directive', 'Unknown directive @foo')
+ * // Returns: <!-- [Directive Error]: Unknown directive @foo -->
+ * ```
+ */
+export function inlineError(type: string, message: string, code?: ErrorCode): string {
+  return formatError({ type, message, code, format: 'html' }).formatted
+}
+
+/**
+ * Quick helper for creating console error messages
+ *
+ * @example
+ * ```typescript
+ * console.error(consoleError('Syntax', 'Missing closing bracket', filePath, line))
+ * ```
+ */
+export function consoleError(
+  type: string,
+  message: string,
+  filePath?: string,
+  line?: number,
+  code?: ErrorCode,
+): string {
+  return formatError({ type, message, code, filePath, line, format: 'console' }).formatted
+}
+
 /**
  * Enhanced error reporting with better context
  */

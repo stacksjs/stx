@@ -23,8 +23,8 @@
 
 import type { StxOptions } from './types'
 import { processConditionals } from './conditionals'
+import { ErrorCodes, inlineError } from './error-handling'
 import { processExpressions } from './expressions'
-import { createDetailedErrorMessage } from './utils'
 
 // Default loop configuration
 const DEFAULT_MAX_WHILE_ITERATIONS = 1000
@@ -189,7 +189,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
   let output = template
 
   // Process @forelse loops (combine foreach with an empty check)
-  output = output.replace(/@forelse\s*\(([^)]+)as([^)]+)\)([\s\S]*?)@empty([\s\S]*?)@endforelse/g, (match, arrayExpr, itemVar, content, emptyContent, offset) => {
+  output = output.replace(/@forelse\s*\(([^)]+)as([^)]+)\)([\s\S]*?)@empty([\s\S]*?)@endforelse/g, (_match, arrayExpr, itemVar, content, emptyContent, _offset) => {
     try {
       // eslint-disable-next-line no-new-func
       const arrayFn = new Function(...Object.keys(context), `return ${arrayExpr.trim()}`)
@@ -202,14 +202,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
       return `@foreach (${arrayExpr.trim()} as ${itemVar.trim()})${content}@endforeach`
     }
     catch (error: any) {
-      return createDetailedErrorMessage(
-        'Directive',
-        `Error in @forelse(${arrayExpr.trim()} as ${itemVar.trim()}): ${error instanceof Error ? error.message : String(error)}`,
-        filePath,
-        template,
-        offset,
-        match,
-      )
+      return inlineError('Forelse', `Error in @forelse(${arrayExpr.trim()} as ${itemVar.trim()}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
 
@@ -320,14 +313,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
         const array = arrayFn(...Object.values(ctx))
 
         if (!Array.isArray(array)) {
-          const errorMsg = createDetailedErrorMessage(
-            'Directive',
-            `Error in @foreach: ${arrayExpr.trim()} is not an array`,
-            filePath,
-            result,
-            start,
-            result.substring(start, end),
-          )
+          const errorMsg = inlineError('Foreach', `Error in @foreach: ${arrayExpr.trim()} is not an array`, ErrorCodes.TYPE_ERROR)
           result = result.substring(0, start) + errorMsg + result.substring(end)
           continue
         }
@@ -409,14 +395,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
         result = result.substring(0, start) + loopResult + result.substring(end)
       }
       catch (error: any) {
-        const errorMsg = createDetailedErrorMessage(
-          'Directive',
-          `Error in @foreach(${arrayExpr.trim()} as ${itemVar.trim()}): ${error instanceof Error ? error.message : String(error)}`,
-          filePath,
-          result,
-          start,
-          result.substring(start, end),
-        )
+        const errorMsg = inlineError('Foreach', `Error in @foreach(${arrayExpr.trim()} as ${itemVar.trim()}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
         result = result.substring(0, start) + errorMsg + result.substring(end)
       }
     }
@@ -427,7 +406,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
   output = processForeachWithContext(output, context)
 
   // Process @for loops
-  output = output.replace(/@for\s*\(([^)]+)\)([\s\S]*?)@endfor/g, (match, forExpr, content, offset) => {
+  output = output.replace(/@for\s*\(([^)]+)\)([\s\S]*?)@endfor/g, (_match, forExpr, content, _offset) => {
     try {
       // Create a simple loop output function that captures the context
       const loopKeys = Object.keys(context)
@@ -451,14 +430,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
       return loopFn(...loopValues)
     }
     catch (error: any) {
-      return createDetailedErrorMessage(
-        'Directive',
-        `Error in @for(${forExpr}): ${error instanceof Error ? error.message : String(error)}`,
-        filePath,
-        template,
-        offset,
-        match,
-      )
+      return inlineError('For', `Error in @for(${forExpr}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
 
@@ -466,7 +438,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
   // Get configurable max iterations (default: 1000)
   const maxWhileIterations = options?.loops?.maxWhileIterations ?? DEFAULT_MAX_WHILE_ITERATIONS
 
-  output = output.replace(/@while\s*\(([^)]+)\)([\s\S]*?)@endwhile/g, (match, condition, content, offset) => {
+  output = output.replace(/@while\s*\(([^)]+)\)([\s\S]*?)@endwhile/g, (_match, condition, content, _offset) => {
     try {
       const loopKeys = Object.keys(context)
       const loopValues = Object.values(context)
@@ -487,7 +459,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
           result += \`${processedContent}\`;
         }
         if (counter >= maxIterations) {
-          result += '[Error: Maximum iterations (${maxWhileIterations}) exceeded in while loop. Configure via options.loops.maxWhileIterations]';
+          result += '<!-- [While Error [1104]]: Maximum iterations (${maxWhileIterations}) exceeded in while loop. Configure via options.loops.maxWhileIterations -->';
         }
         return result;
       `)
@@ -495,14 +467,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
       return whileFn(...loopValues)
     }
     catch (error: any) {
-      return createDetailedErrorMessage(
-        'Directive',
-        `Error in @while(${condition}): ${error instanceof Error ? error.message : String(error)}`,
-        filePath,
-        template,
-        offset,
-        match,
-      )
+      return inlineError('While', `Error in @while(${condition}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
 

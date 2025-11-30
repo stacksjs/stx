@@ -1,5 +1,6 @@
 import type { ComponentPropsSchema, CustomDirective, PropType } from './types'
 import * as path from 'node:path'
+import { ErrorCodes, inlineError } from './error-handling'
 import { renderComponent } from './utils'
 
 // =============================================================================
@@ -123,7 +124,7 @@ export const componentDirective: CustomDirective = {
   name: 'component',
   handler: async (content, params, context, filePath) => {
     if (params.length < 1) {
-      return '[Error: component directive requires at least the component name]'
+      return inlineError('Component', 'component directive requires at least the component name', ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
     }
 
     // Get component name (first parameter)
@@ -217,7 +218,7 @@ export const componentDirective: CustomDirective = {
       }
       catch (error: any) {
         console.error('Component props parsing error:', error)
-        return `[Error parsing component props: ${error.message}]`
+        return inlineError('Component', `Error parsing component props: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
       }
     }
 
@@ -244,7 +245,7 @@ export const componentDirective: CustomDirective = {
     }
     catch (error: any) {
       console.error('Component rendering error:', error)
-      return `[Error rendering component: ${error.message}]`
+      return inlineError('Component', `Error rendering component: ${error.message}`, ErrorCodes.COMPONENT_RENDER_ERROR)
     }
   },
   hasEndTag: false,

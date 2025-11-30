@@ -25,7 +25,7 @@
 
 import process from 'node:process'
 import { evaluateAuthExpression } from './auth'
-import { createDetailedErrorMessage } from './utils'
+import { ErrorCodes, inlineError } from './error-handling'
 
 // =============================================================================
 // Regex Patterns
@@ -42,7 +42,7 @@ import { createDetailedErrorMessage } from './utils'
  * - `\([^()]*\)` - Balanced parens with no nested parens inside
  * - `*` - Zero or more of either option
  */
-const NESTED_PARENS_PATTERN = '(?:[^()]|\\([^()]*\\))*'
+const _NESTED_PARENS_PATTERN = '(?:[^()]|\\([^()]*\\))*'
 
 /**
  * Helper function to find balanced @switch/@endswitch pairs
@@ -90,7 +90,7 @@ function findBalancedSwitch(content: string, startIndex: number): { end: number,
 /**
  * Process switch statements (@switch, @case, @default)
  */
-export function processSwitchStatements(template: string, context: Record<string, any>, filePath: string): string {
+export function processSwitchStatements(template: string, context: Record<string, any>, _filePath: string): string {
   let output = template
   let processedAny = true
 
@@ -197,14 +197,7 @@ export function processSwitchStatements(template: string, context: Record<string
       processedAny = true
     }
     catch (error: any) {
-      const errorMessage = createDetailedErrorMessage(
-        'Switch',
-        `Error evaluating @switch expression: ${error.message}`,
-        filePath,
-        template,
-        switchStart,
-        output.substring(switchStart, switchEnd),
-      )
+      const errorMessage = inlineError('Switch', `Error evaluating @switch expression: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
       output = output.substring(0, switchStart) + errorMessage + output.substring(switchEnd)
       break
     }
@@ -255,7 +248,7 @@ export function processConditionals(template: string, context: Record<string, an
   const processIfStatements = () => {
     let hasMatches = false
 
-    output = output.replace(/@if\s*\(([^)]+)\)([\s\S]*?)@endif/g, (match, condition, content, offset) => {
+    output = output.replace(/@if\s*\(([^)]+)\)([\s\S]*?)@endif/g, (match, condition, content, _offset) => {
       hasMatches = true
 
       try {
@@ -280,14 +273,7 @@ export function processConditionals(template: string, context: Record<string, an
               }
             }
             catch (error: any) {
-              return createDetailedErrorMessage(
-                'Directive',
-                `Error in @elseif(${elseifMatches[1]}): ${error instanceof Error ? error.message : String(error)}`,
-                filePath,
-                template,
-                offset + match.indexOf('@elseif'),
-                `@elseif(${elseifMatches[1]})`,
-              )
+              return inlineError('Elseif', `Error in @elseif(${elseifMatches[1]}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
             }
           }
 
@@ -301,14 +287,7 @@ export function processConditionals(template: string, context: Record<string, an
         }
       }
       catch (error: any) {
-        return createDetailedErrorMessage(
-          'Directive',
-          `Error in @if(${condition}): ${error instanceof Error ? error.message : String(error)}`,
-          filePath,
-          template,
-          offset,
-          `@if(${condition})`,
-        )
+        return inlineError('If', `Error in @if(${condition}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
       }
     })
 
@@ -566,11 +545,11 @@ export function processAuthDirectives(template: string, context: Record<string, 
 /**
  * Process @isset and @empty directives
  */
-export function processIssetEmptyDirectives(template: string, context: Record<string, any>, filePath?: string): string {
+export function processIssetEmptyDirectives(template: string, context: Record<string, any>, _filePath?: string): string {
   let result = template
 
   // Process @isset directive
-  result = result.replace(/@isset\(([^)]+)\)((?:.|\n)*?)(?:@else((?:.|\n)*?))?@endisset/g, (match, variable, content, elseContent, offset) => {
+  result = result.replace(/@isset\(([^)]+)\)((?:.|\n)*?)(?:@else((?:.|\n)*?))?@endisset/g, (_match, variable, content, elseContent, _offset) => {
     try {
       // Evaluate the variable path (silently handle undefined variables)
       const value = evaluateAuthExpression(variable.trim(), context)
@@ -583,25 +562,12 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
       return elseContent || ''
     }
     catch (error: any) {
-      if (filePath) {
-        return createDetailedErrorMessage(
-          'Directive',
-          `Error processing @isset directive: ${error.message}`,
-          filePath,
-          template,
-          offset,
-          match,
-        )
-      }
-      else {
-        console.error(`Error processing @isset directive:`, error)
-        return match // Return unchanged if error
-      }
+      return inlineError('Isset', `Error processing @isset directive: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
 
   // Process @empty directive
-  result = result.replace(/@empty\(([^)]+)\)((?:.|\n)*?)(?:@else((?:.|\n)*?))?@endempty/g, (match, variable, content, elseContent, offset) => {
+  result = result.replace(/@empty\(([^)]+)\)((?:.|\n)*?)(?:@else((?:.|\n)*?))?@endempty/g, (_match, variable, content, elseContent, _offset) => {
     try {
       // Evaluate the variable path (silently handle undefined variables)
       const value = evaluateAuthExpression(variable.trim(), context)
@@ -618,20 +584,7 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
       return elseContent || ''
     }
     catch (error: any) {
-      if (filePath) {
-        return createDetailedErrorMessage(
-          'Directive',
-          `Error processing @empty directive: ${error.message}`,
-          filePath,
-          template,
-          offset,
-          match,
-        )
-      }
-      else {
-        console.error(`Error processing @empty directive:`, error)
-        return match // Return unchanged if error
-      }
+      return inlineError('Empty', `Error processing @empty directive: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
 

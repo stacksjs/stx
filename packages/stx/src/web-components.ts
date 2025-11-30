@@ -2,6 +2,7 @@ import type { StxOptions, WebComponent } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { ErrorCodes, inlineError } from './error-handling'
 import { fileExists, resolveTemplatePath } from './utils'
 
 /**
@@ -283,7 +284,7 @@ export function webComponentDirectiveHandler(
   _filePath: string,
 ): string {
   if (params.length < 1) {
-    return '[Error: @webcomponent directive requires at least the tag name parameter]'
+    return inlineError('WebComponent', '@webcomponent directive requires at least the tag name parameter', ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
   }
 
   const tag = params[0].replace(/['"]/g, '')

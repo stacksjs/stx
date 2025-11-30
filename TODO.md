@@ -397,9 +397,10 @@ This document contains all identified issues, improvements, and enhancements for
   - Errors only kept in memory
   - Add file/external logging option
 
-- [ ] **Inconsistent error message formats**
+- [x] **Inconsistent error message formats**
   - Some errors use `createDetailedErrorMessage`, others use simple strings
   - Standardize error formatting
+  - **Status**: FIXED - Added standardized error formatting system with `formatError()`, `inlineError()`, and `consoleError()` functions. Supports 4 output formats (html, text, json, console). Updated all source files (seo.ts, loops.ts, conditionals.ts, custom-directives.ts, i18n.ts, components.ts, web-components.ts) to use standardized `inlineError()` for HTML comment errors with error codes.
 
 - [x] **No error codes for programmatic handling**
   - Errors have types but no numeric codes

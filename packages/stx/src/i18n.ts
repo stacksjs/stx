@@ -30,7 +30,7 @@
 
 import type { I18nConfig, StxOptions } from './types'
 import path from 'node:path'
-import { createDetailedErrorMessage } from './utils'
+import { ErrorCodes, inlineError } from './error-handling'
 
 // =============================================================================
 // Configuration
@@ -118,7 +118,8 @@ function countKeys(obj: Record<string, any>, count = 0): number {
  * Check if a cache entry is stale (older than maxAge milliseconds)
  */
 function isCacheStale(entry: TranslationCacheEntry, maxAge: number = 0): boolean {
-  if (maxAge <= 0) return false // No max age, never stale
+  if (maxAge <= 0)
+    return false // No max age, never stale
   return Date.now() - entry.loadedAt > maxAge
 }
 
@@ -353,7 +354,7 @@ export async function processTranslateDirective(
   context.__i18nConfig = i18nConfig
 
   // Process @translate with content blocks first
-  output = await replaceAsync(output, fixedTranslateRegex, async (match, key, paramsStr, content, offset) => {
+  output = await replaceAsync(output, fixedTranslateRegex, async (_match, key, paramsStr, content, _offset) => {
     try {
       // Parse parameters if provided
       let params: Record<string, any> = {}
@@ -409,14 +410,7 @@ export async function processTranslateDirective(
         console.error(`Error processing @translate directive:`, error)
       }
 
-      return createDetailedErrorMessage(
-        'Translate',
-        `Error in @translate('${key}'): ${error instanceof Error ? error.message : String(error)}`,
-        filePath,
-        template,
-        offset,
-        match,
-      )
+      return inlineError('Translate', `Error in @translate('${key}'): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
 
@@ -437,7 +431,7 @@ export async function processTranslateDirective(
   // The original regex /@translate\(\s*['"]([^'"]+)['"]\s*(?:,\s*(\{[^}]+\})\s*)?\)/g could be too greedy
   const fixedInlineTranslateRegex = /@translate\(\s*['"]([^'"]+)['"]\s*(?:,\s*(\{[^}]*\})\s*)?\)/g
 
-  output = await replaceAsync(output, fixedInlineTranslateRegex, async (match, key, paramsStr, offset) => {
+  output = await replaceAsync(output, fixedInlineTranslateRegex, async (_match, key, paramsStr, _offset) => {
     try {
       // Parse parameters if provided
       let params: Record<string, any> = {}
@@ -490,14 +484,7 @@ export async function processTranslateDirective(
         console.error(`Error processing @translate directive:`, error)
       }
 
-      return createDetailedErrorMessage(
-        'Translate',
-        `Error in @translate('${key}'): ${error instanceof Error ? error.message : String(error)}`,
-        filePath,
-        template,
-        offset,
-        match,
-      )
+      return inlineError('Translate', `Error in @translate('${key}'): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
 
