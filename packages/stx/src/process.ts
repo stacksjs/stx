@@ -19,6 +19,7 @@ import { processMethodDirectives } from './method-spoofing'
 import { runPostProcessingMiddleware, runPreProcessingMiddleware } from './middleware'
 import { performanceMonitor } from './performance-utils'
 import { processRouteDirectives } from './routes'
+import { injectAnalytics } from './analytics'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
 import { renderComponent, resolveTemplatePath } from './utils'
 import { runComposers } from './view-composers'
@@ -484,6 +485,9 @@ async function processOtherDirectives(
   // Auto-inject CSP meta tag if enabled
   if (options.csp?.enabled && options.csp.addMetaTag) {
     output = injectCspMetaTag(output, options.csp as any, context)
+  // Auto-inject analytics if enabled
+  if (options.analytics?.enabled) {
+    output = injectAnalytics(output, options)
   }
 
   return output

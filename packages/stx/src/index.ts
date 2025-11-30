@@ -1,5 +1,6 @@
 export * from './a11y'
 export * from './analyzer'
+export * from './analytics'
 export * from './animation'
 export * from './assets'
 export * from './auth'

@@ -455,6 +455,80 @@ export interface SeoFeatureConfig {
 }
 
 /**
+ * Analytics driver type
+ */
+export type AnalyticsDriver = 'fathom' | 'google-analytics' | 'plausible' | 'self-hosted' | 'custom'
+
+/**
+ * Analytics configuration for automatic script injection
+ */
+export interface AnalyticsConfig {
+  /** Enable analytics tracking */
+  enabled: boolean
+  /** Analytics driver/provider */
+  driver: AnalyticsDriver
+  /** Fathom Analytics configuration */
+  fathom?: {
+    /** Fathom site ID */
+    siteId: string
+    /** Custom script URL (default: https://cdn.usefathom.com/script.js) */
+    scriptUrl?: string
+    /** Honor Do Not Track browser setting */
+    honorDnt?: boolean
+    /** Defer script loading (default: true) */
+    defer?: boolean
+    /** Enable SPA mode for client-side routing */
+    spa?: boolean
+    /** Canonical URL override */
+    canonical?: string
+    /** Auto-track page views (default: true) */
+    auto?: boolean
+  }
+  /** Google Analytics configuration */
+  googleAnalytics?: {
+    /** GA4 Measurement ID (e.g., G-XXXXXXXXXX) */
+    measurementId: string
+    /** Enable debug mode */
+    debug?: boolean
+  }
+  /** Plausible Analytics configuration */
+  plausible?: {
+    /** Your domain (e.g., example.com) */
+    domain: string
+    /** Custom script URL (default: https://plausible.io/js/script.js) */
+    scriptUrl?: string
+    /** Track localhost */
+    trackLocalhost?: boolean
+    /** Enable hash-based routing */
+    hashMode?: boolean
+  }
+  /** Self-hosted analytics configuration (using dynamodb-tooling analytics) */
+  selfHosted?: {
+    /** Site ID for tracking */
+    siteId: string
+    /** API endpoint URL for collecting analytics */
+    apiEndpoint: string
+    /** Honor Do Not Track browser setting */
+    honorDnt?: boolean
+    /** Track hash changes as page views */
+    trackHashChanges?: boolean
+    /** Track outbound link clicks */
+    trackOutboundLinks?: boolean
+  }
+  /** Custom analytics configuration */
+  custom?: {
+    /** Custom script URL */
+    scriptUrl: string
+    /** Script ID attribute */
+    scriptId?: string
+    /** Additional script attributes */
+    attributes?: Record<string, string>
+    /** Inline script content (instead of external URL) */
+    inlineScript?: string
+  }
+}
+
+/**
  * Animation configuration
  */
 export interface AnimationConfig {
@@ -681,6 +755,8 @@ export interface StxConfig {
   a11y?: Partial<A11yConfig>
   /** SEO configuration */
   seo?: Partial<SeoFeatureConfig>
+  /** Analytics configuration */
+  analytics?: Partial<AnalyticsConfig>
   /** Animation system configuration */
   animation?: Partial<AnimationConfig>
   /** Skip adding default SEO tags */
