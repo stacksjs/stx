@@ -736,6 +736,258 @@ export const validators = {
   },
 }
 
+// =============================================================================
+// Directive Parameter Sanitization
+// =============================================================================
+
+/**
+ * Options for parameter sanitization
+ */
+export interface SanitizeOptions {
+  /** Allow HTML in parameter values (default: false) */
+  allowHtml?: boolean
+  /** Maximum length for string parameters (default: 10000) */
+  maxLength?: number
+  /** Allow special characters (default: true for most, false for paths) */
+  allowSpecialChars?: boolean
+  /** Custom sanitization function */
+  customSanitizer?: (value: string) => string
+}
+
+/**
+ * Result of parameter sanitization
+ */
+export interface SanitizedParam {
+  /** Sanitized value */
+  value: string
+  /** Whether the value was modified */
+  modified: boolean
+  /** Warnings generated during sanitization */
+  warnings: string[]
+}
+
+/**
+ * Sanitize a directive parameter value
+ *
+ * @param param - The parameter to sanitize
+ * @param options - Sanitization options
+ * @returns Sanitized parameter with metadata
+ *
+ * @example
+ * ```typescript
+ * const result = sanitizeDirectiveParam('<script>alert(1)</script>')
+ * // result.value = '&lt;script&gt;alert(1)&lt;/script&gt;'
+ * // result.modified = true
+ * // result.warnings = ['HTML content was escaped']
+ * ```
+ */
+export function sanitizeDirectiveParam(param: string, options: SanitizeOptions = {}): SanitizedParam {
+  const {
+    allowHtml = false,
+    maxLength = 10000,
+    allowSpecialChars = true,
+    customSanitizer,
+  } = options
+
+  const warnings: string[] = []
+  let value = param
+  let modified = false
+
+  // Apply custom sanitizer first if provided
+  if (customSanitizer) {
+    const customResult = customSanitizer(value)
+    if (customResult !== value) {
+      value = customResult
+      modified = true
+    }
+  }
+
+  // Check for null bytes
+  if (value.includes('\0')) {
+    value = value.replace(/\0/g, '')
+    modified = true
+    warnings.push('Null bytes removed from parameter')
+  }
+
+  // Truncate if too long
+  if (value.length > maxLength) {
+    value = value.substring(0, maxLength)
+    modified = true
+    warnings.push(`Parameter truncated to ${maxLength} characters`)
+  }
+
+  // Escape HTML if not allowed
+  if (!allowHtml && /<[^>]+>/.test(value)) {
+    value = escapeHtml(value)
+    modified = true
+    warnings.push('HTML content was escaped')
+  }
+
+  // Remove dangerous patterns
+  const dangerousPatterns = [
+    { pattern: /javascript:/gi, replacement: '', name: 'javascript: URI' },
+    { pattern: /vbscript:/gi, replacement: '', name: 'vbscript: URI' },
+    { pattern: /data:text\/html/gi, replacement: '', name: 'data:text/html URI' },
+  ]
+
+  for (const { pattern, replacement, name } of dangerousPatterns) {
+    if (pattern.test(value)) {
+      value = value.replace(pattern, replacement)
+      modified = true
+      warnings.push(`Removed ${name} from parameter`)
+    }
+  }
+
+  // Remove special characters if not allowed
+  if (!allowSpecialChars) {
+    const originalValue = value
+    // Remove ASCII control characters (0x00-0x1F and 0x7F)
+    // Using character code range instead of hex escapes to avoid lint issues
+    value = value.split('').filter((char) => {
+      const code = char.charCodeAt(0)
+      return code >= 0x20 && code !== 0x7F
+    }).join('')
+    if (value !== originalValue) {
+      modified = true
+      warnings.push('Control characters removed')
+    }
+  }
+
+  return { value, modified, warnings }
+}
+
+/**
+ * Escape HTML special characters
+ */
+function escapeHtml(str: string): string {
+  const htmlEntities: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    '\'': '&#39;',
+  }
+  return str.replace(/[&<>"']/g, char => htmlEntities[char] || char)
+}
+
+/**
+ * Sanitize a file path parameter
+ *
+ * @param filePath - The file path to sanitize
+ * @param baseDir - Optional base directory to restrict paths to
+ * @returns Sanitized path or null if path is invalid
+ */
+export function sanitizeFilePath(filePath: string, baseDir?: string): string | null {
+  // Remove null bytes
+  let sanitized = filePath.replace(/\0/g, '')
+
+  // Normalize path separators
+  sanitized = sanitized.replace(/\\/g, '/')
+
+  // Remove protocol handlers
+  sanitized = sanitized.replace(/^[a-z][a-z0-9+.-]*:/i, '')
+
+  // Remove path traversal attempts
+  while (sanitized.includes('../') || sanitized.includes('./')) {
+    sanitized = sanitized.replace(/\.\.\//g, '').replace(/\.\//g, '')
+  }
+
+  // Validate the path is safe
+  if (!validators.isValidFilePath(sanitized, baseDir)) {
+    return null
+  }
+
+  return sanitized
+}
+
+/**
+ * Sanitize an expression parameter (used in @if, @foreach, etc.)
+ *
+ * @param expr - The expression to sanitize
+ * @returns Sanitized expression with metadata
+ */
+export function sanitizeExpression(expr: string): SanitizedParam {
+  const warnings: string[] = []
+  let value = expr.trim()
+  let modified = value !== expr
+
+  // Remove potentially dangerous patterns in expressions
+  const dangerousExprPatterns = [
+    { pattern: /\beval\s*\(/gi, name: 'eval()' },
+    { pattern: /\bFunction\s*\(/gi, name: 'Function()' },
+    { pattern: /\bsetTimeout\s*\(/gi, name: 'setTimeout()' },
+    { pattern: /\bsetInterval\s*\(/gi, name: 'setInterval()' },
+    { pattern: /\bimport\s*\(/gi, name: 'dynamic import()' },
+    { pattern: /\brequire\s*\(/gi, name: 'require()' },
+    { pattern: /\b__proto__\b/gi, name: '__proto__' },
+    { pattern: /\bconstructor\b/gi, name: 'constructor' },
+    { pattern: /\bprototype\b/gi, name: 'prototype' },
+  ]
+
+  for (const { pattern, name } of dangerousExprPatterns) {
+    if (pattern.test(value)) {
+      warnings.push(`Potentially dangerous pattern detected: ${name}`)
+      // Don't remove, just warn - these might be legitimate in some contexts
+    }
+  }
+
+  // Remove null bytes
+  if (value.includes('\0')) {
+    value = value.replace(/\0/g, '')
+    modified = true
+    warnings.push('Null bytes removed from expression')
+  }
+
+  return { value, modified, warnings }
+}
+
+/**
+ * Sanitize multiple directive parameters at once
+ *
+ * @param params - Array of parameters to sanitize
+ * @param options - Sanitization options for all parameters
+ * @returns Array of sanitized parameters
+ */
+export function sanitizeDirectiveParams(params: string[], options: SanitizeOptions = {}): SanitizedParam[] {
+  return params.map(param => sanitizeDirectiveParam(param, options))
+}
+
+/**
+ * Validate and sanitize component props
+ *
+ * @param props - Props object to sanitize
+ * @returns Sanitized props with any dangerous values escaped
+ */
+export function sanitizeComponentProps(props: Record<string, any>): Record<string, any> {
+  const sanitized: Record<string, any> = {}
+
+  for (const [key, value] of Object.entries(props)) {
+    // Validate key is a valid identifier
+    if (!validators.isValidVariableName(key)) {
+      continue // Skip invalid keys
+    }
+
+    // Sanitize based on value type
+    if (typeof value === 'string') {
+      const result = sanitizeDirectiveParam(value)
+      sanitized[key] = result.value
+    }
+    else if (Array.isArray(value)) {
+      sanitized[key] = value.map(item =>
+        typeof item === 'string' ? sanitizeDirectiveParam(item).value : item,
+      )
+    }
+    else if (typeof value === 'object' && value !== null) {
+      sanitized[key] = sanitizeComponentProps(value)
+    }
+    else {
+      sanitized[key] = value
+    }
+  }
+
+  return sanitized
+}
+
 /**
  * Error recovery strategies
  *
@@ -812,49 +1064,314 @@ export const errorRecovery = {
 }
 
 /**
- * Error logging and monitoring
+ * Error logger configuration options
+ */
+export interface ErrorLoggerOptions {
+  /** Maximum number of errors to keep in memory (default: 1000) */
+  maxErrors?: number
+  /** Enable file logging */
+  enableFileLogging?: boolean
+  /** Path to log file (default: '.stx/errors.log') */
+  logFilePath?: string
+  /** Log format: 'json' for structured logs, 'text' for human-readable (default: 'json') */
+  logFormat?: 'json' | 'text'
+  /** Maximum log file size in bytes before rotation (default: 10MB) */
+  maxFileSize?: number
+  /** Number of rotated log files to keep (default: 5) */
+  maxLogFiles?: number
+  /** Minimum error level to log to file: 'all', 'error', 'warning' (default: 'all') */
+  minLevel?: 'all' | 'error' | 'warning'
+}
+
+/**
+ * Error log entry structure
+ */
+export interface ErrorLogEntry {
+  timestamp: Date
+  error: Error
+  context?: any
+  level?: 'error' | 'warning' | 'info'
+}
+
+/**
+ * Error logging and monitoring with optional file persistence
  */
 export class ErrorLogger {
-  private errors: Array<{ timestamp: Date, error: Error, context?: any }> = []
-  private maxErrors = 1000
+  private errors: ErrorLogEntry[] = []
+  private maxErrors: number
+  private enableFileLogging: boolean
+  private logFilePath: string
+  private logFormat: 'json' | 'text'
+  private maxFileSize: number
+  private maxLogFiles: number
+  private minLevel: 'all' | 'error' | 'warning'
+  private writeQueue: Promise<void> = Promise.resolve()
 
-  log(error: Error, context?: any): void {
-    this.errors.push({
+  constructor(options: ErrorLoggerOptions = {}) {
+    this.maxErrors = options.maxErrors ?? 1000
+    this.enableFileLogging = options.enableFileLogging ?? false
+    this.logFilePath = options.logFilePath ?? '.stx/errors.log'
+    this.logFormat = options.logFormat ?? 'json'
+    this.maxFileSize = options.maxFileSize ?? 10 * 1024 * 1024 // 10MB
+    this.maxLogFiles = options.maxLogFiles ?? 5
+    this.minLevel = options.minLevel ?? 'all'
+  }
+
+  /**
+   * Configure the error logger
+   */
+  configure(options: ErrorLoggerOptions): void {
+    if (options.maxErrors !== undefined)
+      this.maxErrors = options.maxErrors
+    if (options.enableFileLogging !== undefined)
+      this.enableFileLogging = options.enableFileLogging
+    if (options.logFilePath !== undefined)
+      this.logFilePath = options.logFilePath
+    if (options.logFormat !== undefined)
+      this.logFormat = options.logFormat
+    if (options.maxFileSize !== undefined)
+      this.maxFileSize = options.maxFileSize
+    if (options.maxLogFiles !== undefined)
+      this.maxLogFiles = options.maxLogFiles
+    if (options.minLevel !== undefined)
+      this.minLevel = options.minLevel
+  }
+
+  /**
+   * Log an error with optional context
+   */
+  log(error: Error, context?: any, level: 'error' | 'warning' | 'info' = 'error'): void {
+    const entry: ErrorLogEntry = {
       timestamp: new Date(),
       error,
       context,
-    })
+      level,
+    }
 
-    // Keep only recent errors
+    this.errors.push(entry)
+
+    // Keep only recent errors in memory
     if (this.errors.length > this.maxErrors) {
       this.errors = this.errors.slice(-this.maxErrors)
     }
+
+    // Write to file if enabled
+    if (this.enableFileLogging && this.shouldLog(level)) {
+      this.writeToFile(entry)
+    }
   }
 
-  getRecentErrors(limit = 10): Array<{ timestamp: Date, error: Error, context?: any }> {
+  /**
+   * Check if error level should be logged based on minLevel setting
+   */
+  private shouldLog(level: 'error' | 'warning' | 'info'): boolean {
+    if (this.minLevel === 'all')
+      return true
+    if (this.minLevel === 'warning')
+      return level === 'error' || level === 'warning'
+    if (this.minLevel === 'error')
+      return level === 'error'
+    return true
+  }
+
+  /**
+   * Format an error entry for logging
+   */
+  private formatEntry(entry: ErrorLogEntry): string {
+    if (this.logFormat === 'json') {
+      return JSON.stringify({
+        timestamp: entry.timestamp.toISOString(),
+        level: entry.level || 'error',
+        type: entry.error.constructor.name,
+        message: entry.error.message,
+        stack: entry.error.stack,
+        context: entry.context,
+      })
+    }
+
+    // Text format
+    const lines = [
+      `[${entry.timestamp.toISOString()}] [${(entry.level || 'error').toUpperCase()}] ${entry.error.constructor.name}: ${entry.error.message}`,
+    ]
+    if (entry.error.stack) {
+      lines.push(`  Stack: ${entry.error.stack.split('\n').slice(1).join('\n  ')}`)
+    }
+    if (entry.context) {
+      lines.push(`  Context: ${JSON.stringify(entry.context)}`)
+    }
+    return lines.join('\n')
+  }
+
+  /**
+   * Write error entry to file (async, non-blocking)
+   */
+  private writeToFile(entry: ErrorLogEntry): void {
+    // Queue writes to avoid race conditions
+    this.writeQueue = this.writeQueue.then(async () => {
+      try {
+        const fs = await import('node:fs')
+        const path = await import('node:path')
+
+        // Ensure directory exists
+        const dir = path.dirname(this.logFilePath)
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true })
+        }
+
+        // Check file size and rotate if needed
+        await this.rotateIfNeeded(fs, path)
+
+        // Append to log file
+        const logLine = `${this.formatEntry(entry)}\n`
+        fs.appendFileSync(this.logFilePath, logLine, 'utf-8')
+      }
+      catch (err) {
+        // Silently fail - don't let logging errors break the application
+        if (process.env.STX_DEBUG === 'true') {
+          console.error('Failed to write to error log:', err)
+        }
+      }
+    })
+  }
+
+  /**
+   * Rotate log files if current file exceeds max size
+   */
+  private async rotateIfNeeded(fs: typeof import('node:fs'), _path: typeof import('node:path')): Promise<void> {
+    try {
+      if (!fs.existsSync(this.logFilePath))
+        return
+
+      const stats = fs.statSync(this.logFilePath)
+      if (stats.size < this.maxFileSize)
+        return
+
+      // Rotate files: errors.log.4 -> delete, errors.log.3 -> .4, etc.
+      for (let i = this.maxLogFiles - 1; i >= 1; i--) {
+        const oldPath = `${this.logFilePath}.${i}`
+        const newPath = `${this.logFilePath}.${i + 1}`
+        if (fs.existsSync(oldPath)) {
+          if (i === this.maxLogFiles - 1) {
+            fs.unlinkSync(oldPath) // Delete oldest
+          }
+          else {
+            fs.renameSync(oldPath, newPath)
+          }
+        }
+      }
+
+      // Rotate current file
+      fs.renameSync(this.logFilePath, `${this.logFilePath}.1`)
+    }
+    catch (err) {
+      // Silently fail rotation errors
+      if (process.env.STX_DEBUG === 'true') {
+        console.error('Failed to rotate error logs:', err)
+      }
+    }
+  }
+
+  /**
+   * Get recent errors from memory
+   */
+  getRecentErrors(limit = 10): ErrorLogEntry[] {
     return this.errors.slice(-limit)
   }
 
-  getErrorsByType(errorType: string): Array<{ timestamp: Date, error: Error, context?: any }> {
+  /**
+   * Get errors filtered by type
+   */
+  getErrorsByType(errorType: string): ErrorLogEntry[] {
     return this.errors.filter(item => item.error.constructor.name === errorType)
   }
 
+  /**
+   * Get errors filtered by level
+   */
+  getErrorsByLevel(level: 'error' | 'warning' | 'info'): ErrorLogEntry[] {
+    return this.errors.filter(item => item.level === level)
+  }
+
+  /**
+   * Clear all errors from memory
+   */
   clear(): void {
     this.errors.length = 0
   }
 
-  getStats(): { total: number, byType: Record<string, number> } {
+  /**
+   * Clear log file
+   */
+  async clearLogFile(): Promise<void> {
+    try {
+      const fs = await import('node:fs')
+      if (fs.existsSync(this.logFilePath)) {
+        fs.writeFileSync(this.logFilePath, '', 'utf-8')
+      }
+    }
+    catch (err) {
+      if (process.env.STX_DEBUG === 'true') {
+        console.error('Failed to clear error log:', err)
+      }
+    }
+  }
+
+  /**
+   * Get error statistics
+   */
+  getStats(): { total: number, byType: Record<string, number>, byLevel: Record<string, number> } {
     const byType: Record<string, number> = {}
+    const byLevel: Record<string, number> = { error: 0, warning: 0, info: 0 }
 
     for (const item of this.errors) {
       const type = item.error.constructor.name
       byType[type] = (byType[type] || 0) + 1
+      const level = item.level || 'error'
+      byLevel[level] = (byLevel[level] || 0) + 1
     }
 
     return {
       total: this.errors.length,
       byType,
+      byLevel,
     }
+  }
+
+  /**
+   * Export errors to a file (for debugging/reporting)
+   */
+  async exportToFile(filePath: string, format: 'json' | 'text' = 'json'): Promise<void> {
+    const fs = await import('node:fs')
+    const path = await import('node:path')
+
+    // Ensure directory exists
+    const dir = path.dirname(filePath)
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
+
+    if (format === 'json') {
+      const data = this.errors.map(entry => ({
+        timestamp: entry.timestamp.toISOString(),
+        level: entry.level || 'error',
+        type: entry.error.constructor.name,
+        message: entry.error.message,
+        stack: entry.error.stack,
+        context: entry.context,
+      }))
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8')
+    }
+    else {
+      const lines = this.errors.map(entry => this.formatEntry(entry))
+      fs.writeFileSync(filePath, lines.join('\n\n'), 'utf-8')
+    }
+  }
+
+  /**
+   * Wait for all pending writes to complete
+   */
+  async flush(): Promise<void> {
+    await this.writeQueue
   }
 }
 

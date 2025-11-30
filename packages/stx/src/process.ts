@@ -82,6 +82,34 @@ import { runComposers } from './view-composers'
 // IMPORTANT: Changing this order may break template rendering!
 // =============================================================================
 
+// =============================================================================
+// ASYNC/SYNC FUNCTION CONVENTION
+// =============================================================================
+//
+// Directive processors follow this convention:
+//
+// ASYNC functions (return Promise<string>):
+//   - Functions that perform or MAY perform I/O operations (file reads, network)
+//   - Functions that call other async functions
+//   - Examples: processIncludes, processMarkdownDirectives, processJsDirectives
+//
+// SYNC functions (return string):
+//   - Pure transformation functions with no I/O
+//   - Functions that only manipulate strings/data in memory
+//   - Examples: processConditionals, processLoops, processExpressions
+//
+// CALLING CONVENTION:
+//   - All processors can be awaited safely (awaiting a sync function works)
+//   - Use `await` consistently in processOtherDirectives for clarity
+//   - New directive processors should be async if they might need I/O in the future
+//
+// RATIONALE:
+//   - Async functions can call sync functions, but not vice versa
+//   - Keeping I/O-capable functions async allows for future extensibility
+//   - Sync functions are kept sync for performance (no promise overhead)
+//
+// =============================================================================
+
 /**
  * Process all template directives with enhanced error handling and performance monitoring
  */

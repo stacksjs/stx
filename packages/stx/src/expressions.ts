@@ -575,6 +575,94 @@ export function applyFilters(value: any, filterExpression: string, context: Reco
 }
 
 /**
+ * Find the index of a filter pipe character in an expression,
+ * properly distinguishing from || (logical OR), |= (bitwise OR assignment),
+ * and pipes inside strings or parentheses.
+ *
+ * @param expr - The expression to search
+ * @returns The index of the filter pipe, or -1 if not found
+ *
+ * @example
+ * ```typescript
+ * findFilterPipeIndex('name | uppercase')     // 5 (filter pipe)
+ * findFilterPipeIndex('a || b')               // -1 (logical OR, not a filter)
+ * findFilterPipeIndex('x |= 5')               // -1 (bitwise OR assignment)
+ * findFilterPipeIndex('"a|b" | trim')         // 6 (pipe inside string ignored)
+ * findFilterPipeIndex('(a | b) | upper')      // 8 (first is in parens, second is filter)
+ * ```
+ */
+function findFilterPipeIndex(expr: string): number {
+  let inString = false
+  let stringChar = ''
+  let parenDepth = 0
+  let bracketDepth = 0
+  let braceDepth = 0
+
+  for (let i = 0; i < expr.length; i++) {
+    const char = expr[i]
+    const nextChar = expr[i + 1]
+    const prevChar = expr[i - 1]
+
+    // Handle escape sequences in strings
+    if (inString && prevChar === '\\') {
+      continue
+    }
+
+    // Handle string start/end
+    if ((char === '"' || char === '\'' || char === '`') && prevChar !== '\\') {
+      if (!inString) {
+        inString = true
+        stringChar = char
+      }
+      else if (char === stringChar) {
+        inString = false
+        stringChar = ''
+      }
+      continue
+    }
+
+    // Skip characters inside strings
+    if (inString) {
+      continue
+    }
+
+    // Track nesting levels
+    if (char === '(')
+      parenDepth++
+    else if (char === ')')
+      parenDepth--
+    else if (char === '[')
+      bracketDepth++
+    else if (char === ']')
+      bracketDepth--
+    else if (char === '{')
+      braceDepth++
+    else if (char === '}')
+      braceDepth--
+
+    // Look for pipe character at top level (not nested)
+    if (char === '|' && parenDepth === 0 && bracketDepth === 0 && braceDepth === 0) {
+      // Check if this is part of || (logical OR)
+      if (nextChar === '|') {
+        i++ // Skip the second |
+        continue
+      }
+
+      // Check if this is part of |= (bitwise OR assignment)
+      if (nextChar === '=') {
+        i++ // Skip the =
+        continue
+      }
+
+      // This is a filter pipe
+      return i
+    }
+  }
+
+  return -1
+}
+
+/**
  * Evaluate an expression within the given context
  * @param {string} expression - The expression to evaluate
  * @param {Record<string, any>} context - The context object containing variables
@@ -592,26 +680,19 @@ export function evaluateExpression(expression: string, context: Record<string, a
       }
     }
 
-    // Check if expression contains a filter (pipe symbol)
-    const pipeIndex = trimmedExpr.indexOf('|')
+    // Find filter pipe index, properly distinguishing from || and |= operators
+    const filterPipeIndex = findFilterPipeIndex(trimmedExpr)
 
-    if (pipeIndex > 0) {
+    if (filterPipeIndex > 0) {
       // Split into expression and filters
-      const baseExpr = trimmedExpr.substring(0, pipeIndex).trim()
-      const filterExpr = trimmedExpr.substring(pipeIndex + 1).trim()
+      const baseExpr = trimmedExpr.substring(0, filterPipeIndex).trim()
+      const filterExpr = trimmedExpr.substring(filterPipeIndex + 1).trim()
 
-      // Check for logical OR operator (||) which might be mistaken for a filter
-      if (trimmedExpr.includes('||')) {
-        // This is not a filter but a logical OR expression
-        // Fall through to normal evaluation
-      }
-      else {
-        // Evaluate the base expression
-        const baseValue = evaluateExpression(baseExpr, context, true)
+      // Evaluate the base expression
+      const baseValue = evaluateExpression(baseExpr, context, true)
 
-        // Apply filters to the result
-        return applyFilters(baseValue, filterExpr, context)
-      }
+      // Apply filters to the result
+      return applyFilters(baseValue, filterExpr, context)
     }
 
     // Special case for common error patterns

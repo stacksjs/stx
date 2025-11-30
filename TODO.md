@@ -71,9 +71,10 @@ This document contains all identified issues, improvements, and enhancements for
   - `process.ts` imports from many modules, and some modules import back from `process.ts`
   - Consider implementing a dependency injection pattern or event-based architecture
 
-- [ ] **Inconsistent async/sync function signatures**
+- [x] **Inconsistent async/sync function signatures**
   - Some directive processors are sync (`processConditionals`), others are async (`processIncludes`)
   - Standardize on async throughout for consistency
+  - **Status**: FIXED - Added comprehensive documentation in `process.ts` explaining the async/sync convention. Async functions are for I/O operations, sync functions are for pure transformations. Both can be awaited safely.
 
 - [ ] **Lack of proper AST representation**
   - Template parsing uses regex-based approach throughout
@@ -263,9 +264,10 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Expression Processing (`expressions.ts`)
 
-- [ ] **Filter chain parsing is fragile** (`expressions.ts:210-313`)
+- [x] **Filter chain parsing is fragile** (`expressions.ts:210-313`)
   - Manual character-by-character parsing
   - Fails on complex nested expressions
+  - **Status**: FIXED - Added `findFilterPipeIndex()` function that properly distinguishes filter pipes from `||` (logical OR) and `|=` (bitwise OR assignment). Handles strings, parentheses, brackets, and braces correctly.
 
 - [x] **Limited built-in filters** (`expressions.ts:23-113`)
   - Only basic filters: uppercase, lowercase, capitalize, number, join, escape, translate
@@ -277,9 +279,10 @@ This document contains all identified issues, improvements, and enhancements for
   - Allow users to register custom filters
   - **Status**: FIXED - Added custom filter API: `registerFilter(name, fn)`, `registerFilters({...})`, `getAllFilters()`, `clearCustomFilters()`. Custom filters take precedence over built-in. Error messages now list available filters.
 
-- [ ] **Logical OR `||` conflicts with filter pipe `|`** (`expressions.ts:342-345`)
+- [x] **Logical OR `||` conflicts with filter pipe `|`** (`expressions.ts:342-345`)
   - Special case handling but could still fail
   - Consider different filter syntax (e.g., `|>` or `:`)
+  - **Status**: FIXED - The `findFilterPipeIndex()` function now properly skips `||` (logical OR) operators. Also handles `|=` (bitwise OR assignment). The parsing is now robust.
 
 ### Safe Evaluator (`safe-evaluator.ts`)
 
@@ -334,9 +337,10 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Input Validation
 
-- [ ] **Directive parameters not sanitized**
+- [x] **Directive parameters not sanitized**
   - User input in directive params goes directly to evaluation
   - Add input sanitization layer
+  - **Status**: FIXED - Added comprehensive sanitization utilities in `error-handling.ts`: `sanitizeDirectiveParam()`, `sanitizeDirectiveParams()`, `sanitizeFilePath()`, `sanitizeExpression()`, `sanitizeComponentProps()`. Options for HTML escaping, max length, custom sanitizers. Removes dangerous patterns (javascript:, vbscript:, data:text/html).
 
 - [x] **File path validation is incomplete** (`error-handling.ts:150-162`)
   - `isValidFilePath` checks are basic
@@ -378,9 +382,10 @@ This document contains all identified issues, improvements, and enhancements for
   - Even when disabled, the module is loaded
   - Make truly optional with dynamic import
 
-- [ ] **No performance budgets**
+- [x] **No performance budgets**
   - Can't set limits on processing time
   - Add configurable performance budgets with warnings
+  - **Status**: FIXED - Added comprehensive performance budget system to `PerformanceMonitor`: `setBudget()`, `setBudgets()`, `getBudgets()`, `getViolations()`, `getViolationStats()`, `onViolation()` handler. Supports warning thresholds, configurable actions (log/warn/error/throw). Added `defaultPerformanceBudgets` for common operations and `applyDefaultBudgets()` helper.
 
 ---
 
@@ -393,9 +398,10 @@ This document contains all identified issues, improvements, and enhancements for
   - Make recovery opt-in and log warnings
   - **Status**: FIXED - Error recovery is now opt-in via `configureErrorHandling({ enableAutoRecovery: true })`. Disabled by default in production. Logs warnings when fixes are applied (configurable via `logRecoveryWarnings`).
 
-- [ ] **Error logger has no persistence** (`error-handling.ts:239-280`)
+- [x] **Error logger has no persistence** (`error-handling.ts:239-280`)
   - Errors only kept in memory
   - Add file/external logging option
+  - **Status**: FIXED - Enhanced `ErrorLogger` class with file persistence: `configure({ enableFileLogging: true, logFilePath, logFormat, maxFileSize, maxLogFiles, minLevel })`. Supports JSON/text formats, automatic log rotation, async non-blocking writes, error level filtering. Added `exportToFile()`, `clearLogFile()`, `flush()` methods.
 
 - [x] **Inconsistent error message formats**
   - Some errors use `createDetailedErrorMessage`, others use simple strings
