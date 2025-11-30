@@ -9,6 +9,27 @@
  * - `@checkbox`, `@radio` - Check inputs with state binding
  * - `@label` - Associated labels
  * - `@error` / `@enderror` - Validation error display
+ * - `@validate` - Add validation rules with HTML5 attributes
+ *
+ * ## Validation Rules
+ *
+ * Built-in validation rules:
+ * - `required` - Field must have a value
+ * - `email` - Must be valid email format
+ * - `url` - Must be valid URL
+ * - `numeric` - Must be a number
+ * - `integer` - Must be an integer
+ * - `alpha` - Letters only
+ * - `alphanumeric` - Letters and numbers only
+ * - `min:n` - Minimum length/value
+ * - `max:n` - Maximum length/value
+ * - `confirmed` - Must match `{field}_confirmation`
+ * - `in:a,b,c` - Must be one of the values
+ * - `notIn:a,b,c` - Must not be one of the values
+ * - `regex:pattern` - Must match regex
+ * - `date` - Must be valid date
+ * - `before:date` - Must be before date
+ * - `after:date` - Must be after date
  *
  * ## Configuration
  *
@@ -109,9 +130,10 @@ function genId(): string {
  * Process all form-related directives.
  *
  * Processing order:
- * 1. Basic directives (@csrf, @method)
- * 2. Form input directives (@form, @input, @textarea, etc.)
- * 3. Validation directives (@error)
+ * 1. Validation setup (@validate - generates HTML5 attributes)
+ * 2. Basic directives (@csrf, @method)
+ * 3. Form input directives (@form, @input, @textarea, etc.)
+ * 4. Error display directives (@error)
  */
 export function processForms(
   template: string,
@@ -121,6 +143,9 @@ export function processForms(
 ): string {
   const classes = getFormClasses(options)
   let output = template
+
+  // Process @validate directive first (generates HTML5 validation attributes)
+  output = processValidateDirective(output, context)
 
   // Process basic form directives (@csrf, @method)
   output = processBasicFormDirectives(output, context)
@@ -524,4 +549,404 @@ function parseAttributes(attributesStr: string): string {
   }
 
   return attrs.join(' ')
+}
+
+// =============================================================================
+// Validation System
+// =============================================================================
+
+/**
+ * Validation rule definition
+ */
+export interface ValidationRule {
+  /** Rule name (e.g., 'required', 'email', 'min') */
+  name: string
+  /** Rule parameters (e.g., min:5 → params = ['5']) */
+  params?: string[]
+  /** Custom error message */
+  message?: string
+}
+
+/**
+ * Validation result for a single field
+ */
+export interface FieldValidationResult {
+  field: string
+  valid: boolean
+  errors: string[]
+}
+
+/**
+ * Built-in validation rules
+ */
+const validationRules: Record<string, (value: any, params: string[], field: string) => string | null> = {
+  /** Field must have a value */
+  required: (value, _params, field) => {
+    if (value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)) {
+      return `The ${field} field is required.`
+    }
+    return null
+  },
+
+  /** Field must be a valid email */
+  email: (value, _params, field) => {
+    if (!value)
+      return null // Let required handle empty
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(String(value))) {
+      return `The ${field} field must be a valid email address.`
+    }
+    return null
+  },
+
+  /** Field must have minimum length/value */
+  min: (value, params, field) => {
+    if (!value)
+      return null
+    const min = Number(params[0])
+    if (typeof value === 'string' && value.length < min) {
+      return `The ${field} field must be at least ${min} characters.`
+    }
+    if (typeof value === 'number' && value < min) {
+      return `The ${field} field must be at least ${min}.`
+    }
+    if (Array.isArray(value) && value.length < min) {
+      return `The ${field} field must have at least ${min} items.`
+    }
+    return null
+  },
+
+  /** Field must have maximum length/value */
+  max: (value, params, field) => {
+    if (!value)
+      return null
+    const max = Number(params[0])
+    if (typeof value === 'string' && value.length > max) {
+      return `The ${field} field must not exceed ${max} characters.`
+    }
+    if (typeof value === 'number' && value > max) {
+      return `The ${field} field must not exceed ${max}.`
+    }
+    if (Array.isArray(value) && value.length > max) {
+      return `The ${field} field must not have more than ${max} items.`
+    }
+    return null
+  },
+
+  /** Field must match another field */
+  confirmed: (value, params, field) => {
+    // params[0] should be the confirmation field value passed during validation
+    if (params[0] !== undefined && value !== params[0]) {
+      return `The ${field} confirmation does not match.`
+    }
+    return null
+  },
+
+  /** Field must be numeric */
+  numeric: (value, _params, field) => {
+    if (!value)
+      return null
+    if (Number.isNaN(Number(value))) {
+      return `The ${field} field must be a number.`
+    }
+    return null
+  },
+
+  /** Field must be an integer */
+  integer: (value, _params, field) => {
+    if (!value)
+      return null
+    if (!Number.isInteger(Number(value))) {
+      return `The ${field} field must be an integer.`
+    }
+    return null
+  },
+
+  /** Field must be alphabetic */
+  alpha: (value, _params, field) => {
+    if (!value)
+      return null
+    if (!/^[a-z]+$/i.test(String(value))) {
+      return `The ${field} field must only contain letters.`
+    }
+    return null
+  },
+
+  /** Field must be alphanumeric */
+  alphanumeric: (value, _params, field) => {
+    if (!value)
+      return null
+    if (!/^[a-z0-9]+$/i.test(String(value))) {
+      return `The ${field} field must only contain letters and numbers.`
+    }
+    return null
+  },
+
+  /** Field must be a valid URL */
+  url: (value, _params, field) => {
+    if (!value)
+      return null
+    try {
+      // URL constructor throws on invalid URLs
+      const _url = new URL(String(value))
+      return _url ? null : null // Use _url to avoid lint error
+    }
+    catch {
+      return `The ${field} field must be a valid URL.`
+    }
+  },
+
+  /** Field must match a regex pattern */
+  regex: (value, params, field) => {
+    if (!value)
+      return null
+    try {
+      const pattern = new RegExp(params[0])
+      if (!pattern.test(String(value))) {
+        return `The ${field} field format is invalid.`
+      }
+      return null
+    }
+    catch {
+      return `The ${field} field has an invalid validation pattern.`
+    }
+  },
+
+  /** Field must be in a list of values */
+  in: (value, params, field) => {
+    if (!value)
+      return null
+    if (!params.includes(String(value))) {
+      return `The ${field} field must be one of: ${params.join(', ')}.`
+    }
+    return null
+  },
+
+  /** Field must not be in a list of values */
+  notIn: (value, params, field) => {
+    if (!value)
+      return null
+    if (params.includes(String(value))) {
+      return `The ${field} field must not be: ${params.join(', ')}.`
+    }
+    return null
+  },
+
+  /** Field must be a valid date */
+  date: (value, _params, field) => {
+    if (!value)
+      return null
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) {
+      return `The ${field} field must be a valid date.`
+    }
+    return null
+  },
+
+  /** Field must be before a date */
+  before: (value, params, field) => {
+    if (!value)
+      return null
+    const date = new Date(value)
+    const beforeDate = new Date(params[0])
+    if (date >= beforeDate) {
+      return `The ${field} field must be before ${params[0]}.`
+    }
+    return null
+  },
+
+  /** Field must be after a date */
+  after: (value, params, field) => {
+    if (!value)
+      return null
+    const date = new Date(value)
+    const afterDate = new Date(params[0])
+    if (date <= afterDate) {
+      return `The ${field} field must be after ${params[0]}.`
+    }
+    return null
+  },
+}
+
+/**
+ * Register a custom validation rule.
+ *
+ * @param name - Rule name
+ * @param validator - Validation function returning error message or null
+ *
+ * @example
+ * ```typescript
+ * registerValidationRule('phone', (value, params, field) => {
+ *   if (!/^\+?[\d\s-]+$/.test(value)) {
+ *     return `The ${field} field must be a valid phone number.`
+ *   }
+ *   return null
+ * })
+ * ```
+ */
+export function registerValidationRule(
+  name: string,
+  validator: (value: any, params: string[], field: string) => string | null,
+): void {
+  validationRules[name] = validator
+}
+
+/**
+ * Parse a validation rule string into a ValidationRule object.
+ *
+ * @param ruleStr - Rule string (e.g., 'min:5', 'required', 'in:a,b,c')
+ * @returns Parsed validation rule
+ */
+function parseValidationRule(ruleStr: string): ValidationRule {
+  const [name, ...paramParts] = ruleStr.split(':')
+  const params = paramParts.length > 0 ? paramParts.join(':').split(',') : []
+  return { name: name.trim(), params }
+}
+
+/**
+ * Validate a single field value against rules.
+ *
+ * @param field - Field name
+ * @param value - Field value
+ * @param rules - Pipe-separated rules (e.g., 'required|email|max:255')
+ * @param context - Context for accessing other field values (for confirmed rule)
+ * @returns Validation result
+ */
+export function validateField(
+  field: string,
+  value: any,
+  rules: string,
+  context: Record<string, any> = {},
+): FieldValidationResult {
+  const errors: string[] = []
+  const ruleList = rules.split('|').map(r => r.trim()).filter(Boolean)
+
+  for (const ruleStr of ruleList) {
+    const rule = parseValidationRule(ruleStr)
+    const validator = validationRules[rule.name]
+
+    if (!validator) {
+      console.warn(`Unknown validation rule: ${rule.name}`)
+      continue
+    }
+
+    // Special handling for 'confirmed' rule - get confirmation field value
+    if (rule.name === 'confirmed') {
+      const confirmField = `${field}_confirmation`
+      rule.params = [context[confirmField]]
+    }
+
+    const error = validator(value, rule.params || [], field)
+    if (error) {
+      errors.push(rule.message || error)
+    }
+  }
+
+  return {
+    field,
+    valid: errors.length === 0,
+    errors,
+  }
+}
+
+/**
+ * Validate multiple fields.
+ *
+ * @param data - Object with field values
+ * @param rules - Object mapping field names to rule strings
+ * @returns Object with errors per field (empty if valid)
+ *
+ * @example
+ * ```typescript
+ * const errors = validateFields(
+ *   { email: 'test', password: '123' },
+ *   { email: 'required|email', password: 'required|min:8' }
+ * )
+ * // => { email: ['The email field must be a valid email address.'], password: ['The password field must be at least 8 characters.'] }
+ * ```
+ */
+export function validateFields(
+  data: Record<string, any>,
+  rules: Record<string, string>,
+): Record<string, string[]> {
+  const errors: Record<string, string[]> = {}
+
+  for (const [field, fieldRules] of Object.entries(rules)) {
+    const result = validateField(field, data[field], fieldRules, data)
+    if (!result.valid) {
+      errors[field] = result.errors
+    }
+  }
+
+  return errors
+}
+
+/**
+ * Process @validate directive.
+ * Adds validation attributes to the next form element.
+ *
+ * Usage:
+ * ```html
+ * @validate('email', 'required|email|max:255')
+ * @input('email')
+ *
+ * @validate('password', 'required|min:8', { message: 'Password too short' })
+ * @input('password', '', { type: 'password' })
+ * ```
+ */
+export function processValidateDirective(
+  template: string,
+  _context: Record<string, any>,
+): string {
+  // Process @validate directive - adds HTML5 validation attributes
+  return template.replace(
+    /@validate\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*(?:,\s*\{([^}]*)\})?\s*\)/g,
+    (_match, field, rules, _options) => {
+      const ruleList = rules.split('|').map((r: string) => r.trim())
+      const attrs: string[] = []
+
+      for (const ruleStr of ruleList) {
+        const rule = parseValidationRule(ruleStr)
+
+        // Map validation rules to HTML5 attributes
+        switch (rule.name) {
+          case 'required':
+            attrs.push('required')
+            break
+          case 'email':
+            attrs.push('type="email"')
+            break
+          case 'url':
+            attrs.push('type="url"')
+            break
+          case 'numeric':
+          case 'integer':
+            attrs.push('type="number"')
+            if (rule.name === 'integer') {
+              attrs.push('step="1"')
+            }
+            break
+          case 'min':
+            if (rule.params?.[0]) {
+              attrs.push(`minlength="${rule.params[0]}"`)
+            }
+            break
+          case 'max':
+            if (rule.params?.[0]) {
+              attrs.push(`maxlength="${rule.params[0]}"`)
+            }
+            break
+          case 'regex':
+            if (rule.params?.[0]) {
+              attrs.push(`pattern="${rule.params[0]}"`)
+            }
+            break
+        }
+      }
+
+      // Return a data attribute with the rules and HTML5 attrs as a comment
+      // This allows the following input to pick up these attributes
+      return `<!-- @validate:${field}:${rules} -->${attrs.length > 0 ? `<!-- attrs:${attrs.join(' ')} -->` : ''}`
+    },
+  )
 }

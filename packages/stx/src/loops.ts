@@ -1,5 +1,24 @@
 /**
  * Module for processing loop directives (@foreach, @for, @while, @forelse)
+ *
+ * Supports loop control directives:
+ * - `@break` - Exit the loop immediately
+ * - `@break(condition)` - Exit if condition is true
+ * - `@continue` - Skip to next iteration
+ * - `@continue(condition)` - Skip if condition is true
+ *
+ * @example
+ * ```html
+ * @foreach(items as item)
+ *   @if(item.skip)
+ *     @continue
+ *   @endif
+ *   @if(item.stop)
+ *     @break
+ *   @endif
+ *   {{ item.name }}
+ * @endforeach
+ * ```
  */
 
 import type { StxOptions } from './types'
@@ -10,6 +29,138 @@ import { createDetailedErrorMessage } from './utils'
 // Default loop configuration
 const DEFAULT_MAX_WHILE_ITERATIONS = 1000
 const DEFAULT_USE_ALT_LOOP_VARIABLE = false
+
+// =============================================================================
+// Loop Control Markers
+// =============================================================================
+
+/**
+ * Special markers used to communicate break/continue from processed content
+ */
+const BREAK_MARKER = '<!--__STX_BREAK__-->'
+const CONTINUE_MARKER = '<!--__STX_CONTINUE__-->'
+
+/**
+ * Process conditional @break(condition) and @continue(condition) directives.
+ * These are evaluated immediately based on the condition.
+ *
+ * @param content - Loop iteration content
+ * @param context - Current iteration context
+ * @returns Processed content with break/continue markers where conditions were true
+ */
+function processConditionalLoopControl(
+  content: string,
+  context: Record<string, any>,
+): string {
+  let result = content
+
+  // Process @break(condition) - conditional break
+  result = result.replace(/@break\(([^)]+)\)/g, (_match, condition) => {
+    try {
+      const conditionTrimmed = condition.trim()
+      // eslint-disable-next-line no-new-func
+      const condFn = new Function(...Object.keys(context), `return !!(${conditionTrimmed})`)
+      const shouldBreak = condFn(...Object.values(context))
+      return shouldBreak ? BREAK_MARKER : ''
+    }
+    catch {
+      return '' // On error, don't break
+    }
+  })
+
+  // Process @continue(condition) - conditional continue
+  result = result.replace(/@continue\(([^)]+)\)/g, (_match, condition) => {
+    try {
+      const conditionTrimmed = condition.trim()
+      // eslint-disable-next-line no-new-func
+      const condFn = new Function(...Object.keys(context), `return !!(${conditionTrimmed})`)
+      const shouldContinue = condFn(...Object.values(context))
+      return shouldContinue ? CONTINUE_MARKER : ''
+    }
+    catch {
+      return '' // On error, don't continue
+    }
+  })
+
+  return result
+}
+
+/**
+ * Process unconditional @break and @continue directives.
+ * These should be called AFTER conditionals are processed, so @break/@continue
+ * inside @if blocks are only visible when the condition is true.
+ *
+ * @param content - Loop iteration content (after conditionals processed)
+ * @returns Processed content with break/continue markers
+ */
+function processUnconditionalLoopControl(content: string): string {
+  let result = content
+
+  // Process @break - unconditional break
+  result = result.replace(/@break(?!\()/g, BREAK_MARKER)
+
+  // Process @continue - unconditional continue
+  result = result.replace(/@continue(?!\()/g, CONTINUE_MARKER)
+
+  return result
+}
+
+/**
+ * Check if content contains a break marker and clean it up
+ */
+function checkAndCleanBreak(content: string): { hasBreak: boolean, content: string } {
+  const hasBreak = content.includes(BREAK_MARKER)
+  // Remove marker and everything after it
+  const cleanContent = hasBreak
+    ? content.substring(0, content.indexOf(BREAK_MARKER))
+    : content
+  return { hasBreak, content: cleanContent }
+}
+
+/**
+ * Check if content contains a continue marker and clean it up
+ */
+function checkAndCleanContinue(content: string): { hasContinue: boolean, content: string } {
+  const hasContinue = content.includes(CONTINUE_MARKER)
+  // Remove marker and everything after it
+  const cleanContent = hasContinue
+    ? content.substring(0, content.indexOf(CONTINUE_MARKER))
+    : content
+  return { hasContinue, content: cleanContent }
+}
+
+/**
+ * Convert @break/@continue directives to JavaScript statements for @for/@while loops.
+ * These loops execute as JavaScript, so we need native break/continue.
+ *
+ * @param content - Loop body content
+ * @returns Content with directives converted to JS statements
+ */
+function convertLoopControlToJS(content: string): string {
+  let result = content
+
+  // Convert @break(condition) to JavaScript: if (condition) { break; }
+  result = result.replace(/@break\(([^)]+)\)/g, (_match, condition) => {
+    return `\`; if (${condition.trim()}) { break; } result += \``
+  })
+
+  // Convert @continue(condition) to JavaScript: if (condition) { continue; }
+  result = result.replace(/@continue\(([^)]+)\)/g, (_match, condition) => {
+    return `\`; if (${condition.trim()}) { continue; } result += \``
+  })
+
+  // Convert unconditional @break to JavaScript break
+  result = result.replace(/@break(?!\()/g, '`; break; result += `')
+
+  // Convert unconditional @continue to JavaScript continue
+  result = result.replace(/@continue(?!\()/g, '`; continue; result += `')
+
+  return result
+}
+
+// =============================================================================
+// Loop Processing
+// =============================================================================
 
 /**
  * Process loops (@foreach, @for, @while, @forelse)
@@ -207,13 +358,48 @@ export function processLoops(template: string, context: Record<string, any>, fil
             $loop: loopContext, // Alternative name to avoid conflicts with user's 'loop' variable
           }
 
-          // Recursively process nested loops with the new context
-          let processedContent = processForeachWithContext(content, itemContext)
+          // Step 1: Process conditional @break(condition) and @continue(condition)
+          // These are evaluated immediately based on the condition expression
+          let processedContent = processConditionalLoopControl(content, itemContext)
 
-          // Then process conditionals with the item context
+          // Check for continue marker from conditional @continue(condition)
+          let continueCheck = checkAndCleanContinue(processedContent)
+          if (continueCheck.hasContinue) {
+            loopResult += continueCheck.content
+            continue
+          }
+
+          // Check for break marker from conditional @break(condition)
+          let breakCheck = checkAndCleanBreak(processedContent)
+          if (breakCheck.hasBreak) {
+            loopResult += breakCheck.content
+            break
+          }
+
+          // Step 2: Recursively process nested loops with the new context
+          processedContent = processForeachWithContext(processedContent, itemContext)
+
+          // Step 3: Process conditionals with the item context
+          // This evaluates @if/@else blocks and may reveal @break/@continue inside them
           processedContent = processConditionals(processedContent, itemContext, filePath)
 
-          // Finally process expressions with the item context
+          // Step 4: Process unconditional @break and @continue
+          // Now that conditionals are processed, @break/@continue from @if blocks are visible
+          processedContent = processUnconditionalLoopControl(processedContent)
+
+          // Check for break/continue markers
+          breakCheck = checkAndCleanBreak(processedContent)
+          if (breakCheck.hasBreak) {
+            loopResult += breakCheck.content
+            break
+          }
+          continueCheck = checkAndCleanContinue(processedContent)
+          if (continueCheck.hasContinue) {
+            loopResult += continueCheck.content
+            continue
+          }
+
+          // Step 5: Process expressions with the item context
           processedContent = processExpressions(processedContent, itemContext, filePath)
 
           loopResult += processedContent
@@ -247,13 +433,17 @@ export function processLoops(template: string, context: Record<string, any>, fil
       const loopKeys = Object.keys(context)
       const loopValues = Object.values(context)
 
+      // Process break/continue directives
+      let processedContent = content.replace(/`/g, '\\`').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
+        return `\${${expr}}`
+      })
+      processedContent = convertLoopControlToJS(processedContent)
+
       // eslint-disable-next-line no-new-func
       const loopFn = new Function(...loopKeys, `
         let result = '';
         for (${forExpr}) {
-          result += \`${content.replace(/`/g, '\\`').replace(/\{\{([^}]+)\}\}/g, (match: string, expr: string) => {
-            return `\${${expr}}`
-          })}\`;
+          result += \`${processedContent}\`;
         }
         return result;
       `)
@@ -281,6 +471,12 @@ export function processLoops(template: string, context: Record<string, any>, fil
       const loopKeys = Object.keys(context)
       const loopValues = Object.values(context)
 
+      // Process break/continue directives
+      let processedContent = content.replace(/`/g, '\\`').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
+        return `\${${expr}}`
+      })
+      processedContent = convertLoopControlToJS(processedContent)
+
       // eslint-disable-next-line no-new-func
       const whileFn = new Function(...loopKeys, `
         let result = '';
@@ -288,9 +484,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
         let counter = 0;
         while (${condition} && counter < maxIterations) {
           counter++;
-          result += \`${content.replace(/`/g, '\\`').replace(/\{\{([^}]+)\}\}/g, (match: string, expr: string) => {
-            return `\${${expr}}`
-          })}\`;
+          result += \`${processedContent}\`;
         }
         if (counter >= maxIterations) {
           result += '[Error: Maximum iterations (${maxWhileIterations}) exceeded in while loop. Configure via options.loops.maxWhileIterations]';

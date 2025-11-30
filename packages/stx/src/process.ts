@@ -8,7 +8,7 @@ import { processCsrfDirectives } from './csrf'
 import { processCustomDirectives } from './custom-directives'
 import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeError } from './error-handling'
 import { processExpressions } from './expressions'
-import { processErrorDirective, processFormDirectives } from './forms'
+import { processBasicFormDirectives, processErrorDirective } from './forms'
 import { processTranslateDirective } from './i18n'
 import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
 import { processJsDirectives, processTsDirectives } from './js-ts'
@@ -407,7 +407,7 @@ async function processOtherDirectives(
   output = processEnvDirective(output, context)
 
   // Process form directives
-  output = processFormDirectives(output, context)
+  output = processBasicFormDirectives(output, context)
 
   // Process error directive
   output = processErrorDirective(output, context)

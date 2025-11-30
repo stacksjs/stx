@@ -279,4 +279,243 @@ describe('stx Loop Directives', () => {
     // Check loop metadata for total items
     expect(outputHtml).toContain('Total items: 3')
   })
+
+  // Test @break in foreach loops
+  it('should process @break in foreach loops', async () => {
+    const testFile = await createTestFile('foreach-break.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Foreach Break Test</title>
+        <script>
+          module.exports = {
+            numbers: [1, 2, 3, 4, 5]
+          };
+        </script>
+      </head>
+      <body>
+        <ul id="numbers">
+          @foreach (numbers as num)
+            @if (num === 3)
+              @break
+            @endif
+            <li>{{ num }}</li>
+          @endforeach
+        </ul>
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    // Should only include 1 and 2, break at 3
+    expect(outputHtml).toContain('<li>1</li>')
+    expect(outputHtml).toContain('<li>2</li>')
+    expect(outputHtml).not.toContain('<li>3</li>')
+    expect(outputHtml).not.toContain('<li>4</li>')
+    expect(outputHtml).not.toContain('<li>5</li>')
+  })
+
+  // Test @continue in foreach loops
+  it('should process @continue in foreach loops', async () => {
+    const testFile = await createTestFile('foreach-continue.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Foreach Continue Test</title>
+        <script>
+          module.exports = {
+            numbers: [1, 2, 3, 4, 5]
+          };
+        </script>
+      </head>
+      <body>
+        <ul id="numbers">
+          @foreach (numbers as num)
+            @if (num === 3)
+              @continue
+            @endif
+            <li>{{ num }}</li>
+          @endforeach
+        </ul>
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    // Should include all except 3
+    expect(outputHtml).toContain('<li>1</li>')
+    expect(outputHtml).toContain('<li>2</li>')
+    expect(outputHtml).not.toContain('<li>3</li>')
+    expect(outputHtml).toContain('<li>4</li>')
+    expect(outputHtml).toContain('<li>5</li>')
+  })
+
+  // Test conditional @break(condition)
+  it('should process @break(condition) in foreach loops', async () => {
+    const testFile = await createTestFile('foreach-break-condition.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Foreach Break Condition Test</title>
+        <script>
+          module.exports = {
+            numbers: [1, 2, 3, 4, 5]
+          };
+        </script>
+      </head>
+      <body>
+        <ul id="numbers">
+          @foreach (numbers as num)
+            @break(num > 3)
+            <li>{{ num }}</li>
+          @endforeach
+        </ul>
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    // Should only include 1, 2, 3 (breaks when num > 3)
+    expect(outputHtml).toContain('<li>1</li>')
+    expect(outputHtml).toContain('<li>2</li>')
+    expect(outputHtml).toContain('<li>3</li>')
+    expect(outputHtml).not.toContain('<li>4</li>')
+    expect(outputHtml).not.toContain('<li>5</li>')
+  })
+
+  // Test conditional @continue(condition)
+  it('should process @continue(condition) in foreach loops', async () => {
+    const testFile = await createTestFile('foreach-continue-condition.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Foreach Continue Condition Test</title>
+        <script>
+          module.exports = {
+            numbers: [1, 2, 3, 4, 5]
+          };
+        </script>
+      </head>
+      <body>
+        <ul id="numbers">
+          @foreach (numbers as num)
+            @continue(num % 2 === 0)
+            <li>{{ num }}</li>
+          @endforeach
+        </ul>
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    // Should only include odd numbers (skip even)
+    expect(outputHtml).toContain('<li>1</li>')
+    expect(outputHtml).not.toContain('<li>2</li>')
+    expect(outputHtml).toContain('<li>3</li>')
+    expect(outputHtml).not.toContain('<li>4</li>')
+    expect(outputHtml).toContain('<li>5</li>')
+  })
+
+  // Test @break in @for loops
+  it('should process @break in @for loops', async () => {
+    const testFile = await createTestFile('for-break.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>For Break Test</title>
+        <script>
+          module.exports = {};
+        </script>
+      </head>
+      <body>
+        <ul id="numbers">
+          @for (let i = 1; i <= 10; i++)
+            @break(i > 5)
+            <li>{{ i }}</li>
+          @endfor
+        </ul>
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    // Should only include 1-5
+    expect(outputHtml).toContain('<li>1</li>')
+    expect(outputHtml).toContain('<li>5</li>')
+    expect(outputHtml).not.toContain('<li>6</li>')
+    expect(outputHtml).not.toContain('<li>10</li>')
+  })
+
+  // Test @continue in @for loops
+  it('should process @continue in @for loops', async () => {
+    const testFile = await createTestFile('for-continue.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>For Continue Test</title>
+        <script>
+          module.exports = {};
+        </script>
+      </head>
+      <body>
+        <ul id="numbers">
+          @for (let i = 1; i <= 5; i++)
+            @continue(i === 3)
+            <li>{{ i }}</li>
+          @endfor
+        </ul>
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    // Should include all except 3
+    expect(outputHtml).toContain('<li>1</li>')
+    expect(outputHtml).toContain('<li>2</li>')
+    expect(outputHtml).not.toContain('<li>3</li>')
+    expect(outputHtml).toContain('<li>4</li>')
+    expect(outputHtml).toContain('<li>5</li>')
+  })
 })

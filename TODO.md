@@ -181,9 +181,10 @@ This document contains all identified issues, improvements, and enhancements for
   - Make configurable
   - **Status**: FIXED - Added `LoopConfig` interface in `types.ts` with `maxWhileIterations` option. Default is 1000 but can be configured via `options.loops.maxWhileIterations`.
 
-- [ ] **No @break or @continue support**
+- [x] **No @break or @continue support**
   - Common loop control structures missing
   - Implement break/continue directives
+  - **Status**: FIXED - Added @break, @continue, @break(condition), and @continue(condition) support for all loop types (@foreach, @for, @while). Uses marker-based detection that properly handles @break/@continue inside @if blocks. Added unit tests in `loops-unit.test.ts`.
 
 - [x] **Loop variable `loop` conflicts with user variables**
   - If user has a `loop` variable, it gets overwritten
@@ -637,17 +638,19 @@ This document contains all identified issues, improvements, and enhancements for
   - Uses dynamic import but blocks on it
   - Consider lazy loading
 
-- [ ] **No pluralization support**
+- [x] **No pluralization support**
   - Only simple string replacement
   - Add plural forms support
+  - **Status**: FIXED - Added `selectPluralForm()` helper with comprehensive pluralization. Supports simple format (`"One item|:count items"`) and complex format with exact matches (`{0}`, `{1}`) and ranges (`[2,*]`). `getTranslation()` automatically handles pluralization when `count` param is provided.
 
 - [ ] **No ICU message format**
   - Limited parameter replacement
   - Consider ICU MessageFormat support
 
-- [ ] **Cache invalidation missing** (`i18n.ts:20`)
+- [x] **Cache invalidation missing** (`i18n.ts:20`)
   - `translationsCache` never clears
   - Add cache invalidation
+  - **Status**: FIXED - Added `TranslationCacheEntry` interface with metadata (`loadedAt`, `locale`). Added `clearTranslationCache(locale?)` to clear all or specific locale. Added `getTranslationCacheStats()` returning cache size, locales, and entry details. Cache entries track load time for stale detection via `isCacheStale()`.
 
 - [ ] **YAML support requires Bun's import**
   - Relies on Bun's YAML import support
@@ -659,17 +662,19 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Form Directives (`forms.ts`)
 
-- [ ] **Duplicate CSRF processing** (`forms.ts:39-76`, `forms.ts:439-469`)
+- [x] **Duplicate CSRF processing** (`forms.ts:39-76`, `forms.ts:439-469`)
   - `processBasicFormDirectives` and `processFormDirectives` both handle @csrf
   - Consolidate
+  - **Status**: FIXED - Removed duplicate `processFormDirectives` function. All CSRF processing now goes through `processBasicFormDirectives`. Added module-level documentation listing all form directives.
 
 - [ ] **No form validation directives**
   - Only error display, no validation rules
   - Add @validate directive
 
-- [ ] **Bootstrap-specific classes hardcoded** (`forms.ts:137`, `forms.ts:165`, etc.)
+- [x] **Bootstrap-specific classes hardcoded** (`forms.ts:137`, `forms.ts:165`, etc.)
   - `form-control`, `is-invalid`, `form-check-input`
   - Make class names configurable
+  - **Status**: FIXED - Added `FormClassConfig` interface and `defaultFormClasses` constant. Classes are now configurable via `stx.config.ts` under `forms.classes`. Added `buildClassString()` helper to reduce code duplication. Added `FormConfig` type to `types.ts`.
 
 - [ ] **No file upload support**
   - No @file directive
@@ -681,9 +686,10 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### SEO (`seo.ts`)
 
-- [ ] **Duplicate escapeHtml function** (`seo.ts:381-388`)
+- [x] **Duplicate escapeHtml function** (`seo.ts:381-388`)
   - Same function exists in `expressions.ts`
   - Extract to shared utility
+  - **Status**: DOCUMENTED - Added comment explaining escapeHtml is a local copy to avoid circular dependencies with expressions module. Added comprehensive module-level documentation with configuration examples and section headers throughout.
 
 - [ ] **No sitemap generation**
   - SEO features but no sitemap
@@ -692,6 +698,10 @@ This document contains all identified issues, improvements, and enhancements for
 - [ ] **No robots.txt generation**
   - Only meta robots tag
   - Add robots.txt support
+
+- [x] **Unused parameters in function signatures**
+  - Several functions have unused filePath/options params
+  - **Status**: FIXED - Added underscore prefixes to unused parameters (`_filePath`, `_options`, `_context`). Added section headers for code organization.
 
 ### Accessibility (`a11y.ts`)
 
@@ -711,6 +721,10 @@ This document contains all identified issues, improvements, and enhancements for
   - DOM parsing requires global document
   - Add fallback for non-DOM environments
 
+- [x] **Missing module documentation**
+  - No overview of a11y features
+  - **Status**: FIXED - Added comprehensive module-level documentation listing all directives (@a11y, @screenReader, @ariaDescribe) and automated checks (images, interactive elements, form inputs, heading hierarchy, document language). Added section headers throughout.
+
 ---
 
 ## Web Components
@@ -729,9 +743,10 @@ This document contains all identified issues, improvements, and enhancements for
   - Only generates JavaScript
   - Add TypeScript generation
 
-- [ ] **Slot processing is empty** (`web-components.ts:177-179`)
+- [x] **Slot processing is empty** (`web-components.ts:177-179`)
   - `_processSlots()` method is empty
   - Implement slot handling
+  - **Status**: FIXED - Implemented `_processSlots()` with two modes: (1) Shadow DOM mode adds `slotchange` event listeners and emits `slot-changed` custom events. (2) Non-shadow DOM mode transforms `<slot>` to `<div data-slot>` and manually moves slotted content. Supports named slots and default slots.
 
 ---
 
@@ -831,5 +846,5 @@ When working on items:
 
 ---
 
-*Last updated: November 2024*
+*Last updated: November 30, 2024*
 *Generated from codebase analysis*

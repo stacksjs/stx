@@ -137,7 +137,32 @@ function generateWebComponentCode(options: WebComponentCodeOptions): string {
   } = options
 
   // Extract HTML content (stripping any <script> tags)
-  const htmlContent = source.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i, '').trim()
+  let htmlContent = source.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '').trim()
+
+  // For non-shadow DOM mode, transform <slot> elements to data-slot divs
+  // since native <slot> only works with shadow DOM
+  if (!shadowDOM) {
+    // Transform <slot name="xxx">fallback</slot> to <div data-slot="xxx">fallback</div>
+    htmlContent = htmlContent.replace(
+      /<slot\s+name=["']([^"']+)["']\s*>([\s\S]*?)<\/slot>/gi,
+      '<div data-slot="$1">$2</div>',
+    )
+    // Transform <slot name="xxx" /> (self-closing) to <div data-slot="xxx"></div>
+    htmlContent = htmlContent.replace(
+      /<slot\s+name=["']([^"']+)["']\s*\/>/gi,
+      '<div data-slot="$1"></div>',
+    )
+    // Transform default <slot>fallback</slot> to <div data-default-slot>fallback</div>
+    htmlContent = htmlContent.replace(
+      /<slot\s*>([\s\S]*?)<\/slot>/gi,
+      '<div data-default-slot>$1</div>',
+    )
+    // Transform <slot /> (self-closing default) to <div data-default-slot></div>
+    htmlContent = htmlContent.replace(
+      /<slot\s*\/>/gi,
+      '<div data-default-slot></div>',
+    )
+  }
 
   // Handle styles
   let styles = ''
@@ -175,7 +200,48 @@ class ${name.replace(/\W/g, '')} extends ${baseElement} {
   `}
 
   _processSlots() {
-    // Handle any slot processing if needed
+    ${shadowDOM
+      ? `// Shadow DOM handles slot assignment automatically
+    // Listen for slot changes if needed
+    const slots = this.shadowRoot.querySelectorAll('slot')
+    slots.forEach(slot => {
+      slot.addEventListener('slotchange', (e) => {
+        const assignedNodes = slot.assignedNodes()
+        this.dispatchEvent(new CustomEvent('slot-changed', {
+          detail: { slotName: slot.name || 'default', assignedNodes }
+        }))
+      })
+    })`
+      : `// Manual slot processing for non-shadow DOM mode
+    const slots = this.querySelectorAll('[data-slot]')
+    const lightDOMChildren = Array.from(this.childNodes).filter(
+      node => node.nodeType === Node.ELEMENT_NODE && !node.hasAttribute('data-slot')
+    )
+
+    // Process named slots
+    slots.forEach(slotEl => {
+      const slotName = slotEl.getAttribute('data-slot')
+      const slottedContent = this.querySelector(\`[slot="\${slotName}"]\`)
+      if (slottedContent) {
+        // Replace slot placeholder with actual content
+        slotEl.innerHTML = ''
+        slotEl.appendChild(slottedContent.cloneNode(true))
+      }
+    })
+
+    // Process default slot
+    const defaultSlot = this.querySelector('[data-slot=""]') || this.querySelector('[data-default-slot]')
+    if (defaultSlot) {
+      const unslottedContent = Array.from(this.children).filter(
+        child => !child.hasAttribute('slot') && child !== defaultSlot
+      )
+      if (unslottedContent.length > 0) {
+        defaultSlot.innerHTML = ''
+        unslottedContent.forEach(content => {
+          defaultSlot.appendChild(content.cloneNode(true))
+        })
+      }
+    }`}
   }
 
   ${attributes.length > 0

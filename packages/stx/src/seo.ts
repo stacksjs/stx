@@ -7,8 +7,38 @@
  * - `@structuredData({ ... })` - JSON-LD structured data
  * - `@seo({ title, description, ... })` - Comprehensive SEO generation
  *
- * Also provides automatic SEO tag injection for templates without explicit
- * SEO directives via `injectSeoTags()`.
+ * Also provides:
+ * - Automatic SEO tag injection via `injectSeoTags()`
+ * - Sitemap generation via `generateSitemap()`, `scanForSitemapEntries()`
+ * - robots.txt generation via `generateRobotsTxt()`
+ *
+ * ## Sitemap Generation
+ *
+ * ```typescript
+ * import { generateSitemap, scanForSitemapEntries } from 'stx'
+ *
+ * // Manual entries
+ * const sitemap = generateSitemap([
+ *   { loc: '/', priority: 1.0 },
+ *   { loc: '/about', priority: 0.8 },
+ * ], { baseUrl: 'https://example.com' })
+ *
+ * // Auto-scan directory
+ * const entries = await scanForSitemapEntries('./pages', {
+ *   baseUrl: 'https://example.com'
+ * })
+ * ```
+ *
+ * ## Robots.txt Generation
+ *
+ * ```typescript
+ * import { generateRobotsTxt } from 'stx'
+ *
+ * const robotsTxt = generateRobotsTxt({
+ *   rules: [{ userAgent: '*', allow: ['/'], disallow: ['/admin'] }],
+ *   sitemap: 'https://example.com/sitemap.xml'
+ * })
+ * ```
  *
  * ## Configuration
  *
@@ -506,4 +536,338 @@ export function registerSeoDirectives(): CustomDirective[] {
     metaDirective,
     structuredDataDirective,
   ]
+}
+
+// =============================================================================
+// Sitemap Generation
+// =============================================================================
+
+/**
+ * URL entry for sitemap
+ */
+export interface SitemapEntry {
+  /** Full URL of the page */
+  loc: string
+  /** Last modification date (ISO 8601 format) */
+  lastmod?: string
+  /** Change frequency */
+  changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never'
+  /** Priority (0.0 to 1.0) */
+  priority?: number
+}
+
+/**
+ * Sitemap generation options
+ */
+export interface SitemapOptions {
+  /** Base URL for the site (e.g., 'https://example.com') */
+  baseUrl: string
+  /** Default change frequency */
+  defaultChangefreq?: SitemapEntry['changefreq']
+  /** Default priority */
+  defaultPriority?: number
+  /** Whether to include lastmod for all entries */
+  includeLastmod?: boolean
+}
+
+/**
+ * Generate an XML sitemap from a list of URL entries.
+ *
+ * @param entries - Array of sitemap entries
+ * @param options - Sitemap generation options
+ * @returns XML sitemap string
+ *
+ * @example
+ * ```typescript
+ * const sitemap = generateSitemap([
+ *   { loc: '/', priority: 1.0 },
+ *   { loc: '/about', priority: 0.8 },
+ *   { loc: '/blog', changefreq: 'daily' },
+ * ], { baseUrl: 'https://example.com' })
+ * ```
+ */
+export function generateSitemap(entries: SitemapEntry[], options: SitemapOptions): string {
+  const {
+    baseUrl,
+    defaultChangefreq = 'weekly',
+    defaultPriority = 0.5,
+    includeLastmod = true,
+  } = options
+
+  // Normalize base URL (remove trailing slash)
+  const base = baseUrl.replace(/\/$/, '')
+
+  const urlEntries = entries.map((entry) => {
+    const loc = entry.loc.startsWith('http')
+      ? entry.loc
+      : `${base}${entry.loc.startsWith('/') ? '' : '/'}${entry.loc}`
+
+    const lastmod = entry.lastmod
+      || (includeLastmod ? new Date().toISOString().split('T')[0] : undefined)
+
+    const changefreq = entry.changefreq || defaultChangefreq
+    const priority = entry.priority ?? defaultPriority
+
+    let urlXml = `  <url>\n    <loc>${escapeXml(loc)}</loc>`
+
+    if (lastmod) {
+      urlXml += `\n    <lastmod>${lastmod}</lastmod>`
+    }
+
+    urlXml += `\n    <changefreq>${changefreq}</changefreq>`
+    urlXml += `\n    <priority>${priority.toFixed(1)}</priority>`
+    urlXml += `\n  </url>`
+
+    return urlXml
+  })
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urlEntries.join('\n')}
+</urlset>`
+}
+
+/**
+ * Generate a sitemap index for multiple sitemaps.
+ *
+ * @param sitemaps - Array of sitemap URLs
+ * @param baseUrl - Base URL for the site
+ * @returns XML sitemap index string
+ */
+export function generateSitemapIndex(sitemaps: string[], baseUrl: string): string {
+  const base = baseUrl.replace(/\/$/, '')
+  const lastmod = new Date().toISOString().split('T')[0]
+
+  const sitemapEntries = sitemaps.map((sitemap) => {
+    const loc = sitemap.startsWith('http')
+      ? sitemap
+      : `${base}${sitemap.startsWith('/') ? '' : '/'}${sitemap}`
+
+    return `  <sitemap>
+    <loc>${escapeXml(loc)}</loc>
+    <lastmod>${lastmod}</lastmod>
+  </sitemap>`
+  })
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${sitemapEntries.join('\n')}
+</sitemapindex>`
+}
+
+/**
+ * Scan a directory and generate sitemap entries.
+ *
+ * @param directory - Directory to scan for .stx/.html files
+ * @param options - Scan options
+ * @returns Array of sitemap entries
+ */
+export async function scanForSitemapEntries(
+  directory: string,
+  options: {
+    extensions?: string[]
+    ignore?: string[]
+    baseUrl: string
+  },
+): Promise<SitemapEntry[]> {
+  const {
+    extensions = ['.stx', '.html', '.htm'],
+    ignore = ['_*', '.*', 'node_modules', 'components', 'partials', 'layouts'],
+  } = options
+
+  const entries: SitemapEntry[] = []
+
+  // Build glob pattern
+  const extPattern = extensions.length === 1
+    ? `*${extensions[0]}`
+    : `*{${extensions.join(',')}}`
+
+  const glob = new Bun.Glob(`**/${extPattern}`)
+
+  for await (const file of glob.scan(directory)) {
+    // Check if file matches any ignore pattern
+    const shouldIgnore = ignore.some((pattern) => {
+      if (pattern.startsWith('*')) {
+        return file.includes(pattern.slice(1))
+      }
+      return file.startsWith(pattern) || file.includes(`/${pattern}`)
+    })
+
+    if (shouldIgnore)
+      continue
+
+    // Convert file path to URL path
+    let urlPath = file
+      .replace(/\\/g, '/') // Normalize path separators
+      .replace(/index\.(stx|html|htm)$/, '') // Remove index files
+      .replace(/\.(stx|html|htm)$/, '') // Remove extensions
+
+    // Ensure leading slash
+    if (!urlPath.startsWith('/')) {
+      urlPath = `/${urlPath}`
+    }
+
+    // Clean up trailing slashes (except for root)
+    if (urlPath !== '/' && urlPath.endsWith('/')) {
+      urlPath = urlPath.slice(0, -1)
+    }
+
+    // Get file stats for lastmod
+    const filePath = `${directory}/${file}`
+    let lastmod: string | undefined
+
+    try {
+      const stat = await Bun.file(filePath).stat()
+      if (stat) {
+        lastmod = new Date(stat.mtime).toISOString().split('T')[0]
+      }
+    }
+    catch {
+      // Ignore stat errors
+    }
+
+    entries.push({
+      loc: urlPath || '/',
+      lastmod,
+      priority: urlPath === '/' ? 1.0 : 0.5,
+    })
+  }
+
+  // Sort entries by URL
+  entries.sort((a, b) => a.loc.localeCompare(b.loc))
+
+  return entries
+}
+
+// =============================================================================
+// Robots.txt Generation
+// =============================================================================
+
+/**
+ * Robots.txt rule
+ */
+export interface RobotsRule {
+  /** User agent (e.g., '*', 'Googlebot', 'Bingbot') */
+  userAgent: string
+  /** Allowed paths */
+  allow?: string[]
+  /** Disallowed paths */
+  disallow?: string[]
+  /** Crawl delay in seconds */
+  crawlDelay?: number
+}
+
+/**
+ * Robots.txt generation options
+ */
+export interface RobotsOptions {
+  /** Array of rules */
+  rules: RobotsRule[]
+  /** Sitemap URL(s) */
+  sitemap?: string | string[]
+  /** Host directive (for Yandex) */
+  host?: string
+}
+
+/**
+ * Generate a robots.txt file content.
+ *
+ * @param options - Robots.txt options
+ * @returns robots.txt content string
+ *
+ * @example
+ * ```typescript
+ * const robotsTxt = generateRobotsTxt({
+ *   rules: [
+ *     {
+ *       userAgent: '*',
+ *       allow: ['/'],
+ *       disallow: ['/admin', '/private'],
+ *     },
+ *     {
+ *       userAgent: 'Googlebot',
+ *       allow: ['/'],
+ *       crawlDelay: 1,
+ *     },
+ *   ],
+ *   sitemap: 'https://example.com/sitemap.xml',
+ * })
+ * ```
+ */
+export function generateRobotsTxt(options: RobotsOptions): string {
+  const lines: string[] = []
+
+  for (const rule of options.rules) {
+    lines.push(`User-agent: ${rule.userAgent}`)
+
+    if (rule.allow) {
+      for (const path of rule.allow) {
+        lines.push(`Allow: ${path}`)
+      }
+    }
+
+    if (rule.disallow) {
+      for (const path of rule.disallow) {
+        lines.push(`Disallow: ${path}`)
+      }
+    }
+
+    if (rule.crawlDelay !== undefined) {
+      lines.push(`Crawl-delay: ${rule.crawlDelay}`)
+    }
+
+    lines.push('') // Empty line between rules
+  }
+
+  // Add sitemap(s)
+  if (options.sitemap) {
+    const sitemaps = Array.isArray(options.sitemap)
+      ? options.sitemap
+      : [options.sitemap]
+
+    for (const sitemap of sitemaps) {
+      lines.push(`Sitemap: ${sitemap}`)
+    }
+  }
+
+  // Add host directive (for Yandex)
+  if (options.host) {
+    lines.push(`Host: ${options.host}`)
+  }
+
+  return lines.join('\n').trim()
+}
+
+/**
+ * Generate a default robots.txt that allows all crawling.
+ *
+ * @param sitemapUrl - Optional sitemap URL
+ * @returns robots.txt content string
+ */
+export function generateDefaultRobotsTxt(sitemapUrl?: string): string {
+  return generateRobotsTxt({
+    rules: [
+      {
+        userAgent: '*',
+        allow: ['/'],
+      },
+    ],
+    sitemap: sitemapUrl,
+  })
+}
+
+// =============================================================================
+// Internal Utilities
+// =============================================================================
+
+/**
+ * Escape XML special characters
+ */
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
 }
