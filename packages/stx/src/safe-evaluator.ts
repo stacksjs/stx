@@ -157,8 +157,8 @@ export function sanitizeExpression(expression: string): string {
 /**
  * Create a safer context object that only exposes safe properties
  */
-export function createSafeContext(context: Record<string, any>): Record<string, any> {
-  const safeContext: Record<string, any> = {}
+export function createSafeContext(context: Record<string, unknown>): Record<string, unknown> {
+  const safeContext: Record<string, unknown> = {}
 
   // Add allowed globals
   safeContext.Math = Math
@@ -198,7 +198,7 @@ export function createSafeContext(context: Record<string, any>): Record<string, 
  * Recursively sanitize an object by removing dangerous properties
  * Uses configurable maxSanitizeDepth from configuration
  */
-function sanitizeObject(obj: any, depth = 0): any {
+function sanitizeObject(obj: unknown, depth = 0): unknown {
   // Prevent infinite recursion - use configurable depth
   if (depth > currentConfig.maxSanitizeDepth) {
     return '[Object too deep]'
@@ -212,7 +212,7 @@ function sanitizeObject(obj: any, depth = 0): any {
     return obj.map(item => sanitizeObject(item, depth + 1))
   }
 
-  const sanitized: any = {}
+  const sanitized: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(obj)) {
     // Skip dangerous keys
     if (key.startsWith('_')
@@ -235,8 +235,21 @@ function sanitizeObject(obj: any, depth = 0): any {
 
 /**
  * Safely evaluate an expression with the given context
+ *
+ * @param expression - The JavaScript expression to evaluate
+ * @param context - Variables available during evaluation
+ * @returns The result of the expression evaluation, or undefined on error
+ *
+ * @example
+ * ```typescript
+ * // Basic usage
+ * const result = safeEvaluate('name.toUpperCase()', { name: 'hello' })
+ *
+ * // With type parameter for typed result
+ * const count = safeEvaluate<number>('items.length', { items: [1, 2, 3] })
+ * ```
  */
-export function safeEvaluate(expression: string, context: Record<string, any>): any {
+export function safeEvaluate<T = unknown>(expression: string, context: Record<string, unknown>): T | undefined {
   try {
     const sanitizedExpr = sanitizeExpression(expression)
     const safeContext = createSafeContext(context)
@@ -273,5 +286,234 @@ export function isExpressionSafe(expression: string): boolean {
   }
   catch {
     return false
+  }
+}
+
+// =============================================================================
+// Safe Evaluation Functions
+// =============================================================================
+
+/**
+ * Safely evaluate an expression and return a boolean result
+ * Used for conditional expressions in @if, @unless, etc.
+ *
+ * @param expression - The condition expression to evaluate
+ * @param context - Variables available during evaluation
+ * @returns Boolean result, defaults to false on error
+ */
+export function safeEvaluateCondition(expression: string, context: Record<string, unknown>): boolean {
+  try {
+    const result = safeEvaluate<unknown>(expression, context)
+    return Boolean(result)
+  }
+  catch {
+    return false
+  }
+}
+
+/**
+ * Safely evaluate an expression that returns an array
+ * Used for loop iterations in @foreach, @for, etc.
+ *
+ * @param expression - The array expression to evaluate
+ * @param context - Variables available during evaluation
+ * @returns Array result, defaults to empty array on error
+ */
+export function safeEvaluateArray(expression: string, context: Record<string, unknown>): unknown[] {
+  try {
+    const result = safeEvaluate<unknown>(expression, context)
+    if (Array.isArray(result)) {
+      return result
+    }
+    // Handle array-like objects
+    if (result && typeof result === 'object' && 'length' in result) {
+      return Array.from(result as ArrayLike<unknown>)
+    }
+    return []
+  }
+  catch {
+    return []
+  }
+}
+
+/**
+ * Safely evaluate an expression that returns an object
+ * Used for props, attributes, configuration objects
+ *
+ * @param expression - The object expression to evaluate
+ * @param context - Variables available during evaluation
+ * @returns Object result, defaults to empty object on error
+ */
+export function safeEvaluateObject(expression: string, context: Record<string, unknown>): Record<string, unknown> {
+  try {
+    const result = safeEvaluate<unknown>(expression, context)
+    if (result && typeof result === 'object' && !Array.isArray(result)) {
+      return result as Record<string, unknown>
+    }
+    return {}
+  }
+  catch {
+    return {}
+  }
+}
+
+/**
+ * Create a sandboxed function that can only access the provided context
+ * This is a safer alternative to `new Function()` that validates expressions first
+ *
+ * @param expression - The expression to compile into a function
+ * @param contextKeys - Variable names that will be available
+ * @returns A function that takes context values and returns the result
+ * @throws Error if expression contains dangerous patterns
+ *
+ * @example
+ * ```typescript
+ * const fn = createSafeFunction('x + y', ['x', 'y'])
+ * const result = fn(1, 2) // returns 3
+ * ```
+ */
+export function createSafeFunction(expression: string, contextKeys: string[]): (...args: unknown[]) => unknown {
+  // Validate the expression first
+  const sanitizedExpr = sanitizeExpression(expression)
+
+  // Create the function with strict mode
+  // eslint-disable-next-line no-new-func
+  const func = new Function(...contextKeys, `
+    'use strict';
+    try {
+      return ${sanitizedExpr};
+    } catch (e) {
+      if (e instanceof ReferenceError || e instanceof TypeError) {
+        return undefined;
+      }
+      throw e;
+    }
+  `)
+
+  return func
+}
+
+/**
+ * Safely evaluate a return expression (e.g., "return x + y")
+ * Used for script block execution
+ *
+ * @param code - Code that may contain return statements
+ * @param context - Variables available during evaluation
+ * @returns The result of the code execution
+ */
+export function safeEvaluateCode(code: string, context: Record<string, unknown>): unknown {
+  try {
+    // Check for dangerous patterns in the full code
+    for (const pattern of DANGEROUS_PATTERNS) {
+      if (pattern.test(code)) {
+        throw new Error(`Potentially unsafe code detected`)
+      }
+    }
+
+    const safeContext = createSafeContext(context)
+    const keys = Object.keys(safeContext)
+    const values = Object.values(safeContext)
+
+    // eslint-disable-next-line no-new-func
+    const func = new Function(...keys, `
+      'use strict';
+      ${code}
+    `)
+
+    return func(...values)
+  }
+  catch {
+    return undefined
+  }
+}
+
+/**
+ * Validate a for loop expression for safety
+ * Checks for dangerous patterns like eval, Function, import, etc.
+ *
+ * @param expression - The for loop expression (e.g., "let i = 0; i < n; i++")
+ * @returns true if safe, false if potentially dangerous
+ */
+export function isForExpressionSafe(expression: string): boolean {
+  const trimmed = expression.trim()
+
+  // Check for dangerous patterns
+  const forDangerousPatterns = [
+    /\beval\s*\(/i,
+    /\bFunction\s*\(/i,
+    /\bimport\s*\(/i,
+    /\brequire\s*\(/i,
+    /\bprocess\./i,
+    /\b__proto__\b/i,
+    /\bconstructor\s*\./i,
+    /\bglobalThis\b/i,
+    /\bwindow\b/i,
+    /\bdocument\b/i,
+  ]
+
+  for (const pattern of forDangerousPatterns) {
+    if (pattern.test(trimmed)) {
+      return false
+    }
+  }
+
+  return true
+}
+
+/**
+ * Create a safe loop function with iteration limits
+ *
+ * @param loopType - 'for' or 'while'
+ * @param expression - The loop expression or condition
+ * @param body - The loop body template
+ * @param contextKeys - Variable names available in context
+ * @param maxIterations - Maximum iterations allowed (for while loops)
+ * @returns A function that executes the loop safely
+ */
+export function createSafeLoopFunction(
+  loopType: 'for' | 'while',
+  expression: string,
+  body: string,
+  contextKeys: string[],
+  maxIterations: number = 1000,
+): (...args: unknown[]) => string {
+  // Validate the expression
+  if (!isForExpressionSafe(expression)) {
+    throw new Error(`Unsafe expression in @${loopType}: ${expression}`)
+  }
+
+  // Process the body to escape template literals
+  const processedBody = body.replace(/`/g, '\\`').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
+    return `\${${expr}}`
+  })
+
+  if (loopType === 'for') {
+    // eslint-disable-next-line no-new-func
+    return new Function(...contextKeys, `
+      'use strict';
+      let result = '';
+      for (${expression}) {
+        result += \`${processedBody}\`;
+      }
+      return result;
+    `) as (...args: unknown[]) => string
+  }
+  else {
+    // while loop with safety limit
+    // eslint-disable-next-line no-new-func
+    return new Function(...contextKeys, `
+      'use strict';
+      let result = '';
+      let __safeCounter = 0;
+      const __maxIterations = ${maxIterations};
+      while (${expression} && __safeCounter < __maxIterations) {
+        __safeCounter++;
+        result += \`${processedBody}\`;
+      }
+      if (__safeCounter >= __maxIterations) {
+        result += '<!-- [Loop Error]: Maximum iterations exceeded -->';
+      }
+      return result;
+    `) as (...args: unknown[]) => string
   }
 }

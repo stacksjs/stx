@@ -25,7 +25,9 @@
 
 import process from 'node:process'
 import { evaluateAuthExpression } from './auth'
-import { createDetailedErrorMessage } from './utils'
+import { ErrorCodes, inlineError } from './error-handling'
+import { findIfBlocks, parseSwitchBlock } from './parser'
+import { createSafeFunction, isExpressionSafe, safeEvaluate } from './safe-evaluator'
 
 // =============================================================================
 // Regex Patterns
@@ -42,10 +44,12 @@ import { createDetailedErrorMessage } from './utils'
  * - `\([^()]*\)` - Balanced parens with no nested parens inside
  * - `*` - Zero or more of either option
  */
-const NESTED_PARENS_PATTERN = '(?:[^()]|\\([^()]*\\))*'
+const _NESTED_PARENS_PATTERN = '(?:[^()]|\\([^()]*\\))*'
 
 /**
  * Helper function to find balanced @switch/@endswitch pairs
+ *
+ * @deprecated Use parseSwitchBlock from ./parser instead
  *
  * Uses depth-tracking algorithm:
  * 1. Start with depth=1 (we're inside a @switch)
@@ -53,7 +57,7 @@ const NESTED_PARENS_PATTERN = '(?:[^()]|\\([^()]*\\))*'
  * 3. Decrement depth for each @endswitch found
  * 4. Return when depth reaches 0 (found matching @endswitch)
  */
-function findBalancedSwitch(content: string, startIndex: number): { end: number, switchContent: string } | null {
+function _findBalancedSwitch(content: string, startIndex: number): { end: number, switchContent: string } | null {
   let depth = 1
   let currentIndex = startIndex
 
@@ -89,8 +93,13 @@ function findBalancedSwitch(content: string, startIndex: number): { end: number,
 
 /**
  * Process switch statements (@switch, @case, @default)
+ *
+ * Uses the parser module for proper handling of:
+ * - Nested parentheses in expressions (e.g., @switch(fn(a, fn(b))))
+ * - Nested @switch blocks
+ * - @break directives
  */
-export function processSwitchStatements(template: string, context: Record<string, any>, filePath: string): string {
+export function processSwitchStatements(template: string, context: Record<string, any>, _filePath: string): string {
   let output = template
   let processedAny = true
 
@@ -98,114 +107,74 @@ export function processSwitchStatements(template: string, context: Record<string
   while (processedAny) {
     processedAny = false
 
-    // Find the first @switch statement
-    // Uses NESTED_PARENS_PATTERN - see module documentation for regex explanation
-    const switchRegex = /@switch\s*\(((?:[^()]|\([^()]*\))*)\)/
-    const switchMatch = output.match(switchRegex)
+    // Find the first @switch statement using the new parser
+    const switchMatch = output.match(/@switch\s*\(/)
     if (!switchMatch || switchMatch.index === undefined) {
       break
     }
 
-    const expression = switchMatch[1]
     const switchStart = switchMatch.index
-    const contentStart = switchStart + switchMatch[0].length
 
-    // Find the balanced @endswitch
-    const balanced = findBalancedSwitch(output, contentStart)
-    if (!balanced) {
+    // Use the parser to properly parse the switch block
+    const parsed = parseSwitchBlock(output, switchStart)
+    if (!parsed) {
       break
     }
 
-    const switchContent = balanced.switchContent
-    const switchEnd = balanced.end + '@endswitch'.length
-
     try {
-      // Evaluate the switch expression
-      // eslint-disable-next-line no-new-func
-      const exprFn = new Function(...Object.keys(context), `return ${expression}`)
-      const switchValue = exprFn(...Object.values(context))
-
-      // Parse cases and default
-      const cases: Array<{ value: string, content: string }> = []
-      let defaultContent = ''
-
-      // Find all @case and @default positions in the switch content
-      const caseRegex = /@case\s*\(((?:[^()]|\([^()]*\))*)\)/g
-      const casePositions: Array<{ pos: number, value: string, directive: string }> = []
-      let caseMatch
-
-      // eslint-disable-next-line no-cond-assign -- needed for regex matching
-      while ((caseMatch = caseRegex.exec(switchContent)) !== null) {
-        casePositions.push({
-          pos: caseMatch.index,
-          value: caseMatch[1],
-          directive: caseMatch[0],
-        })
+      // Evaluate the switch expression using safe evaluation
+      let switchValue: unknown
+      if (isExpressionSafe(parsed.expression)) {
+        const exprFn = createSafeFunction(parsed.expression, Object.keys(context))
+        switchValue = exprFn(...Object.values(context))
       }
-
-      // Find @default position
-      const defaultMatch = switchContent.match(/@default/)
-      if (defaultMatch && defaultMatch.index !== undefined) {
-        casePositions.push({
-          pos: defaultMatch.index,
-          value: '',
-          directive: '@default',
-        })
-      }
-
-      // Sort by position
-      casePositions.sort((a, b) => a.pos - b.pos)
-
-      // Extract content for each case
-      for (let i = 0; i < casePositions.length; i++) {
-        const current = casePositions[i]
-        const next = casePositions[i + 1]
-
-        const startPos = current.pos + current.directive.length
-        const endPos = next ? next.pos : switchContent.length
-        const content = switchContent.substring(startPos, endPos).trim()
-
-        if (current.directive === '@default') {
-          defaultContent = content
-        }
-        else {
-          cases.push({ value: current.value, content })
-        }
+      else {
+        // Fall back to safe evaluator for potentially unsafe expressions
+        switchValue = safeEvaluate(parsed.expression, context)
       }
 
       // Find matching case
-      let result = defaultContent
-      for (const caseItem of cases) {
-        try {
-          // eslint-disable-next-line no-new-func
-          const caseFn = new Function(...Object.keys(context), `return ${caseItem.value}`)
-          const caseValue = caseFn(...Object.values(context))
+      let result = ''
+      let foundMatch = false
 
-          if (switchValue === caseValue) {
-            result = caseItem.content
-            break
+      for (const caseItem of parsed.cases) {
+        if (caseItem.type === 'default') {
+          if (!foundMatch) {
+            result = caseItem.content.replace(/@break/g, '').trim()
           }
         }
-        catch {
-          // If case evaluation fails, skip this case
-          continue
+        else {
+          try {
+            // Evaluate case value using safe evaluation
+            let caseValue: unknown
+            if (isExpressionSafe(caseItem.value)) {
+              const caseFn = createSafeFunction(caseItem.value, Object.keys(context))
+              caseValue = caseFn(...Object.values(context))
+            }
+            else {
+              caseValue = safeEvaluate(caseItem.value, context)
+            }
+
+            if (switchValue === caseValue) {
+              result = caseItem.content.replace(/@break/g, '').trim()
+              foundMatch = true
+              break
+            }
+          }
+          catch {
+            // If case evaluation fails, skip this case
+            continue
+          }
         }
       }
 
       // Replace the entire switch block with the result
-      output = output.substring(0, switchStart) + result + output.substring(switchEnd)
+      output = output.substring(0, switchStart) + result + output.substring(parsed.end)
       processedAny = true
     }
     catch (error: any) {
-      const errorMessage = createDetailedErrorMessage(
-        'Switch',
-        `Error evaluating @switch expression: ${error.message}`,
-        filePath,
-        template,
-        switchStart,
-        output.substring(switchStart, switchEnd),
-      )
-      output = output.substring(0, switchStart) + errorMessage + output.substring(switchEnd)
+      const errorMessage = inlineError('Switch', `Error evaluating @switch expression: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
+      output = output.substring(0, switchStart) + errorMessage + output.substring(parsed.end)
       break
     }
   }
@@ -215,6 +184,11 @@ export function processSwitchStatements(template: string, context: Record<string
 
 /**
  * Process conditionals (@if, @elseif, @else, @unless)
+ *
+ * Uses the parser module for proper handling of:
+ * - Nested parentheses in conditions (e.g., @if(fn(a, fn(b))))
+ * - Nested @if blocks
+ * - Multiple @elseif branches
  */
 export function processConditionals(template: string, context: Record<string, any>, filePath: string): string {
   let output = template
@@ -225,7 +199,7 @@ export function processConditionals(template: string, context: Record<string, an
   // Process @unless directives with @else support
   // @unless is the inverse of @if - renders content when condition is FALSE
   // Supports @else for content when condition is TRUE
-  output = output.replace(/@unless\s*\(([^)]+)\)([\s\S]*?)@endunless/g, (match, condition, content) => {
+  output = output.replace(/@unless\s*\(([^)]+)\)([\s\S]*?)@endunless/g, (_match, condition, content) => {
     // Check if there's an @else within the @unless block
     const elseMatch = content.match(/^([\s\S]*?)@else([\s\S]*)$/)
 
@@ -251,68 +225,71 @@ export function processConditionals(template: string, context: Record<string, an
   // Process @auth and @guest directives separately
   output = processAuthDirectives(output, context)
 
-  // Process @if, @else, @elseif directives
+  // Process @if, @else, @elseif directives using the new parser
   const processIfStatements = () => {
-    let hasMatches = false
+    // Find all @if blocks using proper balanced parsing
+    const ifBlocks = findIfBlocks(output)
+    if (ifBlocks.length === 0) {
+      return false
+    }
 
-    output = output.replace(/@if\s*\(([^)]+)\)([\s\S]*?)@endif/g, (match, condition, content, offset) => {
-      hasMatches = true
+    // Process from end to start to preserve positions
+    for (let i = ifBlocks.length - 1; i >= 0; i--) {
+      const block = ifBlocks[i]
 
       try {
-        // eslint-disable-next-line no-new-func
-        const conditionFn = new Function(...Object.keys(context), `return ${condition}`)
-        const result = conditionFn(...Object.values(context))
+        let result = ''
+        let foundTrueBranch = false
 
-        if (result) {
-          // If the condition is true, check for else parts
-          const elseParts = content.split(/@else(?:if\s*\([^)]+\))?/)
-          return elseParts[0] // Return only the if part
-        }
-        else {
-          // The condition is false, look for else or elseif parts
-          const elseifMatches = content.match(/@elseif\s*\(([^)]+)\)([\s\S]*?)(?:@elseif|@else|$)/)
-          if (elseifMatches) {
+        for (const branch of block.branches) {
+          if (foundTrueBranch) {
+            break
+          }
+
+          if (branch.type === 'else') {
+            // @else - use this content since no previous branch matched
+            result = branch.content
+            foundTrueBranch = true
+          }
+          else {
+            // @if or @elseif - evaluate condition using safe evaluation
             try {
-              // eslint-disable-next-line no-new-func
-              const elseifFn = new Function(...Object.keys(context), `return ${elseifMatches[1]}`)
-              if (elseifFn(...Object.values(context))) {
-                return elseifMatches[2]
+              let conditionResult: unknown
+              if (isExpressionSafe(branch.condition)) {
+                const conditionFn = createSafeFunction(branch.condition, Object.keys(context))
+                conditionResult = conditionFn(...Object.values(context))
+              }
+              else {
+                // Fall back to safe evaluator for potentially unsafe expressions
+                conditionResult = safeEvaluate(branch.condition, context)
+              }
+
+              if (conditionResult) {
+                result = branch.content
+                foundTrueBranch = true
               }
             }
             catch (error: any) {
-              return createDetailedErrorMessage(
-                'Directive',
-                `Error in @elseif(${elseifMatches[1]}): ${error instanceof Error ? error.message : String(error)}`,
-                filePath,
-                template,
-                offset + match.indexOf('@elseif'),
-                `@elseif(${elseifMatches[1]})`,
+              result = inlineError(
+                branch.type === 'if' ? 'If' : 'Elseif',
+                `Error in @${branch.type}(${branch.condition}): ${error instanceof Error ? error.message : String(error)}`,
+                ErrorCodes.EVALUATION_ERROR,
               )
+              foundTrueBranch = true
             }
           }
-
-          // Check for simple @else
-          const elseMatch = content.match(/@else([\s\S]*?)(?:@elseif|$)/)
-          if (elseMatch) {
-            return elseMatch[1]
-          }
-
-          return '' // If no else/elseif or all conditions are false
         }
+
+        // Replace the block with the result
+        output = output.substring(0, block.start) + result + output.substring(block.end)
       }
       catch (error: any) {
-        return createDetailedErrorMessage(
-          'Directive',
-          `Error in @if(${condition}): ${error instanceof Error ? error.message : String(error)}`,
-          filePath,
-          template,
-          offset,
-          `@if(${condition})`,
-        )
+        const errorMessage = inlineError('If', `Error processing @if block: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
+        output = output.substring(0, block.start) + errorMessage + output.substring(block.end)
       }
-    })
+    }
 
-    return hasMatches
+    return true
   }
 
   // Process @if statements until no more matches are found
@@ -566,11 +543,11 @@ export function processAuthDirectives(template: string, context: Record<string, 
 /**
  * Process @isset and @empty directives
  */
-export function processIssetEmptyDirectives(template: string, context: Record<string, any>, filePath?: string): string {
+export function processIssetEmptyDirectives(template: string, context: Record<string, any>, _filePath?: string): string {
   let result = template
 
   // Process @isset directive
-  result = result.replace(/@isset\(([^)]+)\)((?:.|\n)*?)(?:@else((?:.|\n)*?))?@endisset/g, (match, variable, content, elseContent, offset) => {
+  result = result.replace(/@isset\(([^)]+)\)((?:.|\n)*?)(?:@else((?:.|\n)*?))?@endisset/g, (_match, variable, content, elseContent, _offset) => {
     try {
       // Evaluate the variable path (silently handle undefined variables)
       const value = evaluateAuthExpression(variable.trim(), context)
@@ -583,25 +560,12 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
       return elseContent || ''
     }
     catch (error: any) {
-      if (filePath) {
-        return createDetailedErrorMessage(
-          'Directive',
-          `Error processing @isset directive: ${error.message}`,
-          filePath,
-          template,
-          offset,
-          match,
-        )
-      }
-      else {
-        console.error(`Error processing @isset directive:`, error)
-        return match // Return unchanged if error
-      }
+      return inlineError('Isset', `Error processing @isset directive: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
 
   // Process @empty directive
-  result = result.replace(/@empty\(([^)]+)\)((?:.|\n)*?)(?:@else((?:.|\n)*?))?@endempty/g, (match, variable, content, elseContent, offset) => {
+  result = result.replace(/@empty\(([^)]+)\)((?:.|\n)*?)(?:@else((?:.|\n)*?))?@endempty/g, (_match, variable, content, elseContent, _offset) => {
     try {
       // Evaluate the variable path (silently handle undefined variables)
       const value = evaluateAuthExpression(variable.trim(), context)
@@ -618,20 +582,7 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
       return elseContent || ''
     }
     catch (error: any) {
-      if (filePath) {
-        return createDetailedErrorMessage(
-          'Directive',
-          `Error processing @empty directive: ${error.message}`,
-          filePath,
-          template,
-          offset,
-          match,
-        )
-      }
-      else {
-        console.error(`Error processing @empty directive:`, error)
-        return match // Return unchanged if error
-      }
+      return inlineError('Empty', `Error processing @empty directive: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
 

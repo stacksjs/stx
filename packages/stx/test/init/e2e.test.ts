@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { afterAll, afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -120,5 +120,12 @@ describe('stx CLI end-to-end tests', () => {
     const content = fs.readFileSync(path.join(TEST_DIR, 'e2e-template-file.stx'), 'utf-8')
     expect(content).toContain('E2E Test Template')
     expect(content).toContain('export const title = "E2E Template Test"')
+  })
+
+  // Clean up test directory after all tests
+  afterAll(() => {
+    if (fs.existsSync(TEST_DIR)) {
+      fs.rmSync(TEST_DIR, { recursive: true, force: true })
+    }
   })
 })

@@ -1,6 +1,6 @@
 import type { CustomDirective, StxOptions } from './types'
+import { ErrorCodes, inlineError } from './error-handling'
 import { getCachedRegex } from './performance-utils'
-import { createDetailedErrorMessage } from './utils'
 
 /**
  * Process all custom directives registered in the app
@@ -107,14 +107,7 @@ async function processDirectiveWithEndTag(
       // Replace with detailed error message if processing fails
       replacements.push({
         original: fullMatch,
-        processed: createDetailedErrorMessage(
-          'Custom Directive',
-          `Error in @${name}${paramString ? `(${paramString})` : ''}: ${errorMessage}`,
-          filePath,
-          template,
-          startIndex,
-          fullMatch,
-        ),
+        processed: inlineError('CustomDirective', `Error in @${name}${paramString ? `(${paramString})` : ''}: ${errorMessage}`, ErrorCodes.EVALUATION_ERROR),
         startIndex,
       })
     }
@@ -182,14 +175,7 @@ async function processDirectiveWithoutEndTag(
       // Replace with detailed error message if processing fails
       replacements.push({
         original: fullMatch,
-        processed: createDetailedErrorMessage(
-          'Custom Directive',
-          `Error in @${name}(${paramString}): ${errorMessage}`,
-          filePath,
-          template,
-          startIndex,
-          fullMatch,
-        ),
+        processed: inlineError('CustomDirective', `Error in @${name}(${paramString}): ${errorMessage}`, ErrorCodes.EVALUATION_ERROR),
         startIndex,
       })
     }

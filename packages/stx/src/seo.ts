@@ -7,8 +7,38 @@
  * - `@structuredData({ ... })` - JSON-LD structured data
  * - `@seo({ title, description, ... })` - Comprehensive SEO generation
  *
- * Also provides automatic SEO tag injection for templates without explicit
- * SEO directives via `injectSeoTags()`.
+ * Also provides:
+ * - Automatic SEO tag injection via `injectSeoTags()`
+ * - Sitemap generation via `generateSitemap()`, `scanForSitemapEntries()`
+ * - robots.txt generation via `generateRobotsTxt()`
+ *
+ * ## Sitemap Generation
+ *
+ * ```typescript
+ * import { generateSitemap, scanForSitemapEntries } from 'stx'
+ *
+ * // Manual entries
+ * const sitemap = generateSitemap([
+ *   { loc: '/', priority: 1.0 },
+ *   { loc: '/about', priority: 0.8 },
+ * ], { baseUrl: 'https://example.com' })
+ *
+ * // Auto-scan directory
+ * const entries = await scanForSitemapEntries('./pages', {
+ *   baseUrl: 'https://example.com'
+ * })
+ * ```
+ *
+ * ## Robots.txt Generation
+ *
+ * ```typescript
+ * import { generateRobotsTxt } from 'stx'
+ *
+ * const robotsTxt = generateRobotsTxt({
+ *   rules: [{ userAgent: '*', allow: ['/'], disallow: ['/admin'] }],
+ *   sitemap: 'https://example.com/sitemap.xml'
+ * })
+ * ```
  *
  * ## Configuration
  *
@@ -25,7 +55,8 @@
  * ```
  */
 import type { CustomDirective, SeoConfig, StxOptions } from './types'
-import { createDetailedErrorMessage } from './utils'
+import { ErrorCodes, inlineError } from './error-handling'
+import { safeEvaluateObject } from './safe-evaluator'
 
 // =============================================================================
 // Types
@@ -89,13 +120,11 @@ export function processMetaDirectives(
       : ''
   })
 
-  // Process extended meta directive with attributes object
+  // Process extended meta directive with attributes object using safe evaluation
   output = output.replace(/@metaTag\(\s*(\{[^}]+\})\s*\)/g, (_, attrObject) => {
     try {
-      // Parse the attribute object
-      // eslint-disable-next-line no-new-func
-      const evalFn = new Function(...Object.keys(context), `return ${attrObject}`)
-      const attrs: MetaTag = evalFn(...Object.values(context))
+      // Parse the attribute object using safe evaluation
+      const attrs = safeEvaluateObject(attrObject, context) as MetaTag
 
       if (!attrs)
         return ''
@@ -103,20 +132,20 @@ export function processMetaDirectives(
       // Build meta tag based on provided attributes
       let tag = '<meta'
       if (attrs.name)
-        tag += ` name="${escapeHtml(attrs.name)}"`
+        tag += ` name="${escapeHtml(String(attrs.name))}"`
       if (attrs.property)
-        tag += ` property="${escapeHtml(attrs.property)}"`
+        tag += ` property="${escapeHtml(String(attrs.property))}"`
       if (attrs.httpEquiv)
-        tag += ` http-equiv="${escapeHtml(attrs.httpEquiv)}"`
+        tag += ` http-equiv="${escapeHtml(String(attrs.httpEquiv))}"`
       if (attrs.content)
-        tag += ` content="${escapeHtml(attrs.content)}"`
+        tag += ` content="${escapeHtml(String(attrs.content))}"`
       tag += '>'
 
       return tag
     }
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      return `<!-- Error in @metaTag: ${errorMessage} -->`
+      return inlineError('MetaTag', errorMessage, ErrorCodes.EVALUATION_ERROR)
     }
   })
 
@@ -138,13 +167,11 @@ export function processStructuredData(
 ): string {
   let output = template
 
-  // Process @structuredData directive
+  // Process @structuredData directive using safe evaluation
   output = output.replace(/@structuredData\(\s*(\{[\s\S]*?\})\s*\)/g, (_, dataObject) => {
     try {
-      // Parse the data object
-      // eslint-disable-next-line no-new-func
-      const evalFn = new Function(...Object.keys(context), `return ${dataObject}`)
-      const data: StructuredData = evalFn(...Object.values(context))
+      // Parse the data object using safe evaluation
+      const data = safeEvaluateObject(dataObject, context) as StructuredData
 
       if (!data)
         return ''
@@ -159,7 +186,7 @@ export function processStructuredData(
     }
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      return `<!-- Error in @structuredData: ${errorMessage} -->`
+      return inlineError('StructuredData', errorMessage, ErrorCodes.EVALUATION_ERROR)
     }
   })
 
@@ -177,18 +204,16 @@ export function processStructuredData(
 export function processSeoDirective(
   template: string,
   context: Record<string, any>,
-  filePath: string,
+  _filePath: string,
   _options: StxOptions,
 ): string {
   let output = template
 
-  // Process @seo directive
+  // Process @seo directive using safe evaluation
   output = output.replace(/@seo\(\s*(\{[\s\S]*?\})\s*\)/g, (_, seoConfig) => {
     try {
-      // Parse the SEO configuration object
-      // eslint-disable-next-line no-new-func
-      const evalFn = new Function(...Object.keys(context), `return ${seoConfig}`)
-      const config: Partial<SeoConfig> = evalFn(...Object.values(context))
+      // Parse the SEO configuration object using safe evaluation
+      const config = safeEvaluateObject(seoConfig, context) as Partial<SeoConfig>
 
       if (!config)
         return ''
@@ -300,14 +325,7 @@ export function processSeoDirective(
     }
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      return createDetailedErrorMessage(
-        'SEO Directive',
-        `Error processing @seo directive: ${errorMessage}`,
-        filePath,
-        template,
-        template.indexOf('@seo'),
-        seoConfig,
-      )
+      return inlineError('SEO', `Error processing @seo directive: ${errorMessage}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
 
@@ -453,7 +471,7 @@ export const metaDirective: CustomDirective = {
   name: 'meta',
   handler: (_content, params, _context, _filePath) => {
     if (params.length < 1) {
-      return '[Error: meta directive requires at least the meta name]'
+      return inlineError('Meta', 'meta directive requires at least the meta name', ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
     }
 
     const name = params[0].replace(/['"]/g, '')
@@ -471,7 +489,7 @@ export const structuredDataDirective: CustomDirective = {
   name: 'structuredData',
   handler: (content, _params, _context, _filePath) => {
     if (content.trim() === '') {
-      return '[Error: structuredData directive requires JSON-LD content]'
+      return inlineError('StructuredData', 'structuredData directive requires JSON-LD content', ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
     }
 
     try {
@@ -484,7 +502,7 @@ export const structuredDataDirective: CustomDirective = {
       }
 
       if (!data['@type']) {
-        return '[Error: structuredData requires @type property]'
+        return inlineError('StructuredData', 'structuredData requires @type property', ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
       }
 
       // Return JSON-LD script tag
@@ -492,7 +510,7 @@ export const structuredDataDirective: CustomDirective = {
     }
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      return `<!-- Error in structuredData directive: ${errorMessage} -->`
+      return inlineError('StructuredData', errorMessage, ErrorCodes.EVALUATION_ERROR)
     }
   },
   hasEndTag: true,
@@ -506,4 +524,338 @@ export function registerSeoDirectives(): CustomDirective[] {
     metaDirective,
     structuredDataDirective,
   ]
+}
+
+// =============================================================================
+// Sitemap Generation
+// =============================================================================
+
+/**
+ * URL entry for sitemap
+ */
+export interface SitemapEntry {
+  /** Full URL of the page */
+  loc: string
+  /** Last modification date (ISO 8601 format) */
+  lastmod?: string
+  /** Change frequency */
+  changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never'
+  /** Priority (0.0 to 1.0) */
+  priority?: number
+}
+
+/**
+ * Sitemap generation options
+ */
+export interface SitemapOptions {
+  /** Base URL for the site (e.g., 'https://example.com') */
+  baseUrl: string
+  /** Default change frequency */
+  defaultChangefreq?: SitemapEntry['changefreq']
+  /** Default priority */
+  defaultPriority?: number
+  /** Whether to include lastmod for all entries */
+  includeLastmod?: boolean
+}
+
+/**
+ * Generate an XML sitemap from a list of URL entries.
+ *
+ * @param entries - Array of sitemap entries
+ * @param options - Sitemap generation options
+ * @returns XML sitemap string
+ *
+ * @example
+ * ```typescript
+ * const sitemap = generateSitemap([
+ *   { loc: '/', priority: 1.0 },
+ *   { loc: '/about', priority: 0.8 },
+ *   { loc: '/blog', changefreq: 'daily' },
+ * ], { baseUrl: 'https://example.com' })
+ * ```
+ */
+export function generateSitemap(entries: SitemapEntry[], options: SitemapOptions): string {
+  const {
+    baseUrl,
+    defaultChangefreq = 'weekly',
+    defaultPriority = 0.5,
+    includeLastmod = true,
+  } = options
+
+  // Normalize base URL (remove trailing slash)
+  const base = baseUrl.replace(/\/$/, '')
+
+  const urlEntries = entries.map((entry) => {
+    const loc = entry.loc.startsWith('http')
+      ? entry.loc
+      : `${base}${entry.loc.startsWith('/') ? '' : '/'}${entry.loc}`
+
+    const lastmod = entry.lastmod
+      || (includeLastmod ? new Date().toISOString().split('T')[0] : undefined)
+
+    const changefreq = entry.changefreq || defaultChangefreq
+    const priority = entry.priority ?? defaultPriority
+
+    let urlXml = `  <url>\n    <loc>${escapeXml(loc)}</loc>`
+
+    if (lastmod) {
+      urlXml += `\n    <lastmod>${lastmod}</lastmod>`
+    }
+
+    urlXml += `\n    <changefreq>${changefreq}</changefreq>`
+    urlXml += `\n    <priority>${priority.toFixed(1)}</priority>`
+    urlXml += `\n  </url>`
+
+    return urlXml
+  })
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urlEntries.join('\n')}
+</urlset>`
+}
+
+/**
+ * Generate a sitemap index for multiple sitemaps.
+ *
+ * @param sitemaps - Array of sitemap URLs
+ * @param baseUrl - Base URL for the site
+ * @returns XML sitemap index string
+ */
+export function generateSitemapIndex(sitemaps: string[], baseUrl: string): string {
+  const base = baseUrl.replace(/\/$/, '')
+  const lastmod = new Date().toISOString().split('T')[0]
+
+  const sitemapEntries = sitemaps.map((sitemap) => {
+    const loc = sitemap.startsWith('http')
+      ? sitemap
+      : `${base}${sitemap.startsWith('/') ? '' : '/'}${sitemap}`
+
+    return `  <sitemap>
+    <loc>${escapeXml(loc)}</loc>
+    <lastmod>${lastmod}</lastmod>
+  </sitemap>`
+  })
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${sitemapEntries.join('\n')}
+</sitemapindex>`
+}
+
+/**
+ * Scan a directory and generate sitemap entries.
+ *
+ * @param directory - Directory to scan for .stx/.html files
+ * @param options - Scan options
+ * @returns Array of sitemap entries
+ */
+export async function scanForSitemapEntries(
+  directory: string,
+  options: {
+    extensions?: string[]
+    ignore?: string[]
+    baseUrl: string
+  },
+): Promise<SitemapEntry[]> {
+  const {
+    extensions = ['.stx', '.html', '.htm'],
+    ignore = ['_*', '.*', 'node_modules', 'components', 'partials', 'layouts'],
+  } = options
+
+  const entries: SitemapEntry[] = []
+
+  // Build glob pattern
+  const extPattern = extensions.length === 1
+    ? `*${extensions[0]}`
+    : `*{${extensions.join(',')}}`
+
+  const glob = new Bun.Glob(`**/${extPattern}`)
+
+  for await (const file of glob.scan(directory)) {
+    // Check if file matches any ignore pattern
+    const shouldIgnore = ignore.some((pattern) => {
+      if (pattern.startsWith('*')) {
+        return file.includes(pattern.slice(1))
+      }
+      return file.startsWith(pattern) || file.includes(`/${pattern}`)
+    })
+
+    if (shouldIgnore)
+      continue
+
+    // Convert file path to URL path
+    let urlPath = file
+      .replace(/\\/g, '/') // Normalize path separators
+      .replace(/index\.(stx|html|htm)$/, '') // Remove index files
+      .replace(/\.(stx|html|htm)$/, '') // Remove extensions
+
+    // Ensure leading slash
+    if (!urlPath.startsWith('/')) {
+      urlPath = `/${urlPath}`
+    }
+
+    // Clean up trailing slashes (except for root)
+    if (urlPath !== '/' && urlPath.endsWith('/')) {
+      urlPath = urlPath.slice(0, -1)
+    }
+
+    // Get file stats for lastmod
+    const filePath = `${directory}/${file}`
+    let lastmod: string | undefined
+
+    try {
+      const stat = await Bun.file(filePath).stat()
+      if (stat) {
+        lastmod = new Date(stat.mtime).toISOString().split('T')[0]
+      }
+    }
+    catch {
+      // Ignore stat errors
+    }
+
+    entries.push({
+      loc: urlPath || '/',
+      lastmod,
+      priority: urlPath === '/' ? 1.0 : 0.5,
+    })
+  }
+
+  // Sort entries by URL
+  entries.sort((a, b) => a.loc.localeCompare(b.loc))
+
+  return entries
+}
+
+// =============================================================================
+// Robots.txt Generation
+// =============================================================================
+
+/**
+ * Robots.txt rule
+ */
+export interface RobotsRule {
+  /** User agent (e.g., '*', 'Googlebot', 'Bingbot') */
+  userAgent: string
+  /** Allowed paths */
+  allow?: string[]
+  /** Disallowed paths */
+  disallow?: string[]
+  /** Crawl delay in seconds */
+  crawlDelay?: number
+}
+
+/**
+ * Robots.txt generation options
+ */
+export interface RobotsOptions {
+  /** Array of rules */
+  rules: RobotsRule[]
+  /** Sitemap URL(s) */
+  sitemap?: string | string[]
+  /** Host directive (for Yandex) */
+  host?: string
+}
+
+/**
+ * Generate a robots.txt file content.
+ *
+ * @param options - Robots.txt options
+ * @returns robots.txt content string
+ *
+ * @example
+ * ```typescript
+ * const robotsTxt = generateRobotsTxt({
+ *   rules: [
+ *     {
+ *       userAgent: '*',
+ *       allow: ['/'],
+ *       disallow: ['/admin', '/private'],
+ *     },
+ *     {
+ *       userAgent: 'Googlebot',
+ *       allow: ['/'],
+ *       crawlDelay: 1,
+ *     },
+ *   ],
+ *   sitemap: 'https://example.com/sitemap.xml',
+ * })
+ * ```
+ */
+export function generateRobotsTxt(options: RobotsOptions): string {
+  const lines: string[] = []
+
+  for (const rule of options.rules) {
+    lines.push(`User-agent: ${rule.userAgent}`)
+
+    if (rule.allow) {
+      for (const path of rule.allow) {
+        lines.push(`Allow: ${path}`)
+      }
+    }
+
+    if (rule.disallow) {
+      for (const path of rule.disallow) {
+        lines.push(`Disallow: ${path}`)
+      }
+    }
+
+    if (rule.crawlDelay !== undefined) {
+      lines.push(`Crawl-delay: ${rule.crawlDelay}`)
+    }
+
+    lines.push('') // Empty line between rules
+  }
+
+  // Add sitemap(s)
+  if (options.sitemap) {
+    const sitemaps = Array.isArray(options.sitemap)
+      ? options.sitemap
+      : [options.sitemap]
+
+    for (const sitemap of sitemaps) {
+      lines.push(`Sitemap: ${sitemap}`)
+    }
+  }
+
+  // Add host directive (for Yandex)
+  if (options.host) {
+    lines.push(`Host: ${options.host}`)
+  }
+
+  return lines.join('\n').trim()
+}
+
+/**
+ * Generate a default robots.txt that allows all crawling.
+ *
+ * @param sitemapUrl - Optional sitemap URL
+ * @returns robots.txt content string
+ */
+export function generateDefaultRobotsTxt(sitemapUrl?: string): string {
+  return generateRobotsTxt({
+    rules: [
+      {
+        userAgent: '*',
+        allow: ['/'],
+      },
+    ],
+    sitemap: sitemapUrl,
+  })
+}
+
+// =============================================================================
+// Internal Utilities
+// =============================================================================
+
+/**
+ * Escape XML special characters
+ */
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
 }

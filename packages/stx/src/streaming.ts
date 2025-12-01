@@ -86,7 +86,92 @@ const SECTION_PATTERN = /<!-- @section:([\w-]+) -->([\s\S]*?)<!-- @endsection:\1
 const _DATA_SECTION_PATTERN = /<template\s+data-section="([\w-]+)">([\s\S]*?)<\/template>/g
 
 /**
- * Stream a template with data
+ * Suspense boundary pattern for chunked streaming.
+ * Matches: <!-- @suspense:name -->content<!-- @endsuspense:name -->
+ */
+const SUSPENSE_PATTERN = /<!-- @suspense:([\w-]+) -->([\s\S]*?)<!-- @endsuspense:\1 -->/g
+
+/**
+ * Shell boundary pattern to separate shell (immediate) from deferred content.
+ * Content before the first suspense boundary is the shell.
+ */
+interface StreamChunk {
+  type: 'shell' | 'suspense' | 'content'
+  name?: string
+  content: string
+  priority?: number
+}
+
+/**
+ * Parse template into streamable chunks.
+ * Separates the shell (before any suspense) from suspense boundaries.
+ */
+function parseStreamableChunks(content: string): StreamChunk[] {
+  const chunks: StreamChunk[] = []
+  let lastIndex = 0
+  let match
+
+  SUSPENSE_PATTERN.lastIndex = 0
+
+  // Find all suspense boundaries
+  // eslint-disable-next-line no-cond-assign
+  while ((match = SUSPENSE_PATTERN.exec(content)) !== null) {
+    // Add content before this suspense as shell/content
+    if (match.index > lastIndex) {
+      const beforeContent = content.slice(lastIndex, match.index)
+      if (beforeContent.trim()) {
+        chunks.push({
+          type: chunks.length === 0 ? 'shell' : 'content',
+          content: beforeContent,
+        })
+      }
+    }
+
+    // Add the suspense boundary with placeholder
+    const suspenseName = match[1]
+    const suspenseContent = match[2]
+
+    // Add placeholder in shell for where suspense content will go
+    chunks.push({
+      type: 'suspense',
+      name: suspenseName,
+      content: suspenseContent,
+    })
+
+    lastIndex = match.index + match[0].length
+  }
+
+  // Add remaining content after last suspense
+  if (lastIndex < content.length) {
+    const remainingContent = content.slice(lastIndex)
+    if (remainingContent.trim()) {
+      chunks.push({
+        type: chunks.length === 0 ? 'shell' : 'content',
+        content: remainingContent,
+      })
+    }
+  }
+
+  // If no suspense boundaries found, return whole content as shell
+  if (chunks.length === 0) {
+    chunks.push({
+      type: 'shell',
+      content,
+    })
+  }
+
+  return chunks
+}
+
+/**
+ * Stream a template with data using chunked transfer encoding.
+ *
+ * This implements actual progressive streaming by:
+ * 1. Sending the shell (content before suspense) immediately
+ * 2. Processing suspense boundaries in parallel
+ * 3. Streaming each resolved suspense content as it completes
+ * 4. Using out-of-order streaming with client-side reordering
+ *
  * @param templatePath Path to the template
  * @param data Data to render with the template
  * @param options stx options
@@ -105,7 +190,8 @@ export async function streamTemplate(
     },
   }
 
-  // Create a ReadableStream
+  const bufferSize = fullOptions.streaming?.bufferSize || 16384
+
   return new ReadableStream<string>({
     async start(controller) {
       try {
@@ -127,14 +213,155 @@ export async function streamTemplate(
         // Extract variables from script
         await extractVariables(scriptContent, context, templatePath)
 
-        // Process template with directives
+        // Parse into streamable chunks
+        const chunks = parseStreamableChunks(templateContent)
+        const dependencies = new Set<string>()
+
+        // Check if we have suspense boundaries for true streaming
+        const hasSuspense = chunks.some(c => c.type === 'suspense')
+
+        if (!hasSuspense) {
+          // No suspense boundaries - fall back to chunked output
+          const output = await processDirectives(templateContent, context, templatePath, fullOptions, dependencies)
+
+          // Stream in chunks based on buffer size
+          for (let i = 0; i < output.length; i += bufferSize) {
+            const chunk = output.slice(i, i + bufferSize)
+            controller.enqueue(chunk)
+
+            // Yield to allow other async operations
+            await new Promise(resolve => setTimeout(resolve, 0))
+          }
+        }
+        else {
+          // Has suspense boundaries - use progressive streaming
+          const suspensePromises: Map<string, Promise<string>> = new Map()
+
+          // First pass: send shell with placeholders, start suspense processing
+          for (const chunk of chunks) {
+            if (chunk.type === 'shell' || chunk.type === 'content') {
+              // Process and send immediately
+              const processed = await processDirectives(chunk.content, context, templatePath, fullOptions, dependencies)
+              controller.enqueue(processed)
+            }
+            else if (chunk.type === 'suspense' && chunk.name) {
+              // Send placeholder for suspense content
+              const placeholderId = `stx-suspense-${chunk.name}`
+              controller.enqueue(`<div id="${placeholderId}" data-suspense="${chunk.name}" style="display:contents;">
+  <template data-suspense-fallback>Loading...</template>
+</div>`)
+
+              // Start processing suspense content in parallel
+              suspensePromises.set(
+                chunk.name,
+                processDirectives(chunk.content, context, templatePath, fullOptions, dependencies),
+              )
+            }
+          }
+
+          // Send streaming runtime script
+          controller.enqueue(`
+<script>
+(function() {
+  window.__stxSuspense = window.__stxSuspense || {
+    resolve: function(name, content) {
+      var el = document.querySelector('[data-suspense="' + name + '"]');
+      if (el) {
+        // Create a template to parse the HTML
+        var template = document.createElement('template');
+        template.innerHTML = content;
+        // Replace placeholder with actual content
+        el.replaceWith(template.content);
+      }
+    }
+  };
+})();
+</script>`)
+
+          // Stream resolved suspense content as it completes
+          const resolvePromises = Array.from(suspensePromises.entries()).map(
+            async ([name, promise]) => {
+              try {
+                const content = await promise
+                // Send script to inject content into placeholder
+                const escapedContent = content.replace(/`/g, '\\`').replace(/<\/script>/gi, '<\\/script>')
+                controller.enqueue(`
+<script>
+window.__stxSuspense.resolve('${name}', \`${escapedContent}\`);
+</script>`)
+              }
+              catch (error: any) {
+                // Send error state for this suspense boundary
+                controller.enqueue(`
+<script>
+window.__stxSuspense.resolve('${name}', '<div class="stx-error">Error loading content: ${escapeHtml(error.message)}</div>');
+</script>`)
+              }
+            },
+          )
+
+          // Wait for all suspense boundaries to resolve
+          await Promise.all(resolvePromises)
+        }
+
+        // Close the stream
+        controller.close()
+      }
+      catch (error: any) {
+        controller.error(error)
+      }
+    },
+  })
+}
+
+/**
+ * Stream a template with data (simple version without suspense).
+ * Returns full content in chunks based on buffer size.
+ *
+ * @param templatePath Path to the template
+ * @param data Data to render with the template
+ * @param options stx options
+ */
+export async function streamTemplateSimple(
+  templatePath: string,
+  data: Record<string, any> = {},
+  options: StxOptions = {},
+): Promise<ReadableStream<string>> {
+  const fullOptions = {
+    ...defaultConfig,
+    ...options,
+    streaming: {
+      ...defaultStreamingConfig,
+      ...options.streaming,
+    },
+  }
+
+  const bufferSize = fullOptions.streaming?.bufferSize || 16384
+
+  return new ReadableStream<string>({
+    async start(controller) {
+      try {
+        const content = await Bun.file(templatePath).text()
+        const scriptMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
+        const scriptContent = scriptMatch ? scriptMatch[1] : ''
+        const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i, '')
+
+        const context: Record<string, any> = {
+          ...data,
+          __filename: templatePath,
+          __dirname: path.dirname(templatePath),
+        }
+
+        await extractVariables(scriptContent, context, templatePath)
+
         const dependencies = new Set<string>()
         const output = await processDirectives(templateContent, context, templatePath, fullOptions, dependencies)
 
-        // Enqueue the processed template
-        controller.enqueue(output)
+        // Stream output in chunks
+        for (let i = 0; i < output.length; i += bufferSize) {
+          controller.enqueue(output.slice(i, i + bufferSize))
+        }
 
-        // Close the stream
         controller.close()
       }
       catch (error: any) {
@@ -260,6 +487,37 @@ export async function createStreamRenderer(
 }
 
 /**
+ * Custom directive for marking suspense boundaries in streaming templates.
+ *
+ * Usage:
+ * ```html
+ * @suspense('heavy-content')
+ *   <div>This content will stream after the shell</div>
+ * @endsuspense
+ * ```
+ *
+ * The content inside suspense boundaries will be:
+ * 1. Replaced with a placeholder in the initial shell
+ * 2. Processed in parallel with other suspense boundaries
+ * 3. Streamed to the client as it resolves
+ * 4. Injected into the placeholder via client-side JavaScript
+ */
+export const suspenseDirective: CustomDirective = {
+  name: 'suspense',
+  hasEndTag: true,
+  handler: (content: string, params: string[], _context: Record<string, any>, _filePath: string): string => {
+    if (!params || params.length === 0) {
+      throw new Error('Suspense directive requires a name parameter')
+    }
+
+    const suspenseName = params[0].replace(/['"`]/g, '')
+
+    // Wrap content in suspense markers for streaming detection
+    return `<!-- @suspense:${suspenseName} -->${content}<!-- @endsuspense:${suspenseName} -->`
+  },
+}
+
+/**
  * Custom directive for creating islands (for partial hydration)
  */
 export const islandDirective: CustomDirective = {
@@ -298,6 +556,11 @@ export const islandDirective: CustomDirective = {
  */
 export function registerStreamingDirectives(options: StxOptions = {}): CustomDirective[] {
   const directives: CustomDirective[] = []
+
+  // Add streaming directive if enabled
+  if (options.streaming?.enabled) {
+    directives.push(suspenseDirective)
+  }
 
   // Add hydration directives if enabled
   if (options.hydration?.enabled) {

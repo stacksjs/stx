@@ -1,12 +1,77 @@
+/**
+ * Includes Module
+ *
+ * Processes include, partial, and stack directives for template composition.
+ * This module enables building complex templates from reusable pieces.
+ *
+ * ## Include Directives
+ *
+ * | Directive | Description |
+ * |-----------|-------------|
+ * | `@include('path')` | Include a partial template |
+ * | `@include('path', { vars })` | Include with local variables |
+ * | `@partial('path')` | Alias for @include |
+ * | `@includeIf('path')` | Include only if file exists |
+ * | `@includeWhen(cond, 'path')` | Include if condition is true |
+ * | `@includeUnless(cond, 'path')` | Include if condition is false |
+ * | `@includeFirst(['a','b'])` | Include first existing file |
+ * | `@once...@endonce` | Include content only once per request |
+ *
+ * ## Stack Directives
+ *
+ * | Directive | Description |
+ * |-----------|-------------|
+ * | `@push('name')...@endpush` | Add content to end of stack |
+ * | `@prepend('name')...@endprepend` | Add content to start of stack |
+ * | `@stack('name')` | Output stack contents |
+ *
+ * ## Path Resolution
+ *
+ * Paths are resolved in this order:
+ * 1. If path starts with `./` or `../`: Relative to current template
+ * 2. Otherwise: Relative to `partialsDir` (from config)
+ *
+ * Paths without `.stx` extension automatically get it appended.
+ *
+ * ## Security
+ *
+ * Path traversal attacks are blocked. Includes must resolve to:
+ * - The configured partials directory, OR
+ * - The directory containing the current template
+ *
+ * Uses safe evaluation for expression evaluation to prevent code injection.
+ *
+ * ## @once Directive
+ *
+ * The `@once` directive ensures content is only rendered once per request.
+ * This is useful for including scripts or styles that should not be duplicated.
+ *
+ * **Important**: In server environments, use request-scoped tracking:
+ *
+ * ```typescript
+ * // Option 1: Clear global store per request
+ * app.use((req, res, next) => {
+ *   clearOnceStore()
+ *   next()
+ * })
+ *
+ * // Option 2: Use request-scoped store (recommended)
+ * const context = {
+ *   __onceStore: new Set<string>(),
+ *   ...otherData
+ * }
+ * ```
+ *
+ * @module includes
+ */
+
 import type { StxOptions } from './types'
 import fs from 'node:fs'
-/**
- * Module for processing include and partial directives
- */
 import path from 'node:path'
 import { processConditionals } from './conditionals'
 import { processExpressions } from './expressions'
 import { LRUCache } from './performance-utils'
+import { createSafeFunction, isExpressionSafe, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
 import { createDetailedErrorMessage, fileExists } from './utils'
 
 // Cache for partials to avoid repeated file reads (LRU with max 500 entries)
@@ -59,7 +124,31 @@ function getOnceStore(context: Record<string, any>): Set<string> {
 }
 
 /**
- * Process @include and @partial directives
+ * Process @include, @partial, @includeIf, @includeWhen, @includeUnless,
+ * @includeFirst, and @once directives.
+ *
+ * This is the main function for include processing. It handles all include
+ * variants and the @once directive for deduplication.
+ *
+ * @param template - The template string to process
+ * @param context - Template context with variables
+ * @param filePath - Path to the current template file
+ * @param options - STX processing options
+ * @param dependencies - Set to track included file dependencies (for caching)
+ * @returns The processed template with includes resolved
+ *
+ * @example
+ * ```typescript
+ * const deps = new Set<string>()
+ * const result = await processIncludes(
+ *   '@include("header") <main>Content</main> @include("footer")',
+ *   { title: 'My Page' },
+ *   '/app/views/home.stx',
+ *   options,
+ *   deps
+ * )
+ * // deps now contains paths to header.stx and footer.stx
+ * ```
  */
 export async function processIncludes(
   template: string,
@@ -67,6 +156,7 @@ export async function processIncludes(
   filePath: string,
   options: StxOptions,
   dependencies: Set<string>,
+  includeStack: Set<string> = new Set(),
 ): Promise<string> {
   // Get the partials directory and resolve to absolute path if needed
   let partialsDir = options.partialsDir || path.join(path.dirname(filePath), 'partials')
@@ -113,13 +203,19 @@ export async function processIncludes(
     return ''
   })
 
-  // Process @includeWhen directive
+  // Process @includeWhen directive using safe evaluation
   output = output.replace(/@includeWhen\s*\(([^,]+),\s*['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (match, condition, includePath, varsString, offset) => {
     try {
-      // Evaluate the condition
-      // eslint-disable-next-line no-new-func
-      const conditionFn = new Function(...Object.keys(context), `return Boolean(${condition})`)
-      const shouldInclude = conditionFn(...Object.values(context))
+      // Evaluate the condition using safe evaluation
+      const condExpr = `Boolean(${condition})`
+      let shouldInclude: boolean
+      if (isExpressionSafe(condExpr)) {
+        const conditionFn = createSafeFunction(condExpr, Object.keys(context))
+        shouldInclude = Boolean(conditionFn(...Object.values(context)))
+      }
+      else {
+        shouldInclude = Boolean(safeEvaluate(condExpr, context))
+      }
 
       if (shouldInclude) {
         // Track dependency if condition is true
@@ -143,13 +239,19 @@ export async function processIncludes(
     }
   })
 
-  // Process @includeUnless directive
+  // Process @includeUnless directive using safe evaluation
   output = output.replace(/@includeUnless\s*\(([^,]+),\s*['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (match, condition, includePath, varsString, offset) => {
     try {
-      // Evaluate the condition
-      // eslint-disable-next-line no-new-func
-      const conditionFn = new Function(...Object.keys(context), `return Boolean(${condition})`)
-      const conditionResult = conditionFn(...Object.values(context))
+      // Evaluate the condition using safe evaluation
+      const condExpr = `Boolean(${condition})`
+      let conditionResult: boolean
+      if (isExpressionSafe(condExpr)) {
+        const conditionFn = createSafeFunction(condExpr, Object.keys(context))
+        conditionResult = Boolean(conditionFn(...Object.values(context)))
+      }
+      else {
+        conditionResult = Boolean(safeEvaluate(condExpr, context))
+      }
 
       if (!conditionResult) {
         // Track dependency if condition is false
@@ -188,13 +290,11 @@ export async function processIncludes(
       // Parse the array of paths
       const pathArray = JSON.parse(pathArrayString.replace(/'/g, '"'))
 
-      // Parse local variables if provided
-      let localVars = {}
+      // Parse local variables if provided using safe evaluation
+      let localVars: Record<string, unknown> = {}
       if (varsString) {
         try {
-          // eslint-disable-next-line no-new-func
-          const varsFn = new Function(`return ${varsString}`)
-          localVars = varsFn()
+          localVars = safeEvaluateObject(varsString, context)
         }
         catch (error: any) {
           // In production, use fallback; in debug mode, show error
@@ -333,27 +433,41 @@ export async function processIncludes(
     }
   }
 
-  // Keep track of processed includes to prevent infinite recursion
-  const processedIncludes = new Set<string>()
+  // Add current file to include stack for circular detection
+  // Use resolved absolute path for accurate tracking across recursive calls
+  const currentFilePath = path.resolve(filePath)
+  includeStack.add(currentFilePath)
 
   // Define a helper function to process a single include
   async function processIncludeHelper(includePath: string, localVars: Record<string, any> = {}, templateStr: string, offsetPos: number): Promise<string> {
-    if (processedIncludes.has(includePath)) {
-      // Avoid infinite recursion
+    // Get resolved path first to check for circular includes
+    const includeFilePath = resolvePath(includePath, partialsDir, filePath)
+    if (!includeFilePath) {
       return createDetailedErrorMessage(
         'Include',
-        `Circular include detected: ${includePath}`,
+        `Could not resolve path for include: ${includePath}`,
         filePath,
         templateStr,
         offsetPos,
       )
     }
 
-    processedIncludes.add(includePath)
+    // Check for circular includes using resolved absolute path
+    const resolvedIncludePath = path.resolve(includeFilePath)
+    if (includeStack.has(resolvedIncludePath)) {
+      // Build the include chain for a helpful error message
+      const chain = [...includeStack, resolvedIncludePath].map(p => path.basename(p)).join(' -> ')
+      return createDetailedErrorMessage(
+        'Include',
+        `Circular include detected: ${chain}`,
+        filePath,
+        templateStr,
+        offsetPos,
+      )
+    }
 
     try {
-      // Get resolved path
-      const includeFilePath = resolvePath(includePath, partialsDir, filePath)
+      // Path already resolved above, no need to resolve again
       if (!includeFilePath) {
         return createDetailedErrorMessage(
           'Include',
@@ -398,9 +512,9 @@ export async function processIncludes(
       }
 
       // Process the partial content
-      // Process any nested includes first
+      // Process any nested includes first, passing the includeStack for circular detection
       if (partialContent.includes('@include') || partialContent.includes('@partial')) {
-        partialContent = await processIncludes(partialContent, includeContext, includeFilePath, options, dependencies)
+        partialContent = await processIncludes(partialContent, includeContext, includeFilePath, options, dependencies, includeStack)
       }
 
       // Process loops first to handle array iterations
@@ -424,10 +538,6 @@ export async function processIncludes(
         offsetPos,
       )
     }
-    finally {
-      // Remove from processed set to allow future uses
-      processedIncludes.delete(includePath)
-    }
   }
 
   // Find all includes in the template
@@ -439,14 +549,12 @@ export async function processIncludes(
   while (match = includeRegex.exec(output)) {
     const [fullMatch, includePath, varsString] = match
     const matchOffset = match.index
-    let localVars = {}
+    let localVars: Record<string, unknown> = {}
 
-    // Parse local variables if provided
+    // Parse local variables if provided using safe evaluation
     if (varsString) {
       try {
-        // eslint-disable-next-line no-new-func
-        const varsFn = new Function(`return ${varsString}`)
-        localVars = varsFn()
+        localVars = safeEvaluateObject(varsString, context)
       }
       catch (error: any) {
         output = output.replace(
@@ -477,12 +585,32 @@ export async function processIncludes(
   return output
 }
 
-/**
- * Stack related functions for @push, @stack, @prepend directives
- */
+// =============================================================================
+// Stack Directives
+// =============================================================================
 
 /**
- * Process @push and @prepend directives to collect content
+ * Process @push and @prepend directives to collect content into named stacks.
+ *
+ * This function extracts stack content and removes the directives from output.
+ * The collected content is stored in the `stacks` object for later rendering.
+ *
+ * @param template - The template string to process
+ * @param stacks - Object to collect stack content (mutated)
+ * @returns Template with @push/@prepend directives removed
+ *
+ * @example
+ * ```typescript
+ * const stacks: Record<string, string[]> = {}
+ * const result = processStackPushDirectives(`
+ *   @push('scripts')
+ *     <script src="app.js"></script>
+ *   @endpush
+ *   <div>Content</div>
+ * `, stacks)
+ * // result = '\n  <div>Content</div>\n'
+ * // stacks = { scripts: ['<script src="app.js"></script>'] }
+ * ```
  */
 export function processStackPushDirectives(template: string, stacks: Record<string, string[]>): string {
   let result = template
@@ -517,7 +645,26 @@ export function processStackPushDirectives(template: string, stacks: Record<stri
 }
 
 /**
- * Process @stack directives by replacing them with their content
+ * Process @stack directives by replacing them with collected stack content.
+ *
+ * This should be called AFTER `processStackPushDirectives` has collected
+ * all @push and @prepend content.
+ *
+ * @param template - The template string with @stack directives
+ * @param stacks - Object containing collected stack content
+ * @returns Template with @stack directives replaced by their content
+ *
+ * @example
+ * ```typescript
+ * const stacks = {
+ *   scripts: ['<script src="a.js"></script>', '<script src="b.js"></script>'],
+ *   styles: ['<link rel="stylesheet" href="app.css">']
+ * }
+ * const result = processStackReplacements(`
+ *   <head>@stack('styles')</head>
+ *   <body>...@stack('scripts')</body>
+ * `, stacks)
+ * ```
  */
 export function processStackReplacements(template: string, stacks: Record<string, string[]>): string {
   // Replace @stack directives with their content

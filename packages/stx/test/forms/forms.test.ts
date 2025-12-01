@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import { processBasicFormDirectives, processErrorDirective, processFormInputDirectives, processForms } from '../../src/forms'
@@ -336,5 +336,12 @@ Unclosed code block
     expect(processedContent).toMatch(/<h1[^>]*>Valid markdown<\/h1>/)
     // Despite the syntax error, marked will still render it
     expect(processedContent).toContain('Unclosed code block')
+  })
+
+  // Clean up after tests
+  afterAll(async () => {
+    if (fs.existsSync(TEMP_DIR)) {
+      await fs.promises.rm(TEMP_DIR, { recursive: true, force: true })
+    }
   })
 })

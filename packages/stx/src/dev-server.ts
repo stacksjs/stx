@@ -6,6 +6,14 @@ import process from 'node:process'
 import { openDevWindow } from '@stacksjs/desktop'
 import { readMarkdownFile } from './assets'
 import { config } from './config'
+import {
+  getHmrServer,
+  injectHotReload,
+  isCssOnlyChange,
+  shouldIgnoreFile,
+  shouldReloadOnChange,
+  stopHmrServer,
+} from './hot-reload'
 // NOTE: We use the local plugin instead of importing from 'bun-plugin-stx' because:
 // 1. bun-plugin-stx exports stxPlugin as a function (stxPlugin(options)) while local plugin is a constant
 // 2. Importing from the package would create a circular dependency (bun-plugin-stx -> @stacksjs/stx)
@@ -227,6 +235,10 @@ export interface DevServerOptions {
     }
   }
   cache?: boolean
+  /** Enable hot module reload via WebSocket (default: true in watch mode) */
+  hotReload?: boolean
+  /** Port for WebSocket HMR server (default: HTTP port + 1) */
+  hmrPort?: number
 }
 
 // Function to setup keyboard shortcuts for the server
@@ -617,6 +629,15 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   // Default options
   const port = options.port || 3000
   const watch = options.watch !== false
+  const hotReload = options.hotReload !== false && watch // Enable HMR by default when watching
+  const hmrPort = options.hmrPort || port + 1
+
+  // Start HMR server if enabled
+  let hmrServer: ReturnType<typeof getHmrServer> | null = null
+  if (hotReload) {
+    hmrServer = getHmrServer({ wsPort: hmrPort, verbose: false })
+    hmrServer.start(hmrPort)
+  }
 
   // Validate the file exists
   const absolutePath = path.resolve(filePath)
@@ -700,6 +721,9 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
 
   // Start a server
   console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${actualPort}/${colors.reset}...`)
+  if (hotReload) {
+    console.log(`${colors.magenta}Hot reload enabled on ws://localhost:${hmrPort}${colors.reset}`)
+  }
   const server = serve({
     port: actualPort,
     fetch(request) {
@@ -707,7 +731,12 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
 
       // Serve the main HTML for the root path
       if (url.pathname === '/') {
-        return new Response(htmlContent, {
+        // Inject HMR client script if hot reload is enabled
+        let content = htmlContent || ''
+        if (hotReload) {
+          content = injectHotReload(content, hmrPort)
+        }
+        return new Response(content, {
           headers: {
             'Content-Type': 'text/html',
           },
@@ -841,15 +870,39 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     console.log(`${colors.blue}Watching ${colors.bright}${dirToWatch}${colors.reset} for changes...`)
 
     const watcher = fs.watch(dirToWatch, { recursive: true }, async (eventType, filename) => {
-      if (filename && (filename.endsWith('.stx') || filename.endsWith('.js') || filename.endsWith('.ts'))) {
+      if (!filename || shouldIgnoreFile(filename)) {
+        return
+      }
+
+      if (shouldReloadOnChange(filename)) {
         console.log(`${colors.yellow}File ${colors.bright}${filename}${colors.yellow} changed, rebuilding...${colors.reset}`)
-        await buildFile()
+        const success = await buildFile()
+
+        // Notify connected browsers via HMR
+        if (hotReload && hmrServer) {
+          if (success) {
+            hmrServer.reload(filename)
+          }
+          else {
+            hmrServer.error('Build failed - check console for details')
+          }
+        }
+      }
+      else if (isCssOnlyChange(filename)) {
+        // For CSS files, trigger CSS-only update (no full reload)
+        console.log(`${colors.cyan}CSS ${colors.bright}${filename}${colors.cyan} changed${colors.reset}`)
+        if (hotReload && hmrServer) {
+          hmrServer.updateCss(filename)
+        }
       }
     })
 
     // Clean up on process exit
     process.on('SIGINT', () => {
       watcher.close()
+      if (hmrServer) {
+        stopHmrServer()
+      }
       server.stop()
       process.exit(0)
     })

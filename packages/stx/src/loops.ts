@@ -1,15 +1,180 @@
 /**
  * Module for processing loop directives (@foreach, @for, @while, @forelse)
+ *
+ * Supports loop control directives:
+ * - `@break` - Exit the loop immediately
+ * - `@break(condition)` - Exit if condition is true
+ * - `@continue` - Skip to next iteration
+ * - `@continue(condition)` - Skip if condition is true
+ *
+ * @example
+ * ```html
+ * @foreach(items as item)
+ *   @if(item.skip)
+ *     @continue
+ *   @endif
+ *   @if(item.stop)
+ *     @break
+ *   @endif
+ *   {{ item.name }}
+ * @endforeach
+ * ```
  */
 
 import type { StxOptions } from './types'
 import { processConditionals } from './conditionals'
+import { ErrorCodes, inlineError } from './error-handling'
 import { processExpressions } from './expressions'
-import { createDetailedErrorMessage } from './utils'
+import { findDirectiveBlocks, findMatchingDelimiter } from './parser'
+import { createSafeFunction, isExpressionSafe, isForExpressionSafe, safeEvaluate } from './safe-evaluator'
 
 // Default loop configuration
 const DEFAULT_MAX_WHILE_ITERATIONS = 1000
 const DEFAULT_USE_ALT_LOOP_VARIABLE = false
+
+// =============================================================================
+// Loop Control Markers
+// =============================================================================
+
+/**
+ * Special markers used to communicate break/continue from processed content
+ */
+const BREAK_MARKER = '<!--__STX_BREAK__-->'
+const CONTINUE_MARKER = '<!--__STX_CONTINUE__-->'
+
+/**
+ * Process conditional @break(condition) and @continue(condition) directives.
+ * These are evaluated immediately based on the condition.
+ *
+ * @param content - Loop iteration content
+ * @param context - Current iteration context
+ * @returns Processed content with break/continue markers where conditions were true
+ */
+function processConditionalLoopControl(
+  content: string,
+  context: Record<string, any>,
+): string {
+  let result = content
+
+  // Process @break(condition) - conditional break using safe evaluation
+  result = result.replace(/@break\(([^)]+)\)/g, (_match, condition) => {
+    try {
+      const conditionTrimmed = condition.trim()
+      const boolExpr = `!!(${conditionTrimmed})`
+      let shouldBreak: boolean
+      if (isExpressionSafe(boolExpr)) {
+        const condFn = createSafeFunction(boolExpr, Object.keys(context))
+        shouldBreak = Boolean(condFn(...Object.values(context)))
+      }
+      else {
+        shouldBreak = Boolean(safeEvaluate(boolExpr, context))
+      }
+      return shouldBreak ? BREAK_MARKER : ''
+    }
+    catch {
+      return '' // On error, don't break
+    }
+  })
+
+  // Process @continue(condition) - conditional continue using safe evaluation
+  result = result.replace(/@continue\(([^)]+)\)/g, (_match, condition) => {
+    try {
+      const conditionTrimmed = condition.trim()
+      const boolExpr = `!!(${conditionTrimmed})`
+      let shouldContinue: boolean
+      if (isExpressionSafe(boolExpr)) {
+        const condFn = createSafeFunction(boolExpr, Object.keys(context))
+        shouldContinue = Boolean(condFn(...Object.values(context)))
+      }
+      else {
+        shouldContinue = Boolean(safeEvaluate(boolExpr, context))
+      }
+      return shouldContinue ? CONTINUE_MARKER : ''
+    }
+    catch {
+      return '' // On error, don't continue
+    }
+  })
+
+  return result
+}
+
+/**
+ * Process unconditional @break and @continue directives.
+ * These should be called AFTER conditionals are processed, so @break/@continue
+ * inside @if blocks are only visible when the condition is true.
+ *
+ * @param content - Loop iteration content (after conditionals processed)
+ * @returns Processed content with break/continue markers
+ */
+function processUnconditionalLoopControl(content: string): string {
+  let result = content
+
+  // Process @break - unconditional break
+  result = result.replace(/@break(?!\()/g, BREAK_MARKER)
+
+  // Process @continue - unconditional continue
+  result = result.replace(/@continue(?!\()/g, CONTINUE_MARKER)
+
+  return result
+}
+
+/**
+ * Check if content contains a break marker and clean it up
+ */
+function checkAndCleanBreak(content: string): { hasBreak: boolean, content: string } {
+  const hasBreak = content.includes(BREAK_MARKER)
+  // Remove marker and everything after it
+  const cleanContent = hasBreak
+    ? content.substring(0, content.indexOf(BREAK_MARKER))
+    : content
+  return { hasBreak, content: cleanContent }
+}
+
+/**
+ * Check if content contains a continue marker and clean it up
+ */
+function checkAndCleanContinue(content: string): { hasContinue: boolean, content: string } {
+  const hasContinue = content.includes(CONTINUE_MARKER)
+  // Remove marker and everything after it
+  const cleanContent = hasContinue
+    ? content.substring(0, content.indexOf(CONTINUE_MARKER))
+    : content
+  return { hasContinue, content: cleanContent }
+}
+
+/**
+ * Convert @break/@continue directives to JavaScript statements for @for/@while loops.
+ * These loops execute as JavaScript, so we need native break/continue.
+ *
+ * @param content - Loop body content
+ * @returns Content with directives converted to JS statements
+ */
+function convertLoopControlToJS(content: string): string {
+  let result = content
+
+  // Convert @break(condition) to JavaScript: if (condition) { break; }
+  result = result.replace(/@break\(([^)]+)\)/g, (_match, condition) => {
+    return `\`; if (${condition.trim()}) { break; } result += \``
+  })
+
+  // Convert @continue(condition) to JavaScript: if (condition) { continue; }
+  result = result.replace(/@continue\(([^)]+)\)/g, (_match, condition) => {
+    return `\`; if (${condition.trim()}) { continue; } result += \``
+  })
+
+  // Convert unconditional @break to JavaScript break
+  result = result.replace(/@break(?!\()/g, '`; break; result += `')
+
+  // Convert unconditional @continue to JavaScript continue
+  result = result.replace(/@continue(?!\()/g, '`; continue; result += `')
+
+  return result
+}
+
+// =============================================================================
+// Loop Processing
+// =============================================================================
 
 /**
  * Process loops (@foreach, @for, @while, @forelse)
@@ -37,28 +202,27 @@ const DEFAULT_USE_ALT_LOOP_VARIABLE = false
 export function processLoops(template: string, context: Record<string, any>, filePath: string, options?: StxOptions): string {
   let output = template
 
-  // Process @forelse loops (combine foreach with an empty check)
-  output = output.replace(/@forelse\s*\(([^)]+)as([^)]+)\)([\s\S]*?)@empty([\s\S]*?)@endforelse/g, (match, arrayExpr, itemVar, content, emptyContent, offset) => {
+  // Process @forelse loops (combine foreach with an empty check) using safe evaluation
+  output = output.replace(/@forelse\s*\(([^)]+)as([^)]+)\)([\s\S]*?)@empty([\s\S]*?)@endforelse/g, (_match, arrayExpr, itemVar, content, emptyContent, _offset) => {
     try {
-      // eslint-disable-next-line no-new-func
-      const arrayFn = new Function(...Object.keys(context), `return ${arrayExpr.trim()}`)
-      const array = arrayFn(...Object.values(context))
+      const trimmedExpr = arrayExpr.trim()
+      let array: unknown
+      if (isExpressionSafe(trimmedExpr)) {
+        const arrayFn = createSafeFunction(trimmedExpr, Object.keys(context))
+        array = arrayFn(...Object.values(context))
+      }
+      else {
+        array = safeEvaluate(trimmedExpr, context)
+      }
 
       if (!Array.isArray(array) || array.length === 0) {
         return emptyContent
       }
 
-      return `@foreach (${arrayExpr.trim()} as ${itemVar.trim()})${content}@endforeach`
+      return `@foreach (${trimmedExpr} as ${itemVar.trim()})${content}@endforeach`
     }
     catch (error: any) {
-      return createDetailedErrorMessage(
-        'Directive',
-        `Error in @forelse(${arrayExpr.trim()} as ${itemVar.trim()}): ${error instanceof Error ? error.message : String(error)}`,
-        filePath,
-        template,
-        offset,
-        match,
-      )
+      return inlineError('Forelse', `Error in @forelse(${arrayExpr.trim()} as ${itemVar.trim()}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
 
@@ -164,19 +328,19 @@ export function processLoops(template: string, context: Record<string, any>, fil
       const { start, end, arrayExpr, itemVar, content } = match
 
       try {
-        // eslint-disable-next-line no-new-func
-        const arrayFn = new Function(...Object.keys(ctx), `return ${arrayExpr.trim()}`)
-        const array = arrayFn(...Object.values(ctx))
+        // Evaluate array expression using safe evaluation
+        const trimmedArrayExpr = arrayExpr.trim()
+        let array: unknown
+        if (isExpressionSafe(trimmedArrayExpr)) {
+          const arrayFn = createSafeFunction(trimmedArrayExpr, Object.keys(ctx))
+          array = arrayFn(...Object.values(ctx))
+        }
+        else {
+          array = safeEvaluate(trimmedArrayExpr, ctx)
+        }
 
         if (!Array.isArray(array)) {
-          const errorMsg = createDetailedErrorMessage(
-            'Directive',
-            `Error in @foreach: ${arrayExpr.trim()} is not an array`,
-            filePath,
-            result,
-            start,
-            result.substring(start, end),
-          )
+          const errorMsg = inlineError('Foreach', `Error in @foreach: ${trimmedArrayExpr} is not an array`, ErrorCodes.TYPE_ERROR)
           result = result.substring(0, start) + errorMsg + result.substring(end)
           continue
         }
@@ -207,13 +371,48 @@ export function processLoops(template: string, context: Record<string, any>, fil
             $loop: loopContext, // Alternative name to avoid conflicts with user's 'loop' variable
           }
 
-          // Recursively process nested loops with the new context
-          let processedContent = processForeachWithContext(content, itemContext)
+          // Step 1: Process conditional @break(condition) and @continue(condition)
+          // These are evaluated immediately based on the condition expression
+          let processedContent = processConditionalLoopControl(content, itemContext)
 
-          // Then process conditionals with the item context
+          // Check for continue marker from conditional @continue(condition)
+          let continueCheck = checkAndCleanContinue(processedContent)
+          if (continueCheck.hasContinue) {
+            loopResult += continueCheck.content
+            continue
+          }
+
+          // Check for break marker from conditional @break(condition)
+          let breakCheck = checkAndCleanBreak(processedContent)
+          if (breakCheck.hasBreak) {
+            loopResult += breakCheck.content
+            break
+          }
+
+          // Step 2: Recursively process nested loops with the new context
+          processedContent = processForeachWithContext(processedContent, itemContext)
+
+          // Step 3: Process conditionals with the item context
+          // This evaluates @if/@else blocks and may reveal @break/@continue inside them
           processedContent = processConditionals(processedContent, itemContext, filePath)
 
-          // Finally process expressions with the item context
+          // Step 4: Process unconditional @break and @continue
+          // Now that conditionals are processed, @break/@continue from @if blocks are visible
+          processedContent = processUnconditionalLoopControl(processedContent)
+
+          // Check for break/continue markers
+          breakCheck = checkAndCleanBreak(processedContent)
+          if (breakCheck.hasBreak) {
+            loopResult += breakCheck.content
+            break
+          }
+          continueCheck = checkAndCleanContinue(processedContent)
+          if (continueCheck.hasContinue) {
+            loopResult += continueCheck.content
+            continue
+          }
+
+          // Step 5: Process expressions with the item context
           processedContent = processExpressions(processedContent, itemContext, filePath)
 
           loopResult += processedContent
@@ -223,14 +422,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
         result = result.substring(0, start) + loopResult + result.substring(end)
       }
       catch (error: any) {
-        const errorMsg = createDetailedErrorMessage(
-          'Directive',
-          `Error in @foreach(${arrayExpr.trim()} as ${itemVar.trim()}): ${error instanceof Error ? error.message : String(error)}`,
-          filePath,
-          result,
-          start,
-          result.substring(start, end),
-        )
+        const errorMsg = inlineError('Foreach', `Error in @foreach(${arrayExpr.trim()} as ${itemVar.trim()}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
         result = result.substring(0, start) + errorMsg + result.substring(end)
       }
     }
@@ -240,77 +432,188 @@ export function processLoops(template: string, context: Record<string, any>, fil
 
   output = processForeachWithContext(output, context)
 
-  // Process @for loops
-  output = output.replace(/@for\s*\(([^)]+)\)([\s\S]*?)@endfor/g, (match, forExpr, content, offset) => {
+  // Process @for loops using proper parsing for nested parentheses
+  output = processForLoops(output, context)
+
+  // Process @while loops using proper parsing for nested parentheses
+  // Get configurable max iterations (default: 1000)
+  const maxWhileIterations = options?.loops?.maxWhileIterations ?? DEFAULT_MAX_WHILE_ITERATIONS
+  output = processWhileLoops(output, context, maxWhileIterations)
+
+  return output
+}
+
+// =============================================================================
+// @for and @while loop processing with proper parsing
+// =============================================================================
+
+/**
+ * Validate a for loop expression for basic structure
+ * Uses the safe evaluator's isForExpressionSafe for validation
+ * Allows: "let i = 0; i < n; i++" or "const x of items" etc.
+ */
+function validateForExpression(expr: string): boolean {
+  return isForExpressionSafe(expr)
+}
+
+/**
+ * Process @for loops with proper parsing for nested parentheses
+ */
+function processForLoops(template: string, context: Record<string, any>): string {
+  let output = template
+  let processedAny = true
+
+  while (processedAny) {
+    processedAny = false
+
+    // Find @for( using proper parsing
+    const forMatch = output.match(/@for\s*\(/)
+    if (!forMatch || forMatch.index === undefined) {
+      break
+    }
+
+    const startPos = forMatch.index
+    const openParenPos = startPos + forMatch[0].length - 1
+
+    // Use proper delimiter matching for the expression
+    const closeParenPos = findMatchingDelimiter(output, '(', ')', openParenPos)
+    if (closeParenPos === -1) {
+      break
+    }
+
+    const forExpr = output.slice(openParenPos + 1, closeParenPos)
+    const _contentStart = closeParenPos + 1 // Used for position tracking
+
+    // Find @endfor using the parser
+    const forBlocks = findDirectiveBlocks(output.slice(startPos), 'for', 'endfor')
+    if (forBlocks.length === 0) {
+      break
+    }
+
+    const content = forBlocks[0].content
+    const endPos = startPos + forBlocks[0].end
+
+    // Validate the for expression
+    if (!validateForExpression(forExpr)) {
+      const errorMsg = inlineError('For', `Unsafe expression in @for: ${forExpr}`, ErrorCodes.UNSAFE_EXPRESSION)
+      output = output.substring(0, startPos) + errorMsg + output.substring(endPos)
+      processedAny = true
+      continue
+    }
+
     try {
       // Create a simple loop output function that captures the context
       const loopKeys = Object.keys(context)
       const loopValues = Object.values(context)
 
+      // Process break/continue directives
+      let processedContent = content.replace(/`/g, '\\`').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
+        return `\${${expr}}`
+      })
+      processedContent = convertLoopControlToJS(processedContent)
+
       // eslint-disable-next-line no-new-func
       const loopFn = new Function(...loopKeys, `
         let result = '';
         for (${forExpr}) {
-          result += \`${content.replace(/`/g, '\\`').replace(/\{\{([^}]+)\}\}/g, (match: string, expr: string) => {
-            return `\${${expr}}`
-          })}\`;
+          result += \`${processedContent}\`;
         }
         return result;
       `)
 
-      return loopFn(...loopValues)
+      const result = loopFn(...loopValues)
+      output = output.substring(0, startPos) + result + output.substring(endPos)
+      processedAny = true
     }
     catch (error: any) {
-      return createDetailedErrorMessage(
-        'Directive',
-        `Error in @for(${forExpr}): ${error instanceof Error ? error.message : String(error)}`,
-        filePath,
-        template,
-        offset,
-        match,
-      )
+      const errorMsg = inlineError('For', `Error in @for(${forExpr}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
+      output = output.substring(0, startPos) + errorMsg + output.substring(endPos)
+      processedAny = true
     }
-  })
+  }
 
-  // Process @while loops
-  // Get configurable max iterations (default: 1000)
-  const maxWhileIterations = options?.loops?.maxWhileIterations ?? DEFAULT_MAX_WHILE_ITERATIONS
+  return output
+}
 
-  output = output.replace(/@while\s*\(([^)]+)\)([\s\S]*?)@endwhile/g, (match, condition, content, offset) => {
+/**
+ * Process @while loops with proper parsing for nested parentheses
+ */
+function processWhileLoops(template: string, context: Record<string, any>, maxIterations: number): string {
+  let output = template
+  let processedAny = true
+
+  while (processedAny) {
+    processedAny = false
+
+    // Find @while( using proper parsing
+    const whileMatch = output.match(/@while\s*\(/)
+    if (!whileMatch || whileMatch.index === undefined) {
+      break
+    }
+
+    const startPos = whileMatch.index
+    const openParenPos = startPos + whileMatch[0].length - 1
+
+    // Use proper delimiter matching for the condition
+    const closeParenPos = findMatchingDelimiter(output, '(', ')', openParenPos)
+    if (closeParenPos === -1) {
+      break
+    }
+
+    const condition = output.slice(openParenPos + 1, closeParenPos)
+
+    // Find @endwhile using the parser
+    const whileBlocks = findDirectiveBlocks(output.slice(startPos), 'while', 'endwhile')
+    if (whileBlocks.length === 0) {
+      break
+    }
+
+    const content = whileBlocks[0].content
+    const endPos = startPos + whileBlocks[0].end
+
+    // Validate the condition
+    if (!validateForExpression(condition)) {
+      const errorMsg = inlineError('While', `Unsafe expression in @while: ${condition}`, ErrorCodes.UNSAFE_EXPRESSION)
+      output = output.substring(0, startPos) + errorMsg + output.substring(endPos)
+      processedAny = true
+      continue
+    }
+
     try {
       const loopKeys = Object.keys(context)
       const loopValues = Object.values(context)
 
+      // Process break/continue directives
+      let processedContent = content.replace(/`/g, '\\`').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
+        return `\${${expr}}`
+      })
+      processedContent = convertLoopControlToJS(processedContent)
+
       // eslint-disable-next-line no-new-func
       const whileFn = new Function(...loopKeys, `
         let result = '';
-        let maxIterations = ${maxWhileIterations}; // Configurable safety limit
+        let maxIterations = ${maxIterations}; // Configurable safety limit
         let counter = 0;
         while (${condition} && counter < maxIterations) {
           counter++;
-          result += \`${content.replace(/`/g, '\\`').replace(/\{\{([^}]+)\}\}/g, (match: string, expr: string) => {
-            return `\${${expr}}`
-          })}\`;
+          result += \`${processedContent}\`;
         }
         if (counter >= maxIterations) {
-          result += '[Error: Maximum iterations (${maxWhileIterations}) exceeded in while loop. Configure via options.loops.maxWhileIterations]';
+          result += '<!-- [While Error [1104]]: Maximum iterations (${maxIterations}) exceeded in while loop. Configure via options.loops.maxWhileIterations -->';
         }
         return result;
       `)
 
-      return whileFn(...loopValues)
+      const result = whileFn(...loopValues)
+      output = output.substring(0, startPos) + result + output.substring(endPos)
+      processedAny = true
     }
     catch (error: any) {
-      return createDetailedErrorMessage(
-        'Directive',
-        `Error in @while(${condition}): ${error instanceof Error ? error.message : String(error)}`,
-        filePath,
-        template,
-        offset,
-        match,
-      )
+      const errorMsg = inlineError('While', `Error in @while(${condition}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
+      output = output.substring(0, startPos) + errorMsg + output.substring(endPos)
+      processedAny = true
     }
-  })
+  }
 
   return output
 }

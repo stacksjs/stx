@@ -1,5 +1,7 @@
 import type { ComponentPropsSchema, CustomDirective, PropType } from './types'
 import * as path from 'node:path'
+import { ErrorCodes, inlineError } from './error-handling'
+import { safeEvaluateObject } from './safe-evaluator'
 import { renderComponent } from './utils'
 
 // =============================================================================
@@ -123,7 +125,7 @@ export const componentDirective: CustomDirective = {
   name: 'component',
   handler: async (content, params, context, filePath) => {
     if (params.length < 1) {
-      return '[Error: component directive requires at least the component name]'
+      return inlineError('Component', 'component directive requires at least the component name', ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
     }
 
     // Get component name (first parameter)
@@ -188,10 +190,6 @@ export const componentDirective: CustomDirective = {
 
           // Check if starts with object literal marker
           if (propsString.startsWith('{')) {
-            // Extract object from the string with eval in context
-            const contextKeys = Object.keys(context)
-            const contextValues = Object.values(context)
-
             // Handle quotes in props properly
             const sanitizedPropsString = propsString
               .replace(/'/g, '"')
@@ -202,10 +200,8 @@ export const componentDirective: CustomDirective = {
               props = JSON.parse(sanitizedPropsString)
             }
             catch {
-              // Fall back to Function constructor
-              // eslint-disable-next-line no-new-func
-              const propsFn = new Function(...contextKeys, `return ${propsString}`)
-              props = propsFn(...contextValues)
+              // Fall back to safe evaluation
+              props = safeEvaluateObject(propsString, context)
             }
           }
           else {
@@ -217,7 +213,7 @@ export const componentDirective: CustomDirective = {
       }
       catch (error: any) {
         console.error('Component props parsing error:', error)
-        return `[Error parsing component props: ${error.message}]`
+        return inlineError('Component', `Error parsing component props: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
       }
     }
 
@@ -244,7 +240,7 @@ export const componentDirective: CustomDirective = {
     }
     catch (error: any) {
       console.error('Component rendering error:', error)
-      return `[Error rendering component: ${error.message}]`
+      return inlineError('Component', `Error rendering component: ${error.message}`, ErrorCodes.COMPONENT_RENDER_ERROR)
     }
   },
   hasEndTag: false,
