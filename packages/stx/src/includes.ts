@@ -153,6 +153,7 @@ export async function processIncludes(
   filePath: string,
   options: StxOptions,
   dependencies: Set<string>,
+  includeStack: Set<string> = new Set(),
 ): Promise<string> {
   // Get the partials directory and resolve to absolute path if needed
   let partialsDir = options.partialsDir || path.join(path.dirname(filePath), 'partials')
@@ -419,27 +420,41 @@ export async function processIncludes(
     }
   }
 
-  // Keep track of processed includes to prevent infinite recursion
-  const processedIncludes = new Set<string>()
+  // Add current file to include stack for circular detection
+  // Use resolved absolute path for accurate tracking across recursive calls
+  const currentFilePath = path.resolve(filePath)
+  includeStack.add(currentFilePath)
 
   // Define a helper function to process a single include
   async function processIncludeHelper(includePath: string, localVars: Record<string, any> = {}, templateStr: string, offsetPos: number): Promise<string> {
-    if (processedIncludes.has(includePath)) {
-      // Avoid infinite recursion
+    // Get resolved path first to check for circular includes
+    const includeFilePath = resolvePath(includePath, partialsDir, filePath)
+    if (!includeFilePath) {
       return createDetailedErrorMessage(
         'Include',
-        `Circular include detected: ${includePath}`,
+        `Could not resolve path for include: ${includePath}`,
         filePath,
         templateStr,
         offsetPos,
       )
     }
 
-    processedIncludes.add(includePath)
+    // Check for circular includes using resolved absolute path
+    const resolvedIncludePath = path.resolve(includeFilePath)
+    if (includeStack.has(resolvedIncludePath)) {
+      // Build the include chain for a helpful error message
+      const chain = [...includeStack, resolvedIncludePath].map(p => path.basename(p)).join(' -> ')
+      return createDetailedErrorMessage(
+        'Include',
+        `Circular include detected: ${chain}`,
+        filePath,
+        templateStr,
+        offsetPos,
+      )
+    }
 
     try {
-      // Get resolved path
-      const includeFilePath = resolvePath(includePath, partialsDir, filePath)
+      // Path already resolved above, no need to resolve again
       if (!includeFilePath) {
         return createDetailedErrorMessage(
           'Include',
@@ -484,9 +499,9 @@ export async function processIncludes(
       }
 
       // Process the partial content
-      // Process any nested includes first
+      // Process any nested includes first, passing the includeStack for circular detection
       if (partialContent.includes('@include') || partialContent.includes('@partial')) {
-        partialContent = await processIncludes(partialContent, includeContext, includeFilePath, options, dependencies)
+        partialContent = await processIncludes(partialContent, includeContext, includeFilePath, options, dependencies, includeStack)
       }
 
       // Process loops first to handle array iterations
@@ -509,10 +524,6 @@ export async function processIncludes(
         templateStr,
         offsetPos,
       )
-    }
-    finally {
-      // Remove from processed set to allow future uses
-      processedIncludes.delete(includePath)
     }
   }
 

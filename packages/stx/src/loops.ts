@@ -25,6 +25,7 @@ import type { StxOptions } from './types'
 import { processConditionals } from './conditionals'
 import { ErrorCodes, inlineError } from './error-handling'
 import { processExpressions } from './expressions'
+import { findDirectiveBlocks, findMatchingDelimiter } from './parser'
 
 // Default loop configuration
 const DEFAULT_MAX_WHILE_ITERATIONS = 1000
@@ -405,8 +406,93 @@ export function processLoops(template: string, context: Record<string, any>, fil
 
   output = processForeachWithContext(output, context)
 
-  // Process @for loops
-  output = output.replace(/@for\s*\(([^)]+)\)([\s\S]*?)@endfor/g, (_match, forExpr, content, _offset) => {
+  // Process @for loops using proper parsing for nested parentheses
+  output = processForLoops(output, context)
+
+  // Process @while loops using proper parsing for nested parentheses
+  // Get configurable max iterations (default: 1000)
+  const maxWhileIterations = options?.loops?.maxWhileIterations ?? DEFAULT_MAX_WHILE_ITERATIONS
+  output = processWhileLoops(output, context, maxWhileIterations)
+
+  return output
+}
+
+// =============================================================================
+// @for and @while loop processing with proper parsing
+// =============================================================================
+
+/**
+ * Validate a for loop expression for basic structure
+ * Allows: "let i = 0; i < n; i++" or "const x of items" etc.
+ */
+function validateForExpression(expr: string): boolean {
+  const trimmed = expr.trim()
+
+  // Check for dangerous patterns
+  const dangerousPatterns = [
+    /\beval\s*\(/i,
+    /\bFunction\s*\(/i,
+    /\bimport\s*\(/i,
+    /\brequire\s*\(/i,
+    /\bprocess\./i,
+    /\b__proto__\b/i,
+    /\bconstructor\s*\./i,
+  ]
+
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(trimmed)) {
+      return false
+    }
+  }
+
+  return true
+}
+
+/**
+ * Process @for loops with proper parsing for nested parentheses
+ */
+function processForLoops(template: string, context: Record<string, any>): string {
+  let output = template
+  let processedAny = true
+
+  while (processedAny) {
+    processedAny = false
+
+    // Find @for( using proper parsing
+    const forMatch = output.match(/@for\s*\(/)
+    if (!forMatch || forMatch.index === undefined) {
+      break
+    }
+
+    const startPos = forMatch.index
+    const openParenPos = startPos + forMatch[0].length - 1
+
+    // Use proper delimiter matching for the expression
+    const closeParenPos = findMatchingDelimiter(output, '(', ')', openParenPos)
+    if (closeParenPos === -1) {
+      break
+    }
+
+    const forExpr = output.slice(openParenPos + 1, closeParenPos)
+    const _contentStart = closeParenPos + 1 // Used for position tracking
+
+    // Find @endfor using the parser
+    const forBlocks = findDirectiveBlocks(output.slice(startPos), 'for', 'endfor')
+    if (forBlocks.length === 0) {
+      break
+    }
+
+    const content = forBlocks[0].content
+    const endPos = startPos + forBlocks[0].end
+
+    // Validate the for expression
+    if (!validateForExpression(forExpr)) {
+      const errorMsg = inlineError('For', `Unsafe expression in @for: ${forExpr}`, ErrorCodes.UNSAFE_EXPRESSION)
+      output = output.substring(0, startPos) + errorMsg + output.substring(endPos)
+      processedAny = true
+      continue
+    }
+
     try {
       // Create a simple loop output function that captures the context
       const loopKeys = Object.keys(context)
@@ -427,18 +513,64 @@ export function processLoops(template: string, context: Record<string, any>, fil
         return result;
       `)
 
-      return loopFn(...loopValues)
+      const result = loopFn(...loopValues)
+      output = output.substring(0, startPos) + result + output.substring(endPos)
+      processedAny = true
     }
     catch (error: any) {
-      return inlineError('For', `Error in @for(${forExpr}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
+      const errorMsg = inlineError('For', `Error in @for(${forExpr}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
+      output = output.substring(0, startPos) + errorMsg + output.substring(endPos)
+      processedAny = true
     }
-  })
+  }
 
-  // Process @while loops
-  // Get configurable max iterations (default: 1000)
-  const maxWhileIterations = options?.loops?.maxWhileIterations ?? DEFAULT_MAX_WHILE_ITERATIONS
+  return output
+}
 
-  output = output.replace(/@while\s*\(([^)]+)\)([\s\S]*?)@endwhile/g, (_match, condition, content, _offset) => {
+/**
+ * Process @while loops with proper parsing for nested parentheses
+ */
+function processWhileLoops(template: string, context: Record<string, any>, maxIterations: number): string {
+  let output = template
+  let processedAny = true
+
+  while (processedAny) {
+    processedAny = false
+
+    // Find @while( using proper parsing
+    const whileMatch = output.match(/@while\s*\(/)
+    if (!whileMatch || whileMatch.index === undefined) {
+      break
+    }
+
+    const startPos = whileMatch.index
+    const openParenPos = startPos + whileMatch[0].length - 1
+
+    // Use proper delimiter matching for the condition
+    const closeParenPos = findMatchingDelimiter(output, '(', ')', openParenPos)
+    if (closeParenPos === -1) {
+      break
+    }
+
+    const condition = output.slice(openParenPos + 1, closeParenPos)
+
+    // Find @endwhile using the parser
+    const whileBlocks = findDirectiveBlocks(output.slice(startPos), 'while', 'endwhile')
+    if (whileBlocks.length === 0) {
+      break
+    }
+
+    const content = whileBlocks[0].content
+    const endPos = startPos + whileBlocks[0].end
+
+    // Validate the condition
+    if (!validateForExpression(condition)) {
+      const errorMsg = inlineError('While', `Unsafe expression in @while: ${condition}`, ErrorCodes.UNSAFE_EXPRESSION)
+      output = output.substring(0, startPos) + errorMsg + output.substring(endPos)
+      processedAny = true
+      continue
+    }
+
     try {
       const loopKeys = Object.keys(context)
       const loopValues = Object.values(context)
@@ -452,24 +584,28 @@ export function processLoops(template: string, context: Record<string, any>, fil
       // eslint-disable-next-line no-new-func
       const whileFn = new Function(...loopKeys, `
         let result = '';
-        let maxIterations = ${maxWhileIterations}; // Configurable safety limit
+        let maxIterations = ${maxIterations}; // Configurable safety limit
         let counter = 0;
         while (${condition} && counter < maxIterations) {
           counter++;
           result += \`${processedContent}\`;
         }
         if (counter >= maxIterations) {
-          result += '<!-- [While Error [1104]]: Maximum iterations (${maxWhileIterations}) exceeded in while loop. Configure via options.loops.maxWhileIterations -->';
+          result += '<!-- [While Error [1104]]: Maximum iterations (${maxIterations}) exceeded in while loop. Configure via options.loops.maxWhileIterations -->';
         }
         return result;
       `)
 
-      return whileFn(...loopValues)
+      const result = whileFn(...loopValues)
+      output = output.substring(0, startPos) + result + output.substring(endPos)
+      processedAny = true
     }
     catch (error: any) {
-      return inlineError('While', `Error in @while(${condition}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
+      const errorMsg = inlineError('While', `Error in @while(${condition}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
+      output = output.substring(0, startPos) + errorMsg + output.substring(endPos)
+      processedAny = true
     }
-  })
+  }
 
   return output
 }

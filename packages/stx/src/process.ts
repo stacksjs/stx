@@ -1,6 +1,7 @@
 import type { StxOptions } from './types'
 import path from 'node:path'
 import { processA11yDirectives } from './a11y'
+import { injectAnalytics } from './analytics'
 import { processAnimationDirectives } from './animation'
 import { processMarkdownFileDirectives } from './assets'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
@@ -19,7 +20,6 @@ import { processMethodDirectives } from './method-spoofing'
 import { runPostProcessingMiddleware, runPreProcessingMiddleware } from './middleware'
 import { performanceMonitor } from './performance-utils'
 import { processRouteDirectives } from './routes'
-import { injectAnalytics } from './analytics'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
 import { renderComponent, resolveTemplatePath } from './utils'
 import { runComposers } from './view-composers'
@@ -111,6 +111,153 @@ import { runComposers } from './view-composers'
 //   - Sync functions are kept sync for performance (no promise overhead)
 //
 // =============================================================================
+
+/**
+ * Convert PascalCase to kebab-case with proper handling of consecutive uppercase letters.
+ *
+ * Examples:
+ * - `UserCard` → `user-card`
+ * - `XMLParser` → `xml-parser` (not `x-m-l-parser`)
+ * - `HTMLElement` → `html-element`
+ * - `MyURLParser` → `my-url-parser`
+ * - `IOStream` → `io-stream`
+ *
+ * The algorithm:
+ * 1. Insert hyphen before uppercase letters that follow lowercase letters
+ * 2. Insert hyphen before the last uppercase in a sequence of uppercase letters (before lowercase)
+ * 3. Convert to lowercase
+ */
+function pascalToKebab(str: string): string {
+  return str
+    // Insert hyphen between lowercase and uppercase: userCard → user-Card
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    // Insert hyphen between consecutive uppercase and lowercase: XMLParser → XML-Parser
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
+    .toLowerCase()
+}
+
+/**
+ * Parse HTML/JSX-like attributes from a string.
+ *
+ * Properly handles:
+ * - Simple attributes: `name="value"`
+ * - Boolean attributes: `disabled`
+ * - Vue-like bindings: `:prop="expr"` or `v-bind:prop="expr"`
+ * - Attributes with `=` in values: `url="https://example.com?a=1&b=2"`
+ * - Single and double quoted values
+ * - Escaped quotes within values
+ *
+ * ## Limitations (Vue-like Syntax)
+ *
+ * stx is a **server-side rendering** framework. The following Vue directives
+ * are NOT supported because they require client-side JavaScript:
+ *
+ * - `v-model` - Two-way data binding (requires client-side reactivity)
+ * - `v-on` / `@` - Event handlers (events are client-side only)
+ * - `v-if`/`v-for` - Use stx directives `@if`/`@foreach` instead
+ * - `v-show` - Use `@if` or CSS classes instead
+ *
+ * For client-side interactivity, use:
+ * 1. Web Components (via stx's web component generation)
+ * 2. Alpine.js or similar lightweight libraries
+ * 3. Progressive enhancement with vanilla JavaScript
+ *
+ * @param attributesStr - The attributes portion of a tag (between tag name and closing)
+ * @returns Array of parsed attributes with name, value, and binding info
+ */
+interface ParsedAttribute {
+  name: string
+  value: string | true // true for boolean attributes
+  isBinding: boolean // true if prefixed with : or v-bind:
+}
+
+function parseAttributes(attributesStr: string): ParsedAttribute[] {
+  const attributes: ParsedAttribute[] = []
+  let pos = 0
+  const len = attributesStr.length
+
+  while (pos < len) {
+    // Skip whitespace
+    while (pos < len && /\s/.test(attributesStr[pos])) {
+      pos++
+    }
+
+    if (pos >= len)
+      break
+
+    // Check for binding prefix
+    let isBinding = false
+    if (attributesStr[pos] === ':') {
+      isBinding = true
+      pos++
+    }
+    else if (attributesStr.slice(pos, pos + 7) === 'v-bind:') {
+      isBinding = true
+      pos += 7
+    }
+
+    // Read attribute name (until = or whitespace or end)
+    let name = ''
+    while (pos < len && !/[\s=]/.test(attributesStr[pos])) {
+      name += attributesStr[pos]
+      pos++
+    }
+
+    if (!name)
+      break
+
+    // Skip whitespace
+    while (pos < len && /\s/.test(attributesStr[pos])) {
+      pos++
+    }
+
+    // Check for = sign
+    if (pos < len && attributesStr[pos] === '=') {
+      pos++ // Skip =
+
+      // Skip whitespace after =
+      while (pos < len && /\s/.test(attributesStr[pos])) {
+        pos++
+      }
+
+      // Read value
+      let value = ''
+      if (pos < len && (attributesStr[pos] === '"' || attributesStr[pos] === '\'')) {
+        const quote = attributesStr[pos]
+        pos++ // Skip opening quote
+
+        // Read until closing quote, handling escapes
+        while (pos < len && attributesStr[pos] !== quote) {
+          if (attributesStr[pos] === '\\' && pos + 1 < len) {
+            // Handle escape sequence
+            pos++
+            value += attributesStr[pos]
+          }
+          else {
+            value += attributesStr[pos]
+          }
+          pos++
+        }
+        pos++ // Skip closing quote
+      }
+      else {
+        // Unquoted value (read until whitespace)
+        while (pos < len && !/\s/.test(attributesStr[pos])) {
+          value += attributesStr[pos]
+          pos++
+        }
+      }
+
+      attributes.push({ name, value, isBinding })
+    }
+    else {
+      // Boolean attribute (no value)
+      attributes.push({ name, value: true, isBinding })
+    }
+  }
+
+  return attributes
+}
 
 /**
  * Process all template directives with enhanced error handling and performance monitoring
@@ -485,6 +632,8 @@ async function processOtherDirectives(
   // Auto-inject CSP meta tag if enabled
   if (options.csp?.enabled && options.csp.addMetaTag) {
     output = injectCspMetaTag(output, options.csp as any, context)
+  }
+
   // Auto-inject analytics if enabled
   if (options.analytics?.enabled) {
     output = injectAnalytics(output, options)
@@ -610,7 +759,7 @@ async function processCustomElements(
       let componentPath
       if (isPascalCase) {
         // Convert PascalCase to kebab-case for the file path
-        componentPath = tagName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+        componentPath = pascalToKebab(tagName)
       }
       else {
         componentPath = tagName
@@ -703,25 +852,34 @@ async function processCustomElements(
         componentPath = tagName
       }
 
-      // Parse attributes into props
+      // Parse attributes into props using proper tokenization
       const props: Record<string, any> = {}
 
       if (attributesStr) {
-        // Match attributes in the format: prop="value" or :prop="value" or v-bind:prop="value"
-        const attrRegex = /(:|v-bind:)?([^\s=]+)(?:=["']([^"']*)["'])?/g
-        let attrMatch
+        const parsedAttrs = parseAttributes(attributesStr)
 
-        // eslint-disable-next-line no-cond-assign
-        while (attrMatch = attrRegex.exec(attributesStr)) {
-          const [, bindPrefix, attrName, attrValue] = attrMatch
+        for (const attr of parsedAttrs) {
+          const { name: attrName, value: attrValue, isBinding } = attr
+
+          // Warn about unsupported Vue directives (v-model, v-on, etc.)
+          if (attrName === 'v-model' || attrName.startsWith('v-on:') || attrName.startsWith('@')) {
+            if (options.debug) {
+              console.warn(
+                `[stx] Unsupported Vue directive "${attrName}" in ${filePath}. `
+                + `stx is a server-side rendering framework. For two-way binding, `
+                + `use web components or client-side JavaScript (Alpine.js, etc.).`,
+              )
+            }
+            continue // Skip unsupported directives
+          }
 
           // Skip nodes, event handlers, and other non-prop attributes
           if (attrName === 'class' || attrName.startsWith('on') || attrName === 'style' || attrName === 'id') {
-            props[attrName] = attrValue !== undefined ? attrValue : true
+            props[attrName] = attrValue
             continue
           }
 
-          if (bindPrefix) {
+          if (isBinding && typeof attrValue === 'string') {
             // Dynamic attribute with : or v-bind: prefix, evaluate the expression
             try {
               // eslint-disable-next-line no-new-func
@@ -734,8 +892,8 @@ async function processCustomElements(
             }
           }
           else {
-            // Static attribute
-            props[attrName] = attrValue !== undefined ? attrValue : true
+            // Static attribute or boolean
+            props[attrName] = attrValue
           }
         }
       }

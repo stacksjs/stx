@@ -119,9 +119,10 @@ This document contains all identified issues, improvements, and enhancements for
   - Add explicit ordering configuration with dependency resolution
   - **Status**: FIXED - Added comprehensive documentation block at top of `process.ts` documenting all 37 processing steps in order. Documents three phases: Pre-processing, Layout Resolution, and Directive Processing.
 
-- [ ] **Regex-based parsing limitations**
+- [x] **Regex-based parsing limitations**
   - Complex nested structures can fail
   - Edge cases with quotes inside expressions not handled well
+  - **Status**: FIXED - Created `parser/` module with proper tokenizer-based parsing. `Tokenizer` class handles character-by-character lexical analysis with proper support for nested structures, all string types, template literal expressions, and escape sequences. Utility functions `findMatchingDelimiter()`, `extractBalancedExpression()`, and `splitByPipe()` replace fragile regex patterns.
 
 - [x] **No source maps for compiled templates**
   - Errors point to compiled output, not source
@@ -161,18 +162,20 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Conditionals (`conditionals.ts`)
 
-- [ ] **Nested @if/@elseif handling is fragile** (`conditionals.ts:198-253`)
+- [x] **Nested @if/@elseif handling is fragile** (`conditionals.ts:198-253`)
   - Uses simple regex that can fail on complex nesting
   - Implement proper balanced tag matching
+  - **Status**: FIXED - Created `parser/directive-parser.ts` with `parseConditionalBlock()` and `findIfBlocks()` functions. Uses `findMatchingDelimiter()` from tokenizer for proper balanced parsing. Updated `conditionals.ts` to use new parser functions.
 
 - [x] **@unless doesn't support @else** (`conditionals.ts:181-183`)
   - Converts to @if negation but loses @else support
   - Add proper @else handling for @unless
   - **Status**: FIXED - Updated @unless processing to detect @else within the block and convert correctly: `@unless(cond) A @else B @endunless` → `@if(cond) B @else A @endif`
 
-- [ ] **Switch statement regex is complex** (`conditionals.ts:57`)
+- [x] **Switch statement regex is complex** (`conditionals.ts:57`)
   - Pattern `(?:[^()]|\([^()]*\))*` only handles one level of nesting
   - Implement recursive parenthesis matching
+  - **Status**: FIXED - Created `parseSwitchBlock()` in `parser/directive-parser.ts` using proper balanced parsing. Updated `conditionals.ts` to use new parser function.
 
 - [x] **Auth directives require specific context shape** (`conditionals.ts:270-426`)
   - Expects `auth?.check`, `auth?.user`, `permissions?.check`
@@ -181,9 +184,10 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Loops (`loops.ts`)
 
-- [ ] **@for loop expression evaluation is unsafe** (`loops.ts:218-226`)
+- [x] **@for loop expression evaluation is unsafe** (`loops.ts:218-226`)
   - Uses template literal interpolation with user code
   - Potential for code injection
+  - **Status**: FIXED - Added `validateForExpression()` function in `loops.ts` that blocks dangerous patterns (eval, Function, import, require, process, __proto__, constructor). Updated @for/@while processing to validate expressions before evaluation.
 
 - [x] **@while loop has hardcoded max iterations** (`loops.ts:251`)
   - 1000 iterations max is arbitrary
@@ -202,9 +206,10 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Includes (`includes.ts`)
 
-- [ ] **Circular include detection is per-call** (`includes.ts:255`)
+- [x] **Circular include detection is per-call** (`includes.ts:255`)
   - `processedIncludes` set is local to each call
   - Could still have issues with indirect circular references
+  - **Status**: FIXED - Added `includeStack` parameter to `processIncludes()` that tracks the include chain across recursive calls. Uses resolved absolute paths for accurate detection. Error message shows the full include chain (e.g., "main.stx -> a.stx -> b.stx -> a.stx").
 
 - [x] **@includeFirst error handling** (`includes.ts:194-206`)
   - Returns error message in HTML which could break layout
@@ -254,17 +259,20 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Custom Elements (`process.ts:457-661`)
 
-- [ ] **PascalCase to kebab-case conversion edge cases** (`process.ts:512`, `process.ts:594`)
+- [x] **PascalCase to kebab-case conversion edge cases** (`process.ts:512`, `process.ts:594`)
   - `tagName.replace(/([a-z0-9])([A-Z])/g, '$1-$2')` doesn't handle consecutive caps
   - `XMLParser` becomes `x-m-l-parser` instead of `xml-parser`
+  - **Status**: FIXED - Added `pascalToKebab()` function with two-step regex: (1) insert hyphen between lowercase/digit and uppercase, (2) insert hyphen before last uppercase in consecutive sequence. Now `XMLParser` → `xml-parser`, `HTMLElement` → `html-element`. Added tests in `test/parser/pascal-to-kebab.test.ts`.
 
-- [ ] **Attribute parsing is fragile** (`process.ts:605`)
+- [x] **Attribute parsing is fragile** (`process.ts:605`)
   - Regex `/(:|v-bind:)?([^\s=]+)(?:=["']([^"']*)["'])?/g` has issues with complex values
   - Doesn't handle attributes with `=` in values
+  - **Status**: FIXED - Created `parseAttributes()` function with character-by-character parsing. Handles: quoted values with `=` signs (URLs, query strings), escaped quotes, boolean attributes, Vue-like `:prop` and `v-bind:prop` bindings. Added 15 tests in `test/parser/parse-attributes.test.ts`.
 
-- [ ] **No support for v-model or two-way binding**
+- [x] **No support for v-model or two-way binding**
   - Vue-like syntax partially supported but not v-model
   - Consider adding or documenting limitations
+  - **Status**: DOCUMENTED - Added comprehensive JSDoc documentation in `process.ts` explaining that stx is SSR-only and v-model/v-on/@ are not supported. Added detection for `v-model`, `v-on:*`, and `@*` attributes with dev-mode warning. Suggests alternatives: web components, Alpine.js, or vanilla JS.
 
 ---
 
@@ -951,5 +959,5 @@ When working on items:
 
 ---
 
-*Last updated: November 30, 2024*
+*Last updated: December 1, 2024*
 *Generated from codebase analysis*

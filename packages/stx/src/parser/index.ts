@@ -8,6 +8,21 @@
  * @module parser
  */
 
+// Directive parser
+export {
+  type ConditionalBranch,
+  type DirectiveMatch,
+  extractParenthesizedExpression,
+  findDirectiveBlocks,
+  findIfBlocks,
+  findMatchingEndTag,
+  parseConditionalBlock,
+  type ParsedConditional,
+  type ParsedSwitch,
+  parseSwitchBlock,
+  type SwitchCase,
+} from './directive-parser'
+
 // Expression parser
 export {
   type ExpressionMatch,
