@@ -367,8 +367,389 @@ function selectPluralForm(forms: string[], count: number): string {
   return forms[forms.length - 1].trim()
 }
 
+// =============================================================================
+// ICU MessageFormat Support
+// =============================================================================
+
+/**
+ * ICU MessageFormat parser and formatter
+ *
+ * Supports:
+ * - Simple replacement: {name}
+ * - Plural: {count, plural, =0{none} one{# item} other{# items}}
+ * - Select: {gender, select, male{He} female{She} other{They}}
+ * - SelectOrdinal: {pos, selectordinal, one{#st} two{#nd} few{#rd} other{#th}}
+ * - Number formatting: {amount, number}
+ * - Date formatting: {date, date, short|medium|long|full}
+ *
+ * @example
+ * formatICU('{count, plural, =0{No items} one{# item} other{# items}}', { count: 5 })
+ * // => '5 items'
+ *
+ * @example
+ * formatICU('{gender, select, male{He} female{She} other{They}} liked this', { gender: 'female' })
+ * // => 'She liked this'
+ */
+export function formatICU(message: string, params: Record<string, unknown> = {}): string {
+  return parseICUMessage(message, params)
+}
+
+/**
+ * Parse and format an ICU message
+ */
+function parseICUMessage(message: string, params: Record<string, unknown>): string {
+  let result = ''
+  let i = 0
+
+  while (i < message.length) {
+    if (message[i] === '{') {
+      // Find the matching closing brace
+      const endIndex = findMatchingBrace(message, i)
+      if (endIndex === -1) {
+        result += message[i]
+        i++
+        continue
+      }
+
+      const placeholder = message.slice(i + 1, endIndex)
+      result += formatICUPlaceholder(placeholder, params)
+      i = endIndex + 1
+    }
+    else if (message[i] === '\'' && i + 1 < message.length) {
+      // Handle escaped characters in ICU format
+      if (message[i + 1] === '\'') {
+        result += '\''
+        i += 2
+      }
+      else if (message[i + 1] === '{' || message[i + 1] === '}') {
+        // Escaped brace
+        result += message[i + 1]
+        i += 2
+      }
+      else {
+        result += message[i]
+        i++
+      }
+    }
+    else {
+      result += message[i]
+      i++
+    }
+  }
+
+  return result
+}
+
+/**
+ * Find matching closing brace, accounting for nested braces
+ */
+function findMatchingBrace(message: string, start: number): number {
+  let depth = 0
+  for (let i = start; i < message.length; i++) {
+    if (message[i] === '{') {
+      depth++
+    }
+    else if (message[i] === '}') {
+      depth--
+      if (depth === 0) {
+        return i
+      }
+    }
+  }
+  return -1
+}
+
+/**
+ * Format a single ICU placeholder
+ */
+function formatICUPlaceholder(placeholder: string, params: Record<string, unknown>): string {
+  const parts = splitICUParts(placeholder)
+
+  if (parts.length === 0) {
+    return `{${placeholder}}`
+  }
+
+  const varName = parts[0].trim()
+  const value = params[varName]
+
+  // Simple replacement: {name}
+  if (parts.length === 1) {
+    return value !== undefined ? String(value) : `{${varName}}`
+  }
+
+  const formatType = parts[1].trim().toLowerCase()
+
+  switch (formatType) {
+    case 'plural':
+      return formatICUPlural(value, parts.slice(2).join(','), params)
+    case 'select':
+      return formatICUSelect(value, parts.slice(2).join(','))
+    case 'selectordinal':
+      return formatICUSelectOrdinal(value, parts.slice(2).join(','))
+    case 'number':
+      return formatICUNumber(value, parts[2]?.trim())
+    case 'date':
+      return formatICUDate(value, parts[2]?.trim())
+    case 'time':
+      return formatICUTime(value, parts[2]?.trim())
+    default:
+      return value !== undefined ? String(value) : `{${placeholder}}`
+  }
+}
+
+/**
+ * Split ICU placeholder into parts, respecting nested braces
+ */
+function splitICUParts(placeholder: string): string[] {
+  const parts: string[] = []
+  let current = ''
+  let depth = 0
+
+  for (let i = 0; i < placeholder.length; i++) {
+    const char = placeholder[i]
+    if (char === '{') {
+      depth++
+      current += char
+    }
+    else if (char === '}') {
+      depth--
+      current += char
+    }
+    else if (char === ',' && depth === 0) {
+      parts.push(current)
+      current = ''
+    }
+    else {
+      current += char
+    }
+  }
+
+  if (current) {
+    parts.push(current)
+  }
+
+  return parts
+}
+
+/**
+ * Format ICU plural
+ */
+function formatICUPlural(value: unknown, options: string, params: Record<string, unknown>): string {
+  const count = Number(value) || 0
+  const parsedOptions = parseICUOptions(options)
+
+  // Check for exact match first (=0, =1, =2, etc.)
+  const exactKey = `=${count}`
+  if (parsedOptions[exactKey]) {
+    return formatICUPluralContent(parsedOptions[exactKey], count, params)
+  }
+
+  // Get plural category
+  const category = getPluralCategory(count)
+  if (parsedOptions[category]) {
+    return formatICUPluralContent(parsedOptions[category], count, params)
+  }
+
+  // Fallback to 'other'
+  if (parsedOptions.other) {
+    return formatICUPluralContent(parsedOptions.other, count, params)
+  }
+
+  return String(count)
+}
+
+/**
+ * Format plural content, replacing # with the count
+ */
+function formatICUPluralContent(content: string, count: number, params: Record<string, unknown>): string {
+  const replaced = content.replace(/#/g, String(count))
+  return parseICUMessage(replaced, params)
+}
+
+/**
+ * Get CLDR plural category for a number (simplified English rules)
+ */
+function getPluralCategory(n: number): string {
+  const absN = Math.abs(n)
+  const i = Math.floor(absN)
+  const v = String(n).includes('.') ? String(n).split('.')[1].length : 0
+
+  // English plural rules (simplified)
+  if (i === 1 && v === 0) {
+    return 'one'
+  }
+  return 'other'
+}
+
+/**
+ * Format ICU select
+ */
+function formatICUSelect(value: unknown, options: string): string {
+  const key = String(value || '')
+  const parsedOptions = parseICUOptions(options)
+
+  if (parsedOptions[key]) {
+    return parsedOptions[key]
+  }
+
+  // Fallback to 'other'
+  return parsedOptions.other || String(value)
+}
+
+/**
+ * Format ICU selectordinal
+ */
+function formatICUSelectOrdinal(value: unknown, options: string): string {
+  const count = Number(value) || 0
+  const parsedOptions = parseICUOptions(options)
+
+  // Get ordinal category
+  const category = getOrdinalCategory(count)
+  if (parsedOptions[category]) {
+    return parsedOptions[category].replace(/#/g, String(count))
+  }
+
+  // Fallback to 'other'
+  if (parsedOptions.other) {
+    return parsedOptions.other.replace(/#/g, String(count))
+  }
+
+  return String(count)
+}
+
+/**
+ * Get CLDR ordinal category (simplified English rules)
+ */
+function getOrdinalCategory(n: number): string {
+  const absN = Math.abs(n)
+  const mod10 = absN % 10
+  const mod100 = absN % 100
+
+  if (mod10 === 1 && mod100 !== 11) {
+    return 'one' // 1st, 21st, 31st...
+  }
+  if (mod10 === 2 && mod100 !== 12) {
+    return 'two' // 2nd, 22nd, 32nd...
+  }
+  if (mod10 === 3 && mod100 !== 13) {
+    return 'few' // 3rd, 23rd, 33rd...
+  }
+  return 'other' // 4th, 5th, 11th, 12th, 13th...
+}
+
+/**
+ * Parse ICU options string like "one{# item} other{# items}"
+ */
+function parseICUOptions(options: string): Record<string, string> {
+  const result: Record<string, string> = {}
+  const regex = /(\w+|=\d+)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g
+
+  let match = regex.exec(options)
+  while (match !== null) {
+    result[match[1]] = match[2]
+    match = regex.exec(options)
+  }
+
+  return result
+}
+
+/**
+ * Format ICU number
+ */
+function formatICUNumber(value: unknown, style?: string): string {
+  const num = Number(value)
+  if (Number.isNaN(num)) {
+    return String(value)
+  }
+
+  switch (style) {
+    case 'integer':
+      return Math.floor(num).toLocaleString()
+    case 'percent':
+      return `${(num * 100).toFixed(0)}%`
+    case 'currency':
+      return num.toLocaleString(undefined, { style: 'currency', currency: 'USD' })
+    default:
+      return num.toLocaleString()
+  }
+}
+
+/**
+ * Format ICU date
+ */
+function formatICUDate(value: unknown, style?: string): string {
+  const date = value instanceof Date ? value : new Date(String(value))
+  if (Number.isNaN(date.getTime())) {
+    return String(value)
+  }
+
+  const options: Intl.DateTimeFormatOptions = {}
+  switch (style) {
+    case 'short':
+      options.dateStyle = 'short'
+      break
+    case 'medium':
+      options.dateStyle = 'medium'
+      break
+    case 'long':
+      options.dateStyle = 'long'
+      break
+    case 'full':
+      options.dateStyle = 'full'
+      break
+    default:
+      options.dateStyle = 'medium'
+  }
+
+  return date.toLocaleDateString(undefined, options)
+}
+
+/**
+ * Format ICU time
+ */
+function formatICUTime(value: unknown, style?: string): string {
+  const date = value instanceof Date ? value : new Date(String(value))
+  if (Number.isNaN(date.getTime())) {
+    return String(value)
+  }
+
+  const options: Intl.DateTimeFormatOptions = {}
+  switch (style) {
+    case 'short':
+      options.timeStyle = 'short'
+      break
+    case 'medium':
+      options.timeStyle = 'medium'
+      break
+    case 'long':
+      options.timeStyle = 'long'
+      break
+    case 'full':
+      options.timeStyle = 'full'
+      break
+    default:
+      options.timeStyle = 'short'
+  }
+
+  return date.toLocaleTimeString(undefined, options)
+}
+
+/**
+ * Check if a message uses ICU format
+ */
+export function isICUFormat(message: string): boolean {
+  // ICU format typically has {var, type, ...} patterns
+  return /\{[^}]+,\s*(?:plural|select|selectordinal|number|date|time)\s*,/.test(message)
+}
+
+// =============================================================================
+// Translation Functions
+// =============================================================================
+
 /**
  * Get a translation by key with parameter replacement and pluralization.
+ *
+ * Supports both Laravel-style (:param, |plural) and ICU MessageFormat.
  *
  * @param key - Dot-notation key (e.g., 'messages.welcome')
  * @param translations - Translation dictionary
@@ -382,8 +763,13 @@ function selectPluralForm(forms: string[], count: number): string {
  * // => 'Hello John'
  *
  * @example
- * // Pluralization
+ * // Pluralization (Laravel-style)
  * getTranslation('items', { items: 'One item|:count items' }, true, { count: 5 })
+ * // => '5 items'
+ *
+ * @example
+ * // ICU MessageFormat
+ * getTranslation('items', { items: '{count, plural, one{# item} other{# items}}' }, true, { count: 5 })
  * // => '5 items'
  */
 export function getTranslation(
@@ -411,14 +797,19 @@ export function getTranslation(
 
   let result = String(value)
 
-  // Handle pluralization if value contains | separator and count is provided
+  // Check if message uses ICU MessageFormat
+  if (isICUFormat(result)) {
+    return formatICU(result, params)
+  }
+
+  // Handle Laravel-style pluralization if value contains | separator and count is provided
   if (result.includes('|') && 'count' in params) {
     const count = Number(params.count)
     const forms = result.split('|')
     result = selectPluralForm(forms, count)
   }
 
-  // Replace :parameter style placeholders
+  // Replace :parameter style placeholders (Laravel-style)
   for (const [paramKey, paramValue] of Object.entries(params)) {
     result = result.replace(
       new RegExp(`:${paramKey}`, 'g'),

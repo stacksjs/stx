@@ -706,9 +706,15 @@ This document contains all identified issues, improvements, and enhancements for
   - Add plural forms support
   - **Status**: FIXED - Added `selectPluralForm()` helper with comprehensive pluralization. Supports simple format (`"One item|:count items"`) and complex format with exact matches (`{0}`, `{1}`) and ranges (`[2,*]`). `getTranslation()` automatically handles pluralization when `count` param is provided.
 
-- [ ] **No ICU message format**
+- [x] **No ICU message format**
   - Limited parameter replacement
   - Consider ICU MessageFormat support
+  - **Status**: FIXED - Added comprehensive ICU MessageFormat support in `i18n.ts`:
+    - `formatICU()` - Main parser/formatter function
+    - Supports: plural (`{count, plural, one{# item} other{# items}}`), select (`{gender, select, male{He} female{She} other{They}}`), selectordinal (`{pos, selectordinal, one{#st} other{#th}}`), number (`{amount, number}`), date (`{date, date, short}`), time (`{time, time, long}`)
+    - `isICUFormat()` - Auto-detect ICU format strings
+    - `getTranslation()` now auto-detects and uses ICU format when appropriate
+    - Full CLDR plural category support (one, other) with exact match (=0, =1, =2)
 
 - [x] **Cache invalidation missing** (`i18n.ts:20`)
   - `translationsCache` never clears
@@ -783,9 +789,15 @@ This document contains all identified issues, improvements, and enhancements for
   - Add more WCAG checks
   - **Status**: FIXED - Added 10 additional WCAG accessibility checks in `a11y.ts`: (6) links without accessible text, (7) missing skip navigation links, (8) tables without headers, (9) tables without captions, (10) potential color contrast issues, (11) auto-playing media without muted, (12) positive tabindex disrupting tab order, (13) custom buttons not focusable, (14) missing main landmark, (15) iframes without title. Now 14 total checks covering images, interactive elements, forms, headings, language, links, skip links, tables, contrast, media, tabindex, buttons, landmarks, and iframes.
 
-- [ ] **No auto-fix for a11y issues**
+- [x] **No auto-fix for a11y issues**
   - `autoFix` config exists but not implemented
   - Implement auto-fix functionality
+  - **Status**: FIXED - Added comprehensive auto-fix system in `a11y.ts`:
+    - `autoFixA11y()` - Fix HTML content with configurable options
+    - `autoFixA11yFile()` - Fix a file with optional write-back
+    - `autoFixA11yDirectory()` - Batch fix entire directories
+    - `A11yAutoFixConfig` - Configurable fixes for: missing alt, missing labels, missing form labels, table headers, missing lang, positive tabindex, button focusable
+    - `A11yFixResult` - Detailed results with before/after for each fix
 
 - [ ] **Requires very-happy-dom** (`a11y.ts:104-106`)
   - DOM parsing requires global document
@@ -805,12 +817,25 @@ This document contains all identified issues, improvements, and enhancements for
   - No reactive properties
   - No proper lifecycle management
 
-- [ ] **No CSS scoping**
+- [x] **No CSS scoping**
   - Styles not properly scoped
   - Add CSS scoping/encapsulation
+  - **Status**: FIXED - Added comprehensive CSS scoping system in `web-components.ts`:
+    - `scopeCSS()` - Scope CSS with configurable strategies: 'shadow', 'prefix', 'attribute', 'bem'
+    - `scopeHTML()` - Add scope attributes to HTML elements
+    - `extractAndScopeStyles()` - Extract `<style>` tags and scope both CSS and HTML
+    - `generateScopeId()` - Generate unique scope IDs from component names
+    - `getScopeAttribute()` - Get the scope attribute for a component
+    - `CssScopingConfig` - Configure strategy, prefix, attribute name, preserve original
 
-- [ ] **No TypeScript output option**
+- [x] **No TypeScript output option**
   - Only generates JavaScript
+  - **Status**: FIXED - Added TypeScript output generation in `web-components.ts`:
+    - Set `outputFormat: 'ts'` in WebComponent config
+    - `attributeTypes` - Define types for observed attributes ('string', 'number', 'boolean', 'object')
+    - Generates: Props interface, typed getters/setters, SlotChangeDetail type, HTMLElementTagNameMap augmentation
+    - `generateWebComponentCodeTypeScript()` - Full TypeScript code generator
+    - Auto type parsing for attributes based on declared types
   - Add TypeScript generation
 
 - [x] **Slot processing is empty** (`web-components.ts:177-179`)

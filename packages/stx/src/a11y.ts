@@ -444,6 +444,362 @@ export async function scanA11yIssues(
 }
 
 // =============================================================================
+// Auto-Fix Functionality
+// =============================================================================
+
+/**
+ * Auto-fix result
+ */
+export interface A11yFixResult {
+  /** Original HTML */
+  original: string
+  /** Fixed HTML */
+  fixed: string
+  /** Number of fixes applied */
+  fixCount: number
+  /** Details of each fix */
+  fixes: Array<{
+    type: string
+    description: string
+    before: string
+    after: string
+  }>
+}
+
+/**
+ * Auto-fix configuration
+ */
+export interface A11yAutoFixConfig {
+  /** Fix images without alt text by adding empty alt="" */
+  fixMissingAlt?: boolean
+  /** Fix buttons/links without accessible names by adding aria-label */
+  fixMissingLabels?: boolean
+  /** Fix form inputs without labels by adding aria-label */
+  fixMissingFormLabels?: boolean
+  /** Fix tables without headers by adding scope attribute */
+  fixTableHeaders?: boolean
+  /** Add lang attribute to html element */
+  fixMissingLang?: boolean
+  /** Fix positive tabindex values */
+  fixPositiveTabindex?: boolean
+  /** Fix custom buttons without tabindex */
+  fixButtonFocusable?: boolean
+  /** Default language for lang attribute */
+  defaultLang?: string
+}
+
+const defaultAutoFixConfig: A11yAutoFixConfig = {
+  fixMissingAlt: true,
+  fixMissingLabels: true,
+  fixMissingFormLabels: true,
+  fixTableHeaders: true,
+  fixMissingLang: true,
+  fixPositiveTabindex: true,
+  fixButtonFocusable: true,
+  defaultLang: 'en',
+}
+
+/**
+ * Auto-fix accessibility issues in HTML content.
+ *
+ * This function attempts to automatically fix common accessibility issues.
+ * Note that some fixes may require manual review to ensure they make sense
+ * in context (e.g., alt text should be descriptive, not just present).
+ *
+ * @param html - HTML content to fix
+ * @param config - Auto-fix configuration
+ * @returns Fixed HTML and details of changes made
+ *
+ * @example
+ * const result = autoFixA11y('<img src="photo.jpg">')
+ * // result.fixed = '<img src="photo.jpg" alt="">'
+ * // result.fixCount = 1
+ */
+export function autoFixA11y(
+  html: string,
+  config: A11yAutoFixConfig = {},
+): A11yFixResult {
+  const mergedConfig = { ...defaultAutoFixConfig, ...config }
+  const fixes: A11yFixResult['fixes'] = []
+  let fixed = html
+
+  // Fix 1: Images without alt text
+  if (mergedConfig.fixMissingAlt) {
+    fixed = fixed.replace(
+      /<img([^>]*?)(?<!\balt\s*=\s*["'][^"']*["'])(\s*\/?>)/gi,
+      (match, attrs, closing) => {
+        // Check if alt already exists
+        if (/\balt\s*=/i.test(attrs)) {
+          return match
+        }
+        const before = match
+        const after = `<img${attrs} alt=""${closing}`
+        fixes.push({
+          type: 'missing-alt',
+          description: 'Added empty alt attribute to image',
+          before,
+          after,
+        })
+        return after
+      },
+    )
+  }
+
+  // Fix 2: Buttons without accessible names
+  if (mergedConfig.fixMissingLabels) {
+    // Fix empty buttons
+    fixed = fixed.replace(
+      /<button([^>]*)>\s*<\/button>/gi,
+      (match, attrs) => {
+        if (/\baria-label\s*=/i.test(attrs) || /\btitle\s*=/i.test(attrs)) {
+          return match
+        }
+        const before = match
+        const after = `<button${attrs} aria-label="Button"></button>`
+        fixes.push({
+          type: 'missing-accessible-name',
+          description: 'Added aria-label to empty button',
+          before,
+          after,
+        })
+        return after
+      },
+    )
+
+    // Fix links with only icons or empty
+    fixed = fixed.replace(
+      /<a([^>]*)>\s*(<(?:i|span|svg)[^>]*(?:class="[^"]*icon[^"]*")?[^>]*>.*?<\/(?:i|span|svg)>)?\s*<\/a>/gi,
+      (match, attrs, iconContent) => {
+        if (/\baria-label\s*=/i.test(attrs) || /\btitle\s*=/i.test(attrs)) {
+          return match
+        }
+        // Only fix if truly empty or only contains icon
+        if (!iconContent && match.replace(/<a[^>]*>|<\/a>/gi, '').trim()) {
+          return match
+        }
+        const before = match
+        const after = `<a${attrs} aria-label="Link">${iconContent || ''}</a>`
+        fixes.push({
+          type: 'missing-accessible-name',
+          description: 'Added aria-label to link without text',
+          before,
+          after,
+        })
+        return after
+      },
+    )
+  }
+
+  // Fix 3: Form inputs without labels
+  if (mergedConfig.fixMissingFormLabels) {
+    fixed = fixed.replace(
+      /<(input|select|textarea)([^>]*)>/gi,
+      (match, tag, attrs) => {
+        // Skip if already has label association
+        if (/\baria-label\s*=/i.test(attrs) || /\baria-labelledby\s*=/i.test(attrs)) {
+          return match
+        }
+        // Skip hidden inputs
+        if (/\btype\s*=\s*["']hidden["']/i.test(attrs)) {
+          return match
+        }
+        // Extract name or id for label
+        const nameMatch = attrs.match(/\bname\s*=\s*["']([^"']+)["']/i)
+        const idMatch = attrs.match(/\bid\s*=\s*["']([^"']+)["']/i)
+        const label = nameMatch?.[1] || idMatch?.[1] || tag
+
+        const before = match
+        const after = `<${tag}${attrs} aria-label="${label}">`
+        fixes.push({
+          type: 'input-missing-label',
+          description: `Added aria-label to ${tag} element`,
+          before,
+          after,
+        })
+        return after
+      },
+    )
+  }
+
+  // Fix 4: Missing lang attribute on html element
+  if (mergedConfig.fixMissingLang) {
+    fixed = fixed.replace(
+      /<html([^>]*)>/gi,
+      (match, attrs) => {
+        if (/\blang\s*=/i.test(attrs)) {
+          return match
+        }
+        const before = match
+        const after = `<html${attrs} lang="${mergedConfig.defaultLang}">`
+        fixes.push({
+          type: 'missing-lang',
+          description: `Added lang="${mergedConfig.defaultLang}" to html element`,
+          before,
+          after,
+        })
+        return after
+      },
+    )
+  }
+
+  // Fix 5: Positive tabindex values
+  if (mergedConfig.fixPositiveTabindex) {
+    fixed = fixed.replace(
+      /\btabindex\s*=\s*["']([1-9]\d*)["']/gi,
+      (match, value) => {
+        const before = match
+        const after = 'tabindex="0"'
+        fixes.push({
+          type: 'positive-tabindex',
+          description: `Changed tabindex="${value}" to tabindex="0"`,
+          before,
+          after,
+        })
+        return after
+      },
+    )
+  }
+
+  // Fix 6: Elements with role="button" without tabindex
+  if (mergedConfig.fixButtonFocusable) {
+    fixed = fixed.replace(
+      /<([a-z]+)(\s[^>]*role\s*=\s*["']button["'][^>]*)>/gi,
+      (match, tag, attrs) => {
+        // Skip if already has tabindex
+        if (/\btabindex\s*=/i.test(attrs)) {
+          return match
+        }
+        // Skip actual buttons
+        if (tag.toLowerCase() === 'button') {
+          return match
+        }
+        const before = match
+        const after = `<${tag}${attrs} tabindex="0">`
+        fixes.push({
+          type: 'button-not-focusable',
+          description: 'Added tabindex="0" to element with role="button"',
+          before,
+          after,
+        })
+        return after
+      },
+    )
+  }
+
+  // Fix 7: Tables - add scope to th elements if missing
+  if (mergedConfig.fixTableHeaders) {
+    fixed = fixed.replace(
+      /<th([^>]*)>/gi,
+      (match, attrs) => {
+        if (/\bscope\s*=/i.test(attrs)) {
+          return match
+        }
+        const before = match
+        const after = `<th${attrs} scope="col">`
+        fixes.push({
+          type: 'table-missing-scope',
+          description: 'Added scope="col" to table header',
+          before,
+          after,
+        })
+        return after
+      },
+    )
+  }
+
+  return {
+    original: html,
+    fixed,
+    fixCount: fixes.length,
+    fixes,
+  }
+}
+
+/**
+ * Auto-fix accessibility issues in a file and optionally write back.
+ *
+ * @param filePath - Path to the file to fix
+ * @param config - Auto-fix configuration
+ * @param writeBack - Whether to write the fixed content back to the file
+ * @returns Fix result
+ */
+export async function autoFixA11yFile(
+  filePath: string,
+  config: A11yAutoFixConfig = {},
+  writeBack = false,
+): Promise<A11yFixResult> {
+  const content = await Bun.file(filePath).text()
+  const result = autoFixA11y(content, config)
+
+  if (writeBack && result.fixCount > 0) {
+    await Bun.write(filePath, result.fixed)
+  }
+
+  return result
+}
+
+/**
+ * Auto-fix accessibility issues in a directory of files.
+ *
+ * @param directory - Directory to scan
+ * @param config - Auto-fix configuration
+ * @param options - Scan options
+ * @param options.recursive - Whether to scan recursively (default: true)
+ * @param options.ignorePaths - Paths to ignore
+ * @param options.writeBack - Whether to write fixes back to files (default: false)
+ * @param options.extensions - File extensions to process (default: ['.stx', '.html', '.htm'])
+ * @returns Map of file paths to fix results
+ */
+export async function autoFixA11yDirectory(
+  directory: string,
+  config: A11yAutoFixConfig = {},
+  options: {
+    recursive?: boolean
+    ignorePaths?: string[]
+    writeBack?: boolean
+    extensions?: string[]
+  } = {},
+): Promise<Record<string, A11yFixResult>> {
+  const results: Record<string, A11yFixResult> = {}
+  const {
+    recursive = true,
+    ignorePaths = [],
+    writeBack = false,
+    extensions = ['.stx', '.html', '.htm'],
+  } = options
+
+  // Build glob pattern for all extensions
+  const extPattern = extensions.length === 1
+    ? `*${extensions[0]}`
+    : `*{${extensions.join(',')}}`
+  const pattern = path.join(directory, recursive ? `**/${extPattern}` : extPattern)
+
+  const glob = new Bun.Glob(pattern)
+
+  for await (const file of glob.scan()) {
+    const shouldIgnore = ignorePaths.some(ignorePath =>
+      file.includes(path.normalize(ignorePath)),
+    )
+
+    if (shouldIgnore) {
+      continue
+    }
+
+    try {
+      const result = await autoFixA11yFile(file, config, writeBack)
+      if (result.fixCount > 0) {
+        results[file] = result
+      }
+    }
+    catch (error) {
+      console.error(`Error fixing ${file}:`, error)
+    }
+  }
+
+  return results
+}
+
+// =============================================================================
 // Custom Directives
 // =============================================================================
 

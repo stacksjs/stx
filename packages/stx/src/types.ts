@@ -544,6 +544,10 @@ export interface WebComponent {
   attributes?: string[]
   /** Description of the component for documentation */
   description?: string
+  /** Output format: 'js' (default) or 'ts' for TypeScript */
+  outputFormat?: 'js' | 'ts'
+  /** Type definitions for observed attributes (for TypeScript output) */
+  attributeTypes?: Record<string, 'string' | 'number' | 'boolean' | 'object'>
 }
 
 /**
