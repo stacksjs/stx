@@ -56,6 +56,7 @@
  */
 import type { CustomDirective, SeoConfig, StxOptions } from './types'
 import { ErrorCodes, inlineError } from './error-handling'
+import { safeEvaluateObject } from './safe-evaluator'
 
 // =============================================================================
 // Types
@@ -119,13 +120,11 @@ export function processMetaDirectives(
       : ''
   })
 
-  // Process extended meta directive with attributes object
+  // Process extended meta directive with attributes object using safe evaluation
   output = output.replace(/@metaTag\(\s*(\{[^}]+\})\s*\)/g, (_, attrObject) => {
     try {
-      // Parse the attribute object
-      // eslint-disable-next-line no-new-func
-      const evalFn = new Function(...Object.keys(context), `return ${attrObject}`)
-      const attrs: MetaTag = evalFn(...Object.values(context))
+      // Parse the attribute object using safe evaluation
+      const attrs = safeEvaluateObject(attrObject, context) as MetaTag
 
       if (!attrs)
         return ''
@@ -133,13 +132,13 @@ export function processMetaDirectives(
       // Build meta tag based on provided attributes
       let tag = '<meta'
       if (attrs.name)
-        tag += ` name="${escapeHtml(attrs.name)}"`
+        tag += ` name="${escapeHtml(String(attrs.name))}"`
       if (attrs.property)
-        tag += ` property="${escapeHtml(attrs.property)}"`
+        tag += ` property="${escapeHtml(String(attrs.property))}"`
       if (attrs.httpEquiv)
-        tag += ` http-equiv="${escapeHtml(attrs.httpEquiv)}"`
+        tag += ` http-equiv="${escapeHtml(String(attrs.httpEquiv))}"`
       if (attrs.content)
-        tag += ` content="${escapeHtml(attrs.content)}"`
+        tag += ` content="${escapeHtml(String(attrs.content))}"`
       tag += '>'
 
       return tag
@@ -168,13 +167,11 @@ export function processStructuredData(
 ): string {
   let output = template
 
-  // Process @structuredData directive
+  // Process @structuredData directive using safe evaluation
   output = output.replace(/@structuredData\(\s*(\{[\s\S]*?\})\s*\)/g, (_, dataObject) => {
     try {
-      // Parse the data object
-      // eslint-disable-next-line no-new-func
-      const evalFn = new Function(...Object.keys(context), `return ${dataObject}`)
-      const data: StructuredData = evalFn(...Object.values(context))
+      // Parse the data object using safe evaluation
+      const data = safeEvaluateObject(dataObject, context) as StructuredData
 
       if (!data)
         return ''
@@ -212,13 +209,11 @@ export function processSeoDirective(
 ): string {
   let output = template
 
-  // Process @seo directive
+  // Process @seo directive using safe evaluation
   output = output.replace(/@seo\(\s*(\{[\s\S]*?\})\s*\)/g, (_, seoConfig) => {
     try {
-      // Parse the SEO configuration object
-      // eslint-disable-next-line no-new-func
-      const evalFn = new Function(...Object.keys(context), `return ${seoConfig}`)
-      const config: Partial<SeoConfig> = evalFn(...Object.values(context))
+      // Parse the SEO configuration object using safe evaluation
+      const config = safeEvaluateObject(seoConfig, context) as Partial<SeoConfig>
 
       if (!config)
         return ''

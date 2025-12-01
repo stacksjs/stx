@@ -56,6 +56,7 @@
  */
 import type { StxOptions } from './types'
 import crypto from 'node:crypto'
+import { isExpressionSafe, safeEvaluate } from './safe-evaluator'
 
 // =============================================================================
 // Configuration
@@ -491,12 +492,13 @@ export function processErrorDirective(
               return getErrorMessage(field, context)
             }
 
-            // For other expressions, try to evaluate them
-            // eslint-disable-next-line no-new-func
-            const evalFn = new Function(...Object.keys(context), `
-              try { return ${expr.trim()}; } catch (e) { return '${expr.trim()}'; }
-            `)
-            return evalFn(...Object.values(context))
+            // For other expressions, try to evaluate them using safe evaluation
+            const trimmedExpr = expr.trim()
+            if (isExpressionSafe(trimmedExpr)) {
+              const result = safeEvaluate(trimmedExpr, context)
+              return result !== undefined ? String(result) : trimmedExpr
+            }
+            return trimmedExpr
           }
           catch {
             return expr

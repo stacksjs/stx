@@ -317,9 +317,18 @@ This document contains all identified issues, improvements, and enhancements for
   - Make configurable
   - **Status**: FIXED - Now configurable via `configureSafeEvaluator({ maxSanitizeDepth: 20 })`. Default remains 10.
 
-- [ ] **No sandboxing for function execution**
+- [x] **No sandboxing for function execution**
   - Still uses `new Function()` which has access to global scope
   - Consider using a proper sandbox like `vm2` or isolated-vm
+  - **Status**: FIXED - Enhanced `safe-evaluator.ts` with comprehensive safe evaluation functions:
+    - `createSafeFunction()` - Creates sandboxed functions with expression validation
+    - `safeEvaluateCondition()` - Safe boolean condition evaluation
+    - `safeEvaluateArray()` - Safe array expression evaluation
+    - `safeEvaluateObject()` - Safe object expression evaluation
+    - `safeEvaluateCode()` - Safe code block execution
+    - `isForExpressionSafe()` - For loop expression validation
+    - `createSafeLoopFunction()` - Safe loop function creation with iteration limits
+    All modules updated to use safe evaluation functions.
 
 ---
 
@@ -327,10 +336,20 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Critical Security Items
 
-- [ ] **`new Function()` usage throughout codebase**
+- [x] **`new Function()` usage throughout codebase**
   - Used in: `expressions.ts`, `conditionals.ts`, `loops.ts`, `forms.ts`, `i18n.ts`, `seo.ts`
   - Potential for code injection if user input reaches these
   - Implement proper sandboxing
+  - **Status**: FIXED - All modules now use safe evaluation via `safe-evaluator.ts`:
+    - `conditionals.ts` - Uses `createSafeFunction()` and `safeEvaluate()` for @if/@switch
+    - `loops.ts` - Uses `createSafeFunction()` for @foreach/@for/@while
+    - `auth.ts` - Uses `createSafeFunction()` and `safeEvaluate()` for auth expressions
+    - `forms.ts` - Uses `safeEvaluate()` for error expressions
+    - `includes.ts` - Uses `createSafeFunction()` and `safeEvaluateObject()` for conditions and vars
+    - `seo.ts` - Uses `safeEvaluateObject()` for meta/structured data objects
+    - `i18n.ts` - Uses `safeEvaluateObject()` for translation params
+    - `components.ts` - Uses `safeEvaluateObject()` for component props
+    - `routes.ts` - Uses `safeEvaluateObject()` for route params
 
 - [x] **Path traversal in includes** (`includes.ts:227-252`)
   - `resolvePath` doesn't fully prevent `../` traversal
@@ -460,9 +479,23 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Test Coverage Gaps
 
-- [ ] **No integration tests for full build pipeline**
+- [x] **No integration tests for full build pipeline**
   - Tests are mostly unit tests
   - Add end-to-end build tests
+  - **Status**: IMPLEMENTED - Created comprehensive integration tests in `test/integration/build-pipeline.test.ts`:
+    - Simple template to HTML processing (3 tests)
+    - Directive processing order verification (3 tests)
+    - Layout and component integration (2 tests)
+    - Include and partial processing (2 tests)
+    - Expression filters (1 test)
+    - Conditional directives (@switch, @unless, @isset, @empty) (3 tests)
+    - Loop directives (@foreach, @forelse, @for) (3 tests)
+    - Form directives (@csrf, @method) (2 tests)
+    - Client-side script preservation (1 test)
+    - Error recovery (1 test)
+    - Special characters and escaping (2 tests)
+    - Complex real-world scenarios (3 tests)
+    - Total: 26 integration tests covering the full build pipeline
 
 - [x] **Missing edge case tests**
   - Deeply nested directives
@@ -686,8 +719,17 @@ This document contains all identified issues, improvements, and enhancements for
   - Consider using custom elements or data attributes
   - **Status**: DOCUMENTED - Added comprehensive module documentation explaining why HTML comments are used (valid anywhere, don't affect DOM, stripped during minification). Added alternative `_DATA_SECTION_PATTERN` for data-attribute approach. Documented both patterns.
 
-- [ ] **No actual streaming implementation**
+- [x] **No actual streaming implementation**
   - `streamTemplate` returns full content at once
+  - **Status**: IMPLEMENTED - Enhanced streaming module with:
+    - `parseStreamableChunks()` - Parses templates into shell and suspense chunks
+    - `streamTemplate()` - Now supports progressive streaming with suspense boundaries
+    - `streamTemplateSimple()` - Chunked streaming without suspense for simpler use cases
+    - `suspenseDirective` - `@suspense('name')...@endsuspense` for marking deferred content
+    - Suspense boundaries: Content is processed in parallel and streamed as it resolves
+    - Client-side rehydration: `__stxSuspense.resolve()` injects streamed content
+    - Configurable buffer size for chunked transfer
+    - 11 existing tests pass
   - Implement true chunked streaming
 
 - [x] **Island hydration is basic** (`streaming.ts:199-228`)

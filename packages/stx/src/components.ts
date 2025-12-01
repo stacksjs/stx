@@ -1,6 +1,7 @@
 import type { ComponentPropsSchema, CustomDirective, PropType } from './types'
 import * as path from 'node:path'
 import { ErrorCodes, inlineError } from './error-handling'
+import { safeEvaluateObject } from './safe-evaluator'
 import { renderComponent } from './utils'
 
 // =============================================================================
@@ -189,10 +190,6 @@ export const componentDirective: CustomDirective = {
 
           // Check if starts with object literal marker
           if (propsString.startsWith('{')) {
-            // Extract object from the string with eval in context
-            const contextKeys = Object.keys(context)
-            const contextValues = Object.values(context)
-
             // Handle quotes in props properly
             const sanitizedPropsString = propsString
               .replace(/'/g, '"')
@@ -203,10 +200,8 @@ export const componentDirective: CustomDirective = {
               props = JSON.parse(sanitizedPropsString)
             }
             catch {
-              // Fall back to Function constructor
-              // eslint-disable-next-line no-new-func
-              const propsFn = new Function(...contextKeys, `return ${propsString}`)
-              props = propsFn(...contextValues)
+              // Fall back to safe evaluation
+              props = safeEvaluateObject(propsString, context)
             }
           }
           else {

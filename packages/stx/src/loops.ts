@@ -26,6 +26,7 @@ import { processConditionals } from './conditionals'
 import { ErrorCodes, inlineError } from './error-handling'
 import { processExpressions } from './expressions'
 import { findDirectiveBlocks, findMatchingDelimiter } from './parser'
+import { createSafeFunction, isExpressionSafe, isForExpressionSafe, safeEvaluate } from './safe-evaluator'
 
 // Default loop configuration
 const DEFAULT_MAX_WHILE_ITERATIONS = 1000
@@ -55,13 +56,19 @@ function processConditionalLoopControl(
 ): string {
   let result = content
 
-  // Process @break(condition) - conditional break
+  // Process @break(condition) - conditional break using safe evaluation
   result = result.replace(/@break\(([^)]+)\)/g, (_match, condition) => {
     try {
       const conditionTrimmed = condition.trim()
-      // eslint-disable-next-line no-new-func
-      const condFn = new Function(...Object.keys(context), `return !!(${conditionTrimmed})`)
-      const shouldBreak = condFn(...Object.values(context))
+      const boolExpr = `!!(${conditionTrimmed})`
+      let shouldBreak: boolean
+      if (isExpressionSafe(boolExpr)) {
+        const condFn = createSafeFunction(boolExpr, Object.keys(context))
+        shouldBreak = Boolean(condFn(...Object.values(context)))
+      }
+      else {
+        shouldBreak = Boolean(safeEvaluate(boolExpr, context))
+      }
       return shouldBreak ? BREAK_MARKER : ''
     }
     catch {
@@ -69,13 +76,19 @@ function processConditionalLoopControl(
     }
   })
 
-  // Process @continue(condition) - conditional continue
+  // Process @continue(condition) - conditional continue using safe evaluation
   result = result.replace(/@continue\(([^)]+)\)/g, (_match, condition) => {
     try {
       const conditionTrimmed = condition.trim()
-      // eslint-disable-next-line no-new-func
-      const condFn = new Function(...Object.keys(context), `return !!(${conditionTrimmed})`)
-      const shouldContinue = condFn(...Object.values(context))
+      const boolExpr = `!!(${conditionTrimmed})`
+      let shouldContinue: boolean
+      if (isExpressionSafe(boolExpr)) {
+        const condFn = createSafeFunction(boolExpr, Object.keys(context))
+        shouldContinue = Boolean(condFn(...Object.values(context)))
+      }
+      else {
+        shouldContinue = Boolean(safeEvaluate(boolExpr, context))
+      }
       return shouldContinue ? CONTINUE_MARKER : ''
     }
     catch {
@@ -189,18 +202,24 @@ function convertLoopControlToJS(content: string): string {
 export function processLoops(template: string, context: Record<string, any>, filePath: string, options?: StxOptions): string {
   let output = template
 
-  // Process @forelse loops (combine foreach with an empty check)
+  // Process @forelse loops (combine foreach with an empty check) using safe evaluation
   output = output.replace(/@forelse\s*\(([^)]+)as([^)]+)\)([\s\S]*?)@empty([\s\S]*?)@endforelse/g, (_match, arrayExpr, itemVar, content, emptyContent, _offset) => {
     try {
-      // eslint-disable-next-line no-new-func
-      const arrayFn = new Function(...Object.keys(context), `return ${arrayExpr.trim()}`)
-      const array = arrayFn(...Object.values(context))
+      const trimmedExpr = arrayExpr.trim()
+      let array: unknown
+      if (isExpressionSafe(trimmedExpr)) {
+        const arrayFn = createSafeFunction(trimmedExpr, Object.keys(context))
+        array = arrayFn(...Object.values(context))
+      }
+      else {
+        array = safeEvaluate(trimmedExpr, context)
+      }
 
       if (!Array.isArray(array) || array.length === 0) {
         return emptyContent
       }
 
-      return `@foreach (${arrayExpr.trim()} as ${itemVar.trim()})${content}@endforeach`
+      return `@foreach (${trimmedExpr} as ${itemVar.trim()})${content}@endforeach`
     }
     catch (error: any) {
       return inlineError('Forelse', `Error in @forelse(${arrayExpr.trim()} as ${itemVar.trim()}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
@@ -309,12 +328,19 @@ export function processLoops(template: string, context: Record<string, any>, fil
       const { start, end, arrayExpr, itemVar, content } = match
 
       try {
-        // eslint-disable-next-line no-new-func
-        const arrayFn = new Function(...Object.keys(ctx), `return ${arrayExpr.trim()}`)
-        const array = arrayFn(...Object.values(ctx))
+        // Evaluate array expression using safe evaluation
+        const trimmedArrayExpr = arrayExpr.trim()
+        let array: unknown
+        if (isExpressionSafe(trimmedArrayExpr)) {
+          const arrayFn = createSafeFunction(trimmedArrayExpr, Object.keys(ctx))
+          array = arrayFn(...Object.values(ctx))
+        }
+        else {
+          array = safeEvaluate(trimmedArrayExpr, ctx)
+        }
 
         if (!Array.isArray(array)) {
-          const errorMsg = inlineError('Foreach', `Error in @foreach: ${arrayExpr.trim()} is not an array`, ErrorCodes.TYPE_ERROR)
+          const errorMsg = inlineError('Foreach', `Error in @foreach: ${trimmedArrayExpr} is not an array`, ErrorCodes.TYPE_ERROR)
           result = result.substring(0, start) + errorMsg + result.substring(end)
           continue
         }
@@ -423,29 +449,11 @@ export function processLoops(template: string, context: Record<string, any>, fil
 
 /**
  * Validate a for loop expression for basic structure
+ * Uses the safe evaluator's isForExpressionSafe for validation
  * Allows: "let i = 0; i < n; i++" or "const x of items" etc.
  */
 function validateForExpression(expr: string): boolean {
-  const trimmed = expr.trim()
-
-  // Check for dangerous patterns
-  const dangerousPatterns = [
-    /\beval\s*\(/i,
-    /\bFunction\s*\(/i,
-    /\bimport\s*\(/i,
-    /\brequire\s*\(/i,
-    /\bprocess\./i,
-    /\b__proto__\b/i,
-    /\bconstructor\s*\./i,
-  ]
-
-  for (const pattern of dangerousPatterns) {
-    if (pattern.test(trimmed)) {
-      return false
-    }
-  }
-
-  return true
+  return isForExpressionSafe(expr)
 }
 
 /**

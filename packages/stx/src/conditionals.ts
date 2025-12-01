@@ -27,6 +27,7 @@ import process from 'node:process'
 import { evaluateAuthExpression } from './auth'
 import { ErrorCodes, inlineError } from './error-handling'
 import { findIfBlocks, parseSwitchBlock } from './parser'
+import { createSafeFunction, isExpressionSafe, safeEvaluate } from './safe-evaluator'
 
 // =============================================================================
 // Regex Patterns
@@ -121,10 +122,16 @@ export function processSwitchStatements(template: string, context: Record<string
     }
 
     try {
-      // Evaluate the switch expression
-      // eslint-disable-next-line no-new-func
-      const exprFn = new Function(...Object.keys(context), `return ${parsed.expression}`)
-      const switchValue = exprFn(...Object.values(context))
+      // Evaluate the switch expression using safe evaluation
+      let switchValue: unknown
+      if (isExpressionSafe(parsed.expression)) {
+        const exprFn = createSafeFunction(parsed.expression, Object.keys(context))
+        switchValue = exprFn(...Object.values(context))
+      }
+      else {
+        // Fall back to safe evaluator for potentially unsafe expressions
+        switchValue = safeEvaluate(parsed.expression, context)
+      }
 
       // Find matching case
       let result = ''
@@ -138,9 +145,15 @@ export function processSwitchStatements(template: string, context: Record<string
         }
         else {
           try {
-            // eslint-disable-next-line no-new-func
-            const caseFn = new Function(...Object.keys(context), `return ${caseItem.value}`)
-            const caseValue = caseFn(...Object.values(context))
+            // Evaluate case value using safe evaluation
+            let caseValue: unknown
+            if (isExpressionSafe(caseItem.value)) {
+              const caseFn = createSafeFunction(caseItem.value, Object.keys(context))
+              caseValue = caseFn(...Object.values(context))
+            }
+            else {
+              caseValue = safeEvaluate(caseItem.value, context)
+            }
 
             if (switchValue === caseValue) {
               result = caseItem.content.replace(/@break/g, '').trim()
@@ -239,11 +252,17 @@ export function processConditionals(template: string, context: Record<string, an
             foundTrueBranch = true
           }
           else {
-            // @if or @elseif - evaluate condition
+            // @if or @elseif - evaluate condition using safe evaluation
             try {
-              // eslint-disable-next-line no-new-func
-              const conditionFn = new Function(...Object.keys(context), `return ${branch.condition}`)
-              const conditionResult = conditionFn(...Object.values(context))
+              let conditionResult: unknown
+              if (isExpressionSafe(branch.condition)) {
+                const conditionFn = createSafeFunction(branch.condition, Object.keys(context))
+                conditionResult = conditionFn(...Object.values(context))
+              }
+              else {
+                // Fall back to safe evaluator for potentially unsafe expressions
+                conditionResult = safeEvaluate(branch.condition, context)
+              }
 
               if (conditionResult) {
                 result = branch.content

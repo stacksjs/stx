@@ -1,11 +1,11 @@
-/* eslint-disable no-new-func */
-
 /**
  * Laravel-like named routes system for stx
  *
  * This provides the ability to define routes with names and generate URLs for them,
  * similar to Laravel's route naming and the route() helper.
  */
+
+import { safeEvaluateObject } from './safe-evaluator'
 
 interface RouteDefinition {
   path: string
@@ -101,10 +101,10 @@ export function route(
  * Create a route URL directive processor for stx templates
  */
 export function processRouteDirectives(template: string): string {
-  return template.replace(/@route\(\s*(['"])([^'"]+)\1(?:\s*,\s*(\{[^}]+\}))?\s*(?:,\s*(true|false)\s*)?\)/g, (_, quote, routeName, paramsJson, absolute) => {
+  return template.replace(/@route\(\s*(['"])([^'"]+)\1(?:\s*,\s*(\{[^}]+\}))?\s*(?:,\s*(true|false)\s*)?\)/g, (_, _quote, routeName, paramsJson, absolute) => {
     try {
-      // Parse the params object if provided
-      const params = paramsJson ? new Function(`return ${paramsJson}`)() : {}
+      // Parse the params object if provided using safe evaluation
+      const params = paramsJson ? safeEvaluateObject(paramsJson, {}) : {}
       // Parse the absolute flag if provided
       const isAbsolute = absolute === 'true'
 

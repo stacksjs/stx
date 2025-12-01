@@ -31,6 +31,7 @@
 import type { I18nConfig, StxOptions } from './types'
 import path from 'node:path'
 import { ErrorCodes, inlineError } from './error-handling'
+import { safeEvaluateObject } from './safe-evaluator'
 
 // =============================================================================
 // Configuration
@@ -865,12 +866,9 @@ export async function processTranslateDirective(
               const parsed = JSON.parse(jsonStr)
               return typeof parsed.data === 'object' ? parsed.data : {}
             },
-            // JavaScript eval approach
+            // Safe evaluation approach
             () => {
-              // eslint-disable-next-line no-new-func
-              const evalFn = new Function(`return ${paramsStr}`)
-              const result = evalFn()
-              return typeof result === 'object' ? result : {}
+              return safeEvaluateObject(paramsStr, context)
             },
           ]
 
@@ -942,12 +940,9 @@ export async function processTranslateDirective(
               const parsed = JSON.parse(jsonStr)
               return typeof parsed.data === 'object' ? parsed.data : {}
             },
-            // JavaScript eval approach
+            // Safe evaluation approach
             () => {
-              // eslint-disable-next-line no-new-func
-              const evalFn = new Function(`return ${paramsStr}`)
-              const result = evalFn()
-              return typeof result === 'object' ? result : {}
+              return safeEvaluateObject(paramsStr, context)
             },
           ]
 

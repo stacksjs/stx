@@ -39,6 +39,8 @@
  * - The configured partials directory, OR
  * - The directory containing the current template
  *
+ * Uses safe evaluation for expression evaluation to prevent code injection.
+ *
  * ## @once Directive
  *
  * The `@once` directive ensures content is only rendered once per request.
@@ -69,6 +71,7 @@ import path from 'node:path'
 import { processConditionals } from './conditionals'
 import { processExpressions } from './expressions'
 import { LRUCache } from './performance-utils'
+import { createSafeFunction, isExpressionSafe, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
 import { createDetailedErrorMessage, fileExists } from './utils'
 
 // Cache for partials to avoid repeated file reads (LRU with max 500 entries)
@@ -200,13 +203,19 @@ export async function processIncludes(
     return ''
   })
 
-  // Process @includeWhen directive
+  // Process @includeWhen directive using safe evaluation
   output = output.replace(/@includeWhen\s*\(([^,]+),\s*['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (match, condition, includePath, varsString, offset) => {
     try {
-      // Evaluate the condition
-      // eslint-disable-next-line no-new-func
-      const conditionFn = new Function(...Object.keys(context), `return Boolean(${condition})`)
-      const shouldInclude = conditionFn(...Object.values(context))
+      // Evaluate the condition using safe evaluation
+      const condExpr = `Boolean(${condition})`
+      let shouldInclude: boolean
+      if (isExpressionSafe(condExpr)) {
+        const conditionFn = createSafeFunction(condExpr, Object.keys(context))
+        shouldInclude = Boolean(conditionFn(...Object.values(context)))
+      }
+      else {
+        shouldInclude = Boolean(safeEvaluate(condExpr, context))
+      }
 
       if (shouldInclude) {
         // Track dependency if condition is true
@@ -230,13 +239,19 @@ export async function processIncludes(
     }
   })
 
-  // Process @includeUnless directive
+  // Process @includeUnless directive using safe evaluation
   output = output.replace(/@includeUnless\s*\(([^,]+),\s*['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g, (match, condition, includePath, varsString, offset) => {
     try {
-      // Evaluate the condition
-      // eslint-disable-next-line no-new-func
-      const conditionFn = new Function(...Object.keys(context), `return Boolean(${condition})`)
-      const conditionResult = conditionFn(...Object.values(context))
+      // Evaluate the condition using safe evaluation
+      const condExpr = `Boolean(${condition})`
+      let conditionResult: boolean
+      if (isExpressionSafe(condExpr)) {
+        const conditionFn = createSafeFunction(condExpr, Object.keys(context))
+        conditionResult = Boolean(conditionFn(...Object.values(context)))
+      }
+      else {
+        conditionResult = Boolean(safeEvaluate(condExpr, context))
+      }
 
       if (!conditionResult) {
         // Track dependency if condition is false
@@ -275,13 +290,11 @@ export async function processIncludes(
       // Parse the array of paths
       const pathArray = JSON.parse(pathArrayString.replace(/'/g, '"'))
 
-      // Parse local variables if provided
-      let localVars = {}
+      // Parse local variables if provided using safe evaluation
+      let localVars: Record<string, unknown> = {}
       if (varsString) {
         try {
-          // eslint-disable-next-line no-new-func
-          const varsFn = new Function(`return ${varsString}`)
-          localVars = varsFn()
+          localVars = safeEvaluateObject(varsString, context)
         }
         catch (error: any) {
           // In production, use fallback; in debug mode, show error
@@ -536,14 +549,12 @@ export async function processIncludes(
   while (match = includeRegex.exec(output)) {
     const [fullMatch, includePath, varsString] = match
     const matchOffset = match.index
-    let localVars = {}
+    let localVars: Record<string, unknown> = {}
 
-    // Parse local variables if provided
+    // Parse local variables if provided using safe evaluation
     if (varsString) {
       try {
-        // eslint-disable-next-line no-new-func
-        const varsFn = new Function(`return ${varsString}`)
-        localVars = varsFn()
+        localVars = safeEvaluateObject(varsString, context)
       }
       catch (error: any) {
         output = output.replace(
