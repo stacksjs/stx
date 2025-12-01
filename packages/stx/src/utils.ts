@@ -8,6 +8,8 @@ import process from 'node:process'
 
 // Import from expressions
 import { unescapeHtml } from './expressions'
+// Import directly from tokenizer to avoid any circular dependency issues
+import { findMatchingDelimiter } from './parser/tokenizer'
 import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
 
@@ -513,6 +515,126 @@ function convertToCommonJS(scriptContent: string): string {
 }
 
 /**
+ * Extract a destructuring pattern from a string, handling nested patterns
+ */
+function extractDestructuringPattern(str: string, startPos: number): { pattern: string, endPos: number } | null {
+  const openChar = str[startPos]
+  if (openChar !== '{' && openChar !== '[') {
+    return null
+  }
+
+  const closeChar = openChar === '{' ? '}' : ']'
+  const endPos = findMatchingDelimiter(str, openChar, closeChar, startPos)
+
+  if (endPos === -1) {
+    return null
+  }
+
+  return {
+    pattern: str.slice(startPos, endPos + 1),
+    endPos: endPos + 1,
+  }
+}
+
+/**
+ * Extract variable names from a destructuring pattern
+ * e.g., "{ a, b: c, d: { e } }" -> ["a", "c", "e"]
+ */
+function extractDestructuredNames(pattern: string): string[] {
+  const names: string[] = []
+
+  // Remove outer braces/brackets
+  const inner = pattern.slice(1, -1).trim()
+  if (!inner)
+    return names
+
+  // Parse the pattern character by character
+  let i = 0
+  let depth = 0
+  let currentName = ''
+
+  while (i < inner.length) {
+    const char = inner[i]
+
+    // Track nesting depth
+    if (char === '{' || char === '[') {
+      depth++
+      // If we're starting a nested pattern, recursively extract from it
+      if (depth === 1) {
+        const nested = extractDestructuringPattern(inner, i)
+        if (nested) {
+          const nestedNames = extractDestructuredNames(nested.pattern)
+          names.push(...nestedNames)
+          i = nested.endPos
+          currentName = ''
+          continue
+        }
+      }
+    }
+    else if (char === '}' || char === ']') {
+      depth--
+    }
+
+    // Skip nested content
+    if (depth > 0) {
+      i++
+      continue
+    }
+
+    // Handle comma (end of item)
+    if (char === ',') {
+      if (currentName.trim()) {
+        names.push(currentName.trim())
+      }
+      currentName = ''
+      i++
+      continue
+    }
+
+    // Handle colon (renaming: `a: b` means bind `b`)
+    if (char === ':') {
+      // The value before colon is the property name, after is the binding name
+      currentName = ''
+      i++
+      continue
+    }
+
+    // Handle default values (= something)
+    if (char === '=') {
+      // Save current name before default value
+      if (currentName.trim()) {
+        names.push(currentName.trim())
+      }
+      currentName = ''
+      // Skip the default value expression
+      i++
+      while (i < inner.length && inner[i] !== ',' && depth === 0) {
+        if (inner[i] === '{' || inner[i] === '[')
+          depth++
+        else if (inner[i] === '}' || inner[i] === ']')
+          depth--
+        i++
+      }
+      continue
+    }
+
+    // Accumulate identifier characters
+    if (/[\w$]/.test(char)) {
+      currentName += char
+    }
+
+    i++
+  }
+
+  // Don't forget the last name
+  if (currentName.trim()) {
+    names.push(currentName.trim())
+  }
+
+  return names
+}
+
+/**
  * Parse variable declarations (including multi-line objects and arrays)
  */
 function parseVariableDeclaration(lines: string[], startIndex: number): {
@@ -524,38 +646,59 @@ function parseVariableDeclaration(lines: string[], startIndex: number): {
   const firstLine = lines[startIndex].trim()
 
   // Extract type and check for different declaration patterns
-
   const match = firstLine.match(/^(?:export\s+)?(const|let|var)\s+(\w+)\s*=\s*(.*)$/)
 
   // If simple pattern doesn't match, try destructuring pattern
   if (!match) {
-    const destructuringMatch = firstLine.match(/^(?:export\s+)?(const|let|var)\s+(\{[^}]+\}|\[[^\]]+\])\s*=\s*(.*)$/)
-    if (destructuringMatch) {
-      const [, type, destructuringPattern, initialValue] = destructuringMatch
-      let value = initialValue
-      let currentIndex = startIndex
+    // Check if this is a destructuring declaration
+    const destructuringPrefix = firstLine.match(/^(?:export\s+)?(const|let|var)\s+/)
+    if (destructuringPrefix) {
+      const afterKeyword = firstLine.slice(destructuringPrefix[0].length)
 
-      // Check if we need to read multiple lines for the value
-      if (needsMultilineReading(initialValue)) {
-        const result = readMultilineValue(lines, startIndex, initialValue)
-        value = result.value
-        currentIndex = result.nextIndex
-      }
-      else {
-        currentIndex = startIndex + 1
-      }
+      // Try to extract the destructuring pattern using proper parsing
+      const patternResult = extractDestructuringPattern(afterKeyword, 0)
+      if (patternResult) {
+        const type = destructuringPrefix[1]
+        const destructuringPattern = patternResult.pattern
 
-      // Clean up the value
-      value = value.trim().replace(/;$/, '')
+        // Find the = sign after the pattern
+        const afterPattern = afterKeyword.slice(patternResult.endPos).trim()
+        if (afterPattern.startsWith('=')) {
+          const initialValue = afterPattern.slice(1).trim()
+          let value = initialValue
+          let currentIndex = startIndex
 
-      // For destructuring, create a unique variable name and add the destructuring as well
-      const uniqueName = `__destructured_${startIndex}`
+          // Check if we need to read multiple lines for the value
+          if (needsMultilineReading(initialValue)) {
+            const result = readMultilineValue(lines, startIndex, initialValue)
+            value = result.value
+            currentIndex = result.nextIndex
+          }
+          else {
+            currentIndex = startIndex + 1
+          }
 
-      return {
-        type,
-        name: uniqueName,
-        value: `${value}; const ${destructuringPattern} = ${uniqueName}`,
-        nextIndex: currentIndex,
+          // Clean up the value
+          value = value.trim().replace(/;$/, '')
+
+          // Extract actual variable names from the destructuring pattern
+          const destructuredNames = extractDestructuredNames(destructuringPattern)
+
+          // Create a unique variable name for the source value
+          const uniqueName = `__stx_src_${startIndex}`
+
+          // Build exports for each destructured variable
+          const destructuredExports = destructuredNames
+            .map(name => `module.exports.${name} = ${name};`)
+            .join('\n')
+
+          return {
+            type,
+            name: uniqueName,
+            value: `${value}; ${type} ${destructuringPattern} = ${uniqueName};\n${destructuredExports}`,
+            nextIndex: currentIndex,
+          }
+        }
       }
     }
 
@@ -625,32 +768,121 @@ function parseFunctionDeclaration(lines: string[], startIndex: number): {
 }
 
 /**
- * Check if a value needs multi-line reading
+ * Check if a value needs multi-line reading using proper tokenization
+ * This handles braces inside strings correctly
  */
 function needsMultilineReading(value: string): boolean {
   const trimmed = value.trim()
 
-  // Count braces and brackets
-  const openBraces = (trimmed.match(/\{/g) || []).length
-  const closeBraces = (trimmed.match(/\}/g) || []).length
-  const openBrackets = (trimmed.match(/\[/g) || []).length
-  const closeBrackets = (trimmed.match(/\]/g) || []).length
+  // Check if the value starts with { or [ - if so, find the matching delimiter
+  if (trimmed.startsWith('{')) {
+    const closePos = findMatchingDelimiter(trimmed, '{', '}', 0)
+    return closePos === -1 // Not found = needs more lines
+  }
 
-  return openBraces > closeBraces || openBrackets > closeBrackets
+  if (trimmed.startsWith('[')) {
+    const closePos = findMatchingDelimiter(trimmed, '[', ']', 0)
+    return closePos === -1 // Not found = needs more lines
+  }
+
+  // For other values (like template literals), check using proper parsing
+  return !isValueComplete(trimmed)
 }
 
 /**
- * Check if a function needs multi-line reading
+ * Check if a value expression is complete (all delimiters balanced)
+ */
+function isValueComplete(value: string): boolean {
+  const depth = { paren: 0, bracket: 0, brace: 0 }
+  let inString: string | null = null
+  let inTemplateExpr = 0
+
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i]
+    const prevChar = i > 0 ? value[i - 1] : ''
+
+    // Handle escape sequences
+    if (prevChar === '\\' && inString) {
+      continue
+    }
+
+    // Handle string entry/exit
+    if ((char === '"' || char === '\'') && !inString) {
+      inString = char
+      continue
+    }
+    if (char === inString && inString !== '`') {
+      inString = null
+      continue
+    }
+
+    // Handle template string
+    if (char === '`' && !inString) {
+      inString = '`'
+      continue
+    }
+    if (char === '`' && inString === '`' && inTemplateExpr === 0) {
+      inString = null
+      continue
+    }
+
+    // Handle template expression ${
+    if (inString === '`' && char === '$' && value[i + 1] === '{') {
+      inTemplateExpr++
+      i++ // Skip {
+      continue
+    }
+    if (inTemplateExpr > 0 && char === '{') {
+      inTemplateExpr++
+      continue
+    }
+    if (inTemplateExpr > 0 && char === '}') {
+      inTemplateExpr--
+      continue
+    }
+
+    // Skip if in string
+    if (inString) {
+      continue
+    }
+
+    // Track delimiters
+    if (char === '(')
+      depth.paren++
+    else if (char === ')')
+      depth.paren--
+    else if (char === '[')
+      depth.bracket++
+    else if (char === ']')
+      depth.bracket--
+    else if (char === '{')
+      depth.brace++
+    else if (char === '}')
+      depth.brace--
+  }
+
+  return depth.paren === 0 && depth.bracket === 0 && depth.brace === 0 && inString === null
+}
+
+/**
+ * Check if a function needs multi-line reading using proper tokenization
  */
 function needsMultilineFunctionReading(functionLine: string): boolean {
-  const openBraces = (functionLine.match(/\{/g) || []).length
-  const closeBraces = (functionLine.match(/\}/g) || []).length
+  // Find the function body opening brace
+  const bracePos = functionLine.indexOf('{')
+  if (bracePos === -1) {
+    // No opening brace yet - definitely needs more
+    return true
+  }
 
-  return openBraces > closeBraces
+  // Check if the closing brace is on the same line
+  const closePos = findMatchingDelimiter(functionLine, '{', '}', bracePos)
+  return closePos === -1 // Not found = needs more lines
 }
 
 /**
- * Read multi-line values (objects, arrays)
+ * Read multi-line values (objects, arrays) using proper tokenization
+ * This handles braces inside strings correctly
  */
 function readMultilineValue(lines: string[], startIndex: number, initialValue: string): {
   value: string
@@ -658,16 +890,11 @@ function readMultilineValue(lines: string[], startIndex: number, initialValue: s
 } {
   let value = initialValue
   let i = startIndex + 1
-  let braceCount = (initialValue.match(/\{/g) || []).length - (initialValue.match(/\}/g) || []).length
-  let bracketCount = (initialValue.match(/\[/g) || []).length - (initialValue.match(/\]/g) || []).length
 
-  while (i < lines.length && (braceCount > 0 || bracketCount > 0)) {
+  // Keep adding lines until the value is complete
+  while (i < lines.length && !isValueComplete(value)) {
     const nextLine = lines[i]
     value += `\n${nextLine}`
-
-    braceCount += (nextLine.match(/\{/g) || []).length - (nextLine.match(/\}/g) || []).length
-    bracketCount += (nextLine.match(/\[/g) || []).length - (nextLine.match(/\]/g) || []).length
-
     i++
   }
 
@@ -675,7 +902,8 @@ function readMultilineValue(lines: string[], startIndex: number, initialValue: s
 }
 
 /**
- * Read multi-line functions
+ * Read multi-line functions using proper tokenization
+ * This handles braces inside strings correctly
  */
 function readMultilineFunction(lines: string[], startIndex: number, initialFunction: string): {
   functionCode: string
@@ -683,12 +911,21 @@ function readMultilineFunction(lines: string[], startIndex: number, initialFunct
 } {
   let functionCode = initialFunction
   let i = startIndex + 1
-  let braceCount = (initialFunction.match(/\{/g) || []).length - (initialFunction.match(/\}/g) || []).length
 
-  while (i < lines.length && braceCount > 0) {
+  // Keep adding lines until the function body is complete
+  while (i < lines.length) {
+    // Check if we have a complete function
+    const bracePos = functionCode.indexOf('{')
+    if (bracePos !== -1) {
+      const closePos = findMatchingDelimiter(functionCode, '{', '}', bracePos)
+      if (closePos !== -1) {
+        // Function is complete
+        break
+      }
+    }
+
     const nextLine = lines[i]
     functionCode += `\n${nextLine}`
-    braceCount += (nextLine.match(/\{/g) || []).length - (nextLine.match(/\}/g) || []).length
     i++
   }
 

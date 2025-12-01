@@ -135,13 +135,15 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Variable Extraction (`utils.ts`)
 
-- [ ] **Complex script parsing is fragile** (`utils.ts:217-279`)
+- [x] **Complex script parsing is fragile** (`utils.ts:217-279`)
   - `convertToCommonJS` uses line-by-line parsing
   - Fails on complex patterns like template literals with expressions
+  - **Status**: FIXED - Created `parser/` module with proper tokenizer-based parsing. Replaced regex-based brace counting with `findMatchingDelimiter()` that respects strings, template literals, and nested expressions. Updated `needsMultilineReading()`, `readMultilineValue()`, and `readMultilineFunction()` to use proper parsing.
 
-- [ ] **Destructuring support is incomplete** (`utils.ts:298-326`)
+- [x] **Destructuring support is incomplete** (`utils.ts:298-326`)
   - Creates `__destructured_` variables which is hacky
   - Properly handle destructuring patterns
+  - **Status**: FIXED - Implemented `extractDestructuringPattern()` using proper tokenization to handle nested destructuring patterns like `{ a: { b, c } }`. Added `extractDestructuredNames()` to recursively extract all bound variable names from patterns. All destructured variables are now properly exported to module.exports.
 
 - [x] **No support for async/await in scripts**
   - Top-level await in `<script>` tags not supported
