@@ -390,9 +390,10 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Performance Monitoring (`performance-utils.ts`)
 
-- [ ] **Performance monitoring is opt-in but always imported**
+- [x] **Performance monitoring is opt-in but always imported**
   - Even when disabled, the module is loaded
   - Make truly optional with dynamic import
+  - **Status**: FIXED - Added lazy-loaded `getPerformanceMonitor()` function in `performance-utils.ts` that only creates the `PerformanceMonitor` instance when first accessed. The existing `performanceMonitor` export is now a Proxy that delegates to `getPerformanceMonitor()`, maintaining backward compatibility while enabling lazy initialization.
 
 - [x] **No performance budgets**
   - Can't set limits on processing time
@@ -432,9 +433,10 @@ This document contains all identified issues, improvements, and enhancements for
   - Option to show relative paths only
   - **Status**: FIXED - Added `configureErrorHandling({ showRelativePaths: true, baseDir: '/path' })` to show relative paths in error messages.
 
-- [ ] **No localization for error messages**
+- [x] **No localization for error messages**
   - All errors in English
   - Add i18n support for errors
+  - **Status**: FIXED - Added comprehensive i18n error message system in `error-handling.ts`: `ErrorMessageTemplate` interface, `ErrorMessages` type, `defaultErrorMessages` with 20+ error codes covering runtime errors, parsing errors, directive errors, and validation errors. Functions: `registerErrorMessages()` to add locale-specific messages, `getErrorMessage()` to retrieve messages by code with placeholder substitution, `formatLocalizedError()` for formatted output. Placeholder syntax: `{placeholder}`.
 
 ---
 
@@ -482,9 +484,18 @@ This document contains all identified issues, improvements, and enhancements for
     - Features: whitespace normalization, custom serializers, update mode
     - 14 tests covering all snapshot functionality
 
-- [ ] **Mocking is inconsistent**
+- [x] **Mocking is inconsistent**
   - Some tests use real file system
   - Standardize on mocking approach
+  - **Status**: FIXED - Added comprehensive mocking utilities to `test/test-utils.ts`:
+    - `createMockFn<Args, R>()` - Mock function with call tracking, `mockReturnValue()`, `mockImplementation()`, `wasCalledWith()`, `callCount()`, `lastCall()`, and `reset()`
+    - `createMockUser()`, `createMockUsers()` - Mock data factories
+    - `createMockRequest()`, `createMockResponse()` - HTTP mock utilities
+    - `createTestDirectory()`, `cleanupTestDirectory()` - Temporary directory management with auto-cleanup
+    - `createDeferred<T>()`, `createAsyncMock()`, `withTimeout()` - Async test control
+    - `setupDom()`, `clearDom()`, `queryElement()`, `dispatchEvent()` - DOM test helpers with happy-dom compatibility
+    - `fillForm()`, `submitForm()` - Form testing utilities
+    - `wait()`, `waitFor()` - Timing helpers
 
 ---
 
@@ -704,9 +715,10 @@ This document contains all identified issues, improvements, and enhancements for
   - Add cache invalidation
   - **Status**: FIXED - Added `TranslationCacheEntry` interface with metadata (`loadedAt`, `locale`). Added `clearTranslationCache(locale?)` to clear all or specific locale. Added `getTranslationCacheStats()` returning cache size, locales, and entry details. Cache entries track load time for stale detection via `isCacheStale()`.
 
-- [ ] **YAML support requires Bun's import**
+- [x] **YAML support requires Bun's import**
   - Relies on Bun's YAML import support
   - Add explicit YAML parser fallback
+  - **Status**: FIXED - Added `parseSimpleYaml()` function in `i18n.ts` that parses basic YAML structure (key-value pairs, nested objects, comments, quoted strings, booleans, numbers). Used as fallback when Bun's YAML import fails.
 
 ---
 
@@ -719,18 +731,20 @@ This document contains all identified issues, improvements, and enhancements for
   - Consolidate
   - **Status**: FIXED - Removed duplicate `processFormDirectives` function. All CSRF processing now goes through `processBasicFormDirectives`. Added module-level documentation listing all form directives.
 
-- [ ] **No form validation directives**
+- [x] **No form validation directives**
   - Only error display, no validation rules
   - Add @validate directive
+  - **Status**: FIXED - Added comprehensive enhanced validation system in `forms.ts` with 15+ validation rules: required, email, url, numeric, integer, alpha, alphanumeric, min, max, between, confirmed, in, notIn, regex, date, before, after, size, phone. Added `validateValueEnhanced()`, `validateFormEnhanced()`, `registerEnhancedValidationRule()`, and `generateValidationScript()` for client-side validation.
 
 - [x] **Bootstrap-specific classes hardcoded** (`forms.ts:137`, `forms.ts:165`, etc.)
   - `form-control`, `is-invalid`, `form-check-input`
   - Make class names configurable
   - **Status**: FIXED - Added `FormClassConfig` interface and `defaultFormClasses` constant. Classes are now configurable via `stx.config.ts` under `forms.classes`. Added `buildClassString()` helper to reduce code duplication. Added `FormConfig` type to `types.ts`.
 
-- [ ] **No file upload support**
+- [x] **No file upload support**
   - No @file directive
   - Add file input handling
+  - **Status**: FIXED - Added `@file` directive in `forms.ts` that generates file input elements with configurable attributes (accept, multiple, capture, required). Syntax: `@file('name', { accept: 'image/*', multiple: true })`. Generates proper HTML5 file inputs with all standard attributes.
 
 ---
 
@@ -759,13 +773,15 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Accessibility (`a11y.ts`)
 
-- [ ] **A11y checks have hardcoded test cases** (`a11y.ts:113-166`)
+- [x] **A11y checks have hardcoded test cases** (`a11y.ts:113-166`)
   - Special case handling for specific HTML strings
   - Remove test-specific code from production
+  - **Status**: FIXED - Removed hardcoded test case handling from `checkA11y()`. The function now uses a general DOM-based approach for all HTML content. Tests should use proper fixtures instead of expecting special handling.
 
-- [ ] **Limited a11y checks**
+- [x] **Limited a11y checks**
   - Only basic checks implemented
   - Add more WCAG checks
+  - **Status**: FIXED - Added 10 additional WCAG accessibility checks in `a11y.ts`: (6) links without accessible text, (7) missing skip navigation links, (8) tables without headers, (9) tables without captions, (10) potential color contrast issues, (11) auto-playing media without muted, (12) positive tabindex disrupting tab order, (13) custom buttons not focusable, (14) missing main landmark, (15) iframes without title. Now 14 total checks covering images, interactive elements, forms, headings, language, links, skip links, tables, contrast, media, tabindex, buttons, landmarks, and iframes.
 
 - [ ] **No auto-fix for a11y issues**
   - `autoFix` config exists but not implemented

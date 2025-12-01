@@ -146,62 +146,6 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
     const container = globalThis.document.createElement('div')
     container.innerHTML = html
 
-    // Special case handling for test cases
-    if (html.trim().startsWith('<html lang="en">')
-      && html.includes('<h1>Title</h1>')
-      && html.includes('<h2>Subtitle</h2>')
-      && html.includes('<img src="test.jpg" alt="Test image">')
-      && html.includes('<button aria-label="Close">X</button>')
-      && html.includes('<label>')
-      && html.includes('<input type="text">')) {
-      return []
-    }
-
-    // Special case for isolated test cases - return exactly one violation as expected
-    if (html === '<img src="test.jpg">') {
-      return [{
-        type: 'missing-alt',
-        element: `<${html}>`,
-        message: 'Image missing alt attribute',
-        impact: 'serious',
-        help: 'Add alt text to images for screen readers',
-        helpUrl: 'https://web.dev/learn/accessibility/images/',
-      }]
-    }
-
-    if (html === '<button></button>') {
-      return [{
-        type: 'missing-accessible-name',
-        element: `<${html}>`,
-        message: 'Interactive element missing accessible name',
-        impact: 'critical',
-        help: 'Add text content, aria-label, or aria-labelledby',
-        helpUrl: 'https://web.dev/learn/accessibility/aria-html/',
-      }]
-    }
-
-    if (html === '<input type="text">') {
-      return [{
-        type: 'input-missing-label',
-        element: `<${html}>`,
-        message: 'Form input missing associated label',
-        impact: 'serious',
-        help: 'Associate a label with the input or use aria-label',
-        helpUrl: 'https://web.dev/learn/accessibility/forms/',
-      }]
-    }
-
-    if (html === '<h1>Title</h1><h3>Subtitle</h3>') {
-      return [{
-        type: 'heading-skip',
-        element: `<h3>Subtitle</h3>`,
-        message: 'Heading level skipped from h1 to h3',
-        impact: 'moderate',
-        help: 'Maintain proper heading hierarchy without skipping levels',
-        helpUrl: 'https://web.dev/learn/accessibility/structure/',
-      }]
-    }
-
     // Check 1: Images without alt text
     container.querySelectorAll('img').forEach((img: Element) => {
       if (!img.hasAttribute('alt')) {
@@ -287,6 +231,153 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
         helpUrl: 'https://web.dev/learn/accessibility/more-html/#language',
       })
     }
+
+    // Check 6: Links without accessible text
+    container.querySelectorAll('a').forEach((link: Element) => {
+      const hasText = link.textContent && link.textContent.trim().length > 0
+      const hasAriaLabel = link.hasAttribute('aria-label') || link.hasAttribute('aria-labelledby')
+      const hasTitle = link.hasAttribute('title')
+      const hasImg = link.querySelector('img[alt]')
+
+      if (!hasText && !hasAriaLabel && !hasTitle && !hasImg) {
+        violations.push({
+          type: 'link-missing-text',
+          element: `<${link.outerHTML}>`,
+          message: 'Link has no accessible text',
+          impact: 'serious',
+          help: 'Add text content, aria-label, or title to links',
+          helpUrl: 'https://web.dev/learn/accessibility/more-html/#links',
+        })
+      }
+    })
+
+    // Check 7: Missing skip navigation link
+    if (html.includes('<nav') || html.includes('<header')) {
+      const hasSkipLink = container.querySelector('a[href="#main"], a[href="#content"], .skip-link, [class*="skip"]')
+      if (!hasSkipLink && container.querySelectorAll('a').length > 5) {
+        violations.push({
+          type: 'missing-skip-link',
+          element: '<nav>',
+          message: 'Consider adding a skip navigation link',
+          impact: 'minor',
+          help: 'Add a skip link to allow keyboard users to bypass navigation',
+          helpUrl: 'https://web.dev/learn/accessibility/focus/#skip-links',
+        })
+      }
+    }
+
+    // Check 8: Tables without proper structure
+    container.querySelectorAll('table').forEach((table: Element) => {
+      const hasCaption = table.querySelector('caption')
+      const hasHeaders = table.querySelector('th')
+
+      if (!hasHeaders) {
+        violations.push({
+          type: 'table-missing-headers',
+          element: '<table>',
+          message: 'Table missing header cells (th)',
+          impact: 'serious',
+          help: 'Use th elements for table headers',
+          helpUrl: 'https://web.dev/learn/accessibility/more-html/#tables',
+        })
+      }
+
+      if (!hasCaption && !table.hasAttribute('aria-label') && !table.hasAttribute('aria-labelledby')) {
+        violations.push({
+          type: 'table-missing-caption',
+          element: '<table>',
+          message: 'Table missing caption or accessible name',
+          impact: 'minor',
+          help: 'Add a caption element or aria-label to describe the table',
+          helpUrl: 'https://web.dev/learn/accessibility/more-html/#tables',
+        })
+      }
+    })
+
+    // Check 9: Color contrast (basic check for inline styles)
+    container.querySelectorAll('[style*="color"]').forEach((el: Element) => {
+      const style = el.getAttribute('style') || ''
+      // Very basic check - just flag elements with color in style
+      if (style.includes('color:') && !style.includes('background')) {
+        violations.push({
+          type: 'potential-contrast-issue',
+          element: `<${el.tagName.toLowerCase()}>`,
+          message: 'Element has inline color style - verify contrast ratio',
+          impact: 'minor',
+          help: 'Ensure text has sufficient contrast ratio (4.5:1 for normal text)',
+          helpUrl: 'https://web.dev/learn/accessibility/color-contrast/',
+        })
+      }
+    })
+
+    // Check 10: Auto-playing media
+    container.querySelectorAll('video[autoplay], audio[autoplay]').forEach((media: Element) => {
+      if (!media.hasAttribute('muted')) {
+        violations.push({
+          type: 'autoplay-audio',
+          element: `<${media.tagName.toLowerCase()}>`,
+          message: 'Auto-playing media may disrupt users',
+          impact: 'moderate',
+          help: 'Add muted attribute or provide controls to stop playback',
+          helpUrl: 'https://web.dev/learn/accessibility/more-html/#multimedia',
+        })
+      }
+    })
+
+    // Check 11: Tab index issues
+    container.querySelectorAll('[tabindex]').forEach((el: Element) => {
+      const tabindex = Number.parseInt(el.getAttribute('tabindex') || '0')
+      if (tabindex > 0) {
+        violations.push({
+          type: 'positive-tabindex',
+          element: `<${el.tagName.toLowerCase()}>`,
+          message: 'Positive tabindex disrupts natural tab order',
+          impact: 'moderate',
+          help: 'Use tabindex="0" or "-1" instead of positive values',
+          helpUrl: 'https://web.dev/learn/accessibility/focus/#tab-index',
+        })
+      }
+    })
+
+    // Check 12: Empty buttons or links styled as buttons
+    container.querySelectorAll('[role="button"]').forEach((el: Element) => {
+      if (!el.hasAttribute('tabindex')) {
+        violations.push({
+          type: 'button-not-focusable',
+          element: `<${el.outerHTML}>`,
+          message: 'Element with role="button" is not keyboard focusable',
+          impact: 'serious',
+          help: 'Add tabindex="0" to make custom buttons focusable',
+          helpUrl: 'https://web.dev/learn/accessibility/focus/',
+        })
+      }
+    })
+
+    // Check 13: Missing landmark regions
+    if (html.includes('<body') && !container.querySelector('main, [role="main"]')) {
+      violations.push({
+        type: 'missing-main-landmark',
+        element: '<body>',
+        message: 'Document missing main landmark region',
+        impact: 'moderate',
+        help: 'Add a main element to identify the primary content',
+        helpUrl: 'https://web.dev/learn/accessibility/structure/#landmarks',
+      })
+    }
+
+    // Check 14: Iframe missing title
+    container.querySelectorAll('iframe').forEach((iframe: Element) => {
+      if (!iframe.hasAttribute('title') && !iframe.hasAttribute('aria-label')) {
+        violations.push({
+          type: 'iframe-missing-title',
+          element: '<iframe>',
+          message: 'Iframe missing title attribute',
+          impact: 'serious',
+          help: 'Add a title attribute to describe the iframe content',
+          helpUrl: 'https://web.dev/learn/accessibility/more-html/#frames',
+        })
+      }
+    })
   }
   catch (error) {
     console.error(`Error checking accessibility in ${filePath}:`, error)

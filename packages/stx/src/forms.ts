@@ -7,9 +7,17 @@
  * - `@form` / `@endform` - Form wrapper with auto CSRF
  * - `@input`, `@textarea`, `@select` - Form controls with validation
  * - `@checkbox`, `@radio` - Check inputs with state binding
+ * - `@file` - File upload input with accept and multiple support
  * - `@label` - Associated labels
  * - `@error` / `@enderror` - Validation error display
  * - `@validate` - Add validation rules with HTML5 attributes
+ *
+ * ## File Upload Example
+ *
+ * ```html
+ * @file('avatar', { accept: 'image/*' })
+ * @file('documents', { accept: '.pdf,.doc,.docx', multiple: true })
+ * ```
  *
  * ## Validation Rules
  *
@@ -371,6 +379,53 @@ export function processFormInputDirectives(
       const attrsWithoutClass = attrs.replace(/class=['"][^'"]+['"]/i, '')
 
       return `<input type="radio" name="${name}" value="${value}" class="${className}"${isChecked ? ' checked' : ''}${attrsWithoutClass ? ` ${attrsWithoutClass}` : ''}>`
+    },
+  )
+
+  // Process @file directive
+  result = result.replace(
+    /@file\(\s*['"]([^'"]+)['"]\s*(?:,\s*\{([^}]+)\})?\)/g,
+    (_match, name, attributes = '') => {
+      const attrs = parseAttributes(attributes)
+
+      // Extract accept attribute for file types
+      const acceptMatch = attrs.match(/accept=['"]([^'"]+)['"]/i)
+      const accept = acceptMatch ? acceptMatch[1] : ''
+
+      // Extract multiple attribute
+      const isMultiple = attrs.includes('multiple')
+
+      // Check if this field has an error and build class string
+      const hasError = hasFieldError(name, context)
+      const classMatch = attrs.match(/class=['"]([^'"]+)['"]/i)
+      const className = buildClassString(classMatch ? classMatch[1] : '', classes.input, hasError, classes.inputError)
+
+      // Remove handled attributes to avoid duplication
+      const attrsWithoutHandled = attrs
+        .replace(/class=['"][^'"]+['"]/gi, '')
+        .replace(/accept=['"][^'"]+['"]/gi, '')
+        .replace(/\bmultiple\b/gi, '')
+        .trim()
+
+      // Build the file input element
+      const parts = [
+        `<input type="file" name="${name}"`,
+        `class="${className}"`,
+      ]
+
+      if (accept) {
+        parts.push(`accept="${accept}"`)
+      }
+
+      if (isMultiple) {
+        parts.push('multiple')
+      }
+
+      if (attrsWithoutHandled) {
+        parts.push(attrsWithoutHandled)
+      }
+
+      return `${parts.join(' ')}>`
     },
   )
 
@@ -949,4 +1004,400 @@ export function processValidateDirective(
       return `<!-- @validate:${field}:${rules} -->${attrs.length > 0 ? `<!-- attrs:${attrs.join(' ')} -->` : ''}`
     },
   )
+}
+
+// =============================================================================
+// Enhanced Validation System
+// =============================================================================
+
+/**
+ * Enhanced validation rule definition with HTML5 support
+ */
+export interface EnhancedValidationRule {
+  /** Rule name */
+  name: string
+  /** Validation function - returns true if valid, error message if invalid */
+  validate: (value: unknown, params: string[], allValues: Record<string, unknown>) => true | string
+  /** HTML5 attribute generator */
+  toHtml5?: (params: string[]) => string[]
+  /** Default error message with {{param}} placeholders */
+  message: string
+}
+
+/**
+ * Enhanced validation rules registry with full validation support
+ */
+export const enhancedValidationRules: Record<string, EnhancedValidationRule> = {
+  required: {
+    name: 'required',
+    validate: (value) => {
+      if (value === null || value === undefined || value === '')
+        return 'This field is required'
+      if (Array.isArray(value) && value.length === 0)
+        return 'This field is required'
+      return true
+    },
+    toHtml5: () => ['required'],
+    message: 'This field is required',
+  },
+
+  email: {
+    name: 'email',
+    validate: (value) => {
+      if (!value)
+        return true // Use required rule for empty check
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      return emailRegex.test(String(value)) || 'Please enter a valid email address'
+    },
+    toHtml5: () => ['type="email"'],
+    message: 'Please enter a valid email address',
+  },
+
+  url: {
+    name: 'url',
+    validate: (value) => {
+      if (!value)
+        return true
+      try {
+        const url = new URL(String(value))
+        return url.protocol.startsWith('http') || 'Please enter a valid URL'
+      }
+      catch {
+        return 'Please enter a valid URL'
+      }
+    },
+    toHtml5: () => ['type="url"'],
+    message: 'Please enter a valid URL',
+  },
+
+  numeric: {
+    name: 'numeric',
+    validate: (value) => {
+      if (!value)
+        return true
+      return !Number.isNaN(Number(value)) || 'Please enter a number'
+    },
+    toHtml5: () => ['type="number"'],
+    message: 'Please enter a number',
+  },
+
+  integer: {
+    name: 'integer',
+    validate: (value) => {
+      if (!value)
+        return true
+      const num = Number(value)
+      return (Number.isInteger(num)) || 'Please enter a whole number'
+    },
+    toHtml5: () => ['type="number"', 'step="1"'],
+    message: 'Please enter a whole number',
+  },
+
+  alpha: {
+    name: 'alpha',
+    validate: (value) => {
+      if (!value)
+        return true
+      return /^[a-z]+$/i.test(String(value)) || 'Please enter only letters'
+    },
+    toHtml5: () => ['pattern="[a-zA-Z]+"'],
+    message: 'Please enter only letters',
+  },
+
+  alphanumeric: {
+    name: 'alphanumeric',
+    validate: (value) => {
+      if (!value)
+        return true
+      return /^[a-z0-9]+$/i.test(String(value)) || 'Please enter only letters and numbers'
+    },
+    toHtml5: () => ['pattern="[a-zA-Z0-9]+"'],
+    message: 'Please enter only letters and numbers',
+  },
+
+  min: {
+    name: 'min',
+    validate: (value, params) => {
+      if (!value)
+        return true
+      const min = Number(params[0])
+      if (typeof value === 'string')
+        return value.length >= min || `Must be at least ${min} characters`
+      if (typeof value === 'number')
+        return value >= min || `Must be at least ${min}`
+      if (Array.isArray(value))
+        return value.length >= min || `Must have at least ${min} items`
+      return true
+    },
+    toHtml5: params => [`minlength="${params[0]}"`, `min="${params[0]}"`],
+    message: 'Must be at least {{param}} characters',
+  },
+
+  max: {
+    name: 'max',
+    validate: (value, params) => {
+      if (!value)
+        return true
+      const max = Number(params[0])
+      if (typeof value === 'string')
+        return value.length <= max || `Must be no more than ${max} characters`
+      if (typeof value === 'number')
+        return value <= max || `Must be no more than ${max}`
+      if (Array.isArray(value))
+        return value.length <= max || `Must have no more than ${max} items`
+      return true
+    },
+    toHtml5: params => [`maxlength="${params[0]}"`, `max="${params[0]}"`],
+    message: 'Must be no more than {{param}} characters',
+  },
+
+  between: {
+    name: 'between',
+    validate: (value, params) => {
+      if (!value)
+        return true
+      const [min, max] = params.map(Number)
+      if (typeof value === 'string')
+        return (value.length >= min && value.length <= max) || `Must be between ${min} and ${max} characters`
+      if (typeof value === 'number')
+        return (value >= min && value <= max) || `Must be between ${min} and ${max}`
+      return true
+    },
+    toHtml5: params => [`minlength="${params[0]}"`, `maxlength="${params[1]}"`],
+    message: 'Must be between {{min}} and {{max}}',
+  },
+
+  confirmed: {
+    name: 'confirmed',
+    validate: (value, _params, allValues) => {
+      // Find the confirmation field (assumes fieldName_confirmation naming)
+      const fieldNames = Object.keys(allValues)
+      for (const key of fieldNames) {
+        if (key.endsWith('_confirmation') && allValues[key] === value)
+          return true
+      }
+      return 'Confirmation does not match'
+    },
+    message: 'Confirmation does not match',
+  },
+
+  in: {
+    name: 'in',
+    validate: (value, params) => {
+      if (!value)
+        return true
+      return params.includes(String(value)) || `Must be one of: ${params.join(', ')}`
+    },
+    message: 'Must be one of: {{values}}',
+  },
+
+  notIn: {
+    name: 'notIn',
+    validate: (value, params) => {
+      if (!value)
+        return true
+      return !params.includes(String(value)) || `Must not be: ${params.join(', ')}`
+    },
+    message: 'Must not be: {{values}}',
+  },
+
+  regex: {
+    name: 'regex',
+    validate: (value, params) => {
+      if (!value)
+        return true
+      try {
+        const regex = new RegExp(params[0])
+        return regex.test(String(value)) || 'Invalid format'
+      }
+      catch {
+        return 'Invalid format'
+      }
+    },
+    toHtml5: params => [`pattern="${params[0]}"`],
+    message: 'Invalid format',
+  },
+
+  date: {
+    name: 'date',
+    validate: (value) => {
+      if (!value)
+        return true
+      const date = new Date(String(value))
+      return !Number.isNaN(date.getTime()) || 'Please enter a valid date'
+    },
+    toHtml5: () => ['type="date"'],
+    message: 'Please enter a valid date',
+  },
+
+  before: {
+    name: 'before',
+    validate: (value, params) => {
+      if (!value)
+        return true
+      const inputDate = new Date(String(value))
+      const beforeDate = new Date(params[0])
+      return inputDate < beforeDate || `Must be before ${params[0]}`
+    },
+    toHtml5: params => [`max="${params[0]}"`],
+    message: 'Must be before {{date}}',
+  },
+
+  after: {
+    name: 'after',
+    validate: (value, params) => {
+      if (!value)
+        return true
+      const inputDate = new Date(String(value))
+      const afterDate = new Date(params[0])
+      return inputDate > afterDate || `Must be after ${params[0]}`
+    },
+    toHtml5: params => [`min="${params[0]}"`],
+    message: 'Must be after {{date}}',
+  },
+
+  size: {
+    name: 'size',
+    validate: (value, params) => {
+      if (!value)
+        return true
+      const size = Number(params[0])
+      if (typeof value === 'string')
+        return value.length === size || `Must be exactly ${size} characters`
+      if (Array.isArray(value))
+        return value.length === size || `Must have exactly ${size} items`
+      return true
+    },
+    message: 'Must be exactly {{size}}',
+  },
+
+  phone: {
+    name: 'phone',
+    validate: (value) => {
+      if (!value)
+        return true
+      // Basic international phone regex
+      const phoneRegex = /^\+?\(?\d{1,4}\)?[-\s./\d]*$/
+      return phoneRegex.test(String(value)) || 'Please enter a valid phone number'
+    },
+    toHtml5: () => ['type="tel"', 'pattern="\\+?\\(?\\d{1,4}\\)?[-\\s./\\d]*"'],
+    message: 'Please enter a valid phone number',
+  },
+}
+
+/**
+ * Register a custom enhanced validation rule
+ */
+export function registerEnhancedValidationRule(rule: EnhancedValidationRule): void {
+  enhancedValidationRules[rule.name] = rule
+}
+
+/**
+ * Validate a single value against enhanced rules
+ */
+export function validateValueEnhanced(
+  value: unknown,
+  rules: string,
+  allValues: Record<string, unknown> = {},
+): { valid: boolean, errors: string[] } {
+  const errors: string[] = []
+  const ruleList = rules.split('|').map(r => r.trim())
+
+  for (const ruleStr of ruleList) {
+    const parsed = parseValidationRule(ruleStr)
+    const ruleDef = enhancedValidationRules[parsed.name]
+
+    if (!ruleDef) {
+      console.warn(`Unknown validation rule: ${parsed.name}`)
+      continue
+    }
+
+    const result = ruleDef.validate(value, parsed.params || [], allValues)
+    if (result !== true) {
+      errors.push(result)
+    }
+  }
+
+  return { valid: errors.length === 0, errors }
+}
+
+/**
+ * Validate multiple values with enhanced validation
+ */
+export function validateFormEnhanced(
+  values: Record<string, unknown>,
+  rules: Record<string, string>,
+): { valid: boolean, errors: Record<string, string[]> } {
+  const errors: Record<string, string[]> = {}
+  let valid = true
+
+  for (const [field, fieldRules] of Object.entries(rules)) {
+    const result = validateValueEnhanced(values[field], fieldRules, values)
+    if (!result.valid) {
+      valid = false
+      errors[field] = result.errors
+    }
+  }
+
+  return { valid, errors }
+}
+
+/**
+ * Generate client-side validation script for a form
+ */
+export function generateValidationScript(formId: string, rules: Record<string, string>): string {
+  const rulesJson = JSON.stringify(rules)
+
+  return `
+<script>
+(function() {
+  const form = document.getElementById('${formId}');
+  if (!form) return;
+
+  const rules = ${rulesJson};
+  const validators = {
+    required: (v) => v !== null && v !== undefined && v !== '' ? true : 'This field is required',
+    email: (v) => !v || /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v) ? true : 'Please enter a valid email',
+    url: (v) => { if (!v) return true; try { new URL(v); return true; } catch { return 'Please enter a valid URL'; } },
+    numeric: (v) => !v || !isNaN(Number(v)) ? true : 'Please enter a number',
+    integer: (v) => !v || Number.isInteger(Number(v)) ? true : 'Please enter a whole number',
+    min: (v, p) => !v || (typeof v === 'string' ? v.length >= p : v >= p) ? true : 'Too short/small',
+    max: (v, p) => !v || (typeof v === 'string' ? v.length <= p : v <= p) ? true : 'Too long/large',
+    regex: (v, p) => !v || new RegExp(p).test(v) ? true : 'Invalid format',
+  };
+
+  form.addEventListener('submit', function(e) {
+    let valid = true;
+    const errors = {};
+
+    for (const [field, fieldRules] of Object.entries(rules)) {
+      const input = form.querySelector('[name="' + field + '"]');
+      if (!input) continue;
+
+      const value = input.value;
+      const ruleList = fieldRules.split('|');
+
+      for (const rule of ruleList) {
+        const [name, param] = rule.split(':');
+        const validator = validators[name];
+        if (validator) {
+          const result = validator(value, param);
+          if (result !== true) {
+            valid = false;
+            errors[field] = errors[field] || [];
+            errors[field].push(result);
+            input.classList.add('is-invalid');
+            break;
+          }
+        }
+      }
+    }
+
+    if (!valid) {
+      e.preventDefault();
+      console.log('Validation errors:', errors);
+    }
+  });
+})();
+</script>`.trim()
 }

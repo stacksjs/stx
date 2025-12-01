@@ -732,12 +732,40 @@ export const defaultPerformanceBudgets: Record<string, PerformanceBudget> = {
   buildWebComponents: { maxTime: 1000, warnThreshold: 0.8, action: 'warn' },
 }
 
-// Global performance monitor instance
-export const performanceMonitor: PerformanceMonitor = new PerformanceMonitor()
+// Lazy-loaded performance monitor instance
+let _performanceMonitor: PerformanceMonitor | null = null
+
+/**
+ * Get the global performance monitor instance (lazy-loaded)
+ * This avoids instantiating the monitor until it's actually needed
+ */
+export function getPerformanceMonitor(): PerformanceMonitor {
+  if (!_performanceMonitor) {
+    _performanceMonitor = new PerformanceMonitor()
+  }
+  return _performanceMonitor
+}
+
+/**
+ * Global performance monitor instance
+ * @deprecated Use getPerformanceMonitor() for lazy loading
+ */
+export const performanceMonitor: PerformanceMonitor = new Proxy({} as PerformanceMonitor, {
+  get(_target, prop) {
+    return (getPerformanceMonitor() as any)[prop]
+  },
+})
 
 /**
  * Apply default performance budgets to the monitor
  */
-export function applyDefaultBudgets(monitor: PerformanceMonitor = performanceMonitor): void {
+export function applyDefaultBudgets(monitor: PerformanceMonitor = getPerformanceMonitor()): void {
   monitor.setBudgets(defaultPerformanceBudgets)
+}
+
+/**
+ * Reset the performance monitor instance (useful for testing)
+ */
+export function resetPerformanceMonitor(): void {
+  _performanceMonitor = null
 }

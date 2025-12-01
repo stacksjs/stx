@@ -7,6 +7,9 @@
  * - Edge case test generators
  * - Snapshot testing support
  * - Common test fixtures
+ * - Standardized mocking utilities
+ * - DOM test helpers
+ * - Async test utilities
  *
  * @module test-utils
  */
@@ -703,4 +706,509 @@ export function createSnapshotManager(
         .map(f => f.replace('.snap.html', ''))
     },
   }
+}
+
+// =============================================================================
+// Mock Data Factories
+// =============================================================================
+
+/**
+ * Mock user data interface
+ */
+export interface MockUser {
+  id: number
+  name: string
+  email: string
+  role?: string
+}
+
+/**
+ * Create mock user data
+ */
+export function createMockUser(overrides: Partial<MockUser> = {}): MockUser {
+  return {
+    id: Math.floor(Math.random() * 10000),
+    name: 'Test User',
+    email: 'test@example.com',
+    role: 'User',
+    ...overrides,
+  }
+}
+
+/**
+ * Create multiple mock users
+ */
+export function createMockUsers(count: number): MockUser[] {
+  return Array.from({ length: count }, (_, i) => createMockUser({
+    id: i + 1,
+    name: `User ${i + 1}`,
+    email: `user${i + 1}@example.com`,
+  }))
+}
+
+// =============================================================================
+// Mock Request/Response Utilities
+// =============================================================================
+
+export interface MockRequestOptions {
+  method?: string
+  url?: string
+  headers?: Record<string, string>
+  body?: unknown
+}
+
+/**
+ * Create a mock HTTP request
+ */
+export function createMockRequest(options: MockRequestOptions = {}): Request {
+  return new Request(options.url || 'http://localhost/', {
+    method: options.method || 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  })
+}
+
+/**
+ * Create a mock JSON response
+ */
+export function createMockResponse(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+// =============================================================================
+// Test Directory Management
+// =============================================================================
+
+/**
+ * Create a temporary test directory with automatic cleanup
+ */
+export async function createTestDirectory(basePath: string, subdirs: string[] = []): Promise<{
+  cleanup: () => Promise<void>
+  path: string
+  subdirs: Record<string, string>
+}> {
+  const testDir = path.join(basePath, `test-${Date.now()}`)
+  await fs.promises.mkdir(testDir, { recursive: true })
+
+  const subdirPaths: Record<string, string> = {}
+  for (const subdir of subdirs) {
+    const subdirPath = path.join(testDir, subdir)
+    await fs.promises.mkdir(subdirPath, { recursive: true })
+    subdirPaths[subdir] = subdirPath
+  }
+
+  return {
+    path: testDir,
+    subdirs: subdirPaths,
+    cleanup: async () => {
+      try {
+        await fs.promises.rm(testDir, { recursive: true, force: true })
+      }
+      catch {
+        // Ignore cleanup errors
+      }
+    },
+  }
+}
+
+/**
+ * Standard cleanup function for test directories
+ */
+export async function cleanupTestDirectory(dirPath: string): Promise<void> {
+  try {
+    await fs.promises.rm(dirPath, { recursive: true, force: true })
+  }
+  catch {
+    // Ignore cleanup errors
+  }
+}
+
+/**
+ * Create a test template file
+ */
+export async function createTestTemplate(
+  dir: string,
+  filename: string,
+  content: string,
+): Promise<string> {
+  const filePath = path.join(dir, filename)
+  await Bun.write(filePath, content)
+  return filePath
+}
+
+// =============================================================================
+// DOM Test Helpers
+// =============================================================================
+
+/**
+ * Set up document body with HTML content
+ */
+export function setupDom(html: string): void {
+  if (globalThis.document) {
+    document.body.innerHTML = html
+  }
+}
+
+/**
+ * Clear document body
+ */
+export function clearDom(): void {
+  if (globalThis.document) {
+    document.body.innerHTML = ''
+  }
+}
+
+/**
+ * Query and assert element exists
+ */
+export function queryElement<T extends Element>(selector: string): T {
+  const element = document.querySelector<T>(selector)
+  if (!element) {
+    throw new Error(`Element not found: ${selector}`)
+  }
+  return element
+}
+
+/**
+ * Safely dispatch event on element (handles happy-dom quirks)
+ */
+export function dispatchEvent(element: Element, event: Event): boolean {
+  try {
+    if ('__dispatchEvent_safe' in element) {
+      return (element as Element & { __dispatchEvent_safe: (e: Event) => boolean }).__dispatchEvent_safe(event)
+    }
+    return element.dispatchEvent(event)
+  }
+  catch {
+    // Fallback for happy-dom issues
+    if (element instanceof HTMLElement) {
+      element.click()
+      return true
+    }
+    return false
+  }
+}
+
+/**
+ * Wait for a condition to be true
+ */
+export async function waitFor(
+  condition: () => boolean,
+  timeout = 1000,
+  interval = 10,
+): Promise<void> {
+  const start = Date.now()
+  while (!condition()) {
+    if (Date.now() - start > timeout) {
+      throw new Error('waitFor timeout exceeded')
+    }
+    await new Promise(resolve => setTimeout(resolve, interval))
+  }
+}
+
+/**
+ * Wait for specified milliseconds
+ */
+export function wait(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+// =============================================================================
+// Mock Function Utilities
+// =============================================================================
+
+/**
+ * Mock function interface that tracks calls
+ */
+export interface MockFn<Args extends unknown[] = unknown[], R = unknown> {
+  (...args: Args): R
+  calls: Args[]
+  returnValue: R | undefined
+  mockReturnValue: (value: R) => void
+  mockImplementation: (impl: (...args: Args) => R) => void
+  reset: () => void
+  callCount: () => number
+  lastCall: () => Args | undefined
+  wasCalledWith: (...args: Args) => boolean
+}
+
+/**
+ * Create a mock function that tracks calls
+ *
+ * @example
+ * ```typescript
+ * const mockFetch = createMockFn<[string], Promise<Response>>()
+ * mockFetch.mockReturnValue(Promise.resolve(new Response('ok')))
+ *
+ * await mockFetch('/api/users')
+ *
+ * expect(mockFetch.callCount()).toBe(1)
+ * expect(mockFetch.wasCalledWith('/api/users')).toBe(true)
+ * ```
+ */
+export function createMockFn<Args extends unknown[] = unknown[], R = unknown>(
+  initialImpl?: (...args: Args) => R,
+): MockFn<Args, R> {
+  let impl = initialImpl
+  let returnValue: R | undefined
+
+  const fn = ((...args: Args): R => {
+    fn.calls.push(args)
+    if (impl) {
+      return impl(...args)
+    }
+    return returnValue as R
+  }) as MockFn<Args, R>
+
+  fn.calls = []
+  fn.returnValue = returnValue
+  fn.mockReturnValue = (value: R) => {
+    returnValue = value
+    fn.returnValue = value
+  }
+  fn.mockImplementation = (newImpl: (...args: Args) => R) => {
+    impl = newImpl
+  }
+  fn.reset = () => {
+    fn.calls = []
+    returnValue = undefined
+    fn.returnValue = undefined
+  }
+  fn.callCount = () => fn.calls.length
+  fn.lastCall = () => fn.calls[fn.calls.length - 1]
+  fn.wasCalledWith = (...expectedArgs: Args) => {
+    return fn.calls.some(callArgs =>
+      callArgs.length === expectedArgs.length
+      && callArgs.every((arg, i) => arg === expectedArgs[i]),
+    )
+  }
+
+  return fn
+}
+
+// =============================================================================
+// Async Test Utilities
+// =============================================================================
+
+/**
+ * Deferred promise interface for async test control
+ */
+export interface Deferred<T> {
+  promise: Promise<T>
+  resolve: (value: T) => void
+  reject: (error: Error) => void
+}
+
+/**
+ * Create a deferred promise for async test control
+ *
+ * @example
+ * ```typescript
+ * const deferred = createDeferred<string>()
+ *
+ * // Start async operation
+ * someAsyncOperation(deferred.promise)
+ *
+ * // Later, resolve it
+ * deferred.resolve('result')
+ * ```
+ */
+export function createDeferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void
+  let reject!: (error: Error) => void
+
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+
+  return { promise, resolve, reject }
+}
+
+/**
+ * Create a mock async function with controllable timing
+ */
+export function createAsyncMock<T>(
+  delay: number,
+  result: T | (() => T),
+): () => Promise<T> {
+  return async () => {
+    await wait(delay)
+    return typeof result === 'function' ? (result as () => T)() : result
+  }
+}
+
+/**
+ * Run a function with a timeout
+ */
+export async function withTimeout<T>(
+  fn: () => Promise<T>,
+  timeout: number,
+  message = 'Operation timed out',
+): Promise<T> {
+  return Promise.race([
+    fn(),
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(message)), timeout),
+    ),
+  ])
+}
+
+// =============================================================================
+// Form Test Helpers
+// =============================================================================
+
+/**
+ * Fill form inputs with test data
+ */
+export function fillForm(
+  formSelector: string,
+  data: Record<string, string>,
+): void {
+  const form = document.querySelector(formSelector)
+  if (!form) {
+    throw new Error(`Form not found: ${formSelector}`)
+  }
+
+  for (const [name, value] of Object.entries(data)) {
+    const input = form.querySelector(`[name="${name}"], #${name}`) as HTMLInputElement
+    if (input) {
+      input.value = value
+      dispatchEvent(input, new Event('input', { bubbles: true }))
+      dispatchEvent(input, new Event('change', { bubbles: true }))
+    }
+  }
+}
+
+/**
+ * Submit a form and wait for result
+ */
+export async function submitForm(formSelector: string, waitMs = 50): Promise<void> {
+  const form = document.querySelector(formSelector) as HTMLFormElement
+  if (!form) {
+    throw new Error(`Form not found: ${formSelector}`)
+  }
+
+  const submitButton = form.querySelector('[type="submit"]') as HTMLButtonElement
+  if (submitButton) {
+    submitButton.click()
+  }
+  else {
+    dispatchEvent(form, new Event('submit', { bubbles: true }))
+  }
+
+  await wait(waitMs)
+}
+
+// =============================================================================
+// Validation Test Helpers
+// =============================================================================
+
+export interface ValidationTestCase {
+  value: unknown
+  rules: string
+  expected: {
+    valid: boolean
+    errorContains?: string
+  }
+}
+
+/**
+ * Common validation test cases
+ */
+export const validationTestCases: Record<string, ValidationTestCase[]> = {
+  required: [
+    { value: '', rules: 'required', expected: { valid: false, errorContains: 'required' } },
+    { value: 'test', rules: 'required', expected: { valid: true } },
+    { value: null, rules: 'required', expected: { valid: false } },
+  ],
+  email: [
+    { value: 'invalid', rules: 'email', expected: { valid: false, errorContains: 'email' } },
+    { value: 'test@example.com', rules: 'email', expected: { valid: true } },
+    { value: '', rules: 'email', expected: { valid: true } },
+  ],
+  numeric: [
+    { value: 'abc', rules: 'numeric', expected: { valid: false } },
+    { value: '123', rules: 'numeric', expected: { valid: true } },
+    { value: '12.34', rules: 'numeric', expected: { valid: true } },
+  ],
+}
+
+// =============================================================================
+// Common Template Snippets
+// =============================================================================
+
+/**
+ * Common test template snippets
+ */
+export const templateSnippets = {
+  basicHtml: `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test</title>
+</head>
+<body>
+  <div id="app"></div>
+</body>
+</html>`,
+
+  withScript: (scriptContent: string) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test</title>
+  <script>
+${scriptContent}
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+</body>
+</html>`,
+
+  withDirective: (directive: string, body: string) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test</title>
+</head>
+<body>
+  ${directive}
+    ${body}
+  @end${directive.replace('@', '').split('(')[0]}
+</body>
+</html>`,
+}
+
+// =============================================================================
+// Snapshot Helpers
+// =============================================================================
+
+/**
+ * Normalize HTML for snapshot comparison
+ */
+export function normalizeHtml(html: string): string {
+  return html
+    .replace(/\s+/g, ' ')
+    .replace(/>\s+</g, '><')
+    .replace(/^\s+|\s+$/g, '')
+    .trim()
+}
+
+/**
+ * Extract body content from full HTML document
+ */
+export function extractBodyContent(html: string): string {
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i)
+  return bodyMatch ? normalizeHtml(bodyMatch[1]) : normalizeHtml(html)
 }

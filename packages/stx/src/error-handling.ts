@@ -2,6 +2,151 @@ import path from 'node:path'
 import process from 'node:process'
 
 // =============================================================================
+// Error Message Localization (i18n)
+// =============================================================================
+
+/**
+ * Error message template with placeholder support
+ * Placeholders use {{name}} syntax
+ */
+export interface ErrorMessageTemplate {
+  message: string
+  help?: string
+}
+
+/**
+ * Localized error messages by error code
+ */
+export type ErrorMessages = Record<number, ErrorMessageTemplate>
+
+/**
+ * Default English error messages
+ */
+const defaultErrorMessages: ErrorMessages = {
+  // Syntax errors (1000-1099)
+  1001: { message: 'Unclosed directive: {{directive}}', help: 'Make sure to close the directive with the appropriate end tag' },
+  1002: { message: 'Unclosed expression at position {{position}}', help: 'Check for missing closing braces }}' },
+  1003: { message: 'Invalid directive syntax: {{directive}}', help: 'Review the directive documentation for correct syntax' },
+  1004: { message: 'Malformed expression: {{expression}}', help: 'Check for syntax errors in your expression' },
+  1005: { message: 'Unexpected token: {{token}}', help: 'Remove or fix the unexpected token' },
+
+  // Runtime errors (1100-1199)
+  1101: { message: 'Undefined variable: {{variable}}', help: 'Make sure the variable is defined in the template context' },
+  1102: { message: 'Type error: {{details}}', help: 'Check that you are using the correct types' },
+  1103: { message: 'Evaluation error: {{details}}', help: 'Review the expression for errors' },
+  1104: { message: 'Infinite loop detected in {{location}}', help: 'Check your loop conditions' },
+  1105: { message: 'Circular reference detected: {{path}}', help: 'Remove the circular dependency' },
+
+  // Security errors (1200-1299)
+  1201: { message: 'Unsafe expression blocked: {{expression}}', help: 'This expression contains potentially dangerous code' },
+  1202: { message: 'Path traversal attempt blocked: {{path}}', help: 'Use only relative paths within allowed directories' },
+  1203: { message: 'Potential XSS attempt blocked', help: 'Sanitize user input before rendering' },
+  1204: { message: 'Code injection attempt blocked: {{code}}', help: 'Avoid executing dynamic code' },
+
+  // File errors (1300-1399)
+  1301: { message: 'File not found: {{path}}', help: 'Check that the file exists and the path is correct' },
+  1302: { message: 'Error reading file: {{path}}', help: 'Check file permissions and encoding' },
+  1303: { message: 'Invalid file path: {{path}}', help: 'Use a valid file path' },
+  1304: { message: 'Permission denied: {{path}}', help: 'Check file permissions' },
+
+  // Configuration errors (1400-1499)
+  1401: { message: 'Invalid configuration: {{details}}', help: 'Review your stx.config.ts file' },
+  1402: { message: 'Missing required configuration: {{key}}', help: 'Add the required configuration option' },
+  1403: { message: 'Deprecated configuration: {{key}}', help: 'Update to the new configuration format' },
+
+  // Component errors (1500-1599)
+  1501: { message: 'Component not found: {{name}}', help: 'Check that the component exists in your components directory' },
+  1502: { message: 'Invalid props for component {{name}}: {{details}}', help: 'Check the component prop requirements' },
+  1503: { message: 'Error rendering component {{name}}: {{details}}', help: 'Check the component template for errors' },
+
+  // Expression errors (1600-1699)
+  1601: { message: 'Filter not found: {{filter}}', help: 'Register the filter or check the filter name' },
+  1602: { message: 'Invalid arguments for filter {{filter}}: {{details}}', help: 'Check the filter documentation for correct arguments' },
+  1603: { message: 'Expression evaluation timed out', help: 'Simplify the expression or increase the timeout' },
+}
+
+/**
+ * Custom localized error messages
+ */
+let customErrorMessages: ErrorMessages = {}
+
+/**
+ * Current locale for error messages
+ */
+let currentLocale = 'en'
+
+/**
+ * Set the locale for error messages
+ */
+export function setErrorLocale(locale: string): void {
+  currentLocale = locale
+}
+
+/**
+ * Get the current error message locale
+ */
+export function getErrorLocale(): string {
+  return currentLocale
+}
+
+/**
+ * Register custom error messages for a locale
+ * This allows overriding default messages or adding translations
+ *
+ * @example
+ * ```typescript
+ * registerErrorMessages({
+ *   1301: { message: 'Archivo no encontrado: {{path}}', help: 'Verifique que el archivo existe' }
+ * })
+ * ```
+ */
+export function registerErrorMessages(messages: ErrorMessages): void {
+  customErrorMessages = { ...customErrorMessages, ...messages }
+}
+
+/**
+ * Clear custom error messages
+ */
+export function clearErrorMessages(): void {
+  customErrorMessages = {}
+}
+
+/**
+ * Get an error message by code, with placeholder substitution
+ *
+ * @param code - Numeric error code
+ * @param params - Parameters to substitute in the message
+ * @returns Formatted error message
+ */
+export function getErrorMessage(code: number, params: Record<string, string> = {}): ErrorMessageTemplate {
+  const template = customErrorMessages[code] || defaultErrorMessages[code] || {
+    message: `Unknown error (code: ${code})`,
+  }
+
+  // Substitute placeholders
+  let message = template.message
+  let help = template.help
+
+  for (const [key, value] of Object.entries(params)) {
+    const placeholder = `{{${key}}}`
+    message = message.replace(new RegExp(placeholder, 'g'), value)
+    if (help) {
+      help = help.replace(new RegExp(placeholder, 'g'), value)
+    }
+  }
+
+  return { message, help }
+}
+
+/**
+ * Format an error with localized message
+ */
+export function formatLocalizedError(code: number, params: Record<string, string> = {}): string {
+  const { message, help } = getErrorMessage(code, params)
+  return help ? `${message}\n  Help: ${help}` : message
+}
+
+// =============================================================================
 // Error Codes
 // =============================================================================
 
