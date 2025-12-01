@@ -2071,6 +2071,43 @@ else {
     console.log(version)
   })
 
+  // Interactive mode command
+  cli
+    .command('interactive', 'Start interactive REPL mode for template development')
+    .alias('i')
+    .option('--context <file>', 'Load initial context from JSON file')
+    .option('--cwd <directory>', 'Set working directory')
+    .option('--verbose', 'Show verbose output')
+    .action(async (options: { context?: string, cwd?: string, verbose?: boolean }) => {
+      // Dynamically import to avoid loading on every CLI invocation
+      const { startInteractive } = await import('../src/interactive')
+
+      let initialContext = {}
+      if (options.context) {
+        const contextPath = path.resolve(options.context)
+        if (fs.existsSync(contextPath)) {
+          try {
+            const content = fs.readFileSync(contextPath, 'utf-8')
+            initialContext = JSON.parse(content)
+          }
+          catch (error) {
+            console.error('Error loading context file:', error)
+            process.exit(1)
+          }
+        }
+        else {
+          console.error(`Context file not found: ${contextPath}`)
+          process.exit(1)
+        }
+      }
+
+      await startInteractive({
+        context: initialContext,
+        cwd: options.cwd ? path.resolve(options.cwd) : process.cwd(),
+        verbose: options.verbose,
+      })
+    })
+
   // Helper function to calculate Levenshtein distance for command suggestions
   function levenshteinDistance(a: string, b: string): number {
     const matrix: number[][] = []
@@ -2103,7 +2140,8 @@ else {
   // Check for unknown commands and provide suggestions
   const knownCommands = [
     'docs', 'iconify', 'dev', 'a11y', 'build', 'test', 'init', 'new',
-    'format', 'perf', 'debug', 'status', 'watch', 'analyze', 'version'
+    'format', 'perf', 'debug', 'status', 'watch', 'analyze', 'version',
+    'interactive', 'i'
   ]
 
   const args = process.argv.slice(2)

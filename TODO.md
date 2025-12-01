@@ -469,9 +469,15 @@ This document contains all identified issues, improvements, and enhancements for
   - Could leave artifacts on failure
   - Add proper cleanup in afterAll
 
-- [ ] **No snapshot testing**
+- [x] **No snapshot testing**
   - Output changes not tracked
   - Add snapshot tests for rendered output
+  - **Status**: FIXED - Added comprehensive snapshot testing in `test/test-utils.ts`:
+    - `matchSnapshot()` - Compare template output against stored snapshot
+    - `assertSnapshot()` - Assert match (throws on mismatch)
+    - `createSnapshotManager()` - Factory for test file-specific snapshot management
+    - Features: whitespace normalization, custom serializers, update mode
+    - 14 tests covering all snapshot functionality
 
 - [ ] **Mocking is inconsistent**
   - Some tests use real file system
@@ -486,20 +492,29 @@ This document contains all identified issues, improvements, and enhancements for
 - [x] **No API documentation**
   - Functions lack JSDoc comments in many places
   - Add comprehensive JSDoc
-  - **Status**: IMPROVED - Added comprehensive JSDoc to key modules: `expressions.ts` (expression syntax, filter parsing, available filters), `conditionals.ts` (regex pattern reference, nested parens pattern), `caching.ts` (hash function documentation).
+  - **Status**: IMPROVED - Added comprehensive JSDoc to key modules:
+    - `expressions.ts` (expression syntax, filter parsing, available filters)
+    - `conditionals.ts` (regex pattern reference, nested parens pattern)
+    - `caching.ts` (hash function documentation)
+    - `middleware.ts` (full module documentation, lifecycle, configuration examples)
+    - `view-composers.ts` (module documentation, use cases, execution order)
+    - `includes.ts` (directive reference table, path resolution, security notes)
+    - `test-utils.ts` (module documentation, snapshot testing API)
 
-- [ ] **Directive reference incomplete**
+- [x] **Directive reference incomplete**
   - Not all directives documented
   - Create complete directive reference
+  - **Status**: FIXED - Created comprehensive `docs/api/directives.md` with 60+ directives organized by category, syntax examples, required context shapes, and processing order documentation.
 
 - [x] **No architecture documentation**
   - Processing pipeline not documented
   - Add architecture diagrams
   - **Status**: DOCUMENTED - `process.ts` now contains comprehensive 37-step processing order documentation at module level, explaining all three phases and directive processing sequence.
 
-- [ ] **Missing migration guide**
+- [x] **Missing migration guide**
   - No guide for Laravel Blade users
   - Create migration documentation
+  - **Status**: FIXED - Created comprehensive `docs/guide/migration-from-blade.md` with side-by-side syntax comparison, variable/object/path syntax differences, complete template migration example, and migration checklist.
 
 ### Code Comments
 
@@ -529,9 +544,17 @@ This document contains all identified issues, improvements, and enhancements for
   - Extract shared template
   - **Status**: FIXED - Created shared utility functions: `getThemeSelectorStyles()`, `getThemeSelectorHtml()`, `getThemeSelectorScript()`, `getFrontmatterHtml()`. Both markdown serving locations now use these shared functions.
 
-- [ ] **No WebSocket-based hot reload**
+- [x] **No WebSocket-based hot reload**
   - Uses file watching but no push to browser
   - Implement proper HMR
+  - **Status**: FIXED - Added `hot-reload.ts` module with:
+    - `HotReloadServer` class managing WebSocket connections
+    - Client script injection into HTML with auto-reconnect
+    - Full page reload on template/JS changes
+    - CSS-only updates without full reload
+    - Connection status overlay in browser
+    - File change filtering (ignore node_modules, hidden files, etc.)
+    - Automatic integration in `serveStxFile()` when `watch: true`
 
 - [x] **Theme selector code duplicated** (`dev-server.ts:219-467`, `dev-server.ts:897-1016`)
   - Same HTML/CSS for theme selector in multiple places
@@ -545,9 +568,18 @@ This document contains all identified issues, improvements, and enhancements for
   - Verify and document all commands
   - **Status**: DOCUMENTED - Added comprehensive module-level documentation to `cli.ts` listing all 14 commands organized by category (Development, Code Quality, Project Management, Utilities) with examples.
 
-- [ ] **No interactive mode**
+- [x] **No interactive mode**
   - All commands are one-shot
   - Add interactive/watch modes
+  - **Status**: FIXED - Added `interactive.ts` module and `stx interactive` (alias `stx i`) command with:
+    - REPL-like interface for template development
+    - Commands: render, eval, set, unset, context, clear, cd, ls, cat, load, save, history, help, exit
+    - Template rendering preview with line numbers
+    - Expression evaluation with current context
+    - Context variable management (set/unset/load/save JSON)
+    - Tab completion for commands and file paths
+    - Command history support
+    - Working directory navigation
 
 - [x] **No project scaffolding**
   - `stx init` exists but limited

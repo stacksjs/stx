@@ -1,8 +1,70 @@
+/**
+ * Includes Module
+ *
+ * Processes include, partial, and stack directives for template composition.
+ * This module enables building complex templates from reusable pieces.
+ *
+ * ## Include Directives
+ *
+ * | Directive | Description |
+ * |-----------|-------------|
+ * | `@include('path')` | Include a partial template |
+ * | `@include('path', { vars })` | Include with local variables |
+ * | `@partial('path')` | Alias for @include |
+ * | `@includeIf('path')` | Include only if file exists |
+ * | `@includeWhen(cond, 'path')` | Include if condition is true |
+ * | `@includeUnless(cond, 'path')` | Include if condition is false |
+ * | `@includeFirst(['a','b'])` | Include first existing file |
+ * | `@once...@endonce` | Include content only once per request |
+ *
+ * ## Stack Directives
+ *
+ * | Directive | Description |
+ * |-----------|-------------|
+ * | `@push('name')...@endpush` | Add content to end of stack |
+ * | `@prepend('name')...@endprepend` | Add content to start of stack |
+ * | `@stack('name')` | Output stack contents |
+ *
+ * ## Path Resolution
+ *
+ * Paths are resolved in this order:
+ * 1. If path starts with `./` or `../`: Relative to current template
+ * 2. Otherwise: Relative to `partialsDir` (from config)
+ *
+ * Paths without `.stx` extension automatically get it appended.
+ *
+ * ## Security
+ *
+ * Path traversal attacks are blocked. Includes must resolve to:
+ * - The configured partials directory, OR
+ * - The directory containing the current template
+ *
+ * ## @once Directive
+ *
+ * The `@once` directive ensures content is only rendered once per request.
+ * This is useful for including scripts or styles that should not be duplicated.
+ *
+ * **Important**: In server environments, use request-scoped tracking:
+ *
+ * ```typescript
+ * // Option 1: Clear global store per request
+ * app.use((req, res, next) => {
+ *   clearOnceStore()
+ *   next()
+ * })
+ *
+ * // Option 2: Use request-scoped store (recommended)
+ * const context = {
+ *   __onceStore: new Set<string>(),
+ *   ...otherData
+ * }
+ * ```
+ *
+ * @module includes
+ */
+
 import type { StxOptions } from './types'
 import fs from 'node:fs'
-/**
- * Module for processing include and partial directives
- */
 import path from 'node:path'
 import { processConditionals } from './conditionals'
 import { processExpressions } from './expressions'
@@ -59,7 +121,31 @@ function getOnceStore(context: Record<string, any>): Set<string> {
 }
 
 /**
- * Process @include and @partial directives
+ * Process @include, @partial, @includeIf, @includeWhen, @includeUnless,
+ * @includeFirst, and @once directives.
+ *
+ * This is the main function for include processing. It handles all include
+ * variants and the @once directive for deduplication.
+ *
+ * @param template - The template string to process
+ * @param context - Template context with variables
+ * @param filePath - Path to the current template file
+ * @param options - STX processing options
+ * @param dependencies - Set to track included file dependencies (for caching)
+ * @returns The processed template with includes resolved
+ *
+ * @example
+ * ```typescript
+ * const deps = new Set<string>()
+ * const result = await processIncludes(
+ *   '@include("header") <main>Content</main> @include("footer")',
+ *   { title: 'My Page' },
+ *   '/app/views/home.stx',
+ *   options,
+ *   deps
+ * )
+ * // deps now contains paths to header.stx and footer.stx
+ * ```
  */
 export async function processIncludes(
   template: string,
@@ -477,12 +563,32 @@ export async function processIncludes(
   return output
 }
 
-/**
- * Stack related functions for @push, @stack, @prepend directives
- */
+// =============================================================================
+// Stack Directives
+// =============================================================================
 
 /**
- * Process @push and @prepend directives to collect content
+ * Process @push and @prepend directives to collect content into named stacks.
+ *
+ * This function extracts stack content and removes the directives from output.
+ * The collected content is stored in the `stacks` object for later rendering.
+ *
+ * @param template - The template string to process
+ * @param stacks - Object to collect stack content (mutated)
+ * @returns Template with @push/@prepend directives removed
+ *
+ * @example
+ * ```typescript
+ * const stacks: Record<string, string[]> = {}
+ * const result = processStackPushDirectives(`
+ *   @push('scripts')
+ *     <script src="app.js"></script>
+ *   @endpush
+ *   <div>Content</div>
+ * `, stacks)
+ * // result = '\n  <div>Content</div>\n'
+ * // stacks = { scripts: ['<script src="app.js"></script>'] }
+ * ```
  */
 export function processStackPushDirectives(template: string, stacks: Record<string, string[]>): string {
   let result = template
@@ -517,7 +623,26 @@ export function processStackPushDirectives(template: string, stacks: Record<stri
 }
 
 /**
- * Process @stack directives by replacing them with their content
+ * Process @stack directives by replacing them with collected stack content.
+ *
+ * This should be called AFTER `processStackPushDirectives` has collected
+ * all @push and @prepend content.
+ *
+ * @param template - The template string with @stack directives
+ * @param stacks - Object containing collected stack content
+ * @returns Template with @stack directives replaced by their content
+ *
+ * @example
+ * ```typescript
+ * const stacks = {
+ *   scripts: ['<script src="a.js"></script>', '<script src="b.js"></script>'],
+ *   styles: ['<link rel="stylesheet" href="app.css">']
+ * }
+ * const result = processStackReplacements(`
+ *   <head>@stack('styles')</head>
+ *   <body>...@stack('scripts')</body>
+ * `, stacks)
+ * ```
  */
 export function processStackReplacements(template: string, stacks: Record<string, string[]>): string {
   // Replace @stack directives with their content
