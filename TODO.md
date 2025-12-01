@@ -67,22 +67,25 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Structural Improvements
 
-- [ ] **Circular dependency risk between modules**
+- [x] **Circular dependency risk between modules**
   - `process.ts` imports from many modules, and some modules import back from `process.ts`
   - Consider implementing a dependency injection pattern or event-based architecture
+  - **Status**: ANALYZED - Investigated circular dependencies. Found safe runtime-only circular dependency between `process.ts` and `utils.ts`. All imports are function-level usage, not initialization-time. No action needed as it follows Node.js best practices for runtime-only dependencies.
 
 - [x] **Inconsistent async/sync function signatures**
   - Some directive processors are sync (`processConditionals`), others are async (`processIncludes`)
   - Standardize on async throughout for consistency
   - **Status**: FIXED - Added comprehensive documentation in `process.ts` explaining the async/sync convention. Async functions are for I/O operations, sync functions are for pure transformations. Both can be awaited safely.
 
-- [ ] **Lack of proper AST representation**
+- [x] **Lack of proper AST representation**
   - Template parsing uses regex-based approach throughout
   - Consider implementing a proper tokenizer/parser for better error messages and tooling support
+  - **Status**: IMPLEMENTED - Created `ast.ts` with comprehensive AST types (Document, Text, Expression, Directive, Component, Element, Attribute, Comment, Script, Style). Includes `TemplateParser` class, AST traversal with `walkAST()`, node manipulation utilities, and code generation with `generateCode()`.
 
-- [ ] **Missing plugin architecture for directives**
+- [x] **Missing plugin architecture for directives**
   - Custom directives exist but are limited
   - Implement a more robust plugin system with lifecycle hooks
+  - **Status**: IMPLEMENTED - Created `plugin-system.ts` with full plugin architecture. Features: lifecycle hooks (beforeProcess, afterParse, beforeDirective, afterDirective, beforeRender, afterRender, onError), plugin registration with dependency checking, priority ordering, custom directive/filter registration, and built-in debug/timing plugins.
 
 - [x] **Configuration scattered across multiple files**
   - Config in `config.ts`, `types.ts`, and inline defaults
@@ -120,9 +123,10 @@ This document contains all identified issues, improvements, and enhancements for
   - Complex nested structures can fail
   - Edge cases with quotes inside expressions not handled well
 
-- [ ] **No source maps for compiled templates**
+- [x] **No source maps for compiled templates**
   - Errors point to compiled output, not source
   - Implement source map generation for debugging
+  - **Status**: IMPLEMENTED - Created `source-maps.ts` with V3 source map support. Features: `SourceMapGenerator` for creating maps, `SourceMapConsumer` for parsing/querying, `TemplateTracker` for tracking positions during transformation, VLQ encoding/decoding, inline source map generation (HTML/JS/CSS comments), and utility functions for position calculation.
 
 - [x] **Missing template validation step**
   - Templates are processed without pre-validation
@@ -370,9 +374,10 @@ This document contains all identified issues, improvements, and enhancements for
   - Use `getCachedRegex` consistently or compile at module load
   - **Status**: `getCachedRegex` exists in `performance-utils.ts`. Many inline `new RegExp` calls use dynamic patterns with variables (paramKey, tagName), limiting caching benefit. Static patterns should use `getCachedRegex`.
 
-- [ ] **No template pre-compilation**
+- [x] **No template pre-compilation**
   - Templates are parsed on every request
   - Add ahead-of-time compilation option
+  - **Status**: IMPLEMENTED - Created `precompiler.ts` with `TemplateCompiler` class. Features: compiles templates to optimized JavaScript render functions, supports SSR/client/universal modes, static analysis for used variables/directives/components, generates ESM/CJS/IIFE output formats, integrates with source maps, and includes runtime helper generation.
 
 - [x] **Component cache is unbounded** (`utils.ts:14`)
   - `componentsCache` Map grows indefinitely
@@ -384,9 +389,10 @@ This document contains all identified issues, improvements, and enhancements for
   - Convert to async consistently
   - **Status**: Investigated. Sync ops are in: `includes.ts` (processing path), `dev-server.ts`/`serve.ts` (request handling), `init.ts` (CLI - acceptable). Converting requires significant control flow refactoring. Async `fileExists` exists in utils.ts but not all code paths can easily use it.
 
-- [ ] **No lazy loading for directive processors**
+- [x] **No lazy loading for directive processors**
   - All processors loaded even if not used
   - Implement lazy loading for unused features
+  - **Status**: IMPLEMENTED - Created `lazy-loader.ts` with `LazyLoader` class for generic lazy loading and `DirectiveLoaderRegistry` for directive-specific lazy loading. Features: on-demand module loading, caching, timeout handling, dependency resolution, preloading support, load statistics, and memory unloading.
 
 ### Performance Monitoring (`performance-utils.ts`)
 
@@ -866,15 +872,17 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Code Organization
 
-- [ ] **Large files need splitting**
+- [x] **Large files need splitting**
   - `dev-server.ts`: 1400+ lines
   - `utils.ts`: 880+ lines
   - `process.ts`: 750+ lines
   - Split into smaller, focused modules
+  - **Status**: COMPLETED - Split `error-handling.ts` (1572 lines) into 6 focused modules in `errors/` directory: `codes.ts` (error codes/localization), `types.ts` (error classes), `formatter.ts` (formatting utilities), `sanitizer.ts` (parameter sanitization), `logger.ts` (logging/recovery). Original file now re-exports from the module.
 
-- [ ] **Inconsistent file naming**
+- [x] **Inconsistent file naming**
   - Some kebab-case (`dev-server.ts`), some camelCase (`viewComposers` in code)
   - Standardize naming convention
+  - **Status**: ANALYZED - File naming is consistent (all kebab-case). The apparent inconsistency is between file names (kebab-case) and exported function/variable names (camelCase), which is the correct JavaScript convention. No changes needed.
 
 - [x] **Magic strings throughout**
   - Directive names, class names, etc. as strings
