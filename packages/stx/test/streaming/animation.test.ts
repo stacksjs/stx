@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from 'bun-plugin-stx'
@@ -15,15 +15,23 @@ async function getHtmlOutput(result: any): Promise<string> {
   return await Bun.file(htmlOutput!.path).text()
 }
 
-// Ensure test directories exist
-if (!fs.existsSync(TEMP_DIR)) {
-  fs.mkdirSync(TEMP_DIR, { recursive: true })
-}
-if (!fs.existsSync(OUTPUT_DIR)) {
-  fs.mkdirSync(OUTPUT_DIR, { recursive: true })
-}
-
 describe('Animation System', () => {
+  // Set up test directories
+  beforeAll(async () => {
+    await fs.promises.mkdir(TEMP_DIR, { recursive: true })
+    await fs.promises.mkdir(OUTPUT_DIR, { recursive: true })
+  })
+
+  // Clean up after tests
+  afterAll(async () => {
+    if (fs.existsSync(TEMP_DIR)) {
+      await fs.promises.rm(TEMP_DIR, { recursive: true, force: true })
+    }
+    if (fs.existsSync(OUTPUT_DIR)) {
+      await fs.promises.rm(OUTPUT_DIR, { recursive: true, force: true })
+    }
+  })
+
   // Test @transition directive
   it('should process @transition directive correctly', async () => {
     const testFile = path.join(TEMP_DIR, 'transition.stx')

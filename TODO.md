@@ -96,12 +96,14 @@ This document contains all identified issues, improvements, and enhancements for
   - Create specific context interfaces for different processing stages
   - **Status**: FIXED - Added typed context interfaces in `types.ts`: `LoopContext`, `AuthContext`, `PermissionsContext`, `TranslationContext`, `BaseTemplateContext`. These provide typed interfaces for common context shapes.
 
-- [ ] **Missing discriminated unions for directive types**
+- [x] **Missing discriminated unions for directive types**
   - Directives could benefit from a tagged union type for better type safety
+  - **Status**: FIXED - Added comprehensive discriminated union types in `types.ts` with `Directive` union type covering 16 directive categories (ConditionalDirective, LoopDirective, IncludeDirective, LayoutDirective, ComponentDirective, AuthDirective, FormDirective, StackDirective, ExpressionDirective, SwitchDirective, SeoDirective, A11yDirective, ScriptDirective, EnvDirective, I18nDirective, UserCustomDirective). Each uses `kind` as discriminator with type guard `isDirectiveKind()` and helper type `DirectiveOfKind`.
 
-- [ ] **`any` types in function signatures**
+- [x] **`any` types in function signatures**
   - Many functions use `any` for flexibility but lose type safety
   - Add proper generics where applicable
+  - **Status**: IMPROVED - Added generic type parameter to `safeEvaluate<T>()` in `safe-evaluator.ts`, replaced `any` with `unknown` in sanitization functions, and added utility types in `types.ts`: `TypedContext<T>`, `ContextValue<C, K>`, `RequireContextKeys<C, K>` for better type inference in template contexts. Further improvements can be made incrementally.
 
 ---
 
@@ -465,9 +467,10 @@ This document contains all identified issues, improvements, and enhancements for
   - No helper functions for template testing
   - **Status**: FIXED - Added `processTemplate()`, `assertTemplate()`, and `assertTemplateThrows()` helpers in `test-utils.ts` for convenient template testing with context and options support.
 
-- [ ] **Tests create files in temp directories**
+- [x] **Tests create files in temp directories**
   - Could leave artifacts on failure
   - Add proper cleanup in afterAll
+  - **Status**: FIXED - Added proper `afterAll` cleanup to `forms.test.ts`, `animation.test.ts`, `cli.test.ts`, and `e2e.test.ts`. Removed leftover temp directories. All test files now properly clean up after themselves.
 
 - [x] **No snapshot testing**
   - Output changes not tracked

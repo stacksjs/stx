@@ -157,8 +157,8 @@ export function sanitizeExpression(expression: string): string {
 /**
  * Create a safer context object that only exposes safe properties
  */
-export function createSafeContext(context: Record<string, any>): Record<string, any> {
-  const safeContext: Record<string, any> = {}
+export function createSafeContext(context: Record<string, unknown>): Record<string, unknown> {
+  const safeContext: Record<string, unknown> = {}
 
   // Add allowed globals
   safeContext.Math = Math
@@ -198,7 +198,7 @@ export function createSafeContext(context: Record<string, any>): Record<string, 
  * Recursively sanitize an object by removing dangerous properties
  * Uses configurable maxSanitizeDepth from configuration
  */
-function sanitizeObject(obj: any, depth = 0): any {
+function sanitizeObject(obj: unknown, depth = 0): unknown {
   // Prevent infinite recursion - use configurable depth
   if (depth > currentConfig.maxSanitizeDepth) {
     return '[Object too deep]'
@@ -212,7 +212,7 @@ function sanitizeObject(obj: any, depth = 0): any {
     return obj.map(item => sanitizeObject(item, depth + 1))
   }
 
-  const sanitized: any = {}
+  const sanitized: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(obj)) {
     // Skip dangerous keys
     if (key.startsWith('_')
@@ -235,8 +235,21 @@ function sanitizeObject(obj: any, depth = 0): any {
 
 /**
  * Safely evaluate an expression with the given context
+ *
+ * @param expression - The JavaScript expression to evaluate
+ * @param context - Variables available during evaluation
+ * @returns The result of the expression evaluation, or undefined on error
+ *
+ * @example
+ * ```typescript
+ * // Basic usage
+ * const result = safeEvaluate('name.toUpperCase()', { name: 'hello' })
+ *
+ * // With type parameter for typed result
+ * const count = safeEvaluate<number>('items.length', { items: [1, 2, 3] })
+ * ```
  */
-export function safeEvaluate(expression: string, context: Record<string, any>): any {
+export function safeEvaluate<T = unknown>(expression: string, context: Record<string, unknown>): T | undefined {
   try {
     const sanitizedExpr = sanitizeExpression(expression)
     const safeContext = createSafeContext(context)
