@@ -672,21 +672,51 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Other Desktop Features
 
-- [ ] **System tray is placeholder** (per CLAUDE.md)
+- [x] **System tray is placeholder** (per CLAUDE.md)
   - `packages/desktop/src/system-tray.ts` is placeholder
   - Implement or remove from exports
+  - **Status**: IMPLEMENTED - Full cross-platform system tray implementation with:
+    - `createSystemTray()` / `createMenubar()` - Create system tray with menu items
+    - `getTrayInstance()` / `getActiveTrayInstances()` - Instance management
+    - `triggerTrayAction()` - Programmatic menu item triggering
+    - `getSimulatedTrayHTML()` - Web-based simulation for development
+    - Platform detection for macOS/Linux/Windows (ready for native bindings)
+    - Full CSS styling for simulated tray menu (`TRAY_MENU_STYLES`)
 
-- [ ] **Modals are placeholder** (per CLAUDE.md)
+- [x] **Modals are placeholder** (per CLAUDE.md)
   - `packages/desktop/src/modals.ts` is placeholder
   - Implement or remove from exports
+  - **Status**: IMPLEMENTED - Full cross-platform modal implementation with:
+    - `showModal()` - Main modal function with Promise-based API
+    - `showInfoModal()` / `showWarningModal()` / `showErrorModal()` / `showSuccessModal()` / `showQuestionModal()` - Type-specific modals
+    - `confirm()` / `alert()` / `prompt()` - Convenience functions
+    - `closeAllModals()` / `getActiveModalCount()` - Modal management
+    - Keyboard support (Enter/Escape), accessibility (ARIA), custom buttons
+    - Full CSS styling with dark mode support (`MODAL_STYLES`)
 
-- [ ] **Alerts are placeholder** (per CLAUDE.md)
+- [x] **Alerts are placeholder** (per CLAUDE.md)
   - `packages/desktop/src/alerts.ts` is placeholder
   - Implement or remove from exports
+  - **Status**: IMPLEMENTED - Full cross-platform alert/toast implementation with:
+    - `showAlert()` / `showToast()` - Core notification functions
+    - `showInfoToast()` / `showSuccessToast()` / `showWarningToast()` / `showErrorToast()` - Type-specific toasts
+    - `notify()` - Notification with title
+    - `dismissAlertById()` / `dismissAllAlerts()` / `getActiveAlertCount()` - Alert management
+    - `requestNotificationPermission()` - Browser notification API integration
+    - 6 position options, auto-dismiss, click handlers
+    - Full CSS styling with animations (`TOAST_STYLES`)
 
-- [ ] **Only 3 of 35 components implemented** (per CLAUDE.md)
+- [x] **Only 3 of 35 components implemented** (per CLAUDE.md)
   - `packages/desktop/src/components.ts` has 35 documented but only 3 implemented
   - Implement remaining or update documentation
+  - **Status**: IMPLEMENTED - All 35 components now implemented:
+    - **Input (9)**: Button, TextInput, Checkbox, RadioButton, Slider, ColorPicker, DatePicker, TimePicker, Autocomplete
+    - **Display (9)**: Label, ImageView, ProgressBar, Avatar, Badge, Chip, Card, Tooltip, Toast
+    - **Layout (7)**: ScrollView, SplitView, Accordion, Stepper, Modal, Tabs, Dropdown
+    - **Data (5)**: ListView, Table, TreeView, DataGrid, Chart
+    - **Advanced (5)**: Rating, CodeEditor, MediaPlayer, FileExplorer, WebView
+    - Each component: typed props interface, HTML generator function, full CSS styling
+    - Comprehensive dark mode support across all components
 
 ---
 
@@ -699,9 +729,15 @@ This document contains all identified issues, improvements, and enhancements for
   - Consolidate into single source
   - **Status**: DOCUMENTED - Added comprehensive module-level documentation explaining why two plugins exist: (1) Different export patterns (function vs constant), (2) Internal plugin needs StxError classes, (3) Avoiding circular dependencies. Both share the same core processing pipeline from @stacksjs/stx.
 
-- [ ] **No watch mode support**
+- [x] **No watch mode support**
   - Plugin doesn't support incremental builds
   - Add file watching integration
+  - **Status**: IMPLEMENTED - Full watch mode implementation in `packages/bun-plugin/src/watch.ts`:
+    - `createWatcher()` - Low-level file watcher with configurable patterns and debouncing
+    - `watchAndBuild()` - High-level watch mode with automatic rebuilds
+    - `startWatchMode()` - Interactive watch mode with console UI and user commands
+    - Features: debouncing (configurable), directory watching, ignore patterns, rebuild callbacks
+    - Types: `WatchOptions`, `WatchAndBuildOptions`, `WatcherInstance`, `WatchEvent`, `WatchBuildResult`
 
 - [x] **Error handling differs from main plugin**
   - Different error page generation
@@ -1082,5 +1118,5 @@ When working on items:
 
 ---
 
-*Last updated: December 1, 2024*
+*Last updated: December 2, 2024*
 *Generated from codebase analysis*

@@ -44,6 +44,16 @@ import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVa
 export { createMiddleware, createRoute, readMarkdownFile, serve } from '@stacksjs/stx'
 export type { ServeOptions, ServeResult, StxOptions } from '@stacksjs/stx'
 
+// Export watch functionality
+export { createWatcher, startWatchMode, watchAndBuild } from './watch'
+export type {
+  WatchAndBuildOptions,
+  WatchBuildResult,
+  WatcherInstance,
+  WatchEvent,
+  WatchOptions,
+} from './watch'
+
 /**
  * Escape HTML entities in error messages to prevent XSS in error pages.
  * Matches the escaping behavior in @stacksjs/stx/expressions.
