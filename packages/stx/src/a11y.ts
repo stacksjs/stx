@@ -232,8 +232,20 @@ function checkA11yWithRegex(html: string, _filePath: string): A11yViolation[] {
 
     if (!hasAriaLabel) {
       // Try to find associated label by ID
-      const hasLabel = idMatch && new RegExp(`<label[^>]*\\bfor\\s*=\\s*["']${idMatch[1]}["']`, 'i').test(html)
-      if (!hasLabel) {
+      const hasExplicitLabel = idMatch && new RegExp(`<label[^>]*\\bfor\\s*=\\s*["']${idMatch[1]}["']`, 'i').test(html)
+
+      // Check for implicit labeling (input wrapped inside a label)
+      // Find if this input appears within a <label>...</label> tag
+      const inputPos = match.index
+      const beforeInput = html.substring(0, inputPos)
+      const afterInput = html.substring(inputPos)
+
+      // Count opening and closing label tags before this input
+      const openLabels = (beforeInput.match(/<label\b/gi) || []).length
+      const closeLabels = (beforeInput.match(/<\/label>/gi) || []).length
+      const hasImplicitLabel = openLabels > closeLabels // Input is inside an unclosed label
+
+      if (!hasExplicitLabel && !hasImplicitLabel) {
         violations.push({
           type: 'input-missing-label',
           element: match[0].substring(0, 100),
@@ -441,7 +453,8 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
       const id = input.getAttribute('id')
       const hasLabel = id && container.querySelector(`label[for="${id}"]`)
       const hasAriaLabel = input.hasAttribute('aria-label') || input.hasAttribute('aria-labelledby')
-      const withinLabel = input.parentElement?.tagName === 'LABEL'
+      // Use closest() instead of parentElement check for better compatibility (Happy DOM quirk)
+      const withinLabel = input.closest('label') !== null
 
       if (!hasLabel && !hasAriaLabel && !withinLabel) {
         violations.push({
