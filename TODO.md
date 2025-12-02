@@ -1133,9 +1133,19 @@ This document contains all identified issues, improvements, and enhancements for
     - Types: Keyframe, TimelineEntry, KeyframeAnimationOptions, SpringConfig
     - 117 tests covering transitions, scroll-animate, keyframes, spring, stagger, timeline, and directives
 
-- [ ] **Database integration**
+- [x] **Database integration**
   - Direct database queries in templates
   - Like Laravel's Blade with Eloquent
+  - **Status**: IMPLEMENTED - Created comprehensive database module in `packages/stx/src/database.ts`:
+    - **Query Builder**: Fluent API with `query('table')`, supports select, where, join, orderBy, groupBy, limit, offset, aggregates (count, sum, min, max, avg)
+    - **Multiple Adapters**: SQLite (using Bun's built-in), PostgreSQL, MySQL support with connection pooling
+    - **Model System**: `defineModel()` with relationships (hasOne, hasMany, belongsTo, belongsToMany), fillable/hidden fields, timestamps, soft deletes, casts
+    - **Template Directives**: `@db('table')->where()->get()`, `@model('User')->find(1)`, `@query('SELECT...') as $var`
+    - **Schema Builder**: `schema().create()`, `Blueprint` class for migrations with column types (id, string, text, integer, boolean, datetime, json, timestamps, softDeletes)
+    - **Transactions**: `transaction(async () => { ... })` with automatic commit/rollback
+    - **Caching**: Query result caching with TTL and automatic invalidation on writes
+    - **Logging**: Query logging with duration tracking for debugging
+    - 79 tests covering query builder, models, schema, caching, and SQLite operations
 
 ---
 
