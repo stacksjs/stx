@@ -893,9 +893,14 @@ This document contains all identified issues, improvements, and enhancements for
     - `A11yAutoFixConfig` - Configurable fixes for: missing alt, missing labels, missing form labels, table headers, missing lang, positive tabindex, button focusable
     - `A11yFixResult` - Detailed results with before/after for each fix
 
-- [ ] **Requires very-happy-dom** (`a11y.ts:104-106`)
+- [x] **Requires very-happy-dom** (`a11y.ts:104-106`)
   - DOM parsing requires global document
   - Add fallback for non-DOM environments
+  - **Status**: IMPLEMENTED - Added regex-based accessibility checker for non-DOM environments:
+    - `hasDOMSupport()` - Check if DOM environment is available (exported)
+    - `checkA11yWithRegex()` - Regex-based checker covering 11 common a11y issues
+    - `checkA11y()` now automatically uses regex fallback when DOM unavailable
+    - Covers: missing alt, empty buttons/links, missing labels, heading hierarchy, missing lang, tables without headers, autoplay media, positive tabindex, iframes without title, custom buttons without tabindex
 
 - [x] **Missing module documentation**
   - No overview of a11y features
@@ -907,9 +912,24 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Web Component Generation (`web-components.ts`)
 
-- [ ] **Generated code is basic** (`web-components.ts:127-207`)
+- [x] **Generated code is basic** (`web-components.ts:127-207`)
   - No reactive properties
   - No proper lifecycle management
+  - **Status**: IMPLEMENTED - Added comprehensive reactive web component system:
+    - `generateReactiveWebComponent()` - Generate JS web component with:
+      - Reactive properties with automatic re-rendering
+      - Property observers for side effects
+      - Attribute reflection (property <-> attribute sync)
+      - Internal state management with `setState()`
+      - Batched rendering with `requestAnimationFrame`
+      - Full lifecycle hooks (connected, disconnected, adopted)
+      - Event handling system
+      - Template interpolation with `{{property}}` syntax
+    - `generateReactiveWebComponentTS()` - TypeScript version with full type safety
+    - `generateReactiveMixin()` - Mixin for adding reactivity to existing components
+    - `generateReactiveRuntime()` - Complete runtime with `StxElement` base class
+    - `ReactivePropertyDefinition` - Configure type, default, reflect, observer, render
+    - `ReactiveWebComponentConfig` - Full component configuration
 
 - [x] **No CSS scoping**
   - Styles not properly scoped
