@@ -247,7 +247,7 @@ export { content as default };
 
           return {
             contents: output,
-            loader: 'file',
+            loader: 'html',
           }
         }
         catch (error: any) {
@@ -258,7 +258,7 @@ export { content as default };
               error.message || String(error),
               filePath,
             ),
-            loader: 'file',
+            loader: 'html',
           }
         }
       })
