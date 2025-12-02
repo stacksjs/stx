@@ -503,9 +503,18 @@ This document contains all identified issues, improvements, and enhancements for
   - Very large templates
   - **Status**: FIXED - Added test generators in `test-utils.ts`: `generateNestedDirectives(depth)` for deeply nested directive structures, `generateUnicodeTemplate()` for Unicode/emoji/RTL content, `generateLargeTemplate(itemCount)` for stress testing, `generateComprehensiveTemplate()` for all directive types.
 
-- [ ] **No performance regression tests**
+- [x] **No performance regression tests**
   - No benchmarks in CI
   - Add performance tests with thresholds
+  - **Status**: IMPLEMENTED - Created comprehensive performance regression testing in `packages/benchmarks/src/regression.ts`:
+    - `runRegressionTests()` - Main entry point with configurable options
+    - `DEFAULT_THRESHOLDS` - Pre-defined thresholds for stx operations (simple/complex templates, components, expressions, loops)
+    - Threshold configuration: `maxMs`, `minOpsPerSec`, `maxStdDevPercent`, `allowedRegressionPercent`
+    - Baseline comparison: Save and compare against previous runs
+    - Regression detection: Automatic detection of performance degradation
+    - Multiple output formats: JSON, Markdown, Console
+    - CI-friendly exit codes: 0 for pass, 1 for regressions
+    - New npm scripts: `bench:regression`, `bench:regression:save`, `bench:regression:check`
 
 - [x] **Test fixtures are inline** (`test/stx.test.ts`)
   - Templates written as strings in tests
@@ -791,9 +800,21 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Translation System (`i18n.ts`)
 
-- [ ] **Translation file loading is synchronous-ish**
+- [x] **Translation file loading is synchronous-ish**
   - Uses dynamic import but blocks on it
   - Consider lazy loading
+  - **Status**: IMPLEMENTED - Added comprehensive lazy loading system in `i18n.ts`:
+    - `loadTranslationLazy()` - Load with request deduplication (multiple calls share same promise)
+    - `preloadTranslations()` - Preload multiple locales with parallel/sequential options
+    - `preloadTranslationsBackground()` - Fire-and-forget background preloading
+    - `getTranslationSync()` - Get cached translations without blocking
+    - `getTranslationAsync()` - Get with automatic loading (fast path for cached)
+    - `waitForLocale()` - Wait for a locale to finish loading with timeout support
+    - `getLoadingState()` / `isLoading()` / `isLoaded()` - Check loading status
+    - `getLoadingLocales()` - Get all currently loading locales
+    - `cancelPendingLoads()` - Cancel pending loads
+    - `PreloadConfig` - Configure parallel loading, priority order, callbacks
+    - 23 tests covering all lazy loading functionality
 
 - [x] **No pluralization support**
   - Only simple string replacement
