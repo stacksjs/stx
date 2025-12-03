@@ -450,7 +450,7 @@ export function shouldIgnoreFile(filename: string): boolean {
   const ignorePatterns = [
     /^\./,
     /node_modules/,
-    /\.stx-output/,
+    /\.stx\/output/,
     /\.stx\/cache/,
     /~$/,
     /\.swp$/,

@@ -21,31 +21,31 @@
       hasTripleCaptain: false,
       hasFreeHit: true,
 
-      // Squad Data
+      // Squad Data with Transfermarkt player images
       goalkeepers: [
-        { id: 1, name: "Alisson", team: "Liverpool", points: 72, price: 5.5, form: "6.2", isCaptain: false, isVice: false }
+        { id: 1, name: "Alisson", team: "Liverpool", points: 72, price: 5.5, form: "6.2", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/105470-1670254746.jpg" }
       ],
       defenders: [
-        { id: 2, name: "Alexander-Arnold", team: "Liverpool", points: 89, price: 7.8, form: "7.4", isCaptain: false, isVice: false },
-        { id: 3, name: "Van Dijk", team: "Liverpool", points: 78, price: 6.5, form: "6.8", isCaptain: false, isVice: false },
-        { id: 4, name: "Saliba", team: "Arsenal", points: 82, price: 5.8, form: "7.1", isCaptain: false, isVice: false },
-        { id: 5, name: "Trippier", team: "Newcastle", points: 95, price: 6.2, form: "7.9", isCaptain: false, isVice: false }
+        { id: 2, name: "Alexander-Arnold", team: "Liverpool", points: 89, price: 7.8, form: "7.4", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/314353-1682683695.jpg" },
+        { id: 3, name: "Van Dijk", team: "Liverpool", points: 78, price: 6.5, form: "6.8", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/139208-1695021451.jpg" },
+        { id: 4, name: "Saliba", team: "Arsenal", points: 82, price: 5.8, form: "7.1", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/495666-1694590721.jpg" },
+        { id: 5, name: "Trippier", team: "Newcastle", points: 95, price: 6.2, form: "7.9", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/95810-1695021596.jpg" }
       ],
       midfielders: [
-        { id: 6, name: "Salah", team: "Liverpool", points: 124, price: 12.8, form: "8.8", isCaptain: true, isVice: false },
-        { id: 7, name: "Saka", team: "Arsenal", points: 98, price: 9.2, form: "7.9", isCaptain: false, isVice: true },
-        { id: 8, name: "Odegaard", team: "Arsenal", points: 87, price: 8.4, form: "7.2", isCaptain: false, isVice: false }
+        { id: 6, name: "Salah", team: "Liverpool", points: 124, price: 12.8, form: "8.8", isCaptain: true, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/148455-1682683690.jpg" },
+        { id: 7, name: "Saka", team: "Arsenal", points: 98, price: 9.2, form: "7.9", isCaptain: false, isVice: true, img: "https://img.a.transfermarkt.technology/portrait/header/433177-1694590751.jpg" },
+        { id: 8, name: "Odegaard", team: "Arsenal", points: 87, price: 8.4, form: "7.2", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/316264-1694590743.jpg" }
       ],
       forwards: [
-        { id: 9, name: "Haaland", team: "Man City", points: 156, price: 14.2, form: "9.2", isCaptain: false, isVice: false },
-        { id: 10, name: "Watkins", team: "Aston Villa", points: 92, price: 8.8, form: "7.6", isCaptain: false, isVice: false },
-        { id: 11, name: "Isak", team: "Newcastle", points: 88, price: 8.5, form: "7.3", isCaptain: false, isVice: false }
+        { id: 9, name: "Haaland", team: "Man City", points: 156, price: 14.2, form: "9.2", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/418560-1695029616.jpg" },
+        { id: 10, name: "Watkins", team: "Aston Villa", points: 92, price: 8.8, form: "7.6", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/299420-1695021614.jpg" },
+        { id: 11, name: "Isak", team: "Newcastle", points: 88, price: 8.5, form: "7.3", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/435338-1695021570.jpg" }
       ],
       bench: [
-        { id: 12, name: "Raya", team: "Arsenal", points: 65, price: 5.0, position: "GK" },
-        { id: 13, name: "Gabriel", team: "Arsenal", points: 71, price: 5.2, position: "DEF" },
-        { id: 14, name: "Mac Allister", team: "Liverpool", points: 76, price: 6.8, position: "MID" },
-        { id: 15, name: "Solanke", team: "Tottenham", points: 54, price: 7.2, position: "FWD" }
+        { id: 12, name: "Raya", team: "Arsenal", points: 65, price: 5.0, position: "GK", img: "https://img.a.transfermarkt.technology/portrait/header/262605-1694590713.jpg" },
+        { id: 13, name: "Gabriel", team: "Arsenal", points: 71, price: 5.2, position: "DEF", img: "https://img.a.transfermarkt.technology/portrait/header/544659-1694590729.jpg" },
+        { id: 14, name: "Mac Allister", team: "Liverpool", points: 76, price: 6.8, position: "MID", img: "https://img.a.transfermarkt.technology/portrait/header/534027-1695021478.jpg" },
+        { id: 15, name: "Solanke", team: "Tottenham", points: 54, price: 7.2, position: "FWD", img: "https://img.a.transfermarkt.technology/portrait/header/258878-1724934015.jpg" }
       ],
 
       // Transfer Market Data
@@ -375,92 +375,126 @@
         </div>
 
         <!-- Pitch View -->
-        <div id="pitch-view" class="bg-gradient-to-b from-emerald-600 to-emerald-700 rounded-2xl p-4 sm:p-8 space-y-4 sm:space-y-6 relative overflow-hidden">
-          <!-- Pitch markings -->
+        <div id="pitch-view" class="rounded-2xl relative overflow-hidden" style="background: linear-gradient(to bottom, #2d8a4e 0%, #1e7a3e 50%, #2d8a4e 100%);">
+          <!-- Realistic Pitch Markings -->
           <div class="absolute inset-0 pointer-events-none">
-            <div class="absolute top-1/2 left-0 right-0 h-px bg-white/20"></div>
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border border-white/20 rounded-full"></div>
-            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-44 h-16 border-t border-l border-r border-white/20 rounded-t-lg"></div>
-            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-44 h-16 border-b border-l border-r border-white/20 rounded-b-lg"></div>
-          </div>
-          <!-- Goalkeeper -->
-          <div class="flex justify-center gap-2 sm:gap-4">
-            @foreach(goalkeepers as player)
-              @if(player.isCaptain)
-                <div class="player-card relative bg-slate-800/90 backdrop-blur rounded-xl p-2 sm:p-3 text-center w-16 sm:w-20 cursor-pointer hover:scale-105 transition-all duration-300 ring-2 ring-amber-400">
-                  <div class="absolute -top-2 -right-2 w-5 h-5 bg-amber-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center">C</div>
-              @elseif(player.isVice)
-                <div class="player-card relative bg-slate-800/90 backdrop-blur rounded-xl p-2 sm:p-3 text-center w-16 sm:w-20 cursor-pointer hover:scale-105 transition-all duration-300 ring-2 ring-slate-400">
-                  <div class="absolute -top-2 -right-2 w-5 h-5 bg-slate-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center">V</div>
-              @else
-                <div class="player-card relative bg-slate-800/90 backdrop-blur rounded-xl p-2 sm:p-3 text-center w-16 sm:w-20 cursor-pointer hover:scale-105 transition-all duration-300">
-              @endif
-                <div class="text-2xl sm:text-3xl mb-1">🧤</div>
-                <div class="text-xs font-semibold truncate">{{ player.name }}</div>
-                <div class="text-[10px] text-slate-400 truncate">{{ player.team }}</div>
-                <div class="text-xs font-bold text-emerald-400 mt-1">{{ player.points }} pts</div>
-              </div>
-            @endforeach
-          </div>
-
-          <!-- Defenders -->
-          <div id="defenders-row" class="flex justify-center gap-2 sm:gap-4 transition-all duration-300">
-            @foreach(defenders as player)
-              @if(player.isCaptain)
-                <div class="player-card relative bg-slate-800/90 backdrop-blur rounded-xl p-2 sm:p-3 text-center w-16 sm:w-20 cursor-pointer hover:scale-105 transition-all duration-300 ring-2 ring-amber-400">
-                  <div class="absolute -top-2 -right-2 w-5 h-5 bg-amber-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center">C</div>
-              @elseif(player.isVice)
-                <div class="player-card relative bg-slate-800/90 backdrop-blur rounded-xl p-2 sm:p-3 text-center w-16 sm:w-20 cursor-pointer hover:scale-105 transition-all duration-300 ring-2 ring-slate-400">
-                  <div class="absolute -top-2 -right-2 w-5 h-5 bg-slate-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center">V</div>
-              @else
-                <div class="player-card relative bg-slate-800/90 backdrop-blur rounded-xl p-2 sm:p-3 text-center w-16 sm:w-20 cursor-pointer hover:scale-105 transition-all duration-300">
-              @endif
-                <div class="text-2xl sm:text-3xl mb-1">🛡️</div>
-                <div class="text-xs font-semibold truncate">{{ player.name }}</div>
-                <div class="text-[10px] text-slate-400 truncate">{{ player.team }}</div>
-                <div class="text-xs font-bold text-emerald-400 mt-1">{{ player.points }} pts</div>
-              </div>
-            @endforeach
+            <!-- Pitch border -->
+            <div class="absolute inset-4 border-2 border-white/40 rounded-sm"></div>
+            <!-- Center line -->
+            <div class="absolute top-1/2 left-4 right-4 h-0.5 bg-white/40"></div>
+            <!-- Center circle -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border-2 border-white/40 rounded-full"></div>
+            <!-- Center spot -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white/40 rounded-full"></div>
+            <!-- Top penalty area -->
+            <div class="absolute top-4 left-1/2 -translate-x-1/2 w-52 h-20 border-b-2 border-l-2 border-r-2 border-white/40"></div>
+            <!-- Top goal area -->
+            <div class="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-8 border-b-2 border-l-2 border-r-2 border-white/40"></div>
+            <!-- Top penalty spot -->
+            <div class="absolute top-16 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white/40 rounded-full"></div>
+            <!-- Top penalty arc -->
+            <div class="absolute top-20 left-1/2 -translate-x-1/2 w-20 h-10 border-b-2 border-white/40 rounded-b-full"></div>
+            <!-- Bottom penalty area -->
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 w-52 h-20 border-t-2 border-l-2 border-r-2 border-white/40"></div>
+            <!-- Bottom goal area -->
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 w-28 h-8 border-t-2 border-l-2 border-r-2 border-white/40"></div>
+            <!-- Bottom penalty spot -->
+            <div class="absolute bottom-16 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white/40 rounded-full"></div>
+            <!-- Bottom penalty arc -->
+            <div class="absolute bottom-20 left-1/2 -translate-x-1/2 w-20 h-10 border-t-2 border-white/40 rounded-t-full"></div>
+            <!-- Corner arcs -->
+            <div class="absolute top-4 left-4 w-4 h-4 border-b-2 border-r-2 border-white/40 rounded-br-full"></div>
+            <div class="absolute top-4 right-4 w-4 h-4 border-b-2 border-l-2 border-white/40 rounded-bl-full"></div>
+            <div class="absolute bottom-4 left-4 w-4 h-4 border-t-2 border-r-2 border-white/40 rounded-tr-full"></div>
+            <div class="absolute bottom-4 right-4 w-4 h-4 border-t-2 border-l-2 border-white/40 rounded-tl-full"></div>
+            <!-- Grass stripes effect -->
+            <div class="absolute inset-0 opacity-10" style="background: repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.1) 40px, rgba(255,255,255,0.1) 80px);"></div>
           </div>
 
-          <!-- Midfielders -->
-          <div id="midfielders-row" class="flex justify-center gap-2 sm:gap-4 transition-all duration-300">
-            @foreach(midfielders as player)
-              @if(player.isCaptain)
-                <div class="player-card relative bg-slate-800/90 backdrop-blur rounded-xl p-2 sm:p-3 text-center w-16 sm:w-20 cursor-pointer hover:scale-105 transition-all duration-300 ring-2 ring-amber-400">
-                  <div class="absolute -top-2 -right-2 w-5 h-5 bg-amber-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center">C</div>
-              @elseif(player.isVice)
-                <div class="player-card relative bg-slate-800/90 backdrop-blur rounded-xl p-2 sm:p-3 text-center w-16 sm:w-20 cursor-pointer hover:scale-105 transition-all duration-300 ring-2 ring-slate-400">
-                  <div class="absolute -top-2 -right-2 w-5 h-5 bg-slate-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center">V</div>
-              @else
-                <div class="player-card relative bg-slate-800/90 backdrop-blur rounded-xl p-2 sm:p-3 text-center w-16 sm:w-20 cursor-pointer hover:scale-105 transition-all duration-300">
-              @endif
-                <div class="text-2xl sm:text-3xl mb-1">⚡</div>
-                <div class="text-xs font-semibold truncate">{{ player.name }}</div>
-                <div class="text-[10px] text-slate-400 truncate">{{ player.team }}</div>
-                <div class="text-xs font-bold text-emerald-400 mt-1">{{ player.points }} pts</div>
-              </div>
-            @endforeach
-          </div>
+          <div class="relative z-10 p-6 sm:p-10 space-y-6 sm:space-y-8">
+            <!-- Forwards (attacking end) -->
+            <div id="forwards-row" class="flex justify-center gap-3 sm:gap-6 transition-all duration-300 pt-4">
+              @foreach(forwards as player)
+                <div class="player-card relative cursor-grab active:cursor-grabbing" draggable="true" data-player-id="{{ player.id }}" data-position="FWD">
+                  @if(player.isCaptain)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">C</div>
+                  @endif
+                  @if(player.isVice)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-slate-300 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">V</div>
+                  @endif
+                  <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-3 border-white shadow-xl mx-auto bg-slate-700 hover:scale-110 transition-transform duration-200">
+                    <img src="{{ player.img }}" alt="{{ player.name }}" class="w-full h-full object-cover object-top" onerror="this.src='https://via.placeholder.com/64?text=⚽'">
+                  </div>
+                  <div class="mt-2 bg-slate-900/90 backdrop-blur rounded-lg px-2 py-1.5 text-center shadow-lg min-w-[70px]">
+                    <div class="text-xs font-bold text-white truncate">{{ player.name }}</div>
+                    <div class="text-[10px] text-emerald-400 font-semibold">{{ player.points }} pts</div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
 
-          <!-- Forwards -->
-          <div id="forwards-row" class="flex justify-center gap-2 sm:gap-4 transition-all duration-300">
-            @foreach(forwards as player)
-              @if(player.isCaptain)
-                <div class="player-card relative bg-slate-800/90 backdrop-blur rounded-xl p-2 sm:p-3 text-center w-16 sm:w-20 cursor-pointer hover:scale-105 transition-all duration-300 ring-2 ring-amber-400">
-                  <div class="absolute -top-2 -right-2 w-5 h-5 bg-amber-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center">C</div>
-              @elseif(player.isVice)
-                <div class="player-card relative bg-slate-800/90 backdrop-blur rounded-xl p-2 sm:p-3 text-center w-16 sm:w-20 cursor-pointer hover:scale-105 transition-all duration-300 ring-2 ring-slate-400">
-                  <div class="absolute -top-2 -right-2 w-5 h-5 bg-slate-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center">V</div>
-              @else
-                <div class="player-card relative bg-slate-800/90 backdrop-blur rounded-xl p-2 sm:p-3 text-center w-16 sm:w-20 cursor-pointer hover:scale-105 transition-all duration-300">
-              @endif
-                <div class="text-2xl sm:text-3xl mb-1">⚽</div>
-                <div class="text-xs font-semibold truncate">{{ player.name }}</div>
-                <div class="text-[10px] text-slate-400 truncate">{{ player.team }}</div>
-                <div class="text-xs font-bold text-emerald-400 mt-1">{{ player.points }} pts</div>
-              </div>
-            @endforeach
+            <!-- Midfielders -->
+            <div id="midfielders-row" class="flex justify-center gap-3 sm:gap-6 transition-all duration-300">
+              @foreach(midfielders as player)
+                <div class="player-card relative cursor-grab active:cursor-grabbing" draggable="true" data-player-id="{{ player.id }}" data-position="MID">
+                  @if(player.isCaptain)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">C</div>
+                  @endif
+                  @if(player.isVice)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-slate-300 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">V</div>
+                  @endif
+                  <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-3 border-white shadow-xl mx-auto bg-slate-700 hover:scale-110 transition-transform duration-200">
+                    <img src="{{ player.img }}" alt="{{ player.name }}" class="w-full h-full object-cover object-top" onerror="this.src='https://via.placeholder.com/64?text=⚡'">
+                  </div>
+                  <div class="mt-2 bg-slate-900/90 backdrop-blur rounded-lg px-2 py-1.5 text-center shadow-lg min-w-[70px]">
+                    <div class="text-xs font-bold text-white truncate">{{ player.name }}</div>
+                    <div class="text-[10px] text-emerald-400 font-semibold">{{ player.points }} pts</div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+
+            <!-- Defenders -->
+            <div id="defenders-row" class="flex justify-center gap-3 sm:gap-6 transition-all duration-300">
+              @foreach(defenders as player)
+                <div class="player-card relative cursor-grab active:cursor-grabbing" draggable="true" data-player-id="{{ player.id }}" data-position="DEF">
+                  @if(player.isCaptain)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">C</div>
+                  @endif
+                  @if(player.isVice)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-slate-300 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">V</div>
+                  @endif
+                  <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-3 border-white shadow-xl mx-auto bg-slate-700 hover:scale-110 transition-transform duration-200">
+                    <img src="{{ player.img }}" alt="{{ player.name }}" class="w-full h-full object-cover object-top" onerror="this.src='https://via.placeholder.com/64?text=🛡️'">
+                  </div>
+                  <div class="mt-2 bg-slate-900/90 backdrop-blur rounded-lg px-2 py-1.5 text-center shadow-lg min-w-[70px]">
+                    <div class="text-xs font-bold text-white truncate">{{ player.name }}</div>
+                    <div class="text-[10px] text-emerald-400 font-semibold">{{ player.points }} pts</div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+
+            <!-- Goalkeeper -->
+            <div id="goalkeeper-row" class="flex justify-center gap-3 sm:gap-6 pb-4">
+              @foreach(goalkeepers as player)
+                <div class="player-card relative cursor-grab active:cursor-grabbing" draggable="true" data-player-id="{{ player.id }}" data-position="GK">
+                  @if(player.isCaptain)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">C</div>
+                  @endif
+                  @if(player.isVice)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-slate-300 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">V</div>
+                  @endif
+                  <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-3 border-amber-400 shadow-xl mx-auto bg-slate-700 hover:scale-110 transition-transform duration-200">
+                    <img src="{{ player.img }}" alt="{{ player.name }}" class="w-full h-full object-cover object-top" onerror="this.src='https://via.placeholder.com/64?text=🧤'">
+                  </div>
+                  <div class="mt-2 bg-slate-900/90 backdrop-blur rounded-lg px-2 py-1.5 text-center shadow-lg min-w-[70px]">
+                    <div class="text-xs font-bold text-white truncate">{{ player.name }}</div>
+                    <div class="text-[10px] text-emerald-400 font-semibold">{{ player.points }} pts</div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
           </div>
         </div>
 
@@ -609,22 +643,21 @@
 
         <!-- Bench (Pitch View only) -->
         <div id="bench-pitch-view" class="mt-6 pt-6 border-t border-slate-700">
-          <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">Substitutes</h3>
-          <div class="flex justify-center gap-2 sm:gap-4 flex-wrap">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Substitutes</h3>
+            <span class="text-xs text-slate-500">Drag players to swap positions</span>
+          </div>
+          <div id="bench-row" class="flex justify-center gap-4 sm:gap-6 flex-wrap">
             @foreach(bench as player)
-              <div class="bg-slate-700/50 rounded-xl p-2 sm:p-3 text-center w-16 sm:w-20 opacity-70 hover:opacity-100 transition-opacity cursor-pointer">
-                @if(player.position === "GK")
-                  <div class="text-2xl sm:text-3xl mb-1">🧤</div>
-                @elseif(player.position === "DEF")
-                  <div class="text-2xl sm:text-3xl mb-1">🛡️</div>
-                @elseif(player.position === "MID")
-                  <div class="text-2xl sm:text-3xl mb-1">⚡</div>
-                @else
-                  <div class="text-2xl sm:text-3xl mb-1">⚽</div>
-                @endif
-                <div class="text-xs font-semibold truncate">{{ player.name }}</div>
-                <div class="text-[10px] text-slate-400 truncate">{{ player.team }}</div>
-                <div class="text-xs font-bold text-emerald-400 mt-1">{{ player.points }} pts</div>
+              <div class="player-card bench-player relative cursor-grab active:cursor-grabbing opacity-80 hover:opacity-100 transition-all" draggable="true" data-player-id="{{ player.id }}" data-position="{{ player.position }}">
+                <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-slate-500 shadow-lg mx-auto bg-slate-700 hover:scale-110 transition-transform duration-200 hover:border-indigo-400">
+                  <img src="{{ player.img }}" alt="{{ player.name }}" class="w-full h-full object-cover object-top" onerror="this.src='https://via.placeholder.com/64?text=👤'">
+                </div>
+                <div class="mt-2 bg-slate-700/90 backdrop-blur rounded-lg px-2 py-1.5 text-center shadow-lg min-w-[70px]">
+                  <div class="text-xs font-bold text-white truncate">{{ player.name }}</div>
+                  <div class="text-[10px] text-slate-400">{{ player.position }}</div>
+                  <div class="text-[10px] text-emerald-400 font-semibold">{{ player.points }} pts</div>
+                </div>
               </div>
             @endforeach
           </div>
@@ -1173,6 +1206,127 @@
     function showPlayerOptions(playerName, playerTeam, playerPoints) {
       showPlayerModal(playerName, playerTeam, playerPoints, '7.0');
     }
+
+    // ==========================================
+    // DRAG AND DROP FUNCTIONALITY
+    // ==========================================
+    let draggedPlayer = null;
+    let draggedElement = null;
+
+    function initDragAndDrop() {
+      const playerCards = document.querySelectorAll('.player-card[draggable="true"]');
+
+      playerCards.forEach(card => {
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragend', handleDragEnd);
+        card.addEventListener('dragover', handleDragOver);
+        card.addEventListener('dragenter', handleDragEnter);
+        card.addEventListener('dragleave', handleDragLeave);
+        card.addEventListener('drop', handleDrop);
+      });
+    }
+
+    function handleDragStart(e) {
+      draggedPlayer = this.dataset.playerId;
+      draggedElement = this;
+
+      // Add visual feedback
+      this.style.opacity = '0.5';
+      this.style.transform = 'scale(0.95)';
+
+      // Set drag data
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', draggedPlayer);
+
+      // Add dragging class to pitch
+      document.getElementById('pitch-view')?.classList.add('dragging');
+    }
+
+    function handleDragEnd(e) {
+      this.style.opacity = '';
+      this.style.transform = '';
+
+      // Remove all drag-over styles
+      document.querySelectorAll('.player-card').forEach(card => {
+        card.classList.remove('drag-over');
+      });
+
+      document.getElementById('pitch-view')?.classList.remove('dragging');
+      draggedPlayer = null;
+      draggedElement = null;
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleDragEnter(e) {
+      e.preventDefault();
+      if (this !== draggedElement) {
+        this.classList.add('drag-over');
+        this.style.transform = 'scale(1.1)';
+        this.style.boxShadow = '0 0 20px rgba(99, 102, 241, 0.5)';
+      }
+    }
+
+    function handleDragLeave(e) {
+      this.classList.remove('drag-over');
+      this.style.transform = '';
+      this.style.boxShadow = '';
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (this !== draggedElement && draggedElement) {
+        // Get positions
+        const fromPosition = draggedElement.dataset.position;
+        const toPosition = this.dataset.position;
+
+        // Swap the player cards visually
+        const parent1 = draggedElement.parentNode;
+        const parent2 = this.parentNode;
+
+        // Get the next siblings for proper insertion
+        const next1 = draggedElement.nextSibling;
+        const next2 = this.nextSibling;
+
+        // Perform the swap with animation
+        draggedElement.style.transition = 'all 0.3s ease';
+        this.style.transition = 'all 0.3s ease';
+
+        // Swap positions
+        if (next1 === this) {
+          parent1.insertBefore(this, draggedElement);
+        } else if (next2 === draggedElement) {
+          parent2.insertBefore(draggedElement, this);
+        } else {
+          parent1.insertBefore(this, next1);
+          parent2.insertBefore(draggedElement, next2);
+        }
+
+        // Show toast notification
+        const draggedName = draggedElement.querySelector('.text-xs.font-bold')?.textContent || 'Player';
+        const droppedName = this.querySelector('.text-xs.font-bold')?.textContent || 'Player';
+        showToast(`Swapped ${draggedName} with ${droppedName}`);
+
+        // Reset transitions after animation
+        setTimeout(() => {
+          draggedElement.style.transition = '';
+          this.style.transition = '';
+        }, 300);
+      }
+
+      // Clean up styles
+      this.classList.remove('drag-over');
+      this.style.transform = '';
+      this.style.boxShadow = '';
+    }
+
+    // Initialize drag and drop when DOM is ready
+    document.addEventListener('DOMContentLoaded', initDragAndDrop);
 
     // Modal Functions
     function showPlayerModal(name, team, points, form) {

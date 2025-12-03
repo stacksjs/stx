@@ -781,7 +781,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   }
 
   // Create a temporary output directory
-  const outputDir = path.join(process.cwd(), '.stx-output')
+  const outputDir = path.join(process.cwd(), '.stx/output')
   fs.mkdirSync(outputDir, { recursive: true })
 
   // Initial build
@@ -1070,7 +1070,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   }
 
   // Create a temporary output directory
-  const outputDir = path.join(process.cwd(), '.stx-output')
+  const outputDir = path.join(process.cwd(), '.stx/output')
   fs.mkdirSync(outputDir, { recursive: true })
 
   // Get the common directory from all file paths
