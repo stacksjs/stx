@@ -5,33 +5,143 @@
  *
  * This package provides a TypeScript API for creating native desktop applications
  * with the stx framework. Powered by Craft (~/Code/craft).
+ *
+ * ## Features
+ * - Window Management: Create and control native windows
+ * - System Tray: Build menubar applications
+ * - Modals & Alerts: Native dialogs and notifications
+ * - 35 UI Components: Complete component library
+ * - Hot Reload: Development mode support
  */
 
-// Export alerts/toasts
+// =============================================================================
+// Alerts / Toast Notifications
+// =============================================================================
 export {
+  dismissAlertById,
+  dismissAllAlerts,
+  getActiveAlertCount,
+  notify,
+  requestNotificationPermission,
   showAlert,
   showErrorToast,
   showInfoToast,
   showSuccessToast,
   showToast,
   showWarningToast,
+  TOAST_STYLES,
 } from './alerts'
 
-// Export components
+// =============================================================================
+// Components (35 total)
+// =============================================================================
 export {
-  AVAILABLE_COMPONENTS,
+  // Input Components
   createButton,
-  createCheckbox,
   createTextInput,
+  createCheckbox,
+  createRadioButton,
+  createSlider,
+  createColorPicker,
+  createDatePicker,
+  createTimePicker,
+  createAutocomplete,
+
+  // Display Components
+  createLabel,
+  createImageView,
+  createProgressBar,
+  createAvatar,
+  createBadge,
+  createChip,
+  createCard,
+  createTooltip,
+
+  // Layout Components
+  createScrollView,
+  createSplitView,
+  createAccordion,
+  createStepper,
+  createModalComponent,
+  createTabs,
+  createDropdown,
+
+  // Data Components
+  createListView,
+  createTable,
+  createTreeView,
+  createDataGrid,
+  createChart,
+
+  // Advanced Components
+  createRating,
+  createCodeEditor,
+  createMediaPlayer,
+  createFileExplorer,
+  createWebView,
+
+  // Component list and styles
+  AVAILABLE_COMPONENTS,
+  COMPONENT_STYLES,
 } from './components'
 
-export type { ComponentName } from './components'
+export type {
+  ComponentName,
+  // Input Props
+  ButtonProps,
+  TextInputProps,
+  CheckboxProps,
+  RadioButtonProps,
+  SliderProps,
+  ColorPickerProps,
+  DatePickerProps,
+  TimePickerProps,
+  AutocompleteProps,
+  // Display Props
+  LabelProps,
+  ImageViewProps,
+  ProgressBarProps,
+  AvatarProps,
+  BadgeProps,
+  ChipProps,
+  CardProps,
+  TooltipProps,
+  // Layout Props
+  ScrollViewProps,
+  SplitViewProps,
+  AccordionProps,
+  StepperProps,
+  ModalComponentProps,
+  TabsProps,
+  DropdownProps,
+  // Data Props
+  ListViewProps,
+  TableProps,
+  TreeViewProps,
+  TreeNode,
+  DataGridProps,
+  ChartProps,
+  ChartData,
+  ChartOptions,
+  // Advanced Props
+  RatingProps,
+  CodeEditorProps,
+  MediaPlayerProps,
+  FileExplorerProps,
+  FileNode,
+  WebViewProps,
+} from './components'
 
-// Re-export from types for convenience
-export type { ButtonProps, CheckboxProps, TextInputProps } from './components'
-
-// Export modals
+// =============================================================================
+// Modal Dialogs
+// =============================================================================
 export {
+  alert,
+  closeAllModals,
+  confirm,
+  getActiveModalCount,
+  MODAL_STYLES,
+  prompt,
   showErrorModal,
   showInfoModal,
   showModal,
@@ -40,13 +150,37 @@ export {
   showWarningModal,
 } from './modals'
 
-// Export system tray
+// =============================================================================
+// System Tray / Menubar
+// =============================================================================
 export {
   createMenubar,
   createSystemTray,
+  getActiveTrayInstances,
+  getSimulatedTrayHTML,
+  getTrayInstance,
+  TRAY_MENU_STYLES,
+  triggerTrayAction,
 } from './system-tray'
 
-// Export all types
+// =============================================================================
+// Window Management
+// =============================================================================
+export {
+  createWindow,
+  createWindowWithHTML,
+  getDesktopConfig,
+  isWebviewAvailable,
+  openDevWindow,
+  resetDesktopConfig,
+  setDesktopConfig,
+} from './window'
+
+export type { DesktopConfig } from './window'
+
+// =============================================================================
+// Core Types
+// =============================================================================
 export type {
   AlertOptions,
   ComponentProps,
@@ -60,17 +194,3 @@ export type {
   WindowInstance,
   WindowOptions,
 } from './types'
-
-// Export window management
-export {
-  createWindow,
-  createWindowWithHTML,
-  getDesktopConfig,
-  isWebviewAvailable,
-  openDevWindow,
-  resetDesktopConfig,
-  setDesktopConfig,
-} from './window'
-
-// Export desktop configuration type
-export type { DesktopConfig } from './window'

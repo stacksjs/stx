@@ -503,9 +503,18 @@ This document contains all identified issues, improvements, and enhancements for
   - Very large templates
   - **Status**: FIXED - Added test generators in `test-utils.ts`: `generateNestedDirectives(depth)` for deeply nested directive structures, `generateUnicodeTemplate()` for Unicode/emoji/RTL content, `generateLargeTemplate(itemCount)` for stress testing, `generateComprehensiveTemplate()` for all directive types.
 
-- [ ] **No performance regression tests**
+- [x] **No performance regression tests**
   - No benchmarks in CI
   - Add performance tests with thresholds
+  - **Status**: IMPLEMENTED - Created comprehensive performance regression testing in `packages/benchmarks/src/regression.ts`:
+    - `runRegressionTests()` - Main entry point with configurable options
+    - `DEFAULT_THRESHOLDS` - Pre-defined thresholds for stx operations (simple/complex templates, components, expressions, loops)
+    - Threshold configuration: `maxMs`, `minOpsPerSec`, `maxStdDevPercent`, `allowedRegressionPercent`
+    - Baseline comparison: Save and compare against previous runs
+    - Regression detection: Automatic detection of performance degradation
+    - Multiple output formats: JSON, Markdown, Console
+    - CI-friendly exit codes: 0 for pass, 1 for regressions
+    - New npm scripts: `bench:regression`, `bench:regression:save`, `bench:regression:check`
 
 - [x] **Test fixtures are inline** (`test/stx.test.ts`)
   - Templates written as strings in tests
@@ -672,21 +681,51 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Other Desktop Features
 
-- [ ] **System tray is placeholder** (per CLAUDE.md)
+- [x] **System tray is placeholder** (per CLAUDE.md)
   - `packages/desktop/src/system-tray.ts` is placeholder
   - Implement or remove from exports
+  - **Status**: IMPLEMENTED - Full cross-platform system tray implementation with:
+    - `createSystemTray()` / `createMenubar()` - Create system tray with menu items
+    - `getTrayInstance()` / `getActiveTrayInstances()` - Instance management
+    - `triggerTrayAction()` - Programmatic menu item triggering
+    - `getSimulatedTrayHTML()` - Web-based simulation for development
+    - Platform detection for macOS/Linux/Windows (ready for native bindings)
+    - Full CSS styling for simulated tray menu (`TRAY_MENU_STYLES`)
 
-- [ ] **Modals are placeholder** (per CLAUDE.md)
+- [x] **Modals are placeholder** (per CLAUDE.md)
   - `packages/desktop/src/modals.ts` is placeholder
   - Implement or remove from exports
+  - **Status**: IMPLEMENTED - Full cross-platform modal implementation with:
+    - `showModal()` - Main modal function with Promise-based API
+    - `showInfoModal()` / `showWarningModal()` / `showErrorModal()` / `showSuccessModal()` / `showQuestionModal()` - Type-specific modals
+    - `confirm()` / `alert()` / `prompt()` - Convenience functions
+    - `closeAllModals()` / `getActiveModalCount()` - Modal management
+    - Keyboard support (Enter/Escape), accessibility (ARIA), custom buttons
+    - Full CSS styling with dark mode support (`MODAL_STYLES`)
 
-- [ ] **Alerts are placeholder** (per CLAUDE.md)
+- [x] **Alerts are placeholder** (per CLAUDE.md)
   - `packages/desktop/src/alerts.ts` is placeholder
   - Implement or remove from exports
+  - **Status**: IMPLEMENTED - Full cross-platform alert/toast implementation with:
+    - `showAlert()` / `showToast()` - Core notification functions
+    - `showInfoToast()` / `showSuccessToast()` / `showWarningToast()` / `showErrorToast()` - Type-specific toasts
+    - `notify()` - Notification with title
+    - `dismissAlertById()` / `dismissAllAlerts()` / `getActiveAlertCount()` - Alert management
+    - `requestNotificationPermission()` - Browser notification API integration
+    - 6 position options, auto-dismiss, click handlers
+    - Full CSS styling with animations (`TOAST_STYLES`)
 
-- [ ] **Only 3 of 35 components implemented** (per CLAUDE.md)
+- [x] **Only 3 of 35 components implemented** (per CLAUDE.md)
   - `packages/desktop/src/components.ts` has 35 documented but only 3 implemented
   - Implement remaining or update documentation
+  - **Status**: IMPLEMENTED - All 35 components now implemented:
+    - **Input (9)**: Button, TextInput, Checkbox, RadioButton, Slider, ColorPicker, DatePicker, TimePicker, Autocomplete
+    - **Display (9)**: Label, ImageView, ProgressBar, Avatar, Badge, Chip, Card, Tooltip, Toast
+    - **Layout (7)**: ScrollView, SplitView, Accordion, Stepper, Modal, Tabs, Dropdown
+    - **Data (5)**: ListView, Table, TreeView, DataGrid, Chart
+    - **Advanced (5)**: Rating, CodeEditor, MediaPlayer, FileExplorer, WebView
+    - Each component: typed props interface, HTML generator function, full CSS styling
+    - Comprehensive dark mode support across all components
 
 ---
 
@@ -699,9 +738,15 @@ This document contains all identified issues, improvements, and enhancements for
   - Consolidate into single source
   - **Status**: DOCUMENTED - Added comprehensive module-level documentation explaining why two plugins exist: (1) Different export patterns (function vs constant), (2) Internal plugin needs StxError classes, (3) Avoiding circular dependencies. Both share the same core processing pipeline from @stacksjs/stx.
 
-- [ ] **No watch mode support**
+- [x] **No watch mode support**
   - Plugin doesn't support incremental builds
   - Add file watching integration
+  - **Status**: IMPLEMENTED - Full watch mode implementation in `packages/bun-plugin/src/watch.ts`:
+    - `createWatcher()` - Low-level file watcher with configurable patterns and debouncing
+    - `watchAndBuild()` - High-level watch mode with automatic rebuilds
+    - `startWatchMode()` - Interactive watch mode with console UI and user commands
+    - Features: debouncing (configurable), directory watching, ignore patterns, rebuild callbacks
+    - Types: `WatchOptions`, `WatchAndBuildOptions`, `WatcherInstance`, `WatchEvent`, `WatchBuildResult`
 
 - [x] **Error handling differs from main plugin**
   - Different error page generation
@@ -755,9 +800,21 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Translation System (`i18n.ts`)
 
-- [ ] **Translation file loading is synchronous-ish**
+- [x] **Translation file loading is synchronous-ish**
   - Uses dynamic import but blocks on it
   - Consider lazy loading
+  - **Status**: IMPLEMENTED - Added comprehensive lazy loading system in `i18n.ts`:
+    - `loadTranslationLazy()` - Load with request deduplication (multiple calls share same promise)
+    - `preloadTranslations()` - Preload multiple locales with parallel/sequential options
+    - `preloadTranslationsBackground()` - Fire-and-forget background preloading
+    - `getTranslationSync()` - Get cached translations without blocking
+    - `getTranslationAsync()` - Get with automatic loading (fast path for cached)
+    - `waitForLocale()` - Wait for a locale to finish loading with timeout support
+    - `getLoadingState()` / `isLoading()` / `isLoaded()` - Check loading status
+    - `getLoadingLocales()` - Get all currently loading locales
+    - `cancelPendingLoads()` - Cancel pending loads
+    - `PreloadConfig` - Configure parallel loading, priority order, callbacks
+    - 23 tests covering all lazy loading functionality
 
 - [x] **No pluralization support**
   - Only simple string replacement
@@ -857,9 +914,14 @@ This document contains all identified issues, improvements, and enhancements for
     - `A11yAutoFixConfig` - Configurable fixes for: missing alt, missing labels, missing form labels, table headers, missing lang, positive tabindex, button focusable
     - `A11yFixResult` - Detailed results with before/after for each fix
 
-- [ ] **Requires very-happy-dom** (`a11y.ts:104-106`)
+- [x] **Requires very-happy-dom** (`a11y.ts:104-106`)
   - DOM parsing requires global document
   - Add fallback for non-DOM environments
+  - **Status**: IMPLEMENTED - Added regex-based accessibility checker for non-DOM environments:
+    - `hasDOMSupport()` - Check if DOM environment is available (exported)
+    - `checkA11yWithRegex()` - Regex-based checker covering 11 common a11y issues
+    - `checkA11y()` now automatically uses regex fallback when DOM unavailable
+    - Covers: missing alt, empty buttons/links, missing labels, heading hierarchy, missing lang, tables without headers, autoplay media, positive tabindex, iframes without title, custom buttons without tabindex
 
 - [x] **Missing module documentation**
   - No overview of a11y features
@@ -871,9 +933,24 @@ This document contains all identified issues, improvements, and enhancements for
 
 ### Web Component Generation (`web-components.ts`)
 
-- [ ] **Generated code is basic** (`web-components.ts:127-207`)
+- [x] **Generated code is basic** (`web-components.ts:127-207`)
   - No reactive properties
   - No proper lifecycle management
+  - **Status**: IMPLEMENTED - Added comprehensive reactive web component system:
+    - `generateReactiveWebComponent()` - Generate JS web component with:
+      - Reactive properties with automatic re-rendering
+      - Property observers for side effects
+      - Attribute reflection (property <-> attribute sync)
+      - Internal state management with `setState()`
+      - Batched rendering with `requestAnimationFrame`
+      - Full lifecycle hooks (connected, disconnected, adopted)
+      - Event handling system
+      - Template interpolation with `{{property}}` syntax
+    - `generateReactiveWebComponentTS()` - TypeScript version with full type safety
+    - `generateReactiveMixin()` - Mixin for adding reactivity to existing components
+    - `generateReactiveRuntime()` - Complete runtime with `StxElement` base class
+    - `ReactivePropertyDefinition` - Configure type, default, reflect, observer, render
+    - `ReactiveWebComponentConfig` - Full component configuration
 
 - [x] **No CSS scoping**
   - Styles not properly scoped
@@ -1056,9 +1133,19 @@ This document contains all identified issues, improvements, and enhancements for
     - Types: Keyframe, TimelineEntry, KeyframeAnimationOptions, SpringConfig
     - 117 tests covering transitions, scroll-animate, keyframes, spring, stagger, timeline, and directives
 
-- [ ] **Database integration**
+- [x] **Database integration**
   - Direct database queries in templates
   - Like Laravel's Blade with Eloquent
+  - **Status**: IMPLEMENTED - Created comprehensive database module in `packages/stx/src/database.ts`:
+    - **Query Builder**: Fluent API with `query('table')`, supports select, where, join, orderBy, groupBy, limit, offset, aggregates (count, sum, min, max, avg)
+    - **Multiple Adapters**: SQLite (using Bun's built-in), PostgreSQL, MySQL support with connection pooling
+    - **Model System**: `defineModel()` with relationships (hasOne, hasMany, belongsTo, belongsToMany), fillable/hidden fields, timestamps, soft deletes, casts
+    - **Template Directives**: `@db('table')->where()->get()`, `@model('User')->find(1)`, `@query('SELECT...') as $var`
+    - **Schema Builder**: `schema().create()`, `Blueprint` class for migrations with column types (id, string, text, integer, boolean, datetime, json, timestamps, softDeletes)
+    - **Transactions**: `transaction(async () => { ... })` with automatic commit/rollback
+    - **Caching**: Query result caching with TTL and automatic invalidation on writes
+    - **Logging**: Query logging with duration tracking for debugging
+    - 79 tests covering query builder, models, schema, caching, and SQLite operations
 
 ---
 
@@ -1082,5 +1169,5 @@ When working on items:
 
 ---
 
-*Last updated: December 1, 2024*
+*Last updated: December 2, 2024*
 *Generated from codebase analysis*

@@ -3,10 +3,43 @@
  *
  * Features:
  * - Translation file loading (JSON, YAML, JS)
+ * - Lazy loading with deduplication
+ * - Background preloading for multiple locales
  * - Nested key access (e.g., 'messages.welcome')
  * - Parameter replacement (e.g., ':name' → 'John')
  * - Basic pluralization support
+ * - ICU MessageFormat support
  * - Translation caching with invalidation
+ *
+ * ## Lazy Loading
+ *
+ * Translations are loaded lazily with request deduplication:
+ * ```ts
+ * // Multiple simultaneous calls share the same promise
+ * const [t1, t2] = await Promise.all([
+ *   loadTranslation('en', options),
+ *   loadTranslation('en', options), // Reuses same request
+ * ])
+ * ```
+ *
+ * ## Background Preloading
+ *
+ * Preload translations in the background:
+ * ```ts
+ * // Fire and forget - doesn't block
+ * preloadTranslationsBackground({
+ *   locales: ['en', 'es', 'fr', 'de'],
+ *   parallel: true,
+ *   onLocaleLoaded: (locale) => console.log(`${locale} ready`)
+ * }, options)
+ *
+ * // Later, check if loaded or wait
+ * if (isLoaded('es')) {
+ *   const translations = getTranslationSync('es')
+ * } else {
+ *   await waitForLocale('es', 5000) // Wait up to 5s
+ * }
+ * ```
  *
  * ## Pluralization
  *
@@ -61,9 +94,51 @@ interface TranslationCacheEntry {
 }
 
 /**
+ * Loading state for async translation loading
+ */
+type LoadingState = 'idle' | 'loading' | 'loaded' | 'error'
+
+/**
+ * Pending load tracking for deduplication
+ */
+interface PendingLoad {
+  promise: Promise<Record<string, any>>
+  state: LoadingState
+  error?: Error
+}
+
+/**
+ * Preload configuration
+ */
+export interface PreloadConfig {
+  /** Locales to preload */
+  locales: string[]
+  /** Whether to load in parallel (true) or sequentially (false) */
+  parallel?: boolean
+  /** Priority order - higher priority locales load first in sequential mode */
+  priority?: Record<string, number>
+  /** Callback when a locale finishes loading */
+  onLocaleLoaded?: (locale: string) => void
+  /** Callback when all locales are loaded */
+  onComplete?: () => void
+  /** Callback on error */
+  onError?: (locale: string, error: Error) => void
+}
+
+/**
  * Cache for translation files with metadata
  */
 const translationsCache: Record<string, TranslationCacheEntry> = {}
+
+/**
+ * Track pending loads to prevent duplicate requests
+ */
+const pendingLoads: Record<string, PendingLoad> = {}
+
+/**
+ * Loading state for each locale
+ */
+const loadingStates: Record<string, LoadingState> = {}
 
 /**
  * Clear the translation cache
@@ -125,34 +200,329 @@ function isCacheStale(entry: TranslationCacheEntry, maxAge: number = 0): boolean
 }
 
 // =============================================================================
-// Translation Loading
+// Lazy Loading & Preloading
 // =============================================================================
 
 /**
- * Load a translation file
+ * Get the loading state for a locale
+ *
+ * @param locale - The locale to check
+ * @returns The current loading state
+ */
+export function getLoadingState(locale: string): LoadingState {
+  if (translationsCache[locale]) {
+    return 'loaded'
+  }
+  return loadingStates[locale] || 'idle'
+}
+
+/**
+ * Check if a locale is currently being loaded
+ *
+ * @param locale - The locale to check
+ * @returns True if the locale is currently loading
+ */
+export function isLoading(locale: string): boolean {
+  return loadingStates[locale] === 'loading'
+}
+
+/**
+ * Check if a locale has been loaded (cached)
+ *
+ * @param locale - The locale to check
+ * @returns True if the locale is loaded and cached
+ */
+export function isLoaded(locale: string): boolean {
+  return !!translationsCache[locale]
+}
+
+/**
+ * Preload translations for specified locales in the background.
+ * This is non-blocking and returns immediately.
+ *
+ * @param config - Preload configuration
+ * @param options - stx options with i18n configuration
+ * @returns A promise that resolves when all preloading is complete
+ *
+ * @example
+ * // Preload common locales in parallel
+ * preloadTranslations({
+ *   locales: ['en', 'es', 'fr', 'de'],
+ *   parallel: true,
+ *   onLocaleLoaded: (locale) => console.log(`${locale} ready`),
+ *   onComplete: () => console.log('All translations loaded')
+ * }, options)
+ *
+ * @example
+ * // Preload with priority (user's locale first)
+ * preloadTranslations({
+ *   locales: ['en', 'es', 'fr', 'de'],
+ *   parallel: false,
+ *   priority: { 'es': 10, 'en': 5 }, // Spanish first, then English
+ * }, options)
+ */
+export async function preloadTranslations(
+  config: PreloadConfig,
+  options: StxOptions,
+): Promise<void> {
+  const { locales, parallel = true, priority = {}, onLocaleLoaded, onComplete, onError } = config
+
+  // Sort locales by priority if in sequential mode
+  const sortedLocales = parallel
+    ? locales
+    : [...locales].sort((a, b) => (priority[b] || 0) - (priority[a] || 0))
+
+  if (parallel) {
+    // Load all locales in parallel
+    const promises = sortedLocales.map(async (locale) => {
+      try {
+        await loadTranslationLazy(locale, options)
+        onLocaleLoaded?.(locale)
+      }
+      catch (error) {
+        onError?.(locale, error instanceof Error ? error : new Error(String(error)))
+      }
+    })
+
+    await Promise.all(promises)
+  }
+  else {
+    // Load sequentially with priority
+    for (const locale of sortedLocales) {
+      try {
+        await loadTranslationLazy(locale, options)
+        onLocaleLoaded?.(locale)
+      }
+      catch (error) {
+        onError?.(locale, error instanceof Error ? error : new Error(String(error)))
+      }
+    }
+  }
+
+  onComplete?.()
+}
+
+/**
+ * Start preloading translations in the background without blocking.
+ * This function returns immediately and loads in the background.
+ *
+ * @param config - Preload configuration
+ * @param options - stx options with i18n configuration
+ *
+ * @example
+ * // Fire and forget background preloading
+ * preloadTranslationsBackground({
+ *   locales: ['en', 'es', 'fr'],
+ *   parallel: true
+ * }, options)
+ * // Execution continues immediately
+ */
+export function preloadTranslationsBackground(
+  config: PreloadConfig,
+  options: StxOptions,
+): void {
+  // Use queueMicrotask to defer without blocking
+  queueMicrotask(() => {
+    preloadTranslations(config, options).catch((error) => {
+      if (options.debug) {
+        console.error('Background preload error:', error)
+      }
+    })
+  })
+}
+
+/**
+ * Lazy load a translation file with deduplication.
+ * If a load is already in progress for this locale, returns the existing promise.
+ * This prevents multiple simultaneous loads of the same locale.
  *
  * @param locale - Locale code (e.g., 'en', 'fr', 'de')
  * @param options - stx options with i18n configuration
- * @returns Translation dictionary
+ * @returns Promise resolving to translation dictionary
+ *
+ * @example
+ * // Multiple calls during loading period share the same promise
+ * const p1 = loadTranslationLazy('en', options)
+ * const p2 = loadTranslationLazy('en', options)
+ * // p1 === p2 (same promise instance)
  */
-export async function loadTranslation(
+export async function loadTranslationLazy(
+  locale: string,
+  options: StxOptions,
+): Promise<Record<string, any>> {
+  // If already cached, return immediately
+  const i18nConfig = { ...defaultI18nConfig, ...options.i18n }
+  if (i18nConfig.cache && translationsCache[locale]) {
+    const entry = translationsCache[locale]
+    const maxAge = (options.i18n as any)?.cacheMaxAge ?? 0
+    if (!isCacheStale(entry, maxAge)) {
+      return entry.translations
+    }
+  }
+
+  // If already loading, return existing promise (deduplication)
+  if (pendingLoads[locale]?.state === 'loading') {
+    return pendingLoads[locale].promise
+  }
+
+  // Start new load
+  loadingStates[locale] = 'loading'
+
+  const loadPromise = loadTranslationInternal(locale, options)
+    .then((translations) => {
+      loadingStates[locale] = 'loaded'
+      delete pendingLoads[locale]
+      return translations
+    })
+    .catch((error) => {
+      loadingStates[locale] = 'error'
+      pendingLoads[locale] = {
+        promise: loadPromise,
+        state: 'error',
+        error: error instanceof Error ? error : new Error(String(error)),
+      }
+      throw error
+    })
+
+  pendingLoads[locale] = {
+    promise: loadPromise,
+    state: 'loading',
+  }
+
+  return loadPromise
+}
+
+/**
+ * Get a translation synchronously if already cached, otherwise return undefined.
+ * This is useful for non-blocking render patterns where you want to show
+ * a fallback while translations load.
+ *
+ * @param locale - Locale code
+ * @returns Cached translations or undefined if not loaded
+ *
+ * @example
+ * const translations = getTranslationSync('en')
+ * if (translations) {
+ *   // Use translations
+ * } else {
+ *   // Show loading state or fallback
+ *   loadTranslationLazy('en', options).then(handleLoaded)
+ * }
+ */
+export function getTranslationSync(locale: string): Record<string, any> | undefined {
+  return translationsCache[locale]?.translations
+}
+
+/**
+ * Get translation with automatic loading.
+ * Returns cached translations immediately if available,
+ * otherwise loads them and returns.
+ *
+ * This is the recommended async API for most use cases.
+ *
+ * @param locale - Locale code
+ * @param options - stx options
+ * @returns Promise resolving to translations
+ */
+export async function getTranslationAsync(
+  locale: string,
+  options: StxOptions,
+): Promise<Record<string, any>> {
+  // Fast path: return from cache if available
+  const cached = getTranslationSync(locale)
+  if (cached) {
+    return cached
+  }
+
+  // Slow path: load and cache
+  return loadTranslationLazy(locale, options)
+}
+
+/**
+ * Wait for a locale to finish loading.
+ * Useful when you've started a background preload and need to wait for it.
+ *
+ * @param locale - Locale to wait for
+ * @param timeoutMs - Optional timeout in milliseconds
+ * @returns Promise that resolves when loaded, or rejects on timeout/error
+ *
+ * @example
+ * preloadTranslationsBackground({ locales: ['en', 'es'] }, options)
+ * // ... later
+ * await waitForLocale('en', 5000) // Wait up to 5 seconds
+ */
+export async function waitForLocale(
+  locale: string,
+  timeoutMs?: number,
+): Promise<Record<string, any>> {
+  // Already loaded
+  if (translationsCache[locale]) {
+    return translationsCache[locale].translations
+  }
+
+  // Currently loading
+  if (pendingLoads[locale]) {
+    if (timeoutMs) {
+      return Promise.race([
+        pendingLoads[locale].promise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`Timeout waiting for locale: ${locale}`)), timeoutMs),
+        ),
+      ])
+    }
+    return pendingLoads[locale].promise
+  }
+
+  // Not loading - this locale hasn't been requested
+  throw new Error(`Locale "${locale}" is not loading. Call loadTranslationLazy first.`)
+}
+
+/**
+ * Get all currently loading locales
+ *
+ * @returns Array of locale codes currently being loaded
+ */
+export function getLoadingLocales(): string[] {
+  return Object.entries(loadingStates)
+    .filter(([_, state]) => state === 'loading')
+    .map(([locale]) => locale)
+}
+
+/**
+ * Cancel pending translation loads (clears pending state).
+ * Note: This doesn't actually abort HTTP requests, but clears tracking state.
+ *
+ * @param locale - Optional locale to cancel. If not provided, cancels all.
+ */
+export function cancelPendingLoads(locale?: string): void {
+  if (locale) {
+    delete pendingLoads[locale]
+    delete loadingStates[locale]
+  }
+  else {
+    for (const key of Object.keys(pendingLoads)) {
+      delete pendingLoads[key]
+    }
+    for (const key of Object.keys(loadingStates)) {
+      delete loadingStates[key]
+    }
+  }
+}
+
+// =============================================================================
+// Translation Loading (Internal)
+// =============================================================================
+
+/**
+ * Internal translation loading logic (extracted from loadTranslation)
+ */
+async function loadTranslationInternal(
   locale: string,
   options: StxOptions,
 ): Promise<Record<string, any>> {
   const i18nConfig = {
     ...defaultI18nConfig,
     ...options.i18n,
-  }
-
-  // Check cache first if enabled
-  if (i18nConfig.cache && translationsCache[locale]) {
-    const entry = translationsCache[locale]
-    // Check if cache is stale (if maxAge is configured)
-    const maxAge = (options.i18n as any)?.cacheMaxAge ?? 0
-    if (!isCacheStale(entry, maxAge)) {
-      return entry.translations
-    }
-    // Cache is stale, will reload below
   }
 
   // Determine the path to the translation file
@@ -203,12 +573,41 @@ export async function loadTranslation(
 
     // If file not found and locale is not the default, try to load the default locale
     if (locale !== i18nConfig.defaultLocale) {
-      return loadTranslation(i18nConfig.defaultLocale, options)
+      return loadTranslationInternal(i18nConfig.defaultLocale, options)
     }
 
     // Return empty object if default locale file is also not found
     return {}
   }
+}
+
+// =============================================================================
+// Translation Loading (Public API)
+// =============================================================================
+
+/**
+ * Load a translation file.
+ *
+ * This is the main entry point for loading translations. It uses lazy loading
+ * with deduplication internally, so multiple calls for the same locale will
+ * share the same promise.
+ *
+ * For more control over loading behavior, see:
+ * - `loadTranslationLazy()` - Explicit lazy loading with deduplication
+ * - `preloadTranslations()` - Preload multiple locales
+ * - `getTranslationSync()` - Get cached translations without loading
+ * - `getTranslationAsync()` - Get with automatic loading
+ *
+ * @param locale - Locale code (e.g., 'en', 'fr', 'de')
+ * @param options - stx options with i18n configuration
+ * @returns Translation dictionary
+ */
+export async function loadTranslation(
+  locale: string,
+  options: StxOptions,
+): Promise<Record<string, any>> {
+  // Delegate to lazy loading implementation for deduplication
+  return loadTranslationLazy(locale, options)
 }
 
 /**

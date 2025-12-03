@@ -127,7 +127,7 @@ describe('Accessibility Features', () => {
     })
 
     test('should detect missing language attribute', async () => {
-      const html = `<html><body>Content</body></html>`
+      const html = `<html><body><main>Content</main></body></html>`
       const violations = await checkA11y(html, 'test.stx')
 
       expect(violations.length).toBe(1)
@@ -138,13 +138,15 @@ describe('Accessibility Features', () => {
       const html = `
       <html lang="en">
         <body>
-          <h1>Title</h1>
-          <h2>Subtitle</h2>
-          <img src="test.jpg" alt="Test image">
-          <button aria-label="Close">X</button>
-          <label>
-            Name: <input type="text">
-          </label>
+          <main>
+            <h1>Title</h1>
+            <h2>Subtitle</h2>
+            <img src="test.jpg" alt="Test image">
+            <button aria-label="Close">X</button>
+            <label>
+              Name: <input type="text">
+            </label>
+          </main>
         </body>
       </html>`
 
