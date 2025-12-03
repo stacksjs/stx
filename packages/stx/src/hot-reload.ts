@@ -83,53 +83,69 @@ export class HotReloadServer {
    * Start the WebSocket server
    */
   start(port?: number): number {
-    const wsPort = port ?? this.options.wsPort
+    let wsPort = port ?? this.options.wsPort
+    const maxAttempts = 20
 
-    this.server = Bun.serve({
-      port: wsPort,
-      fetch(req, server) {
-        // Upgrade HTTP requests to WebSocket
-        const success = server.upgrade(req)
-        if (success) {
-          return undefined
-        }
-        // Return info for non-WebSocket requests
-        return new Response('stx Hot Reload Server', {
-          headers: { 'Content-Type': 'text/plain' },
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        this.server = Bun.serve({
+          port: wsPort,
+          fetch(req, server) {
+            // Upgrade HTTP requests to WebSocket
+            const success = server.upgrade(req)
+            if (success) {
+              return undefined
+            }
+            // Return info for non-WebSocket requests
+            return new Response('stx Hot Reload Server', {
+              headers: { 'Content-Type': 'text/plain' },
+            })
+          },
+          websocket: {
+            open: (ws) => {
+              this.clients.add(ws as unknown as WebSocketClient)
+              if (this.options.verbose) {
+                console.log(`[HMR] Client connected (${this.clients.size} total)`)
+              }
+              // Send connected message
+              ws.send(JSON.stringify({
+                type: 'connected',
+                timestamp: Date.now(),
+              } as HotReloadMessage))
+            },
+            close: (ws) => {
+              this.clients.delete(ws as unknown as WebSocketClient)
+              if (this.options.verbose) {
+                console.log(`[HMR] Client disconnected (${this.clients.size} total)`)
+              }
+            },
+            message: (_ws, message) => {
+              // Handle ping/pong for connection keep-alive
+              if (message === 'ping') {
+                // Pong is automatic in Bun
+              }
+            },
+          },
         })
-      },
-      websocket: {
-        open: (ws) => {
-          this.clients.add(ws as unknown as WebSocketClient)
-          if (this.options.verbose) {
-            console.log(`[HMR] Client connected (${this.clients.size} total)`)
-          }
-          // Send connected message
-          ws.send(JSON.stringify({
-            type: 'connected',
-            timestamp: Date.now(),
-          } as HotReloadMessage))
-        },
-        close: (ws) => {
-          this.clients.delete(ws as unknown as WebSocketClient)
-          if (this.options.verbose) {
-            console.log(`[HMR] Client disconnected (${this.clients.size} total)`)
-          }
-        },
-        message: (_ws, message) => {
-          // Handle ping/pong for connection keep-alive
-          if (message === 'ping') {
-            // Pong is automatic in Bun
-          }
-        },
-      },
-    })
 
-    if (this.options.verbose) {
-      console.log(`[HMR] WebSocket server started on port ${wsPort}`)
+        if (this.options.verbose) {
+          console.log(`[HMR] WebSocket server started on port ${wsPort}`)
+        }
+
+        return wsPort
+      }
+      catch (error: any) {
+        if (error?.code === 'EADDRINUSE') {
+          // Port is in use, try the next one
+          wsPort++
+          continue
+        }
+        // Re-throw other errors
+        throw error
+      }
     }
 
-    return wsPort
+    throw new Error(`Could not find an available port after ${maxAttempts} attempts starting from ${port ?? this.options.wsPort}`)
   }
 
   /**
