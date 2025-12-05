@@ -11,6 +11,9 @@
 // Addons
 export * from './addons'
 
+// CLI
+export * from './cli'
+
 // Collection (scanner, analyzer, tree)
 export * from './collect'
 
@@ -43,20 +46,26 @@ export * from './controls'
 // Docs Generator
 export * from './docs-generator'
 
+// Errors
+export * from './errors'
+
 // Generator
 export * from './generator'
 
 // HMR
 export * from './hmr'
 
+// Interactions
+export * from './interactions'
+
 // Output (terminal styling)
 export * from './output'
-
 // Search
 export * from './search'
 
 // Server
 export { createStoryServer } from './server'
+
 export type { ServerOptions, StoryServer } from './server'
 
 // Setup
@@ -65,5 +74,11 @@ export * from './setup'
 // Testing
 export * from './testing'
 
+// Theme
+export * from './theme'
+
 // Types
 export * from './types'
+
+// UI Components
+export * from './ui'

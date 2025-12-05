@@ -113,6 +113,8 @@ export interface StoryConfig {
   setupFile?: string
   /** Default server port */
   port?: number
+  /** Disable auto-generated props controls globally */
+  autoPropsDisabled?: boolean
 }
 
 // =============================================================================
@@ -180,6 +182,8 @@ export interface ServerStory {
   iconColor?: string
   /** Show only in docs, not in canvas */
   docsOnly?: boolean
+  /** Disable auto-generated props controls for this story */
+  autoPropsDisabled?: boolean
 }
 
 /**
@@ -336,6 +340,7 @@ export type ControlType =
   | 'json'
   | 'textarea'
   | 'slider'
+  | 'buttongroup'
 
 /**
  * Control configuration

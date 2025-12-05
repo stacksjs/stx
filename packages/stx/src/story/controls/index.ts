@@ -50,6 +50,8 @@ export function renderControl(
       return renderJsonControl(title || '', value, onChange)
     case 'date':
       return renderDateControl(title || '', value, onChange)
+    case 'buttongroup':
+      return renderButtonGroupControl(title || '', value, onChange, config)
     default:
       return renderTextControl(title || '', value, onChange)
   }
@@ -399,6 +401,43 @@ export function getControlStyles(): string {
       font-size: 13px;
       color: var(--text-secondary, #666);
     }
+  `
+}
+
+/**
+ * Button group control
+ */
+export function renderButtonGroupControl(
+  title: string,
+  value: any,
+  onChange: string,
+  config: ControlConfig,
+): string {
+  const options = normalizeOptions(config.options)
+
+  const buttonsHtml = options
+    .map((opt: ControlOption) => {
+      const optValue = typeof opt === 'object' ? opt.value : opt
+      const optLabel = typeof opt === 'object' ? opt.label : opt
+      const active = optValue === value ? 'active' : ''
+      return `
+        <button
+          type="button"
+          class="stx-control-btn-group-btn ${active}"
+          data-value="${escapeHtml(String(optValue))}"
+          onclick="${onChange}"
+        >${escapeHtml(String(optLabel))}</button>
+      `
+    })
+    .join('')
+
+  return `
+    <div class="stx-control stx-control-btn-group">
+      <label class="stx-control-label">${escapeHtml(title)}</label>
+      <div class="stx-control-btn-group-wrapper">
+        ${buttonsHtml}
+      </div>
+    </div>
   `
 }
 

@@ -347,7 +347,7 @@ const sizeOptions = [
 - [x] `StxTextarea` - Multi-line text
 - [x] `StxJson` - JSON editor for objects
 - [x] `StxColorSelect` - Color picker
-- [ ] `StxButtonGroup` - Button group selector
+- [x] `StxButtonGroup` - Button group selector
 
 ```html
 <!-- Control usage in stories -->
@@ -368,7 +368,7 @@ const sizeOptions = [
 - [x] Auto-generate story file for components without `.story.stx`
 - [x] Infer controls from component props
 - [x] Generate variants for enum/boolean props
-- [ ] Support `autoPropsDisabled` to opt-out
+- [x] Support `autoPropsDisabled` to opt-out
 
 ```typescript
 // Auto-generation for components without explicit stories
@@ -426,7 +426,7 @@ export interface ServerOptions {
 - [x] Create `packages/stx/src/story/app/` directory
 - [x] Create sidebar with tree navigation (basic)
 - [x] Create story canvas with iframe isolation (basic)
-- [ ] Create controls panel (collapsible)
+- [x] Create controls panel (collapsible)
 - [x] Create toolbar (viewport, background, zoom) (basic)
 - [x] Create search with keyboard navigation (search module created)
 
@@ -469,23 +469,23 @@ interface ControlConfig {
 
 ### 4.4 Live Preview
 
-- [ ] Real-time component rendering on prop change
-- [ ] Iframe isolation for component preview
-- [ ] Responsive viewport controls (mobile, tablet, desktop, custom)
-- [ ] Zoom controls
-- [ ] Background color options
-- [ ] Grid/ruler overlay option
-- [ ] Side-by-side comparison mode (two prop states)
+- [x] Real-time component rendering on prop change
+- [x] Iframe isolation for component preview
+- [x] Responsive viewport controls (mobile, tablet, desktop, custom)
+- [x] Zoom controls
+- [x] Background color options
+- [x] Grid/ruler overlay option
+- [x] Side-by-side comparison mode (two prop states)
 - [ ] Native window preview via `@stacksjs/desktop` integration
 - [ ] Auto-inject Headwind CSS for utility classes
 
 ### 4.5 Code Panel
 
-- [ ] Show component source code
-- [ ] Show current story code with props
-- [ ] Copy code button
-- [ ] Syntax highlighting (reuse existing markdown highlighting)
-- [ ] "Open in VS Code" button (integrate with vscode extension)
+- [x] Show component source code
+- [x] Show current story code with props
+- [x] Copy code button
+- [x] Syntax highlighting (reuse existing markdown highlighting)
+- [x] "Open in VS Code" button (integrate with vscode extension)
 - [ ] Show compiled HTML output toggle
 
 ---
@@ -494,9 +494,9 @@ interface ControlConfig {
 
 ### 5.1 Story CLI Commands
 
-- [ ] Add `story` command to CLI in `packages/stx/bin/cli.ts`
+- [x] Add `story` command to CLI in `packages/stx/src/story/cli.ts`
 - [x] Subcommands: `dev`, `build`, `preview`
-- [ ] Support all config options as CLI flags
+- [x] Support all config options as CLI flags
 
 ```typescript
 // CLI command structure
@@ -634,9 +634,9 @@ export async function runA11yTests(
 
 ### 6.4 Interaction Testing
 
-- [ ] Support `@interaction` blocks in stories
-- [ ] Simulate user interactions (click, type, etc.)
-- [ ] Assert component state after interactions
+- [x] Support `@interaction` blocks in stories
+- [x] Simulate user interactions (click, type, etc.)
+- [x] Assert component state after interactions
 - [ ] Integration with Bun test runner
 
 ```html
@@ -685,10 +685,10 @@ export function getAddons(): StorybookAddon[]
 - [x] **Docs**: Auto-generated documentation
 - [x] **Measure**: Spacing/sizing overlay
 - [x] **Outline**: Component boundaries
-- [ ] **i18n**: Test components with different locales (integrate with `packages/stx/src/i18n.ts`)
-- [ ] **A11y**: Real-time accessibility audit panel
-- [ ] **Performance**: Render timing metrics
-- [ ] **State**: Component state inspector
+- [x] **i18n**: Test components with different locales (integrate with `packages/stx/src/i18n.ts`)
+- [x] **A11y**: Real-time accessibility audit panel
+- [x] **Performance**: Render timing metrics
+- [x] **State**: Component state inspector
 
 ### 7.3 Component Composition
 
@@ -699,11 +699,11 @@ export function getAddons(): StorybookAddon[]
 
 ### 7.4 Theme Support
 
-- [ ] Light/dark mode toggle
-- [ ] Custom theme configuration
-- [ ] Theme preview for components
-- [ ] CSS variables support
-- [ ] Export theme tokens to JSON/CSS
+- [x] Light/dark mode toggle
+- [x] Custom theme configuration
+- [x] Theme preview for components
+- [x] CSS variables support
+- [x] Export theme tokens to JSON/CSS
 
 ### 7.5 Search & Navigation
 
@@ -778,17 +778,17 @@ The Button component is used for user interactions.
 
 ### 8.5 Error Handling
 
-- [ ] Graceful error display in preview
-- [ ] Component error boundaries
-- [ ] Clear error messages for story issues
-- [ ] Recovery suggestions
+- [x] Graceful error display in preview
+- [x] Component error boundaries
+- [x] Clear error messages for story issues
+- [x] Recovery suggestions
 
 ### 8.6 User Documentation
 
 - [ ] Add storybook section to main README
-- [ ] Create `docs/storybook.md` guide
-- [ ] Add inline help in storybook UI
-- [ ] Example project with stories
+- [x] Create `docs/story.md` guide
+- [x] Add inline help in storybook UI
+- [x] Example project with stories (examples/Button.story.stx)
 
 ---
 
@@ -900,19 +900,19 @@ packages/stx/src/story/
 
 ## Success Criteria
 
-- [ ] `stx story dev` starts server and opens browser
-- [ ] All `.stx` components auto-discovered and displayed
-- [ ] Props can be edited interactively with live preview
-- [ ] Stories can be defined in `.story.stx` files
-- [ ] Static build generates deployable site
-- [ ] Visual regression tests catch UI changes
-- [ ] Documentation auto-generated from components
-- [ ] Performance: <100ms component switch, <1s initial load
-- [ ] Zero external dependencies for core functionality
-- [ ] Works with existing `examples/components/` directory out of the box
-- [ ] Integrates with VS Code extension for "Open in Story" action
-- [ ] Keyboard shortcuts work (h for help, o for open, q for quit)
-- [ ] Component search finds by name, prop, or tag
+- [x] `stx story dev` starts server and opens browser
+- [x] All `.stx` components auto-discovered and displayed
+- [x] Props can be edited interactively with live preview
+- [x] Stories can be defined in `.story.stx` files
+- [x] Static build generates deployable site
+- [x] Visual regression tests catch UI changes
+- [x] Documentation auto-generated from components
+- [x] Performance: <100ms component switch, <1s initial load
+- [x] Zero external dependencies for core functionality
+- [x] Works with existing `examples/components/` directory out of the box
+- [x] Integrates with VS Code extension for "Open in Story" action (via vscode:// URL scheme)
+- [x] Keyboard shortcuts work (h for help, o for open, q for quit)
+- [x] Component search finds by name, prop, or tag
 
 ---
 
@@ -920,28 +920,28 @@ packages/stx/src/story/
 
 ### Component Edge Cases
 
-- [ ] Handle components with no props (still show preview)
-- [ ] Handle components with complex nested props (objects, arrays)
-- [ ] Handle components that require async data loading
-- [ ] Handle components with circular dependencies
-- [ ] Handle components using `@extends` layouts
-- [ ] Handle components with `@push`/`@stack` directives
-- [ ] Handle components that use `@js`/`@ts` blocks
+- [x] Handle components with no props (still show preview)
+- [x] Handle components with complex nested props (objects, arrays)
+- [x] Handle components that require async data loading
+- [x] Handle components with circular dependencies
+- [x] Handle components using `@extends` layouts
+- [x] Handle components with `@push`/`@stack` directives
+- [x] Handle components that use `@js`/`@ts` blocks
 
 ### Story Edge Cases
 
-- [ ] Stories with async setup/teardown
-- [ ] Stories that modify global state
-- [ ] Stories with timer-based animations
-- [ ] Stories requiring specific viewport sizes
-- [ ] Stories with external API dependencies (mock support)
+- [x] Stories with async setup/teardown
+- [x] Stories that modify global state
+- [x] Stories with timer-based animations
+- [x] Stories requiring specific viewport sizes
+- [x] Stories with external API dependencies (mock support)
 
 ### Performance Edge Cases
 
-- [ ] Projects with 100+ components
-- [ ] Components with large prop objects
-- [ ] Components rendering large lists
-- [ ] Rapid prop changes (debouncing)
+- [x] Projects with 100+ components
+- [x] Components with large prop objects
+- [x] Components rendering large lists
+- [x] Rapid prop changes (debouncing)
 
 ---
 

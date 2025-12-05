@@ -330,6 +330,123 @@ export const outlineAddon: StoryAddon = {
 }
 
 /**
+ * i18n addon - test with different locales
+ */
+export const i18nAddon: StoryAddon = {
+  name: 'i18n',
+  id: 'i18n',
+  toolbar: [
+    {
+      id: 'locale-select',
+      title: 'Locale',
+      icon: 'ph:globe',
+      render: () => {
+        const locales = ['en', 'es', 'fr', 'de', 'ja', 'zh']
+        const options = locales
+          .map(l => `<option value="${l}">${l.toUpperCase()}</option>`)
+          .join('')
+
+        return `
+          <select id="locale-select" onchange="window.__stxStory.setLocale(this.value)">
+            ${options}
+          </select>
+        `
+      },
+    },
+  ],
+}
+
+/**
+ * Performance addon - render timing metrics
+ */
+export const performanceAddon: StoryAddon = {
+  name: 'Performance',
+  id: 'performance',
+  panel: {
+    id: 'performance-panel',
+    title: 'Performance',
+    icon: 'ph:timer',
+    render: () => {
+      return `
+        <div class="addon-performance">
+          <div class="addon-performance-metrics" id="perf-metrics">
+            <div class="perf-metric">
+              <span class="perf-label">Render Time</span>
+              <span class="perf-value" id="perf-render">-</span>
+            </div>
+            <div class="perf-metric">
+              <span class="perf-label">DOM Nodes</span>
+              <span class="perf-value" id="perf-nodes">-</span>
+            </div>
+            <div class="perf-metric">
+              <span class="perf-label">Memory</span>
+              <span class="perf-value" id="perf-memory">-</span>
+            </div>
+            <div class="perf-metric">
+              <span class="perf-label">Re-renders</span>
+              <span class="perf-value" id="perf-rerenders">0</span>
+            </div>
+          </div>
+          <button onclick="window.__stxStory.measurePerformance()">Measure</button>
+        </div>
+      `
+    },
+  },
+}
+
+/**
+ * State addon - component state inspector
+ */
+export const stateAddon: StoryAddon = {
+  name: 'State',
+  id: 'state',
+  panel: {
+    id: 'state-panel',
+    title: 'State',
+    icon: 'ph:database',
+    render: () => {
+      return `
+        <div class="addon-state">
+          <div class="addon-state-header">
+            <span>Component State</span>
+            <button onclick="window.__stxStory.refreshState()">Refresh</button>
+          </div>
+          <div class="addon-state-tree" id="state-tree">
+            <pre>// Select a story to inspect state</pre>
+          </div>
+        </div>
+      `
+    },
+  },
+}
+
+/**
+ * A11y addon - accessibility audit panel
+ */
+export const a11yAddon: StoryAddon = {
+  name: 'Accessibility',
+  id: 'a11y',
+  panel: {
+    id: 'a11y-panel',
+    title: 'A11y',
+    icon: 'ph:wheelchair',
+    render: () => {
+      return `
+        <div class="addon-a11y">
+          <div class="addon-a11y-header">
+            <span>Accessibility Audit</span>
+            <button onclick="window.__stxStory.runA11yAudit()">Run Audit</button>
+          </div>
+          <div class="addon-a11y-results" id="a11y-results">
+            <div class="a11y-empty">Click "Run Audit" to check accessibility</div>
+          </div>
+        </div>
+      `
+    },
+  },
+}
+
+/**
  * Register all built-in addons
  */
 export function registerBuiltinAddons(): void {
@@ -339,4 +456,8 @@ export function registerBuiltinAddons(): void {
   registerAddon(docsAddon)
   registerAddon(measureAddon)
   registerAddon(outlineAddon)
+  registerAddon(i18nAddon)
+  registerAddon(performanceAddon)
+  registerAddon(stateAddon)
+  registerAddon(a11yAddon)
 }
