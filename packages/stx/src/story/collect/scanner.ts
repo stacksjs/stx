@@ -79,6 +79,32 @@ function isIgnored(relativePath: string, ignored: string[]): boolean {
 }
 
 /**
+ * Non-component file patterns to filter out
+ */
+const NON_COMPONENT_PATTERNS = [
+  '**/layouts/**',
+  '**/pages/**',
+  '**/partials/**',
+  '**/_*.stx', // Files starting with underscore
+  '**/layout.stx',
+  '**/page.stx',
+  '**/error.stx',
+  '**/loading.stx',
+]
+
+/**
+ * Check if a file is a non-component file (layout, page, partial)
+ */
+export function isNonComponentFile(relativePath: string): boolean {
+  for (const pattern of NON_COMPONENT_PATTERNS) {
+    if (matchGlob(relativePath, pattern)) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
  * Check if a path matches any of the patterns
  */
 function matchesPatterns(relativePath: string, patterns: string[]): boolean {

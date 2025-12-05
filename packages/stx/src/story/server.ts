@@ -8,6 +8,7 @@ import process from 'node:process'
 import { scanStoryFiles, watchStoryFiles } from './collect/scanner'
 import { buildTree } from './collect/tree'
 import { updateContextStoryFiles, updateContextTree } from './context'
+import { notifyStoryAdd, notifyStoryRemove, notifyStoryUpdate } from './hmr'
 
 /**
  * Server options
@@ -87,7 +88,16 @@ export async function createStoryServer(
     const updatedTree = buildTree(ctx.config, updatedFiles)
     updateContextTree(ctx, updatedTree)
 
-    // TODO: Notify connected clients via WebSocket
+    // Notify connected clients via WebSocket
+    if (event === 'add') {
+      notifyStoryAdd(file.id, { fileName: file.fileName })
+    }
+    else if (event === 'unlink') {
+      notifyStoryRemove(file.id)
+    }
+    else {
+      notifyStoryUpdate(file.id, { fileName: file.fileName })
+    }
   })
 
   // Open browser if requested

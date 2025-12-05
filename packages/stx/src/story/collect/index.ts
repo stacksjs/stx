@@ -9,11 +9,20 @@ export {
   extractCssClasses,
   extractDependencies,
   extractDescription,
+  extractDirectives,
   extractProps,
   extractSlots,
 } from './analyzer'
 
 export {
+  extractScriptContent,
+  extractTemplateContent,
+  parseStoryContent,
+  parseStoryFile,
+} from './parser'
+
+export {
+  isNonComponentFile,
   scanStoryFiles,
   watchStoryFiles,
 } from './scanner'

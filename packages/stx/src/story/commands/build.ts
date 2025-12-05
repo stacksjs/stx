@@ -8,6 +8,8 @@ import path from 'node:path'
 import { scanStoryFiles } from '../collect/scanner'
 import { buildTree } from '../collect/tree'
 import { createContext, updateContextStoryFiles, updateContextTree } from '../context'
+import { printBanner, printBuildSummary, printStoryCount, printWarning } from '../output'
+import { buildSearchIndex, exportSearchIndex } from '../search'
 
 /**
  * Options for the build command
@@ -21,13 +23,14 @@ export interface BuildOptions {
  * Build static story site
  */
 export async function buildCommand(options: BuildOptions = {}): Promise<void> {
-  console.log('\n📖 Building STX Story...\n')
+  const startTime = Date.now()
+  printBanner()
 
   // Create context
   const ctx = await createContext({ mode: 'build' })
 
   if (!ctx.config.enabled) {
-    console.log('Story feature is disabled in config.')
+    printWarning('Story feature is disabled in config.')
     return
   }
 
@@ -39,7 +42,7 @@ export async function buildCommand(options: BuildOptions = {}): Promise<void> {
   const tree = buildTree(ctx.config, storyFiles)
   updateContextTree(ctx, tree)
 
-  console.log(`  Found ${storyFiles.length} story files`)
+  printStoryCount(storyFiles.length)
 
   // Determine output directory
   const outDir = options.outDir ?? ctx.config.outDir
@@ -93,7 +96,16 @@ export async function buildCommand(options: BuildOptions = {}): Promise<void> {
     )
   }
 
-  console.log(`\n  ✅ Built ${storyFiles.length} stories to ${outDir}\n`)
+  // Build search index
+  buildSearchIndex(ctx)
+  const searchIndexJson = exportSearchIndex()
+  await fs.promises.writeFile(
+    path.join(absoluteOutDir, 'search-index.json'),
+    searchIndexJson,
+  )
+
+  const duration = Date.now() - startTime
+  printBuildSummary(storyFiles.length, outDir, duration)
 }
 
 /**

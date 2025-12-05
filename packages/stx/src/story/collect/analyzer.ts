@@ -3,7 +3,7 @@
  * Extracts props, slots, and metadata from .stx components
  */
 
-import type { AnalyzedComponent, AnalyzedSlot, StoryAnalyzedProp } from '../types'
+import type { AnalyzedComponent, AnalyzedSlot, DirectiveUsage, StoryAnalyzedProp } from '../types'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -323,4 +323,95 @@ export function extractCssClasses(content: string): string[] {
   }
 
   return classes
+}
+
+/**
+ * Extract directive usage from template
+ */
+export function extractDirectives(content: string): DirectiveUsage[] {
+  const directives: Map<string, number> = new Map()
+
+  // Common STX directives to detect
+  const directivePatterns = [
+    '@if',
+    '@else',
+    '@elseif',
+    '@endif',
+    '@unless',
+    '@endunless',
+    '@foreach',
+    '@endforeach',
+    '@for',
+    '@endfor',
+    '@while',
+    '@endwhile',
+    '@switch',
+    '@case',
+    '@default',
+    '@endswitch',
+    '@component',
+    '@endcomponent',
+    '@slot',
+    '@endslot',
+    '@include',
+    '@extends',
+    '@section',
+    '@endsection',
+    '@yield',
+    '@push',
+    '@endpush',
+    '@stack',
+    '@once',
+    '@endonce',
+    '@auth',
+    '@endauth',
+    '@guest',
+    '@endguest',
+    '@can',
+    '@endcan',
+    '@cannot',
+    '@endcannot',
+    '@env',
+    '@endenv',
+    '@production',
+    '@endproduction',
+    '@js',
+    '@endjs',
+    '@ts',
+    '@endts',
+    '@css',
+    '@endcss',
+    '@json',
+    '@class',
+    '@style',
+    '@checked',
+    '@selected',
+    '@disabled',
+    '@readonly',
+    '@required',
+  ]
+
+  for (const directive of directivePatterns) {
+    // Count occurrences (case-insensitive)
+    const regex = new RegExp(directive.replace('@', '@'), 'gi')
+    const matches = content.match(regex)
+    if (matches && matches.length > 0) {
+      const name = directive.slice(1) // Remove @ prefix
+      // Only count opening directives, not closing ones
+      if (!name.startsWith('end')) {
+        directives.set(name, (directives.get(name) || 0) + matches.length)
+      }
+    }
+  }
+
+  // Convert to array
+  const result: DirectiveUsage[] = []
+  for (const [name, count] of directives) {
+    result.push({ name, count })
+  }
+
+  // Sort by count descending
+  result.sort((a, b) => b.count - a.count)
+
+  return result
 }

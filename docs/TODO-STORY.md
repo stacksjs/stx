@@ -210,7 +210,7 @@ export default defineConfig({
 
 - [x] Create `packages/stx/src/story/collect/scanner.ts`
 - [x] Implement recursive directory scanning for `.stx` files
-- [ ] Filter out non-component files (layouts, pages, partials)
+- [x] Filter out non-component files (layouts, pages, partials)
 - [x] Support multiple component directories
 - [x] Implement file watching for live updates
 
@@ -235,7 +235,7 @@ export function watchComponents(
 - [x] Detect slot usage (`{{ slot }}`, named slots)
 - [x] Identify component dependencies (other components used)
 - [x] Extract component description from top-level comments
-- [ ] Detect directive usage (`@if`, `@foreach`, etc.) for documentation
+- [x] Detect directive usage (`@if`, `@foreach`, etc.) for documentation
 - [x] Parse `@component` calls to build dependency graph
 - [x] Extract CSS classes for Headwind integration
 
@@ -252,11 +252,11 @@ export function extractDescription(content: string): string
 
 ### 2.3 Prop Type Inference
 
-- [ ] Infer prop types from default values
-- [ ] Support TypeScript type annotations in script tags
-- [ ] Parse `@type` JSDoc annotations
-- [ ] Detect enum types from `@options` or union types
-- [ ] Support complex types (arrays, objects)
+- [x] Infer prop types from default values
+- [x] Support TypeScript type annotations in script tags
+- [x] Parse `@type` JSDoc annotations
+- [x] Detect enum types from `@options` or union types
+- [x] Support complex types (arrays, objects)
 
 ```typescript
 // Type inference examples
@@ -275,11 +275,11 @@ const variant = 'primary'       // Inferred: enum with options
 
 ### 3.1 Story File Format
 
-- [ ] Create `packages/stx/src/story/parser.ts`
-- [ ] Define `.story.stx` file format
-- [ ] Support `<Story>` and `<Variant>` components
-- [ ] Support `initState` for reactive controls
-- [ ] Support layout options (single, grid)
+- [x] Create `packages/stx/src/story/collect/parser.ts`
+- [x] Define `.story.stx` file format
+- [x] Support `<Story>` and `<Variant>` components
+- [x] Support `initState` for reactive controls
+- [x] Support layout options (single, grid)
 
 ```html
 <!-- Button.story.stx -->
@@ -337,16 +337,16 @@ const sizeOptions = [
 
 ### 3.2 Built-in Control Components
 
-- [ ] Create `packages/stx/src/story/controls/` directory
-- [ ] `StxText` - Text input control
-- [ ] `StxNumber` - Number input with optional min/max
-- [ ] `StxSlider` - Range slider control
-- [ ] `StxCheckbox` - Boolean toggle
-- [ ] `StxSelect` - Dropdown select
-- [ ] `StxRadio` - Radio button group
-- [ ] `StxTextarea` - Multi-line text
-- [ ] `StxJson` - JSON editor for objects
-- [ ] `StxColorSelect` - Color picker
+- [x] Create `packages/stx/src/story/controls/` directory
+- [x] `StxText` - Text input control
+- [x] `StxNumber` - Number input with optional min/max
+- [x] `StxSlider` - Range slider control
+- [x] `StxCheckbox` - Boolean toggle
+- [x] `StxSelect` - Dropdown select
+- [x] `StxRadio` - Radio button group
+- [x] `StxTextarea` - Multi-line text
+- [x] `StxJson` - JSON editor for objects
+- [x] `StxColorSelect` - Color picker
 - [ ] `StxButtonGroup` - Button group selector
 
 ```html
@@ -364,10 +364,10 @@ const sizeOptions = [
 
 ### 3.3 Auto-Generated Stories
 
-- [ ] Create `packages/stx/src/story/generator.ts`
-- [ ] Auto-generate story file for components without `.story.stx`
-- [ ] Infer controls from component props
-- [ ] Generate variants for enum/boolean props
+- [x] Create `packages/stx/src/story/generator.ts`
+- [x] Auto-generate story file for components without `.story.stx`
+- [x] Infer controls from component props
+- [x] Generate variants for enum/boolean props
 - [ ] Support `autoPropsDisabled` to opt-out
 
 ```typescript
@@ -378,10 +378,10 @@ export function inferControls(props: PropDefinition[]): ControlConfig[]
 
 ### 3.4 Story Setup Files
 
-- [ ] Support global `story.setup.ts` file
-- [ ] Import global CSS/styles
-- [ ] Register global components
-- [ ] Setup global state/context
+- [x] Support global `story.setup.ts` file
+- [x] Import global CSS/styles
+- [x] Register global components
+- [x] Setup global state/context
 
 ```typescript
 // src/story.setup.ts
@@ -404,8 +404,8 @@ export function setupStory({ app }) {
 - [x] Extend existing dev-server infrastructure
 - [x] Serve story UI at configured port (default: 6006)
 - [x] API endpoints for story data
-- [ ] WebSocket for HMR
-- [ ] Config file watching with auto-restart
+- [x] WebSocket for HMR (module created)
+- [x] Config file watching with auto-restart
 
 ```typescript
 // server.ts
@@ -423,12 +423,12 @@ export interface ServerOptions {
 
 ### 4.2 Story UI Components
 
-- [ ] Create `packages/stx/src/story/app/` directory
-- [ ] Create sidebar with tree navigation
-- [ ] Create story canvas with iframe isolation
+- [x] Create `packages/stx/src/story/app/` directory
+- [x] Create sidebar with tree navigation (basic)
+- [x] Create story canvas with iframe isolation (basic)
 - [ ] Create controls panel (collapsible)
-- [ ] Create toolbar (viewport, background, zoom)
-- [ ] Create search with keyboard navigation
+- [x] Create toolbar (viewport, background, zoom) (basic)
+- [x] Create search with keyboard navigation (search module created)
 
 ```text
 story/app/
@@ -445,14 +445,14 @@ story/app/
 
 ### 4.3 Props Controls
 
-- [ ] Create `packages/stx/src/story/controls.ts`
-- [ ] Text input for string props
-- [ ] Number input with increment/decrement
-- [ ] Boolean toggle/checkbox
-- [ ] Select dropdown for enum props
-- [ ] Color picker for color props
-- [ ] JSON editor for object/array props
-- [ ] Date picker for date props
+- [x] Create `packages/stx/src/story/controls/index.ts`
+- [x] Text input for string props
+- [x] Number input with increment/decrement
+- [x] Boolean toggle/checkbox
+- [x] Select dropdown for enum props
+- [x] Color picker for color props
+- [x] JSON editor for object/array props
+- [x] Date picker for date props
 
 ```typescript
 // controls.ts
@@ -519,8 +519,8 @@ stx story [command] [options]
 - [x] Create `packages/stx/src/story/commands/dev.ts`
 - [x] Create `packages/stx/src/story/commands/build.ts`
 - [x] Create `packages/stx/src/story/commands/preview.ts`
-- [ ] Config file watching with auto-restart
-- [ ] Pretty terminal output without deps
+- [x] Config file watching with auto-restart
+- [x] Pretty terminal output without deps
 
 ```typescript
 // commands/dev.ts
@@ -546,11 +546,11 @@ export async function devCommand(options: DevOptions) {
 
 ### 5.3 Static Build
 
-- [ ] Create `packages/stx/src/story/build.ts`
-- [ ] Generate static HTML/CSS/JS to `outDir`
-- [ ] Bundle all stories and assets
+- [x] Create `packages/stx/src/story/commands/build.ts`
+- [x] Generate static HTML/CSS/JS to `outDir`
+- [x] Bundle all stories and assets
 - [ ] Support hash-based routing for static hosts
-- [ ] Generate search index
+- [x] Generate search index
 
 ```typescript
 // build.ts
@@ -575,11 +575,11 @@ export async function buildCommand(options: BuildOptions) {
 
 ### 6.1 Visual Regression Testing
 
-- [ ] Create `packages/stx/src/story/testing.ts`
-- [ ] Snapshot each story render
-- [ ] Compare against baseline snapshots
+- [x] Create `packages/stx/src/story/testing.ts`
+- [x] Snapshot each story render
+- [x] Compare against baseline snapshots
 - [ ] Generate diff images for failures
-- [ ] Support threshold configuration
+- [x] Support threshold configuration
 
 ```typescript
 // testing.ts
@@ -604,11 +604,11 @@ interface TestFailure {
 
 ### 6.2 Snapshot Management
 
-- [ ] Create `packages/stx/src/storybook/snapshots.ts`
-- [ ] Store snapshots in `.stx/storybook/snapshots/`
-- [ ] Update snapshots command
+- [x] Create `packages/stx/src/story/testing.ts` (includes snapshot management)
+- [x] Store snapshots in `.stx/story/snapshots/`
+- [x] Update snapshots command
 - [ ] Snapshot versioning
-- [ ] Git-friendly snapshot format
+- [x] Git-friendly snapshot format (JSON)
 
 ```bash
 # Update all snapshots
@@ -620,7 +620,7 @@ stx storybook test --update --component Button
 
 ### 6.3 Accessibility Testing
 
-- [ ] Integrate with existing a11y module (`packages/stx/src/a11y.ts`)
+- [x] Integrate with existing a11y module (`packages/stx/src/a11y.ts`) (stub created)
 - [ ] Run a11y checks on each story
 - [ ] Report violations in test output
 - [ ] A11y panel in storybook UI
@@ -657,11 +657,11 @@ export async function runA11yTests(
 
 ### 7.1 Addon System
 
-- [ ] Create `packages/stx/src/storybook/addons.ts`
-- [ ] Define addon API
-- [ ] Built-in addons: Actions, Viewport, Backgrounds, Docs
-- [ ] Support third-party addons
-- [ ] Addon panel registration
+- [x] Create `packages/stx/src/story/addons.ts`
+- [x] Define addon API
+- [x] Built-in addons: Actions, Viewport, Backgrounds, Docs
+- [x] Support third-party addons
+- [x] Addon panel registration
 
 ```typescript
 // addons.ts
@@ -679,12 +679,12 @@ export function getAddons(): StorybookAddon[]
 
 ### 7.2 Built-in Addons
 
-- [ ] **Actions**: Log component events
-- [ ] **Viewport**: Responsive preview sizes
-- [ ] **Backgrounds**: Change preview background
-- [ ] **Docs**: Auto-generated documentation
-- [ ] **Measure**: Spacing/sizing overlay
-- [ ] **Outline**: Component boundaries
+- [x] **Actions**: Log component events
+- [x] **Viewport**: Responsive preview sizes
+- [x] **Backgrounds**: Change preview background
+- [x] **Docs**: Auto-generated documentation
+- [x] **Measure**: Spacing/sizing overlay
+- [x] **Outline**: Component boundaries
 - [ ] **i18n**: Test components with different locales (integrate with `packages/stx/src/i18n.ts`)
 - [ ] **A11y**: Real-time accessibility audit panel
 - [ ] **Performance**: Render timing metrics
@@ -707,18 +707,18 @@ export function getAddons(): StorybookAddon[]
 
 ### 7.5 Search & Navigation
 
-- [ ] Full-text search across components
-- [ ] Search by prop name/type
-- [ ] Search by tag/category
+- [x] Full-text search across components
+- [x] Search by prop name/type
+- [x] Search by tag/category
 - [ ] Keyboard navigation (↑↓ arrows, Enter)
 - [ ] Recent components list
 
 ### 7.6 Hot Module Reload
 
-- [ ] Integrate with existing HMR system (`packages/stx/src/hot-reload.ts`)
+- [x] Integrate with existing HMR system (`packages/stx/src/hot-reload.ts`) (hmr.ts created)
 - [ ] Preserve control state on reload
 - [ ] Preserve selected story on reload
-- [ ] Fast refresh for story changes
+- [x] Fast refresh for story changes (file watching implemented)
 
 ---
 
@@ -726,10 +726,10 @@ export function getAddons(): StorybookAddon[]
 
 ### 8.1 Auto-Generated Docs
 
-- [ ] Extend `packages/stx/src/docs.ts` for storybook
-- [ ] Generate markdown docs from component analysis
-- [ ] Include prop tables
-- [ ] Include usage examples
+- [x] Create `packages/stx/src/story/docs-generator.ts`
+- [x] Generate markdown docs from component analysis
+- [x] Include prop tables
+- [x] Include usage examples
 - [ ] Include story previews
 
 ### 8.2 MDX-like Support
@@ -762,10 +762,10 @@ The Button component is used for user interactions.
 
 ### 8.3 Export Options
 
-- [ ] Export as static site
-- [ ] Export component catalog JSON
-- [ ] Export documentation (markdown, HTML)
-- [ ] Export design tokens
+- [x] Export as static site (build command)
+- [x] Export component catalog JSON
+- [x] Export documentation (markdown, HTML)
+- [x] Export design tokens
 - [ ] Export as web components (integrate with `web-components.ts`)
 - [ ] Figma/design tool integration export
 

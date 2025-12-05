@@ -8,6 +8,9 @@
  * - Documentation generation
  */
 
+// Addons
+export * from './addons'
+
 // Collection (scanner, analyzer, tree)
 export * from './collect'
 
@@ -23,6 +26,9 @@ export {
   resolveStoryConfig,
 } from './config'
 
+// Config Watcher
+export * from './config-watcher'
+
 // Context
 export {
   createContext,
@@ -31,9 +37,33 @@ export {
 } from './context'
 export type { CreateContextOptions } from './context'
 
+// Controls
+export * from './controls'
+
+// Docs Generator
+export * from './docs-generator'
+
+// Generator
+export * from './generator'
+
+// HMR
+export * from './hmr'
+
+// Output (terminal styling)
+export * from './output'
+
+// Search
+export * from './search'
+
 // Server
 export { createStoryServer } from './server'
 export type { ServerOptions, StoryServer } from './server'
+
+// Setup
+export * from './setup'
+
+// Testing
+export * from './testing'
 
 // Types
 export * from './types'
