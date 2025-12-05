@@ -11,6 +11,9 @@
 // Addons
 export * from './addons'
 
+// Bun Test Integration
+export * from './bun-test'
+
 // CLI
 export * from './cli'
 
@@ -20,6 +23,12 @@ export * from './collect'
 // Commands
 export * from './commands'
 
+// Compiled Output
+export * from './compiled-output'
+
+// Composition (dependency graph)
+export * from './composition'
+
 // Configuration
 export {
   defaultBackgroundPresets,
@@ -28,7 +37,6 @@ export {
   getDefaultStoryConfig,
   resolveStoryConfig,
 } from './config'
-
 // Config Watcher
 export * from './config-watcher'
 
@@ -38,10 +46,14 @@ export {
   updateContextStoryFiles,
   updateContextTree,
 } from './context'
+
 export type { CreateContextOptions } from './context'
 
 // Controls
 export * from './controls'
+
+// Desktop Preview
+export * from './desktop-preview'
 
 // Docs Generator
 export * from './docs-generator'
@@ -51,6 +63,8 @@ export * from './errors'
 
 // Generator
 export * from './generator'
+// Headwind CSS
+export * from './headwind'
 
 // HMR
 export * from './hmr'
@@ -60,6 +74,7 @@ export * from './interactions'
 
 // Output (terminal styling)
 export * from './output'
+
 // Search
 export * from './search'
 
@@ -70,6 +85,9 @@ export type { ServerOptions, StoryServer } from './server'
 
 // Setup
 export * from './setup'
+
+// Snapshots
+export * from './snapshots'
 
 // Testing
 export * from './testing'
