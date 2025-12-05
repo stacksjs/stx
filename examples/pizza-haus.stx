@@ -20,15 +20,15 @@
 <script>
 const menuItems = {
   pizzas: [
-    { name: 'Cheese Pizza', description: 'San Marzano tomatoes, creamy Gouda cheese, fresh basil', price: 14 },
-    { name: 'Pepperoni Pizza', description: 'Aged pepperoni, Gouda cheese, our signature red sauce', price: 16 },
-    { name: 'Salami Pizza', description: 'Italian salami, Gouda cheese, crushed tomatoes, oregano', price: 17 },
-    { name: 'Hollandaise Pizza', description: 'Broccoli, corn, grilled chicken, creamy hollandaise, Gouda', price: 19 },
-    { name: 'Veggie Pizza', description: 'Broccoli, corn, cauliflower, hollandaise sauce, Gouda cheese', price: 18 },
-    { name: 'Prosciutto Pizza', description: 'Dry-cured prosciutto, Gouda cheese, arugula, olive oil', price: 20 },
-    { name: 'Hawaii Pizza', description: 'Ham, pineapple, Gouda cheese, tomato sauce', price: 17 },
-    { name: 'Tonno Pizza', description: 'Premium tuna, red onion, Gouda cheese, capers', price: 18 },
-    { name: 'BBQ Chicken Pizza', description: 'Grilled chicken, red onion, house BBQ sauce, Gouda cheese', price: 19 },
+    { name: 'Cheese Pizza', description: 'Tuscan Tomatoes passata, creamy Gouda cheese, fresh basil', price: 14 },
+    { name: 'Pepperoni Pizza', description: 'Tuscan Tomatoes passata, aged pepperoni, Gouda cheese', price: 16 },
+    { name: 'Salami Pizza', description: 'Tuscan Tomatoes passata, Italian salami, Gouda cheese, oregano', price: 17 },
+    { name: 'Hollandaise Pizza', description: 'Tuscan Tomatoes passata, broccoli, corn, grilled chicken, hollandaise, Gouda', price: 19 },
+    { name: 'Veggie Pizza', description: 'Tuscan Tomatoes passata, broccoli, corn, cauliflower, hollandaise, Gouda', price: 18 },
+    { name: 'Prosciutto Pizza', description: 'Tuscan Tomatoes passata, dry-cured prosciutto, Gouda cheese, arugula', price: 20 },
+    { name: 'Hawaii Pizza', description: 'Tuscan Tomatoes passata, ham, pineapple, Gouda cheese', price: 17 },
+    { name: 'Tonno Pizza', description: 'Tuscan Tomatoes passata, premium tuna, red onion, Gouda cheese, capers', price: 18 },
+    { name: 'BBQ Chicken Pizza', description: 'Tuscan Tomatoes passata, grilled chicken, red onion, Pappy\'s STL BBQ sauce, Gouda', price: 19 },
   ],
   drinks: [
     { name: 'Kyoto-style Cold Brew', description: 'Slow-dripped for 12 hours, smooth and aromatic', price: 6 },
@@ -53,7 +53,7 @@ const pizzaIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 68" c
     <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         <div class="flex items-center space-x-2">
-          <span class="w-8 h-8 text-black">{!! pizzaIcon !!}</span>
+          <span class="w-8 h-8 text-red-600">{!! pizzaIcon !!}</span>
           <span class="text-xl font-bold text-black font-display">Pizza Haus</span>
         </div>
         <div class="hidden md:flex items-center space-x-8">
@@ -112,7 +112,7 @@ const pizzaIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 68" c
       <div class="text-center mb-16">
         <h2 class="font-display text-4xl md:text-5xl font-bold text-black mb-4">Our Menu</h2>
         <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-          Neapolitan-style pizzas with creamy Gouda cheese, baked to perfection in our wood-fired oven
+          Neapolitan-style pizzas with creamy Gouda cheese,<br>baked to perfection in our wood-fired oven
         </p>
       </div>
 
