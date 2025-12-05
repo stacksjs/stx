@@ -33,7 +33,8 @@ Native component showcase and testing functionality for the stx framework. Inspi
 ### Key Commands
 
 ```bash
-# Start the story dev server
+# Start the story dev server (both are equivalent)
+stx story
 stx story dev
 
 # Start with custom port
@@ -499,12 +500,13 @@ interface ControlConfig {
 
 ```typescript
 // CLI command structure
-stx story <command> [options]
+stx story [command] [options]
 
 // Commands:
-//   dev      - Start dev server with HMR
-//   build    - Build static story site
-//   preview  - Preview built site locally
+//   (default) - Start dev server (same as 'dev')
+//   dev       - Start dev server with HMR
+//   build     - Build static story site
+//   preview   - Preview built site locally
 
 // Options:
 //   -p, --port <port>     Server port (default: 6006)
@@ -950,6 +952,6 @@ For MVP, implement in this order:
 1. **Day 1-2**: Scanner + basic analyzer (find all `.stx` files, extract props)
 2. **Day 3-4**: Basic server + sidebar UI (list components, click to select)
 3. **Day 5-6**: Canvas + simple controls (render component, edit string/boolean props)
-4. **Day 7**: CLI command (`stx storybook` starts everything)
+4. **Day 7**: CLI command (`stx story` starts everything)
 
 This gives a working prototype in ~1 week that can be iterated on.
