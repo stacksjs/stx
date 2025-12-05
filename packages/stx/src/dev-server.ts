@@ -53,6 +53,131 @@ const colors = {
 }
 
 // =============================================================================
+// Headwind CSS Generation
+// =============================================================================
+
+// Headwind lazy loading cache
+let headwindModule: { CSSGenerator: any, defaultConfig: any } | null = null
+let headwindLoadAttempted = false
+
+async function loadHeadwind(): Promise<{ CSSGenerator: any, defaultConfig: any } | null> {
+  if (headwindLoadAttempted) {
+    return headwindModule
+  }
+  headwindLoadAttempted = true
+
+  try {
+    // Try to import from @stacksjs/headwind package
+    const mod = await import('@stacksjs/headwind')
+    headwindModule = {
+      CSSGenerator: mod.CSSGenerator,
+      defaultConfig: mod.defaultConfig,
+    }
+    console.log(`${colors.green}[Headwind] CSS engine loaded successfully${colors.reset}`)
+    return headwindModule
+  }
+  catch {
+    // Try local headwind from ~/Code/headwind if package not available
+    try {
+      const localPath = path.join(process.env.HOME || '', 'Code/headwind/packages/headwind/src/index.ts')
+      const mod = await import(localPath)
+      headwindModule = {
+        CSSGenerator: mod.CSSGenerator,
+        defaultConfig: mod.defaultConfig,
+      }
+      console.log(`${colors.green}[Headwind] CSS engine loaded from local path${colors.reset}`)
+      return headwindModule
+    }
+    catch {
+      console.warn(`${colors.yellow}[Headwind] CSS engine not available, Tailwind styles will not be generated${colors.reset}`)
+      return null
+    }
+  }
+}
+
+/**
+ * Extract utility classes from HTML content and generate CSS using Headwind
+ */
+async function generateHeadwindCSS(htmlContent: string): Promise<string> {
+  try {
+    // Load headwind module
+    const hw = await loadHeadwind()
+    if (!hw) {
+      return ''
+    }
+
+    // Extract all class attributes from HTML
+    const classRegex = /class\s*=\s*["']([^"']+)["']/gi
+    const classes = new Set<string>()
+
+    let match = classRegex.exec(htmlContent)
+    while (match !== null) {
+      const classValue = match[1]
+      // Split by whitespace and add each class
+      for (const cls of classValue.split(/\s+/)) {
+        if (cls.trim()) {
+          classes.add(cls.trim())
+        }
+      }
+      match = classRegex.exec(htmlContent)
+    }
+
+    if (classes.size === 0) {
+      return ''
+    }
+
+    // Create a Headwind config for on-the-fly generation
+    const headwindConfig = {
+      ...hw.defaultConfig,
+      content: [],
+      output: '',
+      preflight: true,
+      minify: false,
+    }
+
+    // Generate CSS using Headwind's CSSGenerator
+    const generator = new hw.CSSGenerator(headwindConfig)
+
+    for (const className of classes) {
+      generator.generate(className)
+    }
+
+    return generator.toCSS(true, false)
+  }
+  catch (error) {
+    console.warn('Failed to generate Headwind CSS:', error)
+    return ''
+  }
+}
+
+/**
+ * Inject generated CSS into HTML content
+ */
+async function injectHeadwindCSS(htmlContent: string): Promise<string> {
+  const css = await generateHeadwindCSS(htmlContent)
+
+  if (!css) {
+    return htmlContent
+  }
+
+  // Create a style tag with the generated CSS
+  const styleTag = `<style data-headwind="generated">\n${css}\n</style>`
+
+  // Try to inject before </head>
+  if (htmlContent.includes('</head>')) {
+    return htmlContent.replace('</head>', `${styleTag}\n</head>`)
+  }
+
+  // Fallback: inject at the beginning of <body> or at the start
+  if (htmlContent.includes('<body')) {
+    return htmlContent.replace(/<body([^>]*)>/, `<body$1>\n${styleTag}`)
+  }
+
+  // Last resort: prepend to content
+  return styleTag + htmlContent
+}
+
+// =============================================================================
 // Shared HTML Templates
 // =============================================================================
 // These functions generate reusable HTML snippets to avoid duplication
@@ -656,7 +781,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   }
 
   // Create a temporary output directory
-  const outputDir = path.join(process.cwd(), '.stx-output')
+  const outputDir = path.join(process.cwd(), '.stx/output')
   fs.mkdirSync(outputDir, { recursive: true })
 
   // Initial build
@@ -731,16 +856,21 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
 
       // Serve the main HTML for the root path
       if (url.pathname === '/') {
-        // Inject HMR client script if hot reload is enabled
-        let content = htmlContent || ''
-        if (hotReload) {
-          content = injectHotReload(content, hmrPort)
+        // Inject Headwind CSS for utility classes (async)
+        const processedContent = async () => {
+          let content = await injectHeadwindCSS(htmlContent || '')
+          // Inject HMR client script if hot reload is enabled
+          if (hotReload) {
+            content = injectHotReload(content, hmrPort)
+          }
+          return content
         }
-        return new Response(content, {
+
+        return processedContent().then(content => new Response(content, {
           headers: {
             'Content-Type': 'text/html',
           },
-        })
+        }))
       }
 
       // Check if it's a file in the output directory
@@ -940,7 +1070,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   }
 
   // Create a temporary output directory
-  const outputDir = path.join(process.cwd(), '.stx-output')
+  const outputDir = path.join(process.cwd(), '.stx/output')
   fs.mkdirSync(outputDir, { recursive: true })
 
   // Get the common directory from all file paths

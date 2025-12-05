@@ -19,6 +19,13 @@ await Bun.build({
   minify: true,
 })
 
+// Add shebang to CLI
+const cliPath = './dist/cli.js'
+const cliContent = await Bun.file(cliPath).text()
+if (!cliContent.startsWith('#!/')) {
+  await Bun.write(cliPath, '#!/usr/bin/env bun\n' + cliContent)
+}
+
 // Build the client-side library
 await Bun.build({
   entrypoints: ['./client.ts'],
@@ -26,14 +33,3 @@ await Bun.build({
   plugins: [dts()],
   target: 'browser',
 })
-
-// Build the streaming examples
-// await Bun.build({
-//   entrypoints: [
-//     './test/streaming/example-server.ts',
-//     './test/streaming/client-example.ts',
-//     './test/streaming/islands/notification-panel.ts'
-//   ],
-//   outdir: './test/streaming/dist',
-//   target: 'browser',
-// })
