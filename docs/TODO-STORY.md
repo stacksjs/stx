@@ -60,12 +60,12 @@ stx story dev --native
 
 ### 1.1 Create Story Module Structure
 
-- [ ] Create `packages/stx/src/story/` directory
-- [ ] Create `packages/stx/src/story/index.ts` - Internal module
-- [ ] Create `packages/stx/src/story/types.ts` - Type definitions
-- [ ] Create `packages/stx/src/story/config.ts` - Configuration handling
-- [ ] Add `story` config section to `StxConfig` in `packages/stx/src/types.ts`
-- [ ] Export story types from main `stx` package
+- [x] Create `packages/stx/src/story/` directory
+- [x] Create `packages/stx/src/story/index.ts` - Internal module
+- [x] Create `packages/stx/src/story/types.ts` - Type definitions
+- [x] Create `packages/stx/src/story/config.ts` - Configuration handling
+- [x] Add `story` config section to `StxConfig` in `packages/stx/src/types.ts`
+- [x] Export story types from main `stx` package
 
 ### 1.2 Define Core Types
 
@@ -152,9 +152,9 @@ export type StoryLayout =
 
 ### 1.3 Configuration Integration
 
-- [ ] Add `story` section to `defaultConfig` in `packages/stx/src/config.ts`
-- [ ] Add story config validation in `validateConfig()`
-- [ ] Story config lives inside existing `stx.config.ts`
+- [x] Add `story` section to `defaultConfig` in `packages/stx/src/config.ts`
+- [x] Add story config validation in `validateConfig()`
+- [x] Story config lives inside existing `stx.config.ts`
 
 ```typescript
 // stx.config.ts
@@ -208,11 +208,11 @@ export default defineConfig({
 
 ### 2.1 Component Scanner
 
-- [ ] Create `packages/stx/src/story/scanner.ts`
-- [ ] Implement recursive directory scanning for `.stx` files
+- [x] Create `packages/stx/src/story/collect/scanner.ts`
+- [x] Implement recursive directory scanning for `.stx` files
 - [ ] Filter out non-component files (layouts, pages, partials)
-- [ ] Support multiple component directories
-- [ ] Implement file watching for live updates
+- [x] Support multiple component directories
+- [x] Implement file watching for live updates
 
 ```typescript
 // scanner.ts
@@ -229,15 +229,15 @@ export function watchComponents(
 
 ### 2.2 Component Analyzer
 
-- [ ] Create `packages/stx/src/storybook/analyzer.ts`
-- [ ] Extract props from `<script>` tags (with/without export)
-- [ ] Parse JSDoc comments for prop documentation
-- [ ] Detect slot usage (`{{ slot }}`, named slots)
-- [ ] Identify component dependencies (other components used)
-- [ ] Extract component description from top-level comments
+- [x] Create `packages/stx/src/story/collect/analyzer.ts`
+- [x] Extract props from `<script>` tags (with/without export)
+- [x] Parse JSDoc comments for prop documentation
+- [x] Detect slot usage (`{{ slot }}`, named slots)
+- [x] Identify component dependencies (other components used)
+- [x] Extract component description from top-level comments
 - [ ] Detect directive usage (`@if`, `@foreach`, etc.) for documentation
-- [ ] Parse `@component` calls to build dependency graph
-- [ ] Extract CSS classes for Headwind integration
+- [x] Parse `@component` calls to build dependency graph
+- [x] Extract CSS classes for Headwind integration
 
 ```typescript
 // analyzer.ts
@@ -400,10 +400,10 @@ export function setupStory({ app }) {
 
 ### 4.1 Story Server
 
-- [ ] Create `packages/stx/src/story/server.ts`
-- [ ] Extend existing dev-server infrastructure
-- [ ] Serve story UI at configured port (default: 6006)
-- [ ] API endpoints for story data
+- [x] Create `packages/stx/src/story/server.ts`
+- [x] Extend existing dev-server infrastructure
+- [x] Serve story UI at configured port (default: 6006)
+- [x] API endpoints for story data
 - [ ] WebSocket for HMR
 - [ ] Config file watching with auto-restart
 
@@ -495,7 +495,7 @@ interface ControlConfig {
 ### 5.1 Story CLI Commands
 
 - [ ] Add `story` command to CLI in `packages/stx/bin/cli.ts`
-- [ ] Subcommands: `dev`, `build`, `preview`
+- [x] Subcommands: `dev`, `build`, `preview`
 - [ ] Support all config options as CLI flags
 
 ```typescript
@@ -516,11 +516,11 @@ stx story [command] [options]
 
 ### 5.2 CLI Implementation
 
-- [ ] Create `packages/stx/src/story/commands/dev.ts`
-- [ ] Create `packages/stx/src/story/commands/build.ts`
-- [ ] Create `packages/stx/src/story/commands/preview.ts`
+- [x] Create `packages/stx/src/story/commands/dev.ts`
+- [x] Create `packages/stx/src/story/commands/build.ts`
+- [x] Create `packages/stx/src/story/commands/preview.ts`
 - [ ] Config file watching with auto-restart
-- [ ] Pretty terminal output with picocolors
+- [ ] Pretty terminal output without deps
 
 ```typescript
 // commands/dev.ts

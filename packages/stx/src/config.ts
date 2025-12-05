@@ -118,6 +118,13 @@ export const defaultConfig: StxConfig = {
     maxWhileIterations: 1000,
     useAltLoopVariable: false,
   },
+  story: {
+    enabled: true,
+    outDir: '.stx/dist/story',
+    storyMatch: ['**/*.story.stx'],
+    storyIgnored: ['**/node_modules/**', '**/dist/**', '**/.stx/**'],
+    port: 6006,
+  },
 }
 // Lazy-load config to avoid blocking module initialization
 // This makes imports near-instant instead of taking 2-3 seconds
