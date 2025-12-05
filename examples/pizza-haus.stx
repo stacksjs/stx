@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pizza Haus - Artisan Pizza & Fresh Drinks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .font-display {
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+  </style>
+</head>
+
+<script>
+const menuItems = {
+  pizzas: [
+    { name: 'Cheese Pizza', description: 'San Marzano tomatoes, creamy Gouda cheese, fresh basil', price: 14 },
+    { name: 'Pepperoni Pizza', description: 'Aged pepperoni, Gouda cheese, our signature red sauce', price: 16 },
+    { name: 'Salami Pizza', description: 'Italian salami, Gouda cheese, crushed tomatoes, oregano', price: 17 },
+    { name: 'Hollandaise Pizza', description: 'Broccoli, corn, grilled chicken, creamy hollandaise, Gouda', price: 19 },
+    { name: 'Veggie Pizza', description: 'Broccoli, corn, cauliflower, hollandaise sauce, Gouda cheese', price: 18 },
+    { name: 'Prosciutto Pizza', description: 'Dry-cured prosciutto, Gouda cheese, arugula, olive oil', price: 20 },
+    { name: 'Hawaii Pizza', description: 'Ham, pineapple, Gouda cheese, tomato sauce', price: 17 },
+    { name: 'Tonno Pizza', description: 'Premium tuna, red onion, Gouda cheese, capers', price: 18 },
+    { name: 'BBQ Chicken Pizza', description: 'Grilled chicken, red onion, house BBQ sauce, Gouda cheese', price: 19 },
+  ],
+  drinks: [
+    { name: 'Kyoto-style Cold Brew', description: 'Slow-dripped for 12 hours, smooth and aromatic', price: 6 },
+    { name: 'Fresh Lemonade', description: 'Hand-squeezed lemons, pure cane sugar, ice cold', price: 4 },
+    { name: 'Strawberry Lemonade', description: 'Fresh lemonade with muddled strawberries', price: 5 },
+    { name: 'Arnold Palmer', description: 'The perfect blend of lemonade and freshly brewed tea', price: 5 },
+    { name: 'Freshly Brewed Tea', description: 'Hot or iced, steeped to perfection', price: 3 },
+  ],
+  sweets: [
+    { name: 'Chocolate Chip Cookies', description: 'Warm, gooey, made fresh daily - 3 pack', price: 6 },
+    { name: 'Brownies', description: 'Rich, fudgy, topped with sea salt - 2 pack', price: 5 },
+  ]
+}
+
+const pizzaIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 68" class="w-full h-full"><path fill="currentColor" fill-rule="evenodd" d="M81.9829549,429.561954 L81.9829549,429.561954 C81.9704744,429.473081 81.9578973,429.378625 81.945409,429.278879 C81.7494526,427.713731 81.7265421,426.065014 81.9959372,424.47345 C82.2278676,423.103225 82.6667,421.871953 83.3657877,420.825197 C83.9238301,419.98963 84.5726954,419.246199 85.2931184,418.58994 C86.1641885,417.796451 87.094209,417.168577 88.0281173,416.6849 C88.6049819,416.386138 89.0742754,416.195787 89.3850029,416.095922 C89.5827683,416.032362 89.7892287,416 89.996957,416 C108.774638,416 123.996957,431.222319 123.996957,450 C123.996957,450.176736 123.973531,450.352692 123.92729,450.523271 C123.678866,451.439703 123.141417,452.70137 122.201609,453.978644 C121.347461,455.139499 120.292225,456.088434 119.0099,456.729597 C118.012399,457.228347 116.845743,457.555751 115.537999,457.752003 C113.921153,457.99464 112.242335,458.021239 110.6946,457.923981 C110.67342,457.92265 110.652609,457.921316 110.632173,457.919981 L94,466.236068 L94,476.501788 C94,479.539973 91.5378144,482 88.5,482 C85.4664682,482 83,479.541574 83,476.508704 L83,471.736068 L58.8944272,483.788854 C57.1753161,484.64841 55.3515901,482.824684 56.2111456,481.105573 L81.9829549,429.561954 Z M86.9380315,467.998922 C86.9783688,468.157557 87,468.325186 87,468.5 L87,476.508704 C87,477.329505 87.6726882,478 88.5,478 C89.3294604,478 90,477.330048 90,476.501788 L90,465 C90,464.242456 90.4280048,463.54993 91.1055728,463.211146 L96.2155145,460.656175 C94.8636027,459.556017 94,457.878861 94,456 C94,452.686292 96.6862915,450 100,450 C103.235405,450 105.872695,452.560837 105.995527,455.766168 L108.455621,454.536122 C108.815845,453.065041 109,451.545594 109,450 C109,439.50659 100.49341,431 90,431 C88.4544062,431 86.9349587,431.184155 85.4638784,431.544379 L83.7231931,435.02575 C88.9084548,435.396316 93,439.720342 93,445 C93,450.522847 88.5228475,455 83,455 C80.0246016,455 77.3049633,453.689144 75.4540713,451.563993 L62.472136,477.527864 L72.9825133,472.272675 C71.7361758,470.849827 71,468.993717 71,467 C71,462.581722 74.581722,459 79,459 C83.418278,459 87,462.581722 87,467 C87,467.335813 86.9791966,467.669281 86.9380315,467.998922 L86.9380315,467.998922 Z M100,458 C101.104569,458 102,457.104569 102,456 C102,454.895431 101.104569,454 100,454 C98.8954305,454 98,454.895431 98,456 C98,457.104569 98.8954305,458 100,458 Z M77.5160001,447.440136 C78.4629491,449.568819 80.5923716,451 83,451 C86.3137085,451 89,448.313708 89,445 C89,441.686292 86.3137085,439 83,439 C82.5438585,439 82.0958558,439.05056 81.6613563,439.149423 L77.5160001,447.440136 Z M82.9912181,467.268323 C82.9970604,467.179445 83,467.089977 83,467 C83,464.790861 81.209139,463 79,463 C76.790861,463 75,464.790861 75,467 C75,468.381293 75.7064777,469.630491 76.8187942,470.354535 L82.9912181,467.268323 Z M89.8676716,420.236807 C89.227986,420.568104 88.5844127,421.002592 87.9867952,421.546983 C87.499644,421.990746 87.0642686,422.489574 86.6921543,423.046747 C86.3371792,423.578258 86.0842242,424.287996 85.9398389,425.141013 C85.818478,425.858003 85.7796644,426.625441 85.8043247,427.394919 C87.1999492,427.13312 88.625883,427 90.0687343,427 C102.771284,427 113.068734,437.297451 113.068734,450 C113.068734,451.342329 112.953518,452.670064 112.726629,453.97244 C113.475148,453.958605 114.228361,453.903748 114.944373,453.796297 C115.868651,453.657592 116.645864,453.439479 117.221045,453.151888 C117.892484,452.816168 118.478766,452.288948 118.979771,451.608041 C119.330734,451.131055 119.617394,450.609766 119.839186,450.089107 C119.905571,449.933266 119.957413,449.799465 119.995429,449.693997 C119.83247,433.386766 106.65857,420.194583 90.3584159,420.002133 C90.2290826,420.058031 90.0628063,420.135745 89.8676716,420.236807 Z" transform="translate(-56 -416)"/></svg>`
+</script>
+
+<body class="antialiased bg-white">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200">
+    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center space-x-2">
+          <span class="w-8 h-8 text-black">{!! pizzaIcon !!}</span>
+          <span class="text-xl font-bold text-black font-display">Pizza Haus</span>
+        </div>
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="#menu" class="text-gray-600 hover:text-black transition font-medium">Menu</a>
+          <a href="#about" class="text-gray-600 hover:text-black transition font-medium">Our Story</a>
+          <a href="#location" class="text-gray-600 hover:text-black transition font-medium">Find Us</a>
+          <a href="#order" class="px-5 py-2 text-white bg-black rounded-full hover:bg-gray-800 transition font-semibold">Order Now</a>
+        </div>
+        <button class="md:hidden p-2 text-gray-600">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative min-h-screen flex items-center justify-center overflow-hidden bg-white">
+    <div class="absolute inset-0 opacity-5">
+      <div class="absolute top-20 left-10 w-32 h-32 transform -rotate-12">{!! pizzaIcon !!}</div>
+      <div class="absolute top-40 right-20 w-24 h-24 transform rotate-12">{!! pizzaIcon !!}</div>
+      <div class="absolute bottom-32 left-1/4 w-20 h-20 transform -rotate-6">{!! pizzaIcon !!}</div>
+      <div class="absolute bottom-20 right-1/3 w-28 h-28 transform rotate-6">{!! pizzaIcon !!}</div>
+    </div>
+    <div class="relative z-10 text-center px-4 pt-16">
+      <div class="w-24 h-24 mx-auto mb-8 text-black">{!! pizzaIcon !!}</div>
+      <h1 class="font-display text-6xl md:text-8xl font-black text-black mb-6 leading-tight">
+        Pizza Haus
+      </h1>
+      <p class="text-xl md:text-2xl text-gray-600 mb-4 max-w-2xl mx-auto">
+        Artisan pizzas, fresh-baked cookies, and ice-cold drinks
+      </p>
+      <p class="text-lg text-gray-400 mb-10">
+        Made with love since 2019
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="#menu" class="px-8 py-4 text-lg font-semibold text-white bg-black rounded-full hover:bg-gray-800 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+          View Our Menu
+        </a>
+        <a href="#order" class="px-8 py-4 text-lg font-semibold text-black bg-white rounded-full hover:bg-gray-100 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 border-2 border-black">
+          Order Online
+        </a>
+      </div>
+    </div>
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+      <svg class="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+      </svg>
+    </div>
+  </section>
+
+  <!-- Menu Section -->
+  <section id="menu" class="py-24 bg-gray-50">
+    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="font-display text-4xl md:text-5xl font-bold text-black mb-4">Our Menu</h2>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+          Neapolitan-style pizzas with creamy Gouda cheese, baked to perfection in our wood-fired oven
+        </p>
+      </div>
+
+      <!-- Pizzas -->
+      <div class="mb-16">
+        <h3 class="text-2xl font-bold text-black mb-8 flex items-center">
+          <span class="w-8 h-8 mr-3">{!! pizzaIcon !!}</span> Neapolitan Pizzas
+        </h3>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          @foreach(menuItems.pizzas as pizza)
+            <div class="bg-white rounded-2xl p-6 hover:shadow-lg transition group border border-gray-200">
+              <div class="flex justify-between items-start mb-3">
+                <h4 class="text-lg font-semibold text-black group-hover:text-gray-600 transition">{{ pizza.name }}</h4>
+                <span class="text-lg font-bold text-black">${{ pizza.price }}</span>
+              </div>
+              <p class="text-gray-500 text-sm">{{ pizza.description }}</p>
+            </div>
+          @endforeach
+        </div>
+      </div>
+
+      <!-- Drinks -->
+      <div class="mb-16">
+        <h3 class="text-2xl font-bold text-black mb-8 flex items-center">
+          <svg class="w-8 h-8 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Drinks
+        </h3>
+        <div class="grid md:grid-cols-3 lg:grid-cols-5 gap-6">
+          @foreach(menuItems.drinks as drink)
+            <div class="bg-white rounded-2xl p-6 hover:shadow-lg transition group border border-gray-200">
+              <div class="flex justify-between items-start mb-3">
+                <h4 class="text-lg font-semibold text-black group-hover:text-gray-600 transition">{{ drink.name }}</h4>
+                <span class="text-lg font-bold text-black">${{ drink.price }}</span>
+              </div>
+              <p class="text-gray-500 text-sm">{{ drink.description }}</p>
+            </div>
+          @endforeach
+        </div>
+      </div>
+
+      <!-- Sweets -->
+      <div>
+        <h3 class="text-2xl font-bold text-black mb-8 flex items-center">
+          <svg class="w-8 h-8 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+          Sweets
+        </h3>
+        <div class="grid md:grid-cols-3 gap-6">
+          @foreach(menuItems.sweets as sweet)
+            <div class="bg-white rounded-2xl p-6 hover:shadow-lg transition group border border-gray-200">
+              <div class="flex justify-between items-start mb-3">
+                <h4 class="text-lg font-semibold text-black group-hover:text-gray-600 transition">{{ sweet.name }}</h4>
+                <span class="text-lg font-bold text-black">${{ sweet.price }}</span>
+              </div>
+              <p class="text-gray-500 text-sm">{{ sweet.description }}</p>
+            </div>
+          @endforeach
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="py-20 bg-black">
+    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="grid md:grid-cols-3 gap-8 text-center">
+        <div class="p-6">
+          <svg class="w-12 h-12 mx-auto mb-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+          </svg>
+          <h3 class="text-xl font-bold text-white mb-2">Wood-Fired Oven</h3>
+          <p class="text-gray-400">900 degrees of pure pizza perfection</p>
+        </div>
+        <div class="p-6">
+          <svg class="w-12 h-12 mx-auto mb-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+          </svg>
+          <h3 class="text-xl font-bold text-white mb-2">Fresh Ingredients</h3>
+          <p class="text-gray-400">Locally sourced, always fresh, never frozen</p>
+        </div>
+        <div class="p-6">
+          <svg class="w-12 h-12 mx-auto mb-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+          <h3 class="text-xl font-bold text-white mb-2">Made with Love</h3>
+          <p class="text-gray-400">Family recipes passed down through generations</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Section -->
+  <section id="about" class="py-24 bg-white">
+    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <h2 class="font-display text-4xl md:text-5xl font-bold text-black mb-6">Our Story</h2>
+          <p class="text-lg text-gray-600 mb-6">
+            Pizza Haus started with a simple dream: to bring authentic, wood-fired pizza to our community. What began in a tiny kitchen has grown into a neighborhood favorite.
+          </p>
+          <p class="text-lg text-gray-600 mb-6">
+            Our dough is made fresh daily, our sauce simmers for hours, and every pizza is crafted with care. But we're not just about pizza - our homemade chocolate chip cookies and fresh-squeezed lemonade have become legendary in their own right.
+          </p>
+          <p class="text-lg text-gray-600">
+            Whether you're grabbing a quick slice, hosting a party, or just craving the perfect Arnold Palmer on a hot day, we're here for you.
+          </p>
+        </div>
+        <div class="relative">
+          <div class="bg-black rounded-3xl p-8 text-white">
+            <blockquote class="text-xl italic mb-4">
+              "Life is too short for bad pizza."
+            </blockquote>
+            <p class="font-semibold">- The Pizza Haus Family</p>
+          </div>
+          <div class="absolute -bottom-6 -right-6 bg-gray-100 rounded-2xl p-6 shadow-lg border border-gray-200">
+            <p class="text-3xl font-bold text-black">5+</p>
+            <p class="text-sm text-gray-600 font-medium">Years of Delicious</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Location Section -->
+  <section id="location" class="py-24 bg-gray-50">
+    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="font-display text-4xl md:text-5xl font-bold text-black mb-4">Find Us</h2>
+        <p class="text-lg text-gray-600">Come visit us or order for pickup</p>
+      </div>
+      <div class="grid md:grid-cols-2 gap-12">
+        <div class="bg-white rounded-3xl p-8 border border-gray-200">
+          <h3 class="text-xl font-bold text-black mb-6">Hours</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Monday - Thursday</span>
+              <span class="font-semibold text-black">11am - 10pm</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Friday - Saturday</span>
+              <span class="font-semibold text-black">11am - 11pm</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Sunday</span>
+              <span class="font-semibold text-black">12pm - 9pm</span>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-3xl p-8 border border-gray-200">
+          <h3 class="text-xl font-bold text-black mb-6">Contact</h3>
+          <div class="space-y-4">
+            <p class="flex items-center text-gray-600">
+              <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              123 Main Street, Hometown, USA 12345
+            </p>
+            <p class="flex items-center text-gray-600">
+              <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              (555) 123-4567
+            </p>
+            <p class="flex items-center text-gray-600">
+              <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              hello@pizzahaus.com
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section id="order" class="py-20 bg-black">
+    <div class="px-4 mx-auto max-w-4xl sm:px-6 lg:px-8 text-center">
+      <h2 class="font-display text-4xl md:text-5xl font-bold text-white mb-6">
+        Ready to Eat?
+      </h2>
+      <p class="text-xl text-gray-400 mb-10">
+        Order delivery through your favorite app
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="#" class="px-8 py-4 text-lg font-semibold text-white bg-gray-800 rounded-full hover:bg-gray-700 transition border border-gray-600 flex items-center gap-3 hover:scale-105">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+          Uber Eats
+        </a>
+        <a href="#" class="px-8 py-4 text-lg font-semibold text-white bg-gray-800 rounded-full hover:bg-gray-700 transition border border-gray-600 flex items-center gap-3 hover:scale-105">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M23.071 8.409a6.09 6.09 0 00-5.396-3.228H.584A.589.589 0 00.17 6.184L3.894 9.93a1.752 1.752 0 001.242.516h12.049a1.554 1.554 0 11.031 3.108H5.136a1.752 1.752 0 00-1.242.516L.17 17.816a.589.589 0 00.414 1.003h17.085a6.09 6.09 0 005.402-8.41z"/>
+          </svg>
+          DoorDash
+        </a>
+        <a href="#" class="px-8 py-4 text-lg font-semibold text-white bg-gray-800 rounded-full hover:bg-gray-700 transition border border-gray-600 flex items-center gap-3 hover:scale-105">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          Postmates
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-12 bg-gray-950">
+    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row items-center justify-between">
+        <div class="flex items-center space-x-2 mb-4 md:mb-0">
+          <span class="w-8 h-8 text-white">{!! pizzaIcon !!}</span>
+          <span class="text-xl font-bold text-white font-display">Pizza Haus</span>
+        </div>
+        <div class="flex space-x-6 mb-4 md:mb-0">
+          <a href="#" class="text-gray-400 hover:text-white transition">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+          </a>
+          <a href="#" class="text-gray-400 hover:text-white transition">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+            </svg>
+          </a>
+        </div>
+        <p class="text-gray-500 text-sm">
+          &copy; 2025 Pizza Haus. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
