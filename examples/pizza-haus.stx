@@ -10,9 +10,146 @@
   <style>
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #cc333f;
     }
     .font-display {
       font-family: 'Playfair Display', Georgia, serif;
+    }
+
+    /* Loader */
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at center, #cc333f, #8a222a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    #loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+    #loader:before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-50%);
+      width: 15vmin;
+      height: 2vmin;
+      background: #8a222a;
+      margin-top: 17.5vmin;
+      filter: blur(10px);
+      border-radius: 100%;
+    }
+    #loader .loader-text {
+      position: absolute;
+      bottom: 20px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+    .pizza {
+      width: 20vmin;
+      height: 20vmin;
+      position: relative;
+      animation: rotate 13s linear infinite;
+    }
+    @keyframes rotate {
+      to { transform: rotate(360deg); }
+    }
+    .slice {
+      z-index: -1;
+      overflow: visible;
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 10vmin 2.75vmin 0 2.75vmin;
+      border-color: #ffdc73 transparent transparent transparent;
+      left: 7.5vmin;
+      top: 0;
+      transform-origin: 50% 100%;
+      animation: loading 1.8125s ease-in-out infinite;
+    }
+    @keyframes loading {
+      0% { opacity: 1; }
+      49% { opacity: 1; }
+      50% { opacity: 0; }
+      99% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    .slice:before {
+      content: '';
+      position: absolute;
+      height: 1.5vmin;
+      width: 6vmin;
+      background: #bbb083;
+      top: -10.5vmin;
+      left: -3vmin;
+      border-radius: 100vmin 100vmin 0.5vmin 0.5vmin / 50vmin 50vmin;
+    }
+    .slice:after {
+      content: '';
+      border-radius: 100%;
+      position: absolute;
+      width: 1.25vmin;
+      height: 1.25vmin;
+      background: #cc333f;
+      left: -1vmin;
+      top: -7vmin;
+      z-index: 2;
+    }
+    .slice:nth-of-type(2n):after { box-shadow: 0.5vmin 2.5vmin 0 #cc333f; }
+    .slice:nth-of-type(4n):after { box-shadow: 0.5vmin 2.5vmin 0 #cc333f, 1.5vmin 5vmin 0 #cc333f; }
+    .slice:nth-of-type(1) { transform: rotate(-27.75deg); animation-delay: -0.0625s; }
+    .slice:nth-of-type(2) { transform: rotate(-55.5deg); animation-delay: -0.125s; }
+    .slice:nth-of-type(3) { transform: rotate(-83.25deg); animation-delay: -0.1875s; }
+    .slice:nth-of-type(4) { transform: rotate(-111deg); animation-delay: -0.25s; }
+    .slice:nth-of-type(5) { transform: rotate(-138.75deg); animation-delay: -0.3125s; }
+    .slice:nth-of-type(6) { transform: rotate(-166.5deg); animation-delay: -0.375s; }
+    .slice:nth-of-type(7) { transform: rotate(-194.25deg); animation-delay: -0.4375s; }
+    .slice:nth-of-type(8) { transform: rotate(-222deg); animation-delay: -0.5s; }
+    .slice:nth-of-type(9) { transform: rotate(-249.75deg); animation-delay: -0.5625s; }
+    .slice:nth-of-type(10) { transform: rotate(-277.5deg); animation-delay: -0.625s; }
+    .slice:nth-of-type(11) { transform: rotate(-305.25deg); animation-delay: -0.6875s; }
+    .slice:nth-of-type(12) { transform: rotate(-333deg); animation-delay: -0.75s; }
+    .slice:nth-of-type(13) { transform: rotate(-360.75deg); animation-delay: -0.8125s; }
+
+    /* Main content */
+    #main-content {
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    #main-content.visible {
+      opacity: 1;
+    }
+
+    /* Navbar scroll states */
+    #navbar.scrolled {
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    #navbar.scrolled .nav-icon {
+      color: #cc333f !important;
+    }
+    #navbar.scrolled .nav-text {
+      color: #000 !important;
+    }
+    #navbar.scrolled .nav-link {
+      color: #4b5563 !important;
+    }
+    #navbar.scrolled .nav-link:hover {
+      color: #000 !important;
+    }
+    #navbar.scrolled button {
+      color: #4b5563 !important;
     }
   </style>
 </head>
@@ -46,23 +183,45 @@ const menuItems = {
 const pizzaIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 68" class="w-full h-full"><path fill="currentColor" fill-rule="evenodd" d="M81.9829549,429.561954 L81.9829549,429.561954 C81.9704744,429.473081 81.9578973,429.378625 81.945409,429.278879 C81.7494526,427.713731 81.7265421,426.065014 81.9959372,424.47345 C82.2278676,423.103225 82.6667,421.871953 83.3657877,420.825197 C83.9238301,419.98963 84.5726954,419.246199 85.2931184,418.58994 C86.1641885,417.796451 87.094209,417.168577 88.0281173,416.6849 C88.6049819,416.386138 89.0742754,416.195787 89.3850029,416.095922 C89.5827683,416.032362 89.7892287,416 89.996957,416 C108.774638,416 123.996957,431.222319 123.996957,450 C123.996957,450.176736 123.973531,450.352692 123.92729,450.523271 C123.678866,451.439703 123.141417,452.70137 122.201609,453.978644 C121.347461,455.139499 120.292225,456.088434 119.0099,456.729597 C118.012399,457.228347 116.845743,457.555751 115.537999,457.752003 C113.921153,457.99464 112.242335,458.021239 110.6946,457.923981 C110.67342,457.92265 110.652609,457.921316 110.632173,457.919981 L94,466.236068 L94,476.501788 C94,479.539973 91.5378144,482 88.5,482 C85.4664682,482 83,479.541574 83,476.508704 L83,471.736068 L58.8944272,483.788854 C57.1753161,484.64841 55.3515901,482.824684 56.2111456,481.105573 L81.9829549,429.561954 Z M86.9380315,467.998922 C86.9783688,468.157557 87,468.325186 87,468.5 L87,476.508704 C87,477.329505 87.6726882,478 88.5,478 C89.3294604,478 90,477.330048 90,476.501788 L90,465 C90,464.242456 90.4280048,463.54993 91.1055728,463.211146 L96.2155145,460.656175 C94.8636027,459.556017 94,457.878861 94,456 C94,452.686292 96.6862915,450 100,450 C103.235405,450 105.872695,452.560837 105.995527,455.766168 L108.455621,454.536122 C108.815845,453.065041 109,451.545594 109,450 C109,439.50659 100.49341,431 90,431 C88.4544062,431 86.9349587,431.184155 85.4638784,431.544379 L83.7231931,435.02575 C88.9084548,435.396316 93,439.720342 93,445 C93,450.522847 88.5228475,455 83,455 C80.0246016,455 77.3049633,453.689144 75.4540713,451.563993 L62.472136,477.527864 L72.9825133,472.272675 C71.7361758,470.849827 71,468.993717 71,467 C71,462.581722 74.581722,459 79,459 C83.418278,459 87,462.581722 87,467 C87,467.335813 86.9791966,467.669281 86.9380315,467.998922 L86.9380315,467.998922 Z M100,458 C101.104569,458 102,457.104569 102,456 C102,454.895431 101.104569,454 100,454 C98.8954305,454 98,454.895431 98,456 C98,457.104569 98.8954305,458 100,458 Z M77.5160001,447.440136 C78.4629491,449.568819 80.5923716,451 83,451 C86.3137085,451 89,448.313708 89,445 C89,441.686292 86.3137085,439 83,439 C82.5438585,439 82.0958558,439.05056 81.6613563,439.149423 L77.5160001,447.440136 Z M82.9912181,467.268323 C82.9970604,467.179445 83,467.089977 83,467 C83,464.790861 81.209139,463 79,463 C76.790861,463 75,464.790861 75,467 C75,468.381293 75.7064777,469.630491 76.8187942,470.354535 L82.9912181,467.268323 Z M89.8676716,420.236807 C89.227986,420.568104 88.5844127,421.002592 87.9867952,421.546983 C87.499644,421.990746 87.0642686,422.489574 86.6921543,423.046747 C86.3371792,423.578258 86.0842242,424.287996 85.9398389,425.141013 C85.818478,425.858003 85.7796644,426.625441 85.8043247,427.394919 C87.1999492,427.13312 88.625883,427 90.0687343,427 C102.771284,427 113.068734,437.297451 113.068734,450 C113.068734,451.342329 112.953518,452.670064 112.726629,453.97244 C113.475148,453.958605 114.228361,453.903748 114.944373,453.796297 C115.868651,453.657592 116.645864,453.439479 117.221045,453.151888 C117.892484,452.816168 118.478766,452.288948 118.979771,451.608041 C119.330734,451.131055 119.617394,450.609766 119.839186,450.089107 C119.905571,449.933266 119.957413,449.799465 119.995429,449.693997 C119.83247,433.386766 106.65857,420.194583 90.3584159,420.002133 C90.2290826,420.058031 90.0628063,420.135745 89.8676716,420.236807 Z" transform="translate(-56 -416)"/></svg>`
 </script>
 
-<body class="antialiased bg-white">
+<body class="antialiased" style="background: #cc333f;">
+
+  <!-- Loader -->
+  <div id="loader">
+    <div class="pizza">
+      <div class="slice"></div>
+      <div class="slice"></div>
+      <div class="slice"></div>
+      <div class="slice"></div>
+      <div class="slice"></div>
+      <div class="slice"></div>
+      <div class="slice"></div>
+      <div class="slice"></div>
+      <div class="slice"></div>
+      <div class="slice"></div>
+      <div class="slice"></div>
+      <div class="slice"></div>
+      <div class="slice"></div>
+    </div>
+    <p class="loader-text">Pizza Haus</p>
+  </div>
+
+  <div id="main-content">
 
   <!-- Navigation -->
-  <nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200">
+  <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
     <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         <div class="flex items-center space-x-2">
-          <span class="w-8 h-8 text-red-600">{!! pizzaIcon !!}</span>
-          <span class="text-xl font-bold text-black font-display">Pizza Haus</span>
+          <span class="w-8 h-8 nav-icon" style="color: #fff;">{!! pizzaIcon !!}</span>
+          <span class="text-xl font-bold font-display nav-text" style="color: #fff;">Pizza Haus</span>
         </div>
         <div class="hidden md:flex items-center space-x-8">
-          <a href="#menu" class="text-gray-600 hover:text-black transition font-medium">Menu</a>
-          <a href="#about" class="text-gray-600 hover:text-black transition font-medium">Our Story</a>
-          <a href="#location" class="text-gray-600 hover:text-black transition font-medium">Find Us</a>
+          <a href="#menu" class="nav-link transition font-medium" style="color: rgba(255,255,255,0.9);">Menu</a>
+          <a href="#about" class="nav-link transition font-medium" style="color: rgba(255,255,255,0.9);">Our Story</a>
+          <a href="#location" class="nav-link transition font-medium" style="color: rgba(255,255,255,0.9);">Find Us</a>
           <a href="#order" class="px-5 py-2 text-white bg-black rounded-full hover:bg-gray-800 transition font-semibold">Order Now</a>
         </div>
-        <button class="md:hidden p-2 text-gray-600">
+        <button class="md:hidden p-2" style="color: #fff;">
           <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
@@ -72,35 +231,35 @@ const pizzaIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 68" c
   </nav>
 
   <!-- Hero Section -->
-  <section class="relative min-h-screen flex items-center justify-center overflow-hidden bg-white">
-    <div class="absolute inset-0 opacity-5">
+  <section class="relative min-h-screen flex items-center justify-center overflow-hidden" style="background: #cc333f;">
+    <div class="absolute inset-0 opacity-10 text-white">
       <div class="absolute top-20 left-10 w-32 h-32 transform -rotate-12">{!! pizzaIcon !!}</div>
       <div class="absolute top-40 right-20 w-24 h-24 transform rotate-12">{!! pizzaIcon !!}</div>
       <div class="absolute bottom-32 left-1/4 w-20 h-20 transform -rotate-6">{!! pizzaIcon !!}</div>
       <div class="absolute bottom-20 right-1/3 w-28 h-28 transform rotate-6">{!! pizzaIcon !!}</div>
     </div>
     <div class="relative z-10 text-center px-4 pt-16">
-      <div class="w-24 h-24 mx-auto mb-8 text-black">{!! pizzaIcon !!}</div>
-      <h1 class="font-display text-6xl md:text-8xl font-black text-black mb-6 leading-tight">
+      <div class="w-24 h-24 mx-auto mb-8" style="color: #fff;">{!! pizzaIcon !!}</div>
+      <h1 class="font-display text-6xl md:text-8xl font-black mb-6 leading-tight" style="color: #fff;">
         Pizza Haus
       </h1>
-      <p class="text-xl md:text-2xl text-gray-600 mb-4 max-w-2xl mx-auto">
+      <p class="text-xl md:text-2xl mb-4 max-w-2xl mx-auto" style="color: rgba(255,255,255,0.9);">
         Artisan pizzas, fresh-baked cookies, and ice-cold drinks
       </p>
-      <p class="text-lg text-gray-400 mb-10">
+      <p class="text-lg mb-10" style="color: rgba(255,255,255,0.7);">
         Made with love since 2019
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="#menu" class="px-8 py-4 text-lg font-semibold text-white bg-black rounded-full hover:bg-gray-800 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+        <a href="#menu" class="px-8 py-4 text-lg font-semibold bg-white rounded-full hover:bg-gray-100 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5" style="color: #cc333f;">
           View Our Menu
         </a>
-        <a href="#order" class="px-8 py-4 text-lg font-semibold text-black bg-white rounded-full hover:bg-gray-100 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 border-2 border-black">
+        <a href="#order" class="px-8 py-4 text-lg font-semibold bg-transparent rounded-full hover:bg-red-700 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 border-2 border-white" style="color: #fff;">
           Order Online
         </a>
       </div>
     </div>
     <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-      <svg class="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg class="w-6 h-6" style="color: rgba(255,255,255,0.6);" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
       </svg>
     </div>
@@ -352,6 +511,28 @@ const pizzaIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 68" c
       </div>
     </div>
   </footer>
+
+  </div><!-- end main-content -->
+
+  <script>
+    // Hide loader and show content after page loads
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        document.getElementById('loader').classList.add('hidden');
+        document.getElementById('main-content').classList.add('visible');
+      }, 1500);
+    });
+
+    // Navbar scroll behavior
+    window.addEventListener('scroll', function() {
+      const navbar = document.getElementById('navbar');
+      if (window.scrollY > 50) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+    });
+  </script>
 
 </body>
 </html>
