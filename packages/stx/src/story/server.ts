@@ -5,10 +5,16 @@
 
 import type { StoryContext } from './types'
 import process from 'node:process'
+import { AnalyticsTracker } from './analytics'
+import { BookmarksManager } from './bookmarks'
 import { scanStoryFiles, watchStoryFiles } from './collect/scanner'
 import { buildTree } from './collect/tree'
 import { updateContextStoryFiles, updateContextTree } from './context'
 import { createHmrHandler, getHmrClientScript, notifyStoryAdd, notifyStoryRemove, notifyStoryUpdate } from './hmr'
+import { getHotSwapScript } from './hot-swap'
+import { getShortcutsModalHtml, getShortcutsScript, getShortcutsStyles } from './keyboard-shortcuts'
+import { getPerformanceScript } from './performance'
+import { PresetsManager } from './presets'
 import { renderStoryVariant } from './renderer'
 
 /**
@@ -59,6 +65,11 @@ export async function createStoryServer(
       ? '0.0.0.0'
       : 'localhost'
 
+  // Initialize managers
+  const presetsManager = new PresetsManager(ctx.root)
+  const bookmarksManager = new BookmarksManager(ctx.root)
+  const analyticsTracker = new AnalyticsTracker(ctx.root)
+
   // Create HMR handler
   const hmrHandler = createHmrHandler()
 
@@ -80,7 +91,11 @@ export async function createStoryServer(
 
       // API routes
       if (pathname.startsWith('/api/')) {
-        return handleApiRequest(ctx, pathname, req)
+        return handleApiRequest(ctx, pathname, req, {
+          presetsManager,
+          bookmarksManager,
+          analyticsTracker,
+        })
       }
 
       // Serve story UI
@@ -152,13 +167,25 @@ export async function createStoryServer(
 }
 
 /**
+ * API managers
+ */
+interface ApiManagers {
+  presetsManager: PresetsManager
+  bookmarksManager: BookmarksManager
+  analyticsTracker: AnalyticsTracker
+}
+
+/**
  * Handle API requests
  */
 async function handleApiRequest(
   ctx: StoryContext,
   pathname: string,
-  _req: Request,
+  req: Request,
+  managers: ApiManagers,
 ): Promise<Response> {
+  const { presetsManager, bookmarksManager, analyticsTracker } = managers
+
   // GET /api/stories - List all stories
   if (pathname === '/api/stories') {
     return Response.json({
@@ -233,6 +260,162 @@ async function handleApiRequest(
         duration: 0,
       }, { status: 500 })
     }
+  }
+
+  // ============ PRESETS API ============
+
+  // GET /api/presets - List all presets
+  if (pathname === '/api/presets' && req.method === 'GET') {
+    return Response.json({ presets: presetsManager.getAllPresets() })
+  }
+
+  // POST /api/presets - Create preset
+  if (pathname === '/api/presets' && req.method === 'POST') {
+    try {
+      const body = await req.json() as { name: string, props: Record<string, any>, componentId?: string, description?: string }
+      const preset = presetsManager.createPreset(body.name, body.props, {
+        componentId: body.componentId,
+        description: body.description,
+      })
+      await presetsManager.save()
+      return Response.json(preset)
+    }
+    catch (error) {
+      return Response.json({ error: String(error) }, { status: 400 })
+    }
+  }
+
+  // GET /api/presets/:id - Get preset
+  if (pathname.startsWith('/api/presets/') && !pathname.includes('/use') && req.method === 'GET') {
+    const id = pathname.slice('/api/presets/'.length)
+    const preset = presetsManager.getPreset(id)
+    if (!preset) {
+      return new Response('Preset not found', { status: 404 })
+    }
+    return Response.json(preset)
+  }
+
+  // POST /api/presets/:id/use - Use preset
+  if (pathname.endsWith('/use') && req.method === 'POST') {
+    const id = pathname.slice('/api/presets/'.length, -4)
+    const preset = presetsManager.usePreset(id)
+    if (!preset) {
+      return new Response('Preset not found', { status: 404 })
+    }
+    await presetsManager.save()
+    return Response.json(preset)
+  }
+
+  // DELETE /api/presets/:id - Delete preset
+  if (pathname.startsWith('/api/presets/') && req.method === 'DELETE') {
+    const id = pathname.slice('/api/presets/'.length)
+    const deleted = presetsManager.deletePreset(id)
+    if (!deleted) {
+      return new Response('Preset not found', { status: 404 })
+    }
+    await presetsManager.save()
+    return Response.json({ success: true })
+  }
+
+  // ============ BOOKMARKS API ============
+
+  // GET /api/bookmarks - List all bookmarks
+  if (pathname === '/api/bookmarks' && req.method === 'GET') {
+    return Response.json({ bookmarks: bookmarksManager.getAllBookmarks() })
+  }
+
+  // POST /api/bookmarks - Create bookmark
+  if (pathname === '/api/bookmarks' && req.method === 'POST') {
+    try {
+      const body = await req.json() as { name: string, storyId: string, variantId: string, props: Record<string, any>, notes?: string, color?: string }
+      const bookmark = bookmarksManager.addBookmark(body.storyId, body.variantId, body.props, {
+        name: body.name,
+        notes: body.notes,
+        color: body.color,
+      })
+      await bookmarksManager.save()
+      return Response.json(bookmark)
+    }
+    catch (error) {
+      return Response.json({ error: String(error) }, { status: 400 })
+    }
+  }
+
+  // POST /api/bookmarks/toggle - Toggle bookmark
+  if (pathname === '/api/bookmarks/toggle' && req.method === 'POST') {
+    try {
+      const body = await req.json() as { storyId: string, variantId: string, props: Record<string, any> }
+      const result = bookmarksManager.toggleBookmark(body.storyId, body.variantId, body.props)
+      await bookmarksManager.save()
+      return Response.json(result)
+    }
+    catch (error) {
+      return Response.json({ error: String(error) }, { status: 400 })
+    }
+  }
+
+  // GET /api/bookmarks/:id - Get bookmark
+  if (pathname.startsWith('/api/bookmarks/') && pathname !== '/api/bookmarks/toggle' && req.method === 'GET') {
+    const id = pathname.slice('/api/bookmarks/'.length)
+    const bookmark = bookmarksManager.getBookmark(id)
+    if (!bookmark) {
+      return new Response('Bookmark not found', { status: 404 })
+    }
+    return Response.json(bookmark)
+  }
+
+  // DELETE /api/bookmarks/:id - Delete bookmark
+  if (pathname.startsWith('/api/bookmarks/') && req.method === 'DELETE') {
+    const id = pathname.slice('/api/bookmarks/'.length)
+    const deleted = bookmarksManager.deleteBookmark(id)
+    if (!deleted) {
+      return new Response('Bookmark not found', { status: 404 })
+    }
+    await bookmarksManager.save()
+    return Response.json({ success: true })
+  }
+
+  // ============ ANALYTICS API ============
+
+  // POST /api/analytics/track - Track event
+  if (pathname === '/api/analytics/track' && req.method === 'POST') {
+    try {
+      const body = await req.json() as { type: string, componentId?: string, variantId?: string, propName?: string, query?: string }
+      if (body.type === 'view' && body.componentId) {
+        analyticsTracker.trackView(body.componentId, body.variantId)
+      }
+      else if (body.type === 'prop_change' && body.componentId && body.propName) {
+        analyticsTracker.trackPropChange(body.componentId, body.propName, null)
+      }
+      else if (body.type === 'variant_switch' && body.componentId && body.variantId) {
+        analyticsTracker.trackVariantSwitch(body.componentId, body.variantId)
+      }
+      else if (body.type === 'search' && body.query) {
+        analyticsTracker.trackSearch(body.query, 0)
+      }
+      await analyticsTracker.save()
+      return Response.json({ success: true })
+    }
+    catch (error) {
+      return Response.json({ error: String(error) }, { status: 400 })
+    }
+  }
+
+  // GET /api/analytics/summary - Get analytics summary
+  if (pathname === '/api/analytics/summary' && req.method === 'GET') {
+    return Response.json({
+      mostViewed: analyticsTracker.getMostViewedComponents(10),
+      mostChangedProps: analyticsTracker.getMostChangedProps(10),
+      searchAnalytics: analyticsTracker.getSearchAnalytics(),
+    })
+  }
+
+  // GET /api/analytics/component/:id - Get component analytics
+  if (pathname.startsWith('/api/analytics/component/') && req.method === 'GET') {
+    const id = pathname.slice('/api/analytics/component/'.length)
+    const file = ctx.storyFiles.find(f => f.id === id)
+    const analytics = analyticsTracker.getComponentAnalytics(id, file?.fileName || id)
+    return Response.json(analytics)
   }
 
   return new Response('Not found', { status: 404 })
@@ -467,6 +650,11 @@ function generateStoryHTML(ctx: StoryContext, port: number): string {
     };
   </script>
   ${hmrScript}
+  ${getHotSwapScript()}
+  ${getShortcutsScript()}
+  ${getPerformanceScript()}
+  <style>${getShortcutsStyles()}</style>
+  ${getShortcutsModalHtml()}
 </body>
 </html>`
 }

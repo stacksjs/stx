@@ -1002,3 +1002,98 @@ This gives a working prototype in ~1 week that can be iterated on.
 - [x] Added `/api/render/:storyId/:variantId` endpoint
 - [x] Returns rendered HTML, CSS, errors, and duration
 - [x] Error handling with proper status codes
+
+### Screenshot-based Visual Testing
+
+- [x] Created `visual-testing.ts` - Screenshot capture and comparison
+- [x] Added screenshot module to `very-happy-dom` (`screenshot/renderer.ts`, `capture.ts`, `diff.ts`)
+- [x] PNG encoder/decoder for zero-dependency image handling
+- [x] Image diff with pixel-level comparison
+- [x] Fallback to HTML comparison when very-happy-dom unavailable
+- [x] Visual test report generation
+
+### Story Variants Hot Swap
+
+- [x] Created `hot-swap.ts` - Switch variants without full reload
+- [x] Iframe content update via fetch + DOM manipulation
+- [x] Scroll position preservation
+- [x] Fade animation during swap
+- [x] Props update without content swap
+- [x] Variant selector UI component
+
+### Prop Presets
+
+- [x] Created `presets.ts` - Save/load prop configurations
+- [x] Persistent storage in `.stx/story/presets.json`
+- [x] Create, update, delete presets
+- [x] Search presets by name/description/tags
+- [x] Most used presets tracking
+- [x] Import/export presets
+- [x] Presets panel UI
+
+### Component Performance Profiling
+
+- [x] Created `performance.ts` - Track render times and memory
+- [x] Per-component metrics (render count, avg/min/max time)
+- [x] Render history with timestamps
+- [x] Memory usage tracking (when available)
+- [x] Slowest/most rendered component queries
+- [x] Performance panel UI
+- [x] Client-side profiling script
+
+### Keyboard Shortcuts Panel
+
+- [x] Created `keyboard-shortcuts.ts` - Shortcuts handler
+- [x] Default shortcuts for navigation, view, actions
+- [x] Modal UI with categorized shortcuts
+- [x] `?` key to show shortcuts
+- [x] Modifier key support (⌘, Ctrl, Alt, Shift)
+- [x] Action execution system
+
+### Story Bookmarks
+
+- [x] Created `bookmarks.ts` - Bookmark combinations
+- [x] Save component + variant + props state
+- [x] Persistent storage in `.stx/story/bookmarks.json`
+- [x] Toggle bookmark for current state
+- [x] Color labels and notes
+- [x] Import/export bookmarks
+- [x] Bookmarks panel UI
+
+### Diff View for Snapshots
+
+- [x] Side-by-side comparison in `visual-testing.ts`
+- [x] Pixel-level diff highlighting
+- [x] Diff percentage calculation
+- [x] Diff image generation
+- [x] Visual test report with image links
+
+### Auto-generate Stories
+
+- [x] Created `auto-stories.ts` - Generate from components
+- [x] Scan components without `.story.stx` files
+- [x] Generate default variant with default props
+- [x] Generate boolean prop variants
+- [x] Generate enum/options variants
+- [x] CLI command for batch generation
+
+### Component Usage Analytics
+
+- [x] Created `analytics.ts` - Track usage patterns
+- [x] View tracking with session management
+- [x] Prop change tracking
+- [x] Variant switch tracking
+- [x] Search analytics
+- [x] Most viewed components
+- [x] Most changed props
+- [x] Analytics dashboard UI
+
+### Export to Figma
+
+- [x] Created `figma-export.ts` - Figma format export
+- [x] Component to Figma frame conversion
+- [x] Props documentation in Figma
+- [x] Color conversion (CSS ↔ Figma)
+- [x] Figma document structure
+- [x] Plugin manifest generation
+- [x] Import code snippet generation

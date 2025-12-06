@@ -11,6 +11,15 @@
 // Addons
 export * from './addons'
 
+// Analytics
+export * from './analytics'
+
+// Auto-generate Stories
+export * from './auto-stories'
+
+// Bookmarks
+export * from './bookmarks'
+
 // Bun Test Integration
 export * from './bun-test'
 
@@ -61,19 +70,35 @@ export * from './docs-generator'
 // Errors
 export * from './errors'
 
+// Figma Export
+export * from './figma-export'
+
 // Generator
 export * from './generator'
+
 // Headwind CSS
 export * from './headwind'
 
 // HMR
 export * from './hmr'
 
+// Hot Swap
+export * from './hot-swap'
+
 // Interactions
 export * from './interactions'
 
+// Keyboard Shortcuts
+export * from './keyboard-shortcuts'
+
 // Output (terminal styling)
 export * from './output'
+
+// Performance Profiling
+export * from './performance'
+
+// Presets
+export * from './presets'
 
 // Props Validation
 export * from './props-validation'
@@ -109,3 +134,6 @@ export * from './types'
 
 // UI Components
 export * from './ui'
+
+// Visual Testing
+export * from './visual-testing'
