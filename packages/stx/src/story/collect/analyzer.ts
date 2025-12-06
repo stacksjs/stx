@@ -1,11 +1,13 @@
 /**
  * STX Story - Component analyzer
  * Extracts props, slots, and metadata from .stx components
+ * Uses the parser module for accurate tokenization
  */
 
 import type { AnalyzedComponent, AnalyzedSlot, DirectiveUsage, StoryAnalyzedProp } from '../types'
 import fs from 'node:fs'
 import path from 'node:path'
+import { parseScriptDeclarations } from '../../parser'
 
 /**
  * Analyze a component file and extract metadata
@@ -45,7 +47,7 @@ export function analyzeComponent(
 }
 
 /**
- * Extract props from script tags
+ * Extract props from script tags using proper tokenization
  */
 export function extractProps(content: string): StoryAnalyzedProp[] {
   const props: StoryAnalyzedProp[] = []
@@ -57,15 +59,92 @@ export function extractProps(content: string): StoryAnalyzedProp[] {
 
   const scriptContent = scriptMatch[1]
 
+  // Use the parser module for accurate declaration extraction
+  try {
+    const declarations = parseScriptDeclarations(scriptContent)
+
+    for (const decl of declarations) {
+      // Skip internal variables (starting with _ or __)
+      if (decl.name.startsWith('_'))
+        continue
+
+      // Skip functions (we want props/state, not methods)
+      if (decl.type === 'function')
+        continue
+
+      // Extract JSDoc from the content before the declaration
+      const jsdoc = extractJsDocBefore(scriptContent, decl.start)
+
+      const prop: StoryAnalyzedProp = {
+        name: decl.name,
+        type: inferType(decl.value || '', undefined, jsdoc),
+        required: false,
+        default: decl.value ? parseDefaultValue(decl.value) : undefined,
+      }
+
+      // Extract JSDoc info
+      if (jsdoc) {
+        const typeMatch = jsdoc.match(/@type\s+\{([^}]+)\}/i)
+        if (typeMatch) {
+          prop.type = typeMatch[1].trim()
+          // Check for union types (enums)
+          if (prop.type.includes('|')) {
+            prop.options = prop.type
+              .split('|')
+              .map((t: string) => t.trim().replace(/['"]/g, ''))
+              .filter((t: string) => t !== '')
+          }
+        }
+
+        const requiredMatch = jsdoc.match(/@required/i)
+        if (requiredMatch) {
+          prop.required = true
+        }
+
+        // Extract description (lines without @ tags)
+        const descLines = jsdoc
+          .split('\n')
+          .map((line: string) => line.trim().replace(/^\*\s*/, ''))
+          .filter((line: string) => !line.startsWith('@') && line.length > 0)
+        if (descLines.length > 0) {
+          prop.description = descLines.join(' ').trim()
+        }
+      }
+
+      props.push(prop)
+    }
+  }
+  catch {
+    // Fallback to regex-based extraction if parser fails
+    return extractPropsRegex(scriptContent)
+  }
+
+  return props
+}
+
+/**
+ * Extract JSDoc comment before a position
+ */
+function extractJsDocBefore(content: string, position: number): string | undefined {
+  // Look backwards from position for /** ... */
+  const before = content.slice(0, position)
+  const match = before.match(/\/\*\*\s*([\s\S]*?)\s*\*\/\s*$/)
+  return match ? match[1] : undefined
+}
+
+/**
+ * Fallback regex-based prop extraction
+ */
+function extractPropsRegex(scriptContent: string): StoryAnalyzedProp[] {
+  const props: StoryAnalyzedProp[] = []
+
   // Match variable declarations with optional JSDoc
-  // Pattern: /** @type {type} */ const/let/var name = value
   const propRegex = /(?:\/\*\*\s*([\s\S]*?)\s*\*\/\s*)?(?:export\s+)?(?:const|let|var)\s+(\w+)\s*(?::\s*([^=]+))?\s*=\s*([^;\n]+)/g
 
   let match = propRegex.exec(scriptContent)
   while (match !== null) {
     const [, jsdoc, propName, typeAnnotation, defaultValue] = match
 
-    // Skip internal variables (starting with _ or __)
     if (propName.startsWith('_'))
       continue
 
@@ -76,12 +155,10 @@ export function extractProps(content: string): StoryAnalyzedProp[] {
       default: parseDefaultValue(defaultValue),
     }
 
-    // Extract JSDoc info
     if (jsdoc) {
       const typeMatch = jsdoc.match(/@type\s+\{([^}]+)\}/i)
       if (typeMatch) {
         prop.type = typeMatch[1].trim()
-        // Check for union types (enums)
         if (prop.type.includes('|')) {
           prop.options = prop.type
             .split('|')
@@ -95,7 +172,6 @@ export function extractProps(content: string): StoryAnalyzedProp[] {
         prop.required = true
       }
 
-      // Extract description (lines without @ tags)
       const descLines = jsdoc
         .split('\n')
         .map(line => line.trim().replace(/^\*\s*/, ''))

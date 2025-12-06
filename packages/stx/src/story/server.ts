@@ -1,6 +1,6 @@
 /**
  * STX Story - Development server
- * Serves the story UI and handles API requests
+ * Serves the story UI and handles API requests with WebSocket HMR
  */
 
 import type { StoryContext } from './types'
@@ -8,7 +8,8 @@ import process from 'node:process'
 import { scanStoryFiles, watchStoryFiles } from './collect/scanner'
 import { buildTree } from './collect/tree'
 import { updateContextStoryFiles, updateContextTree } from './context'
-import { notifyStoryAdd, notifyStoryRemove, notifyStoryUpdate } from './hmr'
+import { createHmrHandler, getHmrClientScript, notifyStoryAdd, notifyStoryRemove, notifyStoryUpdate } from './hmr'
+import { renderStoryVariant } from './renderer'
 
 /**
  * Server options
@@ -58,13 +59,24 @@ export async function createStoryServer(
       ? '0.0.0.0'
       : 'localhost'
 
-  // Create server
-  const server = Bun.serve({
+  // Create HMR handler
+  const hmrHandler = createHmrHandler()
+
+  // Create server with WebSocket support
+  const server = Bun.serve<{ isHmr: boolean }>({
     port: options.port,
     hostname,
-    fetch: async (req) => {
+    fetch: async (req, server) => {
       const url = new URL(req.url)
       const pathname = url.pathname
+
+      // WebSocket upgrade for HMR
+      if (pathname === '/__hmr') {
+        const upgraded = server.upgrade(req, { data: { isHmr: true } })
+        if (upgraded)
+          return undefined as unknown as Response
+        return new Response('WebSocket upgrade failed', { status: 400 })
+      }
 
       // API routes
       if (pathname.startsWith('/api/')) {
@@ -72,7 +84,18 @@ export async function createStoryServer(
       }
 
       // Serve story UI
-      return serveStoryUI(ctx, pathname)
+      return serveStoryUI(ctx, pathname, options.port)
+    },
+    websocket: {
+      open(ws) {
+        hmrHandler.open(ws as any)
+      },
+      close(ws) {
+        hmrHandler.close(ws as any)
+      },
+      message(ws, message) {
+        hmrHandler.message(ws as any, message as any)
+      },
     },
   })
 
@@ -182,17 +205,44 @@ async function handleApiRequest(
     })
   }
 
+  // GET /api/render/:storyId/:variantId - Render a story variant
+  if (pathname.startsWith('/api/render/')) {
+    const parts = pathname.slice('/api/render/'.length).split('/')
+    const storyId = parts[0]
+    const variantId = parts[1] || 'default'
+
+    const file = ctx.storyFiles.find(f => f.id === storyId)
+    if (!file) {
+      return new Response('Story not found', { status: 404 })
+    }
+
+    try {
+      const result = await renderStoryVariant(ctx, file, variantId)
+      return Response.json({
+        html: result.html,
+        css: result.css,
+        errors: result.errors,
+        duration: result.duration,
+      })
+    }
+    catch (error) {
+      return Response.json({
+        html: '',
+        css: '',
+        errors: [error instanceof Error ? error.message : String(error)],
+        duration: 0,
+      }, { status: 500 })
+    }
+  }
+
   return new Response('Not found', { status: 404 })
 }
 
 /**
  * Serve the story UI
  */
-function serveStoryUI(ctx: StoryContext, _pathname: string): Response {
-  // For now, serve a simple HTML page
-  // TODO: Build proper UI with components
-
-  const html = generateStoryHTML(ctx)
+function serveStoryUI(ctx: StoryContext, _pathname: string, port: number): Response {
+  const html = generateStoryHTML(ctx, port)
 
   return new Response(html, {
     headers: {
@@ -202,11 +252,13 @@ function serveStoryUI(ctx: StoryContext, _pathname: string): Response {
 }
 
 /**
- * Generate the story UI HTML
+ * Generate the story UI HTML with HMR support
  */
-function generateStoryHTML(ctx: StoryContext): string {
+function generateStoryHTML(ctx: StoryContext, port: number): string {
   const { theme } = ctx.config
   const title = theme.title || 'STX Story'
+  const wsUrl = `ws://localhost:${port}/__hmr`
+  const hmrScript = getHmrClientScript(wsUrl)
 
   return `<!DOCTYPE html>
 <html lang="en" class="${theme.darkClass || ''}">
@@ -389,7 +441,32 @@ function generateStoryHTML(ctx: StoryContext): string {
     function changeBackground(color) {
       document.getElementById('canvas').style.background = color;
     }
+
+    // STX Story global object for HMR
+    window.__stxStory = {
+      currentStoryId: null,
+      reloadCurrentStory: function() {
+        if (currentStory) {
+          selectStory(currentStory);
+        }
+      },
+      refreshStoryList: function() {
+        fetch('/api/stories')
+          .then(r => r.json())
+          .then(data => {
+            const list = document.getElementById('story-list');
+            if (data.files.length === 0) {
+              list.innerHTML = '<li class="empty-state">No stories found</li>';
+              return;
+            }
+            list.innerHTML = data.files.map(f =>
+              '<li class="story-item" onclick="selectStory(\\'' + f.id + '\\')">' + f.fileName + '</li>'
+            ).join('');
+          });
+      }
+    };
   </script>
+  ${hmrScript}
 </body>
 </html>`
 }

@@ -955,3 +955,50 @@ For MVP, implement in this order:
 4. **Day 7**: CLI command (`stx story` starts everything)
 
 This gives a working prototype in ~1 week that can be iterated on.
+
+---
+
+## Recent Improvements (Dec 2024)
+
+### Real Component Rendering
+
+- [x] Created `renderer.ts` - Uses actual STX `processDirectives` for real rendering
+- [x] Component caching for faster re-renders
+- [x] CSS/JS extraction from components
+- [x] Preview document generation with Headwind CSS support
+
+### WebSocket HMR
+
+- [x] Added WebSocket support to dev server (`/__hmr` endpoint)
+- [x] HMR client script injection into preview HTML
+- [x] Global `__stxStory` object for HMR callbacks
+- [x] Auto-reconnect on disconnect
+
+### Enhanced Prop Analysis
+
+- [x] Updated analyzer to use `parser/` module for accurate tokenization
+- [x] JSDoc extraction for prop descriptions and types
+- [x] Fallback to regex-based extraction if parser fails
+- [x] Better handling of complex default values
+
+### Search Index Persistence
+
+- [x] Created `search-index.ts` - Caches search index to disk
+- [x] Stale index detection based on file mtimes
+- [x] Scored search results (name match > prop match > text match)
+- [x] Background index saving
+
+### Props Validation
+
+- [x] Created `props-validation.ts` - Runtime prop validation
+- [x] Type checking (string, number, boolean, array, object)
+- [x] Required prop validation
+- [x] Options/enum validation
+- [x] Client-side validation script generation
+- [x] Validation error display HTML
+
+### Render API
+
+- [x] Added `/api/render/:storyId/:variantId` endpoint
+- [x] Returns rendered HTML, CSS, errors, and duration
+- [x] Error handling with proper status codes

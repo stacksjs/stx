@@ -75,8 +75,17 @@ export * from './interactions'
 // Output (terminal styling)
 export * from './output'
 
+// Props Validation
+export * from './props-validation'
+
+// Renderer
+export * from './renderer'
+
 // Search
 export * from './search'
+
+// Search Index
+export * from './search-index'
 
 // Server
 export { createStoryServer } from './server'
