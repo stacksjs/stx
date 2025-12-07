@@ -904,6 +904,21 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
           case '.gif':
             contentType = 'image/gif'
             break
+          case '.woff':
+            contentType = 'font/woff'
+            break
+          case '.woff2':
+            contentType = 'font/woff2'
+            break
+          case '.ttf':
+            contentType = 'font/ttf'
+            break
+          case '.otf':
+            contentType = 'font/otf'
+            break
+          case '.eot':
+            contentType = 'application/vnd.ms-fontobject'
+            break
         }
 
         return new Response(file, {
@@ -948,6 +963,79 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
             break
           case '.ico':
             contentType = 'image/x-icon'
+            break
+          case '.woff':
+            contentType = 'font/woff'
+            break
+          case '.woff2':
+            contentType = 'font/woff2'
+            break
+          case '.ttf':
+            contentType = 'font/ttf'
+            break
+          case '.otf':
+            contentType = 'font/otf'
+            break
+          case '.eot':
+            contentType = 'application/vnd.ms-fontobject'
+            break
+        }
+
+        return new Response(file, {
+          headers: { 'Content-Type': contentType },
+        })
+      }
+
+      // Check if it's a file in the public directory
+      const publicPath = path.join(process.cwd(), 'public', url.pathname)
+      if (fs.existsSync(publicPath) && fs.statSync(publicPath).isFile()) {
+        const file = Bun.file(publicPath)
+        const ext = path.extname(publicPath).toLowerCase()
+        let contentType = 'application/octet-stream'
+
+        switch (ext) {
+          case '.html':
+            contentType = 'text/html'
+            break
+          case '.css':
+            contentType = 'text/css'
+            break
+          case '.js':
+            contentType = 'text/javascript'
+            break
+          case '.json':
+            contentType = 'application/json'
+            break
+          case '.png':
+            contentType = 'image/png'
+            break
+          case '.jpg':
+          case '.jpeg':
+            contentType = 'image/jpeg'
+            break
+          case '.gif':
+            contentType = 'image/gif'
+            break
+          case '.svg':
+            contentType = 'image/svg+xml'
+            break
+          case '.ico':
+            contentType = 'image/x-icon'
+            break
+          case '.woff':
+            contentType = 'font/woff'
+            break
+          case '.woff2':
+            contentType = 'font/woff2'
+            break
+          case '.ttf':
+            contentType = 'font/ttf'
+            break
+          case '.otf':
+            contentType = 'font/otf'
+            break
+          case '.eot':
+            contentType = 'application/vnd.ms-fontobject'
             break
         }
 
@@ -1287,7 +1375,12 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
             // Generate route path based on file location relative to common directory
             const relativePath = path.relative(commonDir, absolutePath)
             // Remove .md extension and use as route
-            const routePath = `/${relativePath.replace(/\.md$/, '')}`
+            let routePath = `/${relativePath.replace(/\.md$/, '')}`
+
+            // Handle index files - they should serve at their parent directory path
+            if (routePath.endsWith('/index')) {
+              routePath = routePath.slice(0, -6) || '/'
+            }
 
             // Add to routes mapping
             routes[routePath || '/'] = {
@@ -1331,7 +1424,12 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
           // Generate route path based on file location relative to common directory
           const relativePath = path.relative(commonDir, absolutePath)
           // Remove .stx extension and use as route
-          const routePath = `/${relativePath.replace(/\.stx$/, '')}`
+          let routePath = `/${relativePath.replace(/\.stx$/, '')}`
+
+          // Handle index files - they should serve at their parent directory path
+          if (routePath.endsWith('/index')) {
+            routePath = routePath.slice(0, -6) || '/'
+          }
 
           // Add to routes mapping
           routes[routePath || '/'] = {
@@ -1382,6 +1480,65 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
     fetch(request) {
       const url = new URL(request.url)
 
+      // Check if it's a file in the public directory FIRST (before route matching)
+      // This ensures static assets like fonts, images are served correctly
+      const publicPath = path.join(process.cwd(), 'public', url.pathname)
+      if (fs.existsSync(publicPath) && fs.statSync(publicPath).isFile()) {
+        const file = Bun.file(publicPath)
+        const ext = path.extname(publicPath).toLowerCase()
+        let contentType = 'application/octet-stream'
+
+        switch (ext) {
+          case '.html':
+            contentType = 'text/html'
+            break
+          case '.css':
+            contentType = 'text/css'
+            break
+          case '.js':
+            contentType = 'text/javascript'
+            break
+          case '.json':
+            contentType = 'application/json'
+            break
+          case '.png':
+            contentType = 'image/png'
+            break
+          case '.jpg':
+          case '.jpeg':
+            contentType = 'image/jpeg'
+            break
+          case '.gif':
+            contentType = 'image/gif'
+            break
+          case '.svg':
+            contentType = 'image/svg+xml'
+            break
+          case '.ico':
+            contentType = 'image/x-icon'
+            break
+          case '.woff':
+            contentType = 'font/woff'
+            break
+          case '.woff2':
+            contentType = 'font/woff2'
+            break
+          case '.ttf':
+            contentType = 'font/ttf'
+            break
+          case '.otf':
+            contentType = 'font/otf'
+            break
+          case '.eot':
+            contentType = 'application/vnd.ms-fontobject'
+            break
+        }
+
+        return new Response(file, {
+          headers: { 'Content-Type': contentType },
+        })
+      }
+
       // First, try to match the pathname exactly to a route
       let routeMatched = routes[url.pathname]
 
@@ -1395,13 +1552,14 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         routeMatched = routes['/']
       }
 
-      // If we found a matching route, serve its content
+      // If we found a matching route, serve its content with Headwind CSS injection
       if (routeMatched) {
-        return new Response(routeMatched.content, {
+        // Inject Headwind CSS for utility classes (async)
+        return injectHeadwindCSS(routeMatched.content).then(content => new Response(content, {
           headers: {
             'Content-Type': 'text/html',
           },
-        })
+        }))
       }
 
       // Check if it's a file in the output directory
@@ -1434,6 +1592,27 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
             break
           case '.gif':
             contentType = 'image/gif'
+            break
+          case '.svg':
+            contentType = 'image/svg+xml'
+            break
+          case '.ico':
+            contentType = 'image/x-icon'
+            break
+          case '.woff':
+            contentType = 'font/woff'
+            break
+          case '.woff2':
+            contentType = 'font/woff2'
+            break
+          case '.ttf':
+            contentType = 'font/ttf'
+            break
+          case '.otf':
+            contentType = 'font/otf'
+            break
+          case '.eot':
+            contentType = 'application/vnd.ms-fontobject'
             break
         }
 
@@ -1477,22 +1656,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
     const prefix = isLast ? '└─ ' : '├─ '
     const fileTypeLabel = routeInfo.fileType === 'md' ? `${colors.magenta}(markdown)${colors.reset}` : ''
 
-    if (routeInfo.route === '/') {
-      console.log(`  ${colors.green}${prefix}/${colors.reset} → ${colors.bright}${routeInfo.filePath}${colors.reset} ${fileTypeLabel}`)
-    }
-    else {
-      // Format like '/about → ./about/index.stx'
-      const routeParts = routeInfo.route.split('/')
-      const lastPart = routeParts[routeParts.length - 1] || routeParts[routeParts.length - 2]
-      const displayRoute = routeInfo.route === '/' ? '/' : `/${lastPart}`
-
-      // Get parent path for proper formatting
-      let parentPath = routeParts.slice(0, -1).join('/')
-      if (parentPath && !parentPath.startsWith('/'))
-        parentPath = `/${parentPath}`
-
-      console.log(`  ${colors.green}${prefix}${displayRoute}${colors.reset} → ${colors.bright}${routeInfo.filePath}${colors.reset} ${fileTypeLabel}`)
-    }
+    console.log(`  ${colors.green}${prefix}${routeInfo.route}${colors.reset} → ${colors.bright}${routeInfo.filePath}${colors.reset} ${fileTypeLabel}`)
   })
 
   console.log(`\nPress ${colors.cyan}h${colors.reset} + ${colors.cyan}Enter${colors.reset} to show shortcuts`)
