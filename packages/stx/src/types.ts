@@ -1124,6 +1124,8 @@ export interface StxConfig {
   forms?: Partial<FormConfig>
   /** Content Security Policy configuration */
   csp?: Partial<CspConfig>
+  /** Story (component showcase) configuration */
+  story?: Partial<import('./story/types').StoryConfig>
 }
 
 /**
