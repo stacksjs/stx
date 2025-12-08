@@ -152,7 +152,7 @@ describe('createMemoizedSelector', () => {
         computeCount++
         return state.items.filter(x => x > 0)
       },
-      (state) => [state.items], // Only recompute when items change
+      state => [state.items], // Only recompute when items change
     )
 
     // Initial computation

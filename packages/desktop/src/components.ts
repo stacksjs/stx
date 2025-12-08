@@ -516,7 +516,8 @@ function buildClasses(...classes: (string | undefined | false)[]): string {
  * Build style string from object
  */
 function buildStyles(styles: Record<string, string> | undefined): string {
-  if (!styles) return ''
+  if (!styles)
+    return ''
   return Object.entries(styles)
     .map(([key, value]) => `${key.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${value}`)
     .join('; ')
@@ -891,7 +892,7 @@ export function createDropdown(props: DropdownProps): string {
   const classes = buildClasses('stx-dropdown', disabled && 'stx-dropdown--disabled', className)
   const styleStr = buildStyles(style)
 
-  const optionsHtml = options.map(opt => {
+  const optionsHtml = options.map((opt) => {
     const selected = opt.value === value ? 'selected' : ''
     const disabledAttr = opt.disabled ? 'disabled' : ''
     return `<option value="${escapeHtml(opt.value)}" ${selected} ${disabledAttr}>${escapeHtml(opt.label)}</option>`
@@ -1175,8 +1176,10 @@ export function createImageView(props: ImageViewProps): string {
 
   const classes = buildClasses('stx-image', className)
   const imageStyles: Record<string, string> = { objectFit }
-  if (width) imageStyles.width = typeof width === 'number' ? `${width}px` : width
-  if (height) imageStyles.height = typeof height === 'number' ? `${height}px` : height
+  if (width)
+    imageStyles.width = typeof width === 'number' ? `${width}px` : width
+  if (height)
+    imageStyles.height = typeof height === 'number' ? `${height}px` : height
 
   const combinedStyle = [buildStyles(imageStyles), buildStyles(style)].filter(Boolean).join('; ')
   const fallbackAttr = fallback ? `onerror="this.src='${escapeHtml(fallback)}'"` : ''
@@ -1267,8 +1270,10 @@ export function createScrollView(props: ScrollViewProps): string {
   )
 
   const scrollStyles: Record<string, string> = {}
-  if (height) scrollStyles.height = typeof height === 'number' ? `${height}px` : height
-  if (width) scrollStyles.width = typeof width === 'number' ? `${width}px` : width
+  if (height)
+    scrollStyles.height = typeof height === 'number' ? `${height}px` : height
+  if (width)
+    scrollStyles.width = typeof width === 'number' ? `${width}px` : width
 
   const combinedStyle = [buildStyles(scrollStyles), buildStyles(style)].filter(Boolean).join('; ')
 
@@ -1764,8 +1769,10 @@ export function createMediaPlayer(props: MediaPlayerProps): string {
 
   const classes = buildClasses('stx-media-player', `stx-media-player--${type}`, className)
   const mediaStyles: Record<string, string> = {}
-  if (width) mediaStyles.width = typeof width === 'number' ? `${width}px` : width
-  if (height) mediaStyles.height = typeof height === 'number' ? `${height}px` : height
+  if (width)
+    mediaStyles.width = typeof width === 'number' ? `${width}px` : width
+  if (height)
+    mediaStyles.height = typeof height === 'number' ? `${height}px` : height
 
   const combinedStyle = [buildStyles(mediaStyles), buildStyles(style)].filter(Boolean).join('; ')
 
@@ -1790,7 +1797,8 @@ export function createMediaPlayer(props: MediaPlayerProps): string {
  * Format file size for display
  */
 function formatFileSize(bytes?: number): string {
-  if (bytes === undefined) return ''
+  if (bytes === undefined)
+    return ''
   const units = ['B', 'KB', 'MB', 'GB']
   let size = bytes
   let unitIndex = 0

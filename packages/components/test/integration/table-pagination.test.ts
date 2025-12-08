@@ -254,7 +254,7 @@ describe('table Pagination Integration', () => {
   describe('table selection with pagination', () => {
     it('should maintain selections across pages', () => {
       const data = generateData(50)
-      const pageSize = 10
+      const _pageSize = 10
       const selectedIds = new Set<number>()
 
       const toggleSelection = (id: number) => {

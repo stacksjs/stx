@@ -1,3 +1,4 @@
+import type { StxOptions } from '../../src/types'
 /**
  * Full Build Pipeline Integration Tests
  *
@@ -11,7 +12,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import { extractVariables, processDirectives } from '../../src'
-import type { StxOptions } from '../../src/types'
 
 const TEST_DIR = import.meta.dir
 const TEMP_DIR = path.join(TEST_DIR, 'temp-build-pipeline')
@@ -28,10 +28,10 @@ async function processTemplate(
   options: Partial<StxOptions> = {},
 ): Promise<string> {
   // Extract script content (only non-module scripts for server-side)
-  const scriptMatch = content.match(/<script(?![^>]*\btype\s*=\s*["']?module["']?)[^>]*>([\s\S]*?)<\/script>/i)
+  const scriptMatch = content.match(/<script(?![^>]*\stype\s*=\s*["']?module["']?)[^>]*>([\s\S]*?)<\/script>/i)
   const scriptContent = scriptMatch ? scriptMatch[1] : ''
   // Remove only non-module scripts from template
-  const templateContent = content.replace(/<script(?![^>]*\btype\s*=\s*["']?module["']?)[^>]*>[\s\S]*?<\/script>/gi, '')
+  const templateContent = content.replace(/<script(?![^>]*\stype\s*=\s*["']?module["']?)[^>]*>[\s\S]*?<\/script>/gi, '')
 
   // Create context and extract variables
   const context: Record<string, any> = {

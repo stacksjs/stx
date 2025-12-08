@@ -35,7 +35,7 @@ describe('stagger directive', () => {
       {},
       '/test.stx',
     )
-    expect(result).toContain("querySelectorAll('span')")
+    expect(result).toContain('querySelectorAll(\'span\')')
   })
 
   it('should accept custom stagger delay', () => {
@@ -117,9 +117,9 @@ describe('stagger directive', () => {
       {},
       '/test.stx',
     )
-    expect(result).toContain("style.setProperty('--stx-stagger-delay'")
+    expect(result).toContain('style.setProperty(\'--stx-stagger-delay\'')
     expect(result).toContain('animationDelay')
-    expect(result).toContain("classList.add('")
+    expect(result).toContain('classList.add(\'')
   })
 
   it('should strip quotes from selectors', () => {
@@ -129,6 +129,6 @@ describe('stagger directive', () => {
       {},
       '/test.stx',
     )
-    expect(result).toContain("querySelectorAll('li')")
+    expect(result).toContain('querySelectorAll(\'li\')')
   })
 })

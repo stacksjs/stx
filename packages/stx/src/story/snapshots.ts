@@ -163,10 +163,12 @@ export async function restoreSnapshotVersion(
   version: number,
 ): Promise<boolean> {
   const versioned = await loadSnapshotVersions(ctx, storyId)
-  if (!versioned) return false
+  if (!versioned)
+    return false
 
   const targetVersion = versioned.history.find(v => v.version === version)
-  if (!targetVersion) return false
+  if (!targetVersion)
+    return false
 
   const snapshotDir = getSnapshotDir(ctx)
 
@@ -311,7 +313,8 @@ export async function listSnapshotVersions(
   storyId: string,
 ): Promise<SnapshotVersion[]> {
   const versioned = await loadSnapshotVersions(ctx, storyId)
-  if (!versioned) return []
+  if (!versioned)
+    return []
 
   return [versioned.current, ...versioned.history]
 }
@@ -325,7 +328,8 @@ export async function pruneSnapshotVersions(
   keepCount: number = 5,
 ): Promise<number> {
   const versioned = await loadSnapshotVersions(ctx, storyId)
-  if (!versioned) return 0
+  if (!versioned)
+    return 0
 
   const toDelete = versioned.history.slice(keepCount)
   const snapshotDir = getSnapshotDir(ctx)

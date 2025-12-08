@@ -13,6 +13,7 @@
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import process from 'node:process'
 
 // Dynamic import for Craft
 async function launchWithCraft() {

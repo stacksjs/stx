@@ -69,7 +69,7 @@ export function parseFrontmatter(content: string): FrontmatterResult {
         value = false
       }
       // Handle numbers
-      else if (/^-?\d+(\.\d+)?$/.test(value as string)) {
+      else if (/^-?\d+(?:\.\d+)?$/.test(value as string)) {
         value = Number(value)
       }
     }
@@ -193,8 +193,8 @@ export function parseMarkdown(content: string, options: MarkdownOptions = {}): s
 
   for (const line of lines) {
     const trimmed = line.trim()
-    const isBlockElement = /^<(h[1-6]|ul|ol|li|blockquote|pre|table|thead|tbody|tr|th|td|hr|div|p)/.test(trimmed)
-      || /^\x00CODEBLOCK\d+\x00$/.test(trimmed)
+    const isBlockElement = /^<(?:h[1-6]|ul|ol|li|blockquote|pre|table|thead|tbody|tr|th|td|hr|div|p)/.test(trimmed)
+      || /^\0CODEBLOCK\d+\0$/.test(trimmed)
       || trimmed === ''
 
     if (isBlockElement) {

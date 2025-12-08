@@ -36,99 +36,99 @@ export {
 // Components (35 total)
 // =============================================================================
 export {
-  // Input Components
-  createButton,
-  createTextInput,
-  createCheckbox,
-  createRadioButton,
-  createSlider,
-  createColorPicker,
-  createDatePicker,
-  createTimePicker,
-  createAutocomplete,
-
-  // Display Components
-  createLabel,
-  createImageView,
-  createProgressBar,
-  createAvatar,
-  createBadge,
-  createChip,
-  createCard,
-  createTooltip,
-
-  // Layout Components
-  createScrollView,
-  createSplitView,
-  createAccordion,
-  createStepper,
-  createModalComponent,
-  createTabs,
-  createDropdown,
-
-  // Data Components
-  createListView,
-  createTable,
-  createTreeView,
-  createDataGrid,
-  createChart,
-
-  // Advanced Components
-  createRating,
-  createCodeEditor,
-  createMediaPlayer,
-  createFileExplorer,
-  createWebView,
-
   // Component list and styles
   AVAILABLE_COMPONENTS,
   COMPONENT_STYLES,
+  createAccordion,
+  createAutocomplete,
+  createAvatar,
+  createBadge,
+  // Input Components
+  createButton,
+  createCard,
+  createChart,
+
+  createCheckbox,
+  createChip,
+  createCodeEditor,
+  createColorPicker,
+  createDataGrid,
+  createDatePicker,
+  createDropdown,
+  createFileExplorer,
+
+  createImageView,
+  // Display Components
+  createLabel,
+  // Data Components
+  createListView,
+  createMediaPlayer,
+  createModalComponent,
+  createProgressBar,
+  createRadioButton,
+
+  // Advanced Components
+  createRating,
+  // Layout Components
+  createScrollView,
+  createSlider,
+  createSplitView,
+  createStepper,
+
+  createTable,
+  createTabs,
+  createTextInput,
+  createTimePicker,
+  createTooltip,
+
+  createTreeView,
+  createWebView,
 } from './components'
 
 export type {
-  ComponentName,
-  // Input Props
-  ButtonProps,
-  TextInputProps,
-  CheckboxProps,
-  RadioButtonProps,
-  SliderProps,
-  ColorPickerProps,
-  DatePickerProps,
-  TimePickerProps,
+  AccordionProps,
   AutocompleteProps,
-  // Display Props
-  LabelProps,
-  ImageViewProps,
-  ProgressBarProps,
   AvatarProps,
   BadgeProps,
-  ChipProps,
+  // Input Props
+  ButtonProps,
   CardProps,
-  TooltipProps,
-  // Layout Props
-  ScrollViewProps,
-  SplitViewProps,
-  AccordionProps,
-  StepperProps,
-  ModalComponentProps,
-  TabsProps,
-  DropdownProps,
-  // Data Props
-  ListViewProps,
-  TableProps,
-  TreeViewProps,
-  TreeNode,
-  DataGridProps,
-  ChartProps,
   ChartData,
   ChartOptions,
-  // Advanced Props
-  RatingProps,
+  ChartProps,
+  CheckboxProps,
+  ChipProps,
   CodeEditorProps,
-  MediaPlayerProps,
+  ColorPickerProps,
+  ComponentName,
+  DataGridProps,
+  DatePickerProps,
+  DropdownProps,
   FileExplorerProps,
   FileNode,
+  ImageViewProps,
+  // Display Props
+  LabelProps,
+  // Data Props
+  ListViewProps,
+  MediaPlayerProps,
+  ModalComponentProps,
+  ProgressBarProps,
+  RadioButtonProps,
+  // Advanced Props
+  RatingProps,
+  // Layout Props
+  ScrollViewProps,
+  SliderProps,
+  SplitViewProps,
+  StepperProps,
+  TableProps,
+  TabsProps,
+  TextInputProps,
+  TimePickerProps,
+  TooltipProps,
+  TreeNode,
+  TreeViewProps,
   WebViewProps,
 } from './components'
 
@@ -164,21 +164,6 @@ export {
 } from './system-tray'
 
 // =============================================================================
-// Window Management
-// =============================================================================
-export {
-  createWindow,
-  createWindowWithHTML,
-  getDesktopConfig,
-  isWebviewAvailable,
-  openDevWindow,
-  resetDesktopConfig,
-  setDesktopConfig,
-} from './window'
-
-export type { DesktopConfig } from './window'
-
-// =============================================================================
 // Core Types
 // =============================================================================
 export type {
@@ -194,3 +179,18 @@ export type {
   WindowInstance,
   WindowOptions,
 } from './types'
+
+// =============================================================================
+// Window Management
+// =============================================================================
+export {
+  createWindow,
+  createWindowWithHTML,
+  getDesktopConfig,
+  isWebviewAvailable,
+  openDevWindow,
+  resetDesktopConfig,
+  setDesktopConfig,
+} from './window'
+
+export type { DesktopConfig } from './window'

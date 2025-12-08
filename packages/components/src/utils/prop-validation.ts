@@ -1,3 +1,5 @@
+import process from 'node:process'
+
 /**
  * Runtime prop validation utilities for component development
  *
@@ -27,12 +29,12 @@
 /**
  * Environment check - only validate in development
  */
-const isDevelopment = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production'
+const isDevelopment = process.env.NODE_ENV !== 'production'
 
 /**
  * Prop validator function type
  */
-export interface PropValidator<T = any> {
+export interface PropValidator<_T = any> {
   /** Validator function */
   validate: (value: any, propName: string, componentName: string) => boolean
   /** Error message generator */
@@ -296,7 +298,7 @@ export const PropTypes = {
       if (typeof value !== 'string')
         return false
       try {
-        new URL(value)
+        const _url = new URL(value)
         return true
       }
       catch {

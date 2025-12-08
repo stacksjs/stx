@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import {
-  findDeadBranches,
   eliminateDeadCode,
   evaluateConstant,
+  findDeadBranches,
 } from '../../src/build-optimizer'
 
 describe('evaluateConstant', () => {
@@ -25,7 +25,7 @@ describe('evaluateConstant', () => {
   })
 
   it('should evaluate string literals', () => {
-    expect(evaluateConstant("'hello'", {})).toBe('hello')
+    expect(evaluateConstant('\'hello\'', {})).toBe('hello')
     expect(evaluateConstant('"world"', {})).toBe('world')
   })
 
@@ -74,13 +74,13 @@ describe('findDeadBranches', () => {
   })
 
   it('should find @env(development) in production', () => {
-    const dead = findDeadBranches("@env('development')\n  Dev only\n@endenv", { __ENV__: 'production' })
+    const dead = findDeadBranches('@env(\'development\')\n  Dev only\n@endenv', { __ENV__: 'production' })
     expect(dead.length).toBeGreaterThan(0)
     expect(dead[0].reason).toContain('Development-only')
   })
 
   it('should not flag @env(development) in development', () => {
-    const dead = findDeadBranches("@env('development')\n  Dev only\n@endenv", { __ENV__: 'development' })
+    const dead = findDeadBranches('@env(\'development\')\n  Dev only\n@endenv', { __ENV__: 'development' })
     expect(dead).toHaveLength(0)
   })
 
@@ -101,7 +101,7 @@ describe('eliminateDeadCode', () => {
 
   it('should remove development code in production', () => {
     const { content } = eliminateDeadCode(
-      "<p>Header</p>@env('development')\n  Dev\n@endenv<p>Footer</p>",
+      '<p>Header</p>@env(\'development\')\n  Dev\n@endenv<p>Footer</p>',
       { __ENV__: 'production' },
     )
     expect(content).not.toContain('Dev')

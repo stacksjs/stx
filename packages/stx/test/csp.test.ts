@@ -1,3 +1,4 @@
+import type { CspConfig, CspDirectives } from '../src/types'
 import { describe, expect, it } from 'bun:test'
 import {
   addNonceToInlineContent,
@@ -16,7 +17,6 @@ import {
   strictCspPreset,
   validateCspDirectives,
 } from '../src/csp'
-import type { CspConfig, CspDirectives } from '../src/types'
 
 describe('CSP Module', () => {
   describe('generateNonce', () => {
@@ -25,7 +25,7 @@ describe('CSP Module', () => {
       expect(nonce).toBeTruthy()
       expect(typeof nonce).toBe('string')
       // Base64 should only contain A-Za-z0-9+/=
-      expect(nonce).toMatch(/^[A-Za-z0-9+/=]+$/)
+      expect(nonce).toMatch(/^[A-Z0-9+/=]+$/i)
     })
 
     it('generates unique nonces', () => {

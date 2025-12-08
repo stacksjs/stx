@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import {
-  generateTypeDefinitions,
   extractTypesFromTemplate,
+  generateTypeDefinitions,
 } from '../../src/typescript-templates'
 
 describe('generateTypeDefinitions', () => {

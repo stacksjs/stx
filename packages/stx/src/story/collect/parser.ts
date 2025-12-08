@@ -208,10 +208,14 @@ function parseObjectLiteral(objStr: string): Record<string, any> {
 function parseValue(valueStr: string): any {
   const trimmed = valueStr.trim()
 
-  if (trimmed === 'true') return true
-  if (trimmed === 'false') return false
-  if (trimmed === 'null') return null
-  if (trimmed === 'undefined') return undefined
+  if (trimmed === 'true')
+    return true
+  if (trimmed === 'false')
+    return false
+  if (trimmed === 'null')
+    return null
+  if (trimmed === 'undefined')
+    return undefined
 
   // Number
   if (/^-?\d+(?:\.\d+)?$/.test(trimmed)) {

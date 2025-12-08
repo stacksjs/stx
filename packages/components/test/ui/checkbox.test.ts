@@ -155,10 +155,10 @@ describe('Checkbox Component - DOM Tests', () => {
       const checkbox = document.createElement('input')
       checkbox.type = 'checkbox'
       checkbox.disabled = true
-      let clicked = false
+      let _clicked = false
 
       checkbox.addEventListener('click', () => {
-        clicked = true
+        _clicked = true
       })
 
       container.appendChild(checkbox)

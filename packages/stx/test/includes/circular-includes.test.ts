@@ -1,8 +1,8 @@
+import type { StxOptions } from '../../src/types'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import { processIncludes } from '../../src/includes'
-import type { StxOptions } from '../../src/types'
 
 const TEST_DIR = path.join(import.meta.dir, 'temp-circular')
 

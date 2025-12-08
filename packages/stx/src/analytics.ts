@@ -124,7 +124,7 @@ function generatePlausibleScript(config: Partial<AnalyticsConfig>): string {
   }
 
   const scriptUrl = plausible.scriptUrl || 'https://plausible.io/js/script.js'
-  const dataAttrs: string[] = [`data-domain="${escapeAttr(plausible.domain)}"`]
+  const _dataAttrs: string[] = [`data-domain="${escapeAttr(plausible.domain)}"`]
 
   // Build script URL with extensions
   let finalScriptUrl = scriptUrl

@@ -44,9 +44,9 @@ describe('analyzeTemplate', () => {
     })
 
     it('should extract directive parameters', () => {
-      const analysis = analyzeTemplate("@include('header')")
+      const analysis = analyzeTemplate('@include(\'header\')')
       const include = analysis.directives.find(d => d.name === 'include')
-      expect(include!.params).toBe("'header'")
+      expect(include!.params).toBe('\'header\'')
     })
   })
 
@@ -75,7 +75,7 @@ describe('analyzeTemplate', () => {
     })
 
     it('should extract @component directives', () => {
-      const analysis = analyzeTemplate("@component('header')\n@endcomponent")
+      const analysis = analyzeTemplate('@component(\'header\')\n@endcomponent')
       const componentDirs = analysis.directives.filter(d => d.name === 'component')
       expect(componentDirs.length).toBeGreaterThan(0)
     })
@@ -90,7 +90,7 @@ describe('analyzeTemplate', () => {
     })
 
     it('should extract named slots', () => {
-      const analysis = analyzeTemplate("@slot('header')\n  Header\n@endslot")
+      const analysis = analyzeTemplate('@slot(\'header\')\n  Header\n@endslot')
       expect(analysis.slots[0].name).toBe('header')
       expect(analysis.slots[0].isNamed).toBe(true)
     })
@@ -98,7 +98,7 @@ describe('analyzeTemplate', () => {
 
   describe('section extraction', () => {
     it('should extract sections', () => {
-      const analysis = analyzeTemplate("@section('content')\n  Main\n@endsection")
+      const analysis = analyzeTemplate('@section(\'content\')\n  Main\n@endsection')
       expect(analysis.sections.length).toBeGreaterThan(0)
       expect(analysis.sections[0].name).toBe('content')
     })
@@ -106,13 +106,13 @@ describe('analyzeTemplate', () => {
 
   describe('layout extraction', () => {
     it('should extract layout extends', () => {
-      const analysis = analyzeTemplate("@extends('layouts/main')\n@section('content')\n@endsection")
+      const analysis = analyzeTemplate('@extends(\'layouts/main\')\n@section(\'content\')\n@endsection')
       expect(analysis.layout).toBeDefined()
       expect(analysis.layout!.extends).toBe('layouts/main')
     })
 
     it('should track sections used in layout', () => {
-      const analysis = analyzeTemplate("@extends('base')\n@section('header')\n@endsection\n@section('footer')\n@endsection")
+      const analysis = analyzeTemplate('@extends(\'base\')\n@section(\'header\')\n@endsection\n@section(\'footer\')\n@endsection')
       expect(analysis.layout!.sections).toContain('header')
       expect(analysis.layout!.sections).toContain('footer')
     })

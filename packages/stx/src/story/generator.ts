@@ -118,9 +118,9 @@ function inferControlType(prop: StoryAnalyzedProp): ControlType {
       return 'color'
     }
     // Check if it's a long text field
-    if (prop.name.toLowerCase().includes('description') ||
-        prop.name.toLowerCase().includes('content') ||
-        prop.name.toLowerCase().includes('text')) {
+    if (prop.name.toLowerCase().includes('description')
+      || prop.name.toLowerCase().includes('content')
+      || prop.name.toLowerCase().includes('text')) {
       return 'textarea'
     }
     return 'text'
@@ -250,11 +250,15 @@ ${story.variants.slice(1).map(v => `  <Variant title="${v.title}">
  */
 function getDefaultForType(type: string): string {
   const t = type.toLowerCase()
-  if (t === 'boolean') return 'false'
-  if (t === 'number') return '0'
-  if (t === 'array') return '[]'
-  if (t === 'object') return '{}'
-  return "''"
+  if (t === 'boolean')
+    return 'false'
+  if (t === 'number')
+    return '0'
+  if (t === 'array')
+    return '[]'
+  if (t === 'object')
+    return '{}'
+  return '\'\''
 }
 
 /**

@@ -424,7 +424,7 @@ export function createKeepAlive(options: KeepAliveOptions = {}): KeepAlive {
     let pruned = 0
 
     // Remove expired entries
-    const now = Date.now()
+    const _now = Date.now()
     for (const [key, entry] of cache.entries()) {
       if (isExpired(entry)) {
         log(`Pruning expired: ${key}`)

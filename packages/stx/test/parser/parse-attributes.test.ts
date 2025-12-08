@@ -19,7 +19,8 @@ function parseAttributes(attributesStr: string): ParsedAttribute[] {
       pos++
     }
 
-    if (pos >= len) break
+    if (pos >= len)
+      break
 
     // Check for binding prefix
     let isBinding = false
@@ -39,7 +40,8 @@ function parseAttributes(attributesStr: string): ParsedAttribute[] {
       pos++
     }
 
-    if (!name) break
+    if (!name)
+      break
 
     // Skip whitespace
     while (pos < len && /\s/.test(attributesStr[pos])) {
@@ -104,7 +106,7 @@ describe('parseAttributes', () => {
   })
 
   it('should parse single-quoted attributes', () => {
-    const result = parseAttributes("name='value'")
+    const result = parseAttributes('name=\'value\'')
     expect(result).toEqual([
       { name: 'name', value: 'value', isBinding: false },
     ])

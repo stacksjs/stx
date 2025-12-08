@@ -29,29 +29,28 @@ export function extractClasses(template: string): string[] {
 
   // Extract from HTML class attributes
   const htmlClassRegex = /class="([^"]+)"/g
-  let match
 
-  while ((match = htmlClassRegex.exec(template)) !== null) {
+  for (const match of template.matchAll(htmlClassRegex)) {
     classes.push(...match[1].split(/\s+/).filter(Boolean))
   }
 
   // Extract from JavaScript string literals (for dynamic class definitions)
   // Match patterns like: 'class-name' or "class-name" in JS code
   const jsStringRegex = /['"]([a-z0-9\-:]+(?:\s+[a-z0-9\-:]+)*)['"](?:\s*[,:+]|\s*\})/gi
-  while ((match = jsStringRegex.exec(template)) !== null) {
+  for (const match of template.matchAll(jsStringRegex)) {
     const classString = match[1]
     // Filter to only include valid Tailwind-like class patterns
     const potentialClasses = classString.split(/\s+/).filter((c) => {
       return /^[a-z][a-z0-9\-]*(?::[a-z0-9\-]+)*$/i.test(c)
         || /^dark:[a-z0-9\-]+$/i.test(c)
-        || /^(sm|md|lg|xl|2xl):[a-z0-9\-]+$/i.test(c)
+        || /^(?:sm|md|lg|xl|2xl):[a-z0-9\-]+$/i.test(c)
     })
     classes.push(...potentialClasses)
   }
 
   // Also extract complete class strings like 'bg-blue-500 hover:bg-blue-600 ...'
   const classStringRegex = /['"`]([^'"`]*(?:bg-|text-|border-|p-|m-|flex|grid|h-|w-|dark:)[^'"`]*)['"`]/g
-  while ((match = classStringRegex.exec(template)) !== null) {
+  for (const match of template.matchAll(classStringRegex)) {
     const classString = match[1]
     // Split and filter valid classes
     const potentialClasses = classString.split(/\s+/).filter((c) => {
@@ -290,7 +289,7 @@ export async function testComponentTemplate(
  */
 export async function testDarkModeSupport(
   componentPath: string,
-  componentName: string,
+  _componentName: string,
 ): Promise<{ hasDarkModeClasses: boolean, darkClasses: string[] }> {
   const template = await readComponentTemplate(componentPath)
   const classes = extractClasses(template)
@@ -307,7 +306,7 @@ export async function testDarkModeSupport(
  */
 export async function testResponsiveSupport(
   componentPath: string,
-  componentName: string,
+  _componentName: string,
 ): Promise<{ hasResponsiveClasses: boolean, responsiveClasses: string[] }> {
   const template = await readComponentTemplate(componentPath)
   const classes = extractClasses(template)

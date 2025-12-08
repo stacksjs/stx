@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test'
 import {
-  typeCheckExpression,
-  validateTemplateTypes,
   compileTimeTypeCheck,
   createTypeContext,
   extractTypesFromTemplate,
   inferTypeFromValue,
+  typeCheckExpression,
+  validateTemplateTypes,
 } from '../../src/typescript-templates'
 
 describe('inferTypeFromValue', () => {

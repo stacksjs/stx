@@ -1,9 +1,10 @@
+import type { Keyframe } from '../../src/animation'
 import { describe, expect, it } from 'bun:test'
 import {
   generateAnimationCSS,
+
   keyframeDirective,
   parseAnimationShorthand,
-  type Keyframe,
 } from '../../src/animation'
 
 describe('keyframe directive', () => {

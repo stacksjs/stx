@@ -6,7 +6,7 @@ describe('calendar Component', () => {
       // This is a type-level test
       const props: import('../../src/ui/calendar').CalendarProps = {
         value: new Date(),
-        onChange: (date: Date) => {},
+        onChange: (_date: Date) => {},
         minDate: new Date(),
         maxDate: new Date(),
         disabledDates: [],

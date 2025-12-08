@@ -1,20 +1,19 @@
-import { describe, expect, test, beforeEach } from 'bun:test'
+import type { StxOptions } from '../src/types'
+import { beforeEach, describe, expect, test } from 'bun:test'
 import {
-  clearTranslationCache,
-  getLoadingState,
-  isLoading,
-  isLoaded,
-  loadTranslationLazy,
-  getTranslationSync,
-  getTranslationAsync,
   cancelPendingLoads,
+  clearTranslationCache,
   getLoadingLocales,
+  getLoadingState,
+  getTranslationAsync,
+  getTranslationCacheStats,
+  getTranslationSync,
+  isLoaded,
+  isLoading,
+  loadTranslationLazy,
   preloadTranslations,
   preloadTranslationsBackground,
-  getTranslationCacheStats,
-  type PreloadConfig,
 } from '../src/i18n'
-import type { StxOptions } from '../src/types'
 
 // Mock options for testing
 const mockOptions: StxOptions = {
@@ -175,7 +174,7 @@ describe('i18n lazy loading', () => {
       await preloadTranslations({
         locales: ['en'],
         parallel: true,
-        onLocaleLoaded: (locale) => loadedLocales.push(locale),
+        onLocaleLoaded: locale => loadedLocales.push(locale),
       }, mockOptions)
 
       expect(loadedLocales).toContain('en')
@@ -213,7 +212,7 @@ describe('i18n lazy loading', () => {
         locales: ['en'],
         parallel: false,
         priority: { en: 10 },
-        onLocaleLoaded: (locale) => loadOrder.push(locale),
+        onLocaleLoaded: locale => loadOrder.push(locale),
       }, mockOptions)
 
       expect(loadOrder.length).toBeGreaterThan(0)

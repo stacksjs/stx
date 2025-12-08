@@ -222,10 +222,10 @@ describe('Radio Component - DOM Tests', () => {
       const radio = document.createElement('input')
       radio.type = 'radio'
       radio.disabled = true
-      let clicked = false
+      let _clicked = false
 
       radio.addEventListener('click', () => {
-        clicked = true
+        _clicked = true
       })
 
       container.appendChild(radio)

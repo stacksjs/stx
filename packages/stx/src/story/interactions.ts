@@ -225,7 +225,7 @@ export async function runInteractionTests(
  * Execute a single interaction step
  * Note: This is a stub - real implementation would use browser automation
  */
-async function executeStep(step: InteractionStep): Promise<{ success: boolean; error?: string }> {
+async function executeStep(step: InteractionStep): Promise<{ success: boolean, error?: string }> {
   // Simulate step execution
   switch (step.action) {
     case 'wait':

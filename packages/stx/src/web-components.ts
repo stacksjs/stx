@@ -897,7 +897,7 @@ function camelToKebab(str: string): string {
 /**
  * Convert kebab-case to camelCase
  */
-function kebabToCamel(str: string): string {
+function _kebabToCamel(str: string): string {
   return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
 }
 
@@ -965,10 +965,14 @@ export function generateReactiveWebComponent(config: ReactiveWebComponentConfig)
     const def = properties[prop]
     const defaultValue = def.default !== undefined
       ? JSON.stringify(def.default)
-      : def.type === 'string' ? '""'
-        : def.type === 'number' ? '0'
-          : def.type === 'boolean' ? 'false'
-            : def.type === 'array' ? '[]'
+      : def.type === 'string'
+        ? '""'
+        : def.type === 'number'
+          ? '0'
+          : def.type === 'boolean'
+            ? 'false'
+            : def.type === 'array'
+              ? '[]'
               : '{}'
     return `    this._${prop} = ${defaultValue};`
   }).join('\n')
@@ -1320,10 +1324,14 @@ export interface ${className}State {
       : null
     const defaultValue = def.default !== undefined
       ? JSON.stringify(def.default)
-      : def.type === 'string' ? '""'
-        : def.type === 'number' ? '0'
-          : def.type === 'boolean' ? 'false'
-            : def.type === 'array' ? '[]'
+      : def.type === 'string'
+        ? '""'
+        : def.type === 'number'
+          ? '0'
+          : def.type === 'boolean'
+            ? 'false'
+            : def.type === 'array'
+              ? '[]'
               : '{}'
 
     const reflectCode = def.reflect && attrName
@@ -1462,10 +1470,14 @@ ${propertyNames.map((prop) => {
   const def = properties[prop]
   const defaultValue = def.default !== undefined
     ? JSON.stringify(def.default)
-    : def.type === 'string' ? '""'
-      : def.type === 'number' ? '0'
-        : def.type === 'boolean' ? 'false'
-          : def.type === 'array' ? '[]'
+    : def.type === 'string'
+      ? '""'
+      : def.type === 'number'
+        ? '0'
+        : def.type === 'boolean'
+          ? 'false'
+          : def.type === 'array'
+            ? '[]'
             : '{}'
   return `    this._${prop} = ${defaultValue};`
 }).join('\n')}

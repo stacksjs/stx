@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test'
 import {
-  optimizeTemplate,
+  createOptimizedBuild,
   foldConstants,
   minifyHtml,
+  optimizeTemplate,
   poolStrings,
-  createOptimizedBuild,
 } from '../../src/build-optimizer'
 
 describe('foldConstants', () => {
@@ -85,20 +85,20 @@ describe('minifyHtml', () => {
 
 describe('poolStrings', () => {
   it('should pool repeated strings', () => {
-    const template = "'long repeated string here' and 'long repeated string here'"
+    const template = '\'long repeated string here\' and \'long repeated string here\''
     const { pool, count } = poolStrings(template)
     expect(count).toBe(1)
     expect(pool.size).toBe(1)
   })
 
   it('should not pool short strings', () => {
-    const template = "'short' and 'short'"
+    const template = '\'short\' and \'short\''
     const { count } = poolStrings(template)
     expect(count).toBe(0)
   })
 
   it('should not pool unique strings', () => {
-    const template = "'unique string one' and 'unique string two'"
+    const template = '\'unique string one\' and \'unique string two\''
     const { count } = poolStrings(template)
     expect(count).toBe(0)
   })

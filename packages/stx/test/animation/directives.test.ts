@@ -1,3 +1,4 @@
+import type { StxOptions } from '../../src/types'
 import { describe, expect, it } from 'bun:test'
 import {
   animationGroupDirective,
@@ -5,7 +6,6 @@ import {
   processAnimationDirectives,
   registerAnimationDirectives,
 } from '../../src/animation'
-import type { StxOptions } from '../../src/types'
 
 describe('animationGroup directive', () => {
   it('should require group name and element selectors', () => {
@@ -61,7 +61,7 @@ describe('animationGroup directive', () => {
       '/test.stx',
     )
     expect(result).toContain('staggerDelay')
-    expect(result).toContain("setProperty('--stx-transition-delay'")
+    expect(result).toContain('setProperty(\'--stx-transition-delay\'')
     expect(result).toContain('animationDelay')
   })
 
@@ -83,8 +83,8 @@ describe('animationGroup directive', () => {
       {},
       '/test.stx',
     )
-    expect(result).toContain("document.readyState === 'loading'")
-    expect(result).toContain("addEventListener('DOMContentLoaded'")
+    expect(result).toContain('document.readyState === \'loading\'')
+    expect(result).toContain('addEventListener(\'DOMContentLoaded\'')
   })
 })
 
@@ -109,7 +109,7 @@ describe('motion directive', () => {
     )
     expect(result).toContain('<script>')
     expect(result).toContain('prefers-reduced-motion')
-    expect(result).toContain("data-reduced-motion")
+    expect(result).toContain('data-reduced-motion')
   })
 
   it('should respect user preferences by default', () => {
@@ -139,7 +139,7 @@ describe('motion directive', () => {
       {},
       '/test.stx',
     )
-    expect(result).toContain("addEventListener('change'")
+    expect(result).toContain('addEventListener(\'change\'')
     expect(result).toContain('e.matches')
   })
 
@@ -150,7 +150,7 @@ describe('motion directive', () => {
       {},
       '/test.stx',
     )
-    expect(result).toContain("'--stx-transition-duration', '0ms'")
+    expect(result).toContain('\'--stx-transition-duration\', \'0ms\'')
   })
 })
 

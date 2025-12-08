@@ -46,7 +46,7 @@ describe('serverComponentDirective', () => {
     serverComponentDirective.handler('<div></div>', ['"my-component"'], {}, 'test.stx')
     expect(getComponent('my-component')).toBeDefined()
 
-    serverComponentDirective.handler('<div></div>', ["'another'"], {}, 'test.stx')
+    serverComponentDirective.handler('<div></div>', ['\'another\''], {}, 'test.stx')
     expect(getComponent('another')).toBeDefined()
   })
 
@@ -104,7 +104,7 @@ describe('clientComponentDirective', () => {
     clientComponentDirective.handler(content, ['with-script'], {}, 'test.stx')
 
     const entry = getComponent('with-script')
-    expect((entry?.component as any).clientScript).toContain("console.log('hello')")
+    expect((entry?.component as any).clientScript).toContain('console.log(\'hello\')')
     expect((entry?.component as any).template).not.toContain('<script>')
   })
 
@@ -255,6 +255,6 @@ describe('generateServerComponentsRuntime', () => {
   it('should mark hydrated components', () => {
     const runtime = generateServerComponentsRuntime()
 
-    expect(runtime).toContain("dataset.hydrated = 'true'")
+    expect(runtime).toContain('dataset.hydrated = \'true\'')
   })
 })

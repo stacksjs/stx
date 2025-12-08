@@ -100,7 +100,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         await fs.cp(assetsDir, targetAssetsDir, { recursive: true })
       }
     }
-    catch (error) {
+    catch {
       // Silently ignore
     }
   }

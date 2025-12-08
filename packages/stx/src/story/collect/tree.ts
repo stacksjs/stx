@@ -59,7 +59,7 @@ export function buildTree(
 
   // Create groups
   const groups: Array<{
-    groupConfig?: { id: string; title: string; include?: (file: StoryTreeFile) => boolean }
+    groupConfig?: { id: string, title: string, include?: (file: StoryTreeFile) => boolean }
     treeObject: Record<string, any>
   }> = (config.tree.groups || []).map(g => ({
     groupConfig: { id: g.id || g.title, title: g.title, include: g.include },
@@ -107,7 +107,7 @@ export function buildTree(
  */
 function getGroup(
   file: ServerStoryFile,
-  groups: Array<{ groupConfig?: { include?: (file: StoryTreeFile) => boolean }; treeObject: Record<string, any> }>,
+  groups: Array<{ groupConfig?: { include?: (file: StoryTreeFile) => boolean }, treeObject: Record<string, any> }>,
   defaultGroup: { treeObject: Record<string, any> },
 ): { treeObject: Record<string, any> } {
   const treeFile = file.treeFile || { title: file.fileName, path: file.relativePath }
@@ -218,8 +218,8 @@ export function flattenTree(tree: ServerTree): number[] {
 export function findStoryInTree(
   tree: ServerTree,
   index: number,
-): { path: string[]; node: ServerTreeLeaf } | null {
-  function walk(nodes: ServerTreeNode[], currentPath: string[]): { path: string[]; node: ServerTreeLeaf } | null {
+): { path: string[], node: ServerTreeLeaf } | null {
+  function walk(nodes: ServerTreeNode[], currentPath: string[]): { path: string[], node: ServerTreeLeaf } | null {
     for (const node of nodes) {
       if ('index' in node && node.index === index) {
         return { path: [...currentPath, node.title], node }

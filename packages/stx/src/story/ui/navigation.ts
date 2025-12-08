@@ -38,7 +38,7 @@ export function createNavigationState(): NavigationState {
 /**
  * Parse hash from URL for routing
  */
-export function parseHash(hash: string): { storyId: string | null; variantId: string | null } {
+export function parseHash(hash: string): { storyId: string | null, variantId: string | null } {
   if (!hash || hash === '#') {
     return { storyId: null, variantId: null }
   }
@@ -59,8 +59,10 @@ export function parseHash(hash: string): { storyId: string | null; variantId: st
  * Generate hash for URL
  */
 export function generateHash(storyId: string | null, variantId: string | null): string {
-  if (!storyId) return ''
-  if (!variantId) return `#/${storyId}`
+  if (!storyId)
+    return ''
+  if (!variantId)
+    return `#/${storyId}`
   return `#/${storyId}/${variantId}`
 }
 
@@ -232,7 +234,8 @@ export function getNavigationStyles(): string {
  * Generate recent stories list HTML
  */
 export function generateRecentList(recentStories: string[], storyMap: Map<string, string>): string {
-  if (recentStories.length === 0) return ''
+  if (recentStories.length === 0)
+    return ''
 
   const items = recentStories
     .filter(id => storyMap.has(id))

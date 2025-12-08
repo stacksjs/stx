@@ -1,31 +1,31 @@
-import { describe, expect, test, beforeEach, afterEach, afterAll } from 'bun:test'
-import { unlinkSync, existsSync } from 'node:fs'
+import type { StxOptions } from '../src/types'
+import { afterAll, afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { existsSync, unlinkSync } from 'node:fs'
 import {
-  configureDatabase,
-  getDatabaseConfig,
-  resetDatabaseConfig,
-  query,
-  table,
-  raw,
-  QueryBuilder,
-  defineModel,
-  getModel,
-  hasModel,
-  transaction,
+  Blueprint,
   clearQueryCache,
+  clearQueryLog,
+  configureDatabase,
+  DatabaseError,
+  defineModel,
+  enableQueryLogging,
+  getDatabaseConfig,
+  getModel,
   getQueryCacheStats,
   getQueryLog,
-  clearQueryLog,
-  enableQueryLogging,
-  schema,
-  Blueprint,
+  hasModel,
+  processDatabaseDirectives,
   processDbDirective,
   processModelDirective,
   processQueryDirective,
-  processDatabaseDirectives,
-  DatabaseError,
+  query,
+  QueryBuilder,
+  raw,
+  resetDatabaseConfig,
+  schema,
+  table,
+  transaction,
 } from '../src/database'
-import type { StxOptions } from '../src/types'
 
 const TEST_DB = './test-database.db'
 

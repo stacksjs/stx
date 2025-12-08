@@ -84,7 +84,7 @@ export function useDarkMode(options: DarkModeOptions = {}): DarkModeResult {
 
   // Listen for system theme changes if using system theme
   if (typeof window !== 'undefined' && theme === 'system') {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (_e) => {
       if (theme === 'system') {
         applyTheme('system')
       }

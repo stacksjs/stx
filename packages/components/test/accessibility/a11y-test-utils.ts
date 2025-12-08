@@ -88,7 +88,7 @@ const REQUIRED_ARIA_BY_ROLE: Record<string, string[]> = {
 /**
  * Interactive elements that should be keyboard accessible
  */
-const INTERACTIVE_ELEMENTS = [
+const _INTERACTIVE_ELEMENTS = [
   'a[href]',
   'button',
   'input',
@@ -119,9 +119,8 @@ async function readTemplate(componentPath: string): Promise<string> {
 export function extractAriaAttributes(template: string): Record<string, string[]> {
   const ariaAttrs: Record<string, string[]> = {}
   const ariaRegex = /aria-([a-z]+)="([^"]*)"/gi
-  let match
 
-  while ((match = ariaRegex.exec(template)) !== null) {
+  for (const match of template.matchAll(ariaRegex)) {
     const attrName = `aria-${match[1]}`
     if (!ariaAttrs[attrName]) {
       ariaAttrs[attrName] = []
@@ -138,9 +137,8 @@ export function extractAriaAttributes(template: string): Record<string, string[]
 export function extractRoles(template: string): string[] {
   const roleRegex = /role="([^"]+)"/gi
   const roles: string[] = []
-  let match
 
-  while ((match = roleRegex.exec(template)) !== null) {
+  for (const match of template.matchAll(roleRegex)) {
     roles.push(match[1])
   }
 
@@ -183,9 +181,8 @@ export function checkAccessibleLabels(template: string): A11yIssue[] {
 
   // Check for buttons without accessible names
   const buttonRegex = /<button([^>]*)>([^<]*)<\/button>/gi
-  let match
 
-  while ((match = buttonRegex.exec(template)) !== null) {
+  for (const match of template.matchAll(buttonRegex)) {
     const attrs = match[1]
     const content = match[2].trim()
 
@@ -207,7 +204,7 @@ export function checkAccessibleLabels(template: string): A11yIssue[] {
 
   // Check for inputs without labels
   const inputRegex = /<input([^>]*)>/gi
-  while ((match = inputRegex.exec(template)) !== null) {
+  for (const match of template.matchAll(inputRegex)) {
     const attrs = match[1]
 
     const hasAriaLabel = /aria-label="[^"]+"/i.test(attrs)
@@ -254,7 +251,7 @@ export function checkKeyboardAccessibility(template: string): A11yIssue[] {
   }
 
   // Check for tabindex values
-  const negativeTabindex = /tabindex="-[2-9]|tabindex="-1\d/gi
+  const negativeTabindex = /tabindex="-[2-9]|tabindex="-1\d/i
   if (negativeTabindex.test(template)) {
     issues.push({
       severity: 'info',

@@ -238,7 +238,7 @@ function checkA11yWithRegex(html: string, _filePath: string): A11yViolation[] {
       // Find if this input appears within a <label>...</label> tag
       const inputPos = match.index
       const beforeInput = html.substring(0, inputPos)
-      const afterInput = html.substring(inputPos)
+      const _afterInput = html.substring(inputPos)
 
       // Count opening and closing label tags before this input
       const openLabels = (beforeInput.match(/<label\b/gi) || []).length
@@ -284,7 +284,7 @@ function checkA11yWithRegex(html: string, _filePath: string): A11yViolation[] {
   }
 
   // Check 6: Missing language attribute
-  if (/<html\b/i.test(html) && !/<html[^>]*\blang\s*=/i.test(html)) {
+  if (/<html\b/i.test(html) && !/<html[^>]*\slang\s*=/i.test(html)) {
     violations.push({
       type: 'missing-lang',
       element: '<html>',
@@ -314,7 +314,7 @@ function checkA11yWithRegex(html: string, _filePath: string): A11yViolation[] {
   }
 
   // Check 8: Auto-playing media without muted
-  const autoplayRegex = /<(video|audio)[^>]*\bautoplay\b[^>]*>/gi
+  const autoplayRegex = /<(video|audio)[^>]*\sautoplay\s[^>]*>/gi
   match = autoplayRegex.exec(html)
   while (match !== null) {
     if (!/\bmuted\b/i.test(match[0])) {

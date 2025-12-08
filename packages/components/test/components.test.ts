@@ -225,7 +225,7 @@ describe('Component Props', () => {
   describe('CommandPalette', () => {
     it('should accept valid props', () => {
       const onClose = () => {}
-      const onQueryChange = (q: string) => {}
+      const onQueryChange = (_q: string) => {}
       const props: CommandPaletteProps = {
         open: true,
         onClose,

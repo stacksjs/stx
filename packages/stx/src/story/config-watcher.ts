@@ -47,7 +47,8 @@ export function watchConfigFile(
   for (const configPath of configPaths) {
     try {
       // Check if file exists
-      if (!fs.existsSync(configPath)) continue
+      if (!fs.existsSync(configPath))
+        continue
 
       const watcher = fs.watch(configPath, (eventType) => {
         if (eventType === 'change') {
@@ -111,7 +112,8 @@ export function findConfigFile(root: string): string | null {
  */
 export async function getConfigModifiedTime(root: string): Promise<number | null> {
   const configPath = findConfigFile(root)
-  if (!configPath) return null
+  if (!configPath)
+    return null
 
   try {
     const stats = await fs.promises.stat(configPath)

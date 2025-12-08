@@ -2,9 +2,9 @@ import { describe, expect, it } from 'bun:test'
 import {
   DEFAULT_TRANSITION_OPTIONS,
   TransitionDirection,
+  transitionDirective,
   TransitionEase,
   TransitionType,
-  transitionDirective,
 } from '../../src/animation'
 
 describe('transition directive', () => {

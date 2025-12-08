@@ -120,7 +120,7 @@ describe('parseTypeAnnotation', () => {
 
   describe('literal types', () => {
     it('should parse string literal with single quotes', () => {
-      const result = parseTypeAnnotation("'hello'")
+      const result = parseTypeAnnotation('\'hello\'')
       expect(result).toEqual({ kind: 'literal', literalValue: 'hello' })
     })
 
@@ -307,7 +307,7 @@ describe('typeToString', () => {
   })
 
   it('should convert literal to string', () => {
-    expect(typeToString({ kind: 'literal', literalValue: 'hello' })).toBe("'hello'")
+    expect(typeToString({ kind: 'literal', literalValue: 'hello' })).toBe('\'hello\'')
     expect(typeToString({ kind: 'literal', literalValue: 42 })).toBe('42')
     expect(typeToString({ kind: 'literal', literalValue: true })).toBe('true')
   })

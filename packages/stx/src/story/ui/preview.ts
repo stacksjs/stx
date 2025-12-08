@@ -53,7 +53,8 @@ export function generatePreviewIframe(
   ctx: StoryContext,
 ): string {
   const variant = story.story?.variants.find(v => v.id === variantId)
-  if (!variant) return ''
+  if (!variant)
+    return ''
 
   const { theme } = ctx.config
   const darkClass = theme.darkClass || 'dark'
@@ -172,7 +173,7 @@ export function generateZoomControls(currentZoom: number): string {
  * Generate background selector HTML
  */
 export function generateBackgroundSelector(
-  presets: { label: string; color: string }[],
+  presets: { label: string, color: string }[],
   currentColor: string,
 ): string {
   const options = presets

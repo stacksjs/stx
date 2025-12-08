@@ -211,17 +211,17 @@ export interface ModelDefinition {
  */
 export interface ModelInstance {
   /** Get attribute value */
-  get(key: string): unknown
+  get: (key: string) => unknown
   /** Set attribute value */
-  set(key: string, value: unknown): void
+  set: (key: string, value: unknown) => void
   /** Get all attributes */
-  toJSON(): Row
+  toJSON: () => Row
   /** Save changes to database */
-  save(): Promise<void>
+  save: () => Promise<void>
   /** Delete from database */
-  delete(): Promise<void>
+  delete: () => Promise<void>
   /** Reload from database */
-  refresh(): Promise<void>
+  refresh: () => Promise<void>
   /** Check if model exists in database */
   exists: boolean
   /** Original attributes before changes */
@@ -229,7 +229,7 @@ export interface ModelInstance {
   /** Current attributes */
   attributes: Row
   /** Check if model has been modified */
-  isDirty(key?: string): boolean
+  isDirty: (key?: string) => boolean
   /** Get relationship data */
   [key: string]: unknown
 }
@@ -243,27 +243,27 @@ export interface Model {
   /** Model definition */
   definition: ModelDefinition
   /** Find by primary key */
-  find(id: unknown): Promise<ModelInstance | null>
+  find: (id: unknown) => Promise<ModelInstance | null>
   /** Find by primary key or throw */
-  findOrFail(id: unknown): Promise<ModelInstance>
+  findOrFail: (id: unknown) => Promise<ModelInstance>
   /** Get all records */
-  all(): Promise<ModelInstance[]>
+  all: () => Promise<ModelInstance[]>
   /** Create new record */
-  create(attributes: Row): Promise<ModelInstance>
+  create: (attributes: Row) => Promise<ModelInstance>
   /** Update records matching query */
-  update(attributes: Row): Promise<number>
+  update: (attributes: Row) => Promise<number>
   /** Delete records matching query */
-  destroy(ids: unknown | unknown[]): Promise<number>
+  destroy: (ids: unknown | unknown[]) => Promise<number>
   /** Start a new query */
-  query(): QueryBuilder
+  query: () => QueryBuilder
   /** Add a where clause */
-  where(column: string, operatorOrValue: QueryOperator | unknown, value?: unknown): QueryBuilder
+  where: (column: string, operatorOrValue: QueryOperator | unknown, value?: unknown) => QueryBuilder
   /** First record matching query */
-  first(): Promise<ModelInstance | null>
+  first: () => Promise<ModelInstance | null>
   /** Get records matching query */
-  get(): Promise<ModelInstance[]>
+  get: () => Promise<ModelInstance[]>
   /** Count records */
-  count(): Promise<number>
+  count: () => Promise<number>
 }
 
 /**
@@ -271,23 +271,23 @@ export interface Model {
  */
 export interface DatabaseAdapter {
   /** Connect to database */
-  connect(): Promise<void>
+  connect: () => Promise<void>
   /** Disconnect from database */
-  disconnect(): Promise<void>
+  disconnect: () => Promise<void>
   /** Execute raw query */
-  query<T = Row>(sql: string, bindings?: unknown[]): Promise<T[]>
+  query: <T = Row>(sql: string, bindings?: unknown[]) => Promise<T[]>
   /** Execute insert and return inserted ID */
-  insert(sql: string, bindings?: unknown[]): Promise<unknown>
+  insert: (sql: string, bindings?: unknown[]) => Promise<unknown>
   /** Execute update/delete and return affected rows */
-  execute(sql: string, bindings?: unknown[]): Promise<number>
+  execute: (sql: string, bindings?: unknown[]) => Promise<number>
   /** Begin transaction */
-  beginTransaction(): Promise<void>
+  beginTransaction: () => Promise<void>
   /** Commit transaction */
-  commit(): Promise<void>
+  commit: () => Promise<void>
   /** Rollback transaction */
-  rollback(): Promise<void>
+  rollback: () => Promise<void>
   /** Check if connected */
-  isConnected(): boolean
+  isConnected: () => boolean
 }
 
 /**
@@ -421,7 +421,8 @@ function createSQLiteAdapter(config: ConnectionConfig): DatabaseAdapter {
 
   return {
     async connect() {
-      if (connected) return
+      if (connected)
+        return
 
       // Use Bun's built-in SQLite
       const { Database } = await import('bun:sqlite')
@@ -441,7 +442,8 @@ function createSQLiteAdapter(config: ConnectionConfig): DatabaseAdapter {
     },
 
     async query<T = Row>(sql: string, bindings: unknown[] = []): Promise<T[]> {
-      if (!connected) await this.connect()
+      if (!connected)
+        await this.connect()
       const start = performance.now()
 
       try {
@@ -460,7 +462,8 @@ function createSQLiteAdapter(config: ConnectionConfig): DatabaseAdapter {
     },
 
     async insert(sql: string, bindings: unknown[] = []): Promise<unknown> {
-      if (!connected) await this.connect()
+      if (!connected)
+        await this.connect()
       const start = performance.now()
 
       try {
@@ -479,7 +482,8 @@ function createSQLiteAdapter(config: ConnectionConfig): DatabaseAdapter {
     },
 
     async execute(sql: string, bindings: unknown[] = []): Promise<number> {
-      if (!connected) await this.connect()
+      if (!connected)
+        await this.connect()
       const start = performance.now()
 
       try {
@@ -498,7 +502,8 @@ function createSQLiteAdapter(config: ConnectionConfig): DatabaseAdapter {
     },
 
     async beginTransaction() {
-      if (!connected) await this.connect()
+      if (!connected)
+        await this.connect()
       db.run('BEGIN TRANSACTION')
     },
 
@@ -525,7 +530,8 @@ function createPostgresAdapter(config: ConnectionConfig): DatabaseAdapter {
 
   return {
     async connect() {
-      if (connected) return
+      if (connected)
+        return
 
       try {
         // Dynamic import for optional pg dependency
@@ -555,7 +561,8 @@ function createPostgresAdapter(config: ConnectionConfig): DatabaseAdapter {
     },
 
     async query<T = Row>(sql: string, bindings: unknown[] = []): Promise<T[]> {
-      if (!connected) await this.connect()
+      if (!connected)
+        await this.connect()
       const start = performance.now()
 
       try {
@@ -573,7 +580,8 @@ function createPostgresAdapter(config: ConnectionConfig): DatabaseAdapter {
     },
 
     async insert(sql: string, bindings: unknown[] = []): Promise<unknown> {
-      if (!connected) await this.connect()
+      if (!connected)
+        await this.connect()
       const start = performance.now()
 
       try {
@@ -592,7 +600,8 @@ function createPostgresAdapter(config: ConnectionConfig): DatabaseAdapter {
     },
 
     async execute(sql: string, bindings: unknown[] = []): Promise<number> {
-      if (!connected) await this.connect()
+      if (!connected)
+        await this.connect()
       const start = performance.now()
 
       try {
@@ -610,7 +619,8 @@ function createPostgresAdapter(config: ConnectionConfig): DatabaseAdapter {
     },
 
     async beginTransaction() {
-      if (!connected) await this.connect()
+      if (!connected)
+        await this.connect()
       await client.query('BEGIN')
     },
 
@@ -637,7 +647,8 @@ function createMySQLAdapter(config: ConnectionConfig): DatabaseAdapter {
 
   return {
     async connect() {
-      if (connected) return
+      if (connected)
+        return
 
       try {
         // Dynamic import for optional mysql2 dependency
@@ -668,7 +679,8 @@ function createMySQLAdapter(config: ConnectionConfig): DatabaseAdapter {
     },
 
     async query<T = Row>(sql: string, bindings: unknown[] = []): Promise<T[]> {
-      if (!connected) await this.connect()
+      if (!connected)
+        await this.connect()
       const start = performance.now()
 
       try {
@@ -686,7 +698,8 @@ function createMySQLAdapter(config: ConnectionConfig): DatabaseAdapter {
     },
 
     async insert(sql: string, bindings: unknown[] = []): Promise<unknown> {
-      if (!connected) await this.connect()
+      if (!connected)
+        await this.connect()
       const start = performance.now()
 
       try {
@@ -704,7 +717,8 @@ function createMySQLAdapter(config: ConnectionConfig): DatabaseAdapter {
     },
 
     async execute(sql: string, bindings: unknown[] = []): Promise<number> {
-      if (!connected) await this.connect()
+      if (!connected)
+        await this.connect()
       const start = performance.now()
 
       try {
@@ -722,7 +736,8 @@ function createMySQLAdapter(config: ConnectionConfig): DatabaseAdapter {
     },
 
     async beginTransaction() {
-      if (!connected) await this.connect()
+      if (!connected)
+        await this.connect()
       const connection = await pool.getConnection()
       await connection.beginTransaction()
       return connection
@@ -1183,7 +1198,8 @@ export class QueryBuilder {
    * Insert multiple rows
    */
   async insertAll(rows: Row[]): Promise<void> {
-    if (rows.length === 0) return
+    if (rows.length === 0)
+      return
 
     const columns = Object.keys(rows[0])
     const placeholders = rows.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ')
@@ -1273,7 +1289,7 @@ export class QueryBuilder {
       sql += 'DISTINCT '
     }
 
-    sql += this._columns.map(col => {
+    sql += this._columns.map((col) => {
       if (typeof col === 'object' && (col as RawExpression).__raw) {
         return (col as RawExpression).sql
       }
@@ -1334,22 +1350,25 @@ export class QueryBuilder {
       const prefix = index === 0 ? ' WHERE ' : ` ${condition.boolean.toUpperCase()} `
 
       switch (condition.operator) {
-        case 'in':
+        case 'in': {
           const inValues = condition.value as unknown[]
           const inPlaceholders = inValues.map(() => '?').join(', ')
           this._bindings.push(...inValues)
           return `${prefix}${condition.column} IN (${inPlaceholders})`
+        }
 
-        case 'not in':
+        case 'not in': {
           const notInValues = condition.value as unknown[]
           const notInPlaceholders = notInValues.map(() => '?').join(', ')
           this._bindings.push(...notInValues)
           return `${prefix}${condition.column} NOT IN (${notInPlaceholders})`
+        }
 
-        case 'between':
+        case 'between': {
           const [min, max] = condition.value as [unknown, unknown]
           this._bindings.push(min, max)
           return `${prefix}${condition.column} BETWEEN ? AND ?`
+        }
 
         case 'is null':
           return `${prefix}${condition.column} IS NULL`
@@ -1476,8 +1495,8 @@ export function defineModel(name: string, definition: ModelDefinition): Model {
       // Filter to fillable
       const fillable = definition.fillable
         ? Object.fromEntries(
-          Object.entries(data).filter(([key]) => definition.fillable!.includes(key)),
-        )
+            Object.entries(data).filter(([key]) => definition.fillable!.includes(key)),
+          )
         : data
 
       // Add timestamps
@@ -1754,7 +1773,8 @@ async function loadRelationship(
  * Cast a value to specified type
  */
 function castValue(value: unknown, type: string): unknown {
-  if (value === null || value === undefined) return value
+  if (value === null || value === undefined)
+    return value
 
   switch (type) {
     case 'string':
@@ -1817,7 +1837,8 @@ export async function transaction<T>(
  */
 function getFromCache(key: string): unknown | undefined {
   const entry = queryCache.get(key)
-  if (!entry) return undefined
+  if (!entry)
+    return undefined
 
   // Check if expired
   if (Date.now() - entry.timestamp > entry.ttl * 1000) {
@@ -1956,7 +1977,7 @@ export async function processDbDirective(
   _options: StxOptions,
 ): Promise<string> {
   // Match @db('table') followed by chained methods
-  const dbPattern = /@db\(\s*['"]([^'"]+)['"]\s*\)((?:->[\w]+\([^)]*\))*)/g
+  const dbPattern = /@db\(\s*['"]([^'"]+)['"]\s*\)((?:->\w+\([^)]*\))*)/g
 
   let output = template
   const matches = [...template.matchAll(dbPattern)]
@@ -2002,7 +2023,7 @@ export async function processModelDirective(
   _options: StxOptions,
 ): Promise<string> {
   // Match @model('Name') followed by chained methods
-  const modelPattern = /@model\(\s*['"]([^'"]+)['"]\s*\)((?:->[\w]+\([^)]*\))*)/g
+  const modelPattern = /@model\(\s*['"]([^'"]+)['"]\s*\)((?:->\w+\([^)]*\))*)/g
 
   let output = template
   const matches = [...template.matchAll(modelPattern)]
@@ -2150,7 +2171,8 @@ async function executeModelChain(model: Model, chain: string): Promise<unknown> 
  * Parse method arguments from string
  */
 function parseMethodArgs(argsStr: string): unknown[] {
-  if (!argsStr.trim()) return []
+  if (!argsStr.trim())
+    return []
 
   const args: unknown[] = []
   let current = ''
@@ -2199,21 +2221,25 @@ function parseMethodArgs(argsStr: string): unknown[] {
  */
 function parseArgValue(value: string): unknown {
   // String
-  if ((value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith('\'') && value.endsWith('\''))) {
+  if ((value.startsWith('"') && value.endsWith('"'))
+    || (value.startsWith('\'') && value.endsWith('\''))) {
     return value.slice(1, -1)
   }
 
   // Boolean
-  if (value === 'true') return true
-  if (value === 'false') return false
+  if (value === 'true')
+    return true
+  if (value === 'false')
+    return false
 
   // Null
-  if (value === 'null') return null
+  if (value === 'null')
+    return null
 
   // Number
   const num = Number(value)
-  if (!Number.isNaN(num)) return num
+  if (!Number.isNaN(num))
+    return num
 
   // Array or object
   try {
@@ -2445,8 +2471,8 @@ export function schema(): SchemaBuilder {
 // =============================================================================
 
 export {
+  type JoinClause,
+  type OrderByClause,
   type Row,
   type WhereCondition,
-  type OrderByClause,
-  type JoinClause,
 }

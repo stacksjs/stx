@@ -40,10 +40,6 @@ import type { BunPlugin } from 'bun'
 import path from 'node:path'
 import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processDirectives, readMarkdownFile } from '@stacksjs/stx'
 
-// Re-export functions and types that consumers might need
-export { createMiddleware, createRoute, readMarkdownFile, serve } from '@stacksjs/stx'
-export type { ServeOptions, ServeResult, StxOptions } from '@stacksjs/stx'
-
 // Export watch functionality
 export { createWatcher, startWatchMode, watchAndBuild } from './watch'
 export type {
@@ -53,6 +49,10 @@ export type {
   WatchEvent,
   WatchOptions,
 } from './watch'
+
+// Re-export functions and types that consumers might need
+export { createMiddleware, createRoute, readMarkdownFile, serve } from '@stacksjs/stx'
+export type { ServeOptions, ServeResult, StxOptions } from '@stacksjs/stx'
 
 /**
  * Escape HTML entities in error messages to prevent XSS in error pages.

@@ -235,11 +235,11 @@ describe('Accessibility Utilities', () => {
         <button>Item 3</button>
       `
 
-      let focusIndex = 0
+      let _focusIndex = 0
       const cleanup = createRovingTabindex(container, {
         selector: 'button',
         orientation: 'horizontal',
-        onFocusChange: (index) => { focusIndex = index },
+        onFocusChange: (index) => { _focusIndex = index },
       })
 
       // Verify callback setup works

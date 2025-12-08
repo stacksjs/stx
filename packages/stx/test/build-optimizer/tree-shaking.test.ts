@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import {
   analyzeDirectiveUsage,
-  getUnusedDirectives,
   generateTreeShakenBundle,
+  getUnusedDirectives,
 } from '../../src/build-optimizer'
 
 describe('analyzeDirectiveUsage', () => {
@@ -86,8 +86,8 @@ describe('generateTreeShakenBundle', () => {
   it('should create activeDirectives map', () => {
     const bundle = generateTreeShakenBundle(['if', 'foreach'])
     expect(bundle).toContain('activeDirectives')
-    expect(bundle).toContain("'if': true")
-    expect(bundle).toContain("'foreach': true")
+    expect(bundle).toContain('\'if\': true')
+    expect(bundle).toContain('\'foreach\': true')
   })
 
   it('should generate isDirectiveActive function', () => {

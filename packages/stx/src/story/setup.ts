@@ -53,7 +53,8 @@ const globalState: Map<string, any> = new Map()
  */
 export async function loadSetupFile(ctx: StoryContext): Promise<void> {
   const setupFile = ctx.config.setupFile
-  if (!setupFile) return
+  if (!setupFile)
+    return
 
   const setupPath = path.resolve(ctx.root, setupFile)
 

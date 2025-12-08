@@ -19,6 +19,7 @@ import { $ } from 'bun'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
+import process from 'node:process'
 
 // Types
 interface AIMessage {
@@ -397,9 +398,8 @@ async function applyChanges(response: string): Promise<string[]> {
 
   const modifiedFiles: string[] = []
   const filePattern = /FILE:\s*([^\n]+)\n```\w*\n([\s\S]*?)```/g
-  let match
 
-  while ((match = filePattern.exec(response)) !== null) {
+  for (const match of response.matchAll(filePattern)) {
     const filePath = match[1].trim()
     const content = match[2]
 
@@ -606,13 +606,17 @@ console.log(`
 `)
 
 // Open in browser
-const { exec } = await import('node:child_process')
-if (process.platform === 'darwin') {
-  exec(`open http://localhost:${server.port}`)
+async function openBrowser() {
+  const { exec } = await import('node:child_process')
+  if (process.platform === 'darwin') {
+    exec(`open http://localhost:${server.port}`)
+  }
+  else if (process.platform === 'win32') {
+    exec(`start http://localhost:${server.port}`)
+  }
+  else {
+    exec(`xdg-open http://localhost:${server.port}`)
+  }
 }
-else if (process.platform === 'win32') {
-  exec(`start http://localhost:${server.port}`)
-}
-else {
-  exec(`xdg-open http://localhost:${server.port}`)
-}
+
+openBrowser()

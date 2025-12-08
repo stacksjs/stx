@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import {
-  extractTypesFromTemplate,
   createTypeContext,
+  extractTypesFromTemplate,
   processTypesDirective,
 } from '../../src/typescript-templates'
 

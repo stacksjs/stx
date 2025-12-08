@@ -479,7 +479,7 @@ export function lazyLoadImage(
           img.classList.add('loaded')
         }, { once: true })
 
-        img.addEventListener('error', (event) => {
+        img.addEventListener('error', (_event) => {
           const error = new Error(`Failed to load image: ${src}`)
           onError?.(error)
           img.classList.add('error')

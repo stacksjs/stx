@@ -185,17 +185,21 @@ export function generateErrorHTML(error: StoryError): string {
         <span class="stx-error-title">${getErrorTitle(error.type)}</span>
       </div>
       <div class="stx-error-message">${escapeHtml(error.message)}</div>
-      ${error.file ? `
+      ${error.file
+        ? `
         <div class="stx-error-location">
           📁 ${escapeHtml(error.file)}${error.line ? `:${error.line}` : ''}${error.column ? `:${error.column}` : ''}
         </div>
-      ` : ''}
-      ${suggestionsHtml ? `
+      `
+        : ''}
+      ${suggestionsHtml
+        ? `
         <div class="stx-error-suggestions">
           <div class="stx-error-suggestions-title">💡 Suggestions:</div>
           <ul>${suggestionsHtml}</ul>
         </div>
-      ` : ''}
+      `
+        : ''}
       <div class="stx-error-actions">
         <button onclick="window.__stxStory.dismissError()">Dismiss</button>
         <button onclick="window.__stxStory.retryRender()">Retry</button>

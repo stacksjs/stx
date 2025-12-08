@@ -24,11 +24,12 @@
  * ```
  */
 
+import type { StxOptions } from '@stacksjs/stx'
 import type { BuildConfig } from 'bun'
 import type { FSWatcher, WatchEventType } from 'node:fs'
-import type { StxOptions } from '@stacksjs/stx'
 import fs from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 import { stxPlugin } from './index'
 
 // =============================================================================
@@ -166,7 +167,7 @@ function shouldWatch(filePath: string, options: WatchOptions): boolean {
 /**
  * Recursively get all files in a directory
  */
-function getAllFiles(dir: string, options: WatchOptions): string[] {
+function _getAllFiles(dir: string, options: WatchOptions): string[] {
   const files: string[] = []
   const ignore = options.ignore || ['node_modules', '.git', 'dist', '.stx']
 
@@ -182,7 +183,7 @@ function getAllFiles(dir: string, options: WatchOptions): string[] {
       }
 
       if (entry.isDirectory()) {
-        files.push(...getAllFiles(fullPath, options))
+        files.push(..._getAllFiles(fullPath, options))
       }
       else if (entry.isFile() && shouldWatch(fullPath, options)) {
         files.push(fullPath)
@@ -247,7 +248,9 @@ export function createWatcher(options: WatchOptions = {}): WatcherInstance {
 
     try {
       const watcher = fs.watch(dirPath, { recursive: true }, (eventType, filename) => {
-        if (!isActive || !filename) return
+        if (!isActive || !filename) {
+          return
+        }
 
         const fullPath = path.join(dirPath, filename)
 

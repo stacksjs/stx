@@ -76,7 +76,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
 const activeAlerts = new Map<string, AlertState>()
 
 // Toast container element
-let toastContainer: HTMLElement | null = null
+const _toastContainer: HTMLElement | null = null
 
 /**
  * Generate a unique alert ID

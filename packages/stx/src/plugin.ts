@@ -91,11 +91,11 @@ export const plugin: BunPlugin = {
             const innerContent = scriptTag.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)?.[1] || ''
 
             // Check if this is a client-side script (has browser APIs)
-            const isClientScript = /\b(document|window|addEventListener|querySelector|getElementById|fetch\(|localStorage|sessionStorage)\b/.test(innerContent)
+            const isClientScript = /\b(?:document|window|addEventListener|querySelector|getElementById|fetch\(|localStorage|sessionStorage)\b/.test(innerContent)
 
             // Check if this looks like a server-side data script
-            const isServerScript = /\b(module\.exports|export\s+(const|let|var|function|default))\b/.test(innerContent)
-              || (/^\s*(const|let|var)\s+\w+\s*=/.test(innerContent) && !isClientScript)
+            const isServerScript = /\b(?:module\.exports|export\s+(?:const|let|var|function|default))\b/.test(innerContent)
+              || (/^\s*(?:const|let|var)\s+\w+\s*=/.test(innerContent) && !isClientScript)
 
             if (isServerScript && !isClientScript) {
               serverScriptContent = innerContent

@@ -1,4 +1,5 @@
 import type { SystemTrayInstance, SystemTrayMenuItem, SystemTrayOptions } from './types'
+import process from 'node:process'
 
 /**
  * System Tray / Menubar Implementation
@@ -34,7 +35,7 @@ interface TrayState {
  * Detect the current platform
  */
 function getPlatform(): 'darwin' | 'linux' | 'win32' | 'unknown' {
-  if (typeof process !== 'undefined' && process.platform) {
+  if (process.platform) {
     return process.platform as 'darwin' | 'linux' | 'win32' | 'unknown'
   }
   return 'unknown'
@@ -249,7 +250,8 @@ export function getActiveTrayInstances(): string[] {
  */
 export function getTrayInstance(id: string): SystemTrayInstance | null {
   const instance = activeTrayInstances.get(id)
-  if (!instance) return null
+  if (!instance)
+    return null
 
   return {
     id,
@@ -274,7 +276,8 @@ export function getTrayInstance(id: string): SystemTrayInstance | null {
  */
 export function triggerTrayAction(trayId: string, actionLabel: string): boolean {
   const instance = activeTrayInstances.get(trayId)
-  if (!instance) return false
+  if (!instance)
+    return false
 
   const handler = instance.handlers.get(actionLabel)
   if (handler) {
@@ -290,7 +293,8 @@ export function triggerTrayAction(trayId: string, actionLabel: string): boolean 
  */
 export function getSimulatedTrayHTML(trayId: string): string | null {
   const instance = activeTrayInstances.get(trayId)
-  if (!instance) return null
+  if (!instance)
+    return null
 
   return renderTrayMenu(instance.state.menu)
 }

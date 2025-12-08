@@ -23,7 +23,7 @@ await Bun.build({
 const cliPath = './dist/cli.js'
 const cliContent = await Bun.file(cliPath).text()
 if (!cliContent.startsWith('#!/')) {
-  await Bun.write(cliPath, '#!/usr/bin/env bun\n' + cliContent)
+  await Bun.write(cliPath, `#!/usr/bin/env bun\n${cliContent}`)
 }
 
 // Build the client-side library

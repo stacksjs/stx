@@ -301,7 +301,7 @@ describe('KeepAlive', () => {
         createdAt: Date.now(),
         lastAccessedAt: Date.now(),
       }, {
-        onSave: instance => ({ count: 10 }),
+        onSave: _instance => ({ count: 10 }),
       })
 
       keepAlive.deactivate('comp-1')

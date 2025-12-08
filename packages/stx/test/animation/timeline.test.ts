@@ -1,8 +1,9 @@
+import type { TimelineEntry } from '../../src/animation'
 import { describe, expect, it } from 'bun:test'
 import {
   createAnimationTimeline,
   generateAnimationRuntime,
-  type TimelineEntry,
+
 } from '../../src/animation'
 
 describe('createAnimationTimeline', () => {
@@ -103,8 +104,8 @@ describe('createAnimationTimeline', () => {
     ]
 
     const result = createAnimationTimeline(entries)
-    expect(result).toContain("document.readyState === 'loading'")
-    expect(result).toContain("addEventListener('DOMContentLoaded'")
+    expect(result).toContain('document.readyState === \'loading\'')
+    expect(result).toContain('addEventListener(\'DOMContentLoaded\'')
     expect(result).toContain('runTimeline()')
   })
 
