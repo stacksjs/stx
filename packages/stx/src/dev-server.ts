@@ -1,3 +1,4 @@
+import type { BunPlugin } from 'bun'
 import type { SyntaxHighlightTheme } from './types'
 import { serve } from 'bun'
 import fs from 'node:fs'
@@ -19,6 +20,7 @@ import {
 // 2. Importing from the package would create a circular dependency (bun-plugin-stx -> @stacksjs/stx)
 // 3. During development, the built dist of bun-plugin-stx might not be available
 // If consolidating, consider making bun-plugin-stx re-export from @stacksjs/stx/plugin
+import { partialsCache } from './includes'
 import { plugin as stxPlugin } from './plugin'
 
 // ANSI color codes for terminal output
@@ -57,10 +59,10 @@ const colors = {
 // =============================================================================
 
 // Headwind lazy loading cache
-let headwindModule: { CSSGenerator: any, defaultConfig: any } | null = null
+let headwindModule: { CSSGenerator: any, getConfig: () => Promise<any> } | null = null
 let headwindLoadAttempted = false
 
-async function loadHeadwind(): Promise<{ CSSGenerator: any, defaultConfig: any } | null> {
+async function loadHeadwind(): Promise<{ CSSGenerator: any, getConfig: () => Promise<any> } | null> {
   if (headwindLoadAttempted) {
     return headwindModule
   }
@@ -71,7 +73,7 @@ async function loadHeadwind(): Promise<{ CSSGenerator: any, defaultConfig: any }
     const mod = await import('@stacksjs/headwind')
     headwindModule = {
       CSSGenerator: mod.CSSGenerator,
-      defaultConfig: mod.defaultConfig,
+      getConfig: mod.getConfig,
     }
     console.log(`${colors.green}[Headwind] CSS engine loaded successfully${colors.reset}`)
     return headwindModule
@@ -83,7 +85,7 @@ async function loadHeadwind(): Promise<{ CSSGenerator: any, defaultConfig: any }
       const mod = await import(localPath)
       headwindModule = {
         CSSGenerator: mod.CSSGenerator,
-        defaultConfig: mod.defaultConfig,
+        getConfig: mod.getConfig,
       }
       console.log(`${colors.green}[Headwind] CSS engine loaded from local path${colors.reset}`)
       return headwindModule
@@ -126,9 +128,12 @@ async function generateHeadwindCSS(htmlContent: string): Promise<string> {
       return ''
     }
 
+    // Load the project's Headwind config (or use defaults)
+    const projectConfig = await hw.getConfig()
+
     // Create a Headwind config for on-the-fly generation
     const headwindConfig = {
-      ...hw.defaultConfig,
+      ...projectConfig,
       content: [],
       output: '',
       preflight: true,
@@ -791,10 +796,27 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   // Function to build the stx file
   const buildFile = async (): Promise<boolean> => {
     try {
+      // Plugin to handle public asset paths (images, fonts, etc.)
+      // These paths are served by the dev server from the public/ directory
+      const publicAssetsPlugin: BunPlugin = {
+        name: 'public-assets',
+        setup(build) {
+          // Handle paths starting with /images/, /fonts/, /assets/, /public/
+          // Return them as-is without trying to bundle
+          build.onResolve({ filter: /^\/(images|fonts|assets|public)\// }, (args) => {
+            return {
+              path: args.path,
+              external: true,
+            }
+          })
+        },
+      }
+
       const result = await Bun.build({
         entrypoints: [absolutePath],
         outdir: outputDir,
-        plugins: [stxPlugin],
+        plugins: [publicAssetsPlugin, stxPlugin],
+        publicPath: '/',
         define: {
           'process.env.NODE_ENV': '"development"',
         },
@@ -1094,6 +1116,8 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
 
       if (shouldReloadOnChange(filename)) {
         console.log(`${colors.yellow}File ${colors.bright}${filename}${colors.yellow} changed, rebuilding...${colors.reset}`)
+        // Clear partials cache to ensure fresh content for included files
+        partialsCache.clear()
         const success = await buildFile()
 
         // Notify connected browsers via HMR
@@ -1395,11 +1419,24 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
           }
         }
         else {
+          // Plugin to handle public asset paths
+          const publicAssetsPlugin: BunPlugin = {
+            name: 'public-assets',
+            setup(build) {
+              build.onResolve({ filter: /^\/(images|fonts|assets|public)\// }, (args) => {
+                return {
+                  path: args.path,
+                  external: true,
+                }
+              })
+            },
+          }
+
           // Build stx file
           const result = await Bun.build({
             entrypoints: [absolutePath],
             outdir: outputDir,
-            plugins: [stxPlugin],
+            plugins: [publicAssetsPlugin, stxPlugin],
             define: {
               'process.env.NODE_ENV': '"development"',
             },
@@ -1682,6 +1719,8 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       // Only rebuild if it's a supported file type
       if (filename.endsWith('.stx') || filename.endsWith('.js') || filename.endsWith('.ts') || filename.endsWith('.md')) {
         console.log(`${colors.yellow}File ${colors.bright}${filename}${colors.yellow} changed, rebuilding...${colors.reset}`)
+        // Clear partials cache to ensure fresh content for included files
+        partialsCache.clear()
         await buildFiles()
       }
     })
