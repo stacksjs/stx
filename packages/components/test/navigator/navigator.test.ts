@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'bun:test'
 import type { NavigatorItem, NavigatorProps } from '../../src/ui/navigator'
+import { describe, expect, it } from 'bun:test'
 
 describe('navigator Component', () => {
   describe('type exports', () => {
@@ -24,7 +24,7 @@ describe('navigator Component', () => {
         orientation: 'horizontal',
         variant: 'default',
         size: 'md',
-        onNavigate: (item) => {},
+        onNavigate: (_item) => {},
         className: 'custom-class',
       }
       expect(props).toBeDefined()
@@ -136,7 +136,7 @@ describe('navigator Component', () => {
     })
 
     it('should handle partial href matches', () => {
-      const items: NavigatorItem[] = [
+      const _items: NavigatorItem[] = [
         { id: 'blog', label: 'Blog', href: '/blog' },
       ]
       const active = '/blog/post-1'
@@ -379,7 +379,7 @@ describe('navigator Component', () => {
 
   describe('accessibility', () => {
     it('should support aria attributes through structure', () => {
-      const item: NavigatorItem = {
+      const _item: NavigatorItem = {
         id: 'current',
         label: 'Current Page',
         href: '/current',

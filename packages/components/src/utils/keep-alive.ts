@@ -424,7 +424,7 @@ export function createKeepAlive(options: KeepAliveOptions = {}): KeepAlive {
     let pruned = 0
 
     // Remove expired entries
-    const now = Date.now()
+    const _now = Date.now()
     for (const [key, entry] of cache.entries()) {
       if (isExpired(entry)) {
         log(`Pruning expired: ${key}`)
@@ -743,6 +743,8 @@ export function createStateManager() {
  *
  * @param factory - Function to create new instances
  * @param options - Pool configuration
+ * @param options.maxSize - Maximum pool size
+ * @param options.reset - Function to reset instance before reuse
  * @returns Component pool
  *
  * @example
@@ -759,7 +761,7 @@ export function createStateManager() {
  */
 export function createComponentPool<T>(
   factory: () => T,
-  options: { maxSize?: number; reset?: (instance: T) => void } = {},
+  options: { maxSize?: number, reset?: (instance: T) => void } = {},
 ) {
   const { maxSize = 100, reset } = options
   const pool: T[] = []

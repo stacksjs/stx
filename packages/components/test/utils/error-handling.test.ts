@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test'
 import {
-  ComponentError,
-  ErrorTypes,
   assert,
+  ComponentError,
   createDebugger,
   devAssert,
   errorBoundary,
+  ErrorTypes,
   handleError,
   setErrorHandler,
   warn,

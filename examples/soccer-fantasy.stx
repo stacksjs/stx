@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fantasy Football - Soccer Fantasy League</title>
+  <script>
+    module.exports = {
+      // Team Data
+      teamName: "FC Thunder",
+      budget: 14.5,
+      totalBudget: 100,
+      budgetPercent: 85.5,
+      gameweek: 12,
+      totalPoints: 847,
+      rank: "12,453",
+      formation: "4-3-3",
+      freeTransfers: 2,
+      hasWildcard: true,
+      hasBenchBoost: true,
+      hasTripleCaptain: false,
+      hasFreeHit: true,
+
+      // Squad Data with Transfermarkt player images
+      goalkeepers: [
+        { id: 1, name: "Alisson", team: "Liverpool", points: 72, price: 5.5, form: "6.2", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/105470-1670254746.jpg" }
+      ],
+      defenders: [
+        { id: 2, name: "Alexander-Arnold", team: "Liverpool", points: 89, price: 7.8, form: "7.4", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/314353-1682683695.jpg" },
+        { id: 3, name: "Van Dijk", team: "Liverpool", points: 78, price: 6.5, form: "6.8", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/139208-1695021451.jpg" },
+        { id: 4, name: "Saliba", team: "Arsenal", points: 82, price: 5.8, form: "7.1", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/495666-1694590721.jpg" },
+        { id: 5, name: "Trippier", team: "Newcastle", points: 95, price: 6.2, form: "7.9", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/95810-1695021596.jpg" }
+      ],
+      midfielders: [
+        { id: 6, name: "Salah", team: "Liverpool", points: 124, price: 12.8, form: "8.8", isCaptain: true, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/148455-1682683690.jpg" },
+        { id: 7, name: "Saka", team: "Arsenal", points: 98, price: 9.2, form: "7.9", isCaptain: false, isVice: true, img: "https://img.a.transfermarkt.technology/portrait/header/433177-1694590751.jpg" },
+        { id: 8, name: "Odegaard", team: "Arsenal", points: 87, price: 8.4, form: "7.2", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/316264-1694590743.jpg" }
+      ],
+      forwards: [
+        { id: 9, name: "Haaland", team: "Man City", points: 156, price: 14.2, form: "9.2", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/418560-1695029616.jpg" },
+        { id: 10, name: "Watkins", team: "Aston Villa", points: 92, price: 8.8, form: "7.6", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/299420-1695021614.jpg" },
+        { id: 11, name: "Isak", team: "Newcastle", points: 88, price: 8.5, form: "7.3", isCaptain: false, isVice: false, img: "https://img.a.transfermarkt.technology/portrait/header/435338-1695021570.jpg" }
+      ],
+      bench: [
+        { id: 12, name: "Raya", team: "Arsenal", points: 65, price: 5.0, position: "GK", img: "https://img.a.transfermarkt.technology/portrait/header/262605-1694590713.jpg" },
+        { id: 13, name: "Gabriel", team: "Arsenal", points: 71, price: 5.2, position: "DEF", img: "https://img.a.transfermarkt.technology/portrait/header/544659-1694590729.jpg" },
+        { id: 14, name: "Mac Allister", team: "Liverpool", points: 76, price: 6.8, position: "MID", img: "https://img.a.transfermarkt.technology/portrait/header/534027-1695021478.jpg" },
+        { id: 15, name: "Solanke", team: "Tottenham", points: 54, price: 7.2, position: "FWD", img: "https://img.a.transfermarkt.technology/portrait/header/258878-1724934015.jpg" }
+      ],
+
+      // Transfer Market Data
+      transferMarket: [
+        { id: 101, name: "Palmer", team: "Chelsea", position: "MID", price: 10.5, form: "8.5", points: 118, selected: "45.2%" },
+        { id: 102, name: "Gordon", team: "Newcastle", position: "MID", price: 7.4, form: "7.8", points: 89, selected: "28.1%" },
+        { id: 103, name: "Solanke", team: "Tottenham", position: "FWD", price: 7.5, form: "6.9", points: 76, selected: "15.3%" },
+        { id: 104, name: "Martinez", team: "Aston Villa", position: "GK", price: 5.0, form: "6.4", points: 68, selected: "22.8%" },
+        { id: 105, name: "Gvardiol", team: "Man City", position: "DEF", price: 5.8, form: "6.1", points: 62, selected: "18.5%" },
+        { id: 106, name: "Foden", team: "Man City", position: "MID", price: 9.0, form: "5.8", points: 72, selected: "12.4%" },
+        { id: 107, name: "Rashford", team: "Man United", position: "MID", price: 6.8, form: "4.2", points: 45, selected: "5.2%" },
+        { id: 108, name: "Darwin", team: "Liverpool", position: "FWD", price: 7.8, form: "5.5", points: 58, selected: "8.9%" }
+      ],
+
+      // Fixtures Data
+      fixtures: [
+        { home: "Liverpool", away: "Man City", time: "Sat 12:30", homeOdds: "2.10", drawOdds: "3.40", awayOdds: "3.20" },
+        { home: "Arsenal", away: "Chelsea", time: "Sat 15:00", homeOdds: "1.75", drawOdds: "3.80", awayOdds: "4.50" },
+        { home: "Man United", away: "Newcastle", time: "Sat 17:30", homeOdds: "2.40", drawOdds: "3.30", awayOdds: "2.90" },
+        { home: "Tottenham", away: "Aston Villa", time: "Sun 14:00", homeOdds: "2.20", drawOdds: "3.50", awayOdds: "3.10" }
+      ],
+
+      // Top Players
+      topPlayers: [
+        { name: "Haaland", team: "Man City", points: 156, form: "9.2", isFirst: true },
+        { name: "Salah", team: "Liverpool", points: 124, form: "8.8", isFirst: false },
+        { name: "Palmer", team: "Chelsea", points: 118, form: "8.5", isFirst: false },
+        { name: "Saka", team: "Arsenal", points: 98, form: "7.9", isFirst: false },
+        { name: "Trippier", team: "Newcastle", points: 95, form: "7.6", isFirst: false }
+      ],
+
+      // Leagues
+      leagues: [
+        { id: 1, name: "Overall", rank: "12,453", members: "9,847,234", isTop3: false },
+        { id: 2, name: "Friends League", rank: "3", members: "24", isTop3: true },
+        { id: 3, name: "Work Rivals", rank: "1", members: "18", isTop3: true },
+        { id: 4, name: "Reddit FPL", rank: "892", members: "45,000", isTop3: false }
+      ],
+
+      // Notifications
+      notifications: [
+        { id: 1, type: "transfer", title: "Transfer Complete", message: "You sold Rashford for £6.8m", time: "2h ago", unread: true },
+        { id: 2, type: "points", title: "Points Updated", message: "GW11 points have been finalized: 67 pts", time: "1d ago", unread: true },
+        { id: 3, type: "deadline", title: "Deadline Reminder", message: "GW12 deadline in 2 days", time: "1d ago", unread: true }
+      ],
+
+      // Gameweek History
+      gameweekHistory: [
+        { gw: 11, points: 67, rank: "15,234", avgPoints: 52 },
+        { gw: 10, points: 82, rank: "8,456", avgPoints: 61 },
+        { gw: 9, points: 45, rank: "45,678", avgPoints: 58 },
+        { gw: 8, points: 91, rank: "3,245", avgPoints: 55 }
+      ]
+    };
+  </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
+  <!-- Header -->
+  <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50 backdrop-blur-sm">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center text-xl">⚽</div>
+        <span class="font-bold text-xl">Fantasy FC</span>
+      </div>
+
+      <div class="flex gap-6">
+        <div class="text-center">
+          <div class="font-bold text-lg text-indigo-400">{{ totalPoints }}</div>
+          <div class="text-xs text-slate-500 uppercase tracking-wide">Points</div>
+        </div>
+        <div class="text-center">
+          <div class="font-bold text-lg text-indigo-400">#{{ rank }}</div>
+          <div class="text-xs text-slate-500 uppercase tracking-wide">Rank</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Notifications Dropdown -->
+        <div class="relative" id="notifications-container">
+          <button onclick="toggleNotifications()" class="w-10 h-10 rounded-xl bg-slate-700 hover:bg-indigo-500 transition-colors relative text-xl" title="Notifications">
+            🔔
+            <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center font-bold">3</span>
+          </button>
+          <!-- Notifications Panel -->
+          <div id="notifications-panel" class="hidden absolute right-0 top-14 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-50" style="width: 360px;">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center gap-4">
+              <h3 class="font-semibold whitespace-nowrap">Notifications</h3>
+              <button onclick="markAllRead()" class="text-xs text-indigo-400 hover:text-indigo-300 whitespace-nowrap">Mark all read</button>
+            </div>
+            <div class="max-h-80 overflow-y-auto">
+              @foreach(notifications as notif)
+                <div class="p-4 border-b border-slate-700/50 hover:bg-slate-700/50 cursor-pointer transition-colors">
+                  <div class="flex items-start gap-3">
+                    @if(notif.type === "transfer")
+                      <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">🔄</div>
+                    @elseif(notif.type === "points")
+                      <div class="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">⭐</div>
+                    @else
+                      <div class="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">⏰</div>
+                    @endif
+                    <div class="flex-1 min-w-0">
+                      <div class="font-semibold text-sm">{{ notif.title }}</div>
+                      <div class="text-sm text-slate-400 mt-0.5">{{ notif.message }}</div>
+                      <div class="text-xs text-slate-500 mt-1">{{ notif.time }}</div>
+                    </div>
+                    @if(notif.unread)
+                      <div class="w-2 h-2 bg-indigo-500 rounded-full shrink-0 mt-2"></div>
+                    @endif
+                  </div>
+                </div>
+              @endforeach
+            </div>
+            <div class="p-3 border-t border-slate-700">
+              <button class="w-full py-2 text-sm text-indigo-400 hover:text-indigo-300 font-medium">View All Notifications</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Menu Dropdown -->
+        <div class="relative" id="user-menu-container">
+          <button onclick="toggleUserMenu()" class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center font-bold cursor-pointer hover:scale-105 transition-transform" title="Account">FC</button>
+          <!-- User Menu Panel -->
+          <div id="user-menu-panel" class="hidden absolute right-0 top-14 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-50" style="width: 240px;">
+            <div class="p-4 border-b border-slate-700">
+              <div class="font-semibold">{{ teamName }}</div>
+              <div class="text-xs text-slate-400">Manager since 2023</div>
+            </div>
+            <div class="py-2">
+              <button onclick="showTab('team')" class="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-700/50 transition-colors flex items-center gap-3">
+                <span class="text-base">👥</span> <span>My Team</span>
+              </button>
+              <button onclick="showTab('transfers')" class="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-700/50 transition-colors flex items-center gap-3">
+                <span class="text-base">🔄</span> <span>Transfers</span>
+              </button>
+              <button onclick="showTab('points')" class="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-700/50 transition-colors flex items-center gap-3">
+                <span class="text-base">⭐</span> <span>Points History</span>
+              </button>
+              <button onclick="showTab('leagues')" class="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-700/50 transition-colors flex items-center gap-3">
+                <span class="text-base">🏆</span> <span>My Leagues</span>
+              </button>
+            </div>
+            <div class="p-2 border-t border-slate-700">
+              <button class="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-3">
+                <span class="text-base">🚪</span> <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+    <!-- Stats Cards - Always visible, responsive grid -->
+    <div class="bg-slate-800 rounded-2xl p-4 md:p-6 border border-slate-700 mb-6">
+      <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">Team Stats</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div class="text-center p-3 md:p-4 bg-slate-700/50 rounded-xl">
+          <div class="text-xl md:text-2xl font-bold text-indigo-400">{{ totalPoints }}</div>
+          <div class="text-xs text-slate-500">Total Points</div>
+        </div>
+        <div class="text-center p-3 md:p-4 bg-slate-700/50 rounded-xl">
+          <div class="text-xl md:text-2xl font-bold">GW{{ gameweek }}</div>
+          <div class="text-xs text-slate-500">Gameweek</div>
+        </div>
+        <div class="text-center p-3 md:p-4 bg-slate-700/50 rounded-xl">
+          <div class="text-xl md:text-2xl font-bold">#{{ rank }}</div>
+          <div class="text-xs text-slate-500">Overall Rank</div>
+        </div>
+        <div class="text-center p-3 md:p-4 bg-slate-700/50 rounded-xl">
+          <div class="text-xl md:text-2xl font-bold">{{ freeTransfers }}</div>
+          <div class="text-xs text-slate-500">Free Transfers</div>
+        </div>
+      </div>
+
+      <div class="mt-4 md:mt-6">
+        <div class="flex justify-between text-sm mb-2">
+          <span class="text-slate-400">Budget</span>
+          <span class="font-semibold">£{{ budget }}m / £{{ totalBudget }}m</span>
+        </div>
+        <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style="width: {{ budgetPercent }}%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chips and Leagues Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+      <!-- Chips Available -->
+      <div class="bg-slate-800 rounded-2xl p-4 md:p-6 border border-slate-700">
+        <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">Chips Available</h3>
+        <div class="grid grid-cols-4 gap-2 md:gap-3">
+          @if(hasWildcard)
+            <div class="p-2 md:p-3 bg-slate-700/50 rounded-xl text-center cursor-pointer hover:bg-slate-600/50 transition-colors border border-emerald-500/30">
+          @else
+            <div class="p-2 md:p-3 bg-slate-700/30 rounded-xl text-center opacity-50">
+          @endif
+            <div class="text-xl md:text-2xl mb-1">🃏</div>
+            <div class="text-[10px] md:text-xs font-medium">Wildcard</div>
+          </div>
+          @if(hasBenchBoost)
+            <div class="p-2 md:p-3 bg-slate-700/50 rounded-xl text-center cursor-pointer hover:bg-slate-600/50 transition-colors border border-emerald-500/30">
+          @else
+            <div class="p-2 md:p-3 bg-slate-700/30 rounded-xl text-center opacity-50">
+          @endif
+            <div class="text-xl md:text-2xl mb-1">📈</div>
+            <div class="text-[10px] md:text-xs font-medium">Bench Boost</div>
+          </div>
+          @if(hasTripleCaptain)
+            <div class="p-2 md:p-3 bg-slate-700/50 rounded-xl text-center cursor-pointer hover:bg-slate-600/50 transition-colors border border-emerald-500/30">
+          @else
+            <div class="p-2 md:p-3 bg-slate-700/30 rounded-xl text-center opacity-50">
+          @endif
+            <div class="text-xl md:text-2xl mb-1">👑</div>
+            <div class="text-[10px] md:text-xs font-medium">Triple Captain</div>
+          </div>
+          @if(hasFreeHit)
+            <div class="p-2 md:p-3 bg-slate-700/50 rounded-xl text-center cursor-pointer hover:bg-slate-600/50 transition-colors border border-emerald-500/30">
+          @else
+            <div class="p-2 md:p-3 bg-slate-700/30 rounded-xl text-center opacity-50">
+          @endif
+            <div class="text-xl md:text-2xl mb-1">⚡</div>
+            <div class="text-[10px] md:text-xs font-medium">Free Hit</div>
+          </div>
+        </div>
+      </div>
+
+
+
+      <!-- My Leagues -->
+      <div class="bg-slate-800 rounded-2xl p-4 md:p-6 border border-slate-700">
+        <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">My Leagues</h3>
+        <div class="space-y-2">
+          @foreach(leagues as league)
+            <div class="flex items-center justify-between p-2 md:p-3 bg-slate-700/50 rounded-xl hover:bg-slate-600/50 transition-colors cursor-pointer">
+              <div>
+                <div class="font-semibold text-sm">{{ league.name }}</div>
+                <div class="text-xs text-slate-500">{{ league.members }} members</div>
+              </div>
+              @if(league.isTop3)
+                <div class="text-base md:text-lg font-bold text-amber-400">#{{ league.rank }}</div>
+              @else
+                <div class="text-base md:text-lg font-bold text-indigo-400">#{{ league.rank }}</div>
+              @endif
+            </div>
+          @endforeach
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main>
+
+      <!-- Gameweek Banner -->
+      <div class="bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl p-5 mb-6 flex justify-between items-center">
+        <div>
+          <h2 class="text-lg font-bold">Gameweek {{ gameweek }}</h2>
+          <p class="text-sm opacity-90">{{ teamName }}</p>
+        </div>
+        <div class="text-right">
+          <div class="text-xs opacity-80">Deadline</div>
+          <div class="font-bold">Sat 11:00</div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex gap-2 mb-6 overflow-x-auto pb-2" id="main-tabs">
+        <button onclick="showTab('team')" class="tab-btn px-4 py-2 rounded-xl bg-indigo-500 text-white font-medium text-sm whitespace-nowrap transition-colors" data-tab="team">My Team</button>
+        <button onclick="showTab('transfers')" class="tab-btn px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium text-sm whitespace-nowrap transition-colors" data-tab="transfers">Transfers</button>
+        <button onclick="showTab('points')" class="tab-btn px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium text-sm whitespace-nowrap transition-colors" data-tab="points">Points</button>
+        <button onclick="showTab('fixtures')" class="tab-btn px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium text-sm whitespace-nowrap transition-colors" data-tab="fixtures">Fixtures</button>
+        <button onclick="showTab('leagues')" class="tab-btn px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium text-sm whitespace-nowrap transition-colors" data-tab="leagues">Leagues</button>
+      </nav>
+
+      <!-- Tab Content: Team -->
+      <div id="tab-team" class="tab-content">
+      <!-- Pitch Container -->
+      <div class="bg-slate-800 rounded-2xl p-4 sm:p-6 border border-slate-700">
+        <!-- Header with controls -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 class="text-lg font-bold">Squad Selection</h2>
+            <p class="text-sm text-slate-400 mt-1">Gameweek {{ gameweek }} · Deadline: Sat 11:00</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Formation Selector -->
+            <div class="flex items-center gap-2 bg-slate-700/50 rounded-xl p-1">
+              <button onclick="setFormation('3-4-3')" class="formation-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-600 transition-colors" data-formation="3-4-3">3-4-3</button>
+              <button onclick="setFormation('3-5-2')" class="formation-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-600 transition-colors" data-formation="3-5-2">3-5-2</button>
+              <button onclick="setFormation('4-3-3')" class="formation-btn px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-500 text-white transition-colors" data-formation="4-3-3">4-3-3</button>
+              <button onclick="setFormation('4-4-2')" class="formation-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-600 transition-colors" data-formation="4-4-2">4-4-2</button>
+              <button onclick="setFormation('5-3-2')" class="formation-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-600 transition-colors" data-formation="5-3-2">5-3-2</button>
+            </div>
+            <!-- View Toggle -->
+            <div class="flex items-center gap-1 bg-slate-700/50 rounded-xl p-1">
+              <button onclick="setView('pitch')" class="view-btn px-3 py-1.5 rounded-lg text-sm bg-indigo-500 text-white transition-colors" data-view="pitch" title="Pitch View">⚽</button>
+              <button onclick="setView('list')" class="view-btn px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-600 transition-colors" data-view="list" title="List View">📋</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Squad Summary Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-700/30 rounded-xl mb-6">
+          <div class="flex items-center gap-4 text-sm">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
+              <span class="text-slate-400">Playing:</span>
+              <span class="font-semibold">11</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 bg-slate-500 rounded-full"></span>
+              <span class="text-slate-400">Bench:</span>
+              <span class="font-semibold">4</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 text-sm">
+            <div>
+              <span class="text-slate-400">Total Value:</span>
+              <span class="font-semibold text-emerald-400 ml-1">£{{ totalBudget - budget }}m</span>
+            </div>
+            <div>
+              <span class="text-slate-400">ITB:</span>
+              <span class="font-semibold text-indigo-400 ml-1">£{{ budget }}m</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pitch View -->
+        <div id="pitch-view" class="rounded-2xl relative overflow-hidden" style="background: linear-gradient(to bottom, #2d8a4e 0%, #1e7a3e 50%, #2d8a4e 100%);">
+          <!-- Realistic Pitch Markings -->
+          <div class="absolute inset-0 pointer-events-none">
+            <!-- Pitch border -->
+            <div class="absolute inset-4 border-2 border-white/40 rounded-sm"></div>
+            <!-- Center line -->
+            <div class="absolute top-1/2 left-4 right-4 h-0.5 bg-white/40"></div>
+            <!-- Center circle -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border-2 border-white/40 rounded-full"></div>
+            <!-- Center spot -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white/40 rounded-full"></div>
+            <!-- Top penalty area -->
+            <div class="absolute top-4 left-1/2 -translate-x-1/2 w-52 h-20 border-b-2 border-l-2 border-r-2 border-white/40"></div>
+            <!-- Top goal area -->
+            <div class="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-8 border-b-2 border-l-2 border-r-2 border-white/40"></div>
+            <!-- Top penalty spot -->
+            <div class="absolute top-16 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white/40 rounded-full"></div>
+            <!-- Top penalty arc -->
+            <div class="absolute top-20 left-1/2 -translate-x-1/2 w-20 h-10 border-b-2 border-white/40 rounded-b-full"></div>
+            <!-- Bottom penalty area -->
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 w-52 h-20 border-t-2 border-l-2 border-r-2 border-white/40"></div>
+            <!-- Bottom goal area -->
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 w-28 h-8 border-t-2 border-l-2 border-r-2 border-white/40"></div>
+            <!-- Bottom penalty spot -->
+            <div class="absolute bottom-16 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white/40 rounded-full"></div>
+            <!-- Bottom penalty arc -->
+            <div class="absolute bottom-20 left-1/2 -translate-x-1/2 w-20 h-10 border-t-2 border-white/40 rounded-t-full"></div>
+            <!-- Corner arcs -->
+            <div class="absolute top-4 left-4 w-4 h-4 border-b-2 border-r-2 border-white/40 rounded-br-full"></div>
+            <div class="absolute top-4 right-4 w-4 h-4 border-b-2 border-l-2 border-white/40 rounded-bl-full"></div>
+            <div class="absolute bottom-4 left-4 w-4 h-4 border-t-2 border-r-2 border-white/40 rounded-tr-full"></div>
+            <div class="absolute bottom-4 right-4 w-4 h-4 border-t-2 border-l-2 border-white/40 rounded-tl-full"></div>
+            <!-- Grass stripes effect -->
+            <div class="absolute inset-0 opacity-10" style="background: repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.1) 40px, rgba(255,255,255,0.1) 80px);"></div>
+          </div>
+
+          <div class="relative z-10 p-6 sm:p-10 space-y-6 sm:space-y-8">
+            <!-- Forwards (attacking end) -->
+            <div id="forwards-row" class="flex justify-center gap-3 sm:gap-6 transition-all duration-300 pt-4">
+              @foreach(forwards as player)
+                <div class="player-card relative cursor-grab active:cursor-grabbing" draggable="true" data-player-id="{{ player.id }}" data-position="FWD">
+                  @if(player.isCaptain)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">C</div>
+                  @endif
+                  @if(player.isVice)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-slate-300 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">V</div>
+                  @endif
+                  <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-3 border-white shadow-xl mx-auto bg-slate-700 hover:scale-110 transition-transform duration-200">
+                    <img src="{{ player.img }}" alt="{{ player.name }}" class="w-full h-full object-cover object-top" onerror="this.src='https://via.placeholder.com/64?text=⚽'">
+                  </div>
+                  <div class="mt-2 bg-slate-900/90 backdrop-blur rounded-lg px-2 py-1.5 text-center shadow-lg min-w-[70px]">
+                    <div class="text-xs font-bold text-white truncate">{{ player.name }}</div>
+                    <div class="text-[10px] text-emerald-400 font-semibold">{{ player.points }} pts</div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+
+            <!-- Midfielders -->
+            <div id="midfielders-row" class="flex justify-center gap-3 sm:gap-6 transition-all duration-300">
+              @foreach(midfielders as player)
+                <div class="player-card relative cursor-grab active:cursor-grabbing" draggable="true" data-player-id="{{ player.id }}" data-position="MID">
+                  @if(player.isCaptain)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">C</div>
+                  @endif
+                  @if(player.isVice)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-slate-300 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">V</div>
+                  @endif
+                  <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-3 border-white shadow-xl mx-auto bg-slate-700 hover:scale-110 transition-transform duration-200">
+                    <img src="{{ player.img }}" alt="{{ player.name }}" class="w-full h-full object-cover object-top" onerror="this.src='https://via.placeholder.com/64?text=⚡'">
+                  </div>
+                  <div class="mt-2 bg-slate-900/90 backdrop-blur rounded-lg px-2 py-1.5 text-center shadow-lg min-w-[70px]">
+                    <div class="text-xs font-bold text-white truncate">{{ player.name }}</div>
+                    <div class="text-[10px] text-emerald-400 font-semibold">{{ player.points }} pts</div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+
+            <!-- Defenders -->
+            <div id="defenders-row" class="flex justify-center gap-3 sm:gap-6 transition-all duration-300">
+              @foreach(defenders as player)
+                <div class="player-card relative cursor-grab active:cursor-grabbing" draggable="true" data-player-id="{{ player.id }}" data-position="DEF">
+                  @if(player.isCaptain)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">C</div>
+                  @endif
+                  @if(player.isVice)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-slate-300 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">V</div>
+                  @endif
+                  <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-3 border-white shadow-xl mx-auto bg-slate-700 hover:scale-110 transition-transform duration-200">
+                    <img src="{{ player.img }}" alt="{{ player.name }}" class="w-full h-full object-cover object-top" onerror="this.src='https://via.placeholder.com/64?text=🛡️'">
+                  </div>
+                  <div class="mt-2 bg-slate-900/90 backdrop-blur rounded-lg px-2 py-1.5 text-center shadow-lg min-w-[70px]">
+                    <div class="text-xs font-bold text-white truncate">{{ player.name }}</div>
+                    <div class="text-[10px] text-emerald-400 font-semibold">{{ player.points }} pts</div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+
+            <!-- Goalkeeper -->
+            <div id="goalkeeper-row" class="flex justify-center gap-3 sm:gap-6 pb-4">
+              @foreach(goalkeepers as player)
+                <div class="player-card relative cursor-grab active:cursor-grabbing" draggable="true" data-player-id="{{ player.id }}" data-position="GK">
+                  @if(player.isCaptain)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">C</div>
+                  @endif
+                  @if(player.isVice)
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-slate-300 rounded-full text-xs font-bold text-slate-900 flex items-center justify-center z-20 shadow-lg">V</div>
+                  @endif
+                  <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-3 border-amber-400 shadow-xl mx-auto bg-slate-700 hover:scale-110 transition-transform duration-200">
+                    <img src="{{ player.img }}" alt="{{ player.name }}" class="w-full h-full object-cover object-top" onerror="this.src='https://via.placeholder.com/64?text=🧤'">
+                  </div>
+                  <div class="mt-2 bg-slate-900/90 backdrop-blur rounded-lg px-2 py-1.5 text-center shadow-lg min-w-[70px]">
+                    <div class="text-xs font-bold text-white truncate">{{ player.name }}</div>
+                    <div class="text-[10px] text-emerald-400 font-semibold">{{ player.points }} pts</div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+        </div>
+
+        <!-- List View (hidden by default) -->
+        <div id="list-view" class="hidden space-y-4">
+          <!-- Starting XI -->
+          <div class="bg-slate-700/30 rounded-xl overflow-hidden">
+            <div class="p-3 bg-slate-700/50 border-b border-slate-600">
+              <h4 class="font-semibold text-sm">Starting XI</h4>
+            </div>
+            <div class="divide-y divide-slate-700/50">
+              @foreach(goalkeepers as player)
+                <div class="flex items-center gap-4 p-3 hover:bg-slate-700/30 transition-colors cursor-pointer">
+                  <div class="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center text-lg shrink-0">🧤</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-sm flex items-center gap-2">
+                      {{ player.name }}
+                      @if(player.isCaptain)
+                        <span class="px-1.5 py-0.5 bg-amber-400 text-slate-900 text-[10px] font-bold rounded">C</span>
+                      @endif
+                      @if(player.isVice)
+                        <span class="px-1.5 py-0.5 bg-slate-400 text-slate-900 text-[10px] font-bold rounded">V</span>
+                      @endif
+                    </div>
+                    <div class="text-xs text-slate-400">{{ player.team }} · GK</div>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <div class="font-bold text-emerald-400">{{ player.points }}</div>
+                    <div class="text-xs text-slate-500">pts</div>
+                  </div>
+                  <div class="text-right shrink-0 w-16">
+                    <div class="font-semibold">£{{ player.price }}m</div>
+                  </div>
+                </div>
+              @endforeach
+              @foreach(defenders as player)
+                <div class="flex items-center gap-4 p-3 hover:bg-slate-700/30 transition-colors cursor-pointer">
+                  <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-lg shrink-0">🛡️</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-sm flex items-center gap-2">
+                      {{ player.name }}
+                      @if(player.isCaptain)
+                        <span class="px-1.5 py-0.5 bg-amber-400 text-slate-900 text-[10px] font-bold rounded">C</span>
+                      @endif
+                      @if(player.isVice)
+                        <span class="px-1.5 py-0.5 bg-slate-400 text-slate-900 text-[10px] font-bold rounded">V</span>
+                      @endif
+                    </div>
+                    <div class="text-xs text-slate-400">{{ player.team }} · DEF</div>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <div class="font-bold text-emerald-400">{{ player.points }}</div>
+                    <div class="text-xs text-slate-500">pts</div>
+                  </div>
+                  <div class="text-right shrink-0 w-16">
+                    <div class="font-semibold">£{{ player.price }}m</div>
+                  </div>
+                </div>
+              @endforeach
+              @foreach(midfielders as player)
+                <div class="flex items-center gap-4 p-3 hover:bg-slate-700/30 transition-colors cursor-pointer">
+                  <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-lg shrink-0">⚡</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-sm flex items-center gap-2">
+                      {{ player.name }}
+                      @if(player.isCaptain)
+                        <span class="px-1.5 py-0.5 bg-amber-400 text-slate-900 text-[10px] font-bold rounded">C</span>
+                      @endif
+                      @if(player.isVice)
+                        <span class="px-1.5 py-0.5 bg-slate-400 text-slate-900 text-[10px] font-bold rounded">V</span>
+                      @endif
+                    </div>
+                    <div class="text-xs text-slate-400">{{ player.team }} · MID</div>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <div class="font-bold text-emerald-400">{{ player.points }}</div>
+                    <div class="text-xs text-slate-500">pts</div>
+                  </div>
+                  <div class="text-right shrink-0 w-16">
+                    <div class="font-semibold">£{{ player.price }}m</div>
+                  </div>
+                </div>
+              @endforeach
+              @foreach(forwards as player)
+                <div class="flex items-center gap-4 p-3 hover:bg-slate-700/30 transition-colors cursor-pointer">
+                  <div class="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center text-lg shrink-0">⚽</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-sm flex items-center gap-2">
+                      {{ player.name }}
+                      @if(player.isCaptain)
+                        <span class="px-1.5 py-0.5 bg-amber-400 text-slate-900 text-[10px] font-bold rounded">C</span>
+                      @endif
+                      @if(player.isVice)
+                        <span class="px-1.5 py-0.5 bg-slate-400 text-slate-900 text-[10px] font-bold rounded">V</span>
+                      @endif
+                    </div>
+                    <div class="text-xs text-slate-400">{{ player.team }} · FWD</div>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <div class="font-bold text-emerald-400">{{ player.points }}</div>
+                    <div class="text-xs text-slate-500">pts</div>
+                  </div>
+                  <div class="text-right shrink-0 w-16">
+                    <div class="font-semibold">£{{ player.price }}m</div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          <!-- Bench in List View -->
+          <div class="bg-slate-700/30 rounded-xl overflow-hidden">
+            <div class="p-3 bg-slate-700/50 border-b border-slate-600">
+              <h4 class="font-semibold text-sm">Substitutes</h4>
+            </div>
+            <div class="divide-y divide-slate-700/50">
+              @foreach(bench as player)
+                <div class="flex items-center gap-4 p-3 hover:bg-slate-700/30 transition-colors cursor-pointer opacity-70">
+                  <div class="w-10 h-10 rounded-lg bg-slate-600/50 flex items-center justify-center text-lg shrink-0">
+                    @if(player.position === "GK")
+                      🧤
+                    @elseif(player.position === "DEF")
+                      🛡️
+                    @elseif(player.position === "MID")
+                      ⚡
+                    @else
+                      ⚽
+                    @endif
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-sm">{{ player.name }}</div>
+                    <div class="text-xs text-slate-400">{{ player.team }} · {{ player.position }}</div>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <div class="font-bold text-emerald-400">{{ player.points }}</div>
+                    <div class="text-xs text-slate-500">pts</div>
+                  </div>
+                  <div class="text-right shrink-0 w-16">
+                    <div class="font-semibold">£{{ player.price }}m</div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+        </div>
+
+        <!-- Bench (Pitch View only) -->
+        <div id="bench-pitch-view" class="mt-6 pt-6 border-t border-slate-700">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Substitutes</h3>
+            <span class="text-xs text-slate-500">Drag players to swap positions</span>
+          </div>
+          <div id="bench-row" class="flex justify-center gap-4 sm:gap-6 flex-wrap">
+            @foreach(bench as player)
+              <div class="player-card bench-player relative cursor-grab active:cursor-grabbing opacity-80 hover:opacity-100 transition-all" draggable="true" data-player-id="{{ player.id }}" data-position="{{ player.position }}">
+                <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-slate-500 shadow-lg mx-auto bg-slate-700 hover:scale-110 transition-transform duration-200 hover:border-indigo-400">
+                  <img src="{{ player.img }}" alt="{{ player.name }}" class="w-full h-full object-cover object-top" onerror="this.src='https://via.placeholder.com/64?text=👤'">
+                </div>
+                <div class="mt-2 bg-slate-700/90 backdrop-blur rounded-lg px-2 py-1.5 text-center shadow-lg min-w-[70px]">
+                  <div class="text-xs font-bold text-white truncate">{{ player.name }}</div>
+                  <div class="text-[10px] text-slate-400">{{ player.position }}</div>
+                  <div class="text-[10px] text-emerald-400 font-semibold">{{ player.points }} pts</div>
+                </div>
+              </div>
+            @endforeach
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-4 mt-6">
+          <button class="flex-1 py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold transition-colors border border-slate-600">Auto Pick</button>
+          <button class="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-semibold transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/30">Save Team</button>
+        </div>
+      </div>
+      <!-- Fixtures and Top Players Row -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-6">
+        <!-- Upcoming Fixtures -->
+        <div class="bg-slate-800 rounded-2xl p-4 md:p-6 border border-slate-700">
+          <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">Upcoming Fixtures</h3>
+          <div class="space-y-2">
+            @foreach(fixtures as fixture)
+              <div class="flex items-center justify-between p-2 md:p-3 bg-slate-700/50 rounded-xl hover:bg-slate-600/50 cursor-pointer transition-colors" onclick="showFixtureDetail(this)">
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold text-sm">{{ fixture.home }}</span>
+                  <span class="text-xs text-slate-500">vs</span>
+                  <span class="font-semibold text-sm">{{ fixture.away }}</span>
+                </div>
+                <div class="text-sm font-semibold text-indigo-400">{{ fixture.time }}</div>
+              </div>
+            @endforeach
+          </div>
+        </div>
+
+        <!-- Top Players -->
+        <div class="bg-slate-800 rounded-2xl p-4 md:p-6 border border-slate-700">
+          <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">Top Players</h3>
+          <div class="space-y-2">
+            @foreach(topPlayers as player)
+              <div class="flex items-center gap-3 p-2 md:p-3 bg-slate-700/50 rounded-xl hover:bg-slate-600/50 transition-colors cursor-pointer" onclick="showPlayerModal('{{ player.name }}', '{{ player.team }}', {{ player.points }}, '{{ player.form }}')">
+                @if(player.isFirst)
+                  <div class="w-6 h-6 md:w-7 md:h-7 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-lg flex items-center justify-center text-xs font-bold text-slate-900">1</div>
+                @else
+                  <div class="w-6 h-6 md:w-7 md:h-7 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-xs font-bold">{{ loop.iteration }}</div>
+                @endif
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-sm truncate">{{ player.name }}</div>
+                  <div class="text-xs text-slate-500">{{ player.team }}</div>
+                </div>
+                <div class="text-right">
+                  <div class="font-bold text-sm text-emerald-400">{{ player.points }}</div>
+                  <div class="text-xs text-slate-500">{{ player.form }}</div>
+                </div>
+              </div>
+            @endforeach
+          </div>
+        </div>
+      </div>
+      </div><!-- End Tab: Team -->
+
+      <!-- Tab Content: Transfers -->
+      <div id="tab-transfers" class="tab-content hidden">
+        <div class="bg-slate-800 rounded-2xl p-4 md:p-6 border border-slate-700 mb-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-lg font-bold">Transfer Market</h2>
+              <p class="text-sm text-slate-400">Find players to strengthen your squad</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="text-sm">
+                <span class="text-slate-400">Budget:</span>
+                <span class="font-bold text-emerald-400 ml-1">£{{ budget }}m</span>
+              </div>
+              <div class="text-sm">
+                <span class="text-slate-400">Free Transfers:</span>
+                <span class="font-bold text-indigo-400 ml-1">{{ freeTransfers }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search and Filters -->
+          <div class="flex flex-col md:flex-row gap-3 mb-6">
+            <div class="flex-1 relative">
+              <input type="text" placeholder="Search players..." class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" id="player-search">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+            </div>
+            <select class="bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" id="position-filter">
+              <option value="all">All Positions</option>
+              <option value="GK">Goalkeepers</option>
+              <option value="DEF">Defenders</option>
+              <option value="MID">Midfielders</option>
+              <option value="FWD">Forwards</option>
+            </select>
+            <select class="bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" id="sort-by">
+              <option value="points">Sort by Points</option>
+              <option value="price">Sort by Price</option>
+              <option value="form">Sort by Form</option>
+              <option value="selected">Sort by Selected %</option>
+            </select>
+          </div>
+
+          <!-- Player List -->
+          <div class="space-y-3">
+            @foreach(transferMarket as player)
+              <div class="flex items-center gap-4 p-4 bg-slate-700/50 rounded-xl hover:bg-slate-600/50 transition-colors">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-xl">
+                  @if(player.position === "GK")
+                    🧤
+                  @elseif(player.position === "DEF")
+                    🛡️
+                  @elseif(player.position === "MID")
+                    ⚡
+                  @else
+                    ⚽
+                  @endif
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold">{{ player.name }}</div>
+                  <div class="text-sm text-slate-400">{{ player.team }} · {{ player.position }}</div>
+                </div>
+                <div class="hidden md:block text-center px-4">
+                  <div class="font-bold text-emerald-400">{{ player.points }}</div>
+                  <div class="text-xs text-slate-500">Points</div>
+                </div>
+                <div class="hidden md:block text-center px-4">
+                  <div class="font-bold">{{ player.form }}</div>
+                  <div class="text-xs text-slate-500">Form</div>
+                </div>
+                <div class="hidden md:block text-center px-4">
+                  <div class="font-bold text-slate-300">{{ player.selected }}</div>
+                  <div class="text-xs text-slate-500">Selected</div>
+                </div>
+                <div class="text-right">
+                  <div class="font-bold text-lg">£{{ player.price }}m</div>
+                </div>
+                <button onclick="showBuyModal('{{ player.name }}', '{{ player.team }}', {{ player.price }})" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-colors text-sm">
+                  Buy
+                </button>
+              </div>
+            @endforeach
+          </div>
+        </div>
+      </div><!-- End Tab: Transfers -->
+
+      <!-- Tab Content: Points -->
+      <div id="tab-points" class="tab-content hidden">
+        <div class="bg-slate-800 rounded-2xl p-4 md:p-6 border border-slate-700 mb-6">
+          <h2 class="text-lg font-bold mb-6">Points History</h2>
+
+          <!-- Current GW Summary -->
+          <div class="bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-xl p-6 mb-6 border border-indigo-500/30">
+            <div class="flex justify-between items-center">
+              <div>
+                <div class="text-sm text-slate-400">Gameweek {{ gameweek }}</div>
+                <div class="text-3xl font-bold">{{ totalPoints }} pts</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm text-slate-400">Overall Rank</div>
+                <div class="text-2xl font-bold text-indigo-400">#{{ rank }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- History Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="text-left text-sm text-slate-400 border-b border-slate-700">
+                  <th class="pb-3 font-medium">Gameweek</th>
+                  <th class="pb-3 font-medium">Points</th>
+                  <th class="pb-3 font-medium">Avg</th>
+                  <th class="pb-3 font-medium">Rank</th>
+                  <th class="pb-3 font-medium">+/-</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-700/50">
+                @foreach(gameweekHistory as gw)
+                  <tr class="hover:bg-slate-700/30 transition-colors">
+                    <td class="py-4 font-medium">GW{{ gw.gw }}</td>
+                    <td class="py-4">
+                      <span class="font-bold text-emerald-400">{{ gw.points }}</span>
+                    </td>
+                    <td class="py-4 text-slate-400">{{ gw.avgPoints }}</td>
+                    <td class="py-4">#{{ gw.rank }}</td>
+                    <td class="py-4">
+                      @if(gw.points > gw.avgPoints)
+                        <span class="text-emerald-400">+{{ gw.points - gw.avgPoints }}</span>
+                      @else
+                        <span class="text-red-400">{{ gw.points - gw.avgPoints }}</span>
+                      @endif
+                    </td>
+                  </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div><!-- End Tab: Points -->
+
+      <!-- Tab Content: Fixtures -->
+      <div id="tab-fixtures" class="tab-content hidden">
+        <div class="bg-slate-800 rounded-2xl p-4 md:p-6 border border-slate-700">
+          <h2 class="text-lg font-bold mb-6">Upcoming Fixtures</h2>
+          <div class="space-y-4">
+            @foreach(fixtures as fixture)
+              <div class="bg-slate-700/50 rounded-xl p-4 hover:bg-slate-600/50 transition-colors">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-sm text-slate-400">{{ fixture.time }}</span>
+                  <span class="text-xs bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded-full">Premier League</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex-1 text-right">
+                    <div class="font-bold text-lg">{{ fixture.home }}</div>
+                  </div>
+                  <div class="px-6 text-center">
+                    <div class="text-2xl font-bold text-slate-500">vs</div>
+                  </div>
+                  <div class="flex-1 text-left">
+                    <div class="font-bold text-lg">{{ fixture.away }}</div>
+                  </div>
+                </div>
+              </div>
+            @endforeach
+          </div>
+        </div>
+      </div><!-- End Tab: Fixtures -->
+
+      <!-- Tab Content: Leagues -->
+      <div id="tab-leagues" class="tab-content hidden">
+        <div class="bg-slate-800 rounded-2xl p-4 md:p-6 border border-slate-700 mb-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-lg font-bold">My Leagues</h2>
+            <button onclick="showCreateLeagueModal()" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-xl transition-colors text-sm flex items-center gap-2">
+              <span>+</span> Create League
+            </button>
+          </div>
+          <div class="space-y-3">
+            @foreach(leagues as league)
+              <div class="flex items-center justify-between p-4 bg-slate-700/50 rounded-xl hover:bg-slate-600/50 transition-colors cursor-pointer" onclick="showLeagueDetail('{{ league.name }}')">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-xl">🏆</div>
+                  <div>
+                    <div class="font-semibold">{{ league.name }}</div>
+                    <div class="text-sm text-slate-400">{{ league.members }} members</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  @if(league.isTop3)
+                    <div class="text-2xl font-bold text-amber-400">#{{ league.rank }}</div>
+                  @else
+                    <div class="text-2xl font-bold text-indigo-400">#{{ league.rank }}</div>
+                  @endif
+                </div>
+              </div>
+            @endforeach
+          </div>
+        </div>
+
+        <!-- Join League -->
+        <div class="bg-slate-800 rounded-2xl p-4 md:p-6 border border-slate-700">
+          <h3 class="font-bold mb-4">Join a League</h3>
+          <div class="flex gap-3">
+            <input type="text" placeholder="Enter league code..." class="flex-1 bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button class="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-colors">Join</button>
+          </div>
+        </div>
+      </div><!-- End Tab: Leagues -->
+
+    </main>
+  </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700 flex justify-around py-2 px-4 z-50" id="mobile-nav">
+    <button onclick="showTab('team')" class="mobile-nav-btn flex flex-col items-center gap-1 p-2 text-indigo-400" data-tab="team">
+      <span class="text-xl">👥</span>
+      <span class="text-xs font-medium">Team</span>
+    </button>
+    <button onclick="showTab('transfers')" class="mobile-nav-btn flex flex-col items-center gap-1 p-2 text-slate-500 hover:text-slate-300 transition-colors" data-tab="transfers">
+      <span class="text-xl">🔄</span>
+      <span class="text-xs font-medium">Transfers</span>
+    </button>
+    <button onclick="showTab('points')" class="mobile-nav-btn flex flex-col items-center gap-1 p-2 text-slate-500 hover:text-slate-300 transition-colors" data-tab="points">
+      <span class="text-xl">⭐</span>
+      <span class="text-xs font-medium">Points</span>
+    </button>
+    <button onclick="showTab('fixtures')" class="mobile-nav-btn flex flex-col items-center gap-1 p-2 text-slate-500 hover:text-slate-300 transition-colors" data-tab="fixtures">
+      <span class="text-xl">📅</span>
+      <span class="text-xs font-medium">Fixtures</span>
+    </button>
+    <button onclick="showTab('leagues')" class="mobile-nav-btn flex flex-col items-center gap-1 p-2 text-slate-500 hover:text-slate-300 transition-colors" data-tab="leagues">
+      <span class="text-xl">🏆</span>
+      <span class="text-xs font-medium">Leagues</span>
+    </button>
+  </nav>
+
+  <!-- Modal Overlay -->
+  <div id="modal-overlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="closeModal(event)">
+    <!-- Player Modal -->
+    <div id="player-modal" class="hidden bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-md overflow-hidden" onclick="event.stopPropagation()">
+      <div class="bg-gradient-to-r from-indigo-500 to-purple-500 p-6">
+        <div class="flex justify-between items-start">
+          <div>
+            <h3 class="text-xl font-bold" id="modal-player-name">Player Name</h3>
+            <p class="text-sm opacity-90" id="modal-player-team">Team</p>
+          </div>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">✕</button>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <div class="text-center p-3 bg-slate-700/50 rounded-xl">
+            <div class="text-2xl font-bold text-emerald-400" id="modal-player-points">0</div>
+            <div class="text-xs text-slate-400">Points</div>
+          </div>
+          <div class="text-center p-3 bg-slate-700/50 rounded-xl">
+            <div class="text-2xl font-bold" id="modal-player-form">0.0</div>
+            <div class="text-xs text-slate-400">Form</div>
+          </div>
+          <div class="text-center p-3 bg-slate-700/50 rounded-xl">
+            <div class="text-2xl font-bold text-indigo-400" id="modal-player-price">£0m</div>
+            <div class="text-xs text-slate-400">Price</div>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="closeModal()" class="flex-1 py-3 px-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold transition-colors">Close</button>
+          <button class="flex-1 py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-colors">Add to Team</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buy Player Modal -->
+    <div id="buy-modal" class="hidden bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-md overflow-hidden" onclick="event.stopPropagation()">
+      <div class="p-6 border-b border-slate-700">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-bold">Confirm Transfer</h3>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-colors">✕</button>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="bg-slate-700/50 rounded-xl p-4 mb-4">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-2xl">⚽</div>
+            <div>
+              <div class="font-bold text-lg" id="buy-player-name">Player Name</div>
+              <div class="text-sm text-slate-400" id="buy-player-team">Team</div>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-between items-center mb-6 p-4 bg-slate-700/30 rounded-xl">
+          <span class="text-slate-400">Transfer Cost</span>
+          <span class="text-xl font-bold text-emerald-400" id="buy-player-price">£0m</span>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="closeModal()" class="flex-1 py-3 px-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold transition-colors">Cancel</button>
+          <button onclick="confirmBuy()" class="flex-1 py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-colors">Confirm Buy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create League Modal -->
+    <div id="create-league-modal" class="hidden bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-md overflow-hidden" onclick="event.stopPropagation()">
+      <div class="p-6 border-b border-slate-700">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-bold">Create New League</h3>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-colors">✕</button>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-400 mb-2">League Name</label>
+            <input type="text" placeholder="Enter league name..." class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-400 mb-2">League Type</label>
+            <select class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option>Classic</option>
+              <option>Head-to-Head</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+          <button onclick="closeModal()" class="flex-1 py-3 px-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold transition-colors">Cancel</button>
+          <button class="flex-1 py-3 px-4 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-semibold transition-colors">Create League</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-700 rounded-xl px-6 py-3 shadow-2xl flex items-center gap-3 z-50">
+      <span class="text-emerald-400">✓</span>
+      <span id="toast-message">Action completed successfully</span>
+    </div>
+  </div>
+
+  <!-- JavaScript for Interactivity -->
+  <script>
+    // Tab Navigation
+    function showTab(tabName) {
+      // Hide all tab contents
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.add('hidden');
+      });
+
+      // Show selected tab
+      const selectedTab = document.getElementById('tab-' + tabName);
+      if (selectedTab) {
+        selectedTab.classList.remove('hidden');
+      }
+
+      // Update tab buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.dataset.tab === tabName) {
+          btn.classList.remove('bg-slate-700', 'text-slate-300');
+          btn.classList.add('bg-indigo-500', 'text-white');
+        } else {
+          btn.classList.remove('bg-indigo-500', 'text-white');
+          btn.classList.add('bg-slate-700', 'text-slate-300');
+        }
+      });
+
+      // Update mobile nav
+      document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+        if (btn.dataset.tab === tabName) {
+          btn.classList.remove('text-slate-500');
+          btn.classList.add('text-indigo-400');
+        } else {
+          btn.classList.remove('text-indigo-400');
+          btn.classList.add('text-slate-500');
+        }
+      });
+
+      // Close dropdowns
+      closeAllDropdowns();
+    }
+
+    // Notifications Dropdown
+    function toggleNotifications() {
+      const panel = document.getElementById('notifications-panel');
+      const userPanel = document.getElementById('user-menu-panel');
+      userPanel.classList.add('hidden');
+      panel.classList.toggle('hidden');
+    }
+
+    // User Menu Dropdown
+    function toggleUserMenu() {
+      const panel = document.getElementById('user-menu-panel');
+      const notifPanel = document.getElementById('notifications-panel');
+      notifPanel.classList.add('hidden');
+      panel.classList.toggle('hidden');
+    }
+
+    // Close all dropdowns
+    function closeAllDropdowns() {
+      document.getElementById('notifications-panel').classList.add('hidden');
+      document.getElementById('user-menu-panel').classList.add('hidden');
+    }
+
+    // Mark all notifications as read
+    function markAllRead() {
+      showToast('All notifications marked as read');
+      closeAllDropdowns();
+    }
+
+    // Formation Selector
+    function setFormation(formation) {
+      // Update button states
+      document.querySelectorAll('.formation-btn').forEach(btn => {
+        if (btn.dataset.formation === formation) {
+          btn.classList.remove('text-slate-400', 'hover:text-white', 'hover:bg-slate-600');
+          btn.classList.add('bg-indigo-500', 'text-white');
+        } else {
+          btn.classList.remove('bg-indigo-500', 'text-white');
+          btn.classList.add('text-slate-400', 'hover:text-white', 'hover:bg-slate-600');
+        }
+      });
+
+      // Parse formation (e.g., "4-3-3" -> [4, 3, 3])
+      const parts = formation.split('-').map(Number);
+      const [def, mid, fwd] = parts;
+
+      // Get player rows
+      const defRow = document.getElementById('defenders-row');
+      const midRow = document.getElementById('midfielders-row');
+      const fwdRow = document.getElementById('forwards-row');
+
+      // Animate out
+      const pitchView = document.getElementById('pitch-view');
+      pitchView.style.transition = 'opacity 0.2s ease-out';
+      pitchView.style.opacity = '0.5';
+
+      setTimeout(() => {
+        // Update visible players based on formation
+        updateRowVisibility(defRow, def, 'defender');
+        updateRowVisibility(midRow, mid, 'midfielder');
+        updateRowVisibility(fwdRow, fwd, 'forward');
+
+        // Animate back in
+        pitchView.style.opacity = '1';
+      }, 200);
+
+      showToast('Formation changed to ' + formation);
+    }
+
+    // Update which players are visible in a row
+    function updateRowVisibility(row, count, position) {
+      if (!row) return;
+      const cards = row.querySelectorAll('.player-card');
+      cards.forEach((card, index) => {
+        if (index < count) {
+          card.style.transform = 'scale(1)';
+          card.style.opacity = '1';
+          card.classList.remove('hidden');
+        } else {
+          card.style.transform = 'scale(0.8)';
+          card.style.opacity = '0';
+          setTimeout(() => card.classList.add('hidden'), 200);
+        }
+      });
+    }
+
+    // View Toggle (Pitch vs List)
+    function setView(view) {
+      document.querySelectorAll('.view-btn').forEach(btn => {
+        if (btn.dataset.view === view) {
+          btn.classList.remove('text-slate-400', 'hover:text-white', 'hover:bg-slate-600');
+          btn.classList.add('bg-indigo-500', 'text-white');
+        } else {
+          btn.classList.remove('bg-indigo-500', 'text-white');
+          btn.classList.add('text-slate-400', 'hover:text-white', 'hover:bg-slate-600');
+        }
+      });
+
+      const pitchView = document.getElementById('pitch-view');
+      const listView = document.getElementById('list-view');
+      const benchPitchView = document.getElementById('bench-pitch-view');
+
+      if (view === 'pitch') {
+        pitchView?.classList.remove('hidden');
+        benchPitchView?.classList.remove('hidden');
+        listView?.classList.add('hidden');
+      } else {
+        pitchView?.classList.add('hidden');
+        benchPitchView?.classList.add('hidden');
+        listView?.classList.remove('hidden');
+      }
+    }
+
+    // Player Card Click - Show options
+    function showPlayerOptions(playerName, playerTeam, playerPoints) {
+      showPlayerModal(playerName, playerTeam, playerPoints, '7.0');
+    }
+
+    // ==========================================
+    // DRAG AND DROP FUNCTIONALITY
+    // ==========================================
+    let draggedPlayer = null;
+    let draggedElement = null;
+
+    function initDragAndDrop() {
+      const playerCards = document.querySelectorAll('.player-card[draggable="true"]');
+
+      playerCards.forEach(card => {
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragend', handleDragEnd);
+        card.addEventListener('dragover', handleDragOver);
+        card.addEventListener('dragenter', handleDragEnter);
+        card.addEventListener('dragleave', handleDragLeave);
+        card.addEventListener('drop', handleDrop);
+      });
+    }
+
+    function handleDragStart(e) {
+      draggedPlayer = this.dataset.playerId;
+      draggedElement = this;
+
+      // Add visual feedback
+      this.style.opacity = '0.5';
+      this.style.transform = 'scale(0.95)';
+
+      // Set drag data
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', draggedPlayer);
+
+      // Add dragging class to pitch
+      document.getElementById('pitch-view')?.classList.add('dragging');
+    }
+
+    function handleDragEnd(e) {
+      this.style.opacity = '';
+      this.style.transform = '';
+
+      // Remove all drag-over styles
+      document.querySelectorAll('.player-card').forEach(card => {
+        card.classList.remove('drag-over');
+      });
+
+      document.getElementById('pitch-view')?.classList.remove('dragging');
+      draggedPlayer = null;
+      draggedElement = null;
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleDragEnter(e) {
+      e.preventDefault();
+      if (this !== draggedElement) {
+        this.classList.add('drag-over');
+        this.style.transform = 'scale(1.1)';
+        this.style.boxShadow = '0 0 20px rgba(99, 102, 241, 0.5)';
+      }
+    }
+
+    function handleDragLeave(e) {
+      this.classList.remove('drag-over');
+      this.style.transform = '';
+      this.style.boxShadow = '';
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (this !== draggedElement && draggedElement) {
+        // Get positions
+        const fromPosition = draggedElement.dataset.position;
+        const toPosition = this.dataset.position;
+
+        // Swap the player cards visually
+        const parent1 = draggedElement.parentNode;
+        const parent2 = this.parentNode;
+
+        // Get the next siblings for proper insertion
+        const next1 = draggedElement.nextSibling;
+        const next2 = this.nextSibling;
+
+        // Perform the swap with animation
+        draggedElement.style.transition = 'all 0.3s ease';
+        this.style.transition = 'all 0.3s ease';
+
+        // Swap positions
+        if (next1 === this) {
+          parent1.insertBefore(this, draggedElement);
+        } else if (next2 === draggedElement) {
+          parent2.insertBefore(draggedElement, this);
+        } else {
+          parent1.insertBefore(this, next1);
+          parent2.insertBefore(draggedElement, next2);
+        }
+
+        // Show toast notification
+        const draggedName = draggedElement.querySelector('.text-xs.font-bold')?.textContent || 'Player';
+        const droppedName = this.querySelector('.text-xs.font-bold')?.textContent || 'Player';
+        showToast(`Swapped ${draggedName} with ${droppedName}`);
+
+        // Reset transitions after animation
+        setTimeout(() => {
+          draggedElement.style.transition = '';
+          this.style.transition = '';
+        }, 300);
+      }
+
+      // Clean up styles
+      this.classList.remove('drag-over');
+      this.style.transform = '';
+      this.style.boxShadow = '';
+    }
+
+    // Initialize drag and drop when DOM is ready
+    document.addEventListener('DOMContentLoaded', initDragAndDrop);
+
+    // Modal Functions
+    function showPlayerModal(name, team, points, form) {
+      document.getElementById('modal-player-name').textContent = name;
+      document.getElementById('modal-player-team').textContent = team;
+      document.getElementById('modal-player-points').textContent = points;
+      document.getElementById('modal-player-form').textContent = form;
+      document.getElementById('modal-player-price').textContent = '£' + (Math.random() * 10 + 5).toFixed(1) + 'm';
+
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.getElementById('player-modal').classList.remove('hidden');
+    }
+
+    function showBuyModal(name, team, price) {
+      document.getElementById('buy-player-name').textContent = name;
+      document.getElementById('buy-player-team').textContent = team;
+      document.getElementById('buy-player-price').textContent = '£' + price + 'm';
+
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.getElementById('buy-modal').classList.remove('hidden');
+    }
+
+    function showCreateLeagueModal() {
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.getElementById('create-league-modal').classList.remove('hidden');
+    }
+
+    function closeModal(event) {
+      if (event && event.target !== event.currentTarget) return;
+      document.getElementById('modal-overlay').classList.add('hidden');
+      document.querySelectorAll('#modal-overlay > div').forEach(modal => {
+        modal.classList.add('hidden');
+      });
+    }
+
+    function confirmBuy() {
+      const playerName = document.getElementById('buy-player-name').textContent;
+      closeModal();
+      showToast(playerName + ' added to your team!');
+    }
+
+    // Toast Notification
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').textContent = message;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3000);
+    }
+
+    // Fixture Detail
+    function showFixtureDetail(element) {
+      showToast('Fixture details coming soon!');
+    }
+
+    // League Detail
+    function showLeagueDetail(leagueName) {
+      showToast('Viewing ' + leagueName + ' standings');
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(event) {
+      const notifContainer = document.getElementById('notifications-container');
+      const userContainer = document.getElementById('user-menu-container');
+
+      if (!notifContainer.contains(event.target)) {
+        document.getElementById('notifications-panel').classList.add('hidden');
+      }
+      if (!userContainer.contains(event.target)) {
+        document.getElementById('user-menu-panel').classList.add('hidden');
+      }
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeModal();
+        closeAllDropdowns();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!-- Button Component Story -->
+<script>
+/**
+ * A simple button component
+ * @type {'primary' | 'secondary' | 'danger'}
+ */
+const variant = 'primary'
+
+/** Button label text */
+const label = 'Click me'
+
+/** Whether the button is disabled */
+const disabled = false
+</script>
+
+<Story title="Button">
+  <Variant title="Primary">
+    <button class="btn btn-primary">
+      {{ label }}
+    </button>
+  </Variant>
+
+  <Variant title="Secondary">
+    <button class="btn btn-secondary">
+      {{ label }}
+    </button>
+  </Variant>
+
+  <Variant title="Disabled">
+    <button class="btn btn-primary" disabled>
+      {{ label }}
+    </button>
+  </Variant>
+</Story>

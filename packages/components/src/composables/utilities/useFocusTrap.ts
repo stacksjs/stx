@@ -40,7 +40,7 @@ export interface UseFocusTrapOptions {
 export function useFocusTrap(
   containerRef: HTMLElement | null,
   options: UseFocusTrapOptions = {},
-): { activate: () => void; deactivate: () => void } {
+): { activate: () => void, deactivate: () => void } {
   const {
     enabled = true,
     initialFocus = null,

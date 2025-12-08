@@ -353,6 +353,82 @@ While raw template rendering is slower than pre-compiled alternatives, STX deliv
 
 ---
 
+## Regression Testing
+
+stx includes a regression testing system to detect performance changes over time.
+
+### Running Regression Tests
+
+```bash
+cd packages/benchmarks
+
+# Run regression tests
+bun run bench:regression
+
+# Save baseline for future comparison
+bun run bench:regression:save
+
+# Check against baseline (CI-friendly, exits 1 on regression)
+bun run bench:regression:check
+```
+
+### Thresholds
+
+Each benchmark has configurable thresholds:
+
+```typescript
+const DEFAULT_THRESHOLDS = {
+  'stx-simple-template': {
+    maxMs: 10,
+    minOpsPerSec: 5000,
+    allowedRegressionPercent: 15
+  },
+  'stx-complex-template': {
+    maxMs: 50,
+    minOpsPerSec: 1000,
+    allowedRegressionPercent: 20
+  },
+  'stx-component-render': {
+    maxMs: 25,
+    minOpsPerSec: 2000,
+    allowedRegressionPercent: 15
+  }
+}
+```
+
+### CI/CD Integration
+
+```yaml
+# GitHub Actions example
+- name: Run regression tests
+  run: |
+    cd packages/benchmarks
+    bun run bench:regression:check
+```
+
+Exit codes:
+- `0` - All benchmarks passed
+- `1` - Regressions detected
+
+### Output Formats
+
+The regression runner supports multiple formats:
+
+```typescript
+import { runRegressionTests } from '@stacksjs/benchmarks'
+
+// Console output (default)
+await runRegressionTests({ outputFormat: 'console' })
+
+// JSON for programmatic use
+await runRegressionTests({ outputFormat: 'json' })
+
+// Markdown for reports
+await runRegressionTests({ outputFormat: 'markdown' })
+```
+
+---
+
 ## Next Steps
 
 - Explore [Performance Optimization](/guide/performance)

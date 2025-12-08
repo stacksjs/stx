@@ -1,5 +1,7 @@
-import { afterEach, describe, expect, it, spyOn } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test'
 import {
+  closeAllModals,
+  getActiveModalCount,
   showErrorModal,
   showInfoModal,
   showModal,
@@ -8,101 +10,112 @@ import {
   showWarningModal,
 } from '../src/modals'
 
+// Check if we're in a browser-like environment (Happy DOM)
+const isBrowserEnv = typeof window !== 'undefined' && typeof document !== 'undefined'
+
 describe('Modals', () => {
-  let consoleSpy: any
+  let consoleSpy: ReturnType<typeof spyOn>
+
+  beforeEach(() => {
+    consoleSpy = spyOn(console, 'log').mockImplementation(() => {})
+    // Clean up any existing modals from previous tests
+    if (isBrowserEnv) {
+      document.querySelectorAll('.stx-modal-overlay').forEach(el => el.remove())
+    }
+  })
 
   afterEach(() => {
-    if (consoleSpy) {
-      consoleSpy.mockRestore()
-      consoleSpy = undefined
+    consoleSpy.mockRestore()
+    closeAllModals()
+    // Clean up any modals
+    if (isBrowserEnv) {
+      document.querySelectorAll('.stx-modal-overlay').forEach(el => el.remove())
     }
   })
 
   describe('showModal', () => {
-    it('should warn that feature is not yet implemented', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      await showModal({ message: 'Test message' })
-
-      expect(consoleSpy).toHaveBeenCalledWith('Modal dialogs not yet implemented')
-    })
-
-    it('should return a ModalResult', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
+    it('should show modal', async () => {
       const result = await showModal({ message: 'Test message' })
 
       expect(result).toBeDefined()
-      expect(result.buttonIndex).toBe(0)
-      expect(result.cancelled).toBe(true)
+      expect(typeof result.buttonIndex).toBe('number')
+    })
+
+    it('should return a ModalResult', async () => {
+      const result = await showModal({ message: 'Test message' })
+
+      expect(result).toBeDefined()
+      expect(typeof result.buttonIndex).toBe('number')
+      expect(typeof result.cancelled).toBe('boolean')
     })
 
     it('should accept title option', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      await showModal({
+      const result = await showModal({
         title: 'Test Title',
         message: 'Test message',
       })
 
-      const optionsArg = consoleSpy.mock.calls[1][1]
-      expect(optionsArg.title).toBe('Test Title')
-      expect(optionsArg.message).toBe('Test message')
+      expect(result).toBeDefined()
+      if (!isBrowserEnv) {
+        const calls = consoleSpy.mock.calls
+        expect(calls.some(call => call[0]?.includes('Test Title'))).toBe(true)
+      }
     })
 
     it('should accept message option', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
+      const result = await showModal({ message: 'Custom message' })
 
-      await showModal({ message: 'Custom message' })
-
-      const optionsArg = consoleSpy.mock.calls[1][1]
-      expect(optionsArg.message).toBe('Custom message')
+      expect(result).toBeDefined()
+      if (!isBrowserEnv) {
+        const calls = consoleSpy.mock.calls
+        expect(calls.some(call => call[0]?.includes('Custom message'))).toBe(true)
+      }
     })
 
     it('should accept type option', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
       const result = await showModal({
         message: 'Test',
         type: 'warning',
       })
 
       expect(result).toBeDefined()
+      if (!isBrowserEnv) {
+        const calls = consoleSpy.mock.calls
+        expect(calls.some(call => call[0]?.includes('WARNING'))).toBe(true)
+      }
     })
 
     it('should accept buttons option', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      await showModal({
+      const result = await showModal({
         message: 'Test',
         buttons: [
           { label: 'OK', action: () => {} },
           { label: 'Cancel', action: () => {} },
         ],
       })
+
+      expect(result).toBeDefined()
     })
 
     it('should accept defaultButton option', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      await showModal({
+      const result = await showModal({
         message: 'Test',
         defaultButton: 0,
       })
+
+      expect(result.buttonIndex).toBe(0)
     })
 
     it('should accept cancelButton option', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      await showModal({
+      const result = await showModal({
         message: 'Test',
         cancelButton: 1,
       })
+
+      expect(result).toBeDefined()
     })
 
     it('should handle all modal types', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
       const types: Array<'info' | 'warning' | 'error' | 'success' | 'question'> = [
         'info',
         'warning',
@@ -119,116 +132,99 @@ describe('Modals', () => {
   })
 
   describe('showInfoModal', () => {
-    it('should call showModal with info type', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
+    it('should show modal with info type', async () => {
+      const result = await showInfoModal('Info Title', 'Info message')
 
-      await showInfoModal('Info Title', 'Info message')
-
-      const optionsArg = consoleSpy.mock.calls[1][1]
-      expect(optionsArg.type).toBe('info')
-      expect(optionsArg.title).toBe('Info Title')
-      expect(optionsArg.message).toBe('Info message')
+      expect(result).toBeDefined()
+      if (!isBrowserEnv) {
+        const calls = consoleSpy.mock.calls
+        expect(calls.some(call => call[0]?.includes('INFO'))).toBe(true)
+      }
     })
 
     it('should return ModalResult', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
       const result = await showInfoModal('Title', 'Message')
 
-      expect(result.cancelled).toBe(true)
-      expect(result.buttonIndex).toBe(0)
+      expect(result).toBeDefined()
+      expect(typeof result.buttonIndex).toBe('number')
     })
   })
 
   describe('showWarningModal', () => {
-    it('should call showModal with warning type', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
+    it('should show modal with warning type', async () => {
+      const result = await showWarningModal('Warning Title', 'Warning message')
 
-      await showWarningModal('Warning Title', 'Warning message')
-
-      const optionsArg = consoleSpy.mock.calls[1][1]
-      expect(optionsArg.type).toBe('warning')
-      expect(optionsArg.title).toBe('Warning Title')
-      expect(optionsArg.message).toBe('Warning message')
+      expect(result).toBeDefined()
+      if (!isBrowserEnv) {
+        const calls = consoleSpy.mock.calls
+        expect(calls.some(call => call[0]?.includes('WARNING'))).toBe(true)
+      }
     })
 
     it('should return ModalResult', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
       const result = await showWarningModal('Title', 'Message')
 
-      expect(result.cancelled).toBe(true)
+      expect(result).toBeDefined()
     })
   })
 
   describe('showErrorModal', () => {
-    it('should call showModal with error type', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
+    it('should show modal with error type', async () => {
+      const result = await showErrorModal('Error Title', 'Error message')
 
-      await showErrorModal('Error Title', 'Error message')
-
-      const optionsArg = consoleSpy.mock.calls[1][1]
-      expect(optionsArg.type).toBe('error')
-      expect(optionsArg.title).toBe('Error Title')
-      expect(optionsArg.message).toBe('Error message')
+      expect(result).toBeDefined()
+      if (!isBrowserEnv) {
+        const calls = consoleSpy.mock.calls
+        expect(calls.some(call => call[0]?.includes('ERROR'))).toBe(true)
+      }
     })
 
     it('should return ModalResult', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
       const result = await showErrorModal('Title', 'Message')
 
-      expect(result.cancelled).toBe(true)
+      expect(result).toBeDefined()
     })
   })
 
   describe('showSuccessModal', () => {
-    it('should call showModal with success type', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
+    it('should show modal with success type', async () => {
+      const result = await showSuccessModal('Success Title', 'Success message')
 
-      await showSuccessModal('Success Title', 'Success message')
-
-      const optionsArg = consoleSpy.mock.calls[1][1]
-      expect(optionsArg.type).toBe('success')
-      expect(optionsArg.title).toBe('Success Title')
-      expect(optionsArg.message).toBe('Success message')
+      expect(result).toBeDefined()
+      if (!isBrowserEnv) {
+        const calls = consoleSpy.mock.calls
+        expect(calls.some(call => call[0]?.includes('SUCCESS'))).toBe(true)
+      }
     })
 
     it('should return ModalResult', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
       const result = await showSuccessModal('Title', 'Message')
 
-      expect(result.cancelled).toBe(true)
+      expect(result).toBeDefined()
     })
   })
 
   describe('showQuestionModal', () => {
-    it('should call showModal with question type', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
+    it('should show modal with question type', async () => {
+      const result = await showQuestionModal('Question Title', 'Question message')
 
-      await showQuestionModal('Question Title', 'Question message')
-
-      const optionsArg = consoleSpy.mock.calls[1][1]
-      expect(optionsArg.type).toBe('question')
-      expect(optionsArg.title).toBe('Question Title')
-      expect(optionsArg.message).toBe('Question message')
+      expect(result).toBeDefined()
+      if (!isBrowserEnv) {
+        const calls = consoleSpy.mock.calls
+        expect(calls.some(call => call[0]?.includes('QUESTION'))).toBe(true)
+      }
     })
 
     it('should return ModalResult', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
       const result = await showQuestionModal('Title', 'Message')
 
-      expect(result.cancelled).toBe(true)
+      expect(result).toBeDefined()
     })
   })
 
   describe('Complex modal configurations', () => {
     it('should handle multiple buttons with different styles', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      await showModal({
+      const result = await showModal({
         title: 'Confirm',
         message: 'Are you sure?',
         buttons: [
@@ -237,14 +233,14 @@ describe('Modals', () => {
           { label: 'Save', style: 'primary' },
         ],
       })
+
+      expect(result).toBeDefined()
     })
 
     it('should handle buttons with actions', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
       let actionCalled = false
 
-      await showModal({
+      const result = await showModal({
         message: 'Test',
         buttons: [
           {
@@ -254,16 +250,16 @@ describe('Modals', () => {
             },
           },
         ],
+        defaultButton: 0,
       })
 
-      // Note: actions won't be called in placeholder implementation
-      expect(actionCalled).toBe(false)
+      // Action should be called when modal resolves with that button
+      expect(actionCalled).toBe(true)
+      expect(result.buttonIndex).toBe(0)
     })
 
     it('should handle modal with default and cancel buttons', async () => {
-      consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      await showModal({
+      const result = await showModal({
         message: 'Test',
         buttons: [
           { label: 'Cancel' },
@@ -272,6 +268,28 @@ describe('Modals', () => {
         defaultButton: 1,
         cancelButton: 0,
       })
+
+      expect(result.buttonIndex).toBe(1)
+    })
+  })
+
+  describe('Modal management', () => {
+    it('should track active modal count', async () => {
+      const modalPromise = showModal({ message: 'Test' })
+
+      await modalPromise
+
+      // After resolution, count should be 0
+      expect(getActiveModalCount()).toBe(0)
+    })
+
+    it('should close all modals', async () => {
+      await showModal({ message: 'Test 1' })
+      await showModal({ message: 'Test 2' })
+
+      closeAllModals()
+
+      expect(getActiveModalCount()).toBe(0)
     })
   })
 })

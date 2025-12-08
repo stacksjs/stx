@@ -20,7 +20,8 @@ export interface SEOMetaOptions {
  * Set document title
  */
 export function setTitle(title: string, template?: string) {
-  if (typeof document === 'undefined') return
+  if (typeof document === 'undefined')
+    return
 
   document.title = template ? template.replace('%s', title) : title
 }
@@ -29,7 +30,8 @@ export function setTitle(title: string, template?: string) {
  * Set meta tag
  */
 export function setMeta(name: string, content: string, isProperty = false) {
-  if (typeof document === 'undefined') return
+  if (typeof document === 'undefined')
+    return
 
   const attribute = isProperty ? 'property' : 'name'
   let meta = document.querySelector(`meta[${attribute}="${name}"]`)
@@ -47,7 +49,8 @@ export function setMeta(name: string, content: string, isProperty = false) {
  * Set link tag
  */
 export function setLink(rel: string, href: string) {
-  if (typeof document === 'undefined') return
+  if (typeof document === 'undefined')
+    return
 
   let link = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement
 
