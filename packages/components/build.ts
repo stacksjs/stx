@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
+import process from 'node:process'
 import { dts } from 'bun-plugin-dtsx'
 
 console.log('Building @stacksjs/components...')

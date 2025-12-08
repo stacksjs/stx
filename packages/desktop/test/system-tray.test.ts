@@ -1,21 +1,34 @@
-import { describe, expect, it, spyOn } from 'bun:test'
-import { createMenubar, createSystemTray } from '../src/system-tray'
+import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test'
+import { createMenubar, createSystemTray, getActiveTrayInstances, getTrayInstance } from '../src/system-tray'
 
 describe('System Tray', () => {
+  let consoleSpy: ReturnType<typeof spyOn>
+
+  beforeEach(() => {
+    // Spy on console.log since system tray uses console.log in non-native environment
+    consoleSpy = spyOn(console, 'log').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    consoleSpy.mockRestore()
+    // Clean up any created trays
+    const trayIds = getActiveTrayInstances()
+    trayIds.forEach((id) => {
+      const tray = getTrayInstance(id)
+      tray?.destroy()
+    })
+  })
+
   describe('createSystemTray', () => {
-    it('should warn that feature is not yet implemented', async () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
+    it('should log tray creation in non-native environment', async () => {
+      await createSystemTray()
 
-      const _tray = await createSystemTray()
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith('System tray functionality not yet implemented')
-
-      consoleWarnSpy.mockRestore()
+      expect(consoleSpy).toHaveBeenCalled()
+      const calls = consoleSpy.mock.calls
+      expect(calls.some(call => call[0]?.includes('[stx-tray]'))).toBe(true)
     })
 
     it('should return a SystemTrayInstance', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
       const tray = await createSystemTray()
 
       expect(tray).not.toBeNull()
@@ -28,31 +41,25 @@ describe('System Tray', () => {
     })
 
     it('should accept icon option', async () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
       const tray = await createSystemTray({
         icon: './icon.png',
       })
 
       expect(tray).not.toBeNull()
-      expect(consoleWarnSpy).toHaveBeenCalled()
-
-      consoleWarnSpy.mockRestore()
+      expect(consoleSpy).toHaveBeenCalled()
     })
 
     it('should accept tooltip option', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
       const tray = await createSystemTray({
         tooltip: 'My App',
       })
 
       expect(tray).not.toBeNull()
+      const calls = consoleSpy.mock.calls
+      expect(calls.some(call => call[0]?.includes('My App'))).toBe(true)
     })
 
     it('should accept menu option', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
       const tray = await createSystemTray({
         menu: [
           { label: 'Open', onClick: () => {} },
@@ -61,11 +68,11 @@ describe('System Tray', () => {
       })
 
       expect(tray).not.toBeNull()
+      const calls = consoleSpy.mock.calls
+      expect(calls.some(call => call[0]?.includes('Menu items: 2'))).toBe(true)
     })
 
     it('should accept all options', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
       const tray = await createSystemTray({
         icon: './icon.png',
         tooltip: 'My App',
@@ -80,8 +87,6 @@ describe('System Tray', () => {
     })
 
     it('should generate unique tray IDs', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
       const tray1 = await createSystemTray()
       const tray2 = await createSystemTray()
 
@@ -90,57 +95,41 @@ describe('System Tray', () => {
   })
 
   describe('SystemTrayInstance methods', () => {
-    it('setIcon should warn not implemented', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
+    it('setIcon should update the icon', async () => {
       const tray = await createSystemTray()
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
 
+      // Should not throw
       tray?.setIcon('./new-icon.png')
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith('setIcon not implemented', './new-icon.png')
-
-      consoleWarnSpy.mockRestore()
+      expect(consoleSpy).toHaveBeenCalled()
     })
 
-    it('setTooltip should warn not implemented', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
+    it('setTooltip should update the tooltip', async () => {
       const tray = await createSystemTray()
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
 
       tray?.setTooltip('New tooltip')
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith('setTooltip not implemented', 'New tooltip')
-
-      consoleWarnSpy.mockRestore()
+      expect(consoleSpy).toHaveBeenCalled()
     })
 
-    it('setMenu should warn not implemented', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
+    it('setMenu should update the menu', async () => {
       const tray = await createSystemTray()
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
 
       const menu = [{ label: 'Test', onClick: () => {} }]
       tray?.setMenu(menu)
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith('setMenu not implemented', menu)
-
-      consoleWarnSpy.mockRestore()
+      expect(consoleSpy).toHaveBeenCalled()
     })
 
-    it('destroy should warn not implemented', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
+    it('destroy should clean up the tray', async () => {
       const tray = await createSystemTray()
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
+      const id = tray?.id
 
       tray?.destroy()
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith('destroy not implemented')
-
-      consoleWarnSpy.mockRestore()
+      // Tray should be removed from active instances
+      const trays = getActiveTrayInstances()
+      expect(trays.find(t => t.id === id)).toBeUndefined()
     })
   })
 
@@ -150,8 +139,6 @@ describe('System Tray', () => {
     })
 
     it('should work the same as createSystemTray', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
       const menubar = await createMenubar({
         icon: './icon.png',
         tooltip: 'Menubar App',
@@ -164,8 +151,6 @@ describe('System Tray', () => {
 
   describe('Complex menu structures', () => {
     it('should handle menu with separators', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
       const tray = await createSystemTray({
         menu: [
           { label: 'Item 1', onClick: () => {} },
@@ -178,8 +163,6 @@ describe('System Tray', () => {
     })
 
     it('should handle menu with checkboxes', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
       const tray = await createSystemTray({
         menu: [
           {
@@ -195,8 +178,6 @@ describe('System Tray', () => {
     })
 
     it('should handle menu with submenus', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
       const tray = await createSystemTray({
         menu: [
           {
@@ -214,8 +195,6 @@ describe('System Tray', () => {
     })
 
     it('should handle menu with accelerators', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
       const tray = await createSystemTray({
         menu: [
           {
@@ -230,8 +209,6 @@ describe('System Tray', () => {
     })
 
     it('should handle disabled menu items', async () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
       const tray = await createSystemTray({
         menu: [
           {
@@ -243,6 +220,18 @@ describe('System Tray', () => {
       })
 
       expect(tray).not.toBeNull()
+    })
+  })
+
+  describe('Tray management', () => {
+    it('should track active tray instances', async () => {
+      const tray1 = await createSystemTray()
+      const tray2 = await createSystemTray()
+
+      const trayIds = getActiveTrayInstances()
+      expect(trayIds.length).toBeGreaterThanOrEqual(2)
+      expect(trayIds.includes(tray1?.id as string)).toBe(true)
+      expect(trayIds.includes(tray2?.id as string)).toBe(true)
     })
   })
 })

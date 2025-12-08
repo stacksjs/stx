@@ -1,7 +1,7 @@
-export { default as PaymentMethods } from './PaymentMethods.stx'
-export { default as DefaultPaymentMethod } from './DefaultPaymentMethod.stx'
-export { default as SubscriptionCheckout } from './SubscriptionCheckout.stx'
 export { default as Checkout } from './Checkout.stx'
+export { default as DefaultPaymentMethod } from './DefaultPaymentMethod.stx'
+export { default as PaymentMethods } from './PaymentMethods.stx'
+export { default as SubscriptionCheckout } from './SubscriptionCheckout.stx'
 
 export interface PaymentMethod {
   id: string | number

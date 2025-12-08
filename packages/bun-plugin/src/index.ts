@@ -1,12 +1,118 @@
+/**
+ * bun-plugin-stx
+ *
+ * Bun build plugin for processing .stx template files and .md markdown files.
+ *
+ * ## Plugin Architecture
+ *
+ * There are two plugin implementations in the stx monorepo:
+ *
+ * 1. **This plugin** (`bun-plugin-stx`) - External package for users
+ *    - Exported as a function: `stxPlugin(options)`
+ *    - Designed for external consumption via npm/bun install
+ *    - Re-exports common utilities from @stacksjs/stx
+ *
+ * 2. **Internal plugin** (`@stacksjs/stx/plugin`) - Used by dev-server
+ *    - Exported as a constant: `plugin`
+ *    - Has additional error handling with StxError classes
+ *    - Includes performance monitoring
+ *
+ * Both plugins share the same core processing pipeline from @stacksjs/stx.
+ * The duplication exists because:
+ * - Different export patterns (function vs constant)
+ * - Internal plugin needs access to internal error classes
+ * - Avoiding circular dependencies
+ *
+ * ## Usage
+ *
+ * ```typescript
+ * import { stxPlugin } from 'bun-plugin-stx'
+ *
+ * await Bun.build({
+ *   entrypoints: ['./src/index.stx'],
+ *   plugins: [stxPlugin({ debug: true })]
+ * })
+ * ```
+ */
+
 import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import path from 'node:path'
 import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processDirectives, readMarkdownFile } from '@stacksjs/stx'
 
+// Export watch functionality
+export { createWatcher, startWatchMode, watchAndBuild } from './watch'
+export type {
+  WatchAndBuildOptions,
+  WatchBuildResult,
+  WatcherInstance,
+  WatchEvent,
+  WatchOptions,
+} from './watch'
+
 // Re-export functions and types that consumers might need
 export { createMiddleware, createRoute, readMarkdownFile, serve } from '@stacksjs/stx'
 export type { ServeOptions, ServeResult, StxOptions } from '@stacksjs/stx'
 
+/**
+ * Escape HTML entities in error messages to prevent XSS in error pages.
+ * Matches the escaping behavior in @stacksjs/stx/expressions.
+ */
+function escapeHtmlForError(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+/**
+ * Generate a styled error page HTML
+ * Consistent with error handling in @stacksjs/stx/plugin
+ */
+function generateErrorPage(title: string, message: string, filePath?: string): string {
+  const escapedMessage = escapeHtmlForError(message)
+  const escapedPath = filePath ? escapeHtmlForError(filePath) : ''
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <title>stx Error</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 2rem; background: #1a1a2e; color: #eee; }
+    h1 { color: #ff6b6b; }
+    pre { background: #16213e; padding: 1rem; border-radius: 4px; overflow-x: auto; border-left: 4px solid #ff6b6b; }
+    .file-path { color: #888; font-size: 0.9rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>${title}</h1>
+  ${escapedPath ? `<div class="file-path">File: ${escapedPath}</div>` : ''}
+  <pre>${escapedMessage}</pre>
+</body>
+</html>`
+}
+
+/**
+ * Create a Bun plugin for processing .stx and .md files
+ *
+ * @param userOptions - Optional configuration to override defaults
+ * @returns BunPlugin instance
+ *
+ * @example
+ * ```typescript
+ * // Basic usage
+ * const plugin = stxPlugin()
+ *
+ * // With options
+ * const plugin = stxPlugin({
+ *   debug: true,
+ *   cache: true,
+ *   cachePath: '.stx/cache'
+ * })
+ * ```
+ */
 export function stxPlugin(userOptions?: StxOptions): BunPlugin {
   return {
     name: 'bun-plugin-stx',
@@ -62,7 +168,11 @@ export { content as default };
         }
         catch (error: any) {
           console.error('Markdown Processing Error:', error)
-          const errorContent = `<!DOCTYPE html><html><body><h1>Markdown Error</h1><pre>${error.message || 'Unknown error'}</pre></body></html>`
+          const errorContent = generateErrorPage(
+            'Markdown Processing Error',
+            error.message || 'Unknown error',
+            filePath,
+          )
           const jsContent = `// ${filePath}
 var content = ${JSON.stringify(errorContent)};
 var data = {};
@@ -137,14 +247,18 @@ export { content as default };
 
           return {
             contents: output,
-            loader: 'file',
+            loader: 'html',
           }
         }
         catch (error: any) {
           console.error('stx Plugin Error:', error)
           return {
-            contents: `<!DOCTYPE html><html><body><h1>stx Rendering Error</h1><pre>${error.message || String(error)}</pre></body></html>`,
-            loader: 'file',
+            contents: generateErrorPage(
+              'stx Rendering Error',
+              error.message || String(error),
+              filePath,
+            ),
+            loader: 'html',
           }
         }
       })

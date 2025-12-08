@@ -1,4 +1,4 @@
-/* eslint-disable unused-imports/no-unused-vars, no-case-declarations,  */
+/* eslint-disable no-case-declarations -- const declarations in case blocks are intentional, each case returns immediately */
 import type { CustomDirective, StxOptions } from './types'
 
 /**
@@ -62,14 +62,10 @@ function generateTransitionCSS(
     custom?: string
   } = {},
 ): string {
-  const { duration, delay, ease, direction, custom } = {
+  const { duration: _duration, delay: _delay, ease: _ease, direction, custom } = {
     ...DEFAULT_TRANSITION_OPTIONS,
     ...options,
   }
-
-  // Base transition property
-  const transitionProperty = 'transition:'
-  let transitionValue = ''
 
   // Handle custom transitions
   if (type === TransitionType.Custom && custom) {
@@ -79,7 +75,6 @@ function generateTransitionCSS(
   // Build transition CSS based on type
   switch (type) {
     case TransitionType.Fade:
-      transitionValue = `opacity ${duration}ms ${ease} ${delay}ms`
       const fadeCSS = direction === TransitionDirection.In
         ? 'opacity: 0; animation: fadeIn var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms) forwards;'
         : direction === TransitionDirection.Out
@@ -89,7 +84,6 @@ function generateTransitionCSS(
       return `${fadeCSS}\n@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }\n@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }`
 
     case TransitionType.Slide:
-      transitionValue = `transform ${duration}ms ${ease} ${delay}ms`
       const slideCSS = direction === TransitionDirection.In
         ? 'transform: translateY(20px); opacity: 0; animation: slideIn var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms) forwards;'
         : direction === TransitionDirection.Out
@@ -99,7 +93,6 @@ function generateTransitionCSS(
       return `${slideCSS}\n@keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }\n@keyframes slideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(20px); opacity: 0; } }`
 
     case TransitionType.Scale:
-      transitionValue = `transform ${duration}ms ${ease} ${delay}ms`
       const scaleCSS = direction === TransitionDirection.In
         ? 'transform: scale(0.95); opacity: 0; animation: scaleIn var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms) forwards;'
         : direction === TransitionDirection.Out
@@ -109,7 +102,6 @@ function generateTransitionCSS(
       return `${scaleCSS}\n@keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }\n@keyframes scaleOut { from { transform: scale(1); opacity: 1; } to { transform: scale(0.95); opacity: 0; } }`
 
     case TransitionType.Flip:
-      transitionValue = `transform ${duration}ms ${ease} ${delay}ms`
       const flipCSS = direction === TransitionDirection.In
         ? 'transform: perspective(400px) rotateX(-90deg); opacity: 0; animation: flipIn var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms) forwards;'
         : direction === TransitionDirection.Out
@@ -119,7 +111,6 @@ function generateTransitionCSS(
       return `${flipCSS}\n@keyframes flipIn { from { transform: perspective(400px) rotateX(-90deg); opacity: 0; } to { transform: perspective(400px) rotateX(0); opacity: 1; } }\n@keyframes flipOut { from { transform: perspective(400px) rotateX(0); opacity: 1; } to { transform: perspective(400px) rotateX(90deg); opacity: 0; } }`
 
     case TransitionType.Rotate:
-      transitionValue = `transform ${duration}ms ${ease} ${delay}ms`
       const rotateCSS = direction === TransitionDirection.In
         ? 'transform: rotate(-90deg); opacity: 0; animation: rotateIn var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-transition-delay, 0ms) forwards;'
         : direction === TransitionDirection.Out
@@ -415,7 +406,7 @@ function generateAnimationGroup(
  */
 export const transitionDirective: CustomDirective = {
   name: 'transition',
-  handler: (content, params, context, filePath) => {
+  handler: (content, params, _context, _filePath) => {
     if (params.length < 1) {
       return `<div class="stx-error">@transition directive requires at least a transition type</div>${content}`
     }
@@ -429,7 +420,8 @@ export const transitionDirective: CustomDirective = {
     // Generate unique ID for the element
     const uniqueId = `stx-transition-${Math.random().toString(36).substr(2, 9)}`
 
-    const css = generateTransitionCSS(type as TransitionType, {
+    // Generate CSS for reference (may be used in future for inline styles)
+    const _css = generateTransitionCSS(type as TransitionType, {
       duration,
       delay,
       ease: ease as TransitionEase,
@@ -473,7 +465,7 @@ export const transitionDirective: CustomDirective = {
  */
 export const scrollAnimateDirective: CustomDirective = {
   name: 'scrollAnimate',
-  handler: (content, params, context, filePath) => {
+  handler: (content, params, _context, _filePath) => {
     if (params.length < 1) {
       return `<div class="stx-error">@scrollAnimate directive requires at least an animation type</div>${content}`
     }
@@ -532,7 +524,7 @@ export const scrollAnimateDirective: CustomDirective = {
  */
 export const animationGroupDirective: CustomDirective = {
   name: 'animationGroup',
-  handler: (content, params, context, filePath) => {
+  handler: (content, params, context, _filePath) => {
     if (params.length < 2) {
       return `<div class="stx-error">@animationGroup directive requires a group name and at least one element selector</div>${content}`
     }
@@ -555,7 +547,7 @@ export const animationGroupDirective: CustomDirective = {
  */
 export const motionDirective: CustomDirective = {
   name: 'motion',
-  handler: (content, params, context, filePath) => {
+  handler: (content, params, _context, _filePath) => {
     const respectPreferences = params.length > 0 ? params[0].toLowerCase() === 'true' : true
 
     // Set up motion preferences script
@@ -615,6 +607,458 @@ export function processAnimationDirectives(
   return output
 }
 
+// =============================================================================
+// Keyframe Animation Types
+// =============================================================================
+
+/** Keyframe definition */
+export interface Keyframe {
+  offset?: number
+  properties: Record<string, string | number>
+  easing?: string
+}
+
+/** Animation timeline entry */
+export interface TimelineEntry {
+  selector: string
+  keyframes: Keyframe[]
+  options: KeyframeAnimationOptions
+}
+
+/** Keyframe animation options */
+export interface KeyframeAnimationOptions {
+  duration: number
+  delay?: number
+  easing?: string
+  iterations?: number | 'infinite'
+  direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse'
+  fill?: 'none' | 'forwards' | 'backwards' | 'both'
+}
+
+/** Spring animation config */
+export interface SpringConfig {
+  stiffness: number
+  damping: number
+  mass: number
+  velocity?: number
+}
+
+/** Preset spring configurations */
+export const SPRING_PRESETS: Record<string, SpringConfig> = {
+  default: { stiffness: 100, damping: 10, mass: 1 },
+  gentle: { stiffness: 120, damping: 14, mass: 1 },
+  wobbly: { stiffness: 180, damping: 12, mass: 1 },
+  stiff: { stiffness: 210, damping: 20, mass: 1 },
+  slow: { stiffness: 280, damping: 60, mass: 1 },
+  molasses: { stiffness: 280, damping: 120, mass: 1 },
+}
+
+// =============================================================================
+// Keyframe Animation Directive
+// =============================================================================
+
+/**
+ * Create keyframes CSS from definition
+ */
+function createKeyframesCSS(name: string, keyframes: Keyframe[]): string {
+  const frames = keyframes.map((kf) => {
+    const offset = kf.offset !== undefined ? `${kf.offset * 100}%` : 'from'
+    const props = Object.entries(kf.properties)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join('; ')
+    return `${offset} { ${props} }`
+  }).join('\n  ')
+
+  return `@keyframes ${name} {\n  ${frames}\n}`
+}
+
+/**
+ * @keyframe directive for custom keyframe animations
+ */
+export const keyframeDirective: CustomDirective = {
+  name: 'keyframe',
+  hasEndTag: true,
+  handler: (content, params, _context, _filePath) => {
+    if (params.length < 1) {
+      return `<div class="stx-error">@keyframe requires an animation name</div>${content}`
+    }
+
+    const animationName = params[0].replace(/['"`]/g, '')
+    const duration = params[1] ? Number.parseInt(params[1], 10) : 1000
+    const easing = params[2]?.replace(/['"`]/g, '') || 'ease'
+    const iterations = params[3] || '1'
+    const direction = params[4]?.replace(/['"`]/g, '') || 'normal'
+    const fill = params[5]?.replace(/['"`]/g, '') || 'forwards'
+
+    const uniqueId = `stx-keyframe-${Math.random().toString(36).slice(2, 9)}`
+
+    const style = `
+      animation-name: ${animationName};
+      animation-duration: ${duration}ms;
+      animation-timing-function: ${easing};
+      animation-iteration-count: ${iterations};
+      animation-direction: ${direction};
+      animation-fill-mode: ${fill};
+    `.trim().replace(/\s+/g, ' ')
+
+    return `<div id="${uniqueId}" style="${style}">${content}</div>`
+  },
+  description: 'Applies a keyframe animation to an element',
+}
+
+// =============================================================================
+// Stagger Animation Directive
+// =============================================================================
+
+/**
+ * Generate stagger animation script
+ */
+function generateStaggerScript(
+  containerId: string,
+  childSelector: string,
+  baseDelay: number,
+  staggerDelay: number,
+  animationClass: string,
+): string {
+  return `
+<script>
+(function() {
+  const container = document.getElementById('${containerId}');
+  if (!container) return;
+
+  const children = container.querySelectorAll('${childSelector}');
+  children.forEach((child, index) => {
+    const delay = ${baseDelay} + (index * ${staggerDelay});
+    child.style.setProperty('--stx-stagger-delay', delay + 'ms');
+    child.style.animationDelay = delay + 'ms';
+    child.classList.add('${animationClass}');
+  });
+})();
+</script>`
+}
+
+/**
+ * @stagger directive for staggered child animations
+ */
+export const staggerDirective: CustomDirective = {
+  name: 'stagger',
+  hasEndTag: true,
+  handler: (content, params, _context, _filePath) => {
+    const childSelector = params[0]?.replace(/['"`]/g, '') || '> *'
+    const staggerDelay = params[1] ? Number.parseInt(params[1], 10) : 100
+    const baseDelay = params[2] ? Number.parseInt(params[2], 10) : 0
+    const animationType = params[3]?.replace(/['"`]/g, '') || 'fade'
+
+    const uniqueId = `stx-stagger-${Math.random().toString(36).slice(2, 9)}`
+
+    let animationClass = 'stx-stagger-item'
+    if (animationType === 'fade')
+      animationClass += ' stx-fade'
+    else if (animationType === 'slide')
+      animationClass += ' stx-from-bottom'
+    else if (animationType === 'scale')
+      animationClass += ' stx-scale'
+
+    const staggerScript = generateStaggerScript(
+      uniqueId,
+      childSelector,
+      baseDelay,
+      staggerDelay,
+      animationClass,
+    )
+
+    const staggerStyles = `
+<style>
+  #${uniqueId} .stx-stagger-item {
+    opacity: 0;
+    animation: staggerIn var(--stx-transition-duration, 300ms) var(--stx-transition-ease, ease) var(--stx-stagger-delay, 0ms) forwards;
+  }
+  @keyframes staggerIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>`
+
+    return `${staggerStyles}<div id="${uniqueId}" class="stx-stagger-container">${content}</div>${staggerScript}`
+  },
+  description: 'Applies staggered animations to child elements',
+}
+
+// =============================================================================
+// Spring Animation
+// =============================================================================
+
+/**
+ * Calculate spring animation CSS
+ */
+function calculateSpringCurve(config: SpringConfig): string {
+  // Approximate spring physics with CSS cubic-bezier
+  // This is a simplification - true spring physics require JS
+  const { stiffness, damping } = config
+  const dampingRatio = damping / (2 * Math.sqrt(stiffness))
+
+  // Map to cubic-bezier approximations
+  if (dampingRatio < 0.5) {
+    // Underdamped - bouncy
+    return 'cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+  }
+  else if (dampingRatio < 1) {
+    // Critically damped
+    return 'cubic-bezier(0.34, 1.56, 0.64, 1)'
+  }
+  else {
+    // Overdamped - smooth
+    return 'cubic-bezier(0.25, 0.1, 0.25, 1)'
+  }
+}
+
+/**
+ * @spring directive for spring physics animations
+ */
+export const springDirective: CustomDirective = {
+  name: 'spring',
+  hasEndTag: true,
+  handler: (content, params, _context, _filePath) => {
+    const presetOrStiffness = params[0]?.replace(/['"`]/g, '') || 'default'
+
+    let config: SpringConfig
+
+    // Check if it's a preset name
+    if (SPRING_PRESETS[presetOrStiffness]) {
+      config = SPRING_PRESETS[presetOrStiffness]
+    }
+    else {
+      // Parse custom values
+      config = {
+        stiffness: Number.parseInt(presetOrStiffness, 10) || 100,
+        damping: params[1] ? Number.parseInt(params[1], 10) : 10,
+        mass: params[2] ? Number.parseFloat(params[2]) : 1,
+      }
+    }
+
+    const duration = params[3] ? Number.parseInt(params[3], 10) : 500
+    const uniqueId = `stx-spring-${Math.random().toString(36).slice(2, 9)}`
+    const easingCurve = calculateSpringCurve(config)
+
+    const style = `
+      transition: all ${duration}ms ${easingCurve};
+      --stx-spring-stiffness: ${config.stiffness};
+      --stx-spring-damping: ${config.damping};
+      --stx-spring-mass: ${config.mass};
+    `.trim().replace(/\s+/g, ' ')
+
+    return `<div id="${uniqueId}" class="stx-spring" style="${style}">${content}</div>`
+  },
+  description: 'Applies spring physics animations to an element',
+}
+
+// =============================================================================
+// Animation Timeline
+// =============================================================================
+
+/**
+ * Create an animation timeline for coordinated animations
+ */
+export function createAnimationTimeline(entries: TimelineEntry[]): string {
+  // Generate unique timeline ID (may be used for future debugging/tracking)
+  const _timelineId = `stx-timeline-${Math.random().toString(36).slice(2, 9)}`
+
+  const script = `
+<script>
+(function() {
+  const timeline = ${JSON.stringify(entries)};
+
+  function runTimeline() {
+    timeline.forEach((entry, index) => {
+      const element = document.querySelector(entry.selector);
+      if (!element) return;
+
+      const keyframes = entry.keyframes.map(kf => {
+        const frame = { ...kf.properties };
+        if (kf.offset !== undefined) frame.offset = kf.offset;
+        if (kf.easing) frame.easing = kf.easing;
+        return frame;
+      });
+
+      const options = {
+        duration: entry.options.duration || 1000,
+        delay: entry.options.delay || 0,
+        easing: entry.options.easing || 'ease',
+        iterations: entry.options.iterations || 1,
+        direction: entry.options.direction || 'normal',
+        fill: entry.options.fill || 'forwards'
+      };
+
+      element.animate(keyframes, options);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runTimeline);
+  } else {
+    runTimeline();
+  }
+})();
+</script>`
+
+  return script
+}
+
+// =============================================================================
+// Animation Utilities
+// =============================================================================
+
+/**
+ * Generate CSS for a custom animation
+ */
+export function generateAnimationCSS(
+  name: string,
+  keyframes: Keyframe[],
+  options: KeyframeAnimationOptions,
+): string {
+  const keyframesCSS = createKeyframesCSS(name, keyframes)
+
+  const animationRule = `
+.${name}-animation {
+  animation-name: ${name};
+  animation-duration: ${options.duration}ms;
+  animation-timing-function: ${options.easing || 'ease'};
+  animation-delay: ${options.delay || 0}ms;
+  animation-iteration-count: ${options.iterations === 'infinite' ? 'infinite' : options.iterations || 1};
+  animation-direction: ${options.direction || 'normal'};
+  animation-fill-mode: ${options.fill || 'forwards'};
+}`
+
+  return `${keyframesCSS}\n${animationRule}`
+}
+
+/**
+ * Parse animation shorthand string
+ * Format: "duration [delay] [easing] [iterations] [direction] [fill]"
+ */
+export function parseAnimationShorthand(shorthand: string): KeyframeAnimationOptions {
+  const parts = shorthand.trim().split(/\s+/)
+
+  const result: KeyframeAnimationOptions = {
+    duration: 300,
+  }
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i]
+
+    // Duration (number with optional ms/s suffix)
+    if (/^\d+(?:ms|s)?$/.test(part)) {
+      const value = Number.parseInt(part, 10)
+      if (i === 0) {
+        result.duration = part.endsWith('s') && !part.endsWith('ms') ? value * 1000 : value
+      }
+      else {
+        result.delay = part.endsWith('s') && !part.endsWith('ms') ? value * 1000 : value
+      }
+    }
+    // Iterations
+    else if (part === 'infinite' || /^\d+$/.test(part)) {
+      result.iterations = part === 'infinite' ? 'infinite' : Number.parseInt(part, 10)
+    }
+    // Direction
+    else if (['normal', 'reverse', 'alternate', 'alternate-reverse'].includes(part)) {
+      result.direction = part as KeyframeAnimationOptions['direction']
+    }
+    // Fill
+    else if (['none', 'forwards', 'backwards', 'both'].includes(part)) {
+      result.fill = part as KeyframeAnimationOptions['fill']
+    }
+    // Easing
+    else {
+      result.easing = part
+    }
+  }
+
+  return result
+}
+
+/**
+ * Generate client-side animation runtime
+ */
+export function generateAnimationRuntime(): string {
+  return `
+<script>
+window.__stxAnimation = {
+  // Registry of animations
+  animations: new Map(),
+
+  // Register a reusable animation
+  register(name, keyframes, options) {
+    this.animations.set(name, { keyframes, options });
+  },
+
+  // Run an animation on an element
+  animate(element, nameOrKeyframes, options = {}) {
+    if (typeof element === 'string') {
+      element = document.querySelector(element);
+    }
+    if (!element) return null;
+
+    let keyframes, defaultOptions;
+
+    if (typeof nameOrKeyframes === 'string' && this.animations.has(nameOrKeyframes)) {
+      const registered = this.animations.get(nameOrKeyframes);
+      keyframes = registered.keyframes;
+      defaultOptions = registered.options;
+    } else {
+      keyframes = nameOrKeyframes;
+      defaultOptions = {};
+    }
+
+    const finalOptions = { ...defaultOptions, ...options };
+    return element.animate(keyframes, finalOptions);
+  },
+
+  // Animate multiple elements with stagger
+  stagger(elements, keyframes, options = {}, staggerDelay = 100) {
+    if (typeof elements === 'string') {
+      elements = document.querySelectorAll(elements);
+    }
+
+    const animations = [];
+    Array.from(elements).forEach((el, index) => {
+      const elementOptions = {
+        ...options,
+        delay: (options.delay || 0) + (index * staggerDelay)
+      };
+      animations.push(this.animate(el, keyframes, elementOptions));
+    });
+
+    return animations;
+  },
+
+  // Chain animations sequentially
+  async sequence(steps) {
+    for (const step of steps) {
+      const animation = this.animate(step.element, step.keyframes, step.options);
+      if (animation) {
+        await animation.finished;
+      }
+    }
+  },
+
+  // Run animations in parallel
+  parallel(steps) {
+    return Promise.all(
+      steps.map(step => {
+        const animation = this.animate(step.element, step.keyframes, step.options);
+        return animation ? animation.finished : Promise.resolve();
+      })
+    );
+  }
+};
+</script>`
+}
+
+// =============================================================================
+// Register Animation Directives
+// =============================================================================
+
 /**
  * Register animation directives
  */
@@ -626,6 +1070,9 @@ export function registerAnimationDirectives(options: StxOptions): StxOptions {
   customDirectives.push(animationGroupDirective)
   customDirectives.push(motionDirective)
   customDirectives.push(scrollAnimateDirective)
+  customDirectives.push(keyframeDirective)
+  customDirectives.push(staggerDirective)
+  customDirectives.push(springDirective)
 
   return {
     ...options,

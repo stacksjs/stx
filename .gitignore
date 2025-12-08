@@ -17,7 +17,7 @@ tsconfig.tsbuildinfo
 /packages/**/bin/stx
 /packages/**/bin/stx*
 /packages/devtools/.stx/cache
-/.stx-output
+/.stx/output
 /packages/stx/packages/stx/test/out
 /packages/stx/test/streaming/out
 /test-build-output
@@ -33,11 +33,11 @@ bin/
 tasks/
 
 examples/stx/test/.stx/cache/
-/packages/stx/.stx-output
+/packages/stx/.stx/output
 
 examples/.stx/
 
-examples/.stx-output/
+examples/.stx/output/
 packages/stx/test/performance/perf-temp
 examples/demo-project/.stx-serve/
 # Craft zig cache (external dependency)
@@ -45,7 +45,7 @@ examples/demo-project/.stx-serve/
 
 packages/desktop/.stx/
 
-packages/desktop/.stx-output/
+packages/desktop/.stx/output/
 
 # Test snapshots (auto-generated)
 packages/components/test/visual/__snapshots__/

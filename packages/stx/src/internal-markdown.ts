@@ -69,7 +69,7 @@ export function parseFrontmatter(content: string): FrontmatterResult {
         value = false
       }
       // Handle numbers
-      else if (/^-?\d+(\.\d+)?$/.test(value as string)) {
+      else if (/^-?\d+(?:\.\d+)?$/.test(value as string)) {
         value = Number(value)
       }
     }
@@ -92,19 +92,14 @@ export function parseMarkdown(content: string, options: MarkdownOptions = {}): s
 
   let html = content
 
-  // Escape HTML entities first
-  html = html
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-
   // Process code blocks first (to avoid processing markdown inside them)
+  // Use a placeholder that won't be affected by any markdown patterns (no *, _, `, etc.)
   const codeBlocks: string[] = []
   html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_match, lang, code) => {
     const index = codeBlocks.length
     const langAttr = lang ? ` class="language-${lang}"` : ''
     codeBlocks.push(`<pre><code${langAttr}>${code.trim()}</code></pre>`)
-    return `__CODE_BLOCK_${index}__`
+    return `\x00CODEBLOCK${index}\x00`
   })
 
   // Inline code
@@ -131,11 +126,11 @@ export function parseMarkdown(content: string, options: MarkdownOptions = {}): s
     html = html.replace(/~~(.+?)~~/g, '<del>$1</del>')
   }
 
+  // Images (must be processed before links since ![alt](url) contains [text](url))
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />')
+
   // Links
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-
-  // Images
-  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />')
 
   // Horizontal rules
   html = html.replace(/^(?:---|\*\*\*|___)\s*$/gm, '<hr />')
@@ -146,7 +141,7 @@ export function parseMarkdown(content: string, options: MarkdownOptions = {}): s
   html = html.replace(/<\/blockquote>\n<blockquote>/g, '\n')
 
   // Unordered lists
-  html = html.replace(/^[\*\-\+]\s+(.*)$/gm, '<li>$1</li>')
+  html = html.replace(/^[*\-+]\s+(.*)$/gm, '<li>$1</li>')
   html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
   html = html.replace(/<\/ul>\n<ul>/g, '')
 
@@ -198,8 +193,8 @@ export function parseMarkdown(content: string, options: MarkdownOptions = {}): s
 
   for (const line of lines) {
     const trimmed = line.trim()
-    const isBlockElement = /^<(h[1-6]|ul|ol|li|blockquote|pre|table|thead|tbody|tr|th|td|hr|div|p)/.test(trimmed)
-      || /^__CODE_BLOCK_\d+__$/.test(trimmed)
+    const isBlockElement = /^<(?:h[1-6]|ul|ol|li|blockquote|pre|table|thead|tbody|tr|th|td|hr|div|p)/.test(trimmed)
+      || /^\0CODEBLOCK\d+\0$/.test(trimmed)
       || trimmed === ''
 
     if (isBlockElement) {
@@ -224,7 +219,7 @@ export function parseMarkdown(content: string, options: MarkdownOptions = {}): s
 
   // Restore code blocks
   for (let i = 0; i < codeBlocks.length; i++) {
-    html = html.replace(`__CODE_BLOCK_${i}__`, codeBlocks[i])
+    html = html.replace(`\x00CODEBLOCK${i}\x00`, codeBlocks[i])
   }
 
   // Line breaks (if breaks option is enabled)

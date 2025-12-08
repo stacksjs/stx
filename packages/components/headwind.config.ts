@@ -30,9 +30,9 @@ export default {
         mono: ['Fira Code', 'Monaco', 'Courier New', 'monospace'],
       },
       spacing: {
-        '18': '4.5rem',
-        '88': '22rem',
-        '100': '25rem',
+        18: '4.5rem',
+        88: '22rem',
+        100: '25rem',
       },
     },
   },

@@ -1,12 +1,12 @@
+import type { Theme } from '../../src/utils/theme'
 import { describe, expect, it } from 'bun:test'
 import {
-  type Theme,
-  applyTheme,
   createTheme,
   defaultTheme,
   generateThemeCSS,
   getTheme,
   getThemeValue,
+
   themePresets,
   themeToCSSProperties,
   useTheme,
