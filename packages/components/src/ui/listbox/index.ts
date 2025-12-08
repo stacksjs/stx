@@ -1,8 +1,8 @@
 export { default as Listbox } from './Listbox.stx'
 export { default as ListboxButton } from './ListboxButton.stx'
-export { default as ListboxOptions } from './ListboxOptions.stx'
-export { default as ListboxOption } from './ListboxOption.stx'
 export { default as ListboxLabel } from './ListboxLabel.stx'
+export { default as ListboxOption } from './ListboxOption.stx'
+export { default as ListboxOptions } from './ListboxOptions.stx'
 
 export interface ListboxProps {
   value?: any

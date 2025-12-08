@@ -1,7 +1,7 @@
 export { default as Dropdown } from './Dropdown.stx'
 export { default as DropdownButton } from './DropdownButton.stx'
-export { default as DropdownItems } from './DropdownItems.stx'
 export { default as DropdownItem } from './DropdownItem.stx'
+export { default as DropdownItems } from './DropdownItems.stx'
 
 export interface DropdownProps {
   className?: string

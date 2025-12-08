@@ -43,7 +43,8 @@ export function useCopyCode(options: CopyCodeOptions): CopyCodeResult {
         copied = false
         timeoutId = null
       }, timeout)
-    } catch (error) {
+    }
+    catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to copy code')
       onError?.(err)
       console.error('Failed to copy code:', err)
@@ -64,7 +65,8 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text)
     return true
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to copy to clipboard:', error)
     return false
   }

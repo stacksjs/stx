@@ -66,7 +66,7 @@ describe('SEO features', () => {
     test('should handle errors in @metaTag directive', () => {
       const template = '<head>@metaTag({ broken: Object.keys(undefined) })</head>'
       const result = processMetaDirectives(template, {}, 'test.stx', {})
-      expect(result).toContain('<!-- Error in @metaTag:')
+      expect(result).toContain('<!-- [MetaTag Error')
     })
   })
 
@@ -111,7 +111,7 @@ describe('SEO features', () => {
     test('should handle errors in @structuredData directive', () => {
       const template = '<head>@structuredData({ "broken": "value", @ })</head>'
       const result = processStructuredData(template, {}, 'test.stx')
-      expect(result).toContain('<!-- Error in @structuredData:')
+      expect(result).toContain('<!-- [StructuredData Error')
     })
   })
 
@@ -351,7 +351,8 @@ describe('SEO features', () => {
 
     test('metaDirective should handle missing name', () => {
       const result = metaDirective.handler('', [], {}, 'test.stx')
-      expect(result).toBe('[Error: meta directive requires at least the meta name]')
+      expect(result).toContain('<!-- [Meta Error')
+      expect(result).toContain('meta directive requires at least the meta name')
     })
 
     test('structuredDataDirective should generate JSON-LD script', () => {
@@ -368,7 +369,8 @@ describe('SEO features', () => {
 
     test('structuredDataDirective should handle empty content', () => {
       const result = structuredDataDirective.handler('', [], {}, 'test.stx')
-      expect(result).toBe('[Error: structuredData directive requires JSON-LD content]')
+      expect(result).toContain('<!-- [StructuredData Error')
+      expect(result).toContain('structuredData directive requires JSON-LD content')
     })
 
     test('structuredDataDirective should handle missing @type', () => {
@@ -376,12 +378,13 @@ describe('SEO features', () => {
         name: 'John Doe',
       })
       const result = structuredDataDirective.handler(content, [], {}, 'test.stx')
-      expect(result).toBe('[Error: structuredData requires @type property]')
+      expect(result).toContain('<!-- [StructuredData Error')
+      expect(result).toContain('structuredData requires @type property')
     })
 
     test('structuredDataDirective should handle invalid JSON', () => {
       const result = structuredDataDirective.handler('invalid json', [], {}, 'test.stx')
-      expect(result).toContain('<!-- Error in structuredData directive:')
+      expect(result).toContain('<!-- [StructuredData Error')
     })
 
     test('registerSeoDirectives should return all SEO directives', () => {

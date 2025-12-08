@@ -376,7 +376,7 @@ export function clearModuleCache(cacheKey?: string): void {
  *
  * @returns Cache size and keys
  */
-export function getCacheStats(): { size: number; keys: string[] } {
+export function getCacheStats(): { size: number, keys: string[] } {
   return {
     size: moduleCache.size,
     keys: Array.from(moduleCache.keys()),
@@ -479,7 +479,7 @@ export function lazyLoadImage(
           img.classList.add('loaded')
         }, { once: true })
 
-        img.addEventListener('error', (event) => {
+        img.addEventListener('error', (_event) => {
           const error = new Error(`Failed to load image: ${src}`)
           onError?.(error)
           img.classList.add('error')

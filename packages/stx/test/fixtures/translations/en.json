@@ -1,0 +1,9 @@
+{
+  "greeting": "Hello",
+  "welcome": "Welcome, :name!",
+  "items": "One item|:count items",
+  "messages": {
+    "success": "Operation completed successfully",
+    "error": "An error occurred"
+  }
+}

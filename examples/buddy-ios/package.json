@@ -1,8 +1,8 @@
 {
   "name": "buddy-ios",
   "version": "1.0.0",
-  "description": "Buddy - Voice AI Code Assistant for iOS",
   "private": true,
+  "description": "Buddy - Voice AI Code Assistant for iOS",
   "scripts": {
     "init": "bun scripts/init.ts",
     "build": "bun scripts/build.ts",
