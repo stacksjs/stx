@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach } from 'bun:test'
 import type { CheckboxProps } from '../../src/ui/checkbox'
+import { beforeEach, describe, expect, it } from 'bun:test'
 
 describe('Checkbox Component - DOM Tests', () => {
   let container: HTMLElement
@@ -155,10 +155,10 @@ describe('Checkbox Component - DOM Tests', () => {
       const checkbox = document.createElement('input')
       checkbox.type = 'checkbox'
       checkbox.disabled = true
-      let clicked = false
+      let _clicked = false
 
       checkbox.addEventListener('click', () => {
-        clicked = true
+        _clicked = true
       })
 
       container.appendChild(checkbox)

@@ -99,4 +99,106 @@ describe('stx Web Components', () => {
     expect(cardJs).toContain('class MyCard extends HTMLElement')
     expect(cardJs).toContain('customElements.define(\'my-card\', MyCard)')
   })
+
+  it('should build web component with slot processing (shadow DOM)', async () => {
+    const dependencies = new Set<string>()
+
+    // Create a component with slots
+    const slotComponent = path.join(COMPONENTS_DIR, 'slot-test.stx')
+    await Bun.write(slotComponent, `
+      <div class="card">
+        <div class="card-header">
+          <slot name="header">Default Header</slot>
+        </div>
+        <div class="card-body">
+          <slot>Default Content</slot>
+        </div>
+        <div class="card-footer">
+          <slot name="footer">Default Footer</slot>
+        </div>
+      </div>
+    `)
+
+    const builtComponents = await buildWebComponents({
+      debug: true,
+      componentsDir: COMPONENTS_DIR,
+      webComponents: {
+        enabled: true,
+        outputDir: WEB_COMPONENTS_DIR,
+        components: [
+          {
+            name: 'SlotTest',
+            tag: 'slot-test',
+            file: slotComponent,
+            shadowDOM: true, // Use shadow DOM (native slot support)
+          },
+        ],
+      },
+    }, dependencies)
+
+    expect(builtComponents.length).toBe(1)
+
+    const slotJs = await Bun.file(path.join(WEB_COMPONENTS_DIR, 'slot-test.js')).text()
+
+    // Should contain shadow DOM setup
+    expect(slotJs).toContain('attachShadow({ mode: "open" })')
+
+    // Should contain _processSlots method with slot change listener
+    expect(slotJs).toContain('_processSlots()')
+    expect(slotJs).toContain('slotchange')
+    expect(slotJs).toContain('slot-changed')
+
+    // Should preserve native <slot> elements for shadow DOM
+    expect(slotJs).toContain('<slot name="header">')
+    expect(slotJs).toContain('<slot name="footer">')
+    expect(slotJs).toContain('<slot>')
+  })
+
+  it('should build web component with slot processing (no shadow DOM)', async () => {
+    const dependencies = new Set<string>()
+
+    // Create a component with slots
+    const noShadowComponent = path.join(COMPONENTS_DIR, 'no-shadow-slot.stx')
+    await Bun.write(noShadowComponent, `
+      <div class="panel">
+        <slot name="title">Default Title</slot>
+        <slot>Default Content</slot>
+      </div>
+    `)
+
+    const builtComponents = await buildWebComponents({
+      debug: true,
+      componentsDir: COMPONENTS_DIR,
+      webComponents: {
+        enabled: true,
+        outputDir: WEB_COMPONENTS_DIR,
+        components: [
+          {
+            name: 'NoShadowSlot',
+            tag: 'no-shadow-slot',
+            file: noShadowComponent,
+            shadowDOM: false, // No shadow DOM, manual slot processing
+          },
+        ],
+      },
+    }, dependencies)
+
+    expect(builtComponents.length).toBe(1)
+
+    const componentJs = await Bun.file(path.join(WEB_COMPONENTS_DIR, 'no-shadow-slot.js')).text()
+
+    // Should NOT contain shadow DOM setup
+    expect(componentJs).not.toContain('attachShadow')
+
+    // Should contain _processSlots method with manual slot processing
+    expect(componentJs).toContain('_processSlots()')
+    expect(componentJs).toContain('data-slot')
+    expect(componentJs).toContain('data-default-slot')
+
+    // <slot> elements should be transformed to data-slot divs
+    expect(componentJs).toContain('data-slot="title"')
+    expect(componentJs).toContain('data-default-slot')
+    expect(componentJs).not.toContain('<slot name="title">')
+    expect(componentJs).not.toContain('<slot>')
+  })
 })

@@ -6,8 +6,8 @@
  * 2. Builds the Xcode project using Craft
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
-import { join, dirname } from 'node:path'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { build } from '/Users/chrisbreuer/Code/craft/packages/ios/dist/index.js'
 // Can also use: bun /Users/chrisbreuer/Code/craft/packages/typescript/bin/cli.ts ios build
 

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'bun:test'
 import type { SwitchProps } from '../src/ui/switch'
+import { describe, expect, it } from 'bun:test'
 
 describe('Switch Component', () => {
   describe('Props', () => {
