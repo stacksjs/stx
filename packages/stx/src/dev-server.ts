@@ -1584,11 +1584,6 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         routeMatched = routes[`${url.pathname}/`]
       }
 
-      // If still no match and there's a root route, serve that as fallback (SPA mode)
-      if (!routeMatched && url.pathname !== '/' && routes['/']) {
-        routeMatched = routes['/']
-      }
-
       // If we found a matching route, serve its content with Headwind CSS injection
       if (routeMatched) {
         // Inject Headwind CSS for utility classes (async)
@@ -1599,7 +1594,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         }))
       }
 
-      // Check if it's a file in the output directory
+      // Check if it's a file in the output directory (bundled assets like images, JS, CSS)
       const requestedPath = path.join(outputDir, url.pathname)
       if (fs.existsSync(requestedPath) && fs.statSync(requestedPath).isFile()) {
         const file = Bun.file(requestedPath)
@@ -1656,6 +1651,15 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         return new Response(file, {
           headers: { 'Content-Type': contentType },
         })
+      }
+
+      // If still no match and there's a root route, serve that as fallback (SPA mode)
+      if (url.pathname !== '/' && routes['/']) {
+        return injectHeadwindCSS(routes['/'].content).then(content => new Response(content, {
+          headers: {
+            'Content-Type': 'text/html',
+          },
+        }))
       }
 
       // Fallback 404 response
