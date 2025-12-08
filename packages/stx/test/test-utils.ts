@@ -645,12 +645,12 @@ export function createSnapshotManager(
   testFilePath: string,
   defaultOptions: SnapshotOptions & { stxOptions?: StxOptions } = {},
 ): {
-  match: (template: string, snapshotName: string, context?: Record<string, any>, options?: SnapshotOptions & { stxOptions?: StxOptions }) => Promise<SnapshotResult>
-  assert: (template: string, snapshotName: string, context?: Record<string, any>, options?: SnapshotOptions & { stxOptions?: StxOptions }) => Promise<void>
-  getSnapshotDir: () => string
-  clearSnapshots: () => void
-  listSnapshots: () => string[]
-} {
+    match: (template: string, snapshotName: string, context?: Record<string, any>, options?: SnapshotOptions & { stxOptions?: StxOptions }) => Promise<SnapshotResult>
+    assert: (template: string, snapshotName: string, context?: Record<string, any>, options?: SnapshotOptions & { stxOptions?: StxOptions }) => Promise<void>
+    getSnapshotDir: () => string
+    clearSnapshots: () => void
+    listSnapshots: () => string[]
+  } {
   return {
     /**
      * Match template output against snapshot and return result

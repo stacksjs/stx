@@ -2465,4 +2465,3 @@ export class Blueprint {
 export function schema(): SchemaBuilder {
   return new SchemaBuilder()
 }
-

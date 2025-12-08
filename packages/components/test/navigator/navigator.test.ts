@@ -270,7 +270,7 @@ describe('navigator Component', () => {
         { id: 'tab3', label: 'Tab 3' },
       ]
 
-      let clickedItem: NavigatorItem | undefined = undefined
+      let clickedItem: NavigatorItem | undefined
 
       const handleNavigate = (item: NavigatorItem) => {
         clickedItem = item
