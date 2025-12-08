@@ -92,7 +92,7 @@ export class HotReloadServer {
           port: wsPort,
           fetch(req, server) {
             // Upgrade HTTP requests to WebSocket
-            const success = server.upgrade(req)
+            const success = server.upgrade(req, { data: {} })
             if (success) {
               return undefined
             }

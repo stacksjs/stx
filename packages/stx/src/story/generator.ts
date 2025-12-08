@@ -276,6 +276,7 @@ function getControlTag(type: ControlType): string {
     date: 'StxText',
     textarea: 'StxTextarea',
     slider: 'StxSlider',
+    buttongroup: 'StxButtonGroup',
   }
   return tags[type] || 'StxText'
 }

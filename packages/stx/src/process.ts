@@ -21,7 +21,7 @@ import { runPostProcessingMiddleware, runPreProcessingMiddleware } from './middl
 import { performanceMonitor } from './performance-utils'
 import { processRouteDirectives } from './routes'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
-import { renderComponent, resolveTemplatePath } from './utils'
+import { renderComponentWithSlot, resolveTemplatePath } from './utils'
 import { runComposers } from './view-composers'
 
 // =============================================================================
@@ -679,7 +679,7 @@ async function processComponentDirectives(
     }
 
     // Process the component
-    const processedContent = await renderComponent(
+    const processedContent = await renderComponentWithSlot(
       componentPath,
       props,
       '',
@@ -785,7 +785,7 @@ async function processCustomElements(
       }
 
       // Process the component
-      const processedContent = await renderComponent(
+      const processedContent = await renderComponentWithSlot(
         componentPath,
         props,
         '', // No content for self-closing tags
@@ -902,7 +902,7 @@ async function processCustomElements(
       const isSelfClosingTag = fullMatch.trimEnd().endsWith('/>') || (isPascalCase && !fullMatch.includes('</'))
 
       // Process the component with its slot content
-      const processedContent = await renderComponent(
+      const processedContent = await renderComponentWithSlot(
         componentPath,
         props,
         isSelfClosingTag ? '' : content.trim(),

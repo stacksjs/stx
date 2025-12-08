@@ -59,10 +59,10 @@ const colors = {
 // =============================================================================
 
 // Headwind lazy loading cache
-let headwindModule: { CSSGenerator: any, getConfig: () => Promise<any> } | null = null
+let headwindModule: { CSSGenerator: any, config: any } | null = null
 let headwindLoadAttempted = false
 
-async function loadHeadwind(): Promise<{ CSSGenerator: any, getConfig: () => Promise<any> } | null> {
+async function loadHeadwind(): Promise<{ CSSGenerator: any, config: any } | null> {
   if (headwindLoadAttempted) {
     return headwindModule
   }
@@ -73,7 +73,7 @@ async function loadHeadwind(): Promise<{ CSSGenerator: any, getConfig: () => Pro
     const mod = await import('@stacksjs/headwind')
     headwindModule = {
       CSSGenerator: mod.CSSGenerator,
-      getConfig: mod.getConfig,
+      config: mod.config,
     }
     console.log(`${colors.green}[Headwind] CSS engine loaded successfully${colors.reset}`)
     return headwindModule
@@ -85,7 +85,7 @@ async function loadHeadwind(): Promise<{ CSSGenerator: any, getConfig: () => Pro
       const mod = await import(localPath)
       headwindModule = {
         CSSGenerator: mod.CSSGenerator,
-        getConfig: mod.getConfig,
+        config: mod.config,
       }
       console.log(`${colors.green}[Headwind] CSS engine loaded from local path${colors.reset}`)
       return headwindModule
@@ -129,7 +129,7 @@ async function generateHeadwindCSS(htmlContent: string): Promise<string> {
     }
 
     // Load the project's Headwind config (or use defaults)
-    const projectConfig = await hw.getConfig()
+    const projectConfig = hw.config
 
     // Create a Headwind config for on-the-fly generation
     const headwindConfig = {

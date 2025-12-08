@@ -46,7 +46,6 @@ async function processTemplate(
   // Process directives
   const fullOptions: StxOptions = {
     componentsDir: options.componentsDir || COMPONENTS_DIR,
-    layoutsDir: options.layoutsDir || LAYOUTS_DIR,
     partialsDir: options.partialsDir || PARTIALS_DIR,
     debug: options.debug ?? false,
     cache: false,

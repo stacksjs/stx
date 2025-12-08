@@ -37,7 +37,7 @@ export async function processTemplate(
   context: Record<string, any> = {},
   options: StxOptions = {},
 ): Promise<string> {
-  return processDirectives(template, context, 'test.stx', options)
+  return processDirectives(template, context, 'test.stx', options, new Set<string>())
 }
 
 /**
@@ -242,8 +242,8 @@ export const testContexts = {
   },
 
   withArray: {
-    items: ['apple', 'banana', 'cherry'],
-    numbers: [1, 2, 3, 4, 5],
+    items: ['apple', 'banana', 'cherry'] as const,
+    numbers: [1, 2, 3, 4, 5] as const,
   },
 
   withNested: {
@@ -445,6 +445,7 @@ export async function matchSnapshot(
     context,
     'snapshot-test.stx',
     options.stxOptions || {},
+    new Set<string>(),
   )
 
   // Apply custom serializer if provided
@@ -643,7 +644,13 @@ export async function assertSnapshot(
 export function createSnapshotManager(
   testFilePath: string,
   defaultOptions: SnapshotOptions & { stxOptions?: StxOptions } = {},
-) {
+): {
+  match: (template: string, snapshotName: string, context?: Record<string, any>, options?: SnapshotOptions & { stxOptions?: StxOptions }) => Promise<SnapshotResult>
+  assert: (template: string, snapshotName: string, context?: Record<string, any>, options?: SnapshotOptions & { stxOptions?: StxOptions }) => Promise<void>
+  getSnapshotDir: () => string
+  clearSnapshots: () => void
+  listSnapshots: () => string[]
+} {
   return {
     /**
      * Match template output against snapshot and return result
@@ -653,7 +660,7 @@ export function createSnapshotManager(
       snapshotName: string,
       context: Record<string, any> = {},
       options: SnapshotOptions & { stxOptions?: StxOptions } = {},
-    ) => matchSnapshot(template, snapshotName, context, {
+    ): Promise<SnapshotResult> => matchSnapshot(template, snapshotName, context, {
       ...defaultOptions,
       ...options,
       testFilePath,
@@ -667,7 +674,7 @@ export function createSnapshotManager(
       snapshotName: string,
       context: Record<string, any> = {},
       options: SnapshotOptions & { stxOptions?: StxOptions } = {},
-    ) => assertSnapshot(template, snapshotName, context, {
+    ): Promise<void> => assertSnapshot(template, snapshotName, context, {
       ...defaultOptions,
       ...options,
       testFilePath,
@@ -676,12 +683,12 @@ export function createSnapshotManager(
     /**
      * Get the snapshot directory path
      */
-    getSnapshotDir: () => getSnapshotDir(testFilePath, defaultOptions),
+    getSnapshotDir: (): string => getSnapshotDir(testFilePath, defaultOptions),
 
     /**
      * Clear all snapshots for this test file
      */
-    clearSnapshots: () => {
+    clearSnapshots: (): void => {
       const dir = getSnapshotDir(testFilePath, defaultOptions)
       if (fs.existsSync(dir)) {
         const files = fs.readdirSync(dir)
@@ -880,8 +887,9 @@ export function queryElement<T extends Element>(selector: string): T {
  */
 export function dispatchEvent(element: Element, event: Event): boolean {
   try {
-    if ('__dispatchEvent_safe' in element) {
-      return (element as Element & { __dispatchEvent_safe: (e: Event) => boolean }).__dispatchEvent_safe(event)
+    const el = element as Element & { __dispatchEvent_safe?: (e: Event) => boolean }
+    if (el.__dispatchEvent_safe) {
+      return el.__dispatchEvent_safe(event)
     }
     return element.dispatchEvent(event)
   }

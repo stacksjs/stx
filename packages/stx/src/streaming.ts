@@ -502,7 +502,7 @@ export async function createStreamRenderer(
  * 3. Streamed to the client as it resolves
  * 4. Injected into the placeholder via client-side JavaScript
  */
-export const suspenseDirective: CustomDirective = {
+export const streamingSuspenseDirective: CustomDirective = {
   name: 'suspense',
   hasEndTag: true,
   handler: (content: string, params: string[], _context: Record<string, any>, _filePath: string): string => {
@@ -559,7 +559,7 @@ export function registerStreamingDirectives(options: StxOptions = {}): CustomDir
 
   // Add streaming directive if enabled
   if (options.streaming?.enabled) {
-    directives.push(suspenseDirective)
+    directives.push(streamingSuspenseDirective)
   }
 
   // Add hydration directives if enabled

@@ -107,7 +107,7 @@ export interface ComponentReference {
   name: string
   path?: string
   line: number
-  props: Record<string, string>
+  props: Record<string, string | true>
   hasSlot: boolean
 }
 
@@ -615,8 +615,24 @@ export function getTemplateOutline(template: string): OutlineNode {
 
 /**
  * Analyze a template for visual editor purposes
+ * (Alias: analyzeTemplateContent)
  */
 export function analyzeVisualEditorTemplate(template: string): TemplateAnalysis {
+  return analyzeTemplateContentImpl(template)
+}
+
+/**
+ * Analyze a template string and extract all relevant information
+ * Use this for analyzing template content directly (not from a file path)
+ */
+export function analyzeTemplateContent(template: string): TemplateAnalysis {
+  return analyzeTemplateContentImpl(template)
+}
+
+/**
+ * Internal implementation of template analysis
+ */
+function analyzeTemplateContentImpl(template: string): TemplateAnalysis {
   const variables: VariableUsage[] = []
   const components: ComponentReference[] = []
   const directives: VisualEditorDirectiveUsage[] = []
@@ -831,7 +847,7 @@ function calculateMetrics(
  */
 export async function generatePreview(
   template: string,
-  options: PreviewOptions = {},
+  options: VisualEditorPreviewOptions = {},
 ): Promise<string> {
   const {
     context = {},

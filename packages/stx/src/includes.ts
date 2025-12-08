@@ -75,7 +75,7 @@ import { createSafeFunction, isExpressionSafe, safeEvaluate, safeEvaluateObject 
 import { createDetailedErrorMessage, fileExists } from './utils'
 
 // Cache for partials to avoid repeated file reads (LRU with max 500 entries)
-export const partialsCache = new LRUCache<string, string>(500)
+export const partialsCache: LRUCache<string, string> = new LRUCache<string, string>(500)
 
 // Global store to track what has been included via @once
 // WARNING: This persists across requests in long-running servers!

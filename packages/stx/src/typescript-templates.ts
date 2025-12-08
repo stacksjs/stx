@@ -633,8 +633,15 @@ export function typeCheckExpression(
       // Handle optional chaining marker
       const propName = prop.endsWith('?') ? prop.slice(0, -1) : prop
 
+      if (!currentType) {
+        return {
+          message: `Cannot access property '${propName}' on undefined type`,
+          expression: trimmed,
+        }
+      }
+
       if (currentType.kind === 'object' && currentType.properties) {
-        const propDef = currentType.properties[propName]
+        const propDef: TSTypeProperty | undefined = currentType.properties[propName]
         if (!propDef) {
           return {
             message: `Property '${propName}' does not exist on type`,
@@ -667,7 +674,7 @@ export function typeCheckExpression(
       }
     }
 
-    return currentType
+    return currentType ?? { kind: 'primitive', value: 'any' }
   }
 
   // For complex expressions, return any (would need full parser)

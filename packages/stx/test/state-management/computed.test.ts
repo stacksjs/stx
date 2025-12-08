@@ -14,14 +14,14 @@ describe('computed', () => {
 
   it('should create a computed value from one store', () => {
     const count = createStore(5)
-    const doubled = computed([count], c => c * 2)
+    const doubled = computed([count] as const, (c: number) => c * 2)
 
     expect(doubled.get()).toBe(10)
   })
 
   it('should update when source store changes', () => {
     const count = createStore(5)
-    const doubled = computed([count], c => c * 2)
+    const doubled = computed([count] as const, (c: number) => c * 2)
 
     count.set(10)
     expect(doubled.get()).toBe(20)
@@ -30,7 +30,7 @@ describe('computed', () => {
   it('should combine multiple stores', () => {
     const a = createStore(10)
     const b = createStore(20)
-    const sum = computed([a, b], (aVal, bVal) => aVal + bVal)
+    const sum = computed([a, b] as const, (aVal: number, bVal: number) => aVal + bVal)
 
     expect(sum.get()).toBe(30)
 
@@ -43,7 +43,7 @@ describe('computed', () => {
 
   it('should notify subscribers when computed value changes', () => {
     const count = createStore(1)
-    const doubled = computed([count], c => c * 2)
+    const doubled = computed([count] as const, (c: number) => c * 2)
 
     const values: number[] = []
     doubled.subscribe(value => values.push(value))
@@ -57,7 +57,7 @@ describe('computed', () => {
   it('should not notify when computed value is the same', () => {
     const count = createStore(2)
     // Always returns 'even' or 'odd'
-    const parity = computed([count], c => (c % 2 === 0 ? 'even' : 'odd'))
+    const parity = computed([count] as const, (c: number) => (c % 2 === 0 ? 'even' : 'odd'))
 
     let notifyCount = 0
     parity.subscribe(() => {
@@ -75,7 +75,7 @@ describe('computed', () => {
 
   it('should throw when trying to set computed', () => {
     const count = createStore(5)
-    const doubled = computed([count], c => c * 2)
+    const doubled = computed([count] as const, (c: number) => c * 2)
 
     expect(() => {
       doubled.set(10)
@@ -84,7 +84,7 @@ describe('computed', () => {
 
   it('should throw when trying to update computed', () => {
     const count = createStore(5)
-    const doubled = computed([count], c => c * 2)
+    const doubled = computed([count] as const, (c: number) => c * 2)
 
     expect(() => {
       doubled.update({} as any)
@@ -93,7 +93,7 @@ describe('computed', () => {
 
   it('should throw when trying to reset computed', () => {
     const count = createStore(5)
-    const doubled = computed([count], c => c * 2)
+    const doubled = computed([count] as const, (c: number) => c * 2)
 
     expect(() => {
       doubled.reset()
@@ -102,7 +102,7 @@ describe('computed', () => {
 
   it('should cleanup subscriptions on destroy', () => {
     const count = createStore(5)
-    const doubled = computed([count], c => c * 2)
+    const doubled = computed([count] as const, (c: number) => c * 2)
 
     let notified = false
     doubled.subscribe(() => {
