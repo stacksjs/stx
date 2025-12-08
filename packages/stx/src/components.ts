@@ -1,12 +1,131 @@
-import type { CustomDirective } from './types'
+import type { ComponentPropsSchema, CustomDirective, PropType } from './types'
 import * as path from 'node:path'
-import { renderComponent } from './utils'
+import { ErrorCodes, inlineError } from './error-handling'
+import { safeEvaluateObject } from './safe-evaluator'
+import { renderComponentWithSlot } from './utils'
+
+// =============================================================================
+// Component System Documentation
+// =============================================================================
+//
+// COMPONENT RESOLUTION ORDER:
+// 1. Check options.componentsDir (configured directory)
+// 2. Check components/ directory relative to current template
+// 3. Check default components directory from stx.config.ts
+//
+// SLOT SUPPORT:
+// Currently only the default slot is supported.
+// Named slots (like Vue's <slot name="header">) are NOT supported.
+// The slot content is available via {{ slot }} in the component template.
+//
+// LIFECYCLE HOOKS:
+// Components are stateless templates - no lifecycle hooks are available.
+// For SSR with client-side hydration, use web components instead.
+//
+// PROP VALIDATION:
+// Optional prop validation is available by registering component schemas.
+// See validateComponentProps() and ComponentPropsSchema type.
+//
+// CACHING:
+// Component templates are cached (not rendered output).
+// Same component with different props will re-render but use cached template.
+//
+// =============================================================================
+
+/**
+ * Validate component props against a schema
+ *
+ * @param props - The props to validate
+ * @param schema - The props schema
+ * @param componentName - Component name for error messages
+ * @returns Array of validation errors (empty if valid)
+ *
+ * @example
+ * ```typescript
+ * const schema: ComponentPropsSchema = {
+ *   title: { type: 'string', required: true },
+ *   count: { type: 'number', default: 0 }
+ * }
+ * const errors = validateComponentProps({ title: 'Hello' }, schema, 'MyComponent')
+ * ```
+ */
+export function validateComponentProps(
+  props: Record<string, any>,
+  schema: ComponentPropsSchema,
+  componentName: string,
+): string[] {
+  const errors: string[] = []
+
+  for (const [propName, definition] of Object.entries(schema)) {
+    const value = props[propName]
+
+    // Check required props
+    if (definition.required && (value === undefined || value === null)) {
+      errors.push(`Component "${componentName}": Missing required prop "${propName}"`)
+      continue
+    }
+
+    // Skip validation for undefined optional props
+    if (value === undefined || value === null) {
+      continue
+    }
+
+    // Check type
+    const types = Array.isArray(definition.type) ? definition.type : [definition.type]
+    if (!types.includes('any')) {
+      const actualType = getActualType(value)
+      if (!types.includes(actualType as PropType)) {
+        errors.push(
+          `Component "${componentName}": Prop "${propName}" expected ${types.join(' | ')}, got ${actualType}`,
+        )
+      }
+    }
+
+    // Run custom validator
+    if (definition.validator && !definition.validator(value)) {
+      errors.push(`Component "${componentName}": Prop "${propName}" failed custom validation`)
+    }
+  }
+
+  return errors
+}
+
+/**
+ * Apply default values to props from schema
+ */
+export function applyPropDefaults(
+  props: Record<string, any>,
+  schema: ComponentPropsSchema,
+): Record<string, any> {
+  const result = { ...props }
+
+  for (const [propName, definition] of Object.entries(schema)) {
+    if (result[propName] === undefined && definition.default !== undefined) {
+      result[propName] = typeof definition.default === 'function'
+        ? definition.default()
+        : definition.default
+    }
+  }
+
+  return result
+}
+
+/**
+ * Get the actual type of a value
+ */
+function getActualType(value: any): string {
+  if (Array.isArray(value))
+    return 'array'
+  if (value === null)
+    return 'null'
+  return typeof value
+}
 
 export const componentDirective: CustomDirective = {
   name: 'component',
   handler: async (content, params, context, filePath) => {
     if (params.length < 1) {
-      return '[Error: component directive requires at least the component name]'
+      return inlineError('Component', 'component directive requires at least the component name', ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
     }
 
     // Get component name (first parameter)
@@ -71,10 +190,6 @@ export const componentDirective: CustomDirective = {
 
           // Check if starts with object literal marker
           if (propsString.startsWith('{')) {
-            // Extract object from the string with eval in context
-            const contextKeys = Object.keys(context)
-            const contextValues = Object.values(context)
-
             // Handle quotes in props properly
             const sanitizedPropsString = propsString
               .replace(/'/g, '"')
@@ -85,10 +200,8 @@ export const componentDirective: CustomDirective = {
               props = JSON.parse(sanitizedPropsString)
             }
             catch {
-              // Fall back to Function constructor
-              // eslint-disable-next-line no-new-func
-              const propsFn = new Function(...contextKeys, `return ${propsString}`)
-              props = propsFn(...contextValues)
+              // Fall back to safe evaluation
+              props = safeEvaluateObject(propsString, context)
             }
           }
           else {
@@ -100,7 +213,7 @@ export const componentDirective: CustomDirective = {
       }
       catch (error: any) {
         console.error('Component props parsing error:', error)
-        return `[Error parsing component props: ${error.message}]`
+        return inlineError('Component', `Error parsing component props: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
       }
     }
 
@@ -111,7 +224,7 @@ export const componentDirective: CustomDirective = {
 
     // Render the component
     try {
-      const rendered = await renderComponent(
+      const rendered = await renderComponentWithSlot(
         componentName,
         props,
         '', // No slot content for @component directive
@@ -127,7 +240,7 @@ export const componentDirective: CustomDirective = {
     }
     catch (error: any) {
       console.error('Component rendering error:', error)
-      return `[Error rendering component: ${error.message}]`
+      return inlineError('Component', `Error rendering component: ${error.message}`, ErrorCodes.COMPONENT_RENDER_ERROR)
     }
   },
   hasEndTag: false,

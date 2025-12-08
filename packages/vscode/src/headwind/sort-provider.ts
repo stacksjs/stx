@@ -7,17 +7,18 @@ export async function sortClasses(classes: string[]): Promise<string[]> {
   try {
     // Load headwind - works after fixing package.json exports
     const headwind = await import('@stacksjs/headwind')
-    const { builtInRules, parseClass } = headwind
+    const { builtInRules, parseClass, defaultConfig } = headwind
 
     // Calculate priority for each class
     const classesWithPriority = classes.map((className) => {
       const parsed = parseClass(className)
 
       // Find the first matching rule index
+      // Use defaultConfig to ensure rules can properly match values like spacing fractions
       let priority = Number.MAX_SAFE_INTEGER
       for (let i = 0; i < builtInRules.length; i++) {
         const rule = builtInRules[i]
-        const result = rule(parsed, {} as any)
+        const result = rule(parsed, defaultConfig)
         if (result) {
           priority = i
           break

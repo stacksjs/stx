@@ -266,10 +266,6 @@ export const easeInOutBack: EasingFunction = (t, b, c, d) => {
 }
 
 // Bounce
-export const easeInBounce: EasingFunction = (t, b, c, d) => {
-  return c - easeOutBounce(d - t, 0, c, d) + b
-}
-
 export const easeOutBounce: EasingFunction = (t, b, c, d) => {
   t /= d
   if (t < 1 / 2.75) {
@@ -287,6 +283,10 @@ export const easeOutBounce: EasingFunction = (t, b, c, d) => {
     t -= 2.625 / 2.75
     return c * (7.5625 * t * t + 0.984375) + b
   }
+}
+
+export const easeInBounce: EasingFunction = (t, b, c, d) => {
+  return c - easeOutBounce(d - t, 0, c, d) + b
 }
 
 export const easeInOutBounce: EasingFunction = (t, b, c, d) => {

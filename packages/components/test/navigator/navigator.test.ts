@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'bun:test'
 import type { NavigatorItem, NavigatorProps } from '../../src/ui/navigator'
+import { describe, expect, it } from 'bun:test'
 
 describe('navigator Component', () => {
   describe('type exports', () => {
@@ -24,7 +24,7 @@ describe('navigator Component', () => {
         orientation: 'horizontal',
         variant: 'default',
         size: 'md',
-        onNavigate: (item) => {},
+        onNavigate: (_item) => {},
         className: 'custom-class',
       }
       expect(props).toBeDefined()
@@ -136,7 +136,7 @@ describe('navigator Component', () => {
     })
 
     it('should handle partial href matches', () => {
-      const items: NavigatorItem[] = [
+      const _items: NavigatorItem[] = [
         { id: 'blog', label: 'Blog', href: '/blog' },
       ]
       const active = '/blog/post-1'
@@ -260,7 +260,7 @@ describe('navigator Component', () => {
       props.onNavigate?.(item)
 
       expect(navigatedItem).toBeDefined()
-      expect(navigatedItem?.id).toBe('home')
+      expect((navigatedItem as unknown as NavigatorItem | undefined)?.id).toBe('home')
     })
 
     it('should pass correct item to handler', () => {
@@ -270,7 +270,7 @@ describe('navigator Component', () => {
         { id: 'tab3', label: 'Tab 3' },
       ]
 
-      let clickedItem: NavigatorItem | null = null
+      let clickedItem: NavigatorItem | undefined = undefined
 
       const handleNavigate = (item: NavigatorItem) => {
         clickedItem = item
@@ -280,8 +280,8 @@ describe('navigator Component', () => {
       handleNavigate(items[1])
 
       expect(clickedItem).toBeDefined()
-      expect(clickedItem?.id).toBe('tab2')
-      expect(clickedItem?.label).toBe('Tab 2')
+      expect((clickedItem as unknown as NavigatorItem).id).toBe('tab2')
+      expect((clickedItem as unknown as NavigatorItem).label).toBe('Tab 2')
     })
   })
 
@@ -379,7 +379,7 @@ describe('navigator Component', () => {
 
   describe('accessibility', () => {
     it('should support aria attributes through structure', () => {
-      const item: NavigatorItem = {
+      const _item: NavigatorItem = {
         id: 'current',
         label: 'Current Page',
         href: '/current',

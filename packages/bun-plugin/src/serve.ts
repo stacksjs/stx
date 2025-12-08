@@ -14,7 +14,6 @@
 
 import { serve as bunServe, Glob } from 'bun'
 import process from 'node:process'
-import stxPlugin from './index'
 
 export interface ServeOptions {
   patterns: string[]
@@ -101,7 +100,7 @@ export async function serve(options: ServeOptions): Promise<void> {
         await fs.cp(assetsDir, targetAssetsDir, { recursive: true })
       }
     }
-    catch (error) {
+    catch {
       // Silently ignore
     }
   }
@@ -111,10 +110,10 @@ export async function serve(options: ServeOptions): Promise<void> {
     const path = await import('node:path')
     const content = await Bun.file(filePath).text()
 
-    const inlineScriptMatch = content.match(/<script(?!\s+[^>]*src=)\b[^>]*>([\s\S]*?)<\/script>/i)
+    const inlineScriptMatch = content.match(/<script(?!\s[^>]*src=)\b[^>]*>([\s\S]*?)<\/script>/i)
     const scriptContent = inlineScriptMatch ? inlineScriptMatch[1] : ''
     const templateContent = inlineScriptMatch
-      ? content.replace(/<script(?!\s+[^>]*src=)\b[^>]*>[\s\S]*?<\/script>/i, '')
+      ? content.replace(/<script(?!\s[^>]*src=)\b[^>]*>[\s\S]*?<\/script>/i, '')
       : content
 
     const context: Record<string, any> = {
@@ -253,19 +252,19 @@ export async function serve(options: ServeOptions): Promise<void> {
               }
 
               const contentTypes: Record<string, string> = {
-                'css': 'text/css',
-                'js': 'application/javascript',
-                'json': 'application/json',
-                'png': 'image/png',
-                'jpg': 'image/jpeg',
-                'jpeg': 'image/jpeg',
-                'gif': 'image/gif',
-                'svg': 'image/svg+xml',
-                'ico': 'image/x-icon',
-                'woff': 'font/woff',
-                'woff2': 'font/woff2',
-                'ttf': 'font/ttf',
-                'eot': 'application/vnd.ms-fontobject',
+                css: 'text/css',
+                js: 'application/javascript',
+                json: 'application/json',
+                png: 'image/png',
+                jpg: 'image/jpeg',
+                jpeg: 'image/jpeg',
+                gif: 'image/gif',
+                svg: 'image/svg+xml',
+                ico: 'image/x-icon',
+                woff: 'font/woff',
+                woff2: 'font/woff2',
+                ttf: 'font/ttf',
+                eot: 'application/vnd.ms-fontobject',
               }
 
               return new Response(file, {

@@ -1,10 +1,10 @@
 import { createPropValidator, PropTypes } from '../../utils/prop-validation'
 
-export { default as TextInput } from './TextInput.stx'
 export { default as EmailInput } from './EmailInput.stx'
-export { default as PasswordInput } from './PasswordInput.stx'
 export { default as NumberInput } from './NumberInput.stx'
+export { default as PasswordInput } from './PasswordInput.stx'
 export { default as SearchInput } from './SearchInput.stx'
+export { default as TextInput } from './TextInput.stx'
 
 export interface BaseInputProps {
   value?: string

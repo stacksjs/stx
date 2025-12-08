@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach } from 'bun:test'
 import type { RadioProps } from '../../src/ui/radio'
+import { beforeEach, describe, expect, it } from 'bun:test'
 
 describe('Radio Component - DOM Tests', () => {
   let container: HTMLElement
@@ -222,10 +222,10 @@ describe('Radio Component - DOM Tests', () => {
       const radio = document.createElement('input')
       radio.type = 'radio'
       radio.disabled = true
-      let clicked = false
+      let _clicked = false
 
       radio.addEventListener('click', () => {
-        clicked = true
+        _clicked = true
       })
 
       container.appendChild(radio)

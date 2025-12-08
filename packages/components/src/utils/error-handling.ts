@@ -14,6 +14,8 @@
  * ```
  */
 
+import process from 'node:process'
+
 /**
  * Base URL for documentation
  */
@@ -255,6 +257,8 @@ export function setErrorHandler(handler: (error: Error) => void): void {
  *
  * @param error - Error to handle
  * @param options - Handling options
+ * @param options.throwError - Whether to re-throw the error after handling
+ * @param options.logError - Whether to log the error to console
  *
  * @example
  * ```ts
@@ -277,7 +281,7 @@ export function handleError(
   const { throwError = true, logError = true } = options
 
   // Log to console in development
-  if (logError && typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
+  if (logError && process.env.NODE_ENV !== 'production') {
     console.error('Component Error:', error)
 
     if (error instanceof ComponentError) {
@@ -373,7 +377,7 @@ export function assert(condition: any, error: Error): asserts condition {
  * Warning message handler
  */
 export function warn(component: string, message: string, context: Partial<ErrorContext> = {}): void {
-  if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production') {
     return
   }
 
@@ -386,7 +390,7 @@ export function warn(component: string, message: string, context: Partial<ErrorC
  * Development-only assertion
  */
 export function devAssert(condition: any, error: Error): asserts condition {
-  if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production') {
     return
   }
 

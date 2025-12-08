@@ -127,7 +127,7 @@ export function staggerAnimation(
  */
 export async function sequenceAnimations(
   element: HTMLElement,
-  animations: Array<{ name: string; options?: CSSAnimationOptions }>,
+  animations: Array<{ name: string, options?: CSSAnimationOptions }>,
 ): Promise<void> {
   for (const animation of animations) {
     applyAnimation(element, animation.name, animation.options)
