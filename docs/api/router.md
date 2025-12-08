@@ -72,7 +72,7 @@ interface RouteConfig {
   beforeEnter?: NavigationGuard
 
   // Lazy loading
-  component: () => import('./UserProfile.vue')
+  component: () => import('./UserProfile.stx')
 }
 ```
 
@@ -353,7 +353,7 @@ router.beforeEach((to, from) => {
 const routes = [
   {
     path: '/user/:id',
-    component: () => import('./views/User.vue')
+    component: () => import('./views/User.stx')
   }
 ]
 

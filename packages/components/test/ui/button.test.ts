@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach } from 'bun:test'
 import type { ButtonProps } from '../../src/ui/button'
+import { beforeEach, describe, expect, it } from 'bun:test'
 
 describe('Button Component - DOM Tests', () => {
   let container: HTMLElement
@@ -145,11 +145,11 @@ describe('Button Component - DOM Tests', () => {
 
     it('should not trigger click when disabled', () => {
       const button = document.createElement('button')
-      let clicked = false
+      let _clicked = false
 
       button.disabled = true
       button.addEventListener('click', () => {
-        clicked = true
+        _clicked = true
       })
 
       container.appendChild(button)

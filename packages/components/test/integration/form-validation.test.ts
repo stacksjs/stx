@@ -20,13 +20,15 @@ describe('form Validation Integration', () => {
 
         if (!data.email) {
           errors.email = 'Email is required'
-        } else if (!/\S+@\S+\.\S+/.test(data.email)) {
+        }
+        else if (!/\S+@\S+\.\S+/.test(data.email)) {
           errors.email = 'Email is invalid'
         }
 
         if (!data.password) {
           errors.password = 'Password is required'
-        } else if (data.password.length < 8) {
+        }
+        else if (data.password.length < 8) {
           errors.password = 'Password must be at least 8 characters'
         }
 
@@ -91,8 +93,10 @@ describe('form Validation Integration', () => {
     it('should validate fields as user types', () => {
       let emailValue = ''
       const validateEmail = (value: string) => {
-        if (!value) return 'Email is required'
-        if (!/\S+@\S+\.\S+/.test(value)) return 'Email is invalid'
+        if (!value)
+          return 'Email is required'
+        if (!/\S+@\S+\.\S+/.test(value))
+          return 'Email is invalid'
         return ''
       }
 

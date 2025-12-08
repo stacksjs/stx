@@ -71,7 +71,7 @@ export class StorageManager {
 
     const dict: Record<string, number> = {}
     let dictSize = 256
-    let result: number[] = []
+    const result: number[] = []
     let w = ''
 
     for (let i = 0; i < data.length; i++) {
@@ -180,7 +180,7 @@ export class StorageManager {
         return null
 
       // Try to decrypt if it looks encrypted (base64)
-      if (item.match(/^[A-Za-z0-9+/]+=*$/)) {
+      if (item.match(/^[A-Z0-9+/]+=*$/i)) {
         try {
           item = this.decrypt(item)
         }
@@ -283,7 +283,7 @@ export class StorageManager {
   }
 
   // Get storage quota information (if available)
-  getQuota(): { usage: number; quota: number; percentage: number } | null {
+  getQuota(): { usage: number, quota: number, percentage: number } | null {
     if ('storage' in navigator && 'estimate' in navigator.storage) {
       // Use async/await pattern but return promise
       return null // This would need to be async, but keeping sync API

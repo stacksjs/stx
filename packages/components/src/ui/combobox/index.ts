@@ -1,8 +1,8 @@
 export { default as Combobox } from './Combobox.stx'
-export { default as ComboboxInput } from './ComboboxInput.stx'
 export { default as ComboboxButton } from './ComboboxButton.stx'
-export { default as ComboboxOptions } from './ComboboxOptions.stx'
+export { default as ComboboxInput } from './ComboboxInput.stx'
 export { default as ComboboxOption } from './ComboboxOption.stx'
+export { default as ComboboxOptions } from './ComboboxOptions.stx'
 
 export interface ComboboxProps {
   value?: any

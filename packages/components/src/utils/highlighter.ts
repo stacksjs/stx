@@ -1,4 +1,5 @@
-import { createHighlighter, type Highlighter as TSHighlighter } from 'ts-syntax-highlighter'
+import type { Highlighter as TSHighlighter } from 'ts-syntax-highlighter'
+import { createHighlighter } from 'ts-syntax-highlighter'
 
 let highlighterInstance: TSHighlighter | null = null
 
@@ -79,13 +80,20 @@ export async function highlight(
  */
 export function detectLanguage(code: string): string {
   // Simple heuristics for language detection
-  if (code.includes('<!DOCTYPE') || code.includes('<html')) return 'html'
-  if (code.includes('<?php')) return 'php'
-  if (code.includes('import') && code.includes('from')) return 'typescript'
-  if (code.includes('function') || code.includes('const')) return 'javascript'
-  if (code.includes('{') && code.includes('}')) return 'json'
-  if (code.includes('$') && code.includes('|')) return 'bash'
-  if (code.includes('#') && code.includes('##')) return 'markdown'
+  if (code.includes('<!DOCTYPE') || code.includes('<html'))
+    return 'html'
+  if (code.includes('<?php'))
+    return 'php'
+  if (code.includes('import') && code.includes('from'))
+    return 'typescript'
+  if (code.includes('function') || code.includes('const'))
+    return 'javascript'
+  if (code.includes('{') && code.includes('}'))
+    return 'json'
+  if (code.includes('$') && code.includes('|'))
+    return 'bash'
+  if (code.includes('#') && code.includes('##'))
+    return 'markdown'
 
   return 'typescript' // Default
 }

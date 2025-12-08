@@ -2,6 +2,7 @@
  * Initialize Buddy iOS using Craft's iOS tooling
  */
 
+import process from 'node:process'
 import { init } from '/Users/chrisbreuer/Code/craft/packages/ios/dist/index.js'
 
 await init({

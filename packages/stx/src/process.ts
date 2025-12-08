@@ -1,14 +1,16 @@
 import type { StxOptions } from './types'
 import path from 'node:path'
 import { processA11yDirectives } from './a11y'
+import { injectAnalytics } from './analytics'
 import { processAnimationDirectives } from './animation'
 import { processMarkdownFileDirectives } from './assets'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
+import { injectCspMetaTag, processCspDirectives } from './csp'
 import { processCsrfDirectives } from './csrf'
 import { processCustomDirectives } from './custom-directives'
 import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeError } from './error-handling'
 import { processExpressions } from './expressions'
-import { processErrorDirective, processFormDirectives } from './forms'
+import { processBasicFormDirectives, processErrorDirective } from './forms'
 import { processTranslateDirective } from './i18n'
 import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
 import { processJsDirectives, processTsDirectives } from './js-ts'
@@ -21,6 +23,241 @@ import { processRouteDirectives } from './routes'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
 import { renderComponent, resolveTemplatePath } from './utils'
 import { runComposers } from './view-composers'
+
+// =============================================================================
+// DIRECTIVE PROCESSING ORDER
+// =============================================================================
+//
+// The order in which directives are processed is CRITICAL for correct template
+// rendering. Directives are processed in a specific sequence to ensure that:
+//
+// 1. Variables are defined before they're used
+// 2. Layouts are resolved before content directives
+// 3. Loop variables are available within conditionals
+// 4. Expressions are evaluated after all directives generate their output
+//
+// PROCESSING ORDER (processDirectivesInternal):
+// ---------------------------------------------
+// Phase 1: Pre-processing
+//   1. Remove comments: {{-- ... --}}
+//   2. Process escaped directives: @@ -> @
+//   3. Process escaped expressions: @{{ }} -> {{ }}
+//   4. Process @push/@prepend (collect stack content)
+//
+// Phase 2: Layout Resolution
+//   5. Extract @extends directive (layout path)
+//   6. Extract @section directives (including @parent handling)
+//   7. Replace @yield with section content
+//   8. Replace @stack with collected content
+//   9. If layout exists: recursively process layout with sections
+//
+// Phase 3: Directive Processing (processOtherDirectives):
+//   10. Run view composers
+//   11. Run pre-processing middleware
+//   12. @js, @ts directives (FIRST - defines variables for other directives)
+//   13. Custom directives (user-registered)
+//   14. @component directives
+//   15. Custom element components (PascalCase/kebab-case tags)
+//   16. @transition, @animationGroup, etc.
+//   17. @route directives
+//   18. @auth, @guest, @can, @cannot directives
+//   19. @csrf directives
+//   20. @method directives
+//   21. @include, @partial, @includeIf, etc.
+//   22. @foreach, @for, @while, @forelse (BEFORE conditionals)
+//   23. @if, @unless, @switch (AFTER loops - loop vars in scope)
+//   24. @isset, @empty directives
+//   25. @env, @production, @development, etc.
+//   26. @form directives
+//   27. @error directives
+//   28. @markdown file directives
+//   29. @markdown block directives
+//   30. @translate, @t directives
+//   31. @a11y, @screenReader directives
+//   32. @meta, @seo, @structuredData directives
+//   33. @json directive
+//   34. @once directive
+//   35. {{ }} expressions (LAST - after all directive output)
+//   36. Run post-processing middleware
+//   37. Auto-inject SEO tags (if enabled)
+//
+// IMPORTANT: Changing this order may break template rendering!
+// =============================================================================
+
+// =============================================================================
+// ASYNC/SYNC FUNCTION CONVENTION
+// =============================================================================
+//
+// Directive processors follow this convention:
+//
+// ASYNC functions (return Promise<string>):
+//   - Functions that perform or MAY perform I/O operations (file reads, network)
+//   - Functions that call other async functions
+//   - Examples: processIncludes, processMarkdownDirectives, processJsDirectives
+//
+// SYNC functions (return string):
+//   - Pure transformation functions with no I/O
+//   - Functions that only manipulate strings/data in memory
+//   - Examples: processConditionals, processLoops, processExpressions
+//
+// CALLING CONVENTION:
+//   - All processors can be awaited safely (awaiting a sync function works)
+//   - Use `await` consistently in processOtherDirectives for clarity
+//   - New directive processors should be async if they might need I/O in the future
+//
+// RATIONALE:
+//   - Async functions can call sync functions, but not vice versa
+//   - Keeping I/O-capable functions async allows for future extensibility
+//   - Sync functions are kept sync for performance (no promise overhead)
+//
+// =============================================================================
+
+/**
+ * Convert PascalCase to kebab-case with proper handling of consecutive uppercase letters.
+ *
+ * Examples:
+ * - `UserCard` → `user-card`
+ * - `XMLParser` → `xml-parser` (not `x-m-l-parser`)
+ * - `HTMLElement` → `html-element`
+ * - `MyURLParser` → `my-url-parser`
+ * - `IOStream` → `io-stream`
+ *
+ * The algorithm:
+ * 1. Insert hyphen before uppercase letters that follow lowercase letters
+ * 2. Insert hyphen before the last uppercase in a sequence of uppercase letters (before lowercase)
+ * 3. Convert to lowercase
+ */
+function pascalToKebab(str: string): string {
+  return str
+    // Insert hyphen between lowercase and uppercase: userCard → user-Card
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    // Insert hyphen between consecutive uppercase and lowercase: XMLParser → XML-Parser
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
+    .toLowerCase()
+}
+
+/**
+ * Parse HTML/JSX-like attributes from a string.
+ *
+ * Properly handles:
+ * - Simple attributes: `name="value"`
+ * - Boolean attributes: `disabled`
+ * - Vue-like bindings: `:prop="expr"` or `v-bind:prop="expr"`
+ * - Attributes with `=` in values: `url="https://example.com?a=1&b=2"`
+ * - Single and double quoted values
+ * - Escaped quotes within values
+ *
+ * ## Limitations (Vue-like Syntax)
+ *
+ * stx is a **server-side rendering** framework. The following Vue directives
+ * are NOT supported because they require client-side JavaScript:
+ *
+ * - `v-model` - Two-way data binding (requires client-side reactivity)
+ * - `v-on` / `@` - Event handlers (events are client-side only)
+ * - `v-if`/`v-for` - Use stx directives `@if`/`@foreach` instead
+ * - `v-show` - Use `@if` or CSS classes instead
+ *
+ * For client-side interactivity, use:
+ * 1. Web Components (via stx's web component generation)
+ * 2. Alpine.js or similar lightweight libraries
+ * 3. Progressive enhancement with vanilla JavaScript
+ *
+ * @param attributesStr - The attributes portion of a tag (between tag name and closing)
+ * @returns Array of parsed attributes with name, value, and binding info
+ */
+interface ParsedAttribute {
+  name: string
+  value: string | true // true for boolean attributes
+  isBinding: boolean // true if prefixed with : or v-bind:
+}
+
+function parseAttributes(attributesStr: string): ParsedAttribute[] {
+  const attributes: ParsedAttribute[] = []
+  let pos = 0
+  const len = attributesStr.length
+
+  while (pos < len) {
+    // Skip whitespace
+    while (pos < len && /\s/.test(attributesStr[pos])) {
+      pos++
+    }
+
+    if (pos >= len)
+      break
+
+    // Check for binding prefix
+    let isBinding = false
+    if (attributesStr[pos] === ':') {
+      isBinding = true
+      pos++
+    }
+    else if (attributesStr.slice(pos, pos + 7) === 'v-bind:') {
+      isBinding = true
+      pos += 7
+    }
+
+    // Read attribute name (until = or whitespace or end)
+    let name = ''
+    while (pos < len && !/[\s=]/.test(attributesStr[pos])) {
+      name += attributesStr[pos]
+      pos++
+    }
+
+    if (!name)
+      break
+
+    // Skip whitespace
+    while (pos < len && /\s/.test(attributesStr[pos])) {
+      pos++
+    }
+
+    // Check for = sign
+    if (pos < len && attributesStr[pos] === '=') {
+      pos++ // Skip =
+
+      // Skip whitespace after =
+      while (pos < len && /\s/.test(attributesStr[pos])) {
+        pos++
+      }
+
+      // Read value
+      let value = ''
+      if (pos < len && (attributesStr[pos] === '"' || attributesStr[pos] === '\'')) {
+        const quote = attributesStr[pos]
+        pos++ // Skip opening quote
+
+        // Read until closing quote, handling escapes
+        while (pos < len && attributesStr[pos] !== quote) {
+          if (attributesStr[pos] === '\\' && pos + 1 < len) {
+            // Handle escape sequence
+            pos++
+            value += attributesStr[pos]
+          }
+          else {
+            value += attributesStr[pos]
+          }
+          pos++
+        }
+        pos++ // Skip closing quote
+      }
+      else {
+        // Unquoted value (read until whitespace)
+        while (pos < len && !/\s/.test(attributesStr[pos])) {
+          value += attributesStr[pos]
+          pos++
+        }
+      }
+
+      attributes.push({ name, value, isBinding })
+    }
+    else {
+      // Boolean attribute (no value)
+      attributes.push({ name, value: true, isBinding })
+    }
+  }
+
+  return attributes
+}
 
 /**
  * Process all template directives with enhanced error handling and performance monitoring
@@ -335,7 +572,7 @@ async function processOtherDirectives(
   output = await processIncludes(output, context, filePath, options, dependencies)
 
   // Process loops (@foreach, @for, etc.) - BEFORE conditionals to handle nested scope properly
-  output = processLoops(output, context, filePath)
+  output = processLoops(output, context, filePath, options)
 
   // Process conditionals (@if, @unless, etc.) - AFTER loops to allow loop variables in scope
   output = processConditionals(output, context, filePath)
@@ -347,7 +584,7 @@ async function processOtherDirectives(
   output = processEnvDirective(output, context)
 
   // Process form directives
-  output = processFormDirectives(output, context)
+  output = processBasicFormDirectives(output, context)
 
   // Process error directive
   output = processErrorDirective(output, context)
@@ -372,6 +609,9 @@ async function processOtherDirectives(
   output = processStructuredData(output, context, filePath)
   output = processSeoDirective(output, context, filePath, options)
 
+  // Process CSP directives (@csp, @cspNonce)
+  output = processCspDirectives(output, context, filePath, options)
+
   // Process @json directive
   output = processJsonDirective(output, context)
 
@@ -387,6 +627,16 @@ async function processOtherDirectives(
   // Auto-inject SEO tags if enabled
   if (options.seo?.enabled) {
     output = injectSeoTags(output, context, options)
+  }
+
+  // Auto-inject CSP meta tag if enabled
+  if (options.csp?.enabled && options.csp.addMetaTag) {
+    output = injectCspMetaTag(output, options.csp as any, context)
+  }
+
+  // Auto-inject analytics if enabled
+  if (options.analytics?.enabled) {
+    output = injectAnalytics(output, options)
   }
 
   return output
@@ -509,7 +759,7 @@ async function processCustomElements(
       let componentPath
       if (isPascalCase) {
         // Convert PascalCase to kebab-case for the file path
-        componentPath = tagName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+        componentPath = pascalToKebab(tagName)
       }
       else {
         componentPath = tagName
@@ -602,25 +852,34 @@ async function processCustomElements(
         componentPath = tagName
       }
 
-      // Parse attributes into props
+      // Parse attributes into props using proper tokenization
       const props: Record<string, any> = {}
 
       if (attributesStr) {
-        // Match attributes in the format: prop="value" or :prop="value" or v-bind:prop="value"
-        const attrRegex = /(:|v-bind:)?([^\s=]+)(?:=["']([^"']*)["'])?/g
-        let attrMatch
+        const parsedAttrs = parseAttributes(attributesStr)
 
-        // eslint-disable-next-line no-cond-assign
-        while (attrMatch = attrRegex.exec(attributesStr)) {
-          const [, bindPrefix, attrName, attrValue] = attrMatch
+        for (const attr of parsedAttrs) {
+          const { name: attrName, value: attrValue, isBinding } = attr
+
+          // Warn about unsupported Vue directives (v-model, v-on, etc.)
+          if (attrName === 'v-model' || attrName.startsWith('v-on:') || attrName.startsWith('@')) {
+            if (options.debug) {
+              console.warn(
+                `[stx] Unsupported Vue directive "${attrName}" in ${filePath}. `
+                + `stx is a server-side rendering framework. For two-way binding, `
+                + `use web components or client-side JavaScript (Alpine.js, etc.).`,
+              )
+            }
+            continue // Skip unsupported directives
+          }
 
           // Skip nodes, event handlers, and other non-prop attributes
           if (attrName === 'class' || attrName.startsWith('on') || attrName === 'style' || attrName === 'id') {
-            props[attrName] = attrValue !== undefined ? attrValue : true
+            props[attrName] = attrValue
             continue
           }
 
-          if (bindPrefix) {
+          if (isBinding && typeof attrValue === 'string') {
             // Dynamic attribute with : or v-bind: prefix, evaluate the expression
             try {
               // eslint-disable-next-line no-new-func
@@ -633,8 +892,8 @@ async function processCustomElements(
             }
           }
           else {
-            // Static attribute
-            props[attrName] = attrValue !== undefined ? attrValue : true
+            // Static attribute or boolean
+            props[attrName] = attrValue
           }
         }
       }

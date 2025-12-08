@@ -8,10 +8,167 @@ import process from 'node:process'
 
 // Import from expressions
 import { unescapeHtml } from './expressions'
+// Import directly from tokenizer to avoid any circular dependency issues
+import { findMatchingDelimiter } from './parser/tokenizer'
+import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
 
-// Cache for components to avoid repeated file reads
-const componentsCache = new Map<string, string>()
+// Cache for components to avoid repeated file reads (LRU with max 500 entries)
+const componentsCache = new LRUCache<string, string>(500)
+
+// =============================================================================
+// Template Validation
+// =============================================================================
+
+/**
+ * Template validation error
+ */
+export interface TemplateValidationError {
+  type: 'syntax' | 'directive' | 'expression' | 'structure'
+  message: string
+  line?: number
+  column?: number
+  suggestion?: string
+}
+
+/**
+ * Template validation result
+ */
+export interface TemplateValidationResult {
+  valid: boolean
+  errors: TemplateValidationError[]
+  warnings: TemplateValidationError[]
+}
+
+/**
+ * Validate a template before processing
+ *
+ * Checks for common syntax errors and structural issues:
+ * - Unclosed directive blocks (@if without @endif)
+ * - Unclosed expression brackets
+ * - Invalid directive syntax
+ * - Nested quote issues
+ *
+ * @param template - The template string to validate
+ * @returns Validation result with errors and warnings
+ *
+ * @example
+ * ```typescript
+ * const result = validateTemplate(templateString)
+ * if (!result.valid) {
+ *   console.error('Template errors:', result.errors)
+ * }
+ * ```
+ */
+export function validateTemplate(template: string): TemplateValidationResult {
+  const errors: TemplateValidationError[] = []
+  const warnings: TemplateValidationError[] = []
+
+  // Check for unclosed expression brackets
+  const expressionOpens = (template.match(/\{\{/g) || []).length
+  const expressionCloses = (template.match(/\}\}/g) || []).length
+  if (expressionOpens !== expressionCloses) {
+    errors.push({
+      type: 'expression',
+      message: `Unclosed expression brackets: found ${expressionOpens} opening '{{' and ${expressionCloses} closing '}}'`,
+      suggestion: 'Ensure every {{ has a matching }}',
+    })
+  }
+
+  // Directive pairs to check
+  const directivePairs = [
+    { open: '@if', close: '@endif', name: 'if' },
+    { open: '@unless', close: '@endunless', name: 'unless' },
+    { open: '@foreach', close: '@endforeach', name: 'foreach' },
+    { open: '@for', close: '@endfor', name: 'for' },
+    { open: '@while', close: '@endwhile', name: 'while' },
+    { open: '@forelse', close: '@endforelse', name: 'forelse' },
+    { open: '@switch', close: '@endswitch', name: 'switch' },
+    { open: '@isset', close: '@endisset', name: 'isset' },
+    { open: '@empty', close: '@endempty', name: 'empty' },
+    { open: '@auth', close: '@endauth', name: 'auth' },
+    { open: '@guest', close: '@endguest', name: 'guest' },
+    { open: '@can', close: '@endcan', name: 'can' },
+    { open: '@cannot', close: '@endcannot', name: 'cannot' },
+    { open: '@section', close: '@endsection', name: 'section', altClose: '@show' },
+    { open: '@push', close: '@endpush', name: 'push' },
+    { open: '@prepend', close: '@endprepend', name: 'prepend' },
+    { open: '@once', close: '@endonce', name: 'once' },
+    { open: '@markdown', close: '@endmarkdown', name: 'markdown' },
+    { open: '@component', close: '@endcomponent', name: 'component' },
+  ]
+
+  for (const pair of directivePairs) {
+    const openRegex = new RegExp(`${pair.open}(?:\\s|\\()`, 'g')
+    const closeRegex = new RegExp(pair.close, 'g')
+
+    const openCount = (template.match(openRegex) || []).length
+    let closeCount = (template.match(closeRegex) || []).length
+
+    // Check for alternate close tags
+    if (pair.altClose) {
+      const altCloseRegex = new RegExp(pair.altClose, 'g')
+      closeCount += (template.match(altCloseRegex) || []).length
+    }
+
+    if (openCount > closeCount) {
+      errors.push({
+        type: 'directive',
+        message: `Unclosed @${pair.name} directive: found ${openCount} opening and ${closeCount} closing`,
+        suggestion: `Add ${openCount - closeCount} missing ${pair.close} tag(s)`,
+      })
+    }
+    else if (closeCount > openCount) {
+      warnings.push({
+        type: 'directive',
+        message: `Extra ${pair.close} found: ${closeCount - openCount} more closing than opening`,
+        suggestion: `Check for orphaned ${pair.close} tags`,
+      })
+    }
+  }
+
+  // Check for common directive syntax errors
+  const malformedDirectives = [
+    { pattern: /@if\s*[^(]/, message: '@if directive missing parentheses', suggestion: 'Use @if(condition)' },
+    { pattern: /@foreach\s*[^(]/, message: '@foreach directive missing parentheses', suggestion: 'Use @foreach(items as item)' },
+    { pattern: /@foreach\([^)]*\)\s*[^@\n<]/, message: '@foreach may have content on same line', suggestion: 'Put content on new line after @foreach()' },
+    { pattern: /@include\s*[^(]/, message: '@include directive missing parentheses', suggestion: 'Use @include(\'partial-name\')' },
+    { pattern: /@extends\s*[^(]/, message: '@extends directive missing parentheses', suggestion: 'Use @extends(\'layout-name\')' },
+  ]
+
+  for (const check of malformedDirectives) {
+    if (check.pattern.test(template)) {
+      warnings.push({
+        type: 'syntax',
+        message: check.message,
+        suggestion: check.suggestion,
+      })
+    }
+  }
+
+  // Check for potentially dangerous patterns
+  const dangerousPatterns = [
+    { pattern: /\{\{\s*constructor\s*\}\}/, message: 'Attempting to access constructor property' },
+    { pattern: /\{\{\s*__proto__\s*\}\}/, message: 'Attempting to access __proto__ property' },
+    { pattern: /\{\{\s*eval\s*\(/, message: 'Attempting to use eval in expression' },
+  ]
+
+  for (const check of dangerousPatterns) {
+    if (check.pattern.test(template)) {
+      errors.push({
+        type: 'expression',
+        message: `Security warning: ${check.message}`,
+        suggestion: 'Remove dangerous code from template expressions',
+      })
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+  }
+}
 
 /**
  * Shared function to render a component with props and slot content
@@ -171,8 +328,87 @@ export async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
+// =============================================================================
+// Script Extraction - Limitations & Known Issues
+// =============================================================================
+//
+// The script extraction system has the following KNOWN LIMITATIONS:
+//
+// 1. NO ASYNC/AWAIT SUPPORT
+//    Top-level await is NOT supported in <script> tags.
+//    Workaround: Use synchronous data or pass async data via context.
+//
+//    ❌ WILL NOT WORK:
+//    <script>
+//      const data = await fetchData()  // Error!
+//    </script>
+//
+//    ✅ WORKS:
+//    <script>
+//      // Data passed from server via context
+//      const data = context.data
+//    </script>
+//
+// 2. NO IMPORT STATEMENTS
+//    ES module imports are not supported in <script> tags.
+//    Workaround: Import in server code and pass via context.
+//
+//    ❌ WILL NOT WORK:
+//    <script>
+//      import { helper } from './utils'  // Error!
+//    </script>
+//
+//    ✅ WORKS:
+//    <script>
+//      // Helper passed via context from server
+//      const result = helper(data)
+//    </script>
+//
+// 3. COMPLEX DESTRUCTURING MAY FAIL
+//    Deeply nested destructuring patterns may not parse correctly.
+//    The system creates __destructured_ temporary variables as a workaround.
+//
+//    ⚠️ MAY HAVE ISSUES:
+//    <script>
+//      const { a: { b: { c } } } = complexObject  // May fail
+//    </script>
+//
+//    ✅ BETTER:
+//    <script>
+//      const obj = complexObject
+//      const c = obj.a.b.c
+//    </script>
+//
+// 4. TEMPLATE LITERALS WITH EXPRESSIONS
+//    Complex template literals with nested expressions may not parse correctly.
+//
+//    ⚠️ MAY HAVE ISSUES:
+//    <script>
+//      const msg = `Hello ${users.map(u => `${u.name}`).join(', ')}`
+//    </script>
+//
+//    ✅ BETTER:
+//    <script>
+//      const names = users.map(u => u.name).join(', ')
+//      const msg = `Hello ${names}`
+//    </script>
+//
+// 5. EXPORT KEYWORD IS OPTIONAL
+//    Both exported and non-exported variables are made available to templates.
+//    This is intentional for developer convenience.
+//
+//    ✅ BOTH WORK:
+//    <script>
+//      const title = 'Hello'           // Available in template
+//      export const subtitle = 'World' // Also available
+//    </script>
+//
+// =============================================================================
+
 /**
  * Extract variables from script content
+ *
+ * @see Script Extraction Limitations above for known issues
  */
 export async function extractVariables(scriptContent: string, context: Record<string, any>, filePath: string): Promise<void> {
   if (!scriptContent.trim())
@@ -279,6 +515,126 @@ function convertToCommonJS(scriptContent: string): string {
 }
 
 /**
+ * Extract a destructuring pattern from a string, handling nested patterns
+ */
+function extractDestructuringPattern(str: string, startPos: number): { pattern: string, endPos: number } | null {
+  const openChar = str[startPos]
+  if (openChar !== '{' && openChar !== '[') {
+    return null
+  }
+
+  const closeChar = openChar === '{' ? '}' : ']'
+  const endPos = findMatchingDelimiter(str, openChar, closeChar, startPos)
+
+  if (endPos === -1) {
+    return null
+  }
+
+  return {
+    pattern: str.slice(startPos, endPos + 1),
+    endPos: endPos + 1,
+  }
+}
+
+/**
+ * Extract variable names from a destructuring pattern
+ * e.g., "{ a, b: c, d: { e } }" -> ["a", "c", "e"]
+ */
+function extractDestructuredNames(pattern: string): string[] {
+  const names: string[] = []
+
+  // Remove outer braces/brackets
+  const inner = pattern.slice(1, -1).trim()
+  if (!inner)
+    return names
+
+  // Parse the pattern character by character
+  let i = 0
+  let depth = 0
+  let currentName = ''
+
+  while (i < inner.length) {
+    const char = inner[i]
+
+    // Track nesting depth
+    if (char === '{' || char === '[') {
+      depth++
+      // If we're starting a nested pattern, recursively extract from it
+      if (depth === 1) {
+        const nested = extractDestructuringPattern(inner, i)
+        if (nested) {
+          const nestedNames = extractDestructuredNames(nested.pattern)
+          names.push(...nestedNames)
+          i = nested.endPos
+          currentName = ''
+          continue
+        }
+      }
+    }
+    else if (char === '}' || char === ']') {
+      depth--
+    }
+
+    // Skip nested content
+    if (depth > 0) {
+      i++
+      continue
+    }
+
+    // Handle comma (end of item)
+    if (char === ',') {
+      if (currentName.trim()) {
+        names.push(currentName.trim())
+      }
+      currentName = ''
+      i++
+      continue
+    }
+
+    // Handle colon (renaming: `a: b` means bind `b`)
+    if (char === ':') {
+      // The value before colon is the property name, after is the binding name
+      currentName = ''
+      i++
+      continue
+    }
+
+    // Handle default values (= something)
+    if (char === '=') {
+      // Save current name before default value
+      if (currentName.trim()) {
+        names.push(currentName.trim())
+      }
+      currentName = ''
+      // Skip the default value expression
+      i++
+      while (i < inner.length && inner[i] !== ',' && depth === 0) {
+        if (inner[i] === '{' || inner[i] === '[')
+          depth++
+        else if (inner[i] === '}' || inner[i] === ']')
+          depth--
+        i++
+      }
+      continue
+    }
+
+    // Accumulate identifier characters
+    if (/[\w$]/.test(char)) {
+      currentName += char
+    }
+
+    i++
+  }
+
+  // Don't forget the last name
+  if (currentName.trim()) {
+    names.push(currentName.trim())
+  }
+
+  return names
+}
+
+/**
  * Parse variable declarations (including multi-line objects and arrays)
  */
 function parseVariableDeclaration(lines: string[], startIndex: number): {
@@ -290,38 +646,59 @@ function parseVariableDeclaration(lines: string[], startIndex: number): {
   const firstLine = lines[startIndex].trim()
 
   // Extract type and check for different declaration patterns
-
   const match = firstLine.match(/^(?:export\s+)?(const|let|var)\s+(\w+)\s*=\s*(.*)$/)
 
   // If simple pattern doesn't match, try destructuring pattern
   if (!match) {
-    const destructuringMatch = firstLine.match(/^(?:export\s+)?(const|let|var)\s+(\{[^}]+\}|\[[^\]]+\])\s*=\s*(.*)$/)
-    if (destructuringMatch) {
-      const [, type, destructuringPattern, initialValue] = destructuringMatch
-      let value = initialValue
-      let currentIndex = startIndex
+    // Check if this is a destructuring declaration
+    const destructuringPrefix = firstLine.match(/^(?:export\s+)?(const|let|var)\s+/)
+    if (destructuringPrefix) {
+      const afterKeyword = firstLine.slice(destructuringPrefix[0].length)
 
-      // Check if we need to read multiple lines for the value
-      if (needsMultilineReading(initialValue)) {
-        const result = readMultilineValue(lines, startIndex, initialValue)
-        value = result.value
-        currentIndex = result.nextIndex
-      }
-      else {
-        currentIndex = startIndex + 1
-      }
+      // Try to extract the destructuring pattern using proper parsing
+      const patternResult = extractDestructuringPattern(afterKeyword, 0)
+      if (patternResult) {
+        const type = destructuringPrefix[1]
+        const destructuringPattern = patternResult.pattern
 
-      // Clean up the value
-      value = value.trim().replace(/;$/, '')
+        // Find the = sign after the pattern
+        const afterPattern = afterKeyword.slice(patternResult.endPos).trim()
+        if (afterPattern.startsWith('=')) {
+          const initialValue = afterPattern.slice(1).trim()
+          let value = initialValue
+          let currentIndex = startIndex
 
-      // For destructuring, create a unique variable name and add the destructuring as well
-      const uniqueName = `__destructured_${startIndex}`
+          // Check if we need to read multiple lines for the value
+          if (needsMultilineReading(initialValue)) {
+            const result = readMultilineValue(lines, startIndex, initialValue)
+            value = result.value
+            currentIndex = result.nextIndex
+          }
+          else {
+            currentIndex = startIndex + 1
+          }
 
-      return {
-        type,
-        name: uniqueName,
-        value: `${value}; const ${destructuringPattern} = ${uniqueName}`,
-        nextIndex: currentIndex,
+          // Clean up the value
+          value = value.trim().replace(/;$/, '')
+
+          // Extract actual variable names from the destructuring pattern
+          const destructuredNames = extractDestructuredNames(destructuringPattern)
+
+          // Create a unique variable name for the source value
+          const uniqueName = `__stx_src_${startIndex}`
+
+          // Build exports for each destructured variable
+          const destructuredExports = destructuredNames
+            .map(name => `module.exports.${name} = ${name};`)
+            .join('\n')
+
+          return {
+            type,
+            name: uniqueName,
+            value: `${value}; ${type} ${destructuringPattern} = ${uniqueName};\n${destructuredExports}`,
+            nextIndex: currentIndex,
+          }
+        }
       }
     }
 
@@ -391,32 +768,121 @@ function parseFunctionDeclaration(lines: string[], startIndex: number): {
 }
 
 /**
- * Check if a value needs multi-line reading
+ * Check if a value needs multi-line reading using proper tokenization
+ * This handles braces inside strings correctly
  */
 function needsMultilineReading(value: string): boolean {
   const trimmed = value.trim()
 
-  // Count braces and brackets
-  const openBraces = (trimmed.match(/\{/g) || []).length
-  const closeBraces = (trimmed.match(/\}/g) || []).length
-  const openBrackets = (trimmed.match(/\[/g) || []).length
-  const closeBrackets = (trimmed.match(/\]/g) || []).length
+  // Check if the value starts with { or [ - if so, find the matching delimiter
+  if (trimmed.startsWith('{')) {
+    const closePos = findMatchingDelimiter(trimmed, '{', '}', 0)
+    return closePos === -1 // Not found = needs more lines
+  }
 
-  return openBraces > closeBraces || openBrackets > closeBrackets
+  if (trimmed.startsWith('[')) {
+    const closePos = findMatchingDelimiter(trimmed, '[', ']', 0)
+    return closePos === -1 // Not found = needs more lines
+  }
+
+  // For other values (like template literals), check using proper parsing
+  return !isValueComplete(trimmed)
 }
 
 /**
- * Check if a function needs multi-line reading
+ * Check if a value expression is complete (all delimiters balanced)
+ */
+function isValueComplete(value: string): boolean {
+  const depth = { paren: 0, bracket: 0, brace: 0 }
+  let inString: string | null = null
+  let inTemplateExpr = 0
+
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i]
+    const prevChar = i > 0 ? value[i - 1] : ''
+
+    // Handle escape sequences
+    if (prevChar === '\\' && inString) {
+      continue
+    }
+
+    // Handle string entry/exit
+    if ((char === '"' || char === '\'') && !inString) {
+      inString = char
+      continue
+    }
+    if (char === inString && inString !== '`') {
+      inString = null
+      continue
+    }
+
+    // Handle template string
+    if (char === '`' && !inString) {
+      inString = '`'
+      continue
+    }
+    if (char === '`' && inString === '`' && inTemplateExpr === 0) {
+      inString = null
+      continue
+    }
+
+    // Handle template expression ${
+    if (inString === '`' && char === '$' && value[i + 1] === '{') {
+      inTemplateExpr++
+      i++ // Skip {
+      continue
+    }
+    if (inTemplateExpr > 0 && char === '{') {
+      inTemplateExpr++
+      continue
+    }
+    if (inTemplateExpr > 0 && char === '}') {
+      inTemplateExpr--
+      continue
+    }
+
+    // Skip if in string
+    if (inString) {
+      continue
+    }
+
+    // Track delimiters
+    if (char === '(')
+      depth.paren++
+    else if (char === ')')
+      depth.paren--
+    else if (char === '[')
+      depth.bracket++
+    else if (char === ']')
+      depth.bracket--
+    else if (char === '{')
+      depth.brace++
+    else if (char === '}')
+      depth.brace--
+  }
+
+  return depth.paren === 0 && depth.bracket === 0 && depth.brace === 0 && inString === null
+}
+
+/**
+ * Check if a function needs multi-line reading using proper tokenization
  */
 function needsMultilineFunctionReading(functionLine: string): boolean {
-  const openBraces = (functionLine.match(/\{/g) || []).length
-  const closeBraces = (functionLine.match(/\}/g) || []).length
+  // Find the function body opening brace
+  const bracePos = functionLine.indexOf('{')
+  if (bracePos === -1) {
+    // No opening brace yet - definitely needs more
+    return true
+  }
 
-  return openBraces > closeBraces
+  // Check if the closing brace is on the same line
+  const closePos = findMatchingDelimiter(functionLine, '{', '}', bracePos)
+  return closePos === -1 // Not found = needs more lines
 }
 
 /**
- * Read multi-line values (objects, arrays)
+ * Read multi-line values (objects, arrays) using proper tokenization
+ * This handles braces inside strings correctly
  */
 function readMultilineValue(lines: string[], startIndex: number, initialValue: string): {
   value: string
@@ -424,16 +890,11 @@ function readMultilineValue(lines: string[], startIndex: number, initialValue: s
 } {
   let value = initialValue
   let i = startIndex + 1
-  let braceCount = (initialValue.match(/\{/g) || []).length - (initialValue.match(/\}/g) || []).length
-  let bracketCount = (initialValue.match(/\[/g) || []).length - (initialValue.match(/\]/g) || []).length
 
-  while (i < lines.length && (braceCount > 0 || bracketCount > 0)) {
+  // Keep adding lines until the value is complete
+  while (i < lines.length && !isValueComplete(value)) {
     const nextLine = lines[i]
     value += `\n${nextLine}`
-
-    braceCount += (nextLine.match(/\{/g) || []).length - (nextLine.match(/\}/g) || []).length
-    bracketCount += (nextLine.match(/\[/g) || []).length - (nextLine.match(/\]/g) || []).length
-
     i++
   }
 
@@ -441,7 +902,8 @@ function readMultilineValue(lines: string[], startIndex: number, initialValue: s
 }
 
 /**
- * Read multi-line functions
+ * Read multi-line functions using proper tokenization
+ * This handles braces inside strings correctly
  */
 function readMultilineFunction(lines: string[], startIndex: number, initialFunction: string): {
   functionCode: string
@@ -449,12 +911,21 @@ function readMultilineFunction(lines: string[], startIndex: number, initialFunct
 } {
   let functionCode = initialFunction
   let i = startIndex + 1
-  let braceCount = (initialFunction.match(/\{/g) || []).length - (initialFunction.match(/\}/g) || []).length
 
-  while (i < lines.length && braceCount > 0) {
+  // Keep adding lines until the function body is complete
+  while (i < lines.length) {
+    // Check if we have a complete function
+    const bracePos = functionCode.indexOf('{')
+    if (bracePos !== -1) {
+      const closePos = findMatchingDelimiter(functionCode, '{', '}', bracePos)
+      if (closePos !== -1) {
+        // Function is complete
+        break
+      }
+    }
+
     const nextLine = lines[i]
     functionCode += `\n${nextLine}`
-    braceCount += (nextLine.match(/\{/g) || []).length - (nextLine.match(/\}/g) || []).length
     i++
   }
 

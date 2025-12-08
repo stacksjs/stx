@@ -2,6 +2,7 @@
  * Visual regression tests for Button component
  */
 
+import type { VariantConfig } from './visual-test-utils'
 import { describe, expect, it } from 'bun:test'
 import { join } from 'node:path'
 import {
@@ -10,7 +11,7 @@ import {
   testComponentVariants,
   testDarkModeSupport,
   testResponsiveSupport,
-  type VariantConfig,
+
 } from './visual-test-utils'
 
 const BUTTON_PATH = join(__dirname, '../../src/ui/button/Button.stx')

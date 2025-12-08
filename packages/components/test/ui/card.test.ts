@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach } from 'bun:test'
 import type { CardProps } from '../../src/ui/card'
+import { beforeEach, describe, expect, it } from 'bun:test'
 
 describe('Card Component - DOM Tests', () => {
   let container: HTMLElement
@@ -178,7 +178,7 @@ describe('Card Component - DOM Tests', () => {
       const card = document.createElement('div')
       card.className = 'card card-disabled'
       card.setAttribute('aria-disabled', 'true')
-      let clicked = false
+      let _clicked = false
 
       card.addEventListener('click', (e) => {
         if (card.getAttribute('aria-disabled') === 'true') {
@@ -186,7 +186,7 @@ describe('Card Component - DOM Tests', () => {
           e.stopPropagation()
           return
         }
-        clicked = true
+        _clicked = true
       })
 
       container.appendChild(card)

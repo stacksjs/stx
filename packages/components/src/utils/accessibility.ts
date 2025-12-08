@@ -146,12 +146,14 @@ export function generateId(prefix = 'a11y'): string {
  * @param text - Label text
  * @param element - Element to associate with
  * @param options - Label options
+ * @param options.visible - Whether the label should be visible
+ * @param options.id - Custom ID for the label
  * @returns Generated label ID
  */
 export function createAriaLabel(
   text: string,
   element?: HTMLElement | null,
-  options: { visible?: boolean; id?: string } = {},
+  options: { visible?: boolean, id?: string } = {},
 ): string {
   const { visible = false, id = generateId('label') } = options
 

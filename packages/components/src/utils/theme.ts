@@ -43,11 +43,11 @@ export interface Typography {
     mono?: string
   }
   fontSize?: {
-    xs?: string
-    sm?: string
-    base?: string
-    lg?: string
-    xl?: string
+    'xs'?: string
+    'sm'?: string
+    'base'?: string
+    'lg'?: string
+    'xl'?: string
     '2xl'?: string
     '3xl'?: string
     '4xl'?: string
@@ -70,11 +70,11 @@ export interface Typography {
  * Spacing scale
  */
 export interface Spacing {
-  xs?: string
-  sm?: string
-  md?: string
-  lg?: string
-  xl?: string
+  'xs'?: string
+  'sm'?: string
+  'md'?: string
+  'lg'?: string
+  'xl'?: string
   '2xl'?: string
   '3xl'?: string
   '4xl'?: string
@@ -95,12 +95,12 @@ export interface BorderRadius {
  * Shadow scale
  */
 export interface Shadows {
-  sm?: string
-  md?: string
-  lg?: string
-  xl?: string
+  'sm'?: string
+  'md'?: string
+  'lg'?: string
+  'xl'?: string
   '2xl'?: string
-  none?: string
+  'none'?: string
 }
 
 /**
@@ -160,11 +160,11 @@ export const defaultTheme: Theme = {
       mono: 'Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
     },
     fontSize: {
-      xs: '0.75rem',
-      sm: '0.875rem',
-      base: '1rem',
-      lg: '1.125rem',
-      xl: '1.25rem',
+      'xs': '0.75rem',
+      'sm': '0.875rem',
+      'base': '1rem',
+      'lg': '1.125rem',
+      'xl': '1.25rem',
       '2xl': '1.5rem',
       '3xl': '1.875rem',
       '4xl': '2.25rem',
@@ -183,11 +183,11 @@ export const defaultTheme: Theme = {
     },
   },
   spacing: {
-    xs: '0.25rem',
-    sm: '0.5rem',
-    md: '1rem',
-    lg: '1.5rem',
-    xl: '2rem',
+    'xs': '0.25rem',
+    'sm': '0.5rem',
+    'md': '1rem',
+    'lg': '1.5rem',
+    'xl': '2rem',
     '2xl': '3rem',
     '3xl': '4rem',
     '4xl': '6rem',
@@ -200,12 +200,12 @@ export const defaultTheme: Theme = {
     full: '9999px',
   },
   shadows: {
-    sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-    md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-    xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
     '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    none: 'none',
+    'none': 'none',
   },
   components: {
     button: {
@@ -591,12 +591,12 @@ export const themePresets = {
       full: '0.25rem',
     },
     shadows: {
-      sm: 'none',
-      md: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-      lg: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-      xl: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+      'sm': 'none',
+      'md': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+      'lg': '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+      'xl': '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
       '2xl': '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-      none: 'none',
+      'none': 'none',
     },
   }),
 }
