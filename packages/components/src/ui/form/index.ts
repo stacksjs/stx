@@ -1,3 +1,4 @@
+import type { PropSchema, ValidationResult } from '../../utils/prop-validation'
 import { createPropValidator, PropTypes } from '../../utils/prop-validation'
 
 export { default as Form } from './Form.stx'
@@ -48,7 +49,7 @@ export interface FieldProps {
 /**
  * Form prop validation schema
  */
-export const formPropSchema = {
+export const formPropSchema: PropSchema = {
   action: PropTypes.string,
   method: PropTypes.oneOf(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']),
   validationSchema: PropTypes.object,
@@ -63,4 +64,4 @@ export const formPropSchema = {
 /**
  * Validate Form component props
  */
-export const validateFormProps = createPropValidator('Form', formPropSchema)
+export const validateFormProps: (props: Record<string, any>) => ValidationResult = createPropValidator('Form', formPropSchema)

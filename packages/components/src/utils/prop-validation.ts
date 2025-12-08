@@ -64,11 +64,31 @@ class Validator<T = any> implements PropValidator<T> {
 /**
  * PropTypes - collection of common validators
  */
-export const PropTypes = {
+export const PropTypes: {
+  string: Validator<string>
+  number: Validator<number>
+  boolean: Validator<boolean>
+  func: Validator<(...args: any[]) => any>
+  object: Validator<object>
+  array: Validator<any[]>
+  any: Validator<any>
+  email: Validator<string>
+  url: Validator<string>
+  oneOf: <T>(validValues: T[]) => Validator<T>
+  oneOfType: (validators: Validator[]) => Validator
+  arrayOf: (validator: Validator) => Validator
+  shape: (shape: Record<string, Validator>) => Validator
+  instanceOf: <T>(expectedClass: new (...args: any[]) => T) => Validator<T>
+  custom: (validatorFn: (value: any, propName: string, componentName: string) => boolean, errorMessage: string | ((value: any, propName: string, componentName: string) => string)) => Validator
+  min: (min: number) => Validator<number>
+  max: (max: number) => Validator<number>
+  range: (min: number, max: number) => Validator<number>
+  pattern: (pattern: RegExp) => Validator<string>
+} = {
   /**
    * String type validator
    */
-  string: new Validator(
+  string: new Validator<string>(
     value => typeof value === 'string',
     (value, propName, componentName) =>
       `Invalid prop \`${propName}\` of type \`${typeof value}\` supplied to \`${componentName}\`, expected \`string\`.`,
@@ -77,7 +97,7 @@ export const PropTypes = {
   /**
    * Number type validator
    */
-  number: new Validator(
+  number: new Validator<number>(
     value => typeof value === 'number' && !Number.isNaN(value),
     (value, propName, componentName) =>
       `Invalid prop \`${propName}\` of type \`${typeof value}\` supplied to \`${componentName}\`, expected \`number\`.`,
@@ -86,7 +106,7 @@ export const PropTypes = {
   /**
    * Boolean type validator
    */
-  boolean: new Validator(
+  boolean: new Validator<boolean>(
     value => typeof value === 'boolean',
     (value, propName, componentName) =>
       `Invalid prop \`${propName}\` of type \`${typeof value}\` supplied to \`${componentName}\`, expected \`boolean\`.`,
@@ -95,16 +115,16 @@ export const PropTypes = {
   /**
    * Function type validator
    */
-  func: new Validator(
+  func: new Validator<(...args: any[]) => any>(
     value => typeof value === 'function',
-    (value, propName, componentName) =>
-      `Invalid prop \`${propName}\` of type \`${typeof value}\` supplied to \`${componentName}\`, expected \`function\`.`,
+  (value, propName, componentName) =>
+    `Invalid prop \`${propName}\` of type \`${typeof value}\` supplied to \`${componentName}\`, expected \`function\`.`,
   ),
 
   /**
    * Object type validator
    */
-  object: new Validator(
+  object: new Validator<object>(
     value => typeof value === 'object' && value !== null && !Array.isArray(value),
     (value, propName, componentName) =>
       `Invalid prop \`${propName}\` of type \`${typeof value}\` supplied to \`${componentName}\`, expected \`object\`.`,
@@ -113,7 +133,7 @@ export const PropTypes = {
   /**
    * Array type validator
    */
-  array: new Validator(
+  array: new Validator<any[]>(
     value => Array.isArray(value),
     (value, propName, componentName) =>
       `Invalid prop \`${propName}\` of type \`${typeof value}\` supplied to \`${componentName}\`, expected \`array\`.`,
@@ -122,7 +142,7 @@ export const PropTypes = {
   /**
    * Any type validator (always passes)
    */
-  any: new Validator(
+  any: new Validator<any>(
     () => true,
     () => '',
   ),
@@ -284,7 +304,7 @@ export const PropTypes = {
   /**
    * Email validator
    */
-  email: new Validator(
+  email: new Validator<string>(
     value => typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
     (value, propName, componentName) =>
       `Invalid prop \`${propName}\` of value \`${value}\` supplied to \`${componentName}\`, expected valid email address.`,
@@ -293,7 +313,7 @@ export const PropTypes = {
   /**
    * URL validator
    */
-  url: new Validator(
+  url: new Validator<string>(
     (value) => {
       if (typeof value !== 'string')
         return false
@@ -420,7 +440,7 @@ export function createPropValidator(
   componentName: string,
   schema: PropSchema,
   options?: { throwOnError?: boolean, logWarnings?: boolean },
-) {
+): (props: Record<string, any>) => ValidationResult {
   return (props: Record<string, any>) => validateProps(componentName, props, schema, options)
 }
 

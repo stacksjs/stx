@@ -11,7 +11,7 @@ import { dirname, join } from 'node:path'
 /**
  * Snapshot directory location
  */
-export const SNAPSHOTS_DIR = join(__dirname, '__snapshots__')
+export const SNAPSHOTS_DIR: string = join(__dirname, '__snapshots__')
 
 /**
  * Read an STX component file and extract its template
