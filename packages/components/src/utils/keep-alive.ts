@@ -743,6 +743,8 @@ export function createStateManager() {
  *
  * @param factory - Function to create new instances
  * @param options - Pool configuration
+ * @param options.maxSize - Maximum pool size
+ * @param options.reset - Function to reset instance before reuse
  * @returns Component pool
  *
  * @example

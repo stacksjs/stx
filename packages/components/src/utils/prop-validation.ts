@@ -332,6 +332,8 @@ export interface ValidationResult {
  * @param props - Props object to validate
  * @param schema - Prop schema definition
  * @param options - Validation options
+ * @param options.throwOnError - Whether to throw on validation failure
+ * @param options.logWarnings - Whether to log warnings to console
  * @returns Validation result
  */
 export function validateProps(

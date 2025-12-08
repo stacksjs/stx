@@ -257,6 +257,8 @@ export function setErrorHandler(handler: (error: Error) => void): void {
  *
  * @param error - Error to handle
  * @param options - Handling options
+ * @param options.throwError - Whether to re-throw the error after handling
+ * @param options.logError - Whether to log the error to console
  *
  * @example
  * ```ts

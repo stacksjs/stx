@@ -648,6 +648,9 @@ ${sitemapEntries.join('\n')}
  *
  * @param directory - Directory to scan for .stx/.html files
  * @param options - Scan options
+ * @param options.extensions - File extensions to include
+ * @param options.ignore - Patterns to ignore
+ * @param options.baseUrl - Base URL for the sitemap
  * @returns Array of sitemap entries
  */
 export async function scanForSitemapEntries(

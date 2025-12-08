@@ -28,10 +28,10 @@ async function processTemplate(
   options: Partial<StxOptions> = {},
 ): Promise<string> {
   // Extract script content (only non-module scripts for server-side)
-  const scriptMatch = content.match(/<script(?![^>]*\stype\s*=\s*["']?module["']?)[^>]*>([\s\S]*?)<\/script>/i)
+  const scriptMatch = content.match(/<script(?![^>]*\stype\s*=\s*["']?module["'])[^>]*>([\s\S]*?)<\/script>/i)
   const scriptContent = scriptMatch ? scriptMatch[1] : ''
   // Remove only non-module scripts from template
-  const templateContent = content.replace(/<script(?![^>]*\stype\s*=\s*["']?module["']?)[^>]*>[\s\S]*?<\/script>/gi, '')
+  const templateContent = content.replace(/<script(?![^>]*\stype\s*=\s*["']?module["'])[^>]*>[\s\S]*?<\/script>/gi, '')
 
   // Create context and extract variables
   const context: Record<string, any> = {
