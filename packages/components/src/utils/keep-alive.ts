@@ -257,7 +257,10 @@ export function createKeepAlive(options: KeepAliveOptions = {}): KeepAlive {
     }
 
     // First entry is least recently used (Map maintains insertion order)
-    const firstKey = cache.keys().next().value
+    const firstKey = cache.keys().next().value as string | undefined
+    if (!firstKey) {
+      return false
+    }
     const entry = cache.get(firstKey)
 
     if (entry) {
@@ -589,8 +592,10 @@ export function createLRUCache<T = any>(maxSize: number) {
 
       // Evict oldest if over max size
       if (cache.size > maxSize) {
-        const firstKey = cache.keys().next().value
-        cache.delete(firstKey)
+        const firstKey = cache.keys().next().value as string | undefined
+        if (firstKey) {
+          cache.delete(firstKey)
+        }
       }
     },
 

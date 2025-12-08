@@ -54,7 +54,7 @@ export interface AnimationOptions {
  */
 export function createKeyframeAnimation(
   element: HTMLElement,
-  keyframes: Keyframe[],
+  keyframes: readonly Keyframe[] | Keyframe[],
   options: AnimationOptions = {},
 ): Animation | null {
   if (typeof element.animate !== 'function') {
@@ -71,7 +71,7 @@ export function createKeyframeAnimation(
     fill = 'both',
   } = options
 
-  return element.animate(keyframes, {
+  return element.animate([...keyframes], {
     duration,
     easing,
     delay,

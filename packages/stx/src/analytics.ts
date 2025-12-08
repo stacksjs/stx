@@ -1,3 +1,5 @@
+import type { CustomDirective } from './types'
+
 /**
  * Analytics Module
  *

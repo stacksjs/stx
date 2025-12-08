@@ -24,7 +24,7 @@ export interface DocsOptions {
 /**
  * Generate documentation for all components
  */
-export async function generateDocs(
+export async function generateStoryDocs(
   ctx: StoryContext,
   components: AnalyzedComponent[],
   options: DocsOptions = {},

@@ -767,7 +767,7 @@ function createMySQLAdapter(config: ConnectionConfig): DatabaseAdapter {
  */
 export class QueryBuilder {
   private _table: string = ''
-  private _columns: string[] = ['*']
+  private _columns: (string | RawExpression)[] = ['*']
   private _wheres: WhereCondition[] = []
   private _orders: OrderByClause[] = []
   private _joins: JoinClause[] = []
@@ -815,7 +815,7 @@ export class QueryBuilder {
   /**
    * Set columns to select
    */
-  select(...columns: string[]): this {
+  select(...columns: (string | RawExpression)[]): this {
     this._columns = columns.length > 0 ? columns : ['*']
     return this
   }
@@ -823,7 +823,7 @@ export class QueryBuilder {
   /**
    * Add columns to select
    */
-  addSelect(...columns: string[]): this {
+  addSelect(...columns: (string | RawExpression)[]): this {
     if (this._columns[0] === '*') {
       this._columns = columns
     }
@@ -2466,13 +2466,3 @@ export function schema(): SchemaBuilder {
   return new SchemaBuilder()
 }
 
-// =============================================================================
-// Exports
-// =============================================================================
-
-export {
-  type JoinClause,
-  type OrderByClause,
-  type Row,
-  type WhereCondition,
-}
