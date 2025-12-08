@@ -229,7 +229,7 @@ describe('Component Accessibility Tests', () => {
       const roles = extractRoles(template)
 
       // Either aria-live or alert/status role provides screen reader support
-      const hasLiveRegion = ariaAttrs['aria-live'] || roles.includes('alert') || roles.includes('status')
+      const hasLiveRegion = Boolean(ariaAttrs['aria-live']) || roles.includes('alert') || roles.includes('status')
       expect(hasLiveRegion).toBe(true)
     })
 
@@ -269,10 +269,10 @@ describe('Component Accessibility Tests', () => {
       const roles = extractRoles(template)
       const ariaAttrs = extractAriaAttributes(template)
 
-      const hasAccessibility = roles.includes('status') ||
-        roles.includes('progressbar') ||
-        ariaAttrs['aria-label'] ||
-        template.includes('sr-only')
+      const hasAccessibility = roles.includes('status')
+        || roles.includes('progressbar')
+        || ariaAttrs['aria-label']
+        || template.includes('sr-only')
 
       expect(hasAccessibility).toBe(true)
     })

@@ -35,7 +35,7 @@ describe('dialog Interaction Integration', () => {
     })
 
     it('should handle dialog with confirmation workflow', () => {
-      let dialogState = {
+      const dialogState = {
         isOpen: false,
         confirmed: false,
         data: null as any,

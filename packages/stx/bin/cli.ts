@@ -1,3 +1,49 @@
+/**
+ * stx CLI
+ *
+ * Command-line interface for the stx templating framework.
+ *
+ * ## Available Commands
+ *
+ * ### Development
+ * - `stx dev <file>` - Start development server for .stx or .md file
+ * - `stx build [files...]` - Bundle STX files using Bun's bundler
+ * - `stx watch [patterns...]` - Watch files for changes
+ * - `stx debug <file>` - Debug template processing step by step
+ *
+ * ### Code Quality
+ * - `stx format [patterns...]` - Format STX and Markdown files
+ * - `stx a11y [directory]` - Scan for accessibility issues
+ * - `stx analyze [patterns...]` - Analyze templates for performance/best practices
+ * - `stx test [patterns...]` - Run tests with Bun test runner
+ *
+ * ### Project Management
+ * - `stx init [file]` - Create a new STX file
+ * - `stx status [directory]` - Show project status
+ * - `stx docs` - Generate documentation
+ *
+ * ### Utilities
+ * - `stx iconify <command>` - Generate Iconify icon packages
+ * - `stx perf [command...]` - Show performance statistics
+ * - `stx version` - Show CLI version
+ *
+ * ## Examples
+ *
+ * ```bash
+ * # Start dev server
+ * stx dev pages/home.stx --port 3000
+ *
+ * # Format all templates
+ * stx format "src/**\/*.stx"
+ *
+ * # Check accessibility
+ * stx a11y ./components
+ *
+ * # Build for production
+ * stx build ./src/index.stx --outdir dist
+ * ```
+ */
+
 import type { DevServerOptions } from '../src/dev-server'
 import type { SyntaxHighlightTheme } from '../src/types'
 import { spawn } from 'node:child_process'
@@ -2025,6 +2071,43 @@ else {
     console.log(version)
   })
 
+  // Interactive mode command
+  cli
+    .command('interactive', 'Start interactive REPL mode for template development')
+    .alias('i')
+    .option('--context <file>', 'Load initial context from JSON file')
+    .option('--cwd <directory>', 'Set working directory')
+    .option('--verbose', 'Show verbose output')
+    .action(async (options: { context?: string, cwd?: string, verbose?: boolean }) => {
+      // Dynamically import to avoid loading on every CLI invocation
+      const { startInteractive } = await import('../src/interactive')
+
+      let initialContext = {}
+      if (options.context) {
+        const contextPath = path.resolve(options.context)
+        if (fs.existsSync(contextPath)) {
+          try {
+            const content = fs.readFileSync(contextPath, 'utf-8')
+            initialContext = JSON.parse(content)
+          }
+          catch (error) {
+            console.error('Error loading context file:', error)
+            process.exit(1)
+          }
+        }
+        else {
+          console.error(`Context file not found: ${contextPath}`)
+          process.exit(1)
+        }
+      }
+
+      await startInteractive({
+        context: initialContext,
+        cwd: options.cwd ? path.resolve(options.cwd) : process.cwd(),
+        verbose: options.verbose,
+      })
+    })
+
   // Helper function to calculate Levenshtein distance for command suggestions
   function levenshteinDistance(a: string, b: string): number {
     const matrix: number[][] = []
@@ -2057,7 +2140,8 @@ else {
   // Check for unknown commands and provide suggestions
   const knownCommands = [
     'docs', 'iconify', 'dev', 'a11y', 'build', 'test', 'init', 'new',
-    'format', 'perf', 'debug', 'status', 'watch', 'analyze', 'version'
+    'format', 'perf', 'debug', 'status', 'watch', 'analyze', 'version',
+    'interactive', 'i'
   ]
 
   const args = process.argv.slice(2)

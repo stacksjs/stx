@@ -228,31 +228,31 @@ line 5`
     describe('fixCommonSyntaxErrors', () => {
       it('should fix unmatched braces', () => {
         const template = 'Hello {{ name world'
-        const fixed = errorRecovery.fixCommonSyntaxErrors(template)
+        const result = errorRecovery.fixCommonSyntaxErrors(template)
 
-        expect(fixed).toBe('Hello {{ name world}}')
+        expect(result.fixed).toBe('Hello {{ name world}}')
       })
 
       it('should fix unclosed directives', () => {
         const template = '@if (condition)\n  Content'
-        const fixed = errorRecovery.fixCommonSyntaxErrors(template)
+        const result = errorRecovery.fixCommonSyntaxErrors(template)
 
-        expect(fixed).toBe('@if (condition)\n  Content\n@endif')
+        expect(result.fixed).toBe('@if (condition)\n  Content\n@endif')
       })
 
       it('should fix multiple unclosed directives', () => {
         const template = '@if (condition)\n  @foreach (items as item)\n    Content'
-        const fixed = errorRecovery.fixCommonSyntaxErrors(template)
+        const result = errorRecovery.fixCommonSyntaxErrors(template)
 
-        expect(fixed).toContain('@endif')
-        expect(fixed).toContain('@endforeach')
+        expect(result.fixed).toContain('@endif')
+        expect(result.fixed).toContain('@endforeach')
       })
 
       it('should not modify correctly formatted templates', () => {
         const template = '@if (condition)\n  {{ name }}\n@endif'
-        const fixed = errorRecovery.fixCommonSyntaxErrors(template)
+        const result = errorRecovery.fixCommonSyntaxErrors(template)
 
-        expect(fixed).toBe(template)
+        expect(result.fixed).toBe(template)
       })
     })
 
@@ -387,8 +387,8 @@ line 5`
       const recent = logger.getRecentErrors(1)
       expect(recent).toHaveLength(1)
       expect(recent[0].error).toBe(error)
-      expect(recent[0].context?.template).toBe('test content')
-      expect(recent[0].context?.operation).toBe('parsing')
+      expect((recent[0].context as Record<string, unknown>)?.template).toBe('test content')
+      expect((recent[0].context as Record<string, unknown>)?.operation).toBe('parsing')
     })
 
     it('should provide error context for debugging', async () => {
@@ -419,13 +419,13 @@ line 3`
     // Missing @endforeach, @endif, @endif
 `
 
-      const fixed = errorRecovery.fixCommonSyntaxErrors(template)
+      const result = errorRecovery.fixCommonSyntaxErrors(template)
 
-      expect(fixed).toContain('@endforeach')
-      expect(fixed).toContain('@endif')
+      expect(result.fixed).toContain('@endforeach')
+      expect(result.fixed).toContain('@endif')
 
       // Should have closed all nested structures
-      const endifCount = (fixed.match(/@endif/g) || []).length
+      const endifCount = (result.fixed.match(/@endif/g) || []).length
       expect(endifCount).toBe(2)
     })
 

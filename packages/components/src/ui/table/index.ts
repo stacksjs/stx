@@ -1,9 +1,9 @@
 export { default as Table } from './Table.stx'
-export { default as TableHead } from './TableHead.stx'
 export { default as TableBody } from './TableBody.stx'
-export { default as TableRow } from './TableRow.stx'
-export { default as TableHeader } from './TableHeader.stx'
 export { default as TableCell } from './TableCell.stx'
+export { default as TableHead } from './TableHead.stx'
+export { default as TableHeader } from './TableHeader.stx'
+export { default as TableRow } from './TableRow.stx'
 
 export interface TableProps {
   className?: string

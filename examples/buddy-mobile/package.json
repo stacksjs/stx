@@ -1,8 +1,8 @@
 {
   "name": "buddy-mobile",
   "version": "1.0.0",
-  "description": "Buddy - Voice AI Code Assistant for iOS and Android",
   "private": true,
+  "description": "Buddy - Voice AI Code Assistant for iOS and Android",
   "scripts": {
     "build": "bun run build:web && bun run build:ios",
     "build:web": "bun scripts/build-web.ts",
@@ -25,6 +25,6 @@
     "@capacitor/status-bar": "^7.0.4"
   },
   "devDependencies": {
-    "@capacitor/cli": "^6.0.0"
+    "@capacitor/cli": "^7.4.4"
   }
 }

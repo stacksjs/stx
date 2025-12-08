@@ -83,7 +83,8 @@ describe('dropdown Navigation Integration', () => {
       const handleKeyDown = (key: string) => {
         if (key === 'ArrowDown') {
           focusedIndex = Math.min(focusedIndex + 1, items.length - 1)
-        } else if (key === 'ArrowUp') {
+        }
+        else if (key === 'ArrowUp') {
           focusedIndex = Math.max(focusedIndex - 1, 0)
         }
       }
@@ -129,10 +130,13 @@ describe('dropdown Navigation Integration', () => {
         do {
           if (direction === 'down') {
             nextIndex++
-            if (nextIndex >= mockItems.length) return currentIndex
-          } else {
+            if (nextIndex >= mockItems.length)
+              return currentIndex
+          }
+          else {
             nextIndex--
-            if (nextIndex < 0) return currentIndex
+            if (nextIndex < 0)
+              return currentIndex
           }
         } while (mockItems[nextIndex].disabled || mockItems[nextIndex].divider)
 
@@ -154,7 +158,7 @@ describe('dropdown Navigation Integration', () => {
     })
 
     it('should select item on Enter key', () => {
-      const items = mockItems.filter(item => !item.divider && !item.disabled)
+      const items: DropdownItem[] = mockItems.filter(item => !item.divider && !item.disabled)
       let focusedIndex = 0
       let selectedItem: DropdownItem | null = null
       let isOpen = true
@@ -168,14 +172,14 @@ describe('dropdown Navigation Integration', () => {
 
       // Select first item
       handleEnter()
-      expect(selectedItem?.label).toBe('Profile')
+      expect((selectedItem as DropdownItem | null)?.label).toBe('Profile')
       expect(isOpen).toBe(false)
 
       // Reset and select another
       isOpen = true
       focusedIndex = 1
       handleEnter()
-      expect(selectedItem?.label).toBe('Settings')
+      expect((selectedItem as DropdownItem | null)?.label).toBe('Settings')
     })
 
     it('should close dropdown on Escape key', () => {
@@ -195,11 +199,12 @@ describe('dropdown Navigation Integration', () => {
       let searchQuery = ''
 
       const getFilteredItems = () => {
-        if (!searchQuery) return mockItems
+        if (!searchQuery)
+          return mockItems
 
         return mockItems.filter(item =>
-          !item.divider &&
-          item.label.toLowerCase().includes(searchQuery.toLowerCase())
+          !item.divider
+          && item.label.toLowerCase().includes(searchQuery.toLowerCase()),
         )
       }
 
@@ -246,7 +251,7 @@ describe('dropdown Navigation Integration', () => {
 
       // Select enabled item
       handleSelect(mockItems[0])
-      expect(selectedItem?.label).toBe('Profile')
+      expect((selectedItem as DropdownItem | null)?.label).toBe('Profile')
       expect(callbackInvoked).toBe(true)
 
       // Try to select disabled item
@@ -267,9 +272,9 @@ describe('dropdown Navigation Integration', () => {
       }
 
       const calculatePosition = (
-        triggerRect: { top: number; left: number; height: number; width: number },
+        triggerRect: { top: number, left: number, height: number, width: number },
         dropdownHeight: number,
-        viewportHeight: number
+        viewportHeight: number,
       ): Position => {
         const spaceBelow = viewportHeight - (triggerRect.top + triggerRect.height)
         const spaceAbove = triggerRect.top
@@ -293,7 +298,7 @@ describe('dropdown Navigation Integration', () => {
       let position = calculatePosition(
         { top: 100, left: 50, height: 40, width: 200 },
         150,
-        800
+        800,
       )
       expect(position.placement).toBe('bottom')
       expect(position.top).toBe(140)
@@ -302,7 +307,7 @@ describe('dropdown Navigation Integration', () => {
       position = calculatePosition(
         { top: 700, left: 50, height: 40, width: 200 },
         150,
-        800
+        800,
       )
       expect(position.placement).toBe('top')
       expect(position.top).toBe(550)
@@ -320,12 +325,12 @@ describe('dropdown Navigation Integration', () => {
           { id: '1-1', label: 'New' },
           { id: '1-2', label: 'Open' },
           { id: '1-3', label: 'Save' },
-        ]},
+        ] },
         { id: '2', label: 'Edit', children: [
           { id: '2-1', label: 'Cut' },
           { id: '2-2', label: 'Copy' },
           { id: '2-3', label: 'Paste' },
-        ]},
+        ] },
         { id: '3', label: 'Help' },
       ]
 
@@ -334,7 +339,8 @@ describe('dropdown Navigation Integration', () => {
       const toggleSubmenu = (id: string) => {
         if (openSubmenus.has(id)) {
           openSubmenus.delete(id)
-        } else {
+        }
+        else {
           openSubmenus.add(id)
         }
       }

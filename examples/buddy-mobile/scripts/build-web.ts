@@ -7,8 +7,8 @@
  * 3. Writing to dist/index.html
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
-import { join, dirname } from 'node:path'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 
 const ROOT = dirname(import.meta.dir)
 const DIST = join(ROOT, 'dist')

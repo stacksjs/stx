@@ -1,5 +1,5 @@
-import { createPropValidator, PropTypes } from '../../utils/prop-validation'
 import { ErrorTypes, wrapErrorHandler } from '../../utils/error-handling'
+import { createPropValidator, PropTypes } from '../../utils/prop-validation'
 
 export { default as Button } from './Button.stx'
 
