@@ -257,7 +257,10 @@ export function createKeepAlive(options: KeepAliveOptions = {}): KeepAlive {
     }
 
     // First entry is least recently used (Map maintains insertion order)
-    const firstKey = cache.keys().next().value
+    const firstKey = cache.keys().next().value as string | undefined
+    if (!firstKey) {
+      return false
+    }
     const entry = cache.get(firstKey)
 
     if (entry) {
@@ -424,7 +427,7 @@ export function createKeepAlive(options: KeepAliveOptions = {}): KeepAlive {
     let pruned = 0
 
     // Remove expired entries
-    const now = Date.now()
+    const _now = Date.now()
     for (const [key, entry] of cache.entries()) {
       if (isExpired(entry)) {
         log(`Pruning expired: ${key}`)
@@ -589,8 +592,10 @@ export function createLRUCache<T = any>(maxSize: number) {
 
       // Evict oldest if over max size
       if (cache.size > maxSize) {
-        const firstKey = cache.keys().next().value
-        cache.delete(firstKey)
+        const firstKey = cache.keys().next().value as string | undefined
+        if (firstKey) {
+          cache.delete(firstKey)
+        }
       }
     },
 
@@ -743,6 +748,8 @@ export function createStateManager() {
  *
  * @param factory - Function to create new instances
  * @param options - Pool configuration
+ * @param options.maxSize - Maximum pool size
+ * @param options.reset - Function to reset instance before reuse
  * @returns Component pool
  *
  * @example
@@ -759,7 +766,7 @@ export function createStateManager() {
  */
 export function createComponentPool<T>(
   factory: () => T,
-  options: { maxSize?: number; reset?: (instance: T) => void } = {},
+  options: { maxSize?: number, reset?: (instance: T) => void } = {},
 ) {
   const { maxSize = 100, reset } = options
   const pool: T[] = []

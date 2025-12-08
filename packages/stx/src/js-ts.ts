@@ -105,17 +105,17 @@ async function processCodeBlocks(
           // Remove interface declarations completely
           .replace(/interface\s+\w+\s*\{[^}]*\}/g, '')
           // Remove type declarations completely
-          .replace(/type\s+\w+\s*=\s*[^;]+;/g, '')
+          .replace(/type\s+\w+\s*=[^;]+;/g, '')
           // Remove type annotations from const/let/var declarations
-          .replace(/(const|let|var)\s+(\w+)\s*:\s*[^=]+=/g, '$1 $2 =')
+          .replace(/(const|let|var)\s+(\w+)\s*:[^=]+=/g, '$1 $2 =')
           // Remove function parameter type annotations
-          .replace(/(\w+)\s*:\s*[\w<>|&[\],\s]+(?=[,)])/g, '$1')
+          .replace(/(\w+)\s*:[\w<>|&[\],\s]+(?=[,)])/g, '$1')
           // Remove function return type annotations
-          .replace(/\)\s*:\s*[\w<>|&[\],\s]+\s*(?=[{=>])/g, ') ')
+          .replace(/\)\s*:[\w<>|&[\],\s]+(?=[{=>])/g, ') ')
           // Remove generic type parameters
           .replace(/<[\w<>|&[\],\s]+>/g, '')
           // Remove 'as' type assertions
-          .replace(/\s+as\s+[\w<>|&[\],\s]+/g, '')
+          .replace(/\s+as\s[\w<>|&[\],\s]+/g, '')
       }
 
       // Extract all variable declarations to capture them

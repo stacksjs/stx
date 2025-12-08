@@ -1,4 +1,5 @@
-import { createHighlighter, type Highlighter as TSHighlighter } from 'ts-syntax-highlighter'
+import type { Highlighter as TSHighlighter } from 'ts-syntax-highlighter'
+import { createHighlighter } from 'ts-syntax-highlighter'
 
 let highlighterInstance: TSHighlighter | null = null
 
@@ -21,19 +22,7 @@ export interface HighlightResult {
 export async function getHighlighter(): Promise<TSHighlighter> {
   if (!highlighterInstance) {
     highlighterInstance = await createHighlighter({
-      themes: ['github-light', 'github-dark'],
-      languages: [
-        'typescript',
-        'javascript',
-        'html',
-        'css',
-        'json',
-        'bash',
-        'markdown',
-        'vue',
-        'jsx',
-        'tsx',
-      ],
+      theme: 'github-light',
     })
   }
   return highlighterInstance
@@ -49,8 +38,8 @@ export async function highlight(
   const {
     theme = 'auto',
     language = 'typescript',
-    lineNumbers = false,
-    wrapLines = true,
+    lineNumbers: _lineNumbers = false,
+    wrapLines: _wrapLines = true,
   } = options
 
   const highlighter = await getHighlighter()
@@ -60,15 +49,10 @@ export async function highlight(
     ? (globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'github-dark' : 'github-light')
     : theme === 'dark' ? 'github-dark' : 'github-light'
 
-  const html = highlighter.highlight(code, {
-    lang: language,
-    theme: effectiveTheme,
-    lineNumbers,
-    wrapLines,
-  })
+  const html = await highlighter.highlight(code, language)
 
   return {
-    html,
+    html: typeof html === 'string' ? html : String(html),
     language,
     theme: effectiveTheme,
   }
@@ -79,13 +63,20 @@ export async function highlight(
  */
 export function detectLanguage(code: string): string {
   // Simple heuristics for language detection
-  if (code.includes('<!DOCTYPE') || code.includes('<html')) return 'html'
-  if (code.includes('<?php')) return 'php'
-  if (code.includes('import') && code.includes('from')) return 'typescript'
-  if (code.includes('function') || code.includes('const')) return 'javascript'
-  if (code.includes('{') && code.includes('}')) return 'json'
-  if (code.includes('$') && code.includes('|')) return 'bash'
-  if (code.includes('#') && code.includes('##')) return 'markdown'
+  if (code.includes('<!DOCTYPE') || code.includes('<html'))
+    return 'html'
+  if (code.includes('<?php'))
+    return 'php'
+  if (code.includes('import') && code.includes('from'))
+    return 'typescript'
+  if (code.includes('function') || code.includes('const'))
+    return 'javascript'
+  if (code.includes('{') && code.includes('}'))
+    return 'json'
+  if (code.includes('$') && code.includes('|'))
+    return 'bash'
+  if (code.includes('#') && code.includes('##'))
+    return 'markdown'
 
   return 'typescript' // Default
 }

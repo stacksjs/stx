@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import {
-  PropTypes,
   assertProp,
   createPropValidator,
+  PropTypes,
   validateProps,
   warnProp,
 } from '../../src/utils/prop-validation'

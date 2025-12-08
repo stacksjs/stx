@@ -27,7 +27,7 @@ export interface UseMediaQueryOptions {
 export function useMediaQuery(
   query: string,
   options: UseMediaQueryOptions = {},
-): { matches: boolean; updateMatches: () => void } {
+): { matches: boolean, updateMatches: () => void } {
   const { defaultValue = false } = options
 
   let matches = defaultValue
@@ -65,20 +65,20 @@ export function useMediaQuery(
  * Common responsive breakpoints
  */
 export const Breakpoints = {
-  xs: '(min-width: 320px)',
-  sm: '(min-width: 640px)',
-  md: '(min-width: 768px)',
-  lg: '(min-width: 1024px)',
-  xl: '(min-width: 1280px)',
+  'xs': '(min-width: 320px)',
+  'sm': '(min-width: 640px)',
+  'md': '(min-width: 768px)',
+  'lg': '(min-width: 1024px)',
+  'xl': '(min-width: 1280px)',
   '2xl': '(min-width: 1536px)',
-  mobile: '(max-width: 767px)',
-  tablet: '(min-width: 768px) and (max-width: 1023px)',
-  desktop: '(min-width: 1024px)',
-  dark: '(prefers-color-scheme: dark)',
-  light: '(prefers-color-scheme: light)',
-  reducedMotion: '(prefers-reduced-motion: reduce)',
-  portrait: '(orientation: portrait)',
-  landscape: '(orientation: landscape)',
+  'mobile': '(max-width: 767px)',
+  'tablet': '(min-width: 768px) and (max-width: 1023px)',
+  'desktop': '(min-width: 1024px)',
+  'dark': '(prefers-color-scheme: dark)',
+  'light': '(prefers-color-scheme: light)',
+  'reducedMotion': '(prefers-reduced-motion: reduce)',
+  'portrait': '(orientation: portrait)',
+  'landscape': '(orientation: landscape)',
 } as const
 
 /**

@@ -467,8 +467,7 @@ function formatAttributes(content: string, options: Required<FormatterOptions>):
     const attrs: Array<{ name: string, value?: string }> = []
     let attrMatch
 
-    // biome-ignore lint/suspicious/noAssignInExpressions: needed for regex matching
-    // eslint-disable-next-line no-cond-assign
+    // eslint-disable-next-line no-cond-assign -- needed for regex matching
     while ((attrMatch = attrRegex.exec(attributes)) !== null) {
       attrs.push({
         name: attrMatch[1],

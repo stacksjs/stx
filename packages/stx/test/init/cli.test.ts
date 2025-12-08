@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { afterAll, afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -238,5 +238,12 @@ describe('stx CLI init command', () => {
     // Check that the file was not created
     const fileExists = fs.existsSync(path.join(TEST_DIR, fileName))
     expect(fileExists).toBe(false)
+  })
+
+  // Clean up test directory after all tests
+  afterAll(() => {
+    if (fs.existsSync(TEST_DIR)) {
+      fs.rmSync(TEST_DIR, { recursive: true, force: true })
+    }
   })
 })

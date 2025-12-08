@@ -25,7 +25,8 @@
 /**
  * Translation messages structure
  */
-export type Messages = Record<string, string | Messages>
+export type MessageValue = string | { [key: string]: MessageValue }
+export type Messages = Record<string, MessageValue>
 
 /**
  * Locale messages
@@ -376,14 +377,14 @@ export function n(value: number, format?: string): string {
  */
 export const pluralRules: Record<string, PluralRule> = {
   // English, German, Dutch, Swedish, Danish, Norwegian, Finnish
-  en: (count) => count === 1 ? 0 : 1,
-  de: (count) => count === 1 ? 0 : 1,
-  nl: (count) => count === 1 ? 0 : 1,
-  sv: (count) => count === 1 ? 0 : 1,
+  en: count => count === 1 ? 0 : 1,
+  de: count => count === 1 ? 0 : 1,
+  nl: count => count === 1 ? 0 : 1,
+  sv: count => count === 1 ? 0 : 1,
 
   // French, Brazilian Portuguese
-  fr: (count) => count === 0 || count === 1 ? 0 : 1,
-  pt_BR: (count) => count === 0 || count === 1 ? 0 : 1,
+  fr: count => count === 0 || count === 1 ? 0 : 1,
+  pt_BR: count => count === 0 || count === 1 ? 0 : 1,
 
   // Russian, Ukrainian, Serbian, Croatian
   ru: (count) => {

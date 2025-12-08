@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test'
 import {
-  ComponentError,
-  ErrorTypes,
   assert,
+  ComponentError,
   createDebugger,
   devAssert,
   errorBoundary,
+  ErrorTypes,
   handleError,
   setErrorHandler,
   warn,
@@ -279,7 +279,7 @@ describe('Global Error Handler', () => {
     const error = new ComponentError('Test', 'Error')
     handleError(error, { throwError: false })
 
-    expect(captured).toBe(error)
+    expect(captured as Error | null).toBe(error)
   })
 
   it('should handle errors without throwing when configured', () => {
