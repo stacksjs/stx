@@ -11,19 +11,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.1
         with:
           fetch-depth: 0
 
       - name: Install Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@v2.0.2
         # env:
         #   BUN_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
         with:
           bun-version: latest
 
       - name: Use cached node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v4.3.0
         with:
           path: node_modules
           key: node-modules-${{ hashFiles('**/bun.lock') }}
@@ -39,7 +39,7 @@ jobs:
           BUN_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 
       - name: Create GitHub Release
-        uses: stacksjs/action-releaser@v1.2.7
+        uses: stacksjs/action-releaser@v1.2.6
         with:
           files: |
             packages/stx/bin/stx-linux-x64.zip
