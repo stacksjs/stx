@@ -286,6 +286,250 @@ describe('stx Form Directives', () => {
   })
 })
 
+describe('stx Form Validation', () => {
+  it('should validate required field', async () => {
+    const { validateField } = await import('../../src/forms')
+
+    const result1 = validateField('name', '', 'required')
+    expect(result1.valid).toBe(false)
+    expect(result1.errors.length).toBeGreaterThan(0)
+
+    const result2 = validateField('name', 'John', 'required')
+    expect(result2.valid).toBe(true)
+  })
+
+  it('should validate email field', async () => {
+    const { validateField } = await import('../../src/forms')
+
+    const result1 = validateField('email', 'invalid', 'email')
+    expect(result1.valid).toBe(false)
+
+    const result2 = validateField('email', 'test@example.com', 'email')
+    expect(result2.valid).toBe(true)
+  })
+
+  it('should validate numeric field', async () => {
+    const { validateField } = await import('../../src/forms')
+
+    const result1 = validateField('age', 'abc', 'numeric')
+    expect(result1.valid).toBe(false)
+
+    const result2 = validateField('age', '25', 'numeric')
+    expect(result2.valid).toBe(true)
+  })
+
+  it('should validate min length', async () => {
+    const { validateField } = await import('../../src/forms')
+
+    const result1 = validateField('password', 'abc', 'min:6')
+    expect(result1.valid).toBe(false)
+
+    const result2 = validateField('password', 'password123', 'min:6')
+    expect(result2.valid).toBe(true)
+  })
+
+  it('should validate max length', async () => {
+    const { validateField } = await import('../../src/forms')
+
+    const result1 = validateField('code', '1234567', 'max:5')
+    expect(result1.valid).toBe(false)
+
+    const result2 = validateField('code', '123', 'max:5')
+    expect(result2.valid).toBe(true)
+  })
+
+  it('should validate multiple rules', async () => {
+    const { validateField } = await import('../../src/forms')
+
+    const result1 = validateField('email', '', 'required|email')
+    expect(result1.valid).toBe(false)
+
+    const result2 = validateField('email', 'invalid', 'required|email')
+    expect(result2.valid).toBe(false)
+
+    const result3 = validateField('email', 'test@example.com', 'required|email')
+    expect(result3.valid).toBe(true)
+  })
+
+  it('should validate url field', async () => {
+    const { validateField } = await import('../../src/forms')
+
+    const result1 = validateField('website', 'not-a-url', 'url')
+    expect(result1.valid).toBe(false)
+
+    const result2 = validateField('website', 'https://example.com', 'url')
+    expect(result2.valid).toBe(true)
+  })
+
+  it('should validate alpha field', async () => {
+    const { validateField } = await import('../../src/forms')
+
+    const result1 = validateField('name', 'John123', 'alpha')
+    expect(result1.valid).toBe(false)
+
+    const result2 = validateField('name', 'John', 'alpha')
+    expect(result2.valid).toBe(true)
+  })
+
+  it('should validate alphanumeric field', async () => {
+    const { validateField } = await import('../../src/forms')
+
+    const result1 = validateField('username', 'user@name', 'alphanumeric')
+    expect(result1.valid).toBe(false)
+
+    const result2 = validateField('username', 'user123', 'alphanumeric')
+    expect(result2.valid).toBe(true)
+  })
+
+  it('should validate in rule', async () => {
+    const { validateField } = await import('../../src/forms')
+
+    const result1 = validateField('status', 'unknown', 'in:active,inactive,pending')
+    expect(result1.valid).toBe(false)
+
+    const result2 = validateField('status', 'active', 'in:active,inactive,pending')
+    expect(result2.valid).toBe(true)
+  })
+
+  it('should validate notIn rule', async () => {
+    const { validateField } = await import('../../src/forms')
+
+    const result1 = validateField('word', 'banned', 'notIn:banned,forbidden')
+    expect(result1.valid).toBe(false)
+
+    const result2 = validateField('word', 'allowed', 'notIn:banned,forbidden')
+    expect(result2.valid).toBe(true)
+  })
+
+  it('should validate multiple fields', async () => {
+    const { validateFields } = await import('../../src/forms')
+
+    const rules = {
+      email: 'required|email',
+      password: 'required|min:6',
+    }
+
+    const values1 = { email: '', password: '123' }
+    const result1 = validateFields(values1, rules)
+    // validateFields returns Record<string, string[]> with errors per field
+    expect(Object.keys(result1)).toContain('email')
+    expect(Object.keys(result1)).toContain('password')
+    expect(result1.email.length).toBeGreaterThan(0)
+    expect(result1.password.length).toBeGreaterThan(0)
+
+    const values2 = { email: 'test@example.com', password: 'password123' }
+    const result2 = validateFields(values2, rules)
+    // No errors means empty object
+    expect(Object.keys(result2).length).toBe(0)
+  })
+
+  it('should register custom validation rule', async () => {
+    const { registerValidationRule, validateField } = await import('../../src/forms')
+
+    // Register a custom rule with unique name to avoid conflicts
+    // Validator returns error message (string) if invalid, or null if valid
+    registerValidationRule('customTestRule', (value) => {
+      if (value !== 'valid') {
+        return 'Value must be "valid"'
+      }
+      return null
+    })
+
+    const result1 = validateField('test', 'invalid', 'customTestRule')
+    expect(result1.valid).toBe(false)
+    expect(result1.errors).toContain('Value must be "valid"')
+
+    const result2 = validateField('test', 'valid', 'customTestRule')
+    expect(result2.valid).toBe(true)
+  })
+
+  it('should process @validate directive', async () => {
+    const { processValidateDirective } = await import('../../src/forms')
+
+    const template = `<form>@validate('email', 'required|email')@endvalidate</form>`
+    const context = { email: 'invalid' }
+    const result = processValidateDirective(template, context)
+
+    // The directive converts to HTML comments with validation info
+    expect(result).toContain('<!-- @validate:email:required|email -->')
+    expect(result).toContain('@endvalidate')
+  })
+
+  it('should generate validation script', async () => {
+    const { generateValidationScript } = await import('../../src/forms')
+
+    const script = generateValidationScript('myForm', {
+      email: 'required|email',
+      password: 'required|min:6',
+    })
+
+    expect(script).toContain('myForm')
+    expect(script).toContain('email')
+    expect(script).toContain('password')
+    expect(script).toContain('script')
+  })
+})
+
+describe('stx Enhanced Validation', () => {
+  it('should validate with enhanced rules', async () => {
+    const { validateValueEnhanced, enhancedValidationRules } = await import('../../src/forms')
+
+    // Test that enhanced rules exist
+    expect(enhancedValidationRules).toBeDefined()
+    expect(typeof enhancedValidationRules.required).toBe('object')
+  })
+
+  it('should register enhanced validation rule', async () => {
+    const { registerEnhancedValidationRule, enhancedValidationRules } = await import('../../src/forms')
+
+    registerEnhancedValidationRule({
+      name: 'testEnhanced',
+      validate: (value) => value === 'test',
+      message: 'Must be test',
+      htmlAttributes: { 'data-test': 'true' },
+    })
+
+    expect(enhancedValidationRules.testEnhanced).toBeDefined()
+  })
+
+  it('should validate form with enhanced rules', async () => {
+    const { validateFormEnhanced } = await import('../../src/forms')
+
+    const result = validateFormEnhanced(
+      { email: 'test@example.com' },
+      { email: 'required|email' },
+    )
+
+    expect(result).toBeDefined()
+    expect(typeof result.valid).toBe('boolean')
+  })
+})
+
+describe('stx File Upload', () => {
+  it('should process @file directive', () => {
+    const template = `<form>@file('document')</form>`
+    const result = processFormInputDirectives(template, {})
+
+    expect(result).toContain('<input type="file" name="document"')
+  })
+
+  it('should process @file directive with accept', () => {
+    const template = `<form>@file('image', {accept: 'image/*'})</form>`
+    const result = processForms(template, {}, '', {})
+
+    expect(result).toContain('<input type="file" name="image"')
+    expect(result).toContain('accept="image/*"')
+  })
+
+  it('should process @file directive with multiple', () => {
+    const template = `<form>@file('documents', {multiple: true})</form>`
+    const result = processForms(template, {}, '', {})
+
+    expect(result).toContain('<input type="file" name="documents"')
+    expect(result).toContain('multiple')
+  })
+})
+
 describe('stx Markdown Support', () => {
   it('should process @markdown directive with simple content', async () => {
     const template = `<div>@markdown
