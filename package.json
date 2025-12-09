@@ -61,13 +61,12 @@
     "zip:windows-x64": "zip -j bin/stx-windows-x64.zip bin/stx-windows-x64.exe",
     "zip:darwin-x64": "zip -j bin/stx-darwin-x64.zip bin/stx-darwin-x64",
     "zip:darwin-arm64": "zip -j bin/stx-darwin-arm64.zip bin/stx-darwin-arm64",
-    "lint:staged": "bun eslint --fix",
     "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
     "prepublishOnly": "bun run build",
     "setup": "bun run scripts/setup.ts",
     "test": "bun test",
-    "lint": "bunx --bun eslint .",
-    "lint:fix": "bunx --bun eslint . --fix",
+    "lint": "bunx --bun pickier lint",
+    "lint:fix": "bunx --bun pickier lint --fix",
     "changelog": "bunx logsmith --verbose",
     "changelog:generate": "bunx logsmith --output CHANGELOG.md",
     "release": "bun run changelog:generate && bunx --bun bumpx prompt --recursive",
@@ -79,7 +78,7 @@
   "git-hooks": {
     "pre-commit": {
       "staged-lint": {
-        "*.{js,ts,json,yaml,yml,md}": "bunx --bun eslint --fix"
+        "*.{js,ts,json,yaml,yml,md}": "bunx --bun pickier lint --fix"
       }
     }
   },
@@ -92,6 +91,7 @@
   },
   "devDependencies": {
     "better-dx": "^0.2.5",
+    "pickier": "^0.1.10",
     "typescript": "^5.9.3"
   }
 }
