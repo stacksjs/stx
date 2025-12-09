@@ -104,19 +104,7 @@ describe('Components', () => {
   })
 
   describe('createButton', () => {
-    it('should warn that feature is not yet implemented', () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      createButton({ text: 'Click me' })
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith('Button component not yet implemented', expect.any(Object))
-
-      consoleWarnSpy.mockRestore()
-    })
-
     it('should return HTML string', () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
       const result = createButton({ text: 'Click me' })
 
       expect(typeof result).toBe('string')
@@ -185,19 +173,7 @@ describe('Components', () => {
   })
 
   describe('createTextInput', () => {
-    it('should warn that feature is not yet implemented', () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      createTextInput({})
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith('TextInput component not yet implemented', expect.any(Object))
-
-      consoleWarnSpy.mockRestore()
-    })
-
     it('should return HTML string', () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
       const result = createTextInput({})
 
       expect(typeof result).toBe('string')
@@ -258,19 +234,7 @@ describe('Components', () => {
   })
 
   describe('createCheckbox', () => {
-    it('should warn that feature is not yet implemented', () => {
-      const consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-
-      createCheckbox({})
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith('Checkbox component not yet implemented', expect.any(Object))
-
-      consoleWarnSpy.mockRestore()
-    })
-
     it('should return HTML string', () => {
-      spyOn(console, 'warn').mockImplementation(() => {})
-
       const result = createCheckbox({})
 
       expect(typeof result).toBe('string')

@@ -1,11 +1,13 @@
-import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import {
+  configureErrorHandling,
   createEnhancedError,
   devHelpers,
   ErrorLogger,
   errorRecovery,
+  resetErrorConfig,
   safeExecute,
   safeExecuteAsync,
   StxError,
@@ -225,6 +227,16 @@ line 5`
   })
 
   describe('Error Recovery', () => {
+    beforeEach(() => {
+      // Enable auto-recovery for these tests
+      configureErrorHandling({ enableAutoRecovery: true, logRecoveryWarnings: false })
+    })
+
+    afterEach(() => {
+      // Reset to default config
+      resetErrorConfig()
+    })
+
     describe('fixCommonSyntaxErrors', () => {
       it('should fix unmatched braces', () => {
         const template = 'Hello {{ name world'

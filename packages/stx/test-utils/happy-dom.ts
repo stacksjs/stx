@@ -397,3 +397,63 @@ if (typeof (window as any).getComputedStyle === 'undefined') {
     }) as CSSStyleDeclaration
   }
 }
+
+// Add matchMedia mock if not available (very-happy-dom doesn't provide this)
+if (typeof (window as any).matchMedia === 'undefined') {
+  ;(window as any).matchMedia = function (query: string): MediaQueryList {
+    // Return a mock MediaQueryList that reports light theme by default
+    return {
+      matches: query.includes('dark') ? false : true, // Default to light theme
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => true,
+    } as MediaQueryList
+  }
+  globalThis.matchMedia = (window as any).matchMedia
+}
+
+// Add disabled property for form elements (very-happy-dom doesn't reflect this)
+if (!Object.getOwnPropertyDescriptor(elementProto, 'disabled')) {
+  Object.defineProperty(elementProto, 'disabled', {
+    get(this: Element) {
+      return this.hasAttribute('disabled')
+    },
+    set(this: Element, value: boolean) {
+      if (value) {
+        this.setAttribute('disabled', '')
+      }
+      else {
+        this.removeAttribute('disabled')
+      }
+    },
+    enumerable: true,
+    configurable: true,
+  })
+}
+
+// Add tabIndex property (very-happy-dom doesn't reflect this)
+if (!Object.getOwnPropertyDescriptor(elementProto, 'tabIndex')) {
+  Object.defineProperty(elementProto, 'tabIndex', {
+    get(this: Element) {
+      const attr = this.getAttribute('tabindex')
+      if (attr !== null) {
+        return Number.parseInt(attr, 10)
+      }
+      // Default focusable elements have tabIndex of 0
+      const focusable = ['a', 'button', 'input', 'select', 'textarea']
+      if (focusable.includes(this.tagName.toLowerCase())) {
+        return 0
+      }
+      return -1
+    },
+    set(this: Element, value: number) {
+      this.setAttribute('tabindex', String(value))
+    },
+    enumerable: true,
+    configurable: true,
+  })
+}

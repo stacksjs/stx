@@ -318,7 +318,8 @@ Line 2
       module.processMarkdownDirectives(template, {}),
     )
 
-    expect(processedContent).toContain('Line 1<br>')
+    // The br tag may be self-closing (<br />) or not (<br>) depending on markdown parser
+    expect(processedContent).toMatch(/Line 1<br\s*\/?>/)
   })
 
   it('should handle @markdown directive with syntax errors gracefully', async () => {

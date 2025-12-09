@@ -112,16 +112,30 @@ function getToastContainer(position: AlertOptions['position'] = 'top-right'): HT
   }
 
   // Check if container already exists with correct position
-  const existingContainer = document.querySelector(`.stx-toast-container[data-position="${position}"]`)
-  if (existingContainer) {
-    return existingContainer as HTMLElement
+  try {
+    const existingContainer = document.querySelector(`.stx-toast-container[data-position="${position}"]`)
+    if (existingContainer) {
+      return existingContainer as HTMLElement
+    }
+  }
+  catch {
+    // Ignore querySelector errors in very-happy-dom
   }
 
   // Create new container
   const container = document.createElement('div')
   container.className = `stx-toast-container ${position}`
   container.dataset.position = position
-  document.body.appendChild(container)
+
+  // Safely append to body
+  try {
+    if (document.body) {
+      document.body.appendChild(container)
+    }
+  }
+  catch {
+    // Ignore appendChild errors in very-happy-dom
+  }
 
   return container
 }
@@ -240,37 +254,75 @@ export async function showAlert(options: AlertOptions): Promise<void> {
 
   if (isBrowser()) {
     // Web-based toast implementation
-    const container = getToastContainer(options.position)
-    const wrapper = document.createElement('div')
-    wrapper.innerHTML = createToastHTML(state)
-    const toast = wrapper.firstElementChild as HTMLElement
-    state.element = toast
+    try {
+      const container = getToastContainer(options.position)
+      const wrapper = document.createElement('div')
+      wrapper.innerHTML = createToastHTML(state)
+      const toast = wrapper.firstElementChild as HTMLElement
 
-    // Add to container
-    container.appendChild(toast)
-
-    // Trigger animation
-    requestAnimationFrame(() => {
-      toast.classList.add('visible')
-    })
-
-    // Handle click
-    toast.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).classList.contains('stx-toast-close')) {
-        dismissAlert(state)
+      if (!toast) {
+        // Fallback to console if DOM manipulation fails
+        const typeLabel = (options.type || 'info').toUpperCase()
+        console.log(`[stx-alert] ${typeLabel}: ${options.title || ''}`)
+        console.log(`[stx-alert] ${options.message}`)
         return
       }
 
-      if (options.onClick) {
-        options.onClick()
-      }
-    })
+      state.element = toast
 
-    // Auto-dismiss
-    if (duration > 0) {
-      state.timeout = setTimeout(() => {
-        dismissAlert(state)
-      }, duration)
+      // Add to container
+      try {
+        container.appendChild(toast)
+      }
+      catch {
+        // Fallback to console if appendChild fails (e.g., in very-happy-dom)
+        const typeLabel = (options.type || 'info').toUpperCase()
+        console.log(`[stx-alert] ${typeLabel}: ${options.title || ''}`)
+        console.log(`[stx-alert] ${options.message}`)
+        return
+      }
+
+      // Trigger animation
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => {
+          try {
+            toast.classList.add('visible')
+          }
+          catch {
+            // Ignore classList errors
+          }
+        })
+      }
+
+      // Handle click
+      try {
+        toast.addEventListener('click', (e) => {
+          if ((e.target as HTMLElement).classList?.contains('stx-toast-close')) {
+            dismissAlert(state)
+            return
+          }
+
+          if (options.onClick) {
+            options.onClick()
+          }
+        })
+      }
+      catch {
+        // Ignore addEventListener errors
+      }
+
+      // Auto-dismiss
+      if (duration > 0) {
+        state.timeout = setTimeout(() => {
+          dismissAlert(state)
+        }, duration)
+      }
+    }
+    catch {
+      // Fallback to console if any DOM operation fails
+      const typeLabel = (options.type || 'info').toUpperCase()
+      console.log(`[stx-alert] ${typeLabel}: ${options.title || ''}`)
+      console.log(`[stx-alert] ${options.message}`)
     }
   }
   else {

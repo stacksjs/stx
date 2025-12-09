@@ -389,7 +389,11 @@ describe('Performance Utils', () => {
 
   describe('Global Performance Monitor', () => {
     it('should be accessible globally', () => {
-      expect(performanceMonitor).toBeInstanceOf(PerformanceMonitor)
+      // performanceMonitor is a Proxy that delegates to a lazily-loaded PerformanceMonitor
+      // Since it's a Proxy, we can't use instanceof, but we can verify it has the expected methods
+      expect(typeof performanceMonitor.recordTime).toBe('function')
+      expect(typeof performanceMonitor.getStats).toBe('function')
+      expect(typeof performanceMonitor.reset).toBe('function')
     })
 
     it('should maintain state across calls', () => {
