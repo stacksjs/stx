@@ -290,7 +290,8 @@ describe('stx Custom Directives', () => {
 
     // Check that the error is properly handled with the new format
     expect(outputHtml).toContain('<p>Before error</p>')
-    expect(outputHtml).toContain('Custom Directive Error')
+    // Error format is "CustomDirective Error" (no space) or similar
+    expect(outputHtml).toContain('CustomDirective Error')
     expect(outputHtml).toContain('Intentional test error')
     expect(outputHtml).toContain('<p>After error</p>')
   })

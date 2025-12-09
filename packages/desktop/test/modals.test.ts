@@ -13,24 +13,46 @@ import {
 // Check if we're in a browser-like environment (Happy DOM)
 const isBrowserEnv = typeof window !== 'undefined' && typeof document !== 'undefined'
 
+/**
+ * Safely clean up modals - handles very-happy-dom quirks
+ */
+function cleanupModals(): void {
+  if (!isBrowserEnv)
+    return
+  try {
+    const modals = document.querySelectorAll('.stx-modal-overlay')
+    if (modals && modals.length > 0) {
+      Array.from(modals).forEach((el) => {
+        try {
+          if (el && el.parentNode) {
+            el.parentNode.removeChild(el)
+          }
+        }
+        catch {
+          // Ignore errors during cleanup
+        }
+      })
+    }
+  }
+  catch {
+    // Ignore querySelectorAll errors in very-happy-dom
+  }
+}
+
 describe('Modals', () => {
   let consoleSpy: ReturnType<typeof spyOn>
 
   beforeEach(() => {
     consoleSpy = spyOn(console, 'log').mockImplementation(() => {})
     // Clean up any existing modals from previous tests
-    if (isBrowserEnv) {
-      document.querySelectorAll('.stx-modal-overlay').forEach(el => el.remove())
-    }
+    cleanupModals()
   })
 
   afterEach(() => {
     consoleSpy.mockRestore()
     closeAllModals()
     // Clean up any modals
-    if (isBrowserEnv) {
-      document.querySelectorAll('.stx-modal-overlay').forEach(el => el.remove())
-    }
+    cleanupModals()
   })
 
   describe('showModal', () => {

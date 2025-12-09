@@ -77,6 +77,46 @@ export const validators = {
       return false
     }
 
+    // Reject suspicious absolute paths (security-sensitive system directories)
+    if (normalizedPath.startsWith('/')) {
+      // Unix/Mac sensitive directories
+      const suspiciousPaths = [
+        '/etc/',
+        '/root/',
+        '/var/',
+        '/usr/',
+        '/bin/',
+        '/sbin/',
+        '/proc/',
+        '/sys/',
+        '/dev/',
+        '/boot/',
+        '/home/',
+        '/private/',
+        '/Library/',
+        '/System/',
+      ]
+      // Check for exact paths or paths starting with sensitive directories
+      if (suspiciousPaths.some(p => normalizedPath === p.slice(0, -1) || normalizedPath.startsWith(p))) {
+        return false
+      }
+    }
+
+    // Reject Windows system paths
+    if (/^[a-z]:/i.test(normalizedPath)) {
+      const windowsSuspicious = [
+        'Windows/',
+        'Windows\\',
+        'System32/',
+        'System32\\',
+        'Program Files/',
+        'Program Files\\',
+      ]
+      if (windowsSuspicious.some(p => normalizedPath.includes(p))) {
+        return false
+      }
+    }
+
     // If allowedDir is provided, validate the resolved path is within it
     if (allowedDir) {
       const resolvedPath = path.resolve(allowedDir, filePath)

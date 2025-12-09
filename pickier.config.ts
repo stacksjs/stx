@@ -34,6 +34,11 @@ const config: Partial<PickierConfig> = {
 
     // Disable false positive regexp rules on mathematical expressions
     'regexp/no-super-linear-backtracking': 'off',
+
+    // Disable quote warnings (false positives in regex patterns that need to match both quote types)
+    'quotes': 'off',
+    'style/quotes': 'off',
+    '@stylistic/quotes': 'off',
   },
 }
 

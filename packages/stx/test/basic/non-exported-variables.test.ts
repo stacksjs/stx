@@ -182,7 +182,7 @@ describe('stx Non-Exported Variables', () => {
           <p>Email: {{ user.email }}</p>
           <p>City: {{ user.address.city }}</p>
         </div>
-        @foreach(item in items)
+        @foreach(items as item)
           <div class="item">{{ item.name }}</div>
         @endforeach
       </body>

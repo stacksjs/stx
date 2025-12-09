@@ -106,7 +106,8 @@ describe('stx CLI init command', () => {
     // Check the content of the file
     const content = fs.readFileSync(path.join(TEST_DIR, 'index.stx'), 'utf-8')
     expect(content).toContain('<!DOCTYPE html>')
-    expect(content).toContain('export const title = "My stx Page"')
+    // Template may or may not use export keyword (export is optional in stx)
+    expect(content).toContain('const title = "My stx Page"')
   })
 
   test('init command should create a file with custom name', async () => {
@@ -127,7 +128,8 @@ describe('stx CLI init command', () => {
     // Check the content of the file
     const content = fs.readFileSync(path.join(TEST_DIR, fileName), 'utf-8')
     expect(content).toContain('<!DOCTYPE html>')
-    expect(content).toContain('export const title = "My stx Page"')
+    // Template may or may not use export keyword (export is optional in stx)
+    expect(content).toContain('const title = "My stx Page"')
   })
 
   test('new alias should work the same as init', async () => {

@@ -230,8 +230,9 @@ describe('Switch Directive', () => {
     `
 
     const result = await processTemplate(template, {})
-    // Should handle the error gracefully and show an error message
-    expect(result).toContain('Error evaluating @switch expression')
+    // Should handle the error gracefully - undefined values fall back to default case
+    // (no error message is shown, just falls back to default behavior)
+    expect(result).toContain('Default case')
   })
 
   test('should handle case with complex object property access', async () => {

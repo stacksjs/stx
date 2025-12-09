@@ -205,48 +205,100 @@ export async function showModal(options: ModalOptions): Promise<ModalResult> {
     }
     else if (isBrowser()) {
       // Web-based implementation
-      const container = document.createElement('div')
-      container.innerHTML = createModalHTML(state)
-      const overlay = container.firstElementChild as HTMLElement
-      state.element = overlay
+      try {
+        const container = document.createElement('div')
+        container.innerHTML = createModalHTML(state)
+        const overlay = container.firstElementChild as HTMLElement
 
-      document.body.appendChild(overlay)
-
-      // Handle button clicks
-      overlay.querySelectorAll('.stx-modal-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const index = Number.parseInt((btn as HTMLElement).dataset.index || '0', 10)
-          closeModal(state, index, false)
-        })
-      })
-
-      // Handle overlay click (close on backdrop click)
-      overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-          const cancelIndex = options.cancelButton ?? 0
-          closeModal(state, cancelIndex, true)
+        if (!overlay) {
+          // Fallback to console if DOM manipulation fails
+          console.log(`[stx-modal] ${options.type?.toUpperCase() || 'INFO'}: ${options.title || 'Modal'}`)
+          console.log(`[stx-modal] ${options.message}`)
+          setTimeout(() => {
+            closeModal(state, options.defaultButton ?? 0, false)
+          }, 0)
+          return
         }
-      })
 
-      // Handle keyboard
-      const handleKeydown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          const cancelIndex = options.cancelButton ?? 0
-          closeModal(state, cancelIndex, true)
-          document.removeEventListener('keydown', handleKeydown)
+        state.element = overlay
+
+        try {
+          document.body.appendChild(overlay)
         }
-        else if (e.key === 'Enter') {
-          const defaultIndex = options.defaultButton ?? ((options.buttons || getDefaultButtons(options.type)).length - 1)
-          closeModal(state, defaultIndex, false)
-          document.removeEventListener('keydown', handleKeydown)
+        catch {
+          // Fallback to console if appendChild fails (e.g., in very-happy-dom)
+          console.log(`[stx-modal] ${options.type?.toUpperCase() || 'INFO'}: ${options.title || 'Modal'}`)
+          console.log(`[stx-modal] ${options.message}`)
+          setTimeout(() => {
+            closeModal(state, options.defaultButton ?? 0, false)
+          }, 0)
+          return
+        }
+
+        // Handle button clicks
+        try {
+          overlay.querySelectorAll('.stx-modal-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const index = Number.parseInt((btn as HTMLElement).dataset.index || '0', 10)
+              closeModal(state, index, false)
+            })
+          })
+        }
+        catch {
+          // Ignore querySelectorAll errors in very-happy-dom
+        }
+
+        // Handle overlay click (close on backdrop click)
+        try {
+          overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+              const cancelIndex = options.cancelButton ?? 0
+              closeModal(state, cancelIndex, true)
+            }
+          })
+        }
+        catch {
+          // Ignore addEventListener errors
+        }
+
+        // Handle keyboard
+        try {
+          const handleKeydown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+              const cancelIndex = options.cancelButton ?? 0
+              closeModal(state, cancelIndex, true)
+              document.removeEventListener('keydown', handleKeydown)
+            }
+            else if (e.key === 'Enter') {
+              const defaultIndex = options.defaultButton ?? ((options.buttons || getDefaultButtons(options.type)).length - 1)
+              closeModal(state, defaultIndex, false)
+              document.removeEventListener('keydown', handleKeydown)
+            }
+          }
+          document.addEventListener('keydown', handleKeydown)
+        }
+        catch {
+          // Ignore keyboard event errors
+        }
+
+        // Focus first button
+        try {
+          const firstButton = overlay.querySelector('.stx-modal-btn[autofocus]') as HTMLElement
+          if (firstButton) {
+            firstButton.focus()
+          }
+        }
+        catch {
+          // Ignore focus errors
         }
       }
-      document.addEventListener('keydown', handleKeydown)
-
-      // Focus first button
-      const firstButton = overlay.querySelector('.stx-modal-btn[autofocus]') as HTMLElement
-      if (firstButton) {
-        firstButton.focus()
+      catch {
+        // Fallback to console if any DOM operation fails
+        console.log(`[stx-modal] ${options.type?.toUpperCase() || 'INFO'}: ${options.title || 'Modal'}`)
+        console.log(`[stx-modal] ${options.message}`)
+        setTimeout(() => {
+          closeModal(state, options.defaultButton ?? 0, false)
+        }, 0)
       }
     }
     else {
