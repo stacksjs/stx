@@ -130,7 +130,7 @@ const commands: Record<string, {
 
         console.log(`\n${c.dim}Rendering ${filePath}...${c.reset}\n`)
 
-        const result = await processDirectives(content, state.context, filePath, {})
+        const result = await processDirectives(content, state.context, filePath, {}, new Set<string>())
         state.lastResult = result
 
         if (showRaw) {
@@ -541,7 +541,7 @@ ${c.dim}Type 'help' for available commands, 'exit' to quit${c.reset}
       const args = parts.slice(1).map(a => a.replace(/^"|"$/g, ''))
 
       // Execute command
-      if (commands[cmd]) {
+      if (cmd && commands[cmd]) {
         try {
           await commands[cmd].handler(args, state)
         }

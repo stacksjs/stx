@@ -78,7 +78,7 @@ export interface TemplateAnalysis {
   /** Components referenced */
   components: ComponentReference[]
   /** Directives used */
-  directives: DirectiveUsage[]
+  directives: VisualEditorDirectiveUsage[]
   /** Slots defined */
   slots: SlotDefinition[]
   /** Sections defined */
@@ -90,7 +90,7 @@ export interface TemplateAnalysis {
   /** Layout inheritance */
   layout?: LayoutInfo
   /** Template complexity metrics */
-  metrics: TemplateMetrics
+  metrics: VisualEditorMetrics
 }
 
 /** Variable usage info */
@@ -107,12 +107,12 @@ export interface ComponentReference {
   name: string
   path?: string
   line: number
-  props: Record<string, string>
+  props: Record<string, string | true>
   hasSlot: boolean
 }
 
-/** Directive usage info */
-export interface DirectiveUsage {
+/** Visual editor directive usage info */
+export interface VisualEditorDirectiveUsage {
   name: string
   category: DirectiveCategory
   line: number
@@ -158,8 +158,8 @@ export interface LayoutInfo {
   sections: string[]
 }
 
-/** Template complexity metrics */
-export interface TemplateMetrics {
+/** Visual editor template complexity metrics */
+export interface VisualEditorMetrics {
   /** Total line count */
   lines: number
   /** Total character count */
@@ -176,8 +176,8 @@ export interface TemplateMetrics {
   complexity: number
 }
 
-/** Preview options */
-export interface PreviewOptions {
+/** Visual editor preview options */
+export interface VisualEditorPreviewOptions {
   /** Context data for rendering */
   context?: Record<string, unknown>
   /** Include styles */
@@ -200,12 +200,12 @@ export interface PaletteItem {
   description: string
   icon?: string
   snippet: string
-  props?: PropDefinition[]
+  props?: VisualEditorPropDefinition[]
   slots?: string[]
 }
 
-/** Prop definition for palette */
-export interface PropDefinition {
+/** Visual editor prop definition for palette */
+export interface VisualEditorPropDefinition {
   name: string
   type: string
   required: boolean
@@ -614,12 +614,28 @@ export function getTemplateOutline(template: string): OutlineNode {
 // =============================================================================
 
 /**
- * Analyze a template for variables, components, directives, etc.
+ * Analyze a template for visual editor purposes
+ * (Alias: analyzeTemplateContent)
  */
-export function analyzeTemplate(template: string): TemplateAnalysis {
+export function analyzeVisualEditorTemplate(template: string): TemplateAnalysis {
+  return analyzeTemplateContentImpl(template)
+}
+
+/**
+ * Analyze a template string and extract all relevant information
+ * Use this for analyzing template content directly (not from a file path)
+ */
+export function analyzeTemplateContent(template: string): TemplateAnalysis {
+  return analyzeTemplateContentImpl(template)
+}
+
+/**
+ * Internal implementation of template analysis
+ */
+function analyzeTemplateContentImpl(template: string): TemplateAnalysis {
   const variables: VariableUsage[] = []
   const components: ComponentReference[] = []
-  const directives: DirectiveUsage[] = []
+  const directives: VisualEditorDirectiveUsage[] = []
   const slots: SlotDefinition[] = []
   const sections: SectionDefinition[] = []
   const scripts: ScriptBlock[] = []
@@ -784,10 +800,10 @@ export function analyzeTemplate(template: string): TemplateAnalysis {
 
 function calculateMetrics(
   template: string,
-  directives: DirectiveUsage[],
+  directives: VisualEditorDirectiveUsage[],
   components: ComponentReference[],
   variables: VariableUsage[],
-): TemplateMetrics {
+): VisualEditorMetrics {
   const lines = template.split('\n').length
   const characters = template.length
 
@@ -831,7 +847,7 @@ function calculateMetrics(
  */
 export async function generatePreview(
   template: string,
-  options: PreviewOptions = {},
+  options: VisualEditorPreviewOptions = {},
 ): Promise<string> {
   const {
     context = {},

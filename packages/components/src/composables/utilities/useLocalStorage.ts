@@ -68,7 +68,7 @@ export function useLocalStorage<T>(
   function setValue(newValue: T | ((prev: T) => T)) {
     try {
       // Allow value to be a function for same API as useState
-      const valueToStore = typeof newValue === 'function' ? newValue(value) : newValue
+      const valueToStore = typeof newValue === 'function' ? (newValue as (prev: T) => T)(value) : newValue
 
       value = valueToStore
 

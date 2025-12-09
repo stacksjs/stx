@@ -495,7 +495,7 @@ export class PluginManager {
 /**
  * Global plugin manager instance
  */
-export const pluginManager = new PluginManager()
+export const pluginManager: PluginManager = new PluginManager()
 
 // =============================================================================
 // Helper Functions

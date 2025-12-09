@@ -85,34 +85,34 @@ export const Breakpoints = {
  * Use a predefined breakpoint
  * @param breakpoint - Breakpoint name from Breakpoints constant
  */
-export function useBreakpoint(breakpoint: keyof typeof Breakpoints) {
+export function useBreakpoint(breakpoint: keyof typeof Breakpoints): { matches: boolean, updateMatches: () => void } {
   return useMediaQuery(Breakpoints[breakpoint])
 }
 
 /**
  * Check if viewport is mobile (max-width: 767px)
  */
-export function useIsMobile() {
+export function useIsMobile(): { matches: boolean, updateMatches: () => void } {
   return useMediaQuery(Breakpoints.mobile)
 }
 
 /**
  * Check if viewport is desktop (min-width: 1024px)
  */
-export function useIsDesktop() {
+export function useIsDesktop(): { matches: boolean, updateMatches: () => void } {
   return useMediaQuery(Breakpoints.desktop)
 }
 
 /**
  * Check if user prefers dark color scheme
  */
-export function useIsDarkMode() {
+export function useIsDarkMode(): { matches: boolean, updateMatches: () => void } {
   return useMediaQuery(Breakpoints.dark)
 }
 
 /**
  * Check if user prefers reduced motion
  */
-export function usePrefersReducedMotion() {
+export function usePrefersReducedMotion(): { matches: boolean, updateMatches: () => void } {
   return useMediaQuery(Breakpoints.reducedMotion)
 }

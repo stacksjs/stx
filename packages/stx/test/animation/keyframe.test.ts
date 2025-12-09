@@ -108,8 +108,8 @@ describe('keyframe directive', () => {
       '/test.stx',
     )
 
-    const id1Match = result1.match(/id="(stx-keyframe-[a-z0-9]+)"/)
-    const id2Match = result2.match(/id="(stx-keyframe-[a-z0-9]+)"/)
+    const id1Match = (result1 as string).match(/id="(stx-keyframe-[a-z0-9]+)"/)
+    const id2Match = (result2 as string).match(/id="(stx-keyframe-[a-z0-9]+)"/)
 
     expect(id1Match).not.toBeNull()
     expect(id2Match).not.toBeNull()

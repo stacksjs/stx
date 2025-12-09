@@ -58,7 +58,7 @@ describe('Modals', () => {
       expect(result).toBeDefined()
       if (!isBrowserEnv) {
         const calls = consoleSpy.mock.calls
-        expect(calls.some(call => call[0]?.includes('Test Title'))).toBe(true)
+        expect(calls.some((call: unknown[]) => (call[0] as string)?.includes('Test Title'))).toBe(true)
       }
     })
 
@@ -68,7 +68,7 @@ describe('Modals', () => {
       expect(result).toBeDefined()
       if (!isBrowserEnv) {
         const calls = consoleSpy.mock.calls
-        expect(calls.some(call => call[0]?.includes('Custom message'))).toBe(true)
+        expect(calls.some((call: unknown[]) => (call[0] as string)?.includes('Custom message'))).toBe(true)
       }
     })
 
@@ -81,7 +81,7 @@ describe('Modals', () => {
       expect(result).toBeDefined()
       if (!isBrowserEnv) {
         const calls = consoleSpy.mock.calls
-        expect(calls.some(call => call[0]?.includes('WARNING'))).toBe(true)
+        expect(calls.some((call: unknown[]) => (call[0] as string)?.includes('WARNING'))).toBe(true)
       }
     })
 
@@ -138,7 +138,7 @@ describe('Modals', () => {
       expect(result).toBeDefined()
       if (!isBrowserEnv) {
         const calls = consoleSpy.mock.calls
-        expect(calls.some(call => call[0]?.includes('INFO'))).toBe(true)
+        expect(calls.some((call: unknown[]) => (call[0] as string)?.includes('INFO'))).toBe(true)
       }
     })
 
@@ -157,7 +157,7 @@ describe('Modals', () => {
       expect(result).toBeDefined()
       if (!isBrowserEnv) {
         const calls = consoleSpy.mock.calls
-        expect(calls.some(call => call[0]?.includes('WARNING'))).toBe(true)
+        expect(calls.some((call: unknown[]) => (call[0] as string)?.includes('WARNING'))).toBe(true)
       }
     })
 
@@ -175,7 +175,7 @@ describe('Modals', () => {
       expect(result).toBeDefined()
       if (!isBrowserEnv) {
         const calls = consoleSpy.mock.calls
-        expect(calls.some(call => call[0]?.includes('ERROR'))).toBe(true)
+        expect(calls.some((call: unknown[]) => (call[0] as string)?.includes('ERROR'))).toBe(true)
       }
     })
 
@@ -193,7 +193,7 @@ describe('Modals', () => {
       expect(result).toBeDefined()
       if (!isBrowserEnv) {
         const calls = consoleSpy.mock.calls
-        expect(calls.some(call => call[0]?.includes('SUCCESS'))).toBe(true)
+        expect(calls.some((call: unknown[]) => (call[0] as string)?.includes('SUCCESS'))).toBe(true)
       }
     })
 
@@ -211,7 +211,7 @@ describe('Modals', () => {
       expect(result).toBeDefined()
       if (!isBrowserEnv) {
         const calls = consoleSpy.mock.calls
-        expect(calls.some(call => call[0]?.includes('QUESTION'))).toBe(true)
+        expect(calls.some((call: unknown[]) => (call[0] as string)?.includes('QUESTION'))).toBe(true)
       }
     })
 

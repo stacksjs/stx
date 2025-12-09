@@ -124,7 +124,7 @@ export function processMetaDirectives(
   output = output.replace(/@metaTag\(\s*(\{[^}]+\})\s*\)/g, (_, attrObject) => {
     try {
       // Parse the attribute object using safe evaluation
-      const attrs = safeEvaluateObject(attrObject, context) as MetaTag
+      const attrs = safeEvaluateObject(attrObject, context) as unknown as MetaTag
 
       if (!attrs)
         return ''

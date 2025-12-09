@@ -1002,4 +1002,4 @@ function _addMapping(
 }
 
 // Export singleton instance
-export const compiler = new TemplateCompiler()
+export const compiler: TemplateCompiler = new TemplateCompiler()

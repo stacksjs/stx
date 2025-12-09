@@ -133,7 +133,7 @@ describe('middleware chaining', () => {
       order.push('mw2-after')
     }
 
-    const store = createStore(0, {
+    const store = createStore<number>(0, {
       middleware: [middleware1, middleware2],
     })
 

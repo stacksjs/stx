@@ -123,7 +123,7 @@ describe('Textarea Component - DOM Tests', () => {
         textarea.style.resize = resize!
         container.appendChild(textarea)
 
-        expect(textarea.style.resize).toBe(resize)
+        expect(textarea.style.resize).toBe(resize!)
       })
     })
   })

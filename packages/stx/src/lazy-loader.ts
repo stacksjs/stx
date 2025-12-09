@@ -458,7 +458,10 @@ export function createDirectiveRegistry(): DirectiveLoaderRegistry {
 
   registry.registerDirective('markdown', 'markdown', () =>
     import('./markdown').then(m => ({
-      process: m.processMarkdown,
+      process: (content: string, params?: string, ctx?: Record<string, unknown>): Promise<string> => {
+        const paramsArray = params ? params.split(',').map(p => p.trim()) : []
+        return m.markdownDirectiveHandler(content, paramsArray, ctx || {}, 'lazy-loader')
+      },
       name: 'markdown',
       hasEndTag: true,
     })))
@@ -475,10 +478,11 @@ export function createDirectiveRegistry(): DirectiveLoaderRegistry {
 
   registry.registerDirective('a11y', 'a11y', () =>
     import('./a11y').then(m => ({
-      process: (content) => {
-        const result = m.checkA11y(content)
-        // In debug mode, could add comments about issues
-        return content + (result.issues.length > 0 ? `<!-- A11y: ${result.issues.length} issues -->` : '')
+      process: (content: string, _params?: string, ctx?: Record<string, unknown>): string | Promise<string> => {
+        const filePath = (ctx as Record<string, string> | undefined)?.__filePath || 'unknown'
+        return m.checkA11y(content, filePath).then(issues =>
+          content + (issues.length > 0 ? `<!-- A11y: ${issues.length} issues -->` : ''),
+        )
       },
       name: 'a11y',
       hasEndTag: true,
@@ -494,12 +498,12 @@ export function createDirectiveRegistry(): DirectiveLoaderRegistry {
 /**
  * Global lazy loader instance
  */
-export const globalLoader = new LazyLoader()
+export const globalLoader: LazyLoader<unknown> = new LazyLoader()
 
 /**
  * Global directive registry
  */
-export const directiveRegistry = createDirectiveRegistry()
+export const directiveRegistry: DirectiveLoaderRegistry = createDirectiveRegistry()
 
 // =============================================================================
 // Utility Functions

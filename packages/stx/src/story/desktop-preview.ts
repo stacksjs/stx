@@ -68,7 +68,6 @@ export async function openDesktopPreview(
       title,
       width: options.width || 800,
       height: options.height || 600,
-      devTools: options.devTools || false,
     })
 
     return {

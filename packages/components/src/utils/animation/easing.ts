@@ -301,7 +301,39 @@ export const easeInOutBounce: EasingFunction = (t, b, c, d) => {
  * Available easings: Linear, Quad, Cubic, Quart, Quint, Sine, Expo, Circ, Elastic, Back, Bounce
  * Each with In, Out, InOut variants (except Linear)
  */
-export const Easing = {
+export const Easing: {
+  linear: EasingFunction
+  easeInQuad: EasingFunction
+  easeOutQuad: EasingFunction
+  easeInOutQuad: EasingFunction
+  easeInCubic: EasingFunction
+  easeOutCubic: EasingFunction
+  easeInOutCubic: EasingFunction
+  easeInQuart: EasingFunction
+  easeOutQuart: EasingFunction
+  easeInOutQuart: EasingFunction
+  easeInQuint: EasingFunction
+  easeOutQuint: EasingFunction
+  easeInOutQuint: EasingFunction
+  easeInSine: EasingFunction
+  easeOutSine: EasingFunction
+  easeInOutSine: EasingFunction
+  easeInExpo: EasingFunction
+  easeOutExpo: EasingFunction
+  easeInOutExpo: EasingFunction
+  easeInCirc: EasingFunction
+  easeOutCirc: EasingFunction
+  easeInOutCirc: EasingFunction
+  easeInElastic: EasingFunction
+  easeOutElastic: EasingFunction
+  easeInOutElastic: EasingFunction
+  easeInBack: EasingFunction
+  easeOutBack: EasingFunction
+  easeInOutBack: EasingFunction
+  easeInBounce: EasingFunction
+  easeOutBounce: EasingFunction
+  easeInOutBounce: EasingFunction
+} = {
   linear,
   easeInQuad,
   easeOutQuad,
@@ -333,4 +365,4 @@ export const Easing = {
   easeInBounce,
   easeOutBounce,
   easeInOutBounce,
-} as const
+}

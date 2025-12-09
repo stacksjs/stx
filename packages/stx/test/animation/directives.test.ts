@@ -157,7 +157,6 @@ describe('motion directive', () => {
 describe('processAnimationDirectives', () => {
   const defaultOptions: StxOptions = {
     componentsDir: 'components',
-    layoutsDir: 'layouts',
     partialsDir: 'partials',
     cache: false,
   }
@@ -207,7 +206,6 @@ describe('registerAnimationDirectives', () => {
   it('should add animation directives to options', () => {
     const options: StxOptions = {
       componentsDir: 'components',
-      layoutsDir: 'layouts',
       partialsDir: 'partials',
     }
 
@@ -226,7 +224,6 @@ describe('registerAnimationDirectives', () => {
 
     const options: StxOptions = {
       componentsDir: 'components',
-      layoutsDir: 'layouts',
       partialsDir: 'partials',
       customDirectives: [existingDirective],
     }
@@ -239,7 +236,6 @@ describe('registerAnimationDirectives', () => {
   it('should include all animation directives', () => {
     const options: StxOptions = {
       componentsDir: 'components',
-      layoutsDir: 'layouts',
       partialsDir: 'partials',
     }
 

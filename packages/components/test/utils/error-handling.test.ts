@@ -279,7 +279,7 @@ describe('Global Error Handler', () => {
     const error = new ComponentError('Test', 'Error')
     handleError(error, { throwError: false })
 
-    expect(captured).toBe(error)
+    expect(captured as Error | null).toBe(error)
   })
 
   it('should handle errors without throwing when configured', () => {

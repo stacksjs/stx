@@ -25,7 +25,7 @@ describe('System Tray', () => {
 
       expect(consoleSpy).toHaveBeenCalled()
       const calls = consoleSpy.mock.calls
-      expect(calls.some(call => call[0]?.includes('[stx-tray]'))).toBe(true)
+      expect(calls.some((call: unknown[]) => (call[0] as string)?.includes('[stx-tray]'))).toBe(true)
     })
 
     it('should return a SystemTrayInstance', async () => {
@@ -56,7 +56,7 @@ describe('System Tray', () => {
 
       expect(tray).not.toBeNull()
       const calls = consoleSpy.mock.calls
-      expect(calls.some(call => call[0]?.includes('My App'))).toBe(true)
+      expect(calls.some((call: unknown[]) => (call[0] as string)?.includes('My App'))).toBe(true)
     })
 
     it('should accept menu option', async () => {
@@ -69,7 +69,7 @@ describe('System Tray', () => {
 
       expect(tray).not.toBeNull()
       const calls = consoleSpy.mock.calls
-      expect(calls.some(call => call[0]?.includes('Menu items: 2'))).toBe(true)
+      expect(calls.some((call: unknown[]) => (call[0] as string)?.includes('Menu items: 2'))).toBe(true)
     })
 
     it('should accept all options', async () => {
@@ -129,7 +129,7 @@ describe('System Tray', () => {
 
       // Tray should be removed from active instances
       const trays = getActiveTrayInstances()
-      expect(trays.find(t => t.id === id)).toBeUndefined()
+      expect(trays.find(t => t === id)).toBeUndefined()
     })
   })
 

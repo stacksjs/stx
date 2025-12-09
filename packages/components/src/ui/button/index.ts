@@ -1,3 +1,4 @@
+import type { PropSchema, ValidationResult } from '../../utils/prop-validation'
 import { ErrorTypes, wrapErrorHandler } from '../../utils/error-handling'
 import { createPropValidator, PropTypes } from '../../utils/prop-validation'
 
@@ -19,7 +20,7 @@ export interface ButtonProps {
 /**
  * Button prop validation schema
  */
-export const buttonPropSchema = {
+export const buttonPropSchema: PropSchema = {
   variant: PropTypes.oneOf(['primary', 'secondary', 'outline', 'ghost', 'danger']),
   size: PropTypes.oneOf(['xs', 'sm', 'md', 'lg', 'xl']),
   disabled: PropTypes.boolean,
@@ -36,7 +37,7 @@ export const buttonPropSchema = {
  * Validate Button component props
  * Only runs in development mode
  */
-export const validateButtonProps = createPropValidator('Button', buttonPropSchema)
+export const validateButtonProps: (props: Record<string, any>) => ValidationResult = createPropValidator('Button', buttonPropSchema)
 
 /**
  * Create a safe onClick handler that catches and reports errors
@@ -51,7 +52,7 @@ export const validateButtonProps = createPropValidator('Button', buttonPropSchem
  * })
  * ```
  */
-export function createSafeClickHandler(handler: (event: Event) => void) {
+export function createSafeClickHandler(handler: (event: Event) => void): (event: Event) => void {
   return wrapErrorHandler(handler, 'Button', 'onClick')
 }
 

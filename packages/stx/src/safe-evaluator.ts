@@ -390,7 +390,7 @@ export function createSafeFunction(expression: string, contextKeys: string[]): (
     }
   `)
 
-  return func
+  return func as (...args: unknown[]) => unknown
 }
 
 /**

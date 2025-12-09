@@ -173,7 +173,7 @@ export function validateTemplate(template: string): TemplateValidationResult {
 /**
  * Shared function to render a component with props and slot content
  */
-export async function renderComponent(
+export async function renderComponentWithSlot(
   componentPath: string,
   props: Record<string, any>,
   slotContent: string,

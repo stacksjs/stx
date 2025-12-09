@@ -117,7 +117,7 @@ function getRecoverySuggestions(type: StoryErrorType, message: string): string[]
 /**
  * Format error for display
  */
-export function formatError(error: StoryError): string {
+export function formatStoryError(error: StoryError): string {
   const lines: string[] = []
 
   // Header

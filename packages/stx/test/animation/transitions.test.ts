@@ -125,8 +125,8 @@ describe('transition directive', () => {
       '/test.stx',
     )
 
-    const id1Match = result1.match(/id="(stx-transition-[a-z0-9]+)"/)
-    const id2Match = result2.match(/id="(stx-transition-[a-z0-9]+)"/)
+    const id1Match = (result1 as string).match(/id="(stx-transition-[a-z0-9]+)"/)
+    const id2Match = (result2 as string).match(/id="(stx-transition-[a-z0-9]+)"/)
 
     expect(id1Match).not.toBeNull()
     expect(id2Match).not.toBeNull()
@@ -136,27 +136,27 @@ describe('transition directive', () => {
 
 describe('transition types', () => {
   it('should have all required transition types', () => {
-    expect(TransitionType.Fade).toBe('fade')
-    expect(TransitionType.Slide).toBe('slide')
-    expect(TransitionType.Scale).toBe('scale')
-    expect(TransitionType.Flip).toBe('flip')
-    expect(TransitionType.Rotate).toBe('rotate')
-    expect(TransitionType.Custom).toBe('custom')
+    expect(TransitionType.Fade).toBe('fade' as TransitionType)
+    expect(TransitionType.Slide).toBe('slide' as TransitionType)
+    expect(TransitionType.Scale).toBe('scale' as TransitionType)
+    expect(TransitionType.Flip).toBe('flip' as TransitionType)
+    expect(TransitionType.Rotate).toBe('rotate' as TransitionType)
+    expect(TransitionType.Custom).toBe('custom' as TransitionType)
   })
 
   it('should have all required transition directions', () => {
-    expect(TransitionDirection.In).toBe('in')
-    expect(TransitionDirection.Out).toBe('out')
-    expect(TransitionDirection.Both).toBe('both')
+    expect(TransitionDirection.In).toBe('in' as TransitionDirection)
+    expect(TransitionDirection.Out).toBe('out' as TransitionDirection)
+    expect(TransitionDirection.Both).toBe('both' as TransitionDirection)
   })
 
   it('should have all required transition eases', () => {
-    expect(TransitionEase.Linear).toBe('linear')
-    expect(TransitionEase.Ease).toBe('ease')
-    expect(TransitionEase.EaseIn).toBe('ease-in')
-    expect(TransitionEase.EaseOut).toBe('ease-out')
-    expect(TransitionEase.EaseInOut).toBe('ease-in-out')
-    expect(TransitionEase.Spring).toBe('spring')
+    expect(TransitionEase.Linear).toBe('linear' as TransitionEase)
+    expect(TransitionEase.Ease).toBe('ease' as TransitionEase)
+    expect(TransitionEase.EaseIn).toBe('ease-in' as TransitionEase)
+    expect(TransitionEase.EaseOut).toBe('ease-out' as TransitionEase)
+    expect(TransitionEase.EaseInOut).toBe('ease-in-out' as TransitionEase)
+    expect(TransitionEase.Spring).toBe('spring' as TransitionEase)
   })
 })
 

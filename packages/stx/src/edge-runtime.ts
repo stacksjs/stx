@@ -992,11 +992,13 @@ export function stringToStream(strings: AsyncIterable<string>): ReadableStream<U
 /**
  * Create a Cloudflare Workers handler.
  */
-export function createCloudflareHandler(config: EdgeHandlerConfig) {
+export function createCloudflareHandler(config: EdgeHandlerConfig): {
+  fetch: (request: Request, env: Record<string, unknown>, ctx: { waitUntil: (p: Promise<unknown>) => void }) => Promise<Response>
+} {
   const handler = createEdgeHandler(config)
 
   return {
-    async fetch(request: Request, env: Record<string, unknown>, ctx: { waitUntil: (p: Promise<unknown>) => void }) {
+    async fetch(request: Request, env: Record<string, unknown>, ctx: { waitUntil: (p: Promise<unknown>) => void }): Promise<Response> {
       return handler(request, { env, ctx, KV: env.KV })
     },
   }
@@ -1005,26 +1007,26 @@ export function createCloudflareHandler(config: EdgeHandlerConfig) {
 /**
  * Create a Deno Deploy handler.
  */
-export function createDenoHandler(config: EdgeHandlerConfig) {
+export function createDenoHandler(config: EdgeHandlerConfig): (request: Request) => Promise<Response> {
   const handler = createEdgeHandler(config)
-  return (request: Request) => handler(request, {})
+  return (request: Request): Promise<Response> => handler(request, {})
 }
 
 /**
  * Create a Vercel Edge handler.
  */
-export function createVercelHandler(config: EdgeHandlerConfig) {
+export function createVercelHandler(config: EdgeHandlerConfig): (request: Request) => Promise<Response> {
   const handler = createEdgeHandler(config)
-  return (request: Request) => handler(request, {})
+  return (request: Request): Promise<Response> => handler(request, {})
 }
 
 /**
  * Create a Netlify Edge handler.
  */
-export function createNetlifyHandler(config: EdgeHandlerConfig) {
+export function createNetlifyHandler(config: EdgeHandlerConfig): (request: Request, context: { geo?: GeoInfo }) => Promise<Response> {
   const handler = createEdgeHandler(config)
 
-  return (request: Request, context: { geo?: GeoInfo }) => {
+  return (request: Request, context: { geo?: GeoInfo }): Promise<Response> => {
     return handler(request, { netlifyContext: context })
   }
 }

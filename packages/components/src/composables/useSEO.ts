@@ -19,7 +19,7 @@ export interface SEOMetaOptions {
 /**
  * Set document title
  */
-export function setTitle(title: string, template?: string) {
+export function setTitle(title: string, template?: string): void {
   if (typeof document === 'undefined')
     return
 
@@ -29,7 +29,7 @@ export function setTitle(title: string, template?: string) {
 /**
  * Set meta tag
  */
-export function setMeta(name: string, content: string, isProperty = false) {
+export function setMeta(name: string, content: string, isProperty = false): void {
   if (typeof document === 'undefined')
     return
 
@@ -48,7 +48,7 @@ export function setMeta(name: string, content: string, isProperty = false) {
 /**
  * Set link tag
  */
-export function setLink(rel: string, href: string) {
+export function setLink(rel: string, href: string): void {
   if (typeof document === 'undefined')
     return
 
@@ -66,7 +66,7 @@ export function setLink(rel: string, href: string) {
 /**
  * Use SEO meta tags
  */
-export function useSEO(options: SEOMetaOptions) {
+export function useSEO(options: SEOMetaOptions): void {
   const {
     title,
     description,

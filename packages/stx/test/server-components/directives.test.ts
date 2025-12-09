@@ -55,8 +55,8 @@ describe('serverComponentDirective', () => {
     clearComponents()
     const result2 = serverComponentDirective.handler('<div></div>', ['comp'], {}, 'test.stx')
 
-    const id1 = result1.match(/data-component-id="([^"]+)"/)?.[1]
-    const id2 = result2.match(/data-component-id="([^"]+)"/)?.[1]
+    const id1 = (result1 as string).match(/data-component-id="([^"]+)"/)?.[1]
+    const id2 = (result2 as string).match(/data-component-id="([^"]+)"/)?.[1]
 
     expect(id1).toBeDefined()
     expect(id2).toBeDefined()
@@ -185,8 +185,8 @@ describe('suspenseDirective', () => {
     const result1 = suspenseDirective.handler('<div></div>', [], {}, 'test.stx')
     const result2 = suspenseDirective.handler('<div></div>', [], {}, 'test.stx')
 
-    const id1 = result1.match(/data-suspense="([^"]+)"/)?.[1]
-    const id2 = result2.match(/data-suspense="([^"]+)"/)?.[1]
+    const id1 = (result1 as string).match(/data-suspense="([^"]+)"/)?.[1]
+    const id2 = (result2 as string).match(/data-suspense="([^"]+)"/)?.[1]
 
     expect(id1).not.toBe(id2)
   })

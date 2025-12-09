@@ -2,7 +2,7 @@ import type { ComponentPropsSchema, CustomDirective, PropType } from './types'
 import * as path from 'node:path'
 import { ErrorCodes, inlineError } from './error-handling'
 import { safeEvaluateObject } from './safe-evaluator'
-import { renderComponent } from './utils'
+import { renderComponentWithSlot } from './utils'
 
 // =============================================================================
 // Component System Documentation
@@ -224,7 +224,7 @@ export const componentDirective: CustomDirective = {
 
     // Render the component
     try {
-      const rendered = await renderComponent(
+      const rendered = await renderComponentWithSlot(
         componentName,
         props,
         '', // No slot content for @component directive

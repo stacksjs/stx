@@ -1,3 +1,4 @@
+import type { PropSchema, ValidationResult } from '../../utils/prop-validation'
 import { createPropValidator, PropTypes } from '../../utils/prop-validation'
 
 export { default as EmailInput } from './EmailInput.stx'
@@ -54,7 +55,7 @@ export interface SearchInputProps extends Omit<BaseInputProps, 'placeholder'> {
 /**
  * Base input prop validation schema
  */
-const baseInputPropSchema = {
+const baseInputPropSchema: PropSchema = {
   value: PropTypes.string,
   onChange: PropTypes.func,
   placeholder: PropTypes.string,
@@ -72,8 +73,19 @@ const baseInputPropSchema = {
 /**
  * TextInput prop validation schema
  */
-export const textInputPropSchema = {
-  ...baseInputPropSchema,
+export const textInputPropSchema: PropSchema = {
+  value: PropTypes.string,
+  onChange: PropTypes.func,
+  placeholder: PropTypes.string,
+  disabled: PropTypes.boolean,
+  readonly: PropTypes.boolean,
+  size: PropTypes.oneOf(['sm', 'md', 'lg']),
+  error: PropTypes.boolean,
+  label: PropTypes.string,
+  helperText: PropTypes.string,
+  required: PropTypes.boolean,
+  className: PropTypes.string,
+  inputClassName: PropTypes.string,
   leftIcon: PropTypes.string,
   rightIcon: PropTypes.string,
   clearable: PropTypes.boolean,
@@ -84,8 +96,19 @@ export const textInputPropSchema = {
 /**
  * NumberInput prop validation schema
  */
-export const numberInputPropSchema = {
-  ...baseInputPropSchema,
+export const numberInputPropSchema: PropSchema = {
+  value: PropTypes.string,
+  onChange: PropTypes.func,
+  placeholder: PropTypes.string,
+  disabled: PropTypes.boolean,
+  readonly: PropTypes.boolean,
+  size: PropTypes.oneOf(['sm', 'md', 'lg']),
+  error: PropTypes.boolean,
+  label: PropTypes.string,
+  helperText: PropTypes.string,
+  required: PropTypes.boolean,
+  className: PropTypes.string,
+  inputClassName: PropTypes.string,
   min: PropTypes.number,
   max: PropTypes.number,
   step: PropTypes.number,
@@ -93,33 +116,65 @@ export const numberInputPropSchema = {
 }
 
 /**
+ * PasswordInput prop validation schema
+ */
+const passwordInputPropSchema: PropSchema = {
+  value: PropTypes.string,
+  onChange: PropTypes.func,
+  placeholder: PropTypes.string,
+  disabled: PropTypes.boolean,
+  readonly: PropTypes.boolean,
+  size: PropTypes.oneOf(['sm', 'md', 'lg']),
+  error: PropTypes.boolean,
+  label: PropTypes.string,
+  helperText: PropTypes.string,
+  required: PropTypes.boolean,
+  className: PropTypes.string,
+  inputClassName: PropTypes.string,
+  showStrength: PropTypes.boolean,
+}
+
+/**
+ * SearchInput prop validation schema
+ */
+const searchInputPropSchema: PropSchema = {
+  value: PropTypes.string,
+  onChange: PropTypes.func,
+  placeholder: PropTypes.string,
+  disabled: PropTypes.boolean,
+  readonly: PropTypes.boolean,
+  size: PropTypes.oneOf(['sm', 'md', 'lg']),
+  error: PropTypes.boolean,
+  label: PropTypes.string,
+  helperText: PropTypes.string,
+  required: PropTypes.boolean,
+  className: PropTypes.string,
+  inputClassName: PropTypes.string,
+  onSearch: PropTypes.func,
+  loading: PropTypes.boolean,
+}
+
+/**
  * Validate TextInput component props
  */
-export const validateTextInputProps = createPropValidator('TextInput', textInputPropSchema)
+export const validateTextInputProps: (props: Record<string, any>) => ValidationResult = createPropValidator('TextInput', textInputPropSchema)
 
 /**
  * Validate EmailInput component props
  */
-export const validateEmailInputProps = createPropValidator('EmailInput', baseInputPropSchema)
+export const validateEmailInputProps: (props: Record<string, any>) => ValidationResult = createPropValidator('EmailInput', baseInputPropSchema)
 
 /**
  * Validate PasswordInput component props
  */
-export const validatePasswordInputProps = createPropValidator('PasswordInput', {
-  ...baseInputPropSchema,
-  showStrength: PropTypes.boolean,
-})
+export const validatePasswordInputProps: (props: Record<string, any>) => ValidationResult = createPropValidator('PasswordInput', passwordInputPropSchema)
 
 /**
  * Validate NumberInput component props
  */
-export const validateNumberInputProps = createPropValidator('NumberInput', numberInputPropSchema)
+export const validateNumberInputProps: (props: Record<string, any>) => ValidationResult = createPropValidator('NumberInput', numberInputPropSchema)
 
 /**
  * Validate SearchInput component props
  */
-export const validateSearchInputProps = createPropValidator('SearchInput', {
-  ...baseInputPropSchema,
-  onSearch: PropTypes.func,
-  loading: PropTypes.boolean,
-})
+export const validateSearchInputProps: (props: Record<string, any>) => ValidationResult = createPropValidator('SearchInput', searchInputPropSchema)

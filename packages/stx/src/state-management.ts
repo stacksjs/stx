@@ -461,8 +461,8 @@ export function createReadonlyStore<T>(
 /**
  * Create a computed value derived from stores.
  */
-export function computed<T, S extends Store<unknown>[]>(
-  stores: [...S],
+export function computed<T, S extends readonly Store<any>[]>(
+  stores: S,
   compute: (...values: { [K in keyof S]: S[K] extends Store<infer V> ? V : never }) => T,
   options: ComputedOptions = {},
 ): Store<T> {
@@ -571,7 +571,7 @@ export function createSelector<T, R>(
   selector: (state: T) => R,
   options: { equals?: (a: R, b: R) => boolean } = {},
 ): Store<R> {
-  return computed([store], selector, options)
+  return computed([store as Store<unknown>], selector as (...values: unknown[]) => R, options as ComputedOptions) as Store<R>
 }
 
 /**
@@ -607,7 +607,7 @@ export function createMemoizedSelector<T, R>(
     return cachedResult
   }
 
-  return computed([store], memoizedSelector)
+  return computed([store as Store<unknown>], memoizedSelector as (...values: unknown[]) => R) as Store<R>
 }
 
 // =============================================================================
@@ -715,7 +715,11 @@ export function useStore<T>(nameOrStore: string | Store<T>): T {
 /**
  * Create a store directive for use in templates.
  */
-export function createStoreDirective(storeName: string) {
+export function createStoreDirective(storeName: string): {
+  name: string
+  hasEndTag: boolean
+  handler: () => string
+} {
   const store = getStore(storeName)
   if (!store) {
     throw new Error(`Store "${storeName}" not found`)
@@ -724,7 +728,7 @@ export function createStoreDirective(storeName: string) {
   return {
     name: 'store',
     hasEndTag: false,
-    handler: () => {
+    handler: (): string => {
       return JSON.stringify(store.get())
     },
   }

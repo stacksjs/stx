@@ -1,5 +1,6 @@
+import type { VariableUsage, VisualEditorDirectiveUsage } from '../../src/visual-editor'
 import { describe, expect, it } from 'bun:test'
-import { analyzeTemplate } from '../../src/visual-editor'
+import { analyzeTemplateContent as analyzeTemplate } from '../../src/visual-editor'
 
 describe('analyzeTemplate', () => {
   describe('variable extraction', () => {
@@ -12,15 +13,15 @@ describe('analyzeTemplate', () => {
 
     it('should extract multiple variables', () => {
       const analysis = analyzeTemplate('{{ title }} - {{ subtitle }}')
-      const names = analysis.variables.map(v => v.name)
+      const names = analysis.variables.map((v: VariableUsage) => v.name)
       expect(names).toContain('title')
       expect(names).toContain('subtitle')
     })
 
     it('should track line numbers', () => {
       const analysis = analyzeTemplate('<p>{{ first }}</p>\n<p>{{ second }}</p>')
-      const first = analysis.variables.find(v => v.name === 'first')
-      const second = analysis.variables.find(v => v.name === 'second')
+      const first = analysis.variables.find((v: VariableUsage) => v.name === 'first')
+      const second = analysis.variables.find((v: VariableUsage) => v.name === 'second')
       expect(first!.line).toBe(1)
       expect(second!.line).toBe(2)
     })
@@ -30,22 +31,22 @@ describe('analyzeTemplate', () => {
     it('should extract directives', () => {
       const analysis = analyzeTemplate('@if(condition)\n  Content\n@endif')
       expect(analysis.directives.length).toBeGreaterThan(0)
-      const ifDir = analysis.directives.find(d => d.name === 'if')
+      const ifDir = analysis.directives.find((d: VisualEditorDirectiveUsage) => d.name === 'if')
       expect(ifDir).toBeDefined()
       expect(ifDir!.category).toBe('control-flow')
     })
 
     it('should detect hasEndTag correctly', () => {
       const analysis = analyzeTemplate('@if(x)\n@endif\n@csrf')
-      const ifDir = analysis.directives.find(d => d.name === 'if')
-      const csrf = analysis.directives.find(d => d.name === 'csrf')
+      const ifDir = analysis.directives.find((d: VisualEditorDirectiveUsage) => d.name === 'if')
+      const csrf = analysis.directives.find((d: VisualEditorDirectiveUsage) => d.name === 'csrf')
       expect(ifDir!.hasEndTag).toBe(true)
       expect(csrf!.hasEndTag).toBe(false)
     })
 
     it('should extract directive parameters', () => {
       const analysis = analyzeTemplate('@include(\'header\')')
-      const include = analysis.directives.find(d => d.name === 'include')
+      const include = analysis.directives.find((d: VisualEditorDirectiveUsage) => d.name === 'include')
       expect(include!.params).toBe('\'header\'')
     })
   })
@@ -76,7 +77,7 @@ describe('analyzeTemplate', () => {
 
     it('should extract @component directives', () => {
       const analysis = analyzeTemplate('@component(\'header\')\n@endcomponent')
-      const componentDirs = analysis.directives.filter(d => d.name === 'component')
+      const componentDirs = analysis.directives.filter((d: VisualEditorDirectiveUsage) => d.name === 'component')
       expect(componentDirs.length).toBeGreaterThan(0)
     })
   })

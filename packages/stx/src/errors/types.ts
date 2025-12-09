@@ -99,7 +99,7 @@ export class StxError extends Error {
   ) {
     super(message)
     this.name = 'StxError'
-    this.numericCode = numericCode || 1100 // Default to generic runtime error
+    this.numericCode = numericCode || ErrorCodes.EVALUATION_ERROR // Default to generic runtime error
     // Format file path based on configuration
     if (this.filePath) {
       this.filePath = formatFilePath(this.filePath)

@@ -22,19 +22,7 @@ export interface HighlightResult {
 export async function getHighlighter(): Promise<TSHighlighter> {
   if (!highlighterInstance) {
     highlighterInstance = await createHighlighter({
-      themes: ['github-light', 'github-dark'],
-      languages: [
-        'typescript',
-        'javascript',
-        'html',
-        'css',
-        'json',
-        'bash',
-        'markdown',
-        'vue',
-        'jsx',
-        'tsx',
-      ],
+      theme: 'github-light',
     })
   }
   return highlighterInstance
@@ -50,8 +38,8 @@ export async function highlight(
   const {
     theme = 'auto',
     language = 'typescript',
-    lineNumbers = false,
-    wrapLines = true,
+    lineNumbers: _lineNumbers = false,
+    wrapLines: _wrapLines = true,
   } = options
 
   const highlighter = await getHighlighter()
@@ -61,15 +49,10 @@ export async function highlight(
     ? (globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'github-dark' : 'github-light')
     : theme === 'dark' ? 'github-dark' : 'github-light'
 
-  const html = highlighter.highlight(code, {
-    lang: language,
-    theme: effectiveTheme,
-    lineNumbers,
-    wrapLines,
-  })
+  const html = await highlighter.highlight(code, language)
 
   return {
-    html,
+    html: typeof html === 'string' ? html : String(html),
     language,
     theme: effectiveTheme,
   }

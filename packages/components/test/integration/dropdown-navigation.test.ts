@@ -158,7 +158,7 @@ describe('dropdown Navigation Integration', () => {
     })
 
     it('should select item on Enter key', () => {
-      const items = mockItems.filter(item => !item.divider && !item.disabled)
+      const items: DropdownItem[] = mockItems.filter(item => !item.divider && !item.disabled)
       let focusedIndex = 0
       let selectedItem: DropdownItem | null = null
       let isOpen = true
@@ -172,14 +172,14 @@ describe('dropdown Navigation Integration', () => {
 
       // Select first item
       handleEnter()
-      expect(selectedItem?.label).toBe('Profile')
+      expect((selectedItem as DropdownItem | null)?.label).toBe('Profile')
       expect(isOpen).toBe(false)
 
       // Reset and select another
       isOpen = true
       focusedIndex = 1
       handleEnter()
-      expect(selectedItem?.label).toBe('Settings')
+      expect((selectedItem as DropdownItem | null)?.label).toBe('Settings')
     })
 
     it('should close dropdown on Escape key', () => {
@@ -251,7 +251,7 @@ describe('dropdown Navigation Integration', () => {
 
       // Select enabled item
       handleSelect(mockItems[0])
-      expect(selectedItem?.label).toBe('Profile')
+      expect((selectedItem as DropdownItem | null)?.label).toBe('Profile')
       expect(callbackInvoked).toBe(true)
 
       // Try to select disabled item

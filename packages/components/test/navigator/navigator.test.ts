@@ -260,7 +260,7 @@ describe('navigator Component', () => {
       props.onNavigate?.(item)
 
       expect(navigatedItem).toBeDefined()
-      expect(navigatedItem?.id).toBe('home')
+      expect((navigatedItem as unknown as NavigatorItem | undefined)?.id).toBe('home')
     })
 
     it('should pass correct item to handler', () => {
@@ -270,7 +270,7 @@ describe('navigator Component', () => {
         { id: 'tab3', label: 'Tab 3' },
       ]
 
-      let clickedItem: NavigatorItem | null = null
+      let clickedItem: NavigatorItem | undefined
 
       const handleNavigate = (item: NavigatorItem) => {
         clickedItem = item
@@ -280,8 +280,8 @@ describe('navigator Component', () => {
       handleNavigate(items[1])
 
       expect(clickedItem).toBeDefined()
-      expect(clickedItem?.id).toBe('tab2')
-      expect(clickedItem?.label).toBe('Tab 2')
+      expect((clickedItem as unknown as NavigatorItem).id).toBe('tab2')
+      expect((clickedItem as unknown as NavigatorItem).label).toBe('Tab 2')
     })
   })
 

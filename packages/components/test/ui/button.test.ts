@@ -96,7 +96,7 @@ describe('Button Component - DOM Tests', () => {
         button.type = type!
         container.appendChild(button)
 
-        expect(button.type).toBe(type)
+        expect(button.type).toBe(type!)
       })
     })
 

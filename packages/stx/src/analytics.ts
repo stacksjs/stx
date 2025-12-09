@@ -1,3 +1,5 @@
+import type { AnalyticsConfig, CustomDirective, StxOptions } from './types'
+
 /**
  * Analytics Module
  *
@@ -24,7 +26,6 @@
  * }
  * ```
  */
-import type { AnalyticsConfig, StxOptions } from './types'
 
 /**
  * Generate analytics tracking script based on configuration

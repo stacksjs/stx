@@ -7,9 +7,9 @@ import type { ServerStoryFile, StoryContext } from './types'
 import fs from 'node:fs'
 
 /**
- * Render options
+ * Story render options
  */
-export interface RenderOptions {
+export interface StoryRenderOptions {
   /** Props to pass to the component */
   props?: Record<string, any>
   /** Slots content */
@@ -21,9 +21,9 @@ export interface RenderOptions {
 }
 
 /**
- * Render result
+ * Story render result
  */
-export interface RenderResult {
+export interface StoryRenderResult {
   /** Rendered HTML */
   html: string
   /** CSS extracted from component */
@@ -46,13 +46,13 @@ const componentCache = new Map<string, {
 }>()
 
 /**
- * Render a component with props
+ * Render a story component with props
  */
-export async function renderComponent(
+export async function renderStoryComponent(
   ctx: StoryContext,
   componentPath: string,
-  options: RenderOptions = {},
-): Promise<RenderResult> {
+  options: StoryRenderOptions = {},
+): Promise<StoryRenderResult> {
   const startTime = performance.now()
   const errors: string[] = []
 
@@ -121,7 +121,7 @@ export async function renderStoryVariant(
   story: ServerStoryFile,
   variantId: string,
   props?: Record<string, any>,
-): Promise<RenderResult> {
+): Promise<StoryRenderResult> {
   const variant = story.story?.variants.find(v => v.id === variantId)
   if (!variant) {
     return {
@@ -142,7 +142,7 @@ export async function renderStoryVariant(
   }
 
   // Otherwise render the component file
-  return renderComponent(ctx, story.path, { props: mergedProps })
+  return renderStoryComponent(ctx, story.path, { props: mergedProps })
 }
 
 /**
@@ -152,7 +152,7 @@ export async function renderInlineTemplate(
   ctx: StoryContext,
   template: string,
   props: Record<string, any> = {},
-): Promise<RenderResult> {
+): Promise<StoryRenderResult> {
   const startTime = performance.now()
   const errors: string[] = []
 
@@ -236,9 +236,9 @@ function escapeHtml(str: string): string {
 }
 
 /**
- * Clear the component cache
+ * Clear the story component cache
  */
-export function clearComponentCache(): void {
+export function clearStoryCache(): void {
   componentCache.clear()
 }
 
@@ -283,7 +283,7 @@ export async function preloadComponents(paths: string[]): Promise<number> {
  * Generate preview HTML document
  */
 export function generatePreviewDocument(
-  result: RenderResult,
+  result: StoryRenderResult,
   options: {
     title?: string
     theme?: 'light' | 'dark'

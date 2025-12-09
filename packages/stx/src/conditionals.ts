@@ -147,11 +147,11 @@ export function processSwitchStatements(template: string, context: Record<string
           try {
             // Evaluate case value using safe evaluation
             let caseValue: unknown
-            if (isExpressionSafe(caseItem.value)) {
+            if (caseItem.value && isExpressionSafe(caseItem.value)) {
               const caseFn = createSafeFunction(caseItem.value, Object.keys(context))
               caseValue = caseFn(...Object.values(context))
             }
-            else {
+            else if (caseItem.value) {
               caseValue = safeEvaluate(caseItem.value, context)
             }
 
@@ -255,11 +255,11 @@ export function processConditionals(template: string, context: Record<string, an
             // @if or @elseif - evaluate condition using safe evaluation
             try {
               let conditionResult: unknown
-              if (isExpressionSafe(branch.condition)) {
+              if (branch.condition && isExpressionSafe(branch.condition)) {
                 const conditionFn = createSafeFunction(branch.condition, Object.keys(context))
                 conditionResult = conditionFn(...Object.values(context))
               }
-              else {
+              else if (branch.condition) {
                 // Fall back to safe evaluator for potentially unsafe expressions
                 conditionResult = safeEvaluate(branch.condition, context)
               }

@@ -25,7 +25,8 @@
 /**
  * Translation messages structure
  */
-export type Messages = Record<string, string | Messages>
+export type MessageValue = string | { [key: string]: MessageValue }
+export type Messages = Record<string, MessageValue>
 
 /**
  * Locale messages

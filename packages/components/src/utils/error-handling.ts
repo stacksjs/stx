@@ -98,7 +98,7 @@ export class ComponentError extends Error {
   /**
    * Get error as plain object
    */
-  toJSON() {
+  toJSON(): { name: string, message: string, component: string, context: ErrorContext | undefined, stack: string | undefined } {
     return {
       name: this.name,
       message: this.message,
@@ -410,19 +410,23 @@ export function devAssert(condition: any, error: Error): asserts condition {
  * debug.error('Invalid prop')
  * ```
  */
-export function createDebugger(component: string) {
+export function createDebugger(component: string): {
+  log: (...args: any[]) => void
+  warn: (message: string, context?: Partial<ErrorContext>) => void
+  error: (message: string, context?: ErrorContext) => void
+} {
   const isDebug = typeof process !== 'undefined' && process.env.DEBUG === 'true'
 
   return {
-    log(...args: any[]) {
+    log(...args: any[]): void {
       if (isDebug) {
         console.log(`[${component}]`, ...args)
       }
     },
-    warn(message: string, context?: Partial<ErrorContext>) {
+    warn(message: string, context?: Partial<ErrorContext>): void {
       warn(component, message, context)
     },
-    error(message: string, context?: ErrorContext) {
+    error(message: string, context?: ErrorContext): void {
       const error = new ComponentError(component, message, context)
       handleError(error, { throwError: false })
     },

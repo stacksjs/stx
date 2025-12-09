@@ -530,7 +530,14 @@ export function getThemeValue(path: string): any {
 /**
  * Predefined theme presets
  */
-export const themePresets = {
+export const themePresets: {
+  default: Theme
+  purple: Theme
+  green: Theme
+  orange: Theme
+  dark: Theme
+  minimal: Theme
+} = {
   /**
    * Default blue theme
    */
