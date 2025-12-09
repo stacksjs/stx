@@ -611,11 +611,7 @@ describe('Enhanced Template Processing Integration', () => {
   })
 
   describe('Real-world Performance Scenarios', () => {
-    // TODO: This test is skipped due to:
-    // 1. Known limitation with nested @if processing
-    // 2. Performance variability in CI/CD environments
-    // Re-enable after nested conditional processing is improved
-    it.skip('should handle large e-commerce product catalogs efficiently', async () => {
+    it('should handle large e-commerce product catalogs efficiently', async () => {
       const testFile = path.join(TEMP_DIR, 'large-ecommerce.stx')
       await Bun.write(testFile, `
 <!DOCTYPE html>
