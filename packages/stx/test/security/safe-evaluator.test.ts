@@ -118,9 +118,9 @@ describe('Safe Evaluator', () => {
     })
 
     it('should evaluate comparison operations', () => {
-      expect(safeEvaluate('a > b', { a: 5, b: 3 })).toBe(true)
-      expect(safeEvaluate('a === b', { a: 5, b: 5 })).toBe(true)
-      expect(safeEvaluate('a !== b', { a: 5, b: 3 })).toBe(true)
+      expect(safeEvaluate<boolean>('a > b', { a: 5, b: 3 })).toBe(true)
+      expect(safeEvaluate<boolean>('a === b', { a: 5, b: 5 })).toBe(true)
+      expect(safeEvaluate<boolean>('a !== b', { a: 5, b: 3 })).toBe(true)
     })
 
     it('should handle undefined gracefully', () => {

@@ -484,9 +484,8 @@ describe('stx Enhanced Validation', () => {
 
     registerEnhancedValidationRule({
       name: 'testEnhanced',
-      validate: (value) => value === 'test',
+      validate: (value) => value === 'test' ? true : 'Must be test',
       message: 'Must be test',
-      htmlAttributes: { 'data-test': 'true' },
     })
 
     expect(enhancedValidationRules.testEnhanced).toBeDefined()
