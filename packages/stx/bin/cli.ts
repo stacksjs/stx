@@ -2108,6 +2108,264 @@ else {
       })
     })
 
+  // Native build command
+  cli
+    .command('build:native <input>', 'Build stx template into a native desktop/mobile app')
+    .option('--output <dir>', 'Output directory', { default: 'dist/native' })
+    .option('--target <platform>', 'Target platform: macos, windows, linux, ios, android')
+    .option('--format <format>', 'Output format: app, dmg, pkg, msi, zip, deb, rpm, appimage, ipa, apk')
+    .option('--name <name>', 'Application name (defaults to filename)')
+    .option('--version <version>', 'Application version', { default: '1.0.0' })
+    .option('--description <desc>', 'Application description')
+    .option('--author <author>', 'Author/Maintainer name')
+    .option('--bundle-id <id>', 'Bundle identifier (macOS/iOS)')
+    .option('--icon <path>', 'Path to application icon')
+    .option('--width <width>', 'Window width', { default: '1200' })
+    .option('--height <height>', 'Window height', { default: '800' })
+    .option('--title <title>', 'Window title')
+    .option('--system-tray', 'Enable system tray/menubar mode')
+    .option('--dev-tools', 'Enable developer tools')
+    .option('--frameless', 'Create frameless window')
+    .option('--always-on-top', 'Keep window always on top')
+    .option('--craft-path <path>', 'Path to Craft binary')
+    .option('--verbose', 'Show verbose output')
+    .example('stx build:native app.stx --target macos')
+    .example('stx build:native app.stx --target macos --format dmg')
+    .example('stx build:native app.stx --target linux --format appimage')
+    .example('stx build:native app.stx --name "My App" --icon icon.png')
+    .action(async (input: string, options: {
+      output: string
+      target?: string
+      format?: string
+      name?: string
+      version: string
+      description?: string
+      author?: string
+      bundleId?: string
+      icon?: string
+      width: string
+      height: string
+      title?: string
+      systemTray?: boolean
+      devTools?: boolean
+      frameless?: boolean
+      alwaysOnTop?: boolean
+      craftPath?: string
+      verbose?: boolean
+    }) => {
+      try {
+        // Dynamically import to avoid circular dependencies
+        const { buildNative, getAvailableTargets, getAvailableFormats } = await import('../src/native-build')
+
+        // Validate input file
+        const inputPath = path.resolve(input)
+        if (!fs.existsSync(inputPath)) {
+          console.error(`❌ Input file not found: ${input}`)
+          process.exit(1)
+        }
+
+        // Validate target
+        const availableTargets = getAvailableTargets()
+        if (options.target && !['macos', 'windows', 'linux', 'ios', 'android'].includes(options.target)) {
+          console.error(`❌ Invalid target: ${options.target}`)
+          console.error(`💡 Available targets: macos, windows, linux, ios, android`)
+          console.error(`💡 Targets available on this machine: ${availableTargets.join(', ')}`)
+          process.exit(1)
+        }
+
+        const target = (options.target || availableTargets[0]) as 'macos' | 'windows' | 'linux' | 'ios' | 'android'
+
+        // Validate format
+        const availableFormats = getAvailableFormats(target)
+        if (options.format && !availableFormats.includes(options.format as any)) {
+          console.error(`❌ Invalid format for ${target}: ${options.format}`)
+          console.error(`💡 Available formats: ${availableFormats.join(', ')}`)
+          process.exit(1)
+        }
+
+        console.log(`\n🔨 Building native app...`)
+        console.log(`   Input:  ${input}`)
+        console.log(`   Target: ${target}`)
+        console.log(`   Format: ${options.format || 'default'}`)
+        console.log(`   Output: ${options.output}\n`)
+
+        const result = await buildNative({
+          input: inputPath,
+          output: path.resolve(options.output),
+          target,
+          format: options.format as any,
+          name: options.name,
+          version: options.version,
+          description: options.description,
+          author: options.author,
+          bundleId: options.bundleId,
+          icon: options.icon ? path.resolve(options.icon) : undefined,
+          window: {
+            title: options.title,
+            width: Number.parseInt(options.width, 10),
+            height: Number.parseInt(options.height, 10),
+            frameless: options.frameless,
+            alwaysOnTop: options.alwaysOnTop,
+          },
+          systemTray: options.systemTray,
+          devTools: options.devTools,
+          craftPath: options.craftPath,
+          verbose: options.verbose,
+        })
+
+        if (result.success) {
+          console.log(`✅ Build successful!`)
+          console.log(`   Output: ${result.outputPath}`)
+          if (result.duration) {
+            console.log(`   Duration: ${(result.duration / 1000).toFixed(2)}s`)
+          }
+
+          // Platform-specific hints
+          if (target === 'macos' && result.format === 'app') {
+            console.log(`\n💡 To run: open "${result.outputPath}"`)
+          } else if (target === 'linux' && result.format === 'appimage') {
+            console.log(`\n💡 To run: chmod +x "${result.outputPath}" && "${result.outputPath}"`)
+          }
+        } else {
+          console.error(`❌ Build failed: ${result.error}`)
+          process.exit(1)
+        }
+      } catch (error) {
+        console.error(`❌ Build error: ${(error as Error).message}`)
+        process.exit(1)
+      }
+    })
+
+  // ============================================================================
+  // compile - Compile stx templates to native Craft code
+  // ============================================================================
+  cli
+    .command('compile <input>', 'Compile stx template to native Craft component code')
+    .option('--target <platform>', 'Target platform: macos, windows, linux, ios, android, universal', { default: 'universal' })
+    .option('--format <format>', 'Output format: zig, typescript, json', { default: 'zig' })
+    .option('--output <path>', 'Output directory for compiled files', { default: './dist' })
+    .option('--optimize', 'Enable optimizations', { default: true })
+    .option('--tree-shake', 'Enable tree shaking', { default: true })
+    .option('--hot-reload', 'Enable hot reload support', { default: false })
+    .option('--sourcemaps', 'Generate source maps', { default: false })
+    .option('--bundle', 'Bundle all dependencies', { default: true })
+    .option('--minify', 'Minify output', { default: false })
+    .option('--verbose', 'Show detailed output', { default: false })
+    .example('stx compile app.stx')
+    .example('stx compile app.stx --target macos --format zig')
+    .example('stx compile app.stx --format typescript --output ./native')
+    .example('stx compile app.stx --optimize --tree-shake --minify')
+    .action(async (input: string, options: Record<string, any>) => {
+      try {
+        // Import the compiler module
+        const { compileToNative } = await import('../src/craft-compiler')
+
+        // Validate input file
+        const inputPath = path.resolve(input)
+        if (!fs.existsSync(inputPath)) {
+          console.error(`❌ Input file not found: ${input}`)
+          process.exit(1)
+        }
+
+        // Validate target
+        const validTargets = ['macos', 'windows', 'linux', 'ios', 'android', 'universal']
+        if (!validTargets.includes(options.target)) {
+          console.error(`❌ Invalid target: ${options.target}`)
+          console.error(`💡 Available targets: ${validTargets.join(', ')}`)
+          process.exit(1)
+        }
+
+        // Validate format
+        const validFormats = ['zig', 'typescript', 'json']
+        if (!validFormats.includes(options.format)) {
+          console.error(`❌ Invalid format: ${options.format}`)
+          console.error(`💡 Available formats: ${validFormats.join(', ')}`)
+          process.exit(1)
+        }
+
+        console.log(`\n🔧 Compiling stx template to native code...`)
+        console.log(`   Input:  ${input}`)
+        console.log(`   Target: ${options.target}`)
+        console.log(`   Format: ${options.format}`)
+        console.log(`   Output: ${options.output}\n`)
+
+        // Read template
+        const template = fs.readFileSync(inputPath, 'utf-8')
+
+        // Compile
+        const result = await compileToNative(template, {
+          target: options.target,
+          format: options.format,
+          optimize: options.optimize,
+          treeShake: options.treeShake,
+          hotReload: options.hotReload,
+          debug: options.verbose,
+          sourceMaps: options.sourcemaps,
+          bundle: options.bundle,
+          minify: options.minify,
+        })
+
+        // Create output directory
+        const outputDir = path.resolve(options.output)
+        if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true })
+        }
+
+        // Write output files
+        const baseName = path.basename(input, path.extname(input))
+
+        // Main code file
+        const ext = options.format === 'typescript' ? 'ts' : options.format === 'json' ? 'json' : 'zig'
+        const mainFile = path.join(outputDir, `${baseName}.${ext}`)
+        fs.writeFileSync(mainFile, result.code)
+
+        // Manifest
+        const manifestFile = path.join(outputDir, `${baseName}.manifest.json`)
+        fs.writeFileSync(manifestFile, JSON.stringify(result.manifest, null, 2))
+
+        // Source maps
+        if (options.sourcemaps && result.sourceMaps) {
+          const mapFile = path.join(outputDir, `${baseName}.${ext}.map`)
+          fs.writeFileSync(mapFile, result.sourceMaps)
+        }
+
+        // Platform-specific code
+        if (options.target === 'universal' && result.platformCode.size > 0) {
+          for (const [platform, code] of result.platformCode) {
+            const platformFile = path.join(outputDir, `${baseName}.${platform}.${ext}`)
+            fs.writeFileSync(platformFile, code)
+          }
+        }
+
+        console.log(`✅ Compilation successful!`)
+        console.log(`   Output: ${mainFile}`)
+        console.log(`   Manifest: ${manifestFile}`)
+        console.log(`\n📊 Statistics:`)
+        console.log(`   Compilation time: ${result.stats.compilationTime.toFixed(2)}ms`)
+        console.log(`   Total components: ${result.stats.totalComponents}`)
+        console.log(`   Native components: ${result.stats.nativeComponents}`)
+        console.log(`   Web fallback components: ${result.stats.webComponents}`)
+        console.log(`   Bundle size: ${(result.stats.bundleSize / 1024).toFixed(2)}KB`)
+
+        if (result.stats.warnings.length > 0) {
+          console.log(`\n⚠️  Warnings:`)
+          for (const warning of result.stats.warnings) {
+            console.log(`   - ${warning.message}`)
+          }
+        }
+
+        if (result.stats.errors.length > 0) {
+          console.log(`\n❌ Errors:`)
+          for (const error of result.stats.errors) {
+            console.log(`   - ${error.message}`)
+          }
+        }
+      } catch (error) {
+        console.error(`❌ Compilation error: ${(error as Error).message}`)
+        process.exit(1)
+      }
+    })
+
   // Helper function to calculate Levenshtein distance for command suggestions
   function levenshteinDistance(a: string, b: string): number {
     const matrix: number[][] = []
@@ -2139,7 +2397,7 @@ else {
 
   // Check for unknown commands and provide suggestions
   const knownCommands = [
-    'docs', 'iconify', 'dev', 'a11y', 'build', 'test', 'init', 'new',
+    'docs', 'iconify', 'dev', 'a11y', 'build', 'build:native', 'compile', 'test', 'init', 'new',
     'format', 'perf', 'debug', 'status', 'watch', 'analyze', 'version',
     'interactive', 'i'
   ]
