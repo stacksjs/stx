@@ -7,6 +7,139 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
   <title>Buddy - Voice AI Code Assistant</title>
+
+  <!-- Craft Native Bridge - enables window.craft APIs when running in native app -->
+  <script>
+  (function() {
+    'use strict';
+    if (window.__craftBridgeInitialized) return;
+    window.__craftBridgeInitialized = true;
+
+    let messageId = 0;
+    const generateId = () => 'msg_' + Date.now() + '_' + (++messageId);
+    const pending = new Map();
+    const eventListeners = new Map();
+    const config = { debug: false, timeout: 30000 };
+
+    function send(message) {
+      if (config.debug) console.log('[Craft] Sending:', message.method);
+      if (window.webkit?.messageHandlers?.craft) {
+        window.webkit.messageHandlers.craft.postMessage(message);
+        return true;
+      }
+      if (window.CraftBridge) {
+        window.CraftBridge.postMessage(JSON.stringify(message));
+        return true;
+      }
+      if (window.craftIPC) {
+        window.craftIPC.send('bridge-message', message);
+        return true;
+      }
+      return false;
+    }
+
+    function request(method, params) {
+      return new Promise((resolve, reject) => {
+        const id = generateId();
+        const timeout = setTimeout(() => {
+          pending.delete(id);
+          reject(new Error('Request timeout: ' + method));
+        }, config.timeout);
+        pending.set(id, { resolve, reject, timeout });
+        if (!send({ id, type: 'request', method, params })) {
+          clearTimeout(timeout);
+          pending.delete(id);
+          resolve(undefined);
+        }
+      });
+    }
+
+    function handleMessage(event) {
+      let data;
+      try {
+        data = event.detail || (typeof event.data === 'string' ? JSON.parse(event.data) : event.data);
+      } catch (e) { return; }
+      if (!data || !data.id) return;
+      if (data.type === 'response') {
+        const req = pending.get(data.id);
+        if (req) {
+          clearTimeout(req.timeout);
+          pending.delete(data.id);
+          data.error ? req.reject(new Error(data.error.message)) : req.resolve(data.result);
+        }
+      } else if (data.type === 'event' && data.method) {
+        (eventListeners.get(data.method) || []).forEach(fn => fn(data.params));
+      }
+    }
+
+    window.addEventListener('message', handleMessage);
+    window.addEventListener('craft-bridge-message', handleMessage);
+
+    function isCraft() {
+      return !!(window.webkit?.messageHandlers?.craft || window.CraftBridge || window.craftIPC);
+    }
+
+    function on(event, callback) {
+      if (!eventListeners.has(event)) eventListeners.set(event, []);
+      eventListeners.get(event).push(callback);
+      return () => {
+        const listeners = eventListeners.get(event);
+        const idx = listeners.indexOf(callback);
+        if (idx > -1) listeners.splice(idx, 1);
+      };
+    }
+
+    window.craft = {
+      isCraft,
+      on,
+      config,
+      window: {
+        show: () => request('window.show'),
+        hide: () => request('window.hide'),
+        close: () => request('window.close'),
+        minimize: () => request('window.minimize'),
+        maximize: () => request('window.maximize'),
+        setTitle: (title) => request('window.setTitle', { title }),
+        setSize: (width, height) => request('window.setSize', { width, height }),
+        center: () => request('window.center'),
+        toggleFullscreen: () => request('window.toggleFullscreen'),
+        startDrag: () => request('window.startDrag'),
+      },
+      tray: {
+        setTitle: (title) => request('tray.setTitle', { title }),
+        setTooltip: (tooltip) => request('tray.setTooltip', { tooltip }),
+        setIcon: (icon) => request('tray.setIcon', { icon }),
+        setMenu: (menu) => request('tray.setMenu', { menu }),
+        show: () => request('tray.show'),
+        hide: () => request('tray.hide'),
+        onClick: (callback) => on('tray.click', callback),
+      },
+      app: {
+        quit: () => request('app.quit'),
+        hide: () => request('app.hide'),
+        show: () => request('app.show'),
+        getInfo: () => request('app.getInfo'),
+        isDarkMode: () => request('app.isDarkMode'),
+        setBadge: (badge) => request('app.setBadge', { badge }),
+        notify: (options) => request('app.notify', options),
+      },
+      dialog: {
+        openFile: (options) => request('dialog.openFile', options),
+        saveFile: (options) => request('dialog.saveFile', options),
+        showAlert: (options) => request('dialog.showAlert', options),
+        showConfirm: (options) => request('dialog.showConfirm', options),
+      },
+      clipboard: {
+        writeText: (text) => request('clipboard.writeText', { text }),
+        readText: () => request('clipboard.readText'),
+      },
+    };
+
+    window.dispatchEvent(new CustomEvent('craft:ready', { detail: { isCraft: isCraft() } }));
+    if (isCraft()) console.log('[Craft] Native bridge initialized');
+  })();
+  </script>
+
   <style>
     :root {
       --bg-primary: #1a1a2e;
