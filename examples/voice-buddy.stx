@@ -1242,11 +1242,13 @@ Example commands:
             body: JSON.stringify({ command, driver: state.currentDriver })
           });
 
-          if (!apiResponse.ok) {
-            throw new Error(await apiResponse.text());
+          const responseData = await apiResponse.json();
+
+          if (!apiResponse.ok || !responseData.success) {
+            throw new Error(responseData.error || 'Unknown error occurred');
           }
 
-          response = await apiResponse.json();
+          response = responseData;
         } else {
           // Fall back to mock response
           response = await getMockResponse(command);
