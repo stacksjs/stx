@@ -135,6 +135,40 @@ export async function renderStoryComponent(
 }
 
 /**
+ * Variant extracted from script (may have optional fields)
+ */
+interface ExtractedVariant {
+  id: string
+  title?: string
+  state?: Record<string, any>
+  source?: string
+}
+
+/**
+ * Extract variants from script content
+ */
+async function extractVariantsFromScript(componentPath: string): Promise<ExtractedVariant[] | null> {
+  try {
+    const content = await fs.promises.readFile(componentPath, 'utf-8')
+    const scriptContent = extractScripts(content)
+    if (!scriptContent)
+      return null
+
+    // Extract the variants array from script
+    const context: Record<string, any> = {}
+    await extractVariables(scriptContent, context, componentPath)
+
+    if (Array.isArray(context.variants)) {
+      return context.variants
+    }
+    return null
+  }
+  catch {
+    return null
+  }
+}
+
+/**
  * Render a story variant
  */
 export async function renderStoryVariant(
@@ -143,12 +177,28 @@ export async function renderStoryVariant(
   variantId: string,
   props?: Record<string, any>,
 ): Promise<StoryRenderResult> {
-  // If story metadata is not parsed, render the component directly
-  if (!story.story?.variants) {
+  // Try to get variants from story metadata first
+  let variants: ExtractedVariant[] | undefined = story.story?.variants
+
+  // If not available, try to extract from script content
+  if (!variants) {
+    const extractedVariants = await extractVariantsFromScript(story.path)
+    if (extractedVariants) {
+      variants = extractedVariants
+    }
+  }
+
+  // If still no variants and variantId is default, just render the component
+  if (!variants && variantId === 'default') {
     return renderStoryComponent(ctx, story.path, { props: props || {} })
   }
 
-  const variant = story.story.variants.find(v => v.id === variantId)
+  // If no variants at all, render with provided props
+  if (!variants) {
+    return renderStoryComponent(ctx, story.path, { props: props || {} })
+  }
+
+  const variant = variants.find(v => v.id === variantId)
 
   // If variant not found but we have the default variant ID, just render the component
   if (!variant && variantId === 'default') {
