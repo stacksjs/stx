@@ -78,8 +78,8 @@ export async function renderStoryComponent(
     // Process the component using STX
     const { processDirectives } = await import('../process')
 
-    // Build props context - start with provided props
-    const propsContext: Record<string, any> = { ...options.props }
+    // Build props context - extract from script first, then override with provided props
+    const propsContext: Record<string, any> = {}
 
     // Extract variables from script tag to populate context
     const scriptContent = extractScripts(content)
@@ -91,6 +91,11 @@ export async function renderStoryComponent(
         // Log but continue - some scripts might have issues
         errors.push(`Warning: Could not extract script variables: ${extractError instanceof Error ? extractError.message : String(extractError)}`)
       }
+    }
+
+    // Override with provided props (these take precedence)
+    if (options.props) {
+      Object.assign(propsContext, options.props)
     }
 
     // Process the template
