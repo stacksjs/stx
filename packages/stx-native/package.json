@@ -5,6 +5,9 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "stx-native": "./dist/cli/index.js"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -17,18 +20,28 @@
     "./components": {
       "import": "./dist/components/index.js",
       "types": "./dist/components/index.d.ts"
+    },
+    "./bridge": {
+      "import": "./dist/bridge/protocol.js",
+      "types": "./dist/bridge/protocol.d.ts"
+    },
+    "./cli": {
+      "import": "./dist/cli/index.js"
     }
   },
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --format esm",
+    "build": "bun build ./src/index.ts ./src/cli/index.ts --outdir ./dist --format esm --splitting",
+    "dev": "bun run ./src/cli/index.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "stx": "workspace:*"
+    "stx": "workspace:*",
+    "ws": "^8.14.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/ws": "^8.5.10",
     "typescript": "^5.0.0"
   },
   "peerDependencies": {

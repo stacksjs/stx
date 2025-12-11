@@ -20,6 +20,10 @@
 // Compiler exports
 export * from './compiler/ir'
 export * from './compiler/headwind-to-style'
+export * from './compiler/parser'
+
+// Bridge exports
+export * from './bridge/protocol'
 
 // Component exports
 export * from './components/primitives'
@@ -45,3 +49,43 @@ export type {
   SwitchProps,
   SliderProps,
 } from './components/primitives'
+
+// Parser exports
+export {
+  parseSTX,
+  parseSTXToNode,
+  compileSTX,
+  compileSTXFiles,
+  mapToNativeComponent,
+  transformToNativeComponents,
+} from './compiler/parser'
+
+export type { Token, TokenType } from './compiler/parser'
+
+// Hot Reload exports
+export {
+  getHotReloadClient,
+  getErrorOverlay,
+  initHotReload,
+  HotReloadClient,
+  ErrorOverlay,
+} from './hot-reload/client'
+
+export type {
+  HotReloadMessage,
+  HotReloadState,
+  HotReloadCallback,
+  ErrorOverlayOptions,
+} from './hot-reload/client'
+
+// Runtime exports
+export {
+  getRuntime,
+  startRuntime,
+  render,
+  setState,
+  getState,
+  STXRuntime,
+} from './runtime/index'
+
+export type { RuntimeConfig } from './runtime/index'

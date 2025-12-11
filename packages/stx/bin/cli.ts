@@ -2237,6 +2237,79 @@ else {
     })
 
   // ============================================================================
+  // story - Component showcase and testing (Storybook for stx)
+  // ============================================================================
+  cli
+    .command('story', 'Start component showcase and testing server')
+    .option('-p, --port <port>', 'Server port', { default: '6006' })
+    .option('-o, --open', 'Open browser automatically', { default: false })
+    .option('--host <host>', 'Host to bind to', { default: 'localhost' })
+    .example('stx story')
+    .example('stx story --port 3000 --open')
+    .action(async (options: { port?: string, open?: boolean, host?: string }) => {
+      try {
+        const { devCommand } = await import('../src/story/commands/dev')
+        await devCommand({
+          port: options.port ? Number.parseInt(options.port, 10) : 6006,
+          open: options.open,
+          host: options.host,
+        })
+      } catch (error) {
+        console.error(`❌ Story error: ${(error as Error).message}`)
+        process.exit(1)
+      }
+    })
+
+  cli
+    .command('story:build', 'Build static story site')
+    .option('-o, --outDir <dir>', 'Output directory', { default: '.stx/dist/story' })
+    .example('stx story:build')
+    .example('stx story:build --outDir ./docs/components')
+    .action(async (options: { outDir?: string }) => {
+      try {
+        const { buildCommand } = await import('../src/story/commands/build')
+        await buildCommand({ outDir: options.outDir })
+      } catch (error) {
+        console.error(`❌ Story build error: ${(error as Error).message}`)
+        process.exit(1)
+      }
+    })
+
+  cli
+    .command('story:test', 'Run visual regression tests')
+    .option('-u, --update', 'Update snapshots', { default: false })
+    .option('-f, --filter <name>', 'Filter components by name')
+    .example('stx story:test')
+    .example('stx story:test --update')
+    .example('stx story:test --filter Button')
+    .action(async (options: { update?: boolean, filter?: string }) => {
+      try {
+        const { createContext } = await import('../src/story/context')
+        const { runVisualTests, updateSnapshots, formatTestResults } = await import('../src/story/testing')
+
+        const ctx = await createContext({ mode: 'build' })
+
+        if (options.update) {
+          const count = await updateSnapshots(ctx, {
+            filter: options.filter ? [options.filter] : undefined,
+          })
+          console.log(`Updated ${count} snapshots`)
+        } else {
+          const result = await runVisualTests(ctx, {
+            filter: options.filter ? [options.filter] : undefined,
+          })
+          console.log(formatTestResults(result))
+          if (result.failed > 0) {
+            process.exit(1)
+          }
+        }
+      } catch (error) {
+        console.error(`❌ Story test error: ${(error as Error).message}`)
+        process.exit(1)
+      }
+    })
+
+  // ============================================================================
   // compile - Compile stx templates to native Craft code
   // ============================================================================
   cli
@@ -2399,7 +2472,7 @@ else {
   const knownCommands = [
     'docs', 'iconify', 'dev', 'a11y', 'build', 'build:native', 'compile', 'test', 'init', 'new',
     'format', 'perf', 'debug', 'status', 'watch', 'analyze', 'version',
-    'interactive', 'i'
+    'interactive', 'i', 'story', 'story:build', 'story:test'
   ]
 
   const args = process.argv.slice(2)

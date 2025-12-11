@@ -248,6 +248,7 @@ async function handleApiRequest(
       return Response.json({
         html: result.html,
         css: result.css,
+        js: result.js,
         errors: result.errors,
         duration: result.duration,
       })
@@ -256,6 +257,7 @@ async function handleApiRequest(
       return Response.json({
         html: '',
         css: '',
+        js: '',
         errors: [error instanceof Error ? error.message : String(error)],
         duration: 0,
       }, { status: 500 })
@@ -545,6 +547,25 @@ function generateStoryHTML(ctx: StoryContext, port: number): string {
       height: 100%;
       color: var(--text-secondary);
     }
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-secondary);
+    }
+    .render-error {
+      padding: 1rem;
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+      border-radius: 4px;
+      color: #dc2626;
+    }
+    .render-error pre {
+      margin-top: 0.5rem;
+      white-space: pre-wrap;
+      font-size: 0.875rem;
+    }
   </style>
 </head>
 <body>
@@ -591,12 +612,50 @@ function generateStoryHTML(ctx: StoryContext, port: number): string {
       document.querySelectorAll('.story-item').forEach(el => el.classList.remove('active'));
       event.target.classList.add('active');
 
-      fetch('/api/story/' + id)
+      const canvas = document.getElementById('canvas');
+      canvas.innerHTML = '<div class="loading">Rendering component...</div>';
+
+      fetch('/api/render/' + id + '/default')
         .then(r => r.json())
         .then(data => {
-          const canvas = document.getElementById('canvas');
-          canvas.innerHTML = '<pre style="padding: 1rem; overflow: auto; height: 100%;">' +
-            escapeHtml(data.content) + '</pre>';
+          if (data.errors && data.errors.length > 0) {
+            canvas.innerHTML = '<div class="render-error"><strong>Render Error:</strong><pre>' +
+              escapeHtml(data.errors.join('\\n')) + '</pre></div>';
+            return;
+          }
+
+          // Create an iframe to isolate component styles
+          const iframe = document.createElement('iframe');
+          iframe.style.width = '100%';
+          iframe.style.height = '100%';
+          iframe.style.border = '1px solid var(--border)';
+          iframe.style.borderRadius = '4px';
+          iframe.style.background = 'white';
+          canvas.innerHTML = '';
+          canvas.appendChild(iframe);
+
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+          iframeDoc.open();
+          iframeDoc.write(\`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    \${data.css || ''}
+  </style>
+</head>
+<body>
+  \${data.html || ''}
+  <script>\${data.js || ''}<\/script>
+</body>
+</html>\`);
+          iframeDoc.close();
+        })
+        .catch(err => {
+          canvas.innerHTML = '<div class="render-error"><strong>Error:</strong> ' + escapeHtml(err.message) + '</div>';
         });
     }
 

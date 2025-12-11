@@ -5,6 +5,7 @@
 
 import type { ServerStoryFile, StoryContext } from './types'
 import fs from 'node:fs'
+import { extractVariables } from '../utils'
 
 /**
  * Story render options
@@ -77,8 +78,20 @@ export async function renderStoryComponent(
     // Process the component using STX
     const { processDirectives } = await import('../process')
 
-    // Build props context
-    const propsContext = options.props || {}
+    // Build props context - start with provided props
+    const propsContext: Record<string, any> = { ...options.props }
+
+    // Extract variables from script tag to populate context
+    const scriptContent = extractScripts(content)
+    if (scriptContent) {
+      try {
+        await extractVariables(scriptContent, propsContext, componentPath)
+      }
+      catch (extractError) {
+        // Log but continue - some scripts might have issues
+        errors.push(`Warning: Could not extract script variables: ${extractError instanceof Error ? extractError.message : String(extractError)}`)
+      }
+    }
 
     // Process the template
     const dependencies = new Set<string>()
@@ -122,13 +135,24 @@ export async function renderStoryVariant(
   variantId: string,
   props?: Record<string, any>,
 ): Promise<StoryRenderResult> {
-  const variant = story.story?.variants.find(v => v.id === variantId)
+  // If story metadata is not parsed, render the component directly
+  if (!story.story?.variants) {
+    return renderStoryComponent(ctx, story.path, { props: props || {} })
+  }
+
+  const variant = story.story.variants.find(v => v.id === variantId)
+
+  // If variant not found but we have the default variant ID, just render the component
+  if (!variant && variantId === 'default') {
+    return renderStoryComponent(ctx, story.path, { props: props || {} })
+  }
+
   if (!variant) {
     return {
       html: '<div class="stx-render-error">Variant not found</div>',
       css: '',
       js: '',
-      errors: ['Variant not found'],
+      errors: [`Variant '${variantId}' not found`],
       duration: 0,
     }
   }
@@ -159,10 +183,24 @@ export async function renderInlineTemplate(
   try {
     const { processDirectives } = await import('../process')
 
-    const dependencies = new Set<string>()
-    let html = await processDirectives(template, props, 'inline-template.stx', {}, dependencies)
+    // Build context with props
+    const context: Record<string, any> = { ...props }
 
-    html = injectPropsIntoHtml(html, props)
+    // Extract variables from script tags
+    const scriptContent = extractScripts(template)
+    if (scriptContent) {
+      try {
+        await extractVariables(scriptContent, context, 'inline-template.stx')
+      }
+      catch {
+        // Continue even if extraction fails
+      }
+    }
+
+    const dependencies = new Set<string>()
+    let html = await processDirectives(template, context, 'inline-template.stx', {}, dependencies)
+
+    html = injectPropsIntoHtml(html, context)
 
     return {
       html,
