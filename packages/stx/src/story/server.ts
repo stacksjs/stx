@@ -636,22 +636,21 @@ function generateStoryHTML(ctx: StoryContext, port: number): string {
 
           const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
           iframeDoc.open();
-          iframeDoc.write(\`<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    \${data.css || ''}
-  </style>
-</head>
-<body>
-  \${data.html || ''}
-  <script>\${data.js || ''}<\/script>
-</body>
-</html>\`);
+          iframeDoc.write('<!DOCTYPE html>' +
+            '<html>' +
+            '<head>' +
+            '<meta charset="UTF-8">' +
+            '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+            '<style>' +
+            '* { box-sizing: border-box; }' +
+            'body { margin: 0; padding: 16px; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; }' +
+            (data.css || '') +
+            '</style>' +
+            '</head>' +
+            '<body>' +
+            (data.html || '') +
+            '</body>' +
+            '</html>');
           iframeDoc.close();
         })
         .catch(err => {

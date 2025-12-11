@@ -103,6 +103,9 @@ export async function renderStoryComponent(
     // Extract JS
     const js = extractScripts(content)
 
+    // Strip script/style tags from HTML for clean preview
+    html = stripTagsForPreview(html)
+
     // Inject props into rendered output
     html = injectPropsIntoHtml(html, propsContext)
 
@@ -200,6 +203,9 @@ export async function renderInlineTemplate(
     const dependencies = new Set<string>()
     let html = await processDirectives(template, context, 'inline-template.stx', {}, dependencies)
 
+    // Strip script/style tags from HTML for clean preview
+    html = stripTagsForPreview(html)
+
     html = injectPropsIntoHtml(html, context)
 
     return {
@@ -236,6 +242,22 @@ function extractStyles(content: string): string {
   }
 
   return styles.join('\n')
+}
+
+/**
+ * Strip <style> and <script> tags and HTML comments from content for clean preview
+ */
+function stripTagsForPreview(content: string): string {
+  return content
+    // Remove HTML comments (including story metadata comments)
+    .replace(/<!--[\s\S]*?-->/g, '')
+    // Remove style tags
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+    // Remove script tags
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    // Clean up excessive whitespace but preserve structure
+    .replace(/^\s*\n/gm, '')
+    .trim()
 }
 
 /**
