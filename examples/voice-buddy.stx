@@ -873,7 +873,9 @@
       <div class="driver-selector">
         <label for="aiDriver">AI Driver:</label>
         <select id="aiDriver">
-          <option value="claude">Claude</option>
+          <option value="claude">Claude (API)</option>
+          <option value="claude-cli">Claude CLI (Local)</option>
+          <option value="claude-cli-ec2">Claude CLI (EC2)</option>
           <option value="openai">OpenAI</option>
           <option value="ollama">Ollama (Local)</option>
           <option value="mock">Mock (Demo)</option>

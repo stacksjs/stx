@@ -77,6 +77,78 @@ if (!existsSync(CONFIG.workDir)) {
 
 // AI Drivers
 const drivers: Record<string, AIDriver> = {
+  // Claude CLI driver - executes the `claude` command line tool
+  'claude-cli': {
+    name: 'Claude CLI',
+    async process(command: string, context: string, _history: AIMessage[]): Promise<string> {
+      // Check if claude CLI is available
+      const whichResult = await $`which claude`.quiet().nothrow()
+      if (whichResult.exitCode !== 0) {
+        throw new Error('Claude CLI not found. Install it with: npm install -g @anthropic-ai/claude-code')
+      }
+
+      // Build the prompt with context
+      const fullPrompt = state.repo
+        ? `Working in repository: ${state.repo.path}\n\nContext:\n${context}\n\nUser request: ${command}`
+        : command
+
+      // Execute claude CLI with the prompt
+      // Using --print to get just the response without interactive mode
+      // The CLI respects ANTHROPIC_API_KEY from environment
+      const cwd = state.repo?.path || process.cwd()
+
+      try {
+        const result = await $`cd ${cwd} && claude --print ${fullPrompt}`.quiet()
+        return result.text().trim()
+      }
+      catch (error) {
+        // Try alternative invocation without --print flag
+        try {
+          const result = await $`cd ${cwd} && echo ${fullPrompt} | claude`.quiet()
+          return result.text().trim()
+        }
+        catch (innerError) {
+          throw new Error(`Claude CLI error: ${(innerError as Error).message}`)
+        }
+      }
+    },
+  },
+
+  // Claude CLI with SSH to remote EC2 instance
+  'claude-cli-ec2': {
+    name: 'Claude CLI (EC2)',
+    async process(command: string, context: string, _history: AIMessage[]): Promise<string> {
+      const ec2Host = process.env.BUDDY_EC2_HOST
+      const ec2User = process.env.BUDDY_EC2_USER || 'ubuntu'
+      const ec2Key = process.env.BUDDY_EC2_KEY
+
+      if (!ec2Host) {
+        throw new Error('BUDDY_EC2_HOST environment variable not set. Set it to your EC2 instance IP/hostname.')
+      }
+
+      // Build the prompt
+      const fullPrompt = state.repo
+        ? `Working in repository: ${state.repo.name}\n\nContext:\n${context}\n\nUser request: ${command}`
+        : command
+
+      // Escape the prompt for SSH
+      const escapedPrompt = fullPrompt.replace(/'/g, `'\\''`)
+
+      // Build SSH command
+      const sshArgs = ec2Key ? `-i ${ec2Key}` : ''
+      const sshTarget = `${ec2User}@${ec2Host}`
+
+      try {
+        // Execute claude CLI on remote EC2 via SSH
+        const result = await $`ssh ${sshArgs} ${sshTarget} "claude --print '${escapedPrompt}'"`.quiet()
+        return result.text().trim()
+      }
+      catch (error) {
+        throw new Error(`EC2 Claude CLI error: ${(error as Error).message}. Make sure SSH is configured and claude CLI is installed on EC2.`)
+      }
+    },
+  },
+
   claude: {
     name: 'Claude',
     async process(command: string, context: string, history: AIMessage[]): Promise<string> {
@@ -589,7 +661,9 @@ console.log(`
 ║   Running at: http://localhost:${server.port}                      ║
 ║                                                            ║
 ║   AI Drivers:                                              ║
-║   • Claude (ANTHROPIC_API_KEY)                             ║
+║   • Claude API (ANTHROPIC_API_KEY)                         ║
+║   • Claude CLI (local claude command)                      ║
+║   • Claude CLI EC2 (BUDDY_EC2_HOST)                        ║
 ║   • OpenAI (OPENAI_API_KEY)                                ║
 ║   • Ollama (local, no key needed)                          ║
 ║   • Mock (demo mode)                                       ║
