@@ -6,6 +6,7 @@ import net from 'node:net'
 import path from 'node:path'
 import process from 'node:process'
 import { openDevWindow } from '@stacksjs/desktop'
+import { handleAgenticApi } from './agentic-api'
 import { readMarkdownFile } from './assets'
 import { config } from './config'
 import {
@@ -887,8 +888,14 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   }
   const server = serve({
     port: actualPort,
-    fetch(request) {
+    async fetch(request) {
       const url = new URL(request.url)
+
+      // Handle API routes first (agentic functionality for AI code assistant)
+      const apiResponse = await handleAgenticApi(request)
+      if (apiResponse) {
+        return apiResponse
+      }
 
       // Serve the main HTML for the root path
       if (url.pathname === '/') {
@@ -1528,8 +1535,14 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${actualPort}/${colors.reset}...`)
   const server = serve({
     port: actualPort,
-    fetch(request) {
+    async fetch(request) {
       const url = new URL(request.url)
+
+      // Handle API routes first (agentic functionality for AI code assistant)
+      const apiResponse = await handleAgenticApi(request)
+      if (apiResponse) {
+        return apiResponse
+      }
 
       // Check if it's a file in the public directory FIRST (before route matching)
       // This ensures static assets like fonts, images are served correctly

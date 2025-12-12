@@ -1,4 +1,5 @@
 export * from './a11y'
+export * from './agentic-api'
 export * from './analytics'
 export * from './analyzer'
 export * from './animation'
