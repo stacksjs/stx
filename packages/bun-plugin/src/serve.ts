@@ -105,6 +105,69 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
   }
 
+  // Headwind CSS lazy loading
+  let headwindModule: { CSSGenerator: any, config: any } | null = null
+  let headwindLoadAttempted = false
+
+  async function loadHeadwind(): Promise<{ CSSGenerator: any, config: any } | null> {
+    if (headwindLoadAttempted)
+      return headwindModule
+    headwindLoadAttempted = true
+
+    try {
+      const mod = await import('@stacksjs/headwind')
+      headwindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
+      console.log('✅ Headwind CSS engine loaded')
+      return headwindModule
+    }
+    catch {
+      try {
+        const nodePath = await import('node:path')
+        const localPath = nodePath.join(process.env.HOME || '', 'Code/headwind/packages/headwind/src/index.ts')
+        const mod = await import(localPath)
+        headwindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
+        console.log('✅ Headwind CSS engine loaded from local path')
+        return headwindModule
+      }
+      catch {
+        console.warn('⚠️ Headwind CSS engine not available')
+        return null
+      }
+    }
+  }
+
+  async function generateHeadwindCSS(htmlContent: string): Promise<string> {
+    try {
+      const hw = await loadHeadwind()
+      if (!hw)
+        return ''
+
+      const classRegex = /class\s*=\s*["']([^"']+)["']/gi
+      const classes = new Set<string>()
+      let match = classRegex.exec(htmlContent)
+      while (match !== null) {
+        for (const cls of match[1].split(/\s+/)) {
+          if (cls.trim())
+            classes.add(cls.trim())
+        }
+        match = classRegex.exec(htmlContent)
+      }
+
+      if (classes.size === 0)
+        return ''
+
+      const generator = new hw.CSSGenerator({ ...hw.config, preflight: true, minify: false })
+      for (const className of classes) {
+        generator.generate(className)
+      }
+      return generator.toCSS(true, false)
+    }
+    catch (error) {
+      console.warn('Failed to generate Headwind CSS:', error)
+      return ''
+    }
+  }
+
   // Lazy template processing function
   async function processTemplate(filePath: string): Promise<string> {
     const path = await import('node:path')
@@ -127,6 +190,21 @@ export async function serve(options: ServeOptions): Promise<void> {
     let output = templateContent
     const dependencies = new Set<string>()
     output = await processDirectives(output, context, filePath, defaultConfig, dependencies)
+
+    // Generate and inject Headwind CSS
+    const headwindCSS = await generateHeadwindCSS(output)
+    if (headwindCSS) {
+      const styleTag = `<style>/* headwind css */\n${headwindCSS}</style>`
+      if (output.includes('</head>')) {
+        output = output.replace('</head>', `${styleTag}\n</head>`)
+      }
+      else if (output.includes('<body')) {
+        output = output.replace(/<body/i, `${styleTag}\n<body`)
+      }
+      else {
+        output = styleTag + output
+      }
+    }
 
     return output
   }

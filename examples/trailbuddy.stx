@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrailBuddy - Discover & Track Your Trail Adventures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .font-display {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+
+    /* Navbar states */
+    #navbar {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    #navbar.scrolled {
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    #navbar.scrolled .nav-link {
+      color: #374151 !important;
+    }
+    #navbar.scrolled .nav-link:hover {
+      color: #059669 !important;
+    }
+    #navbar.scrolled .nav-logo {
+      color: #059669 !important;
+    }
+
+    /* Trail card hover effects */
+    .trail-card {
+      transition: all 0.3s ease;
+    }
+    .trail-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+    }
+    .trail-card:hover .trail-image {
+      transform: scale(1.05);
+    }
+    .trail-image {
+      transition: transform 0.5s ease;
+    }
+
+    /* Stats counter animation */
+    @keyframes countUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .stat-value {
+      animation: countUp 0.6s ease forwards;
+    }
+
+    /* Difficulty badge colors */
+    .difficulty-easy { background: #d1fae5; color: #065f46; }
+    .difficulty-moderate { background: #fef3c7; color: #92400e; }
+    .difficulty-hard { background: #fee2e2; color: #991b1b; }
+
+    /* Hero gradient animation */
+    .hero-gradient {
+      background: linear-gradient(135deg, #065f46 0%, #059669 50%, #34d399 100%);
+      background-size: 200% 200%;
+      animation: gradientShift 8s ease infinite;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Map preview styling */
+    .map-preview {
+      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .map-preview::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2394a3b8' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    /* Activity card pulse */
+    .activity-live {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Filter button active state */
+    .filter-btn.active {
+      background: #059669;
+      color: white;
+    }
+  </style>
+</head>
+
+<script>
+const trails = [
+  {
+    id: 1,
+    name: 'Redwood Canyon Loop',
+    location: 'Big Basin State Park, CA',
+    distance: 8.4,
+    elevation: 1250,
+    difficulty: 'moderate',
+    rating: 4.8,
+    reviews: 2341,
+    time: '3h 15m',
+    image: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&h=600&fit=crop',
+    tags: ['forest', 'waterfall', 'wildlife']
+  },
+  {
+    id: 2,
+    name: 'Ocean Bluff Trail',
+    location: 'Point Reyes, CA',
+    distance: 5.2,
+    elevation: 420,
+    difficulty: 'easy',
+    rating: 4.9,
+    reviews: 1876,
+    time: '1h 45m',
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop',
+    tags: ['coastal', 'views', 'dog-friendly']
+  },
+  {
+    id: 3,
+    name: 'Mission Peak Summit',
+    location: 'Fremont, CA',
+    distance: 6.8,
+    elevation: 2100,
+    difficulty: 'hard',
+    rating: 4.6,
+    reviews: 4521,
+    time: '3h 30m',
+    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&h=600&fit=crop',
+    tags: ['summit', 'views', 'challenging']
+  },
+  {
+    id: 4,
+    name: 'Muir Woods Cathedral Grove',
+    location: 'Mill Valley, CA',
+    distance: 2.1,
+    elevation: 180,
+    difficulty: 'easy',
+    rating: 4.7,
+    reviews: 5234,
+    time: '45m',
+    image: 'https://images.unsplash.com/photo-1476231682828-37e571bc172f?w=800&h=600&fit=crop',
+    tags: ['redwoods', 'family', 'accessible']
+  },
+  {
+    id: 5,
+    name: 'Skyline Ridge Loop',
+    location: 'Los Altos Hills, CA',
+    distance: 11.3,
+    elevation: 1850,
+    difficulty: 'moderate',
+    rating: 4.5,
+    reviews: 892,
+    time: '4h 20m',
+    image: 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=800&h=600&fit=crop',
+    tags: ['running', 'meadow', 'sunrise']
+  },
+  {
+    id: 6,
+    name: 'Dipsea Trail',
+    location: 'Mill Valley to Stinson Beach, CA',
+    distance: 7.4,
+    elevation: 2200,
+    difficulty: 'hard',
+    rating: 4.9,
+    reviews: 3102,
+    time: '3h 45m',
+    image: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&h=600&fit=crop',
+    tags: ['historic', 'stairs', 'beach']
+  }
+]
+
+const recentActivities = [
+  {
+    id: 1,
+    user: 'Sarah M.',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
+    trail: 'Redwood Canyon Loop',
+    type: 'Trail Run',
+    distance: 8.4,
+    time: '58:23',
+    pace: '6:57',
+    elevation: 1250,
+    date: '2 hours ago',
+    kudos: 24
+  },
+  {
+    id: 2,
+    user: 'Mike R.',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+    trail: 'Mission Peak Summit',
+    type: 'Hike',
+    distance: 6.8,
+    time: '2:45:00',
+    pace: '24:15',
+    elevation: 2100,
+    date: '5 hours ago',
+    kudos: 18
+  },
+  {
+    id: 3,
+    user: 'Emma L.',
+    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
+    trail: 'Ocean Bluff Trail',
+    type: 'Walk',
+    distance: 5.2,
+    time: '1:15:00',
+    pace: '14:25',
+    elevation: 420,
+    date: 'Yesterday',
+    kudos: 31
+  }
+]
+
+const userStats = {
+  totalDistance: 847.3,
+  totalTime: '142h 35m',
+  totalElevation: 98450,
+  trailsCompleted: 156,
+  currentStreak: 12,
+  longestStreak: 28
+}
+
+const achievements = [
+  { name: 'Early Bird', icon: '🌅', description: 'Complete 10 sunrise trails', progress: 8, total: 10 },
+  { name: 'Summit Seeker', icon: '🏔️', description: 'Reach 50 summits', progress: 34, total: 50 },
+  { name: 'Century Club', icon: '💯', description: 'Run 100 miles in a month', progress: 76, total: 100 },
+  { name: 'Trail Blazer', icon: '🔥', description: '30-day activity streak', progress: 12, total: 30 }
+]
+
+function getDifficultyClass(difficulty) {
+  const classes = {
+    easy: 'difficulty-easy',
+    moderate: 'difficulty-moderate',
+    hard: 'difficulty-hard'
+  }
+  return classes[difficulty] || 'difficulty-moderate'
+}
+
+function formatNumber(num) {
+  return num.toLocaleString()
+}
+</script>
+
+<body class="antialiased bg-gray-50">
+
+  <!-- Navigation -->
+  <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-transparent">
+    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo -->
+        <a href="#" class="flex items-center space-x-2 nav-logo text-white">
+          <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 17l6-6 4 4 8-8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14 7h7v7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="text-xl font-bold font-display">TrailBuddy</span>
+        </a>
+
+        <!-- Desktop Nav -->
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="#explore" class="nav-link text-white/90 hover:text-white transition font-medium">Explore</a>
+          <a href="#community" class="nav-link text-white/90 hover:text-white transition font-medium">Community</a>
+          <a href="#features" class="nav-link text-white/90 hover:text-white transition font-medium">Features</a>
+          <a href="#" class="px-5 py-2.5 text-emerald-700 bg-white rounded-full hover:bg-gray-100 transition font-semibold shadow-lg">
+            Start Tracking
+          </a>
+        </div>
+
+        <!-- Mobile menu button -->
+        <button class="md:hidden p-2 text-white">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative min-h-screen flex items-center hero-gradient overflow-hidden">
+    <!-- Background pattern -->
+    <div class="absolute inset-0 opacity-10">
+      <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <defs>
+          <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+            <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+      </svg>
+    </div>
+
+    <!-- Decorative mountains -->
+    <div class="absolute bottom-0 left-0 right-0">
+      <svg viewBox="0 0 1440 320" class="w-full" preserveAspectRatio="none">
+        <path fill="rgba(255,255,255,0.1)" d="M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,181.3C960,203,1056,213,1152,197.3C1248,181,1344,139,1392,117.3L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+      </svg>
+    </div>
+
+    <div class="relative z-10 px-4 mx-auto max-w-7xl sm:px-6 lg:px-8 pt-24 pb-32">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <!-- Left content -->
+        <div class="text-center lg:text-left">
+          <div class="inline-flex items-center px-4 py-2 bg-white/20 rounded-full text-white text-sm font-medium mb-6 backdrop-blur-sm">
+            <span class="w-2 h-2 bg-green-400 rounded-full mr-2 activity-live"></span>
+            12,847 runners active now
+          </div>
+          <h1 class="font-display text-5xl md:text-6xl lg:text-7xl font-black text-white mb-6 leading-tight">
+            Every Trail<br/>
+            <span class="text-emerald-200">Tells a Story</span>
+          </h1>
+          <p class="text-xl text-white/80 mb-8 max-w-lg mx-auto lg:mx-0">
+            Discover breathtaking trails, track your adventures, and connect with a community of outdoor enthusiasts.
+          </p>
+          <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+            <a href="#explore" class="w-full sm:w-auto px-8 py-4 text-lg font-semibold text-emerald-700 bg-white rounded-full hover:bg-gray-100 transition shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5">
+              Explore Trails
+            </a>
+            <a href="#" class="w-full sm:w-auto px-8 py-4 text-lg font-semibold text-white bg-white/20 rounded-full hover:bg-white/30 transition backdrop-blur-sm border border-white/30">
+              Download App
+            </a>
+          </div>
+
+          <!-- Quick stats -->
+          <div class="mt-12 grid grid-cols-3 gap-6">
+            <div class="text-center lg:text-left">
+              <p class="text-3xl font-bold text-white stat-value">2.5M+</p>
+              <p class="text-white/60 text-sm">Active Users</p>
+            </div>
+            <div class="text-center lg:text-left">
+              <p class="text-3xl font-bold text-white stat-value">150K+</p>
+              <p class="text-white/60 text-sm">Trails Mapped</p>
+            </div>
+            <div class="text-center lg:text-left">
+              <p class="text-3xl font-bold text-white stat-value">89M+</p>
+              <p class="text-white/60 text-sm">Miles Tracked</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right content - Featured trail card -->
+        <div class="hidden lg:block">
+          <div class="relative">
+            <!-- Main card -->
+            <div class="bg-white rounded-3xl shadow-2xl overflow-hidden transform rotate-2 hover:rotate-0 transition-transform duration-300">
+              <div class="relative h-64 overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&h=600&fit=crop" alt="Trail" class="w-full h-full object-cover" />
+                <div class="absolute top-4 left-4">
+                  <span class="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-sm font-semibold text-emerald-700">
+                    Featured Trail
+                  </span>
+                </div>
+                <div class="absolute bottom-4 right-4 flex items-center space-x-1 bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                  <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                  </svg>
+                  <span class="text-white text-sm font-medium">4.9</span>
+                </div>
+              </div>
+              <div class="p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-1">Dipsea Trail</h3>
+                <p class="text-gray-500 text-sm mb-4">Mill Valley to Stinson Beach, CA</p>
+                <div class="flex items-center justify-between text-sm">
+                  <div class="flex items-center space-x-4">
+                    <span class="flex items-center text-gray-600">
+                      <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                      7.4 mi
+                    </span>
+                    <span class="flex items-center text-gray-600">
+                      <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                      </svg>
+                      2,200 ft
+                    </span>
+                  </div>
+                  <span class="px-3 py-1 difficulty-hard rounded-full text-xs font-semibold">Hard</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Floating activity card -->
+            <div class="absolute -bottom-8 -left-8 bg-white rounded-2xl shadow-xl p-4 w-64 transform -rotate-3">
+              <div class="flex items-center space-x-3">
+                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" alt="User" class="w-10 h-10 rounded-full object-cover" />
+                <div>
+                  <p class="font-semibold text-gray-900 text-sm">Sarah just completed</p>
+                  <p class="text-emerald-600 text-sm font-medium">Redwood Canyon Loop</p>
+                </div>
+              </div>
+              <div class="mt-3 flex items-center justify-between text-xs text-gray-500">
+                <span>8.4 mi in 58:23</span>
+                <span class="flex items-center">
+                  <svg class="w-4 h-4 text-red-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
+                  </svg>
+                  24 kudos
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+      <svg class="w-6 h-6 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+      </svg>
+    </div>
+  </section>
+
+  <!-- Search & Filter Section -->
+  <section class="relative -mt-8 z-20 px-4 mx-auto max-w-5xl sm:px-6 lg:px-8">
+    <div class="bg-white rounded-2xl shadow-xl p-6">
+      <div class="flex flex-col md:flex-row gap-4">
+        <!-- Search input -->
+        <div class="flex-1 relative">
+          <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="text" placeholder="Search trails, parks, or cities..." class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+        </div>
+        <!-- Location -->
+        <div class="relative">
+          <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <input type="text" placeholder="Near me" class="w-full md:w-48 pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+        </div>
+        <!-- Search button -->
+        <button class="px-8 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition shadow-lg hover:shadow-xl">
+          Search
+        </button>
+      </div>
+
+      <!-- Quick filters -->
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button class="filter-btn active px-4 py-2 text-sm font-medium rounded-full border border-gray-200 transition">All Trails</button>
+        <button class="filter-btn px-4 py-2 text-sm font-medium text-gray-600 rounded-full border border-gray-200 hover:border-emerald-500 hover:text-emerald-600 transition">Trail Running</button>
+        <button class="filter-btn px-4 py-2 text-sm font-medium text-gray-600 rounded-full border border-gray-200 hover:border-emerald-500 hover:text-emerald-600 transition">Hiking</button>
+        <button class="filter-btn px-4 py-2 text-sm font-medium text-gray-600 rounded-full border border-gray-200 hover:border-emerald-500 hover:text-emerald-600 transition">Walking</button>
+        <button class="filter-btn px-4 py-2 text-sm font-medium text-gray-600 rounded-full border border-gray-200 hover:border-emerald-500 hover:text-emerald-600 transition">Dog Friendly</button>
+        <button class="filter-btn px-4 py-2 text-sm font-medium text-gray-600 rounded-full border border-gray-200 hover:border-emerald-500 hover:text-emerald-600 transition">Waterfall</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Explore Trails Section -->
+  <section id="explore" class="py-20 px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between mb-10">
+      <div>
+        <h2 class="font-display text-3xl md:text-4xl font-bold text-gray-900">Popular Trails Near You</h2>
+        <p class="text-gray-500 mt-2">Discover the best trails based on your location</p>
+      </div>
+      <a href="#" class="hidden md:flex items-center text-emerald-600 font-semibold hover:text-emerald-700 transition">
+        View All
+        <svg class="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </a>
+    </div>
+
+    <!-- Trail Grid -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      @foreach(trails as trail)
+        <article class="trail-card bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100">
+          <!-- Image -->
+          <div class="relative h-48 overflow-hidden">
+            <img src="{{ trail.image }}" alt="{{ trail.name }}" class="trail-image w-full h-full object-cover" />
+            <div class="absolute top-4 left-4">
+              <span class="px-3 py-1 {{ getDifficultyClass(trail.difficulty) }} rounded-full text-xs font-semibold capitalize">
+                {{ trail.difficulty }}
+              </span>
+            </div>
+            <button class="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition shadow-md">
+              <svg class="w-5 h-5 text-gray-600 hover:text-red-500 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Content -->
+          <div class="p-5">
+            <div class="flex items-start justify-between mb-2">
+              <h3 class="font-bold text-lg text-gray-900 hover:text-emerald-600 transition cursor-pointer">{{ trail.name }}</h3>
+              <div class="flex items-center space-x-1 text-sm">
+                <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+                <span class="font-semibold text-gray-900">{{ trail.rating }}</span>
+                <span class="text-gray-400">({{ formatNumber(trail.reviews) }})</span>
+              </div>
+            </div>
+
+            <p class="text-gray-500 text-sm mb-4 flex items-center">
+              <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              </svg>
+              {{ trail.location }}
+            </p>
+
+            <!-- Stats -->
+            <div class="flex items-center justify-between text-sm text-gray-600 border-t border-gray-100 pt-4">
+              <div class="flex items-center space-x-4">
+                <span class="flex items-center">
+                  <svg class="w-4 h-4 mr-1 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  {{ trail.distance }} mi
+                </span>
+                <span class="flex items-center">
+                  <svg class="w-4 h-4 mr-1 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                  </svg>
+                  {{ formatNumber(trail.elevation) }} ft
+                </span>
+              </div>
+              <span class="text-gray-400">~{{ trail.time }}</span>
+            </div>
+
+            <!-- Tags -->
+            <div class="flex flex-wrap gap-2 mt-4">
+              @foreach(trail.tags as tag)
+                <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-xs capitalize">{{ tag }}</span>
+              @endforeach
+            </div>
+          </div>
+        </article>
+      @endforeach
+    </div>
+
+    <!-- Load more -->
+    <div class="text-center mt-12">
+      <button class="px-8 py-3 bg-white text-gray-700 font-semibold rounded-full border-2 border-gray-200 hover:border-emerald-500 hover:text-emerald-600 transition shadow-sm">
+        Load More Trails
+      </button>
+    </div>
+  </section>
+
+  <!-- Community Activity Section -->
+  <section id="community" class="py-20 bg-gradient-to-b from-white to-gray-50">
+    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">Community Activity</h2>
+        <p class="text-gray-500 max-w-2xl mx-auto">See what fellow trail runners and hikers are up to. Get inspired by their adventures.</p>
+      </div>
+
+      <div class="grid lg:grid-cols-3 gap-8">
+        <!-- Activity Feed -->
+        <div class="lg:col-span-2 space-y-6">
+          @foreach(recentActivities as activity)
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition">
+              <!-- Header -->
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                  <img src="{{ activity.avatar }}" alt="{{ activity.user }}" class="w-12 h-12 rounded-full object-cover border-2 border-emerald-100" />
+                  <div>
+                    <p class="font-semibold text-gray-900">{{ activity.user }}</p>
+                    <p class="text-sm text-gray-500">{{ activity.date }} · {{ activity.type }}</p>
+                  </div>
+                </div>
+                <button class="text-gray-400 hover:text-gray-600">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Trail name -->
+              <h3 class="font-bold text-lg text-gray-900 mb-3 hover:text-emerald-600 cursor-pointer transition">
+                {{ activity.trail }}
+              </h3>
+
+              <!-- Stats grid -->
+              <div class="grid grid-cols-4 gap-4 mb-4">
+                <div class="text-center p-3 bg-gray-50 rounded-xl">
+                  <p class="text-2xl font-bold text-gray-900">{{ activity.distance }}</p>
+                  <p class="text-xs text-gray-500">Miles</p>
+                </div>
+                <div class="text-center p-3 bg-gray-50 rounded-xl">
+                  <p class="text-2xl font-bold text-gray-900">{{ activity.time }}</p>
+                  <p class="text-xs text-gray-500">Time</p>
+                </div>
+                <div class="text-center p-3 bg-gray-50 rounded-xl">
+                  <p class="text-2xl font-bold text-gray-900">{{ activity.pace }}</p>
+                  <p class="text-xs text-gray-500">Pace</p>
+                </div>
+                <div class="text-center p-3 bg-gray-50 rounded-xl">
+                  <p class="text-2xl font-bold text-gray-900">{{ formatNumber(activity.elevation) }}</p>
+                  <p class="text-xs text-gray-500">Elev (ft)</p>
+                </div>
+              </div>
+
+              <!-- Map preview -->
+              <div class="map-preview h-32 rounded-xl mb-4 flex items-center justify-center">
+                <div class="relative z-10 text-center">
+                  <svg class="w-8 h-8 mx-auto text-sky-500 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                  <p class="text-sm text-sky-600 font-medium">View Route</p>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div class="flex items-center space-x-4">
+                  <button class="flex items-center space-x-2 text-gray-500 hover:text-red-500 transition">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                    <span class="text-sm font-medium">{{ activity.kudos }} Kudos</span>
+                  </button>
+                  <button class="flex items-center space-x-2 text-gray-500 hover:text-emerald-500 transition">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <span class="text-sm font-medium">Comment</span>
+                  </button>
+                </div>
+                <button class="text-gray-400 hover:text-gray-600 transition">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          @endforeach
+        </div>
+
+        <!-- Sidebar - Your Stats & Achievements -->
+        <div class="space-y-6">
+          <!-- Your Stats Card -->
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <h3 class="font-bold text-lg text-gray-900 mb-4 flex items-center">
+              <svg class="w-5 h-5 mr-2 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Your Stats
+            </h3>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between p-3 bg-emerald-50 rounded-xl">
+                <div>
+                  <p class="text-2xl font-bold text-emerald-700">{{ userStats.totalDistance }}</p>
+                  <p class="text-sm text-emerald-600">Total Miles</p>
+                </div>
+                <svg class="w-8 h-8 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="p-3 bg-gray-50 rounded-xl">
+                  <p class="text-lg font-bold text-gray-900">{{ userStats.totalTime }}</p>
+                  <p class="text-xs text-gray-500">Time Active</p>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-xl">
+                  <p class="text-lg font-bold text-gray-900">{{ formatNumber(userStats.totalElevation) }}</p>
+                  <p class="text-xs text-gray-500">Elevation (ft)</p>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-xl">
+                  <p class="text-lg font-bold text-gray-900">{{ userStats.trailsCompleted }}</p>
+                  <p class="text-xs text-gray-500">Trails Done</p>
+                </div>
+                <div class="p-3 bg-orange-50 rounded-xl">
+                  <p class="text-lg font-bold text-orange-600">{{ userStats.currentStreak }}</p>
+                  <p class="text-xs text-orange-500">Day Streak</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Achievements Card -->
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <h3 class="font-bold text-lg text-gray-900 mb-4 flex items-center">
+              <svg class="w-5 h-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              </svg>
+              Achievements
+            </h3>
+            <div class="space-y-4">
+              @foreach(achievements as achievement)
+                <div class="p-3 bg-gray-50 rounded-xl">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-2">
+                      <span class="text-2xl">{{ achievement.icon }}</span>
+                      <div>
+                        <p class="font-semibold text-gray-900 text-sm">{{ achievement.name }}</p>
+                        <p class="text-xs text-gray-500">{{ achievement.description }}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="absolute top-0 left-0 h-full bg-emerald-500 rounded-full transition-all" style="width: {{ (achievement.progress / achievement.total) * 100 }}%"></div>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-1 text-right">{{ achievement.progress }}/{{ achievement.total }}</p>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          <!-- Leaderboard Preview -->
+          <div class="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl p-6 text-white">
+            <h3 class="font-bold text-lg mb-4 flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+              </svg>
+              Weekly Leaderboard
+            </h3>
+            <p class="text-emerald-100 text-sm mb-4">You're ranked #47 this week</p>
+            <button class="w-full py-2.5 bg-white text-emerald-700 font-semibold rounded-xl hover:bg-emerald-50 transition">
+              View Full Leaderboard
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="py-20 bg-gray-900">
+    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="font-display text-3xl md:text-4xl font-bold text-white mb-4">Built for Trail Enthusiasts</h2>
+        <p class="text-gray-400 max-w-2xl mx-auto">Everything you need to discover, track, and share your outdoor adventures.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Feature 1 -->
+        <div class="bg-gray-800 rounded-2xl p-8 hover:bg-gray-750 transition">
+          <div class="w-14 h-14 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-6">
+            <svg class="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-3">Offline Maps</h3>
+          <p class="text-gray-400">Download trail maps for offline use. Never lose your way, even without cell service.</p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="bg-gray-800 rounded-2xl p-8 hover:bg-gray-750 transition">
+          <div class="w-14 h-14 bg-blue-500/20 rounded-xl flex items-center justify-center mb-6">
+            <svg class="w-7 h-7 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-3">Real-time Tracking</h3>
+          <p class="text-gray-400">GPS tracking with live stats including pace, distance, elevation gain, and estimated time.</p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="bg-gray-800 rounded-2xl p-8 hover:bg-gray-750 transition">
+          <div class="w-14 h-14 bg-purple-500/20 rounded-xl flex items-center justify-center mb-6">
+            <svg class="w-7 h-7 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-3">Community & Social</h3>
+          <p class="text-gray-400">Connect with fellow runners, share routes, give kudos, and join local running groups.</p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="bg-gray-800 rounded-2xl p-8 hover:bg-gray-750 transition">
+          <div class="w-14 h-14 bg-orange-500/20 rounded-xl flex items-center justify-center mb-6">
+            <svg class="w-7 h-7 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-3">Detailed Analytics</h3>
+          <p class="text-gray-400">Track your progress over time with detailed charts, personal records, and training insights.</p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="bg-gray-800 rounded-2xl p-8 hover:bg-gray-750 transition">
+          <div class="w-14 h-14 bg-red-500/20 rounded-xl flex items-center justify-center mb-6">
+            <svg class="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-3">Safety Alerts</h3>
+          <p class="text-gray-400">Get notified about trail conditions, weather warnings, and wildlife sightings from the community.</p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="bg-gray-800 rounded-2xl p-8 hover:bg-gray-750 transition">
+          <div class="w-14 h-14 bg-yellow-500/20 rounded-xl flex items-center justify-center mb-6">
+            <svg class="w-7 h-7 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-3">Achievements & Challenges</h3>
+          <p class="text-gray-400">Earn badges, complete monthly challenges, and compete on leaderboards with friends.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-20 bg-gradient-to-r from-emerald-600 to-teal-600">
+    <div class="px-4 mx-auto max-w-4xl sm:px-6 lg:px-8 text-center">
+      <h2 class="font-display text-4xl md:text-5xl font-bold text-white mb-6">
+        Start Your Trail Journey Today
+      </h2>
+      <p class="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
+        Join millions of trail runners, hikers, and outdoor enthusiasts discovering new adventures every day.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="#" class="w-full sm:w-auto px-8 py-4 text-lg font-semibold text-emerald-700 bg-white rounded-full hover:bg-gray-100 transition shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 flex items-center justify-center">
+          <svg class="w-6 h-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+          </svg>
+          App Store
+        </a>
+        <a href="#" class="w-full sm:w-auto px-8 py-4 text-lg font-semibold text-emerald-700 bg-white rounded-full hover:bg-gray-100 transition shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 flex items-center justify-center">
+          <svg class="w-6 h-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 010 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.802 8.99l-2.303 2.303-8.635-8.635z"/>
+          </svg>
+          Google Play
+        </a>
+      </div>
+      <p class="text-white/60 text-sm mt-6">Free to download. Premium features available.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 pt-16 pb-8">
+    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        <!-- Brand -->
+        <div>
+          <a href="#" class="flex items-center space-x-2 text-white mb-4">
+            <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 17l6-6 4 4 8-8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M14 7h7v7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="text-xl font-bold font-display">TrailBuddy</span>
+          </a>
+          <p class="text-gray-400 text-sm mb-4">Discover trails, track adventures, connect with nature.</p>
+          <div class="flex space-x-4">
+            <a href="#" class="text-gray-400 hover:text-white transition">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              </svg>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-white transition">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+              </svg>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-white transition">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Explore -->
+        <div>
+          <h4 class="text-white font-semibold mb-4">Explore</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Browse Trails</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Trail Maps</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Top Rated</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Near Me</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Dog Friendly</a></li>
+          </ul>
+        </div>
+
+        <!-- Community -->
+        <div>
+          <h4 class="text-white font-semibold mb-4">Community</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Activity Feed</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Running Groups</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Challenges</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Leaderboards</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Events</a></li>
+          </ul>
+        </div>
+
+        <!-- Company -->
+        <div>
+          <h4 class="text-white font-semibold mb-4">Company</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">About Us</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Careers</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Blog</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Press</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Bottom -->
+      <div class="pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between">
+        <p class="text-gray-500 text-sm">&copy; 2025 TrailBuddy. All rights reserved.</p>
+        <div class="flex space-x-6 mt-4 md:mt-0">
+          <a href="#" class="text-gray-500 hover:text-gray-400 text-sm">Privacy Policy</a>
+          <a href="#" class="text-gray-500 hover:text-gray-400 text-sm">Terms of Service</a>
+          <a href="#" class="text-gray-500 hover:text-gray-400 text-sm">Cookie Policy</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Navbar scroll behavior
+    window.addEventListener('scroll', function() {
+      const navbar = document.getElementById('navbar');
+      if (window.scrollY > 50) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+    });
+
+    // Filter button click handler
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+  </script>
+
+</body>
+</html>

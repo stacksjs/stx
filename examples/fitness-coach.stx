@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FitCoach - Personal Training Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.3);
+    }
+    .pulse-dot {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 120px;
+    }
+    .bar {
+      flex: 1;
+      background: linear-gradient(to top, #10b981, #06b6d4);
+      border-radius: 4px 4px 0 0;
+      transition: height 0.3s ease;
+    }
+  </style>
+  <script>
+    module.exports = {
+      // Trainer Profile
+      trainerName: "Alex Rivera",
+      trainerTitle: "Certified Personal Trainer",
+      trainerAvatar: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=150&h=150&fit=crop&crop=face",
+      trainerRating: 4.9,
+
+      // Dashboard Stats
+      activeClients: 24,
+      sessionsThisWeek: 18,
+      upcomingToday: 5,
+      completionRate: 94,
+      revenue: 4250,
+      newClientsThisMonth: 6,
+
+      // Client List
+      clients: [
+        {
+          id: 1,
+          name: "Sarah Johnson",
+          avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
+          goal: "Weight Loss",
+          progress: 72,
+          nextSession: "Today, 10:00 AM",
+          streak: 12,
+          status: "active",
+          plan: "12-Week Transformation"
+        },
+        {
+          id: 2,
+          name: "Mike Chen",
+          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+          goal: "Muscle Gain",
+          progress: 58,
+          nextSession: "Today, 2:00 PM",
+          streak: 8,
+          status: "active",
+          plan: "Hypertrophy Program"
+        },
+        {
+          id: 3,
+          name: "Emma Wilson",
+          avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+          goal: "Marathon Prep",
+          progress: 85,
+          nextSession: "Tomorrow, 7:00 AM",
+          streak: 21,
+          status: "active",
+          plan: "Endurance Builder"
+        },
+        {
+          id: 4,
+          name: "James Rodriguez",
+          avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
+          goal: "Flexibility",
+          progress: 45,
+          nextSession: "Wed, 5:00 PM",
+          streak: 5,
+          status: "active",
+          plan: "Mobility Mastery"
+        },
+        {
+          id: 5,
+          name: "Lisa Park",
+          avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
+          goal: "Strength",
+          progress: 91,
+          nextSession: "Thu, 11:00 AM",
+          streak: 34,
+          status: "active",
+          plan: "Powerlifting Basics"
+        }
+      ],
+
+      // Today's Schedule
+      todaySchedule: [
+        { time: "7:00 AM", client: "Group HIIT", type: "group", duration: 45, participants: 8, focus: "Full Body", status: "completed" },
+        { time: "10:00 AM", client: "Sarah Johnson", type: "personal", duration: 60, participants: 1, focus: "Lower Body", status: "upcoming" },
+        { time: "2:00 PM", client: "Mike Chen", type: "personal", duration: 60, participants: 1, focus: "Push Day", status: "upcoming" },
+        { time: "4:00 PM", client: "New Client Consultation", type: "consultation", duration: 30, participants: 1, focus: "Assessment", status: "upcoming" },
+        { time: "5:30 PM", client: "Evening Bootcamp", type: "group", duration: 60, participants: 12, focus: "HIIT Circuit", status: "upcoming" }
+      ],
+
+      // Workout Templates
+      workoutTemplates: [
+        { id: 1, name: "Full Body Blast", exercises: 8, duration: 45, difficulty: "Intermediate", category: "Strength", usageCount: 24 },
+        { id: 2, name: "HIIT Inferno", exercises: 12, duration: 30, difficulty: "Advanced", category: "Cardio", usageCount: 18 },
+        { id: 3, name: "Core Crusher", exercises: 10, duration: 20, difficulty: "Beginner", category: "Core", usageCount: 32 },
+        { id: 4, name: "Upper Body Power", exercises: 9, duration: 50, difficulty: "Intermediate", category: "Strength", usageCount: 15 },
+        { id: 5, name: "Leg Day Supreme", exercises: 10, duration: 55, difficulty: "Advanced", category: "Strength", usageCount: 21 },
+        { id: 6, name: "Flexibility Flow", exercises: 15, duration: 40, difficulty: "Beginner", category: "Mobility", usageCount: 12 }
+      ],
+
+      // Exercise Library
+      exercises: [
+        { name: "Barbell Squat", muscle: "Quadriceps", equipment: "Barbell", difficulty: "Intermediate" },
+        { name: "Deadlift", muscle: "Back", equipment: "Barbell", difficulty: "Advanced" },
+        { name: "Bench Press", muscle: "Chest", equipment: "Barbell", difficulty: "Intermediate" },
+        { name: "Pull-ups", muscle: "Back", equipment: "Pull-up Bar", difficulty: "Intermediate" },
+        { name: "Plank", muscle: "Core", equipment: "None", difficulty: "Beginner" },
+        { name: "Dumbbell Lunges", muscle: "Legs", equipment: "Dumbbells", difficulty: "Beginner" },
+        { name: "Overhead Press", muscle: "Shoulders", equipment: "Barbell", difficulty: "Intermediate" },
+        { name: "Lat Pulldown", muscle: "Back", equipment: "Cable Machine", difficulty: "Beginner" }
+      ],
+
+      // Recent Activity
+      recentActivity: [
+        { type: "workout", message: "Sarah completed Full Body Blast", time: "2 hours ago" },
+        { type: "milestone", message: "Mike reached 10-session milestone", time: "3 hours ago" },
+        { type: "message", message: "New message from Emma Wilson", time: "4 hours ago" },
+        { type: "payment", message: "Payment received from James R.", time: "Yesterday" },
+        { type: "signup", message: "New client registration: David L.", time: "Yesterday" }
+      ],
+
+      // Nutrition Plans
+      nutritionPlans: [
+        { name: "Muscle Building", calories: 2800, protein: 180, carbs: 300, fat: 90, clientCount: 12 },
+        { name: "Fat Loss", calories: 1800, protein: 150, carbs: 150, fat: 60, clientCount: 8 },
+        { name: "Maintenance", calories: 2200, protein: 140, carbs: 220, fat: 75, clientCount: 4 }
+      ],
+
+      // Weekly Progress Data
+      weekDays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      weekSessions: [4, 5, 3, 6, 4, 2, 0],
+      weekHours: [4.5, 5.0, 3.5, 6.5, 4.0, 2.5, 0],
+
+      // Upcoming Week Dates
+      weekDates: [9, 10, 11, 12, 13, 14, 15]
+    };
+  </script>
+</head>
+
+<body class="bg-slate-900 text-slate-100 min-h-screen antialiased">
+  <!-- Header -->
+  <header class="bg-slate-800/80 backdrop-blur-xl border-b border-slate-700/50 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center">
+            <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <span class="text-xl font-bold gradient-text">FitCoach</span>
+        </div>
+
+        <!-- Search -->
+        <div class="hidden md:flex flex-1 max-w-md mx-8">
+          <div class="relative w-full">
+            <input type="text" placeholder="Search clients, workouts..." class="w-full bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Right Section -->
+        <div class="flex items-center gap-4">
+          <!-- Notifications -->
+          <button class="relative p-2 rounded-xl bg-slate-700/50 hover:bg-slate-700 transition-colors">
+            <svg class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center font-bold">2</span>
+          </button>
+
+          <!-- Profile -->
+          <div class="flex items-center gap-3 cursor-pointer hover:bg-slate-700/50 rounded-xl p-2 transition-colors">
+            <img src="{{ trainerAvatar }}" alt="{{ trainerName }}" class="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/50" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'; this.alt='AR'">
+            <div class="hidden sm:block">
+              <div class="text-sm font-semibold">{{ trainerName }}</div>
+              <div class="text-xs text-slate-400">Trainer</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside class="hidden lg:flex flex-col w-64 bg-slate-800/50 border-r border-slate-700/50 min-h-[calc(100vh-4rem)] sticky top-16">
+      <nav class="flex-1 p-4 space-y-2">
+        <button onclick="showTab('dashboard')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500/20 text-emerald-400 font-medium transition-colors" data-tab="dashboard">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          Dashboard
+        </button>
+        <button onclick="showTab('clients')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 transition-colors" data-tab="clients">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          Clients
+        </button>
+        <button onclick="showTab('schedule')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 transition-colors" data-tab="schedule">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Schedule
+        </button>
+        <button onclick="showTab('workouts')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 transition-colors" data-tab="workouts">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          Workouts
+        </button>
+        <button onclick="showTab('nutrition')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 transition-colors" data-tab="nutrition">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          Nutrition
+        </button>
+        <button onclick="showTab('analytics')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 transition-colors" data-tab="analytics">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          Analytics
+        </button>
+      </nav>
+
+      <!-- Upgrade Card -->
+      <div class="p-4">
+        <div class="bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-2xl p-4 border border-emerald-500/30">
+          <div class="text-sm font-semibold mb-1">Go Pro</div>
+          <p class="text-xs text-slate-400 mb-3">Unlock advanced features and unlimited clients</p>
+          <button class="w-full py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">Upgrade Now</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+
+      <!-- Dashboard Tab -->
+      <div id="tab-dashboard" class="tab-content">
+        <!-- Welcome Section -->
+        <div class="mb-8">
+          <h1 class="text-2xl sm:text-3xl font-bold mb-2">Good morning, Alex!</h1>
+          <p class="text-slate-400">You have <span class="text-emerald-400 font-semibold">{{ upcomingToday }} sessions</span> scheduled for today</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div class="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50 card-hover">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <span class="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">+{{ newClientsThisMonth }} new</span>
+            </div>
+            <div class="text-2xl font-bold">{{ activeClients }}</div>
+            <div class="text-sm text-slate-400">Active Clients</div>
+          </div>
+
+          <div class="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50 card-hover">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 bg-cyan-500/20 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            <div class="text-2xl font-bold">{{ sessionsThisWeek }}</div>
+            <div class="text-sm text-slate-400">Sessions This Week</div>
+          </div>
+
+          <div class="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50 card-hover">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            <div class="text-2xl font-bold">{{ completionRate }}%</div>
+            <div class="text-sm text-slate-400">Completion Rate</div>
+          </div>
+
+          <div class="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50 card-hover">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            <div class="text-2xl font-bold">${{ revenue }}</div>
+            <div class="text-sm text-slate-400">Revenue This Month</div>
+          </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid lg:grid-cols-3 gap-6">
+          <!-- Today's Schedule -->
+          <div class="lg:col-span-2 bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
+            <div class="p-5 border-b border-slate-700/50 flex justify-between items-center">
+              <h2 class="font-semibold text-lg">Today's Schedule</h2>
+              <button onclick="showTab('schedule')" class="text-sm text-emerald-400 hover:text-emerald-300 font-medium">View All</button>
+            </div>
+            <div class="divide-y divide-slate-700/50">
+              @foreach(todaySchedule as session)
+                <div class="p-4 hover:bg-slate-700/30 transition-colors">
+                  <div class="flex items-center gap-4">
+                    <div class="text-center min-w-[60px]">
+                      <div class="text-sm font-semibold">{{ session.time }}</div>
+                      <div class="text-xs text-slate-500">{{ session.duration }}min</div>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium">{{ session.client }}</span>
+                        @if(session.type === 'group')
+                          <span class="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full">{{ session.participants }} people</span>
+                        @elseif(session.type === 'consultation')
+                          <span class="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">New</span>
+                        @endif
+                      </div>
+                      <div class="text-sm text-slate-400">{{ session.focus }}</div>
+                    </div>
+                    @if(session.status === 'completed')
+                      <div class="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    @else
+                      <button class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-xl transition-colors">Start</button>
+                    @endif
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
+            <div class="p-5 border-b border-slate-700/50">
+              <h2 class="font-semibold text-lg">Recent Activity</h2>
+            </div>
+            <div class="divide-y divide-slate-700/50">
+              @foreach(recentActivity as activity)
+                <div class="p-4 flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0
+                    @if(activity.type === 'workout') bg-emerald-500/20
+                    @elseif(activity.type === 'milestone') bg-amber-500/20
+                    @elseif(activity.type === 'message') bg-blue-500/20
+                    @elseif(activity.type === 'payment') bg-green-500/20
+                    @else bg-purple-500/20
+                    @endif
+                  ">
+                    @if(activity.type === 'workout')
+                      <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                    @elseif(activity.type === 'milestone')
+                      <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                    @elseif(activity.type === 'message')
+                      <svg class="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                    @elseif(activity.type === 'payment')
+                      <svg class="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    @else
+                      <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+                    @endif
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm">{{ activity.message }}</p>
+                    <p class="text-xs text-slate-500 mt-1">{{ activity.time }}</p>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+        </div>
+
+        <!-- Client Progress Section -->
+        <div class="mt-6 bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
+          <div class="p-5 border-b border-slate-700/50 flex justify-between items-center">
+            <h2 class="font-semibold text-lg">Client Progress</h2>
+            <button onclick="showTab('clients')" class="text-sm text-emerald-400 hover:text-emerald-300 font-medium">View All Clients</button>
+          </div>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-5">
+            @foreach(clients as client)
+              <div class="bg-slate-700/30 rounded-xl p-4 card-hover cursor-pointer">
+                <div class="flex items-center gap-3 mb-3">
+                  <img src="{{ client.avatar }}" alt="{{ client.name }}" class="w-10 h-10 rounded-full object-cover" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'">
+                  <div class="min-w-0">
+                    <div class="font-medium text-sm truncate">{{ client.name }}</div>
+                    <div class="text-xs text-slate-400">{{ client.goal }}</div>
+                  </div>
+                </div>
+                <div class="mb-2">
+                  <div class="flex justify-between text-xs mb-1">
+                    <span class="text-slate-400">Progress</span>
+                    <span class="font-semibold text-emerald-400">{{ client.progress }}%</span>
+                  </div>
+                  <div class="h-1.5 bg-slate-600 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full" style="width: {{ client.progress }}%"></div>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-500">{{ client.streak }} day streak</span>
+                  @if(client.streak > 7)
+                    <span class="text-amber-400">🔥</span>
+                  @endif
+                </div>
+              </div>
+            @endforeach
+          </div>
+        </div>
+      </div>
+
+      <!-- Clients Tab -->
+      <div id="tab-clients" class="tab-content hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 class="text-2xl font-bold">Clients</h1>
+            <p class="text-slate-400">Manage your {{ activeClients }} active clients</p>
+          </div>
+          <button class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Add Client
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex flex-wrap gap-3 mb-6">
+          <button class="px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-xl text-sm font-medium">All Clients</button>
+          <button class="px-4 py-2 bg-slate-700/50 text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors">Active</button>
+          <button class="px-4 py-2 bg-slate-700/50 text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors">On Break</button>
+          <button class="px-4 py-2 bg-slate-700/50 text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors">New This Month</button>
+        </div>
+
+        <!-- Client Cards -->
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          @foreach(clients as client)
+            <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden card-hover">
+              <div class="p-5">
+                <div class="flex items-start gap-4 mb-4">
+                  <img src="{{ client.avatar }}" alt="{{ client.name }}" class="w-14 h-14 rounded-xl object-cover" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'">
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-semibold truncate">{{ client.name }}</h3>
+                    <p class="text-sm text-slate-400">{{ client.plan }}</p>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="w-2 h-2 bg-emerald-400 rounded-full pulse-dot"></span>
+                      <span class="text-xs text-emerald-400">Active</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-3">
+                  <div>
+                    <div class="flex justify-between text-sm mb-1">
+                      <span class="text-slate-400">Goal Progress</span>
+                      <span class="font-semibold">{{ client.progress }}%</span>
+                    </div>
+                    <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div class="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full transition-all" style="width: {{ client.progress }}%"></div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center gap-2">
+                      <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      <span>{{ client.streak }} day streak</span>
+                    </div>
+                    <span class="text-slate-400">{{ client.goal }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="px-5 py-3 bg-slate-700/30 border-t border-slate-700/50 flex items-center justify-between">
+                <div class="text-sm">
+                  <span class="text-slate-400">Next:</span>
+                  <span class="font-medium ml-1">{{ client.nextSession }}</span>
+                </div>
+                <button class="p-2 hover:bg-slate-700 rounded-lg transition-colors">
+                  <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      </div>
+
+      <!-- Schedule Tab -->
+      <div id="tab-schedule" class="tab-content hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 class="text-2xl font-bold">Schedule</h1>
+            <p class="text-slate-400">{{ sessionsThisWeek }} sessions scheduled this week</p>
+          </div>
+          <button class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            New Session
+          </button>
+        </div>
+
+        <!-- Week View -->
+        <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
+          <div class="p-5 border-b border-slate-700/50 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+              <button class="p-2 hover:bg-slate-700 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <h2 class="font-semibold text-lg">December 9 - 15, 2024</h2>
+              <button class="p-2 hover:bg-slate-700 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+            <button class="text-sm text-emerald-400 hover:text-emerald-300 font-medium">Today</button>
+          </div>
+
+          <!-- Week Days -->
+          <div class="grid grid-cols-7 border-b border-slate-700/50">
+            @foreach(weekDays as index => day)
+              <div class="p-4 text-center border-r border-slate-700/50 last:border-r-0 @if(index === 0) bg-emerald-500/10 @endif">
+                <div class="text-xs text-slate-400 uppercase">{{ day }}</div>
+                <div class="text-lg font-semibold mt-1 @if(index === 0) text-emerald-400 @endif">{{ weekDates[index] }}</div>
+              </div>
+            @endforeach
+          </div>
+
+          <!-- Schedule Grid -->
+          <div class="p-5">
+            <div class="space-y-3">
+              @foreach(todaySchedule as session)
+                <div class="flex items-center gap-4 p-4 bg-slate-700/30 rounded-xl hover:bg-slate-700/50 transition-colors cursor-pointer">
+                  <div class="w-1 h-12 rounded-full
+                    @if(session.type === 'personal') bg-emerald-500
+                    @elseif(session.type === 'group') bg-purple-500
+                    @else bg-amber-500
+                    @endif
+                  "></div>
+                  <div class="flex-1">
+                    <div class="font-medium">{{ session.client }}</div>
+                    <div class="text-sm text-slate-400">{{ session.time }} - {{ session.duration }} min - {{ session.focus }}</div>
+                  </div>
+                  <span class="text-xs px-2 py-1 rounded-full capitalize
+                    @if(session.type === 'personal') bg-emerald-500/20 text-emerald-400
+                    @elseif(session.type === 'group') bg-purple-500/20 text-purple-400
+                    @else bg-amber-500/20 text-amber-400
+                    @endif
+                  ">{{ session.type }}</span>
+                </div>
+              @endforeach
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workouts Tab -->
+      <div id="tab-workouts" class="tab-content hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 class="text-2xl font-bold">Workout Library</h1>
+            <p class="text-slate-400">{{ workoutTemplates.length }} workout templates available</p>
+          </div>
+          <button class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Create Workout
+          </button>
+        </div>
+
+        <!-- Category Filters -->
+        <div class="flex flex-wrap gap-3 mb-6">
+          <button class="px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-xl text-sm font-medium">All</button>
+          <button class="px-4 py-2 bg-slate-700/50 text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors">Strength</button>
+          <button class="px-4 py-2 bg-slate-700/50 text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors">Cardio</button>
+          <button class="px-4 py-2 bg-slate-700/50 text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors">Core</button>
+          <button class="px-4 py-2 bg-slate-700/50 text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors">Mobility</button>
+        </div>
+
+        <!-- Workout Templates Grid -->
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          @foreach(workoutTemplates as workout)
+            <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden card-hover cursor-pointer">
+              <div class="p-5">
+                <div class="flex items-start justify-between mb-3">
+                  <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl
+                    @if(workout.category === 'Strength') bg-red-500/20
+                    @elseif(workout.category === 'Cardio') bg-orange-500/20
+                    @elseif(workout.category === 'Core') bg-blue-500/20
+                    @else bg-green-500/20
+                    @endif
+                  ">
+                    @if(workout.category === 'Strength')
+                      <svg class="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                    @elseif(workout.category === 'Cardio')
+                      <svg class="w-6 h-6 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    @elseif(workout.category === 'Core')
+                      <svg class="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
+                    @else
+                      <svg class="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    @endif
+                  </div>
+                  <span class="text-xs px-2 py-1 rounded-full
+                    @if(workout.difficulty === 'Beginner') bg-green-500/20 text-green-400
+                    @elseif(workout.difficulty === 'Intermediate') bg-yellow-500/20 text-yellow-400
+                    @else bg-red-500/20 text-red-400
+                    @endif
+                  ">{{ workout.difficulty }}</span>
+                </div>
+                <h3 class="font-semibold text-lg mb-2">{{ workout.name }}</h3>
+                <div class="flex items-center gap-4 text-sm text-slate-400">
+                  <span>{{ workout.exercises }} exercises</span>
+                  <span>{{ workout.duration }} min</span>
+                </div>
+              </div>
+              <div class="px-5 py-3 bg-slate-700/30 border-t border-slate-700/50 flex justify-between items-center">
+                <span class="text-xs text-slate-400">Used {{ workout.usageCount }} times</span>
+                <button class="text-sm text-emerald-400 hover:text-emerald-300 font-medium">Use Template</button>
+              </div>
+            </div>
+          @endforeach
+        </div>
+
+        <!-- Exercise Library -->
+        <div>
+          <h2 class="text-xl font-bold mb-4">Exercise Library</h2>
+          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
+            <div class="divide-y divide-slate-700/50">
+              @foreach(exercises as exercise)
+                <div class="p-4 flex items-center justify-between hover:bg-slate-700/30 transition-colors">
+                  <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center">
+                      <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div class="font-medium">{{ exercise.name }}</div>
+                      <div class="text-sm text-slate-400">{{ exercise.muscle }} - {{ exercise.equipment }}</div>
+                    </div>
+                  </div>
+                  <span class="text-xs px-2 py-1 bg-slate-700 rounded-full">{{ exercise.difficulty }}</span>
+                </div>
+              @endforeach
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nutrition Tab -->
+      <div id="tab-nutrition" class="tab-content hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 class="text-2xl font-bold">Nutrition Plans</h1>
+            <p class="text-slate-400">{{ nutritionPlans.length }} meal plans configured</p>
+          </div>
+          <button class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Create Plan
+          </button>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          @foreach(nutritionPlans as plan)
+            <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden card-hover">
+              <div class="p-5">
+                <h3 class="font-semibold text-lg mb-4">{{ plan.name }}</h3>
+                <div class="space-y-4">
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-400">Daily Calories</span>
+                    <span class="text-2xl font-bold text-emerald-400">{{ plan.calories }}</span>
+                  </div>
+                  <div class="grid grid-cols-3 gap-3">
+                    <div class="text-center p-3 bg-slate-700/30 rounded-xl">
+                      <div class="text-lg font-bold text-red-400">{{ plan.protein }}g</div>
+                      <div class="text-xs text-slate-400">Protein</div>
+                    </div>
+                    <div class="text-center p-3 bg-slate-700/30 rounded-xl">
+                      <div class="text-lg font-bold text-amber-400">{{ plan.carbs }}g</div>
+                      <div class="text-xs text-slate-400">Carbs</div>
+                    </div>
+                    <div class="text-center p-3 bg-slate-700/30 rounded-xl">
+                      <div class="text-lg font-bold text-blue-400">{{ plan.fat }}g</div>
+                      <div class="text-xs text-slate-400">Fat</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="px-5 py-3 bg-slate-700/30 border-t border-slate-700/50 flex justify-between items-center">
+                <span class="text-sm text-slate-400">{{ plan.clientCount }} clients using</span>
+                <button class="text-sm text-emerald-400 hover:text-emerald-300 font-medium">Customize</button>
+              </div>
+            </div>
+          @endforeach
+        </div>
+
+        <!-- Macro Calculator -->
+        <div class="mt-8 bg-slate-800/50 rounded-2xl border border-slate-700/50 p-6">
+          <h2 class="text-xl font-bold mb-4">Quick Macro Calculator</h2>
+          <div class="grid sm:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-sm text-slate-400 mb-2">Weight (lbs)</label>
+              <input type="number" placeholder="165" class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div>
+              <label class="block text-sm text-slate-400 mb-2">Goal</label>
+              <select class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option>Weight Loss</option>
+                <option>Maintenance</option>
+                <option>Muscle Gain</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm text-slate-400 mb-2">Activity Level</label>
+              <select class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option>Sedentary</option>
+                <option>Moderate</option>
+                <option>Active</option>
+                <option>Very Active</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button class="w-full py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold hover:opacity-90 transition-opacity">Calculate</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics Tab -->
+      <div id="tab-analytics" class="tab-content hidden">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold">Analytics</h1>
+          <p class="text-slate-400">Track your business performance</p>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-5 card-hover">
+            <div class="text-sm text-slate-400 mb-1">Total Sessions</div>
+            <div class="text-3xl font-bold">{{ sessionsThisWeek * 4 }}</div>
+            <div class="text-sm text-emerald-400 mt-2">+12% from last month</div>
+          </div>
+          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-5 card-hover">
+            <div class="text-sm text-slate-400 mb-1">Active Clients</div>
+            <div class="text-3xl font-bold">{{ activeClients }}</div>
+            <div class="text-sm text-emerald-400 mt-2">+{{ newClientsThisMonth }} new this month</div>
+          </div>
+          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-5 card-hover">
+            <div class="text-sm text-slate-400 mb-1">Avg. Session Rating</div>
+            <div class="text-3xl font-bold">{{ trainerRating }}</div>
+            <div class="text-sm text-amber-400 mt-2 flex items-center gap-1">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              Excellent
+            </div>
+          </div>
+          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-5 card-hover">
+            <div class="text-sm text-slate-400 mb-1">Monthly Revenue</div>
+            <div class="text-3xl font-bold">${{ revenue }}</div>
+            <div class="text-sm text-emerald-400 mt-2">+18% from last month</div>
+          </div>
+        </div>
+
+        <!-- Weekly Sessions Chart -->
+        <div class="grid lg:grid-cols-2 gap-6">
+          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-5">
+            <h2 class="font-semibold text-lg mb-4">Weekly Sessions</h2>
+            <div class="flex items-end justify-between gap-2 h-32">
+              @foreach(weekSessions as index => sessions)
+                <div class="flex-1 flex flex-col items-center gap-2">
+                  <div class="w-full rounded-t-lg transition-all" style="height: {{ (sessions / 6) * 100 }}%; background: linear-gradient(to top, #10b981, #06b6d4);"></div>
+                  <span class="text-xs text-slate-400">{{ weekDays[index] }}</span>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-5">
+            <h2 class="font-semibold text-lg mb-4">Client Goals Distribution</h2>
+            <div class="space-y-4">
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span>Weight Loss</span>
+                  <span class="text-emerald-400">35%</span>
+                </div>
+                <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div class="h-full bg-emerald-500 rounded-full" style="width: 35%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span>Muscle Gain</span>
+                  <span class="text-cyan-400">30%</span>
+                </div>
+                <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div class="h-full bg-cyan-500 rounded-full" style="width: 30%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span>Endurance</span>
+                  <span class="text-purple-400">20%</span>
+                </div>
+                <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div class="h-full bg-purple-500 rounded-full" style="width: 20%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span>Flexibility</span>
+                  <span class="text-amber-400">15%</span>
+                </div>
+                <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div class="h-full bg-amber-500 rounded-full" style="width: 15%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Performers -->
+        <div class="mt-6 bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
+          <div class="p-5 border-b border-slate-700/50">
+            <h2 class="font-semibold text-lg">Top Performing Clients</h2>
+          </div>
+          <div class="divide-y divide-slate-700/50">
+            @foreach(clients as index => client)
+              @if(index < 3)
+                <div class="p-4 flex items-center gap-4 hover:bg-slate-700/30 transition-colors">
+                  <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm
+                    @if(index === 0) bg-amber-500/20 text-amber-400
+                    @elseif(index === 1) bg-slate-400/20 text-slate-300
+                    @else bg-orange-500/20 text-orange-400
+                    @endif
+                  ">{{ index + 1 }}</div>
+                  <img src="{{ client.avatar }}" alt="{{ client.name }}" class="w-10 h-10 rounded-full object-cover" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'">
+                  <div class="flex-1">
+                    <div class="font-medium">{{ client.name }}</div>
+                    <div class="text-sm text-slate-400">{{ client.goal }}</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="font-bold text-emerald-400">{{ client.progress }}%</div>
+                    <div class="text-xs text-slate-400">{{ client.streak }} day streak</div>
+                  </div>
+                </div>
+              @endif
+            @endforeach
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700 z-50">
+    <div class="flex justify-around py-2">
+      <button onclick="showTab('dashboard')" class="mobile-nav flex flex-col items-center gap-1 p-2 text-emerald-400" data-tab="dashboard">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+        <span class="text-xs">Home</span>
+      </button>
+      <button onclick="showTab('clients')" class="mobile-nav flex flex-col items-center gap-1 p-2 text-slate-500" data-tab="clients">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+        <span class="text-xs">Clients</span>
+      </button>
+      <button onclick="showTab('schedule')" class="mobile-nav flex flex-col items-center gap-1 p-2 text-slate-500" data-tab="schedule">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+        <span class="text-xs">Schedule</span>
+      </button>
+      <button onclick="showTab('workouts')" class="mobile-nav flex flex-col items-center gap-1 p-2 text-slate-500" data-tab="workouts">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+        <span class="text-xs">Workouts</span>
+      </button>
+      <button onclick="showTab('analytics')" class="mobile-nav flex flex-col items-center gap-1 p-2 text-slate-500" data-tab="analytics">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+        <span class="text-xs">Stats</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-700 rounded-xl px-6 py-3 shadow-2xl flex items-center gap-3 z-50">
+    <span class="text-emerald-400">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+    </span>
+    <span id="toast-message">Action completed</span>
+  </div>
+
+  <script>
+    // Tab Navigation
+    function showTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+
+      // Show selected tab
+      const selectedTab = document.getElementById('tab-' + tabName);
+      if (selectedTab) selectedTab.classList.remove('hidden');
+
+      // Update sidebar nav
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        if (btn.dataset.tab === tabName) {
+          btn.classList.remove('text-slate-400', 'hover:bg-slate-700/50', 'hover:text-slate-200');
+          btn.classList.add('bg-emerald-500/20', 'text-emerald-400');
+        } else {
+          btn.classList.remove('bg-emerald-500/20', 'text-emerald-400');
+          btn.classList.add('text-slate-400', 'hover:bg-slate-700/50', 'hover:text-slate-200');
+        }
+      });
+
+      // Update mobile nav
+      document.querySelectorAll('.mobile-nav').forEach(btn => {
+        if (btn.dataset.tab === tabName) {
+          btn.classList.remove('text-slate-500');
+          btn.classList.add('text-emerald-400');
+        } else {
+          btn.classList.remove('text-emerald-400');
+          btn.classList.add('text-slate-500');
+        }
+      });
+    }
+
+    // Toast
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').textContent = message;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+  </script>
+</body>
+</html>

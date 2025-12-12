@@ -1218,6 +1218,39 @@ else {
         // Output summary
         console.log(`✓ Build successful! Built ${successCount} STX ${successCount === 1 ? 'file' : 'files'} with ${copiedFilesCount} output ${copiedFilesCount === 1 ? 'file' : 'files'}`)
 
+        // Generate PWA assets if enabled
+        if (stxConfig.pwa?.enabled) {
+          console.log('\nGenerating PWA assets...')
+          const { buildPwaAssets } = await import('../src/pwa')
+          const pwaResult = await buildPwaAssets(stxConfig, options.outdir)
+
+          if (pwaResult.success) {
+            const pwaFiles: string[] = []
+            if (pwaResult.files.manifest)
+              pwaFiles.push('manifest.json')
+            if (pwaResult.files.serviceWorker)
+              pwaFiles.push(path.basename(pwaResult.files.serviceWorker))
+            if (pwaResult.files.offlinePage)
+              pwaFiles.push('offline.html')
+            if (pwaResult.files.icons.length > 0)
+              pwaFiles.push(`${pwaResult.files.icons.length} icons`)
+
+            console.log(`✓ PWA assets generated: ${pwaFiles.join(', ')}`)
+
+            if (pwaResult.warnings.length > 0) {
+              for (const warning of pwaResult.warnings) {
+                console.warn(`  Warning: ${warning}`)
+              }
+            }
+          }
+          else {
+            console.error('✗ PWA asset generation failed:')
+            for (const error of pwaResult.errors) {
+              console.error(`  ${error}`)
+            }
+          }
+        }
+
         // Track total script/chunk count for reporting
         let totalChunkCount = 0
 

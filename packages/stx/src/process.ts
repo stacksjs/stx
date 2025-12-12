@@ -639,6 +639,12 @@ async function processOtherDirectives(
     output = injectAnalytics(output, options)
   }
 
+  // Auto-inject PWA tags if enabled
+  if (options.pwa?.enabled && options.pwa.autoInject !== false) {
+    const { injectPwaTags } = await import('./pwa/inject')
+    output = injectPwaTags(output, options)
+  }
+
   return output
 }
 
