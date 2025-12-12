@@ -62,6 +62,13 @@ const CONFIG = {
   ollamaModel: process.env.OLLAMA_MODEL || 'llama3.2',
 }
 
+// API Keys state (can be set at runtime via /api/settings)
+const apiKeys: { anthropic?: string, openai?: string, claudeCliHost?: string } = {
+  anthropic: process.env.ANTHROPIC_API_KEY,
+  openai: process.env.OPENAI_API_KEY,
+  claudeCliHost: process.env.BUDDY_EC2_HOST,
+}
+
 // State
 const state: BuddyState = {
   repo: null,
@@ -98,13 +105,15 @@ const drivers: Record<string, AIDriver> = {
       const cwd = state.repo?.path || process.cwd()
 
       try {
-        const result = await $`cd ${cwd} && claude --print ${fullPrompt}`.quiet()
+        // Use --dangerously-skip-permissions to allow file operations without interactive prompts
+        // Use --print to get just the response
+        const result = await $`cd ${cwd} && claude --print --dangerously-skip-permissions ${fullPrompt}`.quiet()
         return result.text().trim()
       }
       catch (error) {
-        // Try alternative invocation without --print flag
+        // Try with allowedTools flag as alternative
         try {
-          const result = await $`cd ${cwd} && echo ${fullPrompt} | claude`.quiet()
+          const result = await $`cd ${cwd} && claude --print --allowedTools "Write,Edit,Bash" ${fullPrompt}`.quiet()
           return result.text().trim()
         }
         catch (innerError) {
@@ -152,9 +161,9 @@ const drivers: Record<string, AIDriver> = {
   claude: {
     name: 'Claude',
     async process(command: string, context: string, history: AIMessage[]): Promise<string> {
-      const apiKey = process.env.ANTHROPIC_API_KEY
+      const apiKey = apiKeys.anthropic
       if (!apiKey) {
-        throw new Error('ANTHROPIC_API_KEY environment variable not set')
+        throw new Error('Anthropic API key not set. Click the settings button (gear icon) to enter your API key.')
       }
 
       const systemPrompt = buildSystemPrompt(context)
@@ -187,9 +196,9 @@ const drivers: Record<string, AIDriver> = {
   openai: {
     name: 'OpenAI',
     async process(command: string, context: string, history: AIMessage[]): Promise<string> {
-      const apiKey = process.env.OPENAI_API_KEY
+      const apiKey = apiKeys.openai
       if (!apiKey) {
-        throw new Error('OPENAI_API_KEY environment variable not set')
+        throw new Error('OpenAI API key not set. Click the settings button (gear icon) to enter your API key.')
       }
 
       const systemPrompt = buildSystemPrompt(context)
@@ -647,6 +656,49 @@ const server = Bun.serve({
       state.github = null
       console.log(`GitHub disconnected: ${previousUser || 'unknown'}`)
       return Response.json({ success: true })
+    }
+
+    // API: Update settings (API keys)
+    if (url.pathname === '/api/settings' && req.method === 'POST') {
+      try {
+        const { apiKeys: newKeys } = (await req.json()) as { apiKeys: { anthropic?: string, openai?: string, claudeCliHost?: string } }
+
+        if (newKeys.anthropic !== undefined) {
+          apiKeys.anthropic = newKeys.anthropic || undefined
+          console.log(`Anthropic API key ${newKeys.anthropic ? 'set' : 'cleared'}`)
+        }
+        if (newKeys.openai !== undefined) {
+          apiKeys.openai = newKeys.openai || undefined
+          console.log(`OpenAI API key ${newKeys.openai ? 'set' : 'cleared'}`)
+        }
+        if (newKeys.claudeCliHost !== undefined) {
+          apiKeys.claudeCliHost = newKeys.claudeCliHost || undefined
+          console.log(`Claude CLI Host ${newKeys.claudeCliHost ? 'set to ' + newKeys.claudeCliHost : 'cleared'}`)
+        }
+
+        return Response.json({
+          success: true,
+          configured: {
+            anthropic: !!apiKeys.anthropic,
+            openai: !!apiKeys.openai,
+            claudeCliHost: !!apiKeys.claudeCliHost,
+          },
+        })
+      }
+      catch (error) {
+        return Response.json({ success: false, error: (error as Error).message }, { status: 400 })
+      }
+    }
+
+    // API: Get settings status
+    if (url.pathname === '/api/settings' && req.method === 'GET') {
+      return Response.json({
+        configured: {
+          anthropic: !!apiKeys.anthropic,
+          openai: !!apiKeys.openai,
+          claudeCliHost: !!apiKeys.claudeCliHost,
+        },
+      })
     }
 
     return new Response('Not Found', { status: 404 })
