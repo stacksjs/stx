@@ -46,11 +46,28 @@ async function buildMacOSApp() {
 import Cocoa
 import WebKit
 
+@main
 class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow!
     var webView: WKWebView!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Get the path to Resources relative to the executable
+        let executablePath = Bundle.main.executablePath ?? ""
+        let macOSDir = (executablePath as NSString).deletingLastPathComponent
+        let contentsDir = (macOSDir as NSString).deletingLastPathComponent
+        let resourcesDir = (contentsDir as NSString).appendingPathComponent("Resources")
+        let htmlPath = (resourcesDir as NSString).appendingPathComponent("index.html")
+
+        print("Looking for HTML at: \\(htmlPath)")
+
+        // Check if file exists
+        guard FileManager.default.fileExists(atPath: htmlPath) else {
+            print("ERROR: index.html not found at \\(htmlPath)")
+            NSApp.terminate(nil)
+            return
+        }
+
         // Create main window
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1200, height: 800),
@@ -66,24 +83,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         config.preferences.setValue(true, forKey: "developerExtrasEnabled")
         config.mediaTypesRequiringUserActionForPlayback = []
 
-        // Enable microphone access
-        if #available(macOS 10.15, *) {
-            config.preferences.setValue(true, forKey: "javaScriptCanAccessAudioEnabled")
-        }
-
         webView = WKWebView(frame: window.contentView!.bounds, configuration: config)
         webView.autoresizingMask = [.width, .height]
 
         // Load the embedded HTML
-        let resourcePath = Bundle.main.resourcePath!
-        let htmlPath = resourcePath + "/index.html"
         let htmlURL = URL(fileURLWithPath: htmlPath)
-        webView.loadFileURL(htmlURL, allowingReadAccessTo: URL(fileURLWithPath: resourcePath))
+        webView.loadFileURL(htmlURL, allowingReadAccessTo: URL(fileURLWithPath: resourcesDir))
 
         window.contentView?.addSubview(webView)
         window.makeKeyAndOrderFront(nil)
 
-        // Activate app
+        // Activate app and show in dock
+        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
     }
 
@@ -91,12 +102,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 }
-
-// Create and run the application
-let app = NSApplication.shared
-let delegate = AppDelegate()
-app.delegate = delegate
-app.run()
 `
 
   const swiftPath = join(macOSDir, 'main.swift')
@@ -107,7 +112,7 @@ app.run()
   const binaryPath = join(macOSDir, APP_NAME)
 
   try {
-    await $`swiftc -o ${binaryPath} ${swiftPath} -framework Cocoa -framework WebKit`.quiet()
+    await $`swiftc -o ${binaryPath} ${swiftPath} -framework Cocoa -framework WebKit -parse-as-library`.quiet()
     chmodSync(binaryPath, 0o755)
     console.log('✅ Compiled native binary')
 

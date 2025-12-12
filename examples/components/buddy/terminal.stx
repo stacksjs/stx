@@ -1,0 +1,167 @@
+<div class="terminal">
+  <div class="terminal-header">
+    <div class="terminal-dot red"></div>
+    <div class="terminal-dot yellow"></div>
+    <div class="terminal-dot green"></div>
+    <span class="terminal-title" id="terminalTitle">{{ title || 'Buddy - Ready' }}</span>
+  </div>
+  <div class="terminal-output" id="output">
+    <div class="message system">
+      <div class="message-content" id="welcomeMessage">{{ welcomeMessage || 'Welcome to Buddy - your voice-controlled AI code assistant.
+
+Instructions:
+1. Select your preferred AI driver above
+2. Enter a GitHub repo URL or local path
+3. Click the microphone button or type your command
+4. The AI will analyze, implement, and commit changes
+
+Example commands:
+- "Update the README to include installation instructions"
+- "Fix the bug in the login function"
+- "Add a new endpoint for user profiles"
+- "Refactor the database module to use async/await"' }}</div>
+    </div>
+  </div>
+</div>
+
+<style>
+.terminal {
+  flex: 1;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.terminal-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.terminal-dot.red { background: #ff5f56; }
+.terminal-dot.yellow { background: #ffbd2e; }
+.terminal-dot.green { background: #27ca40; }
+
+.terminal-title {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.terminal-output {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.message {
+  margin-bottom: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message.user {
+  background: var(--accent-secondary);
+  border-left: 3px solid var(--accent-primary);
+}
+
+.message.assistant {
+  background: var(--bg-secondary);
+  border-left: 3px solid var(--success);
+}
+
+.message.system {
+  background: transparent;
+  border-left: 3px solid var(--warning);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.message.error {
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid var(--error);
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.message-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message-content code {
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.message-content pre {
+  background: var(--bg-tertiary);
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.loading {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.loading span {
+  width: 8px;
+  height: 8px;
+  background: var(--accent-primary);
+  border-radius: 50%;
+  animation: bounce 0.6s infinite alternate;
+}
+
+.loading span:nth-child(2) { animation-delay: 0.2s; }
+.loading span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  to { transform: translateY(-8px); }
+}
+
+@media (max-width: 480px) {
+  .terminal-output {
+    font-size: 12px;
+    padding: 12px;
+  }
+  .message {
+    padding: 10px;
+    margin-bottom: 12px;
+  }
+}
+</style>

@@ -1,0 +1,245 @@
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span>⚙️</span>
+        API Settings
+      </div>
+      <button class="modal-close" id="settingsModalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Anthropic API Key</label>
+        <input
+          type="password"
+          class="form-input"
+          id="anthropicApiKey"
+          placeholder="sk-ant-api03-xxxxxxxxxxxx"
+        />
+        <div class="form-hint">
+          Get your API key from <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">OpenAI API Key (optional)</label>
+        <input
+          type="password"
+          class="form-input"
+          id="openaiApiKey"
+          placeholder="sk-xxxxxxxxxxxx"
+        />
+        <div class="form-hint">
+          For OpenAI driver. Get key from <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Claude CLI EC2 Host (optional)</label>
+        <input
+          type="text"
+          class="form-input"
+          id="claudeCliHost"
+          placeholder="http://your-ec2-instance:3456"
+        />
+        <div class="form-hint">
+          For Claude CLI (EC2) driver. Your EC2 instance running buddy-service.
+        </div>
+      </div>
+      <div class="api-status" id="apiStatus">
+        <div class="api-status-item">
+          <span class="api-status-indicator" id="anthropicStatus"></span>
+          <span>Anthropic: <span id="anthropicStatusText">Not configured</span></span>
+        </div>
+        <div class="api-status-item">
+          <span class="api-status-indicator" id="openaiStatus"></span>
+          <span>OpenAI: <span id="openaiStatusText">Not configured</span></span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="settingsModalCancel">Cancel</button>
+      <button class="btn btn-primary" id="saveSettingsBtn">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 400px;
+  max-width: 90%;
+  transform: translateY(-20px);
+  transition: transform 0.3s;
+}
+
+.modal-overlay.active .modal {
+  transform: translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: var(--text-primary);
+}
+
+.modal-body {
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.form-input::placeholder {
+  color: var(--text-muted);
+}
+
+.form-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.form-hint a {
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+
+.form-hint a:hover {
+  text-decoration: underline;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.api-status {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+}
+
+.api-status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.api-status-item:last-child {
+  margin-bottom: 0;
+}
+
+.api-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.api-status-indicator.configured {
+  background: var(--success);
+}
+
+.api-status-indicator.error {
+  background: var(--error);
+}
+
+.btn {
+  background: var(--accent-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 16px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+@media (max-width: 768px) {
+  .modal {
+    width: 95%;
+    margin: 10px;
+  }
+}
+</style>

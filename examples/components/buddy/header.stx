@@ -1,0 +1,252 @@
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">🤖</div>
+    <span class="logo-text" id="appTitle">{{ title || 'Buddy' }}</span>
+  </div>
+
+  <div class="header-controls">
+    <div class="driver-selector">
+      <label for="aiDriver">AI Driver:</label>
+      <select id="aiDriver">
+        <option value="claude">Claude (API)</option>
+        <option value="claude-cli">Claude CLI (Local)</option>
+        <option value="claude-cli-ec2">Claude CLI (EC2)</option>
+        <option value="openai">OpenAI</option>
+        <option value="ollama">Ollama (Local)</option>
+        <option value="mock">Mock (Demo)</option>
+      </select>
+    </div>
+
+    <div class="repo-selector">
+      <input
+        type="text"
+        class="repo-input"
+        id="repoInput"
+        placeholder="github.com/owner/repo or local path..."
+      />
+      <button class="btn" id="cloneBtn">Clone / Open</button>
+    </div>
+
+    <div class="github-account" id="githubAccount" title="Connect GitHub account">
+      <span class="github-icon">🐙</span>
+      <div class="github-info">
+        <span class="github-username" id="githubUsername">Not connected</span>
+        <span class="github-status" id="githubStatus">Click to connect</span>
+      </div>
+    </div>
+
+    <div class="settings-btn" id="settingsBtn" title="API Settings">
+      <span class="settings-icon">⚙️</span>
+    </div>
+  </div>
+</header>
+
+<style>
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--accent-primary), #ff6b6b);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.logo-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.driver-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.driver-selector label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.driver-selector select {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.github-account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.github-account:hover {
+  border-color: var(--accent-primary);
+}
+
+.github-account.connected {
+  border-color: var(--success);
+}
+
+.github-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+}
+
+.github-info {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+}
+
+.github-username {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.github-status {
+  color: var(--text-secondary);
+}
+
+.github-icon {
+  font-size: 16px;
+}
+
+.settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.settings-btn:hover {
+  border-color: var(--accent-primary);
+  background: var(--bg-tertiary);
+}
+
+.settings-btn.has-key {
+  border-color: var(--success);
+}
+
+.settings-icon {
+  font-size: 18px;
+}
+
+.repo-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.repo-input {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  width: 280px;
+}
+
+.repo-input::placeholder {
+  color: var(--text-muted);
+}
+
+.btn {
+  background: var(--accent-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 16px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .header {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 15px;
+  }
+  .header-controls {
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+    justify-content: center;
+  }
+  .driver-selector {
+    order: 1;
+  }
+  .repo-selector {
+    order: 3;
+    width: 100%;
+  }
+  .github-account {
+    order: 2;
+  }
+  .repo-input {
+    flex: 1;
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-text {
+    font-size: 14px;
+  }
+  .driver-selector label {
+    display: none;
+  }
+}
+</style>
