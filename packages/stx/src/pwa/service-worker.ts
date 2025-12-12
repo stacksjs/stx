@@ -3,14 +3,21 @@
  *
  * Generates a service worker JavaScript file with configurable caching strategies.
  * Supports: cache-first, network-first, stale-while-revalidate, network-only, cache-only
+ *
+ * Additional features:
+ * - Push notifications handling
+ * - Background sync for form submissions
+ * - Cache storage limits and purge strategies
+ * - Update notifications
  */
 
 import type { StxOptions } from '../types'
+import { formatSize, generatePrecacheManifest, generatePrecacheManifestJs } from './precache'
 
 /**
  * Generate the service worker JavaScript code
  */
-export function generateServiceWorker(options: StxOptions): string {
+export function generateServiceWorker(options: StxOptions, outputDir?: string): string {
   const pwa = options.pwa
   if (!pwa?.enabled) {
     return ''
@@ -21,7 +28,15 @@ export function generateServiceWorker(options: StxOptions): string {
   const cacheVersion = swConfig.cacheVersion || '1.0.0'
   const offlineConfig = pwa.offline
   const offlinePage = offlineConfig?.page ? '/offline.html' : '/offline.html'
+  const pushConfig = pwa.push
+  const syncConfig = pwa.backgroundSync
+  const cacheStorageConfig = pwa.cacheStorage
 
+  // Generate precache manifest if enabled
+  const precacheManifest = outputDir ? generatePrecacheManifest(outputDir, options) : null
+  const precacheManifestJs = precacheManifest ? generatePrecacheManifestJs(precacheManifest) : '[]'
+
+  // Base precache assets
   const precacheAssets = [
     '/',
     '/manifest.json',
@@ -39,6 +54,11 @@ export function generateServiceWorker(options: StxOptions): string {
  * - stale-while-revalidate: Serve cached, update in background
  * - network-only: Always fetch from network
  * - cache-only: Only serve from cache
+ *
+ * Additional features:
+ * - Push notifications: ${pushConfig?.enabled ? 'enabled' : 'disabled'}
+ * - Background sync: ${syncConfig?.enabled ? 'enabled' : 'disabled'}
+ * - Cache limits: ${cacheStorageConfig?.maxSize ? `${formatSize(cacheStorageConfig.maxSize * 1024 * 1024)}` : 'unlimited'}
  */
 
 const CACHE_VERSION = '${cacheVersion}';
@@ -48,11 +68,37 @@ const OFFLINE_PAGE = '${offlinePage}';
 // Assets to precache on install
 const PRECACHE_ASSETS = ${JSON.stringify(precacheAssets, null, 2)};
 
+// Auto-generated precache manifest from build output
+const BUILD_PRECACHE_MANIFEST = ${precacheManifestJs};
+
 // Route caching strategies
 const ROUTE_STRATEGIES = ${JSON.stringify(routes, null, 2)};
 
 // Routes to exclude from caching
 const EXCLUDED_ROUTES = ${JSON.stringify(swConfig.excludeRoutes || [], null, 2)};
+
+// Cache storage configuration
+const CACHE_CONFIG = {
+  maxSize: ${cacheStorageConfig?.maxSize || 0} * 1024 * 1024, // Convert MB to bytes
+  maxAge: ${cacheStorageConfig?.maxAge || 0} * 24 * 60 * 60 * 1000, // Convert days to ms
+  maxEntries: ${cacheStorageConfig?.maxEntries || 0},
+  purgeStrategy: '${cacheStorageConfig?.purgeStrategy || 'lru'}',
+};
+
+// Background sync configuration
+const SYNC_CONFIG = {
+  enabled: ${syncConfig?.enabled || false},
+  queueName: '${syncConfig?.queueName || 'stx-sync-queue'}',
+  maxRetries: ${syncConfig?.maxRetries || 3},
+  minInterval: ${syncConfig?.minInterval || 1000},
+};
+
+// Push notification configuration
+const PUSH_CONFIG = {
+  enabled: ${pushConfig?.enabled || false},
+  defaultIcon: '${pushConfig?.defaultIcon || '/pwa-icons/icon-192x192.png'}',
+  defaultBadge: '${pushConfig?.defaultBadge || '/pwa-icons/icon-72x72.png'}',
+};
 
 /**
  * Install event - precache essential assets
@@ -62,13 +108,39 @@ self.addEventListener('install', (event) => {
   ${swConfig.skipWaiting ? 'self.skipWaiting();' : ''}
 
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Precaching assets:', PRECACHE_ASSETS.length);
-      return cache.addAll(PRECACHE_ASSETS).catch((error) => {
-        console.warn('[SW] Failed to precache some assets:', error);
-        // Continue even if some assets fail to cache
-        return Promise.resolve();
-      });
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // Combine manual precache assets with auto-generated manifest
+      const allAssets = [...PRECACHE_ASSETS];
+
+      // Add build precache manifest entries
+      for (const entry of BUILD_PRECACHE_MANIFEST) {
+        if (!allAssets.includes(entry.url)) {
+          allAssets.push(entry.url);
+        }
+      }
+
+      console.log('[SW] Precaching assets:', allAssets.length);
+
+      // Cache assets one by one to handle failures gracefully
+      const results = await Promise.allSettled(
+        allAssets.map(async (url) => {
+          try {
+            const response = await fetch(url);
+            if (response.ok) {
+              await cache.put(url, response);
+              return { url, success: true };
+            }
+            return { url, success: false, reason: response.status };
+          } catch (error) {
+            return { url, success: false, reason: error.message };
+          }
+        })
+      );
+
+      const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success));
+      if (failed.length > 0) {
+        console.warn('[SW] Failed to precache some assets:', failed.length);
+      }
     })
   );
 });
@@ -81,8 +153,10 @@ self.addEventListener('activate', (event) => {
   ${swConfig.clientsClaim ? 'self.clients.claim();' : ''}
 
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    (async () => {
+      // Clean up old caches
+      const cacheNames = await caches.keys();
+      await Promise.all(
         cacheNames
           .filter((name) => name.startsWith('stx-pwa-') && name !== CACHE_NAME)
           .map((name) => {
@@ -90,7 +164,12 @@ self.addEventListener('activate', (event) => {
             return caches.delete(name);
           })
       );
-    })
+
+      // Enforce cache storage limits
+      if (CACHE_CONFIG.maxSize > 0 || CACHE_CONFIG.maxEntries > 0) {
+        await enforceCacheLimits();
+      }
+    })()
   );
 });
 
@@ -120,6 +199,48 @@ self.addEventListener('fetch', (event) => {
   const routeConfig = getRouteConfig(url.pathname);
   event.respondWith(applyStrategy(request, routeConfig));
 });
+
+/**
+ * Message event - handle messages from main thread
+ */
+self.addEventListener('message', (event) => {
+  const { type, payload } = event.data || {};
+
+  switch (type) {
+    case 'SKIP_WAITING':
+      console.log('[SW] Received SKIP_WAITING message');
+      self.skipWaiting();
+      break;
+
+    case 'CACHE_URLS':
+      if (Array.isArray(payload)) {
+        event.waitUntil(
+          caches.open(CACHE_NAME).then((cache) => cache.addAll(payload))
+        );
+      }
+      break;
+
+    case 'CLEAR_CACHE':
+      event.waitUntil(
+        caches.keys().then((names) =>
+          Promise.all(names.map((name) => caches.delete(name)))
+        )
+      );
+      break;
+
+    case 'GET_CACHE_SIZE':
+      event.waitUntil(
+        getCacheSize().then((size) => {
+          event.source?.postMessage({ type: 'CACHE_SIZE', payload: size });
+        })
+      );
+      break;
+  }
+});
+
+${pushConfig?.enabled ? generatePushHandlers() : '// Push notifications disabled'}
+
+${syncConfig?.enabled ? generateSyncHandlers() : '// Background sync disabled'}
 
 /**
  * Check if a route should be excluded from caching
@@ -346,7 +467,416 @@ async function offlineResponse(request) {
   });
 }
 
+/**
+ * Get total cache size
+ */
+async function getCacheSize() {
+  let totalSize = 0;
+  const cacheNames = await caches.keys();
+
+  for (const cacheName of cacheNames) {
+    const cache = await caches.open(cacheName);
+    const keys = await cache.keys();
+
+    for (const request of keys) {
+      const response = await cache.match(request);
+      if (response) {
+        const blob = await response.clone().blob();
+        totalSize += blob.size;
+      }
+    }
+  }
+
+  return totalSize;
+}
+
+/**
+ * Enforce cache storage limits
+ */
+async function enforceCacheLimits() {
+  const cache = await caches.open(CACHE_NAME);
+  const keys = await cache.keys();
+
+  // Get cache entries with metadata
+  const entries = [];
+  for (const request of keys) {
+    const response = await cache.match(request);
+    if (response) {
+      const blob = await response.clone().blob();
+      const cachedDate = response.headers.get('sw-cache-date');
+      entries.push({
+        request,
+        size: blob.size,
+        date: cachedDate ? new Date(cachedDate) : new Date(),
+      });
+    }
+  }
+
+  // Check total size limit
+  if (CACHE_CONFIG.maxSize > 0) {
+    const totalSize = entries.reduce((sum, e) => sum + e.size, 0);
+
+    if (totalSize > CACHE_CONFIG.maxSize) {
+      console.log('[SW] Cache size exceeded, purging...');
+      await purgeCache(entries, cache, CACHE_CONFIG.maxSize);
+    }
+  }
+
+  // Check max entries limit
+  if (CACHE_CONFIG.maxEntries > 0 && entries.length > CACHE_CONFIG.maxEntries) {
+    console.log('[SW] Cache entries exceeded, purging...');
+    await purgeByEntryCount(entries, cache, CACHE_CONFIG.maxEntries);
+  }
+
+  // Check max age limit
+  if (CACHE_CONFIG.maxAge > 0) {
+    const now = Date.now();
+    const expiredEntries = entries.filter(e => (now - e.date.getTime()) > CACHE_CONFIG.maxAge);
+
+    for (const entry of expiredEntries) {
+      console.log('[SW] Removing expired cache entry:', entry.request.url);
+      await cache.delete(entry.request);
+    }
+  }
+}
+
+/**
+ * Purge cache to meet size limit
+ */
+async function purgeCache(entries, cache, maxSize) {
+  // Sort by purge strategy
+  const sorted = [...entries];
+
+  switch (CACHE_CONFIG.purgeStrategy) {
+    case 'lru':
+      // Least Recently Used - remove oldest first
+      sorted.sort((a, b) => a.date.getTime() - b.date.getTime());
+      break;
+    case 'fifo':
+      // First In First Out - same as lru for our purposes
+      sorted.sort((a, b) => a.date.getTime() - b.date.getTime());
+      break;
+    case 'lfu':
+      // Least Frequently Used - we don't track frequency, use size as proxy
+      sorted.sort((a, b) => b.size - a.size);
+      break;
+    default:
+      sorted.sort((a, b) => a.date.getTime() - b.date.getTime());
+  }
+
+  let currentSize = entries.reduce((sum, e) => sum + e.size, 0);
+
+  for (const entry of sorted) {
+    if (currentSize <= maxSize * 0.8) { // Keep 80% buffer
+      break;
+    }
+
+    // Don't delete essential assets
+    const url = entry.request.url;
+    if (PRECACHE_ASSETS.some(asset => url.endsWith(asset))) {
+      continue;
+    }
+
+    console.log('[SW] Purging cache entry:', url);
+    await cache.delete(entry.request);
+    currentSize -= entry.size;
+  }
+}
+
+/**
+ * Purge cache by entry count
+ */
+async function purgeByEntryCount(entries, cache, maxEntries) {
+  const sorted = [...entries].sort((a, b) => a.date.getTime() - b.date.getTime());
+  const toRemove = sorted.slice(0, entries.length - maxEntries);
+
+  for (const entry of toRemove) {
+    // Don't delete essential assets
+    const url = entry.request.url;
+    if (PRECACHE_ASSETS.some(asset => url.endsWith(asset))) {
+      continue;
+    }
+
+    await cache.delete(entry.request);
+  }
+}
+
 console.log('[SW] Service Worker loaded - Version:', CACHE_VERSION);
+`
+}
+
+/**
+ * Generate push notification event handlers
+ */
+function generatePushHandlers(): string {
+  return `
+/**
+ * Push event - handle incoming push notifications
+ */
+self.addEventListener('push', (event) => {
+  console.log('[SW] Push notification received');
+
+  let data = {
+    title: 'Notification',
+    body: 'You have a new notification',
+    icon: PUSH_CONFIG.defaultIcon,
+    badge: PUSH_CONFIG.defaultBadge,
+  };
+
+  if (event.data) {
+    try {
+      const payload = event.data.json();
+      data = { ...data, ...payload };
+    } catch {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || PUSH_CONFIG.defaultIcon,
+    badge: data.badge || PUSH_CONFIG.defaultBadge,
+    vibrate: data.vibrate || [100, 50, 100],
+    data: {
+      url: data.url || '/',
+      ...data.data,
+    },
+    actions: data.actions || [],
+    tag: data.tag,
+    renotify: data.renotify || false,
+    requireInteraction: data.requireInteraction || false,
+    silent: data.silent || false,
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+/**
+ * Notification click event - handle notification interactions
+ */
+self.addEventListener('notificationclick', (event) => {
+  console.log('[SW] Notification clicked:', event.action);
+  event.notification.close();
+
+  const url = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Check if there's already a window open with this URL
+      for (const client of windowClients) {
+        if (client.url === url && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // Open a new window
+      if (clients.openWindow) {
+        return clients.openWindow(url);
+      }
+    })
+  );
+});
+
+/**
+ * Notification close event
+ */
+self.addEventListener('notificationclose', (event) => {
+  console.log('[SW] Notification closed');
+
+  // Track notification dismissal if needed
+  const data = event.notification.data;
+  if (data?.trackDismiss) {
+    // Could send analytics here
+  }
+});
+`
+}
+
+/**
+ * Generate background sync event handlers
+ */
+function generateSyncHandlers(): string {
+  return `
+/**
+ * Background sync queue storage (IndexedDB)
+ */
+const SYNC_STORE = 'stx-sync-store';
+let syncDb = null;
+
+async function getSyncDb() {
+  if (syncDb) return syncDb;
+
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(SYNC_STORE, 1);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      syncDb = request.result;
+      resolve(syncDb);
+    };
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('queue')) {
+        db.createObjectStore('queue', { keyPath: 'id', autoIncrement: true });
+      }
+    };
+  });
+}
+
+/**
+ * Add request to sync queue
+ */
+async function addToSyncQueue(request) {
+  const db = await getSyncDb();
+  const tx = db.transaction('queue', 'readwrite');
+  const store = tx.objectStore('queue');
+
+  const data = {
+    url: request.url,
+    method: request.method,
+    headers: Object.fromEntries(request.headers.entries()),
+    body: await request.clone().text(),
+    timestamp: Date.now(),
+    retries: 0,
+  };
+
+  return new Promise((resolve, reject) => {
+    const req = store.add(data);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/**
+ * Get all pending sync requests
+ */
+async function getPendingSyncRequests() {
+  const db = await getSyncDb();
+  const tx = db.transaction('queue', 'readonly');
+  const store = tx.objectStore('queue');
+
+  return new Promise((resolve, reject) => {
+    const req = store.getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/**
+ * Remove request from sync queue
+ */
+async function removeSyncRequest(id) {
+  const db = await getSyncDb();
+  const tx = db.transaction('queue', 'readwrite');
+  const store = tx.objectStore('queue');
+
+  return new Promise((resolve, reject) => {
+    const req = store.delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/**
+ * Update sync request retry count
+ */
+async function updateSyncRetries(id, retries) {
+  const db = await getSyncDb();
+  const tx = db.transaction('queue', 'readwrite');
+  const store = tx.objectStore('queue');
+
+  const req = store.get(id);
+  req.onsuccess = () => {
+    const data = req.result;
+    if (data) {
+      data.retries = retries;
+      store.put(data);
+    }
+  };
+}
+
+/**
+ * Sync event - process queued requests when online
+ */
+self.addEventListener('sync', (event) => {
+  console.log('[SW] Sync event:', event.tag);
+
+  if (event.tag === SYNC_CONFIG.queueName || event.tag === 'stx-form-sync') {
+    event.waitUntil(processBackgroundSync());
+  }
+});
+
+/**
+ * Process all queued sync requests
+ */
+async function processBackgroundSync() {
+  console.log('[SW] Processing background sync queue');
+
+  const requests = await getPendingSyncRequests();
+  console.log('[SW] Pending sync requests:', requests.length);
+
+  for (const request of requests) {
+    if (request.retries >= SYNC_CONFIG.maxRetries) {
+      console.log('[SW] Max retries reached, removing:', request.url);
+      await removeSyncRequest(request.id);
+      continue;
+    }
+
+    try {
+      const response = await fetch(request.url, {
+        method: request.method,
+        headers: request.headers,
+        body: request.method !== 'GET' ? request.body : undefined,
+      });
+
+      if (response.ok) {
+        console.log('[SW] Sync succeeded:', request.url);
+        await removeSyncRequest(request.id);
+
+        // Notify clients of successful sync
+        const clients = await self.clients.matchAll();
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'SYNC_COMPLETE',
+            url: request.url,
+            success: true,
+          });
+        });
+      } else {
+        throw new Error('Response not ok: ' + response.status);
+      }
+    } catch (error) {
+      console.log('[SW] Sync failed, will retry:', request.url, error.message);
+      await updateSyncRetries(request.id, request.retries + 1);
+    }
+  }
+}
+
+/**
+ * Register a form for background sync
+ * Called from main thread via message
+ */
+async function registerFormSync(formData) {
+  // Store form data in IndexedDB
+  await addToSyncQueue({
+    url: formData.action,
+    method: formData.method || 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    clone: () => ({ text: async () => new URLSearchParams(formData.data).toString() }),
+  });
+
+  // Register for background sync
+  await self.registration.sync.register(SYNC_CONFIG.queueName);
+}
+
+// Listen for form sync requests
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'REGISTER_FORM_SYNC') {
+    event.waitUntil(registerFormSync(event.data.payload));
+  }
+});
 `
 }
 

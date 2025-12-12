@@ -5,6 +5,7 @@ import { a11yDirective, screenReaderDirective } from './a11y'
 import { animationGroupDirective, motionDirective, scrollAnimateDirective, transitionDirective } from './animation'
 import { componentDirective } from './components'
 import { markdownDirectiveHandler } from './markdown'
+import { pwaDirectives } from './pwa/directives'
 import { metaDirective, structuredDataDirective } from './seo'
 import { webComponentDirectiveHandler } from './web-components'
 
@@ -38,6 +39,7 @@ export const defaultConfig: StxConfig = {
     animationGroupDirective,
     motionDirective,
     scrollAnimateDirective,
+    ...pwaDirectives,
   ],
   middleware: [],
   i18n: {
@@ -171,8 +173,63 @@ export const defaultConfig: StxConfig = {
       navigationPreload: false,
       excludeRoutes: ['/api/auth/*'],
       cacheFileTypes: ['html', 'css', 'js', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'woff', 'woff2'],
+      useWorkbox: false,
     },
     autoInject: true,
+    push: {
+      enabled: false,
+      defaultOptions: {
+        vibrate: [100, 50, 100],
+        requireInteraction: false,
+      },
+    },
+    backgroundSync: {
+      enabled: false,
+      queueName: 'stx-sync-queue',
+      maxRetentionMinutes: 60 * 24, // 24 hours
+      maxRetries: 3,
+      minInterval: 1000,
+      forms: [],
+      endpoints: [],
+    },
+    shareTarget: {
+      enabled: false,
+      action: '/share-target',
+      method: 'POST',
+      enctype: 'multipart/form-data',
+      params: {
+        title: 'title',
+        text: 'text',
+        url: 'url',
+      },
+    },
+    fileHandlers: {
+      enabled: false,
+    },
+    protocolHandlers: [],
+    cacheStorage: {
+      maxSize: 100, // MB
+      maxEntries: 500,
+      maxAge: 30, // days
+      purgeStrategy: 'lru',
+    },
+    updates: {
+      enabled: true,
+      promptUser: true,
+      autoReload: false,
+      message: 'A new version is available. Reload to update?',
+    },
+    precache: {
+      enabled: true,
+      includeHtml: true,
+      includeJs: true,
+      includeCss: true,
+      includeImages: true,
+      includeFonts: true,
+      include: [],
+      exclude: ['*.map', '*.LICENSE.txt'],
+      maxFileSizeKB: 500,
+    },
   },
 }
 // Lazy-load config to avoid blocking module initialization

@@ -2,11 +2,16 @@
  * PWA (Progressive Web App) Module
  *
  * Provides comprehensive Progressive Web App functionality for stx:
- * - Web App Manifest generation
+ * - Web App Manifest generation with share target, file handlers, protocol handlers
  * - Service Worker with configurable caching strategies
+ * - Push notifications support
+ * - Background sync for forms
  * - Automatic icon generation from source image
  * - Offline fallback page support
  * - Auto-injection of PWA meta tags and scripts
+ * - PWA directives for install prompts, update notifications, offline indicators
+ * - PWA audit tools
+ * - Auto-precaching from build output
  *
  * ## Quick Start
  *
@@ -80,6 +85,85 @@
  * }
  * ```
  *
+ * ## Push Notifications
+ *
+ * Enable push notifications with VAPID keys:
+ *
+ * ```typescript
+ * pwa: {
+ *   push: {
+ *     enabled: true,
+ *     vapidPublicKey: 'your-vapid-public-key',
+ *     subscriptionEndpoint: '/api/push/subscribe',
+ *   },
+ * }
+ * ```
+ *
+ * ## Background Sync
+ *
+ * Enable background sync for forms:
+ *
+ * ```typescript
+ * pwa: {
+ *   backgroundSync: {
+ *     enabled: true,
+ *     forms: ['/api/contact', '/api/feedback'],
+ *     maxRetries: 3,
+ *   },
+ * }
+ * ```
+ *
+ * ## Share Target
+ *
+ * Enable Web Share Target API:
+ *
+ * ```typescript
+ * pwa: {
+ *   shareTarget: {
+ *     enabled: true,
+ *     action: '/share',
+ *     method: 'POST',
+ *   },
+ * }
+ * ```
+ *
+ * ## File Handlers
+ *
+ * Register as file handler for specific types:
+ *
+ * ```typescript
+ * pwa: {
+ *   fileHandlers: {
+ *     enabled: true,
+ *     accept: {
+ *       'text/markdown': ['.md', '.markdown'],
+ *     },
+ *   },
+ * }
+ * ```
+ *
+ * ## PWA Directives
+ *
+ * Use PWA directives in templates:
+ *
+ * ```html
+ * @pwa.installButton
+ *   <button>Install App</button>
+ * @endpwa.installButton
+ *
+ * @pwa.updatePrompt
+ *   <!-- Custom update UI or use default -->
+ * @endpwa.updatePrompt
+ *
+ * @pwa.offlineIndicator
+ *   <!-- Custom offline UI or use default -->
+ * @endpwa.offlineIndicator
+ *
+ * @pwa.pushSubscribe
+ *   <button>Enable Notifications</button>
+ * @endpwa.pushSubscribe
+ * ```
+ *
  * @module pwa
  */
 
@@ -92,12 +176,16 @@ import { generatePwaIcons, isSharpAvailable } from './pwa/icons'
 import { injectPwaTags } from './pwa/inject'
 import { generateManifestJson } from './pwa/manifest'
 import { generateOfflinePage } from './pwa/offline'
+import { generatePrecacheManifest } from './pwa/precache'
 import { generateServiceWorker, getServiceWorkerFileName } from './pwa/service-worker'
 
+export * from './pwa/audit'
+export * from './pwa/directives'
 export * from './pwa/icons'
 export * from './pwa/inject'
 export * from './pwa/manifest'
 export * from './pwa/offline'
+export * from './pwa/precache'
 export * from './pwa/service-worker'
 
 /**
@@ -113,6 +201,10 @@ export interface PwaBuildResult {
   }
   errors: string[]
   warnings: string[]
+  precacheStats?: {
+    fileCount: number
+    totalSize: number
+  }
 }
 
 /**
@@ -167,22 +259,6 @@ export async function buildPwaAssets(
     result.success = false
   }
 
-  // Generate service worker
-  try {
-    const swCode = generateServiceWorker(options)
-    if (swCode) {
-      const swFileName = getServiceWorkerFileName(options)
-      const swPath = path.join(outputDir, swFileName)
-      await Bun.write(swPath, swCode)
-      result.files.serviceWorker = swPath
-    }
-  }
-  catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    result.errors.push(`Failed to generate service worker: ${msg}`)
-    result.success = false
-  }
-
   // Generate icons (if sharp is available)
   if (pwa.icons?.src) {
     const sharpAvailable = await isSharpAvailable()
@@ -218,6 +294,33 @@ export async function buildPwaAssets(
       result.errors.push(`Failed to generate offline page: ${msg}`)
       result.success = false
     }
+  }
+
+  // Generate precache manifest
+  let precacheStats
+  if (pwa.precache?.enabled) {
+    const precacheManifest = generatePrecacheManifest(outputDir, options)
+    precacheStats = {
+      fileCount: precacheManifest.fileCount,
+      totalSize: precacheManifest.totalSize,
+    }
+    result.precacheStats = precacheStats
+  }
+
+  // Generate service worker (after other assets so precache can include them)
+  try {
+    const swCode = generateServiceWorker(options, outputDir)
+    if (swCode) {
+      const swFileName = getServiceWorkerFileName(options)
+      const swPath = path.join(outputDir, swFileName)
+      await Bun.write(swPath, swCode)
+      result.files.serviceWorker = swPath
+    }
+  }
+  catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    result.errors.push(`Failed to generate service worker: ${msg}`)
+    result.success = false
   }
 
   return result

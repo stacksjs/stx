@@ -503,6 +503,46 @@ else {
     })
 
   cli
+    .command('pwa <command>', 'PWA tools - audit configuration and build output')
+    .option('--output <dir>', 'Build output directory to audit', { default: 'dist' })
+    .example('stx pwa audit')
+    .example('stx pwa audit --output build')
+    .action(async (command: string, options: { output?: string }) => {
+      try {
+        if (command === 'audit') {
+          const { runPwaAudit, formatAuditResult } = await import('../src/pwa/audit')
+          const { loadConfig } = await import('../src/config')
+
+          console.log('\n🔍 Running PWA audit...\n')
+
+          // Load config
+          const config = await loadConfig()
+          const outputDir = options.output || 'dist'
+
+          // Run audit
+          const result = runPwaAudit(config, outputDir)
+
+          // Display results
+          console.log(formatAuditResult(result))
+
+          // Exit with error code if critical issues found
+          if (result.failed > 0) {
+            process.exit(1)
+          }
+        }
+        else {
+          console.error(`Unknown pwa command: ${command}`)
+          console.error('Available commands: audit')
+          process.exit(1)
+        }
+      }
+      catch (error) {
+        console.error('Error:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
+
+  cli
     .command('dev <file>', 'Start a development server for an STX file')
     .option('--port <port>', 'Port to use for the dev server', { default: 3000 })
     .option('--no-watch', 'Disable file watching and auto-reload')

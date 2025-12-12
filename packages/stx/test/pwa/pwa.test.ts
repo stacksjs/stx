@@ -640,4 +640,373 @@ describe('PWA Module', () => {
       expect(isPwaEnabled(options)).toBe(false)
     })
   })
+
+  describe('PWA Audit', () => {
+    const { auditConfig, calculateAuditResult, formatAuditResult } = require('../../src/pwa/audit')
+
+    test('should audit PWA config and return checks', () => {
+      const options: StxOptions = {
+        pwa: {
+          enabled: true,
+          manifest: {
+            name: 'Test App',
+            themeColor: '#4f46e5',
+            backgroundColor: '#ffffff',
+            display: 'standalone',
+            startUrl: '/',
+          },
+          icons: {
+            src: 'icon.png',
+            sizes: [192, 512],
+            purpose: ['any', 'maskable'],
+          },
+          serviceWorker: {
+            cacheVersion: '1.0.0',
+          },
+          offline: { enabled: true },
+        },
+      }
+
+      const checks = auditConfig(options)
+
+      expect(checks.length).toBeGreaterThan(0)
+      expect(checks.some((c: any) => c.id === 'pwa-enabled')).toBe(true)
+      expect(checks.some((c: any) => c.id === 'manifest-name')).toBe(true)
+    })
+
+    test('should calculate audit score', () => {
+      const checks = [
+        { id: 'test1', name: 'Test 1', category: 'required', passed: true, message: 'OK' },
+        { id: 'test2', name: 'Test 2', category: 'required', passed: true, message: 'OK' },
+        { id: 'test3', name: 'Test 3', category: 'recommended', passed: false, message: 'Failed' },
+      ]
+
+      const result = calculateAuditResult(checks)
+
+      expect(result.score).toBeGreaterThan(0)
+      expect(result.passed).toBe(2)
+      expect(result.failed).toBe(0) // Only required failures count
+      expect(result.warnings).toBe(1)
+    })
+
+    test('should format audit result for console', () => {
+      const result = {
+        score: 85,
+        passed: 10,
+        failed: 1,
+        warnings: 2,
+        checks: [
+          { id: 'test', name: 'Test', category: 'required', passed: true, message: 'OK' },
+        ],
+      }
+
+      const formatted = formatAuditResult(result)
+
+      expect(formatted).toContain('PWA Audit Report')
+      expect(formatted).toContain('85/100')
+    })
+  })
+
+  describe('PWA Directives', () => {
+    const { pwaDirectives, pwaInstallDirective, pwaUpdateDirective, pwaOfflineDirective, pwaPushDirective } = require('../../src/pwa/directives')
+
+    test('should export all PWA directives', () => {
+      expect(pwaDirectives).toHaveLength(4)
+      expect(pwaDirectives.map((d: any) => d.name)).toContain('pwa.installButton')
+      expect(pwaDirectives.map((d: any) => d.name)).toContain('pwa.updatePrompt')
+      expect(pwaDirectives.map((d: any) => d.name)).toContain('pwa.offlineIndicator')
+      expect(pwaDirectives.map((d: any) => d.name)).toContain('pwa.pushSubscribe')
+    })
+
+    test('pwa.installButton directive should generate install button HTML', () => {
+      const options: StxOptions = {
+        pwa: {
+          enabled: true,
+          manifest: { name: 'Test', themeColor: '#4f46e5' },
+        },
+      }
+      const context = { __stx_options: options }
+
+      const result = pwaInstallDirective.handler('<button>Install</button>', [], context, '')
+
+      expect(result).toContain('stx-pwa-install')
+      expect(result).toContain('beforeinstallprompt')
+      expect(result).toContain('Install')
+    })
+
+    test('pwa.updatePrompt directive should generate update prompt HTML', () => {
+      const options: StxOptions = {
+        pwa: {
+          enabled: true,
+          manifest: { name: 'Test' },
+          updates: {
+            message: 'Update available!',
+          },
+        },
+      }
+      const context = { __stx_options: options }
+
+      const result = pwaUpdateDirective.handler('', [], context, '')
+
+      expect(result).toContain('stx-pwa-update')
+      expect(result).toContain('Update available!')
+      expect(result).toContain('SKIP_WAITING')
+    })
+
+    test('pwa.offlineIndicator directive should generate offline indicator', () => {
+      const options: StxOptions = {
+        pwa: { enabled: true, manifest: { name: 'Test' } },
+      }
+      const context = { __stx_options: options }
+
+      const result = pwaOfflineDirective.handler('', [], context, '')
+
+      expect(result).toContain('stx-offline-indicator')
+      expect(result).toContain('navigator.onLine')
+      expect(result).toContain('You are offline')
+    })
+
+    test('pwa.pushSubscribe directive should generate push subscription button', () => {
+      const options: StxOptions = {
+        pwa: {
+          enabled: true,
+          manifest: { name: 'Test' },
+          push: {
+            enabled: true,
+            vapidPublicKey: 'test-vapid-key',
+            subscriptionEndpoint: '/api/push/subscribe',
+          },
+        },
+      }
+      const context = { __stx_options: options }
+
+      const result = pwaPushDirective.handler('<button>Subscribe</button>', [], context, '')
+
+      expect(result).toContain('stx-pwa-push')
+      expect(result).toContain('PushManager')
+      expect(result).toContain('test-vapid-key')
+    })
+  })
+
+  describe('Precache Manifest', () => {
+    const { generatePrecacheManifestJs, formatSize } = require('../../src/pwa/precache')
+
+    test('should generate empty precache manifest JS', () => {
+      const manifest = { entries: [], totalSize: 0, fileCount: 0 }
+
+      const js = generatePrecacheManifestJs(manifest)
+
+      expect(js).toBe('[]')
+    })
+
+    test('should generate precache manifest JS with entries', () => {
+      const manifest = {
+        entries: [
+          { url: '/index.html', revision: 'abc123', size: 1024 },
+          { url: '/style.css', revision: 'def456', size: 2048 },
+        ],
+        totalSize: 3072,
+        fileCount: 2,
+      }
+
+      const js = generatePrecacheManifestJs(manifest)
+
+      expect(js).toContain('/index.html')
+      expect(js).toContain('/style.css')
+      expect(js).toContain('abc123')
+    })
+
+    test('formatSize should format bytes correctly', () => {
+      expect(formatSize(500)).toBe('500 B')
+      expect(formatSize(1024)).toBe('1.0 KB')
+      expect(formatSize(1536)).toBe('1.5 KB')
+      expect(formatSize(1024 * 1024)).toBe('1.00 MB')
+    })
+  })
+
+  describe('Service Worker Advanced Features', () => {
+    test('should include push notification handlers when enabled', () => {
+      const options: StxOptions = {
+        pwa: {
+          enabled: true,
+          manifest: { name: 'Test' },
+          push: {
+            enabled: true,
+            vapidPublicKey: 'test-key',
+            defaultIcon: '/icon.png',
+          },
+        },
+      }
+
+      const sw = generateServiceWorker(options)
+
+      expect(sw).toContain('push')
+      expect(sw).toContain('PUSH_CONFIG')
+      expect(sw).toContain('showNotification')
+      expect(sw).toContain('notificationclick')
+    })
+
+    test('should include background sync handlers when enabled', () => {
+      const options: StxOptions = {
+        pwa: {
+          enabled: true,
+          manifest: { name: 'Test' },
+          backgroundSync: {
+            enabled: true,
+            queueName: 'my-queue',
+            maxRetries: 5,
+          },
+        },
+      }
+
+      const sw = generateServiceWorker(options)
+
+      expect(sw).toContain('sync')
+      expect(sw).toContain('SYNC_CONFIG')
+      expect(sw).toContain('my-queue')
+      expect(sw).toContain('processBackgroundSync')
+    })
+
+    test('should include cache storage limits when configured', () => {
+      const options: StxOptions = {
+        pwa: {
+          enabled: true,
+          manifest: { name: 'Test' },
+          cacheStorage: {
+            maxSize: 50,
+            maxEntries: 100,
+            maxAge: 7,
+            purgeStrategy: 'lru',
+          },
+        },
+      }
+
+      const sw = generateServiceWorker(options)
+
+      expect(sw).toContain('CACHE_CONFIG')
+      expect(sw).toContain('maxSize')
+      expect(sw).toContain('enforceCacheLimits')
+      expect(sw).toContain('purgeStrategy')
+      expect(sw).toContain('lru')
+    })
+
+    test('should include message handler for SKIP_WAITING', () => {
+      const options: StxOptions = {
+        pwa: {
+          enabled: true,
+          manifest: { name: 'Test' },
+        },
+      }
+
+      const sw = generateServiceWorker(options)
+
+      expect(sw).toContain('SKIP_WAITING')
+      expect(sw).toContain('self.skipWaiting()')
+      expect(sw).toContain('message')
+    })
+  })
+
+  describe('Manifest Advanced Features', () => {
+    const { generateManifest, validateManifest } = require('../../src/pwa/manifest')
+
+    test('should include share target when enabled', () => {
+      const options: StxOptions = {
+        pwa: {
+          enabled: true,
+          manifest: { name: 'Test' },
+          shareTarget: {
+            enabled: true,
+            action: '/share',
+            method: 'POST',
+            enctype: 'multipart/form-data',
+            params: {
+              title: 'title',
+              text: 'text',
+              url: 'url',
+            },
+          },
+        },
+      }
+
+      const manifest = generateManifest(options)
+
+      expect(manifest?.share_target).toBeDefined()
+      expect(manifest?.share_target?.action).toBe('/share')
+      expect(manifest?.share_target?.method).toBe('POST')
+    })
+
+    test('should include file handlers when enabled', () => {
+      const options: StxOptions = {
+        pwa: {
+          enabled: true,
+          manifest: { name: 'Test' },
+          fileHandlers: {
+            enabled: true,
+            action: '/open',
+            accept: {
+              'text/markdown': ['.md', '.markdown'],
+            },
+            launchType: 'single-client',
+          },
+        },
+      }
+
+      const manifest = generateManifest(options)
+
+      expect(manifest?.file_handlers).toBeDefined()
+      expect(manifest?.file_handlers?.[0].action).toBe('/open')
+      expect(manifest?.file_handlers?.[0].accept['text/markdown']).toContain('.md')
+    })
+
+    test('should include protocol handlers when configured', () => {
+      const options: StxOptions = {
+        pwa: {
+          enabled: true,
+          manifest: { name: 'Test' },
+          protocolHandlers: [
+            { protocol: 'web+myapp', url: '/handle?url=%s' },
+          ],
+        },
+      }
+
+      const manifest = generateManifest(options)
+
+      expect(manifest?.protocol_handlers).toBeDefined()
+      expect(manifest?.protocol_handlers?.[0].protocol).toBe('web+myapp')
+    })
+
+    test('should validate manifest configuration', () => {
+      const options: StxOptions = {
+        pwa: {
+          enabled: true,
+          manifest: {
+            name: 'Test',
+            themeColor: 'not-a-color', // Invalid
+            display: 'invalid' as any, // Invalid
+          },
+        },
+      }
+
+      const errors = validateManifest(options)
+
+      expect(errors.some((e: string) => e.includes('theme color'))).toBe(true)
+      expect(errors.some((e: string) => e.includes('display mode'))).toBe(true)
+    })
+
+    test('should validate protocol handlers', () => {
+      const options: StxOptions = {
+        pwa: {
+          enabled: true,
+          manifest: { name: 'Test' },
+          protocolHandlers: [
+            { protocol: 'web+test', url: '/handle' }, // Missing %s
+          ],
+        },
+      }
+
+      const errors = validateManifest(options)
+
+      expect(errors.some((e: string) => e.includes('%s'))).toBe(true)
+    })
+  })
 })
