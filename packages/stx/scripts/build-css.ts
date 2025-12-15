@@ -17,8 +17,13 @@ const outputPath = resolve(import.meta.dir, '../examples/dist/styles.css')
 const configPath = resolve(import.meta.dir, '../headwind.config.ts')
 
 try {
-  // Use bunx to run headwind CLI (works in CI/CD and locally)
-  const result = await $`bunx --bun @stacksjs/headwind build --content ${contentPath} --output ${outputPath} --config ${configPath}`.text()
+  // Use headwind CLI from the linked package
+  const headwindPkg = import.meta.resolve('@stacksjs/headwind')
+  // headwindPkg is like file:///path/to/headwind/dist/index.js
+  // Go up one level from dist/ to get package root
+  const pkgDir = new URL('..', headwindPkg).pathname
+  const headwindCli = resolve(pkgDir, 'bin/cli.ts')
+  const result = await $`bun ${headwindCli} build --content ${contentPath} --output ${outputPath} --config ${configPath}`.text()
 
   console.log(result)
 

@@ -2,9 +2,11 @@ import type { BunPlugin } from 'bun'
 import type { SyntaxHighlightTheme } from './types'
 import { serve } from 'bun'
 import fs from 'node:fs'
+import net from 'node:net'
 import path from 'node:path'
 import process from 'node:process'
 import { openDevWindow } from '@stacksjs/desktop'
+import { handleAgenticApi } from './agentic-api'
 import { readMarkdownFile } from './assets'
 import { config } from './config'
 import {
@@ -69,31 +71,22 @@ async function loadHeadwind(): Promise<{ CSSGenerator: any, config: any } | null
   headwindLoadAttempted = true
 
   try {
-    // Try to import from @stacksjs/headwind package
-    const mod = await import('@stacksjs/headwind')
-    headwindModule = {
-      CSSGenerator: mod.CSSGenerator,
-      config: mod.config,
-    }
-    console.log(`${colors.green}[Headwind] CSS engine loaded successfully${colors.reset}`)
-    return headwindModule
-  }
-  catch {
-    // Try local headwind from ~/Code/headwind if package not available
-    try {
-      const localPath = path.join(process.env.HOME || '', 'Code/headwind/packages/headwind/src/index.ts')
-      const mod = await import(localPath)
+    // Dynamic import to make headwind optional
+    const HeadwindPkg = await import('@stacksjs/headwind')
+    if (HeadwindPkg && HeadwindPkg.CSSGenerator) {
       headwindModule = {
-        CSSGenerator: mod.CSSGenerator,
-        config: mod.config,
+        CSSGenerator: HeadwindPkg.CSSGenerator,
+        config: HeadwindPkg.config,
       }
-      console.log(`${colors.green}[Headwind] CSS engine loaded from local path${colors.reset}`)
+      console.log(`${colors.green}[Headwind] CSS engine loaded successfully${colors.reset}`)
       return headwindModule
     }
-    catch {
-      console.warn(`${colors.yellow}[Headwind] CSS engine not available, Tailwind styles will not be generated${colors.reset}`)
-      return null
-    }
+    throw new Error('Headwind CSSGenerator not found')
+  }
+  catch {
+    console.warn(`${colors.yellow}[Headwind] CSS engine not available, Tailwind styles will not be generated${colors.reset}`)
+    console.warn(`${colors.yellow}Run 'bun add @stacksjs/headwind' to enable CSS generation${colors.reset}`)
+    return null
   }
 }
 
@@ -303,27 +296,43 @@ function getFrontmatterHtml(data: Record<string, any>): string {
 }
 
 /**
+ * Check if a port is available by attempting to bind to it
+ */
+async function isPortAvailable(port: number): Promise<boolean> {
+  // Check IPv4
+  const ipv4Available = await new Promise<boolean>((resolve) => {
+    const server = net.createServer()
+    server.once('error', () => resolve(false))
+    server.once('listening', () => {
+      server.close(() => resolve(true))
+    })
+    server.listen(port, '0.0.0.0')
+  })
+
+  if (!ipv4Available) return false
+
+  // Check IPv6
+  const ipv6Available = await new Promise<boolean>((resolve) => {
+    const server = net.createServer()
+    server.once('error', () => resolve(false))
+    server.once('listening', () => {
+      server.close(() => resolve(true))
+    })
+    server.listen(port, '::')
+  })
+
+  return ipv6Available
+}
+
+/**
  * Find an available port starting from the given port
  */
-async function findAvailablePort(startPort: number, maxAttempts = 10): Promise<number> {
+async function findAvailablePort(startPort: number, maxAttempts = 20): Promise<number> {
   for (let i = 0; i < maxAttempts; i++) {
     const port = startPort + i
-    try {
-      // Try to create a temporary server to check if port is available
-      const testServer = serve({
-        port,
-        fetch: () => new Response('test'),
-      })
-      testServer.stop()
+    const available = await isPortAvailable(port)
+    if (available) {
       return port
-    }
-    catch (error: any) {
-      // Port is in use, try next one
-      if (error.code === 'EADDRINUSE') {
-        continue
-      }
-      // Other error, rethrow
-      throw error
     }
   }
   throw new Error(`Could not find an available port between ${startPort} and ${startPort + maxAttempts - 1}`)
@@ -708,7 +717,7 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
   // Print Bun-style output header
   console.clear()
   console.log(`\n${colors.blue}stx${colors.reset}  ${colors.green}${process.env.stx_VERSION || 'v0.0.10'}${colors.reset}  ${colors.dim}ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms${colors.reset}`)
-  console.log(`\n${colors.bright}→  ${colors.cyan}http://localhost:${port}/${colors.reset}`)
+  console.log(`\n${colors.bright}→  ${colors.cyan}http://localhost:${actualPort}/${colors.reset}`)
 
   // Print the route in Bun-like format
   console.log(`\n${colors.yellow}Routes:${colors.reset}`)
@@ -760,14 +769,10 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   const port = options.port || 3000
   const watch = options.watch !== false
   const hotReload = options.hotReload !== false && watch // Enable HMR by default when watching
-  const hmrPort = options.hmrPort || port + 1
 
-  // Start HMR server if enabled
+  // HMR server will be started after we find the actual HTTP port
   let hmrServer: ReturnType<typeof getHmrServer> | null = null
-  if (hotReload) {
-    hmrServer = getHmrServer({ wsPort: hmrPort, verbose: false })
-    hmrServer.start(hmrPort)
-  }
+  let actualHmrPort = options.hmrPort || port + 1
 
   // Validate the file exists
   const absolutePath = path.resolve(filePath)
@@ -866,15 +871,28 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     return false
   }
 
+  // Start HMR server AFTER we know the actual HTTP port
+  if (hotReload) {
+    const desiredHmrPort = options.hmrPort || actualPort + 1
+    hmrServer = getHmrServer({ wsPort: desiredHmrPort, verbose: false })
+    actualHmrPort = hmrServer.start(desiredHmrPort)
+  }
+
   // Start a server
   console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${actualPort}/${colors.reset}...`)
   if (hotReload) {
-    console.log(`${colors.magenta}Hot reload enabled on ws://localhost:${hmrPort}${colors.reset}`)
+    console.log(`${colors.magenta}Hot reload enabled on ws://localhost:${actualHmrPort}${colors.reset}`)
   }
   const server = serve({
     port: actualPort,
-    fetch(request) {
+    async fetch(request) {
       const url = new URL(request.url)
+
+      // Handle API routes first (agentic functionality for AI code assistant)
+      const apiResponse = await handleAgenticApi(request)
+      if (apiResponse) {
+        return apiResponse
+      }
 
       // Serve the main HTML for the root path
       if (url.pathname === '/') {
@@ -883,7 +901,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
           let content = await injectHeadwindCSS(htmlContent || '')
           // Inject HMR client script if hot reload is enabled
           if (hotReload) {
-            content = injectHotReload(content, hmrPort)
+            content = injectHotReload(content, actualHmrPort)
           }
           return content
         }
@@ -1081,7 +1099,7 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   // Print Bun-style output header
   console.clear()
   console.log(`\n${colors.blue}stx${colors.reset}  ${colors.green}${process.env.stx_VERSION || 'v0.0.10'}${colors.reset}  ${colors.dim}ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms${colors.reset}`)
-  console.log(`\n${colors.bright}→  ${colors.cyan}http://localhost:${port}/${colors.reset}`)
+  console.log(`\n${colors.bright}→  ${colors.cyan}http://localhost:${actualPort}/${colors.reset}`)
 
   // Print the route in Bun-like format
   console.log(`\n${colors.yellow}Routes:${colors.reset}`)
@@ -1514,8 +1532,14 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${actualPort}/${colors.reset}...`)
   const server = serve({
     port: actualPort,
-    fetch(request) {
+    async fetch(request) {
       const url = new URL(request.url)
+
+      // Handle API routes first (agentic functionality for AI code assistant)
+      const apiResponse = await handleAgenticApi(request)
+      if (apiResponse) {
+        return apiResponse
+      }
 
       // Check if it's a file in the public directory FIRST (before route matching)
       // This ensures static assets like fonts, images are served correctly
@@ -1677,7 +1701,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
   // Print Bun-style output header
   console.clear()
   console.log(`\n${colors.blue}stx${colors.reset}  ${colors.green}${process.env.stx_VERSION || 'v0.0.10'}${colors.reset}  ${colors.dim}ready in  ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0}  ms${colors.reset}`)
-  console.log(`\n${colors.bright}→  ${colors.cyan}http://localhost:${port}/${colors.reset}`)
+  console.log(`\n${colors.bright}→  ${colors.cyan}http://localhost:${actualPort}/${colors.reset}`)
 
   // Print the routes in Bun-like format
   console.log(`\n${colors.yellow}Routes:${colors.reset}`)

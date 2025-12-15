@@ -272,6 +272,7 @@ export function generateHotReloadScript(wsPort: number, options: HotReloadOption
   var reconnectInterval = ${reconnectInterval};
   var socket = null;
   var overlay = null;
+  var wasConnected = false; // Track if we ever connected successfully
 
   ${showOverlay
     ? `
@@ -284,6 +285,8 @@ export function generateHotReloadScript(wsPort: number, options: HotReloadOption
   }
 
   function showOverlay(message, isError) {
+    // Only show overlay if we were previously connected (don't show during initial connection)
+    if (!wasConnected && !isError) return;
     if (!overlay) createOverlay();
     overlay.textContent = message;
     overlay.style.background = isError ? '#ef4444' : '#f59e0b';
@@ -301,10 +304,19 @@ export function generateHotReloadScript(wsPort: number, options: HotReloadOption
   `}
 
   function connect() {
-    socket = new WebSocket(wsUrl);
+    try {
+      socket = new WebSocket(wsUrl);
+    } catch (e) {
+      // Silent fail for initial connection attempts
+      if (wasConnected) {
+        scheduleReconnect();
+      }
+      return;
+    }
 
     socket.onopen = function() {
       console.log('[stx] Hot reload connected');
+      wasConnected = true;
       reconnectAttempts = 0;
       hideOverlay();
     };
@@ -339,21 +351,30 @@ export function generateHotReloadScript(wsPort: number, options: HotReloadOption
     };
 
     socket.onclose = function() {
-      console.log('[stx] Connection closed');
       socket = null;
-
-      if (reconnectAttempts < maxAttempts) {
-        reconnectAttempts++;
-        showOverlay('Reconnecting... (' + reconnectAttempts + '/' + maxAttempts + ')');
-        setTimeout(connect, reconnectInterval);
+      // Only log and show overlay if we were previously connected
+      if (wasConnected) {
+        console.log('[stx] Connection closed, reconnecting...');
+        scheduleReconnect();
       } else {
-        showOverlay('Connection lost. Refresh to reconnect.', true);
+        // Silently retry initial connection
+        setTimeout(connect, reconnectInterval);
       }
     };
 
-    socket.onerror = function(err) {
-      console.error('[stx] WebSocket error:', err);
+    socket.onerror = function() {
+      // Errors are handled in onclose
     };
+  }
+
+  function scheduleReconnect() {
+    if (reconnectAttempts < maxAttempts) {
+      reconnectAttempts++;
+      showOverlay('Reconnecting... (' + reconnectAttempts + '/' + maxAttempts + ')');
+      setTimeout(connect, reconnectInterval);
+    } else {
+      showOverlay('Connection lost. Refresh to reconnect.', true);
+    }
   }
 
   // CSS hot update without full reload

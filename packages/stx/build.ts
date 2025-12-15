@@ -8,6 +8,7 @@ await Bun.build({
   plugins: [dts()],
   target: 'bun',
   minify: true,
+  packages: 'external',
 })
 
 // Build CLI separately
@@ -17,6 +18,7 @@ await Bun.build({
   outdir: './dist',
   target: 'bun',
   minify: true,
+  packages: 'external',
 })
 
 // Add shebang to CLI

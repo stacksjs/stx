@@ -5,6 +5,7 @@ import { a11yDirective, screenReaderDirective } from './a11y'
 import { animationGroupDirective, motionDirective, scrollAnimateDirective, transitionDirective } from './animation'
 import { componentDirective } from './components'
 import { markdownDirectiveHandler } from './markdown'
+import { pwaDirectives } from './pwa/directives'
 import { metaDirective, structuredDataDirective } from './seo'
 import { webComponentDirectiveHandler } from './web-components'
 
@@ -38,6 +39,7 @@ export const defaultConfig: StxConfig = {
     animationGroupDirective,
     motionDirective,
     scrollAnimateDirective,
+    ...pwaDirectives,
   ],
   middleware: [],
   i18n: {
@@ -124,6 +126,110 @@ export const defaultConfig: StxConfig = {
     storyMatch: ['**/*.story.stx'],
     storyIgnored: ['**/node_modules/**', '**/dist/**', '**/.stx/**'],
     port: 6006,
+  },
+  pwa: {
+    enabled: false,
+    manifest: {
+      name: 'stx App',
+      shortName: 'stx',
+      description: 'A Progressive Web App built with stx',
+      startUrl: '/',
+      display: 'standalone',
+      orientation: 'any',
+      themeColor: '#000000',
+      backgroundColor: '#ffffff',
+      scope: '/',
+    },
+    icons: {
+      src: 'public/icon.png',
+      sizes: [72, 96, 128, 144, 152, 192, 384, 512],
+      generateWebP: true,
+      generateAppleIcons: true,
+      outputDir: 'pwa-icons',
+      purpose: ['any', 'maskable'],
+    },
+    routes: [
+      { pattern: '/', strategy: 'network-first' },
+      { pattern: '/static/*', strategy: 'cache-first', maxAgeSeconds: 86400 * 30 },
+      { pattern: '/api/*', strategy: 'network-only' },
+      { pattern: '*.js', strategy: 'stale-while-revalidate' },
+      { pattern: '*.css', strategy: 'stale-while-revalidate' },
+      { pattern: '*.png', strategy: 'cache-first' },
+      { pattern: '*.jpg', strategy: 'cache-first' },
+      { pattern: '*.webp', strategy: 'cache-first' },
+      { pattern: '*.svg', strategy: 'cache-first' },
+    ],
+    offline: {
+      enabled: true,
+      fallbackTitle: 'You are offline',
+      fallbackMessage: 'Please check your internet connection and try again.',
+      precacheAssets: [],
+    },
+    serviceWorker: {
+      fileName: 'sw.js',
+      cacheVersion: '1.0.0',
+      skipWaiting: true,
+      clientsClaim: true,
+      navigationPreload: false,
+      excludeRoutes: ['/api/auth/*'],
+      cacheFileTypes: ['html', 'css', 'js', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'woff', 'woff2'],
+      useWorkbox: false,
+    },
+    autoInject: true,
+    push: {
+      enabled: false,
+      defaultOptions: {
+        vibrate: [100, 50, 100],
+        requireInteraction: false,
+      },
+    },
+    backgroundSync: {
+      enabled: false,
+      queueName: 'stx-sync-queue',
+      maxRetentionMinutes: 60 * 24, // 24 hours
+      maxRetries: 3,
+      minInterval: 1000,
+      forms: [],
+      endpoints: [],
+    },
+    shareTarget: {
+      enabled: false,
+      action: '/share-target',
+      method: 'POST',
+      enctype: 'multipart/form-data',
+      params: {
+        title: 'title',
+        text: 'text',
+        url: 'url',
+      },
+    },
+    fileHandlers: {
+      enabled: false,
+    },
+    protocolHandlers: [],
+    cacheStorage: {
+      maxSize: 100, // MB
+      maxEntries: 500,
+      maxAge: 30, // days
+      purgeStrategy: 'lru',
+    },
+    updates: {
+      enabled: true,
+      promptUser: true,
+      autoReload: false,
+      message: 'A new version is available. Reload to update?',
+    },
+    precache: {
+      enabled: true,
+      includeHtml: true,
+      includeJs: true,
+      includeCss: true,
+      includeImages: true,
+      includeFonts: true,
+      include: [],
+      exclude: ['*.map', '*.LICENSE.txt'],
+      maxFileSizeKB: 500,
+    },
   },
 }
 // Lazy-load config to avoid blocking module initialization
@@ -440,6 +546,129 @@ export function validateConfig(config: StxOptions): ConfigValidationResult {
       message: 'SEO is enabled but no default title is set',
       severity: 'warning',
     })
+  }
+
+  // Validate PWA config
+  if (config.pwa) {
+    // Manifest name is required when PWA is enabled
+    if (config.pwa.enabled === true && !config.pwa.manifest?.name) {
+      errors.push({
+        path: 'pwa.manifest.name',
+        message: 'PWA manifest name is required when PWA is enabled',
+        severity: 'error',
+      })
+    }
+
+    // Validate display mode
+    if (config.pwa.manifest?.display !== undefined) {
+      const validDisplayModes = ['fullscreen', 'standalone', 'minimal-ui', 'browser']
+      if (!validDisplayModes.includes(config.pwa.manifest.display)) {
+        errors.push({
+          path: 'pwa.manifest.display',
+          message: `PWA display must be one of: ${validDisplayModes.join(', ')}`,
+          severity: 'error',
+        })
+      }
+    }
+
+    // Validate orientation
+    if (config.pwa.manifest?.orientation !== undefined) {
+      const validOrientations = ['portrait', 'landscape', 'any', 'portrait-primary', 'portrait-secondary', 'landscape-primary', 'landscape-secondary']
+      if (!validOrientations.includes(config.pwa.manifest.orientation)) {
+        errors.push({
+          path: 'pwa.manifest.orientation',
+          message: `PWA orientation must be one of: ${validOrientations.join(', ')}`,
+          severity: 'error',
+        })
+      }
+    }
+
+    // Validate cache strategies in routes
+    if (config.pwa.routes) {
+      const validStrategies = ['cache-first', 'network-first', 'stale-while-revalidate', 'network-only', 'cache-only']
+      config.pwa.routes.forEach((route, index) => {
+        if (!route.pattern || typeof route.pattern !== 'string') {
+          errors.push({
+            path: `pwa.routes[${index}].pattern`,
+            message: 'PWA route must have a pattern string',
+            severity: 'error',
+          })
+        }
+        if (!validStrategies.includes(route.strategy)) {
+          errors.push({
+            path: `pwa.routes[${index}].strategy`,
+            message: `PWA route strategy must be one of: ${validStrategies.join(', ')}`,
+            severity: 'error',
+          })
+        }
+        if (route.maxAgeSeconds !== undefined && (typeof route.maxAgeSeconds !== 'number' || route.maxAgeSeconds < 0)) {
+          errors.push({
+            path: `pwa.routes[${index}].maxAgeSeconds`,
+            message: 'PWA route maxAgeSeconds must be a non-negative number',
+            severity: 'error',
+          })
+        }
+        if (route.maxEntries !== undefined && (typeof route.maxEntries !== 'number' || route.maxEntries < 1)) {
+          errors.push({
+            path: `pwa.routes[${index}].maxEntries`,
+            message: 'PWA route maxEntries must be a positive number',
+            severity: 'error',
+          })
+        }
+      })
+    }
+
+    // Validate icon sizes
+    if (config.pwa.icons?.sizes) {
+      if (!Array.isArray(config.pwa.icons.sizes)) {
+        errors.push({
+          path: 'pwa.icons.sizes',
+          message: 'PWA icon sizes must be an array of numbers',
+          severity: 'error',
+        })
+      }
+      else {
+        const invalidSizes = config.pwa.icons.sizes.filter(s => typeof s !== 'number' || s < 16 || s > 1024)
+        if (invalidSizes.length > 0) {
+          errors.push({
+            path: 'pwa.icons.sizes',
+            message: 'PWA icon sizes must be numbers between 16 and 1024',
+            severity: 'error',
+          })
+        }
+      }
+    }
+
+    // Validate icon purpose
+    if (config.pwa.icons?.purpose) {
+      const validPurposes = ['any', 'maskable', 'monochrome']
+      const invalidPurposes = config.pwa.icons.purpose.filter(p => !validPurposes.includes(p))
+      if (invalidPurposes.length > 0) {
+        errors.push({
+          path: 'pwa.icons.purpose',
+          message: `PWA icon purpose must be one of: ${validPurposes.join(', ')}`,
+          severity: 'error',
+        })
+      }
+    }
+
+    // Warning for missing icon source when PWA is enabled
+    if (config.pwa.enabled === true && !config.pwa.icons?.src) {
+      warnings.push({
+        path: 'pwa.icons.src',
+        message: 'PWA is enabled but no icon source specified. Provide a 512x512 PNG for best results.',
+        severity: 'warning',
+      })
+    }
+
+    // Warning for missing theme color
+    if (config.pwa.enabled === true && !config.pwa.manifest?.themeColor) {
+      warnings.push({
+        path: 'pwa.manifest.themeColor',
+        message: 'PWA theme color not set, defaulting to black',
+        severity: 'warning',
+      })
+    }
   }
 
   return {

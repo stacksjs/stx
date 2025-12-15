@@ -1,0 +1,60 @@
+{
+  "name": "stx-native",
+  "version": "0.1.0",
+  "description": "STX Native - Compile STX templates to native iOS/Android UI",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "stx-native": "./dist/cli/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./compiler": {
+      "import": "./dist/compiler/index.js",
+      "types": "./dist/compiler/index.d.ts"
+    },
+    "./components": {
+      "import": "./dist/components/index.js",
+      "types": "./dist/components/index.d.ts"
+    },
+    "./bridge": {
+      "import": "./dist/bridge/protocol.js",
+      "types": "./dist/bridge/protocol.d.ts"
+    },
+    "./cli": {
+      "import": "./dist/cli/index.js"
+    }
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts ./src/cli/index.ts --outdir ./dist --format esm --splitting",
+    "dev": "bun run ./src/cli/index.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@stacksjs/stx": "workspace:*",
+    "ws": "^8.14.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "bun": ">=1.0.0"
+  },
+  "keywords": [
+    "stx",
+    "native",
+    "ios",
+    "android",
+    "react-native",
+    "mobile"
+  ],
+  "author": "Stacks Team",
+  "license": "MIT"
+}

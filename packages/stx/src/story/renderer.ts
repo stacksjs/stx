@@ -5,6 +5,7 @@
 
 import type { ServerStoryFile, StoryContext } from './types'
 import fs from 'node:fs'
+import { extractVariables } from '../utils'
 
 /**
  * Story render options
@@ -77,8 +78,25 @@ export async function renderStoryComponent(
     // Process the component using STX
     const { processDirectives } = await import('../process')
 
-    // Build props context
-    const propsContext = options.props || {}
+    // Build props context - extract from script first, then override with provided props
+    const propsContext: Record<string, any> = {}
+
+    // Extract variables from script tag to populate context
+    const scriptContent = extractScripts(content)
+    if (scriptContent) {
+      try {
+        await extractVariables(scriptContent, propsContext, componentPath)
+      }
+      catch (extractError) {
+        // Log but continue - some scripts might have issues
+        errors.push(`Warning: Could not extract script variables: ${extractError instanceof Error ? extractError.message : String(extractError)}`)
+      }
+    }
+
+    // Override with provided props (these take precedence)
+    if (options.props) {
+      Object.assign(propsContext, options.props)
+    }
 
     // Process the template
     const dependencies = new Set<string>()
@@ -89,6 +107,9 @@ export async function renderStoryComponent(
 
     // Extract JS
     const js = extractScripts(content)
+
+    // Strip script/style tags from HTML for clean preview
+    html = stripTagsForPreview(html)
 
     // Inject props into rendered output
     html = injectPropsIntoHtml(html, propsContext)
@@ -114,6 +135,40 @@ export async function renderStoryComponent(
 }
 
 /**
+ * Variant extracted from script (may have optional fields)
+ */
+interface ExtractedVariant {
+  id: string
+  title?: string
+  state?: Record<string, any>
+  source?: string
+}
+
+/**
+ * Extract variants from script content
+ */
+async function extractVariantsFromScript(componentPath: string): Promise<ExtractedVariant[] | null> {
+  try {
+    const content = await fs.promises.readFile(componentPath, 'utf-8')
+    const scriptContent = extractScripts(content)
+    if (!scriptContent)
+      return null
+
+    // Extract the variants array from script
+    const context: Record<string, any> = {}
+    await extractVariables(scriptContent, context, componentPath)
+
+    if (Array.isArray(context.variants)) {
+      return context.variants
+    }
+    return null
+  }
+  catch {
+    return null
+  }
+}
+
+/**
  * Render a story variant
  */
 export async function renderStoryVariant(
@@ -122,13 +177,40 @@ export async function renderStoryVariant(
   variantId: string,
   props?: Record<string, any>,
 ): Promise<StoryRenderResult> {
-  const variant = story.story?.variants.find(v => v.id === variantId)
+  // Try to get variants from story metadata first
+  let variants: ExtractedVariant[] | undefined = story.story?.variants
+
+  // If not available, try to extract from script content
+  if (!variants) {
+    const extractedVariants = await extractVariantsFromScript(story.path)
+    if (extractedVariants) {
+      variants = extractedVariants
+    }
+  }
+
+  // If still no variants and variantId is default, just render the component
+  if (!variants && variantId === 'default') {
+    return renderStoryComponent(ctx, story.path, { props: props || {} })
+  }
+
+  // If no variants at all, render with provided props
+  if (!variants) {
+    return renderStoryComponent(ctx, story.path, { props: props || {} })
+  }
+
+  const variant = variants.find(v => v.id === variantId)
+
+  // If variant not found but we have the default variant ID, just render the component
+  if (!variant && variantId === 'default') {
+    return renderStoryComponent(ctx, story.path, { props: props || {} })
+  }
+
   if (!variant) {
     return {
       html: '<div class="stx-render-error">Variant not found</div>',
       css: '',
       js: '',
-      errors: ['Variant not found'],
+      errors: [`Variant '${variantId}' not found`],
       duration: 0,
     }
   }
@@ -159,10 +241,27 @@ export async function renderInlineTemplate(
   try {
     const { processDirectives } = await import('../process')
 
-    const dependencies = new Set<string>()
-    let html = await processDirectives(template, props, 'inline-template.stx', {}, dependencies)
+    // Build context with props
+    const context: Record<string, any> = { ...props }
 
-    html = injectPropsIntoHtml(html, props)
+    // Extract variables from script tags
+    const scriptContent = extractScripts(template)
+    if (scriptContent) {
+      try {
+        await extractVariables(scriptContent, context, 'inline-template.stx')
+      }
+      catch {
+        // Continue even if extraction fails
+      }
+    }
+
+    const dependencies = new Set<string>()
+    let html = await processDirectives(template, context, 'inline-template.stx', {}, dependencies)
+
+    // Strip script/style tags from HTML for clean preview
+    html = stripTagsForPreview(html)
+
+    html = injectPropsIntoHtml(html, context)
 
     return {
       html,
@@ -198,6 +297,22 @@ function extractStyles(content: string): string {
   }
 
   return styles.join('\n')
+}
+
+/**
+ * Strip <style> and <script> tags and HTML comments from content for clean preview
+ */
+function stripTagsForPreview(content: string): string {
+  return content
+    // Remove HTML comments (including story metadata comments)
+    .replace(/<!--[\s\S]*?-->/g, '')
+    // Remove style tags
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+    // Remove script tags
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    // Clean up excessive whitespace but preserve structure
+    .replace(/^\s*\n/gm, '')
+    .trim()
 }
 
 /**

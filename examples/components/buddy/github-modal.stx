@@ -1,0 +1,238 @@
+<div class="modal-overlay" id="githubModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span>🐙</span>
+        GitHub Connection
+      </div>
+      <button class="modal-close" id="modalClose">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <div id="connectForm">
+        <div class="form-group">
+          <label class="form-label">GitHub Personal Access Token</label>
+          <input
+            type="password"
+            class="form-input"
+            id="githubToken"
+            placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+          />
+          <div class="form-hint">
+            Generate a token at <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a>
+            <br>Required scopes: <code>repo</code>, <code>user:email</code>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Git Commit Name (optional)</label>
+          <input
+            type="text"
+            class="form-input"
+            id="gitName"
+            placeholder="Your Name"
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Git Commit Email (optional)</label>
+          <input
+            type="email"
+            class="form-input"
+            id="gitEmail"
+            placeholder="you@example.com"
+          />
+          <div class="form-hint">
+            Leave blank to use your GitHub email
+          </div>
+        </div>
+      </div>
+      <div id="connectedInfo" style="display: none;">
+        <div style="text-align: center; padding: 20px 0;">
+          <img id="connectedAvatar" class="github-avatar" style="width: 64px; height: 64px; margin-bottom: 12px;" />
+          <div style="font-size: 18px; font-weight: 600; margin-bottom: 4px;" id="connectedName"></div>
+          <div style="color: var(--text-secondary); margin-bottom: 8px;" id="connectedUsername"></div>
+          <div style="color: var(--success); font-size: 12px;">✓ Connected</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="modalCancel">Cancel</button>
+      <button class="btn btn-github" id="connectBtn">Connect</button>
+      <button class="btn btn-disconnect" id="disconnectBtn" style="display: none;">Disconnect</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 400px;
+  max-width: 90%;
+  transform: translateY(-20px);
+  transition: transform 0.3s;
+}
+
+.modal-overlay.active .modal {
+  transform: translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: var(--text-primary);
+}
+
+.modal-body {
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.form-input::placeholder {
+  color: var(--text-muted);
+}
+
+.form-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.form-hint a {
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+
+.form-hint a:hover {
+  text-decoration: underline;
+}
+
+.form-hint code {
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.btn {
+  background: var(--accent-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 16px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.btn-github {
+  background: #238636;
+  border-color: #238636;
+}
+
+.btn-github:hover {
+  background: #2ea043;
+  border-color: #2ea043;
+}
+
+.btn-disconnect {
+  background: var(--error);
+  border-color: var(--error);
+}
+
+.btn-disconnect:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.github-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+}
+
+@media (max-width: 768px) {
+  .modal {
+    width: 95%;
+    margin: 10px;
+  }
+}
+</style>

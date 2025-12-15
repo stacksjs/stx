@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>Buddy - Voice AI Code Assistant</title>
+
+  <style>
+    :root {
+      --bg-primary: #1a1a2e;
+      --bg-secondary: #16213e;
+      --bg-tertiary: #0f0f23;
+      --accent-primary: #e94560;
+      --accent-secondary: #0f3460;
+      --text-primary: #eaeaea;
+      --text-secondary: #a0a0a0;
+      --text-muted: #666;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --error: #ef4444;
+      --border: #2d2d4a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      gap: 20px;
+      overflow: hidden;
+    }
+
+    .footer {
+      padding: 10px 20px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-tertiary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    /* Mobile & iOS Safe Area Support */
+    @supports (padding: env(safe-area-inset-top)) {
+      .header {
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+      }
+      .footer {
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+      }
+      .main {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+      }
+    }
+
+    /* Prevent iOS text size adjustment */
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+  </style>
+</head>
+<body>
+  @component('buddy/header', { title: 'Buddy' })
+
+  @component('buddy/github-modal')
+  @component('buddy/settings-modal')
+
+  <main class="main">
+    @component('buddy/terminal', { title: 'Buddy - Ready' })
+    @component('buddy/voice-control')
+  </main>
+
+  <footer class="footer" id="footer">
+    Buddy v1.0.0 - Voice AI Code Assistant
+  </footer>
+
+  <script>
+    // Configuration
+    const config = {
+      title: 'Buddy',
+      version: '1.0.0',
+      drivers: {
+        claude: { name: 'Claude', requiresKey: 'ANTHROPIC_API_KEY' },
+        openai: { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
+        ollama: { name: 'Ollama', requiresKey: null },
+        mock: { name: 'Mock', requiresKey: null }
+      }
+    };
+
+    // State management
+    const state = {
+      isRecording: false,
+      isProcessing: false,
+      transcript: '',
+      messages: [],
+      repoPath: '',
+      hasChanges: false,
+      recognition: null,
+      speechSupported: false,
+      currentDriver: 'claude',
+      isNativeApp: false,
+      github: {
+        connected: false,
+        token: null,
+        username: null,
+        name: null,
+        email: null,
+        avatarUrl: null
+      },
+      apiKeys: {
+        anthropic: null,
+        openai: null,
+        claudeCliHost: null
+      }
+    };
+
+    // DOM elements
+    const elements = {
+      output: document.getElementById('output'),
+      micButton: document.getElementById('micButton'),
+      micIcon: document.getElementById('micIcon'),
+      statusText: document.getElementById('statusText'),
+      statusHint: document.getElementById('statusHint'),
+      transcriptPreview: document.getElementById('transcriptPreview'),
+      repoInput: document.getElementById('repoInput'),
+      cloneBtn: document.getElementById('cloneBtn'),
+      commitBtn: document.getElementById('commitBtn'),
+      pushBtn: document.getElementById('pushBtn'),
+      terminalTitle: document.getElementById('terminalTitle'),
+      aiDriver: document.getElementById('aiDriver'),
+      textInput: document.getElementById('textInput'),
+      sendBtn: document.getElementById('sendBtn'),
+      footer: document.getElementById('footer'),
+      appTitle: document.getElementById('appTitle'),
+      // GitHub elements
+      githubAccount: document.getElementById('githubAccount'),
+      githubUsername: document.getElementById('githubUsername'),
+      githubStatus: document.getElementById('githubStatus'),
+      githubModal: document.getElementById('githubModal'),
+      githubToken: document.getElementById('githubToken'),
+      gitName: document.getElementById('gitName'),
+      gitEmail: document.getElementById('gitEmail'),
+      modalClose: document.getElementById('modalClose'),
+      modalCancel: document.getElementById('modalCancel'),
+      connectBtn: document.getElementById('connectBtn'),
+      disconnectBtn: document.getElementById('disconnectBtn'),
+      connectForm: document.getElementById('connectForm'),
+      connectedInfo: document.getElementById('connectedInfo'),
+      connectedAvatar: document.getElementById('connectedAvatar'),
+      connectedName: document.getElementById('connectedName'),
+      connectedUsername: document.getElementById('connectedUsername'),
+      // Settings elements
+      settingsBtn: document.getElementById('settingsBtn'),
+      settingsModal: document.getElementById('settingsModal'),
+      settingsModalClose: document.getElementById('settingsModalClose'),
+      settingsModalCancel: document.getElementById('settingsModalCancel'),
+      saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+      anthropicApiKey: document.getElementById('anthropicApiKey'),
+      openaiApiKey: document.getElementById('openaiApiKey'),
+      claudeCliHost: document.getElementById('claudeCliHost'),
+      anthropicStatus: document.getElementById('anthropicStatus'),
+      anthropicStatusText: document.getElementById('anthropicStatusText'),
+      openaiStatus: document.getElementById('openaiStatus'),
+      openaiStatusText: document.getElementById('openaiStatusText')
+    };
+
+    // Initialize Speech Recognition
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        state.speechSupported = false;
+        elements.statusText.textContent = 'Voice not supported - use text input';
+        elements.statusHint.textContent = 'Type your command below';
+        elements.micButton.style.opacity = '0.5';
+        elements.micButton.style.cursor = 'not-allowed';
+        addMessage('system', 'Speech recognition not available. Please use the text input below.');
+        return false;
+      }
+
+      state.recognition = new SpeechRecognition();
+      state.recognition.continuous = false;
+      state.recognition.interimResults = true;
+      state.recognition.lang = 'en-US';
+
+      state.recognition.onstart = () => {
+        state.isRecording = true;
+        elements.micButton.classList.add('recording');
+        elements.micIcon.textContent = '🔴';
+        elements.statusText.textContent = 'Listening...';
+        elements.transcriptPreview.classList.add('active');
+        elements.transcriptPreview.textContent = 'Listening...';
+      };
+
+      state.recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        state.transcript = transcript;
+        elements.transcriptPreview.textContent = transcript || 'Listening...';
+      };
+
+      state.recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        stopRecording();
+        if (event.error === 'not-allowed') {
+          addMessage('error', 'Microphone access denied.');
+        } else if (event.error !== 'aborted') {
+          addMessage('error', `Speech error: ${event.error}`);
+        }
+      };
+
+      state.recognition.onend = () => {
+        if (state.isRecording) {
+          const transcript = state.transcript.trim();
+          stopRecording();
+          if (transcript) {
+            processCommand(transcript);
+          }
+        }
+      };
+
+      state.speechSupported = true;
+      return true;
+    }
+
+    function startRecording() {
+      if (!state.speechSupported || state.isRecording) return;
+      state.transcript = '';
+      try {
+        state.recognition.start();
+      } catch (e) {
+        addMessage('error', 'Failed to start voice recognition.');
+      }
+    }
+
+    function stopRecording() {
+      state.isRecording = false;
+      elements.micButton.classList.remove('recording');
+      elements.micIcon.textContent = '🎤';
+      elements.statusText.textContent = 'Click microphone or type below';
+      elements.statusHint.textContent = 'Hold to record, release to send';
+      elements.transcriptPreview.classList.remove('active');
+      if (state.recognition) {
+        try { state.recognition.stop(); } catch (e) {}
+      }
+    }
+
+    function addMessage(type, content, header = null) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${type}`;
+      const driverName = config.drivers[state.currentDriver]?.name || 'AI';
+      const headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error');
+      messageDiv.innerHTML = `
+        <div class="message-header">${headerText}</div>
+        <div class="message-content">${escapeHtml(content)}</div>
+      `;
+      elements.output.appendChild(messageDiv);
+      elements.output.scrollTop = elements.output.scrollHeight;
+    }
+
+    function addLoadingMessage() {
+      const driverName = config.drivers[state.currentDriver]?.name || 'AI';
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'message assistant';
+      loadingDiv.id = 'loadingMessage';
+      loadingDiv.innerHTML = `
+        <div class="message-header">${driverName}</div>
+        <div class="message-content">
+          <div class="loading"><span></span><span></span><span></span></div>
+          Processing...
+        </div>
+      `;
+      elements.output.appendChild(loadingDiv);
+      elements.output.scrollTop = elements.output.scrollHeight;
+    }
+
+    function removeLoadingMessage() {
+      const loading = document.getElementById('loadingMessage');
+      if (loading) loading.remove();
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function checkBackendAPI() {
+      try {
+        const response = await fetch('/api/state');
+        return response.ok;
+      } catch { return false; }
+    }
+
+    async function callClaudeAPI(prompt) {
+      if (!state.apiKeys.anthropic) {
+        throw new Error('Anthropic API key not configured. Click ⚙️ to add your key.');
+      }
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': state.apiKeys.anthropic,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 4096,
+          system: `You are Buddy, a voice-controlled AI code assistant. Help developers write and modify code. Current repo: ${state.repoPath || 'Not specified'}`,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'API request failed');
+      }
+
+      const data = await response.json();
+      return {
+        message: data.content[0].text,
+        hasChanges: data.content[0].text.includes('```')
+      };
+    }
+
+    async function processCommand(command) {
+      if (!command.trim()) return;
+      addMessage('user', command);
+
+      if (!state.repoPath) {
+        addMessage('error', 'Please enter a repository path first.');
+        return;
+      }
+
+      state.isProcessing = true;
+      addLoadingMessage();
+
+      try {
+        let response;
+        const hasBackend = await checkBackendAPI();
+
+        if (state.currentDriver === 'claude' && state.apiKeys.anthropic) {
+          response = await callClaudeAPI(command);
+        } else if (hasBackend) {
+          const apiResponse = await fetch('/api/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command, driver: state.currentDriver })
+          });
+          response = await apiResponse.json();
+          if (!response.success) throw new Error(response.error);
+        } else if (state.currentDriver === 'claude') {
+          throw new Error('Anthropic API key not configured. Click ⚙️ to add your key.');
+        } else {
+          response = await getMockResponse(command);
+        }
+
+        removeLoadingMessage();
+        addMessage('assistant', response.message);
+
+        if (response.hasChanges) {
+          state.hasChanges = true;
+          elements.commitBtn.disabled = false;
+          elements.pushBtn.disabled = false;
+        }
+      } catch (error) {
+        removeLoadingMessage();
+        addMessage('error', error.message);
+      } finally {
+        state.isProcessing = false;
+      }
+    }
+
+    async function getMockResponse(command) {
+      await new Promise(r => setTimeout(r, 1000));
+      return {
+        message: `Mock response for: "${command}"\n\nThis is a demo response. Add an API key to get real responses.`,
+        hasChanges: false
+      };
+    }
+
+    function handleRepoAction() {
+      const input = elements.repoInput.value.trim();
+      if (!input) {
+        addMessage('error', 'Please enter a repository URL or path.');
+        return;
+      }
+      state.repoPath = input;
+      addMessage('system', `Repository set: ${input}`);
+      elements.terminalTitle.textContent = `Buddy - ${input.split('/').pop()}`;
+    }
+
+    // GitHub functions
+    function openGithubModal() { elements.githubModal.classList.add('active'); }
+    function closeGithubModal() { elements.githubModal.classList.remove('active'); }
+
+    async function connectGithub() {
+      const token = elements.githubToken.value.trim();
+      if (!token || (!token.startsWith('ghp_') && !token.startsWith('github_pat_'))) {
+        addMessage('error', 'Invalid GitHub token format.');
+        return;
+      }
+      try {
+        const userResponse = await fetch('https://api.github.com/user', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!userResponse.ok) throw new Error('Invalid token');
+        const userData = await userResponse.json();
+        state.github = {
+          connected: true, token, username: userData.login,
+          name: elements.gitName.value.trim() || userData.name || userData.login,
+          email: elements.gitEmail.value.trim() || `${userData.login}@users.noreply.github.com`,
+          avatarUrl: userData.avatar_url
+        };
+        localStorage.setItem('buddy_github', JSON.stringify(state.github));
+        updateGithubUI();
+        addMessage('system', `GitHub connected as @${userData.login}`);
+        closeGithubModal();
+      } catch (error) {
+        addMessage('error', `GitHub connection failed: ${error.message}`);
+      }
+    }
+
+    function updateGithubUI() {
+      if (state.github.connected) {
+        elements.githubAccount.classList.add('connected');
+        elements.githubUsername.textContent = state.github.username;
+        elements.githubStatus.textContent = 'Connected';
+      } else {
+        elements.githubAccount.classList.remove('connected');
+        elements.githubUsername.textContent = 'Not connected';
+        elements.githubStatus.textContent = 'Click to connect';
+      }
+    }
+
+    function loadSavedGithub() {
+      try {
+        const saved = localStorage.getItem('buddy_github');
+        if (saved) {
+          state.github = JSON.parse(saved);
+          updateGithubUI();
+        }
+      } catch (e) {}
+    }
+
+    // Settings functions
+    function openSettingsModal() {
+      elements.settingsModal.classList.add('active');
+      if (state.apiKeys.anthropic) elements.anthropicApiKey.value = state.apiKeys.anthropic;
+      if (state.apiKeys.openai) elements.openaiApiKey.value = state.apiKeys.openai;
+      if (state.apiKeys.claudeCliHost) elements.claudeCliHost.value = state.apiKeys.claudeCliHost;
+      updateApiStatusIndicators();
+    }
+
+    function closeSettingsModal() { elements.settingsModal.classList.remove('active'); }
+
+    function updateApiStatusIndicators() {
+      if (state.apiKeys.anthropic) {
+        elements.anthropicStatus.classList.add('configured');
+        elements.anthropicStatusText.textContent = 'Configured';
+      } else {
+        elements.anthropicStatus.classList.remove('configured');
+        elements.anthropicStatusText.textContent = 'Not configured';
+      }
+      if (state.apiKeys.openai) {
+        elements.openaiStatus.classList.add('configured');
+        elements.openaiStatusText.textContent = 'Configured';
+      } else {
+        elements.openaiStatus.classList.remove('configured');
+        elements.openaiStatusText.textContent = 'Not configured';
+      }
+      if (state.apiKeys.anthropic || state.apiKeys.openai) {
+        elements.settingsBtn.classList.add('has-key');
+      } else {
+        elements.settingsBtn.classList.remove('has-key');
+      }
+    }
+
+    async function saveApiSettings() {
+      const anthropicKey = elements.anthropicApiKey.value.trim();
+      const openaiKey = elements.openaiApiKey.value.trim();
+      const claudeHost = elements.claudeCliHost.value.trim();
+
+      if (anthropicKey && !anthropicKey.startsWith('sk-ant-')) {
+        addMessage('error', 'Invalid Anthropic API key format.');
+        return;
+      }
+
+      state.apiKeys = {
+        anthropic: anthropicKey || null,
+        openai: openaiKey || null,
+        claudeCliHost: claudeHost || null
+      };
+
+      localStorage.setItem('buddy_api_keys', JSON.stringify(state.apiKeys));
+      updateApiStatusIndicators();
+      closeSettingsModal();
+      addMessage('system', 'API settings saved.');
+    }
+
+    function loadSavedApiKeys() {
+      try {
+        const saved = localStorage.getItem('buddy_api_keys');
+        if (saved) {
+          state.apiKeys = JSON.parse(saved);
+          updateApiStatusIndicators();
+          if (state.apiKeys.anthropic) addMessage('system', 'API key loaded from storage.');
+        }
+      } catch (e) {}
+    }
+
+    // Event listeners
+    elements.micButton.addEventListener('mousedown', startRecording);
+    elements.micButton.addEventListener('mouseup', stopRecording);
+    elements.micButton.addEventListener('mouseleave', () => { if (state.isRecording) stopRecording(); });
+    elements.micButton.addEventListener('touchstart', (e) => { e.preventDefault(); startRecording(); });
+    elements.micButton.addEventListener('touchend', (e) => { e.preventDefault(); stopRecording(); });
+
+    elements.textInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const text = elements.textInput.value.trim();
+        if (text) { elements.textInput.value = ''; processCommand(text); }
+      }
+    });
+    elements.sendBtn.addEventListener('click', () => {
+      const text = elements.textInput.value.trim();
+      if (text) { elements.textInput.value = ''; processCommand(text); }
+    });
+
+    elements.cloneBtn.addEventListener('click', handleRepoAction);
+    elements.repoInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleRepoAction(); });
+    elements.aiDriver.addEventListener('change', () => {
+      state.currentDriver = elements.aiDriver.value;
+      addMessage('system', `Switched to ${config.drivers[state.currentDriver].name} driver.`);
+    });
+
+    elements.githubAccount.addEventListener('click', openGithubModal);
+    elements.modalClose.addEventListener('click', closeGithubModal);
+    elements.modalCancel.addEventListener('click', closeGithubModal);
+    elements.connectBtn.addEventListener('click', connectGithub);
+    elements.githubModal.addEventListener('click', (e) => { if (e.target === elements.githubModal) closeGithubModal(); });
+
+    elements.settingsBtn.addEventListener('click', openSettingsModal);
+    elements.settingsModalClose.addEventListener('click', closeSettingsModal);
+    elements.settingsModalCancel.addEventListener('click', closeSettingsModal);
+    elements.saveSettingsBtn.addEventListener('click', saveApiSettings);
+    elements.settingsModal.addEventListener('click', (e) => { if (e.target === elements.settingsModal) closeSettingsModal(); });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeGithubModal();
+        closeSettingsModal();
+      }
+      if (e.code === 'Space' && !e.repeat && document.activeElement !== elements.repoInput && document.activeElement !== elements.textInput) {
+        e.preventDefault();
+        startRecording();
+      }
+    });
+    document.addEventListener('keyup', (e) => {
+      if (e.code === 'Space' && state.isRecording) {
+        e.preventDefault();
+        stopRecording();
+      }
+    });
+
+    // Initialize
+    initSpeechRecognition();
+    loadSavedGithub();
+    loadSavedApiKeys();
+  </script>
+</body>
+</html>

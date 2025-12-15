@@ -1,0 +1,123 @@
+<!--
+  Card Component Story
+  A versatile card component for displaying content
+-->
+
+<script>
+const title = 'Card'
+const variants = [
+  { id: 'default', title: 'Default', state: { cardTitle: 'Card Title', content: 'This is a card with some content.' } },
+  { id: 'with-image', title: 'With Image', state: { cardTitle: 'Featured', content: 'Card with an image header.', image: 'https://picsum.photos/400/200' } },
+  { id: 'clickable', title: 'Clickable', state: { cardTitle: 'Click Me', content: 'This card is clickable.', clickable: true } },
+  { id: 'elevated', title: 'Elevated', state: { cardTitle: 'Elevated Card', content: 'A card with more shadow.', elevated: true } },
+]
+
+// Props
+const cardTitle = 'Card Title'
+const content = 'This is the card content. You can put any text here.'
+const image = ''
+const clickable = false
+const elevated = false
+const footer = ''
+</script>
+
+<style>
+  .card {
+    background: white;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    max-width: 320px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  .card--elevated {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border: none;
+  }
+
+  .card--clickable {
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .card--clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+
+  .card__image {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+  }
+
+  .card__body {
+    padding: 1rem;
+  }
+
+  .card__title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .card__content {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #6b7280;
+    line-height: 1.5;
+  }
+
+  .card__footer {
+    padding: 0.75rem 1rem;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  /* Dark mode */
+  .dark .card {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .dark .card__title {
+    color: #f9fafb;
+  }
+
+  .dark .card__content {
+    color: #9ca3af;
+  }
+
+  .dark .card__footer {
+    background: #111827;
+    border-color: #374151;
+  }
+
+  /* Demo */
+  .demo-container {
+    padding: 2rem;
+    background: #f3f4f6;
+    min-height: 300px;
+  }
+</style>
+
+<div class="demo-container">
+  <div class="card @if(elevated) card--elevated @endif @if(clickable) card--clickable @endif">
+    @if(image)
+      <img src="{{ image }}" alt="{{ cardTitle }}" class="card__image">
+    @endif
+
+    <div class="card__body">
+      <h3 class="card__title">{{ cardTitle }}</h3>
+      <p class="card__content">{{ content }}</p>
+    </div>
+
+    @if(footer)
+      <div class="card__footer">
+        {{ footer }}
+      </div>
+    @endif
+  </div>
+</div>

@@ -1,0 +1,223 @@
+<div class="voice-control">
+  <button class="mic-button" id="micButton" title="Hold to record (or press Space)">
+    <span class="mic-icon" id="micIcon">🎤</span>
+  </button>
+
+  <div class="voice-status">
+    <div class="status-text" id="statusText">Click microphone or type below</div>
+    <div class="status-hint" id="statusHint">Hold to record, release to send</div>
+    <div class="transcript-preview" id="transcriptPreview">
+      Your voice command will appear here...
+    </div>
+    <div class="text-input-container">
+      <input
+        type="text"
+        class="text-input"
+        id="textInput"
+        placeholder="Or type your command here..."
+      />
+      <button class="btn btn-primary" id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-commit" id="commitBtn" disabled>
+      Commit Changes
+    </button>
+    <button class="btn" id="pushBtn" disabled>
+      Push
+    </button>
+  </div>
+</div>
+
+<style>
+.voice-control {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.mic-button {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
+  border: 3px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.mic-button:hover {
+  border-color: var(--accent-primary);
+  transform: scale(1.05);
+}
+
+.mic-button.recording {
+  border-color: var(--accent-primary);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.4); }
+  50% { box-shadow: 0 0 0 20px rgba(233, 69, 96, 0); }
+}
+
+.mic-icon {
+  font-size: 32px;
+}
+
+.voice-status {
+  flex: 1;
+}
+
+.status-text {
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.status-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.transcript-preview {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  min-height: 40px;
+}
+
+.transcript-preview.active {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.text-input-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.text-input {
+  flex: 1;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.text-input::placeholder {
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  background: var(--accent-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 16px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.btn-commit {
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--bg-primary);
+}
+
+.btn-commit:hover:not(:disabled) {
+  background: #22c55e;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .voice-control {
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 15px;
+  }
+  .mic-button {
+    width: 70px;
+    height: 70px;
+  }
+  .voice-status {
+    width: 100%;
+    text-align: center;
+  }
+  .actions {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .mic-button {
+    width: 60px;
+    height: 60px;
+  }
+  .mic-icon {
+    font-size: 24px;
+  }
+  .btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  .text-input-container {
+    flex-direction: column;
+  }
+  .text-input {
+    width: 100%;
+  }
+}
+
+/* Better touch targets for mobile */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .mic-button {
+    min-width: 60px;
+    min-height: 60px;
+  }
+}
+</style>

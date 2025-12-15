@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Craft Components Demo</title>
+
+  <!-- Craft Native Bridge -->
+  <script>
+  (function() {
+    'use strict';
+    if (window.__craftBridgeInitialized) return;
+    window.__craftBridgeInitialized = true;
+
+    let messageId = 0;
+    const generateId = () => 'msg_' + Date.now() + '_' + (++messageId);
+    const pending = new Map();
+
+    function send(message) {
+      if (window.webkit?.messageHandlers?.craft) {
+        window.webkit.messageHandlers.craft.postMessage(message);
+        return true;
+      }
+      if (window.CraftBridge) {
+        window.CraftBridge.postMessage(JSON.stringify(message));
+        return true;
+      }
+      return false;
+    }
+
+    function request(method, params) {
+      return new Promise((resolve) => {
+        const id = generateId();
+        const timeout = setTimeout(() => { pending.delete(id); resolve(undefined); }, 30000);
+        pending.set(id, { resolve, timeout });
+        if (!send({ id, type: 'request', method, params })) {
+          clearTimeout(timeout);
+          pending.delete(id);
+          resolve(undefined);
+        }
+      });
+    }
+
+    window.addEventListener('message', (event) => {
+      let data;
+      try { data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch { return; }
+      if (data?.type === 'response' && pending.has(data.id)) {
+        const req = pending.get(data.id);
+        clearTimeout(req.timeout);
+        pending.delete(data.id);
+        req.resolve(data.result);
+      }
+    });
+
+    window.craft = {
+      isCraft: () => !!(window.webkit?.messageHandlers?.craft || window.CraftBridge),
+      window: {
+        setTitle: (title) => request('window.setTitle', { title }),
+        minimize: () => request('window.minimize'),
+        maximize: () => request('window.maximize'),
+        close: () => request('window.close'),
+      },
+      app: {
+        notify: (options) => request('app.notify', options),
+        isDarkMode: () => request('app.isDarkMode'),
+      },
+      dialog: {
+        openFile: (options) => request('dialog.openFile', options),
+        showAlert: (options) => request('dialog.showAlert', options),
+      },
+      clipboard: {
+        writeText: (text) => request('clipboard.writeText', { text }),
+        readText: () => request('clipboard.readText'),
+      },
+    };
+
+    window.dispatchEvent(new CustomEvent('craft:ready'));
+  })();
+  </script>
+
+  <style>
+    :root {
+      --craft-primary: #3b82f6;
+      --craft-secondary: #6b7280;
+      --craft-bg: #ffffff;
+      --craft-bg-secondary: #f9fafb;
+      --craft-text: #1f2937;
+      --craft-border: #e5e7eb;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --craft-bg: #1f2937;
+        --craft-bg-secondary: #374151;
+        --craft-text: #f3f4f6;
+        --craft-border: #4b5563;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--craft-bg);
+      color: var(--craft-text);
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    h2 { font-size: 18px; margin: 24px 0 12px; color: var(--craft-secondary); }
+    p { color: var(--craft-secondary); margin-bottom: 24px; }
+
+    .demo-section {
+      background: var(--craft-bg-secondary);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .demo-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .demo-row:last-child { margin-bottom: 0; }
+
+    .label { font-size: 14px; min-width: 100px; color: var(--craft-secondary); }
+
+    /* Additional custom styles */
+    .craft-button-danger { background: #ef4444; }
+    .craft-button-success { background: #22c55e; }
+  </style>
+</head>
+<body>
+  <h1>🎨 Craft Components Demo</h1>
+  <p>Native components with HTML fallbacks for web browsers</p>
+
+  <!-- Button Components -->
+  <div class="demo-section">
+    <h2>Buttons</h2>
+    <div class="demo-row">
+      <@craft-button variant="primary" onclick="handleClick('Primary')">Primary</@craft-button>
+      <@craft-button class="craft-button-secondary" onclick="handleClick('Secondary')">Secondary</@craft-button>
+      <@craft-button class="craft-button-outline" onclick="handleClick('Outline')">Outline</@craft-button>
+      <@craft-button class="craft-button-danger" onclick="handleClick('Danger')">Danger</@craft-button>
+      <@craft-button class="craft-button-success" onclick="handleClick('Success')">Success</@craft-button>
+      <@craft-button disabled>Disabled</@craft-button>
+    </div>
+  </div>
+
+  <!-- Input Components -->
+  <div class="demo-section">
+    <h2>Inputs</h2>
+    <div class="demo-row">
+      <span class="label">Text Input:</span>
+      <@craft-text-input placeholder="Enter your name" id="nameInput" />
+    </div>
+    <div class="demo-row">
+      <span class="label">Textarea:</span>
+      <@craft-textarea placeholder="Enter description" rows="3" style="width: 300px;"></@craft-textarea>
+    </div>
+    <div class="demo-row">
+      <span class="label">Checkbox:</span>
+      <@craft-checkbox label="Accept terms" />
+      <@craft-checkbox label="Subscribe" checked />
+    </div>
+    <div class="demo-row">
+      <span class="label">Slider:</span>
+      <@craft-slider min="0" max="100" value="50" style="width: 200px;" />
+    </div>
+    <div class="demo-row">
+      <span class="label">Color:</span>
+      <@craft-color-picker value="#3b82f6" />
+    </div>
+    <div class="demo-row">
+      <span class="label">Date:</span>
+      <@craft-date-picker />
+    </div>
+    <div class="demo-row">
+      <span class="label">Time:</span>
+      <@craft-time-picker />
+    </div>
+  </div>
+
+  <!-- Display Components -->
+  <div class="demo-section">
+    <h2>Display</h2>
+    <div class="demo-row">
+      <span class="label">Badges:</span>
+      <@craft-badge>Default</@craft-badge>
+      <@craft-badge style="background: #22c55e;">Success</@craft-badge>
+      <@craft-badge style="background: #ef4444;">Error</@craft-badge>
+      <@craft-badge style="background: #f59e0b;">Warning</@craft-badge>
+    </div>
+    <div class="demo-row">
+      <span class="label">Avatars:</span>
+      <@craft-avatar alt="John Doe" size="40" />
+      <@craft-avatar src="https://i.pravatar.cc/80" alt="Jane" size="40" />
+      <@craft-avatar alt="Bob Smith" size="32" />
+    </div>
+    <div class="demo-row">
+      <span class="label">Progress:</span>
+      <div style="width: 200px;">
+        <@craft-progress value="75" max="100" />
+      </div>
+    </div>
+    <div class="demo-row">
+      <span class="label">Spinner:</span>
+      <@craft-spinner size="24" />
+      <@craft-spinner size="32" />
+    </div>
+  </div>
+
+  <!-- Feedback Components -->
+  <div class="demo-section">
+    <h2>Feedback</h2>
+    <@craft-alert variant="info" title="Information">
+      This is an informational message.
+    </@craft-alert>
+    <br>
+    <@craft-alert variant="success" title="Success">
+      Operation completed successfully!
+    </@craft-alert>
+    <br>
+    <@craft-alert variant="warning" title="Warning">
+      Please review before continuing.
+    </@craft-alert>
+    <br>
+    <@craft-alert variant="error" title="Error">
+      Something went wrong. Please try again.
+    </@craft-alert>
+  </div>
+
+  <!-- Layout Components -->
+  <div class="demo-section">
+    <h2>Layout</h2>
+    <div class="demo-row">
+      <span class="label">Card:</span>
+      <@craft-card style="width: 300px;">
+        <h3 style="margin-bottom: 8px;">Card Title</h3>
+        <p style="color: var(--craft-secondary); font-size: 14px;">This is a card component with some content inside.</p>
+      </@craft-card>
+    </div>
+    <div class="demo-row">
+      <span class="label">Accordion:</span>
+      <div style="width: 300px;">
+        <@craft-accordion title="Click to expand" open>
+          This content is revealed when the accordion is expanded.
+        </@craft-accordion>
+      </div>
+    </div>
+    <div class="demo-row">
+      <span class="label">Tooltip:</span>
+      <@craft-tooltip content="This is a helpful tooltip!">Hover over me</@craft-tooltip>
+    </div>
+  </div>
+
+  <!-- Modal Demo -->
+  <div class="demo-section">
+    <h2>Modal</h2>
+    <@craft-button onclick="document.getElementById('demoModal').showModal()">Open Modal</@craft-button>
+    <@craft-modal title="Example Modal" id="demoModal">
+      <p>This is modal content. You can put any elements here.</p>
+      <br>
+      <@craft-button onclick="document.getElementById('demoModal').close()">Close</@craft-button>
+    </@craft-modal>
+  </div>
+
+  <!-- Native Features (Craft only) -->
+  <div class="demo-section">
+    <h2>Native Features (Craft only)</h2>
+    <p style="font-size: 14px; margin-bottom: 16px;">These features only work when running as a native app via Craft.</p>
+    <div class="demo-row">
+      <@craft-button onclick="sendNotification()">Send Notification</@craft-button>
+      <@craft-button onclick="openFileDialog()">Open File</@craft-button>
+      <@craft-button onclick="copyToClipboard()">Copy to Clipboard</@craft-button>
+      <@craft-button onclick="checkDarkMode()">Check Dark Mode</@craft-button>
+    </div>
+  </div>
+
+  <script>
+    function handleClick(type) {
+      console.log(`${type} button clicked`);
+      // Show in UI
+      const msg = `${type} button clicked!`;
+      if (window.craft?.isCraft()) {
+        window.craft.app.notify({ title: 'Button Click', body: msg });
+      } else {
+        alert(msg);
+      }
+    }
+
+    async function sendNotification() {
+      if (window.craft?.isCraft()) {
+        await window.craft.app.notify({
+          title: 'Hello from Craft!',
+          body: 'This is a native notification.'
+        });
+      } else {
+        alert('Native notifications only work in Craft app');
+      }
+    }
+
+    async function openFileDialog() {
+      if (window.craft?.isCraft()) {
+        const result = await window.craft.dialog.openFile({
+          title: 'Select a file',
+          filters: [{ name: 'All Files', extensions: ['*'] }]
+        });
+        console.log('Selected:', result);
+      } else {
+        alert('File dialogs only work in Craft app');
+      }
+    }
+
+    async function copyToClipboard() {
+      const text = document.getElementById('nameInput')?.value || 'Hello from Craft!';
+      if (window.craft?.isCraft()) {
+        await window.craft.clipboard.writeText(text);
+        await window.craft.app.notify({ title: 'Copied!', body: text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        alert(`Copied: ${text}`);
+      }
+    }
+
+    async function checkDarkMode() {
+      if (window.craft?.isCraft()) {
+        const isDark = await window.craft.app.isDarkMode();
+        await window.craft.app.notify({
+          title: 'Dark Mode',
+          body: isDark ? 'Dark mode is enabled' : 'Light mode is enabled'
+        });
+      } else {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        alert(isDark ? 'Dark mode detected' : 'Light mode detected');
+      }
+    }
+
+    // Log when Craft is ready
+    window.addEventListener('craft:ready', () => {
+      console.log('Craft bridge ready, isCraft:', window.craft?.isCraft());
+      if (window.craft?.isCraft()) {
+        window.craft.window.setTitle('Craft Components Demo');
+      }
+    });
+  </script>
+</body>
+</html>

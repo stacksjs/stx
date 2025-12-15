@@ -1,0 +1,165 @@
+<!--
+  Input Component Story
+  Text input with label, validation, and helper text
+-->
+
+<script>
+const title = 'Input'
+const variants = [
+  { id: 'default', title: 'Default', state: { label: 'Email', placeholder: 'you@example.com' } },
+  { id: 'with-helper', title: 'With Helper', state: { label: 'Password', type: 'password', helperText: 'Must be at least 8 characters' } },
+  { id: 'error', title: 'Error State', state: { label: 'Username', value: 'ab', error: 'Username must be at least 3 characters' } },
+  { id: 'disabled', title: 'Disabled', state: { label: 'Disabled Input', value: 'Cannot edit', disabled: true } },
+  { id: 'with-icon', title: 'With Icon', state: { label: 'Search', placeholder: 'Search...', icon: 'search' } },
+]
+
+// Props
+const label = 'Label'
+const placeholder = 'Enter value...'
+const value = ''
+const type = 'text'
+const helperText = ''
+const error = ''
+const disabled = false
+const required = false
+const icon = ''
+</script>
+
+<style>
+  .input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    max-width: 320px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  .input-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .input-label--required::after {
+    content: ' *';
+    color: #ef4444;
+  }
+
+  .input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-field {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    background: white;
+    color: #111827;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .input-field:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .input-field:disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  .input-field--error {
+    border-color: #ef4444;
+  }
+
+  .input-field--error:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  }
+
+  .input-field--with-icon {
+    padding-left: 2.5rem;
+  }
+
+  .input-icon {
+    position: absolute;
+    left: 0.75rem;
+    color: #9ca3af;
+    pointer-events: none;
+  }
+
+  .input-helper {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+
+  .input-error {
+    font-size: 0.75rem;
+    color: #ef4444;
+  }
+
+  /* Dark mode */
+  .dark .input-label {
+    color: #e5e7eb;
+  }
+
+  .dark .input-field {
+    background: #1f2937;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+
+  .dark .input-field:disabled {
+    background: #374151;
+    color: #6b7280;
+  }
+
+  /* Demo */
+  .demo-container {
+    padding: 2rem;
+  }
+</style>
+
+<div class="demo-container">
+  <div class="input-wrapper">
+    @if(label)
+      <label class="input-label @if(required) input-label--required @endif">
+        {{ label }}
+      </label>
+    @endif
+
+    <div class="input-container">
+      @if(icon)
+        <span class="input-icon">
+          @if(icon === 'search')
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+          @endif
+        </span>
+      @endif
+
+      <input
+        type="{{ type }}"
+        class="input-field @if(error) input-field--error @endif @if(icon) input-field--with-icon @endif"
+        placeholder="{{ placeholder }}"
+        value="{{ value }}"
+        @if(disabled) disabled @endif
+        @if(required) required @endif
+      >
+    </div>
+
+    @if(error)
+      <span class="input-error">{{ error }}</span>
+    @elseif(helperText)
+      <span class="input-helper">{{ helperText }}</span>
+    @endif
+  </div>
+</div>

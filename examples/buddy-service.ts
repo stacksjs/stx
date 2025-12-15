@@ -62,6 +62,13 @@ const CONFIG = {
   ollamaModel: process.env.OLLAMA_MODEL || 'llama3.2',
 }
 
+// API Keys state (can be set at runtime via /api/settings)
+const apiKeys: { anthropic?: string, openai?: string, claudeCliHost?: string } = {
+  anthropic: process.env.ANTHROPIC_API_KEY,
+  openai: process.env.OPENAI_API_KEY,
+  claudeCliHost: process.env.BUDDY_EC2_HOST,
+}
+
 // State
 const state: BuddyState = {
   repo: null,
@@ -77,12 +84,86 @@ if (!existsSync(CONFIG.workDir)) {
 
 // AI Drivers
 const drivers: Record<string, AIDriver> = {
+  // Claude CLI driver - executes the `claude` command line tool
+  'claude-cli': {
+    name: 'Claude CLI',
+    async process(command: string, context: string, _history: AIMessage[]): Promise<string> {
+      // Check if claude CLI is available
+      const whichResult = await $`which claude`.quiet().nothrow()
+      if (whichResult.exitCode !== 0) {
+        throw new Error('Claude CLI not found. Install it with: npm install -g @anthropic-ai/claude-code')
+      }
+
+      // Build the prompt with context
+      const fullPrompt = state.repo
+        ? `Working in repository: ${state.repo.path}\n\nContext:\n${context}\n\nUser request: ${command}`
+        : command
+
+      // Execute claude CLI with the prompt
+      // Using --print to get just the response without interactive mode
+      // The CLI respects ANTHROPIC_API_KEY from environment
+      const cwd = state.repo?.path || process.cwd()
+
+      try {
+        // Use --dangerously-skip-permissions to allow file operations without interactive prompts
+        // Use --print to get just the response
+        const result = await $`cd ${cwd} && claude --print --dangerously-skip-permissions ${fullPrompt}`.quiet()
+        return result.text().trim()
+      }
+      catch (error) {
+        // Try with allowedTools flag as alternative
+        try {
+          const result = await $`cd ${cwd} && claude --print --allowedTools "Write,Edit,Bash" ${fullPrompt}`.quiet()
+          return result.text().trim()
+        }
+        catch (innerError) {
+          throw new Error(`Claude CLI error: ${(innerError as Error).message}`)
+        }
+      }
+    },
+  },
+
+  // Claude CLI with SSH to remote EC2 instance
+  'claude-cli-ec2': {
+    name: 'Claude CLI (EC2)',
+    async process(command: string, context: string, _history: AIMessage[]): Promise<string> {
+      const ec2Host = process.env.BUDDY_EC2_HOST
+      const ec2User = process.env.BUDDY_EC2_USER || 'ubuntu'
+      const ec2Key = process.env.BUDDY_EC2_KEY
+
+      if (!ec2Host) {
+        throw new Error('BUDDY_EC2_HOST environment variable not set. Set it to your EC2 instance IP/hostname.')
+      }
+
+      // Build the prompt
+      const fullPrompt = state.repo
+        ? `Working in repository: ${state.repo.name}\n\nContext:\n${context}\n\nUser request: ${command}`
+        : command
+
+      // Escape the prompt for SSH
+      const escapedPrompt = fullPrompt.replace(/'/g, `'\\''`)
+
+      // Build SSH command
+      const sshArgs = ec2Key ? `-i ${ec2Key}` : ''
+      const sshTarget = `${ec2User}@${ec2Host}`
+
+      try {
+        // Execute claude CLI on remote EC2 via SSH
+        const result = await $`ssh ${sshArgs} ${sshTarget} "claude --print '${escapedPrompt}'"`.quiet()
+        return result.text().trim()
+      }
+      catch (error) {
+        throw new Error(`EC2 Claude CLI error: ${(error as Error).message}. Make sure SSH is configured and claude CLI is installed on EC2.`)
+      }
+    },
+  },
+
   claude: {
     name: 'Claude',
     async process(command: string, context: string, history: AIMessage[]): Promise<string> {
-      const apiKey = process.env.ANTHROPIC_API_KEY
+      const apiKey = apiKeys.anthropic
       if (!apiKey) {
-        throw new Error('ANTHROPIC_API_KEY environment variable not set')
+        throw new Error('Anthropic API key not set. Click the settings button (gear icon) to enter your API key.')
       }
 
       const systemPrompt = buildSystemPrompt(context)
@@ -115,9 +196,9 @@ const drivers: Record<string, AIDriver> = {
   openai: {
     name: 'OpenAI',
     async process(command: string, context: string, history: AIMessage[]): Promise<string> {
-      const apiKey = process.env.OPENAI_API_KEY
+      const apiKey = apiKeys.openai
       if (!apiKey) {
-        throw new Error('OPENAI_API_KEY environment variable not set')
+        throw new Error('OpenAI API key not set. Click the settings button (gear icon) to enter your API key.')
       }
 
       const systemPrompt = buildSystemPrompt(context)
@@ -577,6 +658,49 @@ const server = Bun.serve({
       return Response.json({ success: true })
     }
 
+    // API: Update settings (API keys)
+    if (url.pathname === '/api/settings' && req.method === 'POST') {
+      try {
+        const { apiKeys: newKeys } = (await req.json()) as { apiKeys: { anthropic?: string, openai?: string, claudeCliHost?: string } }
+
+        if (newKeys.anthropic !== undefined) {
+          apiKeys.anthropic = newKeys.anthropic || undefined
+          console.log(`Anthropic API key ${newKeys.anthropic ? 'set' : 'cleared'}`)
+        }
+        if (newKeys.openai !== undefined) {
+          apiKeys.openai = newKeys.openai || undefined
+          console.log(`OpenAI API key ${newKeys.openai ? 'set' : 'cleared'}`)
+        }
+        if (newKeys.claudeCliHost !== undefined) {
+          apiKeys.claudeCliHost = newKeys.claudeCliHost || undefined
+          console.log(`Claude CLI Host ${newKeys.claudeCliHost ? 'set to ' + newKeys.claudeCliHost : 'cleared'}`)
+        }
+
+        return Response.json({
+          success: true,
+          configured: {
+            anthropic: !!apiKeys.anthropic,
+            openai: !!apiKeys.openai,
+            claudeCliHost: !!apiKeys.claudeCliHost,
+          },
+        })
+      }
+      catch (error) {
+        return Response.json({ success: false, error: (error as Error).message }, { status: 400 })
+      }
+    }
+
+    // API: Get settings status
+    if (url.pathname === '/api/settings' && req.method === 'GET') {
+      return Response.json({
+        configured: {
+          anthropic: !!apiKeys.anthropic,
+          openai: !!apiKeys.openai,
+          claudeCliHost: !!apiKeys.claudeCliHost,
+        },
+      })
+    }
+
     return new Response('Not Found', { status: 404 })
   },
 })
@@ -589,7 +713,9 @@ console.log(`
 ║   Running at: http://localhost:${server.port}                      ║
 ║                                                            ║
 ║   AI Drivers:                                              ║
-║   • Claude (ANTHROPIC_API_KEY)                             ║
+║   • Claude API (ANTHROPIC_API_KEY)                         ║
+║   • Claude CLI (local claude command)                      ║
+║   • Claude CLI EC2 (BUDDY_EC2_HOST)                        ║
 ║   • OpenAI (OPENAI_API_KEY)                                ║
 ║   • Ollama (local, no key needed)                          ║
 ║   • Mock (demo mode)                                       ║
