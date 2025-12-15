@@ -158,10 +158,38 @@ export {
   createSystemTray,
   getActiveTrayInstances,
   getSimulatedTrayHTML,
+  getTrayBridgeScript,
   getTrayInstance,
   TRAY_MENU_STYLES,
   triggerTrayAction,
 } from './system-tray'
+
+// =============================================================================
+// Native Dialogs
+// =============================================================================
+export {
+  getDialogBridgeScript,
+  showAlertDialog,
+  showColorPicker,
+  showConfirmDialog,
+  showErrorDialog,
+  showMessageBox,
+  showOpenDialog,
+  showSaveDialog,
+  showWarningDialog,
+} from './dialogs'
+
+export type {
+  ColorPickerOptions,
+  ColorPickerResult,
+  FileFilter,
+  MessageBoxOptions,
+  MessageBoxResult,
+  OpenDialogOptions,
+  OpenDialogResult,
+  SaveDialogOptions,
+  SaveDialogResult,
+} from './dialogs'
 
 // =============================================================================
 // Core Types
@@ -184,9 +212,13 @@ export type {
 // Window Management
 // =============================================================================
 export {
+  closeAllWindows,
   createWindow,
   createWindowWithHTML,
+  getActiveWindowIds,
   getDesktopConfig,
+  getWindow,
+  getWindowBridgeScript,
   isWebviewAvailable,
   openDevWindow,
   resetDesktopConfig,
