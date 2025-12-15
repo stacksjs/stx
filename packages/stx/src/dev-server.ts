@@ -60,10 +60,6 @@ const colors = {
 // Headwind CSS Generation
 // =============================================================================
 
-// Static import for bundling in compiled binaries
-// This import will be bundled by bun build --compile
-import * as HeadwindPkg from '@stacksjs/headwind'
-
 // Headwind lazy loading cache
 let headwindModule: { CSSGenerator: any, config: any } | null = null
 let headwindLoadAttempted = false
@@ -75,7 +71,8 @@ async function loadHeadwind(): Promise<{ CSSGenerator: any, config: any } | null
   headwindLoadAttempted = true
 
   try {
-    // Use the statically imported module
+    // Dynamic import to make headwind optional
+    const HeadwindPkg = await import('@stacksjs/headwind')
     if (HeadwindPkg && HeadwindPkg.CSSGenerator) {
       headwindModule = {
         CSSGenerator: HeadwindPkg.CSSGenerator,
@@ -88,7 +85,7 @@ async function loadHeadwind(): Promise<{ CSSGenerator: any, config: any } | null
   }
   catch {
     console.warn(`${colors.yellow}[Headwind] CSS engine not available, Tailwind styles will not be generated${colors.reset}`)
-    console.warn(`${colors.yellow}Run 'bun link @stacksjs/headwind' to enable CSS generation${colors.reset}`)
+    console.warn(`${colors.yellow}Run 'bun add @stacksjs/headwind' to enable CSS generation${colors.reset}`)
     return null
   }
 }

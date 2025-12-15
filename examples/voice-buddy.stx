@@ -1165,8 +1165,12 @@ Example commands:
     const config = {
       title: 'Buddy',
       version: '1.0.0',
+      // Stacks API base URL - the backend for agentic functionality
+      apiBaseUrl: 'http://localhost:3008/buddy',
       drivers: {
         claude: { name: 'Claude', requiresKey: 'ANTHROPIC_API_KEY' },
+        'claude-cli': { name: 'Claude CLI', requiresKey: null },
+        'claude-cli-ec2': { name: 'Claude CLI (EC2)', requiresKey: 'BUDDY_EC2_HOST' },
         openai: { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
         ollama: { name: 'Ollama', requiresKey: null },
         mock: { name: 'Mock', requiresKey: null }
@@ -1486,10 +1490,10 @@ Example commands:
       return div.innerHTML;
     }
 
-    // Check if backend API is available
+    // Check if Stacks backend API is available
     async function checkBackendAPI() {
       try {
-        const response = await fetch('/api/state');
+        const response = await fetch(`${config.apiBaseUrl}/state`);
         return response.ok;
       } catch {
         return false;
@@ -1519,11 +1523,9 @@ Example commands:
         // Try to use real backend API first
         const hasBackend = await checkBackendAPI();
 
-        if (state.currentDriver === 'claude' && state.apiKeys.anthropic) {
-          // Use direct Claude API call
-          response = await callClaudeAPI(command);
-        } else if (hasBackend) {
-          const apiResponse = await fetch('/api/process', {
+        if (hasBackend) {
+          // Use Stacks API for agentic processing
+          const apiResponse = await fetch(`${config.apiBaseUrl}/process`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ command, driver: state.currentDriver })
@@ -1536,12 +1538,15 @@ Example commands:
           }
 
           response = responseData;
-        } else if (state.currentDriver === 'claude' && !state.apiKeys.anthropic) {
-          // Prompt user to add API key
-          throw new Error('Anthropic API key not configured. Click the ⚙️ settings button to add your API key.');
-        } else {
+        } else if (state.currentDriver === 'claude' && state.apiKeys.anthropic) {
+          // Fall back to direct Claude API call if Stacks backend unavailable
+          response = await callClaudeAPI(command);
+        } else if (state.currentDriver === 'mock') {
           // Fall back to mock response
           response = await getMockResponse(command);
+        } else {
+          // Prompt user to start Stacks API or add API key
+          throw new Error('Stacks API not available. Start the Stacks server at localhost:3008 or configure an Anthropic API key in settings.');
         }
 
         removeLoadingMessage();
@@ -1707,7 +1712,8 @@ Would you like me to proceed with these changes?`;
       try {
         const hasBackend = await checkBackendAPI();
         if (hasBackend) {
-          const apiResponse = await fetch('/api/repo', {
+          // Use Stacks API for repo management
+          const apiResponse = await fetch(`${config.apiBaseUrl}/repo`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ input })
@@ -1727,20 +1733,20 @@ Branch: ${data.repo.branch}
 Last commit: ${data.repo.lastCommit || 'N/A'}
 Has changes: ${data.repo.hasChanges ? 'Yes' : 'No'}`);
         } else {
-          // Simulated repo opening
+          // Simulated repo opening when backend unavailable
           await new Promise(resolve => setTimeout(resolve, 800));
           state.repoPath = input;
 
           if (input.includes('github.com')) {
             const repoName = input.split('/').pop()?.replace('.git', '') || 'repository';
-            addMessage('system', `Repository "${repoName}" cloned successfully.
+            addMessage('system', `[Simulated] Repository "${repoName}" cloned.
+Note: Stacks API not available at ${config.apiBaseUrl}
 Working directory: ~/Code/${repoName}
-Branch: main
-Files: 47 | Commits: 234`);
+Branch: main`);
           } else {
-            addMessage('system', `Opened local repository at ${input}
-Branch: main
-Status: Clean working tree`);
+            addMessage('system', `[Simulated] Opened repository at ${input}
+Note: Stacks API not available at ${config.apiBaseUrl}
+Branch: main`);
           }
         }
 
@@ -1761,7 +1767,8 @@ Status: Clean working tree`);
         let commitHash;
         const hasBackend = await checkBackendAPI();
         if (hasBackend) {
-          const apiResponse = await fetch('/api/commit', {
+          // Use Stacks API for git commit
+          const apiResponse = await fetch(`${config.apiBaseUrl}/commit`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
           });
@@ -1778,13 +1785,12 @@ Message: ${data.message}
 
 Changes committed successfully.`);
         } else {
-          // Simulated commit
+          // Simulated commit when backend unavailable
           await new Promise(resolve => setTimeout(resolve, 500));
           commitHash = Math.random().toString(16).substr(2, 7);
-          addMessage('system', `Committed: ${commitHash}
+          addMessage('system', `[Simulated] Committed: ${commitHash}
 Message: chore: wip
-
-Changes committed successfully.`);
+Note: Stacks API not available - this is a simulated commit.`);
         }
 
         state.hasChanges = false;
@@ -1807,7 +1813,8 @@ Changes committed successfully.`);
       try {
         const hasBackend = await checkBackendAPI();
         if (hasBackend) {
-          const apiResponse = await fetch('/api/push', {
+          // Use Stacks API for git push
+          const apiResponse = await fetch(`${config.apiBaseUrl}/push`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
           });
@@ -1819,11 +1826,10 @@ Changes committed successfully.`);
 
           addMessage('system', `Pushed to remote successfully.`);
         } else {
-          // Simulated push
+          // Simulated push when backend unavailable
           await new Promise(resolve => setTimeout(resolve, 1000));
-          addMessage('system', `Pushed to origin/main
-Remote: https://github.com/...
-Objects: 3 | Bytes: 1.2 KB`);
+          addMessage('system', `[Simulated] Pushed to origin/main
+Note: Stacks API not available - this is a simulated push.`);
         }
 
         elements.pushBtn.disabled = true;
@@ -1975,10 +1981,10 @@ Objects: 3 | Bytes: 1.2 KB`);
           avatarUrl: userData.avatar_url
         }));
 
-        // Send to backend if available
+        // Send to Stacks backend if available
         const hasBackend = await checkBackendAPI();
         if (hasBackend) {
-          await fetch('/api/github/connect', {
+          await fetch(`${config.apiBaseUrl}/github/connect`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2019,10 +2025,10 @@ Commits will be authored by: ${state.github.name} <${state.github.email}>`);
 
       localStorage.removeItem('buddy_github');
 
-      // Notify backend
+      // Notify Stacks backend
       const hasBackend = await checkBackendAPI();
       if (hasBackend) {
-        await fetch('/api/github/disconnect', { method: 'POST' });
+        await fetch(`${config.apiBaseUrl}/github/disconnect`, { method: 'POST' });
       }
 
       updateGithubUI();
@@ -2051,10 +2057,10 @@ Commits will be authored by: ${state.github.name} <${state.github.email}>`);
           };
           updateGithubUI();
 
-          // Sync with backend
+          // Sync with Stacks backend
           checkBackendAPI().then(hasBackend => {
             if (hasBackend) {
-              fetch('/api/github/connect', {
+              fetch(`${config.apiBaseUrl}/github/connect`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2182,10 +2188,10 @@ Commits will be authored by: ${state.github.name} <${state.github.email}>`);
         // Save to localStorage
         localStorage.setItem('buddy_api_keys', JSON.stringify(state.apiKeys));
 
-        // Send to backend if available
+        // Send to Stacks backend if available
         const hasBackend = await checkBackendAPI();
         if (hasBackend) {
-          await fetch('/api/settings', {
+          await fetch(`${config.apiBaseUrl}/settings`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ apiKeys: state.apiKeys })

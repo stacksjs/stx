@@ -36,7 +36,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "stx": "workspace:*",
+    "@stacksjs/stx": "workspace:*",
     "ws": "^8.14.0"
   },
   "devDependencies": {
