@@ -4,16 +4,37 @@ import process from 'node:process'
 /**
  * System Tray / Menubar Implementation
  *
- * Provides cross-platform system tray functionality.
- * Uses platform-specific APIs when available, falls back to web-based simulation.
+ * Provides cross-platform system tray functionality using Craft's native APIs.
  *
- * Platform implementations:
- * - macOS: Uses NSStatusBar via native bindings (when available)
- * - Linux: Uses AppIndicator/libappindicator
- * - Windows: Uses Shell_NotifyIcon
+ * ## Architecture
  *
- * When native APIs are not available, provides a web-based simulation
- * that can be used for development and testing.
+ * When running inside a Craft native window, tray operations use the
+ * `window.craft.tray` bridge to communicate with the native process.
+ *
+ * When running outside Craft (e.g., in browser or Node.js), provides a
+ * web-based simulation for development and testing.
+ *
+ * ## Usage in Craft
+ *
+ * The tray is automatically enabled when you pass `systemTray: true` to
+ * the window options in Craft. This module provides additional TypeScript
+ * APIs for programmatic control.
+ *
+ * ```typescript
+ * // Create tray via @stacksjs/desktop
+ * const tray = await createSystemTray({
+ *   tooltip: 'My App',
+ *   menu: [
+ *     { label: 'Show Window', onClick: () => window.craft.window.show() },
+ *     { type: 'separator' },
+ *     { label: 'Quit', onClick: () => window.craft.app.quit() },
+ *   ],
+ * })
+ *
+ * // Or use Craft's bridge directly in your HTML/JS:
+ * window.craft.tray.setTitle('My App')
+ * window.craft.tray.setMenu([...])
+ * ```
  */
 
 // =============================================================================
@@ -25,6 +46,20 @@ interface TrayState {
   tooltip: string
   menu: SystemTrayMenuItem[]
   visible: boolean
+}
+
+/**
+ * Menu item format expected by Craft's tray bridge
+ */
+interface CraftMenuItemDefinition {
+  id: string
+  label: string
+  type?: 'normal' | 'separator' | 'checkbox' | 'radio'
+  checked?: boolean
+  enabled?: boolean
+  action?: string
+  shortcut?: string
+  submenu?: CraftMenuItemDefinition[]
 }
 
 // =============================================================================
@@ -42,21 +77,64 @@ function getPlatform(): 'darwin' | 'linux' | 'win32' | 'unknown' {
 }
 
 /**
- * Check if native tray APIs are available
+ * Check if running inside a Craft native window
  */
-function hasNativeTraySupport(): boolean {
-  // Check for ts-zyte or other native bindings
-  try {
-    // Future: Check for @stacksjs/zyte bindings
-    return false
+function isInCraftWindow(): boolean {
+  if (typeof window !== 'undefined' && (window as any).craft?.tray) {
+    return true
   }
-  catch {
-    return false
-  }
+  return false
 }
 
 // =============================================================================
-// Menu Rendering
+// Menu Conversion
+// =============================================================================
+
+/**
+ * Convert SystemTrayMenuItem to Craft's menu format
+ */
+function convertMenuItem(item: SystemTrayMenuItem, index: number): CraftMenuItemDefinition {
+  if (item.type === 'separator') {
+    return {
+      id: `sep-${index}`,
+      label: '',
+      type: 'separator',
+    }
+  }
+
+  const menuItem: CraftMenuItemDefinition = {
+    id: `item-${index}-${item.label.replace(/\s+/g, '-').toLowerCase()}`,
+    label: item.label,
+    type: item.type || 'normal',
+    enabled: item.enabled !== false,
+  }
+
+  if (item.accelerator) {
+    menuItem.shortcut = item.accelerator
+  }
+
+  if (item.type === 'checkbox') {
+    menuItem.checked = item.checked || false
+  }
+
+  if (item.type === 'submenu' && item.submenu) {
+    menuItem.submenu = item.submenu.map((subItem, subIndex) =>
+      convertMenuItem(subItem, subIndex),
+    )
+  }
+
+  return menuItem
+}
+
+/**
+ * Convert array of SystemTrayMenuItems to Craft format
+ */
+function convertMenuItems(items: SystemTrayMenuItem[]): CraftMenuItemDefinition[] {
+  return items.map((item, index) => convertMenuItem(item, index))
+}
+
+// =============================================================================
+// Menu Rendering (Web Simulation)
 // =============================================================================
 
 /**
@@ -115,7 +193,33 @@ function generateTrayId(): string {
 }
 
 /**
+ * Set up event listener for tray menu actions (Craft bridge)
+ */
+let craftTrayListenerSetup = false
+
+function setupCraftTrayListener(): void {
+  if (craftTrayListenerSetup || typeof window === 'undefined') return
+
+  window.addEventListener('craft:tray:menu', ((event: CustomEvent) => {
+    const { action } = event.detail
+    // Find the handler for this action
+    for (const instance of activeTrayInstances.values()) {
+      const handler = instance.handlers.get(action)
+      if (handler) {
+        handler()
+        break
+      }
+    }
+  }) as EventListener)
+
+  craftTrayListenerSetup = true
+}
+
+/**
  * Create a system tray/menubar application
+ *
+ * When running inside a Craft native window, this creates a real native tray.
+ * Otherwise, it creates a simulated tray for development purposes.
  *
  * @param options - Tray configuration options
  * @returns System tray instance
@@ -126,9 +230,9 @@ function generateTrayId(): string {
  *   icon: './icon.png',
  *   tooltip: 'My App',
  *   menu: [
- *     { label: 'Show Window', onClick: () => window.show() },
+ *     { label: 'Show Window', onClick: () => stxWindow.show() },
  *     { type: 'separator' },
- *     { label: 'Quit', onClick: () => process.exit(0) },
+ *     { label: 'Quit', onClick: () => stxWindow.quit() },
  *   ],
  * })
  * ```
@@ -136,7 +240,7 @@ function generateTrayId(): string {
 export async function createSystemTray(options: SystemTrayOptions = {}): Promise<SystemTrayInstance> {
   const id = generateTrayId()
   const platform = getPlatform()
-  const hasNative = hasNativeTraySupport()
+  const inCraft = isInCraftWindow()
 
   // Initialize state
   const state: TrayState = {
@@ -166,13 +270,36 @@ export async function createSystemTray(options: SystemTrayOptions = {}): Promise
   activeTrayInstances.set(id, { state, handlers })
 
   // Platform-specific implementation
-  if (hasNative) {
-    // Future: Use native bindings
-    console.log(`[stx-tray] Creating native tray for ${platform}`)
+  if (inCraft) {
+    setupCraftTrayListener()
+
+    // Use Craft's native tray APIs
+    const craftWindow = window as any
+    try {
+      // Set the tray title/tooltip
+      if (state.tooltip) {
+        await craftWindow.craft.tray.setTitle({ title: state.tooltip })
+        await craftWindow.craft.tray.setTooltip({ tooltip: state.tooltip })
+      }
+
+      // Set the icon if provided
+      if (state.icon) {
+        await craftWindow.craft.tray.setIcon({ icon: state.icon })
+      }
+
+      // Set the menu
+      const craftMenu = convertMenuItems(state.menu)
+      await craftWindow.craft.tray.setMenu({ items: craftMenu })
+
+      console.log(`[stx-tray] Native tray created for ${platform}`)
+    }
+    catch (error) {
+      console.warn('[stx-tray] Failed to create native tray:', error)
+    }
   }
   else {
     // Web-based simulation for development
-    console.log(`[stx-tray] Created simulated tray (native APIs not available)`)
+    console.log(`[stx-tray] Created simulated tray (not in Craft window)`)
     console.log(`[stx-tray] ID: ${id}`)
     console.log(`[stx-tray] Tooltip: ${state.tooltip}`)
     console.log(`[stx-tray] Menu items: ${state.menu.length}`)
@@ -184,16 +311,22 @@ export async function createSystemTray(options: SystemTrayOptions = {}): Promise
 
     setIcon: (icon: string) => {
       state.icon = icon
-      if (hasNative) {
-        // Future: Update native icon
+      if (inCraft) {
+        const craftWindow = window as any
+        craftWindow.craft.tray.setIcon({ icon }).catch((e: Error) => {
+          console.warn('[stx-tray] Failed to set icon:', e)
+        })
       }
       console.log(`[stx-tray:${id}] Icon updated`)
     },
 
     setTooltip: (tooltip: string) => {
       state.tooltip = tooltip
-      if (hasNative) {
-        // Future: Update native tooltip
+      if (inCraft) {
+        const craftWindow = window as any
+        craftWindow.craft.tray.setTooltip({ tooltip }).catch((e: Error) => {
+          console.warn('[stx-tray] Failed to set tooltip:', e)
+        })
       }
       console.log(`[stx-tray:${id}] Tooltip: ${tooltip}`)
     },
@@ -214,8 +347,13 @@ export async function createSystemTray(options: SystemTrayOptions = {}): Promise
           }
         }
       }
-      if (hasNative) {
-        // Future: Update native menu
+
+      if (inCraft) {
+        const craftWindow = window as any
+        const craftMenu = convertMenuItems(menu)
+        craftWindow.craft.tray.setMenu({ items: craftMenu }).catch((e: Error) => {
+          console.warn('[stx-tray] Failed to set menu:', e)
+        })
       }
       console.log(`[stx-tray:${id}] Menu updated (${menu.length} items)`)
     },
@@ -223,8 +361,11 @@ export async function createSystemTray(options: SystemTrayOptions = {}): Promise
     destroy: () => {
       state.visible = false
       activeTrayInstances.delete(id)
-      if (hasNative) {
-        // Future: Destroy native tray
+      if (inCraft) {
+        const craftWindow = window as any
+        craftWindow.craft.tray.destroy?.().catch((e: Error) => {
+          console.warn('[stx-tray] Failed to destroy tray:', e)
+        })
       }
       console.log(`[stx-tray:${id}] Destroyed`)
     },
@@ -253,19 +394,38 @@ export function getTrayInstance(id: string): SystemTrayInstance | null {
   if (!instance)
     return null
 
+  const inCraft = isInCraftWindow()
+
   return {
     id,
     setIcon: (icon: string) => {
       instance.state.icon = icon
+      if (inCraft) {
+        const craftWindow = window as any
+        craftWindow.craft.tray.setIcon({ icon }).catch(() => {})
+      }
     },
     setTooltip: (tooltip: string) => {
       instance.state.tooltip = tooltip
+      if (inCraft) {
+        const craftWindow = window as any
+        craftWindow.craft.tray.setTooltip({ tooltip }).catch(() => {})
+      }
     },
     setMenu: (menu: SystemTrayMenuItem[]) => {
       instance.state.menu = menu
+      if (inCraft) {
+        const craftWindow = window as any
+        const craftMenu = convertMenuItems(menu)
+        craftWindow.craft.tray.setMenu({ items: craftMenu }).catch(() => {})
+      }
     },
     destroy: () => {
       activeTrayInstances.delete(id)
+      if (inCraft) {
+        const craftWindow = window as any
+        craftWindow.craft.tray.destroy?.().catch(() => {})
+      }
     },
   }
 }
@@ -298,6 +458,35 @@ export function getSimulatedTrayHTML(trayId: string): string | null {
 
   return renderTrayMenu(instance.state.menu)
 }
+
+// =============================================================================
+// Bridge Script Generator
+// =============================================================================
+
+/**
+ * Generate a JavaScript snippet for tray control from inside a webview.
+ * This provides convenient wrappers around the Craft tray bridge.
+ */
+export function getTrayBridgeScript(): string {
+  return `
+// STX Desktop Tray Bridge
+// Provides convenient wrappers around window.craft.tray APIs
+window.stxTray = {
+  setTitle: (title) => window.craft?.tray?.setTitle({ title }),
+  setTooltip: (tooltip) => window.craft?.tray?.setTooltip({ tooltip }),
+  setIcon: (icon) => window.craft?.tray?.setIcon({ icon }),
+  setMenu: (items) => window.craft?.tray?.setMenu({ items }),
+  destroy: () => window.craft?.tray?.destroy(),
+
+  // Check if tray is available
+  isAvailable: () => typeof window.craft?.tray !== 'undefined',
+};
+`
+}
+
+// =============================================================================
+// CSS Styles
+// =============================================================================
 
 /**
  * CSS styles for the simulated tray menu

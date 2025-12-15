@@ -78,11 +78,15 @@ export function resetDesktopConfig(): void {
  * Used when CRAFT_BINARY_PATH is not set.
  */
 const DEFAULT_SEARCH_PATHS = [
+  // Global bun installation
+  join(process.env.HOME || '', '.bun/bin/craft'),
   // From linked ts-craft in monorepo
   join(process.cwd(), '../../craft/packages/zig/zig-out/bin/craft-minimal'),
   join(process.cwd(), '../../../craft/packages/zig/zig-out/bin/craft-minimal'),
   // If running from stx repo root
   join(process.cwd(), '../craft/packages/zig/zig-out/bin/craft-minimal'),
+  // Local craft installation
+  join(process.cwd(), 'node_modules/.bin/craft'),
 ]
 
 /**
@@ -127,6 +131,109 @@ function getCraftBinaryPath(): string | undefined {
 }
 
 // =============================================================================
+// Window Instance Management
+// =============================================================================
+
+/**
+ * Active window instances managed by this module
+ */
+const activeWindows = new Map<string, {
+  app: any
+  url: string
+  options: WindowOptions
+}>()
+
+/**
+ * Get all active window IDs
+ */
+export function getActiveWindowIds(): string[] {
+  return Array.from(activeWindows.keys())
+}
+
+/**
+ * Get a window by ID
+ */
+export function getWindow(id: string): WindowInstance | null {
+  const windowData = activeWindows.get(id)
+  if (!windowData) return null
+  return createWindowInstance(id, windowData.app)
+}
+
+/**
+ * Close all active windows
+ */
+export function closeAllWindows(): void {
+  for (const [id, windowData] of activeWindows) {
+    try {
+      windowData.app?.close?.()
+    }
+    catch (e) {
+      console.warn(`Failed to close window ${id}:`, e)
+    }
+  }
+  activeWindows.clear()
+}
+
+/**
+ * Create a WindowInstance object with control methods
+ */
+function createWindowInstance(id: string, app: any): WindowInstance {
+  return {
+    id,
+
+    show: () => {
+      // The window is shown when created via app.show()
+      // This is a no-op since ts-craft auto-shows windows
+      console.log(`[stx/desktop] Window ${id} shown`)
+    },
+
+    hide: () => {
+      // ts-craft doesn't expose hide directly from the process side
+      // This would need to be called from inside the webview via window.craft.window.hide()
+      console.log(`[stx/desktop] To hide window, use window.craft.window.hide() from inside the webview`)
+    },
+
+    close: () => {
+      const windowData = activeWindows.get(id)
+      if (windowData?.app) {
+        windowData.app.close()
+        activeWindows.delete(id)
+        console.log(`[stx/desktop] Window ${id} closed`)
+      }
+    },
+
+    focus: () => {
+      console.log(`[stx/desktop] To focus window, use window.craft.window.focus() from inside the webview`)
+    },
+
+    minimize: () => {
+      console.log(`[stx/desktop] To minimize window, use window.craft.window.minimize() from inside the webview`)
+    },
+
+    maximize: () => {
+      console.log(`[stx/desktop] To maximize window, use window.craft.window.maximize() from inside the webview`)
+    },
+
+    restore: () => {
+      console.log(`[stx/desktop] To restore window, use window.craft.window.show() from inside the webview`)
+    },
+
+    setTitle: (title: string) => {
+      console.log(`[stx/desktop] To set title, use window.craft.window.setTitle({ title: "${title}" }) from inside the webview`)
+    },
+
+    loadURL: (url: string) => {
+      // Re-create the window with the new URL
+      console.log(`[stx/desktop] To navigate, use window.location.href = "${url}" from inside the webview`)
+    },
+
+    reload: () => {
+      console.log(`[stx/desktop] To reload, use window.craft.window.reload() from inside the webview`)
+    },
+  }
+}
+
+// =============================================================================
 // Window Creation
 // =============================================================================
 
@@ -136,23 +243,22 @@ function getCraftBinaryPath(): string | undefined {
  * Uses ts-craft to create native desktop windows. Falls back to returning null
  * if ts-craft is not available.
  *
- * ## WindowInstance Methods
+ * ## Window Control
  *
- * The returned WindowInstance provides limited functionality due to ts-craft's
- * architecture. Currently supported:
+ * The CraftApp spawns a native webview process. Window control methods like
+ * hide(), minimize(), setTitle() etc. are available via the `window.craft`
+ * bridge **inside** the webview context:
  *
- * - `show()` - Shows the window (logged only)
+ * ```javascript
+ * // Inside your HTML/JS running in the webview:
+ * window.craft.window.hide()
+ * window.craft.window.minimize()
+ * window.craft.window.setTitle({ title: 'New Title' })
+ * window.craft.window.center()
+ * ```
  *
- * The following methods are stubs that log warnings (awaiting ts-craft support):
- * - `hide()` - Hide the window
- * - `close()` - Close the window
- * - `focus()` - Focus the window
- * - `minimize()` / `maximize()` / `restore()` - Window state management
- * - `setTitle()` - Change window title
- * - `loadURL()` - Navigate to different URL
- * - `reload()` - Reload current page
- *
- * These will be implemented when ts-craft exposes window handle APIs.
+ * The returned WindowInstance provides the `close()` method which terminates
+ * the native process from the Node.js side.
  *
  * @param url - URL to load in the window
  * @param options - Window configuration options
@@ -165,58 +271,42 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
     height = 800,
     darkMode = false,
     hotReload = false,
+    resizable = true,
+    frameless = false,
+    alwaysOnTop = false,
   } = options
 
   try {
     // Dynamically import ts-craft
-    const { loadURL } = await import('ts-craft')
+    const { createApp } = await import('ts-craft')
 
-    // Create the window using ts-craft
-    await loadURL(url, {
-      title,
-      width,
-      height,
-      darkMode,
-      hotReload,
+    const craftPath = getCraftBinaryPath()
+
+    const app = createApp({
+      url,
+      craftPath,
+      window: {
+        title,
+        width,
+        height,
+        darkMode,
+        hotReload,
+        resizable,
+        frameless,
+        alwaysOnTop,
+      },
     })
 
-    // Return a WindowInstance with stub methods
-    // Note: ts-craft doesn't return a window handle, so most methods are stubs
-    // that log warnings until ts-craft exposes these APIs
-    return {
-      id: `craft-window-${Date.now()}`,
-      show: () => {
-        console.log('Window shown')
-      },
-      // Stub methods - awaiting ts-craft window handle support
-      hide: () => {
-        console.warn('[stx/desktop] hide() not yet supported by ts-craft')
-      },
-      close: () => {
-        console.warn('[stx/desktop] close() not yet supported by ts-craft')
-      },
-      focus: () => {
-        console.warn('[stx/desktop] focus() not yet supported by ts-craft')
-      },
-      minimize: () => {
-        console.warn('[stx/desktop] minimize() not yet supported by ts-craft')
-      },
-      maximize: () => {
-        console.warn('[stx/desktop] maximize() not yet supported by ts-craft')
-      },
-      restore: () => {
-        console.warn('[stx/desktop] restore() not yet supported by ts-craft')
-      },
-      setTitle: (_title: string) => {
-        console.warn('[stx/desktop] setTitle() not yet supported by ts-craft')
-      },
-      loadURL: (_url: string) => {
-        console.warn('[stx/desktop] loadURL() not yet supported by ts-craft')
-      },
-      reload: () => {
-        console.warn('[stx/desktop] reload() not yet supported by ts-craft')
-      },
-    }
+    // Generate unique ID
+    const id = `craft-window-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
+    // Store the window instance
+    activeWindows.set(id, { app, url, options })
+
+    // Show the window
+    await app.show()
+
+    return createWindowInstance(id, app)
   }
   catch (error) {
     console.error('Failed to create native window:', error)
@@ -252,11 +342,14 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
         height: options.height || 900,
         resizable: true,
         systemTray: true, // craft requires system tray to function properly
-        darkMode: true,
+        darkMode: options.darkMode ?? true,
         hotReload: options.hotReload ?? true,
         devTools: true,
       },
     })
+
+    const id = `dev-window-${port}`
+    activeWindows.set(id, { app, url, options })
 
     await app.show()
     console.log(`✓ Native window opened at ${url}`)
@@ -313,55 +406,38 @@ export async function createWindowWithHTML(html: string, options: WindowOptions 
     height = 800,
     darkMode = false,
     hotReload = false,
+    resizable = true,
+    frameless = false,
+    alwaysOnTop = false,
   } = options
 
   try {
     // Dynamically import ts-craft
-    const { show } = await import('ts-craft')
+    const { createApp } = await import('ts-craft')
 
-    // Create the window using ts-craft
-    await show(html, {
-      title,
-      width,
-      height,
-      darkMode,
-      hotReload,
+    const craftPath = getCraftBinaryPath()
+
+    const app = createApp({
+      html,
+      craftPath,
+      window: {
+        title,
+        width,
+        height,
+        darkMode,
+        hotReload,
+        resizable,
+        frameless,
+        alwaysOnTop,
+      },
     })
 
-    // Return a WindowInstance stub
-    return {
-      id: `craft-window-${Date.now()}`,
-      show: () => {
-        console.log('Window shown')
-      },
-      hide: () => {
-        console.warn('Hide not implemented')
-      },
-      close: () => {
-        console.warn('Close not implemented')
-      },
-      focus: () => {
-        console.warn('Focus not implemented')
-      },
-      minimize: () => {
-        console.warn('Minimize not implemented')
-      },
-      maximize: () => {
-        console.warn('Maximize not implemented')
-      },
-      restore: () => {
-        console.warn('Restore not implemented')
-      },
-      setTitle: (_title: string) => {
-        console.warn('SetTitle not implemented')
-      },
-      loadURL: (_url: string) => {
-        console.warn('LoadURL not implemented')
-      },
-      reload: () => {
-        console.warn('Reload not implemented')
-      },
-    }
+    const id = `craft-window-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    activeWindows.set(id, { app, url: 'html-content', options })
+
+    await app.show()
+
+    return createWindowInstance(id, app)
   }
   catch (error) {
     console.error('Failed to create window with HTML:', error)
@@ -381,4 +457,74 @@ export function isWebviewAvailable(): boolean {
   catch {
     return false
   }
+}
+
+// =============================================================================
+// Bridge Script Generator
+// =============================================================================
+
+/**
+ * Generate a JavaScript snippet to inject into HTML that provides
+ * helper functions for common window operations.
+ *
+ * This can be injected into your HTML to provide easier access to Craft APIs.
+ *
+ * @example
+ * ```typescript
+ * const html = `
+ *   <html>
+ *     <head>
+ *       <script>${getWindowBridgeScript()}</script>
+ *     </head>
+ *     <body>
+ *       <button onclick="stxWindow.minimize()">Minimize</button>
+ *     </body>
+ *   </html>
+ * `
+ * await createWindowWithHTML(html)
+ * ```
+ */
+export function getWindowBridgeScript(): string {
+  return `
+// STX Desktop Window Bridge
+// Provides convenient wrappers around window.craft APIs
+window.stxWindow = {
+  // Window control
+  hide: () => window.craft?.window?.hide(),
+  show: () => window.craft?.window?.show(),
+  toggle: () => window.craft?.window?.toggle(),
+  close: () => window.craft?.window?.close(),
+  minimize: () => window.craft?.window?.minimize(),
+  maximize: () => window.craft?.window?.maximize(),
+  focus: () => window.craft?.window?.focus(),
+  center: () => window.craft?.window?.center(),
+  reload: () => window.craft?.window?.reload(),
+  toggleFullscreen: () => window.craft?.window?.toggleFullscreen(),
+
+  // Window properties
+  setTitle: (title) => window.craft?.window?.setTitle({ title }),
+  setSize: (width, height) => window.craft?.window?.setSize({ width, height }),
+  setPosition: (x, y) => window.craft?.window?.setPosition({ x, y }),
+  setAlwaysOnTop: (alwaysOnTop) => window.craft?.window?.setAlwaysOnTop({ alwaysOnTop }),
+  setResizable: (resizable) => window.craft?.window?.setResizable({ resizable }),
+  setOpacity: (opacity) => window.craft?.window?.setOpacity({ opacity }),
+
+  // macOS-specific
+  setVibrancy: (vibrancy) => window.craft?.window?.setVibrancy({ vibrancy }),
+
+  // App control
+  quit: () => window.craft?.app?.quit(),
+  isDarkMode: () => window.craft?.app?.isDarkMode(),
+  getLocale: () => window.craft?.app?.getLocale(),
+
+  // Notifications
+  notify: (options) => window.craft?.app?.notify(options),
+
+  // Check if running in Craft
+  isCraftAvailable: () => typeof window.craft !== 'undefined',
+};
+
+// Expose as global for backwards compatibility
+window.desktop = window.stxWindow;
+`
 }
