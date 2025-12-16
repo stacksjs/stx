@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
-  <title>Buddy - Voice AI Code Assistant</title>
+  <title>Voide - Voice AI Code Assistant</title>
 
   <style>
     :root {
@@ -97,24 +97,24 @@
   </style>
 </head>
 <body>
-  @component('buddy/header', { title: 'Buddy' })
+  @component('buddy/header', { title: 'Voide' })
 
   @component('buddy/github-modal')
   @component('buddy/settings-modal')
 
   <main class="main">
-    @component('buddy/terminal', { title: 'Buddy - Ready' })
+    @component('buddy/terminal', { title: 'Voide - Ready' })
     @component('buddy/voice-control')
   </main>
 
   <footer class="footer" id="footer">
-    Buddy v1.0.0 - Voice AI Code Assistant
+    Voide v1.0.0 - Voice AI Code Assistant
   </footer>
 
   <script>
     // Configuration
     const config = {
-      title: 'Buddy',
+      title: 'Voide',
       version: '1.0.0',
       drivers: {
         claude: { name: 'Claude', requiresKey: 'ANTHROPIC_API_KEY' },
@@ -428,7 +428,7 @@
       }
       state.repoPath = input;
       addMessage('system', `Repository set: ${input}`);
-      elements.terminalTitle.textContent = `Buddy - ${input.split('/').pop()}`;
+      elements.terminalTitle.textContent = `Voide - ${input.split('/').pop()}`;
     }
 
     // GitHub functions
@@ -453,7 +453,7 @@
           email: elements.gitEmail.value.trim() || `${userData.login}@users.noreply.github.com`,
           avatarUrl: userData.avatar_url
         };
-        localStorage.setItem('buddy_github', JSON.stringify(state.github));
+        localStorage.setItem('voide_github', JSON.stringify(state.github));
         updateGithubUI();
         addMessage('system', `GitHub connected as @${userData.login}`);
         closeGithubModal();
@@ -476,7 +476,7 @@
 
     function loadSavedGithub() {
       try {
-        const saved = localStorage.getItem('buddy_github');
+        const saved = localStorage.getItem('voide_github');
         if (saved) {
           state.github = JSON.parse(saved);
           updateGithubUI();
@@ -533,7 +533,7 @@
         claudeCliHost: claudeHost || null
       };
 
-      localStorage.setItem('buddy_api_keys', JSON.stringify(state.apiKeys));
+      localStorage.setItem('voide_api_keys', JSON.stringify(state.apiKeys));
       updateApiStatusIndicators();
       closeSettingsModal();
       addMessage('system', 'API settings saved.');
@@ -541,7 +541,7 @@
 
     function loadSavedApiKeys() {
       try {
-        const saved = localStorage.getItem('buddy_api_keys');
+        const saved = localStorage.getItem('voide_api_keys');
         if (saved) {
           state.apiKeys = JSON.parse(saved);
           updateApiStatusIndicators();

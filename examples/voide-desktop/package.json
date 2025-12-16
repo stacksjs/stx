@@ -1,14 +1,14 @@
 {
-  "name": "buddy-desktop",
+  "name": "voide-desktop",
   "version": "1.0.0",
-  "description": "Buddy Voice AI - Desktop Application",
+  "description": "Voide - Voice AI Desktop Application",
   "private": true,
   "scripts": {
-    "dev": "craft dev ../voice-buddy.stx",
-    "preview": "craft preview ../voice-buddy.stx",
+    "dev": "craft dev ../voide.stx",
+    "preview": "craft preview ../voide.stx",
     "build:macos": "bun build-macos.ts",
     "build:dmg": "bun build-macos.ts",
-    "open": "open dist/Buddy.app",
+    "open": "open dist/Voide.app",
     "clean": "rm -rf dist"
   },
   "dependencies": {

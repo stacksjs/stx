@@ -2,18 +2,18 @@ import { defineConfig } from 'ts-craft'
 
 export default defineConfig({
   // Application metadata
-  name: 'Buddy',
+  name: 'Voide',
   version: '1.0.0',
   description: 'Voice AI Code Assistant - Talk to Claude to code',
   author: 'Stacks.js',
-  bundleId: 'com.stacksjs.buddy',
+  bundleId: 'com.stacksjs.voide',
 
   // Entry point
-  entry: '../voice-buddy.stx',
+  entry: '../voide.stx',
 
   // Window configuration
   window: {
-    title: 'Buddy - Voice AI Assistant',
+    title: 'Voide - Voice AI Assistant',
     width: 1200,
     height: 800,
     minWidth: 800,
