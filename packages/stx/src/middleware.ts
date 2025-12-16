@@ -127,7 +127,7 @@ export async function processMiddleware(
         console.warn(`Middleware ${middleware.name} did not return a string`)
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (options.debug) {
         console.error(`Error in middleware ${middleware.name}:`, error)
       }

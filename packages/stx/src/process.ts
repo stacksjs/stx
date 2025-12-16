@@ -506,9 +506,10 @@ export async function processDirectives(
       return await processDirectivesInternal(template, context, filePath, options, dependencies)
     })
   }
-  catch (error: any) {
+  catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error)
     const enhancedError = new StxRuntimeError(
-      `Template processing failed: ${error.message}`,
+      `Template processing failed: ${msg}`,
       filePath,
       undefined,
       undefined,
@@ -892,7 +893,13 @@ async function processComponentDirectives(
   dependencies: Set<string>,
 ): Promise<string> {
   let output = template
-  const processedComponents = new Set<string>() // Prevent infinite recursion
+
+  // Use shared processedComponents set from context to prevent infinite recursion
+  // across nested processDirectives calls
+  if (!context.__processedComponents) {
+    context.__processedComponents = new Set<string>()
+  }
+  const processedComponents = context.__processedComponents as Set<string>
 
   // Find all component directives in the template
   const componentRegex = /@component\s*\(['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g
@@ -910,8 +917,9 @@ async function processComponentDirectives(
         const propsFn = new Function(...Object.keys(context), `return ${propsString}`)
         props = propsFn(...Object.values(context))
       }
-      catch (error: any) {
-        output = output.replace(fullMatch, `[Error parsing component props: ${error.message}]`)
+      catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error)
+        output = output.replace(fullMatch, `[Error parsing component props: ${msg}]`)
         continue
       }
     }
@@ -952,7 +960,13 @@ async function processCustomElements(
   dependencies: Set<string>,
 ): Promise<string> {
   let output = template
-  const processedComponents = new Set<string>()
+
+  // Use shared processedComponents set from context to prevent infinite recursion
+  // across nested processDirectives calls
+  if (!context.__processedComponents) {
+    context.__processedComponents = new Set<string>()
+  }
+  const processedComponents = context.__processedComponents as Set<string>
 
   // Process kebab-case components (e.g., <my-component />)
   const kebabPattern = /[a-z][a-z0-9]*-[a-z0-9-]*/

@@ -172,8 +172,9 @@ export function processSwitchStatements(template: string, context: Record<string
       output = output.substring(0, switchStart) + result + output.substring(parsed.end)
       processedAny = true
     }
-    catch (error: any) {
-      const errorMessage = inlineError('Switch', `Error evaluating @switch expression: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
+    catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error)
+      const errorMessage = inlineError('Switch', `Error evaluating @switch expression: ${msg}`, ErrorCodes.EVALUATION_ERROR)
       output = output.substring(0, switchStart) + errorMessage + output.substring(parsed.end)
       break
     }
@@ -269,7 +270,7 @@ export function processConditionals(template: string, context: Record<string, an
                 foundTrueBranch = true
               }
             }
-            catch (error: any) {
+            catch (error: unknown) {
               result = inlineError(
                 branch.type === 'if' ? 'If' : 'Elseif',
                 `Error in @${branch.type}(${branch.condition}): ${error instanceof Error ? error.message : String(error)}`,
@@ -283,8 +284,9 @@ export function processConditionals(template: string, context: Record<string, an
         // Replace the block with the result
         output = output.substring(0, block.start) + result + output.substring(block.end)
       }
-      catch (error: any) {
-        const errorMessage = inlineError('If', `Error processing @if block: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
+      catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error)
+        const errorMessage = inlineError('If', `Error processing @if block: ${msg}`, ErrorCodes.EVALUATION_ERROR)
         output = output.substring(0, block.start) + errorMessage + output.substring(block.end)
       }
     }
@@ -559,8 +561,9 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
 
       return elseContent || ''
     }
-    catch (error: any) {
-      return inlineError('Isset', `Error processing @isset directive: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
+    catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error)
+      return inlineError('Isset', `Error processing @isset directive: ${msg}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
 
@@ -581,8 +584,9 @@ export function processIssetEmptyDirectives(template: string, context: Record<st
 
       return elseContent || ''
     }
-    catch (error: any) {
-      return inlineError('Empty', `Error processing @empty directive: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
+    catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error)
+      return inlineError('Empty', `Error processing @empty directive: ${msg}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
 

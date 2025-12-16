@@ -221,7 +221,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
 
       return `@foreach (${trimmedExpr} as ${itemVar.trim()})${content}@endforeach`
     }
-    catch (error: any) {
+    catch (error: unknown) {
       return inlineError('Forelse', `Error in @forelse(${arrayExpr.trim()} as ${itemVar.trim()}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
     }
   })
@@ -421,7 +421,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
         // Replace the @foreach block with the processed result
         result = result.substring(0, start) + loopResult + result.substring(end)
       }
-      catch (error: any) {
+      catch (error: unknown) {
         const errorMsg = inlineError('Foreach', `Error in @foreach(${arrayExpr.trim()} as ${itemVar.trim()}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
         result = result.substring(0, start) + errorMsg + result.substring(end)
       }
@@ -525,7 +525,7 @@ function processForLoops(template: string, context: Record<string, any>): string
       output = output.substring(0, startPos) + result + output.substring(endPos)
       processedAny = true
     }
-    catch (error: any) {
+    catch (error: unknown) {
       const errorMsg = inlineError('For', `Error in @for(${forExpr}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
       output = output.substring(0, startPos) + errorMsg + output.substring(endPos)
       processedAny = true
@@ -608,7 +608,7 @@ function processWhileLoops(template: string, context: Record<string, any>, maxIt
       output = output.substring(0, startPos) + result + output.substring(endPos)
       processedAny = true
     }
-    catch (error: any) {
+    catch (error: unknown) {
       const errorMsg = inlineError('While', `Error in @while(${condition}): ${error instanceof Error ? error.message : String(error)}`, ErrorCodes.EVALUATION_ERROR)
       output = output.substring(0, startPos) + errorMsg + output.substring(endPos)
       processedAny = true
