@@ -778,6 +778,18 @@
       to { transform: translateY(-8px); }
     }
 
+    /* Streaming message cursor animation */
+    .message.streaming .cursor {
+      animation: blink 1s step-end infinite;
+      color: var(--accent-primary);
+      font-weight: bold;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
     /* Footer */
     .footer {
       padding: 10px 20px;
@@ -1483,6 +1495,48 @@ Example commands:
       if (loading) loading.remove();
     }
 
+    // Add streaming message (returns unique ID)
+    function addStreamingMessage() {
+      const driverName = config.drivers[state.currentDriver]?.name || 'AI';
+      const messageId = 'streaming-' + Date.now();
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message assistant streaming';
+      messageDiv.id = messageId;
+      messageDiv.innerHTML = `
+        <div class="message-header">${driverName}</div>
+        <div class="message-content">
+          <span class="cursor">▊</span>
+        </div>
+      `;
+      elements.output.appendChild(messageDiv);
+      elements.output.scrollTop = elements.output.scrollHeight;
+      return messageId;
+    }
+
+    // Update streaming message content
+    function updateStreamingMessage(messageId, text) {
+      const messageDiv = document.getElementById(messageId);
+      if (messageDiv) {
+        const contentDiv = messageDiv.querySelector('.message-content');
+        if (contentDiv) {
+          // Format the text (preserve whitespace and handle code blocks)
+          const formattedText = escapeHtml(text);
+          contentDiv.innerHTML = `<pre style="white-space: pre-wrap; margin: 0; font-family: inherit;">${formattedText}</pre><span class="cursor">▊</span>`;
+          elements.output.scrollTop = elements.output.scrollHeight;
+        }
+      }
+    }
+
+    // Finalize streaming message (remove cursor, mark complete)
+    function finalizeStreamingMessage(messageId) {
+      const messageDiv = document.getElementById(messageId);
+      if (messageDiv) {
+        messageDiv.classList.remove('streaming');
+        const cursor = messageDiv.querySelector('.cursor');
+        if (cursor) cursor.remove();
+      }
+    }
+
     // Escape HTML
     function escapeHtml(text) {
       const div = document.createElement('div');
@@ -1524,24 +1578,101 @@ Example commands:
         const hasBackend = await checkBackendAPI();
 
         if (hasBackend) {
-          // Use Stacks API for agentic processing
-          const apiResponse = await fetch(`${config.apiBaseUrl}/process`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              command,
-              driver: state.currentDriver,
-              ...(state.repoPath && { repository: state.repoPath })
-            })
-          });
+          // Check if we should use streaming (only for claude-cli-local)
+          const useStreaming = state.currentDriver === 'claude-cli-local';
 
-          const responseData = await apiResponse.json();
+          if (useStreaming) {
+            // Use SSE streaming endpoint for real-time response
+            removeLoadingMessage();
+            const streamingMessageId = addStreamingMessage();
 
-          if (!apiResponse.ok || !responseData.success) {
-            throw new Error(responseData.error || 'Unknown error occurred');
+            const streamResponse = await fetch(`${config.apiBaseUrl}/process/stream`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                command,
+                driver: state.currentDriver,
+                ...(state.repoPath && { repository: state.repoPath })
+              })
+            });
+
+            if (!streamResponse.ok) {
+              const errorData = await streamResponse.json();
+              throw new Error(errorData.error || 'Streaming request failed');
+            }
+
+            // Read the SSE stream
+            const reader = streamResponse.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText = '';
+            let buffer = '';
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+
+              // Parse SSE events from buffer
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+              for (const line of lines) {
+                if (line.startsWith('event: ')) {
+                  const eventType = line.substring(7);
+                  continue;
+                }
+                if (line.startsWith('data: ')) {
+                  try {
+                    const data = JSON.parse(line.substring(6));
+
+                    if (data.text) {
+                      fullText += data.text;
+                      updateStreamingMessage(streamingMessageId, fullText);
+                    }
+
+                    if (data.status === 'complete') {
+                      // Handle completion
+                      response = {
+                        message: fullText,
+                        hasChanges: data.hasChanges,
+                        modifiedFiles: data.modifiedFiles
+                      };
+                    }
+
+                    if (data.error) {
+                      throw new Error(data.error);
+                    }
+                  } catch (e) {
+                    // Ignore parse errors for incomplete data
+                  }
+                }
+              }
+            }
+
+            // Finalize the streaming message
+            finalizeStreamingMessage(streamingMessageId);
+          } else {
+            // Use regular non-streaming API
+            const apiResponse = await fetch(`${config.apiBaseUrl}/process`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                command,
+                driver: state.currentDriver,
+                ...(state.repoPath && { repository: state.repoPath })
+              })
+            });
+
+            const responseData = await apiResponse.json();
+
+            if (!apiResponse.ok || !responseData.success) {
+              throw new Error(responseData.error || 'Unknown error occurred');
+            }
+
+            // Extract the actual data from Stacks response wrapper
+            response = responseData.data;
           }
-
-          response = responseData;
         } else if (state.currentDriver === 'claude' && state.apiKeys.anthropic) {
           // Fall back to direct Claude API call if Stacks backend unavailable
           response = await callClaudeAPI(command);
