@@ -934,12 +934,12 @@
       <div class="driver-selector">
         <label for="aiDriver">AI Driver:</label>
         <select id="aiDriver">
-          <option value="claude">Claude (API)</option>
-          <option value="claude-cli">Claude CLI (Local)</option>
+          <option value="claude-cli-local" selected>Claude CLI (Local)</option>
           <option value="claude-cli-ec2">Claude CLI (EC2)</option>
+          <option value="claude">Claude API</option>
           <option value="openai">OpenAI</option>
-          <option value="ollama">Ollama (Local)</option>
-          <option value="mock">Mock (Demo)</option>
+          <option value="ollama">Ollama</option>
+          <option value="mock">Mock</option>
         </select>
       </div>
 
@@ -1168,9 +1168,9 @@ Example commands:
       // Stacks API base URL - the backend for agentic functionality
       apiBaseUrl: 'http://localhost:3008/voide',
       drivers: {
-        claude: { name: 'Claude', requiresKey: 'ANTHROPIC_API_KEY' },
-        'claude-cli': { name: 'Claude CLI', requiresKey: null },
+        'claude-cli-local': { name: 'Claude CLI (Local)', requiresKey: null },
         'claude-cli-ec2': { name: 'Claude CLI (EC2)', requiresKey: 'BUDDY_EC2_HOST' },
+        claude: { name: 'Claude API', requiresKey: 'ANTHROPIC_API_KEY' },
         openai: { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
         ollama: { name: 'Ollama', requiresKey: null },
         mock: { name: 'Mock', requiresKey: null }
@@ -1187,7 +1187,7 @@ Example commands:
       hasChanges: false,
       recognition: null,
       speechSupported: false,
-      currentDriver: 'claude',
+      currentDriver: 'claude-cli-local',
       isNativeApp: false,
       github: {
         connected: false,
@@ -1528,7 +1528,11 @@ Example commands:
           const apiResponse = await fetch(`${config.apiBaseUrl}/process`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ command, driver: state.currentDriver })
+            body: JSON.stringify({
+              command,
+              driver: state.currentDriver,
+              ...(state.repoPath && { repository: state.repoPath })
+            })
           });
 
           const responseData = await apiResponse.json();
@@ -1716,7 +1720,7 @@ Would you like me to proceed with these changes?`;
           const apiResponse = await fetch(`${config.apiBaseUrl}/repo`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ input })
+            body: JSON.stringify({ path: input })
           });
 
           if (!apiResponse.ok) {
