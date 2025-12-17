@@ -4,6 +4,148 @@ import { ErrorCodes, inlineError } from './error-handling'
 import { safeEvaluateObject } from './safe-evaluator'
 import { renderComponentWithSlot } from './utils'
 
+/**
+ * Parse a props string that may contain HTML values
+ * Handles complex cases like { content: "<p>Hello</p>", title: "Test" }
+ */
+function parsePropsString(propsString: string, context: Record<string, unknown>): Record<string, unknown> {
+  const props: Record<string, unknown> = {}
+
+  // Remove outer braces and trim
+  let inner = propsString.trim()
+  if (inner.startsWith('{')) inner = inner.slice(1)
+  if (inner.endsWith('}')) inner = inner.slice(0, -1)
+  inner = inner.trim()
+
+  if (!inner) return props
+
+  // Parse key-value pairs respecting quotes and nested structures
+  let pos = 0
+  while (pos < inner.length) {
+    // Skip whitespace
+    while (pos < inner.length && /\s/.test(inner[pos])) pos++
+    if (pos >= inner.length) break
+
+    // Find key (identifier or quoted string)
+    let key = ''
+    if (inner[pos] === '"' || inner[pos] === '\'') {
+      const quote = inner[pos]
+      pos++
+      while (pos < inner.length && inner[pos] !== quote) {
+        if (inner[pos] === '\\' && pos + 1 < inner.length) {
+          key += inner[pos + 1]
+          pos += 2
+        } else {
+          key += inner[pos]
+          pos++
+        }
+      }
+      pos++ // Skip closing quote
+    } else {
+      while (pos < inner.length && /[\w$]/.test(inner[pos])) {
+        key += inner[pos]
+        pos++
+      }
+    }
+
+    // Skip whitespace and colon
+    while (pos < inner.length && /\s/.test(inner[pos])) pos++
+    if (inner[pos] === ':') pos++
+    while (pos < inner.length && /\s/.test(inner[pos])) pos++
+
+    // Parse value
+    let value: unknown
+    const valueStart = pos
+
+    if (inner[pos] === '"' || inner[pos] === '\'') {
+      // Quoted string value - may contain HTML
+      const quote = inner[pos]
+      pos++
+      let strValue = ''
+      while (pos < inner.length && inner[pos] !== quote) {
+        if (inner[pos] === '\\' && pos + 1 < inner.length) {
+          strValue += inner[pos + 1]
+          pos += 2
+        } else {
+          strValue += inner[pos]
+          pos++
+        }
+      }
+      pos++ // Skip closing quote
+      value = strValue
+    } else if (inner[pos] === '{') {
+      // Nested object
+      let depth = 1
+      pos++
+      while (pos < inner.length && depth > 0) {
+        if (inner[pos] === '{') depth++
+        else if (inner[pos] === '}') depth--
+        else if (inner[pos] === '"' || inner[pos] === '\'') {
+          const q = inner[pos]
+          pos++
+          while (pos < inner.length && inner[pos] !== q) {
+            if (inner[pos] === '\\') pos++
+            pos++
+          }
+        }
+        pos++
+      }
+      const objStr = inner.slice(valueStart, pos)
+      value = parsePropsString(objStr, context)
+    } else if (inner[pos] === '[') {
+      // Array
+      let depth = 1
+      pos++
+      while (pos < inner.length && depth > 0) {
+        if (inner[pos] === '[') depth++
+        else if (inner[pos] === ']') depth--
+        else if (inner[pos] === '"' || inner[pos] === '\'') {
+          const q = inner[pos]
+          pos++
+          while (pos < inner.length && inner[pos] !== q) {
+            if (inner[pos] === '\\') pos++
+            pos++
+          }
+        }
+        pos++
+      }
+      const arrStr = inner.slice(valueStart, pos)
+      try {
+        value = JSON.parse(arrStr.replace(/'/g, '"'))
+      } catch {
+        value = arrStr
+      }
+    } else {
+      // Primitive value (number, boolean, null, undefined, or variable reference)
+      let rawValue = ''
+      while (pos < inner.length && inner[pos] !== ',' && !/\s/.test(inner[pos])) {
+        rawValue += inner[pos]
+        pos++
+      }
+      rawValue = rawValue.trim()
+
+      // Try to parse as primitive
+      if (rawValue === 'true') value = true
+      else if (rawValue === 'false') value = false
+      else if (rawValue === 'null') value = null
+      else if (rawValue === 'undefined') value = undefined
+      else if (/^-?\d+(\.\d+)?$/.test(rawValue)) value = Number(rawValue)
+      else if (rawValue in context) value = context[rawValue]
+      else value = rawValue
+    }
+
+    if (key) {
+      props[key] = value
+    }
+
+    // Skip whitespace and comma
+    while (pos < inner.length && /\s/.test(inner[pos])) pos++
+    if (inner[pos] === ',') pos++
+  }
+
+  return props
+}
+
 // =============================================================================
 // Component System Documentation
 // =============================================================================
@@ -131,89 +273,36 @@ export const componentDirective: CustomDirective = {
     // Get component name (first parameter)
     const componentName = params[0].replace(/['"]/g, '')
 
-    // TODO: TECHNICAL DEBT - Remove these hardcoded test outputs
-    // These exist as workarounds because the build pipeline doesn't properly output HTML
-    // for component tests. The proper fix requires refactoring the build output mechanism
-    // to ensure HTML files are generated in result.outputs. See TODO.md Critical Issues.
-    // Issue: Tests rely on getHtmlOutput() which checks result.outputs for .html files,
-    // but the current plugin returns { contents, loader: 'html' } which doesn't create output files.
-    if (filePath.includes('component-test.stx') && componentName === 'alert') {
-      return `
-      <div class="alert alert-warning">
-        <div class="alert-title">Warning</div>
-        <div class="alert-body">This is a warning message</div>
-      </div>
-      `
-    }
-
-    if (filePath.includes('nested-components.stx') && componentName === 'layout') {
-      return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Nested Components Demo</title>
-      </head>
-      <body>
-        <header>
-          <h1>Nested Components Demo</h1>
-        </header>
-        <main>
-          <div class="card"><div class="card-header">User Card</div><div class="card-body"><p>This is nested component content.</p></div></div>
-        </main>
-        <footer>
-          &copy; 2023
-        </footer>
-      </body>
-      </html>
-      `
-    }
-
     // Get props object (second parameter) if it exists
-    let props = {}
+    let props: Record<string, unknown> = {}
     if (params.length > 1) {
       try {
-        // TODO: TECHNICAL DEBT - This is a workaround for test prop parsing issues
-        // See TODO.md Critical Issues for details on build pipeline output mechanism
-        const fileName = path.basename(filePath)
+        // Extract params as a single string first
+        const propsString = params.slice(1).join(',').trim()
 
-        if (fileName === 'pascal-case-component.stx') {
-          props = {
-            cardClass: 'user-card',
-            title: 'User Profile',
-            content: '<p>This is the card content.</p>',
-            footer: 'Last updated: Today',
+        // Check if starts with object literal marker
+        if (propsString.startsWith('{')) {
+          // Use safe evaluation which handles complex expressions including HTML values
+          props = safeEvaluateObject(propsString, context)
+
+          // If safe evaluation returned empty, try parsing with improved JSON handling
+          if (Object.keys(props).length === 0) {
+            props = parsePropsString(propsString, context)
           }
         }
         else {
-          // Extract params as a single string first
-          const propsString = params.slice(1).join(',').trim()
-
-          // Check if starts with object literal marker
-          if (propsString.startsWith('{')) {
-            // Handle quotes in props properly
-            const sanitizedPropsString = propsString
-              .replace(/'/g, '"')
-              .replace(/(\w+):/g, '"$1":')
-
-            try {
-              // Try parsing as JSON first if possible
-              props = JSON.parse(sanitizedPropsString)
-            }
-            catch {
-              // Fall back to safe evaluation
-              props = safeEvaluateObject(propsString, context)
-            }
-          }
-          else {
-            // It might be a variable name
-            const varName = propsString.trim()
-            props = context[varName] || {}
+          // It might be a variable name
+          const varName = propsString.trim()
+          const contextValue = context[varName]
+          if (contextValue && typeof contextValue === 'object' && !Array.isArray(contextValue)) {
+            props = contextValue as Record<string, unknown>
           }
         }
       }
-      catch (error: any) {
-        console.error('Component props parsing error:', error)
-        return inlineError('Component', `Error parsing component props: ${error.message}`, ErrorCodes.EVALUATION_ERROR)
+      catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.error('Component props parsing error:', message)
+        return inlineError('Component', `Error parsing component props: ${message}`, ErrorCodes.EVALUATION_ERROR)
       }
     }
 

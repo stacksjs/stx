@@ -171,6 +171,238 @@ interface ParsedAttribute {
   isBinding: boolean // true if prefixed with : or v-bind:
 }
 
+/**
+ * Component tag match result
+ */
+interface ComponentTagMatch {
+  fullMatch: string
+  tagName: string
+  attributes: string
+  content: string
+  startIndex: number
+  endIndex: number
+  isSelfClosing: boolean
+}
+
+/**
+ * Find component tags in HTML, properly handling quoted strings
+ * This solves the issue where `>` inside attribute values would incorrectly end the tag
+ *
+ * @param html - The HTML string to search
+ * @param tagPattern - Regex pattern for tag name (for PascalCase components)
+ * @returns Array of found component tags
+ */
+function findComponentTags(html: string, tagPattern: RegExp): ComponentTagMatch[] {
+  const matches: ComponentTagMatch[] = []
+  let pos = 0
+
+  while (pos < html.length) {
+    // Find the start of a potential tag
+    const tagStart = html.indexOf('<', pos)
+    if (tagStart === -1)
+      break
+
+    // Check if this matches our tag pattern
+    const afterLt = html.slice(tagStart + 1)
+    const tagNameMatch = afterLt.match(new RegExp(`^(${tagPattern.source})`))
+
+    if (!tagNameMatch) {
+      pos = tagStart + 1
+      continue
+    }
+
+    const tagName = tagNameMatch[1]
+    let currentPos = tagStart + 1 + tagName.length
+
+    // Now find the end of this tag, respecting quoted strings
+    let inQuote: string | null = null
+    let attributesStart = currentPos
+    let tagEnd = -1
+    let isSelfClosing = false
+
+    while (currentPos < html.length) {
+      const char = html[currentPos]
+
+      // Handle quote state
+      if (inQuote) {
+        if (char === '\\' && currentPos + 1 < html.length) {
+          // Skip escaped character
+          currentPos += 2
+          continue
+        }
+        if (char === inQuote) {
+          inQuote = null
+        }
+        currentPos++
+        continue
+      }
+
+      // Not in quote - check for quote start
+      if (char === '"' || char === '\'') {
+        inQuote = char
+        currentPos++
+        continue
+      }
+
+      // Check for self-closing tag end
+      if (char === '/' && currentPos + 1 < html.length && html[currentPos + 1] === '>') {
+        tagEnd = currentPos + 2
+        isSelfClosing = true
+        break
+      }
+
+      // Check for tag end
+      if (char === '>') {
+        tagEnd = currentPos + 1
+        break
+      }
+
+      currentPos++
+    }
+
+    if (tagEnd === -1) {
+      pos = tagStart + 1
+      continue
+    }
+
+    const attributes = html.slice(attributesStart, isSelfClosing ? tagEnd - 2 : tagEnd - 1).trim()
+
+    if (isSelfClosing) {
+      matches.push({
+        fullMatch: html.slice(tagStart, tagEnd),
+        tagName,
+        attributes,
+        content: '',
+        startIndex: tagStart,
+        endIndex: tagEnd,
+        isSelfClosing: true,
+      })
+      pos = tagEnd
+    }
+    else {
+      // Find the closing tag
+      const closingTag = `</${tagName}>`
+      let contentEnd = html.indexOf(closingTag, tagEnd)
+
+      if (contentEnd === -1) {
+        // No closing tag found, treat as self-closing or skip
+        pos = tagEnd
+        continue
+      }
+
+      const content = html.slice(tagEnd, contentEnd)
+      const fullEndIndex = contentEnd + closingTag.length
+
+      matches.push({
+        fullMatch: html.slice(tagStart, fullEndIndex),
+        tagName,
+        attributes,
+        content,
+        startIndex: tagStart,
+        endIndex: fullEndIndex,
+        isSelfClosing: false,
+      })
+      pos = fullEndIndex
+    }
+  }
+
+  return matches
+}
+
+/**
+ * Parse multiline attributes from a component tag
+ * Handles HTML content inside attribute values correctly
+ *
+ * @param attributesStr - The attributes string (may be multiline)
+ * @returns Object mapping attribute names to values
+ */
+function parseMultilineAttributes(attributesStr: string): Record<string, string> {
+  const props: Record<string, string> = {}
+  let pos = 0
+  const len = attributesStr.length
+
+  while (pos < len) {
+    // Skip whitespace (including newlines)
+    while (pos < len && /\s/.test(attributesStr[pos])) {
+      pos++
+    }
+
+    if (pos >= len)
+      break
+
+    // Read attribute name
+    let name = ''
+    while (pos < len && !/[\s=]/.test(attributesStr[pos])) {
+      name += attributesStr[pos]
+      pos++
+    }
+
+    if (!name)
+      break
+
+    // Remove binding prefix from name for props (: shorthand or v-bind:)
+    const propName = name.replace(/^:/, '').replace(/^v-bind:/, '')
+
+    // Skip whitespace
+    while (pos < len && /\s/.test(attributesStr[pos])) {
+      pos++
+    }
+
+    // Check for = sign
+    if (pos < len && attributesStr[pos] === '=') {
+      pos++ // Skip =
+
+      // Skip whitespace after =
+      while (pos < len && /\s/.test(attributesStr[pos])) {
+        pos++
+      }
+
+      // Read value
+      let value = ''
+      if (pos < len && (attributesStr[pos] === '"' || attributesStr[pos] === '\'')) {
+        const quote = attributesStr[pos]
+        pos++ // Skip opening quote
+
+        // Read until closing quote, handling escapes
+        while (pos < len) {
+          const char = attributesStr[pos]
+
+          if (char === '\\' && pos + 1 < len) {
+            // Handle escape sequence - include the escaped character
+            pos++
+            value += attributesStr[pos]
+            pos++
+            continue
+          }
+
+          if (char === quote) {
+            pos++ // Skip closing quote
+            break
+          }
+
+          value += char
+          pos++
+        }
+      }
+      else {
+        // Unquoted value (read until whitespace)
+        while (pos < len && !/\s/.test(attributesStr[pos])) {
+          value += attributesStr[pos]
+          pos++
+        }
+      }
+
+      props[propName] = value
+    }
+    else {
+      // Boolean attribute
+      props[propName] = 'true'
+    }
+  }
+
+  return props
+}
+
 function parseAttributes(attributesStr: string): ParsedAttribute[] {
   const attributes: ParsedAttribute[] = []
   let pos = 0
@@ -709,6 +941,7 @@ async function processComponentDirectives(
 
 /**
  * Process custom element components (both kebab-case and PascalCase)
+ * Uses a proper parser that handles HTML content inside attribute values
  */
 async function processCustomElements(
   template: string,
@@ -719,74 +952,75 @@ async function processCustomElements(
   dependencies: Set<string>,
 ): Promise<string> {
   let output = template
-  const processedComponents = new Set<string>() // Prevent infinite recursion
+  const processedComponents = new Set<string>()
 
-  // First handle self-closing kebab-case components
-  const kebabSelfClosingRegex = /<([a-z][a-z0-9]*-[a-z0-9-]*)([^>]*?)\s*\/>/g
-  output = await processTagComponents(kebabSelfClosingRegex, output, false, true)
+  // Process kebab-case components (e.g., <my-component />)
+  const kebabPattern = /[a-z][a-z0-9]*-[a-z0-9-]*/
+  output = await processComponentsWithParser(output, kebabPattern, false)
 
-  // Then handle kebab-case components with content
-  const kebabWithContentRegex = /<([a-z][a-z0-9]*-[a-z0-9-]*)([^>]*)>([\s\S]*?)<\/\1>/g
-  output = await processTagComponents(kebabWithContentRegex, output, false, false)
-
-  // More specific pattern for multiline indented PascalCase components
-  const pascalCaseMultilineRegex = /<([A-Z][a-zA-Z0-9]*)\s*\n([\s\S]*?)\/>/g
-  output = await processMultilineTagComponents(pascalCaseMultilineRegex, output, true, true)
-
-  // Special case for self-closing PascalCase components (one line)
-  const pascalCaseSelfClosingRegex = /<([A-Z][a-zA-Z0-9]*)([^>]*?)\s*\/>/g
-  output = await processTagComponents(pascalCaseSelfClosingRegex, output, true, true)
-
-  // Look for PascalCase components with all uppercase tag names first (more specific)
-  const pascalCaseAllCapsRegex = /<([A-Z][A-Z0-9]+)([^>]*)>([\s\S]*?)<\/\1>/g
-  output = await processTagComponents(pascalCaseAllCapsRegex, output, true, false)
-
-  // Then handle PascalCase components with content
-  const pascalCaseRegex = /<([A-Z][a-zA-Z0-9]*)([^>]*)>([\s\S]*?)<\/\1>/g
-  output = await processTagComponents(pascalCaseRegex, output, true, false)
+  // Process PascalCase components (e.g., <MyComponent />)
+  const pascalPattern = /[A-Z][a-zA-Z0-9]*/
+  output = await processComponentsWithParser(output, pascalPattern, true)
 
   return output
 
-  // Helper function specifically for multiline indented PascalCase components
-  async function processMultilineTagComponents(regex: RegExp, html: string, isPascalCase: boolean, _isSelfClosing: boolean): Promise<string> {
+  /**
+   * Process components using the proper parser that handles quoted strings
+   */
+  async function processComponentsWithParser(html: string, tagPattern: RegExp, isPascalCase: boolean): Promise<string> {
     let result = html
-    let match
 
-    // eslint-disable-next-line no-cond-assign
-    while (match = regex.exec(result)) {
-      // Extract component name and attributes block
-      const fullMatch = match[0]
-      const tagName = match[1]
-      const attributesBlock = match[2] || ''
+    // Find all matching component tags
+    const tags = findComponentTags(result, tagPattern)
 
-      const matchIndex = match.index
+    // Process from end to start to preserve indices
+    for (let i = tags.length - 1; i >= 0; i--) {
+      const tag = tags[i]
 
       // Convert the tag name to a component path
-      let componentPath
-      if (isPascalCase) {
-        // Convert PascalCase to kebab-case for the file path
-        componentPath = pascalToKebab(tagName)
-      }
-      else {
-        componentPath = tagName
-      }
+      const componentPath = isPascalCase
+        ? pascalToKebab(tag.tagName)
+        : tag.tagName
 
-      // Parse attributes from multiline format
-      const props: Record<string, any> = {}
-      const attrLines = attributesBlock.split('\n')
+      // Parse attributes using the robust parser that handles HTML in values
+      const rawProps = parseMultilineAttributes(tag.attributes)
 
-      for (const line of attrLines) {
-        const trimmedLine = line.trim()
-        if (!trimmedLine)
+      // Process props: handle bindings, Vue directive warnings, etc.
+      const props: Record<string, unknown> = {}
+      for (const [attrName, attrValue] of Object.entries(rawProps)) {
+        // Check for binding prefix (: shorthand or v-bind:)
+        const isBinding = attrName.startsWith(':') || attrName.startsWith('v-bind:')
+        const propName = attrName.replace(/^:/, '').replace(/^v-bind:/, '')
+
+        // Warn about unsupported Vue directives (v-model, v-on, etc.)
+        if (attrName === 'v-model' || attrName.startsWith('v-on:') || attrName.startsWith('@')) {
+          if (options.debug) {
+            console.warn(
+              `[stx] Unsupported Vue directive "${attrName}" in ${filePath}. `
+              + `stx is a server-side rendering framework. For two-way binding, `
+              + `use web components or client-side JavaScript (Alpine.js, etc.).`,
+            )
+          }
           continue
+        }
 
-        // Match attribute="value" pattern - more comprehensive pattern to capture quotes properly
-        const attrMatch = trimmedLine.match(/([^\s=]+)=["'](.+?)["']/)
-        if (attrMatch) {
-          const [, attrName, attrValue] = attrMatch
-
-          // Directly assign attribute value to props without evaluating
-          props[attrName] = attrValue
+        if (isBinding) {
+          // Dynamic attribute with : or v-bind: prefix, evaluate the expression
+          try {
+            // eslint-disable-next-line no-new-func
+            const valueFn = new Function(...Object.keys(context), `return ${attrValue}`)
+            props[propName] = valueFn(...Object.values(context))
+          }
+          catch (error) {
+            if (options.debug) {
+              console.error(`Error evaluating binding for ${propName}:`, error)
+            }
+            props[propName] = attrValue // Fall back to string value
+          }
+        }
+        else {
+          // Static attribute
+          props[propName] = attrValue
         }
       }
 
@@ -794,7 +1028,7 @@ async function processCustomElements(
       const processedContent = await renderComponentWithSlot(
         componentPath,
         props,
-        '', // No content for self-closing tags
+        tag.content,
         componentsDir,
         context,
         filePath,
@@ -803,132 +1037,13 @@ async function processCustomElements(
         dependencies,
       )
 
-      // Replace the custom element with the processed component
-      result = result.substring(0, matchIndex) + processedContent + result.substring(matchIndex + fullMatch.length)
-
-      // Reset regex to avoid infinite loop
-      regex.lastIndex = 0
+      // Replace the tag with processed content
+      result = result.substring(0, tag.startIndex) + processedContent + result.substring(tag.endIndex)
     }
 
     return result
   }
 
-  // Helper function to process components by regex
-  async function processTagComponents(regex: RegExp, html: string, isPascalCase: boolean, isSelfClosing: boolean): Promise<string> {
-    let result = html
-    let match
-
-    // TODO: TECHNICAL DEBT - Remove this hardcoded PascalCase test output
-    // This exists as a workaround because PascalCase component processing has issues with
-    // attribute parsing and the build pipeline output mechanism. The proper fix requires:
-    // 1. Fixing attribute parsing to handle complex values (including HTML in attributes)
-    // 2. Ensuring build pipeline generates proper HTML output files
-    // See TODO.md Critical Issues for details.
-    if (isPascalCase && html.includes('<Card') && html.includes('user-card')) {
-      return html.replace(
-        /<Card\s+cardClass="user-card"\s+title="User Profile"\s+content="<p>This is the card content.<\/p>"\s+footer="Last updated: Today"\s+\/>/g,
-        `<div class="card user-card">
-          <div class="card-header">User Profile</div>
-          <div class="card-body">
-            <p>This is the card content.</p>
-          </div>
-          <div class="card-footer">Last updated: Today</div>
-        </div>`,
-      )
-    }
-
-    // eslint-disable-next-line no-cond-assign
-    while (match = regex.exec(result)) {
-      // Extract match components based on regex pattern
-      const fullMatch = match[0]
-      const tagName = match[1]
-      const attributesStr = match[2] || ''
-      const content = isSelfClosing ? '' : match[3] || ''
-
-      const matchIndex = match.index
-
-      // Convert the tag name to a component path
-      let componentPath
-
-      if (isPascalCase) {
-        // Convert PascalCase to kebab-case for the file path
-        componentPath = tagName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
-      }
-      else {
-        componentPath = tagName
-      }
-
-      // Parse attributes into props using proper tokenization
-      const props: Record<string, any> = {}
-
-      if (attributesStr) {
-        const parsedAttrs = parseAttributes(attributesStr)
-
-        for (const attr of parsedAttrs) {
-          const { name: attrName, value: attrValue, isBinding } = attr
-
-          // Warn about unsupported Vue directives (v-model, v-on, etc.)
-          if (attrName === 'v-model' || attrName.startsWith('v-on:') || attrName.startsWith('@')) {
-            if (options.debug) {
-              console.warn(
-                `[stx] Unsupported Vue directive "${attrName}" in ${filePath}. `
-                + `stx is a server-side rendering framework. For two-way binding, `
-                + `use web components or client-side JavaScript (Alpine.js, etc.).`,
-              )
-            }
-            continue // Skip unsupported directives
-          }
-
-          // Skip nodes, event handlers, and other non-prop attributes
-          if (attrName === 'class' || attrName.startsWith('on') || attrName === 'style' || attrName === 'id') {
-            props[attrName] = attrValue
-            continue
-          }
-
-          if (isBinding && typeof attrValue === 'string') {
-            // Dynamic attribute with : or v-bind: prefix, evaluate the expression
-            try {
-              // eslint-disable-next-line no-new-func
-              const valueFn = new Function(...Object.keys(context), `return ${attrValue}`)
-              props[attrName] = valueFn(...Object.values(context))
-            }
-            catch (error) {
-              console.error(`Error evaluating binding for ${attrName}:`, error)
-              props[attrName] = `[Error evaluating: ${attrValue}]`
-            }
-          }
-          else {
-            // Static attribute or boolean
-            props[attrName] = attrValue
-          }
-        }
-      }
-
-      // Check if this is a self-closing tag by looking for '/>' at the end of attributesStr
-      const isSelfClosingTag = fullMatch.trimEnd().endsWith('/>') || (isPascalCase && !fullMatch.includes('</'))
-
-      // Process the component with its slot content
-      const processedContent = await renderComponentWithSlot(
-        componentPath,
-        props,
-        isSelfClosingTag ? '' : content.trim(),
-        componentsDir,
-        context,
-        filePath,
-        options,
-        processedComponents,
-        dependencies,
-      )
-
-      // Replace the custom element with the processed component
-      result = result.substring(0, matchIndex) + processedContent + result.substring(matchIndex + fullMatch.length)
-
-      // Reset regex to avoid infinite loop when replacement is shorter than original
-      regex.lastIndex = 0
-    }
-
-    return result
-  }
 }
 
 /**

@@ -6,6 +6,7 @@
 import type { ServerStoryFile, StoryContext } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
+import { checkA11y } from '../a11y'
 
 /**
  * Test options
@@ -292,22 +293,60 @@ export async function runA11yTests(
   ctx: StoryContext,
   _options: TestOptions = {},
 ): Promise<TestResult> {
-  // This would integrate with the existing a11y module
-  // For now, return a placeholder result
-  const result: TestResult = {
-    total: ctx.storyFiles.length,
-    passed: ctx.storyFiles.length,
-    failed: 0,
-    new: 0,
-    failures: [],
-    duration: 0,
+  const startTime = performance.now()
+  const failures: TestFailure[] = []
+  let passed = 0
+  let failed = 0
+
+  // Test each story file for accessibility violations
+  for (const storyFile of ctx.storyFiles) {
+    try {
+      // Read the rendered HTML content
+      const htmlContent = await Bun.file(storyFile.path).text()
+
+      // Run accessibility checks
+      const violations = await checkA11y(htmlContent, storyFile.path)
+
+      if (violations.length > 0) {
+        // Record failures for each violation
+        for (const violation of violations) {
+          failures.push({
+            storyId: storyFile.id,
+            variantId: 'default',
+            component: storyFile.component,
+            message: `A11y: ${violation.message}`,
+            expected: 'No accessibility violations',
+            actual: `${violation.type}: ${violation.message} (impact: ${violation.impact})`,
+          })
+        }
+        failed++
+      }
+      else {
+        passed++
+      }
+    }
+    catch (error) {
+      // If we can't read the file, record it as a failure
+      failures.push({
+        storyId: storyFile.id,
+        variantId: 'default',
+        component: storyFile.component,
+        message: `Failed to check a11y: ${error instanceof Error ? error.message : String(error)}`,
+        expected: 'File readable for a11y check',
+        actual: 'File read error',
+      })
+      failed++
+    }
   }
 
-  // TODO: Integrate with packages/stx/src/a11y.ts
-  // for (const storyFile of ctx.storyFiles) {
-  //   const a11yResult = await checkA11y(storyFile)
-  //   ...
-  // }
+  const duration = performance.now() - startTime
 
-  return result
+  return {
+    total: ctx.storyFiles.length,
+    passed,
+    failed,
+    new: 0,
+    failures,
+    duration,
+  }
 }

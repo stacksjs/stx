@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
-  <title>Buddy - Voice AI Code Assistant</title>
+  <title>Voide - Voice AI Code Assistant</title>
 
   <!-- Craft Native Bridge - enables window.craft APIs when running in native app -->
   <script>
@@ -778,6 +778,18 @@
       to { transform: translateY(-8px); }
     }
 
+    /* Streaming message cursor animation */
+    .message.streaming .cursor {
+      animation: blink 1s step-end infinite;
+      color: var(--accent-primary);
+      font-weight: bold;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
     /* Footer */
     .footer {
       padding: 10px 20px;
@@ -927,19 +939,19 @@
   <header class="header">
     <div class="logo">
       <div class="logo-icon">🤖</div>
-      <span class="logo-text" id="appTitle">Buddy</span>
+      <span class="logo-text" id="appTitle">Voide</span>
     </div>
 
     <div class="header-controls">
       <div class="driver-selector">
         <label for="aiDriver">AI Driver:</label>
         <select id="aiDriver">
-          <option value="claude">Claude (API)</option>
-          <option value="claude-cli">Claude CLI (Local)</option>
+          <option value="claude-cli-local" selected>Claude CLI (Local)</option>
           <option value="claude-cli-ec2">Claude CLI (EC2)</option>
+          <option value="claude">Claude API</option>
           <option value="openai">OpenAI</option>
-          <option value="ollama">Ollama (Local)</option>
-          <option value="mock">Mock (Demo)</option>
+          <option value="ollama">Ollama</option>
+          <option value="mock">Mock</option>
         </select>
       </div>
 
@@ -1102,11 +1114,11 @@
         <div class="terminal-dot red"></div>
         <div class="terminal-dot yellow"></div>
         <div class="terminal-dot green"></div>
-        <span class="terminal-title" id="terminalTitle">Buddy - Ready</span>
+        <span class="terminal-title" id="terminalTitle">Voide - Ready</span>
       </div>
       <div class="terminal-output" id="output">
         <div class="message system">
-          <div class="message-content" id="welcomeMessage">Welcome to Buddy - your voice-controlled AI code assistant.
+          <div class="message-content" id="welcomeMessage">Welcome to Voide - your voice-controlled AI code assistant.
 
 Instructions:
 1. Select your preferred AI driver above
@@ -1157,20 +1169,20 @@ Example commands:
   </main>
 
   <footer class="footer" id="footer">
-    Buddy v1.0.0 - Voice AI Code Assistant
+    Voide v1.0.0 - Voice AI Code Assistant
   </footer>
 
   <script>
     // Configuration
     const config = {
-      title: 'Buddy',
+      title: 'Voide',
       version: '1.0.0',
       // Stacks API base URL - the backend for agentic functionality
-      apiBaseUrl: 'http://localhost:3008/buddy',
+      apiBaseUrl: 'http://localhost:3008/voide',
       drivers: {
-        claude: { name: 'Claude', requiresKey: 'ANTHROPIC_API_KEY' },
-        'claude-cli': { name: 'Claude CLI', requiresKey: null },
+        'claude-cli-local': { name: 'Claude CLI (Local)', requiresKey: null },
         'claude-cli-ec2': { name: 'Claude CLI (EC2)', requiresKey: 'BUDDY_EC2_HOST' },
+        claude: { name: 'Claude API', requiresKey: 'ANTHROPIC_API_KEY' },
         openai: { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
         ollama: { name: 'Ollama', requiresKey: null },
         mock: { name: 'Mock', requiresKey: null }
@@ -1187,7 +1199,7 @@ Example commands:
       hasChanges: false,
       recognition: null,
       speechSupported: false,
-      currentDriver: 'claude',
+      currentDriver: 'claude-cli-local',
       isNativeApp: false,
       github: {
         connected: false,
@@ -1272,17 +1284,17 @@ Example commands:
 
       try {
         // Set up system tray
-        await window.craft.tray.setTitle('Buddy');
-        await window.craft.tray.setTooltip('Buddy - Voice AI Code Assistant');
+        await window.craft.tray.setTitle('Voide');
+        await window.craft.tray.setTooltip('Voide - Voice AI Code Assistant');
 
         // Set up tray menu
         await window.craft.tray.setMenu([
-          { id: 'show', label: 'Show Buddy', action: 'show' },
+          { id: 'show', label: 'Show Voide', action: 'show' },
           { id: 'hide', label: 'Hide Window', action: 'hide' },
           { type: 'separator' },
           { id: 'recording', label: 'Start Recording', action: 'startRecording' },
           { type: 'separator' },
-          { id: 'quit', label: 'Quit Buddy', action: 'quit', shortcut: 'Cmd+Q' }
+          { id: 'quit', label: 'Quit Voide', action: 'quit', shortcut: 'Cmd+Q' }
         ]);
 
         // Toggle window on tray click
@@ -1306,7 +1318,7 @@ Example commands:
           success: '✅',
           error: '❌'
         };
-        await window.craft.tray.setTitle(`${icons[status] || '🤖'} Buddy`);
+        await window.craft.tray.setTitle(`${icons[status] || '🤖'} Voide`);
       } catch (e) {
         // Ignore tray errors
       }
@@ -1483,6 +1495,48 @@ Example commands:
       if (loading) loading.remove();
     }
 
+    // Add streaming message (returns unique ID)
+    function addStreamingMessage() {
+      const driverName = config.drivers[state.currentDriver]?.name || 'AI';
+      const messageId = 'streaming-' + Date.now();
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message assistant streaming';
+      messageDiv.id = messageId;
+      messageDiv.innerHTML = `
+        <div class="message-header">${driverName}</div>
+        <div class="message-content">
+          <span class="cursor">▊</span>
+        </div>
+      `;
+      elements.output.appendChild(messageDiv);
+      elements.output.scrollTop = elements.output.scrollHeight;
+      return messageId;
+    }
+
+    // Update streaming message content
+    function updateStreamingMessage(messageId, text) {
+      const messageDiv = document.getElementById(messageId);
+      if (messageDiv) {
+        const contentDiv = messageDiv.querySelector('.message-content');
+        if (contentDiv) {
+          // Format the text (preserve whitespace and handle code blocks)
+          const formattedText = escapeHtml(text);
+          contentDiv.innerHTML = `<pre style="white-space: pre-wrap; margin: 0; font-family: inherit;">${formattedText}</pre><span class="cursor">▊</span>`;
+          elements.output.scrollTop = elements.output.scrollHeight;
+        }
+      }
+    }
+
+    // Finalize streaming message (remove cursor, mark complete)
+    function finalizeStreamingMessage(messageId) {
+      const messageDiv = document.getElementById(messageId);
+      if (messageDiv) {
+        messageDiv.classList.remove('streaming');
+        const cursor = messageDiv.querySelector('.cursor');
+        if (cursor) cursor.remove();
+      }
+    }
+
     // Escape HTML
     function escapeHtml(text) {
       const div = document.createElement('div');
@@ -1524,20 +1578,101 @@ Example commands:
         const hasBackend = await checkBackendAPI();
 
         if (hasBackend) {
-          // Use Stacks API for agentic processing
-          const apiResponse = await fetch(`${config.apiBaseUrl}/process`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ command, driver: state.currentDriver })
-          });
+          // Check if we should use streaming (only for claude-cli-local)
+          const useStreaming = state.currentDriver === 'claude-cli-local';
 
-          const responseData = await apiResponse.json();
+          if (useStreaming) {
+            // Use SSE streaming endpoint for real-time response
+            removeLoadingMessage();
+            const streamingMessageId = addStreamingMessage();
 
-          if (!apiResponse.ok || !responseData.success) {
-            throw new Error(responseData.error || 'Unknown error occurred');
+            const streamResponse = await fetch(`${config.apiBaseUrl}/process/stream`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                command,
+                driver: state.currentDriver,
+                ...(state.repoPath && { repository: state.repoPath })
+              })
+            });
+
+            if (!streamResponse.ok) {
+              const errorData = await streamResponse.json();
+              throw new Error(errorData.error || 'Streaming request failed');
+            }
+
+            // Read the SSE stream
+            const reader = streamResponse.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText = '';
+            let buffer = '';
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+
+              // Parse SSE events from buffer
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+              for (const line of lines) {
+                if (line.startsWith('event: ')) {
+                  const eventType = line.substring(7);
+                  continue;
+                }
+                if (line.startsWith('data: ')) {
+                  try {
+                    const data = JSON.parse(line.substring(6));
+
+                    if (data.text) {
+                      fullText += data.text;
+                      updateStreamingMessage(streamingMessageId, fullText);
+                    }
+
+                    if (data.status === 'complete') {
+                      // Handle completion
+                      response = {
+                        message: fullText,
+                        hasChanges: data.hasChanges,
+                        modifiedFiles: data.modifiedFiles
+                      };
+                    }
+
+                    if (data.error) {
+                      throw new Error(data.error);
+                    }
+                  } catch (e) {
+                    // Ignore parse errors for incomplete data
+                  }
+                }
+              }
+            }
+
+            // Finalize the streaming message
+            finalizeStreamingMessage(streamingMessageId);
+          } else {
+            // Use regular non-streaming API
+            const apiResponse = await fetch(`${config.apiBaseUrl}/process`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                command,
+                driver: state.currentDriver,
+                ...(state.repoPath && { repository: state.repoPath })
+              })
+            });
+
+            const responseData = await apiResponse.json();
+
+            if (!apiResponse.ok || !responseData.success) {
+              throw new Error(responseData.error || 'Unknown error occurred');
+            }
+
+            // Extract the actual data from Stacks response wrapper
+            response = responseData.data;
           }
-
-          response = responseData;
         } else if (state.currentDriver === 'claude' && state.apiKeys.anthropic) {
           // Fall back to direct Claude API call if Stacks backend unavailable
           response = await callClaudeAPI(command);
@@ -1725,13 +1860,14 @@ Would you like me to proceed with these changes?`;
           }
 
           const data = await apiResponse.json();
-          state.repoPath = data.repo.path;
+          const repo = data.data.repo;
+          state.repoPath = repo.path;
 
-          addMessage('system', `Repository "${data.repo.name}" opened successfully.
-Working directory: ${data.repo.path}
-Branch: ${data.repo.branch}
-Last commit: ${data.repo.lastCommit || 'N/A'}
-Has changes: ${data.repo.hasChanges ? 'Yes' : 'No'}`);
+          addMessage('system', `Repository "${repo.name}" opened successfully.
+Working directory: ${repo.path}
+Branch: ${repo.branch}
+Last commit: ${repo.lastCommit || 'N/A'}
+Has changes: ${repo.hasChanges ? 'Yes' : 'No'}`);
         } else {
           // Simulated repo opening when backend unavailable
           await new Promise(resolve => setTimeout(resolve, 800));
@@ -1973,7 +2109,7 @@ Note: Stacks API not available - this is a simulated push.`);
         };
 
         // Save to localStorage for persistence
-        localStorage.setItem('buddy_github', JSON.stringify({
+        localStorage.setItem('voide_github', JSON.stringify({
           token: token,
           username: userData.login,
           name: state.github.name,
@@ -2023,7 +2159,7 @@ Commits will be authored by: ${state.github.name} <${state.github.email}>`);
         avatarUrl: null
       };
 
-      localStorage.removeItem('buddy_github');
+      localStorage.removeItem('voide_github');
 
       // Notify Stacks backend
       const hasBackend = await checkBackendAPI();
@@ -2044,7 +2180,7 @@ Commits will be authored by: ${state.github.name} <${state.github.email}>`);
     // Load saved GitHub credentials
     function loadSavedGithub() {
       try {
-        const saved = localStorage.getItem('buddy_github');
+        const saved = localStorage.getItem('voide_github');
         if (saved) {
           const data = JSON.parse(saved);
           state.github = {
@@ -2186,7 +2322,7 @@ Commits will be authored by: ${state.github.name} <${state.github.email}>`);
         state.apiKeys.claudeCliHost = claudeHost || null;
 
         // Save to localStorage
-        localStorage.setItem('buddy_api_keys', JSON.stringify(state.apiKeys));
+        localStorage.setItem('voide_api_keys', JSON.stringify(state.apiKeys));
 
         // Send to Stacks backend if available
         const hasBackend = await checkBackendAPI();
@@ -2213,7 +2349,7 @@ Commits will be authored by: ${state.github.name} <${state.github.email}>`);
     // Load saved API keys
     function loadSavedApiKeys() {
       try {
-        const saved = localStorage.getItem('buddy_api_keys');
+        const saved = localStorage.getItem('voide_api_keys');
         if (saved) {
           const data = JSON.parse(saved);
           state.apiKeys = {
@@ -2253,7 +2389,7 @@ Commits will be authored by: ${state.github.name} <${state.github.email}>`);
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 4096,
-          system: `You are Buddy, a voice-controlled AI code assistant. You help developers write, review, and modify code through natural language commands.
+          system: `You are Voide, a voice-controlled AI code assistant. You help developers write, review, and modify code through natural language commands.
 
 When the user asks you to modify code, provide:
 1. Analysis of what needs to be changed
