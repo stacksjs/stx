@@ -1720,7 +1720,7 @@ Would you like me to proceed with these changes?`;
           const apiResponse = await fetch(`${config.apiBaseUrl}/repo`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: input })
+            body: JSON.stringify({ input })
           });
 
           if (!apiResponse.ok) {
@@ -1729,13 +1729,14 @@ Would you like me to proceed with these changes?`;
           }
 
           const data = await apiResponse.json();
-          state.repoPath = data.repo.path;
+          const repo = data.data.repo;
+          state.repoPath = repo.path;
 
-          addMessage('system', `Repository "${data.repo.name}" opened successfully.
-Working directory: ${data.repo.path}
-Branch: ${data.repo.branch}
-Last commit: ${data.repo.lastCommit || 'N/A'}
-Has changes: ${data.repo.hasChanges ? 'Yes' : 'No'}`);
+          addMessage('system', `Repository "${repo.name}" opened successfully.
+Working directory: ${repo.path}
+Branch: ${repo.branch}
+Last commit: ${repo.lastCommit || 'N/A'}
+Has changes: ${repo.hasChanges ? 'Yes' : 'No'}`);
         } else {
           // Simulated repo opening when backend unavailable
           await new Promise(resolve => setTimeout(resolve, 800));
