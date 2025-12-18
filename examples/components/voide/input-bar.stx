@@ -1,0 +1,72 @@
+@js
+const statusText = props.statusText || 'Click microphone or type below'
+const statusHint = props.statusHint || 'Hold to record, release to send'
+@endjs
+
+<div class="flex items-center gap-5 p-5 bg-[#161b22] border border-[#30363d] rounded-xl">
+  <!-- Mic Button -->
+  <button
+    id="micButton"
+    class="w-20 h-20 rounded-full bg-gradient-to-br from-[#21262d] to-[#161b22] border-[3px] border-[#30363d] cursor-pointer flex items-center justify-center transition-all hover:border-[#e94560] hover:scale-105 focus:outline-none"
+    title="Hold to record (or press Space)"
+  >
+    <span id="micIcon" class="text-3xl">🎤</span>
+  </button>
+
+  <!-- Voice Status -->
+  <div class="flex-1">
+    <div id="statusText" class="text-sm text-[#e6edf3] mb-1">{{ statusText }}</div>
+    <div id="statusHint" class="text-xs text-[#8b949e]">{{ statusHint }}</div>
+
+    <!-- Transcript Preview -->
+    <div
+      id="transcriptPreview"
+      class="bg-[#21262d] border border-[#30363d] rounded-lg p-3 mt-3 text-sm text-[#8b949e] min-h-[40px]"
+    >
+      Your voice command will appear here...
+    </div>
+
+    <!-- Text Input - ChatGPT/Claude style -->
+    <div class="relative mt-3">
+      <div class="flex items-end gap-2 bg-[#21262d] border border-[#30363d] rounded-2xl px-4 py-3 focus-within:border-[#e94560] transition-colors">
+        <textarea
+          id="textInput"
+          class="flex-1 bg-transparent text-sm text-[#e6edf3] placeholder-[#484f58] focus:outline-none resize-none min-h-[24px] max-h-[200px] leading-6"
+          placeholder="Message Voide... (Shift+Enter for new line)"
+          rows="1"
+        ></textarea>
+        <button
+          id="sendBtn"
+          class="flex-shrink-0 w-8 h-8 rounded-lg bg-[#e94560] hover:bg-[#f45a75] flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Send message (Enter)"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="text-[10px] text-[#484f58] mt-1.5 text-center">
+        Press <kbd class="px-1.5 py-0.5 bg-[#21262d] rounded text-[#8b949e]">Enter</kbd> to send, <kbd class="px-1.5 py-0.5 bg-[#21262d] rounded text-[#8b949e]">Shift+Enter</kbd> for new line
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="flex gap-3">
+    <button
+      id="commitBtn"
+      class="bg-[#3fb950] border border-[#3fb950] rounded-lg px-4 py-2 text-sm text-[#0d1117] cursor-pointer hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+      disabled
+    >
+      Commit Changes
+    </button>
+    <button
+      id="pushBtn"
+      class="bg-[#1a1a2e] border border-[#30363d] rounded-lg px-4 py-2 text-sm text-[#e6edf3] cursor-pointer hover:bg-[#e94560] hover:border-[#e94560] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+      disabled
+    >
+      Push
+    </button>
+  </div>
+</div>

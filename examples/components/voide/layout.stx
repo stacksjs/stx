@@ -1,0 +1,148 @@
+@js
+const title = props.title || 'Voide'
+const version = props.version || '1.0.0'
+@endjs
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>{{ title }} - Voice AI Code Assistant</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/headwind/dist/headwind.min.css">
+
+  <!-- Craft Native Bridge -->
+  <script>
+    (function() {
+      if (window.webkit?.messageHandlers?.craftBridge) {
+        window.craft = {
+          _callbacks: {},
+          _callbackId: 0,
+          _invoke(method, args = {}) {
+            return new Promise((resolve, reject) => {
+              const id = ++this._callbackId;
+              this._callbacks[id] = { resolve, reject };
+              window.webkit.messageHandlers.craftBridge.postMessage({
+                id,
+                method,
+                args
+              });
+            });
+          },
+          _handleResponse(id, result, error) {
+            const cb = this._callbacks[id];
+            if (cb) {
+              delete this._callbacks[id];
+              error ? cb.reject(new Error(error)) : cb.resolve(result);
+            }
+          },
+          window: {
+            setTitle: (title) => window.craft._invoke('window.setTitle', { title }),
+            setSize: (width, height) => window.craft._invoke('window.setSize', { width, height }),
+            setMinSize: (width, height) => window.craft._invoke('window.setMinSize', { width, height }),
+            setMaxSize: (width, height) => window.craft._invoke('window.setMaxSize', { width, height }),
+            center: () => window.craft._invoke('window.center'),
+            close: () => window.craft._invoke('window.close'),
+            minimize: () => window.craft._invoke('window.minimize'),
+            maximize: () => window.craft._invoke('window.maximize'),
+            toggleFullscreen: () => window.craft._invoke('window.toggleFullscreen'),
+            isFullscreen: () => window.craft._invoke('window.isFullscreen'),
+            setResizable: (resizable) => window.craft._invoke('window.setResizable', { resizable }),
+            show: () => window.craft._invoke('window.show'),
+            hide: () => window.craft._invoke('window.hide'),
+            focus: () => window.craft._invoke('window.focus'),
+            getPosition: () => window.craft._invoke('window.getPosition'),
+            setPosition: (x, y) => window.craft._invoke('window.setPosition', { x, y }),
+          },
+          tray: {
+            setTitle: (title) => window.craft._invoke('tray.setTitle', { title }),
+            setIcon: (iconPath) => window.craft._invoke('tray.setIcon', { iconPath }),
+            setTooltip: (tooltip) => window.craft._invoke('tray.setTooltip', { tooltip }),
+            setMenu: (menu) => window.craft._invoke('tray.setMenu', { menu }),
+            onClick: (callback) => { window.craft._trayClickCallback = callback; },
+            onClickToggleWindow: () => window.craft._invoke('tray.onClickToggleWindow'),
+          },
+          app: {
+            quit: () => window.craft._invoke('app.quit'),
+            getVersion: () => window.craft._invoke('app.getVersion'),
+            getName: () => window.craft._invoke('app.getName'),
+            notify: (options) => window.craft._invoke('app.notify', options),
+            setBadge: (count) => window.craft._invoke('app.setBadge', { count }),
+            clearBadge: () => window.craft._invoke('app.clearBadge'),
+          },
+          clipboard: {
+            read: () => window.craft._invoke('clipboard.read'),
+            write: (text) => window.craft._invoke('clipboard.write', { text }),
+          },
+          shell: {
+            openExternal: (url) => window.craft._invoke('shell.openExternal', { url }),
+            showItemInFolder: (path) => window.craft._invoke('shell.showItemInFolder', { path }),
+          },
+        };
+        console.log('[Voide] Craft native bridge initialized');
+      }
+    })();
+  </script>
+
+  <style>
+    /* Custom CSS Variables for theming */
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #484f58;
+      --accent-primary: #e94560;
+      --accent-secondary: #1a1a2e;
+      --border: #30363d;
+      --success: #3fb950;
+      --warning: #d29922;
+      --error: #f85149;
+    }
+
+    /* Base resets */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-tertiary); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.4); }
+      50% { box-shadow: 0 0 0 20px rgba(233, 69, 96, 0); }
+    }
+    @keyframes bounce {
+      to { transform: translateY(-8px); }
+    }
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .animate-fade-in { animation: fadeIn 0.3s ease; }
+    .animate-pulse { animation: pulse 1.5s infinite; }
+    .animate-bounce { animation: bounce 0.6s infinite alternate; }
+    .animate-blink { animation: blink 1s step-end infinite; }
+  </style>
+</head>
+<body class="flex flex-col h-screen">
+  {{ slot }}
+</body>
+</html>

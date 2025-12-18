@@ -1,0 +1,508 @@
+<script>
+const title = 'Voide'
+const version = '1.0.0'
+</script>
+
+@include('./components/voide/layout', { title, version })
+  <!-- Header -->
+  @include('./components/voide/header', { title })
+
+  <!-- Main Content -->
+  <main class="flex-1 flex flex-col p-5 gap-5 overflow-hidden">
+    <!-- Terminal -->
+    @include('./components/voide/terminal')
+
+    <!-- Input Bar -->
+    @include('./components/voide/input-bar')
+  </main>
+
+  <!-- Footer -->
+  <footer id="footer" class="px-5 py-2.5 text-center text-[11px] text-[#484f58] border-t border-[#30363d]">
+    Voide v1.0.0 - Voice AI Code Assistant
+  </footer>
+
+  <!-- Modals -->
+  @include('./components/voide/modals')
+
+  <!-- App Logic Script -->
+  <script>
+    // Configuration
+    const config = {
+      title: 'Voide',
+      version: '1.0.0',
+      apiBaseUrl: 'http://localhost:3008/voide',
+      drivers: {
+        'claude-cli-local': { name: 'Claude CLI (Local)', requiresKey: null },
+        'claude-cli-ec2': { name: 'Claude CLI (EC2)', requiresKey: 'BUDDY_EC2_HOST' },
+        claude: { name: 'Claude API', requiresKey: 'ANTHROPIC_API_KEY' },
+        openai: { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
+        ollama: { name: 'Ollama', requiresKey: null },
+        mock: { name: 'Mock', requiresKey: null }
+      }
+    };
+
+    // State management
+    const state = {
+      isRecording: false,
+      isProcessing: false,
+      transcript: '',
+      messages: [],
+      repoPath: '',
+      hasChanges: false,
+      recognition: null,
+      speechSupported: false,
+      currentDriver: 'claude-cli-local',
+      isNativeApp: false,
+      github: { connected: false, token: null, username: null, name: null, email: null, avatarUrl: null },
+      apiKeys: { anthropic: null, openai: null, claudeCliHost: null }
+    };
+
+    // DOM elements
+    const elements = {
+      output: document.getElementById('output'),
+      micButton: document.getElementById('micButton'),
+      micIcon: document.getElementById('micIcon'),
+      statusText: document.getElementById('statusText'),
+      statusHint: document.getElementById('statusHint'),
+      transcriptPreview: document.getElementById('transcriptPreview'),
+      repoInput: document.getElementById('repoInput'),
+      cloneBtn: document.getElementById('cloneBtn'),
+      commitBtn: document.getElementById('commitBtn'),
+      pushBtn: document.getElementById('pushBtn'),
+      terminalTitle: document.getElementById('terminalTitle'),
+      aiDriver: document.getElementById('aiDriver'),
+      textInput: document.getElementById('textInput'),
+      sendBtn: document.getElementById('sendBtn'),
+      footer: document.getElementById('footer'),
+      appTitle: document.getElementById('appTitle'),
+      githubAccount: document.getElementById('githubAccount'),
+      githubUsername: document.getElementById('githubUsername'),
+      githubStatus: document.getElementById('githubStatus'),
+      githubModal: document.getElementById('githubModal'),
+      githubToken: document.getElementById('githubToken'),
+      gitName: document.getElementById('gitName'),
+      gitEmail: document.getElementById('gitEmail'),
+      modalClose: document.getElementById('modalClose'),
+      modalCancel: document.getElementById('modalCancel'),
+      connectBtn: document.getElementById('connectBtn'),
+      disconnectBtn: document.getElementById('disconnectBtn'),
+      connectForm: document.getElementById('connectForm'),
+      connectedInfo: document.getElementById('connectedInfo'),
+      connectedAvatar: document.getElementById('connectedAvatar'),
+      connectedName: document.getElementById('connectedName'),
+      connectedUsername: document.getElementById('connectedUsername'),
+      settingsBtn: document.getElementById('settingsBtn'),
+      settingsModal: document.getElementById('settingsModal'),
+      settingsModalClose: document.getElementById('settingsModalClose'),
+      settingsModalCancel: document.getElementById('settingsModalCancel'),
+      saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+      anthropicApiKey: document.getElementById('anthropicApiKey'),
+      openaiApiKey: document.getElementById('openaiApiKey'),
+      claudeCliHost: document.getElementById('claudeCliHost'),
+      anthropicStatus: document.getElementById('anthropicStatus'),
+      anthropicStatusText: document.getElementById('anthropicStatusText'),
+      openaiStatus: document.getElementById('openaiStatus'),
+      openaiStatusText: document.getElementById('openaiStatusText')
+    };
+
+    const STORAGE_KEY_REPO = 'voide_last_repo_path';
+
+    // Initialize UI
+    function initUI() {
+      elements.appTitle.textContent = config.title;
+      elements.footer.textContent = `${config.title} v${config.version} - Voice AI Code Assistant`;
+      if (window.craft) { state.isNativeApp = true; initNativeFeatures(); }
+      const savedRepoPath = localStorage.getItem(STORAGE_KEY_REPO);
+      if (savedRepoPath) elements.repoInput.value = savedRepoPath;
+    }
+
+    function restoreSavedRepo() {
+      const savedRepoPath = localStorage.getItem(STORAGE_KEY_REPO);
+      if (savedRepoPath && elements.repoInput.value) handleRepoAction();
+    }
+
+    async function initNativeFeatures() {
+      if (!window.craft) return;
+      try {
+        await window.craft.tray.setTitle('Voide');
+        await window.craft.tray.setTooltip('Voide - Voice AI Code Assistant');
+        await window.craft.tray.setMenu([
+          { id: 'show', label: 'Show Voide', action: 'show' },
+          { id: 'hide', label: 'Hide Window', action: 'hide' },
+          { type: 'separator' },
+          { id: 'recording', label: 'Start Recording', action: 'startRecording' },
+          { type: 'separator' },
+          { id: 'quit', label: 'Quit Voide', action: 'quit', shortcut: 'Cmd+Q' }
+        ]);
+        window.craft.tray.onClickToggleWindow();
+        addMessage('system', 'Running as native app - system tray enabled');
+      } catch (e) { console.log('Native features not fully available:', e); }
+    }
+
+    async function updateTrayStatus(status) {
+      if (!state.isNativeApp || !window.craft) return;
+      try {
+        const icons = { ready: '🤖', recording: '🔴', processing: '⏳', success: '✅', error: '❌' };
+        await window.craft.tray.setTitle(`${icons[status] || '🤖'} Voide`);
+      } catch (e) {}
+    }
+
+    async function sendNotification(title, body, sound = 'default') {
+      if (!state.isNativeApp || !window.craft) return;
+      try { await window.craft.app.notify({ title, body, sound }); } catch (e) {}
+    }
+
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        state.speechSupported = false;
+        elements.statusText.textContent = 'Voice not supported - use text input';
+        elements.statusHint.textContent = 'Type your command below';
+        elements.micButton.style.opacity = '0.5';
+        elements.micButton.style.cursor = 'not-allowed';
+        addMessage('system', 'Speech recognition not available. Please use text input.');
+        return false;
+      }
+      state.recognition = new SpeechRecognition();
+      state.recognition.continuous = false;
+      state.recognition.interimResults = true;
+      state.recognition.lang = 'en-US';
+      state.recognition.maxAlternatives = 1;
+
+      state.recognition.onstart = () => {
+        state.isRecording = true;
+        elements.micButton.classList.add('animate-pulse');
+        elements.micIcon.textContent = '🔴';
+        elements.statusText.textContent = 'Listening...';
+        elements.statusHint.textContent = 'Speak your command clearly';
+        elements.transcriptPreview.classList.add('border-[#e94560]');
+        elements.transcriptPreview.textContent = 'Listening...';
+        updateTrayStatus('recording');
+      };
+
+      state.recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript;
+        state.transcript = transcript;
+        elements.transcriptPreview.textContent = transcript || 'Listening...';
+      };
+
+      state.recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        stopRecording();
+        if (event.error === 'not-allowed') addMessage('error', 'Microphone access denied.');
+        else if (event.error === 'network') { addMessage('error', 'Speech recognition requires internet.'); elements.statusText.textContent = 'Network error - use text input'; }
+        else if (event.error === 'no-speech') elements.statusText.textContent = 'No speech detected - try again';
+        else if (event.error !== 'aborted') addMessage('error', `Speech error: ${event.error}`);
+      };
+
+      state.recognition.onend = () => {
+        if (state.isRecording) {
+          const transcript = state.transcript.trim();
+          stopRecording();
+          if (transcript) processCommand(transcript);
+        }
+      };
+
+      state.speechSupported = true;
+      return true;
+    }
+
+    function startRecording() {
+      if (!state.speechSupported) { elements.textInput.focus(); return; }
+      if (state.isRecording) return;
+      state.transcript = '';
+      elements.transcriptPreview.textContent = 'Initializing...';
+      try { state.recognition.start(); } catch (e) { addMessage('error', 'Failed to start voice recognition.'); }
+    }
+
+    function stopRecording() {
+      state.isRecording = false;
+      elements.micButton.classList.remove('animate-pulse');
+      elements.micIcon.textContent = '🎤';
+      elements.statusText.textContent = 'Click microphone or type below';
+      elements.statusHint.textContent = 'Hold to record, release to send';
+      elements.transcriptPreview.classList.remove('border-[#e94560]');
+      updateTrayStatus('ready');
+      if (state.recognition) try { state.recognition.stop(); } catch (e) {}
+    }
+
+    function addMessage(type, content, header = null) {
+      const messageDiv = document.createElement('div');
+      const driverName = config.drivers[state.currentDriver]?.name || 'AI';
+      const headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error');
+      const typeClasses = { user: 'bg-[#1a1a2e] border-l-2 border-[#e94560]', assistant: 'bg-[#161b22] border-l-2 border-[#3fb950]', system: 'border-l-2 border-[#d29922] text-[#8b949e] text-xs', error: 'bg-[rgba(248,81,73,0.1)] border-l-2 border-[#f85149]' };
+      messageDiv.className = `mb-4 p-3 rounded-lg animate-fade-in ${typeClasses[type] || typeClasses.system}`;
+      messageDiv.innerHTML = `<div class="flex items-center gap-2 mb-2 text-[11px] text-[#8b949e] uppercase tracking-wider">${headerText}</div><div class="whitespace-pre-wrap break-words">${escapeHtml(content)}</div>`;
+      elements.output.appendChild(messageDiv);
+      elements.output.scrollTop = elements.output.scrollHeight;
+      state.messages.push({ type, content, timestamp: Date.now() });
+    }
+
+    function addLoadingMessage() {
+      const driverName = config.drivers[state.currentDriver]?.name || 'AI';
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'mb-4 p-3 rounded-lg bg-[#161b22] border-l-2 border-[#3fb950]';
+      loadingDiv.id = 'loadingMessage';
+      loadingDiv.innerHTML = `<div class="flex items-center gap-2 mb-2 text-[11px] text-[#8b949e] uppercase tracking-wider">${driverName}</div><div class="flex gap-1"><span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0s"></span><span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0.2s"></span><span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0.4s"></span></div>`;
+      elements.output.appendChild(loadingDiv);
+      elements.output.scrollTop = elements.output.scrollHeight;
+    }
+
+    function removeLoadingMessage() { const loading = document.getElementById('loadingMessage'); if (loading) loading.remove(); }
+
+    function addStreamingMessage() {
+      const driverName = config.drivers[state.currentDriver]?.name || 'AI';
+      const messageId = 'streaming-' + Date.now();
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'mb-4 p-3 rounded-lg bg-[#161b22] border-l-2 border-[#3fb950]';
+      messageDiv.id = messageId;
+      messageDiv.innerHTML = `<div class="flex items-center gap-2 mb-2 text-[11px] text-[#8b949e] uppercase tracking-wider">${driverName}</div><div class="whitespace-pre-wrap break-words message-content"><span class="animate-blink text-[#e94560] font-bold">&#9608;</span></div>`;
+      elements.output.appendChild(messageDiv);
+      elements.output.scrollTop = elements.output.scrollHeight;
+      return messageId;
+    }
+
+    function updateStreamingMessage(messageId, text) {
+      const messageDiv = document.getElementById(messageId);
+      if (messageDiv) {
+        const contentDiv = messageDiv.querySelector('.message-content');
+        if (contentDiv) {
+          contentDiv.innerHTML = `<pre style="white-space:pre-wrap;margin:0;font-family:inherit;">${escapeHtml(text)}</pre><span class="animate-blink text-[#e94560] font-bold">&#9608;</span>`;
+          elements.output.scrollTop = elements.output.scrollHeight;
+        }
+      }
+    }
+
+    function finalizeStreamingMessage(messageId) {
+      const messageDiv = document.getElementById(messageId);
+      if (messageDiv) {
+        const cursor = messageDiv.querySelector('.animate-blink');
+        if (cursor) cursor.remove();
+      }
+    }
+
+    function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+    async function checkBackendAPI() { try { return (await fetch(`${config.apiBaseUrl}/state`)).ok; } catch { return false; } }
+
+    async function processCommand(command) {
+      if (!command.trim()) return;
+      addMessage('user', command);
+      elements.terminalTitle.textContent = 'Processing...';
+      if (!state.repoPath) { addMessage('error', 'Please enter a repository URL or path first.'); elements.terminalTitle.textContent = `${config.title} - Ready`; return; }
+      state.isProcessing = true;
+      addLoadingMessage();
+      updateTrayStatus('processing');
+
+      try {
+        let response, usedStreaming = false;
+        const hasBackend = await checkBackendAPI();
+
+        if (hasBackend) {
+          const useStreaming = state.currentDriver === 'claude-cli-local';
+          if (useStreaming) {
+            removeLoadingMessage();
+            const streamingMessageId = addStreamingMessage();
+            const streamResponse = await fetch(`${config.apiBaseUrl}/process/stream`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ command, driver: state.currentDriver, ...(state.repoPath && { repository: state.repoPath }) })
+            });
+            if (!streamResponse.ok) throw new Error((await streamResponse.json()).error || 'Streaming failed');
+
+            const reader = streamResponse.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText = '', buffer = '';
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  try {
+                    const data = JSON.parse(line.substring(6));
+                    if (data.text) { fullText += data.text; updateStreamingMessage(streamingMessageId, fullText); }
+                    if (data.status === 'complete') response = { message: fullText, hasChanges: data.hasChanges, modifiedFiles: data.modifiedFiles };
+                    if (data.error) throw new Error(data.error);
+                  } catch (e) {}
+                }
+              }
+            }
+            finalizeStreamingMessage(streamingMessageId);
+            usedStreaming = true;
+          } else {
+            const apiResponse = await fetch(`${config.apiBaseUrl}/process`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command, driver: state.currentDriver, ...(state.repoPath && { repository: state.repoPath }) }) });
+            const responseData = await apiResponse.json();
+            if (!apiResponse.ok || !responseData.success) throw new Error(responseData.error || 'Unknown error');
+            response = responseData.data;
+          }
+        } else if (state.currentDriver === 'mock') {
+          response = await getMockResponse(command);
+        } else {
+          throw new Error('Stacks API not available. Start the server at localhost:3008.');
+        }
+
+        if (!usedStreaming) { removeLoadingMessage(); addMessage('assistant', response.message); }
+        updateTrayStatus('success');
+        if (response?.hasChanges) { state.hasChanges = true; elements.commitBtn.disabled = false; elements.pushBtn.disabled = false; addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.'); sendNotification('Changes Ready', 'Code changes are staged.'); }
+        elements.terminalTitle.textContent = `${config.title} - Ready`;
+        setTimeout(() => updateTrayStatus('ready'), 2000);
+      } catch (error) {
+        removeLoadingMessage();
+        addMessage('error', `Failed: ${error.message}`);
+        elements.terminalTitle.textContent = `${config.title} - Error`;
+        updateTrayStatus('error');
+        setTimeout(() => updateTrayStatus('ready'), 3000);
+      } finally { state.isProcessing = false; }
+    }
+
+    async function getMockResponse(command) {
+      await new Promise(r => setTimeout(r, 1500));
+      return { message: `[Mock] Processing: "${command}"\n\nThis is a simulated response.`, hasChanges: command.toLowerCase().includes('fix') || command.toLowerCase().includes('add') };
+    }
+
+    async function handleRepoAction() {
+      const input = elements.repoInput.value.trim();
+      if (!input) { addMessage('error', 'Please enter a repository URL or path.'); return; }
+      addMessage('system', `Opening repository: ${input}`);
+      try {
+        const hasBackend = await checkBackendAPI();
+        if (hasBackend) {
+          const apiResponse = await fetch(`${config.apiBaseUrl}/repo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ input }) });
+          if (!apiResponse.ok) throw new Error((await apiResponse.json()).error || 'Failed to open repository');
+          const data = await apiResponse.json();
+          const repo = data.data.repo;
+          state.repoPath = repo.path;
+          localStorage.setItem(STORAGE_KEY_REPO, repo.path);
+          addMessage('system', `Repository "${repo.name}" opened.\nPath: ${repo.path}\nBranch: ${repo.branch}`);
+        } else {
+          state.repoPath = input;
+          localStorage.setItem(STORAGE_KEY_REPO, input);
+          addMessage('system', `[Simulated] Opened: ${input}`);
+        }
+        elements.terminalTitle.textContent = `${config.title} - ${input.split('/').pop()}`;
+      } catch (error) { addMessage('error', `Failed: ${error.message}`); }
+    }
+
+    async function commitChanges() {
+      if (!state.hasChanges) return;
+      addMessage('system', 'Creating commit...');
+      updateTrayStatus('processing');
+      try {
+        const hasBackend = await checkBackendAPI();
+        if (hasBackend) {
+          const apiResponse = await fetch(`${config.apiBaseUrl}/commit`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+          if (!apiResponse.ok) throw new Error((await apiResponse.json()).error || 'Failed to commit');
+          const data = await apiResponse.json();
+          addMessage('system', `Committed: ${data.hash}`);
+        } else { addMessage('system', '[Simulated] Committed'); }
+        state.hasChanges = false;
+        elements.commitBtn.disabled = true;
+        updateTrayStatus('success');
+        setTimeout(() => updateTrayStatus('ready'), 2000);
+      } catch (error) { addMessage('error', `Failed: ${error.message}`); updateTrayStatus('error'); setTimeout(() => updateTrayStatus('ready'), 3000); }
+    }
+
+    async function pushChanges() {
+      addMessage('system', 'Pushing to remote...');
+      updateTrayStatus('processing');
+      try {
+        const hasBackend = await checkBackendAPI();
+        if (hasBackend) {
+          const apiResponse = await fetch(`${config.apiBaseUrl}/push`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+          if (!apiResponse.ok) throw new Error((await apiResponse.json()).error || 'Failed to push');
+          addMessage('system', 'Pushed successfully.');
+        } else { addMessage('system', '[Simulated] Pushed'); }
+        elements.pushBtn.disabled = true;
+        updateTrayStatus('success');
+        setTimeout(() => updateTrayStatus('ready'), 2000);
+      } catch (error) { addMessage('error', `Failed: ${error.message}`); updateTrayStatus('error'); setTimeout(() => updateTrayStatus('ready'), 3000); }
+    }
+
+    function handleDriverChange() { state.currentDriver = elements.aiDriver.value; addMessage('system', `Switched to ${config.drivers[state.currentDriver].name}`); }
+    function handleTextSubmit() { const text = elements.textInput.value.trim(); if (text && !state.isProcessing) { elements.textInput.value = ''; processCommand(text); } }
+
+    // Modal functions
+    function openGithubModal() { elements.githubModal.classList.add('active'); elements.githubModal.classList.remove('hidden'); }
+    function closeGithubModal() { elements.githubModal.classList.remove('active'); elements.githubModal.classList.add('hidden'); }
+    function openSettingsModal() { elements.settingsModal.classList.add('active'); elements.settingsModal.classList.remove('hidden'); updateApiStatusIndicators(); }
+    function closeSettingsModal() { elements.settingsModal.classList.remove('active'); elements.settingsModal.classList.add('hidden'); }
+
+    function updateApiStatusIndicators() {
+      if (state.apiKeys.anthropic) { elements.anthropicStatus.classList.add('configured'); elements.anthropicStatusText.textContent = 'Configured'; }
+      else { elements.anthropicStatus.classList.remove('configured'); elements.anthropicStatusText.textContent = 'Not configured'; }
+      if (state.apiKeys.openai) { elements.openaiStatus.classList.add('configured'); elements.openaiStatusText.textContent = 'Configured'; }
+      else { elements.openaiStatus.classList.remove('configured'); elements.openaiStatusText.textContent = 'Not configured'; }
+    }
+
+    async function saveApiSettings() {
+      const anthropicKey = elements.anthropicApiKey.value.trim();
+      const openaiKey = elements.openaiApiKey.value.trim();
+      const claudeHost = elements.claudeCliHost.value.trim();
+      state.apiKeys = { anthropic: anthropicKey || null, openai: openaiKey || null, claudeCliHost: claudeHost || null };
+      localStorage.setItem('voide_api_keys', JSON.stringify(state.apiKeys));
+      updateApiStatusIndicators();
+      closeSettingsModal();
+      addMessage('system', 'API settings saved.');
+    }
+
+    function loadSavedApiKeys() {
+      try {
+        const saved = localStorage.getItem('voide_api_keys');
+        if (saved) { state.apiKeys = JSON.parse(saved); updateApiStatusIndicators(); }
+      } catch (e) {}
+    }
+
+    // Event listeners
+    elements.micButton.addEventListener('mousedown', startRecording);
+    elements.micButton.addEventListener('mouseup', stopRecording);
+    elements.micButton.addEventListener('mouseleave', () => { if (state.isRecording) stopRecording(); });
+    elements.micButton.addEventListener('touchstart', (e) => { e.preventDefault(); startRecording(); });
+    elements.micButton.addEventListener('touchend', (e) => { e.preventDefault(); stopRecording(); });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !e.repeat && document.activeElement !== elements.repoInput && document.activeElement !== elements.textInput) { e.preventDefault(); startRecording(); }
+      if (e.key === 'Escape') { closeGithubModal(); closeSettingsModal(); }
+    });
+    document.addEventListener('keyup', (e) => { if (e.code === 'Space' && state.isRecording) { e.preventDefault(); stopRecording(); } });
+
+    // Textarea auto-resize and Shift+Enter handling
+    elements.textInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleTextSubmit();
+      }
+    });
+    elements.textInput.addEventListener('input', () => {
+      // Auto-resize textarea
+      elements.textInput.style.height = 'auto';
+      elements.textInput.style.height = Math.min(elements.textInput.scrollHeight, 200) + 'px';
+    });
+    elements.sendBtn.addEventListener('click', handleTextSubmit);
+    elements.cloneBtn.addEventListener('click', handleRepoAction);
+    elements.repoInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleRepoAction(); });
+    elements.commitBtn.addEventListener('click', commitChanges);
+    elements.pushBtn.addEventListener('click', pushChanges);
+    elements.aiDriver.addEventListener('change', handleDriverChange);
+
+    elements.githubAccount.addEventListener('click', openGithubModal);
+    elements.modalClose.addEventListener('click', closeGithubModal);
+    elements.modalCancel.addEventListener('click', closeGithubModal);
+    elements.githubModal.addEventListener('click', (e) => { if (e.target === elements.githubModal) closeGithubModal(); });
+
+    elements.settingsBtn.addEventListener('click', openSettingsModal);
+    elements.settingsModalClose.addEventListener('click', closeSettingsModal);
+    elements.settingsModalCancel.addEventListener('click', closeSettingsModal);
+    elements.saveSettingsBtn.addEventListener('click', saveApiSettings);
+    elements.settingsModal.addEventListener('click', (e) => { if (e.target === elements.settingsModal) closeSettingsModal(); });
+
+    // Initialize
+    initUI();
+    initSpeechRecognition();
+    loadSavedApiKeys();
+    restoreSavedRepo();
+  </script>
+@endinclude

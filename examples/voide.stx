@@ -1266,6 +1266,9 @@ Example commands:
       openaiStatusText: document.getElementById('openaiStatusText')
     };
 
+    // LocalStorage key for persisting repo path
+    const STORAGE_KEY_REPO = 'voide_last_repo_path';
+
     // Initialize UI
     function initUI() {
       elements.appTitle.textContent = config.title;
@@ -1275,6 +1278,21 @@ Example commands:
       if (window.craft) {
         state.isNativeApp = true;
         initNativeFeatures();
+      }
+
+      // Restore last used repo path from localStorage (just populate the input)
+      const savedRepoPath = localStorage.getItem(STORAGE_KEY_REPO);
+      if (savedRepoPath) {
+        elements.repoInput.value = savedRepoPath;
+      }
+    }
+
+    // Auto-open saved repo (called after all functions are defined)
+    function restoreSavedRepo() {
+      const savedRepoPath = localStorage.getItem(STORAGE_KEY_REPO);
+      if (savedRepoPath && elements.repoInput.value) {
+        // handleRepoAction reads from elements.repoInput.value which is already populated by initUI
+        handleRepoAction();
       }
     }
 
@@ -1573,6 +1591,7 @@ Example commands:
 
       try {
         let response;
+        let usedStreaming = false;
 
         // Try to use real backend API first
         const hasBackend = await checkBackendAPI();
@@ -1652,6 +1671,7 @@ Example commands:
 
             // Finalize the streaming message
             finalizeStreamingMessage(streamingMessageId);
+            usedStreaming = true;
           } else {
             // Use regular non-streaming API
             const apiResponse = await fetch(`${config.apiBaseUrl}/process`, {
@@ -1684,11 +1704,14 @@ Example commands:
           throw new Error('Stacks API not available. Start the Stacks server at localhost:3008 or configure an Anthropic API key in settings.');
         }
 
-        removeLoadingMessage();
-        addMessage('assistant', response.message);
+        // Only add message if not streamed (streaming already added the message)
+        if (!usedStreaming) {
+          removeLoadingMessage();
+          addMessage('assistant', response.message);
+        }
         updateTrayStatus('success');
 
-        if (response.hasChanges) {
+        if (response && response.hasChanges) {
           state.hasChanges = true;
           elements.commitBtn.disabled = false;
           elements.pushBtn.disabled = false;
@@ -1863,6 +1886,9 @@ Would you like me to proceed with these changes?`;
           const repo = data.data.repo;
           state.repoPath = repo.path;
 
+          // Save to localStorage for persistence
+          localStorage.setItem(STORAGE_KEY_REPO, repo.path);
+
           addMessage('system', `Repository "${repo.name}" opened successfully.
 Working directory: ${repo.path}
 Branch: ${repo.branch}
@@ -1872,6 +1898,9 @@ Has changes: ${repo.hasChanges ? 'Yes' : 'No'}`);
           // Simulated repo opening when backend unavailable
           await new Promise(resolve => setTimeout(resolve, 800));
           state.repoPath = input;
+
+          // Save to localStorage for persistence
+          localStorage.setItem(STORAGE_KEY_REPO, input);
 
           if (input.includes('github.com')) {
             const repoName = input.split('/').pop()?.replace('.git', '') || 'repository';
@@ -2502,6 +2531,8 @@ Current repository: ${state.repoPath || 'Not specified'}`,
     initSpeechRecognition();
     loadSavedGithub();
     loadSavedApiKeys();
+    // Auto-open saved repo (must be called after all functions are defined)
+    restoreSavedRepo();
   </script>
 </body>
 </html>
