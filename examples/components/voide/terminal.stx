@@ -1,6 +1,17 @@
-@js
-const title = props.title || 'Voide - Ready'
-const welcomeMessage = props.welcomeMessage || `Welcome to Voide - your voice-controlled AI code assistant.
+<div class="flex-1 bg-[#21262d] border border-[#30363d] rounded-xl overflow-hidden flex flex-col">
+  <!-- Terminal Header -->
+  <div class="flex items-center gap-2 px-4 py-3 bg-[#161b22] border-b border-[#30363d]">
+    <div class="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+    <div class="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+    <div class="w-3 h-3 rounded-full bg-[#27ca40]"></div>
+    <span id="terminalTitle" class="flex-1 text-center text-xs text-[#8b949e]">{{ terminalTitle || 'Voide - Ready' }}</span>
+  </div>
+
+  <!-- Terminal Output -->
+  <div id="output" class="flex-1 p-4 overflow-y-auto text-sm leading-relaxed">
+    <!-- Welcome Message -->
+    <div class="message system mb-4 p-3 rounded-lg border-l-2 border-[#d29922] text-[#8b949e] text-xs animate-fade-in">
+      <div id="welcomeMessage" class="whitespace-pre-wrap">Welcome to Voide - your voice-controlled AI code assistant.
 
 Instructions:
 1. Select your preferred AI driver above
@@ -12,23 +23,7 @@ Example commands:
 - "Update the README to include installation instructions"
 - "Fix the bug in the login function"
 - "Add a new endpoint for user profiles"
-- "Refactor the database module to use async/await"`
-@endjs
-
-<div class="flex-1 bg-[#21262d] border border-[#30363d] rounded-xl overflow-hidden flex flex-col">
-  <!-- Terminal Header -->
-  <div class="flex items-center gap-2 px-4 py-3 bg-[#161b22] border-b border-[#30363d]">
-    <div class="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
-    <div class="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
-    <div class="w-3 h-3 rounded-full bg-[#27ca40]"></div>
-    <span id="terminalTitle" class="flex-1 text-center text-xs text-[#8b949e]">{{ title }}</span>
-  </div>
-
-  <!-- Terminal Output -->
-  <div id="output" class="flex-1 p-4 overflow-y-auto text-sm leading-relaxed">
-    <!-- Welcome Message -->
-    <div class="message system mb-4 p-3 rounded-lg border-l-2 border-[#d29922] text-[#8b949e] text-xs animate-fade-in">
-      <div id="welcomeMessage" class="whitespace-pre-wrap">{{ welcomeMessage }}</div>
+- "Refactor the database module to use async/await"</div>
     </div>
   </div>
 </div>

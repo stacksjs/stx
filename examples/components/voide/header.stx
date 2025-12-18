@@ -1,14 +1,10 @@
-@js
-const title = props.title || 'Voide'
-@endjs
-
 <header class="flex items-center justify-between px-5 py-3 bg-[#161b22] border-b border-[#30363d]">
   <!-- Logo -->
   <div class="flex items-center gap-3">
     <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#e94560] to-[#0f3460] flex items-center justify-center text-xl shadow-lg">
-      {{ props.icon || '🤖' }}
+      {{ icon || '🤖' }}
     </div>
-    <span id="appTitle" class="text-xl font-semibold tracking-tight text-[#e6edf3]">{{ title }}</span>
+    <span id="appTitle" class="text-xl font-semibold tracking-tight text-[#e6edf3]">{{ title || 'Voide' }}</span>
   </div>
 
   <!-- Controls -->

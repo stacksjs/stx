@@ -1,15 +1,9 @@
-@js
-const title = props.title || 'Voide'
-const version = props.version || '1.0.0'
-@endjs
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>{{ title }} - Voice AI Code Assistant</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/headwind/dist/headwind.min.css">
+  <title>{{ title || 'Voide' }} - Voice AI Code Assistant</title>
 
   <!-- Craft Native Bridge -->
   <script>
@@ -101,8 +95,15 @@ const version = props.version || '1.0.0'
       --error: #f85149;
     }
 
-    /* Base resets */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* Base resets (Tailwind preflight) */
+    *, ::before, ::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      border-width: 0;
+      border-style: solid;
+      border-color: currentColor;
+    }
     html { -webkit-text-size-adjust: 100%; }
 
     body {
@@ -140,6 +141,83 @@ const version = props.version || '1.0.0'
     .animate-pulse { animation: pulse 1.5s infinite; }
     .animate-bounce { animation: bounce 0.6s infinite alternate; }
     .animate-blink { animation: blink 1s step-end infinite; }
+
+    /* Critical Headwind utilities */
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .flex-1 { flex: 1 1 0%; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-4 { gap: 1rem; }
+    .gap-5 { gap: 1.25rem; }
+    .p-3 { padding: 0.75rem; }
+    .p-4 { padding: 1rem; }
+    .p-5 { padding: 1.25rem; }
+    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    .px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
+    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+    .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+    .m-4 { margin: 1rem; }
+    .h-screen { height: 100vh; }
+    .w-full { width: 100%; }
+    .max-w-md { max-width: 28rem; }
+    .overflow-hidden { overflow: hidden; }
+    .overflow-y-auto { overflow-y: auto; }
+    .rounded-xl { border-radius: 0.75rem; }
+    .rounded-lg { border-radius: 0.5rem; }
+    .rounded-full { border-radius: 9999px; }
+    .border { border-width: 1px; }
+    .border-b { border-bottom-width: 1px; }
+    .border-l-2 { border-left-width: 2px; }
+    .border-transparent { border-color: transparent; }
+    .border-\[\#30363d\] { border-color: #30363d; }
+    .border-\[\#238636\] { border-color: #238636; }
+    .border-\[\#e94560\] { border-color: #e94560; }
+    .border-\[\#f85149\] { border-color: #f85149; }
+    .border-\[\#3fb950\] { border-color: #3fb950; }
+    .bg-\[\#0d1117\] { background-color: #0d1117; }
+    .bg-\[\#161b22\] { background-color: #161b22; }
+    .bg-\[\#21262d\] { background-color: #21262d; }
+    .bg-\[\#30363d\] { background-color: #30363d; }
+    .bg-\[\#e94560\] { background-color: #e94560; }
+    .bg-\[\#238636\] { background-color: #238636; }
+    .bg-\[rgba\(0\,0\,0\,0\.6\)\] { background-color: rgba(0,0,0,0.6); }
+    .text-\[\#e6edf3\] { color: #e6edf3; }
+    .text-\[\#8b949e\] { color: #8b949e; }
+    .text-\[\#e94560\] { color: #e94560; }
+    .text-\[\#3fb950\] { color: #3fb950; }
+    .text-white { color: #fff; }
+    .text-xs { font-size: 0.75rem; line-height: 1rem; }
+    .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+    .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .font-mono { font-family: ui-monospace, monospace; }
+    .uppercase { text-transform: uppercase; }
+    .tracking-wider { letter-spacing: 0.05em; }
+    .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+    .cursor-pointer { cursor: pointer; }
+    .cursor-not-allowed { cursor: not-allowed; }
+    .select-none { user-select: none; }
+    .resize-none { resize: none; }
+    .outline-none { outline: none; }
+    .z-50 { z-index: 50; }
+    .fixed { position: fixed; }
+    .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+    .hidden { display: none; }
+    .backdrop-blur-sm { backdrop-filter: blur(4px); }
+    .transition-colors { transition-property: color, background-color, border-color; transition-duration: 150ms; }
+    .transition-all { transition-property: all; transition-duration: 150ms; }
+    .hover\:bg-\[\#30363d\]:hover { background-color: #30363d; }
+    .hover\:border-\[\#e94560\]:hover { border-color: #e94560; }
+    .focus\:outline-none:focus { outline: none; }
+    .focus\:border-\[\#e94560\]:focus { border-color: #e94560; }
   </style>
 </head>
 <body class="flex flex-col h-screen">

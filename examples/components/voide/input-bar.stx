@@ -1,8 +1,3 @@
-@js
-const statusText = props.statusText || 'Click microphone or type below'
-const statusHint = props.statusHint || 'Hold to record, release to send'
-@endjs
-
 <div class="flex items-center gap-5 p-5 bg-[#161b22] border border-[#30363d] rounded-xl">
   <!-- Mic Button -->
   <button
@@ -15,8 +10,8 @@ const statusHint = props.statusHint || 'Hold to record, release to send'
 
   <!-- Voice Status -->
   <div class="flex-1">
-    <div id="statusText" class="text-sm text-[#e6edf3] mb-1">{{ statusText }}</div>
-    <div id="statusHint" class="text-xs text-[#8b949e]">{{ statusHint }}</div>
+    <div id="statusText" class="text-sm text-[#e6edf3] mb-1">{{ statusText || 'Click microphone or type below' }}</div>
+    <div id="statusHint" class="text-xs text-[#8b949e]">{{ statusHint || 'Hold to record, release to send' }}</div>
 
     <!-- Transcript Preview -->
     <div
@@ -31,9 +26,10 @@ const statusHint = props.statusHint || 'Hold to record, release to send'
       <div class="flex items-end gap-2 bg-[#21262d] border border-[#30363d] rounded-2xl px-4 py-3 focus-within:border-[#e94560] transition-colors">
         <textarea
           id="textInput"
-          class="flex-1 bg-transparent text-sm text-[#e6edf3] placeholder-[#484f58] focus:outline-none resize-none min-h-[24px] max-h-[200px] leading-6"
+          class="flex-1 bg-transparent text-sm text-[#e6edf3] placeholder-[#484f58] focus:outline-none resize-none min-h-[24px] max-h-[200px] leading-6 overflow-y-auto"
           placeholder="Message Voide... (Shift+Enter for new line)"
           rows="1"
+          oninput="this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 200) + 'px';"
         ></textarea>
         <button
           id="sendBtn"
