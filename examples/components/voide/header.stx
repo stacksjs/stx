@@ -1,20 +1,20 @@
-<header class="flex items-center justify-between px-5 py-3 bg-[#161b22] border-b border-[#30363d]">
+<header class="flex items-center justify-between px-5 py-3 bg-[#0f0f23] border-b border-[#2d2d4a]">
   <!-- Logo -->
   <div class="flex items-center gap-3">
     <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#e94560] to-[#0f3460] flex items-center justify-center text-xl shadow-lg">
       {{ icon || '🤖' }}
     </div>
-    <span id="appTitle" class="text-xl font-semibold tracking-tight text-[#e6edf3]">{{ title || 'Voide' }}</span>
+    <span id="appTitle" class="text-xl font-semibold tracking-tight text-[#eaeaea]">{{ title || 'Voide' }}</span>
   </div>
 
   <!-- Controls -->
   <div class="flex items-center gap-4">
     <!-- AI Driver Selector -->
     <div class="flex items-center gap-2">
-      <label for="aiDriver" class="text-xs text-[#8b949e] font-medium hidden sm:inline">AI Driver:</label>
+      <label for="aiDriver" class="text-xs text-[#a0a0a0] font-medium hidden sm:inline">AI Driver:</label>
       <select
         id="aiDriver"
-        class="bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-[#e6edf3] cursor-pointer hover:border-[#e94560] focus:border-[#e94560] focus:outline-none transition-colors"
+        class="bg-[#16213e] border border-[#2d2d4a] rounded-lg px-3 py-2 text-sm text-[#eaeaea] cursor-pointer hover:border-[#e94560] focus:border-[#e94560] focus:outline-none transition-colors"
       >
         <option value="claude-cli-local" selected>Claude CLI (Local)</option>
         <option value="claude-cli-ec2">Claude CLI (EC2)</option>
@@ -30,12 +30,12 @@
       <input
         type="text"
         id="repoInput"
-        class="bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-[#e6edf3] placeholder-[#484f58] w-64 focus:border-[#e94560] focus:outline-none transition-colors"
+        class="bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-3 py-2 text-sm text-[#eaeaea] placeholder-[#666] w-64 focus:border-[#e94560] focus:outline-none transition-colors"
         placeholder="github.com/owner/repo or local path..."
       />
       <button
         id="cloneBtn"
-        class="bg-[#1a1a2e] border border-[#30363d] rounded-lg px-4 py-2 text-sm text-[#e6edf3] cursor-pointer hover:bg-[#e94560] hover:border-[#e94560] transition-all"
+        class="bg-[#0f3460] border border-[#2d2d4a] rounded-lg px-4 py-2 text-sm text-[#eaeaea] cursor-pointer hover:bg-[#e94560] hover:border-[#e94560] transition-all duration-200"
       >
         Clone / Open
       </button>
@@ -44,20 +44,20 @@
     <!-- GitHub Account -->
     <div
       id="githubAccount"
-      class="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#21262d] border border-[#30363d] cursor-pointer hover:border-[#e94560] transition-all"
+      class="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#16213e] border border-[#2d2d4a] cursor-pointer hover:border-[#e94560] transition-all duration-200"
       title="Connect GitHub account"
     >
       <span class="text-lg">🐙</span>
       <div class="flex flex-col">
-        <span id="githubUsername" class="text-xs text-[#e6edf3] font-medium">Not connected</span>
-        <span id="githubStatus" class="text-[10px] text-[#8b949e]">Click to connect</span>
+        <span id="githubUsername" class="text-xs text-[#eaeaea] font-medium">Not connected</span>
+        <span id="githubStatus" class="text-[10px] text-[#a0a0a0]">Click to connect</span>
       </div>
     </div>
 
     <!-- Settings Button -->
     <button
       id="settingsBtn"
-      class="w-10 h-10 rounded-lg bg-[#21262d] border border-[#30363d] flex items-center justify-center text-lg cursor-pointer hover:border-[#e94560] hover:bg-[#1a1a2e] transition-all"
+      class="w-10 h-10 rounded-lg bg-[#16213e] border border-[#2d2d4a] flex items-center justify-center text-lg cursor-pointer hover:border-[#e94560] hover:bg-[#0f0f23] transition-all duration-200"
       title="API Settings"
     >
       ⚙️

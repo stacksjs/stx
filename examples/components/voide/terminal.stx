@@ -1,16 +1,16 @@
-<div class="flex-1 bg-[#21262d] border border-[#30363d] rounded-xl overflow-hidden flex flex-col">
+<div class="flex-1 bg-[#0f0f23] border border-[#2d2d4a] rounded-xl overflow-hidden flex flex-col">
   <!-- Terminal Header -->
-  <div class="flex items-center gap-2 px-4 py-3 bg-[#161b22] border-b border-[#30363d]">
+  <div class="flex items-center gap-2 px-4 py-3 bg-[#16213e] border-b border-[#2d2d4a]">
     <div class="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
     <div class="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
     <div class="w-3 h-3 rounded-full bg-[#27ca40]"></div>
-    <span id="terminalTitle" class="flex-1 text-center text-xs text-[#8b949e]">{{ terminalTitle || 'Voide - Ready' }}</span>
+    <span id="terminalTitle" class="flex-1 text-center text-xs text-[#a0a0a0]">{{ terminalTitle || 'Voide - Ready' }}</span>
   </div>
 
   <!-- Terminal Output -->
   <div id="output" class="flex-1 p-4 overflow-y-auto text-sm leading-relaxed">
     <!-- Welcome Message -->
-    <div class="message system mb-4 p-3 rounded-lg border-l-2 border-[#d29922] text-[#8b949e] text-xs animate-fade-in">
+    <div class="message system mb-4 p-3 rounded-lg border-l-2 border-[#fbbf24] text-[#a0a0a0] text-xs animate-fade-in">
       <div id="welcomeMessage" class="whitespace-pre-wrap">Welcome to Voide - your voice-controlled AI code assistant.
 
 Instructions:

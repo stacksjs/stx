@@ -1,9 +1,8 @@
-<div x-data="{ message: '', charCount: 0, isRecording: false }" class="flex items-center gap-5 p-5 bg-[#161b22] border border-[#30363d] rounded-xl">
+<div x-data="{ message: '', charCount: 0, isRecording: false }" class="flex items-center gap-5 p-5 bg-[#16213e] border border-[#2d2d4a] rounded-xl">
   <!-- Mic Button -->
   <button
     id="micButton"
-    class="w-20 h-20 rounded-full bg-gradient-to-br from-[#e94560] to-[#1a1a2e] border-[3px] border-[#e94560] cursor-pointer flex items-center justify-center transition-all hover:scale-105 focus:outline-none shadow-lg"
-    style="box-shadow: 0 0 30px rgba(233, 69, 96, 0.3);"
+    class="w-20 h-20 rounded-full bg-gradient-to-br from-[#0f0f23] to-[#16213e] border-[3px] border-[#2d2d4a] cursor-pointer flex items-center justify-center hover:border-[#e94560] hover:scale-105 focus:outline-none transition-all duration-300"
     title="Hold to record (or press Space)"
     @click="isRecording = !isRecording"
   >
@@ -12,24 +11,24 @@
 
   <!-- Voice Status -->
   <div class="flex-1">
-    <div id="statusText" class="text-sm text-[#e6edf3] mb-1" x-text="isRecording ? 'Recording...' : 'Click microphone or type below'"></div>
-    <div id="statusHint" class="text-xs text-[#8b949e]" x-text="isRecording ? 'Click again to stop' : 'Hold to record, release to send'"></div>
+    <div id="statusText" class="text-sm text-[#eaeaea] mb-1" x-text="isRecording ? 'Recording...' : 'Click microphone or type below'"></div>
+    <div id="statusHint" class="text-xs text-[#a0a0a0]" x-text="isRecording ? 'Click again to stop' : 'Hold to record, release to send'"></div>
 
     <!-- Transcript Preview -->
     <div
       id="transcriptPreview"
-      class="bg-[#21262d] border border-[#30363d] rounded-lg p-3 mt-3 text-sm text-[#8b949e] min-h-[40px]"
+      class="bg-[#0f0f23] border border-[#2d2d4a] rounded-lg p-3 mt-3 text-sm text-[#a0a0a0] min-h-[40px]"
     >
       Your voice command will appear here...
     </div>
 
     <!-- Text Input - ChatGPT/Claude style -->
     <div class="relative mt-3">
-      <div class="flex items-end gap-2 bg-[#21262d] border border-[#30363d] rounded-2xl px-4 py-3 focus-within:border-[#e94560] transition-colors">
+      <div class="flex items-end gap-2 bg-[#0f0f23] border border-[#2d2d4a] rounded-2xl px-4 py-3 focus-within:border-[#e94560] transition-colors">
         <textarea
           id="textInput"
           x-model="message"
-          class="flex-1 bg-transparent text-sm text-[#e6edf3] placeholder-[#484f58] focus:outline-none resize-none min-h-[24px] max-h-[200px] leading-6 overflow-y-auto"
+          class="flex-1 bg-transparent text-sm text-[#eaeaea] placeholder-[#666] focus:outline-none resize-none min-h-[24px] max-h-[200px] leading-6 overflow-y-auto"
           placeholder="Message Voide... (Shift+Enter for new line)"
           rows="1"
           @input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, 200) + 'px'; charCount = $el.value.length"
@@ -38,15 +37,15 @@
         <!-- Clear button - shows when there's text -->
         <button
           x-show="message.length > 0"
-          class="flex-shrink-0 w-8 h-8 rounded-lg bg-[#30363d] hover:bg-[#484f58] flex items-center justify-center transition-all"
+          class="flex-shrink-0 w-8 h-8 rounded-lg bg-[#0f0f23] border border-[#2d2d4a] hover:border-[#e94560] flex items-center justify-center transition-all duration-200"
           title="Clear"
           @click="message = ''; charCount = 0; document.getElementById('textInput').value = ''"
         >
-          <span class="text-[#8b949e]">×</span>
+          <span class="text-[#a0a0a0]">×</span>
         </button>
         <button
           id="sendBtn"
-          class="flex-shrink-0 w-8 h-8 rounded-lg bg-[#e94560] hover:bg-[#f45a75] flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex-shrink-0 w-8 h-8 rounded-lg bg-[#e94560] border border-[#e94560] hover:bg-[#ff6b6b] flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           title="Send message (Enter)"
           @click="console.log('Sending:', message); message = ''; charCount = 0; document.getElementById('textInput').value = ''"
         >
@@ -56,8 +55,8 @@
           </svg>
         </button>
       </div>
-      <div class="flex justify-between text-[10px] text-[#484f58] mt-1.5">
-        <span>Press <kbd class="px-1.5 py-0.5 bg-[#21262d] rounded text-[#8b949e]">Enter</kbd> to send, <kbd class="px-1.5 py-0.5 bg-[#21262d] rounded text-[#8b949e]">Shift+Enter</kbd> for new line</span>
+      <div class="flex justify-between text-[10px] text-[#666] mt-1.5">
+        <span>Press <kbd class="px-1.5 py-0.5 bg-[#0f0f23] rounded text-[#a0a0a0]">Enter</kbd> to send, <kbd class="px-1.5 py-0.5 bg-[#0f0f23] rounded text-[#a0a0a0]">Shift+Enter</kbd> for new line</span>
         <span x-text="charCount + ' chars'" x-show="charCount > 0"></span>
       </div>
     </div>
@@ -67,14 +66,14 @@
   <div class="flex gap-3">
     <button
       id="commitBtn"
-      class="bg-[#3fb950] border border-[#3fb950] rounded-lg px-4 py-2 text-sm text-[#0d1117] cursor-pointer hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+      class="bg-[#4ade80] border border-[#4ade80] rounded-lg px-4 py-2 text-sm text-[#1a1a2e] font-medium cursor-pointer hover:bg-[#22c55e] hover:border-[#22c55e] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
       :disabled="message.length === 0"
     >
       Commit Changes
     </button>
     <button
       id="pushBtn"
-      class="bg-[#1a1a2e] border border-[#30363d] rounded-lg px-4 py-2 text-sm text-[#e6edf3] cursor-pointer hover:bg-[#e94560] hover:border-[#e94560] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+      class="bg-[#0f3460] border border-[#2d2d4a] rounded-lg px-4 py-2 text-sm text-[#eaeaea] cursor-pointer hover:bg-[#e94560] hover:border-[#e94560] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
       disabled
     >
       Push
