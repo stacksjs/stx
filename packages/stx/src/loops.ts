@@ -228,88 +228,92 @@ export function processLoops(template: string, context: Record<string, any>, fil
 
   // Helper to find matching @foreach/@endforeach pairs using a stack
   function findMatchingForeach(template: string): { start: number, end: number, arrayExpr: string, itemVar: string, content: string } | null {
-    const foreachStart = template.indexOf('@foreach')
-    if (foreachStart === -1) {
-      return null
-    }
+    // Use regex to find @foreach followed immediately by ( (with optional whitespace)
+    const foreachRegex = /@foreach\s*\(/g
+    let match
 
-    // Find the opening parenthesis
-    const openParen = template.indexOf('(', foreachStart)
-    if (openParen === -1) {
-      return null
-    }
+    // Keep searching until we find a valid @foreach directive or run out of matches
+    while ((match = foreachRegex.exec(template)) !== null) {
+      const foreachStart = match.index
+      // The opening paren is at the end of the match (minus 1 since match includes the paren)
+      const openParen = match.index + match[0].length - 1
 
-    // Find the matching closing parenthesis, handling nested parens
-    let parenDepth = 1
-    let pos = openParen + 1
-    let closeParen = -1
+      // Find the matching closing parenthesis, handling nested parens
+      let parenDepth = 1
+      let pos = openParen + 1
+      let closeParen = -1
 
-    while (pos < template.length && parenDepth > 0) {
-      if (template[pos] === '(') {
-        parenDepth++
+      while (pos < template.length && parenDepth > 0) {
+        if (template[pos] === '(') {
+          parenDepth++
+        }
+        else if (template[pos] === ')') {
+          parenDepth--
+          if (parenDepth === 0) {
+            closeParen = pos
+            break
+          }
+        }
+        pos++
       }
-      else if (template[pos] === ')') {
-        parenDepth--
-        if (parenDepth === 0) {
-          closeParen = pos
+
+      if (closeParen === -1) {
+        // No matching closing paren, try next match
+        continue
+      }
+
+      // Extract the parameters between the parentheses
+      const params = template.substring(openParen + 1, closeParen)
+
+      // Find " as " in the params - this is required for a valid @foreach
+      const asIndex = params.indexOf(' as ')
+      if (asIndex === -1) {
+        // Not a valid @foreach directive (e.g., "@foreach (Blade-style)"), try next match
+        continue
+      }
+
+      const start = foreachStart
+      const arrayExpr = params.substring(0, asIndex)
+      const itemVar = params.substring(asIndex + 4)
+      const contentStart = closeParen + 1
+
+      // Now find the matching @endforeach using a stack
+      let depth = 1
+      let searchPos = contentStart
+      // Use pattern that matches actual @foreach directives (with parenthesis) to avoid matching text/comments
+      const nestedForeachRegex = /@foreach\s*\(/g
+      const endforeachRegex = /@endforeach/g
+
+      while (depth > 0 && searchPos < template.length) {
+        nestedForeachRegex.lastIndex = searchPos
+        endforeachRegex.lastIndex = searchPos
+
+        const nextForeach = nestedForeachRegex.exec(template)
+        const nextEndforeach = endforeachRegex.exec(template)
+
+        if (!nextEndforeach) {
+          // No matching @endforeach found for this @foreach, try next match
           break
         }
-      }
-      pos++
-    }
 
-    if (closeParen === -1) {
-      return null
-    }
-
-    // Extract the parameters between the parentheses
-    const params = template.substring(openParen + 1, closeParen)
-
-    // Find " as " in the params
-    const asIndex = params.indexOf(' as ')
-    if (asIndex === -1) {
-      return null
-    }
-
-    const start = foreachStart
-    const arrayExpr = params.substring(0, asIndex)
-    const itemVar = params.substring(asIndex + 4)
-    const contentStart = closeParen + 1
-
-    // Now find the matching @endforeach using a stack
-    let depth = 1
-    let searchPos = contentStart
-    const foreachRegex = /@foreach/g
-    const endforeachRegex = /@endforeach/g
-
-    while (depth > 0 && searchPos < template.length) {
-      foreachRegex.lastIndex = searchPos
-      endforeachRegex.lastIndex = searchPos
-
-      const nextForeach = foreachRegex.exec(template)
-      const nextEndforeach = endforeachRegex.exec(template)
-
-      if (!nextEndforeach) {
-        // No matching @endforeach found
-        return null
-      }
-
-      if (nextForeach && nextForeach.index < nextEndforeach.index) {
-        // Found a nested @foreach
-        depth++
-        searchPos = nextForeach.index + 8 // length of '@foreach'
-      }
-      else {
-        // Found an @endforeach
-        depth--
-        if (depth === 0) {
-          // This is our matching @endforeach
-          const content = template.substring(contentStart, nextEndforeach.index)
-          const end = nextEndforeach.index + 11 // length of '@endforeach'
-          return { start, end, arrayExpr, itemVar, content }
+        if (nextForeach && nextForeach.index < nextEndforeach.index) {
+          // Found a nested @foreach
+          depth++
+          searchPos = nextForeach.index + nextForeach[0].length
         }
-        searchPos = nextEndforeach.index + 11
+        else {
+          // Found an @endforeach
+          depth--
+          if (depth === 0) {
+            // This is our matching @endforeach
+            const content = template.substring(contentStart, nextEndforeach.index)
+            const end = nextEndforeach.index + 11 // length of '@endforeach'
+            return { start, end, arrayExpr, itemVar, content }
+          }
+          searchPos = nextEndforeach.index + 11
+        }
       }
+      // If we reach here, this @foreach didn't have a matching @endforeach, try next match
     }
 
     return null
