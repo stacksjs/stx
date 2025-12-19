@@ -1,144 +1,144 @@
 <!-- GitHub Connection Modal -->
-<div id="githubModal" class="fixed inset-0 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm flex items-center justify-center z-50 hidden">
-  <div class="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-md m-4 shadow-2xl">
+<div id="githubModal" class="fixed inset-0 bg-[rgba(0,0,0,0.7)] backdrop-blur-sm flex items-center justify-center z-50 hidden">
+  <div class="bg-[#16213e] border border-[#2d2d4a] rounded-xl w-full max-w-md m-4 shadow-2xl">
     <!-- Modal Header -->
-    <div class="flex items-center justify-between px-5 py-4 border-b border-[#30363d]">
-      <div class="flex items-center gap-3 text-lg font-semibold text-[#e6edf3]">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-[#2d2d4a]">
+      <div class="flex items-center gap-3 text-lg font-semibold text-[#eaeaea]">
         <span>🐙</span>
         GitHub Connection
       </div>
-      <button id="modalClose" class="w-8 h-8 rounded-lg flex items-center justify-center text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] transition-all">&times;</button>
+      <button id="modalClose" class="w-8 h-8 rounded-lg flex items-center justify-center text-[#a0a0a0] hover:text-[#eaeaea] hover:bg-[#0f0f23] transition-all">&times;</button>
     </div>
 
     <!-- Modal Body -->
     <div id="modalBody" class="p-5">
       <div id="connectForm">
         <div class="mb-4">
-          <label class="block text-sm font-medium text-[#e6edf3] mb-2">GitHub Personal Access Token</label>
+          <label class="block text-sm font-medium text-[#eaeaea] mb-2">GitHub Personal Access Token</label>
           <input
             type="password"
             id="githubToken"
-            class="w-full bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#484f58] focus:border-[#e94560] focus:outline-none transition-colors"
+            class="w-full bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-3 py-2.5 text-sm text-[#eaeaea] placeholder-[#666] focus:border-[#e94560] focus:outline-none transition-colors"
             placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
           />
-          <div class="mt-2 text-xs text-[#8b949e]">
+          <div class="mt-2 text-xs text-[#a0a0a0]">
             Generate a token at <a href="https://github.com/settings/tokens" target="_blank" class="text-[#e94560] hover:underline">github.com/settings/tokens</a>
-            <br>Required scopes: <code class="bg-[#21262d] px-1 rounded">repo</code>, <code class="bg-[#21262d] px-1 rounded">user:email</code>
+            <br>Required scopes: <code class="bg-[#0f0f23] px-1 rounded">repo</code>, <code class="bg-[#0f0f23] px-1 rounded">user:email</code>
           </div>
         </div>
 
         <div class="mb-4">
-          <label class="block text-sm font-medium text-[#e6edf3] mb-2">Git Commit Name (optional)</label>
+          <label class="block text-sm font-medium text-[#eaeaea] mb-2">Git Commit Name (optional)</label>
           <input
             type="text"
             id="gitName"
-            class="w-full bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#484f58] focus:border-[#e94560] focus:outline-none transition-colors"
+            class="w-full bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-3 py-2.5 text-sm text-[#eaeaea] placeholder-[#666] focus:border-[#e94560] focus:outline-none transition-colors"
             placeholder="Your Name"
           />
         </div>
 
         <div class="mb-4">
-          <label class="block text-sm font-medium text-[#e6edf3] mb-2">Git Commit Email (optional)</label>
+          <label class="block text-sm font-medium text-[#eaeaea] mb-2">Git Commit Email (optional)</label>
           <input
             type="email"
             id="gitEmail"
-            class="w-full bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#484f58] focus:border-[#e94560] focus:outline-none transition-colors"
+            class="w-full bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-3 py-2.5 text-sm text-[#eaeaea] placeholder-[#666] focus:border-[#e94560] focus:outline-none transition-colors"
             placeholder="you@example.com"
           />
-          <div class="mt-2 text-xs text-[#8b949e]">Leave blank to use your GitHub email</div>
+          <div class="mt-2 text-xs text-[#a0a0a0]">Leave blank to use your GitHub email</div>
         </div>
       </div>
 
       <div id="connectedInfo" class="hidden text-center py-5">
-        <img id="connectedAvatar" class="w-16 h-16 rounded-full mx-auto mb-3 border-2 border-[#3fb950]" />
-        <div id="connectedName" class="text-lg font-semibold text-[#e6edf3] mb-1"></div>
-        <div id="connectedUsername" class="text-[#8b949e] mb-2"></div>
-        <div class="text-[#3fb950] text-xs">✓ Connected</div>
+        <img id="connectedAvatar" class="w-16 h-16 rounded-full mx-auto mb-3 border-2 border-[#4ade80]" />
+        <div id="connectedName" class="text-lg font-semibold text-[#eaeaea] mb-1"></div>
+        <div id="connectedUsername" class="text-[#a0a0a0] mb-2"></div>
+        <div class="text-[#4ade80] text-xs">✓ Connected</div>
       </div>
     </div>
 
     <!-- Modal Footer -->
-    <div class="flex justify-end gap-3 px-5 py-4 border-t border-[#30363d]">
-      <button id="modalCancel" class="bg-[#21262d] border border-[#30363d] rounded-lg px-4 py-2 text-sm text-[#e6edf3] cursor-pointer hover:bg-[#30363d] transition-all">Cancel</button>
-      <button id="connectBtn" class="bg-[#238636] border border-[#238636] rounded-lg px-4 py-2 text-sm text-white cursor-pointer hover:bg-[#2ea043] transition-all">Connect</button>
-      <button id="disconnectBtn" class="bg-[#f85149] border border-[#f85149] rounded-lg px-4 py-2 text-sm text-white cursor-pointer hover:bg-[#da3633] transition-all hidden">Disconnect</button>
+    <div class="flex justify-end gap-3 px-5 py-4 border-t border-[#2d2d4a]">
+      <button id="modalCancel" class="bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-4 py-2 text-sm text-[#eaeaea] cursor-pointer hover:border-[#e94560] transition-all">Cancel</button>
+      <button id="connectBtn" class="bg-[#4ade80] border border-[#4ade80] rounded-lg px-4 py-2 text-sm text-[#1a1a2e] cursor-pointer hover:bg-[#22c55e] hover:border-[#22c55e] transition-all">Connect</button>
+      <button id="disconnectBtn" class="bg-[#ef4444] border border-[#ef4444] rounded-lg px-4 py-2 text-sm text-white cursor-pointer hover:bg-[#dc2626] hover:border-[#dc2626] transition-all hidden">Disconnect</button>
     </div>
   </div>
 </div>
 
 <!-- API Settings Modal -->
-<div id="settingsModal" class="fixed inset-0 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm flex items-center justify-center z-50 hidden">
-  <div class="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-md m-4 shadow-2xl">
+<div id="settingsModal" class="fixed inset-0 bg-[rgba(0,0,0,0.7)] backdrop-blur-sm flex items-center justify-center z-50 hidden">
+  <div class="bg-[#16213e] border border-[#2d2d4a] rounded-xl w-full max-w-md m-4 shadow-2xl">
     <!-- Modal Header -->
-    <div class="flex items-center justify-between px-5 py-4 border-b border-[#30363d]">
-      <div class="flex items-center gap-3 text-lg font-semibold text-[#e6edf3]">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-[#2d2d4a]">
+      <div class="flex items-center gap-3 text-lg font-semibold text-[#eaeaea]">
         <span>⚙️</span>
         API Settings
       </div>
-      <button id="settingsModalClose" class="w-8 h-8 rounded-lg flex items-center justify-center text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] transition-all">&times;</button>
+      <button id="settingsModalClose" class="w-8 h-8 rounded-lg flex items-center justify-center text-[#a0a0a0] hover:text-[#eaeaea] hover:bg-[#0f0f23] transition-all">&times;</button>
     </div>
 
     <!-- Modal Body -->
     <div class="p-5">
       <div class="mb-4">
-        <label class="block text-sm font-medium text-[#e6edf3] mb-2">Anthropic API Key</label>
+        <label class="block text-sm font-medium text-[#eaeaea] mb-2">Anthropic API Key</label>
         <input
           type="password"
           id="anthropicApiKey"
-          class="w-full bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#484f58] focus:border-[#e94560] focus:outline-none transition-colors"
+          class="w-full bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-3 py-2.5 text-sm text-[#eaeaea] placeholder-[#666] focus:border-[#e94560] focus:outline-none transition-colors"
           placeholder="sk-ant-api03-xxxxxxxxxxxx"
         />
-        <div class="mt-2 text-xs text-[#8b949e]">
+        <div class="mt-2 text-xs text-[#a0a0a0]">
           Get your API key from <a href="https://console.anthropic.com/settings/keys" target="_blank" class="text-[#e94560] hover:underline">console.anthropic.com</a>
         </div>
       </div>
 
       <div class="mb-4">
-        <label class="block text-sm font-medium text-[#e6edf3] mb-2">OpenAI API Key (optional)</label>
+        <label class="block text-sm font-medium text-[#eaeaea] mb-2">OpenAI API Key (optional)</label>
         <input
           type="password"
           id="openaiApiKey"
-          class="w-full bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#484f58] focus:border-[#e94560] focus:outline-none transition-colors"
+          class="w-full bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-3 py-2.5 text-sm text-[#eaeaea] placeholder-[#666] focus:border-[#e94560] focus:outline-none transition-colors"
           placeholder="sk-xxxxxxxxxxxx"
         />
-        <div class="mt-2 text-xs text-[#8b949e]">
+        <div class="mt-2 text-xs text-[#a0a0a0]">
           For OpenAI driver. Get key from <a href="https://platform.openai.com/api-keys" target="_blank" class="text-[#e94560] hover:underline">platform.openai.com</a>
         </div>
       </div>
 
       <div class="mb-4">
-        <label class="block text-sm font-medium text-[#e6edf3] mb-2">Claude CLI EC2 Host (optional)</label>
+        <label class="block text-sm font-medium text-[#eaeaea] mb-2">Claude CLI EC2 Host (optional)</label>
         <input
           type="text"
           id="claudeCliHost"
-          class="w-full bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#484f58] focus:border-[#e94560] focus:outline-none transition-colors"
+          class="w-full bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-3 py-2.5 text-sm text-[#eaeaea] placeholder-[#666] focus:border-[#e94560] focus:outline-none transition-colors"
           placeholder="http://your-ec2-instance:3456"
         />
-        <div class="mt-2 text-xs text-[#8b949e]">For Claude CLI (EC2) driver</div>
+        <div class="mt-2 text-xs text-[#a0a0a0]">For Claude CLI (EC2) driver</div>
       </div>
 
       <!-- API Status -->
-      <div id="apiStatus" class="bg-[#21262d] rounded-lg p-3 text-sm">
+      <div id="apiStatus" class="bg-[#0f0f23] rounded-lg p-3 text-sm">
         <div class="flex items-center gap-2 mb-2">
-          <span id="anthropicStatus" class="w-2 h-2 rounded-full bg-[#484f58]"></span>
-          <span class="text-[#8b949e]">Anthropic: <span id="anthropicStatusText">Not configured</span></span>
+          <span id="anthropicStatus" class="w-2 h-2 rounded-full bg-[#666]"></span>
+          <span class="text-[#a0a0a0]">Anthropic: <span id="anthropicStatusText">Not configured</span></span>
         </div>
         <div class="flex items-center gap-2">
-          <span id="openaiStatus" class="w-2 h-2 rounded-full bg-[#484f58]"></span>
-          <span class="text-[#8b949e]">OpenAI: <span id="openaiStatusText">Not configured</span></span>
+          <span id="openaiStatus" class="w-2 h-2 rounded-full bg-[#666]"></span>
+          <span class="text-[#a0a0a0]">OpenAI: <span id="openaiStatusText">Not configured</span></span>
         </div>
       </div>
     </div>
 
     <!-- Modal Footer -->
-    <div class="flex justify-end gap-3 px-5 py-4 border-t border-[#30363d]">
-      <button id="settingsModalCancel" class="bg-[#21262d] border border-[#30363d] rounded-lg px-4 py-2 text-sm text-[#e6edf3] cursor-pointer hover:bg-[#30363d] transition-all">Cancel</button>
-      <button id="saveSettingsBtn" class="bg-[#e94560] border border-[#e94560] rounded-lg px-4 py-2 text-sm text-white cursor-pointer hover:bg-[#f45a75] transition-all">Save Settings</button>
+    <div class="flex justify-end gap-3 px-5 py-4 border-t border-[#2d2d4a]">
+      <button id="settingsModalCancel" class="bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-4 py-2 text-sm text-[#eaeaea] cursor-pointer hover:border-[#e94560] transition-all">Cancel</button>
+      <button id="saveSettingsBtn" class="bg-[#e94560] border border-[#e94560] rounded-lg px-4 py-2 text-sm text-white cursor-pointer hover:bg-[#ff6b6b] hover:border-[#ff6b6b] transition-all">Save Settings</button>
     </div>
   </div>
 </div>
 
 <style>
-  .configured { background-color: #3fb950 !important; }
+  .configured { background-color: #4ade80 !important; }
   #githubModal.active, #settingsModal.active { display: flex; }
 </style>

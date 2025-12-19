@@ -35,15 +35,15 @@ const version = '1.0.0'
 
     /* Custom scrollbar */
     ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #21262d; }
-    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+    ::-webkit-scrollbar-track { background: #0f0f23; }
+    ::-webkit-scrollbar-thumb { background: #2d2d4a; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #666; }
 
     /* Body styling */
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
-      background: #0d1117;
-      color: #e6edf3;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      background: #1a1a2e;
+      color: #eaeaea;
     }
 
   </style>
@@ -76,7 +76,7 @@ const version = '1.0.0'
   </main>
 
   <!-- Footer -->
-  <footer id="footer" class="px-5 py-2.5 text-center text-[11px] text-[#484f58] border-t border-[#30363d]">
+  <footer id="footer" class="px-5 py-2.5 text-center text-[11px] text-[#666] border-t border-[#2d2d4a]">
     {{ title }} v{{ version }} - Voice AI Code Assistant
   </footer>
 
