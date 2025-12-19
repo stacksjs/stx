@@ -3,6 +3,8 @@ import path from 'node:path'
 import { processA11yDirectives } from './a11y'
 import { injectAnalytics } from './analytics'
 import { processAnimationDirectives } from './animation'
+import { processEventDirectives } from './events'
+import { processReactiveDirectives } from './reactive'
 import { processMarkdownFileDirectives } from './assets'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
 import { injectCspMetaTag, processCspDirectives } from './csp'
@@ -77,9 +79,11 @@ import { runComposers } from './view-composers'
 //   32. @meta, @seo, @structuredData directives
 //   33. @json directive
 //   34. @once directive
-//   35. {{ }} expressions (LAST - after all directive output)
-//   36. Run post-processing middleware
-//   37. Auto-inject SEO tags (if enabled)
+//   35. @click, @keydown, etc. (Alpine-style event directives)
+//   36. x-data, x-model, x-show, etc. (Alpine-style reactive directives)
+//   37. {{ }} expressions (LAST - after all directive output)
+//   38. Run post-processing middleware
+//   39. Auto-inject SEO tags (if enabled)
 //
 // IMPORTANT: Changing this order may break template rendering!
 // =============================================================================
@@ -149,18 +153,21 @@ function pascalToKebab(str: string): string {
  *
  * ## Limitations (Vue-like Syntax)
  *
- * stx is a **server-side rendering** framework. The following Vue directives
- * are NOT supported because they require client-side JavaScript:
+ * stx is a **server-side rendering** framework with Alpine-style event support.
+ * The following Vue directives are NOT supported:
  *
- * - `v-model` - Two-way data binding (requires client-side reactivity)
- * - `v-on` / `@` - Event handlers (events are client-side only)
+ * - `v-model` - Two-way data binding (use x-model when x-data is implemented)
+ * - `v-on:event` - Use `@event` syntax instead (e.g., `@click`, `@keydown.enter`)
  * - `v-if`/`v-for` - Use stx directives `@if`/`@foreach` instead
  * - `v-show` - Use `@if` or CSS classes instead
  *
- * For client-side interactivity, use:
- * 1. Web Components (via stx's web component generation)
- * 2. Alpine.js or similar lightweight libraries
- * 3. Progressive enhancement with vanilla JavaScript
+ * ## Supported Event Syntax (Alpine-style)
+ *
+ * ```html
+ * <button @click="handleClick()">Click me</button>
+ * <form @submit.prevent="handleSubmit()">...</form>
+ * <input @keydown.enter="send()" @keydown.escape="cancel()">
+ * ```
  *
  * @param attributesStr - The attributes portion of a tag (between tag name and closing)
  * @returns Array of parsed attributes with name, value, and binding info
@@ -851,6 +858,12 @@ async function processOtherDirectives(
   // Process @once directive
   output = processOnceDirective(output)
 
+  // Process event directives (@click, @keydown.enter, etc.) - Alpine-style events
+  output = processEventDirectives(output, context, filePath)
+
+  // Process reactive directives (x-data, x-model, x-show, etc.) - Alpine-style reactivity
+  output = processReactiveDirectives(output, context, filePath)
+
   // Process expressions now (delayed to allow other directives to generate expressions)
   output = await processExpressions(output, context, filePath)
 
@@ -1006,15 +1019,21 @@ async function processCustomElements(
         const isBinding = attrName.startsWith(':') || attrName.startsWith('v-bind:')
         const propName = attrName.replace(/^:/, '').replace(/^v-bind:/, '')
 
-        // Warn about unsupported Vue directives (v-model, v-on, etc.)
-        if (attrName === 'v-model' || attrName.startsWith('v-on:') || attrName.startsWith('@')) {
+        // Warn about unsupported Vue directives (v-model, v-on)
+        // Note: @ event syntax (e.g., @click) is now supported via processEventDirectives
+        if (attrName === 'v-model' || attrName.startsWith('v-on:')) {
           if (options.debug) {
             console.warn(
               `[stx] Unsupported Vue directive "${attrName}" in ${filePath}. `
-              + `stx is a server-side rendering framework. For two-way binding, `
-              + `use web components or client-side JavaScript (Alpine.js, etc.).`,
+              + `Use @event syntax instead (e.g., @click, @submit.prevent). `
+              + `For two-way binding (v-model), use x-model with x-data.`,
             )
           }
+          continue
+        }
+
+        // Skip @ event attributes - they're processed by processEventDirectives
+        if (attrName.startsWith('@')) {
           continue
         }
 

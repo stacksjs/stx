@@ -1,17 +1,19 @@
-<div class="flex items-center gap-5 p-5 bg-[#161b22] border border-[#30363d] rounded-xl">
+<div x-data="{ message: '', charCount: 0, isRecording: false }" class="flex items-center gap-5 p-5 bg-[#161b22] border border-[#30363d] rounded-xl">
   <!-- Mic Button -->
   <button
     id="micButton"
-    class="w-20 h-20 rounded-full bg-gradient-to-br from-[#21262d] to-[#161b22] border-[3px] border-[#30363d] cursor-pointer flex items-center justify-center transition-all hover:border-[#e94560] hover:scale-105 focus:outline-none"
+    class="w-20 h-20 rounded-full bg-gradient-to-br from-[#e94560] to-[#1a1a2e] border-[3px] border-[#e94560] cursor-pointer flex items-center justify-center transition-all hover:scale-105 focus:outline-none shadow-lg"
+    style="box-shadow: 0 0 30px rgba(233, 69, 96, 0.3);"
     title="Hold to record (or press Space)"
+    @click="isRecording = !isRecording"
   >
-    <span id="micIcon" class="text-3xl">🎤</span>
+    <span id="micIcon" class="text-3xl" x-text="isRecording ? '🔴' : '🎤'"></span>
   </button>
 
   <!-- Voice Status -->
   <div class="flex-1">
-    <div id="statusText" class="text-sm text-[#e6edf3] mb-1">{{ statusText || 'Click microphone or type below' }}</div>
-    <div id="statusHint" class="text-xs text-[#8b949e]">{{ statusHint || 'Hold to record, release to send' }}</div>
+    <div id="statusText" class="text-sm text-[#e6edf3] mb-1" x-text="isRecording ? 'Recording...' : 'Click microphone or type below'"></div>
+    <div id="statusHint" class="text-xs text-[#8b949e]" x-text="isRecording ? 'Click again to stop' : 'Hold to record, release to send'"></div>
 
     <!-- Transcript Preview -->
     <div
@@ -26,15 +28,27 @@
       <div class="flex items-end gap-2 bg-[#21262d] border border-[#30363d] rounded-2xl px-4 py-3 focus-within:border-[#e94560] transition-colors">
         <textarea
           id="textInput"
+          x-model="message"
           class="flex-1 bg-transparent text-sm text-[#e6edf3] placeholder-[#484f58] focus:outline-none resize-none min-h-[24px] max-h-[200px] leading-6 overflow-y-auto"
           placeholder="Message Voide... (Shift+Enter for new line)"
           rows="1"
-          oninput="this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 200) + 'px';"
+          @input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, 200) + 'px'; charCount = $el.value.length"
+          @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); document.getElementById('sendBtn').click() }"
         ></textarea>
+        <!-- Clear button - shows when there's text -->
+        <button
+          x-show="message.length > 0"
+          class="flex-shrink-0 w-8 h-8 rounded-lg bg-[#30363d] hover:bg-[#484f58] flex items-center justify-center transition-all"
+          title="Clear"
+          @click="message = ''; charCount = 0; document.getElementById('textInput').value = ''"
+        >
+          <span class="text-[#8b949e]">×</span>
+        </button>
         <button
           id="sendBtn"
           class="flex-shrink-0 w-8 h-8 rounded-lg bg-[#e94560] hover:bg-[#f45a75] flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           title="Send message (Enter)"
+          @click="console.log('Sending:', message); message = ''; charCount = 0; document.getElementById('textInput').value = ''"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
             <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -42,8 +56,9 @@
           </svg>
         </button>
       </div>
-      <div class="text-[10px] text-[#484f58] mt-1.5 text-center">
-        Press <kbd class="px-1.5 py-0.5 bg-[#21262d] rounded text-[#8b949e]">Enter</kbd> to send, <kbd class="px-1.5 py-0.5 bg-[#21262d] rounded text-[#8b949e]">Shift+Enter</kbd> for new line
+      <div class="flex justify-between text-[10px] text-[#484f58] mt-1.5">
+        <span>Press <kbd class="px-1.5 py-0.5 bg-[#21262d] rounded text-[#8b949e]">Enter</kbd> to send, <kbd class="px-1.5 py-0.5 bg-[#21262d] rounded text-[#8b949e]">Shift+Enter</kbd> for new line</span>
+        <span x-text="charCount + ' chars'" x-show="charCount > 0"></span>
       </div>
     </div>
   </div>
@@ -53,7 +68,7 @@
     <button
       id="commitBtn"
       class="bg-[#3fb950] border border-[#3fb950] rounded-lg px-4 py-2 text-sm text-[#0d1117] cursor-pointer hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-      disabled
+      :disabled="message.length === 0"
     >
       Commit Changes
     </button>

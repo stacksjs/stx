@@ -3,7 +3,66 @@ const title = 'Voide'
 const version = '1.0.0'
 </script>
 
-@include('./components/voide/layout', { title, version })
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>{{ title }} - Voice AI Code Assistant</title>
+
+  <style>
+    /* Custom animations not in Headwind */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.4); }
+      50% { box-shadow: 0 0 0 20px rgba(233, 69, 96, 0); }
+    }
+    @keyframes bounce {
+      to { transform: translateY(-8px); }
+    }
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .animate-fade-in { animation: fadeIn 0.3s ease; }
+    .animate-pulse { animation: pulse 1.5s infinite; }
+    .animate-bounce { animation: bounce 0.6s infinite alternate; }
+    .animate-blink { animation: blink 1s step-end infinite; }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #21262d; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+    /* Body styling */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+    }
+
+  </style>
+
+  <!-- Load Headwind CSS -->
+  <script>
+    // Dynamically load Headwind CSS to bypass bundler
+    (function() {
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/dist/voide.css';
+      link.onload = function() { document.body.style.visibility = 'visible'; };
+      document.head.appendChild(link);
+      // Hide body until CSS loads to prevent FOUC
+      document.write('<style>body{visibility:hidden}</style>');
+    })();
+  </script>
+</head>
+<body class="flex flex-col h-screen">
   <!-- Header -->
   @include('./components/voide/header', { title })
 
@@ -18,31 +77,76 @@ const version = '1.0.0'
 
   <!-- Footer -->
   <footer id="footer" class="px-5 py-2.5 text-center text-[11px] text-[#484f58] border-t border-[#30363d]">
-    Voide v1.0.0 - Voice AI Code Assistant
+    {{ title }} v{{ version }} - Voice AI Code Assistant
   </footer>
 
   <!-- Modals -->
   @include('./components/voide/modals')
 
+  <!-- Craft Native Bridge -->
+  <script>
+    (function() {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.craftBridge) {
+        window.craft = {
+          _callbacks: {},
+          _callbackId: 0,
+          _invoke: function(method, args) {
+            args = args || {};
+            var self = this;
+            return new Promise(function(resolve, reject) {
+              var id = ++self._callbackId;
+              self._callbacks[id] = { resolve: resolve, reject: reject };
+              window.webkit.messageHandlers.craftBridge.postMessage({ id: id, method: method, args: args });
+            });
+          },
+          _handleResponse: function(id, result, error) {
+            var cb = this._callbacks[id];
+            if (cb) {
+              delete this._callbacks[id];
+              error ? cb.reject(new Error(error)) : cb.resolve(result);
+            }
+          },
+          window: {
+            setTitle: function(title) { return window.craft._invoke('window.setTitle', { title: title }); },
+            close: function() { return window.craft._invoke('window.close'); },
+            minimize: function() { return window.craft._invoke('window.minimize'); },
+            maximize: function() { return window.craft._invoke('window.maximize'); }
+          },
+          tray: {
+            setTitle: function(title) { return window.craft._invoke('tray.setTitle', { title: title }); },
+            setTooltip: function(tooltip) { return window.craft._invoke('tray.setTooltip', { tooltip: tooltip }); },
+            setMenu: function(menu) { return window.craft._invoke('tray.setMenu', { menu: menu }); },
+            onClickToggleWindow: function() { return window.craft._invoke('tray.onClickToggleWindow'); }
+          },
+          app: {
+            quit: function() { return window.craft._invoke('app.quit'); },
+            notify: function(options) { return window.craft._invoke('app.notify', options); }
+          }
+        };
+        console.log('[Voide] Craft native bridge initialized');
+      }
+    })();
+  </script>
+
   <!-- App Logic Script -->
   <script>
     // Configuration
-    const config = {
+    var config = {
       title: 'Voide',
       version: '1.0.0',
       apiBaseUrl: 'http://localhost:3008/voide',
       drivers: {
         'claude-cli-local': { name: 'Claude CLI (Local)', requiresKey: null },
         'claude-cli-ec2': { name: 'Claude CLI (EC2)', requiresKey: 'BUDDY_EC2_HOST' },
-        claude: { name: 'Claude API', requiresKey: 'ANTHROPIC_API_KEY' },
-        openai: { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
-        ollama: { name: 'Ollama', requiresKey: null },
-        mock: { name: 'Mock', requiresKey: null }
+        'claude': { name: 'Claude API', requiresKey: 'ANTHROPIC_API_KEY' },
+        'openai': { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
+        'ollama': { name: 'Ollama', requiresKey: null },
+        'mock': { name: 'Mock', requiresKey: null }
       }
     };
 
     // State management
-    const state = {
+    var state = {
       isRecording: false,
       isProcessing: false,
       transcript: '',
@@ -58,7 +162,7 @@ const version = '1.0.0'
     };
 
     // DOM elements
-    const elements = {
+    var elements = {
       output: document.getElementById('output'),
       micButton: document.getElementById('micButton'),
       micIcon: document.getElementById('micIcon'),
@@ -105,28 +209,28 @@ const version = '1.0.0'
       openaiStatusText: document.getElementById('openaiStatusText')
     };
 
-    const STORAGE_KEY_REPO = 'voide_last_repo_path';
+    var STORAGE_KEY_REPO = 'voide_last_repo_path';
 
     // Initialize UI
     function initUI() {
-      elements.appTitle.textContent = config.title;
-      elements.footer.textContent = `${config.title} v${config.version} - Voice AI Code Assistant`;
+      if (elements.appTitle) elements.appTitle.textContent = config.title;
+      if (elements.footer) elements.footer.textContent = config.title + ' v' + config.version + ' - Voice AI Code Assistant';
       if (window.craft) { state.isNativeApp = true; initNativeFeatures(); }
-      const savedRepoPath = localStorage.getItem(STORAGE_KEY_REPO);
-      if (savedRepoPath) elements.repoInput.value = savedRepoPath;
+      var savedRepoPath = localStorage.getItem(STORAGE_KEY_REPO);
+      if (savedRepoPath && elements.repoInput) elements.repoInput.value = savedRepoPath;
     }
 
     function restoreSavedRepo() {
-      const savedRepoPath = localStorage.getItem(STORAGE_KEY_REPO);
-      if (savedRepoPath && elements.repoInput.value) handleRepoAction();
+      var savedRepoPath = localStorage.getItem(STORAGE_KEY_REPO);
+      if (savedRepoPath && elements.repoInput && elements.repoInput.value) handleRepoAction();
     }
 
-    async function initNativeFeatures() {
+    function initNativeFeatures() {
       if (!window.craft) return;
       try {
-        await window.craft.tray.setTitle('Voide');
-        await window.craft.tray.setTooltip('Voide - Voice AI Code Assistant');
-        await window.craft.tray.setMenu([
+        window.craft.tray.setTitle('Voide');
+        window.craft.tray.setTooltip('Voide - Voice AI Code Assistant');
+        window.craft.tray.setMenu([
           { id: 'show', label: 'Show Voide', action: 'show' },
           { id: 'hide', label: 'Hide Window', action: 'hide' },
           { type: 'separator' },
@@ -139,27 +243,29 @@ const version = '1.0.0'
       } catch (e) { console.log('Native features not fully available:', e); }
     }
 
-    async function updateTrayStatus(status) {
+    function updateTrayStatus(status) {
       if (!state.isNativeApp || !window.craft) return;
       try {
-        const icons = { ready: '🤖', recording: '🔴', processing: '⏳', success: '✅', error: '❌' };
-        await window.craft.tray.setTitle(`${icons[status] || '🤖'} Voide`);
+        var icons = { ready: '🤖', recording: '🔴', processing: '⏳', success: '✅', error: '❌' };
+        window.craft.tray.setTitle((icons[status] || '🤖') + ' Voide');
       } catch (e) {}
     }
 
-    async function sendNotification(title, body, sound = 'default') {
+    function sendNotification(title, body) {
       if (!state.isNativeApp || !window.craft) return;
-      try { await window.craft.app.notify({ title, body, sound }); } catch (e) {}
+      try { window.craft.app.notify({ title: title, body: body }); } catch (e) {}
     }
 
     function initSpeechRecognition() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
         state.speechSupported = false;
-        elements.statusText.textContent = 'Voice not supported - use text input';
-        elements.statusHint.textContent = 'Type your command below';
-        elements.micButton.style.opacity = '0.5';
-        elements.micButton.style.cursor = 'not-allowed';
+        if (elements.statusText) elements.statusText.textContent = 'Voice not supported - use text input';
+        if (elements.statusHint) elements.statusHint.textContent = 'Type your command below';
+        if (elements.micButton) {
+          elements.micButton.style.opacity = '0.5';
+          elements.micButton.style.cursor = 'not-allowed';
+        }
         addMessage('system', 'Speech recognition not available. Please use text input.');
         return false;
       }
@@ -169,36 +275,38 @@ const version = '1.0.0'
       state.recognition.lang = 'en-US';
       state.recognition.maxAlternatives = 1;
 
-      state.recognition.onstart = () => {
+      state.recognition.onstart = function() {
         state.isRecording = true;
-        elements.micButton.classList.add('animate-pulse');
-        elements.micIcon.textContent = '🔴';
-        elements.statusText.textContent = 'Listening...';
-        elements.statusHint.textContent = 'Speak your command clearly';
-        elements.transcriptPreview.classList.add('border-[#e94560]');
-        elements.transcriptPreview.textContent = 'Listening...';
+        if (elements.micButton) elements.micButton.classList.add('animate-pulse');
+        if (elements.micIcon) elements.micIcon.textContent = '🔴';
+        if (elements.statusText) elements.statusText.textContent = 'Listening...';
+        if (elements.statusHint) elements.statusHint.textContent = 'Speak your command clearly';
+        if (elements.transcriptPreview) {
+          elements.transcriptPreview.classList.add('border-[#e94560]');
+          elements.transcriptPreview.textContent = 'Listening...';
+        }
         updateTrayStatus('recording');
       };
 
-      state.recognition.onresult = (event) => {
-        let transcript = '';
-        for (let i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript;
+      state.recognition.onresult = function(event) {
+        var transcript = '';
+        for (var i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript;
         state.transcript = transcript;
-        elements.transcriptPreview.textContent = transcript || 'Listening...';
+        if (elements.transcriptPreview) elements.transcriptPreview.textContent = transcript || 'Listening...';
       };
 
-      state.recognition.onerror = (event) => {
+      state.recognition.onerror = function(event) {
         console.error('Speech recognition error:', event.error);
         stopRecording();
         if (event.error === 'not-allowed') addMessage('error', 'Microphone access denied.');
-        else if (event.error === 'network') { addMessage('error', 'Speech recognition requires internet.'); elements.statusText.textContent = 'Network error - use text input'; }
-        else if (event.error === 'no-speech') elements.statusText.textContent = 'No speech detected - try again';
-        else if (event.error !== 'aborted') addMessage('error', `Speech error: ${event.error}`);
+        else if (event.error === 'network') { addMessage('error', 'Speech recognition requires internet.'); if (elements.statusText) elements.statusText.textContent = 'Network error - use text input'; }
+        else if (event.error === 'no-speech') { if (elements.statusText) elements.statusText.textContent = 'No speech detected - try again'; }
+        else if (event.error !== 'aborted') addMessage('error', 'Speech error: ' + event.error);
       };
 
-      state.recognition.onend = () => {
+      state.recognition.onend = function() {
         if (state.isRecording) {
-          const transcript = state.transcript.trim();
+          var transcript = state.transcript.trim();
           stopRecording();
           if (transcript) processCommand(transcript);
         }
@@ -209,240 +317,265 @@ const version = '1.0.0'
     }
 
     function startRecording() {
-      if (!state.speechSupported) { elements.textInput.focus(); return; }
+      if (!state.speechSupported) { if (elements.textInput) elements.textInput.focus(); return; }
       if (state.isRecording) return;
       state.transcript = '';
-      elements.transcriptPreview.textContent = 'Initializing...';
+      if (elements.transcriptPreview) elements.transcriptPreview.textContent = 'Initializing...';
       try { state.recognition.start(); } catch (e) { addMessage('error', 'Failed to start voice recognition.'); }
     }
 
     function stopRecording() {
       state.isRecording = false;
-      elements.micButton.classList.remove('animate-pulse');
-      elements.micIcon.textContent = '🎤';
-      elements.statusText.textContent = 'Click microphone or type below';
-      elements.statusHint.textContent = 'Hold to record, release to send';
-      elements.transcriptPreview.classList.remove('border-[#e94560]');
+      if (elements.micButton) elements.micButton.classList.remove('animate-pulse');
+      if (elements.micIcon) elements.micIcon.textContent = '🎤';
+      if (elements.statusText) elements.statusText.textContent = 'Click microphone or type below';
+      if (elements.statusHint) elements.statusHint.textContent = 'Hold to record, release to send';
+      if (elements.transcriptPreview) elements.transcriptPreview.classList.remove('border-[#e94560]');
       updateTrayStatus('ready');
       if (state.recognition) try { state.recognition.stop(); } catch (e) {}
     }
 
-    function addMessage(type, content, header = null) {
-      const messageDiv = document.createElement('div');
-      const driverName = config.drivers[state.currentDriver]?.name || 'AI';
-      const headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error');
-      const typeClasses = { user: 'bg-[#1a1a2e] border-l-2 border-[#e94560]', assistant: 'bg-[#161b22] border-l-2 border-[#3fb950]', system: 'border-l-2 border-[#d29922] text-[#8b949e] text-xs', error: 'bg-[rgba(248,81,73,0.1)] border-l-2 border-[#f85149]' };
-      messageDiv.className = `mb-4 p-3 rounded-lg animate-fade-in ${typeClasses[type] || typeClasses.system}`;
-      messageDiv.innerHTML = `<div class="flex items-center gap-2 mb-2 text-[11px] text-[#8b949e] uppercase tracking-wider">${headerText}</div><div class="whitespace-pre-wrap break-words">${escapeHtml(content)}</div>`;
+    function addMessage(type, content, header) {
+      if (!elements.output) return;
+      var messageDiv = document.createElement('div');
+      var driverName = config.drivers[state.currentDriver] ? config.drivers[state.currentDriver].name : 'AI';
+      var headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error');
+      var typeClasses = {
+        user: 'bg-[#1a1a2e] border-l-2 border-[#e94560]',
+        assistant: 'bg-[#161b22] border-l-2 border-[#3fb950]',
+        system: 'border-l-2 border-[#d29922] text-[#8b949e] text-xs',
+        error: 'bg-[rgba(248,81,73,0.1)] border-l-2 border-[#f85149]'
+      };
+      messageDiv.className = 'mb-4 p-3 rounded-lg animate-fade-in ' + (typeClasses[type] || typeClasses.system);
+      messageDiv.innerHTML = '<div class="flex items-center gap-2 mb-2 text-[11px] text-[#8b949e] uppercase tracking-wider">' + headerText + '</div><div class="whitespace-pre-wrap break-words">' + escapeHtml(content) + '</div>';
       elements.output.appendChild(messageDiv);
       elements.output.scrollTop = elements.output.scrollHeight;
-      state.messages.push({ type, content, timestamp: Date.now() });
+      state.messages.push({ type: type, content: content, timestamp: Date.now() });
     }
 
     function addLoadingMessage() {
-      const driverName = config.drivers[state.currentDriver]?.name || 'AI';
-      const loadingDiv = document.createElement('div');
+      if (!elements.output) return;
+      var driverName = config.drivers[state.currentDriver] ? config.drivers[state.currentDriver].name : 'AI';
+      var loadingDiv = document.createElement('div');
       loadingDiv.className = 'mb-4 p-3 rounded-lg bg-[#161b22] border-l-2 border-[#3fb950]';
       loadingDiv.id = 'loadingMessage';
-      loadingDiv.innerHTML = `<div class="flex items-center gap-2 mb-2 text-[11px] text-[#8b949e] uppercase tracking-wider">${driverName}</div><div class="flex gap-1"><span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0s"></span><span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0.2s"></span><span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0.4s"></span></div>`;
+      loadingDiv.innerHTML = '<div class="flex items-center gap-2 mb-2 text-[11px] text-[#8b949e] uppercase tracking-wider">' + driverName + '</div><div class="flex gap-1"><span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0s"></span><span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0.2s"></span><span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0.4s"></span></div>';
       elements.output.appendChild(loadingDiv);
       elements.output.scrollTop = elements.output.scrollHeight;
     }
 
-    function removeLoadingMessage() { const loading = document.getElementById('loadingMessage'); if (loading) loading.remove(); }
+    function removeLoadingMessage() { var loading = document.getElementById('loadingMessage'); if (loading) loading.remove(); }
 
-    function addStreamingMessage() {
-      const driverName = config.drivers[state.currentDriver]?.name || 'AI';
-      const messageId = 'streaming-' + Date.now();
-      const messageDiv = document.createElement('div');
-      messageDiv.className = 'mb-4 p-3 rounded-lg bg-[#161b22] border-l-2 border-[#3fb950]';
-      messageDiv.id = messageId;
-      messageDiv.innerHTML = `<div class="flex items-center gap-2 mb-2 text-[11px] text-[#8b949e] uppercase tracking-wider">${driverName}</div><div class="whitespace-pre-wrap break-words message-content"><span class="animate-blink text-[#e94560] font-bold">&#9608;</span></div>`;
-      elements.output.appendChild(messageDiv);
-      elements.output.scrollTop = elements.output.scrollHeight;
-      return messageId;
+    function escapeHtml(text) { var div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+    function checkBackendAPI() {
+      return fetch(config.apiBaseUrl + '/state').then(function(res) { return res.ok; }).catch(function() { return false; });
     }
 
-    function updateStreamingMessage(messageId, text) {
-      const messageDiv = document.getElementById(messageId);
-      if (messageDiv) {
-        const contentDiv = messageDiv.querySelector('.message-content');
-        if (contentDiv) {
-          contentDiv.innerHTML = `<pre style="white-space:pre-wrap;margin:0;font-family:inherit;">${escapeHtml(text)}</pre><span class="animate-blink text-[#e94560] font-bold">&#9608;</span>`;
-          elements.output.scrollTop = elements.output.scrollHeight;
-        }
-      }
-    }
-
-    function finalizeStreamingMessage(messageId) {
-      const messageDiv = document.getElementById(messageId);
-      if (messageDiv) {
-        const cursor = messageDiv.querySelector('.animate-blink');
-        if (cursor) cursor.remove();
-      }
-    }
-
-    function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
-
-    async function checkBackendAPI() { try { return (await fetch(`${config.apiBaseUrl}/state`)).ok; } catch { return false; } }
-
-    async function processCommand(command) {
+    function processCommand(command) {
       if (!command.trim()) return;
       addMessage('user', command);
-      elements.terminalTitle.textContent = 'Processing...';
-      if (!state.repoPath) { addMessage('error', 'Please enter a repository URL or path first.'); elements.terminalTitle.textContent = `${config.title} - Ready`; return; }
+      if (elements.terminalTitle) elements.terminalTitle.textContent = 'Processing...';
+      if (!state.repoPath) {
+        addMessage('error', 'Please enter a repository URL or path first.');
+        if (elements.terminalTitle) elements.terminalTitle.textContent = config.title + ' - Ready';
+        return;
+      }
       state.isProcessing = true;
       addLoadingMessage();
       updateTrayStatus('processing');
 
-      try {
-        let response, usedStreaming = false;
-        const hasBackend = await checkBackendAPI();
-
+      checkBackendAPI().then(function(hasBackend) {
         if (hasBackend) {
-          const useStreaming = state.currentDriver === 'claude-cli-local';
-          if (useStreaming) {
-            removeLoadingMessage();
-            const streamingMessageId = addStreamingMessage();
-            const streamResponse = await fetch(`${config.apiBaseUrl}/process/stream`, {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ command, driver: state.currentDriver, ...(state.repoPath && { repository: state.repoPath }) })
-            });
-            if (!streamResponse.ok) throw new Error((await streamResponse.json()).error || 'Streaming failed');
-
-            const reader = streamResponse.body.getReader();
-            const decoder = new TextDecoder();
-            let fullText = '', buffer = '';
-
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split('\n');
-              buffer = lines.pop() || '';
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  try {
-                    const data = JSON.parse(line.substring(6));
-                    if (data.text) { fullText += data.text; updateStreamingMessage(streamingMessageId, fullText); }
-                    if (data.status === 'complete') response = { message: fullText, hasChanges: data.hasChanges, modifiedFiles: data.modifiedFiles };
-                    if (data.error) throw new Error(data.error);
-                  } catch (e) {}
-                }
-              }
-            }
-            finalizeStreamingMessage(streamingMessageId);
-            usedStreaming = true;
-          } else {
-            const apiResponse = await fetch(`${config.apiBaseUrl}/process`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command, driver: state.currentDriver, ...(state.repoPath && { repository: state.repoPath }) }) });
-            const responseData = await apiResponse.json();
-            if (!apiResponse.ok || !responseData.success) throw new Error(responseData.error || 'Unknown error');
-            response = responseData.data;
-          }
+          return fetch(config.apiBaseUrl + '/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: command, driver: state.currentDriver, repository: state.repoPath })
+          }).then(function(res) { return res.json(); });
         } else if (state.currentDriver === 'mock') {
-          response = await getMockResponse(command);
+          return new Promise(function(resolve) {
+            setTimeout(function() {
+              resolve({ success: true, data: { message: '[Mock] Processing: "' + command + '"\n\nThis is a simulated response.', hasChanges: command.toLowerCase().indexOf('fix') >= 0 } });
+            }, 1500);
+          });
         } else {
-          throw new Error('Stacks API not available. Start the server at localhost:3008.');
+          throw new Error('Backend API not available. Start the server at localhost:3008.');
         }
-
-        if (!usedStreaming) { removeLoadingMessage(); addMessage('assistant', response.message); }
-        updateTrayStatus('success');
-        if (response?.hasChanges) { state.hasChanges = true; elements.commitBtn.disabled = false; elements.pushBtn.disabled = false; addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.'); sendNotification('Changes Ready', 'Code changes are staged.'); }
-        elements.terminalTitle.textContent = `${config.title} - Ready`;
-        setTimeout(() => updateTrayStatus('ready'), 2000);
-      } catch (error) {
+      }).then(function(response) {
         removeLoadingMessage();
-        addMessage('error', `Failed: ${error.message}`);
-        elements.terminalTitle.textContent = `${config.title} - Error`;
+        if (response.success && response.data) {
+          addMessage('assistant', response.data.message);
+          if (response.data.hasChanges) {
+            state.hasChanges = true;
+            if (elements.commitBtn) elements.commitBtn.disabled = false;
+            if (elements.pushBtn) elements.pushBtn.disabled = false;
+            addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.');
+            sendNotification('Changes Ready', 'Code changes are staged.');
+          }
+        } else {
+          throw new Error(response.error || 'Unknown error');
+        }
+        if (elements.terminalTitle) elements.terminalTitle.textContent = config.title + ' - Ready';
+        updateTrayStatus('success');
+        setTimeout(function() { updateTrayStatus('ready'); }, 2000);
+      }).catch(function(error) {
+        removeLoadingMessage();
+        addMessage('error', 'Failed: ' + error.message);
+        if (elements.terminalTitle) elements.terminalTitle.textContent = config.title + ' - Error';
         updateTrayStatus('error');
-        setTimeout(() => updateTrayStatus('ready'), 3000);
-      } finally { state.isProcessing = false; }
+        setTimeout(function() { updateTrayStatus('ready'); }, 3000);
+      }).finally(function() {
+        state.isProcessing = false;
+      });
     }
 
-    async function getMockResponse(command) {
-      await new Promise(r => setTimeout(r, 1500));
-      return { message: `[Mock] Processing: "${command}"\n\nThis is a simulated response.`, hasChanges: command.toLowerCase().includes('fix') || command.toLowerCase().includes('add') };
-    }
-
-    async function handleRepoAction() {
-      const input = elements.repoInput.value.trim();
+    function handleRepoAction() {
+      var input = elements.repoInput ? elements.repoInput.value.trim() : '';
       if (!input) { addMessage('error', 'Please enter a repository URL or path.'); return; }
-      addMessage('system', `Opening repository: ${input}`);
-      try {
-        const hasBackend = await checkBackendAPI();
+      addMessage('system', 'Opening repository: ' + input);
+
+      checkBackendAPI().then(function(hasBackend) {
         if (hasBackend) {
-          const apiResponse = await fetch(`${config.apiBaseUrl}/repo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ input }) });
-          if (!apiResponse.ok) throw new Error((await apiResponse.json()).error || 'Failed to open repository');
-          const data = await apiResponse.json();
-          const repo = data.data.repo;
+          return fetch(config.apiBaseUrl + '/repo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ input: input })
+          }).then(function(res) { return res.json(); });
+        } else {
+          return { success: true, data: { repo: { path: input, name: input.split('/').pop(), branch: 'main' } } };
+        }
+      }).then(function(response) {
+        if (response.success && response.data && response.data.repo) {
+          var repo = response.data.repo;
           state.repoPath = repo.path;
           localStorage.setItem(STORAGE_KEY_REPO, repo.path);
-          addMessage('system', `Repository "${repo.name}" opened.\nPath: ${repo.path}\nBranch: ${repo.branch}`);
+          addMessage('system', 'Repository "' + repo.name + '" opened.\nPath: ' + repo.path + '\nBranch: ' + repo.branch);
+          if (elements.terminalTitle) elements.terminalTitle.textContent = config.title + ' - ' + repo.name;
         } else {
-          state.repoPath = input;
-          localStorage.setItem(STORAGE_KEY_REPO, input);
-          addMessage('system', `[Simulated] Opened: ${input}`);
+          throw new Error(response.error || 'Failed to open repository');
         }
-        elements.terminalTitle.textContent = `${config.title} - ${input.split('/').pop()}`;
-      } catch (error) { addMessage('error', `Failed: ${error.message}`); }
+      }).catch(function(error) {
+        addMessage('error', 'Failed: ' + error.message);
+      });
     }
 
-    async function commitChanges() {
+    function commitChanges() {
       if (!state.hasChanges) return;
       addMessage('system', 'Creating commit...');
       updateTrayStatus('processing');
-      try {
-        const hasBackend = await checkBackendAPI();
+
+      checkBackendAPI().then(function(hasBackend) {
         if (hasBackend) {
-          const apiResponse = await fetch(`${config.apiBaseUrl}/commit`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-          if (!apiResponse.ok) throw new Error((await apiResponse.json()).error || 'Failed to commit');
-          const data = await apiResponse.json();
-          addMessage('system', `Committed: ${data.hash}`);
-        } else { addMessage('system', '[Simulated] Committed'); }
+          return fetch(config.apiBaseUrl + '/commit', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+            .then(function(res) { return res.json(); });
+        } else {
+          return { success: true, hash: 'mock-commit-hash' };
+        }
+      }).then(function(response) {
+        addMessage('system', 'Committed: ' + (response.hash || 'success'));
         state.hasChanges = false;
-        elements.commitBtn.disabled = true;
+        if (elements.commitBtn) elements.commitBtn.disabled = true;
         updateTrayStatus('success');
-        setTimeout(() => updateTrayStatus('ready'), 2000);
-      } catch (error) { addMessage('error', `Failed: ${error.message}`); updateTrayStatus('error'); setTimeout(() => updateTrayStatus('ready'), 3000); }
+        setTimeout(function() { updateTrayStatus('ready'); }, 2000);
+      }).catch(function(error) {
+        addMessage('error', 'Failed: ' + error.message);
+        updateTrayStatus('error');
+        setTimeout(function() { updateTrayStatus('ready'); }, 3000);
+      });
     }
 
-    async function pushChanges() {
+    function pushChanges() {
       addMessage('system', 'Pushing to remote...');
       updateTrayStatus('processing');
-      try {
-        const hasBackend = await checkBackendAPI();
+
+      checkBackendAPI().then(function(hasBackend) {
         if (hasBackend) {
-          const apiResponse = await fetch(`${config.apiBaseUrl}/push`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-          if (!apiResponse.ok) throw new Error((await apiResponse.json()).error || 'Failed to push');
-          addMessage('system', 'Pushed successfully.');
-        } else { addMessage('system', '[Simulated] Pushed'); }
-        elements.pushBtn.disabled = true;
+          return fetch(config.apiBaseUrl + '/push', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+            .then(function(res) { return res.json(); });
+        } else {
+          return { success: true };
+        }
+      }).then(function() {
+        addMessage('system', 'Pushed successfully.');
+        if (elements.pushBtn) elements.pushBtn.disabled = true;
         updateTrayStatus('success');
-        setTimeout(() => updateTrayStatus('ready'), 2000);
-      } catch (error) { addMessage('error', `Failed: ${error.message}`); updateTrayStatus('error'); setTimeout(() => updateTrayStatus('ready'), 3000); }
+        setTimeout(function() { updateTrayStatus('ready'); }, 2000);
+      }).catch(function(error) {
+        addMessage('error', 'Failed: ' + error.message);
+        updateTrayStatus('error');
+        setTimeout(function() { updateTrayStatus('ready'); }, 3000);
+      });
     }
 
-    function handleDriverChange() { state.currentDriver = elements.aiDriver.value; addMessage('system', `Switched to ${config.drivers[state.currentDriver].name}`); }
-    function handleTextSubmit() { const text = elements.textInput.value.trim(); if (text && !state.isProcessing) { elements.textInput.value = ''; processCommand(text); } }
+    function handleDriverChange() {
+      if (elements.aiDriver) {
+        state.currentDriver = elements.aiDriver.value;
+        addMessage('system', 'Switched to ' + config.drivers[state.currentDriver].name);
+      }
+    }
+
+    function handleTextSubmit() {
+      if (!elements.textInput) return;
+      var text = elements.textInput.value.trim();
+      if (text && !state.isProcessing) {
+        elements.textInput.value = '';
+        processCommand(text);
+      }
+    }
 
     // Modal functions
-    function openGithubModal() { elements.githubModal.classList.add('active'); elements.githubModal.classList.remove('hidden'); }
-    function closeGithubModal() { elements.githubModal.classList.remove('active'); elements.githubModal.classList.add('hidden'); }
-    function openSettingsModal() { elements.settingsModal.classList.add('active'); elements.settingsModal.classList.remove('hidden'); updateApiStatusIndicators(); }
-    function closeSettingsModal() { elements.settingsModal.classList.remove('active'); elements.settingsModal.classList.add('hidden'); }
-
-    function updateApiStatusIndicators() {
-      if (state.apiKeys.anthropic) { elements.anthropicStatus.classList.add('configured'); elements.anthropicStatusText.textContent = 'Configured'; }
-      else { elements.anthropicStatus.classList.remove('configured'); elements.anthropicStatusText.textContent = 'Not configured'; }
-      if (state.apiKeys.openai) { elements.openaiStatus.classList.add('configured'); elements.openaiStatusText.textContent = 'Configured'; }
-      else { elements.openaiStatus.classList.remove('configured'); elements.openaiStatusText.textContent = 'Not configured'; }
+    function openGithubModal() {
+      if (elements.githubModal) {
+        elements.githubModal.classList.add('active');
+        elements.githubModal.classList.remove('hidden');
+      }
     }
 
-    async function saveApiSettings() {
-      const anthropicKey = elements.anthropicApiKey.value.trim();
-      const openaiKey = elements.openaiApiKey.value.trim();
-      const claudeHost = elements.claudeCliHost.value.trim();
-      state.apiKeys = { anthropic: anthropicKey || null, openai: openaiKey || null, claudeCliHost: claudeHost || null };
+    function closeGithubModal() {
+      if (elements.githubModal) {
+        elements.githubModal.classList.remove('active');
+        elements.githubModal.classList.add('hidden');
+      }
+    }
+
+    function openSettingsModal() {
+      if (elements.settingsModal) {
+        elements.settingsModal.classList.add('active');
+        elements.settingsModal.classList.remove('hidden');
+        updateApiStatusIndicators();
+      }
+    }
+
+    function closeSettingsModal() {
+      if (elements.settingsModal) {
+        elements.settingsModal.classList.remove('active');
+        elements.settingsModal.classList.add('hidden');
+      }
+    }
+
+    function updateApiStatusIndicators() {
+      if (state.apiKeys.anthropic) {
+        if (elements.anthropicStatus) elements.anthropicStatus.classList.add('configured');
+        if (elements.anthropicStatusText) elements.anthropicStatusText.textContent = 'Configured';
+      } else {
+        if (elements.anthropicStatus) elements.anthropicStatus.classList.remove('configured');
+        if (elements.anthropicStatusText) elements.anthropicStatusText.textContent = 'Not configured';
+      }
+      if (state.apiKeys.openai) {
+        if (elements.openaiStatus) elements.openaiStatus.classList.add('configured');
+        if (elements.openaiStatusText) elements.openaiStatusText.textContent = 'Configured';
+      } else {
+        if (elements.openaiStatus) elements.openaiStatus.classList.remove('configured');
+        if (elements.openaiStatusText) elements.openaiStatusText.textContent = 'Not configured';
+      }
+    }
+
+    function saveApiSettings() {
+      state.apiKeys = {
+        anthropic: elements.anthropicApiKey ? elements.anthropicApiKey.value.trim() || null : null,
+        openai: elements.openaiApiKey ? elements.openaiApiKey.value.trim() || null : null,
+        claudeCliHost: elements.claudeCliHost ? elements.claudeCliHost.value.trim() || null : null
+      };
       localStorage.setItem('voide_api_keys', JSON.stringify(state.apiKeys));
       updateApiStatusIndicators();
       closeSettingsModal();
@@ -451,53 +584,68 @@ const version = '1.0.0'
 
     function loadSavedApiKeys() {
       try {
-        const saved = localStorage.getItem('voide_api_keys');
-        if (saved) { state.apiKeys = JSON.parse(saved); updateApiStatusIndicators(); }
+        var saved = localStorage.getItem('voide_api_keys');
+        if (saved) {
+          state.apiKeys = JSON.parse(saved);
+          updateApiStatusIndicators();
+        }
       } catch (e) {}
     }
 
     // Event listeners
-    elements.micButton.addEventListener('mousedown', startRecording);
-    elements.micButton.addEventListener('mouseup', stopRecording);
-    elements.micButton.addEventListener('mouseleave', () => { if (state.isRecording) stopRecording(); });
-    elements.micButton.addEventListener('touchstart', (e) => { e.preventDefault(); startRecording(); });
-    elements.micButton.addEventListener('touchend', (e) => { e.preventDefault(); stopRecording(); });
+    if (elements.micButton) {
+      elements.micButton.addEventListener('mousedown', startRecording);
+      elements.micButton.addEventListener('mouseup', stopRecording);
+      elements.micButton.addEventListener('mouseleave', function() { if (state.isRecording) stopRecording(); });
+      elements.micButton.addEventListener('touchstart', function(e) { e.preventDefault(); startRecording(); });
+      elements.micButton.addEventListener('touchend', function(e) { e.preventDefault(); stopRecording(); });
+    }
 
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' && !e.repeat && document.activeElement !== elements.repoInput && document.activeElement !== elements.textInput) { e.preventDefault(); startRecording(); }
+    document.addEventListener('keydown', function(e) {
+      if (e.code === 'Space' && !e.repeat && document.activeElement !== elements.repoInput && document.activeElement !== elements.textInput) {
+        e.preventDefault();
+        startRecording();
+      }
       if (e.key === 'Escape') { closeGithubModal(); closeSettingsModal(); }
     });
-    document.addEventListener('keyup', (e) => { if (e.code === 'Space' && state.isRecording) { e.preventDefault(); stopRecording(); } });
 
-    // Textarea auto-resize and Shift+Enter handling
-    elements.textInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+    document.addEventListener('keyup', function(e) {
+      if (e.code === 'Space' && state.isRecording) {
         e.preventDefault();
-        handleTextSubmit();
+        stopRecording();
       }
     });
-    elements.textInput.addEventListener('input', () => {
-      // Auto-resize textarea
-      elements.textInput.style.height = 'auto';
-      elements.textInput.style.height = Math.min(elements.textInput.scrollHeight, 200) + 'px';
-    });
-    elements.sendBtn.addEventListener('click', handleTextSubmit);
-    elements.cloneBtn.addEventListener('click', handleRepoAction);
-    elements.repoInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleRepoAction(); });
-    elements.commitBtn.addEventListener('click', commitChanges);
-    elements.pushBtn.addEventListener('click', pushChanges);
-    elements.aiDriver.addEventListener('change', handleDriverChange);
 
-    elements.githubAccount.addEventListener('click', openGithubModal);
-    elements.modalClose.addEventListener('click', closeGithubModal);
-    elements.modalCancel.addEventListener('click', closeGithubModal);
-    elements.githubModal.addEventListener('click', (e) => { if (e.target === elements.githubModal) closeGithubModal(); });
+    if (elements.textInput) {
+      elements.textInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleTextSubmit();
+        }
+      });
+      elements.textInput.addEventListener('input', function() {
+        elements.textInput.style.height = 'auto';
+        elements.textInput.style.height = Math.min(elements.textInput.scrollHeight, 200) + 'px';
+      });
+    }
 
-    elements.settingsBtn.addEventListener('click', openSettingsModal);
-    elements.settingsModalClose.addEventListener('click', closeSettingsModal);
-    elements.settingsModalCancel.addEventListener('click', closeSettingsModal);
-    elements.saveSettingsBtn.addEventListener('click', saveApiSettings);
-    elements.settingsModal.addEventListener('click', (e) => { if (e.target === elements.settingsModal) closeSettingsModal(); });
+    if (elements.sendBtn) elements.sendBtn.addEventListener('click', handleTextSubmit);
+    if (elements.cloneBtn) elements.cloneBtn.addEventListener('click', handleRepoAction);
+    if (elements.repoInput) elements.repoInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') handleRepoAction(); });
+    if (elements.commitBtn) elements.commitBtn.addEventListener('click', commitChanges);
+    if (elements.pushBtn) elements.pushBtn.addEventListener('click', pushChanges);
+    if (elements.aiDriver) elements.aiDriver.addEventListener('change', handleDriverChange);
+
+    if (elements.githubAccount) elements.githubAccount.addEventListener('click', openGithubModal);
+    if (elements.modalClose) elements.modalClose.addEventListener('click', closeGithubModal);
+    if (elements.modalCancel) elements.modalCancel.addEventListener('click', closeGithubModal);
+    if (elements.githubModal) elements.githubModal.addEventListener('click', function(e) { if (e.target === elements.githubModal) closeGithubModal(); });
+
+    if (elements.settingsBtn) elements.settingsBtn.addEventListener('click', openSettingsModal);
+    if (elements.settingsModalClose) elements.settingsModalClose.addEventListener('click', closeSettingsModal);
+    if (elements.settingsModalCancel) elements.settingsModalCancel.addEventListener('click', closeSettingsModal);
+    if (elements.saveSettingsBtn) elements.saveSettingsBtn.addEventListener('click', saveApiSettings);
+    if (elements.settingsModal) elements.settingsModal.addEventListener('click', function(e) { if (e.target === elements.settingsModal) closeSettingsModal(); });
 
     // Initialize
     initUI();
@@ -505,4 +653,5 @@ const version = '1.0.0'
     loadSavedApiKeys();
     restoreSavedRepo();
   </script>
-@endinclude
+</body>
+</html>

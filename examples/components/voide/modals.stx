@@ -1,5 +1,5 @@
 <!-- GitHub Connection Modal -->
-<div id="githubModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+<div id="githubModal" class="fixed inset-0 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm flex items-center justify-center z-50 hidden">
   <div class="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-md m-4 shadow-2xl">
     <!-- Modal Header -->
     <div class="flex items-center justify-between px-5 py-4 border-b border-[#30363d]">
@@ -67,7 +67,7 @@
 </div>
 
 <!-- API Settings Modal -->
-<div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+<div id="settingsModal" class="fixed inset-0 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm flex items-center justify-center z-50 hidden">
   <div class="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-md m-4 shadow-2xl">
     <!-- Modal Header -->
     <div class="flex items-center justify-between px-5 py-4 border-b border-[#30363d]">
