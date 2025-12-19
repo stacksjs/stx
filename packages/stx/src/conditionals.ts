@@ -30,7 +30,7 @@ import { findIfBlocks, parseSwitchBlock } from './parser'
 import { createSafeFunction, isExpressionSafe, safeEvaluate } from './safe-evaluator'
 
 // =============================================================================
-// Regex Patterns
+// Pre-compiled Regex Patterns (performance optimization)
 // =============================================================================
 
 /**
@@ -45,6 +45,14 @@ import { createSafeFunction, isExpressionSafe, safeEvaluate } from './safe-evalu
  * - `*` - Zero or more of either option
  */
 const _NESTED_PARENS_PATTERN = '(?:[^()]|\\([^()]*\\))*'
+
+/**
+ * Note on Regex Performance:
+ * JavaScript engines already cache inline regex literals, so pre-compiling
+ * them provides minimal benefit. The patterns below are documented for
+ * reference but defined inline where used to avoid global state issues
+ * with the `g` flag and `lastIndex`.
+ */
 
 /**
  * Helper function to find balanced @switch/@endswitch pairs
