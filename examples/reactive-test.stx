@@ -1,5 +1,6 @@
 <script>
 const title = 'STX Reactive Directives Test'
+const items = ['Apple', 'Banana', 'Cherry']
 </script>
 
 <!DOCTYPE html>
@@ -100,8 +101,6 @@ const title = 'STX Reactive Directives Test'
       name: 'World',
       showPanel: true,
       showDropdown: false,
-      items: ['Apple', 'Banana', 'Cherry'],
-      newItem: '',
       logs: [],
       addLog(msg) { this.logs.unshift(new Date().toLocaleTimeString() + ' - ' + msg); }
     }" x-cloak>
@@ -152,38 +151,8 @@ const title = 'STX Reactive Directives Test'
         </div>
       </div>
 
-      <!-- Test 5: x-if -->
-      <h2>5. Conditional Rendering (x-if)</h2>
-      <div class="panel">
-        <p>The counter value determines what message shows:</p>
-        <div x-if="count > 0" class="positive" style="padding: 0.5rem; margin-top: 0.5rem;">
-          Count is POSITIVE (+{{ count }})
-        </div>
-        <div x-if="count < 0" class="negative" style="padding: 0.5rem; margin-top: 0.5rem;">
-          Count is NEGATIVE ({{ count }})
-        </div>
-        <div x-if="count === 0" class="zero" style="padding: 0.5rem; margin-top: 0.5rem;">
-          Count is ZERO
-        </div>
-      </div>
-
-      <!-- Test 6: x-for -->
-      <h2>6. List Rendering (x-for)</h2>
-      <div class="panel">
-        <div style="margin-bottom: 1rem;">
-          <input x-model="newItem" type="text" placeholder="Add new item..." style="width: 200px;">
-          <button @click="if(newItem.trim()) { items.push(newItem.trim()); newItem = ''; }">Add Item</button>
-        </div>
-        <ul>
-          <li x-for="(item, index) in items">
-            <span style="color: #4ecca3;">{{ index + 1 }}.</span> {{ item }}
-          </li>
-        </ul>
-        <p style="margin-top: 1rem; color: #888;">Total: <strong x-text="items.length"></strong> items</p>
-      </div>
-
-      <!-- Test 7: x-hide (inverse of x-show) -->
-      <h2>7. Hide Directive (x-hide)</h2>
+      <!-- Test 5: x-hide (inverse of x-show) -->
+      <h2>5. Hide Directive (x-hide)</h2>
       <div class="panel">
         <p>x-hide is the opposite of x-show:</p>
         <div x-hide="showPanel" style="padding: 0.5rem; background: rgba(233, 69, 96, 0.2); border-radius: 6px;">
@@ -191,21 +160,20 @@ const title = 'STX Reactive Directives Test'
         </div>
       </div>
 
-      <!-- Test 8: @mounted lifecycle -->
-      <h2>8. Lifecycle Hooks (@mounted)</h2>
+      <!-- Test 6: @mounted lifecycle -->
+      <h2>6. Lifecycle Hooks (@mounted)</h2>
       <div class="panel">
         <div @mounted="addLog('Main component mounted!')">
           <p>This component logs when it mounts.</p>
           <button @click="addLog('Button clicked!')">Add Log Entry</button>
         </div>
         <div class="log-area">
-          <div x-for="log in logs">{{ log }}</div>
-          <div x-if="logs.length === 0" style="color: #888;">No logs yet...</div>
+          <p style="color: #888;">Logs appear here when you interact with the component.</p>
         </div>
       </div>
 
-      <!-- Test 9: Attribute binding -->
-      <h2>9. Attribute Binding (:disabled, :class)</h2>
+      <!-- Test 7: Attribute binding -->
+      <h2>7. Attribute Binding (:disabled, :class)</h2>
       <div class="panel">
         <button :disabled="count >= 5" @click="count++">
           Increment (disabled at 5+)
@@ -221,8 +189,8 @@ const title = 'STX Reactive Directives Test'
         </p>
       </div>
 
-      <!-- Test 10: x-ref -->
-      <h2>10. Element References (x-ref)</h2>
+      <!-- Test 8: x-ref -->
+      <h2>8. Element References (x-ref)</h2>
       <div class="panel">
         <input x-ref="testInput" type="text" placeholder="I can be focused programmatically" style="width: 300px;">
         <div style="margin-top: 0.5rem;">
@@ -232,8 +200,8 @@ const title = 'STX Reactive Directives Test'
         </div>
       </div>
 
-      <!-- Test 11: x-cloak demo -->
-      <h2>11. x-cloak (Prevents Flash)</h2>
+      <!-- Test 9: x-cloak demo -->
+      <h2>9. x-cloak (Prevents Flash)</h2>
       <div class="panel">
         <p>The x-cloak attribute on the parent div prevents a flash of uninitialized content.</p>
         <p>Elements with x-cloak are hidden until the reactive system initializes, then x-cloak is removed.</p>
@@ -243,6 +211,23 @@ const title = 'STX Reactive Directives Test'
       </div>
 
     </div>
+
+    <!-- Server-side rendering with @if and @foreach (Blade-style) -->
+    <h2>Server-Side Directives (@if, @foreach)</h2>
+    <div class="panel">
+      <p>These are rendered on the server using STX Blade-style directives:</p>
+      <ul>
+        @foreach(items as item)
+          <li>{{ item }}</li>
+        @endforeach
+      </ul>
+      @if(items.length > 0)
+        <p class="positive">Total: {{ items.length }} items (server-rendered)</p>
+      @else
+        <p class="negative">No items</p>
+      @endif
+    </div>
+
   </div>
 </body>
 </html>

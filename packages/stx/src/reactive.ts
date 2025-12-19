@@ -78,26 +78,14 @@ export interface ReactiveBinding {
   /** Element ID or selector */
   elementId: string
   /** Binding type */
-  type: 'model' | 'show' | 'hide' | 'text' | 'html' | 'bind' | 'class' | 'style' | 'if' | 'for'
+  type: 'model' | 'show' | 'hide' | 'text' | 'html' | 'bind' | 'class' | 'style'
   /** Expression to evaluate */
   expression: string
   /** For x-bind, the attribute name */
   attribute?: string
   /** For x-model, the input type */
   inputType?: string
-  /** For x-for, the loop variable name */
-  loopVar?: string
-  /** For x-for, the index variable name */
-  loopIndex?: string
-  /** For x-if/x-for, the original template HTML */
-  template?: string
-  /** For x-if, linked else/else-if element IDs */
-  elseId?: string
-  /** For x-else/x-else-if, the parent if ID */
-  parentIfId?: string
-  /** For x-else-if, the condition */
-  elseIfCondition?: string
-  /** For x-show/x-hide/x-if, transition configuration */
+  /** For x-show/x-hide, transition configuration */
   transition?: TransitionConfig
 }
 
@@ -322,135 +310,7 @@ function findBindingsInScope(scopeContent: string, _scopeStart: number): Reactiv
     })
   }
 
-  // Find x-if bindings (double quotes)
-  const ifDoubleRegex = /<([a-z][a-z0-9-]*)\s+([^>]*x-if\s*=\s*"([^"]*)"[^>]*)>/gi
-  while ((match = ifDoubleRegex.exec(scopeContent)) !== null) {
-    const [fullMatch, tagName, attributesStr, expression] = match
-    const elementId = extractOrGenerateId(attributesStr)
-    // Extract the full element including content for template
-    const template = extractElementWithContent(scopeContent, match.index, tagName)
-    bindings.push({
-      elementId,
-      type: 'if',
-      expression,
-      template,
-    })
-  }
-
-  // Find x-if bindings (single quotes)
-  const ifSingleRegex = /<([a-z][a-z0-9-]*)\s+([^>]*x-if\s*=\s*'([^']*)'[^>]*)>/gi
-  while ((match = ifSingleRegex.exec(scopeContent)) !== null) {
-    const [fullMatch, tagName, attributesStr, expression] = match
-    const elementId = extractOrGenerateId(attributesStr)
-    const template = extractElementWithContent(scopeContent, match.index, tagName)
-    bindings.push({
-      elementId,
-      type: 'if',
-      expression,
-      template,
-    })
-  }
-
-  // Find x-for bindings (double quotes) - syntax: "item in items" or "(item, index) in items"
-  const forDoubleRegex = /<([a-z][a-z0-9-]*)\s+([^>]*x-for\s*=\s*"([^"]*)"[^>]*)>/gi
-  while ((match = forDoubleRegex.exec(scopeContent)) !== null) {
-    const [fullMatch, tagName, attributesStr, expression] = match
-    const elementId = extractOrGenerateId(attributesStr)
-    const template = extractElementWithContent(scopeContent, match.index, tagName)
-    const { loopVar, loopIndex, iterableExpr } = parseForExpression(expression)
-    bindings.push({
-      elementId,
-      type: 'for',
-      expression: iterableExpr,
-      template,
-      loopVar,
-      loopIndex,
-    })
-  }
-
-  // Find x-for bindings (single quotes)
-  const forSingleRegex = /<([a-z][a-z0-9-]*)\s+([^>]*x-for\s*=\s*'([^']*)'[^>]*)>/gi
-  while ((match = forSingleRegex.exec(scopeContent)) !== null) {
-    const [fullMatch, tagName, attributesStr, expression] = match
-    const elementId = extractOrGenerateId(attributesStr)
-    const template = extractElementWithContent(scopeContent, match.index, tagName)
-    const { loopVar, loopIndex, iterableExpr } = parseForExpression(expression)
-    bindings.push({
-      elementId,
-      type: 'for',
-      expression: iterableExpr,
-      template,
-      loopVar,
-      loopIndex,
-    })
-  }
-
   return bindings
-}
-
-/**
- * Parse x-for expression like "item in items" or "(item, index) in items"
- */
-function parseForExpression(expr: string): { loopVar: string, loopIndex: string | undefined, iterableExpr: string } {
-  // Match "(item, index) in items" or "item in items"
-  const match = expr.match(/^\s*(?:\(([^,]+),\s*([^)]+)\)|([^\s]+))\s+in\s+(.+)$/)
-  if (!match) {
-    return { loopVar: 'item', loopIndex: undefined, iterableExpr: expr }
-  }
-
-  if (match[1] && match[2]) {
-    // (item, index) in items
-    return { loopVar: match[1].trim(), loopIndex: match[2].trim(), iterableExpr: match[4].trim() }
-  } else {
-    // item in items
-    return { loopVar: match[3].trim(), loopIndex: undefined, iterableExpr: match[4].trim() }
-  }
-}
-
-/**
- * Extract a full element including its content and closing tag
- */
-function extractElementWithContent(html: string, startIndex: number, tagName: string): string {
-  // Find the end of the opening tag
-  const openTagEnd = html.indexOf('>', startIndex)
-  if (openTagEnd === -1) return ''
-
-  // Check if self-closing
-  if (html[openTagEnd - 1] === '/') {
-    return html.slice(startIndex, openTagEnd + 1)
-  }
-
-  // Find the matching closing tag
-  let depth = 1
-  let pos = openTagEnd + 1
-  const openPattern = new RegExp(`<${tagName}(?:\\s|>)`, 'gi')
-  const closePattern = new RegExp(`</${tagName}>`, 'gi')
-
-  while (depth > 0 && pos < html.length) {
-    openPattern.lastIndex = pos
-    closePattern.lastIndex = pos
-
-    const openMatch = openPattern.exec(html)
-    const closeMatch = closePattern.exec(html)
-
-    if (!closeMatch) {
-      // No closing tag found, return to end of string
-      return html.slice(startIndex)
-    }
-
-    if (openMatch && openMatch.index < closeMatch.index) {
-      depth++
-      pos = openMatch.index + openMatch[0].length
-    } else {
-      depth--
-      if (depth === 0) {
-        return html.slice(startIndex, closeMatch.index + closeMatch[0].length)
-      }
-      pos = closeMatch.index + closeMatch[0].length
-    }
-  }
-
-  return html.slice(startIndex)
 }
 
 /**
@@ -822,139 +682,8 @@ window.__stx_reactive = (function() {
               }
             }
             break;
-
-          case 'if':
-            // x-if: conditionally render element
-            handleIfBinding(el, binding, value, ctx);
-            break;
-
-          case 'for':
-            // x-for: render list
-            handleForBinding(el, binding, value, ctx);
-            break;
         }
       }
-    }
-
-    // Track rendered elements for x-if and x-for
-    const ifState = new Map(); // elementId -> { rendered: boolean, placeholder: Comment }
-    const forState = new Map(); // elementId -> { items: any[], renderedEls: Element[] }
-
-    // Handle x-if binding
-    function handleIfBinding(el, binding, value, ctx) {
-      let state = ifState.get(binding.elementId);
-
-      if (!state) {
-        // First render - create placeholder and save template
-        const placeholder = document.createComment('x-if: ' + binding.elementId);
-        state = {
-          rendered: true,
-          placeholder,
-          template: binding.template || el.outerHTML
-        };
-        ifState.set(binding.elementId, state);
-
-        if (!value) {
-          // Initially hidden - replace with placeholder
-          el.parentNode.replaceChild(placeholder, el);
-          state.rendered = false;
-        }
-        return;
-      }
-
-      if (value && !state.rendered) {
-        // Show: replace placeholder with element
-        const temp = document.createElement('div');
-        temp.innerHTML = processTemplate(state.template, ctx);
-        const newEl = temp.firstElementChild;
-        if (newEl) {
-          newEl.id = binding.elementId;
-          state.placeholder.parentNode.replaceChild(newEl, state.placeholder);
-          state.rendered = true;
-        }
-      } else if (!value && state.rendered) {
-        // Hide: replace element with placeholder
-        const currentEl = document.getElementById(binding.elementId);
-        if (currentEl) {
-          currentEl.parentNode.replaceChild(state.placeholder, currentEl);
-          state.rendered = false;
-        }
-      }
-    }
-
-    // Handle x-for binding
-    function handleForBinding(el, binding, items, ctx) {
-      if (!Array.isArray(items)) {
-        console.warn('[stx-reactive] x-for requires an array, got:', typeof items);
-        return;
-      }
-
-      let state = forState.get(binding.elementId);
-
-      if (!state) {
-        // First render - save template and create container
-        const placeholder = document.createComment('x-for: ' + binding.elementId);
-        state = {
-          placeholder,
-          template: binding.template || el.outerHTML,
-          renderedEls: [],
-          parentNode: el.parentNode
-        };
-        forState.set(binding.elementId, state);
-
-        // Replace original element with placeholder
-        el.parentNode.insertBefore(placeholder, el);
-        el.parentNode.removeChild(el);
-      }
-
-      // Remove old rendered elements
-      state.renderedEls.forEach(oldEl => {
-        if (oldEl.parentNode) {
-          oldEl.parentNode.removeChild(oldEl);
-        }
-      });
-      state.renderedEls = [];
-
-      // Render new elements
-      const fragment = document.createDocumentFragment();
-      items.forEach((item, index) => {
-        // Create context with loop variables
-        const loopCtx = { ...ctx };
-        loopCtx[binding.loopVar || 'item'] = item;
-        if (binding.loopIndex) {
-          loopCtx[binding.loopIndex] = index;
-        }
-
-        // Process template with loop context
-        const temp = document.createElement('div');
-        temp.innerHTML = processTemplate(state.template, loopCtx);
-        const newEl = temp.firstElementChild;
-        if (newEl) {
-          // Give each element a unique ID
-          newEl.id = binding.elementId + '_' + index;
-          fragment.appendChild(newEl);
-          state.renderedEls.push(newEl);
-        }
-      });
-
-      // Insert all new elements after placeholder
-      state.placeholder.parentNode.insertBefore(fragment, state.placeholder.nextSibling);
-    }
-
-    // Process template string, replacing expressions with values
-    function processTemplate(template, ctx) {
-      // Replace x-text content
-      let result = template.replace(/x-text="([^"]*)"/g, (match, expr) => {
-        return 'x-text="' + expr + '"';
-      });
-
-      // Process inline expressions {{ expr }}
-      result = result.replace(/\{\{\s*([^}]+)\s*\}\}/g, (match, expr) => {
-        const value = evaluate(expr.trim(), ctx);
-        return value !== undefined ? String(value) : '';
-      });
-
-      return result;
     }
 
     // Create reactive proxy
@@ -1052,9 +781,6 @@ function generateScopeInitializers(scopes: ReactiveScope[]): string {
         attribute: b.attribute,
         inputType: b.inputType,
         transition: b.transition,
-        loopVar: b.loopVar,
-        loopIndex: b.loopIndex,
-        template: b.template,
       })),
     )
 
@@ -1107,7 +833,7 @@ function addIdsToElements(template: string, pattern: RegExp): string {
 function removeReactiveAttributes(template: string): string {
   let output = template
 
-  // Remove x-data, x-init, x-model, x-show, x-hide, x-text, x-html, x-ref, x-if, x-for
+  // Remove x-data, x-init, x-model, x-show, x-hide, x-text, x-html, x-ref
   // Handle both double and single quoted values separately
   const attrsToRemove = [
     // Double-quoted versions
@@ -1119,8 +845,6 @@ function removeReactiveAttributes(template: string): string {
     /\s*x-text\s*=\s*"[^"]*"/g,
     /\s*x-html\s*=\s*"[^"]*"/g,
     /\s*x-ref\s*=\s*"[^"]*"/g,
-    /\s*x-if\s*=\s*"[^"]*"/g,
-    /\s*x-for\s*=\s*"[^"]*"/g,
     /\s*x-bind:[a-z][a-z0-9-]*\s*=\s*"[^"]*"/g,
     /\s*:[a-z][a-z0-9-]*\s*=\s*"[^"]*"/g,
     // x-transition variants (double quotes)
@@ -1140,8 +864,6 @@ function removeReactiveAttributes(template: string): string {
     /\s*x-text\s*=\s*'[^']*'/g,
     /\s*x-html\s*=\s*'[^']*'/g,
     /\s*x-ref\s*=\s*'[^']*'/g,
-    /\s*x-if\s*=\s*'[^']*'/g,
-    /\s*x-for\s*=\s*'[^']*'/g,
     /\s*x-bind:[a-z][a-z0-9-]*\s*=\s*'[^']*'/g,
     /\s*:[a-z][a-z0-9-]*\s*=\s*'[^']*'/g,
     // x-transition variants (single quotes)
@@ -1234,8 +956,6 @@ function addAllReactiveIds(template: string): string {
   output = addIdsToElements(output, /x-html\s*=\s*["']/)
   output = addIdsToElements(output, /(?:x-bind:|:)[a-z]/)
   output = addIdsToElements(output, /x-ref\s*=\s*["']/)
-  output = addIdsToElements(output, /x-if\s*=\s*["']/)
-  output = addIdsToElements(output, /x-for\s*=\s*["']/)
 
   return output
 }
