@@ -120,6 +120,8 @@ const DOM_EVENTS = new Set([
   'scroll', 'resize', 'load', 'error', 'abort',
   'animationstart', 'animationend', 'animationiteration',
   'transitionstart', 'transitionend', 'transitionrun', 'transitioncancel',
+  // Lifecycle events (custom)
+  'mounted', 'unmounted',
 ])
 
 /** Key aliases for common keys */
@@ -369,6 +371,50 @@ function generateEventListener(event: ParsedEvent): string {
 
   // Escape the handler for use in string
   const escapedHandler = handler.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+
+  // Handle lifecycle events specially
+  if (event.event === 'mounted') {
+    return `
+  (function() {
+    var $el = document.getElementById('${elementId}');
+    if (!$el) return;
+    // Run mounted handler immediately (DOM is ready)
+    var scope = $el.closest('[data-stx-scope]');
+    if (scope && scope.__stx_execute) {
+      scope.__stx_execute('${escapedHandler}', null, $el);
+    } else {
+      ${handler}
+    }
+  })();`
+  }
+
+  if (event.event === 'unmounted') {
+    return `
+  (function() {
+    var $el = document.getElementById('${elementId}');
+    if (!$el) return;
+    // Set up MutationObserver to detect removal
+    var observer = new MutationObserver(function(mutations) {
+      for (var m of mutations) {
+        for (var node of m.removedNodes) {
+          if (node === $el || (node.contains && node.contains($el))) {
+            observer.disconnect();
+            var scope = $el.closest('[data-stx-scope]');
+            if (scope && scope.__stx_execute) {
+              scope.__stx_execute('${escapedHandler}', null, $el);
+            } else {
+              ${handler}
+            }
+            return;
+          }
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    // Store observer for cleanup
+    $el.__stx_unmount_observer = observer;
+  })();`
+  }
 
   return `
   (function() {

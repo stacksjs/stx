@@ -539,6 +539,21 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         const ext = path.extname(requestedPath).toLowerCase()
         let contentType = 'text/plain'
 
+        // Transpile TypeScript files on the fly
+        if (ext === '.ts' || ext === '.tsx') {
+          const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
+          const code = await file.text()
+          const js = transpiler.transformSync(code)
+          return new Response(js, {
+            headers: {
+              'Content-Type': 'application/javascript',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          })
+        }
+
         switch (ext) {
           case '.html':
             contentType = 'text/html'
@@ -592,6 +607,21 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         // Determine content type based on extension
         const ext = path.extname(sourcePath).toLowerCase()
         let contentType = 'text/plain'
+
+        // Transpile TypeScript files on the fly
+        if (ext === '.ts' || ext === '.tsx') {
+          const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
+          const code = await file.text()
+          const js = transpiler.transformSync(code)
+          return new Response(js, {
+            headers: {
+              'Content-Type': 'application/javascript',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          })
+        }
 
         switch (ext) {
           case '.html':
@@ -650,6 +680,21 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         const file = Bun.file(publicPath)
         const ext = path.extname(publicPath).toLowerCase()
         let contentType = 'application/octet-stream'
+
+        // Transpile TypeScript files on the fly
+        if (ext === '.ts' || ext === '.tsx') {
+          const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
+          const code = await file.text()
+          const js = transpiler.transformSync(code)
+          return new Response(js, {
+            headers: {
+              'Content-Type': 'application/javascript',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          })
+        }
 
         switch (ext) {
           case '.html':
@@ -1167,6 +1212,21 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         const ext = path.extname(publicPath).toLowerCase()
         let contentType = 'application/octet-stream'
 
+        // Transpile TypeScript files on the fly
+        if (ext === '.ts' || ext === '.tsx') {
+          const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
+          const code = await file.text()
+          const js = transpiler.transformSync(code)
+          return new Response(js, {
+            headers: {
+              'Content-Type': 'application/javascript',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          })
+        }
+
         switch (ext) {
           case '.html':
             contentType = 'text/html'
@@ -1243,6 +1303,21 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         // Determine content type based on extension
         const ext = path.extname(requestedPath).toLowerCase()
         let contentType = 'text/plain'
+
+        // Transpile TypeScript files on the fly
+        if (ext === '.ts' || ext === '.tsx') {
+          const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
+          const code = await file.text()
+          const js = transpiler.transformSync(code)
+          return new Response(js, {
+            headers: {
+              'Content-Type': 'application/javascript',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          })
+        }
 
         switch (ext) {
           case '.html':
