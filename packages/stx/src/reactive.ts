@@ -97,6 +97,27 @@ export interface ReactiveBinding {
   parentIfId?: string
   /** For x-else-if, the condition */
   elseIfCondition?: string
+  /** For x-show/x-hide/x-if, transition configuration */
+  transition?: TransitionConfig
+}
+
+export interface TransitionConfig {
+  /** Simple transition (uses default classes) */
+  enabled: boolean
+  /** Enter transition classes */
+  enter?: string
+  /** Enter start classes (applied before insert) */
+  enterStart?: string
+  /** Enter end classes (applied one frame after insert) */
+  enterEnd?: string
+  /** Leave transition classes */
+  leave?: string
+  /** Leave start classes (applied immediately when leaving) */
+  leaveStart?: string
+  /** Leave end classes (applied one frame after leave starts) */
+  leaveEnd?: string
+  /** Duration in ms (optional, defaults to CSS transition duration) */
+  duration?: number
 }
 
 interface ParsedElement {
@@ -248,8 +269,10 @@ function findBindingsInScope(scopeContent: string, _scopeStart: number): Reactiv
       const [, tagName, attributesStr, expression] = match
       const elementId = extractOrGenerateId(attributesStr)
       const inputType = type === 'model' ? extractInputType(attributesStr, tagName) : undefined
+      // Extract transition config for show/hide bindings
+      const transition = (type === 'show' || type === 'hide') ? extractTransitionConfig(attributesStr) : undefined
 
-      bindings.push({ elementId, type, expression, inputType })
+      bindings.push({ elementId, type, expression, inputType, transition })
     }
 
     // Single-quoted version
@@ -258,8 +281,10 @@ function findBindingsInScope(scopeContent: string, _scopeStart: number): Reactiv
       const [, tagName, attributesStr, expression] = match
       const elementId = extractOrGenerateId(attributesStr)
       const inputType = type === 'model' ? extractInputType(attributesStr, tagName) : undefined
+      // Extract transition config for show/hide bindings
+      const transition = (type === 'show' || type === 'hide') ? extractTransitionConfig(attributesStr) : undefined
 
-      bindings.push({ elementId, type, expression, inputType })
+      bindings.push({ elementId, type, expression, inputType, transition })
     }
   }
 
@@ -467,6 +492,50 @@ function extractInputType(attributesStr: string, tagName: string): string {
   return typeMatch ? typeMatch[1].toLowerCase() : 'text'
 }
 
+/**
+ * Extract transition configuration from element attributes
+ */
+function extractTransitionConfig(attributesStr: string): TransitionConfig | undefined {
+  // Check for simple x-transition (no value)
+  if (/\bx-transition(?:\s|>|$|=)/.test(attributesStr)) {
+    const config: TransitionConfig = { enabled: true }
+
+    // Check for x-transition with no value (simple transition)
+    const simpleMatch = /\bx-transition(?:\s|>|$)/.test(attributesStr)
+    if (simpleMatch && !/\bx-transition\s*=/.test(attributesStr)) {
+      // Simple transition - use default classes
+      return config
+    }
+
+    // Check for x-transition:enter, x-transition:leave, etc.
+    const enterMatch = attributesStr.match(/x-transition:enter\s*=\s*["']([^"']*)["']/)
+    if (enterMatch) config.enter = enterMatch[1]
+
+    const enterStartMatch = attributesStr.match(/x-transition:enter-start\s*=\s*["']([^"']*)["']/)
+    if (enterStartMatch) config.enterStart = enterStartMatch[1]
+
+    const enterEndMatch = attributesStr.match(/x-transition:enter-end\s*=\s*["']([^"']*)["']/)
+    if (enterEndMatch) config.enterEnd = enterEndMatch[1]
+
+    const leaveMatch = attributesStr.match(/x-transition:leave\s*=\s*["']([^"']*)["']/)
+    if (leaveMatch) config.leave = leaveMatch[1]
+
+    const leaveStartMatch = attributesStr.match(/x-transition:leave-start\s*=\s*["']([^"']*)["']/)
+    if (leaveStartMatch) config.leaveStart = leaveStartMatch[1]
+
+    const leaveEndMatch = attributesStr.match(/x-transition:leave-end\s*=\s*["']([^"']*)["']/)
+    if (leaveEndMatch) config.leaveEnd = leaveEndMatch[1]
+
+    // Check for duration modifier x-transition.duration.500ms
+    const durationMatch = attributesStr.match(/x-transition\.duration\.(\d+)(?:ms)?/)
+    if (durationMatch) config.duration = parseInt(durationMatch[1], 10)
+
+    return config
+  }
+
+  return undefined
+}
+
 // =============================================================================
 // Code Generator
 // =============================================================================
@@ -476,9 +545,135 @@ function extractInputType(attributesStr: string, tagName: string): string {
  */
 function generateReactiveRuntime(): string {
   return `
+// STX Reactive Runtime - x-cloak and transition CSS
+(function() {
+  var style = document.createElement('style');
+  style.textContent = [
+    '[x-cloak] { display: none !important; }',
+    // Default transition classes
+    '.stx-enter { opacity: 0; transform: scale(0.95); }',
+    '.stx-enter-start { opacity: 0; transform: scale(0.95); }',
+    '.stx-enter-active { transition: opacity 150ms ease-out, transform 150ms ease-out; }',
+    '.stx-enter-to { opacity: 1; transform: scale(1); }',
+    '.stx-leave { opacity: 1; transform: scale(1); }',
+    '.stx-leave-start { opacity: 1; transform: scale(1); }',
+    '.stx-leave-active { transition: opacity 100ms ease-in, transform 100ms ease-in; }',
+    '.stx-leave-to { opacity: 0; transform: scale(0.95); }'
+  ].join('\\n');
+  document.head.appendChild(style);
+})();
+
 // STX Reactive Runtime
 window.__stx_reactive = (function() {
   'use strict';
+
+  // Default transition classes (similar to Alpine.js)
+  var defaultTransition = {
+    enter: 'stx-enter-active stx-enter-to',
+    enterStart: 'stx-enter stx-enter-start',
+    enterEnd: 'stx-enter-active stx-enter-to',
+    leave: 'stx-leave-active stx-leave-to',
+    leaveStart: 'stx-leave stx-leave-start',
+    leaveEnd: 'stx-leave-active stx-leave-to',
+    duration: 150
+  };
+
+  // Apply classes to element
+  function applyClasses(el, classes) {
+    if (!classes) return;
+    classes.split(/\\s+/).forEach(function(cls) {
+      if (cls) el.classList.add(cls);
+    });
+  }
+
+  // Remove classes from element
+  function removeClasses(el, classes) {
+    if (!classes) return;
+    classes.split(/\\s+/).forEach(function(cls) {
+      if (cls) el.classList.remove(cls);
+    });
+  }
+
+  // Get transition duration from element's computed style or config
+  function getTransitionDuration(el, config) {
+    if (config && config.duration) return config.duration;
+    var style = window.getComputedStyle(el);
+    var duration = style.transitionDuration || style.animationDuration || '0s';
+    var match = duration.match(/([\\d.]+)(s|ms)/);
+    if (match) {
+      var value = parseFloat(match[1]);
+      return match[2] === 's' ? value * 1000 : value;
+    }
+    return defaultTransition.duration;
+  }
+
+  // Transition element in (show)
+  function transitionIn(el, config, callback) {
+    if (!config || !config.enabled) {
+      el.style.display = '';
+      if (callback) callback();
+      return;
+    }
+
+    var enterClasses = config.enter || defaultTransition.enter;
+    var enterStartClasses = config.enterStart || defaultTransition.enterStart;
+    var enterEndClasses = config.enterEnd || defaultTransition.enterEnd;
+
+    // Apply start classes before showing
+    applyClasses(el, enterStartClasses);
+    el.style.display = '';
+
+    // Force reflow
+    el.offsetHeight;
+
+    // Remove start classes and add end classes
+    requestAnimationFrame(function() {
+      removeClasses(el, enterStartClasses);
+      applyClasses(el, enterClasses);
+      applyClasses(el, enterEndClasses);
+
+      var duration = getTransitionDuration(el, config);
+      setTimeout(function() {
+        removeClasses(el, enterClasses);
+        removeClasses(el, enterEndClasses);
+        if (callback) callback();
+      }, duration);
+    });
+  }
+
+  // Transition element out (hide)
+  function transitionOut(el, config, callback) {
+    if (!config || !config.enabled) {
+      el.style.display = 'none';
+      if (callback) callback();
+      return;
+    }
+
+    var leaveClasses = config.leave || defaultTransition.leave;
+    var leaveStartClasses = config.leaveStart || defaultTransition.leaveStart;
+    var leaveEndClasses = config.leaveEnd || defaultTransition.leaveEnd;
+
+    // Apply start classes
+    applyClasses(el, leaveStartClasses);
+
+    // Force reflow
+    el.offsetHeight;
+
+    // Remove start classes and add end classes
+    requestAnimationFrame(function() {
+      removeClasses(el, leaveStartClasses);
+      applyClasses(el, leaveClasses);
+      applyClasses(el, leaveEndClasses);
+
+      var duration = getTransitionDuration(el, config);
+      setTimeout(function() {
+        removeClasses(el, leaveClasses);
+        removeClasses(el, leaveEndClasses);
+        el.style.display = 'none';
+        if (callback) callback();
+      }, duration);
+    });
+  }
 
   // Create a reactive proxy that triggers updates on change
   function reactive(obj, onChange) {
@@ -566,11 +761,23 @@ window.__stx_reactive = (function() {
             break;
 
           case 'show':
-            el.style.display = value ? '' : 'none';
+            // Track previous state to determine if we need to transition
+            var wasVisible = el.style.display !== 'none';
+            if (value && !wasVisible) {
+              transitionIn(el, binding.transition);
+            } else if (!value && wasVisible) {
+              transitionOut(el, binding.transition);
+            }
             break;
 
           case 'hide':
-            el.style.display = value ? 'none' : '';
+            // Inverse of show
+            var wasHidden = el.style.display === 'none';
+            if (value && !wasHidden) {
+              transitionOut(el, binding.transition);
+            } else if (!value && wasHidden) {
+              transitionIn(el, binding.transition);
+            }
             break;
 
           case 'class':
@@ -816,10 +1023,16 @@ window.__stx_reactive = (function() {
     // Initial render
     update();
 
+    // Remove x-cloak from all elements in scope (reactive system is now initialized)
+    scopeEl.querySelectorAll('[x-cloak]').forEach(function(el) {
+      el.removeAttribute('x-cloak');
+    });
+    scopeEl.removeAttribute('x-cloak');
+
     return reactiveState;
   }
 
-  return { initScope, evaluate, execute, reactive };
+  return { initScope, evaluate, execute, reactive, transitionIn, transitionOut };
 })();
 `
 }
@@ -838,6 +1051,10 @@ function generateScopeInitializers(scopes: ReactiveScope[]): string {
         expression: b.expression,
         attribute: b.attribute,
         inputType: b.inputType,
+        transition: b.transition,
+        loopVar: b.loopVar,
+        loopIndex: b.loopIndex,
+        template: b.template,
       })),
     )
 
@@ -906,6 +1123,14 @@ function removeReactiveAttributes(template: string): string {
     /\s*x-for\s*=\s*"[^"]*"/g,
     /\s*x-bind:[a-z][a-z0-9-]*\s*=\s*"[^"]*"/g,
     /\s*:[a-z][a-z0-9-]*\s*=\s*"[^"]*"/g,
+    // x-transition variants (double quotes)
+    /\s*x-transition:enter\s*=\s*"[^"]*"/g,
+    /\s*x-transition:enter-start\s*=\s*"[^"]*"/g,
+    /\s*x-transition:enter-end\s*=\s*"[^"]*"/g,
+    /\s*x-transition:leave\s*=\s*"[^"]*"/g,
+    /\s*x-transition:leave-start\s*=\s*"[^"]*"/g,
+    /\s*x-transition:leave-end\s*=\s*"[^"]*"/g,
+    /\s*x-transition\s*=\s*"[^"]*"/g,
     // Single-quoted versions
     /\s*x-data\s*=\s*'[^']*'/g,
     /\s*x-init\s*=\s*'[^']*'/g,
@@ -919,6 +1144,17 @@ function removeReactiveAttributes(template: string): string {
     /\s*x-for\s*=\s*'[^']*'/g,
     /\s*x-bind:[a-z][a-z0-9-]*\s*=\s*'[^']*'/g,
     /\s*:[a-z][a-z0-9-]*\s*=\s*'[^']*'/g,
+    // x-transition variants (single quotes)
+    /\s*x-transition:enter\s*=\s*'[^']*'/g,
+    /\s*x-transition:enter-start\s*=\s*'[^']*'/g,
+    /\s*x-transition:enter-end\s*=\s*'[^']*'/g,
+    /\s*x-transition:leave\s*=\s*'[^']*'/g,
+    /\s*x-transition:leave-start\s*=\s*'[^']*'/g,
+    /\s*x-transition:leave-end\s*=\s*'[^']*'/g,
+    /\s*x-transition\s*=\s*'[^']*'/g,
+    // Simple x-transition (no value) and duration modifiers
+    /\s*x-transition\.duration\.\d+(?:ms)?/g,
+    /\s*x-transition(?=[\s>\/])/g,
   ]
 
   for (const regex of attrsToRemove) {
