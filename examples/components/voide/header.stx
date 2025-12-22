@@ -1,95 +1,110 @@
-<header class="flex items-center justify-between px-5 py-3 bg-[#0f0f23] border-b border-[#2d2d4a]">
-  <!-- Logo -->
-  <div class="flex items-center gap-3">
-    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#e94560] to-[#0f3460] flex items-center justify-center text-xl shadow-lg">
-      {{ icon || '🤖' }}
-    </div>
-    <span id="appTitle" class="text-xl font-semibold tracking-tight text-[#eaeaea]">{{ title || 'Voide' }}</span>
-  </div>
+<header class="relative px-6 py-4 bg-gradient-to-r from-slate-900/90 via-slate-800/90 to-slate-900/90 backdrop-blur-xl border-b border-white/5">
+  <!-- Subtle gradient overlay -->
+  <div class="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-cyan-500/5 pointer-events-none"></div>
 
-  <!-- Controls -->
-  <div class="flex items-center gap-4">
-    <!-- AI Driver Selector -->
-    <div class="flex items-center gap-2">
-      <label for="aiDriver" class="text-xs text-[#a0a0a0] font-medium hidden sm:inline">AI Driver:</label>
-      <select
-        id="aiDriver"
-        class="bg-[#16213e] border border-[#2d2d4a] rounded-lg px-3 py-2 text-sm text-[#eaeaea] cursor-pointer hover:border-[#e94560] focus:border-[#e94560] focus:outline-none transition-colors"
-        @change="window.voide?.handleDriverChange(event)"
-      >
-        <option value="claude-cli-local" selected>Claude CLI (Local)</option>
-        <option value="claude-cli-ec2">Claude CLI (EC2)</option>
-        <option value="claude">Claude API</option>
-        <option value="openai">OpenAI</option>
-        <option value="ollama">Ollama</option>
-        <option value="mock">Mock</option>
-      </select>
-    </div>
-
-    <!-- Repo Input -->
-    <div class="flex items-center gap-2">
-      <input
-        type="text"
-        id="repoInput"
-        class="bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-3 py-2 text-sm text-[#eaeaea] placeholder-[#666] w-64 focus:border-[#e94560] focus:outline-none transition-colors"
-        placeholder="github.com/owner/repo or local path..."
-        @keypress="if (event.key === 'Enter') window.voide?.handleRepoAction()"
-      />
-      <button
-        id="cloneBtn"
-        class="bg-[#0f3460] border border-[#2d2d4a] rounded-lg px-4 py-2 text-sm text-[#eaeaea] cursor-pointer hover:bg-[#e94560] hover:border-[#e94560] transition-all duration-200"
-        @click="window.voide?.handleRepoAction()"
-      >
-        Clone / Open
-      </button>
-    </div>
-
-    <!-- GitHub Account -->
-    <div
-      id="githubAccount"
-      class="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#16213e] border border-[#2d2d4a] cursor-pointer hover:border-[#e94560] transition-all duration-200"
-      title="Connect GitHub account"
-      @click="window.voide?.openGithubModal()"
-    >
-      <span class="text-lg">🐙</span>
-      <div class="flex flex-col">
-        <span id="githubUsername" class="text-xs text-[#eaeaea] font-medium">Not connected</span>
-        <span id="githubStatus" class="text-[10px] text-[#a0a0a0]">Click to connect</span>
+  <div class="relative flex items-center justify-between">
+    <!-- Logo & Title -->
+    <div class="flex items-center gap-4">
+      <div class="relative group">
+        <div class="absolute -inset-1 bg-gradient-to-r from-violet-600 to-cyan-600 rounded-2xl blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
+        <div class="relative w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center shadow-lg">
+          <span class="text-2xl">{{ icon || '🎙️' }}</span>
+        </div>
+      </div>
+      <div>
+        <h1 id="appTitle" class="text-xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">{{ title || 'Voide' }}</h1>
+        <p class="text-xs text-slate-500">Voice AI Assistant</p>
       </div>
     </div>
 
-    <!-- Settings Button -->
-    <button
-      id="settingsBtn"
-      class="w-10 h-10 rounded-lg bg-[#16213e] border border-[#2d2d4a] flex items-center justify-center text-lg cursor-pointer hover:border-[#e94560] hover:bg-[#0f0f23] transition-all duration-200"
-      title="API Settings"
-      @click="window.voide?.openSettingsModal()"
-    >
-      ⚙️
-    </button>
+    <!-- Center: Repo Input -->
+    <div class="flex-1 max-w-xl mx-8">
+      <div class="relative group">
+        <div class="absolute -inset-0.5 bg-gradient-to-r from-violet-600/20 to-cyan-600/20 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
+        <div class="relative flex items-center gap-2 bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2.5 focus-within:border-violet-500/50 transition-all">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+          </svg>
+          <input
+            type="text"
+            id="repoInput"
+            class="flex-1 bg-transparent text-sm text-white placeholder-slate-500 focus:outline-none"
+            placeholder="Enter repository URL or local path..."
+            @keypress="if (event.key === 'Enter') window.voide?.handleRepoAction()"
+          />
+          <button
+            id="cloneBtn"
+            class="px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-lg hover:from-violet-600 hover:to-cyan-600 transition-all shadow-lg shadow-violet-500/25"
+            @click="window.voide?.handleRepoAction()"
+          >
+            Open
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Controls -->
+    <div class="flex items-center gap-3">
+      <!-- AI Driver -->
+      <div class="relative">
+        <select
+          id="aiDriver"
+          class="appearance-none bg-slate-800/50 border border-white/10 rounded-lg pl-3 pr-8 py-2 text-sm text-white cursor-pointer hover:border-violet-500/50 focus:border-violet-500/50 focus:outline-none transition-all"
+          @change="window.voide?.handleDriverChange(event)"
+        >
+          <option value="claude-cli-local" selected>Claude CLI</option>
+          <option value="claude-cli-ec2">Claude EC2</option>
+          <option value="claude">Claude API</option>
+          <option value="openai">OpenAI</option>
+          <option value="ollama">Ollama</option>
+          <option value="mock">Mock</option>
+        </select>
+        <svg class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </div>
+
+      <!-- GitHub -->
+      <button
+        id="githubAccount"
+        class="flex items-center gap-2 px-3 py-2 bg-slate-800/50 border border-white/10 rounded-lg hover:border-violet-500/50 transition-all group"
+        title="Connect GitHub"
+        @click="window.voide?.openGithubModal()"
+      >
+        <svg class="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+        </svg>
+        <span id="githubUsername" class="text-xs text-slate-400 group-hover:text-white transition-colors hidden sm:inline">Connect</span>
+      </button>
+
+      <!-- Settings -->
+      <button
+        id="settingsBtn"
+        class="w-10 h-10 flex items-center justify-center bg-slate-800/50 border border-white/10 rounded-lg hover:border-violet-500/50 hover:bg-slate-700/50 transition-all group"
+        title="Settings"
+        @click="window.voide?.openSettingsModal()"
+      >
+        <svg class="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+      </button>
+    </div>
   </div>
 </header>
 
 <script>
-// Update GitHub status based on reactive state
 document.addEventListener('DOMContentLoaded', () => {
   const updateGithubStatus = () => {
     if (!window.voide) return
-
     const { github } = window.voide
     const githubUsername = document.getElementById('githubUsername')
-    const githubStatus = document.getElementById('githubStatus')
-
     if (github.connected && github.username) {
-      if (githubUsername) githubUsername.textContent = github.username
-      if (githubStatus) githubStatus.textContent = 'Connected'
+      if (githubUsername) githubUsername.textContent = '@' + github.username
     } else {
-      if (githubUsername) githubUsername.textContent = 'Not connected'
-      if (githubStatus) githubStatus.textContent = 'Click to connect'
+      if (githubUsername) githubUsername.textContent = 'Connect'
     }
   }
-
-  // Poll for state changes
   setInterval(updateGithubStatus, 500)
   updateGithubStatus()
 })
