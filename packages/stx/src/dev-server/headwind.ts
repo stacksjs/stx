@@ -3,12 +3,16 @@
  * Provides on-the-fly Tailwind CSS generation using Headwind
  */
 
+import fs from 'node:fs'
+import path from 'node:path'
 import { colors } from './terminal-colors'
 
 // Type for Headwind module
 interface HeadwindModule {
   CSSGenerator: new (config: HeadwindConfig) => CSSGenerator
   config: HeadwindConfig
+  build?: (config: HeadwindConfig) => Promise<HeadwindBuildResult>
+  defaultConfig?: HeadwindConfig
 }
 
 interface HeadwindConfig {
@@ -16,7 +20,15 @@ interface HeadwindConfig {
   output?: string
   preflight?: boolean
   minify?: boolean
+  preflights?: unknown[]
+  safelist?: string[]
   [key: string]: unknown
+}
+
+interface HeadwindBuildResult {
+  css: string
+  classes: Set<string>
+  duration: number
 }
 
 interface CSSGenerator {
@@ -27,6 +39,11 @@ interface CSSGenerator {
 // Headwind lazy loading cache
 let headwindModule: HeadwindModule | null = null
 let headwindLoadAttempted = false
+
+// Cached config and CSS for dev server
+let cachedConfig: HeadwindConfig | null = null
+let cachedCSS: string = ''
+let isBuilding = false
 
 /**
  * Lazily load the Headwind module
@@ -45,8 +62,10 @@ export async function loadHeadwind(): Promise<HeadwindModule | null> {
       headwindModule = {
         CSSGenerator: HeadwindPkg.CSSGenerator,
         config: HeadwindPkg.config,
+        build: HeadwindPkg.build,
+        defaultConfig: HeadwindPkg.defaultConfig,
       }
-      console.log(`${colors.green}[Headwind] CSS engine loaded successfully${colors.reset}`)
+      console.log(`${colors.green}[Headwind]${colors.reset} CSS engine loaded`)
       return headwindModule
     }
     throw new Error('Headwind CSSGenerator not found')
@@ -64,6 +83,118 @@ export async function loadHeadwind(): Promise<HeadwindModule | null> {
 export function resetHeadwindCache(): void {
   headwindModule = null
   headwindLoadAttempted = false
+  cachedConfig = null
+  cachedCSS = ''
+}
+
+/**
+ * Load headwind config from the working directory
+ */
+export async function loadHeadwindConfig(cwd: string): Promise<HeadwindConfig | null> {
+  const configFiles = [
+    'headwind.config.ts',
+    'headwind.config.js',
+    'headwind.config.mjs',
+  ]
+
+  for (const configFile of configFiles) {
+    const configPath = path.join(cwd, configFile)
+    if (fs.existsSync(configPath)) {
+      try {
+        const configModule = await import(configPath)
+        const config = configModule.default || configModule
+        console.log(`${colors.green}[Headwind]${colors.reset} Loaded config from ${configFile}`)
+        return config
+      }
+      catch (error) {
+        console.warn(`${colors.yellow}[Headwind]${colors.reset} Failed to load ${configFile}:`, error)
+      }
+    }
+  }
+
+  return null
+}
+
+/**
+ * Build Headwind CSS using the build() API
+ * This scans content files and generates CSS for all used classes
+ */
+export async function buildHeadwindCSS(cwd: string): Promise<string> {
+  if (isBuilding) {
+    return cachedCSS
+  }
+  isBuilding = true
+
+  try {
+    const hw = await loadHeadwind()
+    if (!hw || !hw.build) {
+      isBuilding = false
+      return ''
+    }
+
+    // Load config if not cached
+    if (!cachedConfig) {
+      cachedConfig = await loadHeadwindConfig(cwd)
+    }
+
+    if (!cachedConfig) {
+      // No config file, skip building
+      isBuilding = false
+      return ''
+    }
+
+    // Build with the config
+    const config: HeadwindConfig = {
+      ...hw.defaultConfig,
+      ...cachedConfig,
+    }
+
+    const start = performance.now()
+    const result = await hw.build(config)
+    const duration = performance.now() - start
+
+    cachedCSS = result.css
+    console.log(`${colors.cyan}[Headwind]${colors.reset} Built ${result.classes.size} classes in ${duration.toFixed(1)}ms`)
+
+    // Write to output file if specified
+    if (config.output) {
+      const outputPath = path.isAbsolute(config.output)
+        ? config.output
+        : path.join(cwd, config.output)
+
+      // Ensure directory exists
+      const outputDir = path.dirname(outputPath)
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true })
+      }
+
+      fs.writeFileSync(outputPath, result.css)
+    }
+
+    isBuilding = false
+    return result.css
+  }
+  catch (error) {
+    console.error(`${colors.red}[Headwind]${colors.reset} Build error:`, error)
+    isBuilding = false
+    return cachedCSS
+  }
+}
+
+/**
+ * Rebuild Headwind CSS (called on file changes)
+ */
+export async function rebuildHeadwindCSS(cwd: string): Promise<void> {
+  // Clear cached config to reload it
+  cachedConfig = null
+  await buildHeadwindCSS(cwd)
+}
+
+/**
+ * Get the cached CSS (for serving)
+ */
+export function getCachedCSS(): string {
+  return cachedCSS
 }
 
 /**

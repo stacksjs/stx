@@ -25,6 +25,7 @@ import { plugin as stxPlugin } from './plugin'
 
 // Import from modular dev-server components
 import {
+  buildHeadwindCSS,
   colors,
   findAvailablePort,
   getFrontmatterHtml,
@@ -33,6 +34,7 @@ import {
   getThemeSelectorStyles,
   injectHeadwindCSS,
   openNativeWindow,
+  rebuildHeadwindCSS,
   setupKeyboardShortcuts,
 } from './dev-server/index'
 
@@ -476,6 +478,10 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     return false
   }
 
+  // Build Headwind CSS if config exists
+  const cwd = path.dirname(absolutePath)
+  await buildHeadwindCSS(cwd)
+
   // Find an available port (with fallback)
   let actualPort = port
   try {
@@ -800,6 +806,9 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         // Clear partials cache to ensure fresh content for included files
         partialsCache.clear()
         const success = await buildFile()
+
+        // Rebuild Headwind CSS
+        await rebuildHeadwindCSS(cwd)
 
         // Notify connected browsers via HMR
         if (hotReload && hmrServer) {
