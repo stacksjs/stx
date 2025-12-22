@@ -4,7 +4,7 @@
     <div class="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
     <div class="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
     <div class="w-3 h-3 rounded-full bg-[#27ca40]"></div>
-    <span id="terminalTitle" class="flex-1 text-center text-xs text-[#a0a0a0]">{{ terminalTitle || 'Voide - Ready' }}</span>
+    <span id="terminalTitle" class="flex-1 text-center text-xs text-[#a0a0a0]">Voide - Ready</span>
   </div>
 
   <!-- Terminal Output -->
@@ -25,5 +25,81 @@ Example commands:
 - "Add a new endpoint for user profiles"
 - "Refactor the database module to use async/await"</div>
     </div>
+    <!-- Dynamic messages will be inserted here -->
   </div>
 </div>
+
+<script>
+// Render messages from reactive state
+document.addEventListener('DOMContentLoaded', () => {
+  let lastMessageCount = 1 // Start at 1 for welcome message
+
+  const typeClasses = {
+    user: 'bg-[#1a1a2e] border-l-2 border-[#e94560]',
+    assistant: 'bg-[#161b22] border-l-2 border-[#3fb950]',
+    system: 'border-l-2 border-[#d29922] text-[#8b949e] text-xs',
+    error: 'bg-[rgba(248,81,73,0.1)] border-l-2 border-[#f85149]'
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div')
+    div.textContent = text
+    return div.innerHTML
+  }
+
+  function renderMessages() {
+    if (!window.voide) return
+
+    const { messages, state } = window.voide
+    const output = document.getElementById('output')
+    const terminalTitle = document.getElementById('terminalTitle')
+
+    if (!output || !messages) return
+
+    // Update terminal title
+    if (terminalTitle && state.terminalTitle) {
+      terminalTitle.textContent = state.terminalTitle
+    }
+
+    // Check if we have new messages
+    const messageArray = messages.value || []
+    if (messageArray.length === lastMessageCount - 1) return
+
+    // Render new messages
+    while (lastMessageCount - 1 < messageArray.length) {
+      const msg = messageArray[lastMessageCount - 1]
+      if (!msg) break
+
+      const messageDiv = document.createElement('div')
+      messageDiv.className = 'mb-4 p-3 rounded-lg animate-fade-in ' + (typeClasses[msg.type] || typeClasses.system)
+
+      // Handle loading indicator
+      if (msg.content === '...') {
+        messageDiv.innerHTML = `
+          <div class="flex items-center gap-2 mb-2 text-[11px] text-[#8b949e] uppercase tracking-wider">${escapeHtml(msg.header)}</div>
+          <div class="flex gap-1">
+            <span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0s"></span>
+            <span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0.2s"></span>
+            <span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0.4s"></span>
+          </div>
+        `
+      } else {
+        messageDiv.innerHTML = `
+          <div class="flex items-center gap-2 mb-2 text-[11px] text-[#8b949e] uppercase tracking-wider">${escapeHtml(msg.header)}</div>
+          <div class="whitespace-pre-wrap break-words">${escapeHtml(msg.content)}</div>
+        `
+      }
+
+      output.appendChild(messageDiv)
+      lastMessageCount++
+    }
+
+    // Scroll to bottom
+    output.scrollTop = output.scrollHeight
+  }
+
+  // Poll for new messages
+  setInterval(renderMessages, 100)
+  renderMessages()
+})
+</script>

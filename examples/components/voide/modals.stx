@@ -7,7 +7,11 @@
         <span>🐙</span>
         GitHub Connection
       </div>
-      <button id="modalClose" class="w-8 h-8 rounded-lg flex items-center justify-center text-[#a0a0a0] hover:text-[#eaeaea] hover:bg-[#0f0f23] transition-all">&times;</button>
+      <button
+        id="modalClose"
+        class="w-8 h-8 rounded-lg flex items-center justify-center text-[#a0a0a0] hover:text-[#eaeaea] hover:bg-[#0f0f23] transition-all"
+        @click="window.voide?.closeGithubModal()"
+      >&times;</button>
     </div>
 
     <!-- Modal Body -->
@@ -59,9 +63,19 @@
 
     <!-- Modal Footer -->
     <div class="flex justify-end gap-3 px-5 py-4 border-t border-[#2d2d4a]">
-      <button id="modalCancel" class="bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-4 py-2 text-sm text-[#eaeaea] cursor-pointer hover:border-[#e94560] transition-all">Cancel</button>
-      <button id="connectBtn" class="bg-[#4ade80] border border-[#4ade80] rounded-lg px-4 py-2 text-sm text-[#1a1a2e] cursor-pointer hover:bg-[#22c55e] hover:border-[#22c55e] transition-all">Connect</button>
-      <button id="disconnectBtn" class="bg-[#ef4444] border border-[#ef4444] rounded-lg px-4 py-2 text-sm text-white cursor-pointer hover:bg-[#dc2626] hover:border-[#dc2626] transition-all hidden">Disconnect</button>
+      <button
+        id="modalCancel"
+        class="bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-4 py-2 text-sm text-[#eaeaea] cursor-pointer hover:border-[#e94560] transition-all"
+        @click="window.voide?.closeGithubModal()"
+      >Cancel</button>
+      <button
+        id="connectBtn"
+        class="bg-[#4ade80] border border-[#4ade80] rounded-lg px-4 py-2 text-sm text-[#1a1a2e] cursor-pointer hover:bg-[#22c55e] hover:border-[#22c55e] transition-all"
+      >Connect</button>
+      <button
+        id="disconnectBtn"
+        class="bg-[#ef4444] border border-[#ef4444] rounded-lg px-4 py-2 text-sm text-white cursor-pointer hover:bg-[#dc2626] hover:border-[#dc2626] transition-all hidden"
+      >Disconnect</button>
     </div>
   </div>
 </div>
@@ -75,7 +89,11 @@
         <span>⚙️</span>
         API Settings
       </div>
-      <button id="settingsModalClose" class="w-8 h-8 rounded-lg flex items-center justify-center text-[#a0a0a0] hover:text-[#eaeaea] hover:bg-[#0f0f23] transition-all">&times;</button>
+      <button
+        id="settingsModalClose"
+        class="w-8 h-8 rounded-lg flex items-center justify-center text-[#a0a0a0] hover:text-[#eaeaea] hover:bg-[#0f0f23] transition-all"
+        @click="window.voide?.closeSettingsModal()"
+      >&times;</button>
     </div>
 
     <!-- Modal Body -->
@@ -132,13 +150,116 @@
 
     <!-- Modal Footer -->
     <div class="flex justify-end gap-3 px-5 py-4 border-t border-[#2d2d4a]">
-      <button id="settingsModalCancel" class="bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-4 py-2 text-sm text-[#eaeaea] cursor-pointer hover:border-[#e94560] transition-all">Cancel</button>
-      <button id="saveSettingsBtn" class="bg-[#e94560] border border-[#e94560] rounded-lg px-4 py-2 text-sm text-white cursor-pointer hover:bg-[#ff6b6b] hover:border-[#ff6b6b] transition-all">Save Settings</button>
+      <button
+        id="settingsModalCancel"
+        class="bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-4 py-2 text-sm text-[#eaeaea] cursor-pointer hover:border-[#e94560] transition-all"
+        @click="window.voide?.closeSettingsModal()"
+      >Cancel</button>
+      <button
+        id="saveSettingsBtn"
+        class="bg-[#e94560] border border-[#e94560] rounded-lg px-4 py-2 text-sm text-white cursor-pointer hover:bg-[#ff6b6b] hover:border-[#ff6b6b] transition-all"
+        @click="window.voide?.saveApiSettings()"
+      >Save Settings</button>
     </div>
   </div>
 </div>
 
 <style>
   .configured { background-color: #4ade80 !important; }
-  #githubModal.active, #settingsModal.active { display: flex; }
 </style>
+
+<script>
+// Handle modal visibility based on reactive state
+document.addEventListener('DOMContentLoaded', () => {
+  const updateModals = () => {
+    if (!window.voide) return
+
+    const { modals, github, apiKeys } = window.voide
+    const githubModal = document.getElementById('githubModal')
+    const settingsModal = document.getElementById('settingsModal')
+
+    // GitHub Modal visibility
+    if (githubModal) {
+      if (modals.github) {
+        githubModal.classList.remove('hidden')
+        githubModal.classList.add('flex')
+      } else {
+        githubModal.classList.add('hidden')
+        githubModal.classList.remove('flex')
+      }
+    }
+
+    // Settings Modal visibility
+    if (settingsModal) {
+      if (modals.settings) {
+        settingsModal.classList.remove('hidden')
+        settingsModal.classList.add('flex')
+      } else {
+        settingsModal.classList.add('hidden')
+        settingsModal.classList.remove('flex')
+      }
+    }
+
+    // Update GitHub connected state
+    const connectForm = document.getElementById('connectForm')
+    const connectedInfo = document.getElementById('connectedInfo')
+    const connectBtn = document.getElementById('connectBtn')
+    const disconnectBtn = document.getElementById('disconnectBtn')
+
+    if (github.connected) {
+      connectForm?.classList.add('hidden')
+      connectedInfo?.classList.remove('hidden')
+      connectBtn?.classList.add('hidden')
+      disconnectBtn?.classList.remove('hidden')
+
+      const connectedAvatar = document.getElementById('connectedAvatar')
+      const connectedName = document.getElementById('connectedName')
+      const connectedUsername = document.getElementById('connectedUsername')
+
+      if (connectedAvatar && github.avatarUrl) connectedAvatar.src = github.avatarUrl
+      if (connectedName) connectedName.textContent = github.name || github.username
+      if (connectedUsername) connectedUsername.textContent = '@' + github.username
+    } else {
+      connectForm?.classList.remove('hidden')
+      connectedInfo?.classList.add('hidden')
+      connectBtn?.classList.remove('hidden')
+      disconnectBtn?.classList.add('hidden')
+    }
+
+    // Update API status indicators
+    const anthropicStatus = document.getElementById('anthropicStatus')
+    const anthropicStatusText = document.getElementById('anthropicStatusText')
+    const openaiStatus = document.getElementById('openaiStatus')
+    const openaiStatusText = document.getElementById('openaiStatusText')
+
+    if (apiKeys.anthropic) {
+      anthropicStatus?.classList.add('configured')
+      if (anthropicStatusText) anthropicStatusText.textContent = 'Configured'
+    } else {
+      anthropicStatus?.classList.remove('configured')
+      if (anthropicStatusText) anthropicStatusText.textContent = 'Not configured'
+    }
+
+    if (apiKeys.openai) {
+      openaiStatus?.classList.add('configured')
+      if (openaiStatusText) openaiStatusText.textContent = 'Configured'
+    } else {
+      openaiStatus?.classList.remove('configured')
+      if (openaiStatusText) openaiStatusText.textContent = 'Not configured'
+    }
+  }
+
+  // Close modals when clicking outside
+  document.getElementById('githubModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'githubModal') window.voide?.closeGithubModal()
+  })
+
+  document.getElementById('settingsModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'settingsModal') window.voide?.closeSettingsModal()
+  })
+
+  // Poll for state changes
+  setInterval(updateModals, 100)
+  updateModals()
+})
+</script>

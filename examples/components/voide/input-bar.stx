@@ -1,18 +1,20 @@
-<div x-data="{ message: '', charCount: 0, isRecording: false }" class="flex items-center gap-5 p-5 bg-[#16213e] border border-[#2d2d4a] rounded-xl">
+<div class="flex items-center gap-5 p-5 bg-[#16213e] border border-[#2d2d4a] rounded-xl">
   <!-- Mic Button -->
   <button
     id="micButton"
     class="w-20 h-20 rounded-full bg-gradient-to-br from-[#0f0f23] to-[#16213e] border-[3px] border-[#2d2d4a] cursor-pointer flex items-center justify-center hover:border-[#e94560] hover:scale-105 focus:outline-none transition-all duration-300"
     title="Hold to record (or press Space)"
-    @click="isRecording = !isRecording"
+    @mousedown="window.voide?.startRecording()"
+    @mouseup="window.voide?.stopRecording()"
+    @mouseleave="window.voide?.state.isRecording && window.voide?.stopRecording()"
   >
-    <span id="micIcon" class="text-3xl" x-text="isRecording ? '🔴' : '🎤'"></span>
+    <span id="micIcon" class="text-3xl">🎤</span>
   </button>
 
   <!-- Voice Status -->
   <div class="flex-1">
-    <div id="statusText" class="text-sm text-[#eaeaea] mb-1" x-text="isRecording ? 'Recording...' : 'Click microphone or type below'"></div>
-    <div id="statusHint" class="text-xs text-[#a0a0a0]" x-text="isRecording ? 'Click again to stop' : 'Hold to record, release to send'"></div>
+    <div id="statusText" class="text-sm text-[#eaeaea] mb-1">Click microphone or type below</div>
+    <div id="statusHint" class="text-xs text-[#a0a0a0]">Hold to record, release to send</div>
 
     <!-- Transcript Preview -->
     <div
@@ -27,19 +29,36 @@
       <div class="flex items-end gap-2 bg-[#0f0f23] border border-[#2d2d4a] rounded-2xl px-4 py-3 focus-within:border-[#e94560] transition-colors">
         <textarea
           id="textInput"
-          x-model="message"
           class="flex-1 bg-transparent text-sm text-[#eaeaea] placeholder-[#666] focus:outline-none resize-none min-h-[24px] max-h-[200px] leading-6 overflow-y-auto"
           placeholder="Message Voide... (Shift+Enter for new line)"
           rows="1"
-          @input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, 200) + 'px'; charCount = $el.value.length"
-          @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); document.getElementById('sendBtn').click() }"
+          @input="
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+            if (window.voide) window.voide.message.value = this.value;
+          "
+          @keydown="
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              window.voide?.handleTextSubmit();
+              this.value = '';
+              this.style.height = 'auto';
+            }
+          "
         ></textarea>
-        <!-- Clear button - shows when there's text -->
+        <!-- Clear button -->
         <button
-          x-show="message.length > 0"
-          class="flex-shrink-0 w-8 h-8 rounded-lg bg-[#0f0f23] border border-[#2d2d4a] hover:border-[#e94560] flex items-center justify-center transition-all duration-200"
+          id="clearBtn"
+          class="hidden flex-shrink-0 w-8 h-8 rounded-lg bg-[#0f0f23] border border-[#2d2d4a] hover:border-[#e94560] items-center justify-center transition-all duration-200"
           title="Clear"
-          @click="message = ''; charCount = 0; document.getElementById('textInput').value = ''"
+          @click="
+            document.getElementById('textInput').value = '';
+            if (window.voide) {
+              window.voide.message.value = '';
+              window.voide.charCount.value = 0;
+            }
+            this.classList.add('hidden');
+          "
         >
           <span class="text-[#a0a0a0]">×</span>
         </button>
@@ -47,7 +66,10 @@
           id="sendBtn"
           class="flex-shrink-0 w-8 h-8 rounded-lg bg-[#e94560] border border-[#e94560] hover:bg-[#ff6b6b] flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           title="Send message (Enter)"
-          @click="console.log('Sending:', message); message = ''; charCount = 0; document.getElementById('textInput').value = ''"
+          @click="
+            window.voide?.handleTextSubmit();
+            document.getElementById('textInput').value = '';
+          "
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
             <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -57,7 +79,7 @@
       </div>
       <div class="flex justify-between text-[10px] text-[#666] mt-1.5">
         <span>Press <kbd class="px-1.5 py-0.5 bg-[#0f0f23] rounded text-[#a0a0a0]">Enter</kbd> to send, <kbd class="px-1.5 py-0.5 bg-[#0f0f23] rounded text-[#a0a0a0]">Shift+Enter</kbd> for new line</span>
-        <span x-text="charCount + ' chars'" x-show="charCount > 0"></span>
+        <span id="charCountDisplay"></span>
       </div>
     </div>
   </div>
@@ -67,7 +89,8 @@
     <button
       id="commitBtn"
       class="bg-[#4ade80] border border-[#4ade80] rounded-lg px-4 py-2 text-sm text-[#1a1a2e] font-medium cursor-pointer hover:bg-[#22c55e] hover:border-[#22c55e] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-      :disabled="message.length === 0"
+      disabled
+      @click="window.voide?.commitChanges()"
     >
       Commit Changes
     </button>
@@ -75,8 +98,74 @@
       id="pushBtn"
       class="bg-[#0f3460] border border-[#2d2d4a] rounded-lg px-4 py-2 text-sm text-[#eaeaea] cursor-pointer hover:bg-[#e94560] hover:border-[#e94560] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
       disabled
+      @click="window.voide?.pushChanges()"
     >
       Push
     </button>
   </div>
 </div>
+
+<script>
+// Update UI based on reactive state
+document.addEventListener('DOMContentLoaded', () => {
+  const updateUI = () => {
+    if (!window.voide) return
+
+    const { state, charCount } = window.voide
+    const micButton = document.getElementById('micButton')
+    const micIcon = document.getElementById('micIcon')
+    const statusText = document.getElementById('statusText')
+    const statusHint = document.getElementById('statusHint')
+    const transcriptPreview = document.getElementById('transcriptPreview')
+    const commitBtn = document.getElementById('commitBtn')
+    const pushBtn = document.getElementById('pushBtn')
+    const charCountDisplay = document.getElementById('charCountDisplay')
+    const textInput = document.getElementById('textInput')
+    const clearBtn = document.getElementById('clearBtn')
+
+    // Update recording state
+    if (state.isRecording) {
+      micButton?.classList.add('animate-pulse')
+      if (micIcon) micIcon.textContent = '🔴'
+      if (statusText) statusText.textContent = 'Listening...'
+      if (statusHint) statusHint.textContent = 'Speak your command clearly'
+      transcriptPreview?.classList.add('border-[#e94560]')
+      if (transcriptPreview) transcriptPreview.textContent = state.transcript || 'Listening...'
+    } else {
+      micButton?.classList.remove('animate-pulse')
+      if (micIcon) micIcon.textContent = '🎤'
+      if (statusText) statusText.textContent = 'Click microphone or type below'
+      if (statusHint) statusHint.textContent = 'Hold to record, release to send'
+      transcriptPreview?.classList.remove('border-[#e94560]')
+      if (transcriptPreview && !state.transcript) {
+        transcriptPreview.textContent = 'Your voice command will appear here...'
+      }
+    }
+
+    // Update button states
+    if (commitBtn) commitBtn.disabled = !state.hasChanges || state.isProcessing
+    if (pushBtn) pushBtn.disabled = !state.hasChanges || state.isProcessing
+
+    // Update char count
+    if (charCountDisplay) {
+      const count = charCount?.value || 0
+      charCountDisplay.textContent = count > 0 ? count + ' chars' : ''
+    }
+
+    // Show/hide clear button
+    if (clearBtn && textInput) {
+      if (textInput.value.length > 0) {
+        clearBtn.classList.remove('hidden')
+        clearBtn.classList.add('flex')
+      } else {
+        clearBtn.classList.add('hidden')
+        clearBtn.classList.remove('flex')
+      }
+    }
+  }
+
+  // Poll for state changes (until we have proper reactivity binding)
+  setInterval(updateUI, 100)
+  updateUI()
+})
+</script>

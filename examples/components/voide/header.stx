@@ -15,6 +15,7 @@
       <select
         id="aiDriver"
         class="bg-[#16213e] border border-[#2d2d4a] rounded-lg px-3 py-2 text-sm text-[#eaeaea] cursor-pointer hover:border-[#e94560] focus:border-[#e94560] focus:outline-none transition-colors"
+        @change="window.voide?.handleDriverChange(event)"
       >
         <option value="claude-cli-local" selected>Claude CLI (Local)</option>
         <option value="claude-cli-ec2">Claude CLI (EC2)</option>
@@ -32,10 +33,12 @@
         id="repoInput"
         class="bg-[#0f0f23] border border-[#2d2d4a] rounded-lg px-3 py-2 text-sm text-[#eaeaea] placeholder-[#666] w-64 focus:border-[#e94560] focus:outline-none transition-colors"
         placeholder="github.com/owner/repo or local path..."
+        @keypress="if (event.key === 'Enter') window.voide?.handleRepoAction()"
       />
       <button
         id="cloneBtn"
         class="bg-[#0f3460] border border-[#2d2d4a] rounded-lg px-4 py-2 text-sm text-[#eaeaea] cursor-pointer hover:bg-[#e94560] hover:border-[#e94560] transition-all duration-200"
+        @click="window.voide?.handleRepoAction()"
       >
         Clone / Open
       </button>
@@ -46,6 +49,7 @@
       id="githubAccount"
       class="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#16213e] border border-[#2d2d4a] cursor-pointer hover:border-[#e94560] transition-all duration-200"
       title="Connect GitHub account"
+      @click="window.voide?.openGithubModal()"
     >
       <span class="text-lg">🐙</span>
       <div class="flex flex-col">
@@ -59,8 +63,34 @@
       id="settingsBtn"
       class="w-10 h-10 rounded-lg bg-[#16213e] border border-[#2d2d4a] flex items-center justify-center text-lg cursor-pointer hover:border-[#e94560] hover:bg-[#0f0f23] transition-all duration-200"
       title="API Settings"
+      @click="window.voide?.openSettingsModal()"
     >
       ⚙️
     </button>
   </div>
 </header>
+
+<script>
+// Update GitHub status based on reactive state
+document.addEventListener('DOMContentLoaded', () => {
+  const updateGithubStatus = () => {
+    if (!window.voide) return
+
+    const { github } = window.voide
+    const githubUsername = document.getElementById('githubUsername')
+    const githubStatus = document.getElementById('githubStatus')
+
+    if (github.connected && github.username) {
+      if (githubUsername) githubUsername.textContent = github.username
+      if (githubStatus) githubStatus.textContent = 'Connected'
+    } else {
+      if (githubUsername) githubUsername.textContent = 'Not connected'
+      if (githubStatus) githubStatus.textContent = 'Click to connect'
+    }
+  }
+
+  // Poll for state changes
+  setInterval(updateGithubStatus, 500)
+  updateGithubStatus()
+})
+</script>

@@ -1,6 +1,17 @@
 <script>
-const title = 'Voide'
-const version = '1.0.0'
+// Server-side: Static data available at build time
+export const title = 'Voide'
+export const version = '1.0.0'
+export const apiBaseUrl = 'http://localhost:3008/voide'
+
+export const drivers = {
+  'claude-cli-local': { name: 'Claude CLI (Local)', requiresKey: null },
+  'claude-cli-ec2': { name: 'Claude CLI (EC2)', requiresKey: 'BUDDY_EC2_HOST' },
+  'claude': { name: 'Claude API', requiresKey: 'ANTHROPIC_API_KEY' },
+  'openai': { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
+  'ollama': { name: 'Ollama', requiresKey: null },
+  'mock': { name: 'Mock', requiresKey: null }
+}
 </script>
 
 <!DOCTYPE html>
@@ -128,10 +139,55 @@ const version = '1.0.0'
     })();
   </script>
 
-  <!-- App Logic Script -->
-  <script>
-    // Configuration
-    var config = {
+  <!-- STX Client Runtime -->
+  <script client>
+    import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'stx'
+
+    // ==========================================================================
+    // Reactive State
+    // ==========================================================================
+
+    const state = reactive({
+      isRecording: false,
+      isProcessing: false,
+      transcript: '',
+      repoPath: '',
+      hasChanges: false,
+      speechSupported: false,
+      currentDriver: 'claude-cli-local',
+      isNativeApp: false,
+      terminalTitle: 'Voide - Ready'
+    })
+
+    const messages = ref([])
+    const message = ref('')
+    const charCount = ref(0)
+
+    const github = reactive({
+      connected: false,
+      token: null,
+      username: null,
+      name: null,
+      email: null,
+      avatarUrl: null
+    })
+
+    const apiKeys = reactive({
+      anthropic: null,
+      openai: null,
+      claudeCliHost: null
+    })
+
+    const modals = reactive({
+      github: false,
+      settings: false
+    })
+
+    // Speech recognition instance
+    let recognition = null
+
+    // Config
+    const config = {
       title: 'Voide',
       version: '1.0.0',
       apiBaseUrl: 'http://localhost:3008/voide',
@@ -143,93 +199,317 @@ const version = '1.0.0'
         'ollama': { name: 'Ollama', requiresKey: null },
         'mock': { name: 'Mock', requiresKey: null }
       }
-    };
-
-    // State management
-    var state = {
-      isRecording: false,
-      isProcessing: false,
-      transcript: '',
-      messages: [],
-      repoPath: '',
-      hasChanges: false,
-      recognition: null,
-      speechSupported: false,
-      currentDriver: 'claude-cli-local',
-      isNativeApp: false,
-      github: { connected: false, token: null, username: null, name: null, email: null, avatarUrl: null },
-      apiKeys: { anthropic: null, openai: null, claudeCliHost: null }
-    };
-
-    // DOM elements
-    var elements = {
-      output: document.getElementById('output'),
-      micButton: document.getElementById('micButton'),
-      micIcon: document.getElementById('micIcon'),
-      statusText: document.getElementById('statusText'),
-      statusHint: document.getElementById('statusHint'),
-      transcriptPreview: document.getElementById('transcriptPreview'),
-      repoInput: document.getElementById('repoInput'),
-      cloneBtn: document.getElementById('cloneBtn'),
-      commitBtn: document.getElementById('commitBtn'),
-      pushBtn: document.getElementById('pushBtn'),
-      terminalTitle: document.getElementById('terminalTitle'),
-      aiDriver: document.getElementById('aiDriver'),
-      textInput: document.getElementById('textInput'),
-      sendBtn: document.getElementById('sendBtn'),
-      footer: document.getElementById('footer'),
-      appTitle: document.getElementById('appTitle'),
-      githubAccount: document.getElementById('githubAccount'),
-      githubUsername: document.getElementById('githubUsername'),
-      githubStatus: document.getElementById('githubStatus'),
-      githubModal: document.getElementById('githubModal'),
-      githubToken: document.getElementById('githubToken'),
-      gitName: document.getElementById('gitName'),
-      gitEmail: document.getElementById('gitEmail'),
-      modalClose: document.getElementById('modalClose'),
-      modalCancel: document.getElementById('modalCancel'),
-      connectBtn: document.getElementById('connectBtn'),
-      disconnectBtn: document.getElementById('disconnectBtn'),
-      connectForm: document.getElementById('connectForm'),
-      connectedInfo: document.getElementById('connectedInfo'),
-      connectedAvatar: document.getElementById('connectedAvatar'),
-      connectedName: document.getElementById('connectedName'),
-      connectedUsername: document.getElementById('connectedUsername'),
-      settingsBtn: document.getElementById('settingsBtn'),
-      settingsModal: document.getElementById('settingsModal'),
-      settingsModalClose: document.getElementById('settingsModalClose'),
-      settingsModalCancel: document.getElementById('settingsModalCancel'),
-      saveSettingsBtn: document.getElementById('saveSettingsBtn'),
-      anthropicApiKey: document.getElementById('anthropicApiKey'),
-      openaiApiKey: document.getElementById('openaiApiKey'),
-      claudeCliHost: document.getElementById('claudeCliHost'),
-      anthropicStatus: document.getElementById('anthropicStatus'),
-      anthropicStatusText: document.getElementById('anthropicStatusText'),
-      openaiStatus: document.getElementById('openaiStatus'),
-      openaiStatusText: document.getElementById('openaiStatusText')
-    };
-
-    var STORAGE_KEY_REPO = 'voide_last_repo_path';
-
-    // Initialize UI
-    function initUI() {
-      if (elements.appTitle) elements.appTitle.textContent = config.title;
-      if (elements.footer) elements.footer.textContent = config.title + ' v' + config.version + ' - Voice AI Code Assistant';
-      if (window.craft) { state.isNativeApp = true; initNativeFeatures(); }
-      var savedRepoPath = localStorage.getItem(STORAGE_KEY_REPO);
-      if (savedRepoPath && elements.repoInput) elements.repoInput.value = savedRepoPath;
     }
 
-    function restoreSavedRepo() {
-      var savedRepoPath = localStorage.getItem(STORAGE_KEY_REPO);
-      if (savedRepoPath && elements.repoInput && elements.repoInput.value) handleRepoAction();
+    const STORAGE_KEY_REPO = 'voide_last_repo_path'
+
+    // ==========================================================================
+    // Computed Properties
+    // ==========================================================================
+
+    const currentDriverName = computed(() => {
+      return config.drivers[state.currentDriver]?.name || 'AI'
+    })
+
+    const canCommit = computed(() => {
+      return state.hasChanges && !state.isProcessing
+    })
+
+    const canPush = computed(() => {
+      return state.hasChanges && !state.isProcessing
+    })
+
+    // ==========================================================================
+    // Methods
+    // ==========================================================================
+
+    function escapeHtml(text) {
+      const div = document.createElement('div')
+      div.textContent = text
+      return div.innerHTML
     }
+
+    function addMessage(type, content, header) {
+      const driverName = currentDriverName.value
+      const headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error')
+
+      messages.value.push({
+        type,
+        content,
+        header: headerText,
+        timestamp: Date.now()
+      })
+
+      // Scroll to bottom
+      setTimeout(() => {
+        const output = document.getElementById('output')
+        if (output) output.scrollTop = output.scrollHeight
+      }, 10)
+    }
+
+    async function checkBackendAPI() {
+      try {
+        const res = await fetch(config.apiBaseUrl + '/state')
+        return res.ok
+      } catch {
+        return false
+      }
+    }
+
+    async function processCommand(command) {
+      if (!command.trim()) return
+
+      addMessage('user', command)
+      state.terminalTitle = 'Processing...'
+
+      if (!state.repoPath) {
+        addMessage('error', 'Please enter a repository URL or path first.')
+        state.terminalTitle = config.title + ' - Ready'
+        return
+      }
+
+      state.isProcessing = true
+      addMessage('assistant', '...')  // Loading indicator
+
+      try {
+        const hasBackend = await checkBackendAPI()
+        let response
+
+        if (hasBackend) {
+          const res = await fetch(config.apiBaseUrl + '/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              command,
+              driver: state.currentDriver,
+              repository: state.repoPath
+            })
+          })
+          response = await res.json()
+        } else if (state.currentDriver === 'mock') {
+          await new Promise(resolve => setTimeout(resolve, 1500))
+          response = {
+            success: true,
+            data: {
+              message: `[Mock] Processing: "${command}"\n\nThis is a simulated response.`,
+              hasChanges: command.toLowerCase().includes('fix')
+            }
+          }
+        } else {
+          throw new Error('Backend API not available. Start the server at localhost:3008.')
+        }
+
+        // Remove loading message
+        messages.value.pop()
+
+        if (response.success && response.data) {
+          addMessage('assistant', response.data.message)
+          if (response.data.hasChanges) {
+            state.hasChanges = true
+            addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.')
+            sendNotification('Changes Ready', 'Code changes are staged.')
+          }
+        } else {
+          throw new Error(response.error || 'Unknown error')
+        }
+
+        state.terminalTitle = config.title + ' - Ready'
+        updateTrayStatus('success')
+        setTimeout(() => updateTrayStatus('ready'), 2000)
+
+      } catch (error) {
+        messages.value.pop()  // Remove loading
+        addMessage('error', 'Failed: ' + error.message)
+        state.terminalTitle = config.title + ' - Error'
+        updateTrayStatus('error')
+        setTimeout(() => updateTrayStatus('ready'), 3000)
+      } finally {
+        state.isProcessing = false
+      }
+    }
+
+    async function handleRepoAction() {
+      const input = document.getElementById('repoInput')?.value.trim()
+      if (!input) {
+        addMessage('error', 'Please enter a repository URL or path.')
+        return
+      }
+
+      addMessage('system', 'Opening repository: ' + input)
+
+      try {
+        const hasBackend = await checkBackendAPI()
+        let response
+
+        if (hasBackend) {
+          const res = await fetch(config.apiBaseUrl + '/repo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ input })
+          })
+          response = await res.json()
+        } else {
+          response = {
+            success: true,
+            data: {
+              repo: { path: input, name: input.split('/').pop(), branch: 'main' }
+            }
+          }
+        }
+
+        if (response.success && response.data?.repo) {
+          const repo = response.data.repo
+          state.repoPath = repo.path
+          localStorage.setItem(STORAGE_KEY_REPO, repo.path)
+          addMessage('system', `Repository "${repo.name}" opened.\nPath: ${repo.path}\nBranch: ${repo.branch}`)
+          state.terminalTitle = config.title + ' - ' + repo.name
+        } else {
+          throw new Error(response.error || 'Failed to open repository')
+        }
+      } catch (error) {
+        addMessage('error', 'Failed: ' + error.message)
+      }
+    }
+
+    async function commitChanges() {
+      if (!state.hasChanges) return
+
+      addMessage('system', 'Creating commit...')
+      updateTrayStatus('processing')
+
+      try {
+        const hasBackend = await checkBackendAPI()
+        let response
+
+        if (hasBackend) {
+          const res = await fetch(config.apiBaseUrl + '/commit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          })
+          response = await res.json()
+        } else {
+          response = { success: true, hash: 'mock-commit-hash' }
+        }
+
+        addMessage('system', 'Committed: ' + (response.hash || 'success'))
+        state.hasChanges = false
+        updateTrayStatus('success')
+        setTimeout(() => updateTrayStatus('ready'), 2000)
+      } catch (error) {
+        addMessage('error', 'Failed: ' + error.message)
+        updateTrayStatus('error')
+        setTimeout(() => updateTrayStatus('ready'), 3000)
+      }
+    }
+
+    async function pushChanges() {
+      addMessage('system', 'Pushing to remote...')
+      updateTrayStatus('processing')
+
+      try {
+        const hasBackend = await checkBackendAPI()
+        if (hasBackend) {
+          await fetch(config.apiBaseUrl + '/push', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          })
+        }
+
+        addMessage('system', 'Pushed successfully.')
+        updateTrayStatus('success')
+        setTimeout(() => updateTrayStatus('ready'), 2000)
+      } catch (error) {
+        addMessage('error', 'Failed: ' + error.message)
+        updateTrayStatus('error')
+        setTimeout(() => updateTrayStatus('ready'), 3000)
+      }
+    }
+
+    // ==========================================================================
+    // Speech Recognition
+    // ==========================================================================
+
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+      if (!SpeechRecognition) {
+        state.speechSupported = false
+        addMessage('system', 'Speech recognition not available. Please use text input.')
+        return false
+      }
+
+      recognition = new SpeechRecognition()
+      recognition.continuous = false
+      recognition.interimResults = true
+      recognition.lang = 'en-US'
+      recognition.maxAlternatives = 1
+
+      recognition.onstart = () => {
+        state.isRecording = true
+        state.transcript = ''
+        updateTrayStatus('recording')
+      }
+
+      recognition.onresult = (event) => {
+        let transcript = ''
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript
+        }
+        state.transcript = transcript
+      }
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error)
+        stopRecording()
+        if (event.error === 'not-allowed') {
+          addMessage('error', 'Microphone access denied.')
+        } else if (event.error === 'network') {
+          addMessage('error', 'Speech recognition requires internet.')
+        } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
+          addMessage('error', 'Speech error: ' + event.error)
+        }
+      }
+
+      recognition.onend = () => {
+        if (state.isRecording) {
+          const transcript = state.transcript.trim()
+          stopRecording()
+          if (transcript) processCommand(transcript)
+        }
+      }
+
+      state.speechSupported = true
+      return true
+    }
+
+    function startRecording() {
+      if (!state.speechSupported || state.isRecording) return
+      state.transcript = ''
+      try {
+        recognition.start()
+      } catch (e) {
+        addMessage('error', 'Failed to start voice recognition.')
+      }
+    }
+
+    function stopRecording() {
+      state.isRecording = false
+      updateTrayStatus('ready')
+      if (recognition) {
+        try { recognition.stop() } catch (e) {}
+      }
+    }
+
+    // ==========================================================================
+    // Native App Features
+    // ==========================================================================
 
     function initNativeFeatures() {
-      if (!window.craft) return;
+      if (!window.craft) return
+
+      state.isNativeApp = true
       try {
-        window.craft.tray.setTitle('Voide');
-        window.craft.tray.setTooltip('Voide - Voice AI Code Assistant');
+        window.craft.tray.setTitle('Voide')
+        window.craft.tray.setTooltip('Voide - Voice AI Code Assistant')
         window.craft.tray.setMenu([
           { id: 'show', label: 'Show Voide', action: 'show' },
           { id: 'hide', label: 'Hide Window', action: 'hide' },
@@ -237,421 +517,183 @@ const version = '1.0.0'
           { id: 'recording', label: 'Start Recording', action: 'startRecording' },
           { type: 'separator' },
           { id: 'quit', label: 'Quit Voide', action: 'quit', shortcut: 'Cmd+Q' }
-        ]);
-        window.craft.tray.onClickToggleWindow();
-        addMessage('system', 'Running as native app - system tray enabled');
-      } catch (e) { console.log('Native features not fully available:', e); }
+        ])
+        window.craft.tray.onClickToggleWindow()
+        addMessage('system', 'Running as native app - system tray enabled')
+      } catch (e) {
+        console.log('Native features not fully available:', e)
+      }
     }
 
     function updateTrayStatus(status) {
-      if (!state.isNativeApp || !window.craft) return;
+      if (!state.isNativeApp || !window.craft) return
+      const icons = { ready: '🤖', recording: '🔴', processing: '⏳', success: '✅', error: '❌' }
       try {
-        var icons = { ready: '🤖', recording: '🔴', processing: '⏳', success: '✅', error: '❌' };
-        window.craft.tray.setTitle((icons[status] || '🤖') + ' Voide');
+        window.craft.tray.setTitle((icons[status] || '🤖') + ' Voide')
       } catch (e) {}
     }
 
     function sendNotification(title, body) {
-      if (!state.isNativeApp || !window.craft) return;
-      try { window.craft.app.notify({ title: title, body: body }); } catch (e) {}
+      if (!state.isNativeApp || !window.craft) return
+      try {
+        window.craft.app.notify({ title, body })
+      } catch (e) {}
     }
 
-    function initSpeechRecognition() {
-      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        state.speechSupported = false;
-        if (elements.statusText) elements.statusText.textContent = 'Voice not supported - use text input';
-        if (elements.statusHint) elements.statusHint.textContent = 'Type your command below';
-        if (elements.micButton) {
-          elements.micButton.style.opacity = '0.5';
-          elements.micButton.style.cursor = 'not-allowed';
-        }
-        addMessage('system', 'Speech recognition not available. Please use text input.');
-        return false;
-      }
-      state.recognition = new SpeechRecognition();
-      state.recognition.continuous = false;
-      state.recognition.interimResults = true;
-      state.recognition.lang = 'en-US';
-      state.recognition.maxAlternatives = 1;
+    // ==========================================================================
+    // Modal Functions
+    // ==========================================================================
 
-      state.recognition.onstart = function() {
-        state.isRecording = true;
-        if (elements.micButton) elements.micButton.classList.add('animate-pulse');
-        if (elements.micIcon) elements.micIcon.textContent = '🔴';
-        if (elements.statusText) elements.statusText.textContent = 'Listening...';
-        if (elements.statusHint) elements.statusHint.textContent = 'Speak your command clearly';
-        if (elements.transcriptPreview) {
-          elements.transcriptPreview.classList.add('border-[#e94560]');
-          elements.transcriptPreview.textContent = 'Listening...';
-        }
-        updateTrayStatus('recording');
-      };
-
-      state.recognition.onresult = function(event) {
-        var transcript = '';
-        for (var i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript;
-        state.transcript = transcript;
-        if (elements.transcriptPreview) elements.transcriptPreview.textContent = transcript || 'Listening...';
-      };
-
-      state.recognition.onerror = function(event) {
-        console.error('Speech recognition error:', event.error);
-        stopRecording();
-        if (event.error === 'not-allowed') addMessage('error', 'Microphone access denied.');
-        else if (event.error === 'network') { addMessage('error', 'Speech recognition requires internet.'); if (elements.statusText) elements.statusText.textContent = 'Network error - use text input'; }
-        else if (event.error === 'no-speech') { if (elements.statusText) elements.statusText.textContent = 'No speech detected - try again'; }
-        else if (event.error !== 'aborted') addMessage('error', 'Speech error: ' + event.error);
-      };
-
-      state.recognition.onend = function() {
-        if (state.isRecording) {
-          var transcript = state.transcript.trim();
-          stopRecording();
-          if (transcript) processCommand(transcript);
-        }
-      };
-
-      state.speechSupported = true;
-      return true;
-    }
-
-    function startRecording() {
-      if (!state.speechSupported) { if (elements.textInput) elements.textInput.focus(); return; }
-      if (state.isRecording) return;
-      state.transcript = '';
-      if (elements.transcriptPreview) elements.transcriptPreview.textContent = 'Initializing...';
-      try { state.recognition.start(); } catch (e) { addMessage('error', 'Failed to start voice recognition.'); }
-    }
-
-    function stopRecording() {
-      state.isRecording = false;
-      if (elements.micButton) elements.micButton.classList.remove('animate-pulse');
-      if (elements.micIcon) elements.micIcon.textContent = '🎤';
-      if (elements.statusText) elements.statusText.textContent = 'Click microphone or type below';
-      if (elements.statusHint) elements.statusHint.textContent = 'Hold to record, release to send';
-      if (elements.transcriptPreview) elements.transcriptPreview.classList.remove('border-[#e94560]');
-      updateTrayStatus('ready');
-      if (state.recognition) try { state.recognition.stop(); } catch (e) {}
-    }
-
-    function addMessage(type, content, header) {
-      if (!elements.output) return;
-      var messageDiv = document.createElement('div');
-      var driverName = config.drivers[state.currentDriver] ? config.drivers[state.currentDriver].name : 'AI';
-      var headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error');
-      var typeClasses = {
-        user: 'bg-[#1a1a2e] border-l-2 border-[#e94560]',
-        assistant: 'bg-[#161b22] border-l-2 border-[#3fb950]',
-        system: 'border-l-2 border-[#d29922] text-[#8b949e] text-xs',
-        error: 'bg-[rgba(248,81,73,0.1)] border-l-2 border-[#f85149]'
-      };
-      messageDiv.className = 'mb-4 p-3 rounded-lg animate-fade-in ' + (typeClasses[type] || typeClasses.system);
-      messageDiv.innerHTML = '<div class="flex items-center gap-2 mb-2 text-[11px] text-[#8b949e] uppercase tracking-wider">' + headerText + '</div><div class="whitespace-pre-wrap break-words">' + escapeHtml(content) + '</div>';
-      elements.output.appendChild(messageDiv);
-      elements.output.scrollTop = elements.output.scrollHeight;
-      state.messages.push({ type: type, content: content, timestamp: Date.now() });
-    }
-
-    function addLoadingMessage() {
-      if (!elements.output) return;
-      var driverName = config.drivers[state.currentDriver] ? config.drivers[state.currentDriver].name : 'AI';
-      var loadingDiv = document.createElement('div');
-      loadingDiv.className = 'mb-4 p-3 rounded-lg bg-[#161b22] border-l-2 border-[#3fb950]';
-      loadingDiv.id = 'loadingMessage';
-      loadingDiv.innerHTML = '<div class="flex items-center gap-2 mb-2 text-[11px] text-[#8b949e] uppercase tracking-wider">' + driverName + '</div><div class="flex gap-1"><span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0s"></span><span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0.2s"></span><span class="w-2 h-2 bg-[#e94560] rounded-full animate-bounce" style="animation-delay:0.4s"></span></div>';
-      elements.output.appendChild(loadingDiv);
-      elements.output.scrollTop = elements.output.scrollHeight;
-    }
-
-    function removeLoadingMessage() { var loading = document.getElementById('loadingMessage'); if (loading) loading.remove(); }
-
-    function escapeHtml(text) { var div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
-
-    function checkBackendAPI() {
-      return fetch(config.apiBaseUrl + '/state').then(function(res) { return res.ok; }).catch(function() { return false; });
-    }
-
-    function processCommand(command) {
-      if (!command.trim()) return;
-      addMessage('user', command);
-      if (elements.terminalTitle) elements.terminalTitle.textContent = 'Processing...';
-      if (!state.repoPath) {
-        addMessage('error', 'Please enter a repository URL or path first.');
-        if (elements.terminalTitle) elements.terminalTitle.textContent = config.title + ' - Ready';
-        return;
-      }
-      state.isProcessing = true;
-      addLoadingMessage();
-      updateTrayStatus('processing');
-
-      checkBackendAPI().then(function(hasBackend) {
-        if (hasBackend) {
-          return fetch(config.apiBaseUrl + '/process', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ command: command, driver: state.currentDriver, repository: state.repoPath })
-          }).then(function(res) { return res.json(); });
-        } else if (state.currentDriver === 'mock') {
-          return new Promise(function(resolve) {
-            setTimeout(function() {
-              resolve({ success: true, data: { message: '[Mock] Processing: "' + command + '"\n\nThis is a simulated response.', hasChanges: command.toLowerCase().indexOf('fix') >= 0 } });
-            }, 1500);
-          });
-        } else {
-          throw new Error('Backend API not available. Start the server at localhost:3008.');
-        }
-      }).then(function(response) {
-        removeLoadingMessage();
-        if (response.success && response.data) {
-          addMessage('assistant', response.data.message);
-          if (response.data.hasChanges) {
-            state.hasChanges = true;
-            if (elements.commitBtn) elements.commitBtn.disabled = false;
-            if (elements.pushBtn) elements.pushBtn.disabled = false;
-            addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.');
-            sendNotification('Changes Ready', 'Code changes are staged.');
-          }
-        } else {
-          throw new Error(response.error || 'Unknown error');
-        }
-        if (elements.terminalTitle) elements.terminalTitle.textContent = config.title + ' - Ready';
-        updateTrayStatus('success');
-        setTimeout(function() { updateTrayStatus('ready'); }, 2000);
-      }).catch(function(error) {
-        removeLoadingMessage();
-        addMessage('error', 'Failed: ' + error.message);
-        if (elements.terminalTitle) elements.terminalTitle.textContent = config.title + ' - Error';
-        updateTrayStatus('error');
-        setTimeout(function() { updateTrayStatus('ready'); }, 3000);
-      }).finally(function() {
-        state.isProcessing = false;
-      });
-    }
-
-    function handleRepoAction() {
-      var input = elements.repoInput ? elements.repoInput.value.trim() : '';
-      if (!input) { addMessage('error', 'Please enter a repository URL or path.'); return; }
-      addMessage('system', 'Opening repository: ' + input);
-
-      checkBackendAPI().then(function(hasBackend) {
-        if (hasBackend) {
-          return fetch(config.apiBaseUrl + '/repo', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ input: input })
-          }).then(function(res) { return res.json(); });
-        } else {
-          return { success: true, data: { repo: { path: input, name: input.split('/').pop(), branch: 'main' } } };
-        }
-      }).then(function(response) {
-        if (response.success && response.data && response.data.repo) {
-          var repo = response.data.repo;
-          state.repoPath = repo.path;
-          localStorage.setItem(STORAGE_KEY_REPO, repo.path);
-          addMessage('system', 'Repository "' + repo.name + '" opened.\nPath: ' + repo.path + '\nBranch: ' + repo.branch);
-          if (elements.terminalTitle) elements.terminalTitle.textContent = config.title + ' - ' + repo.name;
-        } else {
-          throw new Error(response.error || 'Failed to open repository');
-        }
-      }).catch(function(error) {
-        addMessage('error', 'Failed: ' + error.message);
-      });
-    }
-
-    function commitChanges() {
-      if (!state.hasChanges) return;
-      addMessage('system', 'Creating commit...');
-      updateTrayStatus('processing');
-
-      checkBackendAPI().then(function(hasBackend) {
-        if (hasBackend) {
-          return fetch(config.apiBaseUrl + '/commit', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
-            .then(function(res) { return res.json(); });
-        } else {
-          return { success: true, hash: 'mock-commit-hash' };
-        }
-      }).then(function(response) {
-        addMessage('system', 'Committed: ' + (response.hash || 'success'));
-        state.hasChanges = false;
-        if (elements.commitBtn) elements.commitBtn.disabled = true;
-        updateTrayStatus('success');
-        setTimeout(function() { updateTrayStatus('ready'); }, 2000);
-      }).catch(function(error) {
-        addMessage('error', 'Failed: ' + error.message);
-        updateTrayStatus('error');
-        setTimeout(function() { updateTrayStatus('ready'); }, 3000);
-      });
-    }
-
-    function pushChanges() {
-      addMessage('system', 'Pushing to remote...');
-      updateTrayStatus('processing');
-
-      checkBackendAPI().then(function(hasBackend) {
-        if (hasBackend) {
-          return fetch(config.apiBaseUrl + '/push', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
-            .then(function(res) { return res.json(); });
-        } else {
-          return { success: true };
-        }
-      }).then(function() {
-        addMessage('system', 'Pushed successfully.');
-        if (elements.pushBtn) elements.pushBtn.disabled = true;
-        updateTrayStatus('success');
-        setTimeout(function() { updateTrayStatus('ready'); }, 2000);
-      }).catch(function(error) {
-        addMessage('error', 'Failed: ' + error.message);
-        updateTrayStatus('error');
-        setTimeout(function() { updateTrayStatus('ready'); }, 3000);
-      });
-    }
-
-    function handleDriverChange() {
-      if (elements.aiDriver) {
-        state.currentDriver = elements.aiDriver.value;
-        addMessage('system', 'Switched to ' + config.drivers[state.currentDriver].name);
-      }
-    }
-
-    function handleTextSubmit() {
-      if (!elements.textInput) return;
-      var text = elements.textInput.value.trim();
-      if (text && !state.isProcessing) {
-        elements.textInput.value = '';
-        processCommand(text);
-      }
-    }
-
-    // Modal functions
     function openGithubModal() {
-      if (elements.githubModal) {
-        elements.githubModal.classList.add('active');
-        elements.githubModal.classList.remove('hidden');
-      }
+      modals.github = true
     }
 
     function closeGithubModal() {
-      if (elements.githubModal) {
-        elements.githubModal.classList.remove('active');
-        elements.githubModal.classList.add('hidden');
-      }
+      modals.github = false
     }
 
     function openSettingsModal() {
-      if (elements.settingsModal) {
-        elements.settingsModal.classList.add('active');
-        elements.settingsModal.classList.remove('hidden');
-        updateApiStatusIndicators();
-      }
+      modals.settings = true
+      updateApiStatusIndicators()
     }
 
     function closeSettingsModal() {
-      if (elements.settingsModal) {
-        elements.settingsModal.classList.remove('active');
-        elements.settingsModal.classList.add('hidden');
-      }
+      modals.settings = false
     }
 
     function updateApiStatusIndicators() {
-      if (state.apiKeys.anthropic) {
-        if (elements.anthropicStatus) elements.anthropicStatus.classList.add('configured');
-        if (elements.anthropicStatusText) elements.anthropicStatusText.textContent = 'Configured';
-      } else {
-        if (elements.anthropicStatus) elements.anthropicStatus.classList.remove('configured');
-        if (elements.anthropicStatusText) elements.anthropicStatusText.textContent = 'Not configured';
-      }
-      if (state.apiKeys.openai) {
-        if (elements.openaiStatus) elements.openaiStatus.classList.add('configured');
-        if (elements.openaiStatusText) elements.openaiStatusText.textContent = 'Configured';
-      } else {
-        if (elements.openaiStatus) elements.openaiStatus.classList.remove('configured');
-        if (elements.openaiStatusText) elements.openaiStatusText.textContent = 'Not configured';
-      }
+      // This will be handled by reactive bindings
     }
 
     function saveApiSettings() {
-      state.apiKeys = {
-        anthropic: elements.anthropicApiKey ? elements.anthropicApiKey.value.trim() || null : null,
-        openai: elements.openaiApiKey ? elements.openaiApiKey.value.trim() || null : null,
-        claudeCliHost: elements.claudeCliHost ? elements.claudeCliHost.value.trim() || null : null
-      };
-      localStorage.setItem('voide_api_keys', JSON.stringify(state.apiKeys));
-      updateApiStatusIndicators();
-      closeSettingsModal();
-      addMessage('system', 'API settings saved.');
+      const anthropicInput = document.getElementById('anthropicApiKey')
+      const openaiInput = document.getElementById('openaiApiKey')
+      const claudeHostInput = document.getElementById('claudeCliHost')
+
+      apiKeys.anthropic = anthropicInput?.value.trim() || null
+      apiKeys.openai = openaiInput?.value.trim() || null
+      apiKeys.claudeCliHost = claudeHostInput?.value.trim() || null
+
+      localStorage.setItem('voide_api_keys', JSON.stringify(apiKeys))
+      closeSettingsModal()
+      addMessage('system', 'API settings saved.')
     }
 
     function loadSavedApiKeys() {
       try {
-        var saved = localStorage.getItem('voide_api_keys');
+        const saved = localStorage.getItem('voide_api_keys')
         if (saved) {
-          state.apiKeys = JSON.parse(saved);
-          updateApiStatusIndicators();
+          const parsed = JSON.parse(saved)
+          Object.assign(apiKeys, parsed)
         }
       } catch (e) {}
     }
 
-    // Event listeners
-    if (elements.micButton) {
-      elements.micButton.addEventListener('mousedown', startRecording);
-      elements.micButton.addEventListener('mouseup', stopRecording);
-      elements.micButton.addEventListener('mouseleave', function() { if (state.isRecording) stopRecording(); });
-      elements.micButton.addEventListener('touchstart', function(e) { e.preventDefault(); startRecording(); });
-      elements.micButton.addEventListener('touchend', function(e) { e.preventDefault(); stopRecording(); });
+    // ==========================================================================
+    // Text Input Handling
+    // ==========================================================================
+
+    function handleTextSubmit() {
+      const text = message.value.trim()
+      if (text && !state.isProcessing) {
+        message.value = ''
+        charCount.value = 0
+        processCommand(text)
+      }
     }
 
-    document.addEventListener('keydown', function(e) {
-      if (e.code === 'Space' && !e.repeat && document.activeElement !== elements.repoInput && document.activeElement !== elements.textInput) {
-        e.preventDefault();
-        startRecording();
-      }
-      if (e.key === 'Escape') { closeGithubModal(); closeSettingsModal(); }
-    });
+    function handleDriverChange(event) {
+      state.currentDriver = event.target.value
+      addMessage('system', 'Switched to ' + config.drivers[state.currentDriver].name)
+    }
 
-    document.addEventListener('keyup', function(e) {
-      if (e.code === 'Space' && state.isRecording) {
-        e.preventDefault();
-        stopRecording();
-      }
-    });
+    // ==========================================================================
+    // Lifecycle
+    // ==========================================================================
 
-    if (elements.textInput) {
-      elements.textInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          handleTextSubmit();
+    onMounted(() => {
+      // Initialize native features
+      initNativeFeatures()
+
+      // Initialize speech recognition
+      initSpeechRecognition()
+
+      // Load saved data
+      loadSavedApiKeys()
+
+      const savedRepoPath = localStorage.getItem(STORAGE_KEY_REPO)
+      if (savedRepoPath) {
+        const repoInput = document.getElementById('repoInput')
+        if (repoInput) repoInput.value = savedRepoPath
+      }
+
+      // Setup keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !e.repeat) {
+          const active = document.activeElement
+          const isInput = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA'
+          if (!isInput) {
+            e.preventDefault()
+            startRecording()
+          }
         }
-      });
-      elements.textInput.addEventListener('input', function() {
-        elements.textInput.style.height = 'auto';
-        elements.textInput.style.height = Math.min(elements.textInput.scrollHeight, 200) + 'px';
-      });
+        if (e.key === 'Escape') {
+          closeGithubModal()
+          closeSettingsModal()
+        }
+      })
+
+      document.addEventListener('keyup', (e) => {
+        if (e.code === 'Space' && state.isRecording) {
+          e.preventDefault()
+          stopRecording()
+        }
+      })
+    })
+
+    onUnmounted(() => {
+      if (recognition) {
+        try { recognition.stop() } catch (e) {}
+      }
+    })
+
+    // Watch for message changes
+    watch(message, (newValue) => {
+      charCount.value = newValue.length
+    })
+
+    // ==========================================================================
+    // Expose to window for component access
+    // ==========================================================================
+
+    window.voide = {
+      state,
+      messages,
+      message,
+      charCount,
+      github,
+      apiKeys,
+      modals,
+      config,
+      currentDriverName,
+      canCommit,
+      canPush,
+      // Methods
+      addMessage,
+      processCommand,
+      handleRepoAction,
+      commitChanges,
+      pushChanges,
+      startRecording,
+      stopRecording,
+      handleTextSubmit,
+      handleDriverChange,
+      openGithubModal,
+      closeGithubModal,
+      openSettingsModal,
+      closeSettingsModal,
+      saveApiSettings
     }
-
-    if (elements.sendBtn) elements.sendBtn.addEventListener('click', handleTextSubmit);
-    if (elements.cloneBtn) elements.cloneBtn.addEventListener('click', handleRepoAction);
-    if (elements.repoInput) elements.repoInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') handleRepoAction(); });
-    if (elements.commitBtn) elements.commitBtn.addEventListener('click', commitChanges);
-    if (elements.pushBtn) elements.pushBtn.addEventListener('click', pushChanges);
-    if (elements.aiDriver) elements.aiDriver.addEventListener('change', handleDriverChange);
-
-    if (elements.githubAccount) elements.githubAccount.addEventListener('click', openGithubModal);
-    if (elements.modalClose) elements.modalClose.addEventListener('click', closeGithubModal);
-    if (elements.modalCancel) elements.modalCancel.addEventListener('click', closeGithubModal);
-    if (elements.githubModal) elements.githubModal.addEventListener('click', function(e) { if (e.target === elements.githubModal) closeGithubModal(); });
-
-    if (elements.settingsBtn) elements.settingsBtn.addEventListener('click', openSettingsModal);
-    if (elements.settingsModalClose) elements.settingsModalClose.addEventListener('click', closeSettingsModal);
-    if (elements.settingsModalCancel) elements.settingsModalCancel.addEventListener('click', closeSettingsModal);
-    if (elements.saveSettingsBtn) elements.saveSettingsBtn.addEventListener('click', saveApiSettings);
-    if (elements.settingsModal) elements.settingsModal.addEventListener('click', function(e) { if (e.target === elements.settingsModal) closeSettingsModal(); });
-
-    // Initialize
-    initUI();
-    initSpeechRecognition();
-    loadSavedApiKeys();
-    restoreSavedRepo();
   </script>
 </body>
 </html>

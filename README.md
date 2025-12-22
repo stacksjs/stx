@@ -868,6 +868,279 @@ The documentation will include:
 
 This makes it easy for developers to understand how to use your web components in their HTML.
 
+## Reactive State & Lifecycle
+
+STX provides a powerful reactivity system for building interactive UIs - using the syntax we all know and love. If you've worked with modern frontend frameworks, you'll feel right at home.
+
+### Script Blocks
+
+STX supports two types of script blocks:
+
+```html
+<script>
+  // Server-side: Runs at build/render time
+  // Variables are available for template interpolation
+  export const siteName = "My App"
+  export const initialData = await fetchFromDB()
+</script>
+
+<script client>
+  // Client-side: Runs in the browser
+  // Use for reactivity, event handlers, and data fetching
+  import { ref, onMounted, watch } from 'stx'
+
+  const count = ref(0)
+  const users = ref([])
+</script>
+```
+
+### Reactive Primitives
+
+#### ref() - Reactive References
+
+```html
+<script client>
+  import { ref } from 'stx'
+
+  const count = ref(0)
+  const name = ref('STX')
+
+  // Access and modify with .value
+  count.value++
+  name.value = 'Hello STX'
+</script>
+
+<p>Count: {{ count }}</p>
+<button @click="count++">Increment</button>
+```
+
+#### reactive() - Reactive Objects
+
+```html
+<script client>
+  import { reactive } from 'stx'
+
+  const state = reactive({
+    user: null,
+    loading: false,
+    items: []
+  })
+
+  // Direct property access (no .value needed)
+  state.loading = true
+  state.items.push({ id: 1, name: 'Item' })
+</script>
+```
+
+#### computed() - Derived State
+
+```html
+<script client>
+  import { ref, computed } from 'stx'
+
+  const items = ref([])
+  const search = ref('')
+
+  const filteredItems = computed(() => {
+    return items.value.filter(item =>
+      item.name.includes(search.value)
+    )
+  })
+</script>
+
+<input type="text" x-model="search" placeholder="Search...">
+<p>Found {{ filteredItems.length }} items</p>
+```
+
+### Lifecycle Hooks
+
+```html
+<script client>
+  import { ref, onMounted, onUnmounted, onUpdated } from 'stx'
+
+  const users = ref([])
+  const loading = ref(true)
+  let refreshInterval
+
+  // Called when component is inserted into the DOM
+  onMounted(async () => {
+    const response = await fetch('/api/users')
+    users.value = await response.json()
+    loading.value = false
+
+    // Set up polling
+    refreshInterval = setInterval(fetchUsers, 30000)
+  })
+
+  // Called when component is removed from the DOM
+  onUnmounted(() => {
+    clearInterval(refreshInterval)
+  })
+
+  // Called after reactive state changes trigger a re-render
+  onUpdated(() => {
+    console.log('Component updated, users:', users.value.length)
+  })
+</script>
+```
+
+#### Available Lifecycle Hooks
+
+| Hook | When It's Called |
+|------|------------------|
+| `onBeforeMount` | Before the component is inserted into the DOM |
+| `onMounted` | After the component is inserted into the DOM |
+| `onBeforeUpdate` | Before the component re-renders due to state changes |
+| `onUpdated` | After the component re-renders |
+| `onBeforeUnmount` | Before the component is removed from the DOM |
+| `onUnmounted` | After the component is removed from the DOM |
+
+### Watch API
+
+#### watch() - Watch Reactive Sources
+
+```html
+<script client>
+  import { ref, watch } from 'stx'
+
+  const searchQuery = ref('')
+  const results = ref([])
+
+  // Watch a single ref
+  watch(searchQuery, async (newValue, oldValue) => {
+    console.log(`Search changed: "${oldValue}" -> "${newValue}"`)
+    if (newValue.length > 2) {
+      results.value = await searchAPI(newValue)
+    }
+  })
+
+  // With options
+  watch(searchQuery, callback, {
+    immediate: true,  // Run immediately with current value
+    deep: true,       // Deep watch nested objects
+    flush: 'post'     // 'pre' | 'post' | 'sync'
+  })
+</script>
+```
+
+#### watchEffect() - Auto-track Dependencies
+
+```html
+<script client>
+  import { ref, watchEffect } from 'stx'
+
+  const count = ref(0)
+  const multiplier = ref(2)
+
+  // Automatically tracks count and multiplier
+  watchEffect(() => {
+    console.log(`Result: ${count.value * multiplier.value}`)
+  })
+</script>
+```
+
+### Complete Example
+
+```html
+<!-- components/UserList.stx -->
+<script>
+  // Server-side data (optional)
+  export const pageTitle = "User Management"
+</script>
+
+<script client>
+  import { ref, computed, onMounted, onUnmounted, watch } from 'stx'
+
+  // Reactive state
+  const users = ref([])
+  const loading = ref(true)
+  const error = ref(null)
+  const searchQuery = ref('')
+
+  // Computed property
+  const filteredUsers = computed(() => {
+    if (!searchQuery.value) return users.value
+    return users.value.filter(user =>
+      user.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+  })
+
+  // Methods
+  async function fetchUsers() {
+    try {
+      loading.value = true
+      const response = await fetch('/api/users')
+      users.value = await response.json()
+    } catch (e) {
+      error.value = e.message
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function deleteUser(id) {
+    await fetch(`/api/users/${id}`, { method: 'DELETE' })
+    users.value = users.value.filter(u => u.id !== id)
+  }
+
+  // Lifecycle
+  let refreshInterval
+
+  onMounted(() => {
+    fetchUsers()
+    refreshInterval = setInterval(fetchUsers, 60000)
+  })
+
+  onUnmounted(() => {
+    clearInterval(refreshInterval)
+  })
+
+  // Watchers
+  watch(searchQuery, (query) => {
+    console.log('Searching for:', query)
+  })
+</script>
+
+<div class="user-list">
+  <h1>{{ pageTitle }}</h1>
+
+  <input
+    type="text"
+    x-model="searchQuery"
+    placeholder="Search users..."
+    class="search-input"
+  >
+
+  @when(loading)
+    <div class="spinner">Loading...</div>
+  @elsewhen(error)
+    <div class="error">{{ error }}</div>
+  @else
+    <ul>
+      @each(filteredUsers as user)
+        <li>
+          <span>{{ user.name }}</span>
+          <button @click="deleteUser(user.id)">Delete</button>
+        </li>
+      @endeach
+    </ul>
+    <p>Showing {{ filteredUsers.length }} of {{ users.length }} users</p>
+  @endwhen
+</div>
+```
+
+### Runtime Directives
+
+For client-side reactivity, STX provides runtime versions of directives:
+
+| Directive | Purpose | Example |
+|-----------|---------|---------|
+| `@each` | Reactive loop (client-side) | `@each(users as user)` |
+| `@when` | Reactive conditional (client-side) | `@when(loading)` |
+| `@elsewhen` | Else-if for reactive conditionals | `@elsewhen(error)` |
+
+These differ from `@foreach` and `@if` which run at build time with static data.
+
 ## Other Familiar Features
 
 `stx` includes several convenient features inspired by Laravel's Blade templating engine:
