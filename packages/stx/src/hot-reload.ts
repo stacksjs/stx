@@ -134,8 +134,9 @@ export class HotReloadServer {
 
         return wsPort
       }
-      catch (error: any) {
-        if (error?.code === 'EADDRINUSE') {
+      catch (error: unknown) {
+        const err = error as { code?: string }
+        if (err?.code === 'EADDRINUSE') {
           // Port is in use, try the next one
           wsPort++
           continue

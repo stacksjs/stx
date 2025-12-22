@@ -19,7 +19,7 @@ import process from 'node:process'
 /**
  * Base URL for documentation
  */
-const DOCS_BASE_URL = 'https://stacks.js.org/components'
+const DOCS_BASE_URL = 'https://stacksjs.com/components'
 
 /**
  * Error context information
@@ -250,6 +250,13 @@ let errorHandler: ((error: Error) => void) | null = null
  */
 export function setErrorHandler(handler: (error: Error) => void): void {
   errorHandler = handler
+}
+
+/**
+ * Clear the global error handler (useful for testing)
+ */
+export function clearErrorHandler(): void {
+  errorHandler = null
 }
 
 /**

@@ -1,144 +1,275 @@
 <!-- GitHub Connection Modal -->
-<div id="githubModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden">
-  <div class="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-md m-4 shadow-2xl">
-    <!-- Modal Header -->
-    <div class="flex items-center justify-between px-5 py-4 border-b border-[#30363d]">
-      <div class="flex items-center gap-3 text-lg font-semibold text-[#e6edf3]">
-        <span>🐙</span>
-        GitHub Connection
+<div id="githubModal" class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 hidden">
+  <div class="relative w-full max-w-md m-4 animate-fade-in">
+    <div class="absolute -inset-1 bg-gradient-to-r from-violet-600/20 to-cyan-600/20 rounded-2xl blur-xl"></div>
+    <div class="relative bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+          </div>
+          <h2 class="text-lg font-semibold text-white">GitHub Connection</h2>
+        </div>
+        <button
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+          @click="window.voide?.closeGithubModal()"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
       </div>
-      <button id="modalClose" class="w-8 h-8 rounded-lg flex items-center justify-center text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] transition-all">&times;</button>
-    </div>
 
-    <!-- Modal Body -->
-    <div id="modalBody" class="p-5">
-      <div id="connectForm">
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-[#e6edf3] mb-2">GitHub Personal Access Token</label>
-          <input
-            type="password"
-            id="githubToken"
-            class="w-full bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#484f58] focus:border-[#e94560] focus:outline-none transition-colors"
-            placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-          />
-          <div class="mt-2 text-xs text-[#8b949e]">
-            Generate a token at <a href="https://github.com/settings/tokens" target="_blank" class="text-[#e94560] hover:underline">github.com/settings/tokens</a>
-            <br>Required scopes: <code class="bg-[#21262d] px-1 rounded">repo</code>, <code class="bg-[#21262d] px-1 rounded">user:email</code>
+      <!-- Modal Body -->
+      <div class="p-6">
+        <div id="connectForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Personal Access Token</label>
+            <input
+              type="password"
+              id="githubToken"
+              class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
+              placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+            />
+            <p class="mt-2 text-xs text-slate-500">
+              Generate at <a href="https://github.com/settings/tokens" target="_blank" class="text-violet-400 hover:text-violet-300">github.com/settings/tokens</a>
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Commit Name <span class="text-slate-500">(optional)</span></label>
+            <input
+              type="text"
+              id="gitName"
+              class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
+              placeholder="Your Name"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Commit Email <span class="text-slate-500">(optional)</span></label>
+            <input
+              type="email"
+              id="gitEmail"
+              class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
+              placeholder="you@example.com"
+            />
           </div>
         </div>
 
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-[#e6edf3] mb-2">Git Commit Name (optional)</label>
-          <input
-            type="text"
-            id="gitName"
-            class="w-full bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#484f58] focus:border-[#e94560] focus:outline-none transition-colors"
-            placeholder="Your Name"
-          />
-        </div>
-
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-[#e6edf3] mb-2">Git Commit Email (optional)</label>
-          <input
-            type="email"
-            id="gitEmail"
-            class="w-full bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#484f58] focus:border-[#e94560] focus:outline-none transition-colors"
-            placeholder="you@example.com"
-          />
-          <div class="mt-2 text-xs text-[#8b949e]">Leave blank to use your GitHub email</div>
+        <div id="connectedInfo" class="hidden text-center py-6">
+          <img id="connectedAvatar" class="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-emerald-500 shadow-lg shadow-emerald-500/20" />
+          <div id="connectedName" class="text-xl font-semibold text-white mb-1"></div>
+          <div id="connectedUsername" class="text-slate-400 mb-3"></div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-400 text-xs">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Connected
+          </div>
         </div>
       </div>
 
-      <div id="connectedInfo" class="hidden text-center py-5">
-        <img id="connectedAvatar" class="w-16 h-16 rounded-full mx-auto mb-3 border-2 border-[#3fb950]" />
-        <div id="connectedName" class="text-lg font-semibold text-[#e6edf3] mb-1"></div>
-        <div id="connectedUsername" class="text-[#8b949e] mb-2"></div>
-        <div class="text-[#3fb950] text-xs">✓ Connected</div>
+      <!-- Modal Footer -->
+      <div class="flex justify-end gap-3 px-6 py-4 border-t border-white/5 bg-slate-900/50">
+        <button
+          class="px-4 py-2 text-sm text-slate-300 hover:text-white transition-colors"
+          @click="window.voide?.closeGithubModal()"
+        >Cancel</button>
+        <button
+          id="connectBtn"
+          class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-lg hover:from-violet-600 hover:to-cyan-600 transition-all shadow-lg shadow-violet-500/25"
+        >Connect</button>
+        <button
+          id="disconnectBtn"
+          class="px-4 py-2 text-sm font-medium bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/30 transition-all hidden"
+        >Disconnect</button>
       </div>
-    </div>
-
-    <!-- Modal Footer -->
-    <div class="flex justify-end gap-3 px-5 py-4 border-t border-[#30363d]">
-      <button id="modalCancel" class="bg-[#21262d] border border-[#30363d] rounded-lg px-4 py-2 text-sm text-[#e6edf3] cursor-pointer hover:bg-[#30363d] transition-all">Cancel</button>
-      <button id="connectBtn" class="bg-[#238636] border border-[#238636] rounded-lg px-4 py-2 text-sm text-white cursor-pointer hover:bg-[#2ea043] transition-all">Connect</button>
-      <button id="disconnectBtn" class="bg-[#f85149] border border-[#f85149] rounded-lg px-4 py-2 text-sm text-white cursor-pointer hover:bg-[#da3633] transition-all hidden">Disconnect</button>
     </div>
   </div>
 </div>
 
 <!-- API Settings Modal -->
-<div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden">
-  <div class="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-md m-4 shadow-2xl">
-    <!-- Modal Header -->
-    <div class="flex items-center justify-between px-5 py-4 border-b border-[#30363d]">
-      <div class="flex items-center gap-3 text-lg font-semibold text-[#e6edf3]">
-        <span>⚙️</span>
-        API Settings
+<div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 hidden">
+  <div class="relative w-full max-w-md m-4 animate-fade-in">
+    <div class="absolute -inset-1 bg-gradient-to-r from-violet-600/20 to-cyan-600/20 rounded-2xl blur-xl"></div>
+    <div class="relative bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+          </div>
+          <h2 class="text-lg font-semibold text-white">API Settings</h2>
+        </div>
+        <button
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+          @click="window.voide?.closeSettingsModal()"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
       </div>
-      <button id="settingsModalClose" class="w-8 h-8 rounded-lg flex items-center justify-center text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] transition-all">&times;</button>
-    </div>
 
-    <!-- Modal Body -->
-    <div class="p-5">
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-[#e6edf3] mb-2">Anthropic API Key</label>
-        <input
-          type="password"
-          id="anthropicApiKey"
-          class="w-full bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#484f58] focus:border-[#e94560] focus:outline-none transition-colors"
-          placeholder="sk-ant-api03-xxxxxxxxxxxx"
-        />
-        <div class="mt-2 text-xs text-[#8b949e]">
-          Get your API key from <a href="https://console.anthropic.com/settings/keys" target="_blank" class="text-[#e94560] hover:underline">console.anthropic.com</a>
+      <!-- Modal Body -->
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Anthropic API Key</label>
+          <input
+            type="password"
+            id="anthropicApiKey"
+            class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
+            placeholder="sk-ant-api03-xxxxxxxxxxxx"
+          />
+          <p class="mt-2 text-xs text-slate-500">
+            Get from <a href="https://console.anthropic.com/settings/keys" target="_blank" class="text-violet-400 hover:text-violet-300">console.anthropic.com</a>
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">OpenAI API Key <span class="text-slate-500">(optional)</span></label>
+          <input
+            type="password"
+            id="openaiApiKey"
+            class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
+            placeholder="sk-xxxxxxxxxxxx"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Claude CLI Host <span class="text-slate-500">(optional)</span></label>
+          <input
+            type="text"
+            id="claudeCliHost"
+            class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
+            placeholder="http://your-ec2-instance:3456"
+          />
+        </div>
+
+        <!-- API Status -->
+        <div class="p-4 bg-slate-800/30 border border-white/5 rounded-xl space-y-2">
+          <div class="flex items-center gap-3">
+            <span id="anthropicStatus" class="w-2 h-2 rounded-full bg-slate-600"></span>
+            <span class="text-sm text-slate-400">Anthropic: <span id="anthropicStatusText" class="text-slate-300">Not configured</span></span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span id="openaiStatus" class="w-2 h-2 rounded-full bg-slate-600"></span>
+            <span class="text-sm text-slate-400">OpenAI: <span id="openaiStatusText" class="text-slate-300">Not configured</span></span>
+          </div>
         </div>
       </div>
 
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-[#e6edf3] mb-2">OpenAI API Key (optional)</label>
-        <input
-          type="password"
-          id="openaiApiKey"
-          class="w-full bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#484f58] focus:border-[#e94560] focus:outline-none transition-colors"
-          placeholder="sk-xxxxxxxxxxxx"
-        />
-        <div class="mt-2 text-xs text-[#8b949e]">
-          For OpenAI driver. Get key from <a href="https://platform.openai.com/api-keys" target="_blank" class="text-[#e94560] hover:underline">platform.openai.com</a>
-        </div>
+      <!-- Modal Footer -->
+      <div class="flex justify-end gap-3 px-6 py-4 border-t border-white/5 bg-slate-900/50">
+        <button
+          class="px-4 py-2 text-sm text-slate-300 hover:text-white transition-colors"
+          @click="window.voide?.closeSettingsModal()"
+        >Cancel</button>
+        <button
+          class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-lg hover:from-violet-600 hover:to-cyan-600 transition-all shadow-lg shadow-violet-500/25"
+          @click="window.voide?.saveApiSettings()"
+        >Save Settings</button>
       </div>
-
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-[#e6edf3] mb-2">Claude CLI EC2 Host (optional)</label>
-        <input
-          type="text"
-          id="claudeCliHost"
-          class="w-full bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#484f58] focus:border-[#e94560] focus:outline-none transition-colors"
-          placeholder="http://your-ec2-instance:3456"
-        />
-        <div class="mt-2 text-xs text-[#8b949e]">For Claude CLI (EC2) driver</div>
-      </div>
-
-      <!-- API Status -->
-      <div id="apiStatus" class="bg-[#21262d] rounded-lg p-3 text-sm">
-        <div class="flex items-center gap-2 mb-2">
-          <span id="anthropicStatus" class="w-2 h-2 rounded-full bg-[#484f58]"></span>
-          <span class="text-[#8b949e]">Anthropic: <span id="anthropicStatusText">Not configured</span></span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span id="openaiStatus" class="w-2 h-2 rounded-full bg-[#484f58]"></span>
-          <span class="text-[#8b949e]">OpenAI: <span id="openaiStatusText">Not configured</span></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Footer -->
-    <div class="flex justify-end gap-3 px-5 py-4 border-t border-[#30363d]">
-      <button id="settingsModalCancel" class="bg-[#21262d] border border-[#30363d] rounded-lg px-4 py-2 text-sm text-[#e6edf3] cursor-pointer hover:bg-[#30363d] transition-all">Cancel</button>
-      <button id="saveSettingsBtn" class="bg-[#e94560] border border-[#e94560] rounded-lg px-4 py-2 text-sm text-white cursor-pointer hover:bg-[#f45a75] transition-all">Save Settings</button>
     </div>
   </div>
 </div>
 
 <style>
-  .configured { background-color: #3fb950 !important; }
-  #githubModal.active, #settingsModal.active { display: flex; }
+  .configured { background-color: #10b981 !important; }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const updateModals = () => {
+    if (!window.voide) return
+
+    const { modals, github, apiKeys } = window.voide
+    const githubModal = document.getElementById('githubModal')
+    const settingsModal = document.getElementById('settingsModal')
+
+    if (githubModal) {
+      if (modals.github) {
+        githubModal.classList.remove('hidden')
+        githubModal.classList.add('flex')
+      } else {
+        githubModal.classList.add('hidden')
+        githubModal.classList.remove('flex')
+      }
+    }
+
+    if (settingsModal) {
+      if (modals.settings) {
+        settingsModal.classList.remove('hidden')
+        settingsModal.classList.add('flex')
+      } else {
+        settingsModal.classList.add('hidden')
+        settingsModal.classList.remove('flex')
+      }
+    }
+
+    const connectForm = document.getElementById('connectForm')
+    const connectedInfo = document.getElementById('connectedInfo')
+    const connectBtn = document.getElementById('connectBtn')
+    const disconnectBtn = document.getElementById('disconnectBtn')
+
+    if (github.connected) {
+      connectForm?.classList.add('hidden')
+      connectedInfo?.classList.remove('hidden')
+      connectBtn?.classList.add('hidden')
+      disconnectBtn?.classList.remove('hidden')
+
+      const connectedAvatar = document.getElementById('connectedAvatar')
+      const connectedName = document.getElementById('connectedName')
+      const connectedUsername = document.getElementById('connectedUsername')
+
+      if (connectedAvatar && github.avatarUrl) connectedAvatar.src = github.avatarUrl
+      if (connectedName) connectedName.textContent = github.name || github.username
+      if (connectedUsername) connectedUsername.textContent = '@' + github.username
+    } else {
+      connectForm?.classList.remove('hidden')
+      connectedInfo?.classList.add('hidden')
+      connectBtn?.classList.remove('hidden')
+      disconnectBtn?.classList.add('hidden')
+    }
+
+    const anthropicStatus = document.getElementById('anthropicStatus')
+    const anthropicStatusText = document.getElementById('anthropicStatusText')
+    const openaiStatus = document.getElementById('openaiStatus')
+    const openaiStatusText = document.getElementById('openaiStatusText')
+
+    if (apiKeys.anthropic) {
+      anthropicStatus?.classList.add('configured')
+      if (anthropicStatusText) anthropicStatusText.textContent = 'Configured'
+    } else {
+      anthropicStatus?.classList.remove('configured')
+      if (anthropicStatusText) anthropicStatusText.textContent = 'Not configured'
+    }
+
+    if (apiKeys.openai) {
+      openaiStatus?.classList.add('configured')
+      if (openaiStatusText) openaiStatusText.textContent = 'Configured'
+    } else {
+      openaiStatus?.classList.remove('configured')
+      if (openaiStatusText) openaiStatusText.textContent = 'Not configured'
+    }
+  }
+
+  document.getElementById('githubModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'githubModal') window.voide?.closeGithubModal()
+  })
+
+  document.getElementById('settingsModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'settingsModal') window.voide?.closeSettingsModal()
+  })
+
+  setInterval(updateModals, 100)
+  updateModals()
+})
+</script>

@@ -223,6 +223,8 @@ export { content as default };
               webComponentsPath,
               builtComponents,
             },
+            // Add stx options for directives that need them (like @component)
+            __stx_options: options,
           }
 
           // Execute script content to extract variables

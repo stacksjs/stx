@@ -402,10 +402,11 @@ export function processExpressions(template: string, context: Record<string, any
       // Return raw content without escaping
       return value !== undefined && value !== null ? String(value) : ''
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error)
       return createDetailedErrorMessage(
         'Expression',
-        `Error evaluating: {{{ ${expr.trim()}}}}: ${error.message || ''}`,
+        `Error evaluating: {{{ ${expr.trim()}}}}: ${msg}`,
         filePath,
         template,
         offset,
@@ -421,10 +422,11 @@ export function processExpressions(template: string, context: Record<string, any
       // Return raw content without escaping
       return value !== undefined && value !== null ? String(value) : ''
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error)
       return createDetailedErrorMessage(
         'Expression',
-        `Error evaluating: {!! ${expr.trim()} !!}: ${error.message || ''}`,
+        `Error evaluating: {!! ${expr.trim()} !!}: ${msg}`,
         filePath,
         template,
         offset,
@@ -440,10 +442,11 @@ export function processExpressions(template: string, context: Record<string, any
       // Escape HTML for security
       return value !== undefined && value !== null ? escapeHtml(String(value)) : ''
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error)
       return createDetailedErrorMessage(
         'Expression',
-        `Error evaluating: {{ ${expr.trim()} }}: ${error.message || ''}`,
+        `Error evaluating: {{ ${expr.trim()} }}: ${msg}`,
         filePath,
         template,
         offset,
@@ -557,8 +560,9 @@ export function applyFilters(value: any, filterExpression: string, context: Reco
     try {
       result = filterFn(result, context, ...params)
     }
-    catch (error: any) {
-      throw new Error(`Error applying filter '${filterName}': ${error.message}`)
+    catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error)
+      throw new Error(`Error applying filter '${filterName}': ${msg}`)
     }
 
     // If there's more to process, the next character should be a pipe
@@ -735,7 +739,7 @@ export function evaluateExpression(expression: string, context: Record<string, a
       return safeEvaluate(trimmedExpr, context)
     }
   }
-  catch (error: any) {
+  catch (error: unknown) {
     if (!silent) {
       console.error(`Error evaluating expression: ${expression}`, error)
     }

@@ -227,10 +227,11 @@ export async function processIncludes(
       }
       return ''
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
       return createDetailedErrorMessage(
         'Include',
-        `Error evaluating @includeWhen condition: ${error.message}`,
+        `Error evaluating @includeWhen condition: ${errorMessage}`,
         filePath,
         template,
         offset,
@@ -263,10 +264,11 @@ export async function processIncludes(
       }
       return ''
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
       return createDetailedErrorMessage(
         'Include',
-        `Error evaluating @includeUnless condition: ${error.message}`,
+        `Error evaluating @includeUnless condition: ${errorMessage}`,
         filePath,
         template,
         offset,
@@ -296,14 +298,15 @@ export async function processIncludes(
         try {
           localVars = safeEvaluateObject(varsString, context)
         }
-        catch (error: any) {
+        catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
           // In production, use fallback; in debug mode, show error
           if (options.debug) {
             output = output.replace(
               fullMatch,
               createDetailedErrorMessage(
                 'Include',
-                `Error parsing includeFirst variables: ${error.message}`,
+                `Error parsing includeFirst variables: ${errorMessage}`,
                 filePath,
                 template,
                 matchOffset,
@@ -364,12 +367,13 @@ export async function processIncludes(
         }
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
       output = output.replace(
         fullMatch,
         createDetailedErrorMessage(
           'Include',
-          `Error processing @includeFirst: ${error.message}`,
+          `Error processing @includeFirst: ${errorMessage}`,
           filePath,
           template,
           matchOffset,
@@ -491,10 +495,11 @@ export async function processIncludes(
           // Cache for future use
           partialsCache.set(includeFilePath, partialContent)
         }
-        catch (error: any) {
+        catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
           return createDetailedErrorMessage(
             'Include',
-            `Error loading include file ${includePath}: ${error.message}`,
+            `Error loading include file ${includePath}: ${errorMessage}`,
             filePath,
             templateStr,
             offsetPos,
@@ -529,10 +534,11 @@ export async function processIncludes(
 
       return processedContent
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
       return createDetailedErrorMessage(
         'Include',
-        `Error processing include ${includePath}: ${error.message}`,
+        `Error processing include ${includePath}: ${errorMessage}`,
         filePath,
         templateStr,
         offsetPos,
@@ -556,12 +562,13 @@ export async function processIncludes(
       try {
         localVars = safeEvaluateObject(varsString, context)
       }
-      catch (error: any) {
+      catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
         output = output.replace(
           fullMatch,
           createDetailedErrorMessage(
             'Include',
-            `Error parsing include variables for ${includePath}: ${error.message}`,
+            `Error parsing include variables for ${includePath}: ${errorMessage}`,
             filePath,
             template,
             matchOffset,

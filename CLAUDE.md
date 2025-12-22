@@ -271,10 +271,10 @@ This internally calls `openDevWindow()` from the desktop package, which uses Cra
 ### Implementation Location
 
 - `packages/desktop/src/window.ts` - Window management (fully implemented)
-- `packages/desktop/src/system-tray.ts` - System tray (placeholder)
-- `packages/desktop/src/modals.ts` - Modal dialogs (placeholder)
-- `packages/desktop/src/alerts.ts` - Alerts/toasts (placeholder)
-- `packages/desktop/src/components.ts` - 35 components (3 implemented)
+- `packages/desktop/src/system-tray.ts` - System tray with Craft bridge + web simulation (fully implemented)
+- `packages/desktop/src/modals.ts` - Modal dialogs with native + web fallback (fully implemented)
+- `packages/desktop/src/alerts.ts` - Toast notifications with native + web fallback (fully implemented)
+- `packages/desktop/src/components.ts` - 35+ UI components with HTML rendering (fully implemented)
 - `packages/desktop/src/types.ts` - Complete type definitions
 - `packages/desktop/test/` - Comprehensive test suite
 - `packages/desktop/examples/` - Working examples

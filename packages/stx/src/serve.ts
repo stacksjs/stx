@@ -240,13 +240,15 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
           headers: { 'Content-Type': contentType },
         })
       }
-      catch (error: any) {
+      catch (error: unknown) {
         if (onError) {
           return await onError(error, request)
         }
 
+        const msg = error instanceof Error ? error.message : String(error)
+        const stack = error instanceof Error ? error.stack : ''
         return new Response(
-          `<h1>Error</h1><pre>${error.message}\n${error.stack}</pre>`,
+          `<h1>Error</h1><pre>${msg}\n${stack}</pre>`,
           {
             status: 500,
             headers: { 'Content-Type': 'text/html' },

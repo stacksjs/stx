@@ -181,7 +181,7 @@ export const plugin: BunPlugin = {
           loader: 'html',
         }
       }
-      catch (error: any) {
+      catch (error: unknown) {
         const enhancedError = error instanceof Error
           ? error
           : new StxRuntimeError(`Plugin processing failed: ${String(error)}`, filePath)

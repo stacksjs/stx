@@ -3,7 +3,8 @@ import { resolve } from 'node:path'
 import { loadConfigWithResult } from 'bunfig'
 import { a11yDirective, screenReaderDirective } from './a11y'
 import { animationGroupDirective, motionDirective, scrollAnimateDirective, transitionDirective } from './animation'
-import { componentDirective } from './components'
+// Note: componentDirective is NOT included here because @component is handled
+// by the built-in processComponentDirectives function in process.ts
 import { markdownDirectiveHandler } from './markdown'
 import { pwaDirectives } from './pwa/directives'
 import { metaDirective, structuredDataDirective } from './seo'
@@ -32,7 +33,7 @@ export const defaultConfig: StxConfig = {
     },
     a11yDirective,
     screenReaderDirective,
-    componentDirective,
+    // Note: componentDirective removed - @component is handled by processComponentDirectives
     metaDirective,
     structuredDataDirective,
     transitionDirective,

@@ -307,9 +307,15 @@ export const componentDirective: CustomDirective = {
     }
 
     // Get component options from context or use defaults
-    const options = context.__stx_options || {}
+    const options = (context.__stx_options || {}) as { componentsDir?: string }
     const componentsDir = options.componentsDir || 'components'
     const dependencies = new Set<string>()
+
+    // Use shared processedComponents set from context to prevent infinite recursion
+    if (!context.__processedComponents) {
+      context.__processedComponents = new Set<string>()
+    }
+    const processedComponents = context.__processedComponents as Set<string>
 
     // Render the component
     try {
@@ -321,15 +327,16 @@ export const componentDirective: CustomDirective = {
         context,
         filePath,
         options,
-        undefined,
+        processedComponents,
         dependencies,
       )
 
       return rendered
     }
-    catch (error: any) {
+    catch (error: unknown) {
       console.error('Component rendering error:', error)
-      return inlineError('Component', `Error rendering component: ${error.message}`, ErrorCodes.COMPONENT_RENDER_ERROR)
+      const msg = error instanceof Error ? error.message : String(error)
+      return inlineError('Component', `Error rendering component: ${msg}`, ErrorCodes.COMPONENT_RENDER_ERROR)
     }
   },
   hasEndTag: false,
