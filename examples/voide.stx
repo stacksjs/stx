@@ -1118,7 +1118,7 @@
       </div>
       <div class="terminal-output" id="output">
         <div class="message system">
-          <div class="message-content" id="welcomeMessage">Welcome to Voide - your voice-controlled AI code assistant.
+          <div class="message-content text-red-500" id="welcomeMessage">Welcome to Voide - your voice-controlled AI code assistant.
 
 Instructions:
 1. Select your preferred AI driver above
