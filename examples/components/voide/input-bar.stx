@@ -41,28 +41,14 @@
               class="flex-1 bg-transparent text-sm text-white placeholder-slate-500 focus:outline-none resize-none min-h-[24px] max-h-[120px] leading-6"
               placeholder="Type a command or ask a question..."
               rows="1"
-              @input="
-                this.style.height = 'auto';
-                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-                if (window.voide) window.voide.message.value = this.value;
-              "
-              @keydown="
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault();
-                  window.voide?.handleTextSubmit();
-                  this.value = '';
-                  this.style.height = 'auto';
-                }
-              "
+              @input="this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; if (window.voide) window.voide.message.value = this.value;"
+              @keydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.voide?.handleTextSubmit(); this.value = ''; this.style.height = 'auto'; }"
             ></textarea>
             <button
               id="sendBtn"
               class="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-500 flex items-center justify-center hover:from-violet-600 hover:to-cyan-600 transition-all shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Send (Enter)"
-              @click="
-                window.voide?.handleTextSubmit();
-                document.getElementById('textInput').value = '';
-              "
+              @click="window.voide?.handleTextSubmit(); document.getElementById('textInput').value = '';"
             >
               <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
