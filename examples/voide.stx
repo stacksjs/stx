@@ -55,32 +55,24 @@ export const drivers = {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
-    /* Gradient background with noise */
+    /* Monokai Pro background */
     .gradient-bg {
-      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      background: #221f22;
       position: relative;
     }
-    .gradient-bg::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-      opacity: 0.03;
-      pointer-events: none;
-    }
 
-    /* Floating orbs */
+    /* Floating orbs - Monokai colors */
     .orb {
       position: absolute;
       border-radius: 50%;
       filter: blur(80px);
-      opacity: 0.3;
+      opacity: 0.15;
       animation: float 20s ease-in-out infinite;
     }
     .orb-1 {
       width: 400px;
       height: 400px;
-      background: linear-gradient(to right, #8b5cf6, #06b6d4);
+      background: linear-gradient(to right, #ab9df2, #78dce8);
       top: -100px;
       right: -100px;
       animation-delay: 0s;
@@ -88,7 +80,7 @@ export const drivers = {
     .orb-2 {
       width: 300px;
       height: 300px;
-      background: linear-gradient(to right, #ec4899, #8b5cf6);
+      background: linear-gradient(to right, #ff6188, #ab9df2);
       bottom: -50px;
       left: -50px;
       animation-delay: -10s;
@@ -127,11 +119,11 @@ export const drivers = {
   </main>
 
   <!-- Footer -->
-  <footer class="relative px-6 py-3 text-center text-xs text-slate-500 border-t border-white/5">
-    <span class="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent font-medium">{{ title }}</span>
-    <span class="mx-2">·</span>
+  <footer style="position:relative;padding:12px 24px;text-align:center;font-size:12px;color:#727072;border-top:1px solid #403e41">
+    <span style="background:linear-gradient(to right,#ab9df2,#78dce8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:500">{{ title }}</span>
+    <span style="margin:0 8px">·</span>
     <span>v{{ version }}</span>
-    <span class="mx-2">·</span>
+    <span style="margin:0 8px">·</span>
     <span>Voice AI Code Assistant</span>
   </footer>
 
@@ -282,6 +274,85 @@ export const drivers = {
           .catch(function() { return false; });
       }
 
+      function updateLastMessage(type, content) {
+        var arr = messages.value;
+        if (arr.length > 0 && arr[arr.length - 1].type === type) {
+          arr[arr.length - 1].content = content;
+          arr[arr.length - 1].updated = Date.now();
+        }
+      }
+
+      function processWithStreaming(command) {
+        return new Promise(function(resolve, reject) {
+          var fullContent = '';
+          var currentEvent = '';
+
+          fetch(config.apiBaseUrl + '/process/stream', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              command: command,
+              driver: state.currentDriver,
+              repository: state.repoPath
+            })
+          }).then(function(response) {
+            if (!response.ok) {
+              throw new Error('Stream request failed');
+            }
+
+            var reader = response.body.getReader();
+            var decoder = new TextDecoder();
+            var buffer = '';
+
+            function readChunk() {
+              reader.read().then(function(result) {
+                if (result.done) {
+                  resolve({ message: fullContent, hasChanges: false });
+                  return;
+                }
+
+                buffer += decoder.decode(result.value, { stream: true });
+                var lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (var i = 0; i < lines.length; i++) {
+                  var line = lines[i].trim();
+                  if (!line) continue;
+
+                  if (line.indexOf('event: ') === 0) {
+                    currentEvent = line.substring(7);
+                    continue;
+                  }
+
+                  if (line.indexOf('data: ') === 0) {
+                    try {
+                      var data = JSON.parse(line.substring(6));
+
+                      if (currentEvent === 'chunk' && data.text) {
+                        fullContent += data.text;
+                        updateLastMessage('assistant', fullContent);
+                      } else if (currentEvent === 'done') {
+                        resolve({ message: fullContent, hasChanges: data.hasChanges || false });
+                        return;
+                      } else if (currentEvent === 'error') {
+                        reject(new Error(data.error || 'Stream error'));
+                        return;
+                      }
+                    } catch (e) {
+                      // Ignore parse errors
+                    }
+                  }
+                }
+
+                readChunk();
+              }).catch(reject);
+            }
+
+            readChunk();
+          }).catch(reject);
+        });
+      }
+
       function processCommand(command) {
         if (!command.trim()) return;
 
@@ -298,53 +369,27 @@ export const drivers = {
         addMessage('assistant', '...');
 
         checkBackendAPI().then(function(hasBackend) {
-          var responsePromise;
-
           if (hasBackend) {
-            responsePromise = fetch(config.apiBaseUrl + '/process', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                command: command,
-                driver: state.currentDriver,
-                repository: state.repoPath
-              })
-            }).then(function(res) { return res.json(); });
+            // Use streaming endpoint
+            return processWithStreaming(command);
           } else if (state.currentDriver === 'mock') {
-            responsePromise = new Promise(function(resolve) {
+            return new Promise(function(resolve) {
               setTimeout(function() {
                 resolve({
-                  success: true,
-                  data: {
-                    message: '[Mock] Processing: "' + command + '"\n\nThis is a simulated response.',
-                    hasChanges: command.toLowerCase().indexOf('fix') !== -1
-                  }
+                  message: '[Mock] Processing: "' + command + '"\n\nThis is a simulated response.',
+                  hasChanges: command.toLowerCase().indexOf('fix') !== -1
                 });
               }, 1500);
             });
           } else {
-            responsePromise = Promise.reject(new Error('Backend API not available. Start the server at localhost:3008.'));
+            return Promise.reject(new Error('Backend API not available. Start the server at localhost:3008.'));
           }
-
-          return responsePromise;
         }).then(function(response) {
-          messages.value.pop();
-
-          // Handle both wrapped {success, data} and direct response formats
-          var data = response.data || response;
-          var message = data.message;
-
-          if (message) {
-            addMessage('assistant', message);
-            if (data.hasChanges) {
-              state.hasChanges = true;
-              addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.');
-              sendNotification('Changes Ready', 'Code changes are staged.');
-            }
-          } else if (response.error) {
-            throw new Error(response.error);
-          } else {
-            throw new Error('No response message');
+          // Streaming already updated the message, just handle completion
+          if (response.hasChanges) {
+            state.hasChanges = true;
+            addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.');
+            sendNotification('Changes Ready', 'Code changes are staged.');
           }
 
           state.terminalTitle = config.title + ' - Ready';
