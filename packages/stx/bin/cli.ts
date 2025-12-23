@@ -54,7 +54,7 @@ import process from 'node:process'
 import { CLI } from '@stacksjs/clapp'
 import { version } from '../package.json'
 import { scanA11yIssues } from '../src/a11y'
-import { serveMultipleStxFiles, serveStxFile } from '../src/dev-server'
+import { serveApp, serveMultipleStxFiles, serveStxFile } from '../src/dev-server'
 import { docsCommand } from '../src/docs'
 import { initFile } from '../src/init'
 import { plugin as stxPlugin } from '../src/plugin'
@@ -543,7 +543,7 @@ else {
     })
 
   cli
-    .command('dev <file>', 'Start a development server for an STX file')
+    .command('dev [file]', 'Start a development server for an STX app or file')
     .option('--port <port>', 'Port to use for the dev server', { default: 3000 })
     .option('--no-watch', 'Disable file watching and auto-reload')
     .option('--native', 'Open in a native desktop window using Zyte')
@@ -551,12 +551,12 @@ else {
     .option('--no-highlight', 'Disable syntax highlighting for Markdown code blocks')
     .option('--no-highlight-unknown', 'Disable syntax highlighting for unknown languages in Markdown')
     .option('--no-cache', 'Disable caching of parsed files')
+    .example('stx dev')
+    .example('stx dev --port 8080')
     .example('stx dev template.stx')
     .example('stx dev components/hero.stx --port 8080')
     .example('stx dev **/*.stx')
     .example('stx dev docs/guide.md')
-    .example('stx dev **/*.md')
-    .example('stx dev docs/guide.md --highlight-theme atom-one-dark')
     .example('stx dev template.stx --native')
     .action(async (filePattern, options) => {
       try {
@@ -586,6 +586,21 @@ else {
           },
         }
 
+        // If no file provided, use file-based routing (serveApp)
+        if (!filePattern) {
+          const success = await serveApp('.', {
+            port: options.port,
+            watch: options.watch !== false,
+            native: options.native || false,
+            cache: options.cache !== false,
+          } as DevServerOptions)
+
+          if (!success) {
+            process.exit(1)
+          }
+          return
+        }
+
         // Check if the input is a glob pattern
         if (isGlob(filePattern)) {
           console.log(`Expanding glob pattern: ${filePattern}`)
@@ -603,8 +618,8 @@ else {
               : files.filter(file => file.endsWith('.stx') || file.endsWith('.md'))
 
           if (supportedFiles.length === 0) {
-            console.error(`❌ No STX or Markdown files found matching pattern: ${filePattern}`)
-            console.error(`💡 Try using patterns like '*.stx' or 'components/**/*.stx'`)
+            console.error(`No STX or Markdown files found matching pattern: ${filePattern}`)
+            console.error(`Try using patterns like '*.stx' or 'components/**/*.stx'`)
             process.exit(1)
           }
 

@@ -1,25 +1,23 @@
-<script>
-// Server-side: Static data available at build time
-export const title = 'Voide'
-export const version = '1.0.0'
-export const apiBaseUrl = 'http://localhost:3008/voide'
 
-export const drivers = {
-  'claude-cli-local': { name: 'Claude CLI (Local)', requiresKey: null },
-  'claude-cli-ec2': { name: 'Claude CLI (EC2)', requiresKey: 'BUDDY_EC2_HOST' },
-  'claude': { name: 'Claude API', requiresKey: 'ANTHROPIC_API_KEY' },
-  'openai': { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
-  'ollama': { name: 'Ollama', requiresKey: null },
-  'mock': { name: 'Mock', requiresKey: null }
-}
-</script>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+<!-- stx SEO Tags -->
+<meta name="title" content="Voide">
+<meta name="description" content="A website built with stx templating engine">
+<meta property="og:title" content="Voide">
+<meta property="og:description" content="A website built with stx templating engine">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Voide">
+<meta name="twitter:description" content="A website built with stx templating engine">
+
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>{{ title }} - Voice AI Code Assistant</title>
+  <title>Voide - Voice AI Code Assistant</title>
 
   <style>
     /* Custom animations */
@@ -88,7 +86,92 @@ export const drivers = {
   </style>
 
   <!-- Load Headwind CSS -->
-  <script>
+  
+</head>
+<body class="gradient-bg flex flex-col h-screen text-white overflow-hidden">
+  <!-- Floating orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- Header -->
+  
+[1m[31m╭──────────────────────────────────────────────────────────────╮[0m
+[1m[31m│[0m [1m[41m ERROR [0m [31mInclude Error[0m                                    [1m[31m│[0m
+[1m[31m╰──────────────────────────────────────────────────────────────╯[0m
+
+[36m[1mFile:[0m [2mindex.stx[0m [90m(line 85)[0m
+[33m[1mMessage:[0m Could not resolve path for include: ../components/voide/header
+
+[34m[1mContext:[0m
+[2m  83: 
+  84:   <!-- Header -->
+> 85:   
+[1m[31m╭──────────────────────────────────────────────────────────────╮[0m
+[1m[31m│[0m [1m[41m ERROR [0m [31mInclude Error[0m                                    [1m[31m│[0m
+[1m[31m╰──────────────────────────────────────────────────────────────╯[0m
+
+[36m[1mFile:[0m [2mindex.stx[0m [90m(line 98)[0m
+[33m[1mMessage:[0m Could not resolve path for include: ../components/voide/header
+
+[34m[1mContext:[0m
+[2m  96:   <!-- Footer -->
+  97:   <footer style="position:relative;padding:12px 24px;text-align:center;font-size:12px;color:#727072;border-top:1px solid #403e41">
+> 98:     <span style="background:linear-gradient(to right,#ab9df2,#78dce8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:500">Voide</span>
+  99:     <span style="margin:0 8px">·</span>
+  100:     <span>v1.0.0</span>[0m
+
+  86: 
+  87:   <!-- Main Content -->[0m
+
+
+  <!-- Main Content -->
+  <main class="relative flex-1 flex flex-col p-6 gap-5 overflow-hidden">
+    <!-- Terminal -->
+    
+[1m[31m╭──────────────────────────────────────────────────────────────╮[0m
+[1m[31m│[0m [1m[41m ERROR [0m [31mInclude Error[0m                                    [1m[31m│[0m
+[1m[31m╰──────────────────────────────────────────────────────────────╯[0m
+
+[36m[1mFile:[0m [2mindex.stx[0m
+[33m[1mMessage:[0m Could not resolve path for include: ../components/voide/terminal
+
+
+    <!-- Input Bar -->
+    
+[1m[31m╭──────────────────────────────────────────────────────────────╮[0m
+[1m[31m│[0m [1m[41m ERROR [0m [31mInclude Error[0m                                    [1m[31m│[0m
+[1m[31m╰──────────────────────────────────────────────────────────────╯[0m
+
+[36m[1mFile:[0m [2mindex.stx[0m
+[33m[1mMessage:[0m Could not resolve path for include: ../components/voide/input-bar
+
+  </main>
+
+  <!-- Footer -->
+  <footer style="position:relative;padding:12px 24px;text-align:center;font-size:12px;color:#727072;border-top:1px solid #403e41">
+    <span style="background:linear-gradient(to right,#ab9df2,#78dce8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:500">Voide</span>
+    <span style="margin:0 8px">·</span>
+    <span>v1.0.0</span>
+    <span style="margin:0 8px">·</span>
+    <span>Voice AI Code Assistant</span>
+  </footer>
+
+  <!-- Modals -->
+  
+[1m[31m╭──────────────────────────────────────────────────────────────╮[0m
+[1m[31m│[0m [1m[41m ERROR [0m [31mInclude Error[0m                                    [1m[31m│[0m
+[1m[31m╰──────────────────────────────────────────────────────────────╯[0m
+
+[36m[1mFile:[0m [2mindex.stx[0m
+[33m[1mMessage:[0m Could not resolve path for include: ../components/voide/modals
+
+
+  <!-- Craft Native Bridge -->
+  
+
+  <!-- Voide Client Runtime (Plain JS - No ES Modules) -->
+  
+<script>
     // Dynamically load Headwind CSS to bypass bundler
     (function() {
       var link = document.createElement('link');
@@ -100,38 +183,7 @@ export const drivers = {
       document.write('<style>body{visibility:hidden}</style>');
     })();
   </script>
-</head>
-<body class="gradient-bg flex flex-col h-screen text-white overflow-hidden">
-  <!-- Floating orbs -->
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-
-  <!-- Header -->
-  @include('./components/voide/header', { title })
-
-  <!-- Main Content -->
-  <main class="relative flex-1 flex flex-col p-6 gap-5 overflow-hidden">
-    <!-- Terminal -->
-    @include('./components/voide/terminal')
-
-    <!-- Input Bar -->
-    @include('./components/voide/input-bar')
-  </main>
-
-  <!-- Footer -->
-  <footer style="position:relative;padding:12px 24px;text-align:center;font-size:12px;color:#727072;border-top:1px solid #403e41">
-    <span style="background:linear-gradient(to right,#ab9df2,#78dce8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:500">{{ title }}</span>
-    <span style="margin:0 8px">·</span>
-    <span>v{{ version }}</span>
-    <span style="margin:0 8px">·</span>
-    <span>Voice AI Code Assistant</span>
-  </footer>
-
-  <!-- Modals -->
-  @include('./components/voide/modals')
-
-  <!-- Craft Native Bridge -->
-  <script>
+<script>
     (function() {
       if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.craftBridge) {
         window.craft = {
@@ -174,9 +226,7 @@ export const drivers = {
       }
     })();
   </script>
-
-  <!-- Voide Client Runtime (Plain JS - No ES Modules) -->
-  <script>
+<script>
     (function() {
       'use strict';
 

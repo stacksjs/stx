@@ -1491,3 +1491,335 @@ function findCommonDir(paths: string[]): string {
   // Join the common parts back into a path
   return commonParts.join(path.sep)
 }
+
+// Import file-based router
+import { createRouter, matchRoute, formatRoutes } from './router'
+import type { Route, RouteMatch } from './router'
+
+// Interface for built page content
+interface BuiltPage {
+  route: Route
+  content: string
+}
+
+/**
+ * Serve a full STX application with file-based routing
+ *
+ * Directory structure:
+ *   pages/
+ *     index.stx       → /
+ *     about.stx       → /about
+ *     chat/
+ *       index.stx     → /chat
+ *       [id].stx      → /chat/:id (dynamic route)
+ *   components/       → Shared components
+ *   public/           → Static assets
+ */
+export async function serveApp(appDir: string = '.', options: DevServerOptions = {}): Promise<boolean> {
+  const port = options.port || 3000
+  const watch = options.watch !== false
+  const hotReload = options.hotReload !== false && watch
+
+  let hmrServer: ReturnType<typeof getHmrServer> | null = null
+  let actualHmrPort = options.hmrPort || port + 1
+
+  // Resolve app directory
+  const absoluteAppDir = path.resolve(appDir)
+  const pagesDir = path.join(absoluteAppDir, 'pages')
+
+  // Check if pages directory exists
+  if (!fs.existsSync(pagesDir)) {
+    console.error(`${colors.red}Error: No 'pages' directory found in ${colors.bright}${absoluteAppDir}${colors.reset}`)
+    console.log(`${colors.dim}Create a pages/ directory with .stx files to define your routes.${colors.reset}`)
+    console.log(`${colors.dim}Example: pages/index.stx for the homepage.${colors.reset}`)
+    return false
+  }
+
+  // Create router from pages directory
+  const routes = createRouter(absoluteAppDir)
+
+  if (routes.length === 0) {
+    console.error(`${colors.red}Error: No page files found in ${colors.bright}${pagesDir}${colors.reset}`)
+    return false
+  }
+
+  console.log(`${colors.blue}Found ${colors.bright}${routes.length}${colors.blue} routes${colors.reset}`)
+
+  // Create output directory
+  const outputDir = path.join(absoluteAppDir, '.stx/output')
+  fs.mkdirSync(outputDir, { recursive: true })
+
+  // Built pages cache
+  const builtPages: Map<string, BuiltPage> = new Map()
+
+  // Build a single page file
+  const buildPage = async (route: Route): Promise<BuiltPage | null> => {
+    try {
+      // Plugin to handle public asset paths
+      const publicAssetsPlugin: BunPlugin = {
+        name: 'public-assets',
+        setup(build) {
+          build.onResolve({ filter: /^\/(images|fonts|assets|public|dist)\// }, (args) => {
+            return { path: args.path, external: true }
+          })
+        },
+      }
+
+      const result = await Bun.build({
+        entrypoints: [route.filePath],
+        outdir: outputDir,
+        plugins: [publicAssetsPlugin, stxPlugin],
+        publicPath: '/',
+        define: {
+          'process.env.NODE_ENV': '"development"',
+        },
+        ...options.stxOptions,
+      })
+
+      if (!result.success) {
+        console.error(`${colors.red}Build failed for ${colors.bright}${route.pattern}${colors.reset}:`, result.logs)
+        return null
+      }
+
+      const htmlOutput = result.outputs.find(o => o.path.endsWith('.html'))
+      if (!htmlOutput) {
+        console.error(`${colors.red}No HTML output for ${colors.bright}${route.pattern}${colors.reset}`)
+        return null
+      }
+
+      const content = await Bun.file(htmlOutput.path).text()
+      return { route, content }
+    } catch (error) {
+      console.error(`${colors.red}Error building ${colors.bright}${route.pattern}${colors.reset}:`, error)
+      return null
+    }
+  }
+
+  // Build all pages
+  const buildAllPages = async (): Promise<boolean> => {
+    builtPages.clear()
+
+    for (const route of routes) {
+      const built = await buildPage(route)
+      if (built) {
+        builtPages.set(route.pattern, built)
+      }
+    }
+
+    return builtPages.size > 0
+  }
+
+  // Initial build
+  console.log(`${colors.blue}Building pages...${colors.reset}`)
+  const buildSuccess = await buildAllPages()
+  if (!buildSuccess) {
+    console.error(`${colors.red}No pages were successfully built${colors.reset}`)
+    return false
+  }
+
+  // Build Headwind CSS if config exists
+  await buildHeadwindCSS(absoluteAppDir)
+
+  // Find available port
+  let actualPort = port
+  try {
+    actualPort = await findAvailablePort(port)
+    if (actualPort !== port) {
+      console.log(`${colors.yellow}Port ${port} is busy, using port ${actualPort} instead${colors.reset}`)
+    }
+  } catch {
+    console.error(`${colors.red}Could not find an available port${colors.reset}`)
+    return false
+  }
+
+  // Start HMR server
+  if (hotReload) {
+    const desiredHmrPort = options.hmrPort || actualPort + 1
+    hmrServer = getHmrServer({ wsPort: desiredHmrPort, verbose: false })
+    actualHmrPort = hmrServer.start(desiredHmrPort)
+  }
+
+  // Inject route params into HTML content
+  const injectRouteParams = (content: string, params: Record<string, string>): string => {
+    // Inject as a script tag that sets window.__STX_ROUTE_PARAMS__
+    const paramsScript = `<script>window.__STX_ROUTE_PARAMS__ = ${JSON.stringify(params)};</script>`
+    // Insert before closing </head> or at start of <body>
+    if (content.includes('</head>')) {
+      return content.replace('</head>', `${paramsScript}</head>`)
+    }
+    if (content.includes('<body')) {
+      return content.replace(/<body([^>]*)>/, `<body$1>${paramsScript}`)
+    }
+    return paramsScript + content
+  }
+
+  // Start server
+  console.log(`${colors.blue}Starting server...${colors.reset}`)
+  const server = serve({
+    port: actualPort,
+    async fetch(request) {
+      const url = new URL(request.url)
+
+      // Handle API routes
+      const apiResponse = await handleAgenticApi(request)
+      if (apiResponse) return apiResponse
+
+      // Serve static files from public/
+      const publicPath = path.join(absoluteAppDir, 'public', url.pathname)
+      if (fs.existsSync(publicPath) && fs.statSync(publicPath).isFile()) {
+        return serveStaticFile(publicPath)
+      }
+
+      // Serve static files from dist/ (for Headwind CSS etc.)
+      const distPath = path.join(absoluteAppDir, url.pathname)
+      if (fs.existsSync(distPath) && fs.statSync(distPath).isFile()) {
+        return serveStaticFile(distPath)
+      }
+
+      // Serve files from output directory
+      const outputPath = path.join(outputDir, url.pathname)
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).isFile()) {
+        return serveStaticFile(outputPath)
+      }
+
+      // Match route
+      const routeMatch = matchRoute(url.pathname, routes)
+
+      if (routeMatch) {
+        const builtPage = builtPages.get(routeMatch.route.pattern)
+        if (builtPage) {
+          let content = builtPage.content
+
+          // Inject route params for dynamic routes
+          if (Object.keys(routeMatch.params).length > 0) {
+            content = injectRouteParams(content, routeMatch.params)
+          }
+
+          // Inject Headwind CSS
+          content = await injectHeadwindCSS(content)
+
+          // Inject HMR client
+          if (hotReload) {
+            content = injectHotReload(content, actualHmrPort)
+          }
+
+          return new Response(content, {
+            headers: { 'Content-Type': 'text/html' },
+          })
+        }
+      }
+
+      // SPA fallback: serve index page for unmatched routes
+      const indexPage = builtPages.get('/')
+      if (indexPage) {
+        let content = indexPage.content
+        content = await injectHeadwindCSS(content)
+        if (hotReload) {
+          content = injectHotReload(content, actualHmrPort)
+        }
+        return new Response(content, {
+          headers: { 'Content-Type': 'text/html' },
+        })
+      }
+
+      return new Response('Not Found', { status: 404 })
+    },
+    error(error) {
+      return new Response(`<pre>${error}\n${error.stack}</pre>`, {
+        headers: { 'Content-Type': 'text/html' },
+      })
+    },
+  })
+
+  // Print output
+  console.clear()
+  console.log(`\n${colors.blue}stx${colors.reset}  ${colors.green}${process.env.stx_VERSION || 'v0.0.10'}${colors.reset}  ${colors.dim}ready in ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0} ms${colors.reset}`)
+  console.log(`\n${colors.bright}→  ${colors.cyan}http://localhost:${actualPort}/${colors.reset}`)
+  if (hotReload) {
+    console.log(`${colors.dim}   HMR: ws://localhost:${actualHmrPort}${colors.reset}`)
+  }
+
+  // Print routes
+  console.log(`\n${colors.yellow}Routes:${colors.reset}`)
+  const routeStrings = formatRoutes(routes, absoluteAppDir)
+  routeStrings.forEach((str, i) => {
+    const isLast = i === routeStrings.length - 1
+    const prefix = isLast ? '└─ ' : '├─ '
+    console.log(`  ${colors.green}${prefix}${colors.reset}${str}`)
+  })
+
+  console.log(`\nPress ${colors.cyan}h${colors.reset} + ${colors.cyan}Enter${colors.reset} to show shortcuts`)
+
+  // Set up keyboard shortcuts
+  setupKeyboardShortcuts(server.url.toString(), () => {
+    if (hmrServer) stopHmrServer()
+    server.stop()
+  })
+
+  // Open native window if requested
+  if (options.native) {
+    await openNativeWindow(actualPort)
+  }
+
+  // File watching
+  if (watch) {
+    console.log(`${colors.blue}Watching for changes...${colors.reset}`)
+
+    const watcher = fs.watch(absoluteAppDir, { recursive: true }, async (eventType, filename) => {
+      if (!filename || shouldIgnoreFile(filename)) return
+
+      if (shouldReloadOnChange(filename)) {
+        console.log(`${colors.yellow}${filename} changed, rebuilding...${colors.reset}`)
+        partialsCache.clear()
+        await buildAllPages()
+        await rebuildHeadwindCSS(absoluteAppDir)
+
+        if (hotReload && hmrServer) {
+          hmrServer.reload(filename)
+        }
+      } else if (isCssOnlyChange(filename)) {
+        console.log(`${colors.cyan}CSS ${filename} changed${colors.reset}`)
+        if (hotReload && hmrServer) {
+          hmrServer.updateCss(filename)
+        }
+      }
+    })
+
+    process.on('SIGINT', () => {
+      watcher.close()
+      if (hmrServer) stopHmrServer()
+      server.stop()
+      process.exit(0)
+    })
+  }
+
+  return true
+}
+
+// Helper to serve static files with proper content types
+function serveStaticFile(filePath: string): Response {
+  const file = Bun.file(filePath)
+  const ext = path.extname(filePath).toLowerCase()
+
+  const contentTypes: Record<string, string> = {
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.js': 'text/javascript',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.otf': 'font/otf',
+    '.eot': 'application/vnd.ms-fontobject',
+  }
+
+  return new Response(file, {
+    headers: { 'Content-Type': contentTypes[ext] || 'application/octet-stream' },
+  })
+}

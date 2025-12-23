@@ -107,15 +107,15 @@ export const drivers = {
   <div class="orb orb-2"></div>
 
   <!-- Header -->
-  @include('./components/voide/header', { title })
+  @include('../components/voide/header', { title })
 
   <!-- Main Content -->
   <main class="relative flex-1 flex flex-col p-6 gap-5 overflow-hidden">
     <!-- Terminal -->
-    @include('./components/voide/terminal')
+    @include('../components/voide/terminal')
 
     <!-- Input Bar -->
-    @include('./components/voide/input-bar')
+    @include('../components/voide/input-bar')
   </main>
 
   <!-- Footer -->
@@ -128,7 +128,7 @@ export const drivers = {
   </footer>
 
   <!-- Modals -->
-  @include('./components/voide/modals')
+  @include('../components/voide/modals')
 
   <!-- Craft Native Bridge -->
   <script>
