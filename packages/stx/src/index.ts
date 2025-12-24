@@ -55,5 +55,8 @@ export * from './web-components'
 // Client-side modules (for browser)
 export * from './client'
 
+// Composables (Nuxt-style browser API utilities)
+export * from './composables'
+
 // Default export for the stx module
 export default {}
