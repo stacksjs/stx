@@ -297,6 +297,7 @@ export function createStore<T extends object>(
  */
 export * from './app'
 export { createStore } from '../store'
+export * from '../composables'
 `,
 
   'lib/stores/app.ts': `/**
