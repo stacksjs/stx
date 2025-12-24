@@ -292,6 +292,124 @@ export function createStore<T extends object>(
 }
 `,
 
+  'lib/composables/index.ts': `/**
+ * Composables - Browser API utilities (Nuxt-style)
+ */
+export * from './use-storage'
+export * from './use-cookie'
+`,
+
+  'lib/composables/use-storage.ts': `/**
+ * useStorage - Reactive localStorage/sessionStorage wrapper
+ */
+export interface StorageOptions<T> {
+  defaultValue?: T
+  serializer?: {
+    read: (raw: string) => T
+    write: (value: T) => string
+  }
+}
+
+export function useStorage<T>(
+  key: string,
+  storage: Storage = localStorage,
+  options: StorageOptions<T> = {}
+) {
+  const { defaultValue, serializer = { read: JSON.parse, write: JSON.stringify } } = options
+  let listeners: Array<(value: T | undefined) => void> = []
+
+  const get = (): T | undefined => {
+    try {
+      const raw = storage.getItem(key)
+      return raw !== null ? serializer.read(raw) : defaultValue
+    } catch {
+      return defaultValue
+    }
+  }
+
+  const set = (value: T): void => {
+    try {
+      storage.setItem(key, serializer.write(value))
+      listeners.forEach(fn => fn(value))
+    } catch (e) {
+      console.error('[useStorage] Failed to set:', e)
+    }
+  }
+
+  const remove = (): void => {
+    storage.removeItem(key)
+    listeners.forEach(fn => fn(undefined))
+  }
+
+  const subscribe = (fn: (value: T | undefined) => void) => {
+    listeners.push(fn)
+    fn(get())
+    return () => { listeners = listeners.filter(l => l !== fn) }
+  }
+
+  return { get, set, remove, subscribe }
+}
+
+export const useLocalStorage = <T>(key: string, options?: StorageOptions<T>) =>
+  useStorage<T>(key, localStorage, options)
+
+export const useSessionStorage = <T>(key: string, options?: StorageOptions<T>) =>
+  useStorage<T>(key, sessionStorage, options)
+`,
+
+  'lib/composables/use-cookie.ts': `/**
+ * useCookie - Cookie management utility
+ */
+export interface CookieOptions {
+  expires?: number | Date
+  path?: string
+  domain?: string
+  secure?: boolean
+  sameSite?: 'Strict' | 'Lax' | 'None'
+}
+
+export function getCookie(name: string): string | undefined {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+  return match ? decodeURIComponent(match[2]) : undefined
+}
+
+export function setCookie(name: string, value: string, options: CookieOptions = {}): void {
+  let cookie = encodeURIComponent(name) + '=' + encodeURIComponent(value)
+  if (options.expires) {
+    const date = options.expires instanceof Date
+      ? options.expires
+      : new Date(Date.now() + options.expires * 864e5)
+    cookie += '; expires=' + date.toUTCString()
+  }
+  if (options.path) cookie += '; path=' + options.path
+  if (options.domain) cookie += '; domain=' + options.domain
+  if (options.secure) cookie += '; secure'
+  if (options.sameSite) cookie += '; samesite=' + options.sameSite
+  document.cookie = cookie
+}
+
+export function removeCookie(name: string, options: CookieOptions = {}): void {
+  setCookie(name, '', { ...options, expires: -1 })
+}
+
+export function useCookie<T = string>(name: string, options: CookieOptions = {}) {
+  const serialize = (val: T): string =>
+    typeof val === 'string' ? val : JSON.stringify(val)
+  const deserialize = (raw: string): T => {
+    try { return JSON.parse(raw) as T } catch { return raw as T }
+  }
+
+  return {
+    get: (): T | undefined => {
+      const raw = getCookie(name)
+      return raw !== undefined ? deserialize(raw) : undefined
+    },
+    set: (value: T) => setCookie(name, serialize(value), options),
+    remove: () => removeCookie(name, options)
+  }
+}
+`,
+
   'lib/stores/index.ts': `/**
  * Stores - Central export
  */
