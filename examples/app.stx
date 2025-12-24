@@ -4,83 +4,110 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>stx Component Demo</title>
-  <script>
-    module.exports = {
-      title: "stx Component Demo",
-      card1: {
-        title: "Getting Started",
-        subtitle: "Your first steps with stx",
-        content: "stx is a powerful templating engine for Bun.",
-        variant: "primary"
-      },
-      card2: {
-        title: "Components",
-        content: "Components in stx are reusable templates.",
-        variant: "info"
-      }
-    };
-  </script>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-    .card {
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-    }
-    .card.primary {
-      border-top: 3px solid blue;
-    }
-    .card.info {
-      border-top: 3px solid teal;
-    }
-  </style>
+  <link rel="stylesheet" href="/dist/voide.css">
 </head>
-<body>
-  <header>
-    <h1>{{ title }}</h1>
-    <p>This demo shows how to use components in stx</p>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+
+<script>
+const title = "stx Component Demo"
+const card1 = {
+  title: "Getting Started",
+  subtitle: "Your first steps with stx",
+  content: "stx is a powerful templating engine for Bun that combines Laravel Blade-like syntax with modern JavaScript.",
+  icon: "🚀",
+  gradient: "from-violet-500 to-cyan-500"
+}
+const card2 = {
+  title: "Components",
+  subtitle: "Build reusable UI",
+  content: "Components in stx are reusable templates that can receive props, slots, and maintain their own state.",
+  icon: "🧩",
+  gradient: "from-emerald-500 to-teal-500"
+}
+</script>
+
+<!-- Background Effects -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none">
+  <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl"></div>
+  <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
+</div>
+
+<div class="relative max-w-4xl mx-auto px-6 py-12">
+  <!-- Header -->
+  <header class="text-center mb-12">
+    <div class="inline-flex items-center gap-3 mb-4">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+        <span class="text-3xl">📦</span>
+      </div>
+    </div>
+    <h1 class="text-4xl font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent mb-3">
+      {{ title }}
+    </h1>
+    <p class="text-slate-400 text-lg">Learn how to use components in stx</p>
   </header>
 
-  <h2>Card Components</h2>
+  <!-- Cards Section -->
+  <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+    <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-sm">🃏</span>
+    Card Components
+  </h2>
 
-  <div class="grid">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
     <!-- Card 1 -->
-    <div class="card {{ card1.variant }}">
-      <div class="card-header">
-        <h3>{{ card1.title }}</h3>
-        @if(card1.subtitle)
-          <h4>{{ card1.subtitle }}</h4>
-        @endif
-      </div>
-
-      <div class="card-body">
-        {{ card1.content }}
+    <div class="relative group">
+      <div class="absolute -inset-1 bg-gradient-to-r {{ card1.gradient }} rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity"></div>
+      <div class="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:border-violet-500/50 transition-all">
+        <div class="h-2 bg-gradient-to-r {{ card1.gradient }}"></div>
+        <div class="p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br {{ card1.gradient }} flex items-center justify-center shadow-lg">
+              <span class="text-xl">{{ card1.icon }}</span>
+            </div>
+            <div>
+              <h3 class="text-xl font-semibold text-white">{{ card1.title }}</h3>
+              @if(card1.subtitle)
+                <p class="text-sm text-slate-400">{{ card1.subtitle }}</p>
+              @endif
+            </div>
+          </div>
+          <p class="text-slate-300 leading-relaxed">{{ card1.content }}</p>
+        </div>
       </div>
     </div>
 
     <!-- Card 2 -->
-    <div class="card {{ card2.variant }}">
-      <div class="card-header">
-        <h3>{{ card2.title }}</h3>
-        @if(card2.subtitle)
-          <h4>{{ card2.subtitle }}</h4>
-        @endif
-      </div>
-
-      <div class="card-body">
-        {{ card2.content }}
+    <div class="relative group">
+      <div class="absolute -inset-1 bg-gradient-to-r {{ card2.gradient }} rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity"></div>
+      <div class="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:border-emerald-500/50 transition-all">
+        <div class="h-2 bg-gradient-to-r {{ card2.gradient }}"></div>
+        <div class="p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br {{ card2.gradient }} flex items-center justify-center shadow-lg">
+              <span class="text-xl">{{ card2.icon }}</span>
+            </div>
+            <div>
+              <h3 class="text-xl font-semibold text-white">{{ card2.title }}</h3>
+              @if(card2.subtitle)
+                <p class="text-sm text-slate-400">{{ card2.subtitle }}</p>
+              @endif
+            </div>
+          </div>
+          <p class="text-slate-300 leading-relaxed">{{ card2.content }}</p>
+        </div>
       </div>
     </div>
   </div>
 
-  <footer>
-    <p>&copy; 2023 stx Components Demo</p>
+  <!-- Footer -->
+  <footer class="text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/50 border border-white/10 rounded-xl text-sm text-slate-400">
+      <span>©</span>
+      <span>2024</span>
+      <span class="text-violet-400">stx</span>
+      <span>Components Demo</span>
+    </div>
   </footer>
+</div>
+
 </body>
 </html>

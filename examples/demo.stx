@@ -4,218 +4,173 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>stx Demo</title>
-  <script>
-    module.exports = {
-      title: "stx Interactive Demo",
-      description: "A powerful templating engine for Bun",
-      features: [
-        { name: "Templates", description: "Write HTML with powerful templating syntax" },
-        { name: "Directives", description: "Use @if, @foreach, and other directives" },
-        { name: "Components", description: "Build reusable components" },
-        { name: "Streaming", description: "Support for streaming rendering" }
-      ],
-      user: {
-        name: "Demo User",
-        isLoggedIn: true,
-        role: "Developer"
-      },
-      theme: "light",
-      count: 0
-    };
-  </script>
-  <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      line-height: 1.5;
-      padding: 2rem;
-      max-width: 800px;
-      margin: 0 auto;
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    .dark {
-      background-color: #1a1a1a;
-      color: #f5f5f5;
-    }
-
-    .light {
-      background-color: #f5f5f5;
-      color: #1a1a1a;
-    }
-
-    header {
-      margin-bottom: 2rem;
-    }
-
-    h1 {
-      margin-bottom: 0.5rem;
-    }
-
-    .user-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-      padding: 1rem;
-      border-radius: 8px;
-    }
-
-    .dark .user-bar {
-      background-color: #333;
-    }
-
-    .light .user-bar {
-      background-color: #e0e0e0;
-    }
-
-    .feature-card {
-      border-radius: 8px;
-      padding: 1.5rem;
-      margin-bottom: 1rem;
-      transition: transform 0.2s;
-      cursor: pointer;
-    }
-
-    .feature-card:hover {
-      transform: translateY(-5px);
-    }
-
-    .dark .feature-card {
-      background-color: #333;
-    }
-
-    .light .feature-card {
-      background-color: #e0e0e0;
-    }
-
-    .counter {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin: 2rem 0;
-    }
-
-    button {
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .dark button {
-      background-color: #555;
-      color: white;
-    }
-
-    .light button {
-      background-color: #ddd;
-      color: black;
-    }
-
-    #count-display {
-      font-size: 1.5rem;
-      font-weight: bold;
-      min-width: 3rem;
-      text-align: center;
-    }
-
-    .theme-toggle {
-      cursor: pointer;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-    }
-
-    .dark .theme-toggle {
-      background-color: #555;
-    }
-
-    .light .theme-toggle {
-      background-color: #ddd;
-    }
-  </style>
+  <link rel="stylesheet" href="/dist/voide.css">
 </head>
-<body class="{{ theme }}">
-  <header>
-    <h1>{{ title }}</h1>
-    <p>{{ description }}</p>
+<body class="min-h-screen bg-slate-900 text-white transition-colors duration-300" id="app-body">
+
+<script>
+const title = "stx Interactive Demo"
+const description = "A powerful templating engine for Bun"
+const features = [
+  { name: "Templates", icon: "📄", description: "Write HTML with powerful templating syntax", color: "violet" },
+  { name: "Directives", icon: "⚡", description: "Use @if, @foreach, and other directives", color: "cyan" },
+  { name: "Components", icon: "🧩", description: "Build reusable components", color: "emerald" },
+  { name: "Streaming", icon: "🌊", description: "Support for streaming rendering", color: "rose" }
+]
+const user = {
+  name: "Demo User",
+  isLoggedIn: true,
+  role: "Developer"
+}
+const theme = "dark"
+const count = 0
+</script>
+
+<!-- Background Effects -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none">
+  <div class="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl"></div>
+  <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
+</div>
+
+<div class="relative max-w-4xl mx-auto px-6 py-12">
+  <!-- Header -->
+  <header class="text-center mb-12">
+    <div class="inline-flex items-center gap-3 mb-4">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+        <span class="text-3xl">🚀</span>
+      </div>
+    </div>
+    <h1 class="text-4xl font-bold bg-gradient-to-r from-violet-400 via-cyan-400 to-violet-400 bg-clip-text text-transparent mb-3">
+      {{ title }}
+    </h1>
+    <p class="text-slate-400 text-lg">{{ description }}</p>
   </header>
 
-  <div class="user-bar">
-    @if(user.isLoggedIn)
-      <div class="welcome">👋 Welcome back, {{ user.name }} ({{ user.role }})</div>
-    @else
-      <div class="welcome">👋 Welcome, Guest</div>
-    @endif
+  <!-- User Bar -->
+  <div class="relative group mb-10">
+    <div class="absolute -inset-1 bg-gradient-to-r from-violet-600/20 to-cyan-600/20 rounded-2xl blur-xl opacity-50"></div>
+    <div class="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        @if(user.isLoggedIn)
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+            <span class="text-lg">👋</span>
+          </div>
+          <div>
+            <p class="text-white font-medium">Welcome back, {{ user.name }}</p>
+            <p class="text-sm text-slate-400">{{ user.role }}</p>
+          </div>
+        @else
+          <div class="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center">
+            <span class="text-lg">👋</span>
+          </div>
+          <p class="text-slate-300">Welcome, Guest</p>
+        @endif
+      </div>
 
-    <div class="theme-toggle" id="theme-toggle">
-      @if(theme === 'light')
-        🌙 Dark Mode
-      @else
-        ☀️ Light Mode
-      @endif
+      <button
+        id="themeToggle"
+        class="flex items-center gap-2 px-4 py-2 bg-slate-700/50 border border-white/10 rounded-xl hover:border-violet-500/50 transition-all"
+        @click="toggleTheme()"
+      >
+        <span id="themeIcon">🌙</span>
+        <span id="themeText" class="text-sm text-slate-300">Dark Mode</span>
+      </button>
     </div>
   </div>
 
-  <h2>Features</h2>
-  <div class="features">
+  <!-- Features Section -->
+  <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+    <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-sm">✨</span>
+    Features
+  </h2>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
     @foreach(features as feature)
-      <div class="feature-card">
-        <h3>{{ feature.name }}</h3>
-        <p>{{ feature.description }}</p>
+      <div class="relative group cursor-pointer" @click="pulseCard(this)">
+        <div class="absolute -inset-1 bg-gradient-to-r from-{{ feature.color }}-600/20 to-{{ feature.color }}-400/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-75 transition-opacity"></div>
+        <div class="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-5 hover:border-{{ feature.color }}-500/50 transition-all">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-{{ feature.color }}-500 to-{{ feature.color }}-400 flex items-center justify-center shadow-lg">
+              <span class="text-lg">{{ feature.icon }}</span>
+            </div>
+            <h3 class="text-lg font-semibold text-white">{{ feature.name }}</h3>
+          </div>
+          <p class="text-slate-400 text-sm">{{ feature.description }}</p>
+        </div>
       </div>
     @endforeach
   </div>
 
-  <h2>Interactive Counter</h2>
-  <div class="counter">
-    <button id="decrement">-</button>
-    <div id="count-display">{{ count }}</div>
-    <button id="increment">+</button>
+  <!-- Counter Section -->
+  <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+    <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-sm">🔢</span>
+    Interactive Counter
+  </h2>
+
+  <div class="relative group mb-10">
+    <div class="absolute -inset-1 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 rounded-2xl blur-xl opacity-50"></div>
+    <div class="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
+      <div class="flex items-center justify-center gap-6">
+        <button
+          id="decrementBtn"
+          class="w-14 h-14 rounded-xl bg-slate-700/50 border border-white/10 text-2xl font-bold text-white hover:bg-rose-500/20 hover:border-rose-500/50 hover:text-rose-400 transition-all"
+          @click="updateCount(-1)"
+        >−</button>
+        <div id="countDisplay" class="w-24 h-20 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center text-4xl font-bold text-white">
+          {{ count }}
+        </div>
+        <button
+          id="incrementBtn"
+          class="w-14 h-14 rounded-xl bg-slate-700/50 border border-white/10 text-2xl font-bold text-white hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:text-emerald-400 transition-all"
+          @click="updateCount(1)"
+        >+</button>
+      </div>
+    </div>
   </div>
 
-  <script>
-    // Client-side JavaScript
-    document.addEventListener('DOMContentLoaded', () => {
-      // Theme toggling
-      const body = document.body;
-      const themeToggle = document.getElementById('theme-toggle');
+  <!-- Footer -->
+  <div class="text-center text-sm text-slate-500">
+    <p>Built with <span class="text-violet-400 font-medium">stx</span> templating engine</p>
+  </div>
+</div>
 
-      themeToggle.addEventListener('click', () => {
-        const isDark = body.classList.contains('dark');
-        body.classList.remove(isDark ? 'dark' : 'light');
-        body.classList.add(isDark ? 'light' : 'dark');
-        themeToggle.innerHTML = isDark ? '🌙 Dark Mode' : '☀️ Light Mode';
-      });
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  let count = 0
+  let isDark = true
+  const countDisplay = document.getElementById('countDisplay')
+  const body = document.getElementById('app-body')
+  const themeIcon = document.getElementById('themeIcon')
+  const themeText = document.getElementById('themeText')
 
-      // Counter functionality
-      const countDisplay = document.getElementById('count-display');
-      const incrementBtn = document.getElementById('increment');
-      const decrementBtn = document.getElementById('decrement');
-      let count = parseInt(countDisplay.textContent);
+  window.updateCount = (delta) => {
+    count += delta
+    if (countDisplay) countDisplay.textContent = count
+  }
 
-      incrementBtn.addEventListener('click', () => {
-        count++;
-        countDisplay.textContent = count;
-      });
+  window.toggleTheme = () => {
+    isDark = !isDark
+    if (isDark) {
+      body.classList.remove('bg-slate-100')
+      body.classList.add('bg-slate-900')
+      themeIcon.textContent = '🌙'
+      themeText.textContent = 'Dark Mode'
+    } else {
+      body.classList.remove('bg-slate-900')
+      body.classList.add('bg-slate-100')
+      themeIcon.textContent = '☀️'
+      themeText.textContent = 'Light Mode'
+    }
+  }
 
-      decrementBtn.addEventListener('click', () => {
-        count--;
-        countDisplay.textContent = count;
-      });
+  window.pulseCard = (card) => {
+    card.style.transform = 'scale(0.98)'
+    setTimeout(() => {
+      card.style.transform = 'scale(1)'
+    }, 150)
+  }
+})
+</script>
 
-      // Feature card effect
-      const featureCards = document.querySelectorAll('.feature-card');
-      featureCards.forEach(card => {
-        card.addEventListener('click', () => {
-          // Add a subtle pulse effect
-          card.style.opacity = '0.8';
-          setTimeout(() => {
-            card.style.opacity = '1';
-          }, 200);
-        });
-      });
-    });
-  </script>
 </body>
 </html>

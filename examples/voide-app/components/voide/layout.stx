@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>{{ title || 'Voide' }} - Voice AI Code Assistant</title>
+
+  <!-- Craft Native Bridge -->
+  <script>
+    (function() {
+      if (window.webkit?.messageHandlers?.craftBridge) {
+        window.craft = {
+          _callbacks: {},
+          _callbackId: 0,
+          _invoke(method, args = {}) {
+            return new Promise((resolve, reject) => {
+              const id = ++this._callbackId;
+              this._callbacks[id] = { resolve, reject };
+              window.webkit.messageHandlers.craftBridge.postMessage({
+                id,
+                method,
+                args
+              });
+            });
+          },
+          _handleResponse(id, result, error) {
+            const cb = this._callbacks[id];
+            if (cb) {
+              delete this._callbacks[id];
+              error ? cb.reject(new Error(error)) : cb.resolve(result);
+            }
+          },
+          window: {
+            setTitle: (title) => window.craft._invoke('window.setTitle', { title }),
+            setSize: (width, height) => window.craft._invoke('window.setSize', { width, height }),
+            setMinSize: (width, height) => window.craft._invoke('window.setMinSize', { width, height }),
+            setMaxSize: (width, height) => window.craft._invoke('window.setMaxSize', { width, height }),
+            center: () => window.craft._invoke('window.center'),
+            close: () => window.craft._invoke('window.close'),
+            minimize: () => window.craft._invoke('window.minimize'),
+            maximize: () => window.craft._invoke('window.maximize'),
+            toggleFullscreen: () => window.craft._invoke('window.toggleFullscreen'),
+            isFullscreen: () => window.craft._invoke('window.isFullscreen'),
+            setResizable: (resizable) => window.craft._invoke('window.setResizable', { resizable }),
+            show: () => window.craft._invoke('window.show'),
+            hide: () => window.craft._invoke('window.hide'),
+            focus: () => window.craft._invoke('window.focus'),
+            getPosition: () => window.craft._invoke('window.getPosition'),
+            setPosition: (x, y) => window.craft._invoke('window.setPosition', { x, y }),
+          },
+          tray: {
+            setTitle: (title) => window.craft._invoke('tray.setTitle', { title }),
+            setIcon: (iconPath) => window.craft._invoke('tray.setIcon', { iconPath }),
+            setTooltip: (tooltip) => window.craft._invoke('tray.setTooltip', { tooltip }),
+            setMenu: (menu) => window.craft._invoke('tray.setMenu', { menu }),
+            onClick: (callback) => { window.craft._trayClickCallback = callback; },
+            onClickToggleWindow: () => window.craft._invoke('tray.onClickToggleWindow'),
+          },
+          app: {
+            quit: () => window.craft._invoke('app.quit'),
+            getVersion: () => window.craft._invoke('app.getVersion'),
+            getName: () => window.craft._invoke('app.getName'),
+            notify: (options) => window.craft._invoke('app.notify', options),
+            setBadge: (count) => window.craft._invoke('app.setBadge', { count }),
+            clearBadge: () => window.craft._invoke('app.clearBadge'),
+          },
+          clipboard: {
+            read: () => window.craft._invoke('clipboard.read'),
+            write: (text) => window.craft._invoke('clipboard.write', { text }),
+          },
+          shell: {
+            openExternal: (url) => window.craft._invoke('shell.openExternal', { url }),
+            showItemInFolder: (path) => window.craft._invoke('shell.showItemInFolder', { path }),
+          },
+        };
+        console.log('[Voide] Craft native bridge initialized');
+      }
+    })();
+  </script>
+
+  <style>
+    /* Custom CSS Variables for theming */
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #484f58;
+      --accent-primary: #e94560;
+      --accent-secondary: #1a1a2e;
+      --border: #30363d;
+      --success: #3fb950;
+      --warning: #d29922;
+      --error: #f85149;
+    }
+
+    /* Base resets (Tailwind preflight) */
+    *, ::before, ::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      border-width: 0;
+      border-style: solid;
+      border-color: currentColor;
+    }
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-tertiary); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.4); }
+      50% { box-shadow: 0 0 0 20px rgba(233, 69, 96, 0); }
+    }
+    @keyframes bounce {
+      to { transform: translateY(-8px); }
+    }
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .animate-fade-in { animation: fadeIn 0.3s ease; }
+    .animate-pulse { animation: pulse 1.5s infinite; }
+    .animate-bounce { animation: bounce 0.6s infinite alternate; }
+    .animate-blink { animation: blink 1s step-end infinite; }
+
+    /* Critical Headwind utilities */
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .flex-1 { flex: 1 1 0%; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-4 { gap: 1rem; }
+    .gap-5 { gap: 1.25rem; }
+    .p-3 { padding: 0.75rem; }
+    .p-4 { padding: 1rem; }
+    .p-5 { padding: 1.25rem; }
+    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    .px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
+    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+    .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+    .m-4 { margin: 1rem; }
+    .h-screen { height: 100vh; }
+    .w-full { width: 100%; }
+    .max-w-md { max-width: 28rem; }
+    .overflow-hidden { overflow: hidden; }
+    .overflow-y-auto { overflow-y: auto; }
+    .rounded-xl { border-radius: 0.75rem; }
+    .rounded-lg { border-radius: 0.5rem; }
+    .rounded-full { border-radius: 9999px; }
+    .border { border-width: 1px; }
+    .border-b { border-bottom-width: 1px; }
+    .border-l-2 { border-left-width: 2px; }
+    .border-transparent { border-color: transparent; }
+    .border-\[\#30363d\] { border-color: #30363d; }
+    .border-\[\#238636\] { border-color: #238636; }
+    .border-\[\#e94560\] { border-color: #e94560; }
+    .border-\[\#f85149\] { border-color: #f85149; }
+    .border-\[\#3fb950\] { border-color: #3fb950; }
+    .bg-\[\#0d1117\] { background-color: #0d1117; }
+    .bg-\[\#161b22\] { background-color: #161b22; }
+    .bg-\[\#21262d\] { background-color: #21262d; }
+    .bg-\[\#30363d\] { background-color: #30363d; }
+    .bg-\[\#e94560\] { background-color: #e94560; }
+    .bg-\[\#238636\] { background-color: #238636; }
+    .bg-\[rgba\(0\,0\,0\,0\.6\)\] { background-color: rgba(0,0,0,0.6); }
+    .text-\[\#e6edf3\] { color: #e6edf3; }
+    .text-\[\#8b949e\] { color: #8b949e; }
+    .text-\[\#e94560\] { color: #e94560; }
+    .text-\[\#3fb950\] { color: #3fb950; }
+    .text-white { color: #fff; }
+    .text-xs { font-size: 0.75rem; line-height: 1rem; }
+    .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+    .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .font-mono { font-family: ui-monospace, monospace; }
+    .uppercase { text-transform: uppercase; }
+    .tracking-wider { letter-spacing: 0.05em; }
+    .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+    .cursor-pointer { cursor: pointer; }
+    .cursor-not-allowed { cursor: not-allowed; }
+    .select-none { user-select: none; }
+    .resize-none { resize: none; }
+    .outline-none { outline: none; }
+    .z-50 { z-index: 50; }
+    .fixed { position: fixed; }
+    .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+    .hidden { display: none; }
+    .backdrop-blur-sm { backdrop-filter: blur(4px); }
+    .transition-colors { transition-property: color, background-color, border-color; transition-duration: 150ms; }
+    .transition-all { transition-property: all; transition-duration: 150ms; }
+    .hover\:bg-\[\#30363d\]:hover { background-color: #30363d; }
+    .hover\:border-\[\#e94560\]:hover { border-color: #e94560; }
+    .focus\:outline-none:focus { outline: none; }
+    .focus\:border-\[\#e94560\]:focus { border-color: #e94560; }
+  </style>
+</head>
+<body class="flex flex-col h-screen">
+  {{ slot }}
+</body>
+</html>

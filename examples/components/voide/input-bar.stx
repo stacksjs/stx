@@ -1,97 +1,73 @@
-<div class="relative">
-  <!-- Glow effect -->
-  <div class="absolute -inset-1 bg-gradient-to-r from-violet-600/20 via-cyan-600/20 to-violet-600/20 rounded-2xl blur-xl opacity-50"></div>
-
-  <div class="relative bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl p-5">
-    <div class="flex items-start gap-5">
+<div style="position:relative">
+  <div style="background:#2d2a2e;border:1px solid #403e41;border-radius:16px;padding:20px">
+    <div style="display:flex;align-items:flex-start;gap:20px">
       <!-- Voice Button -->
-      <div class="flex flex-col items-center gap-2">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
         <button
           id="micButton"
-          class="relative group"
+          style="width:64px;height:64px;border-radius:50%;background:#221f22;border:2px solid #403e41;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s"
           title="Hold to record (or press Space)"
           @mousedown="window.voide?.startRecording()"
           @mouseup="window.voide?.stopRecording()"
           @mouseleave="window.voide?.state.isRecording && window.voide?.stopRecording()"
         >
-          <div class="absolute -inset-2 bg-gradient-to-r from-violet-600 to-cyan-600 rounded-full blur opacity-0 group-hover:opacity-40 transition-opacity"></div>
-          <div class="relative w-16 h-16 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-white/10 flex items-center justify-center hover:border-violet-500/50 transition-all shadow-xl">
-            <div id="micIcon" class="text-2xl transition-transform group-hover:scale-110">🎤</div>
-          </div>
+          <span id="micIcon" style="font-size:24px">🎤</span>
         </button>
-        <span id="statusHint" class="text-[10px] text-slate-500 text-center">Hold to speak</span>
+        <span id="statusHint" style="font-size:10px;color:#727072;text-align:center">Hold to speak</span>
       </div>
 
       <!-- Input Area -->
-      <div class="flex-1 space-y-3">
+      <div style="flex:1;display:flex;flex-direction:column;gap:12px">
         <!-- Transcript Preview (shows when recording) -->
         <div
           id="transcriptPreview"
-          class="hidden p-3 bg-slate-800/50 border border-violet-500/30 rounded-xl text-sm text-slate-300 min-h-[44px]"
+          style="display:none;padding:12px;background:#221f22;border:1px solid #ff618840;border-radius:12px;font-size:14px;color:#fcfcfacc;min-height:44px"
         >
           Listening...
         </div>
 
         <!-- Text Input -->
-        <div class="relative group">
-          <div class="absolute -inset-0.5 bg-gradient-to-r from-violet-600/0 to-cyan-600/0 rounded-xl blur opacity-0 group-focus-within:from-violet-600/20 group-focus-within:to-cyan-600/20 group-focus-within:opacity-100 transition-all"></div>
-          <div class="relative flex items-end gap-3 bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 focus-within:border-violet-500/50 transition-all">
-            <textarea
-              id="textInput"
-              class="flex-1 bg-transparent text-sm text-white placeholder-slate-500 focus:outline-none resize-none min-h-[24px] max-h-[120px] leading-6"
-              placeholder="Type a command or ask a question..."
-              rows="1"
-              @input="
-                this.style.height = 'auto';
-                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-                if (window.voide) window.voide.message.value = this.value;
-              "
-              @keydown="
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault();
-                  window.voide?.handleTextSubmit();
-                  this.value = '';
-                  this.style.height = 'auto';
-                }
-              "
-            ></textarea>
-            <button
-              id="sendBtn"
-              class="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-500 flex items-center justify-center hover:from-violet-600 hover:to-cyan-600 transition-all shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Send (Enter)"
-              @click="
-                window.voide?.handleTextSubmit();
-                document.getElementById('textInput').value = '';
-              "
-            >
-              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-              </svg>
-            </button>
-          </div>
+        <div style="display:flex;align-items:flex-end;gap:12px;background:#221f22;border:1px solid #403e41;border-radius:12px;padding:12px 16px">
+          <textarea
+            id="textInput"
+            style="flex:1;background:transparent;font-size:14px;color:#fcfcfa;border:none;outline:none;resize:none;min-height:24px;max-height:120px;line-height:24px"
+            placeholder="Type a command or ask a question..."
+            @input="this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; if (window.voide) window.voide.chatActions.setInputText(this.value);"
+            @keydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.voide?.handleTextSubmit(); this.value = ''; this.style.height = 'auto'; }"
+          ></textarea>
+          <button
+            id="sendBtn"
+            style="flex-shrink:0;width:40px;height:40px;border-radius:12px;background:#78dce8;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer"
+            title="Send (Enter)"
+            @click="window.voide?.handleTextSubmit(); document.getElementById('textInput').value = '';"
+          >
+            <svg style="width:20px;height:20px;color:#2d2a2e" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+            </svg>
+          </button>
         </div>
 
         <!-- Hints -->
-        <div class="flex items-center justify-between text-[10px] text-slate-500 px-1">
-          <div class="flex items-center gap-3">
-            <span><kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">Enter</kbd> send</span>
-            <span><kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">Shift+Enter</kbd> new line</span>
-            <span><kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">Space</kbd> voice</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;font-size:10px;color:#727072;padding:0 4px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span><kbd style="padding:2px 6px;background:#221f22;border-radius:4px;color:#fcfcfa80">Enter</kbd> send</span>
+            <span><kbd style="padding:2px 6px;background:#221f22;border-radius:4px;color:#fcfcfa80">Shift+Enter</kbd> new line</span>
+            <span><kbd style="padding:2px 6px;background:#221f22;border-radius:4px;color:#fcfcfa80">Space</kbd> voice</span>
           </div>
-          <span id="charCountDisplay" class="text-slate-500"></span>
+          <span id="charCountDisplay"></span>
         </div>
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex flex-col gap-2">
+      <div style="display:flex;flex-direction:column;gap:8px">
         <button
           id="commitBtn"
-          class="px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+          style="padding:10px 16px;font-size:14px;font-weight:500;background:#a9dc76;color:#2d2a2e;border:none;border-radius:12px;cursor:pointer;opacity:0.4"
           disabled
           @click="window.voide?.commitChanges()"
         >
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div style="display:flex;align-items:center;gap:8px">
+            <svg style="width:16px;height:16px" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
             </svg>
             Commit
@@ -99,12 +75,12 @@
         </button>
         <button
           id="pushBtn"
-          class="px-4 py-2.5 text-sm font-medium bg-slate-800/80 border border-white/10 text-white rounded-xl hover:bg-slate-700/80 hover:border-violet-500/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          style="padding:10px 16px;font-size:14px;font-weight:500;background:#221f22;color:#fcfcfa;border:1px solid #403e41;border-radius:12px;cursor:pointer;opacity:0.4"
           disabled
           @click="window.voide?.pushChanges()"
         >
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div style="display:flex;align-items:center;gap:8px">
+            <svg style="width:16px;height:16px" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
             </svg>
             Push
@@ -117,46 +93,52 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const updateUI = () => {
-    if (!window.voide) return
+  const stores = window.VoideStores
+  if (!stores) return
 
-    const { state, charCount } = window.voide
-    const micButton = document.getElementById('micButton')
-    const micIcon = document.getElementById('micIcon')
-    const statusHint = document.getElementById('statusHint')
-    const transcriptPreview = document.getElementById('transcriptPreview')
-    const commitBtn = document.getElementById('commitBtn')
-    const pushBtn = document.getElementById('pushBtn')
-    const charCountDisplay = document.getElementById('charCountDisplay')
+  const micButton = document.getElementById('micButton')
+  const micIcon = document.getElementById('micIcon')
+  const statusHint = document.getElementById('statusHint')
+  const transcriptPreview = document.getElementById('transcriptPreview')
+  const commitBtn = document.getElementById('commitBtn')
+  const pushBtn = document.getElementById('pushBtn')
+  const charCountDisplay = document.getElementById('charCountDisplay')
 
+  // Subscribe to app store for recording/processing state
+  stores.appStore.subscribe((state) => {
     // Update recording state
     if (state.isRecording) {
-      micButton?.classList.add('animate-pulse')
-      micButton?.querySelector('div:nth-child(2)')?.classList.add('border-violet-500', 'shadow-violet-500/50')
+      if (micButton) micButton.style.borderColor = '#ff6188'
       if (micIcon) micIcon.textContent = '🔴'
       if (statusHint) statusHint.textContent = 'Listening...'
-      transcriptPreview?.classList.remove('hidden')
-      if (transcriptPreview) transcriptPreview.textContent = state.transcript || 'Listening...'
+      if (transcriptPreview) {
+        transcriptPreview.style.display = 'block'
+        transcriptPreview.textContent = state.transcript || 'Listening...'
+      }
     } else {
-      micButton?.classList.remove('animate-pulse')
-      micButton?.querySelector('div:nth-child(2)')?.classList.remove('border-violet-500', 'shadow-violet-500/50')
+      if (micButton) micButton.style.borderColor = '#403e41'
       if (micIcon) micIcon.textContent = '🎤'
       if (statusHint) statusHint.textContent = 'Hold to speak'
-      transcriptPreview?.classList.add('hidden')
+      if (transcriptPreview) transcriptPreview.style.display = 'none'
     }
 
     // Update button states
-    if (commitBtn) commitBtn.disabled = !state.hasChanges || state.isProcessing
-    if (pushBtn) pushBtn.disabled = !state.hasChanges || state.isProcessing
+    if (commitBtn) {
+      commitBtn.disabled = !state.hasChanges || state.isProcessing
+      commitBtn.style.opacity = commitBtn.disabled ? '0.4' : '1'
+    }
+    if (pushBtn) {
+      pushBtn.disabled = !state.hasChanges || state.isProcessing
+      pushBtn.style.opacity = pushBtn.disabled ? '0.4' : '1'
+    }
+  })
 
-    // Update char count
+  // Subscribe to chat store for char count
+  stores.chatStore.subscribe((state) => {
     if (charCountDisplay) {
-      const count = charCount?.value || 0
+      const count = state.charCount || 0
       charCountDisplay.textContent = count > 0 ? count + ' chars' : ''
     }
-  }
-
-  setInterval(updateUI, 100)
-  updateUI()
+  })
 })
 </script>

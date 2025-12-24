@@ -55,32 +55,24 @@ export const drivers = {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
-    /* Gradient background with noise */
+    /* Monokai Pro background */
     .gradient-bg {
-      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      background: #221f22;
       position: relative;
     }
-    .gradient-bg::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-      opacity: 0.03;
-      pointer-events: none;
-    }
 
-    /* Floating orbs */
+    /* Floating orbs - Monokai colors */
     .orb {
       position: absolute;
       border-radius: 50%;
       filter: blur(80px);
-      opacity: 0.3;
+      opacity: 0.15;
       animation: float 20s ease-in-out infinite;
     }
     .orb-1 {
       width: 400px;
       height: 400px;
-      background: linear-gradient(to right, #8b5cf6, #06b6d4);
+      background: linear-gradient(to right, #ab9df2, #78dce8);
       top: -100px;
       right: -100px;
       animation-delay: 0s;
@@ -88,7 +80,7 @@ export const drivers = {
     .orb-2 {
       width: 300px;
       height: 300px;
-      background: linear-gradient(to right, #ec4899, #8b5cf6);
+      background: linear-gradient(to right, #ff6188, #ab9df2);
       bottom: -50px;
       left: -50px;
       animation-delay: -10s;
@@ -127,11 +119,11 @@ export const drivers = {
   </main>
 
   <!-- Footer -->
-  <footer class="relative px-6 py-3 text-center text-xs text-slate-500 border-t border-white/5">
-    <span class="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent font-medium">{{ title }}</span>
-    <span class="mx-2">·</span>
+  <footer style="position:relative;padding:12px 24px;text-align:center;font-size:12px;color:#727072;border-top:1px solid #403e41">
+    <span style="background:linear-gradient(to right,#ab9df2,#78dce8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:500">{{ title }}</span>
+    <span style="margin:0 8px">·</span>
     <span>v{{ version }}</span>
-    <span class="mx-2">·</span>
+    <span style="margin:0 8px">·</span>
     <span>Voice AI Code Assistant</span>
   </footer>
 
@@ -183,561 +175,718 @@ export const drivers = {
     })();
   </script>
 
-  <!-- STX Client Runtime -->
-  <script client>
-    import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'stx'
+  <!-- Voide Client Runtime (Plain JS - No ES Modules) -->
+  <script>
+    (function() {
+      'use strict';
 
-    // ==========================================================================
-    // Reactive State
-    // ==========================================================================
+      // ==========================================================================
+      // State Management (Simple reactive-like state)
+      // ==========================================================================
 
-    const state = reactive({
-      isRecording: false,
-      isProcessing: false,
-      transcript: '',
-      repoPath: '',
-      hasChanges: false,
-      speechSupported: false,
-      currentDriver: 'claude-cli-local',
-      isNativeApp: false,
-      terminalTitle: 'Voide - Ready'
-    })
+      var state = {
+        isRecording: false,
+        isProcessing: false,
+        transcript: '',
+        repoPath: '',
+        hasChanges: false,
+        speechSupported: false,
+        currentDriver: 'claude-cli-local',
+        isNativeApp: false,
+        terminalTitle: 'Voide - Ready',
+        currentChatId: null
+      };
 
-    const messages = ref([])
-    const message = ref('')
-    const charCount = ref(0)
+      var messages = { value: [] };
+      var message = { value: '' };
+      var charCount = { value: 0 };
 
-    const github = reactive({
-      connected: false,
-      token: null,
-      username: null,
-      name: null,
-      email: null,
-      avatarUrl: null
-    })
+      var github = {
+        connected: false,
+        token: null,
+        username: null,
+        name: null,
+        email: null,
+        avatarUrl: null
+      };
 
-    const apiKeys = reactive({
-      anthropic: null,
-      openai: null,
-      claudeCliHost: null
-    })
+      var apiKeys = {
+        anthropic: null,
+        openai: null,
+        claudeCliHost: null
+      };
 
-    const modals = reactive({
-      github: false,
-      settings: false
-    })
+      var modals = {
+        github: false,
+        settings: false
+      };
 
-    // Speech recognition instance
-    let recognition = null
+      var recognition = null;
 
-    // Config
-    const config = {
-      title: 'Voide',
-      version: '1.0.0',
-      apiBaseUrl: 'http://localhost:3008/voide',
-      drivers: {
-        'claude-cli-local': { name: 'Claude CLI (Local)', requiresKey: null },
-        'claude-cli-ec2': { name: 'Claude CLI (EC2)', requiresKey: 'BUDDY_EC2_HOST' },
-        'claude': { name: 'Claude API', requiresKey: 'ANTHROPIC_API_KEY' },
-        'openai': { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
-        'ollama': { name: 'Ollama', requiresKey: null },
-        'mock': { name: 'Mock', requiresKey: null }
-      }
-    }
+      var config = {
+        title: 'Voide',
+        version: '1.0.0',
+        apiBaseUrl: 'http://localhost:3008/voide',
+        drivers: {
+          'claude-cli-local': { name: 'Claude CLI (Local)', requiresKey: null },
+          'claude-cli-ec2': { name: 'Claude CLI (EC2)', requiresKey: 'BUDDY_EC2_HOST' },
+          'claude': { name: 'Claude API', requiresKey: 'ANTHROPIC_API_KEY' },
+          'openai': { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
+          'ollama': { name: 'Ollama', requiresKey: null },
+          'mock': { name: 'Mock', requiresKey: null }
+        }
+      };
 
-    const STORAGE_KEY_REPO = 'voide_last_repo_path'
+      var STORAGE_KEY_REPO = 'voide_last_repo_path';
+      var STORAGE_KEY_CHATS = 'voide_chats';
+      var STORAGE_KEY_CHAT_COUNTER = 'voide_chat_counter';
 
-    // ==========================================================================
-    // Computed Properties
-    // ==========================================================================
+      // ==========================================================================
+      // Chat Persistence
+      // ==========================================================================
 
-    const currentDriverName = computed(() => {
-      return config.drivers[state.currentDriver]?.name || 'AI'
-    })
-
-    const canCommit = computed(() => {
-      return state.hasChanges && !state.isProcessing
-    })
-
-    const canPush = computed(() => {
-      return state.hasChanges && !state.isProcessing
-    })
-
-    // ==========================================================================
-    // Methods
-    // ==========================================================================
-
-    function escapeHtml(text) {
-      const div = document.createElement('div')
-      div.textContent = text
-      return div.innerHTML
-    }
-
-    function addMessage(type, content, header) {
-      const driverName = currentDriverName.value
-      const headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error')
-
-      messages.value.push({
-        type,
-        content,
-        header: headerText,
-        timestamp: Date.now()
-      })
-
-      // Scroll to bottom
-      setTimeout(() => {
-        const output = document.getElementById('output')
-        if (output) output.scrollTop = output.scrollHeight
-      }, 10)
-    }
-
-    async function checkBackendAPI() {
-      try {
-        const res = await fetch(config.apiBaseUrl + '/state')
-        return res.ok
-      } catch {
-        return false
-      }
-    }
-
-    async function processCommand(command) {
-      if (!command.trim()) return
-
-      addMessage('user', command)
-      state.terminalTitle = 'Processing...'
-
-      if (!state.repoPath) {
-        addMessage('error', 'Please enter a repository URL or path first.')
-        state.terminalTitle = config.title + ' - Ready'
-        return
+      function generateChatId() {
+        var counter = parseInt(localStorage.getItem(STORAGE_KEY_CHAT_COUNTER) || '0', 10) + 1;
+        localStorage.setItem(STORAGE_KEY_CHAT_COUNTER, counter.toString());
+        return counter.toString();
       }
 
-      state.isProcessing = true
-      addMessage('assistant', '...')  // Loading indicator
+      function getChatIdFromUrl() {
+        var match = window.location.pathname.match(/^\/chat\/(\d+)$/);
+        return match ? match[1] : null;
+      }
 
-      try {
-        const hasBackend = await checkBackendAPI()
-        let response
+      function getAllChats() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY_CHATS) || '{}');
+        } catch (e) {
+          return {};
+        }
+      }
 
-        if (hasBackend) {
-          const res = await fetch(config.apiBaseUrl + '/process', {
+      function saveChat() {
+        if (!state.currentChatId) return;
+
+        var chats = getAllChats();
+        chats[state.currentChatId] = {
+          id: state.currentChatId,
+          messages: messages.value,
+          repoPath: state.repoPath,
+          driver: state.currentDriver,
+          updatedAt: Date.now(),
+          createdAt: chats[state.currentChatId] ? chats[state.currentChatId].createdAt : Date.now()
+        };
+        localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chats));
+      }
+
+      function loadChat(chatId) {
+        var chats = getAllChats();
+        var chat = chats[chatId];
+        if (chat) {
+          state.currentChatId = chatId;
+          messages.value = chat.messages || [];
+          state.repoPath = chat.repoPath || '';
+          state.currentDriver = chat.driver || 'claude-cli-local';
+
+          // Update repo input if it exists
+          var repoInput = document.getElementById('repoInput');
+          if (repoInput && chat.repoPath) {
+            repoInput.value = chat.repoPath;
+          }
+
+          return true;
+        }
+        return false;
+      }
+
+      function startNewChat() {
+        var chatId = generateChatId();
+        state.currentChatId = chatId;
+        history.pushState({ chatId: chatId }, '', '/chat/' + chatId);
+        saveChat();
+        return chatId;
+      }
+
+      function deleteChat(chatId) {
+        var chats = getAllChats();
+        delete chats[chatId];
+        localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chats));
+      }
+
+      // ==========================================================================
+      // Computed Properties
+      // ==========================================================================
+
+      function getCurrentDriverName() {
+        var driver = config.drivers[state.currentDriver];
+        return driver ? driver.name : 'AI';
+      }
+
+      // ==========================================================================
+      // Methods
+      // ==========================================================================
+
+      function addMessage(type, content, header) {
+        var driverName = getCurrentDriverName();
+        var headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error');
+
+        messages.value.push({
+          type: type,
+          content: content,
+          header: headerText,
+          timestamp: Date.now()
+        });
+
+        // Save chat to localStorage
+        saveChat();
+
+        // Only scroll to bottom when user sends a new prompt
+        if (type === 'user') {
+          setTimeout(function() {
+            var output = document.getElementById('output');
+            if (output) output.scrollTop = output.scrollHeight;
+          }, 10);
+        }
+      }
+
+      function checkBackendAPI() {
+        return fetch(config.apiBaseUrl + '/state')
+          .then(function(res) { return res.ok; })
+          .catch(function() { return false; });
+      }
+
+      var saveChatDebounceTimer = null;
+      function updateLastMessage(type, content) {
+        var arr = messages.value;
+        if (arr.length > 0 && arr[arr.length - 1].type === type) {
+          arr[arr.length - 1].content = content;
+          arr[arr.length - 1].updated = Date.now();
+
+          // Debounce save during streaming to avoid excessive writes
+          clearTimeout(saveChatDebounceTimer);
+          saveChatDebounceTimer = setTimeout(saveChat, 500);
+        }
+      }
+
+      function processWithStreaming(command) {
+        return new Promise(function(resolve, reject) {
+          var fullContent = '';
+          var currentEvent = '';
+
+          fetch(config.apiBaseUrl + '/process/stream', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              command,
+              command: command,
               driver: state.currentDriver,
               repository: state.repoPath
             })
-          })
-          response = await res.json()
-        } else if (state.currentDriver === 'mock') {
-          await new Promise(resolve => setTimeout(resolve, 1500))
-          response = {
-            success: true,
-            data: {
-              message: `[Mock] Processing: "${command}"\n\nThis is a simulated response.`,
-              hasChanges: command.toLowerCase().includes('fix')
+          }).then(function(response) {
+            if (!response.ok) {
+              throw new Error('Stream request failed');
+            }
+
+            var reader = response.body.getReader();
+            var decoder = new TextDecoder();
+            var buffer = '';
+
+            function readChunk() {
+              reader.read().then(function(result) {
+                if (result.done) {
+                  resolve({ message: fullContent, hasChanges: false });
+                  return;
+                }
+
+                buffer += decoder.decode(result.value, { stream: true });
+                var lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (var i = 0; i < lines.length; i++) {
+                  var line = lines[i].trim();
+                  if (!line) continue;
+
+                  if (line.indexOf('event: ') === 0) {
+                    currentEvent = line.substring(7);
+                    continue;
+                  }
+
+                  if (line.indexOf('data: ') === 0) {
+                    try {
+                      var data = JSON.parse(line.substring(6));
+
+                      if (currentEvent === 'chunk' && data.text) {
+                        fullContent += data.text;
+                        updateLastMessage('assistant', fullContent);
+                      } else if (currentEvent === 'done') {
+                        resolve({ message: fullContent, hasChanges: data.hasChanges || false });
+                        return;
+                      } else if (currentEvent === 'error') {
+                        reject(new Error(data.error || 'Stream error'));
+                        return;
+                      }
+                    } catch (e) {
+                      // Ignore parse errors
+                    }
+                  }
+                }
+
+                readChunk();
+              }).catch(reject);
+            }
+
+            readChunk();
+          }).catch(reject);
+        });
+      }
+
+      function processCommand(command) {
+        if (!command.trim()) return;
+
+        // Start a new chat on first prompt if not already in a chat
+        if (!state.currentChatId) {
+          startNewChat();
+        }
+
+        addMessage('user', command);
+        state.terminalTitle = 'Processing...';
+
+        if (!state.repoPath) {
+          addMessage('error', 'Please enter a repository URL or path first.');
+          state.terminalTitle = config.title + ' - Ready';
+          return;
+        }
+
+        state.isProcessing = true;
+        addMessage('assistant', '...');
+
+        checkBackendAPI().then(function(hasBackend) {
+          if (hasBackend) {
+            // Use streaming endpoint
+            return processWithStreaming(command);
+          } else if (state.currentDriver === 'mock') {
+            return new Promise(function(resolve) {
+              setTimeout(function() {
+                resolve({
+                  message: '[Mock] Processing: "' + command + '"\n\nThis is a simulated response.',
+                  hasChanges: command.toLowerCase().indexOf('fix') !== -1
+                });
+              }, 1500);
+            });
+          } else {
+            return Promise.reject(new Error('Backend API not available. Start the server at localhost:3008.'));
+          }
+        }).then(function(response) {
+          // Streaming already updated the message, just handle completion
+          if (response.hasChanges) {
+            state.hasChanges = true;
+            addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.');
+            sendNotification('Changes Ready', 'Code changes are staged.');
+          }
+
+          state.terminalTitle = config.title + ' - Ready';
+          updateTrayStatus('success');
+          setTimeout(function() { updateTrayStatus('ready'); }, 2000);
+        }).catch(function(error) {
+          messages.value.pop();
+          addMessage('error', 'Failed: ' + error.message);
+          state.terminalTitle = config.title + ' - Error';
+          updateTrayStatus('error');
+          setTimeout(function() { updateTrayStatus('ready'); }, 3000);
+        }).finally(function() {
+          state.isProcessing = false;
+        });
+      }
+
+      function handleRepoAction() {
+        var input = document.getElementById('repoInput');
+        var inputValue = input ? input.value.trim() : '';
+
+        if (!inputValue) {
+          addMessage('error', 'Please enter a repository URL or path.');
+          return;
+        }
+
+        addMessage('system', 'Opening repository: ' + inputValue);
+
+        checkBackendAPI().then(function(hasBackend) {
+          if (hasBackend) {
+            return fetch(config.apiBaseUrl + '/repo', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ input: inputValue })
+            }).then(function(res) { return res.json(); });
+          } else {
+            return {
+              success: true,
+              data: {
+                repo: { path: inputValue, name: inputValue.split('/').pop(), branch: 'main' }
+              }
+            };
+          }
+        }).then(function(response) {
+          // Handle both wrapped {success, data} and direct response formats
+          var data = response.data || response;
+          var repo = data.repo;
+
+          if (repo) {
+            state.repoPath = repo.path;
+            localStorage.setItem(STORAGE_KEY_REPO, repo.path);
+            saveChat(); // Save repo path to chat
+            addMessage('system', 'Repository "' + repo.name + '" opened.\nPath: ' + repo.path + '\nBranch: ' + repo.branch);
+            state.terminalTitle = config.title + ' - ' + repo.name;
+          } else if (response.error) {
+            throw new Error(response.error);
+          } else {
+            throw new Error('Failed to open repository');
+          }
+        }).catch(function(error) {
+          addMessage('error', 'Failed: ' + error.message);
+        });
+      }
+
+      function commitChanges() {
+        if (!state.hasChanges) return;
+
+        addMessage('system', 'Creating commit...');
+        updateTrayStatus('processing');
+
+        checkBackendAPI().then(function(hasBackend) {
+          if (hasBackend) {
+            return fetch(config.apiBaseUrl + '/commit', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            }).then(function(res) { return res.json(); });
+          } else {
+            return { success: true, hash: 'mock-commit-hash' };
+          }
+        }).then(function(response) {
+          addMessage('system', 'Committed: ' + (response.hash || 'success'));
+          state.hasChanges = false;
+          updateTrayStatus('success');
+          setTimeout(function() { updateTrayStatus('ready'); }, 2000);
+        }).catch(function(error) {
+          addMessage('error', 'Failed: ' + error.message);
+          updateTrayStatus('error');
+          setTimeout(function() { updateTrayStatus('ready'); }, 3000);
+        });
+      }
+
+      function pushChanges() {
+        addMessage('system', 'Pushing to remote...');
+        updateTrayStatus('processing');
+
+        checkBackendAPI().then(function(hasBackend) {
+          if (hasBackend) {
+            return fetch(config.apiBaseUrl + '/push', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+          return Promise.resolve();
+        }).then(function() {
+          addMessage('system', 'Pushed successfully.');
+          updateTrayStatus('success');
+          setTimeout(function() { updateTrayStatus('ready'); }, 2000);
+        }).catch(function(error) {
+          addMessage('error', 'Failed: ' + error.message);
+          updateTrayStatus('error');
+          setTimeout(function() { updateTrayStatus('ready'); }, 3000);
+        });
+      }
+
+      // ==========================================================================
+      // Speech Recognition
+      // ==========================================================================
+
+      function initSpeechRecognition() {
+        var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          state.speechSupported = false;
+          addMessage('system', 'Speech recognition not available. Please use text input.');
+          return false;
+        }
+
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = function() {
+          state.isRecording = true;
+          state.transcript = '';
+          updateTrayStatus('recording');
+        };
+
+        recognition.onresult = function(event) {
+          var transcript = '';
+          for (var i = 0; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          state.transcript = transcript;
+        };
+
+        recognition.onerror = function(event) {
+          console.error('Speech recognition error:', event.error);
+          stopRecording();
+          if (event.error === 'not-allowed') {
+            addMessage('error', 'Microphone access denied.');
+          } else if (event.error === 'network') {
+            addMessage('error', 'Speech recognition requires internet.');
+          } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
+            addMessage('error', 'Speech error: ' + event.error);
+          }
+        };
+
+        recognition.onend = function() {
+          if (state.isRecording) {
+            var transcript = state.transcript.trim();
+            stopRecording();
+            if (transcript) processCommand(transcript);
+          }
+        };
+
+        state.speechSupported = true;
+        return true;
+      }
+
+      function startRecording() {
+        if (!state.speechSupported || state.isRecording) return;
+        state.transcript = '';
+        try {
+          recognition.start();
+        } catch (e) {
+          addMessage('error', 'Failed to start voice recognition.');
+        }
+      }
+
+      function stopRecording() {
+        state.isRecording = false;
+        updateTrayStatus('ready');
+        if (recognition) {
+          try { recognition.stop(); } catch (e) {}
+        }
+      }
+
+      // ==========================================================================
+      // Native App Features
+      // ==========================================================================
+
+      function initNativeFeatures() {
+        if (!window.craft) return;
+
+        state.isNativeApp = true;
+        try {
+          window.craft.tray.setTitle('Voide');
+          window.craft.tray.setTooltip('Voide - Voice AI Code Assistant');
+          window.craft.tray.setMenu([
+            { id: 'show', label: 'Show Voide', action: 'show' },
+            { id: 'hide', label: 'Hide Window', action: 'hide' },
+            { type: 'separator' },
+            { id: 'recording', label: 'Start Recording', action: 'startRecording' },
+            { type: 'separator' },
+            { id: 'quit', label: 'Quit Voide', action: 'quit', shortcut: 'Cmd+Q' }
+          ]);
+          window.craft.tray.onClickToggleWindow();
+          addMessage('system', 'Running as native app - system tray enabled');
+        } catch (e) {
+          console.log('Native features not fully available:', e);
+        }
+      }
+
+      function updateTrayStatus(status) {
+        if (!state.isNativeApp || !window.craft) return;
+        var icons = { ready: '🤖', recording: '🔴', processing: '⏳', success: '✅', error: '❌' };
+        try {
+          window.craft.tray.setTitle((icons[status] || '🤖') + ' Voide');
+        } catch (e) {}
+      }
+
+      function sendNotification(title, body) {
+        if (!state.isNativeApp || !window.craft) return;
+        try {
+          window.craft.app.notify({ title: title, body: body });
+        } catch (e) {}
+      }
+
+      // ==========================================================================
+      // Modal Functions
+      // ==========================================================================
+
+      function openGithubModal() {
+        modals.github = true;
+      }
+
+      function closeGithubModal() {
+        modals.github = false;
+      }
+
+      function openSettingsModal() {
+        modals.settings = true;
+      }
+
+      function closeSettingsModal() {
+        modals.settings = false;
+      }
+
+      function saveApiSettings() {
+        var anthropicInput = document.getElementById('anthropicApiKey');
+        var openaiInput = document.getElementById('openaiApiKey');
+        var claudeHostInput = document.getElementById('claudeCliHost');
+
+        apiKeys.anthropic = anthropicInput ? anthropicInput.value.trim() || null : null;
+        apiKeys.openai = openaiInput ? openaiInput.value.trim() || null : null;
+        apiKeys.claudeCliHost = claudeHostInput ? claudeHostInput.value.trim() || null : null;
+
+        localStorage.setItem('voide_api_keys', JSON.stringify(apiKeys));
+        closeSettingsModal();
+        addMessage('system', 'API settings saved.');
+      }
+
+      function loadSavedApiKeys() {
+        try {
+          var saved = localStorage.getItem('voide_api_keys');
+          if (saved) {
+            var parsed = JSON.parse(saved);
+            Object.assign(apiKeys, parsed);
+          }
+        } catch (e) {}
+      }
+
+      // ==========================================================================
+      // Text Input Handling
+      // ==========================================================================
+
+      function handleTextSubmit() {
+        var text = message.value.trim();
+        if (text && !state.isProcessing) {
+          message.value = '';
+          charCount.value = 0;
+          processCommand(text);
+        }
+      }
+
+      function handleDriverChange(event) {
+        state.currentDriver = event.target.value;
+        addMessage('system', 'Switched to ' + config.drivers[state.currentDriver].name);
+      }
+
+      // ==========================================================================
+      // Initialization
+      // ==========================================================================
+
+      function init() {
+        // Initialize native features
+        initNativeFeatures();
+
+        // Initialize speech recognition
+        initSpeechRecognition();
+
+        // Load saved data
+        loadSavedApiKeys();
+
+        // Check URL for existing chat
+        var chatIdFromUrl = getChatIdFromUrl();
+        if (chatIdFromUrl) {
+          if (!loadChat(chatIdFromUrl)) {
+            // Chat not found, redirect to home
+            history.replaceState({}, '', '/voide');
+          }
+        } else {
+          // No chat in URL, load last repo path for new session
+          var savedRepoPath = localStorage.getItem(STORAGE_KEY_REPO);
+          if (savedRepoPath) {
+            var repoInput = document.getElementById('repoInput');
+            if (repoInput) repoInput.value = savedRepoPath;
+          }
+        }
+
+        // Handle browser back/forward navigation
+        window.addEventListener('popstate', function(e) {
+          var chatId = getChatIdFromUrl();
+          if (chatId) {
+            loadChat(chatId);
+          } else {
+            // Navigated to home, clear current chat
+            state.currentChatId = null;
+            messages.value = [];
+          }
+        });
+
+        // Setup keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+          if (e.code === 'Space' && !e.repeat) {
+            var active = document.activeElement;
+            var isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+            if (!isInput) {
+              e.preventDefault();
+              startRecording();
             }
           }
-        } else {
-          throw new Error('Backend API not available. Start the server at localhost:3008.')
-        }
-
-        // Remove loading message
-        messages.value.pop()
-
-        if (response.success && response.data) {
-          addMessage('assistant', response.data.message)
-          if (response.data.hasChanges) {
-            state.hasChanges = true
-            addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.')
-            sendNotification('Changes Ready', 'Code changes are staged.')
+          if (e.key === 'Escape') {
+            closeGithubModal();
+            closeSettingsModal();
           }
-        } else {
-          throw new Error(response.error || 'Unknown error')
-        }
+        });
 
-        state.terminalTitle = config.title + ' - Ready'
-        updateTrayStatus('success')
-        setTimeout(() => updateTrayStatus('ready'), 2000)
-
-      } catch (error) {
-        messages.value.pop()  // Remove loading
-        addMessage('error', 'Failed: ' + error.message)
-        state.terminalTitle = config.title + ' - Error'
-        updateTrayStatus('error')
-        setTimeout(() => updateTrayStatus('ready'), 3000)
-      } finally {
-        state.isProcessing = false
-      }
-    }
-
-    async function handleRepoAction() {
-      const input = document.getElementById('repoInput')?.value.trim()
-      if (!input) {
-        addMessage('error', 'Please enter a repository URL or path.')
-        return
-      }
-
-      addMessage('system', 'Opening repository: ' + input)
-
-      try {
-        const hasBackend = await checkBackendAPI()
-        let response
-
-        if (hasBackend) {
-          const res = await fetch(config.apiBaseUrl + '/repo', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ input })
-          })
-          response = await res.json()
-        } else {
-          response = {
-            success: true,
-            data: {
-              repo: { path: input, name: input.split('/').pop(), branch: 'main' }
-            }
+        document.addEventListener('keyup', function(e) {
+          if (e.code === 'Space' && state.isRecording) {
+            e.preventDefault();
+            stopRecording();
           }
-        }
-
-        if (response.success && response.data?.repo) {
-          const repo = response.data.repo
-          state.repoPath = repo.path
-          localStorage.setItem(STORAGE_KEY_REPO, repo.path)
-          addMessage('system', `Repository "${repo.name}" opened.\nPath: ${repo.path}\nBranch: ${repo.branch}`)
-          state.terminalTitle = config.title + ' - ' + repo.name
-        } else {
-          throw new Error(response.error || 'Failed to open repository')
-        }
-      } catch (error) {
-        addMessage('error', 'Failed: ' + error.message)
-      }
-    }
-
-    async function commitChanges() {
-      if (!state.hasChanges) return
-
-      addMessage('system', 'Creating commit...')
-      updateTrayStatus('processing')
-
-      try {
-        const hasBackend = await checkBackendAPI()
-        let response
-
-        if (hasBackend) {
-          const res = await fetch(config.apiBaseUrl + '/commit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-          })
-          response = await res.json()
-        } else {
-          response = { success: true, hash: 'mock-commit-hash' }
-        }
-
-        addMessage('system', 'Committed: ' + (response.hash || 'success'))
-        state.hasChanges = false
-        updateTrayStatus('success')
-        setTimeout(() => updateTrayStatus('ready'), 2000)
-      } catch (error) {
-        addMessage('error', 'Failed: ' + error.message)
-        updateTrayStatus('error')
-        setTimeout(() => updateTrayStatus('ready'), 3000)
-      }
-    }
-
-    async function pushChanges() {
-      addMessage('system', 'Pushing to remote...')
-      updateTrayStatus('processing')
-
-      try {
-        const hasBackend = await checkBackendAPI()
-        if (hasBackend) {
-          await fetch(config.apiBaseUrl + '/push', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-
-        addMessage('system', 'Pushed successfully.')
-        updateTrayStatus('success')
-        setTimeout(() => updateTrayStatus('ready'), 2000)
-      } catch (error) {
-        addMessage('error', 'Failed: ' + error.message)
-        updateTrayStatus('error')
-        setTimeout(() => updateTrayStatus('ready'), 3000)
-      }
-    }
-
-    // ==========================================================================
-    // Speech Recognition
-    // ==========================================================================
-
-    function initSpeechRecognition() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-      if (!SpeechRecognition) {
-        state.speechSupported = false
-        addMessage('system', 'Speech recognition not available. Please use text input.')
-        return false
+        });
       }
 
-      recognition = new SpeechRecognition()
-      recognition.continuous = false
-      recognition.interimResults = true
-      recognition.lang = 'en-US'
-      recognition.maxAlternatives = 1
+      // ==========================================================================
+      // Expose to window for component access
+      // ==========================================================================
 
-      recognition.onstart = () => {
-        state.isRecording = true
-        state.transcript = ''
-        updateTrayStatus('recording')
+      // Navigate to a new chat (clears current state)
+      function newChat() {
+        state.currentChatId = null;
+        messages.value = [];
+        history.pushState({}, '', '/voide');
       }
 
-      recognition.onresult = (event) => {
-        let transcript = ''
-        for (let i = 0; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript
-        }
-        state.transcript = transcript
+      window.voide = {
+        state: state,
+        messages: messages,
+        message: message,
+        charCount: charCount,
+        github: github,
+        apiKeys: apiKeys,
+        modals: modals,
+        config: config,
+        getCurrentDriverName: getCurrentDriverName,
+        // Methods
+        addMessage: addMessage,
+        processCommand: processCommand,
+        handleRepoAction: handleRepoAction,
+        commitChanges: commitChanges,
+        pushChanges: pushChanges,
+        startRecording: startRecording,
+        stopRecording: stopRecording,
+        handleTextSubmit: handleTextSubmit,
+        handleDriverChange: handleDriverChange,
+        openGithubModal: openGithubModal,
+        closeGithubModal: closeGithubModal,
+        openSettingsModal: openSettingsModal,
+        closeSettingsModal: closeSettingsModal,
+        saveApiSettings: saveApiSettings,
+        // Chat management
+        newChat: newChat,
+        loadChat: loadChat,
+        getAllChats: getAllChats,
+        deleteChat: deleteChat
+      };
+
+      // Initialize when DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
       }
-
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error)
-        stopRecording()
-        if (event.error === 'not-allowed') {
-          addMessage('error', 'Microphone access denied.')
-        } else if (event.error === 'network') {
-          addMessage('error', 'Speech recognition requires internet.')
-        } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
-          addMessage('error', 'Speech error: ' + event.error)
-        }
-      }
-
-      recognition.onend = () => {
-        if (state.isRecording) {
-          const transcript = state.transcript.trim()
-          stopRecording()
-          if (transcript) processCommand(transcript)
-        }
-      }
-
-      state.speechSupported = true
-      return true
-    }
-
-    function startRecording() {
-      if (!state.speechSupported || state.isRecording) return
-      state.transcript = ''
-      try {
-        recognition.start()
-      } catch (e) {
-        addMessage('error', 'Failed to start voice recognition.')
-      }
-    }
-
-    function stopRecording() {
-      state.isRecording = false
-      updateTrayStatus('ready')
-      if (recognition) {
-        try { recognition.stop() } catch (e) {}
-      }
-    }
-
-    // ==========================================================================
-    // Native App Features
-    // ==========================================================================
-
-    function initNativeFeatures() {
-      if (!window.craft) return
-
-      state.isNativeApp = true
-      try {
-        window.craft.tray.setTitle('Voide')
-        window.craft.tray.setTooltip('Voide - Voice AI Code Assistant')
-        window.craft.tray.setMenu([
-          { id: 'show', label: 'Show Voide', action: 'show' },
-          { id: 'hide', label: 'Hide Window', action: 'hide' },
-          { type: 'separator' },
-          { id: 'recording', label: 'Start Recording', action: 'startRecording' },
-          { type: 'separator' },
-          { id: 'quit', label: 'Quit Voide', action: 'quit', shortcut: 'Cmd+Q' }
-        ])
-        window.craft.tray.onClickToggleWindow()
-        addMessage('system', 'Running as native app - system tray enabled')
-      } catch (e) {
-        console.log('Native features not fully available:', e)
-      }
-    }
-
-    function updateTrayStatus(status) {
-      if (!state.isNativeApp || !window.craft) return
-      const icons = { ready: '🤖', recording: '🔴', processing: '⏳', success: '✅', error: '❌' }
-      try {
-        window.craft.tray.setTitle((icons[status] || '🤖') + ' Voide')
-      } catch (e) {}
-    }
-
-    function sendNotification(title, body) {
-      if (!state.isNativeApp || !window.craft) return
-      try {
-        window.craft.app.notify({ title, body })
-      } catch (e) {}
-    }
-
-    // ==========================================================================
-    // Modal Functions
-    // ==========================================================================
-
-    function openGithubModal() {
-      modals.github = true
-    }
-
-    function closeGithubModal() {
-      modals.github = false
-    }
-
-    function openSettingsModal() {
-      modals.settings = true
-      updateApiStatusIndicators()
-    }
-
-    function closeSettingsModal() {
-      modals.settings = false
-    }
-
-    function updateApiStatusIndicators() {
-      // This will be handled by reactive bindings
-    }
-
-    function saveApiSettings() {
-      const anthropicInput = document.getElementById('anthropicApiKey')
-      const openaiInput = document.getElementById('openaiApiKey')
-      const claudeHostInput = document.getElementById('claudeCliHost')
-
-      apiKeys.anthropic = anthropicInput?.value.trim() || null
-      apiKeys.openai = openaiInput?.value.trim() || null
-      apiKeys.claudeCliHost = claudeHostInput?.value.trim() || null
-
-      localStorage.setItem('voide_api_keys', JSON.stringify(apiKeys))
-      closeSettingsModal()
-      addMessage('system', 'API settings saved.')
-    }
-
-    function loadSavedApiKeys() {
-      try {
-        const saved = localStorage.getItem('voide_api_keys')
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          Object.assign(apiKeys, parsed)
-        }
-      } catch (e) {}
-    }
-
-    // ==========================================================================
-    // Text Input Handling
-    // ==========================================================================
-
-    function handleTextSubmit() {
-      const text = message.value.trim()
-      if (text && !state.isProcessing) {
-        message.value = ''
-        charCount.value = 0
-        processCommand(text)
-      }
-    }
-
-    function handleDriverChange(event) {
-      state.currentDriver = event.target.value
-      addMessage('system', 'Switched to ' + config.drivers[state.currentDriver].name)
-    }
-
-    // ==========================================================================
-    // Lifecycle
-    // ==========================================================================
-
-    onMounted(() => {
-      // Initialize native features
-      initNativeFeatures()
-
-      // Initialize speech recognition
-      initSpeechRecognition()
-
-      // Load saved data
-      loadSavedApiKeys()
-
-      const savedRepoPath = localStorage.getItem(STORAGE_KEY_REPO)
-      if (savedRepoPath) {
-        const repoInput = document.getElementById('repoInput')
-        if (repoInput) repoInput.value = savedRepoPath
-      }
-
-      // Setup keyboard shortcuts
-      document.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' && !e.repeat) {
-          const active = document.activeElement
-          const isInput = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA'
-          if (!isInput) {
-            e.preventDefault()
-            startRecording()
-          }
-        }
-        if (e.key === 'Escape') {
-          closeGithubModal()
-          closeSettingsModal()
-        }
-      })
-
-      document.addEventListener('keyup', (e) => {
-        if (e.code === 'Space' && state.isRecording) {
-          e.preventDefault()
-          stopRecording()
-        }
-      })
-    })
-
-    onUnmounted(() => {
-      if (recognition) {
-        try { recognition.stop() } catch (e) {}
-      }
-    })
-
-    // Watch for message changes
-    watch(message, (newValue) => {
-      charCount.value = newValue.length
-    })
-
-    // ==========================================================================
-    // Expose to window for component access
-    // ==========================================================================
-
-    window.voide = {
-      state,
-      messages,
-      message,
-      charCount,
-      github,
-      apiKeys,
-      modals,
-      config,
-      currentDriverName,
-      canCommit,
-      canPush,
-      // Methods
-      addMessage,
-      processCommand,
-      handleRepoAction,
-      commitChanges,
-      pushChanges,
-      startRecording,
-      stopRecording,
-      handleTextSubmit,
-      handleDriverChange,
-      openGithubModal,
-      closeGithubModal,
-      openSettingsModal,
-      closeSettingsModal,
-      saveApiSettings
-    }
+    })();
   </script>
 </body>
 </html>

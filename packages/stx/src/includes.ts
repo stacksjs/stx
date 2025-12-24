@@ -416,13 +416,27 @@ export async function processIncludes(
       const normalizedResolvedPath = path.normalize(resolvedPath)
 
       // Security: Prevent path traversal attacks
-      // The resolved path must be within the partials directory or the template directory
+      // The resolved path must be within:
+      // 1. The partials directory, OR
+      // 2. The template directory, OR
+      // 3. Any sibling directory within 3 parent levels (for typical app structures)
       const isWithinPartialsDir = normalizedResolvedPath.startsWith(normalizedPartialsDir + path.sep)
         || normalizedResolvedPath === normalizedPartialsDir
       const isWithinTemplateDir = normalizedResolvedPath.startsWith(templateDir + path.sep)
         || normalizedResolvedPath === templateDir
 
-      if (!isWithinPartialsDir && !isWithinTemplateDir) {
+      // Check if within sibling directories (up to 3 levels up)
+      let isWithinProjectScope = false
+      let parentDir = templateDir
+      for (let i = 0; i < 3; i++) {
+        parentDir = path.dirname(parentDir)
+        if (normalizedResolvedPath.startsWith(parentDir + path.sep)) {
+          isWithinProjectScope = true
+          break
+        }
+      }
+
+      if (!isWithinPartialsDir && !isWithinTemplateDir && !isWithinProjectScope) {
         console.error(`Security: Path traversal attempt blocked for include path: ${includePath}`)
         console.error(`  Resolved to: ${normalizedResolvedPath}`)
         console.error(`  Allowed dirs: ${normalizedPartialsDir}, ${templateDir}`)

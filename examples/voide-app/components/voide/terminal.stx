@@ -1,0 +1,222 @@
+<div style="flex:1;position:relative;background:#2d2a2e;border:1px solid #403e41;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5)">
+  <!-- Terminal Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#221f22;border-bottom:1px solid #403e41">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:12px;height:12px;border-radius:50%;background:#ff6188;cursor:pointer"></div>
+      <div style="width:12px;height:12px;border-radius:50%;background:#ffd866;cursor:pointer"></div>
+      <div style="width:12px;height:12px;border-radius:50%;background:#a9dc76;cursor:pointer"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="animate-pulse" style="width:8px;height:8px;border-radius:50%;background:#a9dc76"></div>
+      <span id="terminalTitle" style="font-size:12px;font-weight:500;color:#727072">Ready</span>
+    </div>
+    <div style="width:64px"></div>
+  </div>
+
+  <!-- Terminal Output -->
+  <div id="output" style="flex:1;padding:24px;overflow-y:auto;display:flex;flex-direction:column;gap:16px">
+    <!-- Welcome Message -->
+    <div style="padding:16px;background:#ab9df215;border:1px solid #ab9df240;border-radius:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div style="width:32px;height:32px;border-radius:8px;background:#ab9df2;display:flex;align-items:center;justify-content:center">
+          <span style="font-size:14px">✨</span>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#fcfcfa80;text-transform:uppercase;letter-spacing:0.05em">Welcome</span>
+      </div>
+      <div id="welcomeMessage" style="font-size:14px;color:#fcfcfa99;line-height:1.6">
+        <p style="margin-bottom:12px">Welcome to <span style="color:#fcfcfa;font-weight:500">Voide</span> - your voice-controlled AI code assistant.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+          <div style="padding:12px;background:#2d2a2e;border-radius:8px;border:1px solid #403e41">
+            <p style="font-size:11px;color:#727072;margin-bottom:4px">Step 1</p>
+            <p style="font-size:14px;color:#fcfcfacc">Select an AI driver</p>
+          </div>
+          <div style="padding:12px;background:#2d2a2e;border-radius:8px;border:1px solid #403e41">
+            <p style="font-size:11px;color:#727072;margin-bottom:4px">Step 2</p>
+            <p style="font-size:14px;color:#fcfcfacc">Open a repository</p>
+          </div>
+          <div style="padding:12px;background:#2d2a2e;border-radius:8px;border:1px solid #403e41">
+            <p style="font-size:11px;color:#727072;margin-bottom:4px">Step 3</p>
+            <p style="font-size:14px;color:#fcfcfacc">Speak or type commands</p>
+          </div>
+          <div style="padding:12px;background:#2d2a2e;border-radius:8px;border:1px solid #403e41">
+            <p style="font-size:11px;color:#727072;margin-bottom:4px">Step 4</p>
+            <p style="font-size:14px;color:#fcfcfacc">Review & commit changes</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Dynamic messages will be inserted here -->
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  let lastMessageCount = 1
+  const messageElements = new Map() // Track DOM elements by message index
+  const messageUpdates = new Map() // Track last update time
+
+  // Monokai Pro color scheme
+  const monokai = {
+    bg: '#2d2a2e',
+    fg: '#fcfcfa',
+    pink: '#ff6188',
+    orange: '#fc9867',
+    yellow: '#ffd866',
+    green: '#a9dc76',
+    cyan: '#78dce8',
+    purple: '#ab9df2',
+    gray: '#727072'
+  }
+
+  const typeStyles = {
+    user: {
+      bg: monokai.cyan + '15',
+      border: monokai.cyan + '40',
+      icon: '👤',
+      iconBg: monokai.cyan
+    },
+    assistant: {
+      bg: monokai.green + '15',
+      border: monokai.green + '40',
+      icon: '🤖',
+      iconBg: monokai.green
+    },
+    system: {
+      bg: monokai.yellow + '15',
+      border: monokai.yellow + '40',
+      icon: '⚡',
+      iconBg: monokai.yellow
+    },
+    error: {
+      bg: monokai.pink + '15',
+      border: monokai.pink + '40',
+      icon: '⚠️',
+      iconBg: monokai.pink
+    }
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div')
+    div.textContent = text
+    return div.innerHTML
+  }
+
+  function renderMarkdown(text) {
+    if (!text) return ''
+
+    let html = escapeHtml(text)
+
+    // Code blocks (```lang\ncode```)
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      return `<pre style="background:${monokai.bg};border:1px solid ${monokai.gray}40;border-radius:8px;padding:12px;margin:8px 0;overflow-x:auto"><code style="color:${monokai.green};font-size:12px">` + code.trim() + '</code></pre>'
+    })
+
+    // Inline code (`code`)
+    html = html.replace(/`([^`]+)`/g, `<code style="background:${monokai.bg};color:${monokai.cyan};padding:2px 6px;border-radius:4px;font-size:12px">$1</code>`)
+
+    // Headers
+    html = html.replace(/^### (.+)$/gm, `<h3 style="color:${monokai.fg};font-size:16px;font-weight:600;margin:16px 0 8px">$1</h3>`)
+    html = html.replace(/^## (.+)$/gm, `<h2 style="color:${monokai.fg};font-size:18px;font-weight:600;margin:16px 0 8px">$1</h2>`)
+    html = html.replace(/^# (.+)$/gm, `<h1 style="color:${monokai.fg};font-size:20px;font-weight:700;margin:16px 0 8px">$1</h1>`)
+
+    // Bold (**text**)
+    html = html.replace(/\*\*([^*]+)\*\*/g, `<strong style="color:${monokai.fg};font-weight:600">$1</strong>`)
+
+    // Links [text](url)
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, `<a href="$2" target="_blank" style="color:${monokai.cyan};text-decoration:underline">$1</a>`)
+
+    // Unordered lists (- item)
+    html = html.replace(/^- (.+)$/gm, `<li style="margin-left:16px;list-style:disc;color:${monokai.fg}80">$1</li>`)
+
+    // Horizontal rule
+    html = html.replace(/^---$/gm, `<hr style="border-color:${monokai.gray}40;margin:16px 0">`)
+
+    return html
+  }
+
+  function createMessageHtml(msg, style) {
+    if (msg.content === '...') {
+      return `
+        <div style="padding:16px;background:${style.bg};border:1px solid ${style.border};border-radius:12px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <div style="width:32px;height:32px;border-radius:8px;background:${style.iconBg};display:flex;align-items:center;justify-content:center">
+              <span style="font-size:14px">${style.icon}</span>
+            </div>
+            <span style="font-size:12px;font-weight:600;color:${monokai.fg}80;text-transform:uppercase;letter-spacing:0.05em">${escapeHtml(msg.header)}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="animate-bounce" style="width:8px;height:8px;background:${monokai.purple};border-radius:50%;animation-delay:0ms"></div>
+            <div class="animate-bounce" style="width:8px;height:8px;background:${monokai.purple};border-radius:50%;animation-delay:150ms"></div>
+            <div class="animate-bounce" style="width:8px;height:8px;background:${monokai.purple};border-radius:50%;animation-delay:300ms"></div>
+          </div>
+        </div>
+      `
+    } else {
+      return `
+        <div style="padding:16px;background:${style.bg};border:1px solid ${style.border};border-radius:12px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <div style="width:32px;height:32px;border-radius:8px;background:${style.iconBg};display:flex;align-items:center;justify-content:center">
+              <span style="font-size:14px">${style.icon}</span>
+            </div>
+            <span style="font-size:12px;font-weight:600;color:${monokai.fg}80;text-transform:uppercase;letter-spacing:0.05em">${escapeHtml(msg.header)}</span>
+          </div>
+          <div style="font-size:14px;color:${monokai.fg}cc;line-height:1.6;white-space:pre-wrap">${renderMarkdown(msg.content)}</div>
+        </div>
+      `
+    }
+  }
+
+  function renderMessages() {
+    if (!window.voide) return
+
+    const { messages, state } = window.voide
+    const output = document.getElementById('output')
+    const terminalTitle = document.getElementById('terminalTitle')
+
+    if (!output || !messages) return
+
+    if (terminalTitle && state.terminalTitle) {
+      terminalTitle.textContent = state.terminalTitle.replace('Voide - ', '')
+    }
+
+    const messageArray = messages.value || []
+
+    // Check for updates to existing messages (for streaming)
+    for (let i = 0; i < messageArray.length; i++) {
+      const msg = messageArray[i]
+      if (!msg) continue
+
+      const existingEl = messageElements.get(i)
+      const lastUpdate = messageUpdates.get(i)
+
+      if (existingEl && msg.updated && msg.updated !== lastUpdate) {
+        // Message was updated - re-render it
+        const style = typeStyles[msg.type] || typeStyles.system
+        existingEl.innerHTML = createMessageHtml(msg, style)
+        messageUpdates.set(i, msg.updated)
+      }
+    }
+
+    // Add new messages
+    while (lastMessageCount - 1 < messageArray.length) {
+      const idx = lastMessageCount - 1
+      const msg = messageArray[idx]
+      if (!msg) break
+
+      const style = typeStyles[msg.type] || typeStyles.system
+
+      const messageDiv = document.createElement('div')
+      messageDiv.className = 'relative group animate-fade-in'
+      messageDiv.innerHTML = createMessageHtml(msg, style)
+
+      output.appendChild(messageDiv)
+      messageElements.set(idx, messageDiv)
+      messageUpdates.set(idx, msg.updated || 0)
+      lastMessageCount++
+    }
+  }
+
+  setInterval(renderMessages, 100)
+  renderMessages()
+})
+</script>

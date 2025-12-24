@@ -1,0 +1,840 @@
+<script>
+// Server-side: Static data available at build time
+export const title = 'Voide'
+export const version = '1.0.0'
+export const apiBaseUrl = 'http://localhost:3008/voide'
+
+export const drivers = {
+  'claude-cli-local': { name: 'Claude CLI (Local)', requiresKey: null },
+  'claude-cli-ec2': { name: 'Claude CLI (EC2)', requiresKey: 'BUDDY_EC2_HOST' },
+  'claude': { name: 'Claude API', requiresKey: 'ANTHROPIC_API_KEY' },
+  'openai': { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
+  'ollama': { name: 'Ollama', requiresKey: null },
+  'mock': { name: 'Mock', requiresKey: null }
+}
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>{{ title }} - Voice AI Code Assistant</title>
+
+  <style>
+    /* Custom animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(5deg); }
+    }
+
+    .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+    .animate-pulse { animation: pulse 2s ease-in-out infinite; }
+    .animate-bounce { animation: bounce 0.6s ease-in-out infinite; }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* Body styling */
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* Monokai Pro background */
+    .gradient-bg {
+      background: #221f22;
+      position: relative;
+    }
+
+    /* Floating orbs - Monokai colors */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      animation: float 20s ease-in-out infinite;
+    }
+    .orb-1 {
+      width: 400px;
+      height: 400px;
+      background: linear-gradient(to right, #ab9df2, #78dce8);
+      top: -100px;
+      right: -100px;
+      animation-delay: 0s;
+    }
+    .orb-2 {
+      width: 300px;
+      height: 300px;
+      background: linear-gradient(to right, #ff6188, #ab9df2);
+      bottom: -50px;
+      left: -50px;
+      animation-delay: -10s;
+    }
+  </style>
+
+  <!-- Load Headwind CSS -->
+  <script>
+    // Dynamically load Headwind CSS to bypass bundler
+    (function() {
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/dist/voide.css';
+      link.onload = function() { document.body.style.visibility = 'visible'; };
+      document.head.appendChild(link);
+      // Hide body until CSS loads to prevent FOUC
+      document.write('<style>body{visibility:hidden}</style>');
+    })();
+  </script>
+
+  <!-- Voide Stores (loaded synchronously before main script) -->
+  <script>
+    // Load stores synchronously
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/js/voide-stores.js', false); // false = synchronous
+    xhr.send();
+    if (xhr.status === 200) {
+      eval(xhr.responseText);
+    }
+  </script>
+</head>
+<body class="gradient-bg flex flex-col h-screen text-white overflow-hidden">
+  <!-- Floating orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- Header -->
+  @include('../components/voide/header', { title })
+
+  <!-- Main Content -->
+  <main class="relative flex-1 flex flex-col p-6 gap-5 overflow-hidden">
+    <!-- Terminal -->
+    @include('../components/voide/terminal')
+
+    <!-- Input Bar -->
+    @include('../components/voide/input-bar')
+  </main>
+
+  <!-- Footer -->
+  <footer style="position:relative;padding:12px 24px;text-align:center;font-size:12px;color:#727072;border-top:1px solid #403e41">
+    <span style="background:linear-gradient(to right,#ab9df2,#78dce8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:500">{{ title }}</span>
+    <span style="margin:0 8px">·</span>
+    <span>v{{ version }}</span>
+    <span style="margin:0 8px">·</span>
+    <span>Voice AI Code Assistant</span>
+  </footer>
+
+  <!-- Modals -->
+  @include('../components/voide/modals')
+
+  <!-- Craft Native Bridge -->
+  <script>
+    (function() {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.craftBridge) {
+        window.craft = {
+          _callbacks: {},
+          _callbackId: 0,
+          _invoke: function(method, args) {
+            args = args || {};
+            var self = this;
+            return new Promise(function(resolve, reject) {
+              var id = ++self._callbackId;
+              self._callbacks[id] = { resolve: resolve, reject: reject };
+              window.webkit.messageHandlers.craftBridge.postMessage({ id: id, method: method, args: args });
+            });
+          },
+          _handleResponse: function(id, result, error) {
+            var cb = this._callbacks[id];
+            if (cb) {
+              delete this._callbacks[id];
+              error ? cb.reject(new Error(error)) : cb.resolve(result);
+            }
+          },
+          window: {
+            setTitle: function(title) { return window.craft._invoke('window.setTitle', { title: title }); },
+            close: function() { return window.craft._invoke('window.close'); },
+            minimize: function() { return window.craft._invoke('window.minimize'); },
+            maximize: function() { return window.craft._invoke('window.maximize'); }
+          },
+          tray: {
+            setTitle: function(title) { return window.craft._invoke('tray.setTitle', { title: title }); },
+            setTooltip: function(tooltip) { return window.craft._invoke('tray.setTooltip', { tooltip: tooltip }); },
+            setMenu: function(menu) { return window.craft._invoke('tray.setMenu', { menu: menu }); },
+            onClickToggleWindow: function() { return window.craft._invoke('tray.onClickToggleWindow'); }
+          },
+          app: {
+            quit: function() { return window.craft._invoke('app.quit'); },
+            notify: function(options) { return window.craft._invoke('app.notify', options); }
+          }
+        };
+        console.log('[Voide] Craft native bridge initialized');
+      }
+    })();
+  </script>
+
+  <!-- Voide Client Runtime (Plain JS - No ES Modules) -->
+  <script>
+    (function() {
+      'use strict';
+
+      // ==========================================================================
+      // Store References (from VoideStores)
+      // ==========================================================================
+
+      var stores = window.VoideStores;
+      var appStore = stores.appStore;
+      var appActions = stores.appActions;
+      var chatStore = stores.chatStore;
+      var chatActions = stores.chatActions;
+      var settingsStore = stores.settingsStore;
+      var settingsActions = stores.settingsActions;
+      var uiStore = stores.uiStore;
+      var uiActions = stores.uiActions;
+
+      var recognition = null;
+
+      var config = {
+        title: 'Voide',
+        version: '1.0.0',
+        apiBaseUrl: 'http://localhost:3008/voide',
+        drivers: {
+          'claude-cli-local': { name: 'Claude CLI (Local)', requiresKey: null },
+          'claude-cli-ec2': { name: 'Claude CLI (EC2)', requiresKey: 'BUDDY_EC2_HOST' },
+          'claude': { name: 'Claude API', requiresKey: 'ANTHROPIC_API_KEY' },
+          'openai': { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
+          'ollama': { name: 'Ollama', requiresKey: null },
+          'mock': { name: 'Mock', requiresKey: null }
+        }
+      };
+
+      // ==========================================================================
+      // Helper Functions (wrapping store actions)
+      // ==========================================================================
+
+      function saveChat() {
+        var app = appStore.get();
+        chatActions.saveCurrentChat(app.repoPath, app.currentDriver);
+      }
+
+      function loadChat(chatId) {
+        var success = chatActions.loadChat(chatId);
+        if (success) {
+          var chats = chatActions.getAllChats();
+          var chat = chats[chatId];
+          if (chat) {
+            appActions.setRepoPath(chat.repoPath || '');
+            appActions.setDriver(chat.driver || 'claude-cli-local');
+
+            // Update repo input if it exists
+            var repoInput = document.getElementById('repoInput');
+            if (repoInput && chat.repoPath) {
+              repoInput.value = chat.repoPath;
+            }
+          }
+        }
+        return success;
+      }
+
+      function startNewChat() {
+        var app = appStore.get();
+        return chatActions.startNewChat(app.repoPath, app.currentDriver);
+      }
+
+      function getCurrentDriverName() {
+        var app = appStore.get();
+        var driver = config.drivers[app.currentDriver];
+        return driver ? driver.name : 'AI';
+      }
+
+      // ==========================================================================
+      // Methods
+      // ==========================================================================
+
+      function addMessage(type, content, header) {
+        var driverName = getCurrentDriverName();
+        var headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error');
+
+        chatActions.addMessage(type, content, headerText);
+
+        // Save chat to localStorage
+        saveChat();
+
+        // Only scroll to bottom when user sends a new prompt
+        if (type === 'user') {
+          setTimeout(function() {
+            var output = document.getElementById('output');
+            if (output) output.scrollTop = output.scrollHeight;
+          }, 10);
+        }
+      }
+
+      function checkBackendAPI() {
+        return fetch(config.apiBaseUrl + '/state')
+          .then(function(res) { return res.ok; })
+          .catch(function() { return false; });
+      }
+
+      var saveChatDebounceTimer = null;
+      function updateLastMessage(type, content) {
+        chatActions.updateLastMessage(type, content);
+
+        // Debounce save during streaming to avoid excessive writes
+        clearTimeout(saveChatDebounceTimer);
+        saveChatDebounceTimer = setTimeout(saveChat, 500);
+      }
+
+      function processWithStreaming(command) {
+        return new Promise(function(resolve, reject) {
+          var fullContent = '';
+          var currentEvent = '';
+          var app = appStore.get();
+
+          fetch(config.apiBaseUrl + '/process/stream', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              command: command,
+              driver: app.currentDriver,
+              repository: app.repoPath
+            })
+          }).then(function(response) {
+            if (!response.ok) {
+              throw new Error('Stream request failed');
+            }
+
+            var reader = response.body.getReader();
+            var decoder = new TextDecoder();
+            var buffer = '';
+
+            function readChunk() {
+              reader.read().then(function(result) {
+                if (result.done) {
+                  resolve({ message: fullContent, hasChanges: false });
+                  return;
+                }
+
+                buffer += decoder.decode(result.value, { stream: true });
+                var lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (var i = 0; i < lines.length; i++) {
+                  var line = lines[i].trim();
+                  if (!line) continue;
+
+                  if (line.indexOf('event: ') === 0) {
+                    currentEvent = line.substring(7);
+                    continue;
+                  }
+
+                  if (line.indexOf('data: ') === 0) {
+                    try {
+                      var data = JSON.parse(line.substring(6));
+
+                      if (currentEvent === 'chunk' && data.text) {
+                        fullContent += data.text;
+                        updateLastMessage('assistant', fullContent);
+                      } else if (currentEvent === 'done') {
+                        resolve({ message: fullContent, hasChanges: data.hasChanges || false });
+                        return;
+                      } else if (currentEvent === 'error') {
+                        reject(new Error(data.error || 'Stream error'));
+                        return;
+                      }
+                    } catch (e) {
+                      // Ignore parse errors
+                    }
+                  }
+                }
+
+                readChunk();
+              }).catch(reject);
+            }
+
+            readChunk();
+          }).catch(reject);
+        });
+      }
+
+      function processCommand(command) {
+        if (!command.trim()) return;
+
+        var chat = chatStore.get();
+        var app = appStore.get();
+
+        // Start a new chat on first prompt if not already in a chat
+        if (!chat.currentChatId) {
+          startNewChat();
+        }
+
+        addMessage('user', command);
+        appActions.setTerminalTitle('Processing...');
+
+        if (!app.repoPath) {
+          addMessage('error', 'Please enter a repository URL or path first.');
+          appActions.setTerminalTitle(config.title + ' - Ready');
+          return;
+        }
+
+        appActions.setProcessing(true);
+        addMessage('assistant', '...');
+
+        checkBackendAPI().then(function(hasBackend) {
+          if (hasBackend) {
+            // Use streaming endpoint
+            return processWithStreaming(command);
+          } else if (appStore.get().currentDriver === 'mock') {
+            return new Promise(function(resolve) {
+              setTimeout(function() {
+                resolve({
+                  message: '[Mock] Processing: "' + command + '"\n\nThis is a simulated response.',
+                  hasChanges: command.toLowerCase().indexOf('fix') !== -1
+                });
+              }, 1500);
+            });
+          } else {
+            return Promise.reject(new Error('Backend API not available. Start the server at localhost:3008.'));
+          }
+        }).then(function(response) {
+          // Streaming already updated the message, just handle completion
+          if (response.hasChanges) {
+            appActions.setHasChanges(true);
+            addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.');
+            sendNotification('Changes Ready', 'Code changes are staged.');
+          }
+
+          appActions.setTerminalTitle(config.title + ' - Ready');
+          updateTrayStatus('success');
+          setTimeout(function() { updateTrayStatus('ready'); }, 2000);
+        }).catch(function(error) {
+          chatActions.removeLastMessage();
+          addMessage('error', 'Failed: ' + error.message);
+          appActions.setTerminalTitle(config.title + ' - Error');
+          updateTrayStatus('error');
+          setTimeout(function() { updateTrayStatus('ready'); }, 3000);
+        }).finally(function() {
+          appActions.setProcessing(false);
+        });
+      }
+
+      function handleRepoAction() {
+        var input = document.getElementById('repoInput');
+        var inputValue = input ? input.value.trim() : '';
+
+        if (!inputValue) {
+          addMessage('error', 'Please enter a repository URL or path.');
+          return;
+        }
+
+        addMessage('system', 'Opening repository: ' + inputValue);
+
+        checkBackendAPI().then(function(hasBackend) {
+          if (hasBackend) {
+            return fetch(config.apiBaseUrl + '/repo', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ input: inputValue })
+            }).then(function(res) { return res.json(); });
+          } else {
+            return {
+              success: true,
+              data: {
+                repo: { path: inputValue, name: inputValue.split('/').pop(), branch: 'main' }
+              }
+            };
+          }
+        }).then(function(response) {
+          // Handle both wrapped {success, data} and direct response formats
+          var data = response.data || response;
+          var repo = data.repo;
+
+          if (repo) {
+            appActions.setRepoPath(repo.path);
+            settingsActions.setLastRepoPath(repo.path);
+            saveChat(); // Save repo path to chat
+            addMessage('system', 'Repository "' + repo.name + '" opened.\nPath: ' + repo.path + '\nBranch: ' + repo.branch);
+            appActions.setTerminalTitle(config.title + ' - ' + repo.name);
+          } else if (response.error) {
+            throw new Error(response.error);
+          } else {
+            throw new Error('Failed to open repository');
+          }
+        }).catch(function(error) {
+          addMessage('error', 'Failed: ' + error.message);
+        });
+      }
+
+      function commitChanges() {
+        if (!appStore.get().hasChanges) return;
+
+        addMessage('system', 'Creating commit...');
+        updateTrayStatus('processing');
+
+        checkBackendAPI().then(function(hasBackend) {
+          if (hasBackend) {
+            return fetch(config.apiBaseUrl + '/commit', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            }).then(function(res) { return res.json(); });
+          } else {
+            return { success: true, hash: 'mock-commit-hash' };
+          }
+        }).then(function(response) {
+          addMessage('system', 'Committed: ' + (response.hash || 'success'));
+          appActions.setHasChanges(false);
+          updateTrayStatus('success');
+          setTimeout(function() { updateTrayStatus('ready'); }, 2000);
+        }).catch(function(error) {
+          addMessage('error', 'Failed: ' + error.message);
+          updateTrayStatus('error');
+          setTimeout(function() { updateTrayStatus('ready'); }, 3000);
+        });
+      }
+
+      function pushChanges() {
+        addMessage('system', 'Pushing to remote...');
+        updateTrayStatus('processing');
+
+        checkBackendAPI().then(function(hasBackend) {
+          if (hasBackend) {
+            return fetch(config.apiBaseUrl + '/push', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+          return Promise.resolve();
+        }).then(function() {
+          addMessage('system', 'Pushed successfully.');
+          updateTrayStatus('success');
+          setTimeout(function() { updateTrayStatus('ready'); }, 2000);
+        }).catch(function(error) {
+          addMessage('error', 'Failed: ' + error.message);
+          updateTrayStatus('error');
+          setTimeout(function() { updateTrayStatus('ready'); }, 3000);
+        });
+      }
+
+      // ==========================================================================
+      // Speech Recognition
+      // ==========================================================================
+
+      function initSpeechRecognition() {
+        var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          appActions.setSpeechSupported(false);
+          addMessage('system', 'Speech recognition not available. Please use text input.');
+          return false;
+        }
+
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = function() {
+          appActions.setRecording(true);
+          appActions.setTranscript('');
+          updateTrayStatus('recording');
+        };
+
+        recognition.onresult = function(event) {
+          var transcript = '';
+          for (var i = 0; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          appActions.setTranscript(transcript);
+        };
+
+        recognition.onerror = function(event) {
+          console.error('Speech recognition error:', event.error);
+          stopRecording();
+          if (event.error === 'not-allowed') {
+            addMessage('error', 'Microphone access denied.');
+          } else if (event.error === 'network') {
+            addMessage('error', 'Speech recognition requires internet.');
+          } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
+            addMessage('error', 'Speech error: ' + event.error);
+          }
+        };
+
+        recognition.onend = function() {
+          var app = appStore.get();
+          if (app.isRecording) {
+            var transcript = app.transcript.trim();
+            stopRecording();
+            if (transcript) processCommand(transcript);
+          }
+        };
+
+        appActions.setSpeechSupported(true);
+        return true;
+      }
+
+      function startRecording() {
+        var app = appStore.get();
+        if (!app.speechSupported || app.isRecording) return;
+        appActions.setTranscript('');
+        try {
+          recognition.start();
+        } catch (e) {
+          addMessage('error', 'Failed to start voice recognition.');
+        }
+      }
+
+      function stopRecording() {
+        appActions.setRecording(false);
+        updateTrayStatus('ready');
+        if (recognition) {
+          try { recognition.stop(); } catch (e) {}
+        }
+      }
+
+      // ==========================================================================
+      // Native App Features
+      // ==========================================================================
+
+      function initNativeFeatures() {
+        if (!window.craft) return;
+
+        appActions.setNativeApp(true);
+        try {
+          window.craft.tray.setTitle('Voide');
+          window.craft.tray.setTooltip('Voide - Voice AI Code Assistant');
+          window.craft.tray.setMenu([
+            { id: 'show', label: 'Show Voide', action: 'show' },
+            { id: 'hide', label: 'Hide Window', action: 'hide' },
+            { type: 'separator' },
+            { id: 'recording', label: 'Start Recording', action: 'startRecording' },
+            { type: 'separator' },
+            { id: 'quit', label: 'Quit Voide', action: 'quit', shortcut: 'Cmd+Q' }
+          ]);
+          window.craft.tray.onClickToggleWindow();
+          addMessage('system', 'Running as native app - system tray enabled');
+        } catch (e) {
+          console.log('Native features not fully available:', e);
+        }
+      }
+
+      function updateTrayStatus(status) {
+        if (!appStore.get().isNativeApp || !window.craft) return;
+        var icons = { ready: '🤖', recording: '🔴', processing: '⏳', success: '✅', error: '❌' };
+        try {
+          window.craft.tray.setTitle((icons[status] || '🤖') + ' Voide');
+        } catch (e) {}
+      }
+
+      function sendNotification(title, body) {
+        if (!appStore.get().isNativeApp || !window.craft) return;
+        try {
+          window.craft.app.notify({ title: title, body: body });
+        } catch (e) {}
+      }
+
+      // ==========================================================================
+      // Modal Functions
+      // ==========================================================================
+
+      function openGithubModal() {
+        uiActions.openModal('github');
+      }
+
+      function closeGithubModal() {
+        uiActions.closeModal('github');
+      }
+
+      function openSettingsModal() {
+        uiActions.openModal('settings');
+      }
+
+      function closeSettingsModal() {
+        uiActions.closeModal('settings');
+      }
+
+      function saveApiSettings() {
+        var anthropicInput = document.getElementById('anthropicApiKey');
+        var openaiInput = document.getElementById('openaiApiKey');
+        var claudeHostInput = document.getElementById('claudeCliHost');
+
+        settingsActions.setAllApiKeys({
+          anthropic: anthropicInput ? anthropicInput.value.trim() || null : null,
+          openai: openaiInput ? openaiInput.value.trim() || null : null,
+          claudeCliHost: claudeHostInput ? claudeHostInput.value.trim() || null : null
+        });
+
+        closeSettingsModal();
+        addMessage('system', 'API settings saved.');
+      }
+
+      // ==========================================================================
+      // Text Input Handling
+      // ==========================================================================
+
+      function handleTextSubmit() {
+        var chat = chatStore.get();
+        var text = chat.inputText.trim();
+        if (text && !appStore.get().isProcessing) {
+          chatActions.clearInput();
+          processCommand(text);
+        }
+      }
+
+      function handleDriverChange(event) {
+        appActions.setDriver(event.target.value);
+        addMessage('system', 'Switched to ' + config.drivers[event.target.value].name);
+      }
+
+      // ==========================================================================
+      // Initialization
+      // ==========================================================================
+
+      function init() {
+        // Initialize native features
+        initNativeFeatures();
+
+        // Initialize speech recognition
+        initSpeechRecognition();
+
+        // Check URL for existing chat
+        var chatIdFromUrl = chatActions.getChatIdFromUrl();
+        if (chatIdFromUrl) {
+          if (!loadChat(chatIdFromUrl)) {
+            // Chat not found, redirect to home
+            history.replaceState({}, '', '/');
+          }
+        } else {
+          // No chat in URL, load last repo path for new session
+          var settings = settingsStore.get();
+          if (settings.lastRepoPath) {
+            appActions.setRepoPath(settings.lastRepoPath);
+            var repoInput = document.getElementById('repoInput');
+            if (repoInput) repoInput.value = settings.lastRepoPath;
+          }
+        }
+
+        // Handle browser back/forward navigation
+        window.addEventListener('popstate', function(e) {
+          var chatId = chatActions.getChatIdFromUrl();
+          if (chatId) {
+            loadChat(chatId);
+          } else {
+            // Navigated to home, clear current chat
+            chatActions.newChat();
+          }
+        });
+
+        // Setup keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+          if (e.code === 'Space' && !e.repeat) {
+            var active = document.activeElement;
+            var isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+            if (!isInput) {
+              e.preventDefault();
+              startRecording();
+            }
+          }
+          if (e.key === 'Escape') {
+            uiActions.closeAllModals();
+          }
+        });
+
+        document.addEventListener('keyup', function(e) {
+          if (e.code === 'Space' && appStore.get().isRecording) {
+            e.preventDefault();
+            stopRecording();
+          }
+        });
+      }
+
+      // ==========================================================================
+      // Expose to window for component access
+      // ==========================================================================
+
+      window.voide = {
+        // Stores (reactive)
+        stores: stores,
+        appStore: appStore,
+        chatStore: chatStore,
+        settingsStore: settingsStore,
+        uiStore: uiStore,
+
+        // Store actions
+        appActions: appActions,
+        chatActions: chatActions,
+        settingsActions: settingsActions,
+        uiActions: uiActions,
+
+        // Composables (Nuxt-style browser API utilities)
+        useStorage: stores.useStorage,
+        useLocalStorage: stores.useLocalStorage,
+        useSessionStorage: stores.useSessionStorage,
+        useCookie: stores.useCookie,
+        useClipboard: stores.useClipboard,
+        useMediaQuery: stores.useMediaQuery,
+        usePreferredDark: stores.usePreferredDark,
+        useNetwork: stores.useNetwork,
+        useOnline: stores.useOnline,
+        useWindowSize: stores.useWindowSize,
+        useScroll: stores.useScroll,
+        useVisibility: stores.useVisibility,
+        useTitle: stores.useTitle,
+        useFavicon: stores.useFavicon,
+        useIsMobile: stores.useIsMobile,
+        useIsDesktop: stores.useIsDesktop,
+        copyToClipboard: stores.copyToClipboard,
+
+        // Legacy accessors (for component compatibility)
+        get state() { return appStore.get(); },
+        get messages() { return chatStore.get().messages; },
+        get charCount() { return chatStore.get().charCount; },
+
+        // Config
+        config: config,
+        getCurrentDriverName: getCurrentDriverName,
+
+        // Methods
+        addMessage: addMessage,
+        processCommand: processCommand,
+        handleRepoAction: handleRepoAction,
+        commitChanges: commitChanges,
+        pushChanges: pushChanges,
+        startRecording: startRecording,
+        stopRecording: stopRecording,
+        handleTextSubmit: handleTextSubmit,
+        handleDriverChange: handleDriverChange,
+        openGithubModal: openGithubModal,
+        closeGithubModal: closeGithubModal,
+        openSettingsModal: openSettingsModal,
+        closeSettingsModal: closeSettingsModal,
+        saveApiSettings: saveApiSettings,
+
+        // Chat management
+        newChat: chatActions.newChat,
+        loadChat: loadChat,
+        getAllChats: chatActions.getAllChats,
+        deleteChat: chatActions.deleteChat
+      };
+
+      // Initialize when DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>

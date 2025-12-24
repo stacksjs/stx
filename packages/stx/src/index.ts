@@ -39,6 +39,7 @@ export * from './pwa'
 export * from './reactive'
 export * from './reactivity'
 export * from './release'
+export * from './router'
 export * from './seo'
 export * from './serve'
 export * from './server-components'
@@ -50,6 +51,12 @@ export * from './typescript-templates'
 export * from './utils'
 export * from './visual-editor'
 export * from './web-components'
+
+// Client-side modules (for browser)
+export * from './client'
+
+// Composables (Nuxt-style browser API utilities)
+export * from './composables'
 
 // Default export for the stx module
 export default {}

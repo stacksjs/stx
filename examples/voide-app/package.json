@@ -1,0 +1,23 @@
+{
+  "name": "voide",
+  "version": "0.0.1",
+  "description": "Voice AI Code Assistant",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run build:stores && bun run --bun ../stx/packages/stx/bin/cli.ts dev",
+    "build": "bun run build:stores && bun run --bun ../stx/packages/stx/bin/cli.ts build",
+    "build:stores": "bun run lib/build.ts",
+    "preview": "bun run --bun ../stx/packages/stx/bin/cli.ts preview",
+    "lint": "bunx --bun pickier run",
+    "lint:fix": "bunx --bun pickier run --fix",
+    "format": "bunx --bun pickier run --mode format --write",
+    "format:check": "bunx --bun pickier run --mode format --check"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@stacksjs/stx": "link:@stacksjs/stx",
+    "bun-plugin-stx": "link:bun-plugin-stx",
+    "pickier": "^0.1.10",
+    "typescript": "^5.0.0"
+  }
+}

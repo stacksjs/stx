@@ -187,15 +187,16 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const updateModals = () => {
-    if (!window.voide) return
+  const stores = window.VoideStores
+  if (!stores) return
 
-    const { modals, github, apiKeys } = window.voide
-    const githubModal = document.getElementById('githubModal')
-    const settingsModal = document.getElementById('settingsModal')
+  const githubModal = document.getElementById('githubModal')
+  const settingsModal = document.getElementById('settingsModal')
 
+  // Subscribe to UI store for modal visibility
+  stores.uiStore.subscribe((state) => {
     if (githubModal) {
-      if (modals.github) {
+      if (state.modals.github) {
         githubModal.classList.remove('hidden')
         githubModal.classList.add('flex')
       } else {
@@ -205,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (settingsModal) {
-      if (modals.settings) {
+      if (state.modals.settings) {
         settingsModal.classList.remove('hidden')
         settingsModal.classList.add('flex')
       } else {
@@ -213,13 +214,16 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsModal.classList.remove('flex')
       }
     }
+  })
 
+  // Subscribe to settings store for GitHub and API status
+  stores.settingsStore.subscribe((state) => {
     const connectForm = document.getElementById('connectForm')
     const connectedInfo = document.getElementById('connectedInfo')
     const connectBtn = document.getElementById('connectBtn')
     const disconnectBtn = document.getElementById('disconnectBtn')
 
-    if (github.connected) {
+    if (state.github.connected) {
       connectForm?.classList.add('hidden')
       connectedInfo?.classList.remove('hidden')
       connectBtn?.classList.add('hidden')
@@ -229,9 +233,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const connectedName = document.getElementById('connectedName')
       const connectedUsername = document.getElementById('connectedUsername')
 
-      if (connectedAvatar && github.avatarUrl) connectedAvatar.src = github.avatarUrl
-      if (connectedName) connectedName.textContent = github.name || github.username
-      if (connectedUsername) connectedUsername.textContent = '@' + github.username
+      if (connectedAvatar && state.github.avatarUrl) connectedAvatar.src = state.github.avatarUrl
+      if (connectedName) connectedName.textContent = state.github.name || state.github.username
+      if (connectedUsername) connectedUsername.textContent = '@' + state.github.username
     } else {
       connectForm?.classList.remove('hidden')
       connectedInfo?.classList.add('hidden')
@@ -244,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const openaiStatus = document.getElementById('openaiStatus')
     const openaiStatusText = document.getElementById('openaiStatusText')
 
-    if (apiKeys.anthropic) {
+    if (state.apiKeys.anthropic) {
       anthropicStatus?.classList.add('configured')
       if (anthropicStatusText) anthropicStatusText.textContent = 'Configured'
     } else {
@@ -252,24 +256,22 @@ document.addEventListener('DOMContentLoaded', () => {
       if (anthropicStatusText) anthropicStatusText.textContent = 'Not configured'
     }
 
-    if (apiKeys.openai) {
+    if (state.apiKeys.openai) {
       openaiStatus?.classList.add('configured')
       if (openaiStatusText) openaiStatusText.textContent = 'Configured'
     } else {
       openaiStatus?.classList.remove('configured')
       if (openaiStatusText) openaiStatusText.textContent = 'Not configured'
     }
-  }
+  })
 
-  document.getElementById('githubModal')?.addEventListener('click', (e) => {
+  // Close modal on backdrop click
+  githubModal?.addEventListener('click', (e) => {
     if (e.target.id === 'githubModal') window.voide?.closeGithubModal()
   })
 
-  document.getElementById('settingsModal')?.addEventListener('click', (e) => {
+  settingsModal?.addEventListener('click', (e) => {
     if (e.target.id === 'settingsModal') window.voide?.closeSettingsModal()
   })
-
-  setInterval(updateModals, 100)
-  updateModals()
 })
 </script>

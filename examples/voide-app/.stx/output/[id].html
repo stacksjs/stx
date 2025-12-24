@@ -1,0 +1,48 @@
+<!--
+  Chat Page - Dynamic Route
+  Handles /chat/:id routes
+
+  Route params are injected as window.__STX_ROUTE_PARAMS__ by the server.
+  This page includes the main Voide app and passes the chat ID.
+-->
+
+
+[1m[31m╭──────────────────────────────────────────────────────────────╮[0m
+[1m[31m│[0m [1m[41m ERROR [0m [31mInclude Error[0m                                    [1m[31m│[0m
+[1m[31m╰──────────────────────────────────────────────────────────────╯[0m
+
+[36m[1mFile:[0m [2m[id].stx[0m [90m(line 8)[0m
+[33m[1mMessage:[0m Could not resolve path for include: ../../pages/index
+
+[34m[1mContext:[0m
+[2m  6:   This page includes the main Voide app and passes the chat ID.
+  7: -->
+> 8: 
+  9: 
+[1m[31m╭──────────────────────────────────────────────────────────────╮[0m
+[1m[31m│[0m [1m[41m ERROR [0m [31mInclude Error[0m                                    [1m[31m│[0m
+[1m[31m╰──────────────────────────────────────────────────────────────╯[0m
+
+[36m[1mFile:[0m [2m[id].stx[0m
+[33m[1mMessage:[0m Could not resolve path for include: ../../pages/index
+
+  10: [0m
+
+
+
+
+<script>
+// Load chat from route params on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const params = window.__STX_ROUTE_PARAMS__ || {};
+  const chatId = params.id;
+
+  if (chatId && window.voide) {
+    // Load the chat if it exists
+    const loaded = window.voide.loadChat(chatId);
+    if (!loaded) {
+      console.log('Chat not found:', chatId);
+    }
+  }
+});
+</script><script type="module" crossorigin src="/chunk-fz5y3eh5.js"></script>
