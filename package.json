@@ -94,7 +94,7 @@
   },
   "devDependencies": {
     "better-dx": "^0.2.5",
-    "bun-plugin-dtsx": "^0.9.9",
+    "bun-plugin-dtsx": "^0.21.17",
     "pickier": "^0.1.10",
     "typescript": "^5.9.3"
   }
