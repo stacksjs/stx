@@ -15,9 +15,7 @@ const config: Partial<PickierConfig> = {
     '**/scripts/**', // Build scripts have different conventions
     '**/packages/iconify-generator/**', // Icon generator has template patterns
     '**/packages/stx-native/**', // Native compiler has regex patterns
-    '**/packages/stx/src/story/**', // Storybook integration
-    '**/packages/stx/src/pwa/**', // PWA service worker templates
-    '**/packages/stx/src/dev-server/**', // Dev server theme templates
+    '**/packages/stx/src/**', // Core template engine has regex patterns for parsing both quote types
   ],
 
   lint: {

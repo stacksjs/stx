@@ -67,6 +67,8 @@
     "test": "bun test",
     "lint": "bunx --bun pickier lint",
     "lint:fix": "bunx --bun pickier lint --fix",
+    "format": "bunx --bun pickier format --write",
+    "format:check": "bunx --bun pickier format --check",
     "changelog": "bunx logsmith --verbose",
     "changelog:generate": "bunx logsmith --output CHANGELOG.md",
     "release": "bun run changelog:generate && bunx --bun bumpx prompt --recursive",
