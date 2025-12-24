@@ -51,9 +51,15 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  // Use stores if available, fallback to polling
+  const stores = window.VoideStores
+  const voide = window.voide
+
+  if (!stores && !voide) return
+
   let lastMessageCount = 1
-  const messageElements = new Map() // Track DOM elements by message index
-  const messageUpdates = new Map() // Track last update time
+  const messageElements = new Map()
+  const messageUpdates = new Map()
 
   // Monokai Pro color scheme
   const monokai = {
@@ -69,30 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const typeStyles = {
-    user: {
-      bg: monokai.cyan + '15',
-      border: monokai.cyan + '40',
-      icon: '👤',
-      iconBg: monokai.cyan
-    },
-    assistant: {
-      bg: monokai.green + '15',
-      border: monokai.green + '40',
-      icon: '🤖',
-      iconBg: monokai.green
-    },
-    system: {
-      bg: monokai.yellow + '15',
-      border: monokai.yellow + '40',
-      icon: '⚡',
-      iconBg: monokai.yellow
-    },
-    error: {
-      bg: monokai.pink + '15',
-      border: monokai.pink + '40',
-      icon: '⚠️',
-      iconBg: monokai.pink
-    }
+    user: { bg: monokai.cyan + '15', border: monokai.cyan + '40', icon: '👤', iconBg: monokai.cyan },
+    assistant: { bg: monokai.green + '15', border: monokai.green + '40', icon: '🤖', iconBg: monokai.green },
+    system: { bg: monokai.yellow + '15', border: monokai.yellow + '40', icon: '⚡', iconBg: monokai.yellow },
+    error: { bg: monokai.pink + '15', border: monokai.pink + '40', icon: '⚠️', iconBg: monokai.pink }
   }
 
   function escapeHtml(text) {
@@ -103,94 +89,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderMarkdown(text) {
     if (!text) return ''
-
     let html = escapeHtml(text)
-
-    // Code blocks (```lang\ncode```)
-    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
-      return `<pre style="background:${monokai.bg};border:1px solid ${monokai.gray}40;border-radius:8px;padding:12px;margin:8px 0;overflow-x:auto"><code style="color:${monokai.green};font-size:12px">` + code.trim() + '</code></pre>'
-    })
-
-    // Inline code (`code`)
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => `<pre style="background:${monokai.bg};border:1px solid ${monokai.gray}40;border-radius:8px;padding:12px;margin:8px 0;overflow-x:auto"><code style="color:${monokai.green};font-size:12px">` + code.trim() + '</code></pre>')
     html = html.replace(/`([^`]+)`/g, `<code style="background:${monokai.bg};color:${monokai.cyan};padding:2px 6px;border-radius:4px;font-size:12px">$1</code>`)
-
-    // Headers
     html = html.replace(/^### (.+)$/gm, `<h3 style="color:${monokai.fg};font-size:16px;font-weight:600;margin:16px 0 8px">$1</h3>`)
     html = html.replace(/^## (.+)$/gm, `<h2 style="color:${monokai.fg};font-size:18px;font-weight:600;margin:16px 0 8px">$1</h2>`)
     html = html.replace(/^# (.+)$/gm, `<h1 style="color:${monokai.fg};font-size:20px;font-weight:700;margin:16px 0 8px">$1</h1>`)
-
-    // Bold (**text**)
     html = html.replace(/\*\*([^*]+)\*\*/g, `<strong style="color:${monokai.fg};font-weight:600">$1</strong>`)
-
-    // Links [text](url)
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, `<a href="$2" target="_blank" style="color:${monokai.cyan};text-decoration:underline">$1</a>`)
-
-    // Unordered lists (- item)
     html = html.replace(/^- (.+)$/gm, `<li style="margin-left:16px;list-style:disc;color:${monokai.fg}80">$1</li>`)
-
-    // Horizontal rule
     html = html.replace(/^---$/gm, `<hr style="border-color:${monokai.gray}40;margin:16px 0">`)
-
     return html
   }
 
   function createMessageHtml(msg, style) {
     if (msg.content === '...') {
-      return `
-        <div style="padding:16px;background:${style.bg};border:1px solid ${style.border};border-radius:12px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-            <div style="width:32px;height:32px;border-radius:8px;background:${style.iconBg};display:flex;align-items:center;justify-content:center">
-              <span style="font-size:14px">${style.icon}</span>
-            </div>
-            <span style="font-size:12px;font-weight:600;color:${monokai.fg}80;text-transform:uppercase;letter-spacing:0.05em">${escapeHtml(msg.header)}</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="animate-bounce" style="width:8px;height:8px;background:${monokai.purple};border-radius:50%;animation-delay:0ms"></div>
-            <div class="animate-bounce" style="width:8px;height:8px;background:${monokai.purple};border-radius:50%;animation-delay:150ms"></div>
-            <div class="animate-bounce" style="width:8px;height:8px;background:${monokai.purple};border-radius:50%;animation-delay:300ms"></div>
-          </div>
+      return `<div style="padding:16px;background:${style.bg};border:1px solid ${style.border};border-radius:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <div style="width:32px;height:32px;border-radius:8px;background:${style.iconBg};display:flex;align-items:center;justify-content:center"><span style="font-size:14px">${style.icon}</span></div>
+          <span style="font-size:12px;font-weight:600;color:${monokai.fg}80;text-transform:uppercase;letter-spacing:0.05em">${escapeHtml(msg.header)}</span>
         </div>
-      `
-    } else {
-      return `
-        <div style="padding:16px;background:${style.bg};border:1px solid ${style.border};border-radius:12px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-            <div style="width:32px;height:32px;border-radius:8px;background:${style.iconBg};display:flex;align-items:center;justify-content:center">
-              <span style="font-size:14px">${style.icon}</span>
-            </div>
-            <span style="font-size:12px;font-weight:600;color:${monokai.fg}80;text-transform:uppercase;letter-spacing:0.05em">${escapeHtml(msg.header)}</span>
-          </div>
-          <div style="font-size:14px;color:${monokai.fg}cc;line-height:1.6;white-space:pre-wrap">${renderMarkdown(msg.content)}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="animate-bounce" style="width:8px;height:8px;background:${monokai.purple};border-radius:50%"></div>
+          <div class="animate-bounce" style="width:8px;height:8px;background:${monokai.purple};border-radius:50%;animation-delay:150ms"></div>
+          <div class="animate-bounce" style="width:8px;height:8px;background:${monokai.purple};border-radius:50%;animation-delay:300ms"></div>
         </div>
-      `
+      </div>`
     }
+    return `<div style="padding:16px;background:${style.bg};border:1px solid ${style.border};border-radius:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div style="width:32px;height:32px;border-radius:8px;background:${style.iconBg};display:flex;align-items:center;justify-content:center"><span style="font-size:14px">${style.icon}</span></div>
+        <span style="font-size:12px;font-weight:600;color:${monokai.fg}80;text-transform:uppercase;letter-spacing:0.05em">${escapeHtml(msg.header)}</span>
+      </div>
+      <div style="font-size:14px;color:${monokai.fg}cc;line-height:1.6;white-space:pre-wrap">${renderMarkdown(msg.content)}</div>
+    </div>`
   }
 
-  function renderMessages() {
-    if (!window.voide) return
-
-    const { messages, state } = window.voide
+  function renderMessages(messages) {
     const output = document.getElementById('output')
-    const terminalTitle = document.getElementById('terminalTitle')
+    if (!output) return
 
-    if (!output || !messages) return
+    const messageArray = messages || []
 
-    if (terminalTitle && state.terminalTitle) {
-      terminalTitle.textContent = state.terminalTitle.replace('Voide - ', '')
-    }
-
-    const messageArray = messages.value || []
-
-    // Check for updates to existing messages (for streaming)
+    // Update existing messages (for streaming)
     for (let i = 0; i < messageArray.length; i++) {
       const msg = messageArray[i]
       if (!msg) continue
-
       const existingEl = messageElements.get(i)
       const lastUpdate = messageUpdates.get(i)
-
       if (existingEl && msg.updated && msg.updated !== lastUpdate) {
-        // Message was updated - re-render it
         const style = typeStyles[msg.type] || typeStyles.system
         existingEl.innerHTML = createMessageHtml(msg, style)
         messageUpdates.set(i, msg.updated)
@@ -202,13 +149,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const idx = lastMessageCount - 1
       const msg = messageArray[idx]
       if (!msg) break
-
       const style = typeStyles[msg.type] || typeStyles.system
-
       const messageDiv = document.createElement('div')
       messageDiv.className = 'relative group animate-fade-in'
       messageDiv.innerHTML = createMessageHtml(msg, style)
-
       output.appendChild(messageDiv)
       messageElements.set(idx, messageDiv)
       messageUpdates.set(idx, msg.updated || 0)
@@ -216,7 +160,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  setInterval(renderMessages, 100)
-  renderMessages()
+  function updateTitle(title) {
+    const terminalTitle = document.getElementById('terminalTitle')
+    if (terminalTitle && title) {
+      terminalTitle.textContent = title.replace('Voide - ', '')
+    }
+  }
+
+  // Subscribe to stores for reactive updates
+  if (stores) {
+    stores.chatStore.subscribe(function(state) {
+      renderMessages(state.messages)
+    })
+    stores.appStore.subscribe(function(state) {
+      updateTitle(state.terminalTitle)
+    })
+  } else {
+    // Fallback to polling for legacy compatibility
+    setInterval(function() {
+      if (voide) {
+        renderMessages(voide.messages)
+        updateTitle(voide.state.terminalTitle)
+      }
+    }, 100)
+  }
 })
 </script>

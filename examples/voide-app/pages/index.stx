@@ -100,6 +100,17 @@ export const drivers = {
       document.write('<style>body{visibility:hidden}</style>');
     })();
   </script>
+
+  <!-- Voide Stores (loaded synchronously before main script) -->
+  <script>
+    // Load stores synchronously
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/js/voide-stores.js', false); // false = synchronous
+    xhr.send();
+    if (xhr.status === 200) {
+      eval(xhr.responseText);
+    }
+  </script>
 </head>
 <body class="gradient-bg flex flex-col h-screen text-white overflow-hidden">
   <!-- Floating orbs -->
@@ -181,45 +192,18 @@ export const drivers = {
       'use strict';
 
       // ==========================================================================
-      // State Management (Simple reactive-like state)
+      // Store References (from VoideStores)
       // ==========================================================================
 
-      var state = {
-        isRecording: false,
-        isProcessing: false,
-        transcript: '',
-        repoPath: '',
-        hasChanges: false,
-        speechSupported: false,
-        currentDriver: 'claude-cli-local',
-        isNativeApp: false,
-        terminalTitle: 'Voide - Ready',
-        currentChatId: null
-      };
-
-      var messages = { value: [] };
-      var message = { value: '' };
-      var charCount = { value: 0 };
-
-      var github = {
-        connected: false,
-        token: null,
-        username: null,
-        name: null,
-        email: null,
-        avatarUrl: null
-      };
-
-      var apiKeys = {
-        anthropic: null,
-        openai: null,
-        claudeCliHost: null
-      };
-
-      var modals = {
-        github: false,
-        settings: false
-      };
+      var stores = window.VoideStores;
+      var appStore = stores.appStore;
+      var appActions = stores.appActions;
+      var chatStore = stores.chatStore;
+      var chatActions = stores.chatActions;
+      var settingsStore = stores.settingsStore;
+      var settingsActions = stores.settingsActions;
+      var uiStore = stores.uiStore;
+      var uiActions = stores.uiActions;
 
       var recognition = null;
 
@@ -237,88 +221,42 @@ export const drivers = {
         }
       };
 
-      var STORAGE_KEY_REPO = 'voide_last_repo_path';
-      var STORAGE_KEY_CHATS = 'voide_chats';
-      var STORAGE_KEY_CHAT_COUNTER = 'voide_chat_counter';
-
       // ==========================================================================
-      // Chat Persistence
+      // Helper Functions (wrapping store actions)
       // ==========================================================================
-
-      function generateChatId() {
-        var counter = parseInt(localStorage.getItem(STORAGE_KEY_CHAT_COUNTER) || '0', 10) + 1;
-        localStorage.setItem(STORAGE_KEY_CHAT_COUNTER, counter.toString());
-        return counter.toString();
-      }
-
-      function getChatIdFromUrl() {
-        var match = window.location.pathname.match(/^\/chat\/(\d+)$/);
-        return match ? match[1] : null;
-      }
-
-      function getAllChats() {
-        try {
-          return JSON.parse(localStorage.getItem(STORAGE_KEY_CHATS) || '{}');
-        } catch (e) {
-          return {};
-        }
-      }
 
       function saveChat() {
-        if (!state.currentChatId) return;
-
-        var chats = getAllChats();
-        chats[state.currentChatId] = {
-          id: state.currentChatId,
-          messages: messages.value,
-          repoPath: state.repoPath,
-          driver: state.currentDriver,
-          updatedAt: Date.now(),
-          createdAt: chats[state.currentChatId] ? chats[state.currentChatId].createdAt : Date.now()
-        };
-        localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chats));
+        var app = appStore.get();
+        chatActions.saveCurrentChat(app.repoPath, app.currentDriver);
       }
 
       function loadChat(chatId) {
-        var chats = getAllChats();
-        var chat = chats[chatId];
-        if (chat) {
-          state.currentChatId = chatId;
-          messages.value = chat.messages || [];
-          state.repoPath = chat.repoPath || '';
-          state.currentDriver = chat.driver || 'claude-cli-local';
+        var success = chatActions.loadChat(chatId);
+        if (success) {
+          var chats = chatActions.getAllChats();
+          var chat = chats[chatId];
+          if (chat) {
+            appActions.setRepoPath(chat.repoPath || '');
+            appActions.setDriver(chat.driver || 'claude-cli-local');
 
-          // Update repo input if it exists
-          var repoInput = document.getElementById('repoInput');
-          if (repoInput && chat.repoPath) {
-            repoInput.value = chat.repoPath;
+            // Update repo input if it exists
+            var repoInput = document.getElementById('repoInput');
+            if (repoInput && chat.repoPath) {
+              repoInput.value = chat.repoPath;
+            }
           }
-
-          return true;
         }
-        return false;
+        return success;
       }
 
       function startNewChat() {
-        var chatId = generateChatId();
-        state.currentChatId = chatId;
-        history.pushState({ chatId: chatId }, '', '/chat/' + chatId);
-        saveChat();
-        return chatId;
+        var app = appStore.get();
+        return chatActions.startNewChat(app.repoPath, app.currentDriver);
       }
-
-      function deleteChat(chatId) {
-        var chats = getAllChats();
-        delete chats[chatId];
-        localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chats));
-      }
-
-      // ==========================================================================
-      // Computed Properties
-      // ==========================================================================
 
       function getCurrentDriverName() {
-        var driver = config.drivers[state.currentDriver];
+        var app = appStore.get();
+        var driver = config.drivers[app.currentDriver];
         return driver ? driver.name : 'AI';
       }
 
@@ -330,12 +268,7 @@ export const drivers = {
         var driverName = getCurrentDriverName();
         var headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error');
 
-        messages.value.push({
-          type: type,
-          content: content,
-          header: headerText,
-          timestamp: Date.now()
-        });
+        chatActions.addMessage(type, content, headerText);
 
         // Save chat to localStorage
         saveChat();
@@ -357,29 +290,26 @@ export const drivers = {
 
       var saveChatDebounceTimer = null;
       function updateLastMessage(type, content) {
-        var arr = messages.value;
-        if (arr.length > 0 && arr[arr.length - 1].type === type) {
-          arr[arr.length - 1].content = content;
-          arr[arr.length - 1].updated = Date.now();
+        chatActions.updateLastMessage(type, content);
 
-          // Debounce save during streaming to avoid excessive writes
-          clearTimeout(saveChatDebounceTimer);
-          saveChatDebounceTimer = setTimeout(saveChat, 500);
-        }
+        // Debounce save during streaming to avoid excessive writes
+        clearTimeout(saveChatDebounceTimer);
+        saveChatDebounceTimer = setTimeout(saveChat, 500);
       }
 
       function processWithStreaming(command) {
         return new Promise(function(resolve, reject) {
           var fullContent = '';
           var currentEvent = '';
+          var app = appStore.get();
 
           fetch(config.apiBaseUrl + '/process/stream', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               command: command,
-              driver: state.currentDriver,
-              repository: state.repoPath
+              driver: app.currentDriver,
+              repository: app.repoPath
             })
           }).then(function(response) {
             if (!response.ok) {
@@ -442,28 +372,31 @@ export const drivers = {
       function processCommand(command) {
         if (!command.trim()) return;
 
+        var chat = chatStore.get();
+        var app = appStore.get();
+
         // Start a new chat on first prompt if not already in a chat
-        if (!state.currentChatId) {
+        if (!chat.currentChatId) {
           startNewChat();
         }
 
         addMessage('user', command);
-        state.terminalTitle = 'Processing...';
+        appActions.setTerminalTitle('Processing...');
 
-        if (!state.repoPath) {
+        if (!app.repoPath) {
           addMessage('error', 'Please enter a repository URL or path first.');
-          state.terminalTitle = config.title + ' - Ready';
+          appActions.setTerminalTitle(config.title + ' - Ready');
           return;
         }
 
-        state.isProcessing = true;
+        appActions.setProcessing(true);
         addMessage('assistant', '...');
 
         checkBackendAPI().then(function(hasBackend) {
           if (hasBackend) {
             // Use streaming endpoint
             return processWithStreaming(command);
-          } else if (state.currentDriver === 'mock') {
+          } else if (appStore.get().currentDriver === 'mock') {
             return new Promise(function(resolve) {
               setTimeout(function() {
                 resolve({
@@ -478,22 +411,22 @@ export const drivers = {
         }).then(function(response) {
           // Streaming already updated the message, just handle completion
           if (response.hasChanges) {
-            state.hasChanges = true;
+            appActions.setHasChanges(true);
             addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.');
             sendNotification('Changes Ready', 'Code changes are staged.');
           }
 
-          state.terminalTitle = config.title + ' - Ready';
+          appActions.setTerminalTitle(config.title + ' - Ready');
           updateTrayStatus('success');
           setTimeout(function() { updateTrayStatus('ready'); }, 2000);
         }).catch(function(error) {
-          messages.value.pop();
+          chatActions.removeLastMessage();
           addMessage('error', 'Failed: ' + error.message);
-          state.terminalTitle = config.title + ' - Error';
+          appActions.setTerminalTitle(config.title + ' - Error');
           updateTrayStatus('error');
           setTimeout(function() { updateTrayStatus('ready'); }, 3000);
         }).finally(function() {
-          state.isProcessing = false;
+          appActions.setProcessing(false);
         });
       }
 
@@ -529,11 +462,11 @@ export const drivers = {
           var repo = data.repo;
 
           if (repo) {
-            state.repoPath = repo.path;
-            localStorage.setItem(STORAGE_KEY_REPO, repo.path);
+            appActions.setRepoPath(repo.path);
+            settingsActions.setLastRepoPath(repo.path);
             saveChat(); // Save repo path to chat
             addMessage('system', 'Repository "' + repo.name + '" opened.\nPath: ' + repo.path + '\nBranch: ' + repo.branch);
-            state.terminalTitle = config.title + ' - ' + repo.name;
+            appActions.setTerminalTitle(config.title + ' - ' + repo.name);
           } else if (response.error) {
             throw new Error(response.error);
           } else {
@@ -545,7 +478,7 @@ export const drivers = {
       }
 
       function commitChanges() {
-        if (!state.hasChanges) return;
+        if (!appStore.get().hasChanges) return;
 
         addMessage('system', 'Creating commit...');
         updateTrayStatus('processing');
@@ -561,7 +494,7 @@ export const drivers = {
           }
         }).then(function(response) {
           addMessage('system', 'Committed: ' + (response.hash || 'success'));
-          state.hasChanges = false;
+          appActions.setHasChanges(false);
           updateTrayStatus('success');
           setTimeout(function() { updateTrayStatus('ready'); }, 2000);
         }).catch(function(error) {
@@ -601,7 +534,7 @@ export const drivers = {
       function initSpeechRecognition() {
         var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-          state.speechSupported = false;
+          appActions.setSpeechSupported(false);
           addMessage('system', 'Speech recognition not available. Please use text input.');
           return false;
         }
@@ -613,8 +546,8 @@ export const drivers = {
         recognition.maxAlternatives = 1;
 
         recognition.onstart = function() {
-          state.isRecording = true;
-          state.transcript = '';
+          appActions.setRecording(true);
+          appActions.setTranscript('');
           updateTrayStatus('recording');
         };
 
@@ -623,7 +556,7 @@ export const drivers = {
           for (var i = 0; i < event.results.length; i++) {
             transcript += event.results[i][0].transcript;
           }
-          state.transcript = transcript;
+          appActions.setTranscript(transcript);
         };
 
         recognition.onerror = function(event) {
@@ -639,20 +572,22 @@ export const drivers = {
         };
 
         recognition.onend = function() {
-          if (state.isRecording) {
-            var transcript = state.transcript.trim();
+          var app = appStore.get();
+          if (app.isRecording) {
+            var transcript = app.transcript.trim();
             stopRecording();
             if (transcript) processCommand(transcript);
           }
         };
 
-        state.speechSupported = true;
+        appActions.setSpeechSupported(true);
         return true;
       }
 
       function startRecording() {
-        if (!state.speechSupported || state.isRecording) return;
-        state.transcript = '';
+        var app = appStore.get();
+        if (!app.speechSupported || app.isRecording) return;
+        appActions.setTranscript('');
         try {
           recognition.start();
         } catch (e) {
@@ -661,7 +596,7 @@ export const drivers = {
       }
 
       function stopRecording() {
-        state.isRecording = false;
+        appActions.setRecording(false);
         updateTrayStatus('ready');
         if (recognition) {
           try { recognition.stop(); } catch (e) {}
@@ -675,7 +610,7 @@ export const drivers = {
       function initNativeFeatures() {
         if (!window.craft) return;
 
-        state.isNativeApp = true;
+        appActions.setNativeApp(true);
         try {
           window.craft.tray.setTitle('Voide');
           window.craft.tray.setTooltip('Voide - Voice AI Code Assistant');
@@ -695,7 +630,7 @@ export const drivers = {
       }
 
       function updateTrayStatus(status) {
-        if (!state.isNativeApp || !window.craft) return;
+        if (!appStore.get().isNativeApp || !window.craft) return;
         var icons = { ready: '🤖', recording: '🔴', processing: '⏳', success: '✅', error: '❌' };
         try {
           window.craft.tray.setTitle((icons[status] || '🤖') + ' Voide');
@@ -703,7 +638,7 @@ export const drivers = {
       }
 
       function sendNotification(title, body) {
-        if (!state.isNativeApp || !window.craft) return;
+        if (!appStore.get().isNativeApp || !window.craft) return;
         try {
           window.craft.app.notify({ title: title, body: body });
         } catch (e) {}
@@ -714,19 +649,19 @@ export const drivers = {
       // ==========================================================================
 
       function openGithubModal() {
-        modals.github = true;
+        uiActions.openModal('github');
       }
 
       function closeGithubModal() {
-        modals.github = false;
+        uiActions.closeModal('github');
       }
 
       function openSettingsModal() {
-        modals.settings = true;
+        uiActions.openModal('settings');
       }
 
       function closeSettingsModal() {
-        modals.settings = false;
+        uiActions.closeModal('settings');
       }
 
       function saveApiSettings() {
@@ -734,23 +669,14 @@ export const drivers = {
         var openaiInput = document.getElementById('openaiApiKey');
         var claudeHostInput = document.getElementById('claudeCliHost');
 
-        apiKeys.anthropic = anthropicInput ? anthropicInput.value.trim() || null : null;
-        apiKeys.openai = openaiInput ? openaiInput.value.trim() || null : null;
-        apiKeys.claudeCliHost = claudeHostInput ? claudeHostInput.value.trim() || null : null;
+        settingsActions.setAllApiKeys({
+          anthropic: anthropicInput ? anthropicInput.value.trim() || null : null,
+          openai: openaiInput ? openaiInput.value.trim() || null : null,
+          claudeCliHost: claudeHostInput ? claudeHostInput.value.trim() || null : null
+        });
 
-        localStorage.setItem('voide_api_keys', JSON.stringify(apiKeys));
         closeSettingsModal();
         addMessage('system', 'API settings saved.');
-      }
-
-      function loadSavedApiKeys() {
-        try {
-          var saved = localStorage.getItem('voide_api_keys');
-          if (saved) {
-            var parsed = JSON.parse(saved);
-            Object.assign(apiKeys, parsed);
-          }
-        } catch (e) {}
       }
 
       // ==========================================================================
@@ -758,17 +684,17 @@ export const drivers = {
       // ==========================================================================
 
       function handleTextSubmit() {
-        var text = message.value.trim();
-        if (text && !state.isProcessing) {
-          message.value = '';
-          charCount.value = 0;
+        var chat = chatStore.get();
+        var text = chat.inputText.trim();
+        if (text && !appStore.get().isProcessing) {
+          chatActions.clearInput();
           processCommand(text);
         }
       }
 
       function handleDriverChange(event) {
-        state.currentDriver = event.target.value;
-        addMessage('system', 'Switched to ' + config.drivers[state.currentDriver].name);
+        appActions.setDriver(event.target.value);
+        addMessage('system', 'Switched to ' + config.drivers[event.target.value].name);
       }
 
       // ==========================================================================
@@ -782,34 +708,31 @@ export const drivers = {
         // Initialize speech recognition
         initSpeechRecognition();
 
-        // Load saved data
-        loadSavedApiKeys();
-
         // Check URL for existing chat
-        var chatIdFromUrl = getChatIdFromUrl();
+        var chatIdFromUrl = chatActions.getChatIdFromUrl();
         if (chatIdFromUrl) {
           if (!loadChat(chatIdFromUrl)) {
             // Chat not found, redirect to home
-            history.replaceState({}, '', '/voide');
+            history.replaceState({}, '', '/');
           }
         } else {
           // No chat in URL, load last repo path for new session
-          var savedRepoPath = localStorage.getItem(STORAGE_KEY_REPO);
-          if (savedRepoPath) {
+          var settings = settingsStore.get();
+          if (settings.lastRepoPath) {
+            appActions.setRepoPath(settings.lastRepoPath);
             var repoInput = document.getElementById('repoInput');
-            if (repoInput) repoInput.value = savedRepoPath;
+            if (repoInput) repoInput.value = settings.lastRepoPath;
           }
         }
 
         // Handle browser back/forward navigation
         window.addEventListener('popstate', function(e) {
-          var chatId = getChatIdFromUrl();
+          var chatId = chatActions.getChatIdFromUrl();
           if (chatId) {
             loadChat(chatId);
           } else {
             // Navigated to home, clear current chat
-            state.currentChatId = null;
-            messages.value = [];
+            chatActions.newChat();
           }
         });
 
@@ -824,13 +747,12 @@ export const drivers = {
             }
           }
           if (e.key === 'Escape') {
-            closeGithubModal();
-            closeSettingsModal();
+            uiActions.closeAllModals();
           }
         });
 
         document.addEventListener('keyup', function(e) {
-          if (e.code === 'Space' && state.isRecording) {
+          if (e.code === 'Space' && appStore.get().isRecording) {
             e.preventDefault();
             stopRecording();
           }
@@ -841,23 +763,48 @@ export const drivers = {
       // Expose to window for component access
       // ==========================================================================
 
-      // Navigate to a new chat (clears current state)
-      function newChat() {
-        state.currentChatId = null;
-        messages.value = [];
-        history.pushState({}, '', '/voide');
-      }
-
       window.voide = {
-        state: state,
-        messages: messages,
-        message: message,
-        charCount: charCount,
-        github: github,
-        apiKeys: apiKeys,
-        modals: modals,
+        // Stores (reactive)
+        stores: stores,
+        appStore: appStore,
+        chatStore: chatStore,
+        settingsStore: settingsStore,
+        uiStore: uiStore,
+
+        // Store actions
+        appActions: appActions,
+        chatActions: chatActions,
+        settingsActions: settingsActions,
+        uiActions: uiActions,
+
+        // Composables (Nuxt-style browser API utilities)
+        useStorage: stores.useStorage,
+        useLocalStorage: stores.useLocalStorage,
+        useSessionStorage: stores.useSessionStorage,
+        useCookie: stores.useCookie,
+        useClipboard: stores.useClipboard,
+        useMediaQuery: stores.useMediaQuery,
+        usePreferredDark: stores.usePreferredDark,
+        useNetwork: stores.useNetwork,
+        useOnline: stores.useOnline,
+        useWindowSize: stores.useWindowSize,
+        useScroll: stores.useScroll,
+        useVisibility: stores.useVisibility,
+        useTitle: stores.useTitle,
+        useFavicon: stores.useFavicon,
+        useIsMobile: stores.useIsMobile,
+        useIsDesktop: stores.useIsDesktop,
+        copyToClipboard: stores.copyToClipboard,
+
+        // Legacy accessors (for component compatibility)
+        get state() { return appStore.get(); },
+        get messages() { return chatStore.get().messages; },
+        get charCount() { return chatStore.get().charCount; },
+
+        // Config
         config: config,
         getCurrentDriverName: getCurrentDriverName,
+
         // Methods
         addMessage: addMessage,
         processCommand: processCommand,
@@ -873,11 +820,12 @@ export const drivers = {
         openSettingsModal: openSettingsModal,
         closeSettingsModal: closeSettingsModal,
         saveApiSettings: saveApiSettings,
+
         // Chat management
-        newChat: newChat,
+        newChat: chatActions.newChat,
         loadChat: loadChat,
-        getAllChats: getAllChats,
-        deleteChat: deleteChat
+        getAllChats: chatActions.getAllChats,
+        deleteChat: chatActions.deleteChat
       };
 
       // Initialize when DOM is ready

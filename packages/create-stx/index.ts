@@ -489,7 +489,7 @@ async function createProject(projectName: string, targetDir: string) {
   log('')
 
   // Create directories
-  const dirs = ['pages', 'components', 'public', 'public/js', 'lib', 'lib/stores']
+  const dirs = ['pages', 'components', 'public', 'public/js', 'lib', 'lib/stores', 'lib/composables']
   for (const dir of dirs) {
     const dirPath = path.join(targetDir, dir)
     fs.mkdirSync(dirPath, { recursive: true })

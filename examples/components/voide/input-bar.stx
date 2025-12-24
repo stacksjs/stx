@@ -32,7 +32,7 @@
             id="textInput"
             style="flex:1;background:transparent;font-size:14px;color:#fcfcfa;border:none;outline:none;resize:none;min-height:24px;max-height:120px;line-height:24px"
             placeholder="Type a command or ask a question..."
-            @input="this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; if (window.voide) window.voide.message.value = this.value;"
+            @input="this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; if (window.voide) window.voide.chatActions.setInputText(this.value);"
             @keydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.voide?.handleTextSubmit(); this.value = ''; this.style.height = 'auto'; }"
           ></textarea>
           <button
@@ -93,18 +93,19 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const updateUI = () => {
-    if (!window.voide) return
+  const stores = window.VoideStores
+  if (!stores) return
 
-    const { state, charCount } = window.voide
-    const micButton = document.getElementById('micButton')
-    const micIcon = document.getElementById('micIcon')
-    const statusHint = document.getElementById('statusHint')
-    const transcriptPreview = document.getElementById('transcriptPreview')
-    const commitBtn = document.getElementById('commitBtn')
-    const pushBtn = document.getElementById('pushBtn')
-    const charCountDisplay = document.getElementById('charCountDisplay')
+  const micButton = document.getElementById('micButton')
+  const micIcon = document.getElementById('micIcon')
+  const statusHint = document.getElementById('statusHint')
+  const transcriptPreview = document.getElementById('transcriptPreview')
+  const commitBtn = document.getElementById('commitBtn')
+  const pushBtn = document.getElementById('pushBtn')
+  const charCountDisplay = document.getElementById('charCountDisplay')
 
+  // Subscribe to app store for recording/processing state
+  stores.appStore.subscribe((state) => {
     // Update recording state
     if (state.isRecording) {
       if (micButton) micButton.style.borderColor = '#ff6188'
@@ -130,15 +131,14 @@ document.addEventListener('DOMContentLoaded', () => {
       pushBtn.disabled = !state.hasChanges || state.isProcessing
       pushBtn.style.opacity = pushBtn.disabled ? '0.4' : '1'
     }
+  })
 
-    // Update char count
+  // Subscribe to chat store for char count
+  stores.chatStore.subscribe((state) => {
     if (charCountDisplay) {
-      const count = charCount?.value || 0
+      const count = state.charCount || 0
       charCountDisplay.textContent = count > 0 ? count + ' chars' : ''
     }
-  }
-
-  setInterval(updateUI, 100)
-  updateUI()
+  })
 })
 </script>

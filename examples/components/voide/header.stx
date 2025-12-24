@@ -86,17 +86,17 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const updateGithubStatus = () => {
-    if (!window.voide) return
-    const { github } = window.voide
+  const stores = window.VoideStores
+  if (!stores) return
+
+  // Subscribe to settings store for GitHub status updates
+  stores.settingsStore.subscribe((state) => {
     const githubUsername = document.getElementById('githubUsername')
-    if (github.connected && github.username) {
-      if (githubUsername) githubUsername.textContent = '@' + github.username
+    if (state.github.connected && state.github.username) {
+      if (githubUsername) githubUsername.textContent = '@' + state.github.username
     } else {
       if (githubUsername) githubUsername.textContent = 'Connect'
     }
-  }
-  setInterval(updateGithubStatus, 500)
-  updateGithubStatus()
+  })
 })
 </script>
