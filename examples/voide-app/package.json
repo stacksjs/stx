@@ -18,6 +18,6 @@
     "@stacksjs/stx": "link:@stacksjs/stx",
     "bun-plugin-stx": "link:bun-plugin-stx",
     "better-dx": "^0.2.5",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
   }
 }
