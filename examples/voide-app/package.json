@@ -8,8 +8,8 @@
     "build": "bun run build:stores && bun run --bun ../stx/packages/stx/bin/cli.ts build",
     "build:stores": "bun run lib/build.ts",
     "preview": "bun run --bun ../stx/packages/stx/bin/cli.ts preview",
-    "lint": "bunx --bun pickier run",
-    "lint:fix": "bunx --bun pickier run --fix",
+    "lint": "bunx --bun pickier run --mode lint",
+    "lint:fix": "bunx --bun pickier run --mode lint --fix",
     "format": "bunx --bun pickier run --mode format --write",
     "format:check": "bunx --bun pickier run --mode format --check"
   },
@@ -17,7 +17,7 @@
   "devDependencies": {
     "@stacksjs/stx": "link:@stacksjs/stx",
     "bun-plugin-stx": "link:bun-plugin-stx",
-    "pickier": "^0.1.10",
+    "better-dx": "^0.2.5",
     "typescript": "^5.0.0"
   }
 }
