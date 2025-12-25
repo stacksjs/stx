@@ -170,3 +170,58 @@ export {
   type NotificationOptions,
   type NotificationRef,
 } from './use-notification'
+
+// Share
+export {
+  useShare,
+  share,
+  shareURL,
+  shareText,
+  shareFiles,
+  shareCurrentPage,
+  shareWithFallback,
+  createShareableFile,
+  type ShareData,
+  type ShareResult,
+  type ShareRef,
+} from './use-share'
+
+// Permissions
+export {
+  usePermission,
+  usePermissions,
+  isPermissionGranted,
+  hasCameraPermission,
+  hasMicrophonePermission,
+  hasGeolocationPermission,
+  hasNotificationPermission,
+  requestMediaPermissions,
+  permissionGroups,
+  type PermissionName,
+  type PermissionState,
+  type PermissionStatus,
+  type PermissionRef,
+  type MultiPermissionRef,
+} from './use-permissions'
+
+// Resize Observer
+export {
+  useResizeObserver,
+  useResizeObserverMultiple,
+  useElementSize,
+  hasResizeObserver,
+  type ResizeObserverSize,
+  type ResizeObserverState,
+  type ResizeObserverOptions,
+  type ResizeObserverRef,
+} from './use-resize-observer'
+
+// Battery
+export {
+  useBattery,
+  getBatteryLevel,
+  isCharging,
+  hasBattery,
+  type BatteryState,
+  type BatteryRef,
+} from './use-battery'
