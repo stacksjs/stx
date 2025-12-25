@@ -55,7 +55,7 @@
     "ts-syntax-highlighter": "^0.2.1"
   },
   "devDependencies": {
-    "@types/bun": "^1.3.4",
+    "@types/bun": "^1.3.5",
     "bun-plugin-dtsx": "^0.9.9",
     "pickier": "^0.1.10",
     "typescript": "^5.9.3"
