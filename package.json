@@ -65,10 +65,10 @@
     "prepublishOnly": "bun run build",
     "setup": "bun run scripts/setup.ts",
     "test": "bun test",
-    "lint": "bunx --bun pickier lint",
-    "lint:fix": "bunx --bun pickier lint --fix",
-    "format": "bunx --bun pickier format --write",
-    "format:check": "bunx --bun pickier format --check",
+    "lint": "bunx --bun pickier run --mode lint",
+    "lint:fix": "bunx --bun pickier run --mode lint --fix",
+    "format": "bunx --bun pickier run --mode format --write",
+    "format:check": "bunx --bun pickier run --mode format --check",
     "changelog": "bunx logsmith --verbose",
     "changelog:generate": "bunx logsmith --output CHANGELOG.md",
     "release": "bun run changelog:generate && bunx --bun bumpx prompt --recursive",
@@ -80,7 +80,7 @@
   "git-hooks": {
     "pre-commit": {
       "staged-lint": {
-        "*.{js,ts,json,yaml,yml,md}": "bunx --bun pickier lint --fix"
+        "*.{js,ts,json,yaml,yml,md}": "bunx --bun pickier run --mode lint --fix"
       }
     }
   },
@@ -94,8 +94,7 @@
   },
   "devDependencies": {
     "better-dx": "^0.2.5",
-    "bun-plugin-dtsx": "^0.21.17",
-    "pickier": "^0.1.10",
+    "bun-plugin-dtsx": "^0.9.9",
     "typescript": "^5.9.3"
   }
 }
