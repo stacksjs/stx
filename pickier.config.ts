@@ -29,9 +29,6 @@ const config: Partial<PickierConfig> = {
     // Allow console in CLI tools and build scripts
     noConsole: 'off',
     noDebugger: 'warn',
-    // Disable style rules that trigger false positives in regex patterns matching both quote types
-    quotes: 'off',
-    indent: 'off',
   },
 
   pluginRules: {
