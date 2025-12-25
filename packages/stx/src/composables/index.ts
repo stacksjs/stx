@@ -86,3 +86,40 @@ export {
   type ScrollRef,
   type VisibilityRef,
 } from './use-window'
+
+// Geolocation
+export {
+  useGeolocation,
+  useGeolocationWatch,
+  getCurrentPosition,
+  calculateDistance,
+  type GeolocationCoords,
+  type GeolocationState,
+  type GeolocationOptions,
+  type GeolocationRef,
+} from './use-geolocation'
+
+// Mouse & Pointer
+export {
+  useMouse,
+  useMouseInElement,
+  usePointer,
+  type MouseState,
+  type MouseOptions,
+  type MouseRef,
+  type ElementMouseState,
+  type ElementMouseRef,
+} from './use-mouse'
+
+// Keyboard
+export {
+  useKeyboard,
+  useHotkey,
+  useKeyPressed,
+  useKeySequence,
+  shortcuts,
+  type KeyboardState,
+  type KeyboardOptions,
+  type KeyboardRef,
+  type HotkeyOptions,
+} from './use-keyboard'
