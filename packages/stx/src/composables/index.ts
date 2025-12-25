@@ -123,3 +123,50 @@ export {
   type KeyboardRef,
   type HotkeyOptions,
 } from './use-keyboard'
+
+// Intersection Observer
+export {
+  useIntersectionObserver,
+  useElementVisibility,
+  useLazyLoad,
+  useInfiniteScroll,
+  useIntersectionObserverMultiple,
+  type IntersectionObserverOptions,
+  type IntersectionState,
+  type IntersectionObserverRef,
+} from './use-intersection-observer'
+
+// Fetch & Async Data
+export {
+  useFetch,
+  useAsyncData,
+  usePost,
+  clearFetchCache,
+  prefetch,
+  type FetchOptions,
+  type FetchState,
+  type FetchRef,
+} from './use-fetch'
+
+// Fullscreen
+export {
+  useFullscreen,
+  toggleFullscreen,
+  isInFullscreen,
+  type FullscreenState,
+  type FullscreenOptions,
+  type FullscreenRef,
+} from './use-fullscreen'
+
+// Notifications
+export {
+  useNotification,
+  notify,
+  canNotify,
+  requestNotificationPermission,
+  notifications,
+  type NotificationPermission,
+  type NotificationState,
+  type NotificationOptions,
+  type NotificationRef,
+} from './use-notification'
