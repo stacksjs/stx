@@ -290,3 +290,60 @@ export {
   type MutationObserverOptions,
   type MutationObserverRef,
 } from './use-mutation-observer'
+
+// Event Source (SSE)
+export {
+  useEventSource,
+  useSSE,
+  isEventSourceSupported,
+  type EventSourceStatus,
+  type EventSourceState,
+  type EventSourceOptions,
+  type EventSourceRef,
+} from './use-event-source'
+
+// Idle Detection
+export {
+  useIdle,
+  useIdleState,
+  useLastActive,
+  useAutoLogout,
+  type IdleState,
+  type IdleOptions,
+  type IdleRef,
+} from './use-idle'
+
+// Text Selection
+export {
+  useTextSelection,
+  useElementTextSelection,
+  useSelectionPopup,
+  useCopySelection,
+  type TextSelectionState,
+  type TextSelectionOptions,
+  type TextSelectionRef,
+} from './use-text-selection'
+
+// Wake Lock
+export {
+  useWakeLock,
+  useAutoWakeLock,
+  useConditionalWakeLock,
+  isWakeLockSupported,
+  type WakeLockState,
+  type WakeLockRef,
+} from './use-wake-lock'
+
+// Eye Dropper (Color Picker)
+export {
+  useEyeDropper,
+  useColorHistory,
+  pickColor,
+  hexToRgb,
+  hexToHsl,
+  isEyeDropperSupported,
+  type EyeDropperState,
+  type EyeDropperResult,
+  type EyeDropperOptions,
+  type EyeDropperRef,
+} from './use-eye-dropper'

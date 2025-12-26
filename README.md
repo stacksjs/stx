@@ -1259,7 +1259,10 @@ import {
 | **Permissions** | `usePermission`, `usePermissions` |
 | **Device** | `useBattery`, `useDeviceOrientation`, `useDeviceMotion`, `useParallax` |
 | **Speech** | `useSpeechRecognition`, `useSpeechSynthesis`, `speak`, `getVoices` |
-| **Communication** | `useWebSocket`, `useBroadcastChannel`, `broadcast` |
+| **Communication** | `useWebSocket`, `useBroadcastChannel`, `useEventSource`, `useSSE` |
+| **Idle Detection** | `useIdle`, `useIdleState`, `useLastActive`, `useAutoLogout` |
+| **Text Selection** | `useTextSelection`, `useSelectionPopup`, `useCopySelection` |
+| **Screen** | `useWakeLock`, `useEyeDropper`, `pickColor`, `hexToRgb` |
 
 ### Example Usage
 
