@@ -1227,6 +1227,59 @@ Conditionally render content based on environment:
 @endenv
 ```
 
+## Composables
+
+STX provides Nuxt-style composables for common browser APIs. These reactive utilities make it easy to work with browser features in a declarative way.
+
+```typescript
+import {
+  useStorage,
+  useClipboard,
+  useMediaQuery,
+  useNetwork,
+  useSpeechRecognition,
+} from '@stacksjs/stx/composables'
+```
+
+### Available Composables
+
+| Category | Composables |
+|----------|-------------|
+| **Storage** | `useStorage`, `useLocalStorage`, `useSessionStorage` |
+| **Cookies** | `useCookie`, `useCookies`, `getCookie`, `setCookie` |
+| **Clipboard** | `useClipboard`, `copyToClipboard` |
+| **Media Queries** | `useMediaQuery`, `usePreferredDark`, `useIsMobile`, `useIsDesktop` |
+| **Network** | `useNetwork`, `useOnline` |
+| **Window** | `useWindowSize`, `useScroll`, `useVisibility`, `useTitle`, `useFavicon` |
+| **Geolocation** | `useGeolocation`, `useGeolocationWatch`, `getCurrentPosition` |
+| **Input** | `useMouse`, `usePointer`, `useKeyboard`, `useHotkey`, `useKeyPressed` |
+| **Observers** | `useIntersectionObserver`, `useResizeObserver`, `useMutationObserver` |
+| **Data Fetching** | `useFetch`, `useAsyncData`, `usePost` |
+| **UI** | `useFullscreen`, `useNotification`, `useShare` |
+| **Permissions** | `usePermission`, `usePermissions` |
+| **Device** | `useBattery`, `useDeviceOrientation`, `useDeviceMotion`, `useParallax` |
+| **Speech** | `useSpeechRecognition`, `useSpeechSynthesis`, `speak`, `getVoices` |
+| **Communication** | `useWebSocket`, `useBroadcastChannel`, `broadcast` |
+
+### Example Usage
+
+```html
+<script client>
+  import { useClipboard, useSpeechRecognition } from '@stacksjs/stx/composables'
+
+  // Clipboard
+  const clipboard = useClipboard()
+  clipboard.copy('Hello!')
+
+  // Speech Recognition
+  const speech = useSpeechRecognition({ lang: 'en-US' })
+  speech.on('result', (data) => console.log(data.transcript))
+  speech.start()
+</script>
+```
+
+All composables follow a consistent reactive pattern with `subscribe()` for state changes and getter properties for current values.
+
 ## Icon Components
 
 stx includes a powerful icon component system powered by [Iconify](https://iconify.design/), giving you access to over 200,000 icons from 150+ icon sets as ready-to-use components.

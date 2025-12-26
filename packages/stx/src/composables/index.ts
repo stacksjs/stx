@@ -243,3 +243,50 @@ export {
   type SpeechSynthesisState,
   type SpeechSynthesisRef,
 } from './use-speech'
+
+// Broadcast Channel
+export {
+  useBroadcastChannel,
+  broadcast,
+  isBroadcastChannelSupported,
+  type BroadcastChannelState,
+  type BroadcastChannelOptions,
+  type BroadcastChannelRef,
+} from './use-broadcast-channel'
+
+// WebSocket
+export {
+  useWebSocket,
+  isWebSocketSupported,
+  type WebSocketStatus,
+  type WebSocketState,
+  type WebSocketOptions,
+  type WebSocketRef,
+} from './use-websocket'
+
+// Device Orientation & Motion
+export {
+  useDeviceOrientation,
+  useDeviceMotion,
+  useParallax,
+  isDeviceOrientationSupported,
+  isDeviceMotionSupported,
+  requestOrientationPermission,
+  requestMotionPermission,
+  type DeviceOrientationState,
+  type DeviceMotionState,
+  type DeviceOrientationRef,
+  type DeviceMotionRef,
+} from './use-device-orientation'
+
+// Mutation Observer
+export {
+  useMutationObserver,
+  useAttributeObserver,
+  useChildListObserver,
+  useTextObserver,
+  isMutationObserverSupported,
+  type MutationObserverState,
+  type MutationObserverOptions,
+  type MutationObserverRef,
+} from './use-mutation-observer'
