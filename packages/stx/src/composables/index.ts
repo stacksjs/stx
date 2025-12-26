@@ -225,3 +225,21 @@ export {
   type BatteryState,
   type BatteryRef,
 } from './use-battery'
+
+// Speech Recognition & Synthesis
+export {
+  useSpeechRecognition,
+  useSpeechSynthesis,
+  isSpeechRecognitionSupported,
+  isSpeechSynthesisSupported,
+  speak,
+  stopSpeaking,
+  getVoices,
+  type SpeechRecognitionOptions,
+  type SpeechRecognitionState,
+  type SpeechRecognitionResult,
+  type SpeechRecognitionRef,
+  type SpeechSynthesisOptions,
+  type SpeechSynthesisState,
+  type SpeechSynthesisRef,
+} from './use-speech'
