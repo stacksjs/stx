@@ -1,6 +1,7 @@
 import type { StxOptions } from './types'
 import path from 'node:path'
 import { processA11yDirectives } from './a11y'
+import { processTemplateBindings } from './reactive-bindings'
 import { injectAnalytics } from './analytics'
 import { processAnimationDirectives } from './animation'
 import { processEventDirectives } from './events'
@@ -866,6 +867,10 @@ async function processOtherDirectives(
 
   // Process expressions now (delayed to allow other directives to generate expressions)
   output = await processExpressions(output, context, filePath)
+
+  // Process reactive bindings (:class, :text, stx-class, stx-bind:class, etc.)
+  // This generates client-side JS for store-aware reactive updates
+  output = processTemplateBindings(output)
 
   // Run post-processing middleware
   output = await runPostProcessingMiddleware(output, context, filePath, options)
