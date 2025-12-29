@@ -240,7 +240,7 @@ export const defaultConfig: StxConfig = {
 let _config: StxConfig | null = null
 let _configPromise: Promise<StxConfig> | null = null
 
-async function loadStxConfig(): Promise<StxConfig> {
+export async function loadStxConfig(): Promise<StxConfig> {
   if (_config)
     return _config
   if (_configPromise)
@@ -249,7 +249,7 @@ async function loadStxConfig(): Promise<StxConfig> {
   _configPromise = (async () => {
     const configResult = await loadConfigWithResult({
       name: 'stx',
-      cwd: resolve(__dirname, '..'),
+      cwd: process.cwd(), // Load config from the project directory, not the stx package
       defaultConfig,
       verbose: false,
     })
