@@ -140,18 +140,28 @@ export async function renderComponentWithSlot(
       slot: slotContent,
     }
 
-    // Extract any script content from the component
-    const scriptMatch = componentContent.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
-    const scriptContent = scriptMatch ? scriptMatch[1] : ''
+    // Extract any script content from the component (SFC support)
+    const scriptMatch = componentContent.match(/<script\b([^>]*)>([\s\S]*?)<\/script>/i)
+    const scriptAttrs = scriptMatch ? scriptMatch[1] : ''
+    const scriptContent = scriptMatch ? scriptMatch[2] : ''
 
-    if (scriptContent) {
-      await extractVariables(scriptContent, componentContext, componentFilePath)
+    // Only extract variables for server-side if script doesn't have special attributes
+    const isClientOnlyScript = scriptAttrs.includes('client') || scriptAttrs.includes('type="module"')
+    if (scriptContent && !isClientOnlyScript) {
+      try {
+        await extractVariables(scriptContent, componentContext, componentFilePath)
+      } catch (e) {
+        // Script may contain browser-only code, skip variable extraction
+      }
     }
 
-    // Remove script tags from the component template
+    // Remove script tags from the component template (we'll add them back at the end)
     let templateContent = componentContent
+    let preservedScript = ''
     if (scriptMatch) {
       templateContent = templateContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i, '')
+      // Preserve the script for client-side execution
+      preservedScript = `<script${scriptAttrs}>${scriptContent}</script>`
     }
 
     // Find and replace any direct references to {{ text || slot }} with the actual value
@@ -183,6 +193,11 @@ export async function renderComponentWithSlot(
 
     // Process the component content recursively with the new context
     const result = await processDirectives(templateContent, componentContext, componentFilePath, componentOptions, dependencies)
+
+    // Append preserved script for SFC support (client-side execution)
+    if (preservedScript) {
+      return result + '\n' + preservedScript
+    }
 
     return result
   }
