@@ -546,14 +546,14 @@ async function processDirectivesInternal(
   dependencies: Set<string>,
 ): Promise<string> {
   // Resolve relative paths in options to absolute paths
+  // Use process.cwd() (project root) as the base, not STX's __dirname
   const resolvedOptions = { ...options }
+  const projectRoot = process.cwd()
   if (resolvedOptions.partialsDir && !path.isAbsolute(resolvedOptions.partialsDir)) {
-    const configDir = path.resolve(__dirname, '..')
-    resolvedOptions.partialsDir = path.resolve(configDir, resolvedOptions.partialsDir)
+    resolvedOptions.partialsDir = path.resolve(projectRoot, resolvedOptions.partialsDir)
   }
   if (resolvedOptions.componentsDir && !path.isAbsolute(resolvedOptions.componentsDir)) {
-    const configDir = path.resolve(__dirname, '..')
-    resolvedOptions.componentsDir = path.resolve(configDir, resolvedOptions.componentsDir)
+    resolvedOptions.componentsDir = path.resolve(projectRoot, resolvedOptions.componentsDir)
   }
 
   let output = template
