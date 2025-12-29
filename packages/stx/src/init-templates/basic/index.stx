@@ -5,78 +5,156 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ title }}</title>
   <script>
-    export const title = "My stx Project";
-    export const description = "A new project built with stx";
-    export const features = [
-      { name: "Templates", description: "Write HTML with powerful templating syntax" },
-      { name: "Components", description: "Build reusable components" },
-      { name: "Directives", description: "Use powerful directives for logic" }
-    ];
+    const title = "My stx Project"
+    const description = "A new project built with stx"
+    const features = [
+      {
+        name: "Reactive Bindings",
+        icon: "⚡",
+        description: "Use :class, :text, :show, :disabled for reactive UI updates"
+      },
+      {
+        name: "Vue-style Components",
+        icon: "🧩",
+        description: "Import components with <ComponentName /> syntax"
+      },
+      {
+        name: "Blade Directives",
+        icon: "🔧",
+        description: "@if, @foreach, @switch, @extends, @section and more"
+      },
+      {
+        name: "Store Integration",
+        icon: "📦",
+        description: "Reference stores with $storeName.property in bindings"
+      }
+    ]
   </script>
   <style>
     :root {
-      --primary-color: #3498db;
-      --secondary-color: #2ecc71;
-      --dark-color: #34495e;
-      --light-color: #ecf0f1;
-      --font-main: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --primary: #3498db;
+      --secondary: #2ecc71;
+      --accent: #9b59b6;
+      --dark: #2c3e50;
+      --light: #ecf0f1;
+      --card-bg: #fff;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: var(--font-main);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       line-height: 1.6;
-      color: var(--dark-color);
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 1rem;
+      color: var(--dark);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 2rem 1rem;
     }
 
     .container {
-      padding: 2rem;
+      max-width: 900px;
+      margin: 0 auto;
     }
 
     header {
       text-align: center;
+      padding: 3rem 2rem;
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
       margin-bottom: 2rem;
-      padding: 1rem;
-      background-color: var(--light-color);
-      border-radius: 5px;
     }
 
     h1 {
-      color: var(--primary-color);
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
     }
 
-    .feature-list {
+    .subtitle {
+      color: #666;
+      font-size: 1.1rem;
+    }
+
+    .features {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 2rem;
-      margin-top: 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
     }
 
     .feature-card {
+      background: var(--card-bg);
       padding: 1.5rem;
-      border-radius: 5px;
-      background-color: #fff;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      transition: transform 0.2s;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .feature-card:hover {
-      transform: translateY(-5px);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
     }
 
     .feature-card h3 {
-      color: var(--primary-color);
-      margin-top: 0;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    .feature-card p {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .getting-started {
+      background: var(--card-bg);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .getting-started h2 {
+      color: var(--dark);
+      margin-bottom: 1rem;
+    }
+
+    code {
+      background: var(--dark);
+      color: var(--secondary);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      display: block;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+    }
+
+    .commands {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 1rem;
     }
 
     footer {
-      margin-top: 3rem;
       text-align: center;
-      padding: 1rem;
-      background-color: var(--light-color);
-      border-radius: 5px;
+      padding: 2rem;
+      color: white;
+    }
+
+    footer a {
+      color: white;
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -84,29 +162,28 @@
   <div class="container">
     <header>
       <h1>{{ title }}</h1>
-      <p>{{ description }}</p>
+      <p class="subtitle">{{ description }}</p>
     </header>
 
-    <main>
-      <section>
-        <h2>Get Started</h2>
-        <p>This is a basic stx project template. You can modify this file or create new stx templates to build your site.</p>
-        <p>To run the development server:</p>
-        <pre><code>stx dev index.stx</code></pre>
-      </section>
-
-      <section>
-        <h2>Features</h2>
-        <div class="feature-list">
-          @foreach(features as feature)
-            <div class="feature-card">
-              <h3>{{ feature.name }}</h3>
-              <p>{{ feature.description }}</p>
-            </div>
-          @endforeach
+    <section class="features">
+      @foreach(features as feature)
+        <div class="feature-card">
+          <div class="feature-icon">{{ feature.icon }}</div>
+          <h3>{{ feature.name }}</h3>
+          <p>{{ feature.description }}</p>
         </div>
-      </section>
-    </main>
+      @endforeach
+    </section>
+
+    <section class="getting-started">
+      <h2>Getting Started</h2>
+      <p>Run these commands to start developing:</p>
+      <div class="commands">
+        <code>stx dev index.stx --port 3000</code>
+        <code>stx init components/header.stx --preset component</code>
+        <code>stx init app.stx --preset app</code>
+      </div>
+    </section>
 
     <footer>
       <p>Built with <a href="https://github.com/stacksjs/stx">stx</a></p>
