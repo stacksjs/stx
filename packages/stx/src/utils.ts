@@ -140,7 +140,17 @@ export async function renderComponentWithSlot(
       slot: slotContent,
     }
 
+    // SFC Support: Extract <template>, <script>, and <style> sections
+    let workingContent = componentContent
+
+    // Extract <template> content if present (Vue-style SFC)
+    const templateMatch = workingContent.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
+    if (templateMatch) {
+      workingContent = templateMatch[1].trim()
+    }
+
     // Extract any script content from the component (SFC support)
+    // Look in original content since template section won't have scripts
     const scriptMatch = componentContent.match(/<script\b([^>]*)>([\s\S]*?)<\/script>/i)
     const scriptAttrs = scriptMatch ? scriptMatch[1] : ''
     const scriptContent = scriptMatch ? scriptMatch[2] : ''
@@ -155,13 +165,25 @@ export async function renderComponentWithSlot(
       }
     }
 
-    // Remove script tags from the component template (we'll add them back at the end)
-    let templateContent = componentContent
+    // Extract <style> content if present
+    const styleMatch = componentContent.match(/<style\b([^>]*)>([\s\S]*?)<\/style>/i)
+    const styleAttrs = styleMatch ? styleMatch[1] : ''
+    const styleContent = styleMatch ? styleMatch[2] : ''
+    let preservedStyle = ''
+    if (styleMatch) {
+      preservedStyle = `<style${styleAttrs}>${styleContent}</style>`
+    }
+
+    // Remove script and style tags from template content
+    let templateContent = workingContent
     let preservedScript = ''
     if (scriptMatch) {
-      templateContent = templateContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i, '')
+      templateContent = templateContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
       // Preserve the script for client-side execution
       preservedScript = `<script${scriptAttrs}>${scriptContent}</script>`
+    }
+    if (styleMatch) {
+      templateContent = templateContent.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
     }
 
     // Find and replace any direct references to {{ text || slot }} with the actual value
@@ -194,12 +216,16 @@ export async function renderComponentWithSlot(
     // Process the component content recursively with the new context
     const result = await processDirectives(templateContent, componentContext, componentFilePath, componentOptions, dependencies)
 
-    // Append preserved script for SFC support (client-side execution)
+    // Append preserved style and script for SFC support (client-side execution)
+    let output = result
+    if (preservedStyle) {
+      output += '\n' + preservedStyle
+    }
     if (preservedScript) {
-      return result + '\n' + preservedScript
+      output += '\n' + preservedScript
     }
 
-    return result
+    return output
   }
   catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
