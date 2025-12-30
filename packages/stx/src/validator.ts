@@ -85,7 +85,8 @@ const MALFORMED_DIRECTIVE_CHECKS: MalformedDirectiveCheck[] = [
   { pattern: /@foreach\s*[^(]/, message: '@foreach directive missing parentheses', suggestion: 'Use @foreach(items as item)' },
   { pattern: /@foreach\([^)]*\)\s*[^@\n<]/, message: '@foreach may have content on same line', suggestion: 'Put content on new line after @foreach()' },
   { pattern: /@include\s*[^(]/, message: '@include directive missing parentheses', suggestion: 'Use @include(\'partial-name\')' },
-  { pattern: /@extends\s*[^(]/, message: '@extends directive missing parentheses', suggestion: 'Use @extends(\'layout-name\')' },
+  { pattern: /@extends\s*[^(]/, message: '@extends directive missing parentheses', suggestion: 'Use @extends(\'layout-name\') or @layout(\'layout-name\')' },
+  { pattern: /@layout\s*[^(]/, message: '@layout directive missing parentheses', suggestion: 'Use @layout(\'layout-name\')' },
 ]
 
 /**

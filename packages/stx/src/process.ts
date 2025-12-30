@@ -48,9 +48,9 @@ import { runComposers } from './view-composers'
 //   4. Process @push/@prepend (collect stack content)
 //
 // Phase 2: Layout Resolution
-//   5. Extract @extends directive (layout path)
+//   5. Extract @layout/@extends directive (layout path)
 //   6. Extract @section directives (including @parent handling)
-//   7. Replace @yield with section content
+//   7. Replace @yield and {{ slot }} with section content
 //   8. Replace @stack with collected content
 //   9. If layout exists: recursively process layout with sections
 //
@@ -581,12 +581,12 @@ async function processDirectivesInternal(
   const sections: Record<string, string> = {}
   let layoutPath = ''
 
-  // Extract layout if used
-  const layoutMatch = output.match(/@extends\(\s*['"]([^'"]+)['"]\s*\)/)
+  // Extract layout if used (@layout or @extends)
+  const layoutMatch = output.match(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/)
   if (layoutMatch) {
     layoutPath = layoutMatch[1]
-    // Remove the @extends directive from the template
-    output = output.replace(/@extends\(\s*['"]([^'"]+)['"]\s*\)/, '')
+    // Remove the @layout/@extends directive from the template
+    output = output.replace(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/, '')
   }
 
   // Extract sections
@@ -615,6 +615,11 @@ async function processDirectivesInternal(
   // Replace yield with section content
   output = output.replace(/@yield\(\s*['"]([^'"]+)['"](?:,\s*['"]([^'"]+)['"])?\)/g, (_, name, defaultContent) => {
     return sections[name] || defaultContent || ''
+  })
+
+  // Replace {{ slot }} with content section (simpler syntax for layouts)
+  output = output.replace(/\{\{\s*slot\s*\}\}/g, () => {
+    return sections.content || ''
   })
 
   // Replace @stack directives with their content
@@ -667,8 +672,8 @@ async function processDirectivesInternal(
         },
       )
 
-      // Check if the layout itself extends another layout
-      const nestedLayoutMatch = layoutContent.match(/@extends\(\s*['"]([^'"]+)['"]\s*\)/)
+      // Check if the layout itself extends another layout (@layout or @extends)
+      const nestedLayoutMatch = layoutContent.match(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/)
       if (nestedLayoutMatch) {
         if (resolvedOptions.debug) {
           console.log(`Found nested layout: ${nestedLayoutMatch[1]} in ${layoutFullPath}`)
@@ -697,8 +702,8 @@ async function processDirectivesInternal(
         const nestedContext = { ...context, __sections: sections }
 
         // Process the nested layout by recursively calling processDirectives
-        // with the modified template that includes the @extends directive
-        const nestedTemplate = `@extends('${nestedLayoutMatch[1]}')${processedLayout}`
+        // with the modified template that includes the @layout directive
+        const nestedTemplate = `@layout('${nestedLayoutMatch[1]}')${processedLayout}`
         return await processDirectives(nestedTemplate, nestedContext, layoutFullPath, resolvedOptions, dependencies)
       }
 
@@ -724,6 +729,11 @@ async function processDirectivesInternal(
           return sectionContent
         }
         return defaultContent || ''
+      })
+
+      // Replace {{ slot }} with content section (simpler syntax for layouts)
+      processedLayout = processedLayout.replace(/\{\{\s*slot\s*\}\}/g, () => {
+        return sections.content || ''
       })
 
       // Process stack replacements in the layout

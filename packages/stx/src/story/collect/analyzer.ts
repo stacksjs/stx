@@ -430,6 +430,7 @@ export function extractDirectives(content: string): DirectiveUsage[] {
     '@slot',
     '@endslot',
     '@include',
+    '@layout',
     '@extends',
     '@section',
     '@endsection',

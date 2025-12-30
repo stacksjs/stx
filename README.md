@@ -20,7 +20,7 @@ stx combines the elegance of Laravel Blade syntax with the speed of Bun, deliver
 - 🎨 **Intuitive Template Syntax** - Laravel Blade-like directives with enhanced capabilities
 - ⚡ **Lightning Fast** - Built with performance in mind
 - 🧩 **Component System** - Create reusable `.stx` components with props, slots, and composition
-- 🎯 **Vue-Style SFC** - Single File Components with `<ComponentName />` syntax
+- 🎯 **Single File Components** - Modular components with `@component` directive and props
 - 🔄 **Reactive State** - Built-in state management for interactive UIs
 - 🎯 **TypeScript First** - Full type safety and autocomplete support
 - 📦 **Zero Config** - Works out of the box, configure when you need to
@@ -138,30 +138,52 @@ import homeTemplate from './views/home.stx'
 const html = homeTemplate // Already processed and ready to use!
 ```
 
-## Vue-Style Single File Components (SFC)
+## Single File Components (SFC)
 
-STX supports Vue-style component syntax for clean, modular architecture. Components are automatically resolved from your `componentsDir`.
+STX supports Single File Components for clean, modular architecture. Components are automatically resolved from your `componentsDir`.
 
 ### Using Components
 
-Components in `components/` directory are used with PascalCase tags:
+Import components using the `@component` directive:
 
 ```html
 <!-- pages/index.stx -->
-<Header />
+@component('header')
 
 <main class="container">
-  <Sidebar />
-  <Content />
+  @component('sidebar')
+  @component('content')
 </main>
 
-<Footer />
+@component('footer')
 ```
 
-Component files use kebab-case naming:
-- `<Header />` → `components/header.stx`
-- `<UserProfile />` → `components/user-profile.stx`
-- `<NavMenu />` → `components/nav-menu.stx`
+### Passing Props
+
+Pass data to components using the optional second parameter:
+
+```html
+<!-- Pass props to component -->
+@component('user-card', { name: 'John', role: 'Admin' })
+
+<!-- Props with dynamic values -->
+@component('product-card', { product: product, showPrice: true })
+
+<!-- No props needed -->
+@component('navbar')
+```
+
+### Component Files
+
+Components are `.stx` files in your `componentsDir`:
+
+```html
+<!-- components/user-card.stx -->
+<div class="p-4 rounded-lg border">
+  <h3>{{ name }}</h3>
+  <span class="text-gray-500">{{ role }}</span>
+</div>
+```
 
 ### Client Scripts in Components
 
@@ -205,9 +227,9 @@ Components can include client-side JavaScript for interactivity:
 ```html
 <!-- components/user-card.stx -->
 <div class="p-4 rounded-lg border">
-  <img id="avatar" class="w-16 h-16 rounded-full" />
-  <h3 id="userName">User Name</h3>
-  <p id="userBio">Bio text...</p>
+  <img id="avatar" src="{{ avatar }}" class="w-16 h-16 rounded-full" />
+  <h3 id="userName">{{ name }}</h3>
+  <p id="userBio">{{ bio }}</p>
   <div id="onlineStatus" class="hidden flex items-center gap-2">
     <span class="w-2 h-2 bg-green-500 rounded-full"></span>
     <span>Online</span>
@@ -234,6 +256,101 @@ Components can include client-side JavaScript for interactivity:
   });
 })();
 </script>
+```
+
+## Layouts
+
+STX supports layouts for wrapping pages with common structure like headers, footers, and navigation.
+
+### Using Layouts
+
+Use `@layout` to wrap a page with a layout:
+
+```html
+<!-- pages/dashboard.stx -->
+@layout('default')
+
+@section('content')
+  <h1>Dashboard</h1>
+  <p>Welcome to your dashboard!</p>
+@endsection
+```
+
+### Creating Layouts
+
+Layouts use `{{ slot }}` or `@yield` to define content slots:
+
+```html
+<!-- layouts/default.stx -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ title || 'My App' }}</title>
+  @yield('head')
+</head>
+<body>
+  @component('navbar')
+
+  <main class="container">
+    {{ slot }}
+  </main>
+
+  @component('footer')
+
+  @yield('scripts')
+</body>
+</html>
+```
+
+The `{{ slot }}` syntax is equivalent to `@yield('content')` - use whichever you prefer.
+
+### Multiple Sections
+
+Define multiple content sections in your pages:
+
+```html
+<!-- pages/about.stx -->
+@layout('default')
+
+@section('head')
+  <meta name="description" content="About us page">
+@endsection
+
+@section('content')
+  <h1>About Us</h1>
+  <p>Our company story...</p>
+@endsection
+
+@section('scripts')
+  <script src="/js/about.js"></script>
+@endsection
+```
+
+### Nested Layouts
+
+Layouts can extend other layouts:
+
+```html
+<!-- layouts/admin.stx -->
+@layout('default')
+
+@section('content')
+  <div class="admin-wrapper">
+    @component('admin-sidebar')
+    <div class="admin-content">
+      @yield('admin-content')
+    </div>
+  </div>
+@endsection
+```
+
+```html
+<!-- pages/admin/users.stx -->
+@layout('admin')
+
+@section('admin-content')
+  <h1>Manage Users</h1>
+@endsection
 ```
 
 ## What You Can Build

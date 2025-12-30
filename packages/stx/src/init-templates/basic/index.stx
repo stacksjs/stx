@@ -9,24 +9,24 @@
     const description = "A new project built with stx"
     const features = [
       {
-        name: "Reactive Bindings",
+        name: "Single File Components",
         icon: "⚡",
-        description: "Use :class, :text, :show, :disabled for reactive UI updates"
+        description: "Script, style, and template in one .stx file"
       },
       {
-        name: "Vue-style Components",
+        name: "Component System",
         icon: "🧩",
-        description: "Import components with <ComponentName /> syntax"
+        description: "Import components with @component('name', {}) directive"
       },
       {
         name: "Blade Directives",
         icon: "🔧",
-        description: "@if, @foreach, @switch, @extends, @section and more"
+        description: "@if, @foreach, @switch, @layout, @section and more"
       },
       {
-        name: "Store Integration",
+        name: "Layouts & Sections",
         icon: "📦",
-        description: "Reference stores with $storeName.property in bindings"
+        description: "Use @layout and @section for page templates"
       }
     ]
   </script>

@@ -28,11 +28,11 @@ type TemplatePreset = 'basic' | 'component' | 'layout' | 'blog' | 'api' | 'app'
  */
 export const TEMPLATE_PRESETS: Record<TemplatePreset, { description: string }> = {
   basic: { description: 'Simple page with script, style, and template sections' },
-  component: { description: 'Reusable component with props, slots, and reactive bindings' },
+  component: { description: 'Reusable component with props and slots' },
   layout: { description: 'Layout template with sections and yields' },
   blog: { description: 'Blog post with frontmatter-style variables' },
   api: { description: 'API endpoint template with JSON response' },
-  app: { description: 'Full app with stores, reactive bindings, and components' },
+  app: { description: 'Full app with stores and components' },
 }
 
 /**
@@ -141,9 +141,9 @@ function getBasicTemplate(): string {
     const title = "My stx Page"
     const description = "A page built with stx"
     const features = [
-      { name: "Reactive Bindings", desc: "Use :class, :text, :show for reactive UI" },
-      { name: "Vue-style Components", desc: "Import components with <ComponentName />" },
-      { name: "Blade Directives", desc: "@if, @foreach, @switch and more" }
+      { name: "Single File Components", desc: "Script, style, and template in one .stx file" },
+      { name: "Component System", desc: "Import components with @component('name', {})" },
+      { name: "Blade Directives", desc: "@if, @foreach, @switch, @layout and more" }
     ]
   </script>
   <style>
@@ -192,12 +192,12 @@ function getBasicTemplate(): string {
 }
 
 /**
- * Component template - reusable component with props, slots, and reactive bindings
+ * Component template - reusable component with props and slots
  */
 function getComponentTemplate(): string {
   return `{{-- Component: Card --}}
 {{-- Props: title, variant, collapsible --}}
-{{-- Usage: <Card title="Hello" variant="primary" :collapsible="true">Content</Card> --}}
+{{-- Usage: @component('card', { title: "Hello", variant: "primary", collapsible: true }) Content @endcomponent --}}
 <script>
   // Props with defaults
   const title = props.title || 'Card Title'
@@ -289,7 +289,7 @@ function getLayoutTemplate(): string {
   </header>
 
   <main>
-    @yield('content')
+    {{ slot }}
   </main>
 
   <footer>
@@ -318,7 +318,7 @@ function getBlogTemplate(): string {
   const readingTime = "5 min read"
 </script>
 
-@extends('layouts/blog')
+@layout('layouts/blog')
 
 @section('title')
   {{ title }}
@@ -396,7 +396,7 @@ function getApiTemplate(): string {
 }
 
 /**
- * App template - Full app with stores, reactive bindings, and components
+ * App template - Full app with stores and components
  * Demonstrates modern stx patterns for building interactive applications
  */
 function getAppTemplate(): string {
@@ -473,14 +473,14 @@ function getAppTemplate(): string {
   <div class="container">
     <header class="header">
       <h1>{{ title }}</h1>
-      <p class="text-muted">Built with stx reactive bindings</p>
+      <p class="text-muted">Built with stx</p>
     </header>
 
-    <!-- Counter Example with Reactive Bindings -->
+    <!-- Counter Example -->
     <div class="card">
       <h2 class="mb-1">Counter Example</h2>
       <div class="flex flex-between">
-        <span id="counterDisplay" :text="'Count: ' + $appStore.count">Count: 0</span>
+        <span id="counterDisplay">Count: 0</span>
         <div class="flex">
           <button class="btn btn--secondary" onclick="window.app?.decrement()">-</button>
           <button class="btn" onclick="window.app?.increment()">+</button>
@@ -504,7 +504,7 @@ function getAppTemplate(): string {
         <button class="btn" onclick="window.app?.addTodo()">Add</button>
       </div>
       <div id="todoList"></div>
-      <p id="todoCount" class="text-muted" :text="$appStore.todos.length + ' items'">0 items</p>
+      <p id="todoCount" class="text-muted">0 items</p>
     </div>
 
     <!-- Toggle Example -->
@@ -512,12 +512,10 @@ function getAppTemplate(): string {
       <h2 class="mb-1">Toggle Example</h2>
       <button
         id="toggleBtn"
-        class="btn"
-        :class="$appStore.isActive ? 'btn--success' : 'btn--secondary'"
-        :text="$appStore.isActive ? 'Active' : 'Inactive'"
+        class="btn btn--secondary"
         onclick="window.app?.toggle()"
       >Inactive</button>
-      <div id="toggleContent" class="mt-1" :show="$appStore.isActive" style="margin-top:1rem">
+      <div id="toggleContent" class="mt-1" style="margin-top:1rem;display:none">
         <p class="text-success">This content is visible when active!</p>
       </div>
     </div>
@@ -550,9 +548,6 @@ function getAppTemplate(): string {
         todos: [],
         isActive: false
       });
-
-      // Expose stores globally for reactive bindings
-      window.AppStores = { appStore };
 
       // App methods
       window.app = {
@@ -591,21 +586,42 @@ function getAppTemplate(): string {
         }
       };
 
-      // Render todo list
-      function renderTodos(state) {
+      // Update UI based on state
+      function updateUI(state) {
+        // Update counter
+        const counterDisplay = document.getElementById('counterDisplay');
+        if (counterDisplay) counterDisplay.textContent = 'Count: ' + state.count;
+
+        // Update todo count
+        const todoCount = document.getElementById('todoCount');
+        if (todoCount) todoCount.textContent = state.todos.length + ' items';
+
+        // Update toggle button
+        const toggleBtn = document.getElementById('toggleBtn');
+        if (toggleBtn) {
+          toggleBtn.textContent = state.isActive ? 'Active' : 'Inactive';
+          toggleBtn.className = 'btn ' + (state.isActive ? 'btn--success' : 'btn--secondary');
+        }
+
+        // Show/hide toggle content
+        const toggleContent = document.getElementById('toggleContent');
+        if (toggleContent) toggleContent.style.display = state.isActive ? 'block' : 'none';
+
+        // Render todo list
         const list = document.getElementById('todoList');
-        if (!list) return;
-        list.innerHTML = state.todos.map(todo => \`
-          <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid var(--border)">
-            <input type="checkbox" \${todo.done ? 'checked' : ''} onchange="window.app?.toggleTodo(\${todo.id})" />
-            <span style="\${todo.done ? 'text-decoration:line-through;opacity:0.5' : ''}">\${todo.text}</span>
-            <button onclick="window.app?.deleteTodo(\${todo.id})" style="margin-left:auto;background:none;border:none;color:var(--primary);cursor:pointer">×</button>
-          </div>
-        \`).join('');
+        if (list) {
+          list.innerHTML = state.todos.map(todo => \`
+            <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid var(--border)">
+              <input type="checkbox" \${todo.done ? 'checked' : ''} onchange="window.app?.toggleTodo(\${todo.id})" />
+              <span style="\${todo.done ? 'text-decoration:line-through;opacity:0.5' : ''}">\${todo.text}</span>
+              <button onclick="window.app?.deleteTodo(\${todo.id})" style="margin-left:auto;background:none;border:none;color:var(--primary);cursor:pointer">×</button>
+            </div>
+          \`).join('');
+        }
       }
 
       // Subscribe to store changes
-      appStore.subscribe(renderTodos);
+      appStore.subscribe(updateUI);
     })();
   </script>
 </body>

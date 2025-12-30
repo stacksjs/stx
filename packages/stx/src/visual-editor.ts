@@ -942,11 +942,11 @@ export function getDefaultPalette(): PaletteItem[] {
     // Layout
     {
       name: 'extends',
-      displayName: 'Extends Layout',
+      displayName: 'Use Layout',
       category: 'Layout',
-      description: 'Extend a parent layout template',
+      description: 'Use a layout template',
       icon: 'symbol-structure',
-      snippet: '@extends(\'$1\')\n\n@section(\'content\')\n  $0\n@endsection',
+      snippet: '@layout(\'$1\')\n\n@section(\'content\')\n  $0\n@endsection',
     },
     {
       name: 'section',

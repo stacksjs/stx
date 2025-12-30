@@ -80,7 +80,7 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     // Check if this is a full HTML page or a partial that needs layout
     const hasDoctype = content.trim().toLowerCase().startsWith('<!doctype') ||
                        content.trim().toLowerCase().startsWith('<html')
-    const hasExtends = content.includes('@extends(')
+    const hasExtends = content.includes('@extends(') || content.includes('@layout(')
 
     // SFC Support: Extract <template> content if present
     let workingContent = content
