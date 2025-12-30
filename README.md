@@ -1,381 +1,87 @@
-![Social Card of Bun Plugin blade](https://github.com/stacksjs/stx/blob/main/.github/art/cover.jpg)
+![Social Card of stx](https://github.com/stacksjs/stx/blob/main/.github/art/cover.jpg)
 
 [![npm version][npm-version-src]][npm-version-href]
 [![GitHub Actions][github-actions-src]][github-actions-href]
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 [![npm downloads][npm-downloads-src]][npm-downloads-href]
 
-<!-- [![Codecov][codecov-src]][codecov-href] -->
-
 # stx
 
-Build modern web applications with intuitive templating, reactive components, and zero configuration.
-
-stx combines the elegance of Laravel Blade syntax with the speed of Bun, delivering a complete solution for server-side rendering, component-based architecture, and seamless developer experience.
+A modern templating framework with Laravel Blade-like syntax, Vue-style Single File Components, and Bun-powered performance.
 
 ## Features
 
-### Core Framework
-
-- 🎨 **Intuitive Template Syntax** - Laravel Blade-like directives with enhanced capabilities
-- ⚡ **Lightning Fast** - Built with performance in mind
-- 🧩 **Component System** - Create reusable `.stx` components with props, slots, and composition
-- 🎯 **Single File Components** - Standard `<script>` and `<style>` tags, just like Vue/Svelte
-- 🔄 **Reactive State** - Built-in state management for interactive UIs
-- 🎯 **TypeScript First** - Full type safety and autocomplete support
-- 📦 **Zero Config** - Works out of the box, configure when you need to
-
-### Rich Feature Set
-
-- 🎭 **200,000+ Icons** - Built-in Iconify integration with component-based icons
-- 🛣️ **Smart Routing** - File-based and programmatic routing with middleware
-- 💅 **Scoped Styling** - Component-scoped CSS with utility classes
-- 🔌 **Plugin System** - Extend functionality with custom plugins
-- 🧪 **Testing Utilities** - Built-in tools for component and integration testing
-- 📊 **SEO Optimized** - Meta tags, structured data, and OG tags support
-
-### Developer Experience
-
-- 🔥 **Hot Reload** - Instant updates during development
-- 🐛 **Enhanced Debugging** - Detailed error messages with stack traces
-- 📝 **Markdown Support** - Render markdown with syntax highlighting
-- 🌍 **i18n Ready** - Built-in internationalization support
-- 🔒 **Security First** - CSRF protection, XSS prevention, and sanitization
-- ⚙️ **CLI Tools** - Powerful command-line interface for scaffolding and generation
-
-## Why stx?
-
-stx is designed for developers who want the **productivity of modern frameworks** with the **performance of Bun**. Whether you're building a simple landing page or a complex web application, stx provides the tools you need without the bloat.
-
-```html
-<!-- Create beautiful UIs with familiar syntax -->
-<div class="hero">
-  <h1>{{ title }}</h1>
-  <SearchIcon size="24" />
-
-  @if(user.isAuthenticated)
-    <UserProfile :user="user" />
-  @else
-    <LoginButton />
-  @endif
-</div>
-```
-
-### How It Compares
-
-| Feature | stx | Next.js | SvelteKit | Astro |
-|---------|-----|---------|-----------|-------|
-| **Setup** | Zero config | Config needed | Config needed | Config needed |
-| **Template Syntax** | HTML & Blade-like | JSX | Svelte | Astro |
-| **Component System** | Built-in | React | Svelte | Any |
-| **Icons** | 200K+ built-in | Requires setup | Requires setup | Requires setup |
-| **Learning Curve** | Low | Medium | Medium | Medium |
-| **Bundle Size** | Minimal | Large | Medium | Small |
+- **Single File Components** - Standard `<script>` and `<style>` tags
+- **Blade Directives** - `@if`, `@foreach`, `@component`, `@layout`, and more
+- **Client Reactivity** - Vue-like `ref`, `reactive`, `watch`, `onMounted`
+- **200K+ Icons** - Built-in Iconify integration
+- **Zero Config** - Works out of the box
 
 ## Quick Start
-
-### Installation
 
 ```bash
 bun add bun-plugin-stx
 ```
 
-### Setup
-
-Add the plugin to your `bunfig.toml`:
-
 ```toml
-preload = [ "bun-plugin-stx" ]
-
-# or as a serve plugin
-[serve.static]
-plugins = [ "bun-plugin-stx" ]
+# bunfig.toml
+preload = ["bun-plugin-stx"]
 ```
 
-Or register the plugin in your build script:
+## Single File Components
 
-```ts
-import { build } from "bun";
-import stxPlugin from "bun-plugin-stx";
-
-await build({
-  entrypoints: ["./src/index.ts", "./templates/home.stx"],
-  outdir: "./dist",
-  plugins: [stxPlugin],
-});
-```
-
-### Create Your First Template
-
-```stx
-<!-- views/home.stx -->
-<!DOCTYPE html>
-<html>
-<head>
-  <title>{{ title }}</title>
-</head>
-<body>
-  <nav>
-    <HomeIcon size="20" /> Home
-  </nav>
-
-  <main>
-    @foreach(posts as post)
-      <article>
-        <h2>{{ post.title }}</h2>
-        <p>{{ post.excerpt }}</p>
-      </article>
-    @endforeach
-  </main>
-</body>
-</html>
-```
-
-```typescript
-// Use in your Bun server
-import homeTemplate from './views/home.stx'
-
-const html = homeTemplate // Already processed and ready to use!
-```
-
-## Single File Components (SFC)
-
-STX uses a familiar Single File Component structure with standard `<script>` and `<style>` tags - just like Vue or Svelte:
+STX uses a familiar structure with `<script>`, `<style>`, and template:
 
 ```html
 <!-- components/greeting.stx -->
 <script>
   const name = 'World'
-  const timestamp = new Date().toLocaleString()
+  const time = new Date().toLocaleTimeString()
 </script>
 
 <div class="greeting">
   <h1>Hello, {{ name }}!</h1>
-  <p>Generated at {{ timestamp }}</p>
+  <p>Current time: {{ time }}</p>
 </div>
 
 <style>
   .greeting {
     padding: 2rem;
-    background: #f0f0f0;
-    border-radius: 8px;
-  }
-  .greeting h1 {
-    color: #333;
+    background: #f5f5f5;
   }
 </style>
 ```
 
-Variables declared in `<script>` are automatically available in the template. No special directives needed - it just works.
+Variables in `<script>` are automatically available in the template.
 
-### Using Components
+## Components
 
-Import components using the `@component` directive:
+Use `@component` to include components:
 
 ```html
-<!-- pages/index.stx -->
+<!-- pages/home.stx -->
 @component('header')
 
-<main class="container">
-  @component('sidebar')
-  @component('content')
+<main>
+  @component('user-card', { name: 'John', role: 'Admin' })
 </main>
 
 @component('footer')
 ```
 
-### Passing Props
-
-Pass data to components using the optional second parameter:
-
-```html
-<!-- Pass props to component -->
-@component('user-card', { name: 'John', role: 'Admin' })
-
-<!-- Props with dynamic values -->
-@component('product-card', { product: product, showPrice: true })
-
-<!-- No props needed -->
-@component('navbar')
-```
-
-### Component Files
-
-Components are `.stx` files in your `componentsDir`:
+Components receive props directly:
 
 ```html
 <!-- components/user-card.stx -->
-<div class="p-4 rounded-lg border">
+<div class="card">
   <h3>{{ name }}</h3>
-  <span class="text-gray-500">{{ role }}</span>
+  <span>{{ role }}</span>
 </div>
 ```
-
-### Client Scripts in Components
-
-Components can include client-side JavaScript for interactivity:
-
-```html
-<!-- components/counter.stx -->
-<div class="counter">
-  <span id="count">0</span>
-  <button id="increment">+</button>
-</div>
-
-<script client>
-(() => {
-  function init() {
-    const stores = window.MyStores;
-    if (!stores) {
-      setTimeout(init, 10);
-      return;
-    }
-
-    // Subscribe to store changes
-    stores.counterStore.subscribe((state) => {
-      const countEl = document.getElementById('count');
-      if (countEl) countEl.textContent = state.count;
-    });
-
-    // Handle events
-    document.getElementById('increment')?.addEventListener('click', () => {
-      stores.counterActions.increment();
-    });
-  }
-
-  init();
-})();
-</script>
-```
-
-### Complete SFC Example
-
-A complete Single File Component with server-side data, template, styles, and client interactivity:
-
-```html
-<!-- components/user-card.stx -->
-<script>
-  // Server-side data (runs at build/render time)
-  const defaultAvatar = '/images/default-avatar.png'
-  const formatDate = (date) => new Date(date).toLocaleDateString()
-</script>
-
-<div class="user-card">
-  <img class="user-card__avatar" src="{{ avatar || defaultAvatar }}" />
-  <h3 class="user-card__name">{{ name }}</h3>
-  <p class="user-card__bio">{{ bio }}</p>
-  <time class="user-card__joined">Joined {{ formatDate(joinedAt) }}</time>
-</div>
-
-<style>
-  .user-card {
-    padding: 1.5rem;
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
-    background: white;
-  }
-  .user-card__avatar {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-  }
-  .user-card__name {
-    margin: 0.5rem 0 0.25rem;
-    font-size: 1.25rem;
-  }
-  .user-card__bio {
-    color: #6b7280;
-    margin: 0;
-  }
-  .user-card__joined {
-    font-size: 0.875rem;
-    color: #9ca3af;
-  }
-</style>
-
-<script client>
-  // Client-side JavaScript (runs in browser)
-  import { ref, onMounted, watch } from 'stx'
-
-  const isOnline = ref(false)
-
-  onMounted(() => {
-    // Runs when component is in DOM
-    console.log('User card mounted')
-  })
-
-  watch(isOnline, (newVal) => {
-    const el = document.querySelector('.user-card')
-    if (el) el.classList.toggle('online', newVal)
-  })
-</script>
-```
-
-**Key points:**
-- `<script>` - Server-side code, variables available in template
-- `<style>` - Component styles
-- `<script client>` - Client-side JavaScript with Vue-like reactivity
-
-### Client-Side Reactivity
-
-STX provides Vue-like reactivity primitives for client scripts:
-
-```html
-<script client>
-  import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'stx'
-
-  // Reactive primitives
-  const count = ref(0)
-  const user = reactive({ name: 'Guest', loggedIn: false })
-  const doubled = computed(() => count.value * 2)
-
-  // Lifecycle hooks
-  onMounted(async () => {
-    const data = await fetch('/api/user').then(r => r.json())
-    user.name = data.name
-    user.loggedIn = true
-  })
-
-  // Watch for changes
-  watch(count, (newVal, oldVal) => {
-    console.log(`Count: ${oldVal} -> ${newVal}`)
-  })
-
-  onUnmounted(() => {
-    console.log('Cleanup')
-  })
-</script>
-```
-
-Available imports from `'stx'`:
-- **`ref(value)`** - Reactive reference (access via `.value`)
-- **`reactive(obj)`** - Reactive object proxy
-- **`computed(getter)`** - Computed value
-- **`watch(source, callback)`** - Watch reactive source
-- **`onMounted(fn)`** - Run when component mounts
-- **`onUnmounted(fn)`** - Run on cleanup
 
 ## Layouts
 
-STX supports layouts for wrapping pages with common structure like headers, footers, and navigation.
-
-### Using Layouts
-
-Use `@layout` to wrap a page with a layout:
-
-```html
-<!-- pages/dashboard.stx -->
-@layout('default')
-
-@section('content')
-  <h1>Dashboard</h1>
-  <p>Welcome to your dashboard!</p>
-@endsection
-```
-
-### Creating Layouts
-
-Layouts use `{{ slot }}` or `@yield` to define content slots:
+Use `@layout` to wrap pages with common structure:
 
 ```html
 <!-- layouts/default.stx -->
@@ -383,1311 +89,185 @@ Layouts use `{{ slot }}` or `@yield` to define content slots:
 <html>
 <head>
   <title>{{ title || 'My App' }}</title>
-  @yield('head')
 </head>
 <body>
   @component('navbar')
 
-  <main class="container">
+  <main>
     {{ slot }}
   </main>
 
   @component('footer')
-
-  @yield('scripts')
 </body>
 </html>
 ```
-
-The `{{ slot }}` syntax is equivalent to `@yield('content')` - use whichever you prefer.
-
-### Multiple Sections
-
-Define multiple content sections in your pages:
 
 ```html
 <!-- pages/about.stx -->
 @layout('default')
 
-@section('head')
-  <meta name="description" content="About us page">
-@endsection
-
 @section('content')
   <h1>About Us</h1>
-  <p>Our company story...</p>
-@endsection
-
-@section('scripts')
-  <script src="/js/about.js"></script>
+  <p>Welcome to our site.</p>
 @endsection
 ```
 
-### Nested Layouts
+`{{ slot }}` is equivalent to `@yield('content')`.
 
-Layouts can extend other layouts:
+## Client-Side Reactivity
 
-```html
-<!-- layouts/admin.stx -->
-@layout('default')
-
-@section('content')
-  <div class="admin-wrapper">
-    @component('admin-sidebar')
-    <div class="admin-content">
-      @yield('admin-content')
-    </div>
-  </div>
-@endsection
-```
+Use `<script client>` for browser-side JavaScript with Vue-like reactivity:
 
 ```html
-<!-- pages/admin/users.stx -->
-@layout('admin')
-
-@section('admin-content')
-  <h1>Manage Users</h1>
-@endsection
-```
-
-## What You Can Build
-
-- 🌐 **Server-Side Rendered Apps** - Full-featured web applications with SSR
-- 📱 **Landing Pages** - Beautiful marketing sites with minimal JavaScript
-- 🛍️ **E-commerce Platforms** - Product catalogs with dynamic content
-- 📝 **Content Management** - Blogs and documentation sites
-- 🎮 **Interactive Dashboards** - Data visualizations and admin panels
-- 🔐 **Authentication Flows** - Login, registration, and protected routes
-
-## Documentation
-
-📚 **[Read the Full Documentation →](https://stx.sh)**
-
-- [Getting Started Guide](./docs/guide/getting-started.md)
-- [Template Syntax Reference](./docs/api/template-syntax.md)
-- [Component System](./docs/api/components.md)
-- [Iconify Integration](./docs/iconify.md)
-- [API Reference](./docs/api/)
-- [Examples & Recipes](./docs/examples.md)
-
-## Usage
-
-### Import and Use Templates
-
-```typescript
-import homeTemplate from './views/home.stx'
-
-// Use the processed HTML content
-document.body.innerHTML = homeTemplate
-```
-
-### Use with Bun Server
-
-You can serve .stx files directly with Bun's server:
-
-```js
-// server.js
-import { serve } from "bun";
-import homeTemplate from "./home.stx";
-
-serve({
-  port: 3000,
-  fetch(req) {
-    return new Response(homeTemplate, {
-      headers: { "Content-Type": "text/html" },
-    });
-  },
-});
-```
-
-Or use as route handlers:
-
-```js
-import about from "./about.stx";
-// server.js
-import home from "./home.stx";
-
-export default {
-  port: 3000,
-  routes: {
-    "/": home,
-    "/about": about,
-  },
-};
-```
-
-## stx Template Syntax
-
-`stx` templates use a syntax inspired by Laravel Blade. Templates can contain HTML with special directives for rendering dynamic content.
-
-### Basic Example
-
-```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>stx Example</title>
-    <script>
-      // Define your data as an ESM export
-      export const title = "Hello World";
-      export const items = ["Apple", "Banana", "Cherry"];
-      export const showFooter = true;
-    </script>
-  </head>
-  <body>
-    <h1>{{ title }}</h1>
-
-    <ul>
-      @foreach(items as item)
-        <li>{{ item }}</li>
-      @endforeach
-    </ul>
-
-    @if(showFooter)
-      <footer>Copyright 2023</footer>
-    @endif
-  </body>
-</html>
-```
-
-### Data Export Options
-
-There are two ways to expose data in your `stx` templates:
-
-#### 1. ESM exports (recommended)
-
-```html
-<script>
-  // Modern ESM named exports
-  export const title = "Hello World";
-  export const count = 42;
-
-  // Export functions
-  export function getFullName(first, last) {
-    return `${first} ${last}`;
-  }
-
-  // Export default object
-  export default {
-    items: ["Apple", "Banana", "Cherry"],
-    showDetails: true,
-  };
-</script>
-```
-
-#### 2. Legacy CommonJS (module.exports)
-
-```html
-<script>
-  // Legacy CommonJS exports
-  module.exports = {
-    title: "Hello World",
-    items: ["Apple", "Banana", "Cherry"],
-    showFooter: true,
-  };
-</script>
-```
-
-### Template Directives
-
-#### Custom Directives
-
-`stx` supports defining your own custom directives for template processing:
-
-```ts
-import type { CustomDirective } from "bun-plugin-stx";
-// Configure custom directives
-import stxPlugin from "bun-plugin-stx";
-
-// Create custom directives
-const uppercaseDirective: CustomDirective = {
-  name: "uppercase",
-  handler: (content, params) => {
-    return params[0] ? params[0].toUpperCase() : content.toUpperCase();
-  },
-  // No hasEndTag needed for single-parameter directives
-};
-
-const wrapDirective: CustomDirective = {
-  name: "wrap",
-  handler: (content, params) => {
-    const className = params[0] || "default-wrapper";
-    return `<div class="${className}">${content}</div>`;
-  },
-  hasEndTag: true, // This directive requires an end tag (@wrap...@endwrap)
-};
-
-// Register custom directives
-await build({
-  entrypoints: ["./src/index.ts", "./templates/home.stx"],
-  outdir: "./dist",
-  plugins: [stxPlugin],
-  stx: {
-    customDirectives: [uppercaseDirective, wrapDirective],
-  },
-});
-```
-
-Then use them in your templates:
-
-```html
-<!-- Single-parameter directive -->
-<p>@uppercase('hello world')</p>
-
-<!-- Block directive with content and optional parameter -->
-@wrap(highlight)
-  <p>This content will be wrapped in a div with class "highlight"</p>
-@endwrap
-```
-
-Custom directives have access to:
-
-- `content`: The content between start and end tags (for block directives)
-- `params`: Array of parameters passed to the directive
-- `context`: The template data context (all variables)
-- `filePath`: The current template file path
-
-#### Variables
-
-Display content with double curly braces:
-
-```html
-<h1>{{ title }}</h1>
-<p>{{ user.name }}</p>
-```
-
-#### Conditionals
-
-Use `@if`, `@elseif`, and `@else` for conditional rendering:
-
-```html
-@if(user.isAdmin)
-  <div class="admin-panel">Admin content</div>
-@elseif(user.isEditor)
-  <div class="editor-tools">Editor tools</div>
-@else
-  <div class="user-view">Regular user view</div>
-@endif
-```
-
-#### Loops
-
-Iterate over arrays with `@foreach`:
-
-```html
-<ul>
-  @foreach(items as item)
-    <li>{{ item }}</li>
-  @endforeach
-</ul>
-```
-
-Use `@for` for numeric loops:
-
-```html
-<ol>
-  @for(let i = 1; i <= 5; i++)
-    <li>Item {{ i }}</li>
-  @endfor
-</ol>
-```
-
-#### Raw HTML
-
-Output unescaped HTML content:
-
-```html
-{!! rawHtmlContent !!}
-```
-
-#### Server-Side Scripts
-
-The recommended way to define server-side data is using standard `<script>` tags:
-
-```html
-<script>
-  const title = 'My Page'
-  const items = ['Apple', 'Banana', 'Cherry']
-
-  function formatDate(date) {
-    return date.toLocaleDateString()
-  }
-</script>
-
-<h1>{{ title }}</h1>
-<ul>
-  @foreach(items as item)
-    <li>{{ item }}</li>
-  @endforeach
-</ul>
-<p>Today: {{ formatDate(new Date()) }}</p>
-```
-
-Variables and functions declared in `<script>` are automatically available in your template. This is the standard SFC pattern - no special directives needed.
-
-#### Markdown Support
-
-`stx` supports rendering Markdown content directly in your templates using the `@markdown` directive:
-
-````html
-<div class="content">
-  @markdown # Heading 1 This is a paragraph with **bold text** and *italic
-  text*. - List item 1 - List item 2 - List item 3 ```js // Code block function
-  hello() { console.log('Hello world'); }
-</div>
-````
-
-@endmarkdown
-
-</div>
-```
-
-You can also pass options to the markdown renderer:
-
-```html
-<!-- Enable line breaks (converts single line breaks to <br>) -->
-@markdown(breaks) Line 1 Line 2 @endmarkdown
-
-<!-- Disable GitHub Flavored Markdown -->
-@markdown(no-gfm) Content here @endmarkdown
-```
-
-### Internationalization (i18n)
-
-`stx` supports internationalization to help you build multilingual applications. Translation files are stored in YAML format (JSON also supported) and support nested keys and parameter replacements.
-
-#### Configuration
-
-Configure i18n in your build script:
-
-```js
-import stxPlugin from "bun-plugin-stx";
-
-await build({
-  entrypoints: ["./templates/home.stx"],
-  outdir: "./dist",
-  plugins: [stxPlugin],
-  stx: {
-    i18n: {
-      locale: "en", // Current locale
-      defaultLocale: "en", // Fallback locale
-      translationsDir: "translations", // Directory containing translations
-      format: "yaml", // Format of translation files (yaml, yml, json, or js)
-      fallbackToKey: true, // Use key as fallback when translation not found
-      cache: true, // Cache translations in memory
-    },
-  },
-});
-```
-
-#### Translation Files
-
-Create translation files in your translationsDir:
-
-```yaml
-# translations/en.yaml
-welcome: Welcome to `stx`
-greeting: Hello, :name!
-nav:
-  home: Home
-  about: About
-  contact: Contact
-```
-
-```yaml
-# translations/de.yaml
-welcome: Willkommen bei `stx`
-greeting: Hallo, :name!
-nav:
-  home: Startseite
-  about: Über uns
-  contact: Kontakt
-```
-
-#### Using Translations
-
-`stx` provides multiple ways to use translations in your templates:
-
-1. **@translate Directive**
-
-   ```html
-   <!-- Basic translation -->
-   <p>@translate('welcome')</p>
-
-   <!-- With parameters -->
-   <p>@translate('greeting', { "name": "John" })</p>
-
-   <!-- Nested keys -->
-   <p>@translate('nav.home')</p>
-
-   <!-- With fallback content -->
-   <p>@translate('missing.key')Fallback Content@endtranslate</p>
-   ```
-
-2. **Filter Syntax**
-
-   ```html
-   <!-- Basic translation as filter -->
-   <p>{{ 'welcome' | translate }}</p>
-
-   <!-- With parameters -->
-   <p>{{ 'greeting' | translate({ "name": "Alice" }) }}</p>
-
-   <!-- Short alias -->
-   <p>{{ 'nav.home' | t }}</p>
-   ```
-
-Parameters in translations use the `:param` syntax, similar to Laravel:
-
-```yaml
-greeting: Hello, :name!
-items: You have :count items in your cart.
-```
-
-Then in your template:
-
-```html
-<p>@translate('greeting', { "name": "John" })</p>
-<p>@translate('items', { "count": 5 })</p>
-```
-
-### Web Components Integration
-
-`stx` now provides seamless integration with Web Components, allowing you to automatically build and use custom elements from your `stx` components.
-
-#### Configuration
-
-Enable web component integration in your build configuration:
-
-```ts
-import { build } from "bun";
-import stxPlugin from "bun-plugin-stx";
-
-await build({
-  entrypoints: ["./templates/home.stx"],
-  outdir: "./dist",
-  plugins: [stxPlugin],
-  config: {
-    stx: {
-      webComponents: {
-        enabled: true,
-        outputDir: "dist/web-components",
-        components: [
-          {
-            name: "MyButton", // Class name for the component
-            tag: "my-button", // HTML tag name (must contain a hyphen)
-            file: "components/button.stx", // Path to the stx component
-            attributes: ["type", "text", "disabled"], // Observed attributes
-          },
-          {
-            name: "MyCard",
-            tag: "my-card",
-            file: "components/card.stx",
-            shadowDOM: true, // Use Shadow DOM (default: true)
-            template: true, // Use template element (default: true)
-            styleSource: "styles/card.css", // Optional external stylesheet
-            attributes: ["title", "footer"],
-          },
-        ],
-      },
-    },
-  },
-});
-```
-
-#### Using Web Components in Templates
-
-Include web components in your templates with the `@webcomponent` directive:
-
-```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Web Component Demo</title>
-
-    <!-- Include the web components -->
-    @webcomponent('my-button') @webcomponent('my-card')
-  </head>
-  <body>
-    <h1>Web Components Demo</h1>
-
-    <!-- Use the custom elements -->
-    <my-button type="primary" text="Click Me"></my-button>
-
-    <my-card title="Card Title" footer="Card Footer">
-      This is the card content
-    </my-card>
-  </body>
-</html>
-```
-
-#### Source `stx` Components
-
-The original `stx` components can be simple:
-
-```html
-<!-- components/button.stx -->
-<button class="btn {{ type ? 'btn-' + type : '' }}" {{ disabled ? 'disabled' : '' }}>
-  {{ text || slot }}
-</button>
-
-<!-- components/card.stx -->
-<div class="card">
-  <div class="card-header">{{ title }}</div>
-  <div class="card-body">
-    {{ slot }}
-  </div>
-  <div class="card-footer">{{ footer }}</div>
-</div>
-```
-
-#### Advanced Options
-
-Web components support several configuration options:
-
-- `shadowDOM`: Enable/disable Shadow DOM (default: true)
-- `template`: Use template element for better performance (default: true)
-- `extends`: Extend a specific HTML element class
-- `styleSource`: Path to external stylesheet
-- `attributes`: List of attributes to observe for changes
-
-## TypeScript Support
-
-`stx` includes TypeScript declarations for importing .stx files. Make sure your `tsconfig.json` includes the necessary configuration:
-
-```jsonc
-{
-  "compilerOptions": {
-    // ... your other options
-    "types": ["bun"],
-  },
-  "files": ["src/stx.d.ts"],
-  "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx"],
-}
-```
-
-Create a declaration file (`src/stx.d.ts`):
-
-```ts
-// Allow importing .stx files
-declare module "*.stx";
-```
-
-## Example Server
-
-Run a development server with your `stx` templates:
-
-```ts
-// serve.ts
-import home from "./home.stx";
-
-const server = Bun.serve({
-  routes: {
-    "/": home,
-  },
-  development: true,
-
-  fetch(req) {
-    return new Response("Not Found", { status: 404 });
-  },
-});
-
-console.log(`Listening on ${server.url}`);
-```
-
-## Testing This Plugin
-
-To test the plugin with the included examples:
-
-1. Build the test file:
-
-```bash
-bun run test-build.ts
-```
-
-2. Run the test server:
-
-```bash
-bun run serve-test.ts
-```
-
-3. Open your browser to the displayed URL (typically `http://localhost:3000`).
-
-## How It Works
-
-The plugin works by:
-
-1. Extracting script tags from .stx files
-2. Creating an execution context with variables from the script
-3. Processing Blade-like directives (@if, @foreach, etc.) into HTML
-4. Processing variable tags ({{ var }}) with their values
-5. Returning the processed HTML content
-
-## Documentation Generation
-
-`stx` can automatically generate documentation for your components, templates, and directives. This helps developers understand your UI components and how to use them.
-
-### Command Line
-
-Generate documentation using the CLI:
-
-```bash
-# Generate markdown documentation (default)
-stx docs
-
-# Generate HTML documentation
-stx docs --format html
-
-# Generate JSON documentation
-stx docs --format json
-
-# Specify output directory
-stx docs --output my-docs
-
-# Only generate specific sections
-stx docs --no-components
-stx docs --no-templates
-stx docs --no-directives
-
-# Specify custom directories
-stx docs --components-dir src/components --templates-dir src/views
-```
-
-### Configuration
-
-You can configure documentation generation in your `stx.config.ts` file:
-
-```ts
-export default {
-  // ...other config options
-  docs: {
-    enabled: true,
-    outputDir: "docs",
-    format: "markdown", // 'markdown', 'html', or 'json'
-    components: true,
-    templates: true,
-    directives: true,
-    extraContent:
-      "## Getting Started\n\nThis is additional content to include in the documentation.",
-  },
-};
-```
-
-### Component Documentation
-
-`stx` can extract component metadata from JSDoc comments in your component files:
-
-```html
-<!--
-  Alert component for displaying messages to the user.
-  This component supports different types (success, warning, error).
--->
-<div class="alert alert-{{ type }}">
-  <div class="alert-title">{{ title }}</div>
-  <div class="alert-body">{{ message }}</div>
-</div>
-
-<script>
-  /**
-   * The type of alert to display
-   * @type {string}
-   * @default "info"
-   */
-  const type = module.exports.type || "info";
-
-  /**
-   * The alert title
-   * @type {string}
-   * @required
-   */
-  const title = module.exports.title;
-
-  /**
-   * The alert message
-   * @type {string}
-   */
-  const message = module.exports.message || "";
-
-  // Prepare the component's context
-  module.exports = {
-    type,
-    title,
-    message,
-  };
-</script>
-```
-
-This component will be documented with all its properties, types, default values, and requirements.
-
-### Web Component Documentation
-
-`stx` will automatically document web components defined in your configuration:
-
-```ts
-export default {
-  // ... other config
-  webComponents: {
-    enabled: true,
-    outputDir: "dist/web-components",
-    components: [
-      {
-        name: "MyButton",
-        tag: "my-button",
-        file: "components/button.stx",
-        attributes: ["type", "text", "disabled"],
-        description: "A customizable button component",
-      },
-    ],
-  },
-};
-```
-
-The documentation will include:
-
-- Component name and description
-- Custom element tag
-- Observed attributes
-- Usage examples
-
-This makes it easy for developers to understand how to use your web components in their HTML.
-
-## Reactive State & Lifecycle
-
-STX provides a powerful reactivity system for building interactive UIs - using the syntax we all know and love. If you've worked with modern frontend frameworks, you'll feel right at home.
-
-### Script Blocks
-
-STX supports two types of script blocks:
-
-```html
-<script>
-  // Server-side: Runs at build/render time
-  // Variables are available for template interpolation
-  export const siteName = "My App"
-  export const initialData = await fetchFromDB()
-</script>
-
 <script client>
-  // Client-side: Runs in the browser
-  // Use for reactivity, event handlers, and data fetching
   import { ref, onMounted, watch } from 'stx'
 
   const count = ref(0)
   const users = ref([])
-</script>
-```
 
-### Reactive Primitives
-
-#### ref() - Reactive References
-
-```html
-<script client>
-  import { ref } from 'stx'
-
-  const count = ref(0)
-  const name = ref('STX')
-
-  // Access and modify with .value
-  count.value++
-  name.value = 'Hello STX'
-</script>
-
-<p>Count: {{ count }}</p>
-<button @click="count++">Increment</button>
-```
-
-#### reactive() - Reactive Objects
-
-```html
-<script client>
-  import { reactive } from 'stx'
-
-  const state = reactive({
-    user: null,
-    loading: false,
-    items: []
-  })
-
-  // Direct property access (no .value needed)
-  state.loading = true
-  state.items.push({ id: 1, name: 'Item' })
-</script>
-```
-
-#### computed() - Derived State
-
-```html
-<script client>
-  import { ref, computed } from 'stx'
-
-  const items = ref([])
-  const search = ref('')
-
-  const filteredItems = computed(() => {
-    return items.value.filter(item =>
-      item.name.includes(search.value)
-    )
-  })
-</script>
-
-<input type="text" x-model="search" placeholder="Search...">
-<p>Found {{ filteredItems.length }} items</p>
-```
-
-### Lifecycle Hooks
-
-```html
-<script client>
-  import { ref, onMounted, onUnmounted, onUpdated } from 'stx'
-
-  const users = ref([])
-  const loading = ref(true)
-  let refreshInterval
-
-  // Called when component is inserted into the DOM
   onMounted(async () => {
-    const response = await fetch('/api/users')
-    users.value = await response.json()
-    loading.value = false
-
-    // Set up polling
-    refreshInterval = setInterval(fetchUsers, 30000)
+    users.value = await fetch('/api/users').then(r => r.json())
   })
 
-  // Called when component is removed from the DOM
-  onUnmounted(() => {
-    clearInterval(refreshInterval)
-  })
-
-  // Called after reactive state changes trigger a re-render
-  onUpdated(() => {
-    console.log('Component updated, users:', users.value.length)
+  watch(count, (newVal, oldVal) => {
+    console.log(`Count: ${oldVal} -> ${newVal}`)
   })
 </script>
+
+<button onclick="count.value++">Count: <span id="count">0</span></button>
 ```
 
-#### Available Lifecycle Hooks
+### Available Imports
 
-| Hook | When It's Called |
-|------|------------------|
-| `onBeforeMount` | Before the component is inserted into the DOM |
-| `onMounted` | After the component is inserted into the DOM |
-| `onBeforeUpdate` | Before the component re-renders due to state changes |
-| `onUpdated` | After the component re-renders |
-| `onBeforeUnmount` | Before the component is removed from the DOM |
-| `onUnmounted` | After the component is removed from the DOM |
-
-### Watch API
-
-#### watch() - Watch Reactive Sources
-
-```html
-<script client>
-  import { ref, watch } from 'stx'
-
-  const searchQuery = ref('')
-  const results = ref([])
-
-  // Watch a single ref
-  watch(searchQuery, async (newValue, oldValue) => {
-    console.log(`Search changed: "${oldValue}" -> "${newValue}"`)
-    if (newValue.length > 2) {
-      results.value = await searchAPI(newValue)
-    }
-  })
-
-  // With options
-  watch(searchQuery, callback, {
-    immediate: true,  // Run immediately with current value
-    deep: true,       // Deep watch nested objects
-    flush: 'post'     // 'pre' | 'post' | 'sync'
-  })
-</script>
-```
-
-#### watchEffect() - Auto-track Dependencies
-
-```html
-<script client>
-  import { ref, watchEffect } from 'stx'
-
-  const count = ref(0)
-  const multiplier = ref(2)
-
-  // Automatically tracks count and multiplier
-  watchEffect(() => {
-    console.log(`Result: ${count.value * multiplier.value}`)
-  })
-</script>
-```
-
-### Complete Example
-
-```html
-<!-- components/UserList.stx -->
-<script>
-  // Server-side data (optional)
-  export const pageTitle = "User Management"
-</script>
-
-<script client>
-  import { ref, computed, onMounted, onUnmounted, watch } from 'stx'
-
+```javascript
+import {
   // Reactive state
-  const users = ref([])
-  const loading = ref(true)
-  const error = ref(null)
-  const searchQuery = ref('')
+  ref,           // ref(0) - access via .value
+  reactive,      // reactive({}) - direct property access
+  computed,      // computed(() => x.value * 2)
 
-  // Computed property
-  const filteredUsers = computed(() => {
-    if (!searchQuery.value) return users.value
-    return users.value.filter(user =>
-      user.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
-  })
-
-  // Methods
-  async function fetchUsers() {
-    try {
-      loading.value = true
-      const response = await fetch('/api/users')
-      users.value = await response.json()
-    } catch (e) {
-      error.value = e.message
-    } finally {
-      loading.value = false
-    }
-  }
-
-  async function deleteUser(id) {
-    await fetch(`/api/users/${id}`, { method: 'DELETE' })
-    users.value = users.value.filter(u => u.id !== id)
-  }
+  // Watch
+  watch,         // watch(source, callback)
+  watchEffect,   // watchEffect(() => { ... })
 
   // Lifecycle
-  let refreshInterval
-
-  onMounted(() => {
-    fetchUsers()
-    refreshInterval = setInterval(fetchUsers, 60000)
-  })
-
-  onUnmounted(() => {
-    clearInterval(refreshInterval)
-  })
-
-  // Watchers
-  watch(searchQuery, (query) => {
-    console.log('Searching for:', query)
-  })
-</script>
-
-<div class="user-list">
-  <h1>{{ pageTitle }}</h1>
-
-  <input
-    type="text"
-    x-model="searchQuery"
-    placeholder="Search users..."
-    class="search-input"
-  >
-
-  @when(loading)
-    <div class="spinner">Loading...</div>
-  @elsewhen(error)
-    <div class="error">{{ error }}</div>
-  @else
-    <ul>
-      @each(filteredUsers as user)
-        <li>
-          <span>{{ user.name }}</span>
-          <button @click="deleteUser(user.id)">Delete</button>
-        </li>
-      @endeach
-    </ul>
-    <p>Showing {{ filteredUsers.length }} of {{ users.length }} users</p>
-  @endwhen
-</div>
+  onMounted,     // After DOM insertion
+  onUnmounted,   // Before removal (cleanup)
+  onBeforeMount,
+  onBeforeUpdate,
+  onUpdated,
+  onBeforeUnmount
+} from 'stx'
 ```
 
-### Runtime Directives
+## Template Directives
 
-For client-side reactivity, STX provides runtime versions of directives:
-
-| Directive | Purpose | Example |
-|-----------|---------|---------|
-| `@each` | Reactive loop (client-side) | `@each(users as user)` |
-| `@when` | Reactive conditional (client-side) | `@when(loading)` |
-| `@elsewhen` | Else-if for reactive conditionals | `@elsewhen(error)` |
-
-These differ from `@foreach` and `@if` which run at build time with static data.
-
-## Other Familiar Features
-
-`stx` includes several convenient features inspired by Laravel's Blade templating engine:
-
-### View Composers
-
-Register callbacks to be executed when specific views are rendered:
-
-```typescript
-import { composer, composerPattern } from "stx";
-
-// Register for specific view
-composer("dashboard", (context) => {
-  context.menuItems = ["Home", "Settings", "Profile"];
-});
-
-// Register for any view matching a pattern
-composerPattern(/user/, (context) => {
-  context.section = "User Management";
-});
-```
-
-### CSRF Protection
-
-Built-in CSRF token generation and verification:
+### Conditionals
 
 ```html
-<form method="POST" action="/submit">
-  @csrf
-  <!-- Creates a hidden input with the CSRF token -->
-
-  <!-- Custom field name -->
-  @csrf("my_token")
-</form>
-```
-
-### Form Method Spoofing
-
-Support for RESTful routes with HTML forms:
-
-```html
-<form method="POST" action="/users/1">
-  @method('PUT')
-  <!-- Creates a hidden input for PUT method -->
-
-  <!-- Custom field name -->
-  @method('DELETE', 'http_method')
-</form>
-```
-
-### Named Routes
-
-Generate URLs based on named routes:
-
-```typescript
-import { defineRoute, route } from 'stx';
-
-// Define routes
-defineRoute('users.profile', '/users/:id/profile');
-defineRoute('dashboard', '/dashboard');
-
-// In templates
-<a href="@route('users.profile', {id: 1})">User Profile</a>
-<a href="@route('dashboard')">Dashboard</a>
-
-// Generate URLs in server code
-const url = route('users.profile', {id: 1}); // => '/users/1/profile'
-```
-
-### Environment-Specific Directives
-
-Conditionally render content based on environment:
-
-```html
-@production
-<script src="/js/analytics.min.js"></script>
+@if(user.isAdmin)
+  <div>Admin Panel</div>
+@elseif(user.isEditor)
+  <div>Editor Tools</div>
 @else
-<!-- Development tools -->
-<script src="/js/debug.js"></script>
-@endproduction @development
-<div class="dev-banner">Development Mode</div>
-@enddevelopment @env('staging')
-<div class="staging-notice">Staging Environment</div>
-@endenv
+  <div>User View</div>
+@endif
 ```
 
-## Composables
-
-STX provides Nuxt-style composables for common browser APIs. These reactive utilities make it easy to work with browser features in a declarative way.
-
-```typescript
-import {
-  useStorage,
-  useClipboard,
-  useMediaQuery,
-  useNetwork,
-  useSpeechRecognition,
-} from '@stacksjs/stx/composables'
-```
-
-### Available Composables
-
-| Category | Composables |
-|----------|-------------|
-| **Storage** | `useStorage`, `useLocalStorage`, `useSessionStorage` |
-| **Cookies** | `useCookie`, `useCookies`, `getCookie`, `setCookie` |
-| **Clipboard** | `useClipboard`, `copyToClipboard` |
-| **Media Queries** | `useMediaQuery`, `usePreferredDark`, `useIsMobile`, `useIsDesktop` |
-| **Network** | `useNetwork`, `useOnline` |
-| **Window** | `useWindowSize`, `useScroll`, `useVisibility`, `useTitle`, `useFavicon` |
-| **Geolocation** | `useGeolocation`, `useGeolocationWatch`, `getCurrentPosition` |
-| **Input** | `useMouse`, `usePointer`, `useKeyboard`, `useHotkey`, `useKeyPressed` |
-| **Observers** | `useIntersectionObserver`, `useResizeObserver`, `useMutationObserver` |
-| **Data Fetching** | `useFetch`, `useAsyncData`, `usePost` |
-| **UI** | `useFullscreen`, `useNotification`, `useShare` |
-| **Permissions** | `usePermission`, `usePermissions` |
-| **Device** | `useBattery`, `useDeviceOrientation`, `useDeviceMotion`, `useParallax` |
-| **Speech** | `useSpeechRecognition`, `useSpeechSynthesis`, `speak`, `getVoices` |
-| **Communication** | `useWebSocket`, `useBroadcastChannel`, `useEventSource`, `useSSE` |
-| **Idle Detection** | `useIdle`, `useIdleState`, `useLastActive`, `useAutoLogout` |
-| **Text Selection** | `useTextSelection`, `useSelectionPopup`, `useCopySelection` |
-| **Screen** | `useWakeLock`, `useEyeDropper`, `pickColor`, `hexToRgb` |
-
-### Example Usage
+### Loops
 
 ```html
-<script client>
-  import { useClipboard, useSpeechRecognition } from '@stacksjs/stx/composables'
+@foreach(items as item)
+  <li>{{ item.name }}</li>
+@endforeach
 
-  // Clipboard
-  const clipboard = useClipboard()
-  clipboard.copy('Hello!')
+@for(let i = 0; i < 5; i++)
+  <li>Item {{ i }}</li>
+@endfor
+```
 
-  // Speech Recognition
-  const speech = useSpeechRecognition({ lang: 'en-US' })
-  speech.on('result', (data) => console.log(data.transcript))
-  speech.start()
+### Raw HTML
+
+```html
+{!! trustedHtmlContent !!}
+```
+
+## Complete Example
+
+```html
+<!-- components/todo-list.stx -->
+<script>
+  const title = 'My Todos'
 </script>
-```
 
-All composables follow a consistent reactive pattern with `subscribe()` for state changes and getter properties for current values.
+<script client>
+  import { ref, onMounted } from 'stx'
 
-## Icon Components
+  const todos = ref([])
+  const newTodo = ref('')
 
-stx includes a powerful icon component system powered by [Iconify](https://iconify.design/), giving you access to over 200,000 icons from 150+ icon sets as ready-to-use components.
+  onMounted(async () => {
+    todos.value = await fetch('/api/todos').then(r => r.json())
+  })
 
-### Available Icon Collections
+  function addTodo() {
+    if (newTodo.value.trim()) {
+      todos.value.push({ id: Date.now(), text: newTodo.value, done: false })
+      newTodo.value = ''
+    }
+  }
 
-All icons are available as PascalCase components. For example, the Material Symbols collection includes icons like:
+  function toggleTodo(id) {
+    const todo = todos.value.find(t => t.id === id)
+    if (todo) todo.done = !todo.done
+  }
+</script>
 
-```html
-<DraftsIcon size="24" />
-<HomeIcon size="24" />
-<SettingsIcon size="24" />
-<SearchIcon size="24" />
-```
+<div class="todo-app">
+  <h1>{{ title }}</h1>
 
-Browse all available collections:
+  <form onsubmit="event.preventDefault(); addTodo()">
+    <input type="text" id="newTodo" placeholder="Add todo..." />
+    <button type="submit">Add</button>
+  </form>
 
-- [Material Symbols](./docs/collections/iconify-material-symbols.md) (2,500+ icons)
-- [Heroicons](./docs/collections/iconify-heroicons.md) (300+ icons)
-- [Lucide](./docs/collections/iconify-lucide.md) (1,000+ icons)
-- [And 150+ more...](./docs/collections/)
-
-### Usage
-
-Icon components work seamlessly in your `.stx` templates:
-
-```html
-<!-- Basic usage -->
-<HomeIcon />
-
-<!-- With size -->
-<HomeIcon size="24" />
-<HomeIcon height="1em" />
-
-<!-- With color -->
-<HomeIcon size="24" color="red" />
-<HomeIcon size="24" color="#4a90e2" />
-
-<!-- With transformations -->
-<ArrowRightIcon hFlip="true" />
-<ArrowDownIcon rotate="1" />  <!-- 90° rotation -->
-
-<!-- With CSS classes -->
-<SettingsIcon size="20" className="nav-icon" />
-
-<!-- Inline in text -->
-<p>Welcome <WavingHandIcon height="1em" /> to our app!</p>
-```
-
-### Component Props
-
-All icon components support these props:
-
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `size` | `string \| number` | `24` | Sets both width and height |
-| `width` | `string \| number` | - | Icon width |
-| `height` | `string \| number` | - | Icon height |
-| `color` | `string` | `currentColor` | Icon color (hex, rgb, or CSS color name) |
-| `hFlip` | `boolean` | `false` | Flip horizontally |
-| `vFlip` | `boolean` | `false` | Flip vertically |
-| `rotate` | `0 \| 1 \| 2 \| 3 \| number` | `0` | Rotation (0-3 = multiples of 90°, or degrees) |
-| `className` | `string` | - | CSS classes to apply |
-| `style` | `string` | - | Inline styles |
-
-### Generating Icon Packages
-
-To generate icon packages from any Iconify collection:
-
-```bash
-# List available collections
-bun stx iconify list
-
-# Generate a specific collection
-bun stx iconify generate material-symbols
-bun stx iconify generate heroicons
-bun stx iconify generate lucide
-
-# Generate specific icons only
-bun stx iconify generate lucide --icons home,settings,user
-```
-
-This creates a package with:
-
-- TypeScript icon data files (`.ts`)
-- stx component files (`.stx`)
-- Full TypeScript types
-- Component documentation
-
-### Example: Navigation Menu
-
-```html
-<nav>
-  <a href="/"><HomeIcon size="20" className="nav-icon" /> Home</a>
-  <a href="/about"><InfoIcon size="20" className="nav-icon" /> About</a>
-  <a href="/contact"><MailIcon size="20" className="nav-icon" /> Contact</a>
-  <a href="/settings"><SettingsIcon size="20" className="nav-icon" /> Settings</a>
-</nav>
+  <ul id="todoList"></ul>
+</div>
 
 <style>
-  .nav-icon {
-    vertical-align: middle;
-    margin-right: 0.5rem;
+  .todo-app {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  .done {
+    text-decoration: line-through;
+    opacity: 0.6;
   }
 </style>
 ```
 
-### Example: Status Indicators
+## Icons
+
+200K+ icons via Iconify:
 
 ```html
-<div class="status">
-  <CheckCircleIcon size="16" color="green" /> Success
-</div>
-<div class="status">
-  <AlertCircleIcon size="16" color="orange" /> Warning
-</div>
-<div class="status">
-  <XCircleIcon size="16" color="red" /> Error
-</div>
+<HomeIcon size="24" />
+<SearchIcon size="20" color="#333" />
+<SettingsIcon size="24" className="nav-icon" />
 ```
 
-For more details, see the [icon collections documentation](./docs/collections/).
+```bash
+# Generate icon packages
+bun stx iconify list
+bun stx iconify generate material-symbols
+```
+
+## Documentation
+
+- [Full Documentation](https://stx.sh)
+- [API Reference](./docs/api/)
+- [Examples](./docs/examples.md)
 
 ## Testing
 
@@ -1695,59 +275,14 @@ For more details, see the [icon collections documentation](./docs/collections/).
 bun test
 ```
 
-## Changelog
-
-Please see our [releases](https://github.com/stacksjs/stx/releases) page for more information on what has changed recently.
-
-## Contributing
-
-Please review the [Contributing Guide](https://github.com/stacksjs/contributing) for details.
-
-## Community
-
-For help, discussion about best practices, or any other conversation that would benefit from being searchable:
-
-[Discussions on GitHub](https://github.com/stacksjs/stacks/discussions)
-
-For casual chit-chat with others using this package:
-
-[Join the Stacks Discord Server](https://discord.gg/stacksjs)
-
-## Postcardware
-
-You will always be free to use any of the Stacks OSS software. We would also love to see which parts of the world Stacks ends up in. _Receiving postcards makes us happy—and we will publish them on our website._
-
-Our address: Stacks.js, 12665 Village Ln #2306, Playa Vista, CA 90094, United States 🌎
-
-## Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Stacks development. If you are interested in becoming a sponsor, please reach out to us.
-
-- [JetBrains](https://www.jetbrains.com/)
-- [The Solana Foundation](https://solana.com/)
-
-## Credits
-
-Many thanks to the following core technologies & people who have contributed to this package:
-
-- [Laravel Blade](https://laravel.com) - for the initial inspiration
-- [Chris Breuer](https://github.com/chrisbbreuer)
-- [All Contributors](../../contributors)
-
 ## License
 
-The MIT License (MIT). Please see [LICENSE](https://github.com/stacksjs/stx/tree/main/LICENSE.md) for more information.
-
-Made with 💙
+MIT
 
 <!-- Badges -->
-
 [npm-version-src]: https://img.shields.io/npm/v/@stacksjs/stx?style=flat-square
 [npm-version-href]: https://npmjs.com/package/@stacksjs/stx
 [npm-downloads-src]: https://img.shields.io/npm/dm/@stacksjs/stx?style=flat-square
 [npm-downloads-href]: https://npmjs.com/package/@stacksjs/stx
 [github-actions-src]: https://img.shields.io/github/actions/workflow/status/stacksjs/stx/ci.yml?style=flat-square&branch=main
 [github-actions-href]: https://github.com/stacksjs/stx/actions?query=workflow%3Aci
-
-<!-- [codecov-src]: https://img.shields.io/codecov/c/gh/stacksjs/stx/main?style=flat-square
-[codecov-href]: https://codecov.io/gh/stacksjs/stx -->
