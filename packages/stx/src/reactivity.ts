@@ -803,7 +803,7 @@ export function generateClientRuntime(): string {
     await runHooks('unmounted');
   });
 
-  // Expose to window for <script client> blocks
+  // Expose globally for <script client> blocks
   window.stx = {
     ref,
     reactive,

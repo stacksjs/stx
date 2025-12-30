@@ -223,10 +223,10 @@ export { content as default };
             const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
 
             if (isClientScript) {
-              // Transform stx imports: import { ref, ... } from 'stx' -> const { ref, ... } = window.stx
+              // Transform stx imports: import { ref, ... } from 'stx' -> const { ref, ... } = stx
               const transformed = fullScript.replace(
                 /import\s*\{([^}]+)\}\s*from\s*['"]stx['"]\s*;?\n?/g,
-                (_, imports) => `const {${imports}} = window.stx;\n`,
+                (_, imports) => `const {${imports}} = stx;\n`,
               )
               clientScripts.push(transformed)
             }

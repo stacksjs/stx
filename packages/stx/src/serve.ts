@@ -174,10 +174,10 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
       // Transform stx imports in client scripts
       const transformedScripts = clientScripts.map((script) => {
         // Transform: import { ref, onMounted, watch } from 'stx'
-        // To: const { ref, onMounted, watch } = window.stx
+        // To: const { ref, onMounted, watch } = stx
         return script.replace(
           /import\s*\{([^}]+)\}\s*from\s*['"]stx['"]\s*;?\n?/g,
-          (_, imports) => `const {${imports}} = window.stx;\n`,
+          (_, imports) => `const {${imports}} = stx;\n`,
         )
       })
 
