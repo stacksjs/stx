@@ -75,7 +75,12 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     }
 
     // Read and process file
-    const content = await Bun.file(filePath).text()
+    let content = await Bun.file(filePath).text()
+
+    // Check if this is a full HTML page or a partial that needs layout
+    const hasDoctype = content.trim().toLowerCase().startsWith('<!doctype') ||
+                       content.trim().toLowerCase().startsWith('<html')
+    const hasExtends = content.includes('@extends(')
 
     // SFC Support: Extract <template> content if present
     let workingContent = content
@@ -84,7 +89,7 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
       workingContent = templateTagMatch[1].trim()
     }
 
-    // Extract all script tags and categorize them
+    // Extract all script tags and categorize them from the PAGE content
     const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
     const clientScripts: string[] = []
     const serverScripts: string[] = []
@@ -110,9 +115,31 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     const styleMatches = content.match(/<style\b[^>]*>[\s\S]*?<\/style>/gi) || []
 
     // Remove script and style tags from template content
-    const templateContent = workingContent
+    let templateContent = workingContent
       .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
       .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+
+    // Auto-apply default layout if page doesn't have DOCTYPE and layout is configured
+    if (!hasDoctype && !hasExtends && stxOptions.defaultLayout && stxOptions.layoutsDir) {
+      // Resolve layoutsDir relative to rootDir
+      const layoutsDir = path.isAbsolute(stxOptions.layoutsDir)
+        ? stxOptions.layoutsDir
+        : path.join(rootDir, stxOptions.layoutsDir)
+      const layoutPath = path.join(layoutsDir, stxOptions.defaultLayout)
+      const layoutFullPath = layoutPath.endsWith('.stx') ? layoutPath : `${layoutPath}.stx`
+
+      if (fs.existsSync(layoutFullPath)) {
+        // Read the layout
+        let layoutContent = await Bun.file(layoutFullPath).text()
+
+        // Replace @yield('content') or {{ slot }} with the page content
+        layoutContent = layoutContent.replace(/@yield\s*\(\s*['"]content['"]\s*\)/g, templateContent)
+        layoutContent = layoutContent.replace(/\{\{\s*slot\s*\}\}/g, templateContent)
+
+        // Use the layout as the working content
+        templateContent = layoutContent
+      }
+    }
 
     // Create context
     const context: Record<string, any> = {

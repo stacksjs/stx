@@ -1,23 +1,23 @@
 /**
  * STX Reactive Bindings
  *
- * Provides Vue-style reactive bindings for STX templates with store integration.
+ * Provides reactive bindings for STX templates with store integration.
  *
- * Supported syntaxes:
- * - :class="expression"           (Vue shorthand)
- * - stx-class="expression"        (STX-specific)
- * - stx-bind:class="expression"   (explicit STX bind)
+ * Syntax:
+ * - class="{{ $appStore.isActive ? 'active' : '' }}"
+ * - text="{{ $appStore.message }}"
+ * - disabled="{{ $appStore.isLoading }}"
  *
  * Store references:
- * - $storeName.property           (e.g., $appStore.isRecording)
+ * - $storeName.property (e.g., $appStore.isRecording)
  *
  * Example:
  * <button
- *   :class="$appStore.isRecording ? 'border-pink' : 'border-gray'"
- *   :disabled="$appStore.isProcessing"
+ *   class="{{ $appStore.isRecording ? 'border-pink' : 'border-gray' }}"
+ *   disabled="{{ $appStore.isProcessing }}"
  *   @click="voide.toggleRecording()"
  * >
- *   <span :text="$appStore.isRecording ? '🔴' : '🎤'"></span>
+ *   <span text="{{ $appStore.isRecording ? '🔴' : '🎤' }}"></span>
  * </button>
  */
 
@@ -62,80 +62,79 @@ function generateElementId(): string {
 }
 
 /**
- * Parse binding attributes from an element
- * Supports: :attr, stx-attr, stx-bind:attr
+ * Check if an expression contains store references (needs reactive binding)
  */
-function parseBindingAttribute(attrName: string): { attribute: string, isBinding: boolean } {
-  // :class -> class
-  if (attrName.startsWith(':') && !attrName.startsWith('::')) {
-    return { attribute: attrName.slice(1), isBinding: true }
-  }
-
-  // stx-bind:class -> class
-  if (attrName.startsWith('stx-bind:')) {
-    return { attribute: attrName.slice(9), isBinding: true }
-  }
-
-  // stx-class -> class (shorthand)
-  if (attrName.startsWith('stx-') && !attrName.startsWith('stx-bind:')) {
-    return { attribute: attrName.slice(4), isBinding: true }
-  }
-
-  return { attribute: attrName, isBinding: false }
+function hasStoreRefs(expression: string): boolean {
+  return /\$\w+\./.test(expression)
 }
 
 /**
  * Process reactive bindings in HTML template
+ * Detects {{ $store.value }} patterns in attribute values
  */
 export function processReactiveBindings(html: string): ProcessedBindings {
   const bindings: BindingInfo[] = []
   const stores = new Set<string>()
 
-  // Pattern to match elements with binding attributes
-  // Matches: :attr="value", stx-attr="value", stx-bind:attr="value"
-  const bindingAttrPattern = /(?:^|\s)(:|stx-bind:|stx-)(\w+(?::\w+)?)\s*=\s*"([^"]*)"/g
-
   // Pattern to match opening tags with their attributes
   const tagPattern = /<(\w+)([^>]*?)(\s*\/?>)/g
 
   let result = html
-  let offset = 0
 
   // Process each tag
-  result = result.replace(tagPattern, (match, tagName, attributes, closing, index) => {
+  result = result.replace(tagPattern, (match, tagName, attributes, closing) => {
     // Skip script, style, and other non-element tags
     if (['script', 'style', 'template'].includes(tagName.toLowerCase())) {
       return match
     }
 
-    const elementBindings: Array<{ attr: string, expr: string, fullMatch: string }> = []
+    const elementBindings: Array<{ attr: string, expr: string, fullMatch: string, originalAttr: string }> = []
     let hasBindings = false
     let processedAttrs = attributes
 
-    // Find all binding attributes in this element
-    const attrMatches = [...attributes.matchAll(/(?:^|\s)((?::|stx-bind:|stx-)[\w:-]+)\s*=\s*"([^"]*)"/g)]
+    // Find all attributes with {{ $store... }} patterns
+    // Match attribute="value with {{ expr }}"
+    const attrPattern = /(\w+(?:-\w+)*)\s*=\s*"([^"]*\{\{[^}]*\$\w+[^}]*\}\}[^"]*)"/g
+    const attrMatches = [...attributes.matchAll(attrPattern)]
 
     for (const attrMatch of attrMatches) {
       const fullAttrMatch = attrMatch[0]
       const attrName = attrMatch[1]
       const attrValue = attrMatch[2]
 
-      const { attribute, isBinding } = parseBindingAttribute(attrName)
-
-      if (isBinding) {
+      // Check if this attribute contains store references
+      if (hasStoreRefs(attrValue)) {
         hasBindings = true
-        elementBindings.push({
-          attr: attribute,
-          expr: attrValue,
-          fullMatch: fullAttrMatch,
-        })
 
-        // Extract store references
-        const storeRefs = extractStoreRefs(attrValue)
-        storeRefs.forEach(s => stores.add(s))
+        // Extract the expression from {{ }}
+        const exprMatch = attrValue.match(/\{\{\s*([\s\S]+?)\s*\}\}/)
+        if (exprMatch) {
+          const expression = exprMatch[1]
 
-        // Remove the binding attribute (will be handled by JS)
-        processedAttrs = processedAttrs.replace(fullAttrMatch, '')
+          elementBindings.push({
+            attr: attrName,
+            expr: expression,
+            fullMatch: fullAttrMatch,
+            originalAttr: attrName,
+          })
+
+          // Extract store references
+          const storeRefs = extractStoreRefs(expression)
+          storeRefs.forEach(s => stores.add(s))
+
+          // Remove the reactive attribute (will be handled by JS)
+          // But keep the attribute with an empty or default value for initial render
+          if (attrName === 'text') {
+            processedAttrs = processedAttrs.replace(fullAttrMatch, '')
+          } else if (attrName === 'class') {
+            // Keep class but remove the {{ }} part for initial render
+            processedAttrs = processedAttrs.replace(fullAttrMatch, `class=""`)
+          } else if (attrName === 'disabled' || attrName === 'hidden') {
+            processedAttrs = processedAttrs.replace(fullAttrMatch, '')
+          } else {
+            processedAttrs = processedAttrs.replace(fullAttrMatch, `${attrName}=""`)
+          }
+        }
       }
     }
 
@@ -181,18 +180,6 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
 
   const storeNames = Array.from(stores)
 
-  // Group bindings by store for efficient subscriptions
-  const bindingsByStore = new Map<string, BindingInfo[]>()
-
-  for (const binding of bindings) {
-    for (const store of binding.stores) {
-      if (!bindingsByStore.has(store)) {
-        bindingsByStore.set(store, [])
-      }
-      bindingsByStore.get(store)!.push(binding)
-    }
-  }
-
   // Generate the runtime code
   let code = `
 <script>
@@ -229,7 +216,7 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
     const evalExpr = expression.replace(/\$(\w+)\./g, '$state.$1.')
 
     if (attribute === 'text') {
-      // :text binding - update textContent
+      // text binding - update textContent
       code += `      (function() {
         var el = document.getElementById('${elementId}');
         if (el) {
@@ -241,7 +228,7 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
 `
     }
     else if (attribute === 'html') {
-      // :html binding - update innerHTML
+      // html binding - update innerHTML
       code += `      (function() {
         var el = document.getElementById('${elementId}');
         if (el) {
@@ -253,7 +240,7 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
 `
     }
     else if (attribute === 'class') {
-      // :class binding - can be string or object
+      // class binding - can be string or object
       code += `      (function() {
         var el = document.getElementById('${elementId}');
         if (el) {
@@ -282,7 +269,7 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
 `
     }
     else if (attribute === 'show') {
-      // :show binding - toggle display
+      // show binding - toggle display
       code += `      (function() {
         var el = document.getElementById('${elementId}');
         if (el) {
@@ -294,7 +281,7 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
 `
     }
     else if (attribute === 'if') {
-      // :if binding - toggle visibility (different from show)
+      // if binding - toggle visibility
       code += `      (function() {
         var el = document.getElementById('${elementId}');
         if (el) {
@@ -306,7 +293,7 @@ export function generateBindingsRuntime(bindings: BindingInfo[], stores: Set<str
 `
     }
     else {
-      // Generic attribute binding (:disabled, :value, :src, etc.)
+      // Generic attribute binding (disabled, value, src, etc.)
       code += `      (function() {
         var el = document.getElementById('${elementId}');
         if (el) {

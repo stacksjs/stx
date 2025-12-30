@@ -20,6 +20,7 @@ stx combines the elegance of Laravel Blade syntax with the speed of Bun, deliver
 - 🎨 **Intuitive Template Syntax** - Laravel Blade-like directives with enhanced capabilities
 - ⚡ **Lightning Fast** - Built with performance in mind
 - 🧩 **Component System** - Create reusable `.stx` components with props, slots, and composition
+- 🎯 **Vue-Style SFC** - Single File Components with `<ComponentName />` syntax
 - 🔄 **Reactive State** - Built-in state management for interactive UIs
 - 🎯 **TypeScript First** - Full type safety and autocomplete support
 - 📦 **Zero Config** - Works out of the box, configure when you need to
@@ -135,6 +136,104 @@ await build({
 import homeTemplate from './views/home.stx'
 
 const html = homeTemplate // Already processed and ready to use!
+```
+
+## Vue-Style Single File Components (SFC)
+
+STX supports Vue-style component syntax for clean, modular architecture. Components are automatically resolved from your `componentsDir`.
+
+### Using Components
+
+Components in `components/` directory are used with PascalCase tags:
+
+```html
+<!-- pages/index.stx -->
+<Header />
+
+<main class="container">
+  <Sidebar />
+  <Content />
+</main>
+
+<Footer />
+```
+
+Component files use kebab-case naming:
+- `<Header />` → `components/header.stx`
+- `<UserProfile />` → `components/user-profile.stx`
+- `<NavMenu />` → `components/nav-menu.stx`
+
+### Client Scripts in Components
+
+Components can include client-side JavaScript for interactivity:
+
+```html
+<!-- components/counter.stx -->
+<div class="counter">
+  <span id="count">0</span>
+  <button id="increment">+</button>
+</div>
+
+<script client>
+(() => {
+  function init() {
+    const stores = window.MyStores;
+    if (!stores) {
+      setTimeout(init, 10);
+      return;
+    }
+
+    // Subscribe to store changes
+    stores.counterStore.subscribe((state) => {
+      const countEl = document.getElementById('count');
+      if (countEl) countEl.textContent = state.count;
+    });
+
+    // Handle events
+    document.getElementById('increment')?.addEventListener('click', () => {
+      stores.counterActions.increment();
+    });
+  }
+
+  init();
+})();
+</script>
+```
+
+### Complete SFC Example
+
+```html
+<!-- components/user-card.stx -->
+<div class="p-4 rounded-lg border">
+  <img id="avatar" class="w-16 h-16 rounded-full" />
+  <h3 id="userName">User Name</h3>
+  <p id="userBio">Bio text...</p>
+  <div id="onlineStatus" class="hidden flex items-center gap-2">
+    <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+    <span>Online</span>
+  </div>
+</div>
+
+<script client>
+(() => {
+  const stores = window.AppStores;
+  if (!stores) return;
+
+  stores.userStore.subscribe((state) => {
+    const avatar = document.getElementById('avatar');
+    const userName = document.getElementById('userName');
+    const userBio = document.getElementById('userBio');
+    const onlineStatus = document.getElementById('onlineStatus');
+
+    if (avatar) avatar.src = state.avatar;
+    if (userName) userName.textContent = state.name;
+    if (userBio) userBio.textContent = state.bio;
+    if (onlineStatus) {
+      onlineStatus.classList.toggle('hidden', !state.isOnline);
+    }
+  });
+})();
+</script>
 ```
 
 ## What You Can Build

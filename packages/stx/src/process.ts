@@ -147,22 +147,20 @@ function pascalToKebab(str: string): string {
  * Properly handles:
  * - Simple attributes: `name="value"`
  * - Boolean attributes: `disabled`
- * - Vue-like bindings: `:prop="expr"` or `v-bind:prop="expr"`
+ * - Dynamic values: `prop="{{ expr }}"` (evaluated at SSR)
  * - Attributes with `=` in values: `url="https://example.com?a=1&b=2"`
  * - Single and double quoted values
  * - Escaped quotes within values
  *
- * ## Limitations (Vue-like Syntax)
+ * ## Dynamic Data Syntax
  *
- * stx is a **server-side rendering** framework with Alpine-style event support.
- * The following Vue directives are NOT supported:
+ * Use `{{ }}` for all dynamic data interpolation:
+ * ```html
+ * <Component title="{{ pageTitle }}" count="{{ items.length }}" />
+ * <div class="{{ isActive ? 'active' : '' }}">{{ content }}</div>
+ * ```
  *
- * - `v-model` - Two-way data binding (use x-model when x-data is implemented)
- * - `v-on:event` - Use `@event` syntax instead (e.g., `@click`, `@keydown.enter`)
- * - `v-if`/`v-for` - Use stx directives `@if`/`@foreach` instead
- * - `v-show` - Use `@if` or CSS classes instead
- *
- * ## Supported Event Syntax (Alpine-style)
+ * ## Event Syntax (Alpine-style)
  *
  * ```html
  * <button @click="handleClick()">Click me</button>
@@ -171,12 +169,11 @@ function pascalToKebab(str: string): string {
  * ```
  *
  * @param attributesStr - The attributes portion of a tag (between tag name and closing)
- * @returns Array of parsed attributes with name, value, and binding info
+ * @returns Array of parsed attributes with name and value
  */
 interface ParsedAttribute {
   name: string
   value: string | true // true for boolean attributes
-  isBinding: boolean // true if prefixed with : or v-bind:
 }
 
 /**
@@ -348,8 +345,23 @@ function parseMultilineAttributes(attributesStr: string): Record<string, string>
     if (!name)
       break
 
-    // Remove binding prefix from name for props (: shorthand or v-bind:)
-    const propName = name.replace(/^:/, '').replace(/^v-bind:/, '')
+    // Skip @ event attributes (handled by event processing)
+    if (name.startsWith('@')) {
+      // Skip to next attribute
+      while (pos < len && attributesStr[pos] !== '"' && attributesStr[pos] !== '\'') {
+        pos++
+      }
+      if (pos < len) {
+        const quote = attributesStr[pos]
+        pos++
+        while (pos < len && attributesStr[pos] !== quote) {
+          if (attributesStr[pos] === '\\') pos++
+          pos++
+        }
+        pos++
+      }
+      continue
+    }
 
     // Skip whitespace
     while (pos < len && /\s/.test(attributesStr[pos])) {
@@ -400,11 +412,11 @@ function parseMultilineAttributes(attributesStr: string): Record<string, string>
         }
       }
 
-      props[propName] = value
+      props[name] = value
     }
     else {
       // Boolean attribute
-      props[propName] = 'true'
+      props[name] = 'true'
     }
   }
 
@@ -424,17 +436,6 @@ function parseAttributes(attributesStr: string): ParsedAttribute[] {
 
     if (pos >= len)
       break
-
-    // Check for binding prefix
-    let isBinding = false
-    if (attributesStr[pos] === ':') {
-      isBinding = true
-      pos++
-    }
-    else if (attributesStr.slice(pos, pos + 7) === 'v-bind:') {
-      isBinding = true
-      pos += 7
-    }
 
     // Read attribute name (until = or whitespace or end)
     let name = ''
@@ -488,11 +489,11 @@ function parseAttributes(attributesStr: string): ParsedAttribute[] {
         }
       }
 
-      attributes.push({ name, value, isBinding })
+      attributes.push({ name, value })
     }
     else {
       // Boolean attribute (no value)
-      attributes.push({ name, value: true, isBinding })
+      attributes.push({ name, value: true })
     }
   }
 
@@ -1017,48 +1018,56 @@ async function processCustomElements(
       // Parse attributes using the robust parser that handles HTML in values
       const rawProps = parseMultilineAttributes(tag.attributes)
 
-      // Process props: handle bindings, Vue directive warnings, etc.
+      // Process props: evaluate {{ }} expressions in values
       const props: Record<string, unknown> = {}
       for (const [attrName, attrValue] of Object.entries(rawProps)) {
-        // Check for binding prefix (: shorthand or v-bind:)
-        const isBinding = attrName.startsWith(':') || attrName.startsWith('v-bind:')
-        const propName = attrName.replace(/^:/, '').replace(/^v-bind:/, '')
-
-        // Warn about unsupported Vue directives (v-model, v-on)
-        // Note: @ event syntax (e.g., @click) is now supported via processEventDirectives
-        if (attrName === 'v-model' || attrName.startsWith('v-on:')) {
-          if (options.debug) {
-            console.warn(
-              `[stx] Unsupported Vue directive "${attrName}" in ${filePath}. `
-              + `Use @event syntax instead (e.g., @click, @submit.prevent). `
-              + `For two-way binding (v-model), use x-model with x-data.`,
-            )
-          }
-          continue
-        }
-
         // Skip @ event attributes - they're processed by processEventDirectives
         if (attrName.startsWith('@')) {
           continue
         }
 
-        if (isBinding) {
-          // Dynamic attribute with : or v-bind: prefix, evaluate the expression
-          try {
-            // eslint-disable-next-line no-new-func
-            const valueFn = new Function(...Object.keys(context), `return ${attrValue}`)
-            props[propName] = valueFn(...Object.values(context))
-          }
-          catch (error) {
-            if (options.debug) {
-              console.error(`Error evaluating binding for ${propName}:`, error)
+        // Check if value contains {{ }} expressions
+        if (typeof attrValue === 'string' && attrValue.includes('{{') && attrValue.includes('}}')) {
+          // Check if the entire value is a single expression: {{ expr }}
+          const singleExprMatch = attrValue.match(/^\{\{\s*([\s\S]+?)\s*\}\}$/)
+          if (singleExprMatch) {
+            // Single expression - evaluate and use the result directly
+            try {
+              // eslint-disable-next-line no-new-func
+              const valueFn = new Function(...Object.keys(context), `return ${singleExprMatch[1]}`)
+              props[attrName] = valueFn(...Object.values(context))
             }
-            props[propName] = attrValue // Fall back to string value
+            catch (error) {
+              if (options.debug) {
+                console.error(`Error evaluating expression for ${attrName}:`, error)
+              }
+              props[attrName] = attrValue // Fall back to string value
+            }
+          }
+          else {
+            // Mixed content - interpolate expressions within the string
+            let result = attrValue
+            const exprPattern = /\{\{\s*([\s\S]+?)\s*\}\}/g
+            let match
+            while ((match = exprPattern.exec(attrValue)) !== null) {
+              try {
+                // eslint-disable-next-line no-new-func
+                const valueFn = new Function(...Object.keys(context), `return ${match[1]}`)
+                const evaluated = valueFn(...Object.values(context))
+                result = result.replace(match[0], String(evaluated ?? ''))
+              }
+              catch (error) {
+                if (options.debug) {
+                  console.error(`Error evaluating expression in ${attrName}:`, error)
+                }
+              }
+            }
+            props[attrName] = result
           }
         }
         else {
           // Static attribute
-          props[propName] = attrValue
+          props[attrName] = attrValue
         }
       }
 
