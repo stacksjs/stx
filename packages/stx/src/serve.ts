@@ -10,6 +10,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { readMarkdownFile } from './assets'
 import { processDirectives } from './process'
+import { generateClientRuntime } from './reactivity'
 import { extractVariables } from './utils'
 
 export interface ServeOptions {
@@ -170,7 +171,20 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
 
     // Add client scripts before </body>
     if (clientScripts.length > 0) {
-      const scriptsHtml = clientScripts.join('\n')
+      // Transform stx imports in client scripts
+      const transformedScripts = clientScripts.map((script) => {
+        // Transform: import { ref, onMounted, watch } from 'stx'
+        // To: const { ref, onMounted, watch } = window.stx
+        return script.replace(
+          /import\s*\{([^}]+)\}\s*from\s*['"]stx['"]\s*;?\n?/g,
+          (_, imports) => `const {${imports}} = window.stx;\n`,
+        )
+      })
+
+      // Inject the client runtime before other scripts
+      const runtimeScript = generateClientRuntime()
+      const scriptsHtml = runtimeScript + '\n' + transformedScripts.join('\n')
+
       const bodyEndMatch = output.match(/(<\/body>)/i)
       if (bodyEndMatch) {
         output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)

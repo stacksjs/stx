@@ -38,7 +38,7 @@
 import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processDirectives, readMarkdownFile } from '@stacksjs/stx'
+import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, generateClientRuntime, processDirectives, readMarkdownFile } from '@stacksjs/stx'
 
 // Export watch functionality
 export { createWatcher, startWatchMode, watchAndBuild } from './watch'
@@ -208,10 +208,35 @@ export { content as default };
 
           const content = await Bun.file(filePath).text()
 
-          // Extract script and template sections
-          const scriptMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
-          const scriptContent = scriptMatch ? scriptMatch[1] : ''
-          const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i, '')
+          // Extract all script tags and categorize them
+          const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
+          const clientScripts: string[] = []
+          const serverScripts: string[] = []
+          let scriptMatch: RegExpExecArray | null
+
+          while ((scriptMatch = scriptRegex.exec(content)) !== null) {
+            const attrs = scriptMatch[1]
+            const scriptContent = scriptMatch[2]
+            const fullScript = scriptMatch[0]
+
+            // Check if it's a client-only script
+            const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
+
+            if (isClientScript) {
+              // Transform stx imports: import { ref, ... } from 'stx' -> const { ref, ... } = window.stx
+              const transformed = fullScript.replace(
+                /import\s*\{([^}]+)\}\s*from\s*['"]stx['"]\s*;?\n?/g,
+                (_, imports) => `const {${imports}} = window.stx;\n`,
+              )
+              clientScripts.push(transformed)
+            }
+            else {
+              serverScripts.push(scriptContent)
+            }
+          }
+
+          // Remove all script tags from template
+          const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
           // Create a sandbox environment to execute the script
           const context: Record<string, any> = {
@@ -227,14 +252,31 @@ export { content as default };
             __stx_options: options,
           }
 
-          // Execute script content to extract variables
-          await extractVariables(scriptContent, context, filePath)
+          // Execute server script content to extract variables
+          for (const scriptContent of serverScripts) {
+            await extractVariables(scriptContent, context, filePath)
+          }
 
           // Process template directives
           let output = templateContent
 
           // Process all directives
           output = await processDirectives(output, context, filePath, options, dependencies)
+
+          // Inject client scripts with runtime before </body>
+          if (clientScripts.length > 0) {
+            const runtimeScript = generateClientRuntime()
+            const scriptsHtml = runtimeScript + '\n' + clientScripts.join('\n')
+
+            const bodyEndMatch = output.match(/(<\/body>)/i)
+            if (bodyEndMatch) {
+              output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
+            }
+            else {
+              // If no </body> tag, append scripts at the end
+              output += `\n${scriptsHtml}`
+            }
+          }
 
           // Track dependencies for this file
           dependencies.forEach(dep => allDependencies.add(dep))

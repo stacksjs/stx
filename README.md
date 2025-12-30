@@ -20,7 +20,7 @@ stx combines the elegance of Laravel Blade syntax with the speed of Bun, deliver
 - 🎨 **Intuitive Template Syntax** - Laravel Blade-like directives with enhanced capabilities
 - ⚡ **Lightning Fast** - Built with performance in mind
 - 🧩 **Component System** - Create reusable `.stx` components with props, slots, and composition
-- 🎯 **Single File Components** - Modular components with `@component` directive and props
+- 🎯 **Single File Components** - Standard `<script>` and `<style>` tags, just like Vue/Svelte
 - 🔄 **Reactive State** - Built-in state management for interactive UIs
 - 🎯 **TypeScript First** - Full type safety and autocomplete support
 - 📦 **Zero Config** - Works out of the box, configure when you need to
@@ -140,7 +140,33 @@ const html = homeTemplate // Already processed and ready to use!
 
 ## Single File Components (SFC)
 
-STX supports Single File Components for clean, modular architecture. Components are automatically resolved from your `componentsDir`.
+STX uses a familiar Single File Component structure with standard `<script>` and `<style>` tags - just like Vue or Svelte:
+
+```html
+<!-- components/greeting.stx -->
+<script>
+  const name = 'World'
+  const timestamp = new Date().toLocaleString()
+</script>
+
+<div class="greeting">
+  <h1>Hello, {{ name }}!</h1>
+  <p>Generated at {{ timestamp }}</p>
+</div>
+
+<style>
+  .greeting {
+    padding: 2rem;
+    background: #f0f0f0;
+    border-radius: 8px;
+  }
+  .greeting h1 {
+    color: #333;
+  }
+</style>
+```
+
+Variables declared in `<script>` are automatically available in the template. No special directives needed - it just works.
 
 ### Using Components
 
@@ -224,39 +250,110 @@ Components can include client-side JavaScript for interactivity:
 
 ### Complete SFC Example
 
+A complete Single File Component with server-side data, template, styles, and client interactivity:
+
 ```html
 <!-- components/user-card.stx -->
-<div class="p-4 rounded-lg border">
-  <img id="avatar" src="{{ avatar }}" class="w-16 h-16 rounded-full" />
-  <h3 id="userName">{{ name }}</h3>
-  <p id="userBio">{{ bio }}</p>
-  <div id="onlineStatus" class="hidden flex items-center gap-2">
-    <span class="w-2 h-2 bg-green-500 rounded-full"></span>
-    <span>Online</span>
-  </div>
+<script>
+  // Server-side data (runs at build/render time)
+  const defaultAvatar = '/images/default-avatar.png'
+  const formatDate = (date) => new Date(date).toLocaleDateString()
+</script>
+
+<div class="user-card">
+  <img class="user-card__avatar" src="{{ avatar || defaultAvatar }}" />
+  <h3 class="user-card__name">{{ name }}</h3>
+  <p class="user-card__bio">{{ bio }}</p>
+  <time class="user-card__joined">Joined {{ formatDate(joinedAt) }}</time>
 </div>
 
+<style>
+  .user-card {
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: white;
+  }
+  .user-card__avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+  }
+  .user-card__name {
+    margin: 0.5rem 0 0.25rem;
+    font-size: 1.25rem;
+  }
+  .user-card__bio {
+    color: #6b7280;
+    margin: 0;
+  }
+  .user-card__joined {
+    font-size: 0.875rem;
+    color: #9ca3af;
+  }
+</style>
+
 <script client>
-(() => {
-  const stores = window.AppStores;
-  if (!stores) return;
+  // Client-side JavaScript (runs in browser)
+  import { ref, onMounted, watch } from 'stx'
 
-  stores.userStore.subscribe((state) => {
-    const avatar = document.getElementById('avatar');
-    const userName = document.getElementById('userName');
-    const userBio = document.getElementById('userBio');
-    const onlineStatus = document.getElementById('onlineStatus');
+  const isOnline = ref(false)
 
-    if (avatar) avatar.src = state.avatar;
-    if (userName) userName.textContent = state.name;
-    if (userBio) userBio.textContent = state.bio;
-    if (onlineStatus) {
-      onlineStatus.classList.toggle('hidden', !state.isOnline);
-    }
-  });
-})();
+  onMounted(() => {
+    // Runs when component is in DOM
+    console.log('User card mounted')
+  })
+
+  watch(isOnline, (newVal) => {
+    const el = document.querySelector('.user-card')
+    if (el) el.classList.toggle('online', newVal)
+  })
 </script>
 ```
+
+**Key points:**
+- `<script>` - Server-side code, variables available in template
+- `<style>` - Component styles
+- `<script client>` - Client-side JavaScript with Vue-like reactivity
+
+### Client-Side Reactivity
+
+STX provides Vue-like reactivity primitives for client scripts:
+
+```html
+<script client>
+  import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'stx'
+
+  // Reactive primitives
+  const count = ref(0)
+  const user = reactive({ name: 'Guest', loggedIn: false })
+  const doubled = computed(() => count.value * 2)
+
+  // Lifecycle hooks
+  onMounted(async () => {
+    const data = await fetch('/api/user').then(r => r.json())
+    user.name = data.name
+    user.loggedIn = true
+  })
+
+  // Watch for changes
+  watch(count, (newVal, oldVal) => {
+    console.log(`Count: ${oldVal} -> ${newVal}`)
+  })
+
+  onUnmounted(() => {
+    console.log('Cleanup')
+  })
+</script>
+```
+
+Available imports from `'stx'`:
+- **`ref(value)`** - Reactive reference (access via `.value`)
+- **`reactive(obj)`** - Reactive object proxy
+- **`computed(getter)`** - Computed value
+- **`watch(source, callback)`** - Watch reactive source
+- **`onMounted(fn)`** - Run when component mounts
+- **`onUnmounted(fn)`** - Run on cleanup
 
 ## Layouts
 
@@ -603,60 +700,30 @@ Output unescaped HTML content:
 {!! rawHtmlContent !!}
 ```
 
-#### Server-Side JavaScript and TypeScript
+#### Server-Side Scripts
 
-`stx` allows you to execute JavaScript or TypeScript code directly on the server during template processing. This code runs only on the server and is removed from the final HTML output.
-
-##### JavaScript (@js)
-
-Use `@js` to execute JavaScript code on the server:
+The recommended way to define server-side data is using standard `<script>` tags:
 
 ```html
 <script>
-  module.exports = {
-    initialValue: 5,
-  };
+  const title = 'My Page'
+  const items = ['Apple', 'Banana', 'Cherry']
+
+  function formatDate(date) {
+    return date.toLocaleDateString()
+  }
 </script>
 
-<p>Before: {{ result }}</p>
-
-@js // This code runs on the server and is not included in the output HTML
-global.result = initialValue * 10; // You can access Node.js APIs here if
-(typeof process !== 'undefined') { global.nodeVersion = process.version; }
-@endjs
-
-<p>After: {{ result }}</p>
-<p>Node.js Version: {{ nodeVersion }}</p>
-```
-
-##### TypeScript (@ts)
-
-Use `@ts` to execute TypeScript code on the server:
-
-```html
-<script>
-  module.exports = {
-    users: [
-      { id: 1, name: "Alice" },
-      { id: 2, name: "Bob" },
-    ],
-  };
-</script>
-
-<h1>User List</h1>
-
-@ts // Define TypeScript interfaces interface User { id: number; name: string;
-displayName?: string; } // Process data with TypeScript function
-processUsers(users: User[]): User[] { return users.map(user => ({ ...user,
-displayName: `User ${user.id}: ${user.name}` })); } // Store the processed data
-in the context global.processedUsers = processUsers(users); @endts
-
+<h1>{{ title }}</h1>
 <ul>
-  @foreach(processedUsers as user)
-    <li>{{ user.displayName }}</li>
+  @foreach(items as item)
+    <li>{{ item }}</li>
   @endforeach
 </ul>
+<p>Today: {{ formatDate(new Date()) }}</p>
 ```
+
+Variables and functions declared in `<script>` are automatically available in your template. This is the standard SFC pattern - no special directives needed.
 
 #### Markdown Support
 
