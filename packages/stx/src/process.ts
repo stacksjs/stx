@@ -924,6 +924,11 @@ async function processOtherDirectives(
   // This generates client-side JS for store-aware reactive updates
   output = processTemplateBindings(output)
 
+  // Process x-element directives (x-data, x-model, x-text, etc.)
+  // Injects lightweight reactivity runtime for two-way binding
+  const { processXElementDirectives } = await import('./x-element')
+  output = processXElementDirectives(output)
+
   // Run post-processing middleware
   output = await runPostProcessingMiddleware(output, context, filePath, options)
 

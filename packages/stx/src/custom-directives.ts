@@ -82,8 +82,8 @@ async function processDirectiveWithEndTag(
     const startIndex = match.index || 0
 
     try {
-      // Parse parameters
-      const params = paramString ? paramString.split(',').map(p => p.trim()) : []
+      // Parse parameters (strip quotes from values)
+      const params = paramString ? parseDirectiveParams(paramString) : []
 
       // Trim the content to remove extra whitespace
       const trimmedContent = content.trim()
