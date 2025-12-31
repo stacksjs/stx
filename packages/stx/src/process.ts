@@ -802,6 +802,30 @@ async function processOtherDirectives(
     },
   )
 
+  // Extract variables from <script> tags (SFC support)
+  // This runs server-side scripts and populates context with variables
+  const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
+  let scriptMatch: RegExpExecArray | null
+  while ((scriptMatch = scriptRegex.exec(output)) !== null) {
+    const attrs = scriptMatch[1]
+    const scriptContent = scriptMatch[2]
+
+    // Skip client-only scripts
+    const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
+    if (!isClientScript && scriptContent.trim()) {
+      try {
+        const { extractVariables } = await import('./variable-extractor')
+        await extractVariables(scriptContent, context, filePath)
+      }
+      catch (e) {
+        // Script may contain browser-only code, skip
+        if (options.debug) {
+          console.warn('Script extraction error:', e)
+        }
+      }
+    }
+  }
+
   // Process JS/TS directives FIRST - these define variables needed by other directives
   // These execute server-side code and populate the context with variables
   output = await processJsDirectives(output, context, filePath)
@@ -1071,11 +1095,28 @@ async function processCustomElements(
       // Parse attributes using the robust parser that handles HTML in values
       const rawProps = parseMultilineAttributes(tag.attributes)
 
-      // Process props: evaluate {{ }} expressions in values
+      // Process props: evaluate {{ }} expressions and :prop="var" bindings
       const props: Record<string, unknown> = {}
       for (const [attrName, attrValue] of Object.entries(rawProps)) {
         // Skip @ event attributes - they're processed by processEventDirectives
         if (attrName.startsWith('@')) {
+          continue
+        }
+
+        // Handle Vue-style :prop="expression" binding
+        if (attrName.startsWith(':')) {
+          const propName = attrName.slice(1) // Remove the : prefix
+          try {
+            // eslint-disable-next-line no-new-func
+            const valueFn = new Function(...Object.keys(context), `return ${attrValue}`)
+            props[propName] = valueFn(...Object.values(context))
+          }
+          catch (error) {
+            if (options.debug) {
+              console.error(`Error evaluating :${propName} binding:`, error)
+            }
+            props[propName] = attrValue // Fall back to string value
+          }
           continue
         }
 
