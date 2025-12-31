@@ -1,22 +1,20 @@
 /**
  * x-element: Lightweight two-way binding for STX
  *
- * Provides Alpine.js-like reactivity with minimal overhead:
+ * Provides client-side reactivity for forms and interactive elements:
  * - x-data: Define reactive data scope
  * - x-model: Two-way binding for inputs
  * - x-text: Reactive text content
- * - x-html: Reactive HTML content
- * - x-show: Reactive visibility
- * - x-if: Conditional rendering
- * - x-for: List rendering
- * - x-on / @event: Event handling
- * - x-bind / :attr: Attribute binding
+ * - @event: Event handling (e.g., @click, @submit)
+ *
+ * Note: Use @if, @for, @foreach for server-side rendering.
+ * x-element is only for client-side interactivity that SSR can't handle.
  *
  * @example
  * ```html
  * <div x-data="{ name: '', count: 0 }">
  *   <input x-model="name" />
- *   <p x-text="name"></p>
+ *   <p>Hello, <span x-text="name"></span>!</p>
  *   <button @click="count++">Count: <span x-text="count"></span></button>
  * </div>
  * ```
@@ -31,7 +29,6 @@ export function generateXElementRuntime(): string {
 (function() {
   'use strict';
 
-  // Simple reactive state management
   class XElement {
     constructor(el, data) {
       this.el = el;
@@ -80,7 +77,7 @@ export function generateXElementRuntime(): string {
 
         // Listen for changes
         const eventType = input.tagName === 'SELECT' || input.type === 'checkbox' || input.type === 'radio' ? 'change' : 'input';
-        input.addEventListener(eventType, (e) => {
+        input.addEventListener(eventType, () => {
           if (input.type === 'checkbox') {
             this.data[key] = input.checked;
           } else if (input.type === 'radio') {
@@ -115,91 +112,12 @@ export function generateXElementRuntime(): string {
         this.watchExpression(expr, update);
       });
 
-      // Process x-html (reactive HTML)
-      const htmls = el.querySelectorAll('[x-html]');
-      htmls.forEach(elem => {
-        const expr = elem.getAttribute('x-html');
-        const update = () => {
-          elem.innerHTML = this.evaluate(expr);
-        };
-        update();
-        this.watchExpression(expr, update);
-      });
-
-      // Process x-show (reactive visibility)
-      const shows = el.querySelectorAll('[x-show]');
-      shows.forEach(elem => {
-        const expr = elem.getAttribute('x-show');
-        const originalDisplay = elem.style.display || '';
-        const update = () => {
-          const value = this.evaluate(expr);
-          elem.style.display = value ? originalDisplay : 'none';
-        };
-        update();
-        this.watchExpression(expr, update);
-      });
-
-      // Process x-if (conditional rendering)
-      const ifs = el.querySelectorAll('[x-if]');
-      ifs.forEach(elem => {
-        const expr = elem.getAttribute('x-if');
-        const placeholder = document.createComment('x-if');
-        const template = elem.cloneNode(true);
-        template.removeAttribute('x-if');
-        let current = null;
-
-        const update = () => {
-          const value = this.evaluate(expr);
-          if (value && !current) {
-            current = template.cloneNode(true);
-            placeholder.parentNode.insertBefore(current, placeholder);
-          } else if (!value && current) {
-            current.remove();
-            current = null;
-          }
-        };
-
-        elem.parentNode.insertBefore(placeholder, elem);
-        elem.remove();
-        update();
-        this.watchExpression(expr, update);
-      });
-
-      // Process x-bind / :attr (attribute binding)
+      // Process @event (event handling)
       const allElements = el.querySelectorAll('*');
       allElements.forEach(elem => {
         Array.from(elem.attributes).forEach(attr => {
-          if (attr.name.startsWith('x-bind:') || attr.name.startsWith(':')) {
-            const attrName = attr.name.startsWith(':') ? attr.name.slice(1) : attr.name.slice(7);
-            const expr = attr.value;
-
-            const update = () => {
-              const value = this.evaluate(expr);
-              if (attrName === 'class' && typeof value === 'object') {
-                Object.entries(value).forEach(([cls, active]) => {
-                  elem.classList.toggle(cls, !!active);
-                });
-              } else if (attrName === 'style' && typeof value === 'object') {
-                Object.entries(value).forEach(([prop, val]) => {
-                  elem.style[prop] = val;
-                });
-              } else if (value === false || value === null || value === undefined) {
-                elem.removeAttribute(attrName);
-              } else {
-                elem.setAttribute(attrName, value);
-              }
-            };
-            update();
-            this.watchExpression(expr, update);
-          }
-        });
-      });
-
-      // Process x-on / @event (event handling)
-      allElements.forEach(elem => {
-        Array.from(elem.attributes).forEach(attr => {
-          if (attr.name.startsWith('x-on:') || attr.name.startsWith('@')) {
-            const eventName = attr.name.startsWith('@') ? attr.name.slice(1) : attr.name.slice(5);
+          if (attr.name.startsWith('@')) {
+            const eventName = attr.name.slice(1);
             const expr = attr.value;
 
             // Handle modifiers
@@ -214,10 +132,9 @@ export function generateXElementRuntime(): string {
 
               // Key modifiers
               if (event === 'keydown' || event === 'keyup' || event === 'keypress') {
-                const keyModifiers = ['enter', 'escape', 'tab', 'space', 'delete', 'backspace', 'up', 'down', 'left', 'right'];
-                const keyMap = { enter: 'Enter', escape: 'Escape', tab: 'Tab', space: ' ', delete: 'Delete', backspace: 'Backspace', up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+                const keyMap = { enter: 'Enter', escape: 'Escape', tab: 'Tab', space: ' ' };
                 for (const mod of modifiers) {
-                  if (keyModifiers.includes(mod) && e.key !== keyMap[mod]) return;
+                  if (keyMap[mod] && e.key !== keyMap[mod]) return;
                 }
               }
 
@@ -225,60 +142,6 @@ export function generateXElementRuntime(): string {
             });
           }
         });
-      });
-
-      // Process x-for (list rendering)
-      const fors = el.querySelectorAll('[x-for]');
-      fors.forEach(elem => {
-        const expr = elem.getAttribute('x-for');
-        const match = expr.match(/^(\\w+)(?:\\s*,\\s*(\\w+))?\\s+(?:in|of)\\s+(.+)$/);
-        if (!match) return;
-
-        const [, itemVar, indexVar, listExpr] = match;
-        const placeholder = document.createComment('x-for');
-        const template = elem.cloneNode(true);
-        template.removeAttribute('x-for');
-        let items = [];
-
-        const update = () => {
-          items.forEach(item => item.remove());
-          items = [];
-
-          const list = this.evaluate(listExpr);
-          if (!Array.isArray(list)) return;
-
-          list.forEach((item, index) => {
-            const clone = template.cloneNode(true);
-
-            // Replace template expressions
-            const walk = (node) => {
-              if (node.nodeType === 3) { // Text node
-                node.textContent = node.textContent.replace(new RegExp('{{\\\\s*' + itemVar + '\\\\s*}}', 'g'), item);
-                if (indexVar) {
-                  node.textContent = node.textContent.replace(new RegExp('{{\\\\s*' + indexVar + '\\\\s*}}', 'g'), index);
-                }
-              }
-              if (node.attributes) {
-                Array.from(node.attributes).forEach(attr => {
-                  attr.value = attr.value.replace(new RegExp(itemVar, 'g'), JSON.stringify(item));
-                  if (indexVar) {
-                    attr.value = attr.value.replace(new RegExp(indexVar, 'g'), index);
-                  }
-                });
-              }
-              node.childNodes.forEach(walk);
-            };
-            walk(clone);
-
-            items.push(clone);
-            placeholder.parentNode.insertBefore(clone, placeholder);
-          });
-        };
-
-        elem.parentNode.insertBefore(placeholder, elem);
-        elem.remove();
-        update();
-        this.watchExpression(listExpr, update);
       });
     }
 
@@ -290,7 +153,6 @@ export function generateXElementRuntime(): string {
     }
 
     watchExpression(expr, callback) {
-      // Extract variable names from expression
       const vars = expr.match(/[a-zA-Z_$][a-zA-Z0-9_$]*/g) || [];
       vars.forEach(v => {
         if (v in this.data) {
@@ -355,7 +217,7 @@ export function generateXElementRuntime(): string {
  * Check if template uses x-* directives
  */
 export function hasXElementDirectives(template: string): boolean {
-  return /\bx-(data|model|text|html|show|if|for|on|bind)\b|@\w+|:\w+/.test(template)
+  return /\bx-(data|model|text)\b/.test(template)
 }
 
 /**

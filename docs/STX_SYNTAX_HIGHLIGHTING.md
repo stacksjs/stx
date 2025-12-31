@@ -27,8 +27,9 @@ STX files (`.stx`) are Single File Components (SFC) similar to Vue, containing t
 **Scope:** `meta.tag.block.stx`
 
 ```html
-<script>        <!-- keyword.control.stx -->
-<script client> <!-- keyword.control.stx + entity.other.attribute-name -->
+<script>        <!-- keyword.control.stx - runs on server, preserved for client -->
+<script server> <!-- keyword.control.stx - SSR only, stripped from output -->
+<script client> <!-- keyword.control.stx - client only, skips server evaluation -->
 </script>       <!-- keyword.control.stx -->
 
 <template>      <!-- keyword.control.stx -->
@@ -176,7 +177,52 @@ The `@` prefix: `punctuation.definition.event.stx`
 The event name: `entity.other.attribute-name.event.stx`
 The modifier (`.prevent`, `.enter`): `keyword.modifier.event.stx`
 
-### 7. Slot Element
+### 7. Reactive Directives (x-element)
+
+STX includes lightweight client-side reactivity for two-way binding. Use `@if`, `@for`, `@foreach` for server-side rendering; use `x-*` only for client-side interactivity.
+
+#### x-data (Reactive Scope)
+**Scope:** `entity.other.attribute-name.reactive.stx`
+
+```html
+<div x-data="{ message: '', count: 0 }">
+  <!-- reactive scope -->
+</div>
+```
+
+#### x-model (Two-Way Binding)
+**Scope:** `entity.other.attribute-name.reactive.stx`
+
+```html
+<input x-model="message" />       <!-- binds to message -->
+<select x-model="selected">       <!-- works with select -->
+<textarea x-model="content">      <!-- works with textarea -->
+```
+
+#### x-text (Reactive Display)
+**Scope:** `entity.other.attribute-name.reactive.stx`
+
+```html
+<span x-text="message"></span>           <!-- updates as you type -->
+<span x-text="count"></span>             <!-- displays count -->
+```
+
+#### @event (Client-Side Events)
+**Scope:** `entity.other.attribute-name.event.stx`
+
+```html
+<button @click="count++">Increment</button>
+<button @click="count = 0">Reset</button>
+<form @submit.prevent="save">Submit</form>
+<input @keydown.enter="submit">
+```
+
+**Event Modifiers:**
+- `.prevent` - calls `e.preventDefault()`
+- `.stop` - calls `e.stopPropagation()`
+- `.enter`, `.escape`, `.tab`, `.space` - key modifiers
+
+### 8. Slot Element
 
 **Scope:** `entity.name.tag.slot.stx`
 
@@ -186,7 +232,7 @@ The modifier (`.prevent`, `.enter`): `keyword.modifier.event.stx`
 <slot>Default content</slot>      <!-- slot with fallback -->
 ```
 
-### 8. Comments
+### 9. Comments
 
 #### HTML Comments
 **Scope:** `comment.block.html`
@@ -253,6 +299,7 @@ Expressions inside `{{ }}` and `{!! !!}` should use JavaScript highlighting:
 | Component tags | Green | `#98C379` |
 | Binding prefix (`:`) | Cyan | `#56B6C2` |
 | Event prefix (`@`) | Yellow | `#E5C07B` |
+| Reactive attrs (`x-model`, `x-data`) | Cyan | `#56B6C2` |
 | Slot tag | Blue | `#61AFEF` |
 | Comments | Gray | `#5C6370` |
 
@@ -337,10 +384,24 @@ Expressions inside `{{ }}` and `{!! !!}` should use JavaScript highlighting:
 }
 ```
 
+### Reactive Attribute Pattern (x-*)
+```json
+{
+  "name": "meta.attribute.reactive.stx",
+  "match": "(x-)(data|model|text)\\s*=\\s*\"([^\"]+)\"",
+  "captures": {
+    "1": { "name": "punctuation.definition.reactive.stx" },
+    "2": { "name": "entity.other.attribute-name.reactive.stx" },
+    "3": { "name": "meta.embedded.expression.stx" }
+  }
+}
+```
+
 ## Complete Example
 
 ```html
-<script>
+<script server>
+// Server-only: extracted for SSR, stripped from output
 const user = { name: 'John', role: 'Admin' }
 const items = ['Apple', 'Banana', 'Cherry']
 const isLoggedIn = true
@@ -352,12 +413,13 @@ function formatName(name) {
 
 <template>
   <div class="container">
-    <!-- User greeting -->
+    <!-- User greeting (server-side conditionals) -->
     @if (isLoggedIn)
       <Card :title="formatName(user.name)">
         <h1>Welcome, {{ user.name }}!</h1>
         <p>Role: {{ user.role }}</p>
 
+        <!-- Server-side loop -->
         <ul>
           @foreach (items as item)
             <li>{{ item }}</li>
@@ -373,6 +435,16 @@ function formatName(name) {
     @endif
 
     {{-- This comment won't be in output --}}
+
+    <!-- Client-side two-way binding -->
+    <div x-data="{ message: '', count: 0 }">
+      <input x-model="message" placeholder="Type something..." />
+      <p>You typed: <strong x-text="message"></strong></p>
+
+      <button @click="count++">Increment</button>
+      <button @click="count--">Decrement</button>
+      <span x-text="count"></span>
+    </div>
 
     @include('partials/footer')
   </div>
@@ -401,8 +473,9 @@ When tokenizing, apply patterns in this order:
 3. Raw expressions (`{!! !!}`)
 4. Escaped expressions (`{{ }}`)
 5. Directives (`@directive`)
-6. Component tags (PascalCase and kebab-case)
-7. Binding attributes (`:prop`)
-8. Event attributes (`@event`)
-9. Slot elements (`<slot />`)
-10. Standard HTML tags and attributes
+6. Reactive attributes (`x-data`, `x-model`, `x-text`)
+7. Component tags (PascalCase and kebab-case)
+8. Binding attributes (`:prop`)
+9. Event attributes (`@event`)
+10. Slot elements (`<slot />`)
+11. Standard HTML tags and attributes
