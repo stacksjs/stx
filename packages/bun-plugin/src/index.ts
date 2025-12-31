@@ -52,7 +52,7 @@ export type {
 
 // Re-export functions and types that consumers might need
 export { createMiddleware, createRoute, readMarkdownFile, serve } from '@stacksjs/stx'
-export type { ServeOptions, ServeResult, StxOptions } from '@stacksjs/stx'
+export type { CustomDirective, CustomDirectiveHandler, ServeOptions, ServeResult, StxOptions } from '@stacksjs/stx'
 
 /**
  * Escape HTML entities in error messages to prevent XSS in error pages.
