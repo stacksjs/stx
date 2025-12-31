@@ -177,9 +177,11 @@ export async function renderComponentWithSlot(
     }
 
     // Create a new context with component props and slot content
+    // Include both individual props and a `props` object for Vue-style access
     const componentContext: Record<string, unknown> = {
       ...parentContext,
       ...props,
+      props, // Allow `props.foo` syntax in addition to just `foo`
       slot: slotContent,
     }
 
@@ -192,19 +194,32 @@ export async function renderComponentWithSlot(
       workingContent = templateMatch[1].trim()
     }
 
-    // Extract any script content from the component (SFC support)
+    // Extract all script content from the component (SFC support)
     // Look in original content since template section won't have scripts
-    const scriptMatch = componentContent.match(/<script\b([^>]*)>([\s\S]*?)<\/script>/i)
-    const scriptAttrs = scriptMatch ? scriptMatch[1] : ''
-    const scriptContent = scriptMatch ? scriptMatch[2] : ''
+    const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
+    const scriptMatches = [...componentContent.matchAll(scriptRegex)]
+    const clientScripts: string[] = []
 
-    // Only extract variables for server-side if script doesn't have special attributes
-    const isClientOnlyScript = scriptAttrs.includes('client') || scriptAttrs.includes('type="module"')
-    if (scriptContent && !isClientOnlyScript) {
-      try {
-        await extractVariables(scriptContent, componentContext, componentFilePath)
-      } catch (e) {
-        // Script may contain browser-only code, skip variable extraction
+    for (const match of scriptMatches) {
+      const attrs = match[1] || ''
+      const content = match[2] || ''
+
+      const isServerScript = attrs.includes('server')
+      const isClientOnlyScript = attrs.includes('client') || attrs.includes('type="module"')
+
+      // Extract variables from server scripts (or scripts without client marker)
+      if (!isClientOnlyScript && content) {
+        try {
+          await extractVariables(content, componentContext, componentFilePath)
+        }
+        catch (e) {
+          // Script may contain browser-only code, skip variable extraction
+        }
+      }
+
+      // Preserve client scripts (non-server scripts)
+      if (!isServerScript) {
+        clientScripts.push(`<script${attrs}>${content}</script>`)
       }
     }
 
@@ -219,12 +234,7 @@ export async function renderComponentWithSlot(
 
     // Remove script and style tags from template content
     let templateContent = workingContent
-    let preservedScript = ''
-    if (scriptMatch) {
-      templateContent = templateContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
-      // Preserve the script for client-side execution
-      preservedScript = `<script${scriptAttrs}>${scriptContent}</script>`
-    }
+    templateContent = templateContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
     if (styleMatch) {
       templateContent = templateContent.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
     }
@@ -276,13 +286,13 @@ export async function renderComponentWithSlot(
     // Process the component content recursively with the new context
     const result = await processDirectives(templateContent, componentContext, componentFilePath, componentOptions, dependencies)
 
-    // Append preserved style and script for SFC support (client-side execution)
+    // Append preserved style and client scripts for SFC support
     let output = result
     if (preservedStyle) {
       output += '\n' + preservedStyle
     }
-    if (preservedScript) {
-      output += '\n' + preservedScript
+    if (clientScripts.length > 0) {
+      output += '\n' + clientScripts.join('\n')
     }
 
     return output

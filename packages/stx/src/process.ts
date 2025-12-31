@@ -953,6 +953,10 @@ async function processOtherDirectives(
     output = injectPwaTags(output, options)
   }
 
+  // Strip server-only scripts (marked with 'server' attribute)
+  // These are used for SSR variable extraction and shouldn't appear in client output
+  output = output.replace(/<script\s+server\b[^>]*>[\s\S]*?<\/script>\s*/gi, '')
+
   return output
 }
 
