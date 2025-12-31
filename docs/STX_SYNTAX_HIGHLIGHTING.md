@@ -82,6 +82,8 @@ STX files (`.stx`) are Single File Components (SFC) similar to Vue, containing t
 
 #### Inline Directives
 ```html
+@import ('path/Component')        <!-- keyword.control.directive.stx -->
+@import ('A', 'B', 'C')           <!-- multiple imports -->
 @include ('partial')              <!-- keyword.control.directive.stx -->
 @layout ('layouts/default')       <!-- keyword.control.directive.stx -->
 @extends ('layouts/base')         <!-- keyword.control.directive.stx -->
@@ -260,7 +262,7 @@ Expressions inside `{{ }}` and `{!! !!}` should use JavaScript highlighting:
 ```json
 {
   "name": "keyword.control.directive.stx",
-  "match": "@(if|elseif|else|endif|foreach|endforeach|for|endfor|while|endwhile|switch|case|default|endswitch|auth|endauth|guest|endguest|section|endsection|include|layout|extends|yield|component|stack|push|endpush|once|endonce|csrf|method|json|translate)\\b"
+  "match": "@(import|if|elseif|else|endif|foreach|endforeach|for|endfor|while|endwhile|switch|case|default|endswitch|auth|endauth|guest|endguest|section|endsection|include|layout|extends|yield|component|stack|push|endpush|once|endonce|csrf|method|json|translate)\\b"
 }
 ```
 

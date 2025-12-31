@@ -831,6 +831,9 @@ async function processOtherDirectives(
   output = await processJsDirectives(output, context, filePath)
   output = await processTsDirectives(output, context, filePath)
 
+  // Process @import directives for explicit component imports
+  output = await processImportDirectives(output, context, filePath, options, dependencies)
+
   // Process custom directives
   output = await processCustomDirectives(output, context, filePath, options)
 
@@ -943,6 +946,111 @@ async function processOtherDirectives(
   if (options.pwa?.enabled && options.pwa.autoInject !== false) {
     const { injectPwaTags } = await import('./pwa/inject')
     output = injectPwaTags(output, options)
+  }
+
+  return output
+}
+
+/**
+ * Process @import directives for explicit component imports
+ *
+ * Syntax:
+ *   @import('components/Card')
+ *   @import('ui/Button', 'ui/Modal')
+ *   @import('Card', 'Button', 'Modal')
+ *
+ * This allows explicit importing of components from any path,
+ * overriding the auto-import from the components directory.
+ */
+async function processImportDirectives(
+  template: string,
+  context: Record<string, any>,
+  filePath: string,
+  options: StxOptions,
+  dependencies: Set<string>,
+): Promise<string> {
+  let output = template
+
+  // Initialize imported components registry in context
+  if (!context.__importedComponents) {
+    context.__importedComponents = new Map<string, string>()
+  }
+  const importedComponents = context.__importedComponents as Map<string, string>
+
+  // Match @import('path') or @import('path1', 'path2', ...)
+  const importRegex = /@import\s*\(\s*([^)]+)\s*\)/g
+  let match
+
+  while ((match = importRegex.exec(output)) !== null) {
+    const [fullMatch, pathsString] = match
+
+    // Parse the paths (handle quoted strings separated by commas)
+    const paths = pathsString
+      .split(',')
+      .map(p => p.trim().replace(/^['"]|['"]$/g, ''))
+      .filter(p => p.length > 0)
+
+    for (const componentPath of paths) {
+      // Get the component name from the path (last segment)
+      const segments = componentPath.split('/')
+      const fileName = segments[segments.length - 1]
+      // Remove .stx extension if present, convert to PascalCase for matching
+      const baseName = fileName.replace(/\.stx$/, '')
+      const componentName = baseName.includes('-')
+        ? baseName.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('')
+        : baseName.charAt(0).toUpperCase() + baseName.slice(1)
+
+      // Resolve the full path
+      let resolvedPath: string | null = null
+
+      // Try different resolution strategies
+      const possiblePaths = [
+        // Relative to current file
+        path.resolve(path.dirname(filePath), `${componentPath}.stx`),
+        path.resolve(path.dirname(filePath), componentPath),
+        // Relative to components dir
+        path.resolve(options.componentsDir || 'components', `${componentPath}.stx`),
+        path.resolve(options.componentsDir || 'components', componentPath),
+        // Absolute path
+        componentPath.endsWith('.stx') ? componentPath : `${componentPath}.stx`,
+      ]
+
+      for (const tryPath of possiblePaths) {
+        try {
+          const stat = await Bun.file(tryPath).exists()
+          if (stat) {
+            resolvedPath = tryPath
+            break
+          }
+        }
+        catch {
+          // Continue trying
+        }
+      }
+
+      if (resolvedPath) {
+        // Register the component for both PascalCase and kebab-case usage
+        importedComponents.set(componentName, resolvedPath)
+        importedComponents.set(baseName, resolvedPath)
+        importedComponents.set(baseName.toLowerCase(), resolvedPath)
+        // Also register kebab-case version
+        const kebabCase = componentName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+        importedComponents.set(kebabCase, resolvedPath)
+
+        // Track as dependency
+        dependencies.add(resolvedPath)
+
+        if (options.debug) {
+          console.log(`Imported component: ${componentName} -> ${resolvedPath}`)
+        }
+      }
+      else if (options.debug) {
+        console.warn(`Could not resolve imported component: ${componentPath}`)
+      }
+    }
+
+    // Remove the @import directive from output
+    output = output.replace(fullMatch, '')
   }
 
   return output

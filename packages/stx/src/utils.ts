@@ -90,42 +90,63 @@ export async function renderComponentWithSlot(
       ? componentPath.slice(0, -4)
       : componentPath
 
-    // Generate all possible file names to try
-    const fileVariants = [
-      `${baseName}.stx`,
-      `${kebabToPascal(baseName)}.stx`,
-      `${pascalToKebab(baseName)}.stx`,
-    ]
-    // Remove duplicates
-    const uniqueVariants = [...new Set(fileVariants)]
-
-    // Directories to search
-    const searchDirs = [
-      componentsDir,
-      path.join(path.dirname(parentFilePath), 'components'),
-    ]
-    if (options.componentsDir && options.componentsDir !== componentsDir) {
-      searchDirs.push(options.componentsDir)
-    }
-
     // Find the component file
     let componentFilePath: string | null = null
 
-    // If path starts with ./ or ../, resolve from current template directory
-    if (baseName.startsWith('./') || baseName.startsWith('../')) {
-      componentFilePath = path.resolve(path.dirname(parentFilePath), `${baseName}.stx`)
-    }
-    else {
-      // Search in all directories with all naming variants
-      for (const dir of searchDirs) {
-        for (const variant of uniqueVariants) {
-          const tryPath = path.join(dir, variant)
-          if (await fileExists(tryPath)) {
-            componentFilePath = tryPath
-            break
-          }
+    // First, check if this component was explicitly imported via @import
+    const importedComponents = parentContext.__importedComponents as Map<string, string> | undefined
+    if (importedComponents) {
+      // Try various name formats
+      const namesToTry = [
+        baseName,
+        baseName.toLowerCase(),
+        kebabToPascal(baseName),
+        pascalToKebab(baseName),
+      ]
+      for (const name of namesToTry) {
+        if (importedComponents.has(name)) {
+          componentFilePath = importedComponents.get(name)!
+          break
         }
-        if (componentFilePath) break
+      }
+    }
+
+    // If not found via @import, use auto-discovery
+    if (!componentFilePath) {
+      // Generate all possible file names to try
+      const fileVariants = [
+        `${baseName}.stx`,
+        `${kebabToPascal(baseName)}.stx`,
+        `${pascalToKebab(baseName)}.stx`,
+      ]
+      // Remove duplicates
+      const uniqueVariants = [...new Set(fileVariants)]
+
+      // Directories to search
+      const searchDirs = [
+        componentsDir,
+        path.join(path.dirname(parentFilePath), 'components'),
+      ]
+      if (options.componentsDir && options.componentsDir !== componentsDir) {
+        searchDirs.push(options.componentsDir)
+      }
+
+      // If path starts with ./ or ../, resolve from current template directory
+      if (baseName.startsWith('./') || baseName.startsWith('../')) {
+        componentFilePath = path.resolve(path.dirname(parentFilePath), `${baseName}.stx`)
+      }
+      else {
+        // Search in all directories with all naming variants
+        for (const dir of searchDirs) {
+          for (const variant of uniqueVariants) {
+            const tryPath = path.join(dir, variant)
+            if (await fileExists(tryPath)) {
+              componentFilePath = tryPath
+              break
+            }
+          }
+          if (componentFilePath) break
+        }
       }
     }
 
