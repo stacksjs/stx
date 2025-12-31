@@ -74,41 +74,63 @@ export async function renderComponentWithSlot(
   components.add(componentPath)
 
   try {
-    // Determine the actual file path
-    let componentFilePath = componentPath
+    // Helper: convert kebab-case to PascalCase
+    const kebabToPascal = (str: string) => str
+      .split('-')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('')
 
-    // If it doesn't end with .stx, add the extension
-    if (!componentPath.endsWith('.stx')) {
-      componentFilePath = `${componentPath}.stx`
+    // Helper: convert PascalCase to kebab-case
+    const pascalToKebab = (str: string) => str
+      .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+      .toLowerCase()
+
+    // Get base name without extension
+    const baseName = componentPath.endsWith('.stx')
+      ? componentPath.slice(0, -4)
+      : componentPath
+
+    // Generate all possible file names to try
+    const fileVariants = [
+      `${baseName}.stx`,
+      `${kebabToPascal(baseName)}.stx`,
+      `${pascalToKebab(baseName)}.stx`,
+    ]
+    // Remove duplicates
+    const uniqueVariants = [...new Set(fileVariants)]
+
+    // Directories to search
+    const searchDirs = [
+      componentsDir,
+      path.join(path.dirname(parentFilePath), 'components'),
+    ]
+    if (options.componentsDir && options.componentsDir !== componentsDir) {
+      searchDirs.push(options.componentsDir)
     }
 
-    // If it's a relative path without ./ or ../, assume it's in the components directory
-    if (!componentFilePath.startsWith('./') && !componentFilePath.startsWith('../')) {
-      // Check both componentsDir and the actual components dir from parentFilePath
-      let resolvedPath = path.join(componentsDir, componentFilePath)
+    // Find the component file
+    let componentFilePath: string | null = null
 
-      if (!await fileExists(resolvedPath)) {
-        // Try the default location - components directory next to the file
-        const defaultComponentsDir = path.join(path.dirname(parentFilePath), 'components')
-        resolvedPath = path.join(defaultComponentsDir, componentFilePath)
-
-        if (!await fileExists(resolvedPath)) {
-          // If still not found, try options.componentsDir if specified
-          if (options.componentsDir && await fileExists(path.join(options.componentsDir, componentFilePath))) {
-            resolvedPath = path.join(options.componentsDir, componentFilePath)
-          }
-        }
-      }
-
-      componentFilePath = resolvedPath
+    // If path starts with ./ or ../, resolve from current template directory
+    if (baseName.startsWith('./') || baseName.startsWith('../')) {
+      componentFilePath = path.resolve(path.dirname(parentFilePath), `${baseName}.stx`)
     }
     else {
-      // Otherwise, resolve from the current template directory
-      componentFilePath = path.resolve(path.dirname(parentFilePath), componentFilePath)
+      // Search in all directories with all naming variants
+      for (const dir of searchDirs) {
+        for (const variant of uniqueVariants) {
+          const tryPath = path.join(dir, variant)
+          if (await fileExists(tryPath)) {
+            componentFilePath = tryPath
+            break
+          }
+        }
+        if (componentFilePath) break
+      }
     }
 
     // Check if component exists
-    if (!await fileExists(componentFilePath)) {
+    if (!componentFilePath || !await fileExists(componentFilePath)) {
       return `[Error loading component: ENOENT: no such file or directory, open '${componentPath}']`
     }
 
@@ -189,6 +211,23 @@ export async function renderComponentWithSlot(
     // Find and replace any direct references to {{ text || slot }} with the actual value
     if (slotContent && templateContent.includes('{{ text || slot }}')) {
       templateContent = templateContent.replace(/\{\{\s*text\s*\|\|\s*slot\s*\}\}/g, slotContent)
+    }
+
+    // Replace <slot /> or <slot></slot> with the slot content (Vue-style slots)
+    // This allows using <slot /> in component templates which is more intuitive
+    if (slotContent) {
+      // Match self-closing <slot /> or <slot/> or <slot></slot>
+      templateContent = templateContent.replace(/<slot\s*\/>/gi, slotContent)
+      templateContent = templateContent.replace(/<slot\s*>\s*<\/slot>/gi, slotContent)
+      // Match <slot>default content</slot> - replace with slot content if provided
+      templateContent = templateContent.replace(/<slot\s*>[\s\S]*?<\/slot>/gi, slotContent)
+    }
+    else {
+      // No slot content - replace <slot /> with empty, but keep default content for <slot>default</slot>
+      templateContent = templateContent.replace(/<slot\s*\/>/gi, '')
+      templateContent = templateContent.replace(/<slot\s*>\s*<\/slot>/gi, '')
+      // For <slot>default content</slot>, extract and use the default content
+      templateContent = templateContent.replace(/<slot\s*>([\s\S]*?)<\/slot>/gi, '$1')
     }
 
     // Handle HTML content in component props

@@ -38,7 +38,7 @@
 import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, generateClientRuntime, processDirectives, readMarkdownFile } from '@stacksjs/stx'
+import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processDirectives, readMarkdownFile } from '@stacksjs/stx'
 
 // Export watch functionality
 export { createWatcher, startWatchMode, watchAndBuild } from './watch'
@@ -223,12 +223,7 @@ export { content as default };
             const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
 
             if (isClientScript) {
-              // Transform stx imports: import { ref, ... } from 'stx' -> const { ref, ... } = stx
-              const transformed = fullScript.replace(
-                /import\s*\{([^}]+)\}\s*from\s*['"]stx['"]\s*;?\n?/g,
-                (_, imports) => `const {${imports}} = stx;\n`,
-              )
-              clientScripts.push(transformed)
+              clientScripts.push(fullScript)
             }
             else {
               serverScripts.push(scriptContent)
@@ -263,11 +258,9 @@ export { content as default };
           // Process all directives
           output = await processDirectives(output, context, filePath, options, dependencies)
 
-          // Inject client scripts with runtime before </body>
+          // Inject client scripts before </body>
           if (clientScripts.length > 0) {
-            const runtimeScript = generateClientRuntime()
-            const scriptsHtml = runtimeScript + '\n' + clientScripts.join('\n')
-
+            const scriptsHtml = clientScripts.join('\n')
             const bodyEndMatch = output.match(/(<\/body>)/i)
             if (bodyEndMatch) {
               output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)

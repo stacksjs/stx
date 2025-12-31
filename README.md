@@ -13,7 +13,7 @@ A modern templating framework with Laravel Blade-like syntax, Vue-style Single F
 
 - **Single File Components** - Standard `<script>` and `<style>` tags
 - **Blade Directives** - `@if`, `@foreach`, `@component`, `@layout`, and more
-- **Client Reactivity** - Vue-like `ref`, `reactive`, `watch`, `onMounted`
+- **Client Scripts** - `<script client>` for browser-side JavaScript
 - **200K+ Icons** - Built-in Iconify integration
 - **Zero Config** - Works out of the box
 
@@ -114,50 +114,21 @@ Use `@layout` to wrap pages with common structure:
 
 `{{ slot }}` is equivalent to `@yield('content')`.
 
-## Client-Side Reactivity
+## Client Scripts
 
-Use `<script client>` for browser-side JavaScript with Vue-like reactivity:
+Use `<script client>` for browser-side JavaScript:
 
 ```html
 <script client>
-  import { ref, onMounted, watch } from 'stx'
+  let count = 0
 
-  const count = ref(0)
-  const users = ref([])
-
-  onMounted(async () => {
-    users.value = await fetch('/api/users').then(r => r.json())
-  })
-
-  watch(count, (newVal, oldVal) => {
-    console.log(`Count: ${oldVal} -> ${newVal}`)
+  document.getElementById('increment').addEventListener('click', () => {
+    count++
+    document.getElementById('count').textContent = count
   })
 </script>
 
-<button onclick="count.value++">Count: <span id="count">0</span></button>
-```
-
-### Available Imports
-
-```javascript
-import {
-  // Reactive state
-  ref,           // ref(0) - access via .value
-  reactive,      // reactive({}) - direct property access
-  computed,      // computed(() => x.value * 2)
-
-  // Watch
-  watch,         // watch(source, callback)
-  watchEffect,   // watchEffect(() => { ... })
-
-  // Lifecycle
-  onMounted,     // After DOM insertion
-  onUnmounted,   // Before removal (cleanup)
-  onBeforeMount,
-  onBeforeUpdate,
-  onUpdated,
-  onBeforeUnmount
-} from 'stx'
+<button id="increment">Count: <span id="count">0</span></button>
 ```
 
 ## Template Directives
@@ -201,26 +172,35 @@ import {
 </script>
 
 <script client>
-  import { ref, onMounted } from 'stx'
+  let todos = []
 
-  const todos = ref([])
-  const newTodo = ref('')
-
-  onMounted(async () => {
-    todos.value = await fetch('/api/todos').then(r => r.json())
-  })
+  async function init() {
+    todos = await fetch('/api/todos').then(r => r.json())
+    render()
+  }
 
   function addTodo() {
-    if (newTodo.value.trim()) {
-      todos.value.push({ id: Date.now(), text: newTodo.value, done: false })
-      newTodo.value = ''
+    const input = document.getElementById('newTodo')
+    if (input.value.trim()) {
+      todos.push({ id: Date.now(), text: input.value, done: false })
+      input.value = ''
+      render()
     }
   }
 
   function toggleTodo(id) {
-    const todo = todos.value.find(t => t.id === id)
+    const todo = todos.find(t => t.id === id)
     if (todo) todo.done = !todo.done
+    render()
   }
+
+  function render() {
+    document.getElementById('todoList').innerHTML = todos
+      .map(t => `<li class="${t.done ? 'done' : ''}" onclick="toggleTodo(${t.id})">${t.text}</li>`)
+      .join('')
+  }
+
+  init()
 </script>
 
 <div class="todo-app">

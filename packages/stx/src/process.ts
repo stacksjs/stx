@@ -195,9 +195,10 @@ interface ComponentTagMatch {
  *
  * @param html - The HTML string to search
  * @param tagPattern - Regex pattern for tag name (for PascalCase components)
+ * @param skipTags - Optional set of tag names to skip (for HTML tags)
  * @returns Array of found component tags
  */
-function findComponentTags(html: string, tagPattern: RegExp): ComponentTagMatch[] {
+function findComponentTags(html: string, tagPattern: RegExp, skipTags?: Set<string>): ComponentTagMatch[] {
   const matches: ComponentTagMatch[] = []
   let pos = 0
 
@@ -217,6 +218,18 @@ function findComponentTags(html: string, tagPattern: RegExp): ComponentTagMatch[
     }
 
     const tagName = tagNameMatch[1]
+
+    // Skip HTML tags - only advance past the opening tag, not the content
+    if (skipTags && skipTags.has(tagName.toLowerCase())) {
+      // Find the end of just the opening tag
+      let currentPos = tagStart + 1 + tagName.length
+      while (currentPos < html.length && html[currentPos] !== '>') {
+        currentPos++
+      }
+      pos = currentPos + 1 // Move past the '>'
+      continue
+    }
+
     let currentPos = tagStart + 1 + tagName.length
 
     // Now find the end of this tag, respecting quoted strings
@@ -578,7 +591,8 @@ async function processDirectivesInternal(
   output = processStackPushDirectives(output, stacks)
 
   // Process sections and yields before includes
-  const sections: Record<string, string> = {}
+  // Start with any sections passed in from context (e.g., from parent layout)
+  const sections: Record<string, string> = { ...(context.__sections || {}) }
   let layoutPath = ''
 
   // Extract layout if used (@layout or @extends)
@@ -997,6 +1011,31 @@ async function processCustomElements(
   }
   const processedComponents = context.__processedComponents as Set<string>
 
+  // Standard HTML tags to exclude from component processing
+  const htmlTags = new Set([
+    'a', 'abbr', 'address', 'area', 'article', 'aside', 'audio',
+    'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 'br', 'button',
+    'canvas', 'caption', 'cite', 'code', 'col', 'colgroup',
+    'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'div', 'dl', 'dt',
+    'em', 'embed',
+    'fieldset', 'figcaption', 'figure', 'footer', 'form',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html',
+    'i', 'iframe', 'img', 'input', 'ins',
+    'kbd',
+    'label', 'legend', 'li', 'link',
+    'main', 'map', 'mark', 'menu', 'meta', 'meter',
+    'nav', 'noscript',
+    'object', 'ol', 'optgroup', 'option', 'output',
+    'p', 'param', 'picture', 'pre', 'progress',
+    'q',
+    'rp', 'rt', 'ruby',
+    's', 'samp', 'script', 'section', 'select', 'slot', 'small', 'source', 'span', 'strong', 'style', 'sub', 'summary', 'sup', 'svg',
+    'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track',
+    'u', 'ul',
+    'var', 'video',
+    'wbr',
+  ])
+
   // Process kebab-case components (e.g., <my-component />)
   const kebabPattern = /[a-z][a-z0-9]*-[a-z0-9-]*/
   output = await processComponentsWithParser(output, kebabPattern, false)
@@ -1005,16 +1044,20 @@ async function processCustomElements(
   const pascalPattern = /[A-Z][a-zA-Z0-9]*/
   output = await processComponentsWithParser(output, pascalPattern, true)
 
+  // Process single-word lowercase components (e.g., <card />) - skip HTML tags
+  const lowercasePattern = /[a-z][a-z0-9]*/
+  output = await processComponentsWithParser(output, lowercasePattern, false, htmlTags)
+
   return output
 
   /**
    * Process components using the proper parser that handles quoted strings
    */
-  async function processComponentsWithParser(html: string, tagPattern: RegExp, isPascalCase: boolean): Promise<string> {
+  async function processComponentsWithParser(html: string, tagPattern: RegExp, isPascalCase: boolean, skipTags?: Set<string>): Promise<string> {
     let result = html
 
-    // Find all matching component tags
-    const tags = findComponentTags(result, tagPattern)
+    // Find all matching component tags (pass skipTags to avoid consuming HTML tag content)
+    const tags = findComponentTags(result, tagPattern, skipTags)
 
     // Process from end to start to preserve indices
     for (let i = tags.length - 1; i >= 0; i--) {
