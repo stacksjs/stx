@@ -7,15 +7,17 @@
 
 # stx
 
-A modern templating framework with Laravel Blade-like syntax, Vue-style Single File Components, and Bun-powered performance.
+A modern templating engine with Vue-like Single File Components, Laravel Blade directives, and Bun-powered performance.
 
 ## Features
 
-- **Single File Components** - Standard `<script>` and `<style>` tags
-- **Blade Directives** - `@if`, `@foreach`, `@component`, `@layout`, and more
-- **Client Scripts** - `<script client>` for browser-side JavaScript
+- **Vue-like SFC** - `<script>`, `<template>`, `<style>` structure
+- **Auto-imported Components** - Use `<Card />` directly, no imports needed
+- **Two-way Binding** - `x-model` and `x-text` for reactive forms
+- **Blade Directives** - `@if`, `@foreach`, `@layout`, `@section`
+- **Props & Slots** - Pass data and content to components
 - **200K+ Icons** - Built-in Iconify integration
-- **Zero Config** - Works out of the box
+- **Custom Directives** - Extend with your own directives
 
 ## Quick Start
 
@@ -30,58 +32,123 @@ preload = ["bun-plugin-stx"]
 
 ## Single File Components
 
-STX uses a familiar structure with `<script>`, `<style>`, and template:
+STX components use a Vue-like structure:
 
 ```html
-<!-- components/greeting.stx -->
-<script>
-  const name = 'World'
-  const time = new Date().toLocaleTimeString()
+<!-- components/Greeting.stx -->
+<script server>
+// Server-side only - used for SSR, stripped from output
+const name = props.name || 'World'
+const time = new Date().toLocaleTimeString()
 </script>
 
-<div class="greeting">
-  <h1>Hello, {{ name }}!</h1>
-  <p>Current time: {{ time }}</p>
-</div>
+<template>
+  <div class="greeting">
+    <h1>Hello, {{ name }}!</h1>
+    <p>Current time: {{ time }}</p>
+    <slot />
+  </div>
+</template>
 
 <style>
-  .greeting {
-    padding: 2rem;
-    background: #f5f5f5;
-  }
+.greeting {
+  padding: 2rem;
+  background: #f5f5f5;
+}
 </style>
 ```
 
-Variables in `<script>` are automatically available in the template.
+### Script Types
+
+| Type | Behavior |
+|------|----------|
+| `<script server>` | SSR only - extracted for variables, stripped from output |
+| `<script client>` | Client only - preserved for browser, skips server evaluation |
+| `<script>` | Both - runs on server AND preserved for client |
 
 ## Components
 
-Use `@component` to include components:
+Components in `components/` are auto-imported using PascalCase:
 
 ```html
 <!-- pages/home.stx -->
-@component('header')
+<Header />
 
 <main>
-  @component('user-card', { name: 'John', role: 'Admin' })
+  <UserCard name="John" role="Admin" />
+  <Card title="Welcome">
+    <p>This goes into the slot!</p>
+  </Card>
 </main>
 
-@component('footer')
+<Footer />
 ```
 
-Components receive props directly:
+### Props
+
+Pass data to components via attributes:
 
 ```html
-<!-- components/user-card.stx -->
-<div class="card">
-  <h3>{{ name }}</h3>
-  <span>{{ role }}</span>
-</div>
+<!-- String prop -->
+<Card title="Hello" />
+
+<!-- Expression binding with : -->
+<Card :count="items.length" :active="isActive" />
+
+<!-- Mustache interpolation -->
+<Card title="{{ userName }}" />
+```
+
+Access props in components:
+
+```html
+<script server>
+const title = props.title || 'Default'
+const count = props.count || 0
+</script>
+
+<template>
+  <h1>{{ title }}</h1>
+  <p>Count: {{ count }}</p>
+</template>
+```
+
+### Slots
+
+Use `<slot />` to inject content:
+
+```html
+<!-- components/Card.stx -->
+<template>
+  <div class="card">
+    <h2>{{ props.title }}</h2>
+    <slot />
+  </div>
+</template>
+```
+
+```html
+<!-- Usage -->
+<Card title="News">
+  <p>This content appears in the slot!</p>
+</Card>
+```
+
+### Explicit Imports
+
+For components outside `components/`, use `@import`:
+
+```html
+@import('layouts/Sidebar')
+@import('shared/Button', 'shared/Modal')
+
+<Sidebar />
+<Button label="Click me" />
 ```
 
 ## Layouts
 
-Use `@layout` to wrap pages with common structure:
+Wrap pages with common structure using `@layout`:
 
 ```html
 <!-- layouts/default.stx -->
@@ -91,13 +158,11 @@ Use `@layout` to wrap pages with common structure:
   <title>{{ title || 'My App' }}</title>
 </head>
 <body>
-  @component('navbar')
-
+  <Header />
   <main>
-    {{ slot }}
+    @yield('content')
   </main>
-
-  @component('footer')
+  <Footer />
 </body>
 </html>
 ```
@@ -112,119 +177,113 @@ Use `@layout` to wrap pages with common structure:
 @endsection
 ```
 
-`{{ slot }}` is equivalent to `@yield('content')`.
+## Two-Way Binding (x-element)
 
-## Client Scripts
-
-Use `<script client>` for browser-side JavaScript:
+For reactive forms, use x-element directives:
 
 ```html
-<script client>
-  let count = 0
+<div x-data="{ message: '', count: 0 }">
+  <!-- Two-way binding -->
+  <input x-model="message" placeholder="Type here..." />
 
-  document.getElementById('increment').addEventListener('click', () => {
-    count++
-    document.getElementById('count').textContent = count
-  })
-</script>
+  <!-- Reactive display -->
+  <p>You typed: <span x-text="message"></span></p>
 
-<button id="increment">Count: <span id="count">0</span></button>
+  <!-- Event handling -->
+  <button @click="count++">Increment</button>
+  <button @click="count--">Decrement</button>
+  <span x-text="count"></span>
+</div>
 ```
+
+| Directive | Purpose |
+|-----------|---------|
+| `x-data` | Define reactive scope |
+| `x-model` | Two-way binding for inputs |
+| `x-text` | Reactive text content |
+| `@click` | Event handling |
 
 ## Template Directives
 
 ### Conditionals
 
 ```html
-@if(user.isAdmin)
-  <div>Admin Panel</div>
-@elseif(user.isEditor)
-  <div>Editor Tools</div>
+@if (user.isAdmin)
+  <AdminPanel />
+@elseif (user.isEditor)
+  <EditorTools />
 @else
-  <div>User View</div>
+  <UserView />
 @endif
 ```
 
 ### Loops
 
 ```html
-@foreach(items as item)
+@foreach (items as item)
   <li>{{ item.name }}</li>
 @endforeach
 
-@for(let i = 0; i < 5; i++)
+@for (let i = 0; i < 5; i++)
   <li>Item {{ i }}</li>
 @endfor
 ```
 
-### Raw HTML
+### Auth Guards
 
 ```html
-{!! trustedHtmlContent !!}
+@auth
+  <p>Welcome back, {{ user.name }}!</p>
+@endauth
+
+@guest
+  <a href="/login">Please log in</a>
+@endguest
 ```
 
-## Complete Example
+### Output
 
 ```html
-<!-- components/todo-list.stx -->
-<script>
-  const title = 'My Todos'
-</script>
+<!-- Escaped (safe) -->
+{{ userInput }}
 
-<script client>
-  let todos = []
+<!-- Raw HTML (trusted content only) -->
+{!! trustedHtml !!}
+```
 
-  async function init() {
-    todos = await fetch('/api/todos').then(r => r.json())
-    render()
-  }
+## Custom Directives
 
-  function addTodo() {
-    const input = document.getElementById('newTodo')
-    if (input.value.trim()) {
-      todos.push({ id: Date.now(), text: input.value, done: false })
-      input.value = ''
-      render()
-    }
-  }
+Register custom directives in your build:
 
-  function toggleTodo(id) {
-    const todo = todos.find(t => t.id === id)
-    if (todo) todo.done = !todo.done
-    render()
-  }
+```typescript
+import { stxPlugin, type CustomDirective } from 'bun-plugin-stx'
 
-  function render() {
-    document.getElementById('todoList').innerHTML = todos
-      .map(t => `<li class="${t.done ? 'done' : ''}" onclick="toggleTodo(${t.id})">${t.text}</li>`)
-      .join('')
-  }
+const uppercase: CustomDirective = {
+  name: 'uppercase',
+  handler: (content, params) => params[0]?.toUpperCase() || content.toUpperCase()
+}
 
-  init()
-</script>
+const wrap: CustomDirective = {
+  name: 'wrap',
+  hasEndTag: true,
+  handler: (content, params) => `<div class="${params[0] || 'wrapper'}">${content}</div>`
+}
 
-<div class="todo-app">
-  <h1>{{ title }}</h1>
+Bun.build({
+  entrypoints: ['./src/index.stx'],
+  plugins: [stxPlugin({
+    customDirectives: [uppercase, wrap]
+  })]
+})
+```
 
-  <form onsubmit="event.preventDefault(); addTodo()">
-    <input type="text" id="newTodo" placeholder="Add todo..." />
-    <button type="submit">Add</button>
-  </form>
+```html
+<!-- Usage -->
+<p>@uppercase('hello world')</p>
 
-  <ul id="todoList"></ul>
-</div>
-
-<style>
-  .todo-app {
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 2rem;
-  }
-  .done {
-    text-decoration: line-through;
-    opacity: 0.6;
-  }
-</style>
+@wrap('container')
+  <p>Wrapped content</p>
+@endwrap
 ```
 
 ## Icons
@@ -234,20 +293,53 @@ Use `<script client>` for browser-side JavaScript:
 ```html
 <HomeIcon size="24" />
 <SearchIcon size="20" color="#333" />
-<SettingsIcon size="24" className="nav-icon" />
 ```
 
 ```bash
-# Generate icon packages
 bun stx iconify list
 bun stx iconify generate material-symbols
+```
+
+## Complete Example
+
+```html
+<!-- components/TodoApp.stx -->
+<script server>
+const title = props.title || 'My Todos'
+</script>
+
+<template>
+  <div class="todo-app" x-data="{ todos: [], newTodo: '' }">
+    <h1>{{ title }}</h1>
+
+    <form @submit.prevent="todos.push({ text: newTodo, done: false }); newTodo = ''">
+      <input x-model="newTodo" placeholder="Add todo..." />
+      <button type="submit">Add</button>
+    </form>
+
+    @if (initialTodos)
+      <ul>
+        @foreach (initialTodos as todo)
+          <li>{{ todo.text }}</li>
+        @endforeach
+      </ul>
+    @endif
+  </div>
+</template>
+
+<style>
+.todo-app {
+  max-width: 400px;
+  margin: 0 auto;
+}
+</style>
 ```
 
 ## Documentation
 
 - [Full Documentation](https://stx.sh)
-- [API Reference](./docs/api/)
-- [Examples](./docs/examples.md)
+- [Syntax Highlighting Guide](./docs/STX_SYNTAX_HIGHLIGHTING.md)
+- [Examples](./examples/)
 
 ## Testing
 

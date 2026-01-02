@@ -957,6 +957,10 @@ async function processOtherDirectives(
   // These are used for SSR variable extraction and shouldn't appear in client output
   output = output.replace(/<script\s+server\b[^>]*>[\s\S]*?<\/script>\s*/gi, '')
 
+  // Clean up client attribute from script tags (it's not valid HTML)
+  // Transform <script client> to <script>
+  output = output.replace(/<script\s+client\b([^>]*)>/gi, '<script$1>')
+
   return output
 }
 

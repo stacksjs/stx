@@ -420,6 +420,39 @@ export async function resolveTemplatePath(
     }
   }
 
+  // Check options.layoutsDir if specified (for projects like voide that set layoutsDir)
+  if (options.layoutsDir) {
+    // Resolve relative layoutsDir paths relative to cwd or the file's parent directory
+    const resolvedLayoutsDir = path.isAbsolute(options.layoutsDir)
+      ? options.layoutsDir
+      : path.resolve(process.cwd(), options.layoutsDir)
+
+    const fromLayoutsDir = path.join(resolvedLayoutsDir, templatePath)
+    if (await fileExists(fromLayoutsDir)) {
+      if (options.debug) {
+        console.log(`Found in options.layoutsDir: ${fromLayoutsDir}`)
+      }
+      if (dependencies) {
+        dependencies.add(fromLayoutsDir)
+      }
+      return fromLayoutsDir
+    }
+
+    // With extension
+    if (!templatePath.endsWith('.stx')) {
+      const fromLayoutsDirWithExt = `${fromLayoutsDir}.stx`
+      if (await fileExists(fromLayoutsDirWithExt)) {
+        if (options.debug) {
+          console.log(`Found in options.layoutsDir with extension: ${fromLayoutsDirWithExt}`)
+        }
+        if (dependencies) {
+          dependencies.add(fromLayoutsDirWithExt)
+        }
+        return fromLayoutsDirWithExt
+      }
+    }
+  }
+
   // 4. Special case for layouts directory if specified in options or path looks like 'layouts/*'
   if (templatePath.startsWith('layouts/') || templatePath.includes('/layouts/')) {
     const parts = templatePath.split('layouts/')
