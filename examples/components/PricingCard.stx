@@ -1,38 +1,39 @@
-<script>
-  module.exports = {
-    name: 'Open Source',
-    price: 'FREE',
-    period: 'FOREVER',
-    features: [],
-    cta: 'GET STARTED',
-    link: '#',
-    highlight: false
-  };
+<script server>
+const name = props.name || 'Open Source'
+const price = props.price || 'FREE'
+const period = props.period || 'FOREVER'
+const features = props.features || []
+const cta = props.cta || 'GET STARTED'
+const link = props.link || '#'
+const highlight = props.highlight || false
 </script>
 
-<div class="border-2 {{ highlight ? 'border-white bg-white/5 scale-105' : 'border-gray-700' }} p-8 transition-all hover:border-gray-400 hover:-translate-y-1 flex flex-col relative">
-  @if(highlight)
-    <div class="absolute -top-px left-1/2 -translate-x-1/2 bg-black px-4 text-xs tracking-widest">
-      ◆ POPULAR ◆
+<template>
+  <div class="border-2 {{ highlight ? 'border-white bg-white/5 scale-105' : 'border-gray-700' }} p-8 transition-all hover:border-gray-400 hover:-translate-y-1 flex flex-col relative">
+    @if (highlight)
+      <div class="absolute -top-px left-1/2 -translate-x-1/2 bg-black px-4 text-xs tracking-widest">
+        POPULAR
+      </div>
+    @endif
+
+    <div class="font-bold text-xl tracking-widest mb-4 pb-4 border-b border-gray-700">
+      {{ name }}
     </div>
-  @endif
 
-  <div class="font-bold text-xl tracking-widest mb-4 pb-4 border-b border-gray-700">
-    {{ name }}
+    <div class="text-5xl font-bold mb-2 leading-none">{{ price }}</div>
+    <div class="text-sm text-gray-400 mb-8 tracking-wider">{{ period }}</div>
+
+    <ul class="mb-8 flex-grow space-y-3">
+      @foreach (features as feature)
+        <li class="py-3 border-b border-dashed border-gray-800 text-sm">
+          <span class="text-gray-400 mr-2">></span>{{ feature }}
+        </li>
+      @endforeach
+    </ul>
+
+    <a href="{{ link }}" class="block text-center py-4 border-2 border-white font-bold tracking-wider text-sm transition-all {{ highlight ? 'bg-white text-black hover:bg-black hover:text-white' : 'bg-black text-white hover:bg-white hover:text-black' }}">
+      {{ cta }}
+    </a>
+    <slot />
   </div>
-
-  <div class="text-5xl font-bold mb-2 leading-none">{{ price }}</div>
-  <div class="text-sm text-gray-400 mb-8 tracking-wider">{{ period }}</div>
-
-  <ul class="mb-8 flex-grow space-y-3">
-    @foreach(features as feature)
-      <li class="py-3 border-b border-dashed border-gray-800 text-sm">
-        <span class="text-gray-400 mr-2">▸</span>{{ feature }}
-      </li>
-    @endforeach
-  </ul>
-
-  <a href="{{ link }}" class="block text-center py-4 border-2 border-white font-bold tracking-wider text-sm transition-all {{ highlight ? 'bg-white text-black hover:bg-black hover:text-white' : 'bg-black text-white hover:bg-white hover:text-black' }}">
-    {{ cta }}
-  </a>
-</div>
+</template>

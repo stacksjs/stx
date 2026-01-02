@@ -1,16 +1,25 @@
-<div class="card {{ classList }}">
-  <div class="card-header">
-    <h3>{{ title }}</h3>
-    @if(subtitle)
-      <h4>{{ subtitle }}</h4>
+<script server>
+const title = props.title || 'Card Title'
+const subtitle = props.subtitle
+const classList = props.class || ''
+const footer = props.footer
+</script>
+
+<template>
+  <div class="card {{ classList }}">
+    <div class="card-header">
+      <h3>{{ title }}</h3>
+      @if (subtitle)
+        <h4>{{ subtitle }}</h4>
+      @endif
+    </div>
+    <div class="card-body">
+      <slot />
+    </div>
+    @if (footer)
+      <div class="card-footer">
+        {{ footer }}
+      </div>
     @endif
   </div>
-  <div class="card-body">
-    {{ content }}
-  </div>
-  @if(footer)
-    <div class="card-footer">
-      {{ footer }}
-    </div>
-  @endif
-</div>
+</template>

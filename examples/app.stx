@@ -1,14 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>stx Component Demo</title>
-  <link rel="stylesheet" href="/dist/voide.css">
-</head>
-<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
-
-<script>
+<script server>
 const title = "stx Component Demo"
 const card1 = {
   title: "Getting Started",
@@ -25,6 +15,15 @@ const card2 = {
   gradient: "from-emerald-500 to-teal-500"
 }
 </script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>stx Component Demo</title>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
 
 <!-- Background Effects -->
 <div class="fixed inset-0 overflow-hidden pointer-events-none">
@@ -65,7 +64,7 @@ const card2 = {
             </div>
             <div>
               <h3 class="text-xl font-semibold text-white">{{ card1.title }}</h3>
-              @if(card1.subtitle)
+              @if (card1.subtitle)
                 <p class="text-sm text-slate-400">{{ card1.subtitle }}</p>
               @endif
             </div>
@@ -87,7 +86,7 @@ const card2 = {
             </div>
             <div>
               <h3 class="text-xl font-semibold text-white">{{ card2.title }}</h3>
-              @if(card2.subtitle)
+              @if (card2.subtitle)
                 <p class="text-sm text-slate-400">{{ card2.subtitle }}</p>
               @endif
             </div>

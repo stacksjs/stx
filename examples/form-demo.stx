@@ -1,24 +1,23 @@
+<script server>
+const title = "stx Form Handling Demo"
+const formData = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  agreeTerms: false
+}
+const errors = {}
+const submitted = false
+</script>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>stx Form Demo</title>
-  <script>
-    module.exports = {
-      title: "stx Form Handling Demo",
-      formData: {
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        agreeTerms: false
-      },
-      errors: {},
-      submitted: false
-    };
-  </script>
   <style>
     body {
       font-family: system-ui, -apple-system, sans-serif;
@@ -128,7 +127,7 @@
   <h1>{{ title }}</h1>
 
   <div class="form-container">
-    @if(submitted)
+    @if (submitted)
       <div class="success-message">
         <p>Form submitted successfully!</p>
         <p>Thank you, {{ formData.firstName }} {{ formData.lastName }}.</p>
@@ -151,7 +150,7 @@
           required
           class="{{ errors.firstName ? 'error-field' : '' }}"
         >
-        @if(errors.firstName)
+        @if (errors.firstName)
           <div class="error">{{ errors.firstName }}</div>
         @endif
       </div>
@@ -171,7 +170,7 @@
           required
           class="{{ errors.lastName ? 'error-field' : '' }}"
         >
-        @if(errors.lastName)
+        @if (errors.lastName)
           <div class="error">{{ errors.lastName }}</div>
         @endif
       </div>
@@ -191,7 +190,7 @@
           required
           class="{{ errors.email ? 'error-field' : '' }}"
         >
-        @if(errors.email)
+        @if (errors.email)
           <div class="error">{{ errors.email }}</div>
         @endif
       </div>
@@ -212,7 +211,7 @@
           minlength="8"
           class="{{ errors.password ? 'error-field' : '' }}"
         >
-        @if(errors.password)
+        @if (errors.password)
           <div class="error">{{ errors.password }}</div>
         @endif
       </div>
@@ -232,7 +231,7 @@
           required
           class="{{ errors.confirmPassword ? 'error-field' : '' }}"
         >
-        @if(errors.confirmPassword)
+        @if (errors.confirmPassword)
           <div class="error">{{ errors.confirmPassword }}</div>
         @endif
       </div>
@@ -246,7 +245,7 @@
           {{ formData.agreeTerms ? 'checked' : '' }}
         >
         <label for="agreeTerms">I agree to the Terms and Conditions</label>
-        @if(errors.agreeTerms)
+        @if (errors.agreeTerms)
           <div class="error">{{ errors.agreeTerms }}</div>
         @endif
       </div>
@@ -255,7 +254,7 @@
     </form>
   </div>
 
-  <script>
+  <script client>
     document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('registration-form');
       const formFields = {

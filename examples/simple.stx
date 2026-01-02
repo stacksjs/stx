@@ -1,3 +1,7 @@
+<script server>
+const message = "Hello from stx"
+</script>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,10 +10,6 @@
   <title>Simple stx Component Test</title>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8">
-
-<script>
-const message = "Hello from stx"
-</script>
 
 <!-- Background Effects -->
 <div class="fixed inset-0 overflow-hidden pointer-events-none">
@@ -36,10 +36,7 @@ const message = "Hello from stx"
   </div>
 
   <!-- Component Card -->
-  @include('SimpleCard', {
-    title: "Fixed Component Title",
-    content: "This is fixed component content."
-  })
+  <SimpleCard title="Component Card" content="This is component content using auto-import." />
 </div>
 
 </body>

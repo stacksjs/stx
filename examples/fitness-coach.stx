@@ -1,3 +1,83 @@
+<script server>
+// Trainer Profile
+const trainerName = "Alex Rivera"
+const trainerTitle = "Certified Personal Trainer"
+const trainerAvatar = "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=150&h=150&fit=crop&crop=face"
+const trainerRating = 4.9
+
+// Dashboard Stats
+const activeClients = 24
+const sessionsThisWeek = 18
+const upcomingToday = 5
+const completionRate = 94
+const revenue = 4250
+const newClientsThisMonth = 6
+
+// Client List
+const clients = [
+  { id: 1, name: "Sarah Johnson", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face", goal: "Weight Loss", progress: 72, nextSession: "Today, 10:00 AM", streak: 12, status: "active", plan: "12-Week Transformation" },
+  { id: 2, name: "Mike Chen", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face", goal: "Muscle Gain", progress: 58, nextSession: "Today, 2:00 PM", streak: 8, status: "active", plan: "Hypertrophy Program" },
+  { id: 3, name: "Emma Wilson", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face", goal: "Marathon Prep", progress: 85, nextSession: "Tomorrow, 7:00 AM", streak: 21, status: "active", plan: "Endurance Builder" },
+  { id: 4, name: "James Rodriguez", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face", goal: "Flexibility", progress: 45, nextSession: "Wed, 5:00 PM", streak: 5, status: "active", plan: "Mobility Mastery" },
+  { id: 5, name: "Lisa Park", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face", goal: "Strength", progress: 91, nextSession: "Thu, 11:00 AM", streak: 34, status: "active", plan: "Powerlifting Basics" }
+]
+
+// Today's Schedule
+const todaySchedule = [
+  { time: "7:00 AM", client: "Group HIIT", type: "group", duration: 45, participants: 8, focus: "Full Body", status: "completed" },
+  { time: "10:00 AM", client: "Sarah Johnson", type: "personal", duration: 60, participants: 1, focus: "Lower Body", status: "upcoming" },
+  { time: "2:00 PM", client: "Mike Chen", type: "personal", duration: 60, participants: 1, focus: "Push Day", status: "upcoming" },
+  { time: "4:00 PM", client: "New Client Consultation", type: "consultation", duration: 30, participants: 1, focus: "Assessment", status: "upcoming" },
+  { time: "5:30 PM", client: "Evening Bootcamp", type: "group", duration: 60, participants: 12, focus: "HIIT Circuit", status: "upcoming" }
+]
+
+// Workout Templates
+const workoutTemplates = [
+  { id: 1, name: "Full Body Blast", exercises: 8, duration: 45, difficulty: "Intermediate", category: "Strength", usageCount: 24 },
+  { id: 2, name: "HIIT Inferno", exercises: 12, duration: 30, difficulty: "Advanced", category: "Cardio", usageCount: 18 },
+  { id: 3, name: "Core Crusher", exercises: 10, duration: 20, difficulty: "Beginner", category: "Core", usageCount: 32 },
+  { id: 4, name: "Upper Body Power", exercises: 9, duration: 50, difficulty: "Intermediate", category: "Strength", usageCount: 15 },
+  { id: 5, name: "Leg Day Supreme", exercises: 10, duration: 55, difficulty: "Advanced", category: "Strength", usageCount: 21 },
+  { id: 6, name: "Flexibility Flow", exercises: 15, duration: 40, difficulty: "Beginner", category: "Mobility", usageCount: 12 }
+]
+
+// Exercise Library
+const exercises = [
+  { name: "Barbell Squat", muscle: "Quadriceps", equipment: "Barbell", difficulty: "Intermediate" },
+  { name: "Deadlift", muscle: "Back", equipment: "Barbell", difficulty: "Advanced" },
+  { name: "Bench Press", muscle: "Chest", equipment: "Barbell", difficulty: "Intermediate" },
+  { name: "Pull-ups", muscle: "Back", equipment: "Pull-up Bar", difficulty: "Intermediate" },
+  { name: "Plank", muscle: "Core", equipment: "None", difficulty: "Beginner" },
+  { name: "Dumbbell Lunges", muscle: "Legs", equipment: "Dumbbells", difficulty: "Beginner" },
+  { name: "Overhead Press", muscle: "Shoulders", equipment: "Barbell", difficulty: "Intermediate" },
+  { name: "Lat Pulldown", muscle: "Back", equipment: "Cable Machine", difficulty: "Beginner" }
+]
+
+// Recent Activity
+const recentActivity = [
+  { type: "workout", message: "Sarah completed Full Body Blast", time: "2 hours ago" },
+  { type: "milestone", message: "Mike reached 10-session milestone", time: "3 hours ago" },
+  { type: "message", message: "New message from Emma Wilson", time: "4 hours ago" },
+  { type: "payment", message: "Payment received from James R.", time: "Yesterday" },
+  { type: "signup", message: "New client registration: David L.", time: "Yesterday" }
+]
+
+// Nutrition Plans
+const nutritionPlans = [
+  { name: "Muscle Building", calories: 2800, protein: 180, carbs: 300, fat: 90, clientCount: 12 },
+  { name: "Fat Loss", calories: 1800, protein: 150, carbs: 150, fat: 60, clientCount: 8 },
+  { name: "Maintenance", calories: 2200, protein: 140, carbs: 220, fat: 75, clientCount: 4 }
+]
+
+// Weekly Progress Data
+const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+const weekSessions = [4, 5, 3, 6, 4, 2, 0]
+const weekHours = [4.5, 5.0, 3.5, 6.5, 4.0, 2.5, 0]
+
+// Upcoming Week Dates
+const weekDates = [9, 10, 11, 12, 13, 14, 15]
+</script>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -44,137 +124,6 @@
       transition: height 0.3s ease;
     }
   </style>
-  <script>
-    module.exports = {
-      // Trainer Profile
-      trainerName: "Alex Rivera",
-      trainerTitle: "Certified Personal Trainer",
-      trainerAvatar: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=150&h=150&fit=crop&crop=face",
-      trainerRating: 4.9,
-
-      // Dashboard Stats
-      activeClients: 24,
-      sessionsThisWeek: 18,
-      upcomingToday: 5,
-      completionRate: 94,
-      revenue: 4250,
-      newClientsThisMonth: 6,
-
-      // Client List
-      clients: [
-        {
-          id: 1,
-          name: "Sarah Johnson",
-          avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
-          goal: "Weight Loss",
-          progress: 72,
-          nextSession: "Today, 10:00 AM",
-          streak: 12,
-          status: "active",
-          plan: "12-Week Transformation"
-        },
-        {
-          id: 2,
-          name: "Mike Chen",
-          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-          goal: "Muscle Gain",
-          progress: 58,
-          nextSession: "Today, 2:00 PM",
-          streak: 8,
-          status: "active",
-          plan: "Hypertrophy Program"
-        },
-        {
-          id: 3,
-          name: "Emma Wilson",
-          avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-          goal: "Marathon Prep",
-          progress: 85,
-          nextSession: "Tomorrow, 7:00 AM",
-          streak: 21,
-          status: "active",
-          plan: "Endurance Builder"
-        },
-        {
-          id: 4,
-          name: "James Rodriguez",
-          avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
-          goal: "Flexibility",
-          progress: 45,
-          nextSession: "Wed, 5:00 PM",
-          streak: 5,
-          status: "active",
-          plan: "Mobility Mastery"
-        },
-        {
-          id: 5,
-          name: "Lisa Park",
-          avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
-          goal: "Strength",
-          progress: 91,
-          nextSession: "Thu, 11:00 AM",
-          streak: 34,
-          status: "active",
-          plan: "Powerlifting Basics"
-        }
-      ],
-
-      // Today's Schedule
-      todaySchedule: [
-        { time: "7:00 AM", client: "Group HIIT", type: "group", duration: 45, participants: 8, focus: "Full Body", status: "completed" },
-        { time: "10:00 AM", client: "Sarah Johnson", type: "personal", duration: 60, participants: 1, focus: "Lower Body", status: "upcoming" },
-        { time: "2:00 PM", client: "Mike Chen", type: "personal", duration: 60, participants: 1, focus: "Push Day", status: "upcoming" },
-        { time: "4:00 PM", client: "New Client Consultation", type: "consultation", duration: 30, participants: 1, focus: "Assessment", status: "upcoming" },
-        { time: "5:30 PM", client: "Evening Bootcamp", type: "group", duration: 60, participants: 12, focus: "HIIT Circuit", status: "upcoming" }
-      ],
-
-      // Workout Templates
-      workoutTemplates: [
-        { id: 1, name: "Full Body Blast", exercises: 8, duration: 45, difficulty: "Intermediate", category: "Strength", usageCount: 24 },
-        { id: 2, name: "HIIT Inferno", exercises: 12, duration: 30, difficulty: "Advanced", category: "Cardio", usageCount: 18 },
-        { id: 3, name: "Core Crusher", exercises: 10, duration: 20, difficulty: "Beginner", category: "Core", usageCount: 32 },
-        { id: 4, name: "Upper Body Power", exercises: 9, duration: 50, difficulty: "Intermediate", category: "Strength", usageCount: 15 },
-        { id: 5, name: "Leg Day Supreme", exercises: 10, duration: 55, difficulty: "Advanced", category: "Strength", usageCount: 21 },
-        { id: 6, name: "Flexibility Flow", exercises: 15, duration: 40, difficulty: "Beginner", category: "Mobility", usageCount: 12 }
-      ],
-
-      // Exercise Library
-      exercises: [
-        { name: "Barbell Squat", muscle: "Quadriceps", equipment: "Barbell", difficulty: "Intermediate" },
-        { name: "Deadlift", muscle: "Back", equipment: "Barbell", difficulty: "Advanced" },
-        { name: "Bench Press", muscle: "Chest", equipment: "Barbell", difficulty: "Intermediate" },
-        { name: "Pull-ups", muscle: "Back", equipment: "Pull-up Bar", difficulty: "Intermediate" },
-        { name: "Plank", muscle: "Core", equipment: "None", difficulty: "Beginner" },
-        { name: "Dumbbell Lunges", muscle: "Legs", equipment: "Dumbbells", difficulty: "Beginner" },
-        { name: "Overhead Press", muscle: "Shoulders", equipment: "Barbell", difficulty: "Intermediate" },
-        { name: "Lat Pulldown", muscle: "Back", equipment: "Cable Machine", difficulty: "Beginner" }
-      ],
-
-      // Recent Activity
-      recentActivity: [
-        { type: "workout", message: "Sarah completed Full Body Blast", time: "2 hours ago" },
-        { type: "milestone", message: "Mike reached 10-session milestone", time: "3 hours ago" },
-        { type: "message", message: "New message from Emma Wilson", time: "4 hours ago" },
-        { type: "payment", message: "Payment received from James R.", time: "Yesterday" },
-        { type: "signup", message: "New client registration: David L.", time: "Yesterday" }
-      ],
-
-      // Nutrition Plans
-      nutritionPlans: [
-        { name: "Muscle Building", calories: 2800, protein: 180, carbs: 300, fat: 90, clientCount: 12 },
-        { name: "Fat Loss", calories: 1800, protein: 150, carbs: 150, fat: 60, clientCount: 8 },
-        { name: "Maintenance", calories: 2200, protein: 140, carbs: 220, fat: 75, clientCount: 4 }
-      ],
-
-      // Weekly Progress Data
-      weekDays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-      weekSessions: [4, 5, 3, 6, 4, 2, 0],
-      weekHours: [4.5, 5.0, 3.5, 6.5, 4.0, 2.5, 0],
-
-      // Upcoming Week Dates
-      weekDates: [9, 10, 11, 12, 13, 14, 15]
-    };
-  </script>
 </head>
 
 <body class="bg-slate-900 text-slate-100 min-h-screen antialiased">
@@ -349,7 +298,7 @@
               <button onclick="showTab('schedule')" class="text-sm text-emerald-400 hover:text-emerald-300 font-medium">View All</button>
             </div>
             <div class="divide-y divide-slate-700/50">
-              @foreach(todaySchedule as session)
+              @foreach (todaySchedule as session)
                 <div class="p-4 hover:bg-slate-700/30 transition-colors">
                   <div class="flex items-center gap-4">
                     <div class="text-center min-w-[60px]">
@@ -359,7 +308,7 @@
                     <div class="flex-1">
                       <div class="flex items-center gap-2">
                         <span class="font-medium">{{ session.client }}</span>
-                        @if(session.type === 'group')
+                        @if (session.type === 'group')
                           <span class="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full">{{ session.participants }} people</span>
                         @elseif(session.type === 'consultation')
                           <span class="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">New</span>
@@ -367,7 +316,7 @@
                       </div>
                       <div class="text-sm text-slate-400">{{ session.focus }}</div>
                     </div>
-                    @if(session.status === 'completed')
+                    @if (session.status === 'completed')
                       <div class="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
                         <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -388,17 +337,17 @@
               <h2 class="font-semibold text-lg">Recent Activity</h2>
             </div>
             <div class="divide-y divide-slate-700/50">
-              @foreach(recentActivity as activity)
+              @foreach (recentActivity as activity)
                 <div class="p-4 flex items-start gap-3">
                   <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0
-                    @if(activity.type === 'workout') bg-emerald-500/20
+                    @if (activity.type === 'workout') bg-emerald-500/20
                     @elseif(activity.type === 'milestone') bg-amber-500/20
                     @elseif(activity.type === 'message') bg-blue-500/20
                     @elseif(activity.type === 'payment') bg-green-500/20
                     @else bg-purple-500/20
                     @endif
                   ">
-                    @if(activity.type === 'workout')
+                    @if (activity.type === 'workout')
                       <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                     @elseif(activity.type === 'milestone')
                       <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
@@ -427,7 +376,7 @@
             <button onclick="showTab('clients')" class="text-sm text-emerald-400 hover:text-emerald-300 font-medium">View All Clients</button>
           </div>
           <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-5">
-            @foreach(clients as client)
+            @foreach (clients as client)
               <div class="bg-slate-700/30 rounded-xl p-4 card-hover cursor-pointer">
                 <div class="flex items-center gap-3 mb-3">
                   <img src="{{ client.avatar }}" alt="{{ client.name }}" class="w-10 h-10 rounded-full object-cover" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'">
@@ -447,7 +396,7 @@
                 </div>
                 <div class="flex items-center justify-between text-xs">
                   <span class="text-slate-500">{{ client.streak }} day streak</span>
-                  @if(client.streak > 7)
+                  @if (client.streak > 7)
                     <span class="text-amber-400">🔥</span>
                   @endif
                 </div>
@@ -482,7 +431,7 @@
 
         <!-- Client Cards -->
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          @foreach(clients as client)
+          @foreach (clients as client)
             <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden card-hover">
               <div class="p-5">
                 <div class="flex items-start gap-4 mb-4">
@@ -572,10 +521,10 @@
 
           <!-- Week Days -->
           <div class="grid grid-cols-7 border-b border-slate-700/50">
-            @foreach(weekDays as index => day)
-              <div class="p-4 text-center border-r border-slate-700/50 last:border-r-0 @if(index === 0) bg-emerald-500/10 @endif">
+            @foreach (weekDays as index => day)
+              <div class="p-4 text-center border-r border-slate-700/50 last:border-r-0 @if (index === 0) bg-emerald-500/10 @endif">
                 <div class="text-xs text-slate-400 uppercase">{{ day }}</div>
-                <div class="text-lg font-semibold mt-1 @if(index === 0) text-emerald-400 @endif">{{ weekDates[index] }}</div>
+                <div class="text-lg font-semibold mt-1 @if (index === 0) text-emerald-400 @endif">{{ weekDates[index] }}</div>
               </div>
             @endforeach
           </div>
@@ -583,10 +532,10 @@
           <!-- Schedule Grid -->
           <div class="p-5">
             <div class="space-y-3">
-              @foreach(todaySchedule as session)
+              @foreach (todaySchedule as session)
                 <div class="flex items-center gap-4 p-4 bg-slate-700/30 rounded-xl hover:bg-slate-700/50 transition-colors cursor-pointer">
                   <div class="w-1 h-12 rounded-full
-                    @if(session.type === 'personal') bg-emerald-500
+                    @if (session.type === 'personal') bg-emerald-500
                     @elseif(session.type === 'group') bg-purple-500
                     @else bg-amber-500
                     @endif
@@ -596,7 +545,7 @@
                     <div class="text-sm text-slate-400">{{ session.time }} - {{ session.duration }} min - {{ session.focus }}</div>
                   </div>
                   <span class="text-xs px-2 py-1 rounded-full capitalize
-                    @if(session.type === 'personal') bg-emerald-500/20 text-emerald-400
+                    @if (session.type === 'personal') bg-emerald-500/20 text-emerald-400
                     @elseif(session.type === 'group') bg-purple-500/20 text-purple-400
                     @else bg-amber-500/20 text-amber-400
                     @endif
@@ -634,18 +583,18 @@
 
         <!-- Workout Templates Grid -->
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          @foreach(workoutTemplates as workout)
+          @foreach (workoutTemplates as workout)
             <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden card-hover cursor-pointer">
               <div class="p-5">
                 <div class="flex items-start justify-between mb-3">
                   <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl
-                    @if(workout.category === 'Strength') bg-red-500/20
+                    @if (workout.category === 'Strength') bg-red-500/20
                     @elseif(workout.category === 'Cardio') bg-orange-500/20
                     @elseif(workout.category === 'Core') bg-blue-500/20
                     @else bg-green-500/20
                     @endif
                   ">
-                    @if(workout.category === 'Strength')
+                    @if (workout.category === 'Strength')
                       <svg class="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                     @elseif(workout.category === 'Cardio')
                       <svg class="w-6 h-6 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
@@ -656,7 +605,7 @@
                     @endif
                   </div>
                   <span class="text-xs px-2 py-1 rounded-full
-                    @if(workout.difficulty === 'Beginner') bg-green-500/20 text-green-400
+                    @if (workout.difficulty === 'Beginner') bg-green-500/20 text-green-400
                     @elseif(workout.difficulty === 'Intermediate') bg-yellow-500/20 text-yellow-400
                     @else bg-red-500/20 text-red-400
                     @endif
@@ -681,7 +630,7 @@
           <h2 class="text-xl font-bold mb-4">Exercise Library</h2>
           <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
             <div class="divide-y divide-slate-700/50">
-              @foreach(exercises as exercise)
+              @foreach (exercises as exercise)
                 <div class="p-4 flex items-center justify-between hover:bg-slate-700/30 transition-colors">
                   <div class="flex items-center gap-4">
                     <div class="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center">
@@ -718,7 +667,7 @@
         </div>
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          @foreach(nutritionPlans as plan)
+          @foreach (nutritionPlans as plan)
             <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden card-hover">
               <div class="p-5">
                 <h3 class="font-semibold text-lg mb-4">{{ plan.name }}</h3>
@@ -822,7 +771,7 @@
           <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-5">
             <h2 class="font-semibold text-lg mb-4">Weekly Sessions</h2>
             <div class="flex items-end justify-between gap-2 h-32">
-              @foreach(weekSessions as index => sessions)
+              @foreach (weekSessions as index => sessions)
                 <div class="flex-1 flex flex-col items-center gap-2">
                   <div class="w-full rounded-t-lg transition-all" style="height: {{ (sessions / 6) * 100 }}%; background: linear-gradient(to top, #10b981, #06b6d4);"></div>
                   <span class="text-xs text-slate-400">{{ weekDays[index] }}</span>
@@ -880,11 +829,11 @@
             <h2 class="font-semibold text-lg">Top Performing Clients</h2>
           </div>
           <div class="divide-y divide-slate-700/50">
-            @foreach(clients as index => client)
-              @if(index < 3)
+            @foreach (clients as index => client)
+              @if (index < 3)
                 <div class="p-4 flex items-center gap-4 hover:bg-slate-700/30 transition-colors">
                   <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm
-                    @if(index === 0) bg-amber-500/20 text-amber-400
+                    @if (index === 0) bg-amber-500/20 text-amber-400
                     @elseif(index === 1) bg-slate-400/20 text-slate-300
                     @else bg-orange-500/20 text-orange-400
                     @endif

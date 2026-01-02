@@ -1,18 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>stx Demo - Hello World</title>
-  <link rel="stylesheet" href="/dist/voide.css">
-</head>
-<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
-
-<script>
+<script server>
 const currentTime = new Date().toLocaleTimeString()
 const name = 'World'
 const count = 0
-const themeColor = '#8b5cf6'
 
 const colors = [
   { name: 'Violet', value: '#8b5cf6' },
@@ -22,6 +11,15 @@ const colors = [
   { name: 'Amber', value: '#f59e0b' }
 ]
 </script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>stx Demo - Hello World</title>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
 
 <!-- Background Effects -->
 <div class="fixed inset-0 overflow-hidden pointer-events-none">
@@ -61,8 +59,8 @@ const colors = [
     </div>
   </div>
 
-  <!-- Counter Card -->
-  <div class="relative group mb-6">
+  <!-- Counter Card with x-element -->
+  <div class="relative group mb-6" x-data="{ count: 0 }">
     <div class="absolute -inset-1 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 rounded-2xl blur-xl opacity-50"></div>
     <div class="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
       <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -71,17 +69,15 @@ const colors = [
       </h3>
       <div class="flex items-center justify-center gap-4">
         <button
-          id="decrementBtn"
           class="w-12 h-12 rounded-xl bg-slate-700/50 border border-white/10 text-xl font-bold text-white hover:bg-slate-600/50 hover:border-violet-500/50 transition-all"
-          @click="updateCount(-1)"
+          @click="count--"
         >-</button>
-        <div id="countDisplay" class="w-20 h-16 rounded-xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 border border-white/10 flex items-center justify-center text-3xl font-bold text-white">
-          {{ count }}
+        <div class="w-20 h-16 rounded-xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 border border-white/10 flex items-center justify-center text-3xl font-bold text-white">
+          <span x-text="count"></span>
         </div>
         <button
-          id="incrementBtn"
           class="w-12 h-12 rounded-xl bg-slate-700/50 border border-white/10 text-xl font-bold text-white hover:bg-slate-600/50 hover:border-violet-500/50 transition-all"
-          @click="updateCount(1)"
+          @click="count++"
         >+</button>
       </div>
     </div>
@@ -97,7 +93,7 @@ const colors = [
       </h3>
       <p class="text-slate-400 text-sm mb-4">Click a color to change the theme:</p>
       <div class="flex items-center gap-3">
-        @for(color of colors)
+        @foreach (colors as color)
           <button
             class="color-option w-10 h-10 rounded-full border-2 border-transparent hover:scale-110 transition-all shadow-lg"
             style="background-color: {{ color.value }}; box-shadow: 0 4px 20px {{ color.value }}40"
@@ -105,7 +101,7 @@ const colors = [
             data-color="{{ color.value }}"
             @click="changeThemeColor('{{ color.value }}')"
           ></button>
-        @endfor
+        @endforeach
       </div>
     </div>
   </div>
@@ -116,16 +112,8 @@ const colors = [
   </div>
 </div>
 
-<script>
+<script client>
 document.addEventListener('DOMContentLoaded', () => {
-  let count = 0
-  const countDisplay = document.getElementById('countDisplay')
-
-  window.updateCount = (delta) => {
-    count += delta
-    if (countDisplay) countDisplay.textContent = count
-  }
-
   window.changeThemeColor = (color) => {
     const title = document.getElementById('mainTitle')
     if (title) {

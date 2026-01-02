@@ -1,10 +1,23 @@
-<button
-  class="btn {{ variant ? 'btn-' + variant : 'btn-primary' }} {{ size ? 'btn-' + size : '' }} {{ classList }}"
-  type="{{ type || 'button' }}"
-  @if(disabled)disabled="disabled"@endif
->
-  @if(icon)
-    <span class="btn-icon">{{ icon }}</span>
-  @endif
-  {{ text }}
-</button>
+<script server>
+const text = props.text || ''
+const variant = props.variant || 'primary'
+const size = props.size || ''
+const type = props.type || 'button'
+const icon = props.icon
+const disabled = props.disabled
+const classList = props.class || ''
+</script>
+
+<template>
+  <button
+    class="btn btn-{{ variant }} {{ size ? 'btn-' + size : '' }} {{ classList }}"
+    type="{{ type }}"
+    @if (disabled)disabled@endif
+  >
+    @if (icon)
+      <span class="btn-icon">{{ icon }}</span>
+    @endif
+    {{ text }}
+    <slot />
+  </button>
+</template>

@@ -1,14 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>stx Demo</title>
-  <link rel="stylesheet" href="/dist/voide.css">
-</head>
-<body class="min-h-screen bg-slate-900 text-white transition-colors duration-300" id="app-body">
-
-<script>
+<script server>
 const title = "stx Interactive Demo"
 const description = "A powerful templating engine for Bun"
 const features = [
@@ -22,9 +12,16 @@ const user = {
   isLoggedIn: true,
   role: "Developer"
 }
-const theme = "dark"
-const count = 0
 </script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>stx Demo</title>
+</head>
+<body class="min-h-screen bg-slate-900 text-white transition-colors duration-300" id="app-body">
 
 <!-- Background Effects -->
 <div class="fixed inset-0 overflow-hidden pointer-events-none">
@@ -51,7 +48,7 @@ const count = 0
     <div class="absolute -inset-1 bg-gradient-to-r from-violet-600/20 to-cyan-600/20 rounded-2xl blur-xl opacity-50"></div>
     <div class="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        @if(user.isLoggedIn)
+        @if (user.isLoggedIn)
           <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
             <span class="text-lg">👋</span>
           </div>
@@ -85,7 +82,7 @@ const count = 0
   </h2>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-    @foreach(features as feature)
+    @foreach (features as feature)
       <div class="relative group cursor-pointer" @click="pulseCard(this)">
         <div class="absolute -inset-1 bg-gradient-to-r from-{{ feature.color }}-600/20 to-{{ feature.color }}-400/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-75 transition-opacity"></div>
         <div class="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-5 hover:border-{{ feature.color }}-500/50 transition-all">
@@ -101,28 +98,26 @@ const count = 0
     @endforeach
   </div>
 
-  <!-- Counter Section -->
+  <!-- Counter Section with x-element reactivity -->
   <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
     <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-sm">🔢</span>
     Interactive Counter
   </h2>
 
-  <div class="relative group mb-10">
+  <div class="relative group mb-10" x-data="{ count: 0 }">
     <div class="absolute -inset-1 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 rounded-2xl blur-xl opacity-50"></div>
     <div class="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
       <div class="flex items-center justify-center gap-6">
         <button
-          id="decrementBtn"
           class="w-14 h-14 rounded-xl bg-slate-700/50 border border-white/10 text-2xl font-bold text-white hover:bg-rose-500/20 hover:border-rose-500/50 hover:text-rose-400 transition-all"
-          @click="updateCount(-1)"
-        >−</button>
-        <div id="countDisplay" class="w-24 h-20 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center text-4xl font-bold text-white">
-          {{ count }}
+          @click="count--"
+        >-</button>
+        <div class="w-24 h-20 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center text-4xl font-bold text-white">
+          <span x-text="count"></span>
         </div>
         <button
-          id="incrementBtn"
           class="w-14 h-14 rounded-xl bg-slate-700/50 border border-white/10 text-2xl font-bold text-white hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:text-emerald-400 transition-all"
-          @click="updateCount(1)"
+          @click="count++"
         >+</button>
       </div>
     </div>
@@ -134,19 +129,12 @@ const count = 0
   </div>
 </div>
 
-<script>
+<script client>
 document.addEventListener('DOMContentLoaded', () => {
-  let count = 0
   let isDark = true
-  const countDisplay = document.getElementById('countDisplay')
   const body = document.getElementById('app-body')
   const themeIcon = document.getElementById('themeIcon')
   const themeText = document.getElementById('themeText')
-
-  window.updateCount = (delta) => {
-    count += delta
-    if (countDisplay) countDisplay.textContent = count
-  }
 
   window.toggleTheme = () => {
     isDark = !isDark
