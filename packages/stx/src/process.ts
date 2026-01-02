@@ -626,8 +626,8 @@ async function processDirectivesInternal(
   // Add sections to context
   context.__sections = sections
 
-  // Replace yield with section content
-  output = output.replace(/@yield\(\s*['"]([^'"]+)['"](?:,\s*['"]([^'"]+)['"])?\)/g, (_, name, defaultContent) => {
+  // Replace yield/slot with section content (@slot is preferred, @yield is legacy)
+  output = output.replace(/@(?:yield|slot)\(\s*['"]([^'"]+)['"](?:,\s*['"]([^'"]+)['"])?\)/g, (_, name, defaultContent) => {
     return sections[name] || defaultContent || ''
   })
 
@@ -729,11 +729,11 @@ async function processDirectivesInternal(
       const layoutSections: Record<string, string> = {}
       processedLayout = processedLayout.replace(/@section\(\s*['"]([^'"]+)['"]\s*\)([\s\S]*?)(?:@show|@endsection)/g, (_, name, content) => {
         layoutSections[name] = content.trim()
-        return `@yield('${name}')`
+        return `@slot('${name}')`
       })
 
-      // Apply sections to yields in the layout, handling parent content
-      processedLayout = processedLayout.replace(/@yield\(\s*['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"]\s*)?\)/g, (_, sectionName, defaultContent) => {
+      // Apply sections to slots in the layout, handling parent content
+      processedLayout = processedLayout.replace(/@(?:yield|slot)\(\s*['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"]\s*)?\)/g, (_, sectionName, defaultContent) => {
         if (sections[sectionName]) {
           // If the section has a parent placeholder, replace it with the parent content
           let sectionContent = sections[sectionName]

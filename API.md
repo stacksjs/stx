@@ -208,7 +208,7 @@ const { name, email } = props
 <body>
   <Header />
   <main>
-    @yield('content')
+    @slot('content')
   </main>
   <Footer />
 </body>
@@ -226,15 +226,15 @@ const { name, email } = props
 @endsection
 ```
 
-### Multiple Yields
+### Multiple Slots
 ```html
 <!-- Layout -->
 <head>
-  @yield('head')
+  @slot('head')
 </head>
 <body>
-  @yield('content')
-  @yield('scripts')
+  @slot('content')
+  @slot('scripts')
 </body>
 
 <!-- Page -->
