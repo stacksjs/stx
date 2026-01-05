@@ -24,6 +24,9 @@ A comprehensive reference for all STX templating syntax, directives, and APIs.
 - [Icons](#icons)
 - [Custom Directives](#custom-directives)
 - [Configuration](#configuration)
+- [State Management](#state-management)
+- [Deferred Loading (@defer)](#deferred-loading-defer)
+- [Teleport (@teleport)](#teleport-teleport)
 - [Suggested Future Syntax](#suggested-future-syntax)
 
 ---
@@ -656,6 +659,385 @@ const config: StxConfig = {
 }
 
 export default config
+```
+
+---
+
+## State Management
+
+STX provides a clean, Pinia-inspired state management system with reactive stores.
+
+### Defining Stores
+
+Create stores in a dedicated file (e.g., `stores/index.ts`):
+
+```typescript
+// stores/index.ts
+import { defineStore, registerStoresClient } from 'stx'
+
+// Define a store with state, getters, and actions
+export const counterStore = defineStore('counter', {
+  state: {
+    count: 0,
+    name: 'My Counter'
+  },
+
+  getters: {
+    doubleCount: (state) => state.count * 2,
+    displayName: (state) => `${state.name}: ${state.count}`
+  },
+
+  actions: {
+    increment() {
+      this.count++
+    },
+    decrement() {
+      this.count--
+    },
+    incrementBy(amount: number) {
+      this.count += amount
+    },
+    async fetchCount() {
+      const response = await fetch('/api/count')
+      this.count = await response.json()
+    }
+  },
+
+  // Optional: persist to localStorage
+  persist: true
+})
+
+export const appStore = defineStore('app', {
+  state: {
+    isLoading: false,
+    user: null as { name: string; email: string } | null,
+    theme: 'dark'
+  },
+
+  getters: {
+    isAuthenticated: (state) => state.user !== null
+  },
+
+  actions: {
+    setUser(user: { name: string; email: string } | null) {
+      this.user = user
+    },
+    toggleTheme() {
+      this.theme = this.theme === 'dark' ? 'light' : 'dark'
+    }
+  },
+
+  persist: {
+    storage: 'local',
+    key: 'my-app-state'
+  }
+})
+
+// Register stores for client-side @stores imports
+if (typeof window !== 'undefined') {
+  registerStoresClient({ counterStore, appStore })
+}
+```
+
+### Using Stores in Components
+
+Import stores using the clean `@stores` syntax:
+
+```html
+<script client>
+import { counterStore, appStore } from '@stores'
+
+// Access state directly
+console.log(counterStore.count)        // 0
+console.log(appStore.theme)            // 'dark'
+
+// Use getters
+console.log(counterStore.doubleCount)  // 0
+console.log(appStore.isAuthenticated)  // false
+
+// Call actions
+counterStore.increment()
+counterStore.incrementBy(5)
+appStore.toggleTheme()
+
+// Direct state mutation
+counterStore.count = 10
+appStore.theme = 'light'
+
+// Subscribe to changes
+counterStore.$subscribe((state, prevState) => {
+  console.log('Count changed:', prevState?.count, '->', state.count)
+})
+
+// Patch multiple values at once
+appStore.$patch({
+  isLoading: true,
+  theme: 'dark'
+})
+
+// Or with a function
+appStore.$patch((state) => {
+  state.isLoading = false
+  state.user = { name: 'John', email: 'john@example.com' }
+})
+
+// Reset to initial state
+counterStore.$reset()
+</script>
+
+<template>
+  <div>
+    <p>Count: {{ counterStore.count }}</p>
+    <p>Double: {{ counterStore.doubleCount }}</p>
+    <button @click="counterStore.increment()">+</button>
+    <button @click="counterStore.decrement()">-</button>
+  </div>
+</template>
+```
+
+### Store API Reference
+
+| Property/Method | Description |
+|----------------|-------------|
+| `store.property` | Access state property directly |
+| `store.getter` | Access computed getter |
+| `store.action()` | Call an action |
+| `store.$state` | Get full state snapshot |
+| `store.$subscribe(callback)` | Subscribe to state changes |
+| `store.$patch(partial)` | Update multiple state properties |
+| `store.$reset()` | Reset to initial state |
+| `store.$id` | Get store ID/name |
+
+### Persistence Options
+
+```typescript
+// Simple persistence (localStorage with auto key)
+persist: true
+
+// Custom persistence
+persist: {
+  storage: 'local',     // 'local' | 'session' | 'memory'
+  key: 'my-custom-key'  // Custom storage key
+}
+```
+
+### Loading Stores in HTML
+
+Include your stores before other scripts:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Load store runtime -->
+  <script src="/js/stores.js"></script>
+</head>
+<body>
+  <!-- Your app content -->
+  <script client>
+  import { appStore } from '@stores'
+  // Stores are immediately available
+  console.log(appStore.theme)
+  </script>
+</body>
+</html>
+```
+
+### Waiting for Stores
+
+If you need to ensure a store is loaded:
+
+```html
+<script client>
+import { waitForStore } from 'stx'
+
+// Wait for store with timeout
+const appStore = await waitForStore('app', 5000)
+console.log(appStore.theme)
+</script>
+```
+
+### TypeScript Support
+
+Stores are fully typed:
+
+```typescript
+import { defineStore } from 'stx'
+
+interface User {
+  id: number
+  name: string
+  email: string
+}
+
+interface AppState {
+  user: User | null
+  isLoading: boolean
+  errors: string[]
+}
+
+export const appStore = defineStore('app', {
+  state: {
+    user: null,
+    isLoading: false,
+    errors: []
+  } as AppState,
+
+  getters: {
+    isAuthenticated: (state): boolean => state.user !== null,
+    errorCount: (state): number => state.errors.length
+  },
+
+  actions: {
+    async login(email: string, password: string): Promise<void> {
+      this.isLoading = true
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password })
+        })
+        this.user = await response.json()
+      } catch (e) {
+        this.errors.push('Login failed')
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    logout(): void {
+      this.user = null
+    }
+  }
+})
+```
+
+---
+
+## Deferred Loading (@defer)
+
+Lazy load content based on various triggers for better performance.
+
+### Basic Usage
+```html
+@defer(on: 'visible')
+  <HeavyComponent />
+@placeholder
+  <Skeleton />
+@loading
+  <Spinner />
+@error
+  <div>Failed to load</div>
+@enddefer
+```
+
+### Triggers
+
+| Trigger | Description |
+|---------|-------------|
+| `visible` | Loads when element enters viewport (IntersectionObserver) |
+| `idle` | Loads when browser is idle (requestIdleCallback) |
+| `interaction` | Loads on first click, focus, or touch |
+| `hover` | Loads on mouse hover or focus |
+| `timer(ms)` | Loads after specified milliseconds |
+| `immediate` | Loads immediately but async (default) |
+
+### Examples
+
+```html
+<!-- Load on scroll into view -->
+@defer(on: 'visible')
+  <ImageGallery :images="images" />
+@placeholder
+  <div class="skeleton h-64"></div>
+@enddefer
+
+<!-- Load on hover (prefetch-like) -->
+@defer(on: 'hover')
+  <PreviewCard :data="data" />
+@placeholder
+  <span>Hover to preview</span>
+@enddefer
+
+<!-- Load after 2 seconds -->
+@defer(on: 'timer(2000)')
+  <AnalyticsWidget />
+@loading
+  <div class="spinner"></div>
+@enddefer
+
+<!-- Load when browser is idle -->
+@defer(on: 'idle')
+  <RecommendationsPanel />
+@enddefer
+```
+
+---
+
+## Teleport (@teleport)
+
+Move content to a different location in the DOM. Useful for modals, tooltips, and notifications that need to escape their parent's stacking context.
+
+### Basic Usage
+```html
+@teleport('#modals')
+  <div class="modal">
+    <h2>Modal Title</h2>
+    <p>Modal content here</p>
+  </div>
+@endteleport
+
+<!-- Target element somewhere in the document -->
+<div id="modals"></div>
+```
+
+### With Disabled State
+```html
+@teleport('#modals', disabled: isInline)
+  <div class="modal">
+    Renders inline when isInline is true
+  </div>
+@endteleport
+```
+
+### Common Patterns
+
+```html
+<!-- Modal with teleport -->
+<button @click="showModal = true">Open Modal</button>
+
+@teleport('#modal-container')
+  <div class="modal-overlay" x-show="showModal">
+    <div class="modal">
+      <h2>{{ modalTitle }}</h2>
+      <slot />
+      <button @click="showModal = false">Close</button>
+    </div>
+  </div>
+@endteleport
+
+<!-- Tooltip teleported to body -->
+@teleport('body')
+  <div class="tooltip" :style="tooltipPosition">
+    {{ tooltipText }}
+  </div>
+@endteleport
+
+<!-- Notification toast -->
+@teleport('#notifications')
+  <div class="toast toast-success">
+    {{ message }}
+  </div>
+@endteleport
+```
+
+### Events
+
+```javascript
+// Listen for teleport completion
+document.addEventListener('teleport:mounted', (e) => {
+  console.log('Teleported from:', e.detail.sourceId);
+  console.log('Teleported to:', e.detail.target);
+});
 ```
 
 ---

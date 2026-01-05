@@ -802,17 +802,19 @@ async function processOtherDirectives(
     },
   )
 
-  // Extract variables from <script> tags (SFC support)
-  // This runs server-side scripts and populates context with variables
+  // Extract variables from <script server> tags (SFC support)
+  // Only scripts with explicit 'server' attribute are executed server-side
+  // All other scripts (no attribute, 'client', 'type="module"', 'src=') are client-side
   const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
   let scriptMatch: RegExpExecArray | null
   while ((scriptMatch = scriptRegex.exec(output)) !== null) {
     const attrs = scriptMatch[1]
     const scriptContent = scriptMatch[2]
 
-    // Skip client-only scripts
-    const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
-    if (!isClientScript && scriptContent.trim()) {
+    // Only process scripts with explicit 'server' attribute
+    // This prevents executing client-side code (document, window, etc.) on the server
+    const isServerScript = /\bserver\b/.test(attrs)
+    if (isServerScript && scriptContent.trim()) {
       try {
         const { extractVariables } = await import('./variable-extractor')
         await extractVariables(scriptContent, context, filePath)
@@ -848,6 +850,14 @@ async function processOtherDirectives(
 
   // Process animations and transitions
   output = processAnimationDirectives(output, context, filePath, options)
+
+  // Process defer directives (@defer for lazy loading)
+  const { processDeferDirectives } = await import('./defer')
+  output = processDeferDirectives(output, context, filePath)
+
+  // Process teleport directives (@teleport for DOM portals)
+  const { processTeleportDirectives } = await import('./teleport')
+  output = processTeleportDirectives(output, context, filePath)
 
   // Process route directives
   output = processRouteDirectives(output)
@@ -956,6 +966,14 @@ async function processOtherDirectives(
   // Strip server-only scripts (marked with 'server' attribute)
   // These are used for SSR variable extraction and shouldn't appear in client output
   output = output.replace(/<script\s+server\b[^>]*>[\s\S]*?<\/script>\s*/gi, '')
+
+  // Transform @stores imports in client scripts
+  // import { appStore } from '@stores' → const appStore = window.__STX_STORES__.appStore;
+  output = output.replace(/<script\s+client\b([^>]*)>([\s\S]*?)<\/script>/gi, (_match, attrs, content) => {
+    const { transformStoreImports } = require('./state-management')
+    const transformedContent = transformStoreImports(content)
+    return `<script${attrs}>${transformedContent}</script>`
+  })
 
   // Clean up client attribute from script tags (it's not valid HTML)
   // Transform <script client> to <script>
@@ -1179,6 +1197,18 @@ async function processCustomElements(
     'u', 'ul',
     'var', 'video',
     'wbr',
+    // SVG elements
+    'path', 'circle', 'rect', 'line', 'polygon', 'polyline', 'ellipse',
+    'text', 'tspan', 'textPath',
+    'g', 'defs', 'use', 'symbol', 'image',
+    'clipPath', 'mask', 'pattern', 'marker',
+    'linearGradient', 'radialGradient', 'stop',
+    'filter', 'feBlend', 'feColorMatrix', 'feComponentTransfer', 'feComposite', 'feConvolveMatrix',
+    'feDiffuseLighting', 'feDisplacementMap', 'feDropShadow', 'feFlood', 'feGaussianBlur',
+    'feImage', 'feMerge', 'feMergeNode', 'feMorphology', 'feOffset', 'feSpecularLighting',
+    'feTile', 'feTurbulence', 'foreignObject',
+    'animate', 'animateMotion', 'animateTransform', 'set', 'mpath',
+    'desc', 'metadata', 'switch', 'view',
   ])
 
   // Process kebab-case components (e.g., <my-component />)
