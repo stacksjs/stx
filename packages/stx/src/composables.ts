@@ -645,6 +645,160 @@ export function generateLifecycleRuntime(): string {
 }
 
 // =============================================================================
+// Provide / Inject (Dependency Injection)
+// =============================================================================
+
+/** Symbol for injection keys */
+export type InjectionKey<T> = symbol & { __type?: T }
+
+/** Global injection context (component tree) */
+const injectionContext = new Map<string | symbol, unknown>()
+
+/** Stack of injection scopes (for nested components) */
+const injectionScopes: Map<string | symbol, unknown>[] = []
+
+/**
+ * Create a typed injection key.
+ *
+ * @example
+ * ```typescript
+ * const ThemeKey = createInjectionKey<{ mode: 'dark' | 'light' }>('theme')
+ * ```
+ */
+export function createInjectionKey<T>(description?: string): InjectionKey<T> {
+  return Symbol(description) as InjectionKey<T>
+}
+
+/**
+ * Provide a value that can be injected by descendant components.
+ *
+ * @example
+ * ```html
+ * <script server>
+ * import { provide } from 'stx'
+ *
+ * // Provide a theme object
+ * provide('theme', { mode: 'dark', accent: 'purple' })
+ *
+ * // Or with a typed key
+ * import { ThemeKey } from './injection-keys'
+ * provide(ThemeKey, { mode: 'dark', accent: 'purple' })
+ * </script>
+ * ```
+ */
+export function provide<T>(key: string | InjectionKey<T>, value: T): void {
+  // Get current scope or use global context
+  const scope = injectionScopes.length > 0
+    ? injectionScopes[injectionScopes.length - 1]
+    : injectionContext
+
+  scope.set(key, value)
+}
+
+/**
+ * Inject a value provided by an ancestor component.
+ *
+ * @example
+ * ```html
+ * <script client>
+ * import { inject } from 'stx'
+ *
+ * // Inject with default value
+ * const theme = inject('theme', { mode: 'light', accent: 'blue' })
+ *
+ * // Inject required value (throws if not provided)
+ * const auth = inject('auth')
+ * </script>
+ * ```
+ */
+export function inject<T>(key: string | InjectionKey<T>): T | undefined
+export function inject<T>(key: string | InjectionKey<T>, defaultValue: T): T
+export function inject<T>(
+  key: string | InjectionKey<T>,
+  defaultValue?: T,
+): T | undefined {
+  // Search from innermost scope to outermost
+  for (let i = injectionScopes.length - 1; i >= 0; i--) {
+    const scope = injectionScopes[i]
+    if (scope.has(key)) {
+      return scope.get(key) as T
+    }
+  }
+
+  // Check global context
+  if (injectionContext.has(key)) {
+    return injectionContext.get(key) as T
+  }
+
+  // Return default or undefined
+  if (arguments.length > 1) {
+    return defaultValue as T
+  }
+
+  console.warn(`[stx] Injection "${String(key)}" not found.`)
+  return undefined
+}
+
+/**
+ * Create a new injection scope.
+ * Called internally when entering a component.
+ */
+export function pushInjectionScope(): void {
+  injectionScopes.push(new Map())
+}
+
+/**
+ * Exit the current injection scope.
+ * Called internally when leaving a component.
+ */
+export function popInjectionScope(): void {
+  injectionScopes.pop()
+}
+
+/**
+ * Run a function within a new injection scope.
+ * Useful for component rendering.
+ */
+export async function withInjectionScope<T>(fn: () => T | Promise<T>): Promise<T> {
+  pushInjectionScope()
+  try {
+    return await fn()
+  } finally {
+    popInjectionScope()
+  }
+}
+
+/**
+ * Clear all injections (for testing).
+ */
+export function clearInjections(): void {
+  injectionContext.clear()
+  injectionScopes.length = 0
+}
+
+// =============================================================================
+// Common Injection Keys
+// =============================================================================
+
+/** Built-in injection key for theme */
+export const ThemeKey = createInjectionKey<{
+  mode: 'light' | 'dark'
+  accent?: string
+}>('theme')
+
+/** Built-in injection key for router */
+export const RouterKey = createInjectionKey<{
+  currentRoute: string
+  navigate: (path: string) => void
+}>('router')
+
+/** Built-in injection key for i18n */
+export const I18nKey = createInjectionKey<{
+  locale: string
+  t: (key: string) => string
+}>('i18n')
+
+// =============================================================================
 // Export helpers for client-side usage
 // =============================================================================
 

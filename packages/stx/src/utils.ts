@@ -244,22 +244,12 @@ export async function renderComponentWithSlot(
       templateContent = templateContent.replace(/\{\{\s*text\s*\|\|\s*slot\s*\}\}/g, slotContent)
     }
 
-    // Replace <slot /> or <slot></slot> with the slot content (Vue-style slots)
-    // This allows using <slot /> in component templates which is more intuitive
-    if (slotContent) {
-      // Match self-closing <slot /> or <slot/> or <slot></slot>
-      templateContent = templateContent.replace(/<slot\s*\/>/gi, slotContent)
-      templateContent = templateContent.replace(/<slot\s*>\s*<\/slot>/gi, slotContent)
-      // Match <slot>default content</slot> - replace with slot content if provided
-      templateContent = templateContent.replace(/<slot\s*>[\s\S]*?<\/slot>/gi, slotContent)
-    }
-    else {
-      // No slot content - replace <slot /> with empty, but keep default content for <slot>default</slot>
-      templateContent = templateContent.replace(/<slot\s*\/>/gi, '')
-      templateContent = templateContent.replace(/<slot\s*>\s*<\/slot>/gi, '')
-      // For <slot>default content</slot>, extract and use the default content
-      templateContent = templateContent.replace(/<slot\s*>([\s\S]*?)<\/slot>/gi, '$1')
-    }
+    // Process slots using the new slots module (supports named and scoped slots)
+    const { extractSlotContent, applySlots } = await import('./slots')
+    const { defaultSlot, namedSlots } = extractSlotContent(slotContent)
+
+    // Apply slots to the template (handles named slots, scoped slots, and default slots)
+    templateContent = await applySlots(templateContent, defaultSlot || slotContent, namedSlots, componentContext)
 
     // Handle HTML content in component props
     for (const [key, value] of Object.entries(componentContext)) {

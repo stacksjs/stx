@@ -864,6 +864,10 @@ async function processOtherDirectives(
   output = processTransitionDirectives(output, context, filePath)
   output = processTransitionAttributes(output)
 
+  // Process error boundary directives (@errorBoundary for graceful error handling)
+  const { processErrorBoundaryDirectives } = await import('./error-boundaries')
+  output = processErrorBoundaryDirectives(output, context, filePath)
+
   // Process @ref attributes for DOM references
   output = processRefAttributes(output)
 

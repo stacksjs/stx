@@ -1277,6 +1277,420 @@ STX.transition.toggle(element, isVisible, {
 
 ---
 
+## Scoped Slots
+
+Scoped slots allow parent components to receive data from child components via slot props.
+
+### Named Slots
+
+Basic named slots for content distribution:
+
+```html
+<!-- Card.stx (Child Component) -->
+<div class="card">
+  <header>
+    <slot name="header">Default Header</slot>
+  </header>
+  <main>
+    <slot />  <!-- Default slot -->
+  </main>
+  <footer>
+    <slot name="footer" />
+  </footer>
+</div>
+
+<!-- Parent Usage -->
+<Card>
+  <template #header>
+    <h1>Custom Title</h1>
+  </template>
+
+  <p>This goes in the default slot</p>
+
+  <template #footer>
+    <button>Submit</button>
+  </template>
+</Card>
+```
+
+### Scoped Slots with Props
+
+Pass data from child to parent via slot props:
+
+```html
+<!-- DataTable.stx (Child Component) -->
+<script>
+const items = props.items || []
+</script>
+
+<table>
+  <tbody>
+    @foreach (items as item, index)
+      <tr>
+        <slot name="row" :item="item" :index="index">
+          <!-- Default content if no slot provided -->
+          <td>{{ item }}</td>
+        </slot>
+      </tr>
+    @endforeach
+  </tbody>
+</table>
+
+<!-- Parent Usage -->
+<DataTable :items="users">
+  <template #row="{ item, index }">
+    <td>{{ index + 1 }}</td>
+    <td>{{ item.name }}</td>
+    <td>{{ item.email }}</td>
+    <td>
+      <button @click="editUser(item.id)">Edit</button>
+    </td>
+  </template>
+</DataTable>
+```
+
+### Slot Syntax Variants
+
+```html
+<!-- Hash syntax (recommended) -->
+<template #header>...</template>
+<template #row="{ item }">...</template>
+
+<!-- v-slot syntax (Vue compatible) -->
+<template v-slot:header>...</template>
+<template v-slot:row="{ item }">...</template>
+
+<!-- slot attribute (legacy) -->
+<template slot="header">...</template>
+```
+
+### Default Slot Content
+
+Provide fallback content when no slot is provided:
+
+```html
+<!-- Button.stx -->
+<button class="btn">
+  <slot>Click Me</slot>  <!-- "Click Me" is the default -->
+</button>
+
+<!-- Usage -->
+<Button>Submit</Button>    <!-- Shows "Submit" -->
+<Button />                 <!-- Shows "Click Me" -->
+```
+
+---
+
+## Provide/Inject (Dependency Injection)
+
+Provide/Inject allows ancestor components to pass data to any descendant without prop drilling.
+
+### Basic Usage
+
+```html
+<!-- Parent.stx -->
+<script>
+import { provide } from 'stx'
+
+const theme = 'dark'
+const user = { name: 'John', role: 'admin' }
+
+// Provide values to all descendants
+provide('theme', theme)
+provide('user', user)
+</script>
+
+<div class="app">
+  <Header />
+  <Content />
+  <Footer />
+</div>
+```
+
+```html
+<!-- DeepNestedChild.stx (any descendant) -->
+<script>
+import { inject } from 'stx'
+
+// Inject values from any ancestor
+const theme = inject('theme')
+const user = inject('user')
+</script>
+
+<div class="{{ theme === 'dark' ? 'bg-gray-900' : 'bg-white' }}">
+  <p>Welcome, {{ user.name }}!</p>
+</div>
+```
+
+### Default Values
+
+Provide fallback values when injection is not found:
+
+```html
+<script>
+import { inject } from 'stx'
+
+// With default value
+const theme = inject('theme', 'light')
+const locale = inject('locale', 'en-US')
+</script>
+```
+
+### Typed Injection Keys
+
+Use typed keys for better type safety:
+
+```html
+<script>
+import { createInjectionKey, provide, inject } from 'stx'
+
+// Create a typed injection key
+const ThemeKey = createInjectionKey<'light' | 'dark'>('theme')
+
+// Provider
+provide(ThemeKey, 'dark')
+
+// Consumer (type-safe)
+const theme = inject(ThemeKey) // Type: 'light' | 'dark' | undefined
+</script>
+```
+
+### Reactive Injection
+
+Inject reactive state that updates descendants:
+
+```html
+<!-- Provider.stx -->
+<script>
+import { provide, ref } from 'stx'
+
+const count = ref(0)
+provide('count', count)
+
+function increment() {
+  count.value++
+}
+</script>
+
+<!-- Consumer.stx -->
+<script>
+import { inject, watch } from 'stx'
+
+const count = inject('count')
+
+watch(count, (newVal) => {
+  console.log('Count changed:', newVal)
+})
+</script>
+
+<p>Count: {{ count.value }}</p>
+```
+
+### Common Patterns
+
+```html
+<!-- Theme Provider -->
+<script>
+import { provide, ref } from 'stx'
+
+const theme = ref('light')
+const toggleTheme = () => {
+  theme.value = theme.value === 'light' ? 'dark' : 'light'
+}
+
+provide('theme', { theme, toggleTheme })
+</script>
+
+<!-- Consuming component -->
+<script>
+import { inject } from 'stx'
+
+const { theme, toggleTheme } = inject('theme')
+</script>
+
+<button @click="toggleTheme">
+  Switch to {{ theme.value === 'light' ? 'Dark' : 'Light' }} Mode
+</button>
+```
+
+---
+
+## Error Boundaries
+
+Error boundaries catch JavaScript errors anywhere in their child component tree and display a fallback UI instead of crashing the entire application.
+
+### Basic Usage
+
+```html
+@errorBoundary
+  <RiskyComponent />
+@fallback
+  <div class="error-state">
+    <p>Something went wrong</p>
+    <button @click="$retry()">Retry</button>
+  </div>
+@enderrorBoundary
+```
+
+### With Options
+
+```html
+@errorBoundary(id: 'user-section', logErrors: false)
+  <UserProfile :id="userId" />
+  <UserActivity :id="userId" />
+@fallback
+  <div class="error-fallback">
+    <h3>Failed to load user data</h3>
+    <button @click="$retry()">Try Again</button>
+  </div>
+@enderrorBoundary
+```
+
+### Options Reference
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `id` | `string` | auto-generated | Custom ID for error tracking |
+| `logErrors` | `boolean` | `true` | Whether to log errors to console |
+
+### Retry Functionality
+
+The `$retry()` function resets the error boundary and re-renders the content:
+
+```html
+@errorBoundary
+  <DataGrid :data="largeDataset" />
+@fallback
+  <div class="error-ui">
+    <span class="icon">⚠️</span>
+    <h4>Data failed to load</h4>
+    <p>Check your connection and try again.</p>
+    <button @click="$retry()">Retry</button>
+  </div>
+@enderrorBoundary
+```
+
+### Nested Error Boundaries
+
+Error boundaries can be nested for granular error handling:
+
+```html
+@errorBoundary(id: 'page')
+  <Header />
+
+  @errorBoundary(id: 'sidebar')
+    <Sidebar />
+  @fallback
+    <div>Sidebar unavailable</div>
+  @enderrorBoundary
+
+  @errorBoundary(id: 'main-content')
+    <MainContent />
+  @fallback
+    <div>Content failed to load</div>
+  @enderrorBoundary
+
+  <Footer />
+@fallback
+  <div>Page crashed. Please refresh.</div>
+@enderrorBoundary
+```
+
+### SSR Error Handling
+
+For server-side rendering, use the programmatic API:
+
+```typescript
+import { withErrorBoundary } from 'stx'
+
+const html = await withErrorBoundary(
+  async () => renderComponent(props),
+  '<div>Failed to render</div>',
+  (error) => console.error('Render error:', error)
+)
+```
+
+### Programmatic API
+
+Create error boundaries programmatically:
+
+```html
+<script client>
+// Access error boundary state
+const boundary = window.STX.errorBoundaries['eb-123-abc']
+
+// Check if error occurred
+if (boundary.hasError()) {
+  console.log('Error:', boundary.getError())
+}
+
+// Programmatically show fallback
+boundary.showFallback(new Error('Custom error'))
+
+// Programmatically retry
+boundary.retry()
+</script>
+```
+
+### Event Handling
+
+Listen for error boundary events:
+
+```html
+<script client>
+document.addEventListener('stx:error', (e) => {
+  const { error, boundaryId } = e.detail
+  // Report to error tracking service
+  errorTracker.report(error, { boundaryId })
+})
+
+document.addEventListener('stx:retry', (e) => {
+  const { boundaryId } = e.detail
+  console.log(`Boundary ${boundaryId} retrying...`)
+})
+</script>
+```
+
+### Error Boundary CSS
+
+Default styles are included, but can be customized:
+
+```css
+/* Custom error fallback styling */
+.stx-error-boundary-fallback {
+  padding: 2rem;
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border: 2px solid #ef4444;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.stx-error-boundary-fallback button {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.stx-error-boundary-fallback button:hover {
+  background: #dc2626;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .stx-error-boundary-fallback {
+    background: linear-gradient(135deg, #450a0a, #7f1d1d);
+    color: #fecaca;
+  }
+}
+```
+
+---
+
 ## Deferred Loading (@defer)
 
 Lazy load content based on various triggers for better performance.
