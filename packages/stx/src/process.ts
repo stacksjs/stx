@@ -868,6 +868,18 @@ async function processOtherDirectives(
   const { processErrorBoundaryDirectives } = await import('./error-boundaries')
   output = processErrorBoundaryDirectives(output, context, filePath)
 
+  // Process suspense directives (@suspense for coordinating async loading)
+  const { processSuspenseDirectives } = await import('./suspense')
+  output = processSuspenseDirectives(output, context, filePath)
+
+  // Process async component directives (@async for lazy loading)
+  const { processAsyncDirectives } = await import('./async-components')
+  output = processAsyncDirectives(output, context, filePath)
+
+  // Process keep-alive directives (@keepAlive for caching component state)
+  const { processKeepAliveDirectives } = await import('./keep-alive')
+  output = processKeepAliveDirectives(output, context, filePath)
+
   // Process @ref attributes for DOM references
   output = processRefAttributes(output)
 

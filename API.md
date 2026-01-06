@@ -1691,6 +1691,389 @@ Default styles are included, but can be customized:
 
 ---
 
+## Async Components (@async)
+
+Lazy load components with loading and error states.
+
+### Basic Usage
+
+```html
+@async(component: 'HeavyChart')
+  <div class="loading">
+    <div class="stx-async-spinner"></div>
+    <p>Loading chart...</p>
+  </div>
+@error
+  <div class="error">
+    <p>Failed to load chart</p>
+    <button onclick="$retry()">Retry</button>
+  </div>
+@endasync
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `component` | `string` | required | Component path or name to load |
+| `timeout` | `number` | `30000` | Timeout in milliseconds |
+| `delay` | `number` | `200` | Delay before showing loading state |
+| `retries` | `number` | `0` | Number of retry attempts on failure |
+| `suspensible` | `boolean` | `true` | Whether to notify parent Suspense boundary |
+
+### With All Options
+
+```html
+@async(component: 'Dashboard', timeout: 10000, delay: 100, retries: 3)
+  <DashboardSkeleton />
+@error
+  <div class="error-state">
+    <h4>Dashboard failed to load</h4>
+    <p data-error-message></p>
+    <button onclick="$retry()">Try Again</button>
+  </div>
+@endasync
+```
+
+### Programmatic API
+
+```typescript
+import { defineAsyncComponent } from 'stx'
+
+// Simple async component
+const AsyncChart = defineAsyncComponent(() => import('./Chart.stx'))
+
+// With full options
+const AsyncDashboard = defineAsyncComponent({
+  loader: () => import('./Dashboard.stx'),
+  loadingComponent: '<div class="skeleton"></div>',
+  errorComponent: '<div class="error">Failed</div>',
+  delay: 200,
+  timeout: 10000,
+  onLoadStart: () => console.log('Loading...'),
+  onLoadEnd: () => console.log('Loaded!'),
+  onError: (error, retry, fail, attempts) => {
+    if (attempts < 3) retry()
+    else fail()
+  }
+})
+```
+
+### Client-Side Loading
+
+```html
+<script client>
+// Load a component dynamically
+await STX.loadComponent('HeavyWidget', '#widget-container', {
+  loading: '<div class="spinner"></div>',
+  error: '<div class="error">Failed to load</div>',
+  onLoad: () => console.log('Widget loaded'),
+  onError: (err) => console.error(err)
+})
+</script>
+```
+
+### Events
+
+```html
+<script client>
+// Listen for async component events
+document.addEventListener('stx:async:loaded', (e) => {
+  console.log('Component loaded:', e.detail.component)
+})
+
+document.addEventListener('stx:async:error', (e) => {
+  console.error('Load failed:', e.detail.error)
+})
+</script>
+```
+
+---
+
+## Suspense
+
+Coordinate async loading across component trees, showing a single fallback until all async children resolve.
+
+### Basic Usage
+
+```html
+@suspense
+  <UserProfile :id="userId" />
+  <UserActivity :id="userId" />
+  <UserStats :id="userId" />
+@fallback
+  <PageSkeleton />
+@endsuspense
+```
+
+### With Timeout
+
+```html
+@suspense(timeout: 10000)
+  @async(component: 'Header')
+    <HeaderSkeleton />
+  @endasync
+
+  @async(component: 'Sidebar')
+    <SidebarSkeleton />
+  @endasync
+
+  @async(component: 'MainContent')
+    <ContentSkeleton />
+  @endasync
+@fallback
+  <FullPageLoader />
+@endsuspense
+```
+
+### Nested Suspense
+
+```html
+@suspense(id: 'page')
+  <Header />
+
+  @suspense(id: 'content')
+    @async(component: 'ArticleList')
+      <ArticleListSkeleton />
+    @endasync
+  @fallback
+    <ContentLoader />
+  @endsuspense
+
+  <Footer />
+@fallback
+  <PageLoader />
+@endsuspense
+```
+
+### Events
+
+```html
+<script client>
+// All async children resolved
+document.addEventListener('stx:suspense:resolved', (e) => {
+  console.log('Suspense resolved:', e.detail.suspenseId)
+})
+
+// Timeout occurred
+document.addEventListener('stx:suspense:timeout', (e) => {
+  console.log('Pending components:', e.detail.pending)
+})
+
+// Child failed to load
+document.addEventListener('stx:suspense:error', (e) => {
+  console.error('Child failed:', e.detail.childId, e.detail.error)
+})
+</script>
+```
+
+### Programmatic API
+
+```html
+<script client>
+// Wait for all suspense boundaries to resolve
+await STX.suspense.waitForAll()
+console.log('All content loaded!')
+
+// Access specific boundary
+const boundary = STX.suspense.boundaries['suspense-1-abc']
+console.log('Status:', boundary.getStatus())
+console.log('Pending:', boundary.getPending())
+boundary.reset() // Reset and reload
+</script>
+```
+
+### SSR Streaming
+
+```typescript
+import { createSSRSuspense, renderSSRSuspense } from 'stx'
+
+// Create suspense boundaries for streaming
+const boundaries = [
+  createSSRSuspense('header', renderHeader(), '<HeaderSkeleton />'),
+  createSSRSuspense('content', renderContent(), '<ContentSkeleton />'),
+]
+
+// Render with streaming
+const { initial, streaming } = await renderSSRSuspense(boundaries)
+
+// Send initial HTML with fallbacks
+res.write(initial)
+
+// Stream resolved content as it becomes available
+for await (const chunk of streaming) {
+  res.write(chunk)
+}
+
+res.end()
+```
+
+---
+
+## Keep-Alive
+
+Cache component instances to preserve state when toggling visibility.
+
+### Basic Usage
+
+```html
+@keepAlive
+  @if (currentTab === 'settings')
+    <SettingsPanel />
+  @elseif (currentTab === 'profile')
+    <ProfilePanel />
+  @elseif (currentTab === 'activity')
+    <ActivityPanel />
+  @endif
+@endkeepAlive
+```
+
+### With Options
+
+```html
+@keepAlive(max: 5, include: 'Settings,Profile', exclude: 'Debug')
+  <component :is="currentComponent" />
+@endkeepAlive
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `max` | `number` | `10` | Maximum cached instances (LRU eviction) |
+| `include` | `string` | - | Comma-separated component names to cache |
+| `exclude` | `string` | - | Comma-separated component names to NOT cache |
+| `id` | `string` | auto | Custom cache ID |
+
+### Tab Navigation Example
+
+```html
+<script>
+let activeTab = 'home'
+</script>
+
+<nav>
+  <button @click="activeTab = 'home'" class="{{ activeTab === 'home' ? 'active' : '' }}">
+    Home
+  </button>
+  <button @click="activeTab = 'search'" class="{{ activeTab === 'search' ? 'active' : '' }}">
+    Search
+  </button>
+  <button @click="activeTab = 'settings'" class="{{ activeTab === 'settings' ? 'active' : '' }}">
+    Settings
+  </button>
+</nav>
+
+@keepAlive(max: 3)
+  @if (activeTab === 'home')
+    <HomePage />
+  @elseif (activeTab === 'search')
+    <SearchPage />  <!-- Form state preserved! -->
+  @elseif (activeTab === 'settings')
+    <SettingsPage />
+  @endif
+@endkeepAlive
+```
+
+### Preserving Scroll Position
+
+```html
+<!-- Add data-keep-scroll to scrollable elements -->
+<div class="scrollable-list" data-keep-scroll="main-list">
+  @foreach (items as item)
+    <ListItem :item="item" />
+  @endforeach
+</div>
+```
+
+### Preserving Form State
+
+```html
+<!-- Form values are automatically preserved -->
+<form>
+  <input name="search" type="text" />
+  <select name="filter">
+    <option value="all">All</option>
+    <option value="active">Active</option>
+  </select>
+  <input type="checkbox" name="showArchived" />
+</form>
+
+<!-- For custom state, use data-keep-state -->
+<div data-keep-state="counter" data-state-value="{{ count }}">
+  Count: {{ count }}
+</div>
+```
+
+### Lifecycle Hooks
+
+```html
+<script client>
+import { onActivated, onDeactivated } from 'stx'
+
+// Called when restored from cache
+onActivated((detail) => {
+  console.log('Component activated:', detail.key)
+  console.log('Was cached at:', new Date(detail.cachedAt))
+  // Refresh data if needed
+  fetchLatestData()
+})
+
+// Called when being cached
+onDeactivated((detail) => {
+  console.log('Component deactivated:', detail.key)
+  // Cleanup if needed
+  pauseAnimations()
+})
+</script>
+```
+
+### Programmatic API
+
+```html
+<script client>
+// Access keep-alive instance
+const keepAlive = STX.keepAlive.instances['keep-alive-1-abc']
+
+// Check cache
+console.log('Cached keys:', keepAlive.getCacheKeys())
+console.log('Cache size:', keepAlive.getCacheSize())
+
+// Check if component is cached
+if (keepAlive.isCached('SettingsPanel')) {
+  console.log('Settings are cached')
+}
+
+// Clear specific component
+keepAlive.clear('SettingsPanel')
+
+// Clear all cached components
+keepAlive.clear()
+
+// Global utilities
+STX.keepAlive.clearAll() // Clear all keep-alive caches
+STX.keepAlive.getTotalCached() // Get total cached count
+</script>
+```
+
+### Events
+
+```html
+<script client>
+// Component restored from cache
+document.addEventListener('stx:activated', (e) => {
+  console.log('Activated:', e.detail.key)
+})
+
+// Component cached
+document.addEventListener('stx:deactivated', (e) => {
+  console.log('Deactivated:', e.detail.key)
+})
+</script>
+```
+
+---
+
 ## Deferred Loading (@defer)
 
 Lazy load content based on various triggers for better performance.
