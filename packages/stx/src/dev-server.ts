@@ -1765,17 +1765,48 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   if (watch) {
     console.log(`${colors.blue}Watching for changes...${colors.reset}`)
 
+    // Check if file is a static asset (in public/ directory)
+    const isStaticAsset = (filename: string): boolean => {
+      return filename.startsWith('public/') || filename.startsWith('public\\')
+    }
+
+    // Check if file is a template/source file that needs rebuild
+    const isTemplateFile = (filename: string): boolean => {
+      const ext = filename.toLowerCase()
+      return ext.endsWith('.stx') || ext.endsWith('.html') || ext.endsWith('.md')
+    }
+
     const watcher = fs.watch(absoluteAppDir, { recursive: true }, async (eventType, filename) => {
       if (!filename || shouldIgnoreFile(filename)) return
 
       if (shouldReloadOnChange(filename)) {
-        console.log(`${colors.yellow}${filename} changed, rebuilding...${colors.reset}`)
-        partialsCache.clear()
-        await buildAllPages()
-        await rebuildHeadwindCSS(absoluteAppDir)
+        // For static assets (public/), just trigger reload without rebuilding
+        if (isStaticAsset(filename)) {
+          console.log(`${colors.cyan}${filename} changed${colors.reset}`)
+          if (hotReload && hmrServer) {
+            hmrServer.reload(filename)
+          }
+        }
+        // For template files, rebuild pages
+        else if (isTemplateFile(filename)) {
+          console.log(`${colors.yellow}${filename} changed, rebuilding...${colors.reset}`)
+          partialsCache.clear()
+          await buildAllPages()
+          await rebuildHeadwindCSS(absoluteAppDir)
 
-        if (hotReload && hmrServer) {
-          hmrServer.reload(filename)
+          if (hotReload && hmrServer) {
+            hmrServer.reload(filename)
+          }
+        }
+        // For other JS/TS files (could be components, lib, etc.), rebuild
+        else {
+          console.log(`${colors.yellow}${filename} changed, rebuilding...${colors.reset}`)
+          partialsCache.clear()
+          await buildAllPages()
+
+          if (hotReload && hmrServer) {
+            hmrServer.reload(filename)
+          }
         }
       } else if (isCssOnlyChange(filename)) {
         console.log(`${colors.cyan}CSS ${filename} changed${colors.reset}`)
@@ -1819,7 +1850,20 @@ function serveStaticFile(filePath: string): Response {
     '.eot': 'application/vnd.ms-fontobject',
   }
 
+  // In development, disable caching for JS/CSS files so changes reflect immediately
+  const noCacheExtensions = ['.js', '.css', '.json']
+  const cacheHeaders = noCacheExtensions.includes(ext)
+    ? {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    : {}
+
   return new Response(file, {
-    headers: { 'Content-Type': contentTypes[ext] || 'application/octet-stream' },
+    headers: {
+      'Content-Type': contentTypes[ext] || 'application/octet-stream',
+      ...cacheHeaders,
+    },
   })
 }
