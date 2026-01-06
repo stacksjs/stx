@@ -2074,6 +2074,364 @@ document.addEventListener('stx:deactivated', (e) => {
 
 ---
 
+## TypeScript Props
+
+Type-safe component props with runtime validation.
+
+### Basic Usage
+
+```html
+<script>
+import { defineProps } from 'stx'
+
+// Simple typed props
+const props = defineProps<{
+  title: string
+  count: number
+  items: string[]
+}>()
+</script>
+
+<h1>{{ props.title }}</h1>
+<p>Count: {{ props.count }}</p>
+```
+
+### With Validation and Defaults
+
+```html
+<script>
+import { defineProps } from 'stx'
+
+const props = defineProps<{
+  title: string
+  count?: number
+  status: 'active' | 'inactive'
+  items?: string[]
+}>({
+  title: { required: true },
+  count: { default: 0 },
+  status: {
+    default: 'active',
+    validator: (v) => ['active', 'inactive'].includes(v)
+  },
+  items: { default: () => [] }
+})
+</script>
+```
+
+### Prop Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `type` | `Constructor` | Expected type (String, Number, Boolean, Array, Object, etc.) |
+| `required` | `boolean` | Whether the prop is required |
+| `default` | `T \| () => T` | Default value (use function for objects/arrays) |
+| `validator` | `(value) => boolean` | Custom validation function |
+| `description` | `string` | Documentation description |
+
+### With Defaults Helper
+
+```html
+<script>
+import { defineProps, withDefaults } from 'stx'
+
+const props = withDefaults(defineProps<{
+  title: string
+  count?: number
+  items?: string[]
+}>(), {
+  count: 0,
+  items: () => []
+})
+</script>
+```
+
+### Prop Helper Functions
+
+```typescript
+import { prop, required, optional, validated, oneOf, arrayOf } from 'stx'
+
+const props = defineProps({
+  // Required string
+  name: required(String),
+
+  // Optional with default
+  count: optional(0, Number),
+
+  // With custom validator
+  email: validated(
+    (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+    { type: String, required: true }
+  ),
+
+  // One of specific values
+  status: oneOf(['active', 'inactive', 'pending'] as const),
+
+  // Array of specific type
+  tags: arrayOf(String, { default: () => [] })
+})
+```
+
+### Runtime Validation
+
+```html
+<script>
+import { definePropsWithValidation } from 'stx'
+
+const { props, validation } = definePropsWithValidation({
+  title: { type: String, required: true },
+  count: { type: Number, default: 0 }
+}, {
+  componentName: 'MyComponent',
+  throwOnError: false,  // Don't throw, just log warnings
+  logWarnings: true
+})
+
+if (!validation.valid) {
+  console.error('Prop errors:', validation.errors)
+}
+</script>
+```
+
+### Define Emits (Events)
+
+```html
+<script>
+import { defineEmits } from 'stx'
+
+const emit = defineEmits<{
+  'update:value': string
+  'submit': { data: FormData }
+  'close': void
+}>()
+
+function handleSubmit(data: FormData) {
+  emit('submit', { data })
+}
+
+function handleClose() {
+  emit('close', undefined)
+}
+</script>
+
+<button @click="handleClose">Close</button>
+```
+
+### Define Expose
+
+Expose methods/properties to parent components:
+
+```html
+<script>
+import { defineExpose, ref } from 'stx'
+
+const inputRef = ref<HTMLInputElement>()
+const internalValue = ref('')
+
+defineExpose({
+  focus: () => inputRef.value?.focus(),
+  reset: () => { internalValue.value = '' },
+  getValue: () => internalValue.value
+})
+</script>
+
+<input @ref="inputRef" :value="internalValue" />
+```
+
+Parent can access exposed methods:
+
+```html
+<script>
+const childRef = ref()
+
+function focusChild() {
+  childRef.value?.focus()
+}
+</script>
+
+<MyInput @ref="childRef" />
+<button @click="focusChild">Focus Input</button>
+```
+
+---
+
+## DevTools
+
+Debug and inspect STX applications with built-in developer tools.
+
+### Enabling DevTools
+
+```html
+<script>
+import { enableDevTools } from 'stx'
+
+// Enable in development
+if (process.env.NODE_ENV === 'development') {
+  enableDevTools({
+    maxEvents: 1000,      // Max events in timeline
+    maxPerformance: 500   // Max performance records
+  })
+}
+</script>
+```
+
+### DevTools Panel
+
+When enabled, a DevTools panel appears in the bottom-right corner with tabs:
+
+- **Components** - Component tree with props and state
+- **Stores** - Store state and mutation history
+- **Events** - Event timeline
+
+### Component Registration
+
+Components are automatically tracked when using `registerComponent`:
+
+```typescript
+import { registerComponent, updateComponentState } from 'stx'
+
+// Register a component
+const componentId = registerComponent(
+  'MyComponent',        // Component name
+  element,              // DOM element
+  { title: 'Hello' },   // Props
+  { count: 0 },         // State
+  'src/MyComponent.stx' // File path (optional)
+)
+
+// Update state
+updateComponentState(componentId, { count: 1 })
+```
+
+### Store Integration
+
+Stores are automatically tracked when using `defineStore`:
+
+```typescript
+import { registerStore, recordStoreMutation } from 'stx'
+
+// Register a store
+registerStore('userStore', { name: '', email: '' }, {}, ['login', 'logout'])
+
+// Record mutations
+recordStoreMutation('userStore', 'name', '', 'John', 'state')
+```
+
+### Console API
+
+Access DevTools from the browser console:
+
+```javascript
+// Get all components
+__STX_DEVTOOLS__.getComponents()
+
+// Get specific component
+__STX_DEVTOOLS__.getComponent('stx-1')
+
+// Log component tree
+__STX_DEVTOOLS__.logComponentTree()
+
+// Get all stores
+__STX_DEVTOOLS__.getStores()
+
+// Log store state
+__STX_DEVTOOLS__.logStoreState('userStore')
+
+// Get event timeline
+__STX_DEVTOOLS__.getEvents()
+
+// Get performance metrics
+__STX_DEVTOOLS__.getPerformance()
+```
+
+### Component Inspection
+
+```javascript
+// Select and highlight a component
+__STX_DEVTOOLS__.selectComponent('stx-1')
+
+// Inspect element to find its component
+__STX_DEVTOOLS__.inspectElement(document.querySelector('.my-component'))
+
+// Highlight without selecting
+__STX_DEVTOOLS__.highlightComponent('stx-1')
+
+// Clear highlight
+__STX_DEVTOOLS__.clearHighlight()
+```
+
+### Time Travel Debugging
+
+Navigate through store mutation history:
+
+```javascript
+// View store history
+const store = __STX_DEVTOOLS__.getStore('userStore')
+console.log(store.history)
+
+// Time travel to previous state
+__STX_DEVTOOLS__.timeTravel(5, 'userStore') // Go to index 5 in history
+```
+
+### Performance Measurement
+
+```typescript
+import { measurePerformance, measurePerformanceAsync } from 'stx'
+
+// Measure sync function
+const result = measurePerformance('heavyCalculation', () => {
+  return computeExpensiveValue()
+}, componentId)
+
+// Measure async function
+const data = await measurePerformanceAsync('fetchData', async () => {
+  return await fetch('/api/data').then(r => r.json())
+}, componentId)
+```
+
+### Custom Events
+
+Record custom events in the timeline:
+
+```typescript
+import { recordEvent } from 'stx'
+
+recordEvent({
+  timestamp: Date.now(),
+  type: 'user:action',
+  componentId: 'stx-1',
+  payload: { action: 'clicked', target: 'submit-button' }
+})
+```
+
+### Keyboard Shortcuts
+
+When DevTools panel is open:
+
+| Key | Action |
+|-----|--------|
+| Click header | Toggle panel open/closed |
+| Click component | Select and highlight component |
+
+### Disabling DevTools
+
+```typescript
+import { disableDevTools } from 'stx'
+
+// Disable DevTools (e.g., in production)
+disableDevTools()
+```
+
+### Best Practices
+
+1. **Only enable in development** - DevTools adds overhead
+2. **Use component names** - Makes debugging easier
+3. **Register stores** - For full state visibility
+4. **Record custom events** - Track user interactions
+5. **Use performance measurement** - Find bottlenecks
+
+---
+
 ## Deferred Loading (@defer)
 
 Lazy load content based on various triggers for better performance.

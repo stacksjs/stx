@@ -1704,7 +1704,12 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
           }
 
           return new Response(content, {
-            headers: { 'Content-Type': 'text/html' },
+            headers: {
+              'Content-Type': 'text/html',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
           })
         }
       }
@@ -1718,7 +1723,12 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
           content = injectHotReload(content, actualHmrPort)
         }
         return new Response(content, {
-          headers: { 'Content-Type': 'text/html' },
+          headers: {
+            'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
         })
       }
 
