@@ -859,6 +859,14 @@ async function processOtherDirectives(
   const { processTeleportDirectives } = await import('./teleport')
   output = processTeleportDirectives(output, context, filePath)
 
+  // Process transition directives (@transition for animations)
+  const { processTransitionDirectives, processTransitionAttributes } = await import('./transitions')
+  output = processTransitionDirectives(output, context, filePath)
+  output = processTransitionAttributes(output)
+
+  // Process @ref attributes for DOM references
+  output = processRefAttributes(output)
+
   // Process route directives
   output = processRouteDirectives(output)
 
@@ -1425,4 +1433,20 @@ export function processOnceDirective(template: string): string {
   result = result.replace(/@once\s*([\s\S]*?)@endonce/g, '$1')
 
   return result
+}
+
+/**
+ * Process @ref attributes for DOM element references.
+ *
+ * Transforms:
+ *   <input @ref="inputRef" />
+ *
+ * Into:
+ *   <input data-ref="inputRef" />
+ *
+ * The client-side runtime will bind these to ref objects.
+ */
+function processRefAttributes(template: string): string {
+  // Match @ref="name" attributes
+  return template.replace(/@ref="([^"]+)"/g, 'data-ref="$1"')
 }

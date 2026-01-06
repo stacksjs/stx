@@ -25,6 +25,9 @@ A comprehensive reference for all STX templating syntax, directives, and APIs.
 - [Custom Directives](#custom-directives)
 - [Configuration](#configuration)
 - [State Management](#state-management)
+- [Lifecycle Hooks](#lifecycle-hooks)
+- [Refs (DOM References)](#refs-dom-references)
+- [Transitions](#transitions)
 - [Deferred Loading (@defer)](#deferred-loading-defer)
 - [Teleport (@teleport)](#teleport-teleport)
 - [Suggested Future Syntax](#suggested-future-syntax)
@@ -909,6 +912,367 @@ export const appStore = defineStore('app', {
     }
   }
 })
+```
+
+---
+
+## Lifecycle Hooks
+
+Vue-inspired lifecycle hooks for managing component setup, cleanup, and updates.
+
+### onMount
+
+Called when the component is mounted to the DOM. Perfect for DOM manipulation, event listeners, and subscriptions.
+
+```html
+<script client>
+import { onMount } from 'stx'
+
+onMount(() => {
+  console.log('Component mounted!')
+
+  // Set up event listener
+  const handler = () => console.log('clicked')
+  document.addEventListener('click', handler)
+
+  // Return cleanup function (called on unmount)
+  return () => {
+    document.removeEventListener('click', handler)
+  }
+})
+</script>
+```
+
+### onDestroy
+
+Called when the component is removed from the DOM. Use for cleanup.
+
+```html
+<script client>
+import { onMount, onDestroy } from 'stx'
+
+onMount(() => {
+  const interval = setInterval(() => {
+    console.log('tick')
+  }, 1000)
+
+  // Can also register cleanup in onMount's return
+  onDestroy(() => {
+    clearInterval(interval)
+  })
+})
+</script>
+```
+
+### onUpdate
+
+Called when the component updates (re-renders).
+
+```html
+<script client>
+import { onUpdate } from 'stx'
+
+onUpdate(() => {
+  console.log('Component updated!')
+})
+</script>
+```
+
+### Aliases
+
+| Hook | Alias |
+|------|-------|
+| `onMount` | `onMounted` |
+| `onDestroy` | `onUnmounted` |
+| `onUpdate` | `onUpdated` |
+
+### Full Example
+
+```html
+<script client>
+import { onMount, onDestroy, onUpdate } from 'stx'
+import { appStore } from '@stores'
+
+onMount(() => {
+  console.log('Chat component mounted')
+
+  // Subscribe to store
+  const unsubscribe = appStore.$subscribe((state) => {
+    console.log('App state changed:', state)
+  })
+
+  // WebSocket connection
+  const ws = new WebSocket('wss://api.example.com/chat')
+  ws.onmessage = (e) => handleMessage(JSON.parse(e.data))
+
+  // Cleanup
+  return () => {
+    unsubscribe()
+    ws.close()
+  }
+})
+
+onUpdate(() => {
+  // Scroll to bottom when new messages arrive
+  const container = document.getElementById('messages')
+  container?.scrollTo(0, container.scrollHeight)
+})
+</script>
+```
+
+---
+
+## Refs (DOM References)
+
+Direct references to DOM elements, similar to Vue's `ref` or React's `useRef`.
+
+### Creating Refs
+
+```html
+<script client>
+import { ref, onMount } from 'stx'
+
+// Create a ref
+const inputRef = ref<HTMLInputElement>()
+
+onMount(() => {
+  // Access the DOM element
+  inputRef.value?.focus()
+})
+</script>
+```
+
+### Binding Refs
+
+Use the `@ref` attribute to bind an element to a ref:
+
+```html
+<template>
+  <input type="text" @ref="inputRef" placeholder="Auto-focused" />
+  <button @click="inputRef.value?.select()">Select All</button>
+</template>
+
+<script client>
+import { ref, onMount } from 'stx'
+
+const inputRef = ref<HTMLInputElement>()
+
+onMount(() => {
+  // Focus input on mount
+  inputRef.value?.focus()
+})
+</script>
+```
+
+### Multiple Refs
+
+```html
+<template>
+  <form @ref="formRef">
+    <input @ref="emailRef" type="email" />
+    <input @ref="passwordRef" type="password" />
+    <button type="submit">Login</button>
+  </form>
+</template>
+
+<script client>
+import { ref, onMount } from 'stx'
+
+const formRef = ref<HTMLFormElement>()
+const emailRef = ref<HTMLInputElement>()
+const passwordRef = ref<HTMLInputElement>()
+
+onMount(() => {
+  formRef.value?.addEventListener('submit', (e) => {
+    e.preventDefault()
+    console.log('Email:', emailRef.value?.value)
+    console.log('Password:', passwordRef.value?.value)
+  })
+})
+</script>
+```
+
+### Ref API
+
+| Property | Description |
+|----------|-------------|
+| `ref.value` | The DOM element (or null if not bound) |
+| `ref.current` | Alias for `ref.value` |
+
+---
+
+## Transitions
+
+CSS-based enter/leave transitions for elements, inspired by Vue's transition system.
+
+### Basic Usage
+
+```html
+@transition(name: 'fade')
+  @if (visible)
+    <div class="modal">Modal Content</div>
+  @endif
+@endtransition
+```
+
+### Transition Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `name` | CSS class prefix | `'stx'` |
+| `duration` | Duration in ms | `300` |
+| `mode` | `'in-out'`, `'out-in'`, or `'default'` | `'default'` |
+
+```html
+@transition(name: 'slide-up', duration: 500, mode: 'out-in')
+  @if (currentTab === 'home')
+    <HomeTab />
+  @elseif (currentTab === 'settings')
+    <SettingsTab />
+  @endif
+@endtransition
+```
+
+### Attribute Syntax
+
+For simpler cases, use the attribute syntax:
+
+```html
+<div @transition.fade="isVisible">Fading content</div>
+<div @transition.slide-up.500="isOpen">Sliding content</div>
+```
+
+### CSS Classes
+
+STX applies these CSS classes during transitions:
+
+**Enter Transition:**
+| Class | When Applied |
+|-------|--------------|
+| `{name}-enter-from` | Initial state before entering |
+| `{name}-enter-active` | Active state during enter |
+| `{name}-enter-to` | Final state after entering |
+
+**Leave Transition:**
+| Class | When Applied |
+|-------|--------------|
+| `{name}-leave-from` | Initial state before leaving |
+| `{name}-leave-active` | Active state during leave |
+| `{name}-leave-to` | Final state after leaving |
+
+### Built-in Transitions
+
+STX includes these ready-to-use transitions:
+
+```css
+/* Available transition names */
+fade        /* Opacity fade */
+slide-up    /* Slide from bottom */
+slide-down  /* Slide from top */
+slide-left  /* Slide from right */
+slide-right /* Slide from left */
+scale       /* Scale from 90% */
+scale-up    /* Scale from 50% */
+bounce      /* Bouncy scale */
+flip        /* 3D flip */
+zoom        /* Zoom from 0 */
+collapse    /* Height collapse */
+```
+
+### Custom Transition CSS
+
+Define your own transitions:
+
+```css
+/* Custom 'swing' transition */
+.swing-enter-from,
+.swing-leave-to {
+  opacity: 0;
+  transform: translateX(-100%) rotate(-30deg);
+}
+
+.swing-enter-active,
+.swing-leave-active {
+  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.swing-enter-to,
+.swing-leave-from {
+  opacity: 1;
+  transform: translateX(0) rotate(0);
+}
+```
+
+```html
+@transition(name: 'swing')
+  @if (showMenu)
+    <nav class="menu">...</nav>
+  @endif
+@endtransition
+```
+
+### JavaScript Transition Hooks
+
+For programmatic control:
+
+```html
+<script client>
+// Enter transition
+STX.transition.enter(element, {
+  name: 'fade',
+  duration: 300
+})
+
+// Leave transition (returns Promise)
+await STX.transition.leave(element, {
+  name: 'slide-up',
+  duration: 500
+})
+
+// Toggle with transition
+STX.transition.toggle(element, isVisible, {
+  name: 'scale'
+})
+</script>
+```
+
+### Modal Example
+
+```html
+<template>
+  <button @click="showModal = true">Open Modal</button>
+
+  @transition(name: 'fade')
+    @if (showModal)
+      <div class="modal-overlay" @click.self="showModal = false">
+        @transition(name: 'scale')
+          <div class="modal-content">
+            <h2>Modal Title</h2>
+            <p>Modal content goes here...</p>
+            <button @click="showModal = false">Close</button>
+          </div>
+        @endtransition
+      </div>
+    @endif
+  @endtransition
+</template>
+
+<style>
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  max-width: 500px;
+}
+</style>
 ```
 
 ---
