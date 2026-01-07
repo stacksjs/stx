@@ -104,9 +104,8 @@ export class HotReloadServer {
           websocket: {
             open: (ws) => {
               this.clients.add(ws as unknown as WebSocketClient)
-              if (this.options.verbose) {
-                console.log(`[HMR] Client connected (${this.clients.size} total)`)
-              }
+              // Always log client connections for debugging
+              console.log(`[HMR] Client connected (${this.clients.size} total)`)
               // Send connected message
               ws.send(JSON.stringify({
                 type: 'connected',

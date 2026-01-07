@@ -22,6 +22,7 @@ import {
 // If consolidating, consider making bun-plugin-stx re-export from @stacksjs/stx/plugin
 import { partialsCache } from './includes'
 import { plugin as stxPlugin } from './plugin'
+import { clearComponentCache } from './utils'
 
 // Import from modular dev-server components
 import {
@@ -809,8 +810,9 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
 
       if (shouldReloadOnChange(filename)) {
         console.log(`${colors.yellow}File ${colors.bright}${filename}${colors.yellow} changed, rebuilding...${colors.reset}`)
-        // Clear partials cache to ensure fresh content for included files
+        // Clear all caches to ensure fresh content for included files and components
         partialsCache.clear()
+        clearComponentCache()
         const success = await buildFile()
 
         // Rebuild Headwind CSS
@@ -1461,8 +1463,9 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       // Only rebuild if it's a supported file type
       if (filename.endsWith('.stx') || filename.endsWith('.js') || filename.endsWith('.ts') || filename.endsWith('.md')) {
         console.log(`${colors.yellow}File ${colors.bright}${filename}${colors.yellow} changed, rebuilding...${colors.reset}`)
-        // Clear partials cache to ensure fresh content for included files
+        // Clear all caches to ensure fresh content for included files and components
         partialsCache.clear()
+        clearComponentCache()
         await buildFiles()
       }
     })
@@ -1812,18 +1815,26 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         // For template files, rebuild pages
         else if (isTemplateFile(filename)) {
           console.log(`${colors.yellow}${filename} changed, rebuilding...${colors.reset}`)
+          // Clear all caches to ensure fresh content
           partialsCache.clear()
+          clearComponentCache()
           await buildAllPages()
           await rebuildHeadwindCSS(absoluteAppDir)
 
+          // Debug: Log HMR state
+          console.log(`[HMR Debug] hotReload=${hotReload}, hmrServer=${!!hmrServer}`)
           if (hotReload && hmrServer) {
             hmrServer.reload(filename)
+          } else {
+            console.log(`[HMR Debug] Skipping reload: hotReload=${hotReload}, hmrServer exists=${!!hmrServer}`)
           }
         }
         // For other JS/TS files (could be components, lib, etc.), rebuild
         else {
           console.log(`${colors.yellow}${filename} changed, rebuilding...${colors.reset}`)
+          // Clear all caches to ensure fresh content
           partialsCache.clear()
+          clearComponentCache()
           await buildAllPages()
 
           if (hotReload && hmrServer) {
