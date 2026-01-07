@@ -204,6 +204,7 @@ export class HotReloadServer {
    * Trigger a full page reload
    */
   reload(filePath?: string): void {
+    console.log(`[HMR] Sending reload to ${this.clients.size} client(s) for: ${filePath || 'all'}`)
     this.broadcast({
       type: 'reload',
       path: filePath,
