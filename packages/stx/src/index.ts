@@ -66,6 +66,15 @@ export * from './utils'
 export * from './visual-editor'
 export * from './web-components'
 
+// Virtual scrolling for large lists
+export * from './virtual-scrolling'
+
+// Partial hydration (Islands Architecture)
+export * from './partial-hydration'
+
+// Computed properties and reactivity
+export * from './computed'
+
 // Client-side modules (for browser)
 export * from './client'
 

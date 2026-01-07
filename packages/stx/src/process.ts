@@ -880,6 +880,22 @@ async function processOtherDirectives(
   const { processKeepAliveDirectives } = await import('./keep-alive')
   output = processKeepAliveDirectives(output, context, filePath)
 
+  // Process virtual scrolling directives (@virtualList, @virtualGrid, @infiniteList)
+  const { processVirtualListDirectives, processVirtualGridDirectives, processInfiniteListDirectives } = await import('./virtual-scrolling')
+  output = processVirtualListDirectives(output, context, filePath)
+  output = processVirtualGridDirectives(output, context, filePath)
+  output = processInfiniteListDirectives(output, context, filePath)
+
+  // Process partial hydration directives (@client:load, @client:idle, @client:visible, etc.)
+  const { processPartialHydrationDirectives, processStaticDirectives } = await import('./partial-hydration')
+  output = processPartialHydrationDirectives(output, context, filePath)
+  output = processStaticDirectives(output)
+
+  // Process computed directives (@computed, @watch)
+  const { processComputedDirectives, processWatchDirectives } = await import('./computed')
+  output = processComputedDirectives(output, context, filePath)
+  output = processWatchDirectives(output, context, filePath)
+
   // Process @ref attributes for DOM references
   output = processRefAttributes(output)
 

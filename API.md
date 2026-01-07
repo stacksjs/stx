@@ -3245,4 +3245,393 @@ STX uses file-based routing in the `pages/` directory:
 
 ---
 
+## Virtual Scrolling
+
+Efficiently render large lists using windowing/virtualization.
+
+### @virtualList
+
+Renders only visible items for optimal performance:
+
+```html
+<script server>
+const items = Array.from({ length: 10000 }, (_, i) => ({
+  id: i,
+  name: `Item ${i}`,
+  description: `Description for item ${i}`
+}))
+</script>
+
+@virtualList(items, { itemHeight: 50, containerHeight: 400, overscan: 3 })
+  <div class="item">
+    <strong>{{ item.name }}</strong>
+    <p>{{ item.description }}</p>
+  </div>
+@endvirtualList
+```
+
+### @virtualGrid
+
+Grid virtualization for image galleries or card layouts:
+
+```html
+@virtualGrid(products, { columns: 4, rowHeight: 200, containerHeight: 600, gap: 16 })
+  <div class="product-card">
+    <img src="{{ item.image }}" alt="{{ item.name }}" />
+    <h3>{{ item.name }}</h3>
+    <span>${{ item.price }}</span>
+  </div>
+@endvirtualGrid
+```
+
+### @infiniteList
+
+Virtual list with infinite scroll support:
+
+```html
+@infiniteList(posts, { itemHeight: 100, containerHeight: 500, threshold: 200 })
+  <article class="post">
+    <h2>{{ item.title }}</h2>
+    <p>{{ item.excerpt }}</p>
+  </article>
+@loading
+  <div class="loading-spinner">Loading more posts...</div>
+@endinfiniteList
+```
+
+### Virtual List Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `itemHeight` | number | required | Height of each item in pixels |
+| `containerHeight` | number | required | Height of the scroll container |
+| `overscan` | number | 3 | Buffer items outside viewport |
+| `keyProperty` | string | 'id' | Property to use as key |
+| `dynamicHeight` | boolean | false | Enable variable item heights |
+| `containerClass` | string | '' | CSS class for container |
+| `itemClass` | string | '' | CSS class for each item |
+
+### JavaScript API
+
+```typescript
+import { createVirtualList, useVirtualList } from 'stx'
+
+// Create virtual list instance
+const list = createVirtualList(items, {
+  itemHeight: 50,
+  containerHeight: 400
+})
+
+// Get visible items
+const { visibleItems, startIndex, endIndex } = list.getState()
+
+// Scroll to specific item
+list.scrollToIndex(500)
+
+// Hook for reactive virtual list
+const { visibleItems, containerProps, itemProps, scrollToIndex } = useVirtualList(
+  () => items,
+  { itemHeight: 50, containerHeight: 400 }
+)
+```
+
+---
+
+## Partial Hydration (Islands Architecture)
+
+Selectively hydrate interactive components while leaving static content as plain HTML.
+
+### Hydration Strategies
+
+#### @client:load
+
+Hydrate immediately on page load:
+
+```html
+@client:load
+  <InteractiveWidget />
+@endclient
+```
+
+#### @client:idle
+
+Hydrate when browser is idle (uses `requestIdleCallback`):
+
+```html
+@client:idle(priority: 'high', timeout: 2000)
+  <ChatWidget />
+@endclient
+```
+
+#### @client:visible
+
+Hydrate when component enters viewport (uses `IntersectionObserver`):
+
+```html
+@client:visible(rootMargin: '100px', threshold: 0.1)
+  <ImageCarousel :images="images" />
+@endclient
+```
+
+#### @client:media
+
+Hydrate when media query matches:
+
+```html
+@client:media(media: '(min-width: 768px)')
+  <DesktopNavigation />
+@endclient
+```
+
+#### @client:hover
+
+Hydrate on first hover or focus:
+
+```html
+@client:hover
+  <Tooltip content="More info..." />
+@endclient
+```
+
+#### @client:event
+
+Hydrate on custom event:
+
+```html
+@client:event(event: 'user:authenticated')
+  <UserDashboard />
+@endclient
+```
+
+#### @client:only
+
+Client-side only rendering (no SSR):
+
+```html
+@client:only
+  <BrowserOnlyComponent />
+@endclient
+```
+
+### Static Content
+
+Mark content as static (never hydrates):
+
+```html
+@static
+  <footer>
+    <p>Copyright 2025 My Company</p>
+  </footer>
+@endstatic
+```
+
+### JavaScript API
+
+```typescript
+import {
+  hydrateIsland,
+  hydrateByStrategy,
+  hydrateAll,
+  isHydrated,
+  onHydrated
+} from 'stx'
+
+// Manually hydrate an island
+hydrateIsland('island-abc123')
+
+// Hydrate all islands with a specific strategy
+hydrateByStrategy('visible')
+
+// Hydrate all pending islands
+hydrateAll()
+
+// Check if hydrated
+if (isHydrated('island-abc123')) {
+  console.log('Island is interactive')
+}
+
+// Wait for hydration
+await onHydrated('island-abc123')
+```
+
+---
+
+## Computed Properties & Reactivity
+
+Full reactivity system with computed properties and watchers.
+
+### ref()
+
+Create reactive references:
+
+```typescript
+import { ref } from 'stx'
+
+const count = ref(0)
+console.log(count.value) // 0
+
+count.value++
+console.log(count.value) // 1
+
+// Subscribe to changes
+const unsubscribe = count.subscribe((newValue) => {
+  console.log('Count changed:', newValue)
+})
+```
+
+### computed()
+
+Create computed properties with automatic dependency tracking:
+
+```typescript
+import { ref, computed } from 'stx'
+
+const firstName = ref('John')
+const lastName = ref('Doe')
+
+// Read-only computed
+const fullName = computed(() => `${firstName.value} ${lastName.value}`)
+console.log(fullName.value) // 'John Doe'
+
+firstName.value = 'Jane'
+console.log(fullName.value) // 'Jane Doe'
+
+// Writable computed
+const fullNameWritable = computed({
+  get: () => `${firstName.value} ${lastName.value}`,
+  set: (value) => {
+    const [first, last] = value.split(' ')
+    firstName.value = first
+    lastName.value = last
+  }
+})
+
+fullNameWritable.value = 'Alice Smith'
+console.log(firstName.value) // 'Alice'
+```
+
+### watch()
+
+Watch reactive sources:
+
+```typescript
+import { ref, watch } from 'stx'
+
+const count = ref(0)
+
+// Basic watch
+const stop = watch(count, (newValue, oldValue) => {
+  console.log(`Count changed from ${oldValue} to ${newValue}`)
+})
+
+// With options
+watch(count, (newValue) => {
+  console.log('Count:', newValue)
+}, {
+  immediate: true,  // Run immediately
+  deep: true,       // Deep watch objects
+  once: true,       // Stop after first change
+  flush: 'post'     // Timing: 'pre' | 'post' | 'sync'
+})
+
+// Stop watching
+stop()
+
+// Pause/resume
+stop.pause()
+stop.resume()
+```
+
+### watchEffect()
+
+Auto-tracking effect:
+
+```typescript
+import { ref, watchEffect } from 'stx'
+
+const count = ref(0)
+const multiplier = ref(2)
+
+// Automatically tracks dependencies
+const stop = watchEffect(() => {
+  console.log(`Result: ${count.value * multiplier.value}`)
+})
+
+count.value = 5      // Logs: "Result: 10"
+multiplier.value = 3 // Logs: "Result: 15"
+```
+
+### watchMultiple()
+
+Watch multiple sources:
+
+```typescript
+import { ref, watchMultiple } from 'stx'
+
+const firstName = ref('John')
+const lastName = ref('Doe')
+
+watchMultiple([firstName, lastName], ([first, last], [oldFirst, oldLast]) => {
+  console.log(`Name changed from ${oldFirst} ${oldLast} to ${first} ${last}`)
+})
+```
+
+### Debounced & Throttled Computed
+
+```typescript
+import { ref, debouncedComputed, throttledComputed } from 'stx'
+
+const searchQuery = ref('')
+
+// Debounced - wait for 300ms of no changes
+const debouncedSearch = debouncedComputed(
+  () => searchQuery.value.toLowerCase(),
+  300
+)
+
+// Throttled - update at most every 100ms
+const throttledSearch = throttledComputed(
+  () => searchQuery.value.toLowerCase(),
+  100
+)
+```
+
+### Template Directives
+
+```html
+<!-- Define computed in template -->
+@computed(fullName, firstName + ' ' + lastName)
+
+<h1>{{ fullName }}</h1>
+
+<!-- Watch with handler -->
+@watch(count)
+  function(newValue) {
+    console.log('Count is now:', newValue);
+  }
+@endwatch
+```
+
+### Utility Functions
+
+```typescript
+import { isRef, unref, toRefs, shallowRef } from 'stx'
+
+// Check if value is a ref
+isRef(count) // true
+
+// Unwrap ref (returns value if ref, otherwise returns as-is)
+unref(count) // 0
+unref(5)     // 5
+
+// Convert object properties to refs
+const state = { count: 0, name: 'test' }
+const { count, name } = toRefs(state)
+
+// Shallow ref (doesn't make nested objects reactive)
+const data = shallowRef({ nested: { value: 1 } })
+```
+
+---
+
 *For more details, see the [full documentation](https://stx.sh).*
