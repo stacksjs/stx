@@ -1,9 +1,31 @@
 <script server>
-const currentTime = new Date().toLocaleTimeString()
-const name = 'World'
-const count = 0
+import { defineProps, withDefaults } from 'stx'
 
-const colors = [
+interface HelloWorldProps {
+  name?: string
+  showCounter?: boolean
+  showThemeSelector?: boolean
+}
+
+const { name, showCounter, showThemeSelector } = withDefaults(
+  defineProps<HelloWorldProps>(),
+  {
+    name: 'World',
+    showCounter: true,
+    showThemeSelector: true
+  }
+)
+
+// Runtime data
+const currentTime = new Date().toLocaleTimeString()
+
+// Color options with TypeScript interface
+interface ColorOption {
+  name: string
+  value: string
+}
+
+const colors: ColorOption[] = [
   { name: 'Violet', value: '#8b5cf6' },
   { name: 'Cyan', value: '#06b6d4' },
   { name: 'Emerald', value: '#10b981' },

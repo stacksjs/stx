@@ -2432,6 +2432,477 @@ disableDevTools()
 
 ---
 
+## Custom Directives API
+
+Create your own directives to extend STX's template syntax.
+
+### Define a Simple Directive
+
+```typescript
+import { defineDirective } from 'stx'
+
+// Transform directive - modifies content
+const uppercase = defineDirective({
+  name: 'uppercase',
+  description: 'Convert content to uppercase',
+  transform: (content) => content.toUpperCase()
+})
+
+// Usage: @uppercase Hello World @enduppercase
+// Output: HELLO WORLD
+```
+
+### Directive with Parameters
+
+```typescript
+const highlight = defineDirective({
+  name: 'highlight',
+  defaults: { color: 'yellow', padding: '0.2em' },
+  transform: (content, { color, padding }) =>
+    `<mark style="background: ${color}; padding: ${padding}">${content}</mark>`
+})
+
+// Usage: @highlight(color: 'lime') Important text @endhighlight
+```
+
+### Directive with Validation
+
+```typescript
+const truncate = defineDirective({
+  name: 'truncate',
+  defaults: { length: 100, suffix: '...' },
+  validate: ({ length }) => {
+    if (length <= 0) return 'Length must be positive'
+    return true
+  },
+  transform: (content, { length, suffix }) =>
+    content.length > length
+      ? content.slice(0, length) + suffix
+      : content
+})
+```
+
+### Client-Side Directive
+
+```typescript
+const tooltip = defineDirective({
+  name: 'tooltip',
+  transform: (content, { text }) =>
+    `<span class="tooltip" data-tip="${text}">${content}</span>`,
+  css: () => `
+    .tooltip { position: relative; cursor: help; }
+    .tooltip::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: 100%;
+      background: #333;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .tooltip:hover::after { opacity: 1; }
+  `,
+  client: {
+    mounted(el, { value }) {
+      el.setAttribute('data-tip', value)
+    },
+    updated(el, { value }) {
+      el.setAttribute('data-tip', value)
+    }
+  }
+})
+```
+
+### Built-in Directives
+
+STX includes several built-in directives:
+
+| Directive | Description | Example |
+|-----------|-------------|---------|
+| `@uppercase` | Convert to uppercase | `@uppercase text @enduppercase` |
+| `@lowercase` | Convert to lowercase | `@lowercase TEXT @endlowercase` |
+| `@capitalize` | Capitalize first letter | `@capitalize hello @endcapitalize` |
+| `@trim` | Remove whitespace | `@trim  text  @endtrim` |
+| `@truncate(length, suffix)` | Truncate text | `@truncate(50, '...') long text @endtruncate` |
+| `@highlight(color)` | Highlight text | `@highlight(color: 'yellow') text @endhighlight` |
+| `@badge(variant)` | Create a badge | `@badge(variant: 'success') New @endbadge` |
+| `@code` | Inline code style | `@code const x = 1 @endcode` |
+| `@tooltip(text)` | Add tooltip | `@tooltip(text: 'Help') Hover me @endtooltip` |
+| `@clipboard` | Copy button | `@clipboard npm install stx @endclipboard` |
+| `@currency(amount, currency)` | Format currency | `@currency(amount: 99.99, currency: 'USD')` |
+| `@number(value, decimals)` | Format number | `@number(value: 1234.5, decimals: 2)` |
+| `@pluralize(count, singular)` | Pluralize | `@pluralize(count: 5, singular: 'item')` |
+
+### Register Custom Directive
+
+```typescript
+import { registerDirective } from 'stx'
+
+registerDirective({
+  name: 'myDirective',
+  hasEndTag: true,
+  transform: (content, params, context) => {
+    // Access template context
+    const user = context.user
+    return `<div data-user="${user?.name}">${content}</div>`
+  }
+})
+```
+
+---
+
+## Plugin System
+
+Extend STX with reusable plugins.
+
+### Define a Plugin
+
+```typescript
+import { definePlugin } from 'stx'
+
+const myPlugin = definePlugin({
+  name: 'my-plugin',
+  version: '1.0.0',
+  description: 'My awesome plugin',
+
+  // Called when plugin is registered
+  onRegister(options) {
+    console.log('Plugin registered with options:', options)
+  },
+
+  // Add directives
+  registerDirectives() {
+    return [
+      {
+        name: 'myDirective',
+        handler: (content) => content.toUpperCase(),
+        hasEndTag: true
+      }
+    ]
+  },
+
+  // Add expression filters
+  registerFilters() {
+    return {
+      reverse: (value) => String(value).split('').reverse().join('')
+    }
+  },
+
+  // Lifecycle hooks
+  beforeProcess({ template, context }) {
+    context.pluginData = { initialized: true }
+    return { context }
+  },
+
+  afterRender({ template }) {
+    return { template: template + '<!-- Rendered by my-plugin -->' }
+  }
+})
+```
+
+### Use a Plugin
+
+```typescript
+import { pluginManager } from 'stx'
+
+// Register plugin
+await pluginManager.register(myPlugin, stxOptions)
+
+// Check if registered
+pluginManager.has('my-plugin') // true
+
+// Get plugin
+const plugin = pluginManager.get('my-plugin')
+
+// Unregister
+await pluginManager.unregister('my-plugin')
+```
+
+### Plugin Lifecycle Hooks
+
+| Hook | When Called | Use Case |
+|------|-------------|----------|
+| `onRegister` | Plugin is registered | Initialize state |
+| `beforeProcess` | Before template processing | Add global variables |
+| `afterParse` | After parsing, before directives | Template analysis |
+| `beforeDirective` | Before each directive phase | Modify behavior |
+| `afterDirective` | After each directive phase | Post-process |
+| `beforeRender` | Before final output | Last modifications |
+| `afterRender` | After final output | Add wrappers/scripts |
+| `onError` | On processing error | Error recovery |
+| `onUnregister` | Plugin is removed | Cleanup |
+
+### Built-in Plugins
+
+```typescript
+import { debugPlugin, timingPlugin, createVariablesPlugin } from 'stx'
+
+// Debug plugin - logs lifecycle events
+await pluginManager.register(debugPlugin, options)
+
+// Timing plugin - measures processing time
+await pluginManager.register(timingPlugin, options)
+
+// Variables plugin - adds global variables
+const varsPlugin = createVariablesPlugin({
+  appName: 'My App',
+  version: '1.0.0'
+})
+await pluginManager.register(varsPlugin, options)
+```
+
+### Plugin Dependencies
+
+```typescript
+const childPlugin = definePlugin({
+  name: 'child-plugin',
+  dependencies: ['parent-plugin'], // Must be registered first
+
+  onRegister() {
+    // parent-plugin is guaranteed to be available
+  }
+})
+```
+
+### Create Directive Plugin
+
+```typescript
+import { createDirectivePlugin } from 'stx'
+
+const textPlugin = createDirectivePlugin('text-utils', [
+  {
+    name: 'reverse',
+    handler: (content) => content.split('').reverse().join(''),
+    hasEndTag: true
+  },
+  {
+    name: 'repeat',
+    handler: (content, [times]) => content.repeat(Number(times) || 1),
+    hasEndTag: true
+  }
+])
+```
+
+---
+
+## Testing Utilities
+
+Test STX components with a Vue Test Utils-like API.
+
+### Render a Template
+
+```typescript
+import { render } from 'stx/testing'
+
+const { html, container } = await render('<h1>{{ title }}</h1>', {
+  context: { title: 'Hello World' }
+})
+
+expect(html).toContain('Hello World')
+expect(container.querySelector('h1')?.textContent).toBe('Hello World')
+```
+
+### Mount a Component
+
+```typescript
+import { mount } from 'stx/testing'
+
+const wrapper = await mount('<Button @click="onClick">Click me</Button>', {
+  props: { disabled: false },
+  context: { onClick: vi.fn() }
+})
+
+// Query elements
+expect(wrapper.find('button')).toBeTruthy()
+expect(wrapper.text()).toContain('Click me')
+
+// Check attributes
+expect(wrapper.attributes('disabled')).toBeNull()
+expect(wrapper.classes()).not.toContain('disabled')
+```
+
+### Fire Events
+
+```typescript
+import { mount, fireEvent } from 'stx/testing'
+
+const wrapper = await mount('<input type="text" @input="onInput" />', {
+  context: { onInput: vi.fn() }
+})
+
+// Fire input event
+await fireEvent.input(wrapper.find('input'), 'hello')
+
+// Fire click event
+await fireEvent.click(wrapper.find('button'))
+
+// Fire keyboard event
+await fireEvent.keyDown(wrapper.find('input'), 'Enter')
+
+// Fire custom event
+await fireEvent.custom(wrapper.element, 'my-event', { detail: { foo: 'bar' } })
+```
+
+### Check Emitted Events
+
+```typescript
+const wrapper = await mount('<Button @click="$emit(\'clicked\', data)" />')
+
+await wrapper.trigger('click')
+
+// Check if event was emitted
+expect(wrapper.emitted('clicked')).toBeDefined()
+expect(wrapper.emitted('clicked')).toHaveLength(1)
+
+// Check event payload
+const [[payload]] = wrapper.emitted('clicked')!
+expect(payload).toEqual({ data: 'value' })
+```
+
+### Set Props and Data
+
+```typescript
+const wrapper = await mount('<Counter :count="count" />', {
+  props: { count: 0 }
+})
+
+expect(wrapper.text()).toContain('0')
+
+// Update props
+await wrapper.setProps({ count: 5 })
+expect(wrapper.text()).toContain('5')
+
+// Update data
+await wrapper.setData({ internalCount: 10 })
+```
+
+### Form Testing
+
+```typescript
+const wrapper = await mount(`
+  <form @submit="onSubmit">
+    <input name="email" type="email" />
+    <input name="remember" type="checkbox" />
+    <button type="submit">Submit</button>
+  </form>
+`)
+
+// Set input value
+await wrapper.find('input[name="email"]')?.setValue('test@example.com')
+
+// Check checkbox
+await wrapper.find('input[name="remember"]')?.setValue(true)
+
+// Submit form
+await fireEvent.submit(wrapper.find('form'))
+```
+
+### Wait for Conditions
+
+```typescript
+import { waitFor, waitForElement, flushPromises } from 'stx/testing'
+
+// Wait for element to appear
+const element = await waitForElement(wrapper, '.loaded', { timeout: 1000 })
+
+// Wait for condition
+await waitFor(() => wrapper.text().includes('Loaded'))
+
+// Flush pending promises
+await flushPromises()
+
+// Wait for next tick
+await wrapper.vm.$nextTick()
+```
+
+### Mock Functions
+
+```typescript
+import { createMockFn } from 'stx/testing'
+
+const mockFn = createMockFn()
+
+mockFn('arg1', 'arg2')
+
+expect(mockFn.mock.calls).toHaveLength(1)
+expect(mockFn.mock.calls[0]).toEqual(['arg1', 'arg2'])
+
+// With implementation
+mockFn.mockImplementation((a, b) => a + b)
+expect(mockFn(1, 2)).toBe(3)
+
+// With return value
+mockFn.mockReturnValue(42)
+expect(mockFn()).toBe(42)
+```
+
+### Custom Matchers
+
+```typescript
+import { matchers } from 'stx/testing'
+
+// Check text content
+expect(matchers.toContainText(wrapper, 'Hello')).toBe(true)
+
+// Check class
+expect(matchers.toHaveClass(wrapper, 'active')).toBe(true)
+
+// Check attribute
+expect(matchers.toHaveAttribute(wrapper, 'disabled')).toBe(false)
+expect(matchers.toHaveAttribute(wrapper, 'type', 'button')).toBe(true)
+
+// Check visibility
+expect(matchers.toBeVisible(wrapper)).toBe(true)
+
+// Check existence
+expect(matchers.toExist(wrapper.find('.item'))).toBe(true)
+
+// Check emitted events
+expect(matchers.toHaveEmitted(wrapper, 'click')).toBe(true)
+expect(matchers.toHaveEmitted(wrapper, 'click', 2)).toBe(true) // emitted twice
+expect(matchers.toHaveEmittedWith(wrapper, 'submit', { data: 'value' })).toBe(true)
+```
+
+### Test Setup and Cleanup
+
+```typescript
+import { createTestContext, cleanup } from 'stx/testing'
+
+describe('MyComponent', () => {
+  let ctx: ReturnType<typeof createTestContext>
+
+  beforeEach(() => {
+    ctx = createTestContext({
+      props: { title: 'Test' },
+      context: { user: { name: 'John' } },
+      mocks: { fetchData: vi.fn() }
+    })
+  })
+
+  afterEach(() => {
+    cleanup()
+  })
+
+  it('works', async () => {
+    const wrapper = await mount('<MyComponent :title="title" />', ctx)
+    // ...
+  })
+})
+```
+
+### Snapshot Testing
+
+```typescript
+it('matches snapshot', async () => {
+  const wrapper = await mount('<Card title="Hello" />')
+  expect(wrapper.html()).toMatchSnapshot()
+})
+```
+
+---
+
 ## Deferred Loading (@defer)
 
 Lazy load content based on various triggers for better performance.

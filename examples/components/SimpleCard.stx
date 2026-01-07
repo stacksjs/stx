@@ -1,6 +1,18 @@
 <script server>
-const title = props.title || 'Card Title'
-const content = props.content || 'Card content goes here.'
+import { defineProps, withDefaults } from 'stx'
+
+interface SimpleCardProps {
+  title?: string
+  content?: string
+}
+
+const { title, content } = withDefaults(
+  defineProps<SimpleCardProps>(),
+  {
+    title: 'Card Title',
+    content: 'Card content goes here.'
+  }
+)
 </script>
 
 <template>

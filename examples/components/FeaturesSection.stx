@@ -1,8 +1,27 @@
 <script server>
-const id = props.id || ''
-const title = props.title || 'Features'
-const description = props.description || ''
-const features = props.features || []
+import { defineProps, withDefaults } from 'stx'
+
+interface Feature {
+  title: string
+  desc: string
+}
+
+interface FeaturesSectionProps {
+  id?: string
+  title?: string
+  description?: string
+  features?: Feature[]
+}
+
+const { id, title, description, features } = withDefaults(
+  defineProps<FeaturesSectionProps>(),
+  {
+    id: '',
+    title: 'Features',
+    description: '',
+    features: []
+  }
+)
 </script>
 
 <template>

@@ -318,6 +318,9 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
         return new Response(htmlContent, {
           headers: {
             'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         })
       }
@@ -533,6 +536,9 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         return processedContent().then(content => new Response(content, {
           headers: {
             'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         }))
       }
@@ -1301,6 +1307,9 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         return injectHeadwindCSS(routeMatched.content).then(content => new Response(content, {
           headers: {
             'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         }))
       }
@@ -1384,6 +1393,9 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         return injectHeadwindCSS(routes['/'].content).then(content => new Response(content, {
           headers: {
             'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         }))
       }

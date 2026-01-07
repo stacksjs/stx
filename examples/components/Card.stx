@@ -1,8 +1,20 @@
 <script server>
-const title = props.title || 'Card Title'
-const subtitle = props.subtitle
-const classList = props.class || ''
-const footer = props.footer
+import { defineProps, withDefaults } from 'stx'
+
+interface CardProps {
+  title?: string
+  subtitle?: string
+  class?: string
+  footer?: string
+}
+
+const { title, subtitle, class: classList, footer } = withDefaults(
+  defineProps<CardProps>(),
+  {
+    title: 'Card Title',
+    class: ''
+  }
+)
 </script>
 
 <template>

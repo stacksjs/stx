@@ -1,6 +1,18 @@
 <script server>
-const title = "stx Animation Test"
-const items = ["Fade", "Slide", "Scale", "Flip", "Rotate"]
+import { defineProps, withDefaults } from 'stx'
+
+interface AnimationTestProps {
+  title?: string
+  items?: string[]
+}
+
+const { title, items } = withDefaults(
+  defineProps<AnimationTestProps>(),
+  {
+    title: 'stx Animation Test',
+    items: ['Fade', 'Slide', 'Scale', 'Flip', 'Rotate']
+  }
+)
 </script>
 
 <!DOCTYPE html>

@@ -1,6 +1,18 @@
 <script server>
-const title = props.title || 'Feature'
-const description = props.description || 'Description'
+import { defineProps, withDefaults } from 'stx'
+
+interface FeatureCardProps {
+  title?: string
+  description?: string
+}
+
+const { title, description } = withDefaults(
+  defineProps<FeatureCardProps>(),
+  {
+    title: 'Feature',
+    description: 'Description'
+  }
+)
 </script>
 
 <template>

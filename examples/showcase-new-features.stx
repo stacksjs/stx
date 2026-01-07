@@ -1,0 +1,586 @@
+<script server>
+import { defineProps, withDefaults, defineEmits } from 'stx'
+
+// TypeScript Props with full type safety
+interface ShowcaseProps {
+  title?: string
+  theme?: 'light' | 'dark'
+  showAdvanced?: boolean
+}
+
+const { title, theme, showAdvanced } = withDefaults(
+  defineProps<ShowcaseProps>(),
+  {
+    title: 'STX New Features Showcase',
+    theme: 'dark',
+    showAdvanced: true
+  }
+)
+
+// Sample data for demos
+const users = [
+  { id: 1, name: 'Alice', role: 'Admin', avatar: 'A' },
+  { id: 2, name: 'Bob', role: 'Developer', avatar: 'B' },
+  { id: 3, name: 'Charlie', role: 'Designer', avatar: 'C' }
+]
+
+const products = [
+  { id: 1, name: 'Widget Pro', price: 29.99, inStock: true },
+  { id: 2, name: 'Gadget Plus', price: 49.99, inStock: false },
+  { id: 3, name: 'Tool Master', price: 19.99, inStock: true }
+]
+
+const tabs = ['async', 'suspense', 'keepalive', 'errors', 'directives']
+</script>
+
+<!DOCTYPE html>
+<html lang="en" class="{{ theme }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent: #3b82f6;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --border: #475569;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--accent), #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle { color: var(--text-secondary); margin-bottom: 2rem; }
+
+    .section {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: var(--accent);
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 9999px;
+      background: var(--accent);
+      color: white;
+    }
+
+    .code-block {
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+
+    .demo-area {
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+
+    .card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 0.5rem 0;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .loading-skeleton {
+      background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+      height: 1rem;
+      margin: 0.5rem 0;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .error-box {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--error);
+      border-radius: 8px;
+      padding: 1rem;
+      color: var(--error);
+    }
+
+    .success-box {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid var(--success);
+      border-radius: 8px;
+      padding: 1rem;
+      color: var(--success);
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+
+    button:hover { opacity: 0.9; transform: translateY(-1px); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 0.5rem 1rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab:hover, .tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .highlight { color: var(--warning); }
+    .uppercase { text-transform: uppercase; }
+    .currency::before { content: '$'; }
+
+    /* Transition styles */
+    .fade-enter { opacity: 0; }
+    .fade-enter-active { transition: opacity 300ms ease-out; }
+    .fade-enter-to { opacity: 1; }
+    .fade-leave { opacity: 1; }
+    .fade-leave-active { transition: opacity 200ms ease-in; }
+    .fade-leave-to { opacity: 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header style="text-align: center; margin-bottom: 3rem;">
+      <h1>{{ title }}</h1>
+      <p class="subtitle">Explore the powerful new features in STX framework</p>
+    </header>
+
+    <!-- 1. TypeScript Props Demo -->
+    <section class="section">
+      <h2 class="section-title">
+        TypeScript Props <span class="badge">NEW</span>
+      </h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Full type safety with defineProps and withDefaults
+      </p>
+
+      <div class="code-block">
+<pre>import { defineProps, withDefaults } from 'stx'
+
+interface ButtonProps {
+  text?: string
+  variant?: 'primary' | 'secondary' | 'danger'
+  disabled?: boolean
+}
+
+const { text, variant, disabled } = withDefaults(
+  defineProps&lt;ButtonProps&gt;(),
+  { text: 'Click me', variant: 'primary', disabled: false }
+)</pre>
+      </div>
+
+      <div class="demo-area">
+        <p><strong>Current props:</strong></p>
+        <ul style="margin-left: 1.5rem; color: var(--text-secondary);">
+          <li>title: "{{ title }}"</li>
+          <li>theme: "{{ theme }}"</li>
+          <li>showAdvanced: {{ showAdvanced }}</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 2. Async Components Demo -->
+    <section class="section">
+      <h2 class="section-title">
+        Async Components <span class="badge">NEW</span>
+      </h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Lazy load components with loading and error states
+      </p>
+
+      <div class="code-block">
+<pre>@async(timeout: 5000)
+  &lt;UserProfile :id="userId" /&gt;
+@error
+  &lt;div class="error-box"&gt;Failed to load profile&lt;/div&gt;
+@endasync</pre>
+      </div>
+
+      <div class="demo-area">
+        @async(timeout: 3000)
+          <div class="card-grid">
+            @foreach (users as user)
+              <div class="card">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                    {{ user.avatar }}
+                  </div>
+                  <div>
+                    <div style="font-weight: 600;">{{ user.name }}</div>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);">{{ user.role }}</div>
+                  </div>
+                </div>
+              </div>
+            @endforeach
+          </div>
+        @error
+          <div class="error-box">Failed to load users. Please try again.</div>
+        @endasync
+      </div>
+    </section>
+
+    <!-- 3. Suspense Demo -->
+    <section class="section">
+      <h2 class="section-title">
+        Suspense <span class="badge">NEW</span>
+      </h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Coordinate loading states for multiple async children
+      </p>
+
+      <div class="code-block">
+<pre>@suspense(timeout: 5000)
+  &lt;AsyncComponent1 /&gt;
+  &lt;AsyncComponent2 /&gt;
+@fallback
+  &lt;LoadingSkeleton /&gt;
+@endsuspense</pre>
+      </div>
+
+      <div class="demo-area">
+        @suspense(timeout: 5000)
+          <div class="card-grid">
+            @foreach (products as product)
+              <div class="card">
+                <h4>{{ product.name }}</h4>
+                <div style="font-size: 1.25rem; font-weight: bold; color: var(--success);">
+                  ${{ product.price }}
+                </div>
+                <div style="margin-top: 0.5rem;">
+                  @if (product.inStock)
+                    <span style="color: var(--success);">In Stock</span>
+                  @else
+                    <span style="color: var(--error);">Out of Stock</span>
+                  @endif
+                </div>
+              </div>
+            @endforeach
+          </div>
+        @fallback
+          <div class="card-grid">
+            <div class="card">
+              <div class="loading-skeleton" style="width: 60%;"></div>
+              <div class="loading-skeleton" style="width: 40%;"></div>
+              <div class="loading-skeleton" style="width: 30%;"></div>
+            </div>
+            <div class="card">
+              <div class="loading-skeleton" style="width: 60%;"></div>
+              <div class="loading-skeleton" style="width: 40%;"></div>
+              <div class="loading-skeleton" style="width: 30%;"></div>
+            </div>
+          </div>
+        @endsuspense
+      </div>
+    </section>
+
+    <!-- 4. Keep-Alive Demo -->
+    <section class="section">
+      <h2 class="section-title">
+        Keep-Alive <span class="badge">NEW</span>
+      </h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Cache component state when switching between views
+      </p>
+
+      <div class="code-block">
+<pre>@keepAlive(max: 10, include: 'Dashboard,Settings')
+  &lt;TabContent :tab="activeTab" /&gt;
+@endkeepAlive</pre>
+      </div>
+
+      <div class="demo-area" x-data="{ activeTab: 'tab1', formValue: '' }">
+        <div class="tabs">
+          <div class="tab" :class="{ active: activeTab === 'tab1' }" @click="activeTab = 'tab1'">Tab 1</div>
+          <div class="tab" :class="{ active: activeTab === 'tab2' }" @click="activeTab = 'tab2'">Tab 2</div>
+          <div class="tab" :class="{ active: activeTab === 'tab3' }" @click="activeTab = 'tab3'">Tab 3</div>
+        </div>
+
+        @keepAlive(max: 5)
+          <div x-show="activeTab === 'tab1'" class="card">
+            <h4>Tab 1 Content</h4>
+            <p style="color: var(--text-secondary);">Form state is preserved when switching tabs:</p>
+            <input type="text" x-model="formValue" placeholder="Type something..."
+                   style="margin-top: 0.5rem; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); width: 100%;">
+          </div>
+          <div x-show="activeTab === 'tab2'" class="card">
+            <h4>Tab 2 Content</h4>
+            <p style="color: var(--text-secondary);">Switch between tabs - your input is preserved!</p>
+          </div>
+          <div x-show="activeTab === 'tab3'" class="card">
+            <h4>Tab 3 Content</h4>
+            <p style="color: var(--text-secondary);">Keep-alive caches component state efficiently.</p>
+          </div>
+        @endkeepAlive
+      </div>
+    </section>
+
+    <!-- 5. Error Boundaries Demo -->
+    <section class="section">
+      <h2 class="section-title">
+        Error Boundaries <span class="badge">NEW</span>
+      </h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Gracefully handle runtime errors in components
+      </p>
+
+      <div class="code-block">
+<pre>@errorBoundary
+  &lt;RiskyComponent /&gt;
+@fallback
+  &lt;div class="error-box"&gt;
+    Something went wrong. &lt;button @click="retry()"&gt;Retry&lt;/button&gt;
+  &lt;/div&gt;
+@enderrorBoundary</pre>
+      </div>
+
+      <div class="demo-area">
+        @errorBoundary
+          <div class="success-box">
+            Component rendered successfully! Error boundaries catch any runtime errors.
+          </div>
+        @fallback
+          <div class="error-box">
+            An error occurred while rendering this component.
+            <button style="margin-left: 1rem;">Retry</button>
+          </div>
+        @enderrorBoundary
+      </div>
+    </section>
+
+    <!-- 6. Custom Directives Demo -->
+    <section class="section">
+      <h2 class="section-title">
+        Custom Directives <span class="badge">NEW</span>
+      </h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        14 built-in directives + create your own
+      </p>
+
+      <div class="code-block">
+<pre>// Built-in directives
+@uppercase Hello World @enduppercase
+@currency 29.99 @endcurrency
+@truncate(20) Long text here... @endtruncate
+@highlight(yellow) Important! @endhighlight
+
+// Define custom directive
+defineDirective({
+  name: 'tooltip',
+  transform: (content, params) =>
+    `&lt;span title="${params.text}"&gt;${content}&lt;/span&gt;`
+})</pre>
+      </div>
+
+      <div class="demo-area">
+        <div class="card-grid">
+          <div class="card">
+            <h4>@uppercase</h4>
+            <p class="uppercase">hello world</p>
+          </div>
+          <div class="card">
+            <h4>@currency</h4>
+            <p class="currency">29.99</p>
+          </div>
+          <div class="card">
+            <h4>@highlight</h4>
+            <p><span class="highlight">Important text!</span></p>
+          </div>
+          <div class="card">
+            <h4>@badge</h4>
+            <p><span class="badge">New Feature</span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Transitions Demo -->
+    <section class="section">
+      <h2 class="section-title">
+        Transitions <span class="badge">NEW</span>
+      </h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Smooth enter/leave animations for elements
+      </p>
+
+      <div class="code-block">
+<pre>@transition(name: 'fade', duration: 300)
+  &lt;div x-show="visible"&gt;Animated content&lt;/div&gt;
+@endtransition</pre>
+      </div>
+
+      <div class="demo-area" x-data="{ show: true }">
+        <button @click="show = !show" style="margin-bottom: 1rem;">
+          Toggle Content
+        </button>
+
+        @transition(name: fade, duration: 300)
+          <div x-show="show" class="card">
+            <h4>Animated Content</h4>
+            <p style="color: var(--text-secondary);">This content fades in and out smoothly.</p>
+          </div>
+        @endtransition
+      </div>
+    </section>
+
+    <!-- 8. Provide/Inject Demo -->
+    @if (showAdvanced)
+    <section class="section">
+      <h2 class="section-title">
+        Provide/Inject <span class="badge">NEW</span>
+      </h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Share data across component tree without prop drilling
+      </p>
+
+      <div class="code-block">
+<pre>// Parent component
+@provide(theme, 'dark')
+@provide(user, { name: 'Alice', role: 'Admin' })
+  &lt;ChildComponent /&gt;
+@endprovide
+
+// Child component (any depth)
+@inject(theme)
+@inject(user)
+  &lt;div&gt;Theme: {{ theme }}, User: {{ user.name }}&lt;/div&gt;
+@endinject</pre>
+      </div>
+
+      <div class="demo-area">
+        @provide(appTheme, dark)
+          <div class="card">
+            <h4>Parent Provider</h4>
+            <p style="color: var(--text-secondary);">Provides: appTheme = "dark"</p>
+
+            <div class="card" style="margin-top: 1rem; margin-left: 1rem;">
+              <h4>Child Consumer</h4>
+              @inject(appTheme)
+                <p style="color: var(--text-secondary);">Injected theme: "{{ theme }}"</p>
+              @endinject
+            </div>
+          </div>
+        @endprovide
+      </div>
+    </section>
+    @endif
+
+    <!-- Feature Summary -->
+    <section class="section" style="background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));">
+      <h2 class="section-title">Feature Summary</h2>
+      <div class="card-grid" style="margin-top: 1rem;">
+        <div class="card">
+          <h4 style="color: var(--accent);">TypeScript Props</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary);">Full type safety with defineProps</p>
+        </div>
+        <div class="card">
+          <h4 style="color: var(--accent);">Async Components</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary);">Lazy loading with @async</p>
+        </div>
+        <div class="card">
+          <h4 style="color: var(--accent);">Suspense</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary);">Coordinated loading states</p>
+        </div>
+        <div class="card">
+          <h4 style="color: var(--accent);">Keep-Alive</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary);">Cache component state</p>
+        </div>
+        <div class="card">
+          <h4 style="color: var(--accent);">Error Boundaries</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary);">Graceful error handling</p>
+        </div>
+        <div class="card">
+          <h4 style="color: var(--accent);">Custom Directives</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary);">14 built-in + extensible</p>
+        </div>
+        <div class="card">
+          <h4 style="color: var(--accent);">Transitions</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary);">Smooth animations</p>
+        </div>
+        <div class="card">
+          <h4 style="color: var(--accent);">Provide/Inject</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary);">Dependency injection</p>
+        </div>
+      </div>
+    </section>
+
+    <footer style="text-align: center; margin-top: 3rem; color: var(--text-secondary);">
+      <p>Built with STX Framework</p>
+    </footer>
+  </div>
+</body>
+</html>

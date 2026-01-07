@@ -1,11 +1,26 @@
 <script server>
-const text = props.text || ''
-const variant = props.variant || 'primary'
-const size = props.size || ''
-const type = props.type || 'button'
-const icon = props.icon
-const disabled = props.disabled
-const classList = props.class || ''
+import { defineProps, withDefaults } from 'stx'
+
+interface ButtonProps {
+  text?: string
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
+  size?: 'sm' | 'md' | 'lg' | ''
+  type?: 'button' | 'submit' | 'reset'
+  icon?: string
+  disabled?: boolean
+  class?: string
+}
+
+const { text, variant, size, type, icon, disabled, class: classList } = withDefaults(
+  defineProps<ButtonProps>(),
+  {
+    text: '',
+    variant: 'primary',
+    size: '',
+    type: 'button',
+    class: ''
+  }
+)
 </script>
 
 <template>

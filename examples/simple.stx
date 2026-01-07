@@ -1,5 +1,16 @@
 <script server>
-const message = "Hello from stx"
+import { defineProps, withDefaults } from 'stx'
+
+interface SimplePageProps {
+  message?: string
+}
+
+const { message } = withDefaults(
+  defineProps<SimplePageProps>(),
+  {
+    message: 'Hello from stx'
+  }
+)
 </script>
 
 <!DOCTYPE html>

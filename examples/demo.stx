@@ -1,13 +1,45 @@
 <script server>
-const title = "stx Interactive Demo"
-const description = "A powerful templating engine for Bun"
-const features = [
+import { defineProps, withDefaults } from 'stx'
+
+// TypeScript Props for the demo page
+interface DemoProps {
+  title?: string
+  description?: string
+  showFeatures?: boolean
+}
+
+const { title, description, showFeatures } = withDefaults(
+  defineProps<DemoProps>(),
+  {
+    title: 'stx Interactive Demo',
+    description: 'A powerful templating engine for Bun',
+    showFeatures: true
+  }
+)
+
+// Feature data with TypeScript interface
+interface Feature {
+  name: string
+  icon: string
+  description: string
+  color: string
+}
+
+const features: Feature[] = [
   { name: "Templates", icon: "📄", description: "Write HTML with powerful templating syntax", color: "violet" },
   { name: "Directives", icon: "⚡", description: "Use @if, @foreach, and other directives", color: "cyan" },
   { name: "Components", icon: "🧩", description: "Build reusable components", color: "emerald" },
   { name: "Streaming", icon: "🌊", description: "Support for streaming rendering", color: "rose" }
 ]
-const user = {
+
+// User data with TypeScript interface
+interface User {
+  name: string
+  isLoggedIn: boolean
+  role: string
+}
+
+const user: User = {
   name: "Demo User",
   isLoggedIn: true,
   role: "Developer"

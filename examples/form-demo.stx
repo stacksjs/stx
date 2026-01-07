@@ -1,6 +1,29 @@
 <script server>
-const title = "stx Form Handling Demo"
-const formData = {
+import { defineProps, withDefaults } from 'stx'
+
+interface FormDemoProps {
+  title?: string
+  showValidation?: boolean
+}
+
+const { title, showValidation } = withDefaults(
+  defineProps<FormDemoProps>(),
+  {
+    title: 'stx Form Handling Demo',
+    showValidation: true
+  }
+)
+
+interface FormData {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+  confirmPassword: string
+  agreeTerms: boolean
+}
+
+const formData: FormData = {
   firstName: "",
   lastName: "",
   email: "",
@@ -8,7 +31,8 @@ const formData = {
   confirmPassword: "",
   agreeTerms: false
 }
-const errors = {}
+
+const errors: Record<string, string> = {}
 const submitted = false
 </script>
 

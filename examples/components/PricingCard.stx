@@ -1,11 +1,28 @@
 <script server>
-const name = props.name || 'Open Source'
-const price = props.price || 'FREE'
-const period = props.period || 'FOREVER'
-const features = props.features || []
-const cta = props.cta || 'GET STARTED'
-const link = props.link || '#'
-const highlight = props.highlight || false
+import { defineProps, withDefaults } from 'stx'
+
+interface PricingCardProps {
+  name?: string
+  price?: string
+  period?: string
+  features?: string[]
+  cta?: string
+  link?: string
+  highlight?: boolean
+}
+
+const { name, price, period, features, cta, link, highlight } = withDefaults(
+  defineProps<PricingCardProps>(),
+  {
+    name: 'Open Source',
+    price: 'FREE',
+    period: 'FOREVER',
+    features: [],
+    cta: 'GET STARTED',
+    link: '#',
+    highlight: false
+  }
+)
 </script>
 
 <template>
