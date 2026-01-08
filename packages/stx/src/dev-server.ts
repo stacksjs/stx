@@ -1821,12 +1821,8 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
           await buildAllPages()
           await rebuildHeadwindCSS(absoluteAppDir)
 
-          // Debug: Log HMR state
-          console.log(`[HMR Debug] hotReload=${hotReload}, hmrServer=${!!hmrServer}`)
           if (hotReload && hmrServer) {
             hmrServer.reload(filename)
-          } else {
-            console.log(`[HMR Debug] Skipping reload: hotReload=${hotReload}, hmrServer exists=${!!hmrServer}`)
           }
         }
         // For other JS/TS files (could be components, lib, etc.), rebuild

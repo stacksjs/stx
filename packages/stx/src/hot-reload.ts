@@ -104,8 +104,9 @@ export class HotReloadServer {
           websocket: {
             open: (ws) => {
               this.clients.add(ws as unknown as WebSocketClient)
-              // Always log client connections for debugging
-              console.log(`[HMR] Client connected (${this.clients.size} total)`)
+              if (this.options.verbose) {
+                console.log(`[HMR] Client connected (${this.clients.size} total)`)
+              }
               // Send connected message
               ws.send(JSON.stringify({
                 type: 'connected',
@@ -203,7 +204,9 @@ export class HotReloadServer {
    * Trigger a full page reload
    */
   reload(filePath?: string): void {
-    console.log(`[HMR] Sending reload to ${this.clients.size} client(s) for: ${filePath || 'all'}`)
+    if (this.options.verbose) {
+      console.log(`[HMR] Sending reload to ${this.clients.size} client(s) for: ${filePath || 'all'}`)
+    }
     this.broadcast({
       type: 'reload',
       path: filePath,
