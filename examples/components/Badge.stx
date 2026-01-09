@@ -1,0 +1,53 @@
+<script server>
+import { defineProps, withDefaults } from 'stx'
+
+interface BadgeProps {
+  text: string
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'purple'
+  size?: 'xs' | 'sm' | 'md'
+  pill?: boolean
+  dot?: boolean
+  dotPulse?: boolean
+  icon?: string
+}
+
+const { text, variant, size, pill, dot, dotPulse, icon } = withDefaults(
+  defineProps<BadgeProps>(),
+  {
+    variant: 'default',
+    size: 'sm',
+    pill: true,
+    dot: false,
+    dotPulse: false
+  }
+)
+
+const variantClasses: Record<string, { bg: string, text: string, dot: string }> = {
+  default: { bg: 'bg-slate-500/20', text: 'text-slate-400', dot: 'bg-slate-400' },
+  success: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', dot: 'bg-emerald-400' },
+  warning: { bg: 'bg-amber-500/20', text: 'text-amber-400', dot: 'bg-amber-400' },
+  danger: { bg: 'bg-red-500/20', text: 'text-red-400', dot: 'bg-red-400' },
+  info: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', dot: 'bg-cyan-400' },
+  purple: { bg: 'bg-purple-500/20', text: 'text-purple-400', dot: 'bg-purple-400' }
+}
+
+const sizeClasses: Record<string, string> = {
+  xs: 'px-1.5 py-0.5 text-[10px]',
+  sm: 'px-2 py-0.5 text-xs',
+  md: 'px-3 py-1 text-sm'
+}
+
+const variantClass = variantClasses[variant]
+const sizeClass = sizeClasses[size]
+const shapeClass = pill ? 'rounded-full' : 'rounded-md'
+</script>
+
+<span class="inline-flex items-center gap-1.5 font-medium {{ variantClass.bg }} {{ variantClass.text }} {{ sizeClass }} {{ shapeClass }}">
+  @if (dot)
+    <span class="w-1.5 h-1.5 {{ variantClass.dot }} rounded-full {{ dotPulse ? 'animate-pulse' : '' }}"></span>
+  @endif
+  @if (icon)
+    {!! icon !!}
+  @endif
+  {{ text }}
+</span>

@@ -1,20 +1,135 @@
 <script server>
+import { defineProps, withDefaults } from 'stx'
+
+// ============================================================================
+// TypeScript Interfaces
+// ============================================================================
+
+interface TrainerProfile {
+  name: string
+  title: string
+  avatar: string
+  rating: number
+}
+
+interface DashboardStats {
+  activeClients: number
+  sessionsThisWeek: number
+  upcomingToday: number
+  completionRate: number
+  revenue: number
+  newClientsThisMonth: number
+}
+
+interface Client {
+  id: number
+  name: string
+  avatar: string
+  goal: 'Weight Loss' | 'Muscle Gain' | 'Marathon Prep' | 'Flexibility' | 'Strength'
+  progress: number
+  nextSession: string
+  streak: number
+  status: 'active' | 'paused' | 'completed'
+  plan: string
+}
+
+interface Session {
+  time: string
+  client: string
+  type: 'personal' | 'group' | 'consultation'
+  duration: number
+  participants: number
+  focus: string
+  status: 'completed' | 'upcoming' | 'cancelled'
+}
+
+interface WorkoutTemplate {
+  id: number
+  name: string
+  exercises: number
+  duration: number
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
+  category: 'Strength' | 'Cardio' | 'Core' | 'Mobility'
+  usageCount: number
+}
+
+interface Exercise {
+  name: string
+  muscle: string
+  equipment: string
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
+}
+
+interface Activity {
+  type: 'workout' | 'milestone' | 'message' | 'payment' | 'signup'
+  message: string
+  time: string
+}
+
+interface NutritionPlan {
+  name: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  clientCount: number
+}
+
+// ============================================================================
+// Props Definition (for component reuse)
+// ============================================================================
+
+interface FitCoachProps {
+  initialTab?: 'dashboard' | 'clients' | 'schedule' | 'workouts' | 'nutrition' | 'analytics'
+  theme?: 'dark' | 'light'
+}
+
+const { initialTab, theme } = withDefaults(
+  defineProps<FitCoachProps>(),
+  {
+    initialTab: 'dashboard',
+    theme: 'dark'
+  }
+)
+
+// ============================================================================
+// Data
+// ============================================================================
+
 // Trainer Profile
-const trainerName = "Alex Rivera"
-const trainerTitle = "Certified Personal Trainer"
-const trainerAvatar = "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=150&h=150&fit=crop&crop=face"
-const trainerRating = 4.9
+const trainer: TrainerProfile = {
+  name: "Alex Rivera",
+  title: "Certified Personal Trainer",
+  avatar: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=150&h=150&fit=crop&crop=face",
+  rating: 4.9
+}
+
+// Expose for template
+const trainerName = trainer.name
+const trainerTitle = trainer.title
+const trainerAvatar = trainer.avatar
+const trainerRating = trainer.rating
 
 // Dashboard Stats
-const activeClients = 24
-const sessionsThisWeek = 18
-const upcomingToday = 5
-const completionRate = 94
-const revenue = 4250
-const newClientsThisMonth = 6
+const stats: DashboardStats = {
+  activeClients: 24,
+  sessionsThisWeek: 18,
+  upcomingToday: 5,
+  completionRate: 94,
+  revenue: 4250,
+  newClientsThisMonth: 6
+}
+
+// Expose for template
+const activeClients = stats.activeClients
+const sessionsThisWeek = stats.sessionsThisWeek
+const upcomingToday = stats.upcomingToday
+const completionRate = stats.completionRate
+const revenue = stats.revenue
+const newClientsThisMonth = stats.newClientsThisMonth
 
 // Client List
-const clients = [
+const clients: Client[] = [
   { id: 1, name: "Sarah Johnson", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face", goal: "Weight Loss", progress: 72, nextSession: "Today, 10:00 AM", streak: 12, status: "active", plan: "12-Week Transformation" },
   { id: 2, name: "Mike Chen", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face", goal: "Muscle Gain", progress: 58, nextSession: "Today, 2:00 PM", streak: 8, status: "active", plan: "Hypertrophy Program" },
   { id: 3, name: "Emma Wilson", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face", goal: "Marathon Prep", progress: 85, nextSession: "Tomorrow, 7:00 AM", streak: 21, status: "active", plan: "Endurance Builder" },
@@ -23,7 +138,7 @@ const clients = [
 ]
 
 // Today's Schedule
-const todaySchedule = [
+const todaySchedule: Session[] = [
   { time: "7:00 AM", client: "Group HIIT", type: "group", duration: 45, participants: 8, focus: "Full Body", status: "completed" },
   { time: "10:00 AM", client: "Sarah Johnson", type: "personal", duration: 60, participants: 1, focus: "Lower Body", status: "upcoming" },
   { time: "2:00 PM", client: "Mike Chen", type: "personal", duration: 60, participants: 1, focus: "Push Day", status: "upcoming" },
@@ -32,7 +147,7 @@ const todaySchedule = [
 ]
 
 // Workout Templates
-const workoutTemplates = [
+const workoutTemplates: WorkoutTemplate[] = [
   { id: 1, name: "Full Body Blast", exercises: 8, duration: 45, difficulty: "Intermediate", category: "Strength", usageCount: 24 },
   { id: 2, name: "HIIT Inferno", exercises: 12, duration: 30, difficulty: "Advanced", category: "Cardio", usageCount: 18 },
   { id: 3, name: "Core Crusher", exercises: 10, duration: 20, difficulty: "Beginner", category: "Core", usageCount: 32 },
@@ -42,7 +157,7 @@ const workoutTemplates = [
 ]
 
 // Exercise Library
-const exercises = [
+const exercises: Exercise[] = [
   { name: "Barbell Squat", muscle: "Quadriceps", equipment: "Barbell", difficulty: "Intermediate" },
   { name: "Deadlift", muscle: "Back", equipment: "Barbell", difficulty: "Advanced" },
   { name: "Bench Press", muscle: "Chest", equipment: "Barbell", difficulty: "Intermediate" },
@@ -54,7 +169,7 @@ const exercises = [
 ]
 
 // Recent Activity
-const recentActivity = [
+const recentActivity: Activity[] = [
   { type: "workout", message: "Sarah completed Full Body Blast", time: "2 hours ago" },
   { type: "milestone", message: "Mike reached 10-session milestone", time: "3 hours ago" },
   { type: "message", message: "New message from Emma Wilson", time: "4 hours ago" },
@@ -63,19 +178,19 @@ const recentActivity = [
 ]
 
 // Nutrition Plans
-const nutritionPlans = [
+const nutritionPlans: NutritionPlan[] = [
   { name: "Muscle Building", calories: 2800, protein: 180, carbs: 300, fat: 90, clientCount: 12 },
   { name: "Fat Loss", calories: 1800, protein: 150, carbs: 150, fat: 60, clientCount: 8 },
   { name: "Maintenance", calories: 2200, protein: 140, carbs: 220, fat: 75, clientCount: 4 }
 ]
 
 // Weekly Progress Data
-const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-const weekSessions = [4, 5, 3, 6, 4, 2, 0]
-const weekHours = [4.5, 5.0, 3.5, 6.5, 4.0, 2.5, 0]
+const weekDays: string[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+const weekSessions: number[] = [4, 5, 3, 6, 4, 2, 0]
+const weekHours: number[] = [4.5, 5.0, 3.5, 6.5, 4.0, 2.5, 0]
 
 // Upcoming Week Dates
-const weekDates = [9, 10, 11, 12, 13, 14, 15]
+const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
 </script>
 
 <!DOCTYPE html>

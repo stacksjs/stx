@@ -1,0 +1,57 @@
+<script server>
+import { defineProps, withDefaults } from 'stx'
+
+interface StatCardProps {
+  value: string | number
+  label: string
+  icon?: string
+  trend?: string
+  trendPositive?: boolean
+  variant?: 'default' | 'emerald' | 'cyan' | 'purple' | 'amber' | 'red'
+  size?: 'sm' | 'md' | 'lg'
+}
+
+const { value, label, icon, trend, trendPositive, variant, size } = withDefaults(
+  defineProps<StatCardProps>(),
+  {
+    variant: 'default',
+    size: 'md',
+    trendPositive: true
+  }
+)
+
+const variantClasses: Record<string, string> = {
+  default: 'bg-slate-500/20 text-slate-400',
+  emerald: 'bg-emerald-500/20 text-emerald-400',
+  cyan: 'bg-cyan-500/20 text-cyan-400',
+  purple: 'bg-purple-500/20 text-purple-400',
+  amber: 'bg-amber-500/20 text-amber-400',
+  red: 'bg-red-500/20 text-red-400'
+}
+
+const sizeClasses: Record<string, { card: string, icon: string, value: string, label: string }> = {
+  sm: { card: 'p-3', icon: 'w-8 h-8', value: 'text-lg', label: 'text-xs' },
+  md: { card: 'p-5', icon: 'w-10 h-10', value: 'text-2xl', label: 'text-sm' },
+  lg: { card: 'p-6', icon: 'w-12 h-12', value: 'text-3xl', label: 'text-base' }
+}
+
+const iconClass = variantClasses[variant]
+const sizeClass = sizeClasses[size]
+</script>
+
+<div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 transition-all hover:transform hover:-translate-y-1 hover:shadow-xl {{ sizeClass.card }}">
+  <div class="flex items-center justify-between mb-3">
+    @if (icon)
+      <div class="{{ sizeClass.icon }} {{ iconClass }} rounded-xl flex items-center justify-center">
+        {!! icon !!}
+      </div>
+    @endif
+    @if (trend)
+      <span class="text-xs {{ trendPositive ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10' }} px-2 py-1 rounded-full">
+        {{ trend }}
+      </span>
+    @endif
+  </div>
+  <div class="{{ sizeClass.value }} font-bold">{{ value }}</div>
+  <div class="{{ sizeClass.label }} text-slate-400">{{ label }}</div>
+</div>

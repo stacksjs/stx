@@ -1,0 +1,111 @@
+<script server>
+import { defineProps, withDefaults } from 'stx'
+
+interface ActivityCardProps {
+  avatar: string
+  userName: string
+  activity: string
+  timestamp: string
+  type?: 'workout' | 'milestone' | 'message' | 'payment' | 'signup' | 'trail'
+  stats?: { label: string, value: string | number }[]
+  actionLabel?: string
+  kudos?: number
+}
+
+const { avatar, userName, activity, timestamp, type, stats, actionLabel, kudos } = withDefaults(
+  defineProps<ActivityCardProps>(),
+  {
+    type: 'workout'
+  }
+)
+
+const typeIcons: Record<string, { bg: string, icon: string }> = {
+  workout: {
+    bg: 'bg-emerald-500/20',
+    icon: '<svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>'
+  },
+  milestone: {
+    bg: 'bg-amber-500/20',
+    icon: '<svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>'
+  },
+  message: {
+    bg: 'bg-blue-500/20',
+    icon: '<svg class="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>'
+  },
+  payment: {
+    bg: 'bg-green-500/20',
+    icon: '<svg class="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+  },
+  signup: {
+    bg: 'bg-purple-500/20',
+    icon: '<svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>'
+  },
+  trail: {
+    bg: 'bg-emerald-500/20',
+    icon: '<svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>'
+  }
+}
+
+const typeConfig = typeIcons[type] || typeIcons.workout
+</script>
+
+<div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center space-x-3">
+      <img
+        src="{{ avatar }}"
+        alt="{{ userName }}"
+        class="w-12 h-12 rounded-full object-cover border-2 border-emerald-100"
+        onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'"
+      />
+      <div>
+        <p class="font-semibold text-gray-900">{{ userName }}</p>
+        <p class="text-sm text-gray-500">{{ timestamp }}</p>
+      </div>
+    </div>
+    <div class="w-8 h-8 {{ typeConfig.bg }} rounded-full flex items-center justify-center">
+      {!! typeConfig.icon !!}
+    </div>
+  </div>
+
+  <!-- Activity -->
+  <h3 class="font-bold text-lg text-gray-900 mb-3 hover:text-emerald-600 cursor-pointer transition">
+    {{ activity }}
+  </h3>
+
+  <!-- Stats grid -->
+  @if (stats && stats.length > 0)
+    <div class="grid grid-cols-{{ Math.min(stats.length, 4) }} gap-4 mb-4">
+      @foreach (stats as stat)
+        <div class="text-center p-3 bg-gray-50 rounded-xl">
+          <p class="text-xl font-bold text-gray-900">{{ stat.value }}</p>
+          <p class="text-xs text-gray-500">{{ stat.label }}</p>
+        </div>
+      @endforeach
+    </div>
+  @endif
+
+  <!-- Actions -->
+  <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+    <div class="flex items-center space-x-4">
+      @if (kudos !== undefined)
+        <button class="flex items-center space-x-2 text-gray-500 hover:text-red-500 transition">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+          <span class="text-sm font-medium">{{ kudos }} Kudos</span>
+        </button>
+      @endif
+      <button class="flex items-center space-x-2 text-gray-500 hover:text-emerald-500 transition">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+        <span class="text-sm font-medium">Comment</span>
+      </button>
+    </div>
+    @if (actionLabel)
+      <button class="text-sm text-emerald-400 hover:text-emerald-300 font-medium">{{ actionLabel }}</button>
+    @endif
+  </div>
+</div>

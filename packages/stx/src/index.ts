@@ -81,5 +81,8 @@ export * from './client'
 // Composables (Nuxt-style browser API utilities)
 export * from './composables'
 
+// Form validation with chainable API
+export * from './forms-validation'
+
 // Default export for the stx module
 export default {}

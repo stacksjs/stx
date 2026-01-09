@@ -896,6 +896,10 @@ async function processOtherDirectives(
   output = processComputedDirectives(output, context, filePath)
   output = processWatchDirectives(output, context, filePath)
 
+  // Process form validation directives (@error, @errors, @hasErrors)
+  const { processFormValidationDirectives } = await import('./forms-validation')
+  output = processFormValidationDirectives(output, context, filePath)
+
   // Process @ref attributes for DOM references
   output = processRefAttributes(output)
 
