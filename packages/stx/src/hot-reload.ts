@@ -134,8 +134,9 @@ export class HotReloadServer {
 
         return wsPort
       }
-      catch (error: any) {
-        if (error?.code === 'EADDRINUSE') {
+      catch (error: unknown) {
+        const err = error as { code?: string }
+        if (err?.code === 'EADDRINUSE') {
           // Port is in use, try the next one
           wsPort++
           continue
@@ -203,6 +204,9 @@ export class HotReloadServer {
    * Trigger a full page reload
    */
   reload(filePath?: string): void {
+    if (this.options.verbose) {
+      console.log(`[HMR] Sending reload to ${this.clients.size} client(s) for: ${filePath || 'all'}`)
+    }
     this.broadcast({
       type: 'reload',
       path: filePath,

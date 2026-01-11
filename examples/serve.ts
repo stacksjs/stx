@@ -25,8 +25,6 @@ const _server = Bun.serve({
           headers: {
             'Content-Type': 'application/javascript',
             'Cache-Control': 'no-store, no-cache, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
           },
         })
       }
@@ -37,8 +35,16 @@ const _server = Bun.serve({
           headers: {
             'Content-Type': 'text/html',
             'Cache-Control': 'no-store, no-cache, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
+          },
+        })
+      }
+
+      // Serve CSS with no-cache
+      if (path.endsWith('.css')) {
+        return new Response(file, {
+          headers: {
+            'Content-Type': 'text/css',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
           },
         })
       }
@@ -46,12 +52,10 @@ const _server = Bun.serve({
       return new Response(file, {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
         },
       })
     }
-    catch (err) {
+    catch (err: any) {
       console.error('Error:', err)
       return new Response(`Error: ${err.message}`, { status: 500 })
     }
@@ -59,7 +63,4 @@ const _server = Bun.serve({
 })
 
 console.log('✓ Server running at http://localhost:3000')
-console.log('✓ Homepage: http://localhost:3000/homepage.stx')
-console.log('✓ Homepage CSS: http://localhost:3000/homepage.css')
-console.log('✓ Homepage JS: http://localhost:3000/homepage.ts')
-console.log('Press Ctrl+C to stop')
+console.log('✓ Voide: http://localhost:3000/voide-refactored.stx')

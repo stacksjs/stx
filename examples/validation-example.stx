@@ -1,0 +1,613 @@
+<script server>
+import { defineForm, v } from 'stx'
+
+// =============================================================================
+// Form Definitions
+// =============================================================================
+
+const signupForm = defineForm({
+  fullName: v.required('Full name is required').min(2, 'Name is too short'),
+  email: v.required('Email is required').email('Please enter a valid email address'),
+  password: v.required('Password is required')
+    .min(8, 'Password must be at least 8 characters')
+    .hasUppercase('Include at least one uppercase letter')
+    .hasLowercase('Include at least one lowercase letter')
+    .hasNumber('Include at least one number'),
+  confirmPassword: v.required('Please confirm your password').matches('password', 'Passwords do not match'),
+  username: v.required('Username is required')
+    .min(3, 'Username must be at least 3 characters')
+    .max(20, 'Username cannot exceed 20 characters')
+    .alphanumeric('Username can only contain letters and numbers')
+    .startsWithLetter('Username must start with a letter'),
+  age: v.number('Please enter a valid number').between(13, 120, 'You must be between 13 and 120 years old'),
+  website: v.url('Please enter a valid URL'),
+  bio: v.max(500, 'Bio cannot exceed 500 characters')
+})
+
+// Simulate form with validation errors for demo
+signupForm.values.fullName = 'J'
+signupForm.values.email = 'invalid-email'
+signupForm.values.password = 'weak'
+signupForm.values.confirmPassword = 'different'
+signupForm.values.username = '123user'
+signupForm.values.age = 10
+signupForm.values.website = 'not-a-url'
+
+// Run validation to populate errors
+await signupForm.validate()
+
+// Mark fields as touched to show errors
+signupForm.touched.fullName = true
+signupForm.touched.email = true
+signupForm.touched.password = true
+signupForm.touched.confirmPassword = true
+signupForm.touched.username = true
+signupForm.touched.age = true
+signupForm.touched.website = true
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account - STX Validation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .form-container {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .form-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .form-header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-header p {
+      color: #64748b;
+      font-size: 0.9375rem;
+    }
+
+    .form-card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 0.5rem;
+    }
+
+    label .optional {
+      font-weight: 400;
+      color: #9ca3af;
+      font-size: 0.8125rem;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 0.9375rem;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 0.5rem;
+      background: #fff;
+      color: #1e293b;
+      transition: all 0.15s ease;
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: #94a3b8;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+
+    /* Error states */
+    input.has-error, textarea.has-error {
+      border-color: #ef4444;
+      background: #fef2f2;
+    }
+
+    input.has-error:focus, textarea.has-error:focus {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+    }
+
+    /* Success states */
+    input.is-valid {
+      border-color: #22c55e;
+      background: #f0fdf4;
+    }
+
+    input.is-valid:focus {
+      border-color: #22c55e;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+    }
+
+    /* Error message styling */
+    .error-message {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.375rem;
+      margin-top: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: #fef2f2;
+      border-radius: 0.375rem;
+      border-left: 3px solid #ef4444;
+    }
+
+    .error-message svg {
+      width: 1rem;
+      height: 1rem;
+      color: #ef4444;
+      flex-shrink: 0;
+      margin-top: 0.125rem;
+    }
+
+    .error-message span {
+      font-size: 0.8125rem;
+      color: #dc2626;
+      line-height: 1.4;
+    }
+
+    /* Multiple errors list */
+    .error-list {
+      margin-top: 0.5rem;
+      padding: 0.625rem 0.75rem;
+      background: #fef2f2;
+      border-radius: 0.375rem;
+      border-left: 3px solid #ef4444;
+    }
+
+    .error-list-title {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: #dc2626;
+      margin-bottom: 0.375rem;
+    }
+
+    .error-list-title svg {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .error-list ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .error-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.8125rem;
+      color: #b91c1c;
+      padding: 0.25rem 0;
+      padding-left: 0.25rem;
+    }
+
+    .error-list li::before {
+      content: '';
+      width: 4px;
+      height: 4px;
+      background: #ef4444;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Password strength indicator */
+    .password-requirements {
+      margin-top: 0.75rem;
+      padding: 0.75rem;
+      background: #f8fafc;
+      border-radius: 0.5rem;
+      border: 1px solid #e2e8f0;
+    }
+
+    .password-requirements-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+      margin-bottom: 0.5rem;
+    }
+
+    .requirement {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8125rem;
+      padding: 0.25rem 0;
+    }
+
+    .requirement svg {
+      width: 1rem;
+      height: 1rem;
+      flex-shrink: 0;
+    }
+
+    .requirement.met {
+      color: #16a34a;
+    }
+
+    .requirement.met svg {
+      color: #22c55e;
+    }
+
+    .requirement.unmet {
+      color: #dc2626;
+    }
+
+    .requirement.unmet svg {
+      color: #ef4444;
+    }
+
+    /* Submit button */
+    button[type="submit"] {
+      width: 100%;
+      padding: 0.875rem 1.5rem;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: white;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-top: 0.5rem;
+    }
+
+    button[type="submit"]:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    button[type="submit"]:active {
+      transform: translateY(0);
+    }
+
+    button[type="submit"]:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Footer */
+    .form-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.875rem;
+      color: #64748b;
+    }
+
+    .form-footer a {
+      color: #6366f1;
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .form-footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Input wrapper with icon */
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper input {
+      padding-right: 2.5rem;
+    }
+
+    .input-icon {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .input-icon.error {
+      color: #ef4444;
+    }
+
+    .input-icon.success {
+      color: #22c55e;
+    }
+
+    /* Character count */
+    .char-count {
+      text-align: right;
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 0.25rem;
+    }
+
+    .char-count.warning {
+      color: #f59e0b;
+    }
+
+    .char-count.error {
+      color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <div class="form-header">
+      <h1>Create your account</h1>
+      <p>Join thousands of users building amazing things</p>
+    </div>
+
+    <div class="form-card">
+      <form>
+        <!-- Full Name -->
+        <div class="form-group">
+          <label for="fullName">Full Name</label>
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="fullName"
+              name="fullName"
+              placeholder="John Doe"
+              value="{{ signupForm.values.fullName }}"
+              class="has-error"
+            />
+            <svg class="input-icon error" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          @error(signupForm.errors.fullName)
+            <div class="error-message">
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+              </svg>
+              <span>{{ message }}</span>
+            </div>
+          @enderror
+        </div>
+
+        <!-- Username -->
+        <div class="form-group">
+          <label for="username">Username</label>
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="username"
+              name="username"
+              placeholder="johndoe"
+              value="{{ signupForm.values.username }}"
+              class="has-error"
+            />
+            <svg class="input-icon error" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          @hasErrors(signupForm.errors.username)
+            <div class="error-list">
+              <div class="error-list-title">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                Please fix the following:
+              </div>
+              <ul>
+                @errors(signupForm.errors.username)
+                  <li>{{ message }}</li>
+                @enderrors
+              </ul>
+            </div>
+          @endhasErrors
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <div class="input-wrapper">
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="you@example.com"
+              value="{{ signupForm.values.email }}"
+              class="has-error"
+            />
+            <svg class="input-icon error" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          @error(signupForm.errors.email)
+            <div class="error-message">
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+              </svg>
+              <span>{{ message }}</span>
+            </div>
+          @enderror
+        </div>
+
+        <!-- Password with requirements -->
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Create a strong password"
+            value="{{ signupForm.values.password }}"
+            class="has-error"
+          />
+          <div class="password-requirements">
+            <div class="password-requirements-title">Password must have:</div>
+            <div class="requirement unmet">
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+              </svg>
+              At least 8 characters
+            </div>
+            <div class="requirement unmet">
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+              </svg>
+              One uppercase letter
+            </div>
+            <div class="requirement met">
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              One lowercase letter
+            </div>
+            <div class="requirement unmet">
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+              </svg>
+              One number
+            </div>
+          </div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <div class="input-wrapper">
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              placeholder="Repeat your password"
+              class="has-error"
+            />
+            <svg class="input-icon error" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          @error(signupForm.errors.confirmPassword)
+            <div class="error-message">
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+              </svg>
+              <span>{{ message }}</span>
+            </div>
+          @enderror
+        </div>
+
+        <!-- Age & Website Row -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="age">Age</label>
+            <div class="input-wrapper">
+              <input
+                type="number"
+                id="age"
+                name="age"
+                placeholder="25"
+                value="{{ signupForm.values.age }}"
+                class="has-error"
+              />
+            </div>
+            @error(signupForm.errors.age)
+              <div class="error-message">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <span>{{ message }}</span>
+              </div>
+            @enderror
+          </div>
+
+          <div class="form-group">
+            <label for="website">Website <span class="optional">(optional)</span></label>
+            <div class="input-wrapper">
+              <input
+                type="url"
+                id="website"
+                name="website"
+                placeholder="https://..."
+                value="{{ signupForm.values.website }}"
+                class="has-error"
+              />
+            </div>
+            @error(signupForm.errors.website)
+              <div class="error-message">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <span>{{ message }}</span>
+              </div>
+            @enderror
+          </div>
+        </div>
+
+        <!-- Bio -->
+        <div class="form-group">
+          <label for="bio">Bio <span class="optional">(optional)</span></label>
+          <textarea
+            id="bio"
+            name="bio"
+            rows="3"
+            placeholder="Tell us a bit about yourself..."
+          ></textarea>
+          <div class="char-count">0 / 500 characters</div>
+        </div>
+
+        <button type="submit" disabled>Create Account</button>
+      </form>
+
+      <div class="form-footer">
+        Already have an account? <a href="#">Sign in</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

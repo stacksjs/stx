@@ -7,27 +7,36 @@
   <script>
     const title = "My stx Page"
     const description = "A page built with stx"
-    const items = [
-      "Templates with TypeScript support",
-      "Powerful directives",
-      "Reusable components"
+    const features = [
+      { name: "Single File Components", desc: "Script, style, and template in one .stx file" },
+      { name: "Component System", desc: "Import components with @component('name', {})" },
+      { name: "Blade Directives", desc: "@if, @foreach, @switch, @layout and more" }
     ]
   </script>
   <style>
     :root {
-      --primary-color: #3498db;
-      --dark-color: #34495e;
-      --font-main: system-ui, -apple-system, sans-serif;
+      --primary: #3498db;
+      --secondary: #2ecc71;
+      --dark: #34495e;
+      --light: #ecf0f1;
     }
     body {
-      font-family: var(--font-main);
+      font-family: system-ui, -apple-system, sans-serif;
       line-height: 1.6;
-      color: var(--dark-color);
+      color: var(--dark);
       max-width: 800px;
       margin: 0 auto;
       padding: 2rem;
     }
-    h1 { color: var(--primary-color); }
+    h1 { color: var(--primary); }
+    .card {
+      background: var(--light);
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+    }
+    .card h3 { color: var(--primary); margin: 0 0 0.5rem; }
+    .card p { margin: 0; color: #666; }
   </style>
 </head>
 <body>
@@ -36,13 +45,14 @@
     <p>{{ description }}</p>
   </header>
 
-  <div class="content">
+  <main>
     <h2>Features</h2>
-    <ul>
-      @foreach(items as item)
-        <li>{{ item }}</li>
-      @endforeach
-    </ul>
-  </div>
+    @foreach(features as feature)
+      <div class="card">
+        <h3>{{ feature.name }}</h3>
+        <p>{{ feature.desc }}</p>
+      </div>
+    @endforeach
+  </main>
 </body>
 </html>

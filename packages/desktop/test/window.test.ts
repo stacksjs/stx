@@ -120,20 +120,20 @@ describe('Window Management', () => {
   })
 
   describe('openDevWindow', () => {
-    it('should attempt to open native window and fall back to browser', async () => {
+    it('should attempt to open native window and skip browser fallback in tests', async () => {
       const result = await openDevWindow(3000)
 
-      // Should attempt craft, fail, then open browser
-      expect(result).toBe(true)
+      // In test environment, browser fallback is skipped to avoid opening browsers
+      expect(result).toBe(false)
       expect(consoleWarnSpy).toHaveBeenCalled()
-      expect(consoleLogSpy).toHaveBeenCalledWith('📱 Opening in browser instead...')
+      expect(consoleLogSpy).toHaveBeenCalledWith('(Skipping browser fallback in test environment)')
     })
 
     it('should construct correct URL from port', async () => {
       const result = await openDevWindow(8080)
 
-      // Should have attempted to open http://localhost:8080/
-      expect(result).toBe(true)
+      // In test environment, returns false (browser fallback skipped)
+      expect(result).toBe(false)
       expect(consoleWarnSpy).toHaveBeenCalled()
     })
 
@@ -144,12 +144,14 @@ describe('Window Management', () => {
         height: 1000,
       })
 
-      expect(result).toBe(true)
+      // In test environment, returns false (browser fallback skipped)
+      expect(result).toBe(false)
     })
 
-    it('should return true on successful browser fallback', async () => {
+    it('should return false in test environment (browser fallback skipped)', async () => {
       const result = await openDevWindow(3000)
-      expect(result).toBe(true)
+      // In test environment, browser fallback is skipped to avoid opening browsers
+      expect(result).toBe(false)
     })
 
     it('should be an async function', () => {
@@ -171,7 +173,8 @@ describe('Window Management', () => {
 
     it('should handle invalid port numbers', async () => {
       const result = await openDevWindow(-1)
-      expect(result).toBe(true) // Still returns true (browser fallback)
+      // In test environment, browser fallback is skipped
+      expect(result).toBe(false)
     })
   })
 })

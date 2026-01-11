@@ -414,6 +414,10 @@ export interface StxConfig {
   partialsDir: string
   /** Path to components directory, defaults to 'components' in the same directory as the template */
   componentsDir: string
+  /** Path to layouts directory, defaults to 'layouts' in the project root */
+  layoutsDir?: string
+  /** Default layout to use for pages without DOCTYPE, relative to layoutsDir */
+  defaultLayout?: string
   /** Enable debug mode for detailed error messages */
   debug: boolean
   /** Directory to store cached templates, defaults to '.stx/cache' in the project root */

@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'bun:test'
+import { afterEach, describe, expect, it } from 'bun:test'
 import {
   assert,
+  clearErrorHandler,
   ComponentError,
   createDebugger,
   devAssert,
@@ -11,6 +12,11 @@ import {
   warn,
   wrapErrorHandler,
 } from '../../src/utils/error-handling'
+
+// Clean up global error handler after each test to prevent test pollution
+afterEach(() => {
+  clearErrorHandler()
+})
 
 describe('ComponentError', () => {
   it('should create error with component and message', () => {

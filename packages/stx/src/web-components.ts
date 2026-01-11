@@ -1991,23 +1991,256 @@ export function generateReactiveRuntime(): string {
 }
 
 // =============================================================================
+// SFC Web Component Parser
+// =============================================================================
+
+/**
+ * Parsed SFC web component structure
+ */
+export interface ParsedSFCComponent {
+  tag: string
+  props: string[]
+  template: string
+  styles: string
+  script: string
+  shadowDOM: boolean
+}
+
+/**
+ * Parse an SFC-style web component file
+ *
+ * Expected format:
+ * ```html
+ * <script>
+ * export default {
+ *   tag: 'my-button',
+ *   props: ['type', 'text'],
+ *   shadowDOM: true // optional, defaults to true
+ * }
+ * </script>
+ *
+ * <template>
+ *   <button class="{{ type }}">{{ text }}</button>
+ * </template>
+ *
+ * <style>
+ * button { padding: 8px 16px; }
+ * </style>
+ * ```
+ */
+export function parseSFCComponent(source: string, defaultTag: string): ParsedSFCComponent {
+  // Extract script block
+  const scriptMatch = source.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
+  const scriptContent = scriptMatch ? scriptMatch[1].trim() : ''
+
+  // Parse component config from script
+  let tag = defaultTag
+  let props: string[] = []
+  let shadowDOM = true
+
+  if (scriptContent) {
+    // Try to parse export default { ... }
+    const exportMatch = scriptContent.match(/export\s+default\s+({[\s\S]*})/)
+    if (exportMatch) {
+      try {
+        // Simple parsing - extract tag, props, shadowDOM
+        const configStr = exportMatch[1]
+
+        // Extract tag
+        const tagMatch = configStr.match(/tag\s*:\s*['"`]([^'"`]+)['"`]/)
+        if (tagMatch) tag = tagMatch[1]
+
+        // Extract props array
+        const propsMatch = configStr.match(/props\s*:\s*\[([\s\S]*?)\]/)
+        if (propsMatch) {
+          props = propsMatch[1]
+            .split(',')
+            .map(p => p.trim().replace(/['"`]/g, ''))
+            .filter(p => p.length > 0)
+        }
+
+        // Extract shadowDOM
+        const shadowMatch = configStr.match(/shadowDOM\s*:\s*(true|false)/)
+        if (shadowMatch) shadowDOM = shadowMatch[1] === 'true'
+      }
+      catch {
+        // Ignore parsing errors, use defaults
+      }
+    }
+  }
+
+  // Extract template block
+  const templateMatch = source.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
+  const template = templateMatch ? templateMatch[1].trim() : ''
+
+  // Extract style block
+  const styleMatch = source.match(/<style\b[^>]*>([\s\S]*?)<\/style>/i)
+  const styles = styleMatch ? styleMatch[1].trim() : ''
+
+  return {
+    tag,
+    props,
+    template,
+    styles,
+    script: scriptContent,
+    shadowDOM,
+  }
+}
+
+/**
+ * Generate a web component class from parsed SFC
+ */
+export function generateSFCWebComponent(parsed: ParsedSFCComponent): string {
+  const { tag, props, template, styles, shadowDOM } = parsed
+
+  // Convert tag to class name (my-button -> MyButton)
+  const className = tag
+    .split('-')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('')
+
+  // Escape template for JS string
+  const escapedTemplate = template
+    .replace(/\\/g, '\\\\')
+    .replace(/`/g, '\\`')
+    .replace(/\$\{/g, '\\${')
+
+  // Escape styles
+  const escapedStyles = styles
+    .replace(/\\/g, '\\\\')
+    .replace(/`/g, '\\`')
+
+  // Generate observed attributes
+  const observedAttrs = props.map(p => `'${p}'`).join(', ')
+
+  // Generate property getters/setters
+  const propertyAccessors = props.map(prop => `
+  get ${prop}() {
+    return this.getAttribute('${prop}') || '';
+  }
+  set ${prop}(value) {
+    if (value) {
+      this.setAttribute('${prop}', value);
+    } else {
+      this.removeAttribute('${prop}');
+    }
+  }`).join('\n')
+
+  return `/**
+ * ${className} Web Component
+ * Auto-generated from SFC
+ */
+class ${className} extends HTMLElement {
+  constructor() {
+    super();
+    ${shadowDOM ? "this.attachShadow({ mode: 'open' });" : ''}
+    this._render();
+  }
+
+  static get observedAttributes() {
+    return [${observedAttrs}];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue !== newValue) {
+      this._render();
+    }
+  }
+${propertyAccessors}
+
+  _render() {
+    const template = \`${escapedStyles ? `<style>${escapedStyles}</style>` : ''}${escapedTemplate}\`;
+
+    // Interpolate {{ prop }} with attribute values
+    const rendered = template.replace(/\\{\\{\\s*(\\w+)\\s*\\}\\}/g, (match, prop) => {
+      return this.getAttribute(prop) || '';
+    });
+
+    ${shadowDOM ? 'this.shadowRoot.innerHTML = rendered;' : 'this.innerHTML = rendered;'}
+  }
+
+  connectedCallback() {
+    this._render();
+  }
+}
+
+customElements.define('${tag}', ${className});
+`
+}
+
+// =============================================================================
 // Directive Handler
 // =============================================================================
 
 /**
- * Directive handler for embedding web components in templates
+ * Directive handler for embedding web components in templates.
+ *
+ * The directive looks for an SFC-style component file and generates
+ * an inline script with the web component class.
+ *
+ * Usage:
+ * ```html
+ * @webcomponent('my-button')
+ * <my-button type="primary" text="Click Me"></my-button>
+ * ```
+ *
+ * Component file (components/my-button.stx):
+ * ```html
+ * <script>
+ * export default {
+ *   tag: 'my-button',
+ *   props: ['type', 'text']
+ * }
+ * </script>
+ *
+ * <template>
+ *   <button class="{{ type }}">{{ text }}</button>
+ * </template>
+ *
+ * <style>
+ * button { padding: 8px 16px; }
+ * </style>
+ * ```
  */
-export function webComponentDirectiveHandler(
+export async function webComponentDirectiveHandler(
   content: string,
   params: string[],
   context: Record<string, any>,
-  _filePath: string,
-): string {
+  filePath: string,
+): Promise<string> {
   if (params.length < 1) {
     return inlineError('WebComponent', '@webcomponent directive requires at least the tag name parameter', ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
   }
 
-  const tag = params[0].replace(/['"]/g, '')
-  const path = context.__stx?.webComponentsPath || '/web-components'
-  return `<script type="module" src="${path}/${tag}.js"></script>`
+  const tagName = params[0].replace(/['"]/g, '')
+  const options = context.__stx_options || {}
+
+  // Try to find the component file
+  const componentsDir = options.componentsDir || 'components'
+  const possiblePaths = [
+    path.join(path.dirname(filePath), componentsDir, `${tagName}.stx`),
+    path.join(process.cwd(), componentsDir, `${tagName}.stx`),
+    path.join(path.dirname(filePath), `${tagName}.stx`),
+  ]
+
+  let componentSource: string | null = null
+  for (const componentPath of possiblePaths) {
+    if (await fileExists(componentPath)) {
+      componentSource = await Bun.file(componentPath).text()
+      break
+    }
+  }
+
+  if (!componentSource) {
+    return inlineError('WebComponent', `Component file not found: ${tagName}.stx`, ErrorCodes.FILE_NOT_FOUND)
+  }
+
+  // Parse the SFC and generate the web component
+  const parsed = parseSFCComponent(componentSource, tagName)
+  const webComponentCode = generateSFCWebComponent(parsed)
+
+  // Return inline script with the web component
+  return `<script type="module">
+${webComponentCode}
+</script>`
 }

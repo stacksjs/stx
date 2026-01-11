@@ -1,8 +1,11 @@
 import type { StxOptions } from './types'
 import path from 'node:path'
 import { processA11yDirectives } from './a11y'
+import { processTemplateBindings } from './reactive-bindings'
 import { injectAnalytics } from './analytics'
 import { processAnimationDirectives } from './animation'
+import { processEventDirectives } from './events'
+import { processReactiveDirectives } from './reactive'
 import { processMarkdownFileDirectives } from './assets'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
 import { injectCspMetaTag, processCspDirectives } from './csp'
@@ -45,9 +48,9 @@ import { runComposers } from './view-composers'
 //   4. Process @push/@prepend (collect stack content)
 //
 // Phase 2: Layout Resolution
-//   5. Extract @extends directive (layout path)
+//   5. Extract @layout/@extends directive (layout path)
 //   6. Extract @section directives (including @parent handling)
-//   7. Replace @yield with section content
+//   7. Replace @yield and {{ slot }} with section content
 //   8. Replace @stack with collected content
 //   9. If layout exists: recursively process layout with sections
 //
@@ -77,9 +80,11 @@ import { runComposers } from './view-composers'
 //   32. @meta, @seo, @structuredData directives
 //   33. @json directive
 //   34. @once directive
-//   35. {{ }} expressions (LAST - after all directive output)
-//   36. Run post-processing middleware
-//   37. Auto-inject SEO tags (if enabled)
+//   35. @click, @keydown, etc. (Alpine-style event directives)
+//   36. x-data, x-model, x-show, etc. (Alpine-style reactive directives)
+//   37. {{ }} expressions (LAST - after all directive output)
+//   38. Run post-processing middleware
+//   39. Auto-inject SEO tags (if enabled)
 //
 // IMPORTANT: Changing this order may break template rendering!
 // =============================================================================
@@ -142,33 +147,33 @@ function pascalToKebab(str: string): string {
  * Properly handles:
  * - Simple attributes: `name="value"`
  * - Boolean attributes: `disabled`
- * - Vue-like bindings: `:prop="expr"` or `v-bind:prop="expr"`
+ * - Dynamic values: `prop="{{ expr }}"` (evaluated at SSR)
  * - Attributes with `=` in values: `url="https://example.com?a=1&b=2"`
  * - Single and double quoted values
  * - Escaped quotes within values
  *
- * ## Limitations (Vue-like Syntax)
+ * ## Dynamic Data Syntax
  *
- * stx is a **server-side rendering** framework. The following Vue directives
- * are NOT supported because they require client-side JavaScript:
+ * Use `{{ }}` for all dynamic data interpolation:
+ * ```html
+ * <Component title="{{ pageTitle }}" count="{{ items.length }}" />
+ * <div class="{{ isActive ? 'active' : '' }}">{{ content }}</div>
+ * ```
  *
- * - `v-model` - Two-way data binding (requires client-side reactivity)
- * - `v-on` / `@` - Event handlers (events are client-side only)
- * - `v-if`/`v-for` - Use stx directives `@if`/`@foreach` instead
- * - `v-show` - Use `@if` or CSS classes instead
+ * ## Event Syntax (Alpine-style)
  *
- * For client-side interactivity, use:
- * 1. Web Components (via stx's web component generation)
- * 2. Alpine.js or similar lightweight libraries
- * 3. Progressive enhancement with vanilla JavaScript
+ * ```html
+ * <button @click="handleClick()">Click me</button>
+ * <form @submit.prevent="handleSubmit()">...</form>
+ * <input @keydown.enter="send()" @keydown.escape="cancel()">
+ * ```
  *
  * @param attributesStr - The attributes portion of a tag (between tag name and closing)
- * @returns Array of parsed attributes with name, value, and binding info
+ * @returns Array of parsed attributes with name and value
  */
 interface ParsedAttribute {
   name: string
   value: string | true // true for boolean attributes
-  isBinding: boolean // true if prefixed with : or v-bind:
 }
 
 /**
@@ -190,9 +195,10 @@ interface ComponentTagMatch {
  *
  * @param html - The HTML string to search
  * @param tagPattern - Regex pattern for tag name (for PascalCase components)
+ * @param skipTags - Optional set of tag names to skip (for HTML tags)
  * @returns Array of found component tags
  */
-function findComponentTags(html: string, tagPattern: RegExp): ComponentTagMatch[] {
+function findComponentTags(html: string, tagPattern: RegExp, skipTags?: Set<string>): ComponentTagMatch[] {
   const matches: ComponentTagMatch[] = []
   let pos = 0
 
@@ -212,6 +218,18 @@ function findComponentTags(html: string, tagPattern: RegExp): ComponentTagMatch[
     }
 
     const tagName = tagNameMatch[1]
+
+    // Skip HTML tags - only advance past the opening tag, not the content
+    if (skipTags && skipTags.has(tagName.toLowerCase())) {
+      // Find the end of just the opening tag
+      let currentPos = tagStart + 1 + tagName.length
+      while (currentPos < html.length && html[currentPos] !== '>') {
+        currentPos++
+      }
+      pos = currentPos + 1 // Move past the '>'
+      continue
+    }
+
     let currentPos = tagStart + 1 + tagName.length
 
     // Now find the end of this tag, respecting quoted strings
@@ -340,8 +358,23 @@ function parseMultilineAttributes(attributesStr: string): Record<string, string>
     if (!name)
       break
 
-    // Remove binding prefix from name for props (: shorthand or v-bind:)
-    const propName = name.replace(/^:/, '').replace(/^v-bind:/, '')
+    // Skip @ event attributes (handled by event processing)
+    if (name.startsWith('@')) {
+      // Skip to next attribute
+      while (pos < len && attributesStr[pos] !== '"' && attributesStr[pos] !== '\'') {
+        pos++
+      }
+      if (pos < len) {
+        const quote = attributesStr[pos]
+        pos++
+        while (pos < len && attributesStr[pos] !== quote) {
+          if (attributesStr[pos] === '\\') pos++
+          pos++
+        }
+        pos++
+      }
+      continue
+    }
 
     // Skip whitespace
     while (pos < len && /\s/.test(attributesStr[pos])) {
@@ -392,11 +425,11 @@ function parseMultilineAttributes(attributesStr: string): Record<string, string>
         }
       }
 
-      props[propName] = value
+      props[name] = value
     }
     else {
       // Boolean attribute
-      props[propName] = 'true'
+      props[name] = 'true'
     }
   }
 
@@ -416,17 +449,6 @@ function parseAttributes(attributesStr: string): ParsedAttribute[] {
 
     if (pos >= len)
       break
-
-    // Check for binding prefix
-    let isBinding = false
-    if (attributesStr[pos] === ':') {
-      isBinding = true
-      pos++
-    }
-    else if (attributesStr.slice(pos, pos + 7) === 'v-bind:') {
-      isBinding = true
-      pos += 7
-    }
 
     // Read attribute name (until = or whitespace or end)
     let name = ''
@@ -480,11 +502,11 @@ function parseAttributes(attributesStr: string): ParsedAttribute[] {
         }
       }
 
-      attributes.push({ name, value, isBinding })
+      attributes.push({ name, value })
     }
     else {
       // Boolean attribute (no value)
-      attributes.push({ name, value: true, isBinding })
+      attributes.push({ name, value: true })
     }
   }
 
@@ -506,9 +528,10 @@ export async function processDirectives(
       return await processDirectivesInternal(template, context, filePath, options, dependencies)
     })
   }
-  catch (error: any) {
+  catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error)
     const enhancedError = new StxRuntimeError(
-      `Template processing failed: ${error.message}`,
+      `Template processing failed: ${msg}`,
       filePath,
       undefined,
       undefined,
@@ -538,14 +561,14 @@ async function processDirectivesInternal(
   dependencies: Set<string>,
 ): Promise<string> {
   // Resolve relative paths in options to absolute paths
+  // Use process.cwd() (project root) as the base, not STX's __dirname
   const resolvedOptions = { ...options }
+  const projectRoot = process.cwd()
   if (resolvedOptions.partialsDir && !path.isAbsolute(resolvedOptions.partialsDir)) {
-    const configDir = path.resolve(__dirname, '..')
-    resolvedOptions.partialsDir = path.resolve(configDir, resolvedOptions.partialsDir)
+    resolvedOptions.partialsDir = path.resolve(projectRoot, resolvedOptions.partialsDir)
   }
   if (resolvedOptions.componentsDir && !path.isAbsolute(resolvedOptions.componentsDir)) {
-    const configDir = path.resolve(__dirname, '..')
-    resolvedOptions.componentsDir = path.resolve(configDir, resolvedOptions.componentsDir)
+    resolvedOptions.componentsDir = path.resolve(projectRoot, resolvedOptions.componentsDir)
   }
 
   let output = template
@@ -568,15 +591,16 @@ async function processDirectivesInternal(
   output = processStackPushDirectives(output, stacks)
 
   // Process sections and yields before includes
-  const sections: Record<string, string> = {}
+  // Start with any sections passed in from context (e.g., from parent layout)
+  const sections: Record<string, string> = { ...(context.__sections || {}) }
   let layoutPath = ''
 
-  // Extract layout if used
-  const layoutMatch = output.match(/@extends\(\s*['"]([^'"]+)['"]\s*\)/)
+  // Extract layout if used (@layout or @extends)
+  const layoutMatch = output.match(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/)
   if (layoutMatch) {
     layoutPath = layoutMatch[1]
-    // Remove the @extends directive from the template
-    output = output.replace(/@extends\(\s*['"]([^'"]+)['"]\s*\)/, '')
+    // Remove the @layout/@extends directive from the template
+    output = output.replace(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/, '')
   }
 
   // Extract sections
@@ -602,9 +626,14 @@ async function processDirectivesInternal(
   // Add sections to context
   context.__sections = sections
 
-  // Replace yield with section content
-  output = output.replace(/@yield\(\s*['"]([^'"]+)['"](?:,\s*['"]([^'"]+)['"])?\)/g, (_, name, defaultContent) => {
+  // Replace yield/slot with section content (@slot is preferred, @yield is legacy)
+  output = output.replace(/@(?:yield|slot)\(\s*['"]([^'"]+)['"](?:,\s*['"]([^'"]+)['"])?\)/g, (_, name, defaultContent) => {
     return sections[name] || defaultContent || ''
+  })
+
+  // Replace {{ slot }} with content section (simpler syntax for layouts)
+  output = output.replace(/\{\{\s*slot\s*\}\}/g, () => {
+    return sections.content || ''
   })
 
   // Replace @stack directives with their content
@@ -657,8 +686,8 @@ async function processDirectivesInternal(
         },
       )
 
-      // Check if the layout itself extends another layout
-      const nestedLayoutMatch = layoutContent.match(/@extends\(\s*['"]([^'"]+)['"]\s*\)/)
+      // Check if the layout itself extends another layout (@layout or @extends)
+      const nestedLayoutMatch = layoutContent.match(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/)
       if (nestedLayoutMatch) {
         if (resolvedOptions.debug) {
           console.log(`Found nested layout: ${nestedLayoutMatch[1]} in ${layoutFullPath}`)
@@ -687,8 +716,8 @@ async function processDirectivesInternal(
         const nestedContext = { ...context, __sections: sections }
 
         // Process the nested layout by recursively calling processDirectives
-        // with the modified template that includes the @extends directive
-        const nestedTemplate = `@extends('${nestedLayoutMatch[1]}')${processedLayout}`
+        // with the modified template that includes the @layout directive
+        const nestedTemplate = `@layout('${nestedLayoutMatch[1]}')${processedLayout}`
         return await processDirectives(nestedTemplate, nestedContext, layoutFullPath, resolvedOptions, dependencies)
       }
 
@@ -700,11 +729,11 @@ async function processDirectivesInternal(
       const layoutSections: Record<string, string> = {}
       processedLayout = processedLayout.replace(/@section\(\s*['"]([^'"]+)['"]\s*\)([\s\S]*?)(?:@show|@endsection)/g, (_, name, content) => {
         layoutSections[name] = content.trim()
-        return `@yield('${name}')`
+        return `@slot('${name}')`
       })
 
-      // Apply sections to yields in the layout, handling parent content
-      processedLayout = processedLayout.replace(/@yield\(\s*['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"]\s*)?\)/g, (_, sectionName, defaultContent) => {
+      // Apply sections to slots in the layout, handling parent content
+      processedLayout = processedLayout.replace(/@(?:yield|slot)\(\s*['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"]\s*)?\)/g, (_, sectionName, defaultContent) => {
         if (sections[sectionName]) {
           // If the section has a parent placeholder, replace it with the parent content
           let sectionContent = sections[sectionName]
@@ -714,6 +743,11 @@ async function processDirectivesInternal(
           return sectionContent
         }
         return defaultContent || ''
+      })
+
+      // Replace {{ slot }} with content section (simpler syntax for layouts)
+      processedLayout = processedLayout.replace(/\{\{\s*slot\s*\}\}/g, () => {
+        return sections.content || ''
       })
 
       // Process stack replacements in the layout
@@ -768,10 +802,39 @@ async function processOtherDirectives(
     },
   )
 
+  // Extract variables from <script server> tags (SFC support)
+  // Only scripts with explicit 'server' attribute are executed server-side
+  // All other scripts (no attribute, 'client', 'type="module"', 'src=') are client-side
+  const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
+  let scriptMatch: RegExpExecArray | null
+  while ((scriptMatch = scriptRegex.exec(output)) !== null) {
+    const attrs = scriptMatch[1]
+    const scriptContent = scriptMatch[2]
+
+    // Only process scripts with explicit 'server' attribute
+    // This prevents executing client-side code (document, window, etc.) on the server
+    const isServerScript = /\bserver\b/.test(attrs)
+    if (isServerScript && scriptContent.trim()) {
+      try {
+        const { extractVariables } = await import('./variable-extractor')
+        await extractVariables(scriptContent, context, filePath)
+      }
+      catch (e) {
+        // Script may contain browser-only code, skip
+        if (options.debug) {
+          console.warn('Script extraction error:', e)
+        }
+      }
+    }
+  }
+
   // Process JS/TS directives FIRST - these define variables needed by other directives
   // These execute server-side code and populate the context with variables
   output = await processJsDirectives(output, context, filePath)
   output = await processTsDirectives(output, context, filePath)
+
+  // Process @import directives for explicit component imports
+  output = await processImportDirectives(output, context, filePath, options, dependencies)
 
   // Process custom directives
   output = await processCustomDirectives(output, context, filePath, options)
@@ -787,6 +850,58 @@ async function processOtherDirectives(
 
   // Process animations and transitions
   output = processAnimationDirectives(output, context, filePath, options)
+
+  // Process defer directives (@defer for lazy loading)
+  const { processDeferDirectives } = await import('./defer')
+  output = processDeferDirectives(output, context, filePath)
+
+  // Process teleport directives (@teleport for DOM portals)
+  const { processTeleportDirectives } = await import('./teleport')
+  output = processTeleportDirectives(output, context, filePath)
+
+  // Process transition directives (@transition for animations)
+  const { processTransitionDirectives, processTransitionAttributes } = await import('./transitions')
+  output = processTransitionDirectives(output, context, filePath)
+  output = processTransitionAttributes(output)
+
+  // Process error boundary directives (@errorBoundary for graceful error handling)
+  const { processErrorBoundaryDirectives } = await import('./error-boundaries')
+  output = processErrorBoundaryDirectives(output, context, filePath)
+
+  // Process suspense directives (@suspense for coordinating async loading)
+  const { processSuspenseDirectives } = await import('./suspense')
+  output = processSuspenseDirectives(output, context, filePath)
+
+  // Process async component directives (@async for lazy loading)
+  const { processAsyncDirectives } = await import('./async-components')
+  output = processAsyncDirectives(output, context, filePath)
+
+  // Process keep-alive directives (@keepAlive for caching component state)
+  const { processKeepAliveDirectives } = await import('./keep-alive')
+  output = processKeepAliveDirectives(output, context, filePath)
+
+  // Process virtual scrolling directives (@virtualList, @virtualGrid, @infiniteList)
+  const { processVirtualListDirectives, processVirtualGridDirectives, processInfiniteListDirectives } = await import('./virtual-scrolling')
+  output = processVirtualListDirectives(output, context, filePath)
+  output = processVirtualGridDirectives(output, context, filePath)
+  output = processInfiniteListDirectives(output, context, filePath)
+
+  // Process partial hydration directives (@client:load, @client:idle, @client:visible, etc.)
+  const { processPartialHydrationDirectives, processStaticDirectives } = await import('./partial-hydration')
+  output = processPartialHydrationDirectives(output, context, filePath)
+  output = processStaticDirectives(output)
+
+  // Process computed directives (@computed, @watch)
+  const { processComputedDirectives, processWatchDirectives } = await import('./computed')
+  output = processComputedDirectives(output, context, filePath)
+  output = processWatchDirectives(output, context, filePath)
+
+  // Process form validation directives (@error, @errors, @hasErrors)
+  const { processFormValidationDirectives } = await import('./forms-validation')
+  output = processFormValidationDirectives(output, context, filePath)
+
+  // Process @ref attributes for DOM references
+  output = processRefAttributes(output)
 
   // Process route directives
   output = processRouteDirectives(output)
@@ -850,8 +965,23 @@ async function processOtherDirectives(
   // Process @once directive
   output = processOnceDirective(output)
 
+  // Process event directives (@click, @keydown.enter, etc.) - Alpine-style events
+  output = processEventDirectives(output, context, filePath)
+
+  // Process reactive directives (x-data, x-model, x-show, etc.) - Alpine-style reactivity
+  output = processReactiveDirectives(output, context, filePath)
+
   // Process expressions now (delayed to allow other directives to generate expressions)
   output = await processExpressions(output, context, filePath)
+
+  // Process reactive bindings (:class, :text, stx-class, stx-bind:class, etc.)
+  // This generates client-side JS for store-aware reactive updates
+  output = processTemplateBindings(output)
+
+  // Process x-element directives (x-data, x-model, x-text, etc.)
+  // Injects lightweight reactivity runtime for two-way binding
+  const { processXElementDirectives } = await import('./x-element')
+  output = processXElementDirectives(output)
 
   // Run post-processing middleware
   output = await runPostProcessingMiddleware(output, context, filePath, options)
@@ -877,6 +1007,127 @@ async function processOtherDirectives(
     output = injectPwaTags(output, options)
   }
 
+  // Strip server-only scripts (marked with 'server' attribute)
+  // These are used for SSR variable extraction and shouldn't appear in client output
+  output = output.replace(/<script\s+server\b[^>]*>[\s\S]*?<\/script>\s*/gi, '')
+
+  // Transform @stores imports in client scripts
+  // import { appStore } from '@stores' → const appStore = window.__STX_STORES__.appStore;
+  output = output.replace(/<script\s+client\b([^>]*)>([\s\S]*?)<\/script>/gi, (_match, attrs, content) => {
+    const { transformStoreImports } = require('./state-management')
+    const transformedContent = transformStoreImports(content)
+    return `<script${attrs}>${transformedContent}</script>`
+  })
+
+  // Clean up client attribute from script tags (it's not valid HTML)
+  // Transform <script client> to <script>
+  output = output.replace(/<script\s+client\b([^>]*)>/gi, '<script$1>')
+
+  return output
+}
+
+/**
+ * Process @import directives for explicit component imports
+ *
+ * Syntax:
+ *   @import('components/Card')
+ *   @import('ui/Button', 'ui/Modal')
+ *   @import('Card', 'Button', 'Modal')
+ *
+ * This allows explicit importing of components from any path,
+ * overriding the auto-import from the components directory.
+ */
+async function processImportDirectives(
+  template: string,
+  context: Record<string, any>,
+  filePath: string,
+  options: StxOptions,
+  dependencies: Set<string>,
+): Promise<string> {
+  let output = template
+
+  // Initialize imported components registry in context
+  if (!context.__importedComponents) {
+    context.__importedComponents = new Map<string, string>()
+  }
+  const importedComponents = context.__importedComponents as Map<string, string>
+
+  // Match @import('path') or @import('path1', 'path2', ...)
+  const importRegex = /@import\s*\(\s*([^)]+)\s*\)/g
+  let match
+
+  while ((match = importRegex.exec(output)) !== null) {
+    const [fullMatch, pathsString] = match
+
+    // Parse the paths (handle quoted strings separated by commas)
+    const paths = pathsString
+      .split(',')
+      .map(p => p.trim().replace(/^['"]|['"]$/g, ''))
+      .filter(p => p.length > 0)
+
+    for (const componentPath of paths) {
+      // Get the component name from the path (last segment)
+      const segments = componentPath.split('/')
+      const fileName = segments[segments.length - 1]
+      // Remove .stx extension if present, convert to PascalCase for matching
+      const baseName = fileName.replace(/\.stx$/, '')
+      const componentName = baseName.includes('-')
+        ? baseName.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('')
+        : baseName.charAt(0).toUpperCase() + baseName.slice(1)
+
+      // Resolve the full path
+      let resolvedPath: string | null = null
+
+      // Try different resolution strategies
+      const possiblePaths = [
+        // Relative to current file
+        path.resolve(path.dirname(filePath), `${componentPath}.stx`),
+        path.resolve(path.dirname(filePath), componentPath),
+        // Relative to components dir
+        path.resolve(options.componentsDir || 'components', `${componentPath}.stx`),
+        path.resolve(options.componentsDir || 'components', componentPath),
+        // Absolute path
+        componentPath.endsWith('.stx') ? componentPath : `${componentPath}.stx`,
+      ]
+
+      for (const tryPath of possiblePaths) {
+        try {
+          const stat = await Bun.file(tryPath).exists()
+          if (stat) {
+            resolvedPath = tryPath
+            break
+          }
+        }
+        catch {
+          // Continue trying
+        }
+      }
+
+      if (resolvedPath) {
+        // Register the component for both PascalCase and kebab-case usage
+        importedComponents.set(componentName, resolvedPath)
+        importedComponents.set(baseName, resolvedPath)
+        importedComponents.set(baseName.toLowerCase(), resolvedPath)
+        // Also register kebab-case version
+        const kebabCase = componentName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+        importedComponents.set(kebabCase, resolvedPath)
+
+        // Track as dependency
+        dependencies.add(resolvedPath)
+
+        if (options.debug) {
+          console.log(`Imported component: ${componentName} -> ${resolvedPath}`)
+        }
+      }
+      else if (options.debug) {
+        console.warn(`Could not resolve imported component: ${componentPath}`)
+      }
+    }
+
+    // Remove the @import directive from output
+    output = output.replace(fullMatch, '')
+  }
+
   return output
 }
 
@@ -892,7 +1143,13 @@ async function processComponentDirectives(
   dependencies: Set<string>,
 ): Promise<string> {
   let output = template
-  const processedComponents = new Set<string>() // Prevent infinite recursion
+
+  // Use shared processedComponents set from context to prevent infinite recursion
+  // across nested processDirectives calls
+  if (!context.__processedComponents) {
+    context.__processedComponents = new Set<string>()
+  }
+  const processedComponents = context.__processedComponents as Set<string>
 
   // Find all component directives in the template
   const componentRegex = /@component\s*\(['"]([^'"]+)['"](?:,\s*(\{[^}]*\}))?\)/g
@@ -910,8 +1167,9 @@ async function processComponentDirectives(
         const propsFn = new Function(...Object.keys(context), `return ${propsString}`)
         props = propsFn(...Object.values(context))
       }
-      catch (error: any) {
-        output = output.replace(fullMatch, `[Error parsing component props: ${error.message}]`)
+      catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error)
+        output = output.replace(fullMatch, `[Error parsing component props: ${msg}]`)
         continue
       }
     }
@@ -952,7 +1210,50 @@ async function processCustomElements(
   dependencies: Set<string>,
 ): Promise<string> {
   let output = template
-  const processedComponents = new Set<string>()
+
+  // Use shared processedComponents set from context to prevent infinite recursion
+  // across nested processDirectives calls
+  if (!context.__processedComponents) {
+    context.__processedComponents = new Set<string>()
+  }
+  const processedComponents = context.__processedComponents as Set<string>
+
+  // Standard HTML tags to exclude from component processing
+  const htmlTags = new Set([
+    'a', 'abbr', 'address', 'area', 'article', 'aside', 'audio',
+    'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 'br', 'button',
+    'canvas', 'caption', 'cite', 'code', 'col', 'colgroup',
+    'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'div', 'dl', 'dt',
+    'em', 'embed',
+    'fieldset', 'figcaption', 'figure', 'footer', 'form',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html',
+    'i', 'iframe', 'img', 'input', 'ins',
+    'kbd',
+    'label', 'legend', 'li', 'link',
+    'main', 'map', 'mark', 'menu', 'meta', 'meter',
+    'nav', 'noscript',
+    'object', 'ol', 'optgroup', 'option', 'output',
+    'p', 'param', 'picture', 'pre', 'progress',
+    'q',
+    'rp', 'rt', 'ruby',
+    's', 'samp', 'script', 'section', 'select', 'slot', 'small', 'source', 'span', 'strong', 'style', 'sub', 'summary', 'sup', 'svg',
+    'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track',
+    'u', 'ul',
+    'var', 'video',
+    'wbr',
+    // SVG elements
+    'path', 'circle', 'rect', 'line', 'polygon', 'polyline', 'ellipse',
+    'text', 'tspan', 'textPath',
+    'g', 'defs', 'use', 'symbol', 'image',
+    'clipPath', 'mask', 'pattern', 'marker',
+    'linearGradient', 'radialGradient', 'stop',
+    'filter', 'feBlend', 'feColorMatrix', 'feComponentTransfer', 'feComposite', 'feConvolveMatrix',
+    'feDiffuseLighting', 'feDisplacementMap', 'feDropShadow', 'feFlood', 'feGaussianBlur',
+    'feImage', 'feMerge', 'feMergeNode', 'feMorphology', 'feOffset', 'feSpecularLighting',
+    'feTile', 'feTurbulence', 'foreignObject',
+    'animate', 'animateMotion', 'animateTransform', 'set', 'mpath',
+    'desc', 'metadata', 'switch', 'view',
+  ])
 
   // Process kebab-case components (e.g., <my-component />)
   const kebabPattern = /[a-z][a-z0-9]*-[a-z0-9-]*/
@@ -962,16 +1263,20 @@ async function processCustomElements(
   const pascalPattern = /[A-Z][a-zA-Z0-9]*/
   output = await processComponentsWithParser(output, pascalPattern, true)
 
+  // Process single-word lowercase components (e.g., <card />) - skip HTML tags
+  const lowercasePattern = /[a-z][a-z0-9]*/
+  output = await processComponentsWithParser(output, lowercasePattern, false, htmlTags)
+
   return output
 
   /**
    * Process components using the proper parser that handles quoted strings
    */
-  async function processComponentsWithParser(html: string, tagPattern: RegExp, isPascalCase: boolean): Promise<string> {
+  async function processComponentsWithParser(html: string, tagPattern: RegExp, isPascalCase: boolean, skipTags?: Set<string>): Promise<string> {
     let result = html
 
-    // Find all matching component tags
-    const tags = findComponentTags(result, tagPattern)
+    // Find all matching component tags (pass skipTags to avoid consuming HTML tag content)
+    const tags = findComponentTags(result, tagPattern, skipTags)
 
     // Process from end to start to preserve indices
     for (let i = tags.length - 1; i >= 0; i--) {
@@ -985,27 +1290,17 @@ async function processCustomElements(
       // Parse attributes using the robust parser that handles HTML in values
       const rawProps = parseMultilineAttributes(tag.attributes)
 
-      // Process props: handle bindings, Vue directive warnings, etc.
+      // Process props: evaluate {{ }} expressions and :prop="var" bindings
       const props: Record<string, unknown> = {}
       for (const [attrName, attrValue] of Object.entries(rawProps)) {
-        // Check for binding prefix (: shorthand or v-bind:)
-        const isBinding = attrName.startsWith(':') || attrName.startsWith('v-bind:')
-        const propName = attrName.replace(/^:/, '').replace(/^v-bind:/, '')
-
-        // Warn about unsupported Vue directives (v-model, v-on, etc.)
-        if (attrName === 'v-model' || attrName.startsWith('v-on:') || attrName.startsWith('@')) {
-          if (options.debug) {
-            console.warn(
-              `[stx] Unsupported Vue directive "${attrName}" in ${filePath}. `
-              + `stx is a server-side rendering framework. For two-way binding, `
-              + `use web components or client-side JavaScript (Alpine.js, etc.).`,
-            )
-          }
+        // Skip @ event attributes - they're processed by processEventDirectives
+        if (attrName.startsWith('@')) {
           continue
         }
 
-        if (isBinding) {
-          // Dynamic attribute with : or v-bind: prefix, evaluate the expression
+        // Handle Vue-style :prop="expression" binding
+        if (attrName.startsWith(':')) {
+          const propName = attrName.slice(1) // Remove the : prefix
           try {
             // eslint-disable-next-line no-new-func
             const valueFn = new Function(...Object.keys(context), `return ${attrValue}`)
@@ -1013,14 +1308,55 @@ async function processCustomElements(
           }
           catch (error) {
             if (options.debug) {
-              console.error(`Error evaluating binding for ${propName}:`, error)
+              console.error(`Error evaluating :${propName} binding:`, error)
             }
             props[propName] = attrValue // Fall back to string value
+          }
+          continue
+        }
+
+        // Check if value contains {{ }} expressions
+        if (typeof attrValue === 'string' && attrValue.includes('{{') && attrValue.includes('}}')) {
+          // Check if the entire value is a single expression: {{ expr }}
+          const singleExprMatch = attrValue.match(/^\{\{\s*([\s\S]+?)\s*\}\}$/)
+          if (singleExprMatch) {
+            // Single expression - evaluate and use the result directly
+            try {
+              // eslint-disable-next-line no-new-func
+              const valueFn = new Function(...Object.keys(context), `return ${singleExprMatch[1]}`)
+              props[attrName] = valueFn(...Object.values(context))
+            }
+            catch (error) {
+              if (options.debug) {
+                console.error(`Error evaluating expression for ${attrName}:`, error)
+              }
+              props[attrName] = attrValue // Fall back to string value
+            }
+          }
+          else {
+            // Mixed content - interpolate expressions within the string
+            let result = attrValue
+            const exprPattern = /\{\{\s*([\s\S]+?)\s*\}\}/g
+            let match
+            while ((match = exprPattern.exec(attrValue)) !== null) {
+              try {
+                // eslint-disable-next-line no-new-func
+                const valueFn = new Function(...Object.keys(context), `return ${match[1]}`)
+                const evaluated = valueFn(...Object.values(context))
+                result = result.replace(match[0], String(evaluated ?? ''))
+              }
+              catch (error) {
+                if (options.debug) {
+                  console.error(`Error evaluating expression in ${attrName}:`, error)
+                }
+              }
+            }
+            props[attrName] = result
           }
         }
         else {
           // Static attribute
-          props[propName] = attrValue
+          props[attrName] = attrValue
         }
       }
 
@@ -1133,4 +1469,20 @@ export function processOnceDirective(template: string): string {
   result = result.replace(/@once\s*([\s\S]*?)@endonce/g, '$1')
 
   return result
+}
+
+/**
+ * Process @ref attributes for DOM element references.
+ *
+ * Transforms:
+ *   <input @ref="inputRef" />
+ *
+ * Into:
+ *   <input data-ref="inputRef" />
+ *
+ * The client-side runtime will bind these to ref objects.
+ */
+function processRefAttributes(template: string): string {
+  // Match @ref="name" attributes
+  return template.replace(/@ref="([^"]+)"/g, 'data-ref="$1"')
 }

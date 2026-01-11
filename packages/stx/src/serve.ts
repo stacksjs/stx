@@ -75,16 +75,71 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     }
 
     // Read and process file
-    const content = await Bun.file(filePath).text()
+    let content = await Bun.file(filePath).text()
 
-    // Extract script and template sections
-    const scriptMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
-    const scriptContent = scriptMatch ? scriptMatch[1] : ''
+    // Check if this is a full HTML page or a partial that needs layout
+    const hasDoctype = content.trim().toLowerCase().startsWith('<!doctype') ||
+                       content.trim().toLowerCase().startsWith('<html')
+    const hasExtends = content.includes('@extends(') || content.includes('@layout(')
 
-    // Extract all script tags (both inline and external)
-    const allScriptMatches = content.match(/<script\b[^>]*>[\s\S]*?<\/script>/gi) || []
+    // SFC Support: Extract <template> content if present
+    let workingContent = content
+    const templateTagMatch = content.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
+    if (templateTagMatch) {
+      workingContent = templateTagMatch[1].trim()
+    }
 
-    const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    // Extract all script tags and categorize them from the PAGE content
+    const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
+    const clientScripts: string[] = []
+    const serverScripts: string[] = []
+    let scriptMatch: RegExpExecArray | null
+
+    while ((scriptMatch = scriptRegex.exec(content)) !== null) {
+      const attrs = scriptMatch[1]
+      const scriptContent = scriptMatch[2]
+      const fullScript = scriptMatch[0]
+
+      // Check if it's a client-only script
+      const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
+
+      if (isClientScript) {
+        clientScripts.push(fullScript)
+      } else {
+        // Server script - extract variables but don't output
+        serverScripts.push(scriptContent)
+      }
+    }
+
+    // Extract <style> tags to preserve them
+    const styleMatches = content.match(/<style\b[^>]*>[\s\S]*?<\/style>/gi) || []
+
+    // Remove script and style tags from template content
+    let templateContent = workingContent
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+
+    // Auto-apply default layout if page doesn't have DOCTYPE and layout is configured
+    if (!hasDoctype && !hasExtends && stxOptions.defaultLayout && stxOptions.layoutsDir) {
+      // Resolve layoutsDir relative to rootDir
+      const layoutsDir = path.isAbsolute(stxOptions.layoutsDir)
+        ? stxOptions.layoutsDir
+        : path.join(rootDir, stxOptions.layoutsDir)
+      const layoutPath = path.join(layoutsDir, stxOptions.defaultLayout)
+      const layoutFullPath = layoutPath.endsWith('.stx') ? layoutPath : `${layoutPath}.stx`
+
+      if (fs.existsSync(layoutFullPath)) {
+        // Read the layout
+        let layoutContent = await Bun.file(layoutFullPath).text()
+
+        // Replace @yield('content') or {{ slot }} with the page content
+        layoutContent = layoutContent.replace(/@yield\s*\(\s*['"]content['"]\s*\)/g, templateContent)
+        layoutContent = layoutContent.replace(/\{\{\s*slot\s*\}\}/g, templateContent)
+
+        // Use the layout as the working content
+        templateContent = layoutContent
+      }
+    }
 
     // Create context
     const context: Record<string, any> = {
@@ -92,28 +147,37 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
       __dirname: path.dirname(filePath),
     }
 
-    // Extract variables from inline script content
-    await extractVariables(scriptContent, context, filePath)
+    // Extract variables from server-side script content
+    for (const scriptContent of serverScripts) {
+      await extractVariables(scriptContent, context, filePath)
+    }
 
     // Process template
     const dependencies = new Set<string>()
     const processedTemplate = await processDirectives(templateContent, context, filePath, stxOptions, dependencies)
 
-    // Preserve all script content in final output
+    // Build final output
     let output = processedTemplate
 
-    // Add all script tags back to the output
-    const allScripts = [...allScriptMatches]
-    if (allScripts.length > 0) {
-      // Find the closing </body> tag and insert scripts before it
+    // Add styles to <head> if present
+    if (styleMatches.length > 0) {
+      const stylesHtml = styleMatches.join('\n')
+      const headEndMatch = output.match(/(<\/head>)/i)
+      if (headEndMatch) {
+        output = output.replace(/(<\/head>)/i, `${stylesHtml}\n$1`)
+      }
+    }
+
+    // Add client scripts before </body>
+    if (clientScripts.length > 0) {
+      const scriptsHtml = clientScripts.join('\n')
       const bodyEndMatch = output.match(/(<\/body>)/i)
       if (bodyEndMatch) {
-        const scriptsHtml = allScripts.join('\n')
         output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
       }
       else {
         // If no </body> tag, append scripts at the end
-        output += `\n${allScripts.join('\n')}`
+        output += `\n${scriptsHtml}`
       }
     }
 
@@ -240,13 +304,15 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
           headers: { 'Content-Type': contentType },
         })
       }
-      catch (error: any) {
+      catch (error: unknown) {
         if (onError) {
           return await onError(error, request)
         }
 
+        const msg = error instanceof Error ? error.message : String(error)
+        const stack = error instanceof Error ? error.stack : ''
         return new Response(
-          `<h1>Error</h1><pre>${error.message}\n${error.stack}</pre>`,
+          `<h1>Error</h1><pre>${msg}\n${stack}</pre>`,
           {
             status: 500,
             headers: { 'Content-Type': 'text/html' },

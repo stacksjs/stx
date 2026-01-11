@@ -1,0 +1,325 @@
+<script server>
+const title = "STX Defer & Teleport Demo"
+const heavyContent = "This content was lazily loaded!"
+const modalTitle = "Teleported Modal"
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #e4e4e7;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 2rem;
+      background: linear-gradient(90deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    h2 {
+      font-size: 1.5rem;
+      margin: 2rem 0 1rem;
+      color: #a78bfa;
+    }
+    .card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .skeleton {
+      background: linear-gradient(90deg, #2a2a3e 25%, #3a3a4e 50%, #2a2a3e 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+      height: 100px;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #a78bfa;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 1rem auto;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .loaded-content {
+      background: linear-gradient(135deg, #4c1d95 0%, #1e40af 100%);
+      padding: 1.5rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .btn {
+      background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+    }
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal {
+      background: #1a1a2e;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      transform: scale(0.9);
+      transition: transform 0.3s;
+    }
+    .modal-overlay.active .modal {
+      transform: scale(1);
+    }
+    .modal h3 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: #a78bfa;
+    }
+    .modal p { margin-bottom: 1.5rem; color: #a1a1aa; }
+    #modals-container { position: fixed; z-index: 1000; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>{{ title }}</h1>
+
+    <!-- ===================== -->
+    <!-- @defer Examples       -->
+    <!-- ===================== -->
+    <h2>@defer - Lazy Loading</h2>
+
+    <!-- Defer on Visible (Intersection Observer) -->
+    <div class="card">
+      <h3 style="margin-bottom: 1rem;">Load on Scroll (visible)</h3>
+      <p style="color: #a1a1aa; margin-bottom: 1rem;">
+        Scroll down to load this content. Uses IntersectionObserver.
+      </p>
+
+      @defer(on: 'visible')
+        <div class="loaded-content">
+          <p>{{ heavyContent }}</p>
+          <p style="font-size: 0.875rem; opacity: 0.7; margin-top: 0.5rem;">
+            Loaded when scrolled into view
+          </p>
+        </div>
+      @placeholder
+        <div class="skeleton"></div>
+      @loading
+        <div class="spinner"></div>
+      @enddefer
+    </div>
+
+    <!-- Defer on Hover -->
+    <div class="card">
+      <h3 style="margin-bottom: 1rem;">Load on Hover</h3>
+      <p style="color: #a1a1aa; margin-bottom: 1rem;">
+        Hover over this area to load the content.
+      </p>
+
+      @defer(on: 'hover')
+        <div class="loaded-content">
+          <p>Loaded on hover!</p>
+        </div>
+      @placeholder
+        <div style="padding: 2rem; text-align: center; border: 2px dashed rgba(255,255,255,0.2); border-radius: 8px;">
+          Hover me to load content
+        </div>
+      @enddefer
+    </div>
+
+    <!-- Defer on Interaction -->
+    <div class="card">
+      <h3 style="margin-bottom: 1rem;">Load on Interaction</h3>
+      <p style="color: #a1a1aa; margin-bottom: 1rem;">
+        Click or tap this area to load the content.
+      </p>
+
+      @defer(on: 'interaction')
+        <div class="loaded-content">
+          <p>Loaded on click/tap!</p>
+        </div>
+      @placeholder
+        <div style="padding: 2rem; text-align: center; border: 2px dashed rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer;">
+          Click me to load content
+        </div>
+      @enddefer
+    </div>
+
+    <!-- Defer with Timer -->
+    <div class="card">
+      <h3 style="margin-bottom: 1rem;">Load after 2 seconds</h3>
+      <p style="color: #a1a1aa; margin-bottom: 1rem;">
+        This content will load automatically after 2 seconds.
+      </p>
+
+      @defer(on: 'timer(2000)')
+        <div class="loaded-content">
+          <p>Loaded after 2 second delay!</p>
+        </div>
+      @placeholder
+        <div style="padding: 2rem; text-align: center; border: 2px dashed rgba(255,255,255,0.2); border-radius: 8px;">
+          Loading in 2 seconds...
+        </div>
+      @loading
+        <div class="spinner"></div>
+      @enddefer
+    </div>
+
+    <!-- Defer on Idle -->
+    <div class="card">
+      <h3 style="margin-bottom: 1rem;">Load when Idle</h3>
+      <p style="color: #a1a1aa; margin-bottom: 1rem;">
+        Uses requestIdleCallback to load when browser is idle.
+      </p>
+
+      @defer(on: 'idle')
+        <div class="loaded-content">
+          <p>Loaded when browser was idle!</p>
+        </div>
+      @placeholder
+        <div class="skeleton" style="height: 60px;"></div>
+      @enddefer
+    </div>
+
+    <!-- ===================== -->
+    <!-- @teleport Examples    -->
+    <!-- ===================== -->
+    <h2>@teleport - DOM Portals</h2>
+
+    <div class="card">
+      <h3 style="margin-bottom: 1rem;">Modal with Teleport</h3>
+      <p style="color: #a1a1aa; margin-bottom: 1rem;">
+        The modal content is teleported to #modals-container at the end of body,
+        escaping this card's stacking context.
+      </p>
+
+      <button class="btn" onclick="toggleModal()">Open Modal</button>
+
+      @teleport('#modals-container')
+        <div class="modal-overlay" id="demo-modal">
+          <div class="modal">
+            <h3>{{ modalTitle }}</h3>
+            <p>
+              This modal was teleported from inside a card component to
+              #modals-container at the end of the body. This ensures proper
+              z-index stacking regardless of parent elements.
+            </p>
+            <button class="btn" onclick="toggleModal()">Close</button>
+          </div>
+        </div>
+      @endteleport
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom: 1rem;">Notification Teleport</h3>
+      <p style="color: #a1a1aa; margin-bottom: 1rem;">
+        Notifications are teleported to a fixed container.
+      </p>
+
+      <button class="btn" onclick="showNotification()">Show Notification</button>
+
+      @teleport('#notifications-container')
+        <div class="notification" id="demo-notification" style="
+          position: fixed;
+          top: 1rem;
+          right: 1rem;
+          background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+          color: white;
+          padding: 1rem 1.5rem;
+          border-radius: 8px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+          transform: translateX(150%);
+          transition: transform 0.3s ease;
+          z-index: 1001;
+        ">
+          Notification teleported to top-right!
+        </div>
+      @endteleport
+    </div>
+
+  </div>
+
+  <!-- Teleport containers -->
+  <div id="modals-container"></div>
+  <div id="notifications-container"></div>
+
+  <script client>
+    function toggleModal() {
+      const modal = document.getElementById('demo-modal');
+      if (modal) {
+        modal.classList.toggle('active');
+      }
+    }
+
+    function showNotification() {
+      const notification = document.getElementById('demo-notification');
+      if (notification) {
+        notification.style.transform = 'translateX(0)';
+        setTimeout(() => {
+          notification.style.transform = 'translateX(150%)';
+        }, 3000);
+      }
+    }
+
+    // Close modal on overlay click
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) {
+        toggleModal();
+      }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('demo-modal');
+        if (modal && modal.classList.contains('active')) {
+          toggleModal();
+        }
+      }
+    });
+  </script>
+
+</body>
+</html>

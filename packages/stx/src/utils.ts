@@ -74,41 +74,84 @@ export async function renderComponentWithSlot(
   components.add(componentPath)
 
   try {
-    // Determine the actual file path
-    let componentFilePath = componentPath
+    // Helper: convert kebab-case to PascalCase
+    const kebabToPascal = (str: string) => str
+      .split('-')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('')
 
-    // If it doesn't end with .stx, add the extension
-    if (!componentPath.endsWith('.stx')) {
-      componentFilePath = `${componentPath}.stx`
-    }
+    // Helper: convert PascalCase to kebab-case
+    const pascalToKebab = (str: string) => str
+      .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+      .toLowerCase()
 
-    // If it's a relative path without ./ or ../, assume it's in the components directory
-    if (!componentFilePath.startsWith('./') && !componentFilePath.startsWith('../')) {
-      // Check both componentsDir and the actual components dir from parentFilePath
-      let resolvedPath = path.join(componentsDir, componentFilePath)
+    // Get base name without extension
+    const baseName = componentPath.endsWith('.stx')
+      ? componentPath.slice(0, -4)
+      : componentPath
 
-      if (!await fileExists(resolvedPath)) {
-        // Try the default location - components directory next to the file
-        const defaultComponentsDir = path.join(path.dirname(parentFilePath), 'components')
-        resolvedPath = path.join(defaultComponentsDir, componentFilePath)
+    // Find the component file
+    let componentFilePath: string | null = null
 
-        if (!await fileExists(resolvedPath)) {
-          // If still not found, try options.componentsDir if specified
-          if (options.componentsDir && await fileExists(path.join(options.componentsDir, componentFilePath))) {
-            resolvedPath = path.join(options.componentsDir, componentFilePath)
-          }
+    // First, check if this component was explicitly imported via @import
+    const importedComponents = parentContext.__importedComponents as Map<string, string> | undefined
+    if (importedComponents) {
+      // Try various name formats
+      const namesToTry = [
+        baseName,
+        baseName.toLowerCase(),
+        kebabToPascal(baseName),
+        pascalToKebab(baseName),
+      ]
+      for (const name of namesToTry) {
+        if (importedComponents.has(name)) {
+          componentFilePath = importedComponents.get(name)!
+          break
         }
       }
-
-      componentFilePath = resolvedPath
     }
-    else {
-      // Otherwise, resolve from the current template directory
-      componentFilePath = path.resolve(path.dirname(parentFilePath), componentFilePath)
+
+    // If not found via @import, use auto-discovery
+    if (!componentFilePath) {
+      // Generate all possible file names to try
+      const fileVariants = [
+        `${baseName}.stx`,
+        `${kebabToPascal(baseName)}.stx`,
+        `${pascalToKebab(baseName)}.stx`,
+      ]
+      // Remove duplicates
+      const uniqueVariants = [...new Set(fileVariants)]
+
+      // Directories to search
+      const searchDirs = [
+        componentsDir,
+        path.join(path.dirname(parentFilePath), 'components'),
+      ]
+      if (options.componentsDir && options.componentsDir !== componentsDir) {
+        searchDirs.push(options.componentsDir)
+      }
+
+      // If path starts with ./ or ../, resolve from current template directory
+      if (baseName.startsWith('./') || baseName.startsWith('../')) {
+        componentFilePath = path.resolve(path.dirname(parentFilePath), `${baseName}.stx`)
+      }
+      else {
+        // Search in all directories with all naming variants
+        for (const dir of searchDirs) {
+          for (const variant of uniqueVariants) {
+            const tryPath = path.join(dir, variant)
+            if (await fileExists(tryPath)) {
+              componentFilePath = tryPath
+              break
+            }
+          }
+          if (componentFilePath) break
+        }
+      }
     }
 
     // Check if component exists
-    if (!await fileExists(componentFilePath)) {
+    if (!componentFilePath || !await fileExists(componentFilePath)) {
       return `[Error loading component: ENOENT: no such file or directory, open '${componentPath}']`
     }
 
@@ -134,30 +177,79 @@ export async function renderComponentWithSlot(
     }
 
     // Create a new context with component props and slot content
+    // Include both individual props and a `props` object for Vue-style access
     const componentContext: Record<string, unknown> = {
       ...parentContext,
       ...props,
+      props, // Allow `props.foo` syntax in addition to just `foo`
       slot: slotContent,
     }
 
-    // Extract any script content from the component
-    const scriptMatch = componentContent.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
-    const scriptContent = scriptMatch ? scriptMatch[1] : ''
+    // SFC Support: Extract <template>, <script>, and <style> sections
+    let workingContent = componentContent
 
-    if (scriptContent) {
-      await extractVariables(scriptContent, componentContext, componentFilePath)
+    // Extract <template> content if present (Vue-style SFC)
+    const templateMatch = workingContent.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
+    if (templateMatch) {
+      workingContent = templateMatch[1].trim()
     }
 
-    // Remove script tags from the component template
-    let templateContent = componentContent
-    if (scriptMatch) {
-      templateContent = templateContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i, '')
+    // Extract all script content from the component (SFC support)
+    // Look in original content since template section won't have scripts
+    const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
+    const scriptMatches = [...componentContent.matchAll(scriptRegex)]
+    const clientScripts: string[] = []
+
+    for (const match of scriptMatches) {
+      const attrs = match[1] || ''
+      const content = match[2] || ''
+
+      const isServerScript = attrs.includes('server')
+      const isClientOnlyScript = attrs.includes('client') || attrs.includes('type="module"')
+
+      // Extract variables from server scripts (or scripts without client marker)
+      if (!isClientOnlyScript && content) {
+        try {
+          await extractVariables(content, componentContext, componentFilePath)
+        }
+        catch (e) {
+          // Script may contain browser-only code, skip variable extraction
+        }
+      }
+
+      // Preserve client scripts (non-server scripts)
+      if (!isServerScript) {
+        clientScripts.push(`<script${attrs}>${content}</script>`)
+      }
+    }
+
+    // Extract <style> content if present
+    const styleMatch = componentContent.match(/<style\b([^>]*)>([\s\S]*?)<\/style>/i)
+    const styleAttrs = styleMatch ? styleMatch[1] : ''
+    const styleContent = styleMatch ? styleMatch[2] : ''
+    let preservedStyle = ''
+    if (styleMatch) {
+      preservedStyle = `<style${styleAttrs}>${styleContent}</style>`
+    }
+
+    // Remove script and style tags from template content
+    let templateContent = workingContent
+    templateContent = templateContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    if (styleMatch) {
+      templateContent = templateContent.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
     }
 
     // Find and replace any direct references to {{ text || slot }} with the actual value
     if (slotContent && templateContent.includes('{{ text || slot }}')) {
       templateContent = templateContent.replace(/\{\{\s*text\s*\|\|\s*slot\s*\}\}/g, slotContent)
     }
+
+    // Process slots using the new slots module (supports named and scoped slots)
+    const { extractSlotContent, applySlots } = await import('./slots')
+    const { defaultSlot, namedSlots } = extractSlotContent(slotContent)
+
+    // Apply slots to the template (handles named slots, scoped slots, and default slots)
+    templateContent = await applySlots(templateContent, defaultSlot || slotContent, namedSlots, componentContext)
 
     // Handle HTML content in component props
     for (const [key, value] of Object.entries(componentContext)) {
@@ -184,7 +276,16 @@ export async function renderComponentWithSlot(
     // Process the component content recursively with the new context
     const result = await processDirectives(templateContent, componentContext, componentFilePath, componentOptions, dependencies)
 
-    return result
+    // Append preserved style and client scripts for SFC support
+    let output = result
+    if (preservedStyle) {
+      output += '\n' + preservedStyle
+    }
+    if (clientScripts.length > 0) {
+      output += '\n' + clientScripts.join('\n')
+    }
+
+    return output
   }
   catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
@@ -305,6 +406,39 @@ export async function resolveTemplatePath(
           dependencies.add(fromCurrentLayoutsWithExt)
         }
         return fromCurrentLayoutsWithExt
+      }
+    }
+  }
+
+  // Check options.layoutsDir if specified (for projects like voide that set layoutsDir)
+  if (options.layoutsDir) {
+    // Resolve relative layoutsDir paths relative to cwd or the file's parent directory
+    const resolvedLayoutsDir = path.isAbsolute(options.layoutsDir)
+      ? options.layoutsDir
+      : path.resolve(process.cwd(), options.layoutsDir)
+
+    const fromLayoutsDir = path.join(resolvedLayoutsDir, templatePath)
+    if (await fileExists(fromLayoutsDir)) {
+      if (options.debug) {
+        console.log(`Found in options.layoutsDir: ${fromLayoutsDir}`)
+      }
+      if (dependencies) {
+        dependencies.add(fromLayoutsDir)
+      }
+      return fromLayoutsDir
+    }
+
+    // With extension
+    if (!templatePath.endsWith('.stx')) {
+      const fromLayoutsDirWithExt = `${fromLayoutsDir}.stx`
+      if (await fileExists(fromLayoutsDirWithExt)) {
+        if (options.debug) {
+          console.log(`Found in options.layoutsDir with extension: ${fromLayoutsDirWithExt}`)
+        }
+        if (dependencies) {
+          dependencies.add(fromLayoutsDirWithExt)
+        }
+        return fromLayoutsDirWithExt
       }
     }
   }

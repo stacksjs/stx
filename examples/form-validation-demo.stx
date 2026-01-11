@@ -1,0 +1,496 @@
+<script server>
+import { defineForm, v } from 'stx'
+
+// =============================================================================
+// Form Definitions
+// =============================================================================
+
+// Simple login form
+const loginForm = defineForm({
+  email: v.required().email(),
+  password: v.required().min(8)
+})
+
+// Signup form with more complex validation
+const signupForm = defineForm({
+  username: v.required().min(3).max(20).alphanumeric().startsWithLetter(),
+  email: v.required().email(),
+  password: v.required()
+    .min(8)
+    .hasUppercase()
+    .hasLowercase()
+    .hasNumber(),
+  confirmPassword: v.required().matches('password', 'Passwords do not match'),
+  age: v.number().between(18, 120),
+  website: v.url(),
+  terms: v.required('You must accept the terms')
+})
+
+// Contact form
+const contactForm = defineForm({
+  name: v.required().min(2).max(100),
+  email: v.required().email(),
+  subject: v.required().oneOf(['general', 'support', 'sales', 'feedback']),
+  message: v.required().min(10).max(1000)
+})
+
+// Pre-populate with some errors for demo
+loginForm.errors.email = ['Please enter a valid email']
+loginForm.errors.password = ['Must be at least 8 characters']
+
+signupForm.errors.username = ['Only letters and numbers allowed', 'Must start with a letter']
+signupForm.errors.password = ['Must contain an uppercase letter', 'Must contain a number']
+signupForm.errors.confirmPassword = ['Passwords do not match']
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STX Form Validation Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      min-height: 100vh;
+      color: #e2e8f0;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 0.5rem;
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle {
+      text-align: center;
+      color: #94a3b8;
+      margin-bottom: 3rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+    }
+    .card {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(71, 85, 105, 0.5);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      backdrop-filter: blur(10px);
+    }
+    .card h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: #cbd5e1;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(71, 85, 105, 0.5);
+      border-radius: 0.5rem;
+      color: #e2e8f0;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    input.error, select.error, textarea.error {
+      border-color: #ef4444;
+    }
+    .error-message {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      color: #f87171;
+      font-size: 0.75rem;
+      margin-top: 0.375rem;
+    }
+    .error-message svg {
+      width: 0.875rem;
+      height: 0.875rem;
+      flex-shrink: 0;
+    }
+    .error-list {
+      list-style: none;
+      margin-top: 0.375rem;
+    }
+    .error-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      color: #f87171;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+    button {
+      width: 100%;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      border: none;
+      border-radius: 0.5rem;
+      color: white;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .code-block {
+      background: #0f172a;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.75rem;
+      overflow-x: auto;
+      margin-top: 1rem;
+      border: 1px solid rgba(71, 85, 105, 0.3);
+    }
+    .code-block code {
+      color: #94a3b8;
+    }
+    .code-block .keyword { color: #c084fc; }
+    .code-block .function { color: #38bdf8; }
+    .code-block .string { color: #4ade80; }
+    .code-block .method { color: #fbbf24; }
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .checkbox-group input {
+      width: auto;
+    }
+    .checkbox-group label {
+      margin: 0;
+    }
+    .api-section {
+      margin-top: 3rem;
+    }
+    .api-section h2 {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .api-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    .api-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(71, 85, 105, 0.3);
+      border-radius: 0.75rem;
+      padding: 1rem;
+    }
+    .api-card h3 {
+      font-size: 0.875rem;
+      color: #10b981;
+      margin-bottom: 0.5rem;
+    }
+    .api-card p {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-bottom: 0.5rem;
+    }
+    .api-card code {
+      font-size: 0.7rem;
+      background: rgba(15, 23, 42, 0.8);
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      color: #fbbf24;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Form Validation</h1>
+    <p class="subtitle">Simple, chainable validation API for STX</p>
+
+    <div class="grid">
+      <!-- Login Form -->
+      <div class="card">
+        <h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
+          </svg>
+          Login Form
+        </h2>
+
+        <form>
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input
+              type="email"
+              id="login-email"
+              name="email"
+              placeholder="you@example.com"
+              class="error"
+            />
+            @error(loginForm.errors.email)
+              <p class="error-message">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                {{ message }}
+              </p>
+            @enderror
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input
+              type="password"
+              id="login-password"
+              name="password"
+              placeholder="Min 8 characters"
+              class="error"
+            />
+            @error(loginForm.errors.password)
+              <p class="error-message">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                {{ message }}
+              </p>
+            @enderror
+          </div>
+
+          <button type="submit">Sign In</button>
+        </form>
+
+        <div class="code-block">
+          <code>
+<span class="keyword">const</span> loginForm = <span class="function">defineForm</span>({<br>
+&nbsp;&nbsp;email: <span class="method">v</span>.<span class="function">required</span>().<span class="function">email</span>(),<br>
+&nbsp;&nbsp;password: <span class="method">v</span>.<span class="function">required</span>().<span class="function">min</span>(<span class="string">8</span>)<br>
+})
+          </code>
+        </div>
+      </div>
+
+      <!-- Signup Form -->
+      <div class="card">
+        <h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="8.5" cy="7" r="4"/>
+            <line x1="20" y1="8" x2="20" y2="14"/>
+            <line x1="23" y1="11" x2="17" y2="11"/>
+          </svg>
+          Signup Form
+        </h2>
+
+        <form>
+          <div class="form-group">
+            <label for="signup-username">Username</label>
+            <input
+              type="text"
+              id="signup-username"
+              name="username"
+              placeholder="johndoe"
+              class="error"
+            />
+            <ul class="error-list">
+              @errors(signupForm.errors.username)
+                <li>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                  </svg>
+                  {{ message }}
+                </li>
+              @enderrors
+            </ul>
+          </div>
+
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input
+              type="password"
+              id="signup-password"
+              name="password"
+              placeholder="Strong password"
+              class="error"
+            />
+            <ul class="error-list">
+              @errors(signupForm.errors.password)
+                <li>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                  </svg>
+                  {{ message }}
+                </li>
+              @enderrors
+            </ul>
+          </div>
+
+          <div class="form-group">
+            <label for="signup-confirm">Confirm Password</label>
+            <input
+              type="password"
+              id="signup-confirm"
+              name="confirmPassword"
+              placeholder="Repeat password"
+              class="error"
+            />
+            @error(signupForm.errors.confirmPassword)
+              <p class="error-message">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                {{ message }}
+              </p>
+            @enderror
+          </div>
+
+          <button type="submit">Create Account</button>
+        </form>
+
+        <div class="code-block">
+          <code>
+<span class="keyword">const</span> signupForm = <span class="function">defineForm</span>({<br>
+&nbsp;&nbsp;username: <span class="method">v</span>.<span class="function">required</span>().<span class="function">min</span>(<span class="string">3</span>).<span class="function">alphanumeric</span>(),<br>
+&nbsp;&nbsp;password: <span class="method">v</span>.<span class="function">required</span>().<span class="function">min</span>(<span class="string">8</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;.<span class="function">hasUppercase</span>().<span class="function">hasNumber</span>(),<br>
+&nbsp;&nbsp;confirmPassword: <span class="method">v</span>.<span class="function">matches</span>(<span class="string">'password'</span>)<br>
+})
+          </code>
+        </div>
+      </div>
+
+      <!-- Contact Form -->
+      <div class="card">
+        <h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          Contact Form
+        </h2>
+
+        <form>
+          <div class="form-group">
+            <label for="contact-name">Name</label>
+            <input type="text" id="contact-name" name="name" placeholder="Your name" />
+          </div>
+
+          <div class="form-group">
+            <label for="contact-email">Email</label>
+            <input type="email" id="contact-email" name="email" placeholder="you@example.com" />
+          </div>
+
+          <div class="form-group">
+            <label for="contact-subject">Subject</label>
+            <select id="contact-subject" name="subject">
+              <option value="">Select a topic</option>
+              <option value="general">General Inquiry</option>
+              <option value="support">Technical Support</option>
+              <option value="sales">Sales</option>
+              <option value="feedback">Feedback</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="contact-message">Message</label>
+            <textarea id="contact-message" name="message" rows="3" placeholder="Your message..."></textarea>
+          </div>
+
+          <button type="submit">Send Message</button>
+        </form>
+
+        <div class="code-block">
+          <code>
+<span class="keyword">const</span> contactForm = <span class="function">defineForm</span>({<br>
+&nbsp;&nbsp;name: <span class="method">v</span>.<span class="function">required</span>().<span class="function">min</span>(<span class="string">2</span>),<br>
+&nbsp;&nbsp;email: <span class="method">v</span>.<span class="function">required</span>().<span class="function">email</span>(),<br>
+&nbsp;&nbsp;subject: <span class="method">v</span>.<span class="function">required</span>().<span class="function">oneOf</span>([...]),<br>
+&nbsp;&nbsp;message: <span class="method">v</span>.<span class="function">required</span>().<span class="function">min</span>(<span class="string">10</span>).<span class="function">max</span>(<span class="string">1000</span>)<br>
+})
+          </code>
+        </div>
+      </div>
+    </div>
+
+    <!-- API Reference -->
+    <div class="api-section">
+      <h2>Available Validators</h2>
+      <div class="api-grid">
+        <div class="api-card">
+          <h3>String Validators</h3>
+          <p><code>v.required()</code> - Field is required</p>
+          <p><code>v.email()</code> - Valid email format</p>
+          <p><code>v.url()</code> - Valid URL format</p>
+          <p><code>v.min(n)</code> - Minimum length</p>
+          <p><code>v.max(n)</code> - Maximum length</p>
+          <p><code>v.pattern(regex)</code> - Match pattern</p>
+        </div>
+        <div class="api-card">
+          <h3>Password Validators</h3>
+          <p><code>v.hasUppercase()</code> - Has uppercase</p>
+          <p><code>v.hasLowercase()</code> - Has lowercase</p>
+          <p><code>v.hasNumber()</code> - Contains number</p>
+          <p><code>v.hasSpecial()</code> - Special character</p>
+          <p><code>v.alphanumeric()</code> - Letters & numbers</p>
+          <p><code>v.noSpaces()</code> - No whitespace</p>
+        </div>
+        <div class="api-card">
+          <h3>Number Validators</h3>
+          <p><code>v.number()</code> - Must be numeric</p>
+          <p><code>v.integer()</code> - Whole number</p>
+          <p><code>v.positive()</code> - Greater than 0</p>
+          <p><code>v.minValue(n)</code> - Minimum value</p>
+          <p><code>v.maxValue(n)</code> - Maximum value</p>
+          <p><code>v.between(a, b)</code> - In range</p>
+        </div>
+        <div class="api-card">
+          <h3>Comparison Validators</h3>
+          <p><code>v.matches(field)</code> - Match field</p>
+          <p><code>v.oneOf([...])</code> - In list</p>
+          <p><code>v.notOneOf([...])</code> - Not in list</p>
+          <p><code>v.custom(fn)</code> - Custom function</p>
+          <p><code>v.async(fn)</code> - Async validation</p>
+          <p><code>v.when(cond, v)</code> - Conditional</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

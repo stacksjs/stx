@@ -290,11 +290,12 @@ export async function streamTemplate(
 window.__stxSuspense.resolve('${name}', \`${escapedContent}\`);
 </script>`)
               }
-              catch (error: any) {
+              catch (error: unknown) {
                 // Send error state for this suspense boundary
+                const errorMsg = error instanceof Error ? error.message : String(error)
                 controller.enqueue(`
 <script>
-window.__stxSuspense.resolve('${name}', '<div class="stx-error">Error loading content: ${escapeHtml(error.message)}</div>');
+window.__stxSuspense.resolve('${name}', '<div class="stx-error">Error loading content: ${escapeHtml(errorMsg)}</div>');
 </script>`)
               }
             },
@@ -307,7 +308,7 @@ window.__stxSuspense.resolve('${name}', '<div class="stx-error">Error loading co
         // Close the stream
         controller.close()
       }
-      catch (error: any) {
+      catch (error: unknown) {
         controller.error(error)
       }
     },
@@ -364,7 +365,7 @@ export async function streamTemplateSimple(
 
         controller.close()
       }
-      catch (error: any) {
+      catch (error: unknown) {
         controller.error(error)
       }
     },
@@ -458,7 +459,7 @@ export async function createStreamRenderer(
         const dependencies = new Set<string>()
         return await processDirectives(sections[sectionName], context, templatePath, fullOptions, dependencies)
       }
-      catch (error: any) {
+      catch (error: unknown) {
         // Handle errors gracefully
         const errorMessage = error instanceof Error ? error.message : String(error)
         return createDetailedErrorMessage(

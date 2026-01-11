@@ -3,7 +3,9 @@ import { resolve } from 'node:path'
 import { loadConfigWithResult } from 'bunfig'
 import { a11yDirective, screenReaderDirective } from './a11y'
 import { animationGroupDirective, motionDirective, scrollAnimateDirective, transitionDirective } from './animation'
-import { componentDirective } from './components'
+import { stxRouterDirective } from './client/directive'
+// Note: componentDirective is NOT included here because @component is handled
+// by the built-in processComponentDirectives function in process.ts
 import { markdownDirectiveHandler } from './markdown'
 import { pwaDirectives } from './pwa/directives'
 import { metaDirective, structuredDataDirective } from './seo'
@@ -32,13 +34,14 @@ export const defaultConfig: StxConfig = {
     },
     a11yDirective,
     screenReaderDirective,
-    componentDirective,
+    // Note: componentDirective removed - @component is handled by processComponentDirectives
     metaDirective,
     structuredDataDirective,
     transitionDirective,
     animationGroupDirective,
     motionDirective,
     scrollAnimateDirective,
+    stxRouterDirective,
     ...pwaDirectives,
   ],
   middleware: [],
@@ -237,7 +240,7 @@ export const defaultConfig: StxConfig = {
 let _config: StxConfig | null = null
 let _configPromise: Promise<StxConfig> | null = null
 
-async function loadStxConfig(): Promise<StxConfig> {
+export async function loadStxConfig(): Promise<StxConfig> {
   if (_config)
     return _config
   if (_configPromise)
@@ -246,7 +249,7 @@ async function loadStxConfig(): Promise<StxConfig> {
   _configPromise = (async () => {
     const configResult = await loadConfigWithResult({
       name: 'stx',
-      cwd: resolve(__dirname, '..'),
+      cwd: process.cwd(), // Load config from the project directory, not the stx package
       defaultConfig,
       verbose: false,
     })

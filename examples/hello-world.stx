@@ -1,174 +1,172 @@
+<script server>
+import { defineProps, withDefaults } from 'stx'
+
+interface HelloWorldProps {
+  name?: string
+  showCounter?: boolean
+  showThemeSelector?: boolean
+}
+
+const { name, showCounter, showThemeSelector } = withDefaults(
+  defineProps<HelloWorldProps>(),
+  {
+    name: 'World',
+    showCounter: true,
+    showThemeSelector: true
+  }
+)
+
+// Runtime data
+const currentTime = new Date().toLocaleTimeString()
+
+// Color options with TypeScript interface
+interface ColorOption {
+  name: string
+  value: string
+}
+
+const colors: ColorOption[] = [
+  { name: 'Violet', value: '#8b5cf6' },
+  { name: 'Cyan', value: '#06b6d4' },
+  { name: 'Emerald', value: '#10b981' },
+  { name: 'Rose', value: '#f43f5e' },
+  { name: 'Amber', value: '#f59e0b' }
+]
+</script>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>stx Demo - Hello World</title>
-  <style>
-    body {
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 2rem;
-      line-height: 1.6;
-      color: #333;
-    }
-    h1 {
-      color: #2563eb;
-      margin-bottom: 1rem;
-    }
-    .card {
-      padding: 1.5rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      background-color: #f8fafc;
-      margin-bottom: 1.5rem;
-    }
-    .counter {
-      margin-top: 2rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-    button {
-      background-color: #2563eb;
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 0.25rem;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-    button:hover {
-      background-color: #1d4ed8;
-    }
-    .count {
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-    .time {
-      margin-top: 1rem;
-      color: #64748b;
-    }
-    .color-switcher {
-      margin-top: 2rem;
-    }
-    .color-options {
-      display: flex;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-    }
-    .color-option {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      cursor: pointer;
-      border: 2px solid transparent;
-    }
-    .color-option.active {
-      border-color: #333;
-    }
-  </style>
 </head>
-<body>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
 
-<script>
-  // Get current time
-  export const currentTime = new Date().toLocaleTimeString();
+<!-- Background Effects -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none">
+  <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+  <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl"></div>
+</div>
 
-  // Set initial state
-  export const name = 'World';
-  export const count = 0;
-  export const themeColor = '#2563eb';
+<div class="relative max-w-2xl mx-auto px-6 py-12">
+  <!-- Header -->
+  <div class="text-center mb-12">
+    <div class="inline-flex items-center gap-3 mb-4">
+      <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+        <span class="text-2xl">✨</span>
+      </div>
+      <h1 id="mainTitle" class="text-4xl font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
+        Hello, {{ name }}!
+      </h1>
+    </div>
+    <p class="text-slate-400">Welcome to the stx templating engine</p>
+  </div>
 
-  // Define color options
-  export const colors = [
-    { name: 'Blue', value: '#2563eb' },
-    { name: 'Green', value: '#10b981' },
-    { name: 'Purple', value: '#8b5cf6' },
-    { name: 'Red', value: '#ef4444' },
-    { name: 'Orange', value: '#f97316' }
-  ];
-</script>
+  <!-- Welcome Card -->
+  <div class="relative group mb-6">
+    <div class="absolute -inset-1 bg-gradient-to-r from-violet-600/20 to-cyan-600/20 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
+    <div class="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
+      <p class="text-slate-300 mb-4">
+        This page is rendered using the stx templating engine. Try modifying
+        <code class="px-2 py-1 bg-slate-700/50 rounded text-violet-400 text-sm">examples/hello-world.stx</code>
+        to see changes automatically reload.
+      </p>
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        Page loaded at: {{ currentTime }}
+      </div>
+    </div>
+  </div>
 
-<h1>Hello, {{ name }}!</h1>
+  <!-- Counter Card with x-element -->
+  <div class="relative group mb-6" x-data="{ count: 0 }">
+    <div class="absolute -inset-1 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 rounded-2xl blur-xl opacity-50"></div>
+    <div class="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
+      <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-sm">🔢</span>
+        Interactive Counter
+      </h3>
+      <div class="flex items-center justify-center gap-4">
+        <button
+          class="w-12 h-12 rounded-xl bg-slate-700/50 border border-white/10 text-xl font-bold text-white hover:bg-slate-600/50 hover:border-violet-500/50 transition-all"
+          @click="count--"
+        >-</button>
+        <div class="w-20 h-16 rounded-xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 border border-white/10 flex items-center justify-center text-3xl font-bold text-white">
+          <span x-text="count"></span>
+        </div>
+        <button
+          class="w-12 h-12 rounded-xl bg-slate-700/50 border border-white/10 text-xl font-bold text-white hover:bg-slate-600/50 hover:border-violet-500/50 transition-all"
+          @click="count++"
+        >+</button>
+      </div>
+    </div>
+  </div>
 
-<div class="card">
-  <p>Welcome to the stx dev server. This page is rendered using stx templating engine.</p>
-  <p>Try modifying the <code>examples/hello-world.stx</code> file to see changes automatically reload.</p>
+  <!-- Theme Color Card -->
+  <div class="relative group">
+    <div class="absolute -inset-1 bg-gradient-to-r from-rose-600/20 to-amber-600/20 rounded-2xl blur-xl opacity-50"></div>
+    <div class="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
+      <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-amber-500 flex items-center justify-center text-sm">🎨</span>
+        Theme Color
+      </h3>
+      <p class="text-slate-400 text-sm mb-4">Click a color to change the theme:</p>
+      <div class="flex items-center gap-3">
+        @foreach (colors as color)
+          <button
+            class="color-option w-10 h-10 rounded-full border-2 border-transparent hover:scale-110 transition-all shadow-lg"
+            style="background-color: {{ color.value }}; box-shadow: 0 4px 20px {{ color.value }}40"
+            title="{{ color.name }}"
+            data-color="{{ color.value }}"
+            @click="changeThemeColor('{{ color.value }}')"
+          ></button>
+        @endforeach
+      </div>
+    </div>
+  </div>
 
-  <div class="time">
-    Page loaded at: {{ currentTime }}
+  <!-- Footer -->
+  <div class="text-center mt-12 text-sm text-slate-500">
+    <p>Built with <span class="text-violet-400">stx</span> templating engine</p>
   </div>
 </div>
 
-<div class="card counter">
-  <button onclick="document.querySelector('.count').textContent = Number(document.querySelector('.count').textContent) - 1">-</button>
-  <div class="count">{{ count }}</div>
-  <button onclick="document.querySelector('.count').textContent = Number(document.querySelector('.count').textContent) + 1">+</button>
-</div>
+<script client>
+document.addEventListener('DOMContentLoaded', () => {
+  window.changeThemeColor = (color) => {
+    const title = document.getElementById('mainTitle')
+    if (title) {
+      title.style.background = `linear-gradient(to right, ${color}, ${adjustColor(color, 40)})`
+      title.style.webkitBackgroundClip = 'text'
+      title.style.backgroundClip = 'text'
+    }
 
-<div class="card color-switcher">
-  <h3>Theme Color</h3>
-  <p>Click a color to change the theme:</p>
-
-  <div class="color-options">
-    @for(color of colors)
-      <div
-        class="color-option {{ color.value === themeColor ? 'active' : '' }}"
-        style="background-color: {{ color.value }}"
-        onclick="changeThemeColor('{{ color.value }}')"
-        title="{{ color.name }}"
-        ></div>
-    @endfor
-  </div>
-</div>
-
-<script>
-  function changeThemeColor(color) {
-    // Update theme color
-    document.querySelectorAll('h1').forEach(h1 => h1.style.color = color);
-    document.querySelectorAll('button').forEach(btn => {
-      btn.style.backgroundColor = color;
-      btn.addEventListener('mouseenter', () => {
-        btn.style.backgroundColor = adjustColor(color, -20);
-      });
-      btn.addEventListener('mouseleave', () => {
-        btn.style.backgroundColor = color;
-      });
-    });
-
-    // Update active state
     document.querySelectorAll('.color-option').forEach(option => {
-      if (option.style.backgroundColor === color) {
-        option.classList.add('active');
+      const optionColor = option.dataset.color
+      if (optionColor === color) {
+        option.style.borderColor = 'white'
+        option.style.transform = 'scale(1.1)'
       } else {
-        option.classList.remove('active');
+        option.style.borderColor = 'transparent'
+        option.style.transform = 'scale(1)'
       }
-    });
+    })
   }
 
   function adjustColor(color, amount) {
-    // Simple function to darken/lighten color
-    const hexToRgb = (hex) => {
-      hex = hex.replace('#', '');
-      return [
-        parseInt(hex.substring(0, 2), 16),
-        parseInt(hex.substring(2, 4), 16),
-        parseInt(hex.substring(4, 6), 16)
-      ];
-    };
-
-    const [r, g, b] = hexToRgb(color);
-    const newR = Math.max(0, Math.min(255, r + amount));
-    const newG = Math.max(0, Math.min(255, g + amount));
-    const newB = Math.max(0, Math.min(255, b + amount));
-
-    return `rgb(${newR}, ${newG}, ${newB})`;
+    const hex = color.replace('#', '')
+    const r = Math.min(255, parseInt(hex.substring(0, 2), 16) + amount)
+    const g = Math.min(255, parseInt(hex.substring(2, 4), 16) + amount)
+    const b = Math.min(255, parseInt(hex.substring(4, 6), 16) + amount)
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
   }
 
-  // Initialize theme color
-  changeThemeColor('{{ themeColor }}');
+  // Set initial active color
+  changeThemeColor('#8b5cf6')
+})
 </script>
 
 </body>

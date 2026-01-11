@@ -1,15 +1,26 @@
+<script server>
+import { defineProps, withDefaults } from 'stx'
+
+interface AnimationTestProps {
+  title?: string
+  items?: string[]
+}
+
+const { title, items } = withDefaults(
+  defineProps<AnimationTestProps>(),
+  {
+    title: 'stx Animation Test',
+    items: ['Fade', 'Slide', 'Scale', 'Flip', 'Rotate']
+  }
+)
+</script>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>stx Animation Test</title>
-  <script>
-    module.exports = {
-      title: "stx Animation Test",
-      items: ["Fade", "Slide", "Scale", "Flip", "Rotate"]
-    };
-  </script>
   <style>
     body {
       font-family: system-ui, -apple-system, sans-serif;
@@ -48,7 +59,7 @@
 
   <!-- Animation group example -->
   <div id="animation-group">
-    @foreach(item in items)
+    @foreach (items as item)
       <div id="item-{{ loop.index }}" class="card">
         <h2>{{ item }}</h2>
         <p>Item {{ loop.index + 1 }} in animation group.</p>

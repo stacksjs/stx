@@ -358,6 +358,13 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
   }
   catch (error) {
     console.warn('⚠  Could not open native window:', (error as Error).message)
+
+    // Skip browser fallback in test environment
+    if (process.env.NODE_ENV === 'test' || process.env.BUN_TEST) {
+      console.log('(Skipping browser fallback in test environment)')
+      return false
+    }
+
     console.log('📱 Opening in browser instead...')
 
     // Fallback: Open in default browser

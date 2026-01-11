@@ -1,7 +1,7 @@
 import type { BunPlugin } from 'bun'
 import type { StxOptions } from './'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, config, extractVariables, processDirectives } from './'
+import { buildWebComponents, cacheTemplate, checkCache, extractVariables, loadStxConfig, processDirectives } from './'
 import { devHelpers, errorLogger, safeExecuteAsync, StxFileError, StxRuntimeError } from './error-handling'
 import { escapeHtml } from './expressions'
 import { performanceMonitor } from './performance-utils'
@@ -9,9 +9,12 @@ import { performanceMonitor } from './performance-utils'
 export const plugin: BunPlugin = {
   name: 'bun-plugin-stx',
   async setup(build) {
+    // Load and await the config from the project directory
+    const loadedConfig = await loadStxConfig()
+
     // Extract options from loaded config or use defaults
     const options: StxOptions = {
-      ...config,
+      ...loadedConfig,
       ...(build.config as any)?.stx,
     }
 
@@ -181,7 +184,7 @@ export const plugin: BunPlugin = {
           loader: 'html',
         }
       }
-      catch (error: any) {
+      catch (error: unknown) {
         const enhancedError = error instanceof Error
           ? error
           : new StxRuntimeError(`Plugin processing failed: ${String(error)}`, filePath)

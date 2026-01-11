@@ -92,14 +92,37 @@ export class LRUCache<K, V> {
 }
 
 /**
- * Cache for compiled regex patterns to avoid recompilation
+ * Cache for compiled regex patterns to avoid recompilation.
+ * Only stores non-global patterns to avoid lastIndex state issues.
  */
 const REGEX_CACHE = new Map<string, RegExp>()
 
 /**
- * Get a cached regex pattern or compile and cache it
+ * Get a cached regex pattern or compile and cache it.
+ *
+ * IMPORTANT: For global patterns (flags include 'g'), this function returns
+ * a NEW RegExp instance each time to avoid shared `lastIndex` state issues.
+ * Only non-global patterns are cached.
+ *
+ * @param pattern - The regex pattern string
+ * @param flags - Optional regex flags (e.g., 'i', 'g', 'gi')
+ * @returns A RegExp instance (cached for non-global, new for global)
+ *
+ * @example
+ * ```typescript
+ * // Safe to cache - non-global pattern
+ * const pattern = getCachedRegex('@if\\s*\\(', 'i')
+ *
+ * // Not cached - global patterns always return new instance
+ * const global = getCachedRegex('@directive', 'g')
+ * ```
  */
 export function getCachedRegex(pattern: string, flags?: string): RegExp {
+  // Global patterns have mutable lastIndex state, so always create new instances
+  if (flags?.includes('g')) {
+    return new RegExp(pattern, flags)
+  }
+
   const key = `${pattern}:${flags || ''}`
 
   if (!REGEX_CACHE.has(key)) {
@@ -107,6 +130,13 @@ export function getCachedRegex(pattern: string, flags?: string): RegExp {
   }
 
   return REGEX_CACHE.get(key)!
+}
+
+/**
+ * Clear the regex cache (useful for testing)
+ */
+export function clearRegexCache(): void {
+  REGEX_CACHE.clear()
 }
 
 /**

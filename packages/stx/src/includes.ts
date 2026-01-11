@@ -227,10 +227,11 @@ export async function processIncludes(
       }
       return ''
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
       return createDetailedErrorMessage(
         'Include',
-        `Error evaluating @includeWhen condition: ${error.message}`,
+        `Error evaluating @includeWhen condition: ${errorMessage}`,
         filePath,
         template,
         offset,
@@ -263,10 +264,11 @@ export async function processIncludes(
       }
       return ''
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
       return createDetailedErrorMessage(
         'Include',
-        `Error evaluating @includeUnless condition: ${error.message}`,
+        `Error evaluating @includeUnless condition: ${errorMessage}`,
         filePath,
         template,
         offset,
@@ -296,14 +298,15 @@ export async function processIncludes(
         try {
           localVars = safeEvaluateObject(varsString, context)
         }
-        catch (error: any) {
+        catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
           // In production, use fallback; in debug mode, show error
           if (options.debug) {
             output = output.replace(
               fullMatch,
               createDetailedErrorMessage(
                 'Include',
-                `Error parsing includeFirst variables: ${error.message}`,
+                `Error parsing includeFirst variables: ${errorMessage}`,
                 filePath,
                 template,
                 matchOffset,
@@ -364,12 +367,13 @@ export async function processIncludes(
         }
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
       output = output.replace(
         fullMatch,
         createDetailedErrorMessage(
           'Include',
-          `Error processing @includeFirst: ${error.message}`,
+          `Error processing @includeFirst: ${errorMessage}`,
           filePath,
           template,
           matchOffset,
@@ -412,13 +416,27 @@ export async function processIncludes(
       const normalizedResolvedPath = path.normalize(resolvedPath)
 
       // Security: Prevent path traversal attacks
-      // The resolved path must be within the partials directory or the template directory
+      // The resolved path must be within:
+      // 1. The partials directory, OR
+      // 2. The template directory, OR
+      // 3. Any sibling directory within 3 parent levels (for typical app structures)
       const isWithinPartialsDir = normalizedResolvedPath.startsWith(normalizedPartialsDir + path.sep)
         || normalizedResolvedPath === normalizedPartialsDir
       const isWithinTemplateDir = normalizedResolvedPath.startsWith(templateDir + path.sep)
         || normalizedResolvedPath === templateDir
 
-      if (!isWithinPartialsDir && !isWithinTemplateDir) {
+      // Check if within sibling directories (up to 3 levels up)
+      let isWithinProjectScope = false
+      let parentDir = templateDir
+      for (let i = 0; i < 3; i++) {
+        parentDir = path.dirname(parentDir)
+        if (normalizedResolvedPath.startsWith(parentDir + path.sep)) {
+          isWithinProjectScope = true
+          break
+        }
+      }
+
+      if (!isWithinPartialsDir && !isWithinTemplateDir && !isWithinProjectScope) {
         console.error(`Security: Path traversal attempt blocked for include path: ${includePath}`)
         console.error(`  Resolved to: ${normalizedResolvedPath}`)
         console.error(`  Allowed dirs: ${normalizedPartialsDir}, ${templateDir}`)
@@ -491,16 +509,46 @@ export async function processIncludes(
           // Cache for future use
           partialsCache.set(includeFilePath, partialContent)
         }
-        catch (error: any) {
+        catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
           return createDetailedErrorMessage(
             'Include',
-            `Error loading include file ${includePath}: ${error.message}`,
+            `Error loading include file ${includePath}: ${errorMessage}`,
             filePath,
             templateStr,
             offsetPos,
           )
         }
       }
+
+      // SFC Support: Extract <template>, <script>, and <style> sections
+      let workingContent = partialContent
+
+      // Extract <template> content if present (Vue-style SFC)
+      const templateMatch = workingContent.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
+      if (templateMatch) {
+        workingContent = templateMatch[1].trim()
+      }
+
+      // Extract <script> content (look in original content)
+      const scriptMatch = partialContent.match(/<script\b([^>]*)>([\s\S]*?)<\/script>/i)
+      const scriptAttrs = scriptMatch ? scriptMatch[1] : ''
+      const isClientScript = scriptAttrs.includes('client') || scriptAttrs.includes('type="module"')
+      let preservedScript = ''
+      if (scriptMatch && isClientScript) {
+        preservedScript = `<script${scriptAttrs}>${scriptMatch[2]}</script>`
+      }
+
+      // Extract <style> content
+      const styleMatch = partialContent.match(/<style\b([^>]*)>([\s\S]*?)<\/style>/i)
+      let preservedStyle = ''
+      if (styleMatch) {
+        preservedStyle = `<style${styleMatch[1]}>${styleMatch[2]}</style>`
+      }
+
+      // Remove script and style tags from working content
+      workingContent = workingContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      workingContent = workingContent.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
 
       // Create a new context with local variables
       // Make sure parent variables are accessible in includes
@@ -513,13 +561,13 @@ export async function processIncludes(
 
       // Process the partial content
       // Process any nested includes first, passing the includeStack for circular detection
-      if (partialContent.includes('@include') || partialContent.includes('@partial')) {
-        partialContent = await processIncludes(partialContent, includeContext, includeFilePath, options, dependencies, includeStack)
+      if (workingContent.includes('@include') || workingContent.includes('@partial')) {
+        workingContent = await processIncludes(workingContent, includeContext, includeFilePath, options, dependencies, includeStack)
       }
 
       // Process loops first to handle array iterations
       const { processLoops } = await import('./loops')
-      let processedContent = processLoops(partialContent, includeContext, includeFilePath)
+      let processedContent = processLoops(workingContent, includeContext, includeFilePath)
 
       // Process conditionals
       processedContent = processConditionals(processedContent, includeContext, includeFilePath)
@@ -527,12 +575,21 @@ export async function processIncludes(
       // Process expressions
       processedContent = processExpressions(processedContent, includeContext, includeFilePath)
 
+      // Append preserved style and script for SFC support
+      if (preservedStyle) {
+        processedContent += '\n' + preservedStyle
+      }
+      if (preservedScript) {
+        processedContent += '\n' + preservedScript
+      }
+
       return processedContent
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
       return createDetailedErrorMessage(
         'Include',
-        `Error processing include ${includePath}: ${error.message}`,
+        `Error processing include ${includePath}: ${errorMessage}`,
         filePath,
         templateStr,
         offsetPos,
@@ -556,12 +613,13 @@ export async function processIncludes(
       try {
         localVars = safeEvaluateObject(varsString, context)
       }
-      catch (error: any) {
+      catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
         output = output.replace(
           fullMatch,
           createDetailedErrorMessage(
             'Include',
-            `Error parsing include variables for ${includePath}: ${error.message}`,
+            `Error parsing include variables for ${includePath}: ${errorMessage}`,
             filePath,
             template,
             matchOffset,

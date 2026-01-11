@@ -1,0 +1,66 @@
+<script server>
+import { defineProps, withDefaults } from 'stx'
+
+interface ProgressBarProps {
+  value: number
+  max?: number
+  showLabel?: boolean
+  showPercentage?: boolean
+  label?: string
+  variant?: 'emerald' | 'cyan' | 'purple' | 'amber' | 'red' | 'gradient'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
+  animated?: boolean
+}
+
+const { value, max, showLabel, showPercentage, label, variant, size, animated } = withDefaults(
+  defineProps<ProgressBarProps>(),
+  {
+    max: 100,
+    showLabel: false,
+    showPercentage: false,
+    variant: 'gradient',
+    size: 'md',
+    animated: false
+  }
+)
+
+const percentage = Math.min(Math.round((value / max) * 100), 100)
+
+const variantClasses: Record<string, string> = {
+  emerald: 'bg-emerald-500',
+  cyan: 'bg-cyan-500',
+  purple: 'bg-purple-500',
+  amber: 'bg-amber-500',
+  red: 'bg-red-500',
+  gradient: 'bg-gradient-to-r from-emerald-500 to-cyan-500'
+}
+
+const sizeClasses: Record<string, string> = {
+  xs: 'h-1',
+  sm: 'h-1.5',
+  md: 'h-2',
+  lg: 'h-3'
+}
+
+const barClass = variantClasses[variant]
+const heightClass = sizeClasses[size]
+</script>
+
+<div>
+  @if (showLabel || showPercentage)
+    <div class="flex justify-between text-sm mb-1">
+      @if (showLabel && label)
+        <span class="text-slate-400">{{ label }}</span>
+      @endif
+      @if (showPercentage)
+        <span class="font-semibold text-emerald-400">{{ percentage }}%</span>
+      @endif
+    </div>
+  @endif
+  <div class="bg-slate-700 rounded-full overflow-hidden {{ heightClass }}">
+    <div
+      class="{{ barClass }} rounded-full {{ animated ? 'transition-all duration-500' : '' }} {{ heightClass }}"
+      style="width: {{ percentage }}%"
+    ></div>
+  </div>
+</div>

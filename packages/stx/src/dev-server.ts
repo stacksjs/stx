@@ -2,10 +2,8 @@ import type { BunPlugin } from 'bun'
 import type { SyntaxHighlightTheme } from './types'
 import { serve } from 'bun'
 import fs from 'node:fs'
-import net from 'node:net'
 import path from 'node:path'
 import process from 'node:process'
-import { openDevWindow } from '@stacksjs/desktop'
 import { handleAgenticApi } from './agentic-api'
 import { readMarkdownFile } from './assets'
 import { config } from './config'
@@ -24,339 +22,25 @@ import {
 // If consolidating, consider making bun-plugin-stx re-export from @stacksjs/stx/plugin
 import { partialsCache } from './includes'
 import { plugin as stxPlugin } from './plugin'
+import { clearComponentCache } from './utils'
 
-// ANSI color codes for terminal output
-const colors = {
-  reset: '\x1B[0m',
-  bright: '\x1B[1m',
-  dim: '\x1B[2m',
-  underscore: '\x1B[4m',
-  blink: '\x1B[5m',
-  reverse: '\x1B[7m',
-  hidden: '\x1B[8m',
+// Import from modular dev-server components
+import {
+  buildHeadwindCSS,
+  colors,
+  findAvailablePort,
+  getFrontmatterHtml,
+  getThemeSelectorHtml,
+  getThemeSelectorScript,
+  getThemeSelectorStyles,
+  injectHeadwindCSS,
+  openNativeWindow,
+  rebuildHeadwindCSS,
+  setupKeyboardShortcuts,
+} from './dev-server/index'
 
-  black: '\x1B[30m',
-  red: '\x1B[31m',
-  green: '\x1B[32m',
-  yellow: '\x1B[33m',
-  blue: '\x1B[34m',
-  magenta: '\x1B[35m',
-  cyan: '\x1B[36m',
-  white: '\x1B[37m',
-  gray: '\x1B[90m',
-
-  bgBlack: '\x1B[40m',
-  bgRed: '\x1B[41m',
-  bgGreen: '\x1B[42m',
-  bgYellow: '\x1B[43m',
-  bgBlue: '\x1B[44m',
-  bgMagenta: '\x1B[45m',
-  bgCyan: '\x1B[46m',
-  bgWhite: '\x1B[47m',
-  bgGray: '\x1B[100m',
-}
-
-// =============================================================================
-// Headwind CSS Generation
-// =============================================================================
-
-// Headwind lazy loading cache
-let headwindModule: { CSSGenerator: any, config: any } | null = null
-let headwindLoadAttempted = false
-
-async function loadHeadwind(): Promise<{ CSSGenerator: any, config: any } | null> {
-  if (headwindLoadAttempted) {
-    return headwindModule
-  }
-  headwindLoadAttempted = true
-
-  try {
-    // Dynamic import to make headwind optional
-    const HeadwindPkg = await import('@stacksjs/headwind')
-    if (HeadwindPkg && HeadwindPkg.CSSGenerator) {
-      headwindModule = {
-        CSSGenerator: HeadwindPkg.CSSGenerator,
-        config: HeadwindPkg.config,
-      }
-      console.log(`${colors.green}[Headwind] CSS engine loaded successfully${colors.reset}`)
-      return headwindModule
-    }
-    throw new Error('Headwind CSSGenerator not found')
-  }
-  catch {
-    console.warn(`${colors.yellow}[Headwind] CSS engine not available, Tailwind styles will not be generated${colors.reset}`)
-    console.warn(`${colors.yellow}Run 'bun add @stacksjs/headwind' to enable CSS generation${colors.reset}`)
-    return null
-  }
-}
-
-/**
- * Extract utility classes from HTML content and generate CSS using Headwind
- */
-async function generateHeadwindCSS(htmlContent: string): Promise<string> {
-  try {
-    // Load headwind module
-    const hw = await loadHeadwind()
-    if (!hw) {
-      return ''
-    }
-
-    // Extract all class attributes from HTML
-    const classRegex = /class\s*=\s*["']([^"']+)["']/gi
-    const classes = new Set<string>()
-
-    let match = classRegex.exec(htmlContent)
-    while (match !== null) {
-      const classValue = match[1]
-      // Split by whitespace and add each class
-      for (const cls of classValue.split(/\s+/)) {
-        if (cls.trim()) {
-          classes.add(cls.trim())
-        }
-      }
-      match = classRegex.exec(htmlContent)
-    }
-
-    if (classes.size === 0) {
-      return ''
-    }
-
-    // Load the project's Headwind config (or use defaults)
-    const projectConfig = hw.config
-
-    // Create a Headwind config for on-the-fly generation
-    const headwindConfig = {
-      ...projectConfig,
-      content: [],
-      output: '',
-      preflight: true,
-      minify: false,
-    }
-
-    // Generate CSS using Headwind's CSSGenerator
-    const generator = new hw.CSSGenerator(headwindConfig)
-
-    for (const className of classes) {
-      generator.generate(className)
-    }
-
-    return generator.toCSS(true, false)
-  }
-  catch (error) {
-    console.warn('Failed to generate Headwind CSS:', error)
-    return ''
-  }
-}
-
-/**
- * Inject generated CSS into HTML content
- */
-async function injectHeadwindCSS(htmlContent: string): Promise<string> {
-  const css = await generateHeadwindCSS(htmlContent)
-
-  if (!css) {
-    return htmlContent
-  }
-
-  // Create a style tag with the generated CSS
-  const styleTag = `<style data-headwind="generated">\n${css}\n</style>`
-
-  // Try to inject before </head>
-  if (htmlContent.includes('</head>')) {
-    return htmlContent.replace('</head>', `${styleTag}\n</head>`)
-  }
-
-  // Fallback: inject at the beginning of <body> or at the start
-  if (htmlContent.includes('<body')) {
-    return htmlContent.replace(/<body([^>]*)>/, `<body$1>\n${styleTag}`)
-  }
-
-  // Last resort: prepend to content
-  return styleTag + htmlContent
-}
-
-// =============================================================================
-// Shared HTML Templates
-// =============================================================================
-// These functions generate reusable HTML snippets to avoid duplication
-
-/**
- * Generate theme selector CSS styles
- * Used in markdown preview pages for syntax highlighting theme selection
- */
-function getThemeSelectorStyles(): string {
-  return `
-    /* Theme selector for code blocks */
-    .theme-selector {
-      margin: 1rem 0;
-      padding: 0.5rem;
-      background: #f8f8f8;
-      border-radius: 4px;
-      text-align: right;
-    }
-    select {
-      padding: 0.25rem 0.5rem;
-      border-radius: 3px;
-      border: 1px solid #ddd;
-    }
-
-    /* Dark mode body styles */
-    body.dark-mode {
-      background-color: #121212;
-      color: #e1e4e8;
-    }
-
-    body.dark-mode h1,
-    body.dark-mode h2,
-    body.dark-mode h3 {
-      color: #e1e4e8;
-      border-color: #2f363d;
-    }
-
-    body.dark-mode .theme-selector {
-      background: #2f363d;
-      color: #e1e4e8;
-    }
-
-    body.dark-mode select {
-      background: #24292e;
-      color: #e1e4e8;
-      border-color: #444;
-    }
-
-    body.dark-mode blockquote {
-      background: #24292e;
-      color: #e1e4e8;
-    }
-
-    body.dark-mode .frontmatter {
-      background: #24292e;
-    }
-
-    body.dark-mode a {
-      color: #58a6ff;
-    }`
-}
-
-/**
- * Generate theme selector HTML with dropdown
- * @param themeOptions - HTML string of option elements
- */
-function getThemeSelectorHtml(themeOptions: string): string {
-  return `
-  <div class="theme-selector">
-    Theme:
-    <select id="themeSelector" onchange="changeTheme()">
-      ${themeOptions}
-    </select>
-  </div>`
-}
-
-/**
- * Generate theme change JavaScript
- * Handles toggling dark mode based on theme selection
- */
-function getThemeSelectorScript(): string {
-  return `
-    function changeTheme() {
-      const theme = document.getElementById('themeSelector').value;
-
-      // Toggle dark mode class based on theme
-      // Dark themes typically include these keywords in their names
-      if (theme.includes('dark') || theme.includes('night') || theme.includes('monokai') ||
-          theme.includes('dracula') || theme.includes('nord') || theme.includes('material')) {
-        document.body.classList.add('dark-mode');
-      } else {
-        document.body.classList.remove('dark-mode');
-      }
-    }
-
-    // Initialize theme on page load
-    document.addEventListener('DOMContentLoaded', changeTheme);`
-}
-
-/**
- * Generate frontmatter display HTML
- * @param data - Frontmatter key-value pairs
- */
-function getFrontmatterHtml(data: Record<string, any>): string {
-  if (Object.keys(data).length === 0) {
-    return ''
-  }
-
-  return `
-  <div class="frontmatter">
-    <h3>Frontmatter</h3>
-    ${Object.entries(data).map(([key, value]) => `
-    <div class="frontmatter-item">
-      <span class="frontmatter-label">${key}:</span>
-      <span>${Array.isArray(value) ? value.join(', ') : value}</span>
-    </div>`).join('')}
-  </div>`
-}
-
-/**
- * Check if a port is available by attempting to bind to it
- */
-async function isPortAvailable(port: number): Promise<boolean> {
-  // Check IPv4
-  const ipv4Available = await new Promise<boolean>((resolve) => {
-    const server = net.createServer()
-    server.once('error', () => resolve(false))
-    server.once('listening', () => {
-      server.close(() => resolve(true))
-    })
-    server.listen(port, '0.0.0.0')
-  })
-
-  if (!ipv4Available) return false
-
-  // Check IPv6
-  const ipv6Available = await new Promise<boolean>((resolve) => {
-    const server = net.createServer()
-    server.once('error', () => resolve(false))
-    server.once('listening', () => {
-      server.close(() => resolve(true))
-    })
-    server.listen(port, '::')
-  })
-
-  return ipv6Available
-}
-
-/**
- * Find an available port starting from the given port
- */
-async function findAvailablePort(startPort: number, maxAttempts = 20): Promise<number> {
-  for (let i = 0; i < maxAttempts; i++) {
-    const port = startPort + i
-    const available = await isPortAvailable(port)
-    if (available) {
-      return port
-    }
-  }
-  throw new Error(`Could not find an available port between ${startPort} and ${startPort + maxAttempts - 1}`)
-}
-
-// Helper function to open native window with desktop package
-async function openNativeWindow(port: number) {
-  try {
-    // Use the desktop package to open the window
-    const success = await openDevWindow(port, {
-      title: 'stx Development',
-      width: 1400,
-      height: 900,
-      darkMode: true,
-      hotReload: true,
-    })
-
-    return success
-  }
-  catch (error) {
-    console.log(`${colors.red}✗${colors.reset} Could not open native window:`, error)
-    return false
-  }
-}
+// NOTE: Headwind CSS, theme selector, port utils, and native window functions
+// have been extracted to dev-server/ modules for better organization
 
 // Define types for dev server options
 export interface DevServerOptions {
@@ -378,69 +62,6 @@ export interface DevServerOptions {
   hotReload?: boolean
   /** Port for WebSocket HMR server (default: HTTP port + 1) */
   hmrPort?: number
-}
-
-// Function to setup keyboard shortcuts for the server
-function setupKeyboardShortcuts(serverUrl: string, stopServer: () => void) {
-  // Set up raw mode for handling keyboard input
-  if (process.stdin.isTTY) {
-    process.stdin.setRawMode(true)
-    process.stdin.setEncoding('utf8')
-    process.stdin.resume()
-
-    console.log('\nKeyboard shortcuts:')
-    console.log(`  ${colors.cyan}o${colors.reset} + Enter - Open in browser`)
-    console.log(`  ${colors.cyan}c${colors.reset} + Enter - Clear console`)
-    console.log(`  ${colors.cyan}q${colors.reset} + Enter (or ${colors.cyan}Ctrl+C${colors.reset}) - Quit server`)
-
-    let buffer = ''
-
-    process.stdin.on('data', (key: string) => {
-      // Handle Ctrl+C
-      if (key === '\u0003') {
-        stopServer()
-        process.exit(0)
-      }
-
-      buffer += key
-
-      // Check for command sequences
-      if (buffer.endsWith('\r') || buffer.endsWith('\n')) {
-        const cmd = buffer.trim().toLowerCase()
-        buffer = ''
-
-        if (cmd === 'o') {
-          // Open in browser
-          console.log(`${colors.dim}Opening ${colors.cyan}${serverUrl}${colors.dim} in your browser...${colors.reset}`)
-          Bun.spawn(['open', serverUrl], { stderr: 'inherit' })
-        }
-        else if (cmd === 'c') {
-          // Clear console
-          console.clear()
-          console.log(`${colors.green}Server running at ${colors.cyan}${serverUrl}${colors.reset}`)
-          console.log(`Press ${colors.cyan}Ctrl+C${colors.reset} to stop the server`)
-          console.log('\nKeyboard shortcuts:')
-          console.log(`  ${colors.cyan}o${colors.reset} + Enter - Open in browser`)
-          console.log(`  ${colors.cyan}c${colors.reset} + Enter - Clear console`)
-          console.log(`  ${colors.cyan}q${colors.reset} + Enter (or ${colors.cyan}Ctrl+C${colors.reset}) - Quit server`)
-        }
-        else if (cmd === 'q') {
-          // Quit server
-          console.log(`${colors.yellow}Stopping server...${colors.reset}`)
-          stopServer()
-          process.exit(0)
-        }
-        else if (cmd === 'h') {
-          // Show help/shortcuts
-          console.log('\nKeyboard Shortcuts:')
-          console.log(`  ${colors.cyan}o${colors.reset} + Enter - Open in browser`)
-          console.log(`  ${colors.cyan}c${colors.reset} + Enter - Clear console`)
-          console.log(`  ${colors.cyan}q${colors.reset} + Enter (or ${colors.cyan}Ctrl+C${colors.reset}) - Quit server`)
-          console.log(`  ${colors.cyan}h${colors.reset} + Enter - Show this help`)
-        }
-      }
-    })
-  }
 }
 
 // Serve a Markdown file directly
@@ -698,6 +319,9 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
         return new Response(htmlContent, {
           headers: {
             'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         })
       }
@@ -858,6 +482,10 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     return false
   }
 
+  // Build Headwind CSS if config exists
+  const cwd = path.dirname(absolutePath)
+  await buildHeadwindCSS(cwd)
+
   // Find an available port (with fallback)
   let actualPort = port
   try {
@@ -909,6 +537,9 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         return processedContent().then(content => new Response(content, {
           headers: {
             'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         }))
       }
@@ -920,6 +551,21 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         // Determine content type based on extension
         const ext = path.extname(requestedPath).toLowerCase()
         let contentType = 'text/plain'
+
+        // Transpile TypeScript files on the fly
+        if (ext === '.ts' || ext === '.tsx') {
+          const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
+          const code = await file.text()
+          const js = transpiler.transformSync(code)
+          return new Response(js, {
+            headers: {
+              'Content-Type': 'application/javascript',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          })
+        }
 
         switch (ext) {
           case '.html':
@@ -974,6 +620,21 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         // Determine content type based on extension
         const ext = path.extname(sourcePath).toLowerCase()
         let contentType = 'text/plain'
+
+        // Transpile TypeScript files on the fly
+        if (ext === '.ts' || ext === '.tsx') {
+          const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
+          const code = await file.text()
+          const js = transpiler.transformSync(code)
+          return new Response(js, {
+            headers: {
+              'Content-Type': 'application/javascript',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          })
+        }
 
         switch (ext) {
           case '.html':
@@ -1032,6 +693,21 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         const file = Bun.file(publicPath)
         const ext = path.extname(publicPath).toLowerCase()
         let contentType = 'application/octet-stream'
+
+        // Transpile TypeScript files on the fly
+        if (ext === '.ts' || ext === '.tsx') {
+          const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
+          const code = await file.text()
+          const js = transpiler.transformSync(code)
+          return new Response(js, {
+            headers: {
+              'Content-Type': 'application/javascript',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          })
+        }
 
         switch (ext) {
           case '.html':
@@ -1134,9 +810,13 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
 
       if (shouldReloadOnChange(filename)) {
         console.log(`${colors.yellow}File ${colors.bright}${filename}${colors.yellow} changed, rebuilding...${colors.reset}`)
-        // Clear partials cache to ensure fresh content for included files
+        // Clear all caches to ensure fresh content for included files and components
         partialsCache.clear()
+        clearComponentCache()
         const success = await buildFile()
+
+        // Rebuild Headwind CSS
+        await rebuildHeadwindCSS(cwd)
 
         // Notify connected browsers via HMR
         if (hotReload && hmrServer) {
@@ -1549,6 +1229,21 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         const ext = path.extname(publicPath).toLowerCase()
         let contentType = 'application/octet-stream'
 
+        // Transpile TypeScript files on the fly
+        if (ext === '.ts' || ext === '.tsx') {
+          const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
+          const code = await file.text()
+          const js = transpiler.transformSync(code)
+          return new Response(js, {
+            headers: {
+              'Content-Type': 'application/javascript',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          })
+        }
+
         switch (ext) {
           case '.html':
             contentType = 'text/html'
@@ -1614,6 +1309,9 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         return injectHeadwindCSS(routeMatched.content).then(content => new Response(content, {
           headers: {
             'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         }))
       }
@@ -1625,6 +1323,21 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         // Determine content type based on extension
         const ext = path.extname(requestedPath).toLowerCase()
         let contentType = 'text/plain'
+
+        // Transpile TypeScript files on the fly
+        if (ext === '.ts' || ext === '.tsx') {
+          const transpiler = new Bun.Transpiler({ loader: ext === '.tsx' ? 'tsx' : 'ts' })
+          const code = await file.text()
+          const js = transpiler.transformSync(code)
+          return new Response(js, {
+            headers: {
+              'Content-Type': 'application/javascript',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          })
+        }
 
         switch (ext) {
           case '.html':
@@ -1682,6 +1395,9 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         return injectHeadwindCSS(routes['/'].content).then(content => new Response(content, {
           headers: {
             'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         }))
       }
@@ -1747,8 +1463,9 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       // Only rebuild if it's a supported file type
       if (filename.endsWith('.stx') || filename.endsWith('.js') || filename.endsWith('.ts') || filename.endsWith('.md')) {
         console.log(`${colors.yellow}File ${colors.bright}${filename}${colors.yellow} changed, rebuilding...${colors.reset}`)
-        // Clear partials cache to ensure fresh content for included files
+        // Clear all caches to ensure fresh content for included files and components
         partialsCache.clear()
+        clearComponentCache()
         await buildFiles()
       }
     })
@@ -1788,4 +1505,394 @@ function findCommonDir(paths: string[]): string {
 
   // Join the common parts back into a path
   return commonParts.join(path.sep)
+}
+
+// Import file-based router
+import { createRouter, matchRoute, formatRoutes } from './router'
+import type { Route, RouteMatch } from './router'
+
+// Interface for built page content
+interface BuiltPage {
+  route: Route
+  content: string
+}
+
+/**
+ * Serve a full STX application with file-based routing
+ *
+ * Directory structure:
+ *   pages/
+ *     index.stx       → /
+ *     about.stx       → /about
+ *     chat/
+ *       index.stx     → /chat
+ *       [id].stx      → /chat/:id (dynamic route)
+ *   components/       → Shared components
+ *   public/           → Static assets
+ */
+export async function serveApp(appDir: string = '.', options: DevServerOptions = {}): Promise<boolean> {
+  const port = options.port || 3000
+  const watch = options.watch !== false
+  const hotReload = options.hotReload !== false && watch
+
+  let hmrServer: ReturnType<typeof getHmrServer> | null = null
+  let actualHmrPort = options.hmrPort || port + 1
+
+  // Resolve app directory
+  const absoluteAppDir = path.resolve(appDir)
+  const pagesDir = path.join(absoluteAppDir, 'pages')
+
+  // Check if pages directory exists
+  if (!fs.existsSync(pagesDir)) {
+    console.error(`${colors.red}Error: No 'pages' directory found in ${colors.bright}${absoluteAppDir}${colors.reset}`)
+    console.log(`${colors.dim}Create a pages/ directory with .stx files to define your routes.${colors.reset}`)
+    console.log(`${colors.dim}Example: pages/index.stx for the homepage.${colors.reset}`)
+    return false
+  }
+
+  // Create router from pages directory
+  const routes = createRouter(absoluteAppDir)
+
+  if (routes.length === 0) {
+    console.error(`${colors.red}Error: No page files found in ${colors.bright}${pagesDir}${colors.reset}`)
+    return false
+  }
+
+  console.log(`${colors.blue}Found ${colors.bright}${routes.length}${colors.blue} routes${colors.reset}`)
+
+  // Create output directory
+  const outputDir = path.join(absoluteAppDir, '.stx/output')
+  fs.mkdirSync(outputDir, { recursive: true })
+
+  // Built pages cache
+  const builtPages: Map<string, BuiltPage> = new Map()
+
+  // Build a single page file
+  const buildPage = async (route: Route): Promise<BuiltPage | null> => {
+    try {
+      // Plugin to handle public asset paths
+      const publicAssetsPlugin: BunPlugin = {
+        name: 'public-assets',
+        setup(build) {
+          build.onResolve({ filter: /^\/(images|fonts|assets|public|dist)\// }, (args) => {
+            return { path: args.path, external: true }
+          })
+        },
+      }
+
+      const result = await Bun.build({
+        entrypoints: [route.filePath],
+        outdir: outputDir,
+        plugins: [publicAssetsPlugin, stxPlugin],
+        publicPath: '/',
+        define: {
+          'process.env.NODE_ENV': '"development"',
+        },
+        ...options.stxOptions,
+      })
+
+      if (!result.success) {
+        console.error(`${colors.red}Build failed for ${colors.bright}${route.pattern}${colors.reset}:`, result.logs)
+        return null
+      }
+
+      const htmlOutput = result.outputs.find(o => o.path.endsWith('.html'))
+      if (!htmlOutput) {
+        console.error(`${colors.red}No HTML output for ${colors.bright}${route.pattern}${colors.reset}`)
+        return null
+      }
+
+      const content = await Bun.file(htmlOutput.path).text()
+      return { route, content }
+    } catch (error) {
+      console.error(`${colors.red}Error building ${colors.bright}${route.pattern}${colors.reset}:`, error)
+      return null
+    }
+  }
+
+  // Build all pages
+  const buildAllPages = async (): Promise<boolean> => {
+    builtPages.clear()
+
+    for (const route of routes) {
+      const built = await buildPage(route)
+      if (built) {
+        builtPages.set(route.pattern, built)
+      }
+    }
+
+    return builtPages.size > 0
+  }
+
+  // Initial build
+  console.log(`${colors.blue}Building pages...${colors.reset}`)
+  const buildSuccess = await buildAllPages()
+  if (!buildSuccess) {
+    console.error(`${colors.red}No pages were successfully built${colors.reset}`)
+    return false
+  }
+
+  // Build Headwind CSS if config exists
+  await buildHeadwindCSS(absoluteAppDir)
+
+  // Find available port
+  let actualPort = port
+  try {
+    actualPort = await findAvailablePort(port)
+    if (actualPort !== port) {
+      console.log(`${colors.yellow}Port ${port} is busy, using port ${actualPort} instead${colors.reset}`)
+    }
+  } catch {
+    console.error(`${colors.red}Could not find an available port${colors.reset}`)
+    return false
+  }
+
+  // Start HMR server
+  if (hotReload) {
+    const desiredHmrPort = options.hmrPort || actualPort + 1
+    hmrServer = getHmrServer({ wsPort: desiredHmrPort, verbose: false })
+    actualHmrPort = hmrServer.start(desiredHmrPort)
+  }
+
+  // Inject route params into HTML content
+  const injectRouteParams = (content: string, params: Record<string, string>): string => {
+    // Inject as a script tag that sets window.__STX_ROUTE_PARAMS__
+    const paramsScript = `<script>window.__STX_ROUTE_PARAMS__ = ${JSON.stringify(params)};</script>`
+    // Insert before closing </head> or at start of <body>
+    if (content.includes('</head>')) {
+      return content.replace('</head>', `${paramsScript}</head>`)
+    }
+    if (content.includes('<body')) {
+      return content.replace(/<body([^>]*)>/, `<body$1>${paramsScript}`)
+    }
+    return paramsScript + content
+  }
+
+  // Start server
+  console.log(`${colors.blue}Starting server...${colors.reset}`)
+  const server = serve({
+    port: actualPort,
+    async fetch(request) {
+      const url = new URL(request.url)
+
+      // Handle API routes
+      const apiResponse = await handleAgenticApi(request)
+      if (apiResponse) return apiResponse
+
+      // Serve static files from public/
+      const publicPath = path.join(absoluteAppDir, 'public', url.pathname)
+      if (fs.existsSync(publicPath) && fs.statSync(publicPath).isFile()) {
+        return serveStaticFile(publicPath)
+      }
+
+      // Serve static files from dist/ (for Headwind CSS etc.)
+      const distPath = path.join(absoluteAppDir, url.pathname)
+      if (fs.existsSync(distPath) && fs.statSync(distPath).isFile()) {
+        return serveStaticFile(distPath)
+      }
+
+      // Serve files from output directory
+      const outputPath = path.join(outputDir, url.pathname)
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).isFile()) {
+        return serveStaticFile(outputPath)
+      }
+
+      // Match route
+      const routeMatch = matchRoute(url.pathname, routes)
+
+      if (routeMatch) {
+        const builtPage = builtPages.get(routeMatch.route.pattern)
+        if (builtPage) {
+          let content = builtPage.content
+
+          // Inject route params for dynamic routes
+          if (Object.keys(routeMatch.params).length > 0) {
+            content = injectRouteParams(content, routeMatch.params)
+          }
+
+          // Inject Headwind CSS
+          content = await injectHeadwindCSS(content)
+
+          // Inject HMR client
+          if (hotReload) {
+            content = injectHotReload(content, actualHmrPort)
+          }
+
+          return new Response(content, {
+            headers: {
+              'Content-Type': 'text/html',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          })
+        }
+      }
+
+      // SPA fallback: serve index page for unmatched routes
+      const indexPage = builtPages.get('/')
+      if (indexPage) {
+        let content = indexPage.content
+        content = await injectHeadwindCSS(content)
+        if (hotReload) {
+          content = injectHotReload(content, actualHmrPort)
+        }
+        return new Response(content, {
+          headers: {
+            'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
+        })
+      }
+
+      return new Response('Not Found', { status: 404 })
+    },
+    error(error) {
+      return new Response(`<pre>${error}\n${error.stack}</pre>`, {
+        headers: { 'Content-Type': 'text/html' },
+      })
+    },
+  })
+
+  // Print output
+  console.clear()
+  console.log(`\n${colors.blue}stx${colors.reset}  ${colors.green}${process.env.stx_VERSION || 'v0.0.10'}${colors.reset}  ${colors.dim}ready in ${Math.random() * 10 + 5 | 0}.${Math.random() * 90 + 10 | 0} ms${colors.reset}`)
+  console.log(`\n${colors.bright}→  ${colors.cyan}http://localhost:${actualPort}/${colors.reset}`)
+  if (hotReload) {
+    console.log(`${colors.dim}   HMR: ws://localhost:${actualHmrPort}${colors.reset}`)
+  }
+
+  // Print routes
+  console.log(`\n${colors.yellow}Routes:${colors.reset}`)
+  const routeStrings = formatRoutes(routes, absoluteAppDir)
+  routeStrings.forEach((str, i) => {
+    const isLast = i === routeStrings.length - 1
+    const prefix = isLast ? '└─ ' : '├─ '
+    console.log(`  ${colors.green}${prefix}${colors.reset}${str}`)
+  })
+
+  console.log(`\nPress ${colors.cyan}h${colors.reset} + ${colors.cyan}Enter${colors.reset} to show shortcuts`)
+
+  // Set up keyboard shortcuts
+  setupKeyboardShortcuts(server.url.toString(), () => {
+    if (hmrServer) stopHmrServer()
+    server.stop()
+  })
+
+  // Open native window if requested
+  if (options.native) {
+    await openNativeWindow(actualPort)
+  }
+
+  // File watching
+  if (watch) {
+    console.log(`${colors.blue}Watching for changes...${colors.reset}`)
+
+    // Check if file is a static asset (in public/ directory)
+    const isStaticAsset = (filename: string): boolean => {
+      return filename.startsWith('public/') || filename.startsWith('public\\')
+    }
+
+    // Check if file is a template/source file that needs rebuild
+    const isTemplateFile = (filename: string): boolean => {
+      const ext = filename.toLowerCase()
+      return ext.endsWith('.stx') || ext.endsWith('.html') || ext.endsWith('.md')
+    }
+
+    const watcher = fs.watch(absoluteAppDir, { recursive: true }, async (eventType, filename) => {
+      if (!filename || shouldIgnoreFile(filename)) return
+
+      if (shouldReloadOnChange(filename)) {
+        // For static assets (public/), just trigger reload without rebuilding
+        if (isStaticAsset(filename)) {
+          console.log(`${colors.cyan}${filename} changed${colors.reset}`)
+          if (hotReload && hmrServer) {
+            hmrServer.reload(filename)
+          }
+        }
+        // For template files, rebuild pages
+        else if (isTemplateFile(filename)) {
+          console.log(`${colors.yellow}${filename} changed, rebuilding...${colors.reset}`)
+          // Clear all caches to ensure fresh content
+          partialsCache.clear()
+          clearComponentCache()
+          await buildAllPages()
+          await rebuildHeadwindCSS(absoluteAppDir)
+
+          if (hotReload && hmrServer) {
+            hmrServer.reload(filename)
+          }
+        }
+        // For other JS/TS files (could be components, lib, etc.), rebuild
+        else {
+          console.log(`${colors.yellow}${filename} changed, rebuilding...${colors.reset}`)
+          // Clear all caches to ensure fresh content
+          partialsCache.clear()
+          clearComponentCache()
+          await buildAllPages()
+
+          if (hotReload && hmrServer) {
+            hmrServer.reload(filename)
+          }
+        }
+      } else if (isCssOnlyChange(filename)) {
+        console.log(`${colors.cyan}CSS ${filename} changed${colors.reset}`)
+        if (hotReload && hmrServer) {
+          hmrServer.updateCss(filename)
+        }
+      }
+    })
+
+    process.on('SIGINT', () => {
+      watcher.close()
+      if (hmrServer) stopHmrServer()
+      server.stop()
+      process.exit(0)
+    })
+  }
+
+  return true
+}
+
+// Helper to serve static files with proper content types
+function serveStaticFile(filePath: string): Response {
+  const file = Bun.file(filePath)
+  const ext = path.extname(filePath).toLowerCase()
+
+  const contentTypes: Record<string, string> = {
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.js': 'text/javascript',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.otf': 'font/otf',
+    '.eot': 'application/vnd.ms-fontobject',
+  }
+
+  // In development, disable caching for JS/CSS files so changes reflect immediately
+  const noCacheExtensions = ['.js', '.css', '.json']
+  const cacheHeaders = noCacheExtensions.includes(ext)
+    ? {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    : {}
+
+  return new Response(file, {
+    headers: {
+      'Content-Type': contentTypes[ext] || 'application/octet-stream',
+      ...cacheHeaders,
+    },
+  })
 }
