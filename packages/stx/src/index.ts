@@ -81,6 +81,9 @@ export * from './client'
 // Composables (Nuxt-style browser API utilities)
 export * from './composables'
 
+// Browser composables (useLocalStorage, useFetch, useDebounce, etc.)
+export * from './browser-composables'
+
 // Form validation with chainable API
 export * from './forms-validation'
 
