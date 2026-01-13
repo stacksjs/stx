@@ -3,6 +3,7 @@
  */
 
 import type { CustomDirective, Middleware } from './directive-types'
+import type { MiddlewareMode } from '../route-middleware'
 import type { ComponentConfig, DocGeneratorConfig, WebComponentConfig } from './component-types'
 import type { PwaConfig } from './pwa-types'
 import type { CspConfig } from './csp-types'
@@ -270,6 +271,20 @@ export interface AnimationConfig {
 }
 
 /**
+ * Route middleware configuration
+ */
+export interface RouteMiddlewareConfig {
+  /** Enable route middleware system */
+  enabled: boolean
+  /** Directory containing middleware files (default: 'middleware') */
+  dir: string
+  /** Global middleware to run on every route */
+  global?: string[]
+  /** Default middleware mode (default: 'universal') */
+  defaultMode: MiddlewareMode
+}
+
+/**
  * Loop directive configuration
  */
 export interface LoopConfig {
@@ -460,6 +475,8 @@ export interface StxConfig {
   pwa?: Partial<PwaConfig>
   /** Component configuration */
   components?: Partial<ComponentConfig>
+  /** Route middleware configuration */
+  routeMiddleware?: Partial<RouteMiddlewareConfig>
 }
 
 export type StxOptions = Partial<StxConfig>

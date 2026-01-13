@@ -1511,6 +1511,17 @@ function findCommonDir(paths: string[]): string {
 import { createRouter, matchRoute, formatRoutes } from './router'
 import type { Route, RouteMatch } from './router'
 
+// Import route middleware system
+import {
+  loadMiddlewareFromDirectory,
+  runMiddleware,
+  createMiddlewareContext,
+  createRouteLocation,
+  clearMiddleware,
+  getMiddlewareNames,
+} from './route-middleware'
+import { getPageMeta, resetHead } from './head'
+
 // Interface for built page content
 interface BuiltPage {
   route: Route
@@ -1559,6 +1570,14 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   }
 
   console.log(`${colors.blue}Found ${colors.bright}${routes.length}${colors.blue} routes${colors.reset}`)
+
+  // Load route middleware from middleware/ directory
+  clearMiddleware() // Clear any previously registered middleware
+  await loadMiddlewareFromDirectory(absoluteAppDir)
+  const loadedMiddleware = getMiddlewareNames()
+  if (loadedMiddleware.length > 0) {
+    console.log(`${colors.blue}Loaded ${colors.bright}${loadedMiddleware.length}${colors.blue} middleware: ${colors.dim}${loadedMiddleware.join(', ')}${colors.reset}`)
+  }
 
   // Create output directory
   const outputDir = path.join(absoluteAppDir, '.stx/output')
@@ -1703,6 +1722,55 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
       if (routeMatch) {
         const builtPage = builtPages.get(routeMatch.route.pattern)
         if (builtPage) {
+          // Get page metadata (middleware, etc.)
+          const pageMeta = getPageMeta()
+
+          // Run route middleware if defined
+          if (pageMeta.middleware) {
+            const toRoute = createRouteLocation(
+              url.pathname,
+              routeMatch.params,
+              pageMeta,
+              url.search
+            )
+
+            const middlewareContext = createMiddlewareContext(toRoute, null, request)
+            const middlewareResult = await runMiddleware(pageMeta.middleware, middlewareContext)
+
+            // Handle redirect
+            if (middlewareResult.redirect) {
+              const redirectUrl = middlewareResult.redirect.path
+              const statusCode = middlewareResult.redirect.options.redirectCode || 302
+
+              // Apply any response headers from middleware
+              const headers = new Headers(middlewareResult.responseHeaders)
+              headers.set('Location', redirectUrl)
+
+              return new Response(null, {
+                status: statusCode,
+                headers,
+              })
+            }
+
+            // Handle abort
+            if (middlewareResult.abort) {
+              const { statusCode, message } = middlewareResult.abort.error
+              return new Response(
+                `<!DOCTYPE html><html><head><title>Error ${statusCode}</title></head><body><h1>Error ${statusCode}</h1><p>${message}</p></body></html>`,
+                {
+                  status: statusCode,
+                  headers: { 'Content-Type': 'text/html' },
+                }
+              )
+            }
+
+            // Inject middleware state into page if any
+            if (Object.keys(middlewareResult.state).length > 0) {
+              const stateScript = `<script>window.__STX_MIDDLEWARE_STATE__ = ${JSON.stringify(middlewareResult.state)};</script>`
+              builtPage.content = builtPage.content.replace('</head>', `${stateScript}</head>`)
+            }
+          }
+
           let content = builtPage.content
 
           // Inject route params for dynamic routes

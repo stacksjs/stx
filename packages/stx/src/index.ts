@@ -90,5 +90,8 @@ export * from './forms-validation'
 // Head management (useHead, useSeoMeta, definePageMeta)
 export * from './head'
 
+// Route middleware (defineMiddleware, navigateTo, abortNavigation)
+export * from './route-middleware'
+
 // Default export for the stx module
 export default {}
