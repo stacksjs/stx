@@ -3634,4 +3634,352 @@ const data = shallowRef({ nested: { value: 1 } })
 
 ---
 
+## Browser Composables
+
+Reusable composable functions for common browser patterns. All composables auto-cleanup when used within a component context.
+
+### Storage
+
+```typescript
+import { useLocalStorage, useSessionStorage } from 'stx'
+
+// Reactive localStorage with auto-serialization
+const theme = useLocalStorage('theme', 'dark')
+console.log(theme.value) // 'dark'
+theme.value = 'light'    // Automatically saved
+theme.remove()           // Clear from storage
+
+// Session storage (cleared when tab closes)
+const token = useSessionStorage('auth_token', null)
+```
+
+### Events
+
+```typescript
+import { useEventListener, useClickOutside } from 'stx'
+
+// Window events (auto-cleanup)
+useEventListener('resize', () => console.log('resized'))
+useEventListener('keydown', (e) => console.log(e.key))
+
+// Element events
+useEventListener(buttonRef, 'click', handler)
+
+// Click outside detection (great for dropdowns)
+const dropdownRef = ref<HTMLElement>()
+useClickOutside(dropdownRef, () => {
+  isOpen.value = false
+})
+```
+
+### Window & Media
+
+```typescript
+import {
+  useWindowSize,
+  useMediaQuery,
+  useBreakpoints,
+  usePrefersDark,
+  useOnline,
+  useMouse,
+  useScroll
+} from 'stx'
+
+// Window dimensions
+const { width, height } = useWindowSize()
+
+// Media queries
+const isMobile = useMediaQuery('(max-width: 768px)')
+const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
+
+// Common breakpoints
+const { isMobile, isTablet, isDesktop, isLargeDesktop } = useBreakpoints()
+
+// Dark mode preference
+const isDark = usePrefersDark()
+
+// Online/offline status
+const isOnline = useOnline()
+
+// Mouse position
+const { x, y } = useMouse()
+
+// Scroll position
+const { x, y, isScrolling } = useScroll()
+const { x, y } = useScroll(containerRef) // For specific element
+```
+
+### Timing
+
+```typescript
+import {
+  useDebounce,
+  useDebouncedValue,
+  useThrottle,
+  useInterval,
+  useTimeout
+} from 'stx'
+
+// Debounce function calls
+const debouncedSearch = useDebounce((query: string) => {
+  fetchResults(query)
+}, 300)
+
+// Debounce a reactive value
+const debouncedQuery = useDebouncedValue(() => searchInput.value, 300)
+
+// Throttle function calls
+const throttledScroll = useThrottle(() => {
+  updateHeader()
+}, 100)
+
+// Reactive interval
+const { counter, pause, resume, reset } = useInterval(1000)
+
+// Timeout with controls
+const { isPending, start, stop } = useTimeout(() => {
+  showNotification()
+}, 5000)
+```
+
+### Utilities
+
+```typescript
+import {
+  useToggle,
+  useCounter,
+  useClipboard,
+  useTitle,
+  useIntersectionObserver,
+  useFocus
+} from 'stx'
+
+// Boolean toggle
+const [isOpen, toggle, setOpen] = useToggle(false)
+toggle()        // true
+setOpen(false)  // false
+
+// Counter with bounds
+const { count, inc, dec, set, reset } = useCounter(0, { min: 0, max: 100 })
+inc()      // 1
+inc(5)     // 6
+dec(2)     // 4
+
+// Clipboard
+const { copy, copied, text, read } = useClipboard()
+await copy('Hello!')
+if (copied.value) showToast('Copied!')
+
+// Document title
+const title = useTitle('My App')
+title.value = 'New Page - My App'
+
+// Intersection observer (lazy loading, animations)
+const { isVisible, stop } = useIntersectionObserver(elementRef, {
+  threshold: 0.5
+})
+
+// Focus management
+const { isFocused, focus, blur } = useFocus(inputRef)
+```
+
+### Async
+
+```typescript
+import { useFetch, useAsync } from 'stx'
+
+// Fetch with reactive state
+const { data, error, isLoading, execute, abort } = useFetch('/api/users')
+
+// With options
+const { data } = useFetch('/api/user', {
+  immediate: false,  // Don't fetch immediately
+  initialData: []
+})
+await execute()  // Fetch manually
+
+// Generic async operations
+const { state, isLoading, error, execute } = useAsync(async () => {
+  const res = await fetch('/api/data')
+  return res.json()
+})
+```
+
+---
+
+## Form Validation
+
+Simple, chainable form validation API.
+
+### Basic Usage
+
+```typescript
+import { defineForm, v } from 'stx'
+
+const form = defineForm({
+  email: v.required().email(),
+  password: v.required().min(8).hasUppercase().hasNumber(),
+  age: v.number().between(18, 100)
+})
+
+// Access form state
+form.values.email       // Current value
+form.errors.email       // Array of error messages
+form.touched.email      // Has field been touched?
+form.isValid            // Is entire form valid?
+form.isDirty            // Have any values changed?
+
+// Methods
+await form.validate()              // Validate all fields
+await form.validateField('email')  // Validate single field
+form.reset()                       // Reset to initial values
+form.setFieldValue('email', 'test@example.com')
+form.setFieldTouched('email', true)
+```
+
+### Available Validators
+
+**String:**
+```typescript
+v.required(message?)      // Field is required
+v.email(message?)         // Valid email format
+v.url(message?)           // Valid URL format
+v.min(length, message?)   // Minimum length
+v.max(length, message?)   // Maximum length
+v.length(min, max, msg?)  // Length between
+v.pattern(regex, message) // Match regex pattern
+v.alphanumeric(message?)  // Letters and numbers only
+v.noSpaces(message?)      // No whitespace
+v.startsWithLetter(msg?)  // Must start with letter
+```
+
+**Password:**
+```typescript
+v.hasUppercase(message?)  // Contains uppercase
+v.hasLowercase(message?)  // Contains lowercase
+v.hasNumber(message?)     // Contains number
+v.hasSpecial(message?)    // Contains special char
+```
+
+**Number:**
+```typescript
+v.number(message?)           // Must be numeric
+v.integer(message?)          // Whole number only
+v.positive(message?)         // Greater than 0
+v.negative(message?)         // Less than 0
+v.minValue(min, message?)    // Minimum value
+v.maxValue(max, message?)    // Maximum value
+v.between(min, max, msg?)    // Value in range
+```
+
+**Comparison:**
+```typescript
+v.matches(fieldName, message?)   // Match another field
+v.oneOf([values], message?)      // In allowed list
+v.notOneOf([values], message?)   // Not in list
+```
+
+**Advanced:**
+```typescript
+// Custom sync validator
+v.custom((value) => {
+  return value.startsWith('A') || 'Must start with A'
+})
+
+// Async validator (API checks)
+v.async(async (value) => {
+  const exists = await checkUsername(value)
+  return exists ? 'Username taken' : true
+})
+
+// Conditional validation
+v.when(
+  (value, formValues) => formValues.country === 'US',
+  v.required().pattern(/^\d{5}$/, 'Invalid ZIP')
+)
+```
+
+### Form Submission
+
+```typescript
+const form = defineForm({
+  email: v.required().email(),
+  password: v.required().min(8)
+})
+
+// handleSubmit validates before calling your function
+const onSubmit = form.handleSubmit(async (values) => {
+  await api.login(values.email, values.password)
+})
+
+// In template
+<form @submit.prevent="onSubmit">
+  ...
+</form>
+```
+
+### Template Directives
+
+```html
+<!-- Single error message -->
+@error(form.errors.email)
+  <span class="error">{{ message }}</span>
+@enderror
+
+<!-- Multiple errors as list -->
+@errors(form.errors.password)
+  <li>{{ message }}</li>
+@enderrors
+
+<!-- Conditional block if has errors -->
+@hasErrors(form.errors.email)
+  <div class="error-container">
+    ...
+  </div>
+@endhasErrors
+```
+
+### Complete Example
+
+```html
+<script server>
+import { defineForm, v } from 'stx'
+
+const signupForm = defineForm({
+  username: v.required().min(3).max(20).alphanumeric(),
+  email: v.required().email(),
+  password: v.required()
+    .min(8)
+    .hasUppercase('Include uppercase')
+    .hasNumber('Include number'),
+  confirmPassword: v.required().matches('password', 'Passwords must match'),
+  age: v.number().between(13, 120)
+})
+</script>
+
+<form @submit.prevent="signupForm.handleSubmit(onSubmit)">
+  <div class="field">
+    <label>Username</label>
+    <input name="username" :value="signupForm.values.username" />
+    @error(signupForm.errors.username)
+      <span class="error">{{ message }}</span>
+    @enderror
+  </div>
+
+  <div class="field">
+    <label>Password</label>
+    <input type="password" name="password" />
+    @errors(signupForm.errors.password)
+      <li class="error">{{ message }}</li>
+    @enderrors
+  </div>
+
+  <button type="submit" :disabled="!signupForm.isValid">
+    Sign Up
+  </button>
+</form>
+```
+
+---
+
 *For more details, see the [full documentation](https://stx.sh).*
