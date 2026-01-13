@@ -64,6 +64,31 @@ export interface NativeBuildConfig {
     fullscreen?: boolean
   }
 
+  /** Native sidebar configuration (macOS only) */
+  sidebar?: {
+    /** Enable native macOS sidebar */
+    enabled?: boolean
+    /** Sidebar width in pixels */
+    width?: number
+    /** Sidebar sections and items */
+    config?: {
+      sections: Array<{
+        id: string
+        title: string
+        items: Array<{
+          id: string
+          label: string
+          icon?: string
+          badge?: string | number
+          tintColor?: string
+        }>
+      }>
+      minWidth?: number
+      maxWidth?: number
+      canCollapse?: boolean
+    }
+  }
+
   /** Enable system tray/menubar */
   systemTray?: boolean
 
@@ -226,7 +251,18 @@ async function buildMacOS(
   const htmlPath = join(resourcesDir, 'index.html')
   writeFileSync(htmlPath, html)
 
+  // Write sidebar config to resources if enabled
+  let sidebarConfigPath = ''
+  if (config.sidebar?.enabled && config.sidebar?.config) {
+    sidebarConfigPath = join(resourcesDir, 'sidebar-config.json')
+    writeFileSync(sidebarConfigPath, JSON.stringify(config.sidebar.config))
+  }
+
   // Create launcher script that uses Craft
+  const sidebarFlags = config.sidebar?.enabled
+    ? `--native-sidebar --sidebar-width ${config.sidebar?.width || 240} --sidebar-config "$(cat "$RESOURCES/sidebar-config.json")"`
+    : ''
+
   const launcherScript = `#!/bin/bash
 DIR="$( cd "$( dirname "\${BASH_SOURCE[0]}" )" && pwd )"
 RESOURCES="$DIR/../Resources"
@@ -237,7 +273,8 @@ RESOURCES="$DIR/../Resources"
   ${config.systemTray ? '--system-tray' : ''} \\
   ${config.devTools ? '--dev-tools' : ''} \\
   ${config.window?.frameless ? '--frameless' : ''} \\
-  ${config.window?.alwaysOnTop ? '--always-on-top' : ''}
+  ${config.window?.alwaysOnTop ? '--always-on-top' : ''} \\
+  ${sidebarFlags}
 `
   const launcherPath = join(macOSDir, appName)
   writeFileSync(launcherPath, launcherScript)

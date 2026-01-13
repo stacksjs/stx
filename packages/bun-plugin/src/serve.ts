@@ -43,6 +43,45 @@ export async function serve(options: ServeOptions): Promise<void> {
   const routes = new Map<string, string>()
   let sourceFiles: string[] | null = null
   let assetsInitialized = false
+  let baseCSS: string | null = null
+  let baseCSSLoaded = false
+
+  // Load base CSS from styles/base.css if it exists
+  async function loadBaseCSS(): Promise<string> {
+    if (baseCSSLoaded)
+      return baseCSS || ''
+    baseCSSLoaded = true
+
+    // Try to find base.css in the serve directory
+    const possiblePaths = [
+      './styles/base.css',
+      './css/base.css',
+      './assets/css/base.css',
+    ]
+
+    for (const pattern of patterns) {
+      if (pattern.endsWith('/') || !pattern.includes('.')) {
+        possiblePaths.unshift(`${pattern}/styles/base.css`)
+        possiblePaths.unshift(`${pattern}/css/base.css`)
+      }
+    }
+
+    for (const cssPath of possiblePaths) {
+      try {
+        const file = Bun.file(cssPath)
+        if (await file.exists()) {
+          baseCSS = await file.text()
+          console.log(`✅ Loaded base CSS from ${cssPath}`)
+          return baseCSS
+        }
+      }
+      catch {
+        // Continue to next path
+      }
+    }
+
+    return ''
+  }
 
   // Lazy file discovery function
   async function discoverFiles() {
@@ -191,10 +230,22 @@ export async function serve(options: ServeOptions): Promise<void> {
     const dependencies = new Set<string>()
     output = await processDirectives(output, context, filePath, defaultConfig, dependencies)
 
-    // Generate and inject Headwind CSS
+    // Strip <template> wrapper tags FIRST - browsers don't render template content
+    // STX uses <template> in source but output should be renderable HTML
+    output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
+
+    // Load base CSS and generate Headwind CSS
+    const baseCSSContent = await loadBaseCSS()
     const headwindCSS = await generateHeadwindCSS(output)
-    if (headwindCSS) {
-      const styleTag = `<style>/* headwind css */\n${headwindCSS}</style>`
+
+    // Combine all CSS: base first, then headwind utilities
+    const allCSS = [
+      baseCSSContent ? `/* base.css */\n${baseCSSContent}` : '',
+      headwindCSS ? `/* headwind css */\n${headwindCSS}` : '',
+    ].filter(Boolean).join('\n\n')
+
+    if (allCSS) {
+      const styleTag = `<style>\n${allCSS}\n</style>`
       if (output.includes('</head>')) {
         output = output.replace('</head>', `${styleTag}\n</head>`)
       }
@@ -210,25 +261,83 @@ export async function serve(options: ServeOptions): Promise<void> {
   }
 
   // Function to get or create route
-  async function getRoute(path: string): Promise<string | null> {
+  async function getRoute(requestPath: string): Promise<string | null> {
     // Check cache first
-    if (routes.has(path))
-      return routes.get(path)!
+    if (routes.has(requestPath))
+      return routes.get(requestPath)!
 
     // Discover files if needed
     const files = await discoverFiles()
     const nodePath = await import('node:path')
 
-    // Find matching file
-    for (const filePath of files) {
-      const filename = nodePath.basename(filePath, nodePath.extname(filePath))
-      const route = ['index', 'home'].includes(filename) ? '/' : `/${filename}`
+    // Normalize the request path
+    let normalizedPath = requestPath.startsWith('/') ? requestPath.slice(1) : requestPath
 
-      if (route === path) {
-        // Process and cache
+    // Try to find matching file with various strategies
+    const possibleFiles: string[] = []
+
+    // Strategy 1: Direct path match (e.g., /pages/home.stx -> pages/home.stx)
+    for (const ext of ['.stx', '.md', '.html', '']) {
+      const directPath = normalizedPath.endsWith(ext) ? normalizedPath : `${normalizedPath}${ext}`
+      possibleFiles.push(directPath)
+    }
+
+    // Strategy 2: Look for index files in directory
+    possibleFiles.push(`${normalizedPath}/index.stx`)
+    possibleFiles.push(`${normalizedPath}/index.md`)
+    possibleFiles.push(`${normalizedPath}/index.html`)
+
+    // Strategy 3: Simple filename match (legacy behavior)
+    const filename = nodePath.basename(normalizedPath, nodePath.extname(normalizedPath))
+    if (filename && !normalizedPath.includes('/')) {
+      possibleFiles.push(`${filename}.stx`)
+      possibleFiles.push(`${filename}.md`)
+      possibleFiles.push(`${filename}.html`)
+    }
+
+    // Find a matching file from discovered files
+    for (const possible of possibleFiles) {
+      for (const filePath of files) {
+        // Normalize file path for comparison
+        const normalizedFilePath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
+        if (normalizedFilePath === possible || normalizedFilePath.endsWith(`/${possible}`)) {
+          // Process and cache
+          const output = await processTemplate(filePath)
+          routes.set(requestPath, output)
+          return output
+        }
+      }
+    }
+
+    // Strategy 4: Try finding by relative path within any pattern directory
+    for (const filePath of files) {
+      const normalizedFilePath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
+
+      // Check if this file matches by extracting route from file path
+      // e.g., pages/library/components.stx -> /pages/library/components or /library/components
+      const fileRoute = normalizedFilePath.replace(/\.(stx|md|html)$/, '')
+
+      // Check various possible route formats
+      if (`/${fileRoute}` === requestPath ||
+          fileRoute === normalizedPath ||
+          `/${fileRoute}.stx` === requestPath ||
+          `/${fileRoute}.md` === requestPath ||
+          `/${fileRoute}.html` === requestPath) {
         const output = await processTemplate(filePath)
-        routes.set(route, output)
+        routes.set(requestPath, output)
         return output
+      }
+
+      // Strategy 5: Pretty routes - strip 'pages/' prefix for cleaner URLs
+      // e.g., /home -> pages/home.stx, /library/components -> pages/library/components.stx
+      if (fileRoute.startsWith('pages/')) {
+        const prettyRoute = fileRoute.slice(6) // Remove 'pages/' prefix
+        if (`/${prettyRoute}` === requestPath ||
+            prettyRoute === normalizedPath) {
+          const output = await processTemplate(filePath)
+          routes.set(requestPath, output)
+          return output
+        }
       }
     }
 
@@ -239,11 +348,23 @@ export async function serve(options: ServeOptions): Promise<void> {
   console.log(`🌐 Server running at: http://localhost:${port}`)
   console.log(`💡 Templates will be processed on first request\n`)
 
+  // CORS headers for cross-origin requests (needed for Craft WebView)
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  }
+
   const _server = bunServe({
     port,
     async fetch(req) {
       const url = new URL(req.url)
       let path = url.pathname
+
+      // Handle CORS preflight
+      if (req.method === 'OPTIONS') {
+        return new Response(null, { headers: corsHeaders })
+      }
 
       // Normalize path
       if (path === '/index')
@@ -256,6 +377,7 @@ export async function serve(options: ServeOptions): Promise<void> {
           headers: {
             'Content-Type': 'text/html',
             'Cache-Control': 'no-cache',
+            ...corsHeaders,
           },
         })
       }
@@ -267,6 +389,7 @@ export async function serve(options: ServeOptions): Promise<void> {
           headers: {
             'Content-Type': 'text/html',
             'Cache-Control': 'no-cache',
+            ...corsHeaders,
           },
         })
       }
@@ -392,12 +515,12 @@ export async function serve(options: ServeOptions): Promise<void> {
 
       // 404 page - discover files to show available routes
       const files = await discoverFiles()
-      const nodePath = await import('node:path')
       const availableRoutes: string[] = []
 
       for (const filePath of files) {
-        const filename = nodePath.basename(filePath, nodePath.extname(filePath))
-        const route = ['index', 'home'].includes(filename) ? '/' : `/${filename}`
+        // Normalize and create route from file path
+        const normalizedPath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
+        const route = `/${normalizedPath}`
         availableRoutes.push(`<li><a href="${route}">${route}</a></li>`)
       }
 

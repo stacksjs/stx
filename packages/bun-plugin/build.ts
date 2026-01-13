@@ -6,5 +6,5 @@ await Bun.build({
   plugins: [dts()],
   target: 'bun',
   splitting: true,
-  minify: true,
+  external: ['@stacksjs/stx'], // Don't bundle stx to avoid duplicate exports
 })

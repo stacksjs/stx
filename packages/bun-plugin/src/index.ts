@@ -51,7 +51,8 @@ export type {
 } from './watch'
 
 // Re-export functions and types that consumers might need
-export { createMiddleware, createRoute, readMarkdownFile, serve } from '@stacksjs/stx'
+// Note: serve is exported from ./serve.ts, not here (to avoid duplicate export names when bundled)
+export { createMiddleware, createRoute, readMarkdownFile } from '@stacksjs/stx'
 export type { CustomDirective, CustomDirectiveHandler, ServeOptions, ServeResult, StxOptions } from '@stacksjs/stx'
 
 /**
