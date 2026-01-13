@@ -9,6 +9,7 @@ lib-cov
 logs
 node_modules
 temp
+packages/stx/test/integration/temp
 tsconfig.tsbuildinfo
 /test/out
 /.stx/cache
