@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install Bun
-        uses: oven-sh/setup-bun@v2.0.2
+        uses: oven-sh/setup-bun@v2.1.0
         # env:
         #   BUN_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
         with:
@@ -39,7 +39,7 @@ jobs:
           BUN_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 
       - name: Create GitHub Release
-        uses: stacksjs/action-releaser@v1.2.6
+        uses: stacksjs/action-releaser@v1.2.7
         with:
           files: |
             packages/stx/bin/stx-linux-x64.zip
