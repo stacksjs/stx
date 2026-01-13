@@ -1,11 +1,30 @@
-<!-- Simple Card Component -->
-<div class="relative group">
-  <div class="absolute -inset-1 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
-  <div class="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-emerald-500/50 transition-all">
-    <h2 class="text-xl font-semibold text-white mb-3 flex items-center gap-2">
-      <span class="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-xs">✨</span>
-      {{ title }}
-    </h2>
-    <p class="text-slate-400">{{ content }}</p>
+<script server>
+import { defineProps, withDefaults } from 'stx'
+
+interface SimpleCardProps {
+  title?: string
+  content?: string
+}
+
+const { title, content } = withDefaults(
+  defineProps<SimpleCardProps>(),
+  {
+    title: 'Card Title',
+    content: 'Card content goes here.'
+  }
+)
+</script>
+
+<template>
+  <div class="relative group">
+    <div class="absolute -inset-1 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
+    <div class="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-emerald-500/50 transition-all">
+      <h2 class="text-xl font-semibold text-white mb-3 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-xs">✨</span>
+        {{ title }}
+      </h2>
+      <p class="text-slate-400">{{ content }}</p>
+      <slot />
+    </div>
   </div>
-</div>
+</template>

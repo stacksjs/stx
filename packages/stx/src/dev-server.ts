@@ -22,6 +22,7 @@ import {
 // If consolidating, consider making bun-plugin-stx re-export from @stacksjs/stx/plugin
 import { partialsCache } from './includes'
 import { plugin as stxPlugin } from './plugin'
+import { clearComponentCache } from './utils'
 
 // Import from modular dev-server components
 import {
@@ -318,6 +319,9 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
         return new Response(htmlContent, {
           headers: {
             'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         })
       }
@@ -533,6 +537,9 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         return processedContent().then(content => new Response(content, {
           headers: {
             'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         }))
       }
@@ -803,8 +810,9 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
 
       if (shouldReloadOnChange(filename)) {
         console.log(`${colors.yellow}File ${colors.bright}${filename}${colors.yellow} changed, rebuilding...${colors.reset}`)
-        // Clear partials cache to ensure fresh content for included files
+        // Clear all caches to ensure fresh content for included files and components
         partialsCache.clear()
+        clearComponentCache()
         const success = await buildFile()
 
         // Rebuild Headwind CSS
@@ -1301,6 +1309,9 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         return injectHeadwindCSS(routeMatched.content).then(content => new Response(content, {
           headers: {
             'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         }))
       }
@@ -1384,6 +1395,9 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         return injectHeadwindCSS(routes['/'].content).then(content => new Response(content, {
           headers: {
             'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         }))
       }
@@ -1449,8 +1463,9 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       // Only rebuild if it's a supported file type
       if (filename.endsWith('.stx') || filename.endsWith('.js') || filename.endsWith('.ts') || filename.endsWith('.md')) {
         console.log(`${colors.yellow}File ${colors.bright}${filename}${colors.yellow} changed, rebuilding...${colors.reset}`)
-        // Clear partials cache to ensure fresh content for included files
+        // Clear all caches to ensure fresh content for included files and components
         partialsCache.clear()
+        clearComponentCache()
         await buildFiles()
       }
     })
@@ -1704,7 +1719,12 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
           }
 
           return new Response(content, {
-            headers: { 'Content-Type': 'text/html' },
+            headers: {
+              'Content-Type': 'text/html',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
           })
         }
       }
@@ -1718,7 +1738,12 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
           content = injectHotReload(content, actualHmrPort)
         }
         return new Response(content, {
-          headers: { 'Content-Type': 'text/html' },
+          headers: {
+            'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
         })
       }
 
@@ -1765,17 +1790,52 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   if (watch) {
     console.log(`${colors.blue}Watching for changes...${colors.reset}`)
 
+    // Check if file is a static asset (in public/ directory)
+    const isStaticAsset = (filename: string): boolean => {
+      return filename.startsWith('public/') || filename.startsWith('public\\')
+    }
+
+    // Check if file is a template/source file that needs rebuild
+    const isTemplateFile = (filename: string): boolean => {
+      const ext = filename.toLowerCase()
+      return ext.endsWith('.stx') || ext.endsWith('.html') || ext.endsWith('.md')
+    }
+
     const watcher = fs.watch(absoluteAppDir, { recursive: true }, async (eventType, filename) => {
       if (!filename || shouldIgnoreFile(filename)) return
 
       if (shouldReloadOnChange(filename)) {
-        console.log(`${colors.yellow}${filename} changed, rebuilding...${colors.reset}`)
-        partialsCache.clear()
-        await buildAllPages()
-        await rebuildHeadwindCSS(absoluteAppDir)
+        // For static assets (public/), just trigger reload without rebuilding
+        if (isStaticAsset(filename)) {
+          console.log(`${colors.cyan}${filename} changed${colors.reset}`)
+          if (hotReload && hmrServer) {
+            hmrServer.reload(filename)
+          }
+        }
+        // For template files, rebuild pages
+        else if (isTemplateFile(filename)) {
+          console.log(`${colors.yellow}${filename} changed, rebuilding...${colors.reset}`)
+          // Clear all caches to ensure fresh content
+          partialsCache.clear()
+          clearComponentCache()
+          await buildAllPages()
+          await rebuildHeadwindCSS(absoluteAppDir)
 
-        if (hotReload && hmrServer) {
-          hmrServer.reload(filename)
+          if (hotReload && hmrServer) {
+            hmrServer.reload(filename)
+          }
+        }
+        // For other JS/TS files (could be components, lib, etc.), rebuild
+        else {
+          console.log(`${colors.yellow}${filename} changed, rebuilding...${colors.reset}`)
+          // Clear all caches to ensure fresh content
+          partialsCache.clear()
+          clearComponentCache()
+          await buildAllPages()
+
+          if (hotReload && hmrServer) {
+            hmrServer.reload(filename)
+          }
         }
       } else if (isCssOnlyChange(filename)) {
         console.log(`${colors.cyan}CSS ${filename} changed${colors.reset}`)
@@ -1819,7 +1879,20 @@ function serveStaticFile(filePath: string): Response {
     '.eot': 'application/vnd.ms-fontobject',
   }
 
+  // In development, disable caching for JS/CSS files so changes reflect immediately
+  const noCacheExtensions = ['.js', '.css', '.json']
+  const cacheHeaders = noCacheExtensions.includes(ext)
+    ? {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    : {}
+
   return new Response(file, {
-    headers: { 'Content-Type': contentTypes[ext] || 'application/octet-stream' },
+    headers: {
+      'Content-Type': contentTypes[ext] || 'application/octet-stream',
+      ...cacheHeaders,
+    },
   })
 }

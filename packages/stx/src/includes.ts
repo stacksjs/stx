@@ -521,6 +521,35 @@ export async function processIncludes(
         }
       }
 
+      // SFC Support: Extract <template>, <script>, and <style> sections
+      let workingContent = partialContent
+
+      // Extract <template> content if present (Vue-style SFC)
+      const templateMatch = workingContent.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
+      if (templateMatch) {
+        workingContent = templateMatch[1].trim()
+      }
+
+      // Extract <script> content (look in original content)
+      const scriptMatch = partialContent.match(/<script\b([^>]*)>([\s\S]*?)<\/script>/i)
+      const scriptAttrs = scriptMatch ? scriptMatch[1] : ''
+      const isClientScript = scriptAttrs.includes('client') || scriptAttrs.includes('type="module"')
+      let preservedScript = ''
+      if (scriptMatch && isClientScript) {
+        preservedScript = `<script${scriptAttrs}>${scriptMatch[2]}</script>`
+      }
+
+      // Extract <style> content
+      const styleMatch = partialContent.match(/<style\b([^>]*)>([\s\S]*?)<\/style>/i)
+      let preservedStyle = ''
+      if (styleMatch) {
+        preservedStyle = `<style${styleMatch[1]}>${styleMatch[2]}</style>`
+      }
+
+      // Remove script and style tags from working content
+      workingContent = workingContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      workingContent = workingContent.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+
       // Create a new context with local variables
       // Make sure parent variables are accessible in includes
       const includeContext = { ...context }
@@ -532,19 +561,27 @@ export async function processIncludes(
 
       // Process the partial content
       // Process any nested includes first, passing the includeStack for circular detection
-      if (partialContent.includes('@include') || partialContent.includes('@partial')) {
-        partialContent = await processIncludes(partialContent, includeContext, includeFilePath, options, dependencies, includeStack)
+      if (workingContent.includes('@include') || workingContent.includes('@partial')) {
+        workingContent = await processIncludes(workingContent, includeContext, includeFilePath, options, dependencies, includeStack)
       }
 
       // Process loops first to handle array iterations
       const { processLoops } = await import('./loops')
-      let processedContent = processLoops(partialContent, includeContext, includeFilePath)
+      let processedContent = processLoops(workingContent, includeContext, includeFilePath)
 
       // Process conditionals
       processedContent = processConditionals(processedContent, includeContext, includeFilePath)
 
       // Process expressions
       processedContent = processExpressions(processedContent, includeContext, includeFilePath)
+
+      // Append preserved style and script for SFC support
+      if (preservedStyle) {
+        processedContent += '\n' + preservedStyle
+      }
+      if (preservedScript) {
+        processedContent += '\n' + preservedScript
+      }
 
       return processedContent
     }

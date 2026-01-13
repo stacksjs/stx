@@ -1,6 +1,18 @@
-<script>
-const title = 'STX Reactive Directives Test'
-const items = ['Apple', 'Banana', 'Cherry']
+<script server>
+import { defineProps, withDefaults } from 'stx'
+
+interface ReactiveTestProps {
+  title?: string
+  items?: string[]
+}
+
+const { title, items } = withDefaults(
+  defineProps<ReactiveTestProps>(),
+  {
+    title: 'STX Reactive Directives Test',
+    items: ['Apple', 'Banana', 'Cherry']
+  }
+)
 </script>
 
 <!DOCTYPE html>

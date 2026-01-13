@@ -121,8 +121,87 @@
   </style>
 </head>
 
-<script>
-const trails = [
+<script server>
+import { defineProps, withDefaults } from 'stx'
+
+// ============================================================================
+// TypeScript Interfaces
+// ============================================================================
+
+type Difficulty = 'easy' | 'moderate' | 'hard'
+type ActivityType = 'Trail Run' | 'Hike' | 'Walk' | 'Bike'
+
+interface Trail {
+  id: number
+  name: string
+  location: string
+  distance: number
+  elevation: number
+  difficulty: Difficulty
+  rating: number
+  reviews: number
+  time: string
+  image: string
+  tags: string[]
+}
+
+interface Activity {
+  id: number
+  user: string
+  avatar: string
+  trail: string
+  type: ActivityType
+  distance: number
+  time: string
+  pace: string
+  elevation: number
+  date: string
+  kudos: number
+}
+
+interface UserStats {
+  totalDistance: number
+  totalTime: string
+  totalElevation: number
+  trailsCompleted: number
+  currentStreak: number
+  longestStreak: number
+}
+
+interface Achievement {
+  name: string
+  icon: string
+  description: string
+  progress: number
+  total: number
+}
+
+// ============================================================================
+// Props Definition (for component reuse)
+// ============================================================================
+
+interface TrailBuddyProps {
+  initialFilter?: 'all' | 'running' | 'hiking' | 'walking' | 'dog-friendly'
+  showCommunity?: boolean
+  maxTrails?: number
+  theme?: 'light' | 'dark'
+}
+
+const { initialFilter, showCommunity, maxTrails, theme } = withDefaults(
+  defineProps<TrailBuddyProps>(),
+  {
+    initialFilter: 'all',
+    showCommunity: true,
+    maxTrails: 6,
+    theme: 'light'
+  }
+)
+
+// ============================================================================
+// Data
+// ============================================================================
+
+const trails: Trail[] = [
   {
     id: 1,
     name: 'Redwood Canyon Loop',
@@ -203,7 +282,7 @@ const trails = [
   }
 ]
 
-const recentActivities = [
+const recentActivities: Activity[] = [
   {
     id: 1,
     user: 'Sarah M.',
@@ -245,7 +324,7 @@ const recentActivities = [
   }
 ]
 
-const userStats = {
+const userStats: UserStats = {
   totalDistance: 847.3,
   totalTime: '142h 35m',
   totalElevation: 98450,
@@ -254,15 +333,19 @@ const userStats = {
   longestStreak: 28
 }
 
-const achievements = [
+const achievements: Achievement[] = [
   { name: 'Early Bird', icon: '🌅', description: 'Complete 10 sunrise trails', progress: 8, total: 10 },
   { name: 'Summit Seeker', icon: '🏔️', description: 'Reach 50 summits', progress: 34, total: 50 },
   { name: 'Century Club', icon: '💯', description: 'Run 100 miles in a month', progress: 76, total: 100 },
   { name: 'Trail Blazer', icon: '🔥', description: '30-day activity streak', progress: 12, total: 30 }
 ]
 
-function getDifficultyClass(difficulty) {
-  const classes = {
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+function getDifficultyClass(difficulty: Difficulty): string {
+  const classes: Record<Difficulty, string> = {
     easy: 'difficulty-easy',
     moderate: 'difficulty-moderate',
     hard: 'difficulty-hard'
@@ -270,8 +353,24 @@ function getDifficultyClass(difficulty) {
   return classes[difficulty] || 'difficulty-moderate'
 }
 
-function formatNumber(num) {
+function formatNumber(num: number): string {
   return num.toLocaleString()
+}
+
+function getTrailsByFilter(filter: TrailBuddyProps['initialFilter']): Trail[] {
+  if (filter === 'all') return trails
+  if (filter === 'dog-friendly') return trails.filter(t => t.tags.includes('dog-friendly'))
+  if (filter === 'running') return trails.filter(t => t.tags.includes('running') || t.difficulty === 'moderate')
+  if (filter === 'hiking') return trails.filter(t => t.difficulty === 'hard' || t.tags.includes('summit'))
+  if (filter === 'walking') return trails.filter(t => t.difficulty === 'easy')
+  return trails
+}
+
+// Platform stats for hero section
+const platformStats = {
+  activeUsers: '2.5M+',
+  trailsMapped: '150K+',
+  milesTracked: '89M+'
 }
 </script>
 

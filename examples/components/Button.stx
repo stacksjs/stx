@@ -1,10 +1,38 @@
-<button
-  class="btn {{ variant ? 'btn-' + variant : 'btn-primary' }} {{ size ? 'btn-' + size : '' }} {{ classList }}"
-  type="{{ type || 'button' }}"
-  @if(disabled)disabled="disabled"@endif
->
-  @if(icon)
-    <span class="btn-icon">{{ icon }}</span>
-  @endif
-  {{ text }}
-</button>
+<script server>
+import { defineProps, withDefaults } from 'stx'
+
+interface ButtonProps {
+  text?: string
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
+  size?: 'sm' | 'md' | 'lg' | ''
+  type?: 'button' | 'submit' | 'reset'
+  icon?: string
+  disabled?: boolean
+  class?: string
+}
+
+const { text, variant, size, type, icon, disabled, class: classList } = withDefaults(
+  defineProps<ButtonProps>(),
+  {
+    text: '',
+    variant: 'primary',
+    size: '',
+    type: 'button',
+    class: ''
+  }
+)
+</script>
+
+<template>
+  <button
+    class="btn btn-{{ variant }} {{ size ? 'btn-' + size : '' }} {{ classList }}"
+    type="{{ type }}"
+    @if (disabled)disabled@endif
+  >
+    @if (icon)
+      <span class="btn-icon">{{ icon }}</span>
+    @endif
+    {{ text }}
+    <slot />
+  </button>
+</template>

@@ -21,7 +21,7 @@ interface InitOptions {
 /**
  * Built-in template presets
  */
-type TemplatePreset = 'basic' | 'component' | 'layout' | 'blog' | 'api'
+type TemplatePreset = 'basic' | 'component' | 'layout' | 'blog' | 'api' | 'app'
 
 /**
  * Available template presets with descriptions
@@ -32,6 +32,7 @@ export const TEMPLATE_PRESETS: Record<TemplatePreset, { description: string }> =
   layout: { description: 'Layout template with sections and yields' },
   blog: { description: 'Blog post with frontmatter-style variables' },
   api: { description: 'API endpoint template with JSON response' },
+  app: { description: 'Full app with stores and components' },
 }
 
 /**
@@ -119,6 +120,8 @@ function getPresetTemplate(preset: TemplatePreset): string {
       return getBlogTemplate()
     case 'api':
       return getApiTemplate()
+    case 'app':
+      return getAppTemplate()
     default:
       return getBasicTemplate()
   }
@@ -137,27 +140,36 @@ function getBasicTemplate(): string {
   <script>
     const title = "My stx Page"
     const description = "A page built with stx"
-    const items = [
-      "Templates with TypeScript support",
-      "Powerful directives",
-      "Reusable components"
+    const features = [
+      { name: "Single File Components", desc: "Script, style, and template in one .stx file" },
+      { name: "Component System", desc: "Import components with @component('name', {})" },
+      { name: "Blade Directives", desc: "@if, @foreach, @switch, @layout and more" }
     ]
   </script>
   <style>
     :root {
-      --primary-color: #3498db;
-      --dark-color: #34495e;
-      --font-main: system-ui, -apple-system, sans-serif;
+      --primary: #3498db;
+      --secondary: #2ecc71;
+      --dark: #34495e;
+      --light: #ecf0f1;
     }
     body {
-      font-family: var(--font-main);
+      font-family: system-ui, -apple-system, sans-serif;
       line-height: 1.6;
-      color: var(--dark-color);
+      color: var(--dark);
       max-width: 800px;
       margin: 0 auto;
       padding: 2rem;
     }
-    h1 { color: var(--primary-color); }
+    h1 { color: var(--primary); }
+    .card {
+      background: var(--light);
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+    }
+    .card h3 { color: var(--primary); margin: 0 0 0.5rem; }
+    .card p { margin: 0; color: #666; }
   </style>
 </head>
 <body>
@@ -166,14 +178,15 @@ function getBasicTemplate(): string {
     <p>{{ description }}</p>
   </header>
 
-  <div class="content">
+  <main>
     <h2>Features</h2>
-    <ul>
-      @foreach(items as item)
-        <li>{{ item }}</li>
-      @endforeach
-    </ul>
-  </div>
+    @foreach(features as feature)
+      <div class="card">
+        <h3>{{ feature.name }}</h3>
+        <p>{{ feature.desc }}</p>
+      </div>
+    @endforeach
+  </main>
 </body>
 </html>`
 }
@@ -182,36 +195,51 @@ function getBasicTemplate(): string {
  * Component template - reusable component with props and slots
  */
 function getComponentTemplate(): string {
-  return `{{-- Component: MyComponent --}}
-{{-- Props: title, variant (optional) --}}
+  return `{{-- Component: Card --}}
+{{-- Props: title, variant, collapsible --}}
+{{-- Usage: @component('card', { title: "Hello", variant: "primary", collapsible: true }) Content @endcomponent --}}
 <script>
   // Props with defaults
-  const title = props.title || 'Default Title'
-  const variant = props.variant || 'primary'
+  const title = props.title || 'Card Title'
+  const variant = props.variant || 'default'
+  const collapsible = props.collapsible || false
 </script>
 
-<div class="my-component my-component--{{ variant }}">
-  <h3 class="my-component__title">{{ title }}</h3>
-  <div class="my-component__content">
-    @slot
-      {{-- Default slot content --}}
-      <p>Add your content here</p>
-    @endslot
+<div class="card card--{{ variant }}">
+  <div class="card__header" onclick="this.parentElement.classList.toggle('collapsed')">
+    <h3 class="card__title">{{ title }}</h3>
+    @if(collapsible)
+      <span class="card__toggle">▼</span>
+    @endif
+  </div>
+  <div class="card__body">
+    {{ slot }}
   </div>
 </div>
 
 <style scoped>
-  .my-component {
-    padding: 1rem;
+  .card {
     border-radius: 8px;
-    background: #f5f5f5;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
   }
-  .my-component--primary { border-left: 4px solid #3498db; }
-  .my-component--secondary { border-left: 4px solid #2ecc71; }
-  .my-component__title {
-    margin: 0 0 0.5rem;
-    font-size: 1.1rem;
+  .card--primary { border-top: 3px solid #3498db; }
+  .card--success { border-top: 3px solid #2ecc71; }
+  .card--warning { border-top: 3px solid #f39c12; }
+  .card--danger { border-top: 3px solid #e74c3c; }
+  .card__header {
+    padding: 1rem;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
+  .card__title { margin: 0; font-size: 1.1rem; }
+  .card__toggle { transition: transform 0.2s; }
+  .card.collapsed .card__toggle { transform: rotate(-90deg); }
+  .card__body { padding: 1rem; }
+  .card.collapsed .card__body { display: none; }
 </style>`
 }
 
@@ -261,7 +289,7 @@ function getLayoutTemplate(): string {
   </header>
 
   <main>
-    @yield('content')
+    {{ slot }}
   </main>
 
   <footer>
@@ -290,7 +318,7 @@ function getBlogTemplate(): string {
   const readingTime = "5 min read"
 </script>
 
-@extends('layouts/blog')
+@layout('layouts/blog')
 
 @section('title')
   {{ title }}
@@ -365,4 +393,237 @@ function getApiTemplate(): string {
 @else
 {{ JSON.stringify(data, null, 2) }}
 @endif`
+}
+
+/**
+ * App template - Full app with stores and components
+ * Demonstrates modern stx patterns for building interactive applications
+ */
+function getAppTemplate(): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }} - stx App</title>
+  <script>
+    const title = "My App"
+  </script>
+  <style>
+    :root {
+      --bg: #1a1a2e;
+      --bg-dark: #16213e;
+      --fg: #eaeaea;
+      --primary: #e94560;
+      --secondary: #0f3460;
+      --success: #00d9ff;
+      --border: #2a2a4a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+    }
+    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+    .header { text-align: center; margin-bottom: 2rem; }
+    .header h1 { color: var(--primary); margin-bottom: 0.5rem; }
+    .card {
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn--secondary { background: var(--secondary); }
+    .btn--success { background: var(--success); color: var(--bg); }
+    .input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    .input:focus { outline: none; border-color: var(--primary); }
+    .flex { display: flex; gap: 1rem; align-items: center; }
+    .flex-between { justify-content: space-between; }
+    .text-muted { color: #888; }
+    .text-success { color: var(--success); }
+    .mb-1 { margin-bottom: 1rem; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>{{ title }}</h1>
+      <p class="text-muted">Built with stx</p>
+    </header>
+
+    <!-- Counter Example -->
+    <div class="card">
+      <h2 class="mb-1">Counter Example</h2>
+      <div class="flex flex-between">
+        <span id="counterDisplay">Count: 0</span>
+        <div class="flex">
+          <button class="btn btn--secondary" onclick="window.app?.decrement()">-</button>
+          <button class="btn" onclick="window.app?.increment()">+</button>
+          <button class="btn btn--success" onclick="window.app?.reset()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Todo List Example -->
+    <div class="card">
+      <h2 class="mb-1">Todo List</h2>
+      <div class="flex mb-1">
+        <input
+          type="text"
+          id="todoInput"
+          class="input"
+          placeholder="Add a new todo..."
+          onkeypress="if(event.key==='Enter') window.app?.addTodo()"
+          style="margin-bottom:0"
+        />
+        <button class="btn" onclick="window.app?.addTodo()">Add</button>
+      </div>
+      <div id="todoList"></div>
+      <p id="todoCount" class="text-muted">0 items</p>
+    </div>
+
+    <!-- Toggle Example -->
+    <div class="card">
+      <h2 class="mb-1">Toggle Example</h2>
+      <button
+        id="toggleBtn"
+        class="btn btn--secondary"
+        onclick="window.app?.toggle()"
+      >Inactive</button>
+      <div id="toggleContent" class="mt-1" style="margin-top:1rem;display:none">
+        <p class="text-success">This content is visible when active!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simple Store Implementation -->
+  <script>
+    (function() {
+      // Create a simple reactive store
+      function createStore(initialState) {
+        let state = { ...initialState };
+        const listeners = [];
+        return {
+          get() { return state; },
+          set(newState) {
+            state = { ...state, ...newState };
+            listeners.forEach(fn => fn(state));
+          },
+          subscribe(fn) {
+            listeners.push(fn);
+            fn(state); // Call immediately
+            return () => listeners.splice(listeners.indexOf(fn), 1);
+          }
+        };
+      }
+
+      // Initialize app store
+      const appStore = createStore({
+        count: 0,
+        todos: [],
+        isActive: false
+      });
+
+      // App methods
+      window.app = {
+        increment() {
+          const { count } = appStore.get();
+          appStore.set({ count: count + 1 });
+        },
+        decrement() {
+          const { count } = appStore.get();
+          appStore.set({ count: Math.max(0, count - 1) });
+        },
+        reset() {
+          appStore.set({ count: 0 });
+        },
+        toggle() {
+          const { isActive } = appStore.get();
+          appStore.set({ isActive: !isActive });
+        },
+        addTodo() {
+          const input = document.getElementById('todoInput');
+          const text = input.value.trim();
+          if (!text) return;
+          const { todos } = appStore.get();
+          appStore.set({ todos: [...todos, { id: Date.now(), text, done: false }] });
+          input.value = '';
+        },
+        toggleTodo(id) {
+          const { todos } = appStore.get();
+          appStore.set({
+            todos: todos.map(t => t.id === id ? { ...t, done: !t.done } : t)
+          });
+        },
+        deleteTodo(id) {
+          const { todos } = appStore.get();
+          appStore.set({ todos: todos.filter(t => t.id !== id) });
+        }
+      };
+
+      // Update UI based on state
+      function updateUI(state) {
+        // Update counter
+        const counterDisplay = document.getElementById('counterDisplay');
+        if (counterDisplay) counterDisplay.textContent = 'Count: ' + state.count;
+
+        // Update todo count
+        const todoCount = document.getElementById('todoCount');
+        if (todoCount) todoCount.textContent = state.todos.length + ' items';
+
+        // Update toggle button
+        const toggleBtn = document.getElementById('toggleBtn');
+        if (toggleBtn) {
+          toggleBtn.textContent = state.isActive ? 'Active' : 'Inactive';
+          toggleBtn.className = 'btn ' + (state.isActive ? 'btn--success' : 'btn--secondary');
+        }
+
+        // Show/hide toggle content
+        const toggleContent = document.getElementById('toggleContent');
+        if (toggleContent) toggleContent.style.display = state.isActive ? 'block' : 'none';
+
+        // Render todo list
+        const list = document.getElementById('todoList');
+        if (list) {
+          list.innerHTML = state.todos.map(todo => \`
+            <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid var(--border)">
+              <input type="checkbox" \${todo.done ? 'checked' : ''} onchange="window.app?.toggleTodo(\${todo.id})" />
+              <span style="\${todo.done ? 'text-decoration:line-through;opacity:0.5' : ''}">\${todo.text}</span>
+              <button onclick="window.app?.deleteTodo(\${todo.id})" style="margin-left:auto;background:none;border:none;color:var(--primary);cursor:pointer">×</button>
+            </div>
+          \`).join('');
+        }
+      }
+
+      // Subscribe to store changes
+      appStore.subscribe(updateUI);
+    })();
+  </script>
+</body>
+</html>`
 }

@@ -66,12 +66,12 @@ export interface IncludeDirective extends BaseDirective {
 }
 
 /**
- * Layout directive (@extends, @section, @yield, @parent)
+ * Layout directive (@layout, @extends, @section, @yield, @parent)
  */
 export interface LayoutDirective extends BaseDirective {
   kind: 'layout'
   /** Specific layout type */
-  type: 'extends' | 'section' | 'endsection' | 'yield' | 'parent' | 'show'
+  type: 'layout' | 'extends' | 'section' | 'endsection' | 'yield' | 'parent' | 'show'
   /** Layout or section name */
   name?: string
   /** Default content (for yield) */

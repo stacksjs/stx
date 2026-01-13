@@ -110,8 +110,8 @@ function calculateMetrics(content: string): TemplateMetrics {
   // Count components (custom elements)
   const components = (content.match(/<[A-Z][^>]*>/g) || []).length
 
-  // Count layouts
-  const layouts = (content.match(/@extends\(/g) || []).length
+  // Count layouts (@layout or @extends)
+  const layouts = (content.match(/@(?:layout|extends)\(/g) || []).length
 
   // Detect deeply nested structures (4+ levels) - check for any block directives
   // Match patterns like @if...@if...@if...@if or @foreach...@if...@if...@if

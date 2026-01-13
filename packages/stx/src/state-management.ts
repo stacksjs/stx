@@ -830,3 +830,391 @@ export function initDevTools(): void {
     },
   }
 }
+
+// =============================================================================
+// defineStore API (Clean Import Pattern)
+// =============================================================================
+
+/**
+ * Store definition options for defineStore
+ */
+export interface DefineStoreOptions<S, G extends Record<string, (state: S) => any>, A extends Record<string, (...args: any[]) => any>> {
+  /** Initial state */
+  state: S | (() => S)
+  /** Getter functions (computed values) */
+  getters?: G
+  /** Action functions */
+  actions?: A
+  /** Enable persistence */
+  persist?: PersistOptions | boolean
+  /** Enable devtools */
+  devtools?: boolean
+}
+
+/**
+ * Store instance returned by defineStore
+ */
+export interface DefinedStore<S, G extends Record<string, (state: S) => any>, A extends Record<string, (...args: any[]) => any>> {
+  /** Get current state */
+  $state: S
+  /** Subscribe to state changes */
+  $subscribe: (callback: Subscriber<S>) => Unsubscribe
+  /** Reset store to initial state */
+  $reset: () => void
+  /** Patch state with partial update */
+  $patch: (partial: Partial<S> | ((state: S) => void)) => void
+  /** Internal store reference */
+  _store: Store<S>
+  /** Store ID/name */
+  $id: string
+}
+
+// Type helper for getters
+type StoreGetters<S, G extends Record<string, (state: S) => any>> = {
+  [K in keyof G]: ReturnType<G[K]>
+}
+
+// Type helper for actions
+type StoreActions<A extends Record<string, (...args: any[]) => any>> = {
+  [K in keyof A]: A[K]
+}
+
+// Full store type combining state, getters, and actions
+export type DefinedStoreWithGettersAndActions<
+  S,
+  G extends Record<string, (state: S) => any>,
+  A extends Record<string, (...args: any[]) => any>,
+> = DefinedStore<S, G, A> & StoreGetters<S, G> & StoreActions<A>
+
+/**
+ * Define a store with state, getters, and actions.
+ *
+ * @example
+ * ```typescript
+ * // stores/counter.ts
+ * import { defineStore } from 'stx'
+ *
+ * export const counterStore = defineStore('counter', {
+ *   state: {
+ *     count: 0,
+ *     name: 'Counter'
+ *   },
+ *   getters: {
+ *     doubleCount: (state) => state.count * 2,
+ *     displayName: (state) => `${state.name}: ${state.count}`
+ *   },
+ *   actions: {
+ *     increment() { this.count++ },
+ *     decrement() { this.count-- },
+ *     incrementBy(amount: number) { this.count += amount },
+ *     async fetchCount() {
+ *       const response = await fetch('/api/count')
+ *       this.count = await response.json()
+ *     }
+ *   },
+ *   persist: true // or { storage: 'local', key: 'my-counter' }
+ * })
+ * ```
+ *
+ * Usage in components:
+ * ```html
+ * <script client>
+ * import { counterStore } from '@stores'
+ *
+ * // Access state
+ * console.log(counterStore.count) // 0
+ *
+ * // Use getters
+ * console.log(counterStore.doubleCount) // 0
+ *
+ * // Call actions
+ * counterStore.increment()
+ * counterStore.incrementBy(5)
+ *
+ * // Subscribe to changes
+ * counterStore.$subscribe((state) => {
+ *   console.log('Count changed:', state.count)
+ * })
+ *
+ * // Reset to initial state
+ * counterStore.$reset()
+ * </script>
+ * ```
+ */
+export function defineStore<
+  S extends object,
+  G extends Record<string, (state: S) => any> = Record<string, never>,
+  A extends Record<string, (...args: any[]) => any> = Record<string, never>,
+>(
+  id: string,
+  options: DefineStoreOptions<S, G, A>,
+): DefinedStoreWithGettersAndActions<S, G, A> {
+  const {
+    state: initialState,
+    getters = {} as G,
+    actions = {} as A,
+    persist,
+    devtools = true,
+  } = options
+
+  // Resolve initial state (support factory function)
+  const resolvedInitialState = typeof initialState === 'function'
+    ? (initialState as () => S)()
+    : initialState
+
+  // Create persistence options
+  const persistOptions: PersistOptions | undefined = persist === true
+    ? { storage: 'local', key: `stx-store:${id}` }
+    : persist || undefined
+
+  // Create the underlying store
+  const store = createStore<S>(resolvedInitialState, {
+    name: id,
+    persist: persistOptions,
+    devtools,
+  })
+
+  // Create a proxy that provides reactive access to state
+  const storeProxy = new Proxy({} as DefinedStoreWithGettersAndActions<S, G, A>, {
+    get(_target, prop: string | symbol) {
+      const propStr = String(prop)
+
+      // Handle special $ properties
+      if (propStr === '$state') {
+        return store.get()
+      }
+      if (propStr === '$subscribe') {
+        return store.subscribe
+      }
+      if (propStr === '$reset') {
+        return store.reset
+      }
+      if (propStr === '$patch') {
+        return (partial: Partial<S> | ((state: S) => void)) => {
+          if (typeof partial === 'function') {
+            const currentState = store.get()
+            const draft = { ...currentState }
+            partial(draft)
+            store.set(draft)
+          }
+          else {
+            store.update(partial)
+          }
+        }
+      }
+      if (propStr === '_store') {
+        return store
+      }
+      if (propStr === '$id') {
+        return id
+      }
+
+      // Handle getters
+      if (propStr in getters) {
+        return getters[propStr](store.get())
+      }
+
+      // Handle actions (bind 'this' to the store proxy)
+      if (propStr in actions) {
+        return (...args: unknown[]) => {
+          return actions[propStr].apply(storeProxy, args)
+        }
+      }
+
+      // Handle state properties
+      const state = store.get()
+      if (state && typeof state === 'object' && propStr in state) {
+        return (state as Record<string, unknown>)[propStr]
+      }
+
+      return undefined
+    },
+
+    set(_target, prop: string | symbol, value: unknown) {
+      const propStr = String(prop)
+
+      // Don't allow setting special properties
+      if (propStr.startsWith('$') || propStr === '_store') {
+        return false
+      }
+
+      // Update state
+      const state = store.get()
+      if (state && typeof state === 'object') {
+        store.set({ ...state, [propStr]: value })
+        return true
+      }
+
+      return false
+    },
+
+    has(_target, prop: string | symbol) {
+      const propStr = String(prop)
+      const state = store.get()
+      return (
+        propStr.startsWith('$')
+        || propStr === '_store'
+        || propStr in getters
+        || propStr in actions
+        || (state && typeof state === 'object' && propStr in state)
+      )
+    },
+
+    ownKeys() {
+      const state = store.get()
+      const stateKeys = state && typeof state === 'object' ? Object.keys(state) : []
+      return [
+        ...stateKeys,
+        ...Object.keys(getters),
+        ...Object.keys(actions),
+        '$state',
+        '$subscribe',
+        '$reset',
+        '$patch',
+        '$id',
+      ]
+    },
+
+    getOwnPropertyDescriptor(_target, prop) {
+      return {
+        enumerable: true,
+        configurable: true,
+        get: () => this.get!(_target, prop, storeProxy),
+      }
+    },
+  })
+
+  // Register in global store registry for @stores imports
+  storeRegistry.set(id, storeProxy)
+
+  return storeProxy
+}
+
+// =============================================================================
+// Store Registry for @stores Imports
+// =============================================================================
+
+/** Global registry of defined stores */
+const storeRegistry = new Map<string, DefinedStoreWithGettersAndActions<any, any, any>>()
+
+/**
+ * Get a defined store by name.
+ * Used internally by the @stores import transformation.
+ */
+export function getDefinedStore<S extends object = any>(name: string): DefinedStoreWithGettersAndActions<S, any, any> | undefined {
+  return storeRegistry.get(name)
+}
+
+/**
+ * Get all defined store names.
+ */
+export function getDefinedStoreNames(): string[] {
+  return Array.from(storeRegistry.keys())
+}
+
+/**
+ * Check if a store is defined.
+ */
+export function hasDefinedStore(name: string): boolean {
+  return storeRegistry.has(name)
+}
+
+// =============================================================================
+// Client Runtime for @stores Imports
+// =============================================================================
+
+/**
+ * Generate client-side runtime code for store imports.
+ * This transforms `import { appStore } from '@stores'` into working code.
+ */
+export function generateStoreImportRuntime(): string {
+  return `
+// STX Store Runtime
+(function() {
+  if (typeof window === 'undefined') return;
+
+  // Store registry
+  window.__STX_STORES__ = window.__STX_STORES__ || {};
+
+  // Helper to wait for stores to be ready
+  window.__STX_STORE_READY__ = function(storeName) {
+    return new Promise(function(resolve) {
+      function check() {
+        if (window.__STX_STORES__[storeName]) {
+          resolve(window.__STX_STORES__[storeName]);
+        } else {
+          requestAnimationFrame(check);
+        }
+      }
+      check();
+    });
+  };
+
+  // Export stores globally for @stores imports
+  window.__STX_GET_STORE__ = function(name) {
+    return window.__STX_STORES__[name];
+  };
+})();
+`
+}
+
+/**
+ * Transform import statements from @stores to runtime code.
+ *
+ * Transforms:
+ * ```js
+ * import { appStore, chatStore } from '@stores'
+ * ```
+ *
+ * Into:
+ * ```js
+ * const appStore = window.__STX_STORES__.appStore;
+ * const chatStore = window.__STX_STORES__.chatStore;
+ * ```
+ */
+export function transformStoreImports(code: string): string {
+  // Match: import { store1, store2 } from '@stores' or "stx/stores" or 'stx/stores'
+  const importRegex = /import\s*\{([^}]+)\}\s*from\s*['"](@stores|stx\/stores)['"]\s*;?\n?/g
+
+  return code.replace(importRegex, (_match, imports: string) => {
+    const storeNames = imports
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+
+    return storeNames
+      .map(name => `const ${name} = window.__STX_STORES__.${name};`)
+      .join('\n') + '\n'
+  })
+}
+
+/**
+ * Generate store registration code for the client.
+ *
+ * @example
+ * ```js
+ * // In your stores file (e.g., stores/index.ts)
+ * import { defineStore, registerStoresClient } from 'stx'
+ *
+ * export const appStore = defineStore('app', { ... })
+ * export const chatStore = defineStore('chat', { ... })
+ *
+ * // Register for client-side @stores imports
+ * if (typeof window !== 'undefined') {
+ *   registerStoresClient({ appStore, chatStore })
+ * }
+ * ```
+ */
+export function registerStoresClient(stores: Record<string, DefinedStoreWithGettersAndActions<any, any, any>>): void {
+  if (typeof window === 'undefined') return
+
+  const w = window as any
+  w.__STX_STORES__ = w.__STX_STORES__ || {}
+
+  for (const [name, store] of Object.entries(stores)) {
+    w.__STX_STORES__[name] = store
+  }
+
+  // Dispatch event to notify that stores are ready
+  window.dispatchEvent(new CustomEvent('stx:stores-ready', { detail: Object.keys(stores) }))
+}

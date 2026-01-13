@@ -33,7 +33,7 @@ The core template processing happens in `packages/stx/src/process.ts` via `proce
 2. **Directive Processing**: Sequential processing of directives in specific order:
    - Stack directives (`@push`, `@prepend`)
    - JavaScript/TypeScript execution (`@js`, `@ts`)
-   - Includes and layouts (`@include`, `@extends`, `@section`)
+   - Includes and layouts (`@include`, `@layout`, `@extends`, `@section`)
    - Custom directives
    - Components (`@component`)
    - Conditionals (`@if`, `@switch`, `@auth`, `@env`)
