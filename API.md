@@ -30,6 +30,9 @@ A comprehensive reference for all STX templating syntax, directives, and APIs.
 - [Transitions](#transitions)
 - [Deferred Loading (@defer)](#deferred-loading-defer)
 - [Teleport (@teleport)](#teleport-teleport)
+- [Browser Composables](#browser-composables)
+- [Form Validation](#form-validation)
+- [Head Management](#head-management)
 - [Suggested Future Syntax](#suggested-future-syntax)
 
 ---
@@ -3978,6 +3981,170 @@ const signupForm = defineForm({
     Sign Up
   </button>
 </form>
+```
+
+---
+
+## Head Management
+
+Manage document head (title, meta tags, links, scripts) with a simple, composable API similar to Nuxt's `useHead` and `useSeoMeta`.
+
+### useHead
+
+Full control over the document head.
+
+```typescript
+import { useHead } from 'stx'
+
+useHead({
+  title: 'My Page',
+  titleTemplate: '%s | My Site',  // or (title) => `${title} | My Site`
+  meta: [
+    { name: 'description', content: 'Page description' },
+    { property: 'og:image', content: '/og.png' }
+  ],
+  link: [
+    { rel: 'canonical', href: 'https://example.com/page' },
+    { rel: 'icon', href: '/favicon.ico' }
+  ],
+  script: [
+    { src: 'https://example.com/analytics.js', async: true }
+  ],
+  style: [
+    { content: 'body { font-family: sans-serif; }' }
+  ],
+  htmlAttrs: { lang: 'en' },
+  bodyAttrs: { class: 'dark' }
+})
+```
+
+### useSeoMeta
+
+Simplified API for common SEO meta tags - automatically generates Open Graph and Twitter tags.
+
+```typescript
+import { useSeoMeta } from 'stx'
+
+useSeoMeta({
+  // Basic
+  title: 'My Blog Post',
+  description: 'An amazing article about something',
+  author: 'Jane Doe',
+  keywords: ['blog', 'tech', 'tutorial'],
+  robots: 'index, follow',
+  canonical: 'https://example.com/blog/post',
+
+  // Open Graph (auto-inherits title/description if not set)
+  ogTitle: 'Custom OG Title',
+  ogDescription: 'Custom OG description',
+  ogImage: 'https://example.com/og.png',
+  ogUrl: 'https://example.com/page',
+  ogType: 'article',
+  ogSiteName: 'My Site',
+
+  // Twitter (auto-inherits from OG if not set)
+  twitterCard: 'summary_large_image',
+  twitterSite: '@mysite',
+  twitterCreator: '@author',
+
+  // Article metadata
+  articleAuthor: 'Jane Doe',
+  articlePublishedTime: '2024-01-15',
+  articleModifiedTime: '2024-01-20',
+  articleSection: 'Technology',
+  articleTags: ['web', 'development']
+})
+```
+
+### definePageMeta
+
+Page-level configuration (Nuxt-style).
+
+```typescript
+import { definePageMeta } from 'stx'
+
+definePageMeta({
+  title: 'Dashboard',
+  description: 'User dashboard page',
+  layout: 'admin',
+  middleware: ['auth', 'admin'],
+  keepAlive: true
+})
+```
+
+### Template Directives
+
+Quick inline usage without JavaScript:
+
+```html
+<!-- Set page title -->
+@title('My Page Title')
+
+<!-- Add meta tags -->
+@meta('description', 'Page description')
+@meta('og:image', '/social.png')
+
+<!-- Raw head content block -->
+@head
+  <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+@endhead
+```
+
+### Client-Side Updates
+
+For SPA navigation, update the head dynamically:
+
+```typescript
+import { applyHead, useHead } from 'stx'
+
+// Update head configuration
+useHead({ title: 'New Page' })
+
+// Apply changes to the DOM
+applyHead()
+```
+
+### Complete Example
+
+```html
+<script server>
+import { useSeoMeta, useHead } from 'stx'
+
+const article = {
+  title: 'How to Build Fast UIs with STX',
+  description: 'Learn the fundamentals of building performant UIs.',
+  author: 'Jane Developer',
+  publishedAt: '2024-01-15',
+  image: 'https://example.com/og-image.png'
+}
+
+useSeoMeta({
+  title: article.title,
+  description: article.description,
+  author: article.author,
+  ogImage: article.image,
+  ogType: 'article',
+  twitterCard: 'summary_large_image',
+  articlePublishedTime: article.publishedAt,
+  canonical: 'https://example.com/blog/fast-uis'
+})
+
+useHead({
+  link: [{ rel: 'icon', href: '/favicon.ico' }],
+  htmlAttrs: { lang: 'en' }
+})
+</script>
+
+@title('STX Head Demo')
+@meta('theme-color', '#4f46e5')
+
+<main>
+  <h1>{{ article.title }}</h1>
+  <p>{{ article.description }}</p>
+</main>
 ```
 
 ---
