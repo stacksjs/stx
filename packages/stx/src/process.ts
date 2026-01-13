@@ -900,6 +900,14 @@ async function processOtherDirectives(
   const { processFormValidationDirectives } = await import('./forms-validation')
   output = processFormValidationDirectives(output, context, filePath)
 
+  // Process head directives (@head, @title, @meta)
+  const { processHeadDirective, processTitleDirective, processMetaDirective, resetHead } = await import('./head')
+  resetHead() // Reset head state for each page
+  const headResult = processHeadDirective(output)
+  output = headResult.content
+  output = processTitleDirective(output, context)
+  output = processMetaDirective(output, context)
+
   // Process @ref attributes for DOM references
   output = processRefAttributes(output)
 
@@ -989,6 +997,30 @@ async function processOtherDirectives(
   // Auto-inject SEO tags if enabled
   if (options.seo?.enabled) {
     output = injectSeoTags(output, context, options)
+  }
+
+  // Inject rendered head content from useHead/useSeoMeta calls
+  const { renderHead, getHead } = await import('./head')
+  const headConfig = getHead()
+  if (headConfig.title || headConfig.meta?.length || headConfig.link?.length) {
+    const renderedHead = renderHead()
+    if (renderedHead) {
+      // Inject before </head> or at start of document
+      if (output.includes('</head>')) {
+        output = output.replace('</head>', `${renderedHead}\n</head>`)
+      } else if (output.includes('<head>')) {
+        output = output.replace('<head>', `<head>\n${renderedHead}`)
+      }
+    }
+  }
+
+  // Also inject head content from @head directive blocks
+  if (headResult.headContent) {
+    if (output.includes('</head>')) {
+      output = output.replace('</head>', `${headResult.headContent}\n</head>`)
+    } else if (output.includes('<head>')) {
+      output = output.replace('<head>', `<head>\n${headResult.headContent}`)
+    }
   }
 
   // Auto-inject CSP meta tag if enabled

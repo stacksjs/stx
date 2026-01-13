@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<script server>
+import { useSeoMeta, useHead } from 'stx'
+
+const article = {
+  title: 'How to Build Fast UIs with STX',
+  description: 'Learn the fundamentals of building performant user interfaces using the STX framework.',
+  author: 'Jane Developer',
+  publishedAt: '2024-01-15',
+  image: 'https://example.com/og-image.png'
+}
+
+// Full SEO configuration
+useSeoMeta({
+  title: article.title,
+  description: article.description,
+  author: article.author,
+  ogImage: article.image,
+  ogType: 'article',
+  twitterCard: 'summary_large_image',
+  articlePublishedTime: article.publishedAt,
+  articleAuthor: article.author,
+  canonical: 'https://example.com/blog/fast-uis-with-stx'
+})
+
+// Additional head configuration
+useHead({
+  link: [
+    { rel: 'icon', href: '/favicon.ico' },
+    { rel: 'preconnect', href: 'https://fonts.googleapis.com' }
+  ],
+  script: [
+    { src: '/analytics.js', async: true }
+  ],
+  htmlAttrs: { lang: 'en' },
+  bodyAttrs: { class: 'antialiased' }
+})
+</script>
+
+<!-- Using @title and @meta directives -->
+@title('STX Head Management Demo')
+@meta('theme-color', '#4f46e5')
+
+<!-- Using @head block for raw head content -->
+@head
+  <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+@endhead
+
+<main class="max-w-3xl mx-auto py-12 px-6">
+  <article>
+    <header class="mb-8">
+      <h1 class="text-4xl font-bold text-gray-900">{{ article.title }}</h1>
+      <p class="mt-2 text-gray-600">{{ article.description }}</p>
+      <div class="mt-4 text-sm text-gray-500">
+        By {{ article.author }} on {{ article.publishedAt }}
+      </div>
+    </header>
+
+    <div class="prose prose-lg">
+      <p>
+        This example demonstrates the head management capabilities of STX.
+        Check the page source to see the generated meta tags.
+      </p>
+
+      <h2>Features Used</h2>
+      <ul>
+        <li><code>useSeoMeta()</code> - SEO meta tags (title, description, Open Graph, Twitter)</li>
+        <li><code>useHead()</code> - Full head configuration (links, scripts, attrs)</li>
+        <li><code>@title()</code> - Set page title via directive</li>
+        <li><code>@meta()</code> - Add meta tags via directive</li>
+        <li><code>@head...@endhead</code> - Raw head content block</li>
+      </ul>
+
+      <h2>Output</h2>
+      <p>
+        The head section will include all configured meta tags, link tags,
+        scripts, and the page title - perfect for SEO and social sharing.
+      </p>
+    </div>
+  </article>
+</main>
+</body>
+</html>
