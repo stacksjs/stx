@@ -13,15 +13,28 @@ import {
 
 describe('Performance Utils', () => {
   describe('Regex Caching', () => {
-    it('should cache and reuse regex patterns', () => {
+    it('should cache and reuse regex patterns without global flag', () => {
       const pattern = 'test\\d+'
-      const flags = 'gi'
+      const flags = 'i' // Non-global flag - can be cached
 
       const regex1 = getCachedRegex(pattern, flags)
       const regex2 = getCachedRegex(pattern, flags)
 
       // Should return the same instance (cached)
       expect(regex1).toBe(regex2)
+      expect(regex1.source).toBe(pattern)
+      expect(regex1.flags).toBe(flags)
+    })
+
+    it('should NOT cache regex patterns with global flag', () => {
+      const pattern = 'test\\d+'
+      const flags = 'gi' // Global flag - creates new instance each time
+
+      const regex1 = getCachedRegex(pattern, flags)
+      const regex2 = getCachedRegex(pattern, flags)
+
+      // Should return different instances (not cached due to mutable lastIndex)
+      expect(regex1).not.toBe(regex2)
       expect(regex1.source).toBe(pattern)
       expect(regex1.flags).toBe(flags)
     })
@@ -606,11 +619,11 @@ describe('Performance Utils', () => {
   })
 
   describe('Regex Caching Performance', () => {
-    it('should cache regex patterns effectively', () => {
-      // Test that regex caching works as expected
+    it('should cache regex patterns effectively for non-global patterns', () => {
+      // Test that regex caching works as expected (non-global flags)
       const pattern1 = 'test\\d+'
       const pattern2 = 'hello.*world'
-      const flags = 'gi'
+      const flags = 'i' // Non-global flag - can be cached
 
       // Create multiple regex instances
       const regex1a = getCachedRegex(pattern1, flags)
@@ -628,6 +641,22 @@ describe('Performance Utils', () => {
       // Verify functionality
       expect('test123'.match(regex1a)).toBeTruthy()
       expect('hello beautiful world'.match(regex2a)).toBeTruthy()
+    })
+
+    it('should create new instances for global patterns', () => {
+      // Global patterns are not cached due to mutable lastIndex state
+      const pattern = 'test\\d+'
+      const flags = 'gi'
+
+      const regex1 = getCachedRegex(pattern, flags)
+      const regex2 = getCachedRegex(pattern, flags)
+
+      // Should be different instances
+      expect(regex1).not.toBe(regex2)
+
+      // But should both work correctly
+      expect('test123'.match(regex1)).toBeTruthy()
+      expect('test456'.match(regex2)).toBeTruthy()
     })
 
     it('should handle optimized string replacement', () => {

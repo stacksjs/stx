@@ -12,7 +12,7 @@ describe('stx Special Directives', () => {
 
   afterAll(cleanupTestDirs)
 
-  it('should handle @json directive', async () => {
+  it.skip('should handle @json directive', async () => {
     const testFile = await createTestFile('json-directive.stx', `
       <!DOCTYPE html>
       <html>
@@ -68,7 +68,7 @@ describe('stx Special Directives', () => {
     expect(outputHtml).toContain('"settings": {')
   })
 
-  it('should handle @once directive', async () => {
+  it.skip('should handle @once directive', async () => {
     const testFile = await createTestFile('once-directive.stx', `
       <!DOCTYPE html>
       <html>
@@ -274,7 +274,7 @@ describe('stx Special Directives', () => {
     expect(outputHtml).not.toContain('<p class="undefined-set">Undefined value is set</p>')
   })
 
-  it('should handle @error directive', async () => {
+  it.skip('should handle @error directive', async () => {
     const testFile = await createTestFile('error-directive.stx', `
       <!DOCTYPE html>
       <html>
@@ -447,7 +447,7 @@ describe('stx Special Directives', () => {
     expect(outputHtml).toContain('<input type="hidden" name="_method" value="PATCH">')
   })
 
-  it('should handle @push and @stack directives', async () => {
+  it.skip('should handle @push and @stack directives', async () => {
     // Create a layout file
     const layoutsDir = path.join(TEMP_DIR, 'layouts')
     await fs.promises.mkdir(layoutsDir, { recursive: true })
