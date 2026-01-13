@@ -1673,10 +1673,10 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
     actualHmrPort = hmrServer.start(desiredHmrPort)
   }
 
-  // Inject route params into HTML content
+  // Inject route params into HTML content via stx runtime
   const injectRouteParams = (content: string, params: Record<string, string>): string => {
-    // Inject as a script tag that sets window.__STX_ROUTE_PARAMS__
-    const paramsScript = `<script>window.__STX_ROUTE_PARAMS__ = ${JSON.stringify(params)};</script>`
+    // Use stx.setRouteParams() which internally handles window access
+    const paramsScript = `<script>(function(){var s=typeof stx!=='undefined'?stx:{};s._rp=${JSON.stringify(params)};if(s.setRouteParams)s.setRouteParams(s._rp);})()</script>`
     // Insert before closing </head> or at start of <body>
     if (content.includes('</head>')) {
       return content.replace('</head>', `${paramsScript}</head>`)
@@ -1764,9 +1764,9 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
               )
             }
 
-            // Inject middleware state into page if any
+            // Inject middleware state into page via stx runtime
             if (Object.keys(middlewareResult.state).length > 0) {
-              const stateScript = `<script>window.__STX_MIDDLEWARE_STATE__ = ${JSON.stringify(middlewareResult.state)};</script>`
+              const stateScript = `<script>(function(){var s=typeof stx!=='undefined'?stx:{};s._ms=${JSON.stringify(middlewareResult.state)};if(s.setMiddlewareState)s.setMiddlewareState(s._ms);})()</script>`
               builtPage.content = builtPage.content.replace('</head>', `${stateScript}</head>`)
             }
           }

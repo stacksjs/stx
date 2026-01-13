@@ -93,5 +93,8 @@ export * from './head'
 // Route middleware (defineMiddleware, navigateTo, abortNavigation)
 export * from './route-middleware'
 
+// Runtime APIs (useStore, useRouteParams, useMiddlewareState - clean APIs without window.* exposure)
+export * from './runtime'
+
 // Default export for the stx module
 export default {}

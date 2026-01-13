@@ -803,8 +803,14 @@ export function generateClientRuntime(): string {
     await runHooks('unmounted');
   });
 
+  // Internal state (hidden from developers)
+  var __stores = {};
+  var __routeParams = {};
+  var __middlewareState = {};
+
   // Expose globally for <script client> blocks
   window.stx = {
+    // Reactivity
     ref,
     reactive,
     computed,
@@ -814,7 +820,28 @@ export function generateClientRuntime(): string {
     onBeforeUpdate,
     onUpdated,
     onBeforeUnmount,
-    onUnmounted
+    onUnmounted,
+
+    // Store access (clean API - no window.* exposure)
+    useStore: function(name) { return __stores[name] || null; },
+    hasStore: function(name) { return name in __stores; },
+    getStoreNames: function() { return Object.keys(__stores); },
+
+    // Route params (clean API)
+    useRouteParams: function() { return __routeParams; },
+    useRouteParam: function(name) { return __routeParams[name]; },
+
+    // Middleware state (clean API)
+    useMiddlewareState: function() { return __middlewareState; },
+
+    // Internal setters (used by framework, not exposed in docs)
+    setRouteParams: function(params) { __routeParams = params || {}; },
+    setMiddlewareState: function(state) { __middlewareState = state || {}; },
+    registerStore: function(name, store) { __stores[name] = store; },
+
+    // SSR detection
+    isClient: function() { return true; },
+    isServer: function() { return false; }
   };
 })();
 </script>`;

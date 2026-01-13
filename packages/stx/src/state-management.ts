@@ -1125,23 +1125,26 @@ export function hasDefinedStore(name: string): boolean {
 
 /**
  * Generate client-side runtime code for store imports.
- * This transforms `import { appStore } from '@stores'` into working code.
+ * Uses the stx runtime to avoid exposing window.* to developers.
  */
 export function generateStoreImportRuntime(): string {
   return `
-// STX Store Runtime
+// STX Store Runtime - extends stx global
 (function() {
   if (typeof window === 'undefined') return;
-
-  // Store registry
-  window.__STX_STORES__ = window.__STX_STORES__ || {};
+  var s = window.stx || {};
 
   // Helper to wait for stores to be ready
-  window.__STX_STORE_READY__ = function(storeName) {
-    return new Promise(function(resolve) {
+  s.waitForStore = function(storeName, timeout) {
+    timeout = timeout || 5000;
+    var start = Date.now();
+    return new Promise(function(resolve, reject) {
       function check() {
-        if (window.__STX_STORES__[storeName]) {
-          resolve(window.__STX_STORES__[storeName]);
+        var store = s.useStore ? s.useStore(storeName) : null;
+        if (store) {
+          resolve(store);
+        } else if (Date.now() - start > timeout) {
+          reject(new Error('Timeout waiting for store: ' + storeName));
         } else {
           requestAnimationFrame(check);
         }
@@ -1150,10 +1153,7 @@ export function generateStoreImportRuntime(): string {
     });
   };
 
-  // Export stores globally for @stores imports
-  window.__STX_GET_STORE__ = function(name) {
-    return window.__STX_STORES__[name];
-  };
+  window.stx = s;
 })();
 `
 }
@@ -1168,9 +1168,11 @@ export function generateStoreImportRuntime(): string {
  *
  * Into:
  * ```js
- * const appStore = window.__STX_STORES__.appStore;
- * const chatStore = window.__STX_STORES__.chatStore;
+ * const appStore = stx.useStore('appStore');
+ * const chatStore = stx.useStore('chatStore');
  * ```
+ *
+ * The stx runtime is injected automatically and abstracts away window.* access.
  */
 export function transformStoreImports(code: string): string {
   // Match: import { store1, store2 } from '@stores' or "stx/stores" or 'stx/stores'
@@ -1182,8 +1184,9 @@ export function transformStoreImports(code: string): string {
       .map(s => s.trim())
       .filter(Boolean)
 
+    // Use stx.useStore() which internally handles window access
     return storeNames
-      .map(name => `const ${name} = window.__STX_STORES__.${name};`)
+      .map(name => `const ${name} = stx.useStore('${name}');`)
       .join('\n') + '\n'
   })
 }
