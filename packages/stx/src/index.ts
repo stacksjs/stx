@@ -87,5 +87,8 @@ export * from './browser-composables'
 // Form validation with chainable API
 export * from './forms-validation'
 
+// Head management (useHead, useSeoMeta, definePageMeta)
+export * from './head'
+
 // Default export for the stx module
 export default {}
