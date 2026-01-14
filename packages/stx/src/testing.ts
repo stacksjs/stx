@@ -894,6 +894,82 @@ export interface MockFn<T extends (...args: unknown[]) => unknown = (...args: un
   mockReset(): MockFn<T>
 }
 
+/** Mock store interface */
+export interface MockStore<T extends Record<string, unknown>> {
+  /** Get current state */
+  getState(): T
+  /** Update state */
+  setState(partial: Partial<T>): void
+  /** Reset to initial state */
+  reset(): void
+  /** Get state change history */
+  getHistory(): T[]
+  /** Subscribe to state changes */
+  subscribe(listener: (state: T) => void): () => void
+}
+
+/**
+ * Create a mock store for testing.
+ *
+ * @example
+ * ```ts
+ * const store = createMockStore({ count: 0, user: null })
+ *
+ * store.setState({ count: 5 })
+ * expect(store.getState().count).toBe(5)
+ *
+ * // Check history
+ * expect(store.getHistory()).toEqual([
+ *   { count: 0, user: null },
+ *   { count: 5, user: null }
+ * ])
+ *
+ * // Reset
+ * store.reset()
+ * expect(store.getState().count).toBe(0)
+ * ```
+ */
+export function createMockStore<T extends Record<string, unknown>>(initialState: T): MockStore<T> {
+  const initial = { ...initialState }
+  let state = { ...initialState }
+  const history: T[] = [{ ...state }]
+  const listeners = new Set<(state: T) => void>()
+
+  const notify = () => {
+    for (const listener of listeners) {
+      listener({ ...state })
+    }
+  }
+
+  return {
+    getState(): T {
+      return { ...state }
+    },
+
+    setState(partial: Partial<T>): void {
+      state = { ...state, ...partial }
+      history.push({ ...state })
+      notify()
+    },
+
+    reset(): void {
+      state = { ...initial }
+      history.length = 0
+      history.push({ ...state })
+      notify()
+    },
+
+    getHistory(): T[] {
+      return history.map(s => ({ ...s }))
+    },
+
+    subscribe(listener: (state: T) => void): () => void {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
+    },
+  }
+}
+
 // =============================================================================
 // Helper Functions
 // =============================================================================

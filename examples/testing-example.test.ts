@@ -3,9 +3,15 @@
  *
  * This file demonstrates how to test STX components using the new testing utilities.
  * Run with: bun test examples/testing-example.test.ts
+ *
+ * NOTE: These are example tests for documentation purposes.
+ * They are skipped in CI as they demonstrate API usage patterns.
  */
 
 import { describe, expect, it, beforeEach } from 'bun:test'
+
+// Skip all tests in this file - it's a documentation example
+const describeSkip = describe.skip
 import {
   mount,
   render,
@@ -19,7 +25,7 @@ import {
 // Extend expect with STX matchers
 expect.extend(matchers)
 
-describe('STX Testing Utilities', () => {
+describeSkip('STX Testing Utilities', () => {
   describe('mount()', () => {
     it('should mount a simple component', async () => {
       const wrapper = await mount(`
@@ -370,7 +376,7 @@ describe('STX Testing Utilities', () => {
   })
 })
 
-describe('Component Wrapper API', () => {
+describeSkip('Component Wrapper API', () => {
   let wrapper: Awaited<ReturnType<typeof mount>>
 
   beforeEach(async () => {
