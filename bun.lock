@@ -21,7 +21,7 @@
         "@11ty/eleventy": "^3.1.2",
         "@stacksjs/sanitizer": "workspace:*",
         "dompurify": "^3.3.1",
-        "ejs": "^3.1.10",
+        "ejs": "^4.0.1",
         "gray-matter": "^4.0.3",
         "handlebars": "^4.7.8",
         "isomorphic-dompurify": "^2.34.0",
@@ -2391,7 +2391,7 @@
 
     "ee-first": ["ee-first@1.1.1", "", {}, "sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow=="],
 
-    "ejs": ["ejs@3.1.10", "", { "dependencies": { "jake": "^10.8.5" }, "bin": { "ejs": "bin/cli.js" } }, "sha512-UeJmFfOrAQS8OJWPZ4qtgHyWExa088/MtK5UEyoJGFH67cDEXkZSviOiKRCZ4Xij0zxI3JECgYs3oKx+AizQBA=="],
+    "ejs": ["ejs@4.0.1", "", { "dependencies": { "jake": "^10.9.1" }, "bin": { "ejs": "bin/cli.js" } }, "sha512-krvQtxc0btwSm/nvnt1UpnaFDFVJpJ0fdckmALpCgShsr/iGYHTnJiUliZTgmzq/UxTX33TtOQVKaNigMQp/6Q=="],
 
     "emoji-regex": ["emoji-regex@10.6.0", "", {}, "sha512-toUI84YS5YmxW219erniWD0CIVOo46xGKColeNQRgOzDorgBi1v4D71/OFzgD9GO2UGKIv1C3Sp8DAn0+j5w7A=="],
 
