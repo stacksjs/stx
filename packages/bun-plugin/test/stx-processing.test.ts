@@ -1,4 +1,7 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test, setDefaultTimeout } from 'bun:test'
+
+// Increase timeout for CI environments where Bun.build() can be slow
+setDefaultTimeout(30000)
 import fs from 'node:fs'
 import path from 'node:path'
 import plugin from '../src/index'

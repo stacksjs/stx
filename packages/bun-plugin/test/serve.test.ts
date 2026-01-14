@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it, setDefaultTimeout } from 'bun:test'
+
+// Increase timeout for CI environments where Bun.build() can be slow
+setDefaultTimeout(30000)
 import path from 'node:path'
 import stxPlugin from '../src/index'
 
