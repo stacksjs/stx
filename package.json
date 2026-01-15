@@ -93,7 +93,7 @@
     "very-happy-dom": "^0.0.9"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.13",
+    "@types/bun": "^1.3.6",
     "better-dx": "^0.2.5",
     "bun-plugin-dtsx": "^0.21.17",
     "typescript": "^5.9.3"
