@@ -1,0 +1,95 @@
+<script>
+/**
+ * SidebarFooter Component
+ *
+ * A footer component for the sidebar with quick actions and settings.
+ *
+ * @example
+ * <SidebarFooter
+ *   :showSettings="true"
+ *   :showThemeToggle="true"
+ *   settingsHref="/settings"
+ * />
+ */
+
+// Props
+export const showSettings = $props.showSettings ?? true
+export const showThemeToggle = $props.showThemeToggle ?? true
+export const settingsHref = $props.settingsHref || '/settings'
+export const settingsLabel = $props.settingsLabel || 'Settings'
+export const collapsed = $props.collapsed ?? false
+export const onThemeToggle = $props.onThemeToggle
+
+// Quick action items
+export const actions = $props.actions || []
+
+// Handle theme toggle
+function handleThemeToggle() {
+  if (onThemeToggle) {
+    onThemeToggle()
+  } else {
+    // Default theme toggle behavior
+    document.documentElement.classList.toggle('dark')
+  }
+}
+</script>
+
+<div class="border-t border-black/5 dark:border-white/10 p-3 space-y-2">
+  <!-- Custom actions slot -->
+  <slot />
+
+  <!-- Quick actions row -->
+  @if(!collapsed && actions.length > 0)
+    <div class="flex items-center gap-2">
+      @foreach(actions as action)
+        @if(action.href)
+          <a
+            href="{{ action.href }}"
+            class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+          >
+            @if(action.icon)
+              <div class="{{ action.icon }} w-4 h-4"></div>
+            @endif
+            <span>{{ action.label }}</span>
+          </a>
+        @else
+          <button
+            type="button"
+            class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            @click="action.onClick"
+          >
+            @if(action.icon)
+              <div class="{{ action.icon }} w-4 h-4"></div>
+            @endif
+            <span>{{ action.label }}</span>
+          </button>
+        @endif
+      @endforeach
+
+      @if(showThemeToggle)
+        <button
+          type="button"
+          class="p-2 rounded-lg text-black/50 hover:text-black/80 hover:bg-black/5 dark:text-white/50 dark:hover:text-white/80 dark:hover:bg-white/10 transition-colors"
+          @click="handleThemeToggle"
+          aria-label="Toggle dark mode"
+        >
+          <div class="i-hugeicons-moon-02 w-4 h-4 dark:hidden"></div>
+          <div class="i-hugeicons-sun-02 w-4 h-4 hidden dark:block"></div>
+        </button>
+      @endif
+    </div>
+  @endif
+
+  <!-- Settings link -->
+  @if(showSettings)
+    <a
+      href="{{ settingsHref }}"
+      class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors duration-150 text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/10"
+    >
+      <div class="i-hugeicons-settings-02 w-5 h-5 text-black/50 dark:text-white/50"></div>
+      @if(!collapsed)
+        <span>{{ settingsLabel }}</span>
+      @endif
+    </a>
+  @endif
+</div>
