@@ -3,6 +3,7 @@ import path from 'node:path'
 import { processA11yDirectives } from './a11y'
 import { processTemplateBindings } from './reactive-bindings'
 import { injectAnalytics } from './analytics'
+import { injectHeatmap } from './heatmap'
 import { processAnimationDirectives } from './animation'
 import { processEventDirectives } from './events'
 import { processReactiveDirectives } from './reactive'
@@ -1031,6 +1032,11 @@ async function processOtherDirectives(
   // Auto-inject analytics if enabled
   if (options.analytics?.enabled) {
     output = injectAnalytics(output, options)
+  }
+
+  // Auto-inject heatmap tracking if enabled
+  if (options.heatmap?.enabled) {
+    output = injectHeatmap(output, options)
   }
 
   // Auto-inject PWA tags if enabled

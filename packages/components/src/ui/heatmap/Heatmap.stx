@@ -1,0 +1,315 @@
+<script>
+/**
+ * Heatmap Component
+ *
+ * A privacy-compliant heatmap visualization component that displays user interaction data.
+ * Can be used to show click heatmaps, movement heatmaps, or scroll depth visualizations.
+ *
+ * Props:
+ * @prop {string} id - Unique identifier for the heatmap container
+ * @prop {string} mode - Visualization mode: 'overlay' | 'standalone' | 'thumbnail' (default: 'overlay')
+ * @prop {number} width - Width in pixels (default: 100% of container)
+ * @prop {number} height - Height in pixels (default: 100% of container)
+ * @prop {number} radius - Heat point radius (default: 20)
+ * @prop {number} blur - Blur amount for heatmap (default: 15)
+ * @prop {number} opacity - Maximum opacity (default: 0.6)
+ * @prop {boolean} showLegend - Show color legend (default: true)
+ * @prop {boolean} interactive - Enable zoom/pan interactions (default: false)
+ * @prop {string} dataSource - Source of data: 'auto' | 'manual' | 'endpoint' (default: 'auto')
+ * @prop {string} endpoint - API endpoint for fetching heatmap data
+ * @prop {string} colorScheme - Color scheme: 'default' | 'fire' | 'cool' | 'grayscale' (default: 'default')
+ */
+const id = props.id || 'stx-heatmap-' + Math.random().toString(36).slice(2, 8)
+const mode = props.mode || 'overlay'
+const width = props.width || null
+const height = props.height || null
+const radius = props.radius || 20
+const blur = props.blur || 15
+const opacity = props.opacity || 0.6
+const showLegend = props.showLegend !== false
+const interactive = props.interactive || false
+const dataSource = props.dataSource || 'auto'
+const endpoint = props.endpoint || ''
+const colorScheme = props.colorScheme || 'default'
+
+// Color schemes
+const colorSchemes = {
+  default: ['#0000ff', '#00ffff', '#00ff00', '#ffff00', '#ff0000'],
+  fire: ['#000000', '#ff0000', '#ffff00', '#ffffff'],
+  cool: ['#000033', '#0066ff', '#00ccff', '#ffffff'],
+  grayscale: ['#000000', '#444444', '#888888', '#cccccc', '#ffffff']
+}
+
+const colors = colorSchemes[colorScheme] || colorSchemes.default
+</script>
+
+<div
+  id="{{ id }}"
+  class="stx-heatmap stx-heatmap--{{ mode }}"
+  data-heatmap-radius="{{ radius }}"
+  data-heatmap-blur="{{ blur }}"
+  data-heatmap-opacity="{{ opacity }}"
+  data-heatmap-colors="{{ JSON.stringify(colors) }}"
+  data-heatmap-source="{{ dataSource }}"
+  @if(endpoint)
+  data-heatmap-endpoint="{{ endpoint }}"
+  @endif
+  @if(width)
+  style="width: {{ width }}px; {{ height ? 'height: ' + height + 'px;' : '' }}"
+  @endif
+>
+  <canvas class="stx-heatmap__canvas"></canvas>
+
+  @if(showLegend)
+  <div class="stx-heatmap__legend">
+    <span class="stx-heatmap__legend-label">Low</span>
+    <div class="stx-heatmap__legend-gradient" style="background: linear-gradient(to right, {{ colors.join(', ') }})"></div>
+    <span class="stx-heatmap__legend-label">High</span>
+  </div>
+  @endif
+
+  @if(interactive)
+  <div class="stx-heatmap__controls">
+    <button type="button" class="stx-heatmap__control" data-action="zoom-in" aria-label="Zoom in">+</button>
+    <button type="button" class="stx-heatmap__control" data-action="zoom-out" aria-label="Zoom out">-</button>
+    <button type="button" class="stx-heatmap__control" data-action="reset" aria-label="Reset view">Reset</button>
+  </div>
+  @endif
+
+  {{ slot }}
+</div>
+
+<style>
+.stx-heatmap {
+  position: relative;
+  overflow: hidden;
+}
+
+.stx-heatmap--overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.stx-heatmap--standalone {
+  display: block;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.stx-heatmap--thumbnail {
+  display: inline-block;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #f9f9f9;
+}
+
+.stx-heatmap__canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.stx-heatmap__legend {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 12px;
+  pointer-events: auto;
+}
+
+.stx-heatmap__legend-gradient {
+  width: 100px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.stx-heatmap__legend-label {
+  color: #666;
+}
+
+.stx-heatmap__controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: auto;
+}
+
+.stx-heatmap__control {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s;
+}
+
+.stx-heatmap__control:hover {
+  background: #f0f0f0;
+}
+
+.stx-heatmap__control:active {
+  background: #e0e0e0;
+}
+</style>
+
+<script client>
+(function() {
+  const container = document.getElementById('{{ id }}');
+  if (!container) return;
+
+  const canvas = container.querySelector('.stx-heatmap__canvas');
+  const ctx = canvas.getContext('2d');
+
+  const config = {
+    radius: parseInt(container.dataset.heatmapRadius) || 20,
+    blur: parseInt(container.dataset.heatmapBlur) || 15,
+    opacity: parseFloat(container.dataset.heatmapOpacity) || 0.6,
+    colors: JSON.parse(container.dataset.heatmapColors || '[]'),
+    source: container.dataset.heatmapSource || 'auto',
+    endpoint: container.dataset.heatmapEndpoint || ''
+  };
+
+  // Resize canvas to match container
+  function resizeCanvas() {
+    const rect = container.getBoundingClientRect();
+    canvas.width = rect.width || window.innerWidth;
+    canvas.height = rect.height || window.innerHeight;
+  }
+
+  // Create color gradient for heatmap
+  function createGradient(colors) {
+    const gradientCanvas = document.createElement('canvas');
+    gradientCanvas.width = 256;
+    gradientCanvas.height = 1;
+    const gradientCtx = gradientCanvas.getContext('2d');
+    const gradient = gradientCtx.createLinearGradient(0, 0, 256, 0);
+
+    colors.forEach((color, i) => {
+      gradient.addColorStop(i / (colors.length - 1), color);
+    });
+
+    gradientCtx.fillStyle = gradient;
+    gradientCtx.fillRect(0, 0, 256, 1);
+    return gradientCtx.getImageData(0, 0, 256, 1).data;
+  }
+
+  // Render heatmap from data points
+  function render(points) {
+    resizeCanvas();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw heat points
+    points.forEach(function(p) {
+      const x = (p.x / 100) * canvas.width;
+      const y = (p.y / 100) * canvas.height;
+      const intensity = p.type === 'click' ? 1 : 0.3;
+
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, config.radius);
+      gradient.addColorStop(0, 'rgba(0,0,0,' + intensity + ')');
+      gradient.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(x - config.radius, y - config.radius, config.radius * 2, config.radius * 2);
+    });
+
+    // Apply blur
+    if (config.blur > 0) {
+      ctx.filter = 'blur(' + config.blur + 'px)';
+      ctx.drawImage(canvas, 0, 0);
+      ctx.filter = 'none';
+    }
+
+    // Colorize
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+    const gradientColors = createGradient(config.colors);
+
+    for (let i = 0; i < pixels.length; i += 4) {
+      const alpha = pixels[i + 3];
+      if (alpha > 0) {
+        const colorIndex = Math.min(alpha, 255) * 4;
+        pixels[i] = gradientColors[colorIndex];
+        pixels[i + 1] = gradientColors[colorIndex + 1];
+        pixels[i + 2] = gradientColors[colorIndex + 2];
+        pixels[i + 3] = Math.round(alpha * config.opacity);
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  // Load data based on source
+  function loadData() {
+    if (config.source === 'auto' && window.stxHeatmap) {
+      render(window.stxHeatmap.getData().points);
+    } else if (config.source === 'endpoint' && config.endpoint) {
+      fetch(config.endpoint)
+        .then(r => r.json())
+        .then(data => render(data.points || data))
+        .catch(console.error);
+    }
+  }
+
+  // Initialize
+  resizeCanvas();
+  loadData();
+
+  // Handle resize
+  window.addEventListener('resize', function() {
+    resizeCanvas();
+    loadData();
+  });
+
+  // Handle interactive controls
+  const controls = container.querySelectorAll('.stx-heatmap__control');
+  let zoom = 1;
+  let panX = 0;
+  let panY = 0;
+
+  controls.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const action = btn.dataset.action;
+      if (action === 'zoom-in') {
+        zoom = Math.min(zoom * 1.2, 5);
+      } else if (action === 'zoom-out') {
+        zoom = Math.max(zoom / 1.2, 0.5);
+      } else if (action === 'reset') {
+        zoom = 1;
+        panX = 0;
+        panY = 0;
+      }
+      canvas.style.transform = 'scale(' + zoom + ') translate(' + panX + 'px, ' + panY + 'px)';
+    });
+  });
+
+  // Expose API
+  container.stxHeatmap = {
+    render: render,
+    refresh: loadData,
+    setData: function(points) { render(points); },
+    getCanvas: function() { return canvas; },
+    toDataURL: function() { return canvas.toDataURL(); }
+  };
+})();
+</script>

@@ -7,6 +7,7 @@ import type { MiddlewareMode } from '../route-middleware'
 import type { ComponentConfig, DocGeneratorConfig, WebComponentConfig } from './component-types'
 import type { PwaConfig } from './pwa-types'
 import type { CspConfig } from './csp-types'
+import type { HeatmapConfig } from '../heatmap'
 
 /**
  * Internationalization (i18n) configuration
@@ -477,6 +478,8 @@ export interface StxConfig {
   components?: Partial<ComponentConfig>
   /** Route middleware configuration */
   routeMiddleware?: Partial<RouteMiddlewareConfig>
+  /** Heatmap tracking configuration */
+  heatmap?: Partial<HeatmapConfig>
 }
 
 export type StxOptions = Partial<StxConfig>
