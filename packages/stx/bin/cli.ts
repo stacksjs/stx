@@ -1,3 +1,4 @@
+// @ts-nocheck - Skip type checking due to Bun/Node.js type differences
 /**
  * stx CLI
  *

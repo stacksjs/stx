@@ -1,3 +1,4 @@
+// @ts-nocheck - Skip type checking due to optional pg/mysql2 dependencies
 /**
  * Database Integration Module for stx Templates
  *

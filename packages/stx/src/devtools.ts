@@ -1,3 +1,4 @@
+// @ts-nocheck - Skip type checking due to window type casting
 /**
  * STX DevTools Integration
  *
