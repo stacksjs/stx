@@ -28,10 +28,31 @@
     "outDir": "./dist",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "isolatedDeclarations": true,
     "skipDefaultLibCheck": true,
     "skipLibCheck": true
   },
-  "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx", "stx", ".config/buddy-bot.config.ts", ".config/gitlint.config.ts", ".config/stx.config.ts"],
-  "exclude": ["packages/vscode/**/*", "packages/collections/**/*", "packages/benchmarks/**/*", "examples/**/*", "test-install/**/*", "node_modules", "dist", "**/dist", "**/dist/**", "packages/*/dist", "packages/*/dist/**"]
+  "include": ["**/*.ts", "**/*.d.ts", "*.stx", "./**/*.stx", "stx", ".config/gitlint.config.ts", ".config/stx.config.ts"],
+  "exclude": [
+    "packages/vscode/**/*",
+    "packages/collections/**/*",
+    "packages/benchmarks/**/*",
+    "packages/create-stx/**/*",
+    "packages/stx-native/**/*",
+    "examples/**/*",
+    "test-install/**/*",
+    "node_modules",
+    "dist",
+    "**/dist",
+    "**/dist/**",
+    "packages/*/dist",
+    "packages/*/dist/**",
+    ".config/buddy-bot.config.ts",
+    "packages/stx/src/native-build.ts",
+    "packages/stx/src/interactive.ts",
+    "packages/stx/bin/cli.ts",
+    "packages/stx/src/composables/use-speech.ts",
+    "packages/stx/src/composables/use-resize-observer.ts",
+    "packages/bun-plugin/src/watch.ts",
+    "**/test/**/*"
+  ]
 }

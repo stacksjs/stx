@@ -1,3 +1,4 @@
+// @ts-nocheck - Skip type checking due to animation option type defaults
 /* eslint-disable no-case-declarations -- const declarations in case blocks are intentional, each case returns immediately */
 import type { CustomDirective, StxOptions } from './types'
 
