@@ -38,6 +38,7 @@ A comprehensive reference for all STX templating syntax, directives, and APIs.
 - [Hydration Runtime](#hydration-runtime)
 - [Component HMR](#component-hmr)
 - [Deployment](#deployment)
+- [Image Optimization](#image-optimization)
 - [Suggested Future Syntax](#suggested-future-syntax)
 
 ---
@@ -3538,6 +3539,269 @@ interface DeployResult {
   totalSize: number       // Bytes uploaded
 }
 ```
+
+---
+
+## Image Optimization
+
+STX provides comprehensive image optimization for improved Core Web Vitals (LCP).
+
+### Image Component
+
+```html
+<!-- Basic usage -->
+<Image
+  src="/images/hero.jpg"
+  alt="Hero image"
+  width="1200"
+  height="600"
+/>
+
+<!-- With responsive sizes -->
+<Image
+  src="/images/hero.jpg"
+  alt="Hero image"
+  width="1200"
+  height="600"
+  sizes="(max-width: 768px) 100vw, 50vw"
+/>
+
+<!-- Priority image (above-fold) -->
+<Image
+  src="/images/hero.jpg"
+  alt="Hero image"
+  priority
+/>
+
+<!-- With placeholder -->
+<Image
+  src="/images/hero.jpg"
+  alt="Hero image"
+  placeholder="blur"
+/>
+```
+
+#### Image Component Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `src` | string | required | Source image path |
+| `alt` | string | required | Alt text (accessibility) |
+| `width` | number | - | Display width |
+| `height` | number | - | Display height |
+| `sizes` | string | `100vw` | Responsive sizes attribute |
+| `loading` | `'lazy' \| 'eager'` | `'lazy'` | Loading strategy |
+| `priority` | boolean | `false` | Preload (above-fold images) |
+| `quality` | number | `80` | Output quality (1-100) |
+| `placeholder` | `'blur' \| 'color' \| 'none'` | `'none'` | Placeholder type |
+| `formats` | string[] | `['webp', 'jpeg']` | Output formats |
+
+### @image Directive
+
+```html
+<!-- Basic usage -->
+@image('/images/hero.jpg', 'Hero image')
+
+<!-- With options -->
+@image('/images/hero.jpg', 'Hero image', { width: 800, quality: 85 })
+
+<!-- Lazy loading -->
+@image('/images/photo.jpg', 'Photo', { lazy: true })
+
+<!-- High priority -->
+@image('/images/banner.jpg', 'Banner', { priority: true })
+```
+
+### CLI Command
+
+```bash
+# Optimize all images in a directory
+stx images public/images
+
+# Specify output directory
+stx images public/images -o dist/images
+
+# Custom widths
+stx images public/images --widths 640,1024,1920
+
+# Custom formats
+stx images public/images --formats webp,avif
+
+# Set quality
+stx images public/images --quality 85
+
+# Preview without processing
+stx images public/images --dry-run
+
+# Verbose output
+stx images public/images --verbose
+```
+
+### Build Plugin
+
+```typescript
+import { createImagePlugin } from '@stacksjs/stx'
+
+// Add to production build config
+const plugin = createImagePlugin({
+  // Input directories to scan
+  inputDirs: ['public', 'src/assets'],
+
+  // Output directory
+  outputDir: 'dist/images',
+
+  // Base URL for generated paths
+  baseUrl: '/images',
+
+  // Output formats
+  formats: ['webp', 'avif', 'jpeg'],
+
+  // Responsive widths
+  widths: [320, 640, 1024, 1920],
+
+  // Quality (1-100)
+  quality: 80,
+
+  // Placeholder generation
+  placeholder: 'blur',
+
+  // Concurrent processing
+  concurrency: 4,
+
+  // Cache processed images
+  cache: true,
+
+  // Verbose logging
+  verbose: false,
+})
+```
+
+### Programmatic API
+
+```typescript
+import {
+  processImage,
+  getImageMetadata,
+  isSharpAvailable,
+  generateSrcSet,
+  generateSizes,
+  optimizeDirectory,
+} from '@stacksjs/stx'
+
+// Check if sharp is available
+const hasSharp = await isSharpAvailable()
+
+// Get image metadata
+const metadata = await getImageMetadata('/path/to/image.jpg')
+console.log(metadata.width, metadata.height, metadata.format)
+
+// Process single image
+const result = await processImage('/path/to/image.jpg', {
+  widths: [320, 640, 1024],
+  formats: ['webp', 'jpeg'],
+  quality: 80,
+  outputDir: 'dist/images',
+})
+
+console.log(result.variants)  // Generated variants
+console.log(result.placeholder)  // Placeholder data URL
+
+// Generate srcset from variants
+const srcset = generateSrcSet(result.variants, 'webp')
+// "/images/test-320.webp 320w, /images/test-640.webp 640w, ..."
+
+// Generate sizes attribute
+const sizes = generateSizes({
+  '768px': '100vw',
+  '1024px': '50vw',
+})
+// "(max-width: 1024px) 50vw, (max-width: 768px) 100vw, 100vw"
+
+// Optimize entire directory
+const dirResult = await optimizeDirectory('public/images', 'dist/images', {
+  formats: ['webp', 'jpeg'],
+  widths: [640, 1024, 1920],
+  quality: 85,
+  verbose: true,
+})
+
+console.log(dirResult.stats.optimizedImages)
+console.log(dirResult.stats.variants)
+```
+
+### Configuration
+
+Add to `stx.config.ts`:
+
+```typescript
+export default {
+  images: {
+    // Enable image optimization
+    enabled: true,
+
+    // Default widths for responsive images
+    widths: [320, 640, 768, 1024, 1280, 1536, 1920],
+
+    // Default output formats
+    formats: ['webp', 'jpeg'],
+
+    // Default quality (1-100)
+    quality: 80,
+
+    // Enable during development (slower but tests optimization)
+    devOptimize: false,
+
+    // Cache directory
+    cacheDir: '.stx/image-cache',
+
+    // Placeholder generation
+    placeholder: 'none',  // 'blur' | 'dominant-color' | 'none'
+  },
+}
+```
+
+### Output
+
+The Image component generates a `<picture>` element with multiple sources:
+
+```html
+<picture>
+  <source
+    type="image/avif"
+    srcset="/images/hero-320-abc123.avif 320w, /images/hero-640-abc123.avif 640w, ..."
+    sizes="(max-width: 768px) 100vw, 50vw"
+  />
+  <source
+    type="image/webp"
+    srcset="/images/hero-320-abc123.webp 320w, /images/hero-640-abc123.webp 640w, ..."
+    sizes="(max-width: 768px) 100vw, 50vw"
+  />
+  <source
+    type="image/jpeg"
+    srcset="/images/hero-320-abc123.jpg 320w, /images/hero-640-abc123.jpg 640w, ..."
+    sizes="(max-width: 768px) 100vw, 50vw"
+  />
+  <img
+    src="/images/hero-1024-abc123.jpg"
+    alt="Hero image"
+    width="1200"
+    height="600"
+    loading="lazy"
+    decoding="async"
+    style="aspect-ratio: 2"
+  />
+</picture>
+```
+
+### Requirements
+
+Image optimization requires `sharp`:
+
+```bash
+bun add sharp
+```
+
+Without sharp, images are served without optimization (graceful degradation).
 
 ---
 
