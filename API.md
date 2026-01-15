@@ -37,6 +37,7 @@ A comprehensive reference for all STX templating syntax, directives, and APIs.
 - [Visual Testing](#visual-testing)
 - [Hydration Runtime](#hydration-runtime)
 - [Component HMR](#component-hmr)
+- [Deployment](#deployment)
 - [Suggested Future Syntax](#suggested-future-syntax)
 
 ---
@@ -3432,6 +3433,110 @@ const server = await createDevServer({
 
 // HMR is automatically enabled
 // Changes to .stx files trigger hot updates
+```
+
+---
+
+## Deployment
+
+Deploy your STX application to Netlify with a single command.
+
+### CLI Commands
+
+```bash
+# Deploy to Netlify (draft preview)
+stx deploy
+
+# Deploy to production
+stx deploy --production
+
+# Deploy with custom build directory
+stx deploy dist --site-id my-site-abc123
+
+# Initialize Netlify configuration
+stx deploy --init
+
+# Preview deployment without uploading
+stx deploy --dry-run
+
+# Skip build step
+stx deploy --no-build
+```
+
+### deploy()
+
+Programmatic deployment API:
+
+```typescript
+import { deploy } from '@stacksjs/stx'
+
+const result = await deploy({
+  directory: 'dist',
+  siteId: 'my-site-id',      // or NETLIFY_SITE_ID env var
+  token: 'netlify-token',     // or NETLIFY_AUTH_TOKEN env var
+  production: true,           // Deploy to production (default: draft)
+  message: 'Release v1.0.0',  // Deploy title
+  open: true,                 // Open URL in browser
+  dryRun: false,              // Preview mode
+  onProgress: (status) => {
+    console.log(status.stage, status.message)
+  },
+})
+
+console.log('Deployed:', result.url)
+console.log('Deploy ID:', result.deployId)
+```
+
+### initNetlify()
+
+Initialize Netlify configuration:
+
+```typescript
+import { initNetlify } from '@stacksjs/stx'
+
+await initNetlify({
+  directory: process.cwd(),
+  siteId: 'my-site-id',  // Saves to .env.local
+})
+```
+
+### generateNetlifyToml()
+
+Generate netlify.toml configuration:
+
+```typescript
+import { generateNetlifyToml, createDefaultNetlifyConfig } from '@stacksjs/stx'
+
+const config = createDefaultNetlifyConfig({
+  buildCommand: 'bun run build',
+  outputDir: 'dist',
+  functionsDir: 'functions',
+})
+
+const toml = generateNetlifyToml(config)
+// Write to netlify.toml
+```
+
+### Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `NETLIFY_AUTH_TOKEN` | API authentication token |
+| `NETLIFY_SITE_ID` | Default site ID for deployments |
+
+### Deploy Result
+
+```typescript
+interface DeployResult {
+  success: boolean
+  url: string             // Deploy preview URL
+  siteUrl?: string        // Production URL (if --production)
+  deployId: string
+  logs: string[]
+  duration: number        // Build time in ms
+  filesUploaded: number
+  totalSize: number       // Bytes uploaded
+}
 ```
 
 ---

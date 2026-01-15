@@ -1429,6 +1429,114 @@ else {
       }
     })
 
+  // Deploy command
+  cli
+    .command('deploy [directory]', 'Deploy built site to Netlify')
+    .option('--site-id <id>', 'Netlify site ID (or set NETLIFY_SITE_ID env var)')
+    .option('--token <token>', 'Auth token (or set NETLIFY_AUTH_TOKEN env var)')
+    .option('--production', 'Deploy to production (default: draft preview)')
+    .option('--message <msg>', 'Deploy message/title')
+    .option('--no-build', 'Skip build step before deploy')
+    .option('--open', 'Open deployed URL in browser')
+    .option('--dry-run', 'Preview deployment without uploading')
+    .option('--init', 'Initialize Netlify configuration for this project')
+    .example('stx deploy')
+    .example('stx deploy --production')
+    .example('stx deploy dist --site-id my-site-abc123')
+    .example('stx deploy --init')
+    .example('stx deploy --dry-run')
+    .action(async (directory: string | undefined, options: {
+      siteId?: string
+      token?: string
+      production?: boolean
+      message?: string
+      build?: boolean
+      open?: boolean
+      dryRun?: boolean
+      init?: boolean
+    }) => {
+      try {
+        const { deploy, initNetlify, DeployError } = await import('../src/deploy')
+
+        console.log(`\x1B[1mstx deploy\x1B[0m \x1B[2mv${version}\x1B[0m`)
+
+        // Init mode
+        if (options.init) {
+          console.log('\n📝 Initializing Netlify configuration...\n')
+
+          const result = await initNetlify({
+            directory: directory || process.cwd(),
+            siteId: options.siteId,
+          })
+
+          console.log(`✓ Created ${result.configPath}`)
+          if (result.siteId) {
+            console.log(`✓ Saved site ID to .env.local`)
+          }
+          console.log('\nYou can now deploy with: stx deploy')
+          return
+        }
+
+        // Build first if not disabled
+        if (options.build !== false) {
+          console.log('\n🔨 Building project...')
+          const buildProcess = Bun.spawn(['bun', 'run', 'build'], {
+            stdio: ['inherit', 'inherit', 'inherit'],
+            cwd: process.cwd(),
+          })
+          const exitCode = await buildProcess.exited
+          if (exitCode !== 0) {
+            console.error('❌ Build failed')
+            process.exit(1)
+          }
+          console.log('✓ Build complete\n')
+        }
+
+        // Deploy
+        console.log('🚀 Deploying to Netlify...\n')
+
+        const result = await deploy({
+          directory: directory || 'dist',
+          siteId: options.siteId,
+          token: options.token,
+          production: options.production,
+          message: options.message,
+          build: false, // We already built above
+          open: options.open,
+          dryRun: options.dryRun,
+          onProgress: (status) => {
+            if (status.stage === 'upload' && status.percent !== undefined) {
+              process.stdout.write(`\r  Uploading: ${status.percent}%`)
+              if (status.percent === 100) {
+                process.stdout.write('\n')
+              }
+            }
+          },
+        })
+
+        if (result.success) {
+          console.log('\n✓ Deployed successfully!\n')
+          console.log(`  ${options.dryRun ? 'Would deploy' : 'Draft URL'}:  ${result.url}`)
+          if (result.siteUrl) {
+            console.log(`  Site URL:   ${result.siteUrl}`)
+          }
+          if (!options.dryRun) {
+            console.log(`\n  Deploy ID:  ${result.deployId}`)
+            console.log(`  Duration:   ${(result.duration / 1000).toFixed(1)}s`)
+            console.log(`  Files:      ${result.filesUploaded}`)
+          }
+        }
+      }
+      catch (error) {
+        if (error instanceof Error && error.name === 'DeployError') {
+          console.error(`\n❌ ${error.message}`)
+          process.exit(1)
+        }
+        console.error('\n❌ Deploy failed:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
+
   cli
     .command('test [patterns...]', 'Run tests with Bun test runner and browser environment')
     .option('--watch', 'Watch for changes and rerun tests')
