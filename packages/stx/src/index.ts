@@ -70,6 +70,8 @@ export * from './client'
 export * from './reactive-bindings'
 export * from './component-hmr'
 export * from './hydration'
+export * from './ssg'
+export * from './visual-testing'
 
 // These modules are exported first to establish their types
 export * from './utils'
