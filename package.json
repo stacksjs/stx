@@ -95,7 +95,6 @@
   "devDependencies": {
     "@types/bun": "^1.2.13",
     "better-dx": "^0.2.5",
-    "bun-plugin-dtsx": "^0.9.9",
-    "typescript": "^5.9.3"
+    "bun-plugin-dtsx": "^0.9.9"
   }
 }
