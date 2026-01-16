@@ -6,6 +6,7 @@ import { animationGroupDirective, motionDirective, scrollAnimateDirective, trans
 import { stxRouterDirective } from './client/directive'
 // Note: componentDirective is NOT included here because @component is handled
 // by the built-in processComponentDirectives function in process.ts
+import { heatmapDirective } from './heatmap'
 import { markdownDirectiveHandler } from './markdown'
 import { pwaDirectives } from './pwa/directives'
 import { metaDirective, structuredDataDirective } from './seo'
@@ -42,6 +43,7 @@ export const defaultConfig: StxConfig = {
     motionDirective,
     scrollAnimateDirective,
     stxRouterDirective,
+    heatmapDirective,
     ...pwaDirectives,
   ],
   middleware: [],

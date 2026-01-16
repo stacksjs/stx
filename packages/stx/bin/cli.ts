@@ -1429,6 +1429,242 @@ else {
       }
     })
 
+  // Deploy command
+  cli
+    .command('deploy [directory]', 'Deploy built site to Netlify')
+    .option('--site-id <id>', 'Netlify site ID (or set NETLIFY_SITE_ID env var)')
+    .option('--token <token>', 'Auth token (or set NETLIFY_AUTH_TOKEN env var)')
+    .option('--production', 'Deploy to production (default: draft preview)')
+    .option('--message <msg>', 'Deploy message/title')
+    .option('--no-build', 'Skip build step before deploy')
+    .option('--open', 'Open deployed URL in browser')
+    .option('--dry-run', 'Preview deployment without uploading')
+    .option('--init', 'Initialize Netlify configuration for this project')
+    .example('stx deploy')
+    .example('stx deploy --production')
+    .example('stx deploy dist --site-id my-site-abc123')
+    .example('stx deploy --init')
+    .example('stx deploy --dry-run')
+    .action(async (directory: string | undefined, options: {
+      siteId?: string
+      token?: string
+      production?: boolean
+      message?: string
+      build?: boolean
+      open?: boolean
+      dryRun?: boolean
+      init?: boolean
+    }) => {
+      try {
+        const { deploy, initNetlify, DeployError } = await import('../src/deploy')
+
+        console.log(`\x1B[1mstx deploy\x1B[0m \x1B[2mv${version}\x1B[0m`)
+
+        // Init mode
+        if (options.init) {
+          console.log('\n📝 Initializing Netlify configuration...\n')
+
+          const result = await initNetlify({
+            directory: directory || process.cwd(),
+            siteId: options.siteId,
+          })
+
+          console.log(`✓ Created ${result.configPath}`)
+          if (result.siteId) {
+            console.log(`✓ Saved site ID to .env.local`)
+          }
+          console.log('\nYou can now deploy with: stx deploy')
+          return
+        }
+
+        // Build first if not disabled
+        if (options.build !== false) {
+          console.log('\n🔨 Building project...')
+          const buildProcess = Bun.spawn(['bun', 'run', 'build'], {
+            stdio: ['inherit', 'inherit', 'inherit'],
+            cwd: process.cwd(),
+          })
+          const exitCode = await buildProcess.exited
+          if (exitCode !== 0) {
+            console.error('❌ Build failed')
+            process.exit(1)
+          }
+          console.log('✓ Build complete\n')
+        }
+
+        // Deploy
+        console.log('🚀 Deploying to Netlify...\n')
+
+        const result = await deploy({
+          directory: directory || 'dist',
+          siteId: options.siteId,
+          token: options.token,
+          production: options.production,
+          message: options.message,
+          build: false, // We already built above
+          open: options.open,
+          dryRun: options.dryRun,
+          onProgress: (status) => {
+            if (status.stage === 'upload' && status.percent !== undefined) {
+              process.stdout.write(`\r  Uploading: ${status.percent}%`)
+              if (status.percent === 100) {
+                process.stdout.write('\n')
+              }
+            }
+          },
+        })
+
+        if (result.success) {
+          console.log('\n✓ Deployed successfully!\n')
+          console.log(`  ${options.dryRun ? 'Would deploy' : 'Draft URL'}:  ${result.url}`)
+          if (result.siteUrl) {
+            console.log(`  Site URL:   ${result.siteUrl}`)
+          }
+          if (!options.dryRun) {
+            console.log(`\n  Deploy ID:  ${result.deployId}`)
+            console.log(`  Duration:   ${(result.duration / 1000).toFixed(1)}s`)
+            console.log(`  Files:      ${result.filesUploaded}`)
+          }
+        }
+      }
+      catch (error) {
+        if (error instanceof Error && error.name === 'DeployError') {
+          console.error(`\n❌ ${error.message}`)
+          process.exit(1)
+        }
+        console.error('\n❌ Deploy failed:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
+
+  // Images command
+  cli
+    .command('images <input>', 'Optimize images for production')
+    .option('-o, --output <dir>', 'Output directory', { default: 'dist/images' })
+    .option('-w, --widths <sizes>', 'Output widths (comma-separated)', { default: '320,640,768,1024,1280,1536,1920' })
+    .option('-f, --formats <types>', 'Output formats (comma-separated)', { default: 'webp,jpeg' })
+    .option('-q, --quality <n>', 'Output quality (1-100)', { default: '80' })
+    .option('--placeholder <type>', 'Placeholder type: blur, dominant-color, none', { default: 'none' })
+    .option('--dry-run', 'Preview without processing')
+    .option('--verbose', 'Show detailed output')
+    .example('stx images public/images')
+    .example('stx images public/images -o dist/images')
+    .example('stx images public/images --widths 640,1024,1920')
+    .example('stx images public/images --formats webp,avif')
+    .example('stx images public/images --quality 85')
+    .example('stx images public/images --dry-run')
+    .action(async (input: string, options: {
+      output: string
+      widths: string
+      formats: string
+      quality: string
+      placeholder: string
+      dryRun?: boolean
+      verbose?: boolean
+    }) => {
+      try {
+        const {
+          optimizeDirectory,
+          isSharpAvailable,
+          formatSize,
+        } = await import('../src/image-optimization')
+        const fs = await import('node:fs')
+        const path = await import('node:path')
+
+        console.log(`\x1B[1mstx images\x1B[0m \x1B[2mv${version}\x1B[0m`)
+
+        // Check sharp availability
+        const hasSharp = await isSharpAvailable()
+        if (!hasSharp) {
+          console.error('\n❌ sharp is required for image optimization.')
+          console.log('\nInstall sharp with:')
+          console.log('  bun add sharp')
+          process.exit(1)
+        }
+
+        // Parse options
+        const widths = options.widths.split(',').map(w => Number.parseInt(w.trim(), 10)).filter(w => !Number.isNaN(w))
+        const formats = options.formats.split(',').map(f => f.trim().toLowerCase()) as ('webp' | 'avif' | 'jpeg' | 'png')[]
+        const quality = Number.parseInt(options.quality, 10) || 80
+        const placeholder = options.placeholder as 'blur' | 'dominant-color' | 'none'
+
+        // Validate input directory
+        const inputPath = path.resolve(input)
+        if (!fs.existsSync(inputPath)) {
+          console.error(`\n❌ Input directory not found: ${inputPath}`)
+          process.exit(1)
+        }
+
+        const stats = fs.statSync(inputPath)
+        if (!stats.isDirectory()) {
+          console.error(`\n❌ Input must be a directory: ${inputPath}`)
+          process.exit(1)
+        }
+
+        console.log(`\n📸 Input:   ${inputPath}`)
+        console.log(`📁 Output:  ${path.resolve(options.output)}`)
+        console.log(`📐 Widths:  ${widths.join(', ')}`)
+        console.log(`🎨 Formats: ${formats.join(', ')}`)
+        console.log(`✨ Quality: ${quality}`)
+
+        if (options.dryRun) {
+          console.log('\n🔍 Dry run mode - no files will be written\n')
+
+          // Collect and count images
+          const collectImages = async (dir: string): Promise<string[]> => {
+            const images: string[] = []
+            const entries = await fs.promises.readdir(dir, { withFileTypes: true })
+
+            for (const entry of entries) {
+              const fullPath = path.join(dir, entry.name)
+              if (entry.isDirectory()) {
+                images.push(...(await collectImages(fullPath)))
+              }
+              else if (/\.(jpg|jpeg|png|webp|avif|gif)$/i.test(entry.name)) {
+                images.push(fullPath)
+              }
+            }
+            return images
+          }
+
+          const images = await collectImages(inputPath)
+          console.log(`Found ${images.length} images:`)
+
+          for (const img of images) {
+            const relPath = path.relative(inputPath, img)
+            const stats = fs.statSync(img)
+            console.log(`  ${relPath} (${formatSize(stats.size)})`)
+          }
+
+          const expectedVariants = images.length * widths.length * formats.length
+          console.log(`\nWould generate ~${expectedVariants} image variants`)
+          return
+        }
+
+        console.log('\n⏳ Optimizing images...\n')
+
+        const result = await optimizeDirectory(inputPath, options.output, {
+          widths,
+          formats,
+          quality,
+          placeholder,
+          verbose: options.verbose,
+        })
+
+        console.log('\n✓ Optimization complete!\n')
+        console.log(`  Images processed: ${result.stats.optimizedImages}/${result.stats.totalImages}`)
+        console.log(`  Variants created: ${result.stats.variants}`)
+
+        if (result.stats.savedBytes > 0) {
+          console.log(`  Estimated savings: ~${formatSize(result.stats.savedBytes)}`)
+        }
+      }
+      catch (error) {
+        console.error('\n❌ Image optimization failed:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
+
   cli
     .command('test [patterns...]', 'Run tests with Bun test runner and browser environment')
     .option('--watch', 'Watch for changes and rerun tests')

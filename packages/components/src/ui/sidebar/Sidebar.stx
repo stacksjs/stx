@@ -1,0 +1,277 @@
+<script>
+/**
+ * Sidebar Component - macOS Native Style
+ *
+ * A native-feeling sidebar component that integrates with Craft for true native rendering
+ * when running in a Craft desktop environment, with beautiful macOS Tahoe-style fallback
+ * for web environments.
+ *
+ * @example
+ * <Sidebar
+ *   :sections="sections"
+ *   :collapsed="false"
+ *   :width="240"
+ *   variant="tahoe"
+ * >
+ *   <template #header>
+ *     <SidebarHeader title="My App" />
+ *   </template>
+ *   <template #footer>
+ *     <SidebarFooter />
+ *   </template>
+ * </Sidebar>
+ */
+
+// Props
+export const sections = $props.sections || []
+export const collapsed = $props.collapsed ?? false
+export const collapsible = $props.collapsible ?? true
+export const width = $props.width || 240
+export const minWidth = $props.minWidth || 64
+export const variant = $props.variant || 'tahoe' // 'tahoe' | 'vibrancy' | 'solid' | 'transparent'
+export const position = $props.position || 'left' // 'left' | 'right'
+export const bordered = $props.bordered ?? true
+export const className = $props.className || ''
+export const onCollapse = $props.onCollapse
+export const onSectionToggle = $props.onSectionToggle
+export const onItemClick = $props.onItemClick
+
+// Internal state
+let isHovered = false
+let nativeSidebarId = null
+
+// Check if running in Craft environment
+const isCraft = typeof window !== 'undefined' && window.craft?.isCraft?.()
+
+// Variant styles - macOS Tahoe inspired
+// Native macOS sidebars use vibrancy where desktop background shines through
+const variantStyles = {
+  tahoe: {
+    // Translucent with warm tint overlay - desktop shows through
+    bg: 'bg-white/70 dark:bg-black/50',
+    border: 'border-black/5 dark:border-white/10',
+    backdrop: 'backdrop-blur-2xl backdrop-saturate-180',
+    // Warm tint is applied via pseudo-element in template
+    tint: true
+  },
+  vibrancy: {
+    bg: 'bg-white/50 dark:bg-black/40',
+    border: 'border-white/20 dark:border-white/10',
+    backdrop: 'backdrop-blur-3xl backdrop-saturate-200',
+    tint: false
+  },
+  solid: {
+    bg: 'bg-stone-100 dark:bg-neutral-900',
+    border: 'border-stone-200 dark:border-neutral-800',
+    backdrop: '',
+    tint: false
+  },
+  transparent: {
+    bg: 'bg-transparent',
+    border: 'border-transparent',
+    backdrop: '',
+    tint: false
+  }
+}
+
+// Get current variant style
+function getVariantStyle() {
+  return variantStyles[variant] || variantStyles.tahoe
+}
+
+// Calculate sidebar width
+function getSidebarWidth() {
+  if (collapsed && !isHovered) {
+    return `${minWidth}px`
+  }
+  return `${width}px`
+}
+
+// Check if showing expanded content
+function showExpanded() {
+  return !collapsed || isHovered
+}
+
+// Initialize Craft native sidebar if available
+async function initNativeSidebar() {
+  if (isCraft && window.craft?.components?.createSidebar) {
+    try {
+      const config = {
+        position,
+        width,
+        minWidth,
+        collapsible,
+        sections: sections.map(section => ({
+          id: section.id,
+          label: section.label,
+          items: section.items?.map(item => ({
+            id: item.id,
+            label: item.label,
+            icon: item.icon,
+            href: item.href,
+            badge: item.badge
+          }))
+        }))
+      }
+      nativeSidebarId = await window.craft.components.createSidebar(config)
+    } catch (err) {
+      console.warn('[Sidebar] Failed to create native sidebar, using web fallback:', err)
+    }
+  }
+}
+
+// Handle collapse toggle
+function handleCollapseToggle() {
+  if (onCollapse) {
+    onCollapse(!collapsed)
+  }
+}
+
+// Handle mouse enter/leave for hover expand
+function handleMouseEnter() {
+  if (collapsed && collapsible) {
+    isHovered = true
+  }
+}
+
+function handleMouseLeave() {
+  isHovered = false
+}
+
+// Handle section toggle
+function handleSectionToggle(sectionId) {
+  if (onSectionToggle) {
+    onSectionToggle(sectionId)
+  }
+}
+
+// Handle item click
+function handleItemClick(item, event) {
+  if (onItemClick) {
+    onItemClick(item, event)
+  }
+}
+
+// Build container classes
+const style = getVariantStyle()
+
+// Build border classes properly for Tailwind
+function getBorderClasses() {
+  if (!bordered) return ''
+  const borderSide = position === 'left' ? 'border-r' : 'border-l'
+  return `${borderSide} ${style.border}`
+}
+
+const containerClasses = [
+  'fixed inset-y-0 z-50 flex flex-col',
+  'transition-all duration-300 ease-out',
+  'overflow-hidden', // Contain the tint overlay
+  style.bg,
+  style.backdrop,
+  getBorderClasses(),
+  position === 'left' ? 'left-0' : 'right-0',
+  className
+].filter(Boolean).join(' ')
+
+// Initialize native sidebar on mount
+if (typeof window !== 'undefined') {
+  initNativeSidebar()
+}
+</script>
+
+<aside
+  class="{{ containerClasses }} sidebar-container"
+  style="width: {{ getSidebarWidth() }}"
+  @mouseenter="handleMouseEnter"
+  @mouseleave="handleMouseLeave"
+  role="navigation"
+  aria-label="Sidebar navigation"
+>
+  <!-- Warm tint overlay for macOS Tahoe effect - desktop shows through -->
+  @if(style.tint)
+    <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-amber-50/30 via-orange-50/20 to-stone-100/30 dark:from-neutral-800/20 dark:via-neutral-900/10 dark:to-neutral-800/20 mix-blend-overlay"></div>
+  @endif
+
+  <!-- Header slot -->
+  @if($slots.header)
+    <div class="flex-shrink-0 relative z-10">
+      <slot name="header" />
+    </div>
+  @endif
+
+  <!-- Main content area with sections -->
+  <div class="flex-1 overflow-y-auto overflow-x-hidden relative z-10">
+    @if(sections.length > 0)
+      <nav class="px-3 py-2 space-y-1">
+        @foreach(sections as section)
+          <SidebarSection
+            :id="section.id"
+            :label="section.label"
+            :icon="section.icon"
+            :items="section.items"
+            :expanded="section.expanded !== false"
+            :collapsible="section.collapsible !== false"
+            :showLabel="showExpanded()"
+            @toggle="handleSectionToggle(section.id)"
+            @itemClick="handleItemClick"
+          />
+        @endforeach
+      </nav>
+    @else
+      <!-- Default slot for custom content -->
+      <div class="px-3 py-2">
+        <slot />
+      </div>
+    @endif
+  </div>
+
+  <!-- Footer slot -->
+  @if($slots.footer)
+    <div class="flex-shrink-0 relative z-10">
+      <slot name="footer" />
+    </div>
+  @endif
+
+  <!-- Collapse toggle button -->
+  @if(collapsible && showExpanded())
+    <button
+      type="button"
+      class="absolute top-4 {{ position === 'left' ? 'right-2' : 'left-2' }} p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-black/5 dark:hover:text-neutral-300 dark:hover:bg-white/10 transition-colors z-20"
+      @click="handleCollapseToggle"
+      aria-label="{{ collapsed ? 'Expand sidebar' : 'Collapse sidebar' }}"
+    >
+      <div class="{{ collapsed ? 'i-hugeicons-sidebar-right' : 'i-hugeicons-sidebar-left' }} w-5 h-5"></div>
+    </button>
+  @endif
+</aside>
+
+<style scoped>
+/* Smooth scrollbar styling for macOS feel */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+/* Dark mode scrollbar */
+@media (prefers-color-scheme: dark) {
+  .overflow-y-auto::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+  }
+}
+</style>
