@@ -1665,6 +1665,105 @@ else {
       }
     })
 
+  // Bundle analyzer command
+  cli
+    .command('bundle [directory]', 'Analyze bundle size and composition')
+    .option('-o, --output <file>', 'Output file path')
+    .option('--json', 'Output as JSON')
+    .option('--text', 'Output as text summary')
+    .option('--markdown', 'Output as Markdown')
+    .option('--no-open', 'Do not open HTML report in browser')
+    .option('--no-gzip', 'Do not show gzip sizes')
+    .option('--threshold <size>', 'Fail if total size exceeds threshold (e.g., 500KB, 1MB)')
+    .option('--top <n>', 'Number of top modules to show', { default: '20' })
+    .example('stx bundle')
+    .example('stx bundle dist/')
+    .example('stx bundle dist/ --json')
+    .example('stx bundle dist/ --text')
+    .example('stx bundle dist/ --threshold 500KB')
+    .example('stx bundle dist/ --no-open')
+    .action(async (directory: string | undefined, options: {
+      output?: string
+      json?: boolean
+      text?: boolean
+      markdown?: boolean
+      open?: boolean
+      gzip?: boolean
+      threshold?: string
+      top?: string
+    }) => {
+      try {
+        const { analyze, formatBytes, parseSize } = await import('../src/bundle-analyzer')
+        const path = await import('node:path')
+
+        console.log(`\x1B[1mstx bundle\x1B[0m \x1B[2mv${version}\x1B[0m`)
+
+        const buildDir = directory || 'dist'
+        const resolvedDir = path.resolve(buildDir)
+
+        // Check if directory exists
+        const fs = await import('node:fs')
+        if (!fs.existsSync(resolvedDir)) {
+          console.error(`\n❌ Directory not found: ${resolvedDir}`)
+          console.log('\nRun `stx build` first to generate build output.')
+          process.exit(1)
+        }
+
+        // Determine format
+        let format: 'html' | 'json' | 'text' | 'markdown' = 'html'
+        if (options.json) format = 'json'
+        else if (options.text) format = 'text'
+        else if (options.markdown) format = 'markdown'
+
+        console.log(`\n📦 Analyzing: ${resolvedDir}`)
+
+        const result = await analyze({
+          directory: resolvedDir,
+          output: options.output,
+          format,
+          open: options.open !== false && format === 'html',
+          gzip: options.gzip !== false,
+          threshold: options.threshold,
+          topModules: Number.parseInt(options.top || '20', 10),
+          recommendations: true,
+        })
+
+        // Output results
+        if (format === 'html') {
+          console.log(`\n✓ Report generated: ${result.outputPath}`)
+          if (options.open !== false) {
+            console.log('  Opening in browser...')
+          }
+        }
+        else {
+          console.log(result.report)
+        }
+
+        // Check threshold
+        if (result.exceedsThreshold) {
+          const threshold = options.threshold!
+          console.error(`\n❌ Bundle size (${formatBytes(result.stats.totalSize)}) exceeds threshold (${threshold})`)
+          process.exit(1)
+        }
+
+        // Summary
+        if (format === 'html') {
+          console.log(`\n📊 Summary:`)
+          console.log(`   Total Size:  ${formatBytes(result.stats.totalSize)}`)
+          console.log(`   Gzip Size:   ${formatBytes(result.stats.totalGzipSize)}`)
+          console.log(`   Modules:     ${result.stats.moduleCount}`)
+          console.log(`   Chunks:      ${result.stats.chunks.length}`)
+          if (result.stats.duplicates.length > 0) {
+            console.log(`   Duplicates:  ${result.stats.duplicates.length}`)
+          }
+        }
+      }
+      catch (error) {
+        console.error('\n❌ Bundle analysis failed:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
+
   cli
     .command('test [patterns...]', 'Run tests with Bun test runner and browser environment')
     .option('--watch', 'Watch for changes and rerun tests')

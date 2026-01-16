@@ -74,6 +74,7 @@ export * from './hydration'
 export * from './ssg'
 export * from './visual-testing'
 export * from './image-optimization'
+export * from './bundle-analyzer'
 
 // These modules are exported first to establish their types
 export * from './utils'
