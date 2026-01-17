@@ -66,56 +66,23 @@ export async function extractVariables(
   const module = { exports: {} as Record<string, unknown> }
   const exports = module.exports
 
-  // Pre-load commonly needed modules for require()
-  const preloadedModules: Record<string, unknown> = {}
-
-  // Load path module
-  preloadedModules.path = await import('node:path')
-  preloadedModules['node:path'] = preloadedModules.path
-
-  // Load bun:sqlite if available (Bun-specific)
-  try {
-    preloadedModules['bun:sqlite'] = await import('bun:sqlite')
-  }
-  catch {
-    // Not running in Bun
-  }
-
-  // Load fs modules
-  try {
-    preloadedModules.fs = await import('node:fs')
-    preloadedModules['node:fs'] = preloadedModules.fs
-    preloadedModules['fs/promises'] = await import('node:fs/promises')
-    preloadedModules['node:fs/promises'] = preloadedModules['fs/promises']
-  }
-  catch {
-    // Ignore
-  }
-
-  // Create a require function that uses preloaded modules
+  // Create a require function for CommonJS compatibility (bun:sqlite, path, etc.)
   const requireFn = (id: string) => {
-    if (preloadedModules[id]) {
-      return preloadedModules[id]
-    }
-    throw new Error(`Module '${id}' is not preloaded. Available: ${Object.keys(preloadedModules).join(', ')}`)
+    // Use Bun's require for built-in and node modules
+    return require(id)
   }
-
-  // Provide common Node.js/Bun globals
-  const processObj = typeof process !== 'undefined' ? process : { cwd: () => '.' }
 
   try {
     // Parse and convert the script content
     const convertedScript = convertToCommonJS(scriptContent)
 
-    // Execute with context variables available plus require and process
-    // Note: We don't pass path/fs as parameters to avoid conflicts with user-declared variables
-    // Users should use require('path') or require('fs') in their scripts
+    // Execute with context variables available
     const contextKeys = Object.keys(context)
     const contextValues = Object.values(context)
 
     // eslint-disable-next-line no-new-func
-    const scriptFn = new Function('module', 'exports', 'require', 'process', ...contextKeys, convertedScript)
-    scriptFn(module, exports, requireFn, processObj, ...contextValues)
+    const scriptFn = new Function('module', 'exports', 'require', ...contextKeys, convertedScript)
+    scriptFn(module, exports, requireFn, ...contextValues)
 
     // Copy results to context
     Object.assign(context, module.exports)

@@ -563,14 +563,22 @@ async function processDirectivesInternal(
 ): Promise<string> {
   // Resolve relative paths in options to absolute paths
   // Use process.cwd() (project root) as the base, not STX's __dirname
-  const resolvedOptions = { ...options }
   const projectRoot = process.cwd()
-  if (resolvedOptions.partialsDir && !path.isAbsolute(resolvedOptions.partialsDir)) {
-    resolvedOptions.partialsDir = path.resolve(projectRoot, resolvedOptions.partialsDir)
+  const resolvedOptions: StxOptions = {
+    ...options,
+    partialsDir: options.partialsDir && !path.isAbsolute(options.partialsDir)
+      ? path.resolve(projectRoot, options.partialsDir)
+      : options.partialsDir,
+    componentsDir: options.componentsDir && !path.isAbsolute(options.componentsDir)
+      ? path.resolve(projectRoot, options.componentsDir)
+      : options.componentsDir,
+    layoutsDir: options.layoutsDir && !path.isAbsolute(options.layoutsDir)
+      ? path.resolve(projectRoot, options.layoutsDir)
+      : options.layoutsDir,
   }
-  if (resolvedOptions.componentsDir && !path.isAbsolute(resolvedOptions.componentsDir)) {
-    resolvedOptions.componentsDir = path.resolve(projectRoot, resolvedOptions.componentsDir)
-  }
+
+  // Use resolvedOptions throughout this function
+  const opts = resolvedOptions
 
   let output = template
 
@@ -778,26 +786,29 @@ async function processOtherDirectives(
 ): Promise<string> {
   let output = template
 
+  // Use opts as alias for options (consistent with processDirectivesInternal)
+  const opts = options
+
   // Run view composers for the current view with error handling
   await safeExecuteAsync(
     () => runComposers(filePath, context),
     undefined,
     (error) => {
-      if (options.debug) {
+      if (opts.debug) {
         console.warn(`View composer error for ${filePath}:`, error.message)
       }
     },
   )
 
   // Add options to context for component processing
-  context.__stx_options = options
+  context.__stx_options = opts
 
   // Run pre-processing middleware with error handling
   output = await safeExecuteAsync(
-    () => runPreProcessingMiddleware(output, context, filePath, options),
+    () => runPreProcessingMiddleware(output, context, filePath, opts),
     output,
     (error) => {
-      if (options.debug) {
+      if (opts.debug) {
         console.warn(`Pre-processing middleware error:`, error.message)
       }
     },
@@ -822,7 +833,7 @@ async function processOtherDirectives(
       }
       catch (e) {
         // Script may contain browser-only code, skip
-        if (options.debug) {
+        if (opts.debug) {
           console.warn('Script extraction error:', e)
         }
       }
@@ -835,22 +846,22 @@ async function processOtherDirectives(
   output = await processTsDirectives(output, context, filePath)
 
   // Process @import directives for explicit component imports
-  output = await processImportDirectives(output, context, filePath, options, dependencies)
+  output = await processImportDirectives(output, context, filePath, opts, dependencies)
 
   // Process custom directives
-  output = await processCustomDirectives(output, context, filePath, options)
+  output = await processCustomDirectives(output, context, filePath, opts)
 
-  // Process component directives
-  if (options.componentsDir) {
+  // Process component directives (opts has already-resolved paths)
+  if (opts.componentsDir) {
     // Process @component directives
-    output = await processComponentDirectives(output, context, filePath, options.componentsDir, options, dependencies)
+    output = await processComponentDirectives(output, context, filePath, opts.componentsDir, opts, dependencies)
 
     // Process custom element components (kebab-case and PascalCase tags)
-    output = await processCustomElements(output, context, filePath, options.componentsDir, options, dependencies)
+    output = await processCustomElements(output, context, filePath, opts.componentsDir, opts, dependencies)
   }
 
   // Process animations and transitions
-  output = processAnimationDirectives(output, context, filePath, options)
+  output = processAnimationDirectives(output, context, filePath, opts)
 
   // Process defer directives (@defer for lazy loading)
   const { processDeferDirectives } = await import('./defer')
@@ -925,10 +936,10 @@ async function processOtherDirectives(
   output = processMethodDirectives(output)
 
   // Process includes (@include, @component, etc.)
-  output = await processIncludes(output, context, filePath, options, dependencies)
+  output = await processIncludes(output, context, filePath, opts, dependencies)
 
   // Process loops (@foreach, @for, etc.) - BEFORE conditionals to handle nested scope properly
-  output = processLoops(output, context, filePath, options)
+  output = processLoops(output, context, filePath, opts)
 
   // Process conditionals (@if, @unless, etc.) - AFTER loops to allow loop variables in scope
   output = processConditionals(output, context, filePath)
@@ -949,24 +960,24 @@ async function processOtherDirectives(
   // to ensure variables are available for conditionals, loops, and expressions
 
   // Process markdown files - new directive for including .md files with frontmatter
-  output = await processMarkdownFileDirectives(output, context, filePath, options)
+  output = await processMarkdownFileDirectives(output, context, filePath, opts)
 
   // Process markdown directives (@markdown)
   output = await processMarkdownDirectives(output, context, filePath)
 
   // Process translate directives (@translate, @t)
-  output = await processTranslateDirective(output, context, filePath, options)
+  output = await processTranslateDirective(output, context, filePath, opts)
 
   // Process accessibility directives (@a11y, @screenReader)
-  output = processA11yDirectives(output, context, filePath, options)
+  output = processA11yDirectives(output, context, filePath, opts)
 
   // Process SEO directives (@meta, @seo, @structuredData)
-  output = processMetaDirectives(output, context, filePath, options)
+  output = processMetaDirectives(output, context, filePath, opts)
   output = processStructuredData(output, context, filePath)
-  output = processSeoDirective(output, context, filePath, options)
+  output = processSeoDirective(output, context, filePath, opts)
 
   // Process CSP directives (@csp, @cspNonce)
-  output = processCspDirectives(output, context, filePath, options)
+  output = processCspDirectives(output, context, filePath, opts)
 
   // Process @json directive
   output = processJsonDirective(output, context)
@@ -993,11 +1004,11 @@ async function processOtherDirectives(
   output = processXElementDirectives(output)
 
   // Run post-processing middleware
-  output = await runPostProcessingMiddleware(output, context, filePath, options)
+  output = await runPostProcessingMiddleware(output, context, filePath, opts)
 
   // Auto-inject SEO tags if enabled
-  if (options.seo?.enabled) {
-    output = injectSeoTags(output, context, options)
+  if (opts.seo?.enabled) {
+    output = injectSeoTags(output, context, opts)
   }
 
   // Inject rendered head content from useHead/useSeoMeta calls
@@ -1025,24 +1036,24 @@ async function processOtherDirectives(
   }
 
   // Auto-inject CSP meta tag if enabled
-  if (options.csp?.enabled && options.csp.addMetaTag) {
-    output = injectCspMetaTag(output, options.csp as any, context)
+  if (opts.csp?.enabled && opts.csp.addMetaTag) {
+    output = injectCspMetaTag(output, opts.csp as any, context)
   }
 
   // Auto-inject analytics if enabled
-  if (options.analytics?.enabled) {
-    output = injectAnalytics(output, options)
+  if (opts.analytics?.enabled) {
+    output = injectAnalytics(output, opts)
   }
 
   // Auto-inject heatmap tracking if enabled
-  if (options.heatmap?.enabled) {
-    output = injectHeatmap(output, options)
+  if (opts.heatmap?.enabled) {
+    output = injectHeatmap(output, opts)
   }
 
   // Auto-inject PWA tags if enabled
-  if (options.pwa?.enabled && options.pwa.autoInject !== false) {
+  if (opts.pwa?.enabled && opts.pwa.autoInject !== false) {
     const { injectPwaTags } = await import('./pwa/inject')
-    output = injectPwaTags(output, options)
+    output = injectPwaTags(output, opts)
   }
 
   // Strip server-only scripts (marked with 'server' attribute)
