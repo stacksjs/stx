@@ -81,7 +81,15 @@ export const plugin: BunPlugin = {
 
         // Extract script and template sections with performance monitoring
         const { scriptContent, templateContent, allScripts } = performanceMonitor.time('script-extraction', () => {
-          // Extract all script tags (both inline and external)
+          // SFC Support: Extract <template> content if present
+          // This allows Vue-style single file components with explicit <template> tags
+          let workingContent = content
+          const templateTagMatch = content.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
+          if (templateTagMatch) {
+            workingContent = templateTagMatch[1].trim()
+          }
+
+          // Extract all script tags (both inline and external) from original content
           const allScriptMatches = content.match(/<script\b[^>]*>[\s\S]*?<\/script>/gi) || []
 
           // Find server-side script (for variable extraction)
@@ -109,7 +117,8 @@ export const plugin: BunPlugin = {
             }
           }
 
-          const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+          // Remove script tags from template content (use workingContent which may be from <template> tag)
+          const templateContent = workingContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
           return { scriptContent: serverScriptContent, templateContent, allScripts: clientScripts }
         })
 

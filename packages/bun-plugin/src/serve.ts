@@ -18,6 +18,9 @@ import process from 'node:process'
 export interface ServeOptions {
   patterns: string[]
   port?: number
+  componentsDir?: string
+  layoutsDir?: string
+  partialsDir?: string
 }
 
 /**
@@ -25,7 +28,7 @@ export interface ServeOptions {
  * @param options Server options with patterns and port
  */
 export async function serve(options: ServeOptions): Promise<void> {
-  const { patterns, port = 3456 } = options
+  const { patterns, port = 3456, componentsDir, layoutsDir, partialsDir } = options
 
   if (patterns.length === 0) {
     console.error('Usage: serve <files...> [--port 3000]')
@@ -187,12 +190,81 @@ export async function serve(options: ServeOptions): Promise<void> {
     const { processDirectives, extractVariables, defaultConfig } = await import('@stacksjs/stx')
     await extractVariables(scriptContent, context, filePath)
 
+    // Create config with custom directories
+    const config = {
+      ...defaultConfig,
+      componentsDir: componentsDir || defaultConfig.componentsDir,
+      layoutsDir: layoutsDir || defaultConfig.layoutsDir,
+      partialsDir: partialsDir || defaultConfig.partialsDir,
+    }
+
     let output = templateContent
     const dependencies = new Set<string>()
-    output = await processDirectives(output, context, filePath, defaultConfig, dependencies)
+    output = await processDirectives(output, context, filePath, config, dependencies)
 
     // Strip <template> wrapper tags FIRST - browsers don't render template content
     // STX uses <template> in source but output should be renderable HTML
+    output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
+
+    // Generate and inject Headwind CSS
+    const headwindCSS = await generateHeadwindCSS(output)
+    if (headwindCSS) {
+      const styleTag = `<style>/* headwind css */\n${headwindCSS}</style>`
+      if (output.includes('</head>')) {
+        output = output.replace('</head>', `${styleTag}\n</head>`)
+      }
+      else if (output.includes('<body')) {
+        output = output.replace(/<body/i, `${styleTag}\n<body`)
+      }
+      else {
+        output = styleTag + output
+      }
+    }
+
+    return output
+  }
+
+  // Process template with dynamic route parameters
+  async function processTemplateDynamic(
+    filePath: string,
+    routeParams: Record<string, string>,
+  ): Promise<string> {
+    const path = await import('node:path')
+    const content = await Bun.file(filePath).text()
+
+    const inlineScriptMatch = content.match(/<script(?!\s[^>]*src=)\b[^>]*>([\s\S]*?)<\/script>/i)
+    const scriptContent = inlineScriptMatch ? inlineScriptMatch[1] : ''
+    const templateContent = inlineScriptMatch
+      ? content.replace(/<script(?!\s[^>]*src=)\b[^>]*>[\s\S]*?<\/script>/i, '')
+      : content
+
+    // Inject route parameters into context BEFORE extracting variables
+    // This makes them available in <script server> blocks
+    const context: Record<string, any> = {
+      __filename: filePath,
+      __dirname: path.dirname(filePath),
+      ...routeParams,
+    }
+
+    const { processDirectives, extractVariables, defaultConfig } = await import('@stacksjs/stx')
+
+    // Also inject route params as global variables for the script execution
+    // The extractVariables function will now see these values
+    await extractVariables(scriptContent, context, filePath)
+
+    // Create config with custom directories
+    const config = {
+      ...defaultConfig,
+      componentsDir: componentsDir || defaultConfig.componentsDir,
+      layoutsDir: layoutsDir || defaultConfig.layoutsDir,
+      partialsDir: partialsDir || defaultConfig.partialsDir,
+    }
+
+    let output = templateContent
+    const dependencies = new Set<string>()
+    output = await processDirectives(output, context, filePath, config, dependencies)
+
+    // Strip <template> wrapper tags
     output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
 
     // Generate and inject Headwind CSS
@@ -289,6 +361,91 @@ export async function serve(options: ServeOptions): Promise<void> {
             prettyRoute === normalizedPath) {
           const output = await processTemplate(filePath)
           routes.set(requestPath, output)
+          return output
+        }
+      }
+    }
+
+    // Strategy 6: Dynamic route segments - [param].stx files
+    // e.g., /pages/data/user matches pages/data/[model].stx with model="user"
+    for (const filePath of files) {
+      // Only check files that have dynamic segments
+      if (!filePath.includes('['))
+        continue
+
+      // Extract the relative path portion for route matching
+      // File could be absolute: /path/to/project/pages/data/[model].stx
+      // Or relative: pages/data/[model].stx
+      let relativeFilePath = filePath.replace(/\\/g, '/')
+
+      // Find the 'pages/' directory portion for route matching
+      const pagesIndex = relativeFilePath.indexOf('/pages/')
+      if (pagesIndex !== -1) {
+        relativeFilePath = relativeFilePath.slice(pagesIndex + 1)
+      }
+      else if (relativeFilePath.startsWith('pages/')) {
+        // Already relative
+      }
+      else {
+        // Try to find any meaningful relative portion
+        const lastPagesIndex = relativeFilePath.lastIndexOf('pages/')
+        if (lastPagesIndex !== -1) {
+          relativeFilePath = relativeFilePath.slice(lastPagesIndex)
+        }
+      }
+
+      // Get the file route without extension
+      const fileRoute = relativeFilePath.replace(/\.(stx|md|html)$/, '')
+
+      // Convert [param] patterns to regex capture groups
+      // e.g., pages/data/[model] -> pages/data/([^/]+)
+      const paramNames: string[] = []
+      const regexPattern = fileRoute.replace(/\[([^\]]+)\]/g, (_match, paramName) => {
+        paramNames.push(paramName)
+        return '([^/]+)'
+      })
+
+      // Escape special regex characters in the pattern (except our capture groups)
+      const escapedPattern = regexPattern.replace(/[.*+?^${}()|[\]\\]/g, (match) => {
+        // Don't escape our capture group parentheses
+        if (match === '(' || match === ')') return match
+        return `\\${match}`
+      })
+
+      // Create regex to match the route
+      const routeRegex = new RegExp(`^/?${escapedPattern}$`)
+      const match = normalizedPath.match(routeRegex)
+
+      if (match) {
+        // Extract parameter values
+        const routeParams: Record<string, string> = {}
+        paramNames.forEach((name, index) => {
+          routeParams[name] = match[index + 1]
+        })
+
+        // Process template with dynamic parameters
+        // Don't cache dynamic routes - each request may have different params
+        const output = await processTemplateDynamic(filePath, routeParams)
+        return output
+      }
+
+      // Also try matching without 'pages/' prefix (pretty routes)
+      if (fileRoute.startsWith('pages/')) {
+        const prettyRoute = fileRoute.slice(6) // Remove 'pages/' prefix
+        const prettyParamNames: string[] = []
+        const prettyRegexPattern = prettyRoute.replace(/\[([^\]]+)\]/g, (_match, paramName) => {
+          prettyParamNames.push(paramName)
+          return '([^/]+)'
+        })
+        const prettyRouteRegex = new RegExp(`^/?${prettyRegexPattern}$`)
+        const prettyMatch = normalizedPath.match(prettyRouteRegex)
+
+        if (prettyMatch) {
+          const routeParams: Record<string, string> = {}
+          prettyParamNames.forEach((name, index) => {
+            routeParams[name] = prettyMatch[index + 1]
+          })
+          const output = await processTemplateDynamic(filePath, routeParams)
           return output
         }
       }
