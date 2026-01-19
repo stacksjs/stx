@@ -166,4 +166,88 @@ describe('stx Basic Variable Rendering', () => {
 
     expect(outputHtml).toContain('<h2>Awesome Product</h2>')
   })
+
+  // Test Vue-style SFC with <template> tag
+  it('should handle Vue-style SFC with <template> tag', async () => {
+    const testFile = await createTestFile('sfc-template.stx', `
+      <script>
+        const title = "Hello from SFC"
+        const subtitle = "Template tags work"
+      </script>
+
+      <template>
+        <div class="container">
+          <h1>{{ title }}</h1>
+          <p>{{ subtitle }}</p>
+        </div>
+      </template>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    expect(outputHtml).toContain('<h1>Hello from SFC</h1>')
+    expect(outputHtml).toContain('<p>Template tags work</p>')
+    // Should NOT contain the literal <template> tags
+    expect(outputHtml).not.toContain('<template>')
+    expect(outputHtml).not.toContain('</template>')
+  })
+
+  // Test that template tags are optional
+  it('should work without <template> tags', async () => {
+    const testFile = await createTestFile('no-template-tag.stx', `
+      <script>
+        const title = "No Template Tag"
+      </script>
+
+      <div class="container">
+        <h1>{{ title }}</h1>
+      </div>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    expect(outputHtml).toContain('<h1>No Template Tag</h1>')
+  })
+
+  // Test SFC with script, template, and style
+  it('should handle full SFC with script, template, and style', async () => {
+    const testFile = await createTestFile('full-sfc.stx', `
+      <script>
+        const message = "Full SFC Support"
+      </script>
+
+      <template>
+        <div class="styled">
+          <h1>{{ message }}</h1>
+        </div>
+      </template>
+
+      <style>
+        .styled { color: blue; }
+      </style>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    expect(outputHtml).toContain('<h1>Full SFC Support</h1>')
+    expect(outputHtml).not.toContain('<template>')
+  })
 })

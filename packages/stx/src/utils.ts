@@ -112,6 +112,7 @@ export async function renderComponentWithSlot(
     }
 
     // If not found via @import, use auto-discovery
+    const triedPaths: string[] = []
     if (!componentFilePath) {
       // Generate all possible file names to try
       const fileVariants = [
@@ -122,11 +123,11 @@ export async function renderComponentWithSlot(
       // Remove duplicates
       const uniqueVariants = [...new Set(fileVariants)]
 
-      // Directories to search
+      // Directories to search - filter out undefined/empty values
       const searchDirs = [
         componentsDir,
         path.join(path.dirname(parentFilePath), 'components'),
-      ]
+      ].filter(Boolean)
       if (options.componentsDir && options.componentsDir !== componentsDir) {
         searchDirs.push(options.componentsDir)
       }
@@ -134,12 +135,15 @@ export async function renderComponentWithSlot(
       // If path starts with ./ or ../, resolve from current template directory
       if (baseName.startsWith('./') || baseName.startsWith('../')) {
         componentFilePath = path.resolve(path.dirname(parentFilePath), `${baseName}.stx`)
+        triedPaths.push(componentFilePath)
       }
       else {
         // Search in all directories with all naming variants
         for (const dir of searchDirs) {
+          if (!dir) continue
           for (const variant of uniqueVariants) {
             const tryPath = path.join(dir, variant)
+            triedPaths.push(tryPath)
             if (await fileExists(tryPath)) {
               componentFilePath = tryPath
               break
@@ -152,7 +156,10 @@ export async function renderComponentWithSlot(
 
     // Check if component exists
     if (!componentFilePath || !await fileExists(componentFilePath)) {
-      return `[Error loading component: ENOENT: no such file or directory, open '${componentPath}']`
+      const searchInfo = triedPaths.length > 0
+        ? `\nSearched paths:\n${triedPaths.map(p => `  - ${p}`).join('\n')}`
+        : ''
+      return `[Error loading component: ENOENT: no such file or directory, open '${componentPath}']${searchInfo}`
     }
 
     // Track this component as a dependency

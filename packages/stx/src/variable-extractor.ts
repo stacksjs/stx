@@ -66,6 +66,12 @@ export async function extractVariables(
   const module = { exports: {} as Record<string, unknown> }
   const exports = module.exports
 
+  // Create a require function for CommonJS compatibility (bun:sqlite, path, etc.)
+  const requireFn = (id: string) => {
+    // Use Bun's require for built-in and node modules
+    return require(id)
+  }
+
   try {
     // Parse and convert the script content
     const convertedScript = convertToCommonJS(scriptContent)
@@ -75,8 +81,8 @@ export async function extractVariables(
     const contextValues = Object.values(context)
 
     // eslint-disable-next-line no-new-func
-    const scriptFn = new Function('module', 'exports', ...contextKeys, convertedScript)
-    scriptFn(module, exports, ...contextValues)
+    const scriptFn = new Function('module', 'exports', 'require', ...contextKeys, convertedScript)
+    scriptFn(module, exports, requireFn, ...contextValues)
 
     // Copy results to context
     Object.assign(context, module.exports)

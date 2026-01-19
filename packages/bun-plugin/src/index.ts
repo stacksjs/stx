@@ -209,7 +209,15 @@ export { content as default };
 
           const content = await Bun.file(filePath).text()
 
-          // Extract all script tags and categorize them
+          // SFC Support: Extract <template> content if present
+          // This allows Vue-style single file components with explicit <template> tags
+          let workingContent = content
+          const templateTagMatch = content.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
+          if (templateTagMatch) {
+            workingContent = templateTagMatch[1].trim()
+          }
+
+          // Extract all script tags and categorize them from original content
           const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
           const clientScripts: string[] = []
           const serverScripts: string[] = []
@@ -231,8 +239,8 @@ export { content as default };
             }
           }
 
-          // Remove all script tags from template
-          const templateContent = content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+          // Remove all script tags from template (use workingContent which may be from <template> tag)
+          const templateContent = workingContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
           // Create a sandbox environment to execute the script
           const context: Record<string, any> = {
