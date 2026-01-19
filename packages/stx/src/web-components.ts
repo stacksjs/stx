@@ -2019,9 +2019,7 @@ export interface ParsedSFCComponent {
  * }
  * </script>
  *
- * <template>
- *   <button class="{{ type }}">{{ text }}</button>
- * </template>
+ * <button class="{{ type }}">{{ text }}</button>
  *
  * <style>
  * button { padding: 8px 16px; }
@@ -2193,9 +2191,7 @@ customElements.define('${tag}', ${className});
  * }
  * </script>
  *
- * <template>
- *   <button class="{{ type }}">{{ text }}</button>
- * </template>
+ * <button class="{{ type }}">{{ text }}</button>
  *
  * <style>
  * button { padding: 8px 16px; }

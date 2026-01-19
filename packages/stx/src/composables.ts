@@ -205,9 +205,7 @@ export const onUpdated = onUpdate
  * })
  * </script>
  *
- * <template>
- *   <input type="text" @ref="inputRef" />
- * </template>
+ * <input type="text" @ref="inputRef" />
  * ```
  */
 export function ref<T = HTMLElement>(initialValue: T | null = null): Ref<T> {
