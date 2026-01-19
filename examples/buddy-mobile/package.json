@@ -15,16 +15,16 @@
     "open:android": "cap open android"
   },
   "dependencies": {
-    "@capacitor/android": "^8.0.0",
+    "@capacitor/android": "^8.0.1",
     "@capacitor/app": "^6.0.0",
-    "@capacitor/core": "^8.0.0",
+    "@capacitor/core": "^8.0.1",
     "@capacitor/haptics": "^6.0.0",
-    "@capacitor/ios": "^8.0.0",
+    "@capacitor/ios": "^8.0.1",
     "@capacitor/keyboard": "^6.0.0",
     "@capacitor/splash-screen": "^6.0.0",
     "@capacitor/status-bar": "^8.0.0"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.0.0"
+    "@capacitor/cli": "^8.0.1"
   }
 }
