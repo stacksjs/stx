@@ -148,6 +148,20 @@ export class StxFileError extends StxError {
 }
 
 /**
+ * Validation error - these are ALWAYS fatal and cannot be recovered from.
+ * Used for enforcing coding standards like prohibited DOM API usage.
+ */
+export class StxValidationError extends StxError {
+  /** Validation errors are always fatal and should never be caught/recovered */
+  public readonly isFatal: boolean = true
+
+  constructor(message: string, filePath?: string, line?: number, column?: number, context?: string, numericCode?: ErrorCode) {
+    super(message, 'stx_VALIDATION_ERROR', filePath, line, column, context, numericCode || ErrorCodes.DOM_API_VIOLATION)
+    this.name = 'StxValidationError'
+  }
+}
+
+/**
  * Error context information
  */
 export interface ErrorContext {

@@ -48,6 +48,7 @@ const defaultErrorMessages: ErrorMessages = {
   1202: { message: 'Path traversal attempt blocked: {{path}}', help: 'Use only relative paths within allowed directories' },
   1203: { message: 'Potential XSS attempt blocked', help: 'Sanitize user input before rendering' },
   1204: { message: 'Code injection attempt blocked: {{code}}', help: 'Avoid executing dynamic code' },
+  1205: { message: 'Prohibited DOM API usage: {{api}}', help: 'Use STX.useRefs(), STX.useRef(), STX.el() and other STX helpers instead of direct DOM manipulation' },
 
   // File errors (1300-1399)
   1301: { message: 'File not found: {{path}}', help: 'Check that the file exists and the path is correct' },
@@ -177,6 +178,7 @@ export const ErrorCodes = {
   PATH_TRAVERSAL: 1202,
   XSS_ATTEMPT: 1203,
   CODE_INJECTION: 1204,
+  DOM_API_VIOLATION: 1205,
 
   // File errors (1300-1399)
   FILE_NOT_FOUND: 1301,

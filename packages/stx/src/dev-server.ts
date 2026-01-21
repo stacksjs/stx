@@ -1590,11 +1590,16 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   // Build a single page file
   const buildPage = async (route: Route): Promise<BuiltPage | null> => {
     try {
-      // Plugin to handle public asset paths
+      // Plugin to handle public asset paths and CSS files
       const publicAssetsPlugin: BunPlugin = {
         name: 'public-assets',
         setup(build) {
-          build.onResolve({ filter: /^\/(images|fonts|assets|public|dist)\// }, (args) => {
+          // Handle absolute paths to public directories
+          build.onResolve({ filter: /^\/(images|fonts|assets|public|dist|js|css)\// }, (args) => {
+            return { path: args.path, external: true }
+          })
+          // Handle all CSS files - mark as external to prevent bundling
+          build.onResolve({ filter: /\.css$/ }, (args) => {
             return { path: args.path, external: true }
           })
         },

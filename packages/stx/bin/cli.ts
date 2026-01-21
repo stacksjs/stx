@@ -928,6 +928,12 @@ else {
           console.log('')
         }
 
+        // Exit with error if there were any failures (validation errors are fatal)
+        if (result.failedCount > 0) {
+          console.error(`\n  Build completed with ${result.failedCount} error(s). Fix the issues above and try again.\n`)
+          process.exit(1)
+        }
+
         console.log(`  To preview locally:`)
         console.log(`    cd ${options.out} && npx serve\n`)
       }

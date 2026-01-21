@@ -12,7 +12,7 @@ import { processAuthDirectives, processConditionals, processEnvDirective, proces
 import { injectCspMetaTag, processCspDirectives } from './csp'
 import { processCsrfDirectives } from './csrf'
 import { processCustomDirectives } from './custom-directives'
-import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeError } from './error-handling'
+import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeError, StxValidationError } from './error-handling'
 import { processExpressions } from './expressions'
 import { processBasicFormDirectives, processErrorDirective } from './forms'
 import { processTranslateDirective } from './i18n'
@@ -530,6 +530,12 @@ export async function processDirectives(
     })
   }
   catch (error: unknown) {
+    // Validation errors are ALWAYS fatal - they enforce coding standards
+    // and should never be recovered from, even in production
+    if (error instanceof StxValidationError) {
+      throw error
+    }
+
     const msg = error instanceof Error ? error.message : String(error)
     const enhancedError = new StxRuntimeError(
       `Template processing failed: ${msg}`,
@@ -1065,6 +1071,10 @@ async function processOtherDirectives(
   output = output.replace(/<script\s+client\b([^>]*)>([\s\S]*?)<\/script>/gi, (_match, attrs, content) => {
     const { transformStoreImports } = require('./state-management')
     const transformedContent = transformStoreImports(content)
+
+    // Validate client scripts for prohibited patterns
+    validateClientScript(transformedContent, filePath)
+
     return `<script${attrs}>${transformedContent}</script>`
   })
 
@@ -1539,4 +1549,109 @@ function processRefAttributes(template: string): string {
   // Also support Vue-style ref="name" (but not if already processed)
   result = result.replace(/\sref="([^"]+)"/g, ' data-stx-ref="$1"')
   return result
+}
+
+/**
+ * Prohibited DOM API patterns in client scripts.
+ * STX provides Vue-style alternatives via the STX global object.
+ */
+const PROHIBITED_DOM_PATTERNS: Array<{
+  pattern: RegExp
+  message: string
+  suggestion: string
+}> = [
+  {
+    pattern: /document\.getElementById\s*\(/g,
+    message: 'document.getElementById() is prohibited',
+    suggestion: 'Use STX.useRef("name") or STX.useRefs() instead',
+  },
+  {
+    pattern: /document\.querySelector\s*\(/g,
+    message: 'document.querySelector() is prohibited',
+    suggestion: 'Use STX.useRef("name") or refs.container?.querySelector() instead',
+  },
+  {
+    pattern: /document\.querySelectorAll\s*\(/g,
+    message: 'document.querySelectorAll() is prohibited',
+    suggestion: 'Use refs.container?.querySelectorAll() instead',
+  },
+  {
+    pattern: /document\.getElementsBy\w+\s*\(/g,
+    message: 'document.getElementsBy*() is prohibited',
+    suggestion: 'Use STX.useRefs() or refs.container?.querySelectorAll() instead',
+  },
+  {
+    pattern: /document\.createElement\s*\(/g,
+    message: 'document.createElement() is prohibited',
+    suggestion: 'Use STX.el(tag, attrs, content) instead',
+  },
+  {
+    pattern: /document\.activeElement(?![A-Za-z])/g,
+    message: 'document.activeElement is prohibited',
+    suggestion: 'Use STX.activeElement() instead',
+  },
+]
+
+/**
+ * Validate client script content for prohibited DOM API patterns.
+ * Throws an error if prohibited patterns are found.
+ *
+ * @param content - The script content to validate
+ * @param filePath - The file path for error reporting
+ */
+function validateClientScript(content: string, filePath: string): void {
+  const errors: string[] = []
+
+  for (const { pattern, message, suggestion } of PROHIBITED_DOM_PATTERNS) {
+    // Reset regex lastIndex for global patterns
+    pattern.lastIndex = 0
+    const matches = content.match(pattern)
+
+    if (matches && matches.length > 0) {
+      // Find line numbers for better error messages
+      const lines = content.split('\n')
+      const lineNumbers: number[] = []
+
+      lines.forEach((line, index) => {
+        pattern.lastIndex = 0
+        if (pattern.test(line)) {
+          lineNumbers.push(index + 1)
+        }
+      })
+
+      const locationInfo = lineNumbers.length > 0
+        ? ` (line${lineNumbers.length > 1 ? 's' : ''}: ${lineNumbers.join(', ')})`
+        : ''
+
+      errors.push(`  ✗ ${message}${locationInfo}\n    → ${suggestion}`)
+    }
+  }
+
+  if (errors.length > 0) {
+    const fileName = filePath.split('/').pop() || filePath
+    const errorMessage = `
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  STX: Prohibited DOM API Usage Detected                                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+File: ${fileName}
+
+STX enforces Vue-style patterns. Direct DOM manipulation via document.* is not allowed.
+Use the STX API instead for cleaner, more maintainable code.
+
+Errors found:
+${errors.join('\n\n')}
+
+Quick Reference:
+  • STX.useRefs()          → Get all refs from template
+  • STX.useRef("name")     → Get single ref by name
+  • STX.el(tag, attrs)     → Create element
+  • STX.onKey(key, fn)     → Global keyboard listener
+  • STX.activeElement()    → Get focused element
+  • STX.escapeHtml(text)   → Escape HTML
+
+Documentation: https://stx.stacksjs.org/refs
+`
+    throw new StxValidationError(errorMessage, filePath)
+  }
 }
