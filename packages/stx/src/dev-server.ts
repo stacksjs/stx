@@ -5,7 +5,6 @@ import { serve } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { handleAgenticApi } from './agentic-api'
 import { readMarkdownFile } from './assets'
 import { config } from './config'
 import {
@@ -516,12 +515,6 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     port: actualPort,
     async fetch(request) {
       const url = new URL(request.url)
-
-      // Handle API routes first (agentic functionality for AI code assistant)
-      const apiResponse = await handleAgenticApi(request)
-      if (apiResponse) {
-        return apiResponse
-      }
 
       // Serve the main HTML for the root path
       if (url.pathname === '/') {
@@ -1216,12 +1209,6 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
     async fetch(request) {
       const url = new URL(request.url)
 
-      // Handle API routes first (agentic functionality for AI code assistant)
-      const apiResponse = await handleAgenticApi(request)
-      if (apiResponse) {
-        return apiResponse
-      }
-
       // Check if it's a file in the public directory FIRST (before route matching)
       // This ensures static assets like fonts, images are served correctly
       const publicPath = path.join(process.cwd(), 'public', url.pathname)
@@ -1590,11 +1577,16 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   // Build a single page file
   const buildPage = async (route: Route): Promise<BuiltPage | null> => {
     try {
-      // Plugin to handle public asset paths
+      // Plugin to handle public asset paths and CSS files
       const publicAssetsPlugin: BunPlugin = {
         name: 'public-assets',
         setup(build) {
-          build.onResolve({ filter: /^\/(images|fonts|assets|public|dist)\// }, (args) => {
+          // Handle absolute paths to public directories
+          build.onResolve({ filter: /^\/(images|fonts|assets|public|dist|js|css)\// }, (args) => {
+            return { path: args.path, external: true }
+          })
+          // Handle all CSS files - mark as external to prevent bundling
+          build.onResolve({ filter: /\.css$/ }, (args) => {
             return { path: args.path, external: true }
           })
         },
@@ -1694,10 +1686,6 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
     port: actualPort,
     async fetch(request) {
       const url = new URL(request.url)
-
-      // Handle API routes
-      const apiResponse = await handleAgenticApi(request)
-      if (apiResponse) return apiResponse
 
       // Serve static files from public/
       const publicPath = path.join(absoluteAppDir, 'public', url.pathname)

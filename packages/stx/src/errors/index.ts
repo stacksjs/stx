@@ -69,4 +69,5 @@ export {
   StxRuntimeError,
   StxSecurityError,
   StxSyntaxError,
+  StxValidationError,
 } from './types'
