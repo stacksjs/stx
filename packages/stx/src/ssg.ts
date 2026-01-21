@@ -48,7 +48,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createRouter, type Route } from './router'
 import { processDirectives } from './process'
-import { config } from './config'
+import { loadStxConfig } from './config'
 
 // =============================================================================
 // Types
@@ -472,7 +472,8 @@ async function renderPage(
   route: Route,
   params: Record<string, string>,
   props: Record<string, unknown> = {},
-  options: SSGConfig
+  options: SSGConfig,
+  stxConfig: Record<string, unknown>
 ): Promise<string> {
   const content = await Bun.file(route.filePath).text()
 
@@ -489,7 +490,7 @@ async function renderPage(
   // Process the template with proper arguments
   const dependencies = new Set<string>()
   const stxOptions = {
-    ...config,
+    ...stxConfig,
     debug: false,
     cache: false,
   }
@@ -649,6 +650,9 @@ ${itemsXml.join('\n')}
 export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGResult> {
   const startTime = Date.now()
 
+  // Load user's stx.config.ts for proper layoutsDir, componentsDir, etc.
+  const stxConfig = await loadStxConfig()
+
   const cfg: Required<SSGConfig> = {
     pagesDir: options.pagesDir || 'pages',
     outputDir: options.outputDir || 'dist',
@@ -754,7 +758,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
 
           // Render if not cached
           if (!html) {
-            html = await renderPage(route, params, props, cfg)
+            html = await renderPage(route, params, props, cfg, stxConfig)
 
             if (cfg.cache) {
               buildCache.set(url, route.filePath, [], html)
@@ -820,7 +824,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
       const notFoundPath = path.join(cfg.pagesDir, '404.stx')
       if (fs.existsSync(notFoundPath)) {
         const notFoundDeps = new Set<string>()
-        const notFoundOptions = { ...config, debug: false, cache: false }
+        const notFoundOptions = { ...stxConfig, debug: false, cache: false }
         const html = await processDirectives(
           await Bun.file(notFoundPath).text(),
           {},
@@ -997,8 +1001,11 @@ export function createISRHandler(options: SSGConfig = {}): {
         })
       }
 
+      // Load stx config for proper template processing
+      const stxConfig = await loadStxConfig()
+
       // Re-render the page
-      const html = await renderPage(matchedRoute, params, {}, options)
+      const html = await renderPage(matchedRoute, params, {}, options, stxConfig)
 
       // Update cache
       await cache.set(route, {

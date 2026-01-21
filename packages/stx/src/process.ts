@@ -1521,17 +1521,22 @@ export function processOnceDirective(template: string): string {
 }
 
 /**
- * Process @ref attributes for DOM element references.
+ * Process ref attributes for DOM element references (Vue-style).
  *
  * Transforms:
+ *   <input ref="inputRef" />
  *   <input @ref="inputRef" />
  *
  * Into:
- *   <input data-ref="inputRef" />
+ *   <input data-stx-ref="inputRef" />
  *
- * The client-side runtime will bind these to ref objects.
+ * The client-side runtime will automatically bind these to ref objects.
  */
 function processRefAttributes(template: string): string {
-  // Match @ref="name" attributes
-  return template.replace(/@ref="([^"]+)"/g, 'data-ref="$1"')
+  // Match ref="name" (Vue-style) and @ref="name" attributes
+  // Use data-stx-ref to avoid conflicts with native ref attribute
+  let result = template.replace(/@ref="([^"]+)"/g, 'data-stx-ref="$1"')
+  // Also support Vue-style ref="name" (but not if already processed)
+  result = result.replace(/\sref="([^"]+)"/g, ' data-stx-ref="$1"')
+  return result
 }
