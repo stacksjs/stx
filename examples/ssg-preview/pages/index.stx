@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Email Preview Gallery</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    h1 { color: #333; }
+    .preview-list {
+      display: grid;
+      gap: 20px;
+    }
+    .preview-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      transition: box-shadow 0.2s;
+    }
+    .preview-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .preview-card h2 {
+      margin-top: 0;
+    }
+    .preview-card a {
+      color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <h1>Email Template Previews</h1>
+  <p>These are SSG-generated previews of your email templates with real data.</p>
+
+  <div class="preview-list">
+    <div class="preview-card">
+      <h2>Welcome Email</h2>
+      <p>Sent to new users after registration.</p>
+      <p>Preview data: Barack Obama (Premium plan)</p>
+      <a href="/mail/welcome">View Preview &rarr;</a>
+    </div>
+  </div>
+</body>
+</html>

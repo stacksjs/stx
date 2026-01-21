@@ -17,6 +17,20 @@ import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 
+// Claude Agent SDK - lazily imported to avoid issues if not installed
+let claudeSDK: typeof import('@anthropic-ai/claude-code') | null = null
+async function getClaudeSDK() {
+  if (!claudeSDK) {
+    try {
+      claudeSDK = await import('@anthropic-ai/claude-code')
+    }
+    catch {
+      throw new Error('Claude SDK not installed. Run: bun add @anthropic-ai/claude-code')
+    }
+  }
+  return claudeSDK
+}
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -53,6 +67,42 @@ interface AIDriver {
   process: (command: string, context: string, history: AIMessage[]) => Promise<string>
 }
 
+// Claude SDK Types
+interface ClaudeSDKOptions {
+  allowedTools?: string[]
+  permissionMode?: 'bypassPermissions' | 'acceptEdits' | 'default'
+  maxTurns?: number
+  settingSources?: string[]
+  systemPrompt?: string
+  cwd?: string
+  resume?: string
+  mcpServers?: Record<string, { command: string, args?: string[] }>
+  agents?: Record<string, {
+    description: string
+    prompt: string
+    tools?: string[]
+  }>
+}
+
+interface SystemInitMessage {
+  type: 'system'
+  subtype: 'init'
+  session_id: string
+}
+
+// Claude SDK Configuration
+interface ClaudeSDKConfig {
+  maxTurns: number
+  useProjectSettings: boolean
+  systemPrompt?: string
+  defaultTools: string[]
+}
+
+// Claude SDK State (for session management)
+interface ClaudeSDKState {
+  lastSessionId?: string
+}
+
 // =============================================================================
 // Configuration
 // =============================================================================
@@ -62,6 +112,23 @@ const CONFIG = {
   commitMessage: 'chore: wip',
   ollamaHost: process.env.OLLAMA_HOST || 'http://localhost:11434',
   ollamaModel: process.env.OLLAMA_MODEL || 'llama3.2',
+}
+
+// Claude SDK Configuration (can be customized per use case)
+const sdkConfig: ClaudeSDKConfig = {
+  // Maximum turns before stopping (prevents runaway execution)
+  maxTurns: Number(process.env.CLAUDE_SDK_MAX_TURNS) || 25,
+  // Whether to load project settings (CLAUDE.md, .claude/*)
+  useProjectSettings: process.env.CLAUDE_SDK_USE_PROJECT_SETTINGS !== 'false',
+  // Custom system prompt (optional, overrides default)
+  systemPrompt: process.env.CLAUDE_SDK_SYSTEM_PROMPT,
+  // Default tools available to the agent
+  defaultTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep'],
+}
+
+// Claude SDK State (for session management)
+const sdkState: ClaudeSDKState = {
+  lastSessionId: undefined,
 }
 
 // API Keys state (can be set at runtime via /api/settings)
@@ -225,6 +292,77 @@ const drivers: Record<string, AIDriver> = {
 
       const data = (await response.json()) as { content: Array<{ text: string }> }
       return data.content[0].text
+    },
+  },
+
+  // Claude Agent SDK driver - uses @anthropic-ai/claude-code programmatically
+  // This provides full agentic capabilities with built-in tools
+  'claude-sdk': {
+    name: 'Claude SDK',
+    async process(command: string, context: string, _history: AIMessage[]): Promise<string> {
+      const sdk = await getClaudeSDK()
+      const { query } = sdk
+
+      // Build the full prompt with repository context
+      const fullPrompt = state.repo
+        ? `Working in repository: ${state.repo.path}\n\nContext:\n${context}\n\nUser request: ${command}`
+        : command
+
+      // Configure SDK options
+      const sdkOptions: ClaudeSDKOptions = {
+        // Allow read/write/execute tools for full agentic capabilities
+        allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep'],
+        // Bypass permission prompts since we're running programmatically
+        permissionMode: 'bypassPermissions' as const,
+        // Limit turns to prevent runaway execution
+        maxTurns: sdkConfig.maxTurns,
+        // Use project settings if available (CLAUDE.md, etc.)
+        settingSources: sdkConfig.useProjectSettings ? ['project'] : [],
+      }
+
+      // Add custom system prompt if configured
+      if (sdkConfig.systemPrompt) {
+        sdkOptions.systemPrompt = sdkConfig.systemPrompt
+      }
+
+      // Set working directory if we have a repo open
+      if (state.repo?.path) {
+        sdkOptions.cwd = state.repo.path
+      }
+
+      let result = ''
+      let sessionId: string | undefined
+
+      try {
+        // Stream messages from the SDK
+        for await (const message of query({ prompt: fullPrompt, options: sdkOptions })) {
+          // Capture session ID for potential resume
+          if (message.type === 'system' && message.subtype === 'init') {
+            sessionId = (message as SystemInitMessage).session_id
+            sdkState.lastSessionId = sessionId
+          }
+
+          // Capture the final result
+          if ('result' in message && typeof message.result === 'string') {
+            result = message.result
+          }
+
+          // Track tool usage for debugging/logging
+          if (message.type === 'assistant' && 'tool_use' in message) {
+            console.log(`[Claude SDK] Tool use: ${JSON.stringify(message.tool_use)}`)
+          }
+        }
+
+        return result || 'No response from Claude SDK'
+      }
+      catch (error) {
+        const err = error as Error
+        // Provide helpful error messages
+        if (err.message.includes('ANTHROPIC_API_KEY')) {
+          throw new Error('Claude SDK requires ANTHROPIC_API_KEY environment variable or Claude Code authentication.')
+        }
+        throw new Error(`Claude SDK error: ${err.message}`)
+      }
     },
   },
 
@@ -635,6 +773,11 @@ export async function handleAgenticApi(req: Request): Promise<Response | null> {
         historyLength: state.conversationHistory.length,
         availableDrivers: Object.keys(drivers),
         github: state.github ? { username: state.github.username, name: state.github.name, email: state.github.email } : null,
+        // Claude SDK state
+        claudeSDK: {
+          config: sdkConfig,
+          lastSessionId: sdkState.lastSessionId,
+        },
       }, { headers: corsHeaders })
     }
 
@@ -689,6 +832,64 @@ export async function handleAgenticApi(req: Request): Promise<Response | null> {
           openai: !!apiKeys.openai,
           claudeCliHost: !!apiKeys.claudeCliHost,
         },
+        claudeSDK: sdkConfig,
+      }, { headers: corsHeaders })
+    }
+
+    // API: Update Claude SDK settings
+    if (url.pathname === '/api/sdk/config' && req.method === 'POST') {
+      const updates = (await req.json()) as Partial<ClaudeSDKConfig>
+
+      if (updates.maxTurns !== undefined) {
+        sdkConfig.maxTurns = updates.maxTurns
+        console.log(`Claude SDK maxTurns set to ${updates.maxTurns}`)
+      }
+      if (updates.useProjectSettings !== undefined) {
+        sdkConfig.useProjectSettings = updates.useProjectSettings
+        console.log(`Claude SDK useProjectSettings set to ${updates.useProjectSettings}`)
+      }
+      if (updates.systemPrompt !== undefined) {
+        sdkConfig.systemPrompt = updates.systemPrompt || undefined
+        console.log(`Claude SDK systemPrompt ${updates.systemPrompt ? 'set' : 'cleared'}`)
+      }
+      if (updates.defaultTools !== undefined) {
+        sdkConfig.defaultTools = updates.defaultTools
+        console.log(`Claude SDK defaultTools set to [${updates.defaultTools.join(', ')}]`)
+      }
+
+      return Response.json({
+        success: true,
+        config: sdkConfig,
+      }, { headers: corsHeaders })
+    }
+
+    // API: Get Claude SDK config
+    if (url.pathname === '/api/sdk/config' && req.method === 'GET') {
+      return Response.json({
+        config: sdkConfig,
+        state: {
+          lastSessionId: sdkState.lastSessionId,
+        },
+      }, { headers: corsHeaders })
+    }
+
+    // API: Resume SDK session
+    if (url.pathname === '/api/sdk/resume' && req.method === 'POST') {
+      const { sessionId, prompt } = (await req.json()) as { sessionId?: string, prompt: string }
+      const resumeId = sessionId || sdkState.lastSessionId
+
+      if (!resumeId) {
+        return Response.json({
+          success: false,
+          error: 'No session ID provided and no previous session available',
+        }, { status: 400, headers: corsHeaders })
+      }
+
+      const result = await resumeSDKSession(resumeId, prompt)
+      return Response.json({
+        success: true,
+        result,
+        sessionId: resumeId,
       }, { headers: corsHeaders })
     }
 
@@ -712,3 +913,53 @@ export function getState() {
 export function getApiKeys() {
   return apiKeys
 }
+
+// Export SDK configuration and state for external access
+export function getSDKConfig() {
+  return { ...sdkConfig }
+}
+
+export function getSDKState() {
+  return { ...sdkState }
+}
+
+export function updateSDKConfig(updates: Partial<ClaudeSDKConfig>) {
+  if (updates.maxTurns !== undefined) {
+    sdkConfig.maxTurns = updates.maxTurns
+  }
+  if (updates.useProjectSettings !== undefined) {
+    sdkConfig.useProjectSettings = updates.useProjectSettings
+  }
+  if (updates.systemPrompt !== undefined) {
+    sdkConfig.systemPrompt = updates.systemPrompt
+  }
+  if (updates.defaultTools !== undefined) {
+    sdkConfig.defaultTools = updates.defaultTools
+  }
+  return { ...sdkConfig }
+}
+
+// Resume a previous SDK session
+export async function resumeSDKSession(sessionId: string, prompt: string): Promise<string> {
+  const sdk = await getClaudeSDK()
+  const { query } = sdk
+
+  let result = ''
+
+  for await (const message of query({
+    prompt,
+    options: {
+      resume: sessionId,
+      permissionMode: 'bypassPermissions',
+    },
+  })) {
+    if ('result' in message && typeof message.result === 'string') {
+      result = message.result
+    }
+  }
+
+  return result || 'No response from resumed session'
+}
+
+// Export types for external use
+export type { ClaudeSDKOptions, ClaudeSDKConfig, ClaudeSDKState }

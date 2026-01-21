@@ -466,6 +466,86 @@ async function generatePathsForRoute(route: Route): Promise<Array<{
 // =============================================================================
 
 /**
+ * Load data from a companion .data.ts file
+ * e.g., pages/mail/welcome.stx -> pages/mail/welcome.data.ts
+ */
+async function loadDataFile(templatePath: string): Promise<Record<string, unknown> | null> {
+  // Try multiple data file patterns
+  const dataFilePatterns = [
+    templatePath.replace(/\.stx$/, '.data.ts'),
+    templatePath.replace(/\.stx$/, '.data.js'),
+    templatePath + '.data.ts',
+    templatePath + '.data.js',
+  ]
+
+  for (const dataFile of dataFilePatterns) {
+    if (fs.existsSync(dataFile)) {
+      try {
+        // Use dynamic import to load the data file
+        const dataModule = await import(dataFile)
+
+        // Support both default export and named exports
+        if (typeof dataModule.default === 'function') {
+          // export default async function() { return { ... } }
+          return await dataModule.default()
+        } else if (typeof dataModule.default === 'object') {
+          // export default { ... }
+          return dataModule.default
+        } else if (typeof dataModule.getData === 'function') {
+          // export function getData() { return { ... } }
+          return await dataModule.getData()
+        } else {
+          // export const user = { ... }; export const items = [...]
+          const { default: _, ...namedExports } = dataModule
+          return namedExports
+        }
+      } catch (error) {
+        console.error(`Error loading data file ${dataFile}:`, error)
+      }
+    }
+  }
+
+  return null
+}
+
+/**
+ * Extract and execute getStaticProps from a template's server script
+ */
+async function extractStaticProps(
+  content: string,
+  params: Record<string, string>,
+  filePath: string
+): Promise<Record<string, unknown> | null> {
+  // Look for <script server> block with getStaticProps
+  const serverScriptMatch = content.match(/<script\s+server\b[^>]*>([\s\S]*?)<\/script>/i)
+  if (!serverScriptMatch) return null
+
+  const scriptContent = serverScriptMatch[1]
+  if (!scriptContent.includes('getStaticProps')) return null
+
+  try {
+    // Extract and evaluate the function
+    const fnMatch = scriptContent.match(
+      /(?:export\s+)?(?:async\s+)?function\s+getStaticProps\s*\([^)]*\)\s*\{([\s\S]*?)\n\}/
+    )
+    if (!fnMatch) return null
+
+    // Create a safe evaluation context with params available
+    const asyncFn = new Function('params', `
+      return (async function getStaticProps() {
+        ${fnMatch[1]}
+      })()
+    `)
+
+    const result = await asyncFn(params)
+    return result as Record<string, unknown>
+  } catch (error) {
+    console.error(`Error executing getStaticProps in ${filePath}:`, error)
+    return null
+  }
+}
+
+/**
  * Render a single page
  */
 async function renderPage(
@@ -477,8 +557,17 @@ async function renderPage(
 ): Promise<string> {
   const content = await Bun.file(route.filePath).text()
 
-  // Merge params and props into context
+  // 1. Load data from companion .data.ts file
+  const dataFileProps = await loadDataFile(route.filePath)
+
+  // 2. Extract and execute getStaticProps from server script
+  const staticProps = await extractStaticProps(content, params, route.filePath)
+
+  // Merge all data sources: dataFile < staticProps < explicit props < params
+  // Later sources override earlier ones
   const context = {
+    ...(dataFileProps || {}),
+    ...(staticProps || {}),
     ...props,
     params,
     $route: {
