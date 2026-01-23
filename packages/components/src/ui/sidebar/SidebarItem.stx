@@ -1,0 +1,118 @@
+<script>
+/**
+ * SidebarItem Component
+ *
+ * An individual navigation item within a sidebar section.
+ * Supports icons, badges, active states, and keyboard navigation.
+ *
+ * @example
+ * <SidebarItem
+ *   id="home"
+ *   label="Home"
+ *   icon="i-hugeicons-home-02"
+ *   href="/"
+ *   :active="true"
+ * />
+ */
+
+// Props
+export const id = $props.id || ''
+export const label = $props.label || ''
+export const icon = $props.icon || ''
+export const href = $props.href || ''
+export const badge = $props.badge || ''
+export const active = $props.active ?? false
+export const disabled = $props.disabled ?? false
+export const indent = $props.indent ?? false
+export const onClick = $props.onClick
+
+// Handle click
+function handleClick(event) {
+  if (disabled) {
+    event.preventDefault()
+    return
+  }
+
+  if (onClick) {
+    onClick(event)
+  }
+}
+
+// Build item classes - macOS Tahoe style with translucent-friendly colors
+function getItemClasses() {
+  const baseClasses = [
+    'flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px]',
+    'transition-all duration-150',
+    indent ? 'ml-2' : ''
+  ]
+
+  if (disabled) {
+    baseClasses.push('opacity-50 cursor-not-allowed')
+  } else if (active) {
+    // Active state - subtle blue highlight like macOS
+    baseClasses.push(
+      'bg-blue-500/20 text-blue-600 dark:bg-blue-400/25 dark:text-blue-300 font-medium'
+    )
+  } else {
+    // Default state - works with translucent backgrounds
+    baseClasses.push(
+      'text-black/80 dark:text-white/80',
+      'hover:bg-black/5 dark:hover:bg-white/10'
+    )
+  }
+
+  return baseClasses.filter(Boolean).join(' ')
+}
+
+// Icon classes
+function getIconClasses() {
+  const baseClasses = 'w-4 h-4 flex-shrink-0'
+
+  if (active) {
+    return `${icon} ${baseClasses} text-blue-600 dark:text-blue-300`
+  }
+
+  return `${icon} ${baseClasses} text-black/50 dark:text-white/50`
+}
+</script>
+
+@if(href && !disabled)
+  <a
+    href="{{ href }}"
+    class="{{ getItemClasses() }}"
+    @click="handleClick"
+    @if(active)
+      aria-current="page"
+    @endif
+  >
+    @if(icon)
+      <div class="{{ getIconClasses() }}"></div>
+    @endif
+    <span class="flex-1 truncate">{{ label }}</span>
+    @if(badge)
+      <span class="ml-auto px-2 py-0.5 text-xs font-medium rounded-full bg-black/10 text-black/70 dark:bg-white/15 dark:text-white/70">
+        {{ badge }}
+      </span>
+    @endif
+  </a>
+@else
+  <button
+    type="button"
+    class="{{ getItemClasses() }}"
+    @click="handleClick"
+    @if(disabled)
+      disabled
+      aria-disabled="true"
+    @endif
+  >
+    @if(icon)
+      <div class="{{ getIconClasses() }}"></div>
+    @endif
+    <span class="flex-1 truncate text-left">{{ label }}</span>
+    @if(badge)
+      <span class="ml-auto px-2 py-0.5 text-xs font-medium rounded-full bg-black/10 text-black/70 dark:bg-white/15 dark:text-white/70">
+        {{ badge }}
+      </span>
+    @endif
+  </button>
+@endif

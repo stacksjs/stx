@@ -205,9 +205,7 @@ export const onUpdated = onUpdate
  * })
  * </script>
  *
- * <template>
- *   <input type="text" @ref="inputRef" />
- * </template>
+ * <input type="text" @ref="inputRef" />
  * ```
  */
 export function ref<T = HTMLElement>(initialValue: T | null = null): Ref<T> {
@@ -607,15 +605,160 @@ export function generateLifecycleRuntime(): string {
     instances.delete(instance.id);
   };
 
-  // Auto-bind refs from @ref attributes
+  // ==========================================================================
+  // Vue-Style Refs System - No document.** required!
+  // ==========================================================================
+
+  // Internal: Query for ref elements without exposing document API
+  function queryRef(name, root) {
+    return (root || document).querySelector('[data-stx-ref="' + name + '"], [data-ref="' + name + '"]');
+  }
+
+  function queryAllRefs(root) {
+    return (root || document).querySelectorAll('[data-stx-ref], [data-ref]');
+  }
+
+  // Auto-bind refs from ref attributes (Vue-style)
   window.STX.bindRefs = function(root, refs) {
     if (!root) return;
-    root.querySelectorAll('[data-ref]').forEach(function(el) {
-      const refName = el.getAttribute('data-ref');
+    queryAllRefs(root).forEach(function(el) {
+      var refName = el.getAttribute('data-stx-ref') || el.getAttribute('data-ref');
       if (refs[refName]) {
         refs[refName].value = el;
       }
     });
+  };
+
+  // Vue-style useRefs() - returns object with all refs as direct elements
+  // Usage: const { input, button, container } = STX.useRefs()
+  window.STX.useRefs = function(root) {
+    var refs = {};
+    queryAllRefs(root).forEach(function(el) {
+      var refName = el.getAttribute('data-stx-ref') || el.getAttribute('data-ref');
+      if (refName) {
+        refs[refName] = el;
+      }
+    });
+    return refs;
+  };
+
+  // Get a single ref by name - Vue's useTemplateRef equivalent
+  // Usage: const input = STX.useRef('input')
+  window.STX.useRef = function(name, root) {
+    return queryRef(name, root);
+  };
+
+  // Two-way binding helper for form elements
+  // Usage: STX.model(inputEl, state, 'username')
+  window.STX.model = function(el, state, key) {
+    if (!el || !state) return;
+
+    var isCheckbox = el.type === 'checkbox';
+    var isRadio = el.type === 'radio';
+    var isSelect = el.tagName === 'SELECT';
+
+    // Set initial value
+    if (isCheckbox) {
+      el.checked = !!state[key];
+    } else if (isRadio) {
+      el.checked = el.value === state[key];
+    } else {
+      el.value = state[key] || '';
+    }
+
+    // Listen for changes
+    var eventType = isCheckbox || isRadio ? 'change' : 'input';
+    el.addEventListener(eventType, function() {
+      if (isCheckbox) {
+        state[key] = el.checked;
+      } else if (isRadio) {
+        if (el.checked) state[key] = el.value;
+      } else {
+        state[key] = el.value;
+      }
+    });
+
+    // Return cleanup function
+    return function() {
+      el.removeEventListener(eventType, arguments.callee);
+    };
+  };
+
+  // Batch event binding helper - cleaner than manual addEventListener
+  // Usage: STX.on({ click: [btn1, btn2], input: [textField] }, handler)
+  window.STX.on = function(el, event, handler) {
+    if (!el) return function() {};
+    el.addEventListener(event, handler);
+    return function() { el.removeEventListener(event, handler); };
+  };
+
+  // Bind multiple events at once
+  // Usage: STX.events(refs.btn, { click: handleClick, mouseenter: handleHover })
+  window.STX.events = function(el, eventMap) {
+    if (!el) return function() {};
+    var cleanups = [];
+    Object.keys(eventMap).forEach(function(event) {
+      el.addEventListener(event, eventMap[event]);
+      cleanups.push(function() { el.removeEventListener(event, eventMap[event]); });
+    });
+    return function() { cleanups.forEach(function(c) { c(); }); };
+  };
+
+  // ==========================================================================
+  // DOM Helpers - Eliminate document.* usage
+  // ==========================================================================
+
+  // Global keyboard event listener
+  // Usage: STX.onKey('Escape', () => closeModal())
+  window.STX.onKey = function(key, handler, options) {
+    var listener = function(e) {
+      if (e.key === key) {
+        handler(e);
+      }
+    };
+    document.addEventListener('keydown', listener, options);
+    return function() { document.removeEventListener('keydown', listener, options); };
+  };
+
+  // Create element helper
+  // Usage: STX.el('div', { class: 'foo' }, 'text content')
+  window.STX.el = function(tag, attrs, content) {
+    var el = document.createElement(tag);
+    if (attrs) {
+      Object.keys(attrs).forEach(function(key) {
+        if (key === 'class') {
+          el.className = attrs[key];
+        } else if (key.startsWith('on')) {
+          el.addEventListener(key.slice(2).toLowerCase(), attrs[key]);
+        } else {
+          el.setAttribute(key, attrs[key]);
+        }
+      });
+    }
+    if (content) {
+      if (typeof content === 'string') {
+        el.textContent = content;
+      } else if (Array.isArray(content)) {
+        content.forEach(function(child) { el.appendChild(child); });
+      } else {
+        el.appendChild(content);
+      }
+    }
+    return el;
+  };
+
+  // Get currently focused element
+  // Usage: const focused = STX.activeElement()
+  window.STX.activeElement = function() {
+    return document.activeElement;
+  };
+
+  // Escape HTML helper
+  // Usage: const safe = STX.escapeHtml(userInput)
+  window.STX.escapeHtml = function(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   };
 
   // MutationObserver for automatic lifecycle management

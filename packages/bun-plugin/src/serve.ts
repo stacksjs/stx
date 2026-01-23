@@ -18,6 +18,9 @@ import process from 'node:process'
 export interface ServeOptions {
   patterns: string[]
   port?: number
+  componentsDir?: string
+  layoutsDir?: string
+  partialsDir?: string
 }
 
 /**
@@ -25,7 +28,7 @@ export interface ServeOptions {
  * @param options Server options with patterns and port
  */
 export async function serve(options: ServeOptions): Promise<void> {
-  const { patterns, port = 3456 } = options
+  const { patterns, port = 3456, componentsDir, layoutsDir, partialsDir } = options
 
   if (patterns.length === 0) {
     console.error('Usage: serve <files...> [--port 3000]')
@@ -60,14 +63,14 @@ export async function serve(options: ServeOptions): Promise<void> {
         if (stat?.isDirectory()) {
           for (const ext of ['.stx', '.md', '.html']) {
             const glob = new Glob(`**/*${ext}`)
-            const discovered = await Array.fromAsync(glob.scan(pattern))
+            const discovered = await Array.fromAsync(glob.scan({ cwd: pattern, followSymlinks: true }))
             files.push(...discovered.map(f => `${pattern}/${f}`.replace(/\/+/g, '/')))
           }
         }
         else if (pattern.includes('*')) {
           const glob = new Glob(pattern)
           const basePath = pattern.split('*')[0].replace(/\/$/, '')
-          const discovered = await Array.fromAsync(glob.scan(basePath || '.'))
+          const discovered = await Array.fromAsync(glob.scan({ cwd: basePath || '.', followSymlinks: true }))
           files.push(...discovered.map(f => basePath ? `${basePath}/${f}` : f))
         }
         else if (supportedExtensions.some(ext => pattern.endsWith(ext))) {
@@ -187,9 +190,17 @@ export async function serve(options: ServeOptions): Promise<void> {
     const { processDirectives, extractVariables, defaultConfig } = await import('@stacksjs/stx')
     await extractVariables(scriptContent, context, filePath)
 
+    // Merge custom options with default config
+    const config = {
+      ...defaultConfig,
+      ...(componentsDir && { componentsDir }),
+      ...(layoutsDir && { layoutsDir }),
+      ...(partialsDir && { partialsDir }),
+    }
+
     let output = templateContent
     const dependencies = new Set<string>()
-    output = await processDirectives(output, context, filePath, defaultConfig, dependencies)
+    output = await processDirectives(output, context, filePath, config, dependencies)
 
     // Strip <template> wrapper tags FIRST - browsers don't render template content
     // STX uses <template> in source but output should be renderable HTML
@@ -266,9 +277,21 @@ export async function serve(options: ServeOptions): Promise<void> {
     for (const filePath of files) {
       const normalizedFilePath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
 
+      // For absolute paths, extract the relative portion from the pattern
+      // e.g., /Users/.../dashboard/pages/home.stx with pattern /Users/.../dashboard
+      //       becomes pages/home.stx
+      let relativeFilePath = normalizedFilePath
+      for (const pattern of patterns) {
+        const normalizedPattern = pattern.replace(/\\/g, '/').replace(/\/$/, '')
+        if (normalizedFilePath.startsWith(normalizedPattern + '/')) {
+          relativeFilePath = normalizedFilePath.slice(normalizedPattern.length + 1)
+          break
+        }
+      }
+
       // Check if this file matches by extracting route from file path
       // e.g., pages/library/components.stx -> /pages/library/components or /library/components
-      const fileRoute = normalizedFilePath.replace(/\.(stx|md|html)$/, '')
+      const fileRoute = relativeFilePath.replace(/\.(stx|md|html)$/, '')
 
       // Check various possible route formats
       if (`/${fileRoute}` === requestPath ||
@@ -294,7 +317,118 @@ export async function serve(options: ServeOptions): Promise<void> {
       }
     }
 
+    // Strategy 6: Dynamic route segments - [param].stx files
+    // e.g., /data/product -> pages/data/[model].stx or data/[model].stx
+    for (const filePath of files) {
+      const normalizedFilePath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
+
+      // Check if this file has a dynamic segment like [param]
+      if (!normalizedFilePath.includes('['))
+        continue
+
+      // Extract the relative path from patterns
+      let relativeFilePath = normalizedFilePath
+      for (const pattern of patterns) {
+        const normalizedPattern = pattern.replace(/\\/g, '/').replace(/\/$/, '')
+        if (normalizedFilePath.startsWith(normalizedPattern + '/')) {
+          relativeFilePath = normalizedFilePath.slice(normalizedPattern.length + 1)
+          break
+        }
+      }
+
+      // Convert dynamic route file to regex pattern
+      // e.g., pages/data/[model].stx -> ^pages/data/([^/]+)$
+      const fileRouteBase = relativeFilePath.replace(/\.(stx|md|html)$/, '')
+      const routePattern = fileRouteBase
+        .replace(/\[([^\]]+)\]/g, '([^/]+)') // Replace [param] with capture group
+        .replace(/\//g, '\\/') // Escape slashes
+
+      // Try matching with and without 'pages/' prefix
+      const regexPatterns = [
+        new RegExp(`^${routePattern}$`),
+      ]
+      if (fileRouteBase.startsWith('pages/')) {
+        const prettyPattern = fileRouteBase.slice(6).replace(/\[([^\]]+)\]/g, '([^/]+)').replace(/\//g, '\\/')
+        regexPatterns.push(new RegExp(`^${prettyPattern}$`))
+      }
+
+      for (const regex of regexPatterns) {
+        const match = normalizedPath.match(regex)
+        if (match) {
+          // Extract param names and values
+          const paramNames = [...fileRouteBase.matchAll(/\[([^\]]+)\]/g)].map(m => m[1])
+          const paramValues = match.slice(1)
+
+          // Process template with dynamic params in context
+          const output = await processTemplateDynamic(filePath, paramNames, paramValues, normalizedPath)
+          routes.set(requestPath, output)
+          return output
+        }
+      }
+    }
+
     return null
+  }
+
+  // Process template with dynamic route parameters
+  async function processTemplateDynamic(
+    filePath: string,
+    paramNames: string[],
+    paramValues: string[],
+    routePath: string,
+  ): Promise<string> {
+    const path = await import('node:path')
+    const content = await Bun.file(filePath).text()
+
+    const inlineScriptMatch = content.match(/<script(?!\s[^>]*src=)\b[^>]*>([\s\S]*?)<\/script>/i)
+    const scriptContent = inlineScriptMatch ? inlineScriptMatch[1] : ''
+    const templateContent = inlineScriptMatch
+      ? content.replace(/<script(?!\s[^>]*src=)\b[^>]*>[\s\S]*?<\/script>/i, '')
+      : content
+
+    // Build context with dynamic params
+    const context: Record<string, any> = {
+      __filename: filePath,
+      __dirname: path.dirname(filePath),
+      __route: routePath,
+    }
+
+    // Add each param to context
+    for (let i = 0; i < paramNames.length; i++) {
+      context[paramNames[i]] = paramValues[i]
+    }
+
+    const { processDirectives, extractVariables, defaultConfig } = await import('@stacksjs/stx')
+    await extractVariables(scriptContent, context, filePath)
+
+    const config = {
+      ...defaultConfig,
+      ...(componentsDir && { componentsDir }),
+      ...(layoutsDir && { layoutsDir }),
+      ...(partialsDir && { partialsDir }),
+    }
+
+    let output = templateContent
+    const dependencies = new Set<string>()
+    output = await processDirectives(output, context, filePath, config, dependencies)
+
+    output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
+
+    const headwindCSS = await generateHeadwindCSS(output)
+    if (headwindCSS) {
+      const styleTag = `<style>/* headwind css */\n${headwindCSS}</style>`
+      if (output.includes('</head>')) {
+        output = output.replace('</head>', `${styleTag}\n</head>`)
+      }
+      else if (output.includes('<body')) {
+        output = output.replace(/<body/i, `${styleTag}\n<body`)
+      }
+      else {
+        output = styleTag + output
+      }
+    }
+
+    return output
   }
 
   // Start server immediately - processing happens on-demand
@@ -319,9 +453,110 @@ export async function serve(options: ServeOptions): Promise<void> {
         return new Response(null, { headers: corsHeaders })
       }
 
+      // Handle API routes for data operations
+      if (path.startsWith('/api/data/') && req.method === 'POST') {
+        try {
+          const tableName = path.replace('/api/data/', '').split('/')[0]
+          if (!tableName) {
+            return new Response(JSON.stringify({ error: 'Table name required' }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            })
+          }
+
+          const body = await req.json()
+          const nodePath = await import('node:path')
+
+          // Import bun:sqlite for database operations
+          const { Database } = await import('bun:sqlite')
+          const dbPath = nodePath.resolve(process.cwd(), 'database/stacks.sqlite')
+          const db = new Database(dbPath)
+
+          // Get column info to validate fields
+          const tableInfo = db.query(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string, type: string, notnull: number, dflt_value: any }>
+          const validColumns = tableInfo.map((c: any) => c.name).filter((n: string) => n !== 'id' && n !== 'created_at' && n !== 'updated_at')
+
+          // Build INSERT query with only valid columns that have values
+          const columns: string[] = []
+          const placeholders: string[] = []
+          const values: any[] = []
+
+          for (const col of validColumns) {
+            if (body[col] !== undefined && body[col] !== '') {
+              columns.push(col)
+              placeholders.push('?')
+              values.push(body[col])
+            }
+          }
+
+          // Add timestamps
+          const now = new Date().toISOString()
+          if (tableInfo.some((c: any) => c.name === 'created_at')) {
+            columns.push('created_at')
+            placeholders.push('?')
+            values.push(now)
+          }
+          if (tableInfo.some((c: any) => c.name === 'updated_at')) {
+            columns.push('updated_at')
+            placeholders.push('?')
+            values.push(now)
+          }
+
+          if (columns.length === 0) {
+            db.close()
+            return new Response(JSON.stringify({ error: 'No valid fields provided' }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            })
+          }
+
+          const query = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`
+          const stmt = db.prepare(query)
+          const result = stmt.run(...values)
+
+          db.close()
+
+          return new Response(JSON.stringify({
+            success: true,
+            id: result.lastInsertRowid,
+            message: 'Record created successfully',
+          }), {
+            status: 201,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          })
+        }
+        catch (error: any) {
+          console.error('API Error:', error)
+          return new Response(JSON.stringify({
+            error: error.message || 'Failed to create record',
+          }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          })
+        }
+      }
+
       // Normalize path
       if (path === '/index')
         path = '/'
+
+      // Redirect root to /home if no index exists (dashboard pattern)
+      if (path === '/') {
+        const indexContent = await getRoute('/')
+        if (!indexContent) {
+          // Try /home as default landing page
+          const homeContent = await getRoute('/home')
+          if (homeContent) {
+            return new Response(null, {
+              status: 302,
+              headers: {
+                'Location': '/home',
+                ...corsHeaders,
+              },
+            })
+          }
+        }
+      }
 
       // Try to serve the requested page (lazy load on demand)
       const content = await getRoute(path)
@@ -472,9 +707,24 @@ export async function serve(options: ServeOptions): Promise<void> {
 
       for (const filePath of files) {
         // Normalize and create route from file path
-        const normalizedPath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
-        const route = `/${normalizedPath}`
-        availableRoutes.push(`<li><a href="${route}">${route}</a></li>`)
+        let normalizedPath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
+
+        // For absolute paths, extract relative portion from patterns
+        for (const pattern of patterns) {
+          const normalizedPattern = pattern.replace(/\\/g, '/').replace(/\/$/, '')
+          if (normalizedPath.startsWith(normalizedPattern + '/')) {
+            normalizedPath = normalizedPath.slice(normalizedPattern.length + 1)
+            break
+          }
+        }
+
+        // Strip extension and 'pages/' prefix for cleaner route display
+        let route = normalizedPath.replace(/\.(stx|md|html)$/, '')
+        if (route.startsWith('pages/')) {
+          route = route.slice(6) // Remove 'pages/' prefix
+        }
+
+        availableRoutes.push(`<li><a href="/${route}">/${route}</a></li>`)
       }
 
       const routesList = availableRoutes.join('\n')

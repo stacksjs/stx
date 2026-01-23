@@ -886,3 +886,32 @@ self.addEventListener('message', (event) => {
 export function getServiceWorkerFileName(options: StxOptions): string {
   return options.pwa?.serviceWorker?.fileName || 'sw.js'
 }
+
+/**
+ * Check if Workbox mode is enabled
+ */
+export function isWorkboxEnabled(options: StxOptions): boolean {
+  return options.pwa?.enabled === true && options.pwa?.serviceWorker?.useWorkbox === true
+}
+
+/**
+ * Generate service worker code (auto-selects native or Workbox based on config)
+ *
+ * @param options - stx configuration options
+ * @param outputDir - optional output directory for precache manifest
+ * @returns Generated service worker JavaScript code
+ */
+export function generateServiceWorkerAuto(options: StxOptions, outputDir?: string): string {
+  if (!options.pwa?.enabled) {
+    return ''
+  }
+
+  if (isWorkboxEnabled(options)) {
+    // Use Workbox generator
+    const { generateWorkboxServiceWorker } = require('./workbox')
+    return generateWorkboxServiceWorker(options, outputDir)
+  }
+
+  // Use native generator
+  return generateServiceWorker(options, outputDir)
+}

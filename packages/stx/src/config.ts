@@ -6,6 +6,7 @@ import { animationGroupDirective, motionDirective, scrollAnimateDirective, trans
 import { stxRouterDirective } from './client/directive'
 // Note: componentDirective is NOT included here because @component is handled
 // by the built-in processComponentDirectives function in process.ts
+import { heatmapDirective } from './heatmap'
 import { markdownDirectiveHandler } from './markdown'
 import { pwaDirectives } from './pwa/directives'
 import { metaDirective, structuredDataDirective } from './seo'
@@ -19,6 +20,24 @@ export const defaultConfig: StxConfig = {
   cache: true,
   cachePath: '.stx/cache',
   cacheVersion: '1.0.0',
+
+  // ==========================================================================
+  // SSG Build Configuration (Static Site Generation)
+  // ==========================================================================
+  build: {
+    pagesDir: 'pages',
+    outputDir: 'dist',
+    baseUrl: '/',
+    sitemap: true,
+    minify: true,
+    cache: true,
+    cacheDir: '.stx/ssg-cache',
+    concurrency: 10,
+    generate404: true,
+    publicDir: 'public',
+    trailingSlash: false,
+    cleanOutput: true,
+  },
   customDirectives: [
     {
       name: 'markdown',
@@ -42,6 +61,7 @@ export const defaultConfig: StxConfig = {
     motionDirective,
     scrollAnimateDirective,
     stxRouterDirective,
+    heatmapDirective,
     ...pwaDirectives,
   ],
   middleware: [],

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome to Our Platform</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 40px;
+      text-align: center;
+    }
+    .content {
+      padding: 40px;
+    }
+    .content h2 {
+      color: #333;
+      margin-top: 0;
+    }
+    .button {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      padding: 12px 30px;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    .footer {
+      background: #f8f9fa;
+      padding: 20px;
+      text-align: center;
+      color: #666;
+      font-size: 12px;
+    }
+    .order-summary {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 5px;
+      margin: 20px 0;
+    }
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .order-item:last-child {
+      border-bottom: none;
+    }
+    .total {
+      font-weight: bold;
+      font-size: 18px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <h1>Welcome, {{ user.name }}!</h1>
+      <p>Thank you for joining us</p>
+    </div>
+
+    <div class="content">
+      <h2>Your account is ready</h2>
+      <p>Hi {{ user.name }},</p>
+      <p>We're excited to have you on board. Your account has been created successfully.</p>
+
+      <p><strong>Account Details:</strong></p>
+      <ul>
+        <li>Email: {{ user.email }}</li>
+        <li>Member since: {{ user.joinDate }}</li>
+        <li>Plan: {{ user.plan }}</li>
+      </ul>
+
+      @if(order)
+        <div class="order-summary">
+          <h3>Order Summary</h3>
+          @foreach(order.items as item)
+            <div class="order-item">
+              <span>{{ item.name }}</span>
+              <span>{{ item.price }}</span>
+            </div>
+          @endforeach
+          <div class="total">
+            Total: {{ order.total }}
+          </div>
+        </div>
+      @endif
+
+      <a href="{{ activationLink }}" class="button">Activate Account</a>
+
+      <p style="margin-top: 30px; color: #666;">
+        If you have any questions, feel free to reply to this email or contact our support team.
+      </p>
+    </div>
+
+    <div class="footer">
+      <p>&copy; {{ currentYear }} Our Company. All rights reserved.</p>
+      <p>
+        <a href="#">Unsubscribe</a> | <a href="#">Privacy Policy</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

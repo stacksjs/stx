@@ -33,6 +33,12 @@ A comprehensive reference for all STX templating syntax, directives, and APIs.
 - [Browser Composables](#browser-composables)
 - [Form Validation](#form-validation)
 - [Head Management](#head-management)
+- [Static Site Generation (SSG)](#static-site-generation-ssg)
+- [Visual Testing](#visual-testing)
+- [Hydration Runtime](#hydration-runtime)
+- [Component HMR](#component-hmr)
+- [Deployment](#deployment)
+- [Image Optimization](#image-optimization)
 - [Suggested Future Syntax](#suggested-future-syntax)
 
 ---
@@ -3032,6 +3038,770 @@ document.addEventListener('teleport:mounted', (e) => {
   console.log('Teleported to:', e.detail.target);
 });
 ```
+
+---
+
+## Static Site Generation (SSG)
+
+Generate static HTML pages at build time with optional Incremental Static Regeneration (ISR).
+
+### generateStaticSite()
+
+Build all pages in a directory to static HTML:
+
+```typescript
+import { generateStaticSite } from '@stacksjs/stx'
+
+const result = await generateStaticSite({
+  pagesDir: 'pages',
+  outputDir: 'dist',
+  publicDir: 'public',
+  domain: 'https://example.com',
+  sitemap: true,
+  generate404: true,
+  cache: true,
+  parallel: 4,
+  cleanOutput: true,
+  hooks: {
+    onBuildStart: () => console.log('Build starting...'),
+    onBuildEnd: (result) => console.log(`Built ${result.totalPages} pages`),
+    onPageStart: (page) => console.log(`Building ${page}...`),
+    onPageEnd: (page, html) => console.log(`Built ${page}`)
+  }
+})
+
+console.log(`Built ${result.successCount}/${result.totalPages} pages`)
+console.log(`Build time: ${result.buildTime}ms`)
+```
+
+### defineStaticPaths()
+
+Define dynamic routes for static generation (Next.js-style):
+
+```typescript
+import { defineStaticPaths } from '@stacksjs/stx'
+
+// In pages/blog/[slug].stx
+export const getStaticPaths = defineStaticPaths(async () => {
+  const posts = await fetchAllPosts()
+
+  return posts.map(post => ({
+    params: { slug: post.slug },
+    props: { title: post.title, content: post.content }
+  }))
+})
+
+// Sync version
+export const getStaticPaths = defineStaticPaths(() => [
+  { params: { slug: 'hello-world' } },
+  { params: { slug: 'getting-started' } }
+])
+```
+
+### createISRHandler()
+
+On-demand revalidation for static pages:
+
+```typescript
+import { createISRHandler } from '@stacksjs/stx'
+
+const isr = createISRHandler({
+  pagesDir: 'pages',
+  cacheDir: '.isr-cache',
+  revalidate: 60 // seconds
+})
+
+// Get cached page
+const html = await isr.get('/blog/my-post')
+
+// Revalidate specific route
+await isr.revalidate('/blog/my-post')
+
+// Invalidate routes matching pattern
+await isr.invalidate(/^\/blog\//)
+```
+
+### createMarkdownLoader()
+
+Load markdown files with frontmatter:
+
+```typescript
+import { createMarkdownLoader } from '@stacksjs/stx'
+
+const loader = createMarkdownLoader()
+const result = await loader.load('posts/hello.md')
+
+console.log(result.data)     // Frontmatter: { title, date, tags }
+console.log(result.content)  // Rendered HTML
+console.log(result.toc)      // Table of contents
+```
+
+### SSG Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `pagesDir` | `string` | `'pages'` | Directory containing page templates |
+| `outputDir` | `string` | `'dist'` | Output directory for generated files |
+| `publicDir` | `string` | `'public'` | Static assets directory |
+| `domain` | `string` | - | Domain for sitemap URLs |
+| `sitemap` | `boolean` | `true` | Generate sitemap.xml |
+| `rss` | `boolean` | `false` | Generate RSS feed |
+| `generate404` | `boolean` | `true` | Generate 404.html |
+| `cache` | `boolean` | `true` | Enable build caching |
+| `parallel` | `number` | `4` | Parallel page generation |
+| `cleanOutput` | `boolean` | `false` | Clean output dir before build |
+
+---
+
+## Visual Testing
+
+Snapshot and visual regression testing for STX components.
+
+### createSnapshotTester()
+
+Create HTML snapshots for component testing:
+
+```typescript
+import { createSnapshotTester } from '@stacksjs/stx'
+
+const tester = createSnapshotTester({
+  snapshotDir: '__snapshots__',
+  updateSnapshots: false,
+  normalizeHtml: true
+})
+
+// Create or compare snapshot
+const result = await tester.test('Button', '<button class="btn">Click</button>')
+
+if (result.passed) {
+  console.log('Snapshot matches!')
+} else {
+  console.log('Diff:', result.diff)
+}
+
+// Update snapshot
+await tester.update('Button', '<button class="btn">Click</button>')
+```
+
+### createVisualRegressionTester()
+
+Visual diff testing with multiple viewports:
+
+```typescript
+import { createVisualRegressionTester } from '@stacksjs/stx'
+
+const tester = createVisualRegressionTester({
+  snapshotDir: '__visual__',
+  viewports: [
+    { name: 'mobile', width: 375, height: 667 },
+    { name: 'tablet', width: 768, height: 1024 },
+    { name: 'desktop', width: 1920, height: 1080 }
+  ],
+  threshold: 0.1
+})
+
+// Test across all viewports
+const results = await tester.testAllViewports('Card', '<div class="card">...</div>')
+
+results.forEach(result => {
+  console.log(`${result.viewport}: ${result.passed ? 'PASS' : 'FAIL'}`)
+})
+```
+
+### createStoryTester()
+
+Story-based testing (Storybook-style):
+
+```typescript
+import { createStoryTester } from '@stacksjs/stx'
+
+const storyTester = createStoryTester({
+  snapshotDir: '__stories__'
+})
+
+// Define component stories
+storyTester.addStory('Button', 'primary', '<button class="btn-primary">Primary</button>')
+storyTester.addStory('Button', 'secondary', '<button class="btn-secondary">Secondary</button>')
+storyTester.addStory('Button', 'disabled', '<button class="btn" disabled>Disabled</button>')
+
+// Test all stories
+const results = await storyTester.testAll()
+
+// Generate HTML report
+const report = await generateReport(results, {
+  title: 'Component Stories',
+  outputPath: 'test-report.html'
+})
+```
+
+### snapshot()
+
+Simple snapshot utility:
+
+```typescript
+import { snapshot } from '@stacksjs/stx'
+
+// Quick snapshot test
+const result = await snapshot('my-component', '<div>Content</div>', {
+  snapshotDir: '__snapshots__'
+})
+
+expect(result.passed).toBe(true)
+```
+
+### generateReport()
+
+Generate HTML test report:
+
+```typescript
+import { generateReport } from '@stacksjs/stx'
+
+const report = await generateReport(testResults, {
+  title: 'Visual Test Report',
+  outputPath: 'report.html',
+  includeTimestamp: true
+})
+```
+
+---
+
+## Hydration Runtime
+
+Client-side hydration for server-rendered pages.
+
+### hydrate()
+
+Hydrate a server-rendered page:
+
+```typescript
+import { hydrate } from '@stacksjs/stx'
+
+// Basic hydration
+await hydrate()
+
+// With options
+await hydrate({
+  strategy: 'eager',  // 'eager' | 'lazy' | 'idle' | 'visible'
+  rootElement: document.getElementById('app'),
+  onHydrated: () => console.log('Hydration complete!')
+})
+```
+
+### Hydration Strategies
+
+| Strategy | Description |
+|----------|-------------|
+| `eager` | Hydrate immediately on page load |
+| `lazy` | Hydrate on first user interaction |
+| `idle` | Hydrate when browser is idle |
+| `visible` | Hydrate when element enters viewport |
+
+### getHydrationRuntime()
+
+Get the client-side hydration runtime script:
+
+```typescript
+import { getHydrationRuntime } from '@stacksjs/stx'
+
+const runtime = getHydrationRuntime({
+  strategy: 'visible',
+  rootMargin: '100px'
+})
+
+// Inject into page
+const html = `
+<html>
+<body>
+  ${content}
+  <script>${runtime}</script>
+</body>
+</html>
+`
+```
+
+### generateHydrationScript()
+
+Generate hydration bootstrap script:
+
+```typescript
+import { generateHydrationScript } from '@stacksjs/stx'
+
+const script = generateHydrationScript({
+  state: { user: { name: 'John' } },
+  components: ['Header', 'Footer'],
+  strategy: 'eager'
+})
+```
+
+### Selective Hydration
+
+Hydrate specific components:
+
+```typescript
+import { hydrateComponent, hydrateIsland } from '@stacksjs/stx'
+
+// Hydrate single component
+await hydrateComponent('interactive-widget', {
+  strategy: 'visible'
+})
+
+// Hydrate island by ID
+await hydrateIsland('island-abc123')
+```
+
+---
+
+## Component HMR
+
+Hot Module Replacement with state preservation for STX components.
+
+### getHMRHandler()
+
+Get the server-side HMR handler:
+
+```typescript
+import { getHMRHandler } from '@stacksjs/stx'
+
+const hmr = getHMRHandler({
+  watchDir: 'components',
+  extensions: ['.stx'],
+  debounce: 100
+})
+
+// Handle file changes
+hmr.on('change', async (file) => {
+  const update = await hmr.getUpdate(file)
+  // Send to connected clients
+  broadcast(update)
+})
+
+// Start watching
+hmr.start()
+```
+
+### generateHMRClientScript()
+
+Generate client-side HMR script:
+
+```typescript
+import { generateHMRClientScript } from '@stacksjs/stx'
+
+const script = generateHMRClientScript({
+  wsUrl: 'ws://localhost:3000/__hmr',
+  reconnectInterval: 1000,
+  overlay: true
+})
+
+// Inject into development pages
+const devHtml = `${html}<script>${script}</script>`
+```
+
+### HMR Client API
+
+```typescript
+// In browser console or client code
+window.__STX_HMR__.on('update', (update) => {
+  console.log('Component updated:', update.component)
+})
+
+// Manually trigger reload
+window.__STX_HMR__.reload('Header')
+
+// Preserve state during updates
+window.__STX_HMR__.preserveState('counter', { count: 5 })
+```
+
+### HMR Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `watchDir` | `string` | `'components'` | Directory to watch |
+| `extensions` | `string[]` | `['.stx']` | File extensions to watch |
+| `debounce` | `number` | `100` | Debounce delay in ms |
+| `preserveState` | `boolean` | `true` | Preserve component state |
+| `overlay` | `boolean` | `true` | Show error overlay |
+
+### Development Server Integration
+
+```typescript
+import { createDevServer } from '@stacksjs/stx'
+
+const server = await createDevServer({
+  port: 3000,
+  hmr: true,
+  open: true
+})
+
+// HMR is automatically enabled
+// Changes to .stx files trigger hot updates
+```
+
+---
+
+## Deployment
+
+Deploy your STX application to Netlify with a single command.
+
+### CLI Commands
+
+```bash
+# Deploy to Netlify (draft preview)
+stx deploy
+
+# Deploy to production
+stx deploy --production
+
+# Deploy with custom build directory
+stx deploy dist --site-id my-site-abc123
+
+# Initialize Netlify configuration
+stx deploy --init
+
+# Preview deployment without uploading
+stx deploy --dry-run
+
+# Skip build step
+stx deploy --no-build
+```
+
+### deploy()
+
+Programmatic deployment API:
+
+```typescript
+import { deploy } from '@stacksjs/stx'
+
+const result = await deploy({
+  directory: 'dist',
+  siteId: 'my-site-id',      // or NETLIFY_SITE_ID env var
+  token: 'netlify-token',     // or NETLIFY_AUTH_TOKEN env var
+  production: true,           // Deploy to production (default: draft)
+  message: 'Release v1.0.0',  // Deploy title
+  open: true,                 // Open URL in browser
+  dryRun: false,              // Preview mode
+  onProgress: (status) => {
+    console.log(status.stage, status.message)
+  },
+})
+
+console.log('Deployed:', result.url)
+console.log('Deploy ID:', result.deployId)
+```
+
+### initNetlify()
+
+Initialize Netlify configuration:
+
+```typescript
+import { initNetlify } from '@stacksjs/stx'
+
+await initNetlify({
+  directory: process.cwd(),
+  siteId: 'my-site-id',  // Saves to .env.local
+})
+```
+
+### generateNetlifyToml()
+
+Generate netlify.toml configuration:
+
+```typescript
+import { generateNetlifyToml, createDefaultNetlifyConfig } from '@stacksjs/stx'
+
+const config = createDefaultNetlifyConfig({
+  buildCommand: 'bun run build',
+  outputDir: 'dist',
+  functionsDir: 'functions',
+})
+
+const toml = generateNetlifyToml(config)
+// Write to netlify.toml
+```
+
+### Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `NETLIFY_AUTH_TOKEN` | API authentication token |
+| `NETLIFY_SITE_ID` | Default site ID for deployments |
+
+### Deploy Result
+
+```typescript
+interface DeployResult {
+  success: boolean
+  url: string             // Deploy preview URL
+  siteUrl?: string        // Production URL (if --production)
+  deployId: string
+  logs: string[]
+  duration: number        // Build time in ms
+  filesUploaded: number
+  totalSize: number       // Bytes uploaded
+}
+```
+
+---
+
+## Image Optimization
+
+STX provides comprehensive image optimization for improved Core Web Vitals (LCP).
+
+### Image Component
+
+```html
+<!-- Basic usage -->
+<Image
+  src="/images/hero.jpg"
+  alt="Hero image"
+  width="1200"
+  height="600"
+/>
+
+<!-- With responsive sizes -->
+<Image
+  src="/images/hero.jpg"
+  alt="Hero image"
+  width="1200"
+  height="600"
+  sizes="(max-width: 768px) 100vw, 50vw"
+/>
+
+<!-- Priority image (above-fold) -->
+<Image
+  src="/images/hero.jpg"
+  alt="Hero image"
+  priority
+/>
+
+<!-- With placeholder -->
+<Image
+  src="/images/hero.jpg"
+  alt="Hero image"
+  placeholder="blur"
+/>
+```
+
+#### Image Component Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `src` | string | required | Source image path |
+| `alt` | string | required | Alt text (accessibility) |
+| `width` | number | - | Display width |
+| `height` | number | - | Display height |
+| `sizes` | string | `100vw` | Responsive sizes attribute |
+| `loading` | `'lazy' \| 'eager'` | `'lazy'` | Loading strategy |
+| `priority` | boolean | `false` | Preload (above-fold images) |
+| `quality` | number | `80` | Output quality (1-100) |
+| `placeholder` | `'blur' \| 'color' \| 'none'` | `'none'` | Placeholder type |
+| `formats` | string[] | `['webp', 'jpeg']` | Output formats |
+
+### @image Directive
+
+```html
+<!-- Basic usage -->
+@image('/images/hero.jpg', 'Hero image')
+
+<!-- With options -->
+@image('/images/hero.jpg', 'Hero image', { width: 800, quality: 85 })
+
+<!-- Lazy loading -->
+@image('/images/photo.jpg', 'Photo', { lazy: true })
+
+<!-- High priority -->
+@image('/images/banner.jpg', 'Banner', { priority: true })
+```
+
+### CLI Command
+
+```bash
+# Optimize all images in a directory
+stx images public/images
+
+# Specify output directory
+stx images public/images -o dist/images
+
+# Custom widths
+stx images public/images --widths 640,1024,1920
+
+# Custom formats
+stx images public/images --formats webp,avif
+
+# Set quality
+stx images public/images --quality 85
+
+# Preview without processing
+stx images public/images --dry-run
+
+# Verbose output
+stx images public/images --verbose
+```
+
+### Build Plugin
+
+```typescript
+import { createImagePlugin } from '@stacksjs/stx'
+
+// Add to production build config
+const plugin = createImagePlugin({
+  // Input directories to scan
+  inputDirs: ['public', 'src/assets'],
+
+  // Output directory
+  outputDir: 'dist/images',
+
+  // Base URL for generated paths
+  baseUrl: '/images',
+
+  // Output formats
+  formats: ['webp', 'avif', 'jpeg'],
+
+  // Responsive widths
+  widths: [320, 640, 1024, 1920],
+
+  // Quality (1-100)
+  quality: 80,
+
+  // Placeholder generation
+  placeholder: 'blur',
+
+  // Concurrent processing
+  concurrency: 4,
+
+  // Cache processed images
+  cache: true,
+
+  // Verbose logging
+  verbose: false,
+})
+```
+
+### Programmatic API
+
+```typescript
+import {
+  processImage,
+  getImageMetadata,
+  isSharpAvailable,
+  generateSrcSet,
+  generateSizes,
+  optimizeDirectory,
+} from '@stacksjs/stx'
+
+// Check if sharp is available
+const hasSharp = await isSharpAvailable()
+
+// Get image metadata
+const metadata = await getImageMetadata('/path/to/image.jpg')
+console.log(metadata.width, metadata.height, metadata.format)
+
+// Process single image
+const result = await processImage('/path/to/image.jpg', {
+  widths: [320, 640, 1024],
+  formats: ['webp', 'jpeg'],
+  quality: 80,
+  outputDir: 'dist/images',
+})
+
+console.log(result.variants)  // Generated variants
+console.log(result.placeholder)  // Placeholder data URL
+
+// Generate srcset from variants
+const srcset = generateSrcSet(result.variants, 'webp')
+// "/images/test-320.webp 320w, /images/test-640.webp 640w, ..."
+
+// Generate sizes attribute
+const sizes = generateSizes({
+  '768px': '100vw',
+  '1024px': '50vw',
+})
+// "(max-width: 1024px) 50vw, (max-width: 768px) 100vw, 100vw"
+
+// Optimize entire directory
+const dirResult = await optimizeDirectory('public/images', 'dist/images', {
+  formats: ['webp', 'jpeg'],
+  widths: [640, 1024, 1920],
+  quality: 85,
+  verbose: true,
+})
+
+console.log(dirResult.stats.optimizedImages)
+console.log(dirResult.stats.variants)
+```
+
+### Configuration
+
+Add to `stx.config.ts`:
+
+```typescript
+export default {
+  images: {
+    // Enable image optimization
+    enabled: true,
+
+    // Default widths for responsive images
+    widths: [320, 640, 768, 1024, 1280, 1536, 1920],
+
+    // Default output formats
+    formats: ['webp', 'jpeg'],
+
+    // Default quality (1-100)
+    quality: 80,
+
+    // Enable during development (slower but tests optimization)
+    devOptimize: false,
+
+    // Cache directory
+    cacheDir: '.stx/image-cache',
+
+    // Placeholder generation
+    placeholder: 'none',  // 'blur' | 'dominant-color' | 'none'
+  },
+}
+```
+
+### Output
+
+The Image component generates a `<picture>` element with multiple sources:
+
+```html
+<picture>
+  <source
+    type="image/avif"
+    srcset="/images/hero-320-abc123.avif 320w, /images/hero-640-abc123.avif 640w, ..."
+    sizes="(max-width: 768px) 100vw, 50vw"
+  />
+  <source
+    type="image/webp"
+    srcset="/images/hero-320-abc123.webp 320w, /images/hero-640-abc123.webp 640w, ..."
+    sizes="(max-width: 768px) 100vw, 50vw"
+  />
+  <source
+    type="image/jpeg"
+    srcset="/images/hero-320-abc123.jpg 320w, /images/hero-640-abc123.jpg 640w, ..."
+    sizes="(max-width: 768px) 100vw, 50vw"
+  />
+  <img
+    src="/images/hero-1024-abc123.jpg"
+    alt="Hero image"
+    width="1200"
+    height="600"
+    loading="lazy"
+    decoding="async"
+    style="aspect-ratio: 2"
+  />
+</picture>
+```
+
+### Requirements
+
+Image optimization requires `sharp`:
+
+```bash
+bun add sharp
+```
+
+Without sharp, images are served without optimization (graceful degradation).
 
 ---
 

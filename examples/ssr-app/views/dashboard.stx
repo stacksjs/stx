@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+    .user-card { background: #f5f5f5; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    .user-card h2 { margin-top: 0; }
+    .btn { display: inline-block; padding: 10px 20px; background: #dc3545; color: white; text-decoration: none; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+    .btn:hover { background: #c82333; }
+  </style>
+</head>
+<body>
+  <h1>{{ title }}</h1>
+
+  <div class="user-card">
+    <h2>Welcome, {{ user.name }}!</h2>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+    <p>You are now logged in with session-based authentication.</p>
+  </div>
+
+  <form method="POST" action="/logout">
+    @csrf
+    <button type="submit" class="btn">Logout</button>
+  </form>
+
+  <p><a href="/">Back to Home</a></p>
+</body>
+</html>

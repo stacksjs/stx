@@ -1,0 +1,100 @@
+<script>
+/**
+ * SidebarHeader Component
+ *
+ * A header component for the sidebar with logo, title, and optional search.
+ *
+ * @example
+ * <SidebarHeader
+ *   title="My App"
+ *   subtitle="Professional"
+ *   :showSearch="true"
+ * />
+ */
+
+// Props
+export const title = $props.title || ''
+export const subtitle = $props.subtitle || ''
+export const logo = $props.logo || ''
+export const logoIcon = $props.logoIcon || ''
+export const showSearch = $props.showSearch ?? false
+export const searchPlaceholder = $props.searchPlaceholder || 'Search...'
+export const searchValue = $props.searchValue || ''
+export const collapsed = $props.collapsed ?? false
+export const onSearch = $props.onSearch
+
+// Handle search input
+function handleSearchInput(event) {
+  if (onSearch) {
+    onSearch(event.target.value)
+  }
+}
+</script>
+
+<div class="flex-shrink-0">
+  <!-- Title bar area -->
+  <div class="h-13 flex items-center justify-between px-4 border-b border-black/5 dark:border-white/10">
+    @if(!collapsed)
+      <div class="flex items-center gap-3 min-w-0">
+        <!-- Logo -->
+        @if(logo)
+          <img src="{{ logo }}" alt="{{ title }}" class="w-8 h-8 rounded-lg object-cover" />
+        @elseif(logoIcon)
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+            <div class="{{ logoIcon }} w-5 h-5 text-white"></div>
+          </div>
+        @else
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
+            {{ title.charAt(0) }}
+          </div>
+        @endif
+
+        <!-- Title & Subtitle -->
+        <div class="min-w-0">
+          @if(title)
+            <div class="text-sm font-semibold text-black/90 dark:text-white truncate">
+              {{ title }}
+            </div>
+          @endif
+          @if(subtitle)
+            <div class="text-xs text-black/50 dark:text-white/50 truncate">
+              {{ subtitle }}
+            </div>
+          @endif
+        </div>
+      </div>
+    @else
+      <!-- Collapsed state - just logo -->
+      @if(logo)
+        <img src="{{ logo }}" alt="{{ title }}" class="w-8 h-8 rounded-lg object-cover mx-auto" />
+      @elseif(logoIcon)
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mx-auto">
+          <div class="{{ logoIcon }} w-5 h-5 text-white"></div>
+        </div>
+      @else
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm mx-auto">
+          {{ title.charAt(0) }}
+        </div>
+      @endif
+    @endif
+
+    <!-- Slot for custom header actions -->
+    <slot name="actions" />
+  </div>
+
+  <!-- Search (only when expanded) -->
+  @if(showSearch && !collapsed)
+    <div class="px-3 py-3">
+      <div class="relative">
+        <div class="i-hugeicons-search-01 absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40 dark:text-white/40"></div>
+        <input
+          type="text"
+          placeholder="{{ searchPlaceholder }}"
+          value="{{ searchValue }}"
+          class="w-full pl-9 pr-3 py-2 text-sm bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 rounded-lg text-black/90 dark:text-white placeholder:text-black/40 dark:placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400/50 transition-colors"
+          @input="handleSearchInput"
+        />
+      </div>
+    </div>
+  @endif
+</div>

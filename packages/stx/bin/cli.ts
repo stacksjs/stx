@@ -1,3 +1,4 @@
+// @ts-nocheck - Skip type checking due to Bun/Node.js type differences
 /**
  * stx CLI
  *
@@ -62,6 +63,7 @@ import { gitHash } from '../src/release'
 import { performanceMonitor } from '../src/performance-utils'
 import { formatMarkdownContent, formatStxContent } from '../src/formatter'
 import { analyzeProject } from '../src/analyzer'
+import { generateStaticSite } from '../src/ssg'
 
 const cli = new CLI('stx')
 
@@ -801,629 +803,477 @@ else {
       }
     })
 
+  // ==========================================================================
+  // Build Command - Static Site Generation (SSG)
+  // ==========================================================================
   cli
-    .command('build [entrypoints...]', 'Bundle your STX files using Bun\'s bundler')
-    .option('--outdir <dir>', 'Output directory for bundled files', { default: 'dist' })
-    .option('--outfile <file>', 'Output file name (for single entrypoint)')
-    .option('--target <target>', 'Target environment: browser, bun, or node', { default: 'browser' })
-    .option('--format <format>', 'Output format: esm, cjs, or iife', { default: 'esm' })
-    .option('--port <port>', 'Port for dev server integration (validation only)')
-    .option('--timeout <ms>', 'Timeout for build operations')
-    .option('--minify', 'Enable minification')
-    .option('--no-minify', 'Disable minification')
-    .option('--sourcemap <type>', 'Sourcemap type: none, linked, inline, or external', { default: 'none' })
-    .option('--splitting', 'Enable code splitting')
-    .option('--no-splitting', 'Disable code splitting')
-    .option('--external <modules>', 'Comma-separated list of modules to exclude from bundle')
-    .option('--packages <mode>', 'Package handling mode: bundle or external', { default: 'bundle' })
-    .option('--watch', 'Watch for changes and rebuild')
-    .option('--public-path <path>', 'Public path for assets')
-    .option('--env <mode>', 'How to handle environment variables: inline, disable, or prefix*')
-    .option('--compile', 'Generate a standalone executable')
-    .option('--root <dir>', 'Project root directory')
-    .option('--verbose', 'Show verbose build output')
-    .example('stx build ./src/index.stx --outfile bundle.js')
-    .example('stx build ./components/*.stx --outdir dist --minify')
-    .example('stx build ./src/index.stx --outfile bundle.js --target bun')
-    .example('stx build **/*.stx --outdir dist')
-    .action(async (entrypoints: string | string[], options: {
-      outdir: string
-      outfile?: string
-      target?: 'browser' | 'bun' | 'node'
-      format?: 'esm' | 'cjs' | 'iife'
-      minify?: boolean
-      sourcemap?: 'none' | 'linked' | 'inline' | 'external' | boolean
-      splitting?: boolean
-      external?: string
-      packages?: 'bundle' | 'external'
-      watch?: boolean
-      publicPath?: string
-      env?: 'inline' | 'disable' | `${string}*`
-      compile?: boolean
-      root?: string
+    .command('build', 'Generate static HTML files from STX templates (SSG)')
+    .option('--pages <dir>', 'Directory containing page templates', { default: 'pages' })
+    .option('--out <dir>', 'Output directory for generated files', { default: 'dist' })
+    .option('--domain <url>', 'Site domain for absolute URLs (e.g., https://example.com)')
+    .option('--base <path>', 'Base URL path for the site', { default: '/' })
+    .option('--sitemap', 'Generate sitemap.xml', { default: true })
+    .option('--no-sitemap', 'Disable sitemap generation')
+    .option('--rss', 'Generate RSS feed')
+    .option('--minify', 'Minify HTML output', { default: true })
+    .option('--no-minify', 'Disable HTML minification')
+    .option('--no-cache', 'Disable build caching')
+    .option('--clean', 'Clean output directory before build', { default: true })
+    .option('--no-clean', 'Keep existing files in output directory')
+    .option('--concurrency <n>', 'Parallel page generation limit', { default: '10' })
+    .option('--public <dir>', 'Directory with static assets to copy', { default: 'public' })
+    .option('--trailing-slash', 'Add trailing slashes to URLs')
+    .option('--verbose', 'Show detailed build output')
+    .example('stx build')
+    .example('stx build --pages src/pages --out public')
+    .example('stx build --domain https://example.com --sitemap')
+    .example('stx build --no-minify --verbose')
+    .action(async (options: {
+      pages: string
+      out: string
+      domain?: string
+      base: string
+      sitemap: boolean
+      rss?: boolean
+      minify: boolean
+      cache?: boolean
+      clean: boolean
+      concurrency: string
+      public: string
+      trailingSlash?: boolean
       verbose?: boolean
-      port?: string | number
-      timeout?: string | number
     }) => {
       try {
-        // Validate port parameter if provided
-        if (options.port !== undefined) {
-          const portValidation = validatePort(options.port)
-          if (!portValidation.isValid) {
-            reportValidationError(portValidation)
-          }
-        }
+        const startTime = performance.now()
+        const pagesDir = path.resolve(options.pages)
+        const outputDir = path.resolve(options.out)
 
-        // Validate timeout parameter if provided
-        if (options.timeout !== undefined) {
-          const timeoutValidation = validateTimeout(options.timeout)
-          if (!timeoutValidation.isValid) {
-            reportValidationError(timeoutValidation)
-          }
-        }
-
-        console.log('Building STX files...')
-
-        // Convert entrypoints to an array if it's a string
-        let entrypointArray: string[] = []
-        if (typeof entrypoints === 'string') {
-          // It's a single path
-          entrypointArray = [entrypoints]
-        }
-        else if (Array.isArray(entrypoints)) {
-          entrypointArray = entrypoints
-        }
-        else {
-          entrypointArray = []
-        }
-
-        if (entrypointArray.length === 0) {
-          console.error('Error: No entrypoints specified')
+        // Check if pages directory exists
+        if (!fs.existsSync(pagesDir)) {
+          console.error(`\n  Pages directory not found: ${pagesDir}`)
+          console.log(`\n  Create a 'pages' directory with .stx files, or use --pages to specify a different directory.`)
           process.exit(1)
         }
 
-        // Validate each entrypoint (non-glob files)
-        for (const entrypoint of entrypointArray) {
-          // Skip validation for glob patterns - they'll be validated after expansion
-          if (!isGlob(entrypoint)) {
-            // Validate file exists
-            const fileValidation = validateFileExists(entrypoint)
-            if (!fileValidation.isValid) {
-              console.error('❌ File not found')
-              if (fileValidation.suggestion) {
-                console.error(`💡 suggestion: ${fileValidation.suggestion}`)
-              }
-              process.exit(1)
-            }
-
-            // Validate file extension
-            if (!entrypoint.endsWith('.stx')) {
-              console.error('❌ File must have .stx extension')
-              console.error('💡 suggestion: Only .stx files can be built')
-              process.exit(1)
-            }
-          }
+        console.log('\n  Building static site...\n')
+        if (options.verbose) {
+          console.log(`  Pages directory: ${pagesDir}`)
+          console.log(`  Output directory: ${outputDir}`)
+          if (options.domain) console.log(`  Domain: ${options.domain}`)
+          console.log(`  Sitemap: ${options.sitemap}`)
+          console.log(`  Minify: ${options.minify}`)
+          console.log(`  Concurrency: ${options.concurrency}`)
+          console.log('')
         }
 
-        // Create temporary and output directories
-        const tempDir = path.join(process.cwd(), '.stx-build-temp')
-        const outputDir = path.resolve(options.outdir)
+        // Call generateStaticSite with options
+        const result = await generateStaticSite({
+          pagesDir: options.pages,
+          outputDir: options.out,
+          domain: options.domain,
+          baseUrl: options.base,
+          sitemap: options.sitemap,
+          rss: options.rss,
+          minify: options.minify,
+          cache: options.cache !== false,
+          cleanOutput: options.clean,
+          concurrency: Number.parseInt(options.concurrency, 10) || 10,
+          publicDir: options.public,
+          trailingSlash: options.trailingSlash,
+          generate404: true,
+          hooks: options.verbose ? {
+            onPageStart: (route) => console.log(`    Generating: ${route}`),
+            onPageEnd: (route, html) => console.log(`    Generated: ${route} (${html.length} bytes)`),
+            onError: (error, route) => console.error(`    Error in ${route}: ${error.message}`),
+          } : undefined,
+        })
 
-        // Ensure directories exist
-        fs.mkdirSync(tempDir, { recursive: true })
-        fs.mkdirSync(outputDir, { recursive: true })
-
-        // Expanded file paths
-        const expandedFiles: string[] = []
-
-        // Process each entrypoint, expanding globs as needed
-        for (const entrypoint of entrypointArray) {
-          if (isGlob(entrypoint)) {
-            console.log(`Expanding glob pattern: ${entrypoint}`)
-            try {
-              const matchedFiles = await Array.fromAsync(
-                new Bun.Glob(entrypoint).scan({
-                  onlyFiles: true,
-                  absolute: false, // Use relative paths
-                }),
-              )
-
-              // Filter to only include .stx files if pattern doesn't specify
-              const stxFiles = entrypoint.endsWith('.stx')
-                ? matchedFiles
-                : matchedFiles.filter(file => file.endsWith('.stx'))
-
-              if (stxFiles.length === 0) {
-                console.warn(`Warning: No .stx files found matching pattern: ${entrypoint}`)
-              }
-              else {
-                console.log(`Found ${stxFiles.length} STX ${stxFiles.length === 1 ? 'file' : 'files'} matching ${entrypoint}`)
-                expandedFiles.push(...stxFiles)
-              }
-            }
-            catch (error) {
-              console.error(`Error expanding glob pattern ${entrypoint}:`, error)
-              process.exit(1)
-            }
-          }
-          else if (entrypoint.endsWith('.stx')) {
-            // Add .stx file directly
-            expandedFiles.push(entrypoint)
-          }
-          else {
-            console.warn(`Warning: Skipping non-STX file: ${entrypoint}`)
-          }
-        }
-
-        if (expandedFiles.length === 0) {
-          console.error('Error: No valid .stx files found to build')
-          process.exit(1)
-        }
-
-        console.log(`Building ${expandedFiles.length} STX ${expandedFiles.length === 1 ? 'file' : 'files'}...`)
-
-        // Track successfully built files
-        interface BuildResult {
-          inputFile: string
-          outputHtml?: string
-          outputJs?: string
-          otherOutputs: string[]
-          scriptSources?: string[]
-        }
-
-        const results: BuildResult[] = []
-        let successCount = 0
-
-        // Build each file individually
-        for (const file of expandedFiles) {
-          const absolutePath = path.resolve(file)
-          const relativePath = path.relative(process.cwd(), absolutePath)
-
-          if (options.verbose) {
-            console.log(`Processing: ${relativePath}`)
-          }
-
-          try {
-            // Build with STX plugin to generate HTML
-            const buildResult = await Bun.build({
-              entrypoints: [absolutePath],
-              outdir: tempDir,
-              plugins: [stxPlugin],
-              target: options.target || 'browser',
-              format: options.format || 'esm',
-              minify: options.minify !== false,
-              sourcemap: options.sourcemap || 'none',
-              splitting: options.splitting !== false,
-              define: {
-                'process.env.NODE_ENV': '"production"',
-              },
-            })
-
-            if (!buildResult.success) {
-              console.error(`Build failed for ${relativePath}:`, buildResult.logs)
-              continue
-            }
-
-            // Find HTML and JS outputs
-            const htmlOutput = buildResult.outputs.find(o => o.path.endsWith('.html'))
-            const jsOutputs = buildResult.outputs.filter(o => o.path.endsWith('.js'))
-            const otherOutputs = buildResult.outputs.filter(o => !o.path.endsWith('.html') && !o.path.endsWith('.js'))
-
-            const result: BuildResult = {
-              inputFile: relativePath,
-              otherOutputs: otherOutputs.map(o => o.path),
-            }
-
-            if (htmlOutput) {
-              result.outputHtml = htmlOutput.path
-
-              // Read the HTML content to find all chunk references
-              const htmlContent = await Bun.file(htmlOutput.path).text()
-
-              // Extract all script src attributes from the HTML
-              const scriptMatches = htmlContent.match(/<script[^>]*src="([^"]+)"[^>]*><\/script>/g) || []
-
-              // Find JS files referenced in the HTML
-              const scriptSources = scriptMatches
-                .map((script) => {
-                  const srcMatch = script.match(/src="([^"]+)"/)
-                  return srcMatch ? srcMatch[1] : null
-                })
-                .filter((src): src is string => src !== null)
-                .filter(src => src.includes('chunk-'))
-
-              if (options.verbose && scriptSources.length > 0) {
-                console.log(`    Script references found in HTML: ${scriptSources.join(', ')}`)
-              }
-
-              // Track them in the result for reporting later
-              result.scriptSources = scriptSources
-
-              // Process expressions in the HTML that might not have been evaluated
-              try {
-                // Extract the script content from the original STX file
-                const originalContent = await Bun.file(absolutePath).text()
-                const scriptMatch = originalContent.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)
-
-                if (scriptMatch) {
-                  const scriptContent = scriptMatch[1]
-
-                  // Execute the script to extract variables
-                  try {
-                    // Create a function to evaluate the script and extract variables
-                    // eslint-disable-next-line no-new-func
-                    const evalFn = new Function(`${scriptContent}
-                      // Return all variables defined in this scope
-                      return {
-                        name: typeof name !== 'undefined' ? name : undefined,
-                        items: typeof items !== 'undefined' ? items : undefined,
-                        count: typeof count !== 'undefined' ? count : undefined
-                      };
-                    `)
-
-                    // Execute the function to get the variables
-                    const context = evalFn()
-
-                    if (options.verbose) {
-                      console.log(`    Extracted variables:`, Object.keys(context).filter(k => context[k] !== undefined))
-                    }
-
-                    // Process the HTML content with these variables
-                    let processedHtml = htmlContent
-
-                    // Handle known complex patterns like the items.map() specifically
-                    const itemsMapRegex = /\{items\.map\(item\s*=>\s*`[\s\S]*?<li>\{item\}<\/li>[\s\S]*?`\)\.join\(['"]*\)\}/g
-
-                    // Replace items.map with the actual rendered list items
-                    processedHtml = processedHtml.replace(itemsMapRegex, () => {
-                      try {
-                        if (!context.items || !Array.isArray(context.items)) {
-                          if (options.verbose) {
-                            console.warn('    Warning: items is not an array in context')
-                          }
-                          return '<!-- Error: items not found -->'
-                        }
-
-                        // Manually render the list items
-                        const renderedItems = context.items.map((item: any) =>
-                          `
-    <li>${item}</li>
-  `).join('')
-
-                        if (options.verbose) {
-                          console.log(`    Rendered items.map() with ${context.items.length} items`)
-                        }
-
-                        return renderedItems
-                      }
-                      catch (err) {
-                        if (options.verbose) {
-                          console.warn(`    Warning: Failed to render items.map(): ${err}`)
-                        }
-                        return '<!-- Error rendering items -->'
-                      }
-                    })
-
-                    // Process other simple expressions like {name} and {count}
-                    processedHtml = processedHtml.replace(/\{([^{}]+)\}/g, (match, expr) => {
-                      // Skip if it looks like a complex expression
-                      if (expr.includes('.map(') || expr.includes('.join(')) {
-                        return match
-                      }
-
-                      try {
-                        // Simple variable replacements
-                        if (expr.trim() in context) {
-                          return String(context[expr.trim()])
-                        }
-
-                        // Return the original expression if we can't evaluate it
-                        return match
-                      }
-                      catch (err) {
-                        if (options.verbose) {
-                          console.warn(`    Warning: Error processing expression ${expr}: ${err}`)
-                        }
-                        return match // Keep original expression if processing fails
-                      }
-                    })
-
-                    // Write the processed HTML back to the file
-                    await Bun.write(htmlOutput.path, processedHtml)
-
-                    if (options.verbose) {
-                      console.log(`    Processed expressions in HTML output`)
-                    }
-                  }
-                  catch (scriptError) {
-                    if (options.verbose) {
-                      console.warn(`    Warning: Could not extract variables from script: ${scriptError}`)
-                    }
-                  }
-                }
-              }
-              catch (processError) {
-                if (options.verbose) {
-                  console.warn(`    Warning: Could not process expressions in HTML: ${processError}`)
-                }
-              }
-            }
-
-            if (jsOutputs.length > 0) {
-              result.outputJs = jsOutputs[0].path
-            }
-
-            if (!htmlOutput) {
-              console.warn(`Warning: No HTML output generated for ${relativePath}`)
-            }
-
-            results.push(result)
-            successCount++
-
-            if (options.verbose) {
-              console.log(`  Success: ${relativePath}`)
-              if (htmlOutput)
-                console.log(`    HTML: ${path.basename(htmlOutput.path)}`)
-              if (jsOutputs.length > 0)
-                console.log(`    JS: ${jsOutputs.map(o => path.basename(o.path)).join(', ')}`)
-              if (otherOutputs.length > 0)
-                console.log(`    Other: ${otherOutputs.length} file(s)`)
-            }
-          }
-          catch (error) {
-            console.error(`Error building ${relativePath}:`, error)
-          }
-        }
-
-        if (successCount === 0) {
-          console.error('Error: No files were successfully built')
-          fs.rmSync(tempDir, { recursive: true, force: true })
-          process.exit(1)
-        }
-
-        // Copy files to final output directory, maintaining directory structure
-        console.log(`Copying output files to ${outputDir}...`)
-        let copiedFilesCount = 0
-
-        for (const result of results) {
-          // Calculate output paths, preserving directory structure
-          const inputDir = path.dirname(result.inputFile)
-          const baseName = path.basename(result.inputFile, '.stx')
-          const targetDir = path.join(outputDir, inputDir)
-
-          // Ensure target directory exists
-          fs.mkdirSync(targetDir, { recursive: true })
-
-          if (result.outputHtml) {
-            // Read the HTML content to find all chunk references
-            const htmlContent = await Bun.file(result.outputHtml).text()
-            const targetHtmlPath = path.join(targetDir, `${baseName}.html`)
-
-            // Extract all script src attributes from the HTML
-            const scriptRegex = /<script[^>]*src="([^"]+)"[^>]*><\/script>/g
-            const matches = [...htmlContent.matchAll(scriptRegex)]
-            const scriptSrcs = matches.map(match => match[1])
-
-            // Track all chunk files we need to copy
-            const chunksToCopy = new Map<string, string>()
-
-            // Process each script src to find chunk files
-            for (const src of scriptSrcs) {
-              if (src.startsWith('./') && src.includes('chunk-')) {
-                const srcFileName = path.basename(src)
-                const tempChunkPath = path.join(path.dirname(result.outputHtml), srcFileName)
-
-                if (fs.existsSync(tempChunkPath)) {
-                  chunksToCopy.set(srcFileName, tempChunkPath)
-                }
-                else if (options.verbose) {
-                  console.warn(`    Warning: Referenced chunk file not found: ${tempChunkPath}`)
-                }
-              }
-            }
-
-            // Copy HTML file with adjusted script references if needed
-            if (chunksToCopy.size > 0) {
-              // We keep the references as they are (relative paths)
-              fs.copyFileSync(result.outputHtml, targetHtmlPath)
-
-              // Now copy all chunk files
-              for (const [chunkName, chunkPath] of chunksToCopy.entries()) {
-                const targetChunkPath = path.join(targetDir, chunkName)
-                fs.copyFileSync(chunkPath, targetChunkPath)
-                copiedFilesCount++
-
-                if (options.verbose) {
-                  console.log(`    Copied chunk: ${path.relative(outputDir, targetChunkPath)}`)
-                }
-              }
-            }
-            else {
-              // No chunks, just copy the HTML file
-              fs.copyFileSync(result.outputHtml, targetHtmlPath)
-            }
-
-            copiedFilesCount++
-          }
-
-          // Copy JS file (main entry JS, not chunks)
-          if (result.outputJs) {
-            const targetJsPath = path.join(targetDir, `${baseName}.js`)
-            fs.copyFileSync(result.outputJs, targetJsPath)
-            copiedFilesCount++
-          }
-
-          // Copy other files
-          for (const otherPath of result.otherOutputs) {
-            const otherName = path.basename(otherPath)
-            const targetOtherPath = path.join(targetDir, otherName)
-            fs.copyFileSync(otherPath, targetOtherPath)
-            copiedFilesCount++
-          }
-        }
-
-        // Clean up temporary directory
-        try {
-          fs.rmSync(tempDir, { recursive: true, force: true })
-        }
-        catch {
-          console.warn('Warning: Failed to clean up temporary directory')
-        }
+        const buildTime = ((performance.now() - startTime) / 1000).toFixed(2)
 
         // Output summary
-        console.log(`✓ Build successful! Built ${successCount} STX ${successCount === 1 ? 'file' : 'files'} with ${copiedFilesCount} output ${copiedFilesCount === 1 ? 'file' : 'files'}`)
+        console.log(`\n  Build complete!\n`)
+        console.log(`    Pages generated: ${result.successCount}`)
+        if (result.failedCount > 0) {
+          console.log(`    Failed: ${result.failedCount}`)
+        }
+        if (result.cachedCount > 0) {
+          console.log(`    From cache: ${result.cachedCount}`)
+        }
+        if (result.sitemapPath) {
+          console.log(`    Sitemap: ${path.relative(process.cwd(), result.sitemapPath)}`)
+        }
+        if (result.rssPath) {
+          console.log(`    RSS: ${path.relative(process.cwd(), result.rssPath)}`)
+        }
+        console.log(`    Build time: ${buildTime}s`)
+        console.log(`    Output: ${path.relative(process.cwd(), outputDir)}/\n`)
 
-        // Generate PWA assets if enabled
-        if (stxConfig.pwa?.enabled) {
-          console.log('\nGenerating PWA assets...')
-          const { buildPwaAssets } = await import('../src/pwa')
-          const pwaResult = await buildPwaAssets(stxConfig, options.outdir)
-
-          if (pwaResult.success) {
-            const pwaFiles: string[] = []
-            if (pwaResult.files.manifest)
-              pwaFiles.push('manifest.json')
-            if (pwaResult.files.serviceWorker)
-              pwaFiles.push(path.basename(pwaResult.files.serviceWorker))
-            if (pwaResult.files.offlinePage)
-              pwaFiles.push('offline.html')
-            if (pwaResult.files.icons.length > 0)
-              pwaFiles.push(`${pwaResult.files.icons.length} icons`)
-
-            console.log(`✓ PWA assets generated: ${pwaFiles.join(', ')}`)
-
-            if (pwaResult.warnings.length > 0) {
-              for (const warning of pwaResult.warnings) {
-                console.warn(`  Warning: ${warning}`)
-              }
-            }
+        // Show errors if any
+        if (result.errors.length > 0) {
+          console.log('  Errors:')
+          for (const error of result.errors) {
+            console.error(`    ${error.route}: ${error.error}`)
           }
-          else {
-            console.error('✗ PWA asset generation failed:')
-            for (const error of pwaResult.errors) {
-              console.error(`  ${error}`)
-            }
-          }
+          console.log('')
         }
 
-        // Track total script/chunk count for reporting
-        let totalChunkCount = 0
-
-        if (results.length > 0 && results.length <= 10) {
-          console.log('\nGenerated files:')
-          for (const result of results) {
-            const inputDir = path.dirname(result.inputFile)
-            const baseName = path.basename(result.inputFile, '.stx')
-
-            console.log(`  ${result.inputFile} →`)
-            if (result.outputHtml) {
-              console.log(`    HTML: ${path.join(options.outdir, inputDir, `${baseName}.html`)}`)
-            }
-            if (result.outputJs) {
-              console.log(`    JS: ${path.join(options.outdir, inputDir, `${baseName}.js`)}`)
-            }
-
-            // Report chunk files
-            if (result.scriptSources && result.scriptSources.length > 0) {
-              totalChunkCount += result.scriptSources.length
-              console.log(`    Chunks: ${result.scriptSources.length} chunk file(s)`)
-
-              // Show detailed chunk info if verbose
-              if (options.verbose) {
-                for (const src of result.scriptSources) {
-                  const chunkName = path.basename(src)
-                  console.log(`      - ${path.join(inputDir, chunkName)}`)
-                }
-              }
-            }
+        // Show generated pages if verbose
+        if (options.verbose && result.pages.length > 0 && result.pages.length <= 20) {
+          console.log('  Generated pages:')
+          for (const page of result.pages) {
+            const relativePath = path.relative(process.cwd(), page.outputPath)
+            const sizeKb = (page.size / 1024).toFixed(1)
+            console.log(`    ${relativePath} (${sizeKb} KB)${page.cached ? ' [cached]' : ''}`)
           }
+          console.log('')
         }
 
-        console.log(`\nTo view these files, you can use a local HTTP server:`)
-        console.log(`  cd ${options.outdir} && npx serve`)
-
-        if (totalChunkCount > 0) {
-          console.log(`\nNote: The build includes JavaScript chunks that need to be served over HTTP for proper functioning.`)
-          console.log(`Opening the HTML files directly may not work correctly due to browser security restrictions.`)
+        // Exit with error if there were any failures (validation errors are fatal)
+        if (result.failedCount > 0) {
+          console.error(`\n  Build completed with ${result.failedCount} error(s). Fix the issues above and try again.\n`)
+          process.exit(1)
         }
 
-        // Handle watch mode
-        if (options.watch) {
-          console.log('\nWatch mode enabled. Waiting for changes...')
+        console.log(`  To preview locally:`)
+        console.log(`    cd ${options.out} && npx serve\n`)
+      }
+      catch (error) {
+        console.error('\n  Build failed:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
 
-          // Get directories to watch (parent directories of each STX file)
-          const watchDirs = new Set(
-            expandedFiles.map(file => path.dirname(path.resolve(file))),
-          )
+  // Deploy command
+  cli
+    .command('deploy [directory]', 'Deploy built site to Netlify')
+    .option('--site-id <id>', 'Netlify site ID (or set NETLIFY_SITE_ID env var)')
+    .option('--token <token>', 'Auth token (or set NETLIFY_AUTH_TOKEN env var)')
+    .option('--production', 'Deploy to production (default: draft preview)')
+    .option('--message <msg>', 'Deploy message/title')
+    .option('--no-build', 'Skip build step before deploy')
+    .option('--open', 'Open deployed URL in browser')
+    .option('--dry-run', 'Preview deployment without uploading')
+    .option('--init', 'Initialize Netlify configuration for this project')
+    .example('stx deploy')
+    .example('stx deploy --production')
+    .example('stx deploy dist --site-id my-site-abc123')
+    .example('stx deploy --init')
+    .example('stx deploy --dry-run')
+    .action(async (directory: string | undefined, options: {
+      siteId?: string
+      token?: string
+      production?: boolean
+      message?: string
+      build?: boolean
+      open?: boolean
+      dryRun?: boolean
+      init?: boolean
+    }) => {
+      try {
+        const { deploy, initNetlify, DeployError } = await import('../src/deploy')
 
-          for (const dir of watchDirs) {
-            fs.watch(dir, { recursive: true }, async (eventType, filename) => {
-              if (!filename)
-                return
+        console.log(`\x1B[1mstx deploy\x1B[0m \x1B[2mv${version}\x1B[0m`)
 
-              if (filename.endsWith('.stx') || filename.endsWith('.js') || filename.endsWith('.ts')) {
-                console.log(`\nFile changed: ${filename}, rebuilding...`)
+        // Init mode
+        if (options.init) {
+          console.log('\n📝 Initializing Netlify configuration...\n')
 
-                // Find associated input file
-                const changedFile = path.join(dir, filename)
-                const relativeChanged = path.relative(process.cwd(), changedFile)
+          const result = await initNetlify({
+            directory: directory || process.cwd(),
+            siteId: options.siteId,
+          })
 
-                // Find file(s) to rebuild
-                const filesToRebuild = filename.endsWith('.stx')
-                  ? [relativeChanged] // If .stx file changed, rebuild just that file
-                  : expandedFiles.filter((f) => { // If .js/.ts changed, rebuild any STX file in same directory
-                      const fileDir = path.dirname(path.resolve(f))
-                      return fileDir === dir
-                    })
-
-                if (filesToRebuild.length === 0) {
-                  console.log('No STX files to rebuild')
-                  return
-                }
-
-                // Rebuild files
-                console.log(`Rebuilding ${filesToRebuild.length} file(s)...`)
-
-                for (const file of filesToRebuild) {
-                  try {
-                    const absolutePath = path.resolve(file)
-                    const buildResult = await Bun.build({
-                      entrypoints: [absolutePath],
-                      outdir: options.outdir,
-                      plugins: [stxPlugin],
-                      target: options.target || 'browser',
-                      format: options.format || 'esm',
-                      minify: options.minify !== false,
-                      sourcemap: options.sourcemap || 'none',
-                      splitting: options.splitting !== false,
-                      define: {
-                        'process.env.NODE_ENV': '"production"',
-                      },
-                    })
-
-                    if (buildResult.success) {
-                      console.log(`  ✓ Rebuilt ${file}`)
-                    }
-                    else {
-                      console.error(`  ✗ Failed to rebuild ${file}`)
-                    }
-                  }
-                  catch (error) {
-                    console.error(`Error rebuilding ${file}:`, error)
-                  }
-                }
-
-                console.log('Rebuild complete')
-              }
-            })
+          console.log(`✓ Created ${result.configPath}`)
+          if (result.siteId) {
+            console.log(`✓ Saved site ID to .env.local`)
           }
+          console.log('\nYou can now deploy with: stx deploy')
+          return
+        }
 
-          console.log(`Watching ${watchDirs.size} ${watchDirs.size === 1 ? 'directory' : 'directories'} for changes...`)
-          console.log('Press Ctrl+C to stop')
+        // Build first if not disabled
+        if (options.build !== false) {
+          console.log('\n🔨 Building project...')
+          const buildProcess = Bun.spawn(['bun', 'run', 'build'], {
+            stdio: ['inherit', 'inherit', 'inherit'],
+            cwd: process.cwd(),
+          })
+          const exitCode = await buildProcess.exited
+          if (exitCode !== 0) {
+            console.error('❌ Build failed')
+            process.exit(1)
+          }
+          console.log('✓ Build complete\n')
+        }
+
+        // Deploy
+        console.log('🚀 Deploying to Netlify...\n')
+
+        const result = await deploy({
+          directory: directory || 'dist',
+          siteId: options.siteId,
+          token: options.token,
+          production: options.production,
+          message: options.message,
+          build: false, // We already built above
+          open: options.open,
+          dryRun: options.dryRun,
+          onProgress: (status) => {
+            if (status.stage === 'upload' && status.percent !== undefined) {
+              process.stdout.write(`\r  Uploading: ${status.percent}%`)
+              if (status.percent === 100) {
+                process.stdout.write('\n')
+              }
+            }
+          },
+        })
+
+        if (result.success) {
+          console.log('\n✓ Deployed successfully!\n')
+          console.log(`  ${options.dryRun ? 'Would deploy' : 'Draft URL'}:  ${result.url}`)
+          if (result.siteUrl) {
+            console.log(`  Site URL:   ${result.siteUrl}`)
+          }
+          if (!options.dryRun) {
+            console.log(`\n  Deploy ID:  ${result.deployId}`)
+            console.log(`  Duration:   ${(result.duration / 1000).toFixed(1)}s`)
+            console.log(`  Files:      ${result.filesUploaded}`)
+          }
         }
       }
       catch (error) {
-        console.error('Build failed:', error instanceof Error ? error.message : String(error))
+        if (error instanceof Error && error.name === 'DeployError') {
+          console.error(`\n❌ ${error.message}`)
+          process.exit(1)
+        }
+        console.error('\n❌ Deploy failed:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
+
+  // Images command
+  cli
+    .command('images <input>', 'Optimize images for production')
+    .option('-o, --output <dir>', 'Output directory', { default: 'dist/images' })
+    .option('-w, --widths <sizes>', 'Output widths (comma-separated)', { default: '320,640,768,1024,1280,1536,1920' })
+    .option('-f, --formats <types>', 'Output formats (comma-separated)', { default: 'webp,jpeg' })
+    .option('-q, --quality <n>', 'Output quality (1-100)', { default: '80' })
+    .option('--placeholder <type>', 'Placeholder type: blur, dominant-color, none', { default: 'none' })
+    .option('--dry-run', 'Preview without processing')
+    .option('--verbose', 'Show detailed output')
+    .example('stx images public/images')
+    .example('stx images public/images -o dist/images')
+    .example('stx images public/images --widths 640,1024,1920')
+    .example('stx images public/images --formats webp,avif')
+    .example('stx images public/images --quality 85')
+    .example('stx images public/images --dry-run')
+    .action(async (input: string, options: {
+      output: string
+      widths: string
+      formats: string
+      quality: string
+      placeholder: string
+      dryRun?: boolean
+      verbose?: boolean
+    }) => {
+      try {
+        const {
+          optimizeDirectory,
+          isSharpAvailable,
+          formatSize,
+        } = await import('../src/image-optimization')
+        const fs = await import('node:fs')
+        const path = await import('node:path')
+
+        console.log(`\x1B[1mstx images\x1B[0m \x1B[2mv${version}\x1B[0m`)
+
+        // Check sharp availability
+        const hasSharp = await isSharpAvailable()
+        if (!hasSharp) {
+          console.error('\n❌ sharp is required for image optimization.')
+          console.log('\nInstall sharp with:')
+          console.log('  bun add sharp')
+          process.exit(1)
+        }
+
+        // Parse options
+        const widths = options.widths.split(',').map(w => Number.parseInt(w.trim(), 10)).filter(w => !Number.isNaN(w))
+        const formats = options.formats.split(',').map(f => f.trim().toLowerCase()) as ('webp' | 'avif' | 'jpeg' | 'png')[]
+        const quality = Number.parseInt(options.quality, 10) || 80
+        const placeholder = options.placeholder as 'blur' | 'dominant-color' | 'none'
+
+        // Validate input directory
+        const inputPath = path.resolve(input)
+        if (!fs.existsSync(inputPath)) {
+          console.error(`\n❌ Input directory not found: ${inputPath}`)
+          process.exit(1)
+        }
+
+        const stats = fs.statSync(inputPath)
+        if (!stats.isDirectory()) {
+          console.error(`\n❌ Input must be a directory: ${inputPath}`)
+          process.exit(1)
+        }
+
+        console.log(`\n📸 Input:   ${inputPath}`)
+        console.log(`📁 Output:  ${path.resolve(options.output)}`)
+        console.log(`📐 Widths:  ${widths.join(', ')}`)
+        console.log(`🎨 Formats: ${formats.join(', ')}`)
+        console.log(`✨ Quality: ${quality}`)
+
+        if (options.dryRun) {
+          console.log('\n🔍 Dry run mode - no files will be written\n')
+
+          // Collect and count images
+          const collectImages = async (dir: string): Promise<string[]> => {
+            const images: string[] = []
+            const entries = await fs.promises.readdir(dir, { withFileTypes: true })
+
+            for (const entry of entries) {
+              const fullPath = path.join(dir, entry.name)
+              if (entry.isDirectory()) {
+                images.push(...(await collectImages(fullPath)))
+              }
+              else if (/\.(jpg|jpeg|png|webp|avif|gif)$/i.test(entry.name)) {
+                images.push(fullPath)
+              }
+            }
+            return images
+          }
+
+          const images = await collectImages(inputPath)
+          console.log(`Found ${images.length} images:`)
+
+          for (const img of images) {
+            const relPath = path.relative(inputPath, img)
+            const stats = fs.statSync(img)
+            console.log(`  ${relPath} (${formatSize(stats.size)})`)
+          }
+
+          const expectedVariants = images.length * widths.length * formats.length
+          console.log(`\nWould generate ~${expectedVariants} image variants`)
+          return
+        }
+
+        console.log('\n⏳ Optimizing images...\n')
+
+        const result = await optimizeDirectory(inputPath, options.output, {
+          widths,
+          formats,
+          quality,
+          placeholder,
+          verbose: options.verbose,
+        })
+
+        console.log('\n✓ Optimization complete!\n')
+        console.log(`  Images processed: ${result.stats.optimizedImages}/${result.stats.totalImages}`)
+        console.log(`  Variants created: ${result.stats.variants}`)
+
+        if (result.stats.savedBytes > 0) {
+          console.log(`  Estimated savings: ~${formatSize(result.stats.savedBytes)}`)
+        }
+      }
+      catch (error) {
+        console.error('\n❌ Image optimization failed:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
+
+  // Bundle analyzer command
+  cli
+    .command('bundle [directory]', 'Analyze bundle size and composition')
+    .option('-o, --output <file>', 'Output file path')
+    .option('--json', 'Output as JSON')
+    .option('--text', 'Output as text summary')
+    .option('--markdown', 'Output as Markdown')
+    .option('--no-open', 'Do not open HTML report in browser')
+    .option('--no-gzip', 'Do not show gzip sizes')
+    .option('--threshold <size>', 'Fail if total size exceeds threshold (e.g., 500KB, 1MB)')
+    .option('--top <n>', 'Number of top modules to show', { default: '20' })
+    .example('stx bundle')
+    .example('stx bundle dist/')
+    .example('stx bundle dist/ --json')
+    .example('stx bundle dist/ --text')
+    .example('stx bundle dist/ --threshold 500KB')
+    .example('stx bundle dist/ --no-open')
+    .action(async (directory: string | undefined, options: {
+      output?: string
+      json?: boolean
+      text?: boolean
+      markdown?: boolean
+      open?: boolean
+      gzip?: boolean
+      threshold?: string
+      top?: string
+    }) => {
+      try {
+        const { analyze, formatBytes, parseSize } = await import('../src/bundle-analyzer')
+        const path = await import('node:path')
+
+        console.log(`\x1B[1mstx bundle\x1B[0m \x1B[2mv${version}\x1B[0m`)
+
+        const buildDir = directory || 'dist'
+        const resolvedDir = path.resolve(buildDir)
+
+        // Check if directory exists
+        const fs = await import('node:fs')
+        if (!fs.existsSync(resolvedDir)) {
+          console.error(`\n❌ Directory not found: ${resolvedDir}`)
+          console.log('\nRun `stx build` first to generate build output.')
+          process.exit(1)
+        }
+
+        // Determine format
+        let format: 'html' | 'json' | 'text' | 'markdown' = 'html'
+        if (options.json) format = 'json'
+        else if (options.text) format = 'text'
+        else if (options.markdown) format = 'markdown'
+
+        console.log(`\n📦 Analyzing: ${resolvedDir}`)
+
+        const result = await analyze({
+          directory: resolvedDir,
+          output: options.output,
+          format,
+          open: options.open !== false && format === 'html',
+          gzip: options.gzip !== false,
+          threshold: options.threshold,
+          topModules: Number.parseInt(options.top || '20', 10),
+          recommendations: true,
+        })
+
+        // Output results
+        if (format === 'html') {
+          console.log(`\n✓ Report generated: ${result.outputPath}`)
+          if (options.open !== false) {
+            console.log('  Opening in browser...')
+          }
+        }
+        else {
+          console.log(result.report)
+        }
+
+        // Check threshold
+        if (result.exceedsThreshold) {
+          const threshold = options.threshold!
+          console.error(`\n❌ Bundle size (${formatBytes(result.stats.totalSize)}) exceeds threshold (${threshold})`)
+          process.exit(1)
+        }
+
+        // Summary
+        if (format === 'html') {
+          console.log(`\n📊 Summary:`)
+          console.log(`   Total Size:  ${formatBytes(result.stats.totalSize)}`)
+          console.log(`   Gzip Size:   ${formatBytes(result.stats.totalGzipSize)}`)
+          console.log(`   Modules:     ${result.stats.moduleCount}`)
+          console.log(`   Chunks:      ${result.stats.chunks.length}`)
+          if (result.stats.duplicates.length > 0) {
+            console.log(`   Duplicates:  ${result.stats.duplicates.length}`)
+          }
+        }
+      }
+      catch (error) {
+        console.error('\n❌ Bundle analysis failed:', error instanceof Error ? error.message : String(error))
         process.exit(1)
       }
     })

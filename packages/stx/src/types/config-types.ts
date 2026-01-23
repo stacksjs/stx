@@ -7,6 +7,7 @@ import type { MiddlewareMode } from '../route-middleware'
 import type { ComponentConfig, DocGeneratorConfig, WebComponentConfig } from './component-types'
 import type { PwaConfig } from './pwa-types'
 import type { CspConfig } from './csp-types'
+import type { HeatmapConfig } from '../heatmap'
 
 /**
  * Internationalization (i18n) configuration
@@ -477,6 +478,46 @@ export interface StxConfig {
   components?: Partial<ComponentConfig>
   /** Route middleware configuration */
   routeMiddleware?: Partial<RouteMiddlewareConfig>
+  /** Heatmap tracking configuration */
+  heatmap?: Partial<HeatmapConfig>
+  /** Static Site Generation (SSG) build configuration */
+  build?: Partial<BuildConfig>
+}
+
+/**
+ * SSG Build configuration for static site generation
+ */
+export interface BuildConfig {
+  /** Directory containing page templates (default: 'pages') */
+  pagesDir: string
+  /** Output directory for generated files (default: 'dist') */
+  outputDir: string
+  /** Base URL path for the site (default: '/') */
+  baseUrl: string
+  /** Site domain for absolute URLs in sitemap */
+  domain?: string
+  /** Generate sitemap.xml (default: true) */
+  sitemap: boolean
+  /** Generate RSS feed */
+  rss?: boolean | import('../ssg').RSSConfig
+  /** Minify HTML output (default: true) */
+  minify: boolean
+  /** Enable build caching (default: true) */
+  cache: boolean
+  /** Cache directory (default: '.stx/ssg-cache') */
+  cacheDir: string
+  /** Parallel page generation limit (default: 10) */
+  concurrency: number
+  /** Generate 404 page (default: true) */
+  generate404: boolean
+  /** Directory with static assets to copy (default: 'public') */
+  publicDir: string
+  /** Add trailing slashes to URLs (default: false) */
+  trailingSlash: boolean
+  /** Clean output directory before build (default: true) */
+  cleanOutput: boolean
+  /** ISR revalidation time in seconds */
+  revalidate?: number | false
 }
 
 export type StxOptions = Partial<StxConfig>

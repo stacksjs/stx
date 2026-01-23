@@ -3,6 +3,7 @@ import path from 'node:path'
 import { processA11yDirectives } from './a11y'
 import { processTemplateBindings } from './reactive-bindings'
 import { injectAnalytics } from './analytics'
+import { injectHeatmap } from './heatmap'
 import { processAnimationDirectives } from './animation'
 import { processEventDirectives } from './events'
 import { processReactiveDirectives } from './reactive'
@@ -11,7 +12,7 @@ import { processAuthDirectives, processConditionals, processEnvDirective, proces
 import { injectCspMetaTag, processCspDirectives } from './csp'
 import { processCsrfDirectives } from './csrf'
 import { processCustomDirectives } from './custom-directives'
-import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeError } from './error-handling'
+import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeError, StxValidationError } from './error-handling'
 import { processExpressions } from './expressions'
 import { processBasicFormDirectives, processErrorDirective } from './forms'
 import { processTranslateDirective } from './i18n'
@@ -529,6 +530,12 @@ export async function processDirectives(
     })
   }
   catch (error: unknown) {
+    // Validation errors are ALWAYS fatal - they enforce coding standards
+    // and should never be recovered from, even in production
+    if (error instanceof StxValidationError) {
+      throw error
+    }
+
     const msg = error instanceof Error ? error.message : String(error)
     const enhancedError = new StxRuntimeError(
       `Template processing failed: ${msg}`,
@@ -562,14 +569,22 @@ async function processDirectivesInternal(
 ): Promise<string> {
   // Resolve relative paths in options to absolute paths
   // Use process.cwd() (project root) as the base, not STX's __dirname
-  const resolvedOptions = { ...options }
   const projectRoot = process.cwd()
-  if (resolvedOptions.partialsDir && !path.isAbsolute(resolvedOptions.partialsDir)) {
-    resolvedOptions.partialsDir = path.resolve(projectRoot, resolvedOptions.partialsDir)
+  const resolvedOptions: StxOptions = {
+    ...options,
+    partialsDir: options.partialsDir && !path.isAbsolute(options.partialsDir)
+      ? path.resolve(projectRoot, options.partialsDir)
+      : options.partialsDir,
+    componentsDir: options.componentsDir && !path.isAbsolute(options.componentsDir)
+      ? path.resolve(projectRoot, options.componentsDir)
+      : options.componentsDir,
+    layoutsDir: options.layoutsDir && !path.isAbsolute(options.layoutsDir)
+      ? path.resolve(projectRoot, options.layoutsDir)
+      : options.layoutsDir,
   }
-  if (resolvedOptions.componentsDir && !path.isAbsolute(resolvedOptions.componentsDir)) {
-    resolvedOptions.componentsDir = path.resolve(projectRoot, resolvedOptions.componentsDir)
-  }
+
+  // Use resolvedOptions throughout this function
+  const opts = resolvedOptions
 
   let output = template
 
@@ -777,26 +792,29 @@ async function processOtherDirectives(
 ): Promise<string> {
   let output = template
 
+  // Use opts as alias for options (consistent with processDirectivesInternal)
+  const opts = options
+
   // Run view composers for the current view with error handling
   await safeExecuteAsync(
     () => runComposers(filePath, context),
     undefined,
     (error) => {
-      if (options.debug) {
+      if (opts.debug) {
         console.warn(`View composer error for ${filePath}:`, error.message)
       }
     },
   )
 
   // Add options to context for component processing
-  context.__stx_options = options
+  context.__stx_options = opts
 
   // Run pre-processing middleware with error handling
   output = await safeExecuteAsync(
-    () => runPreProcessingMiddleware(output, context, filePath, options),
+    () => runPreProcessingMiddleware(output, context, filePath, opts),
     output,
     (error) => {
-      if (options.debug) {
+      if (opts.debug) {
         console.warn(`Pre-processing middleware error:`, error.message)
       }
     },
@@ -821,7 +839,7 @@ async function processOtherDirectives(
       }
       catch (e) {
         // Script may contain browser-only code, skip
-        if (options.debug) {
+        if (opts.debug) {
           console.warn('Script extraction error:', e)
         }
       }
@@ -834,22 +852,22 @@ async function processOtherDirectives(
   output = await processTsDirectives(output, context, filePath)
 
   // Process @import directives for explicit component imports
-  output = await processImportDirectives(output, context, filePath, options, dependencies)
+  output = await processImportDirectives(output, context, filePath, opts, dependencies)
 
   // Process custom directives
-  output = await processCustomDirectives(output, context, filePath, options)
+  output = await processCustomDirectives(output, context, filePath, opts)
 
-  // Process component directives
-  if (options.componentsDir) {
+  // Process component directives (opts has already-resolved paths)
+  if (opts.componentsDir) {
     // Process @component directives
-    output = await processComponentDirectives(output, context, filePath, options.componentsDir, options, dependencies)
+    output = await processComponentDirectives(output, context, filePath, opts.componentsDir, opts, dependencies)
 
     // Process custom element components (kebab-case and PascalCase tags)
-    output = await processCustomElements(output, context, filePath, options.componentsDir, options, dependencies)
+    output = await processCustomElements(output, context, filePath, opts.componentsDir, opts, dependencies)
   }
 
   // Process animations and transitions
-  output = processAnimationDirectives(output, context, filePath, options)
+  output = processAnimationDirectives(output, context, filePath, opts)
 
   // Process defer directives (@defer for lazy loading)
   const { processDeferDirectives } = await import('./defer')
@@ -924,10 +942,10 @@ async function processOtherDirectives(
   output = processMethodDirectives(output)
 
   // Process includes (@include, @component, etc.)
-  output = await processIncludes(output, context, filePath, options, dependencies)
+  output = await processIncludes(output, context, filePath, opts, dependencies)
 
   // Process loops (@foreach, @for, etc.) - BEFORE conditionals to handle nested scope properly
-  output = processLoops(output, context, filePath, options)
+  output = processLoops(output, context, filePath, opts)
 
   // Process conditionals (@if, @unless, etc.) - AFTER loops to allow loop variables in scope
   output = processConditionals(output, context, filePath)
@@ -948,24 +966,24 @@ async function processOtherDirectives(
   // to ensure variables are available for conditionals, loops, and expressions
 
   // Process markdown files - new directive for including .md files with frontmatter
-  output = await processMarkdownFileDirectives(output, context, filePath, options)
+  output = await processMarkdownFileDirectives(output, context, filePath, opts)
 
   // Process markdown directives (@markdown)
   output = await processMarkdownDirectives(output, context, filePath)
 
   // Process translate directives (@translate, @t)
-  output = await processTranslateDirective(output, context, filePath, options)
+  output = await processTranslateDirective(output, context, filePath, opts)
 
   // Process accessibility directives (@a11y, @screenReader)
-  output = processA11yDirectives(output, context, filePath, options)
+  output = processA11yDirectives(output, context, filePath, opts)
 
   // Process SEO directives (@meta, @seo, @structuredData)
-  output = processMetaDirectives(output, context, filePath, options)
+  output = processMetaDirectives(output, context, filePath, opts)
   output = processStructuredData(output, context, filePath)
-  output = processSeoDirective(output, context, filePath, options)
+  output = processSeoDirective(output, context, filePath, opts)
 
   // Process CSP directives (@csp, @cspNonce)
-  output = processCspDirectives(output, context, filePath, options)
+  output = processCspDirectives(output, context, filePath, opts)
 
   // Process @json directive
   output = processJsonDirective(output, context)
@@ -992,11 +1010,11 @@ async function processOtherDirectives(
   output = processXElementDirectives(output)
 
   // Run post-processing middleware
-  output = await runPostProcessingMiddleware(output, context, filePath, options)
+  output = await runPostProcessingMiddleware(output, context, filePath, opts)
 
   // Auto-inject SEO tags if enabled
-  if (options.seo?.enabled) {
-    output = injectSeoTags(output, context, options)
+  if (opts.seo?.enabled) {
+    output = injectSeoTags(output, context, opts)
   }
 
   // Inject rendered head content from useHead/useSeoMeta calls
@@ -1024,19 +1042,24 @@ async function processOtherDirectives(
   }
 
   // Auto-inject CSP meta tag if enabled
-  if (options.csp?.enabled && options.csp.addMetaTag) {
-    output = injectCspMetaTag(output, options.csp as any, context)
+  if (opts.csp?.enabled && opts.csp.addMetaTag) {
+    output = injectCspMetaTag(output, opts.csp as any, context)
   }
 
   // Auto-inject analytics if enabled
-  if (options.analytics?.enabled) {
-    output = injectAnalytics(output, options)
+  if (opts.analytics?.enabled) {
+    output = injectAnalytics(output, opts)
+  }
+
+  // Auto-inject heatmap tracking if enabled
+  if (opts.heatmap?.enabled) {
+    output = injectHeatmap(output, opts)
   }
 
   // Auto-inject PWA tags if enabled
-  if (options.pwa?.enabled && options.pwa.autoInject !== false) {
+  if (opts.pwa?.enabled && opts.pwa.autoInject !== false) {
     const { injectPwaTags } = await import('./pwa/inject')
-    output = injectPwaTags(output, options)
+    output = injectPwaTags(output, opts)
   }
 
   // Strip server-only scripts (marked with 'server' attribute)
@@ -1048,6 +1071,10 @@ async function processOtherDirectives(
   output = output.replace(/<script\s+client\b([^>]*)>([\s\S]*?)<\/script>/gi, (_match, attrs, content) => {
     const { transformStoreImports } = require('./state-management')
     const transformedContent = transformStoreImports(content)
+
+    // Validate client scripts for prohibited patterns
+    validateClientScript(transformedContent, filePath)
+
     return `<script${attrs}>${transformedContent}</script>`
   })
 
@@ -1504,17 +1531,127 @@ export function processOnceDirective(template: string): string {
 }
 
 /**
- * Process @ref attributes for DOM element references.
+ * Process ref attributes for DOM element references (Vue-style).
  *
  * Transforms:
+ *   <input ref="inputRef" />
  *   <input @ref="inputRef" />
  *
  * Into:
- *   <input data-ref="inputRef" />
+ *   <input data-stx-ref="inputRef" />
  *
- * The client-side runtime will bind these to ref objects.
+ * The client-side runtime will automatically bind these to ref objects.
  */
 function processRefAttributes(template: string): string {
-  // Match @ref="name" attributes
-  return template.replace(/@ref="([^"]+)"/g, 'data-ref="$1"')
+  // Match ref="name" (Vue-style) and @ref="name" attributes
+  // Use data-stx-ref to avoid conflicts with native ref attribute
+  let result = template.replace(/@ref="([^"]+)"/g, 'data-stx-ref="$1"')
+  // Also support Vue-style ref="name" (but not if already processed)
+  result = result.replace(/\sref="([^"]+)"/g, ' data-stx-ref="$1"')
+  return result
+}
+
+/**
+ * Prohibited DOM API patterns in client scripts.
+ * STX provides Vue-style alternatives via the STX global object.
+ */
+const PROHIBITED_DOM_PATTERNS: Array<{
+  pattern: RegExp
+  message: string
+  suggestion: string
+}> = [
+  {
+    pattern: /document\.getElementById\s*\(/g,
+    message: 'document.getElementById() is prohibited',
+    suggestion: 'Use STX.useRef("name") or STX.useRefs() instead',
+  },
+  {
+    pattern: /document\.querySelector\s*\(/g,
+    message: 'document.querySelector() is prohibited',
+    suggestion: 'Use STX.useRef("name") or refs.container?.querySelector() instead',
+  },
+  {
+    pattern: /document\.querySelectorAll\s*\(/g,
+    message: 'document.querySelectorAll() is prohibited',
+    suggestion: 'Use refs.container?.querySelectorAll() instead',
+  },
+  {
+    pattern: /document\.getElementsBy\w+\s*\(/g,
+    message: 'document.getElementsBy*() is prohibited',
+    suggestion: 'Use STX.useRefs() or refs.container?.querySelectorAll() instead',
+  },
+  {
+    pattern: /document\.createElement\s*\(/g,
+    message: 'document.createElement() is prohibited',
+    suggestion: 'Use STX.el(tag, attrs, content) instead',
+  },
+  {
+    pattern: /document\.activeElement(?![A-Za-z])/g,
+    message: 'document.activeElement is prohibited',
+    suggestion: 'Use STX.activeElement() instead',
+  },
+]
+
+/**
+ * Validate client script content for prohibited DOM API patterns.
+ * Throws an error if prohibited patterns are found.
+ *
+ * @param content - The script content to validate
+ * @param filePath - The file path for error reporting
+ */
+function validateClientScript(content: string, filePath: string): void {
+  const errors: string[] = []
+
+  for (const { pattern, message, suggestion } of PROHIBITED_DOM_PATTERNS) {
+    // Reset regex lastIndex for global patterns
+    pattern.lastIndex = 0
+    const matches = content.match(pattern)
+
+    if (matches && matches.length > 0) {
+      // Find line numbers for better error messages
+      const lines = content.split('\n')
+      const lineNumbers: number[] = []
+
+      lines.forEach((line, index) => {
+        pattern.lastIndex = 0
+        if (pattern.test(line)) {
+          lineNumbers.push(index + 1)
+        }
+      })
+
+      const locationInfo = lineNumbers.length > 0
+        ? ` (line${lineNumbers.length > 1 ? 's' : ''}: ${lineNumbers.join(', ')})`
+        : ''
+
+      errors.push(`  ✗ ${message}${locationInfo}\n    → ${suggestion}`)
+    }
+  }
+
+  if (errors.length > 0) {
+    const fileName = filePath.split('/').pop() || filePath
+    const errorMessage = `
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  STX: Prohibited DOM API Usage Detected                                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+File: ${fileName}
+
+STX enforces Vue-style patterns. Direct DOM manipulation via document.* is not allowed.
+Use the STX API instead for cleaner, more maintainable code.
+
+Errors found:
+${errors.join('\n\n')}
+
+Quick Reference:
+  • STX.useRefs()          → Get all refs from template
+  • STX.useRef("name")     → Get single ref by name
+  • STX.el(tag, attrs)     → Create element
+  • STX.onKey(key, fn)     → Global keyboard listener
+  • STX.activeElement()    → Get focused element
+  • STX.escapeHtml(text)   → Escape HTML
+
+Documentation: https://stx.stacksjs.org/refs
+`
+    throw new StxValidationError(errorMessage, filePath)
+  }
 }
