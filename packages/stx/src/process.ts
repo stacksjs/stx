@@ -1,6 +1,7 @@
 import type { StxOptions } from './types'
 import path from 'node:path'
 import { processA11yDirectives } from './a11y'
+import { generateLifecycleRuntime } from './composables'
 import { processTemplateBindings } from './reactive-bindings'
 import { injectAnalytics } from './analytics'
 import { injectHeatmap } from './heatmap'
@@ -1060,6 +1061,41 @@ async function processOtherDirectives(
   if (opts.pwa?.enabled && opts.pwa.autoInject !== false) {
     const { injectPwaTags } = await import('./pwa/inject')
     output = injectPwaTags(output, opts)
+  }
+
+  // Auto-inject STX lifecycle runtime if client scripts use STX APIs
+  // This provides window.STX with useRefs, el, onKey, activeElement, escapeHtml, etc.
+  const hasClientScripts = /<script\b(?![^>]*\bserver\b)[^>]*>[\s\S]*?<\/script>/i.test(output)
+  const hasStxUsage = /\bSTX\.\w+/.test(output)
+  const alreadyHasRuntime = /window\.STX\s*=/.test(output)
+
+  if (hasClientScripts && hasStxUsage && !alreadyHasRuntime) {
+    const runtimeScript = `<script>${generateLifecycleRuntime()}</script>`
+
+    // Inject in head before other scripts, or at start of body
+    if (output.includes('</head>')) {
+      // Find position before any script tags in head, or before </head>
+      const headMatch = output.match(/<head[^>]*>([\s\S]*?)<\/head>/i)
+      if (headMatch) {
+        const headContent = headMatch[1]
+        const firstScriptInHead = headContent.indexOf('<script')
+        if (firstScriptInHead !== -1) {
+          // Insert before first script in head
+          const headStart = output.indexOf('<head')
+          const headTagEnd = output.indexOf('>', headStart) + 1
+          const insertPos = headTagEnd + firstScriptInHead
+          output = output.slice(0, insertPos) + runtimeScript + '\n' + output.slice(insertPos)
+        } else {
+          // No scripts in head, insert before </head>
+          output = output.replace('</head>', `${runtimeScript}\n</head>`)
+        }
+      }
+    } else if (output.includes('<body')) {
+      output = output.replace(/<body([^>]*)>/, `<body$1>\n${runtimeScript}`)
+    } else {
+      // No head or body, prepend to output
+      output = runtimeScript + '\n' + output
+    }
   }
 
   // Strip server-only scripts (marked with 'server' attribute)
