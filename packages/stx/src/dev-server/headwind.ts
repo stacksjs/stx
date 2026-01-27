@@ -58,7 +58,16 @@ export async function loadHeadwind(): Promise<HeadwindModule | null> {
 
   try {
     // Dynamic import to make headwind optional
-    const HeadwindPkg = await import('@stacksjs/headwind')
+    // Try standard import first, then fallback to direct dist path
+    // (headwind package.json exports are sometimes misconfigured)
+    let HeadwindPkg
+    try {
+      HeadwindPkg = await import('@stacksjs/headwind')
+    }
+    catch {
+      // Fallback: try importing from dist directly
+      HeadwindPkg = await import('@stacksjs/headwind/dist/index.js')
+    }
     if (HeadwindPkg && HeadwindPkg.CSSGenerator) {
       headwindModule = {
         CSSGenerator: HeadwindPkg.CSSGenerator,
@@ -144,10 +153,21 @@ export async function buildHeadwindCSS(cwd: string): Promise<string> {
       return ''
     }
 
-    // Build with the config
+    // Build with the config - deep merge theme to preserve defaults
+    const defaultTheme = hw.defaultConfig?.theme || {}
+    const userTheme = cachedConfig.theme || {}
     const config: HeadwindConfig = {
       ...hw.defaultConfig,
       ...cachedConfig,
+      theme: {
+        ...defaultTheme,
+        ...userTheme,
+        // Deep merge extend if present
+        extend: {
+          ...(defaultTheme.extend || {}),
+          ...(userTheme.extend || {}),
+        },
+      },
     }
 
     const start = performance.now()
