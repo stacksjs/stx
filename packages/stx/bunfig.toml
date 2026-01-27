@@ -1,2 +1,5 @@
+[install]
+linker = "hoisted"
+
 [test]
 preload = "./happy-dom.ts"

@@ -1070,25 +1070,24 @@ async function processOtherDirectives(
   const alreadyHasRuntime = /window\.STX\s*=/.test(output)
 
   if (hasClientScripts && hasStxUsage && !alreadyHasRuntime) {
-    const runtimeScript = `<script>${generateLifecycleRuntime()}</script>`
+    const runtimeCode = generateLifecycleRuntime()
+    const runtimeScript = `<script>\n${runtimeCode}\n</script>`
 
     // Inject in head before other scripts, or at start of body
     if (output.includes('</head>')) {
-      // Find position before any script tags in head, or before </head>
-      const headMatch = output.match(/<head[^>]*>([\s\S]*?)<\/head>/i)
-      if (headMatch) {
-        const headContent = headMatch[1]
-        const firstScriptInHead = headContent.indexOf('<script')
-        if (firstScriptInHead !== -1) {
-          // Insert before first script in head
-          const headStart = output.indexOf('<head')
-          const headTagEnd = output.indexOf('>', headStart) + 1
-          const insertPos = headTagEnd + firstScriptInHead
-          output = output.slice(0, insertPos) + runtimeScript + '\n' + output.slice(insertPos)
-        } else {
-          // No scripts in head, insert before </head>
-          output = output.replace('</head>', `${runtimeScript}\n</head>`)
-        }
+      // Find the first <script in the head section and insert runtime before it
+      const headEndPos = output.indexOf('</head>')
+      const headSection = output.slice(0, headEndPos)
+      const firstScriptPos = headSection.indexOf('<script')
+
+      if (firstScriptPos !== -1) {
+        // Insert runtime script right before the first script tag
+        const before = output.slice(0, firstScriptPos)
+        const after = output.slice(firstScriptPos)
+        output = before + runtimeScript + '\n' + after
+      } else {
+        // No scripts in head, insert before </head>
+        output = output.replace('</head>', `${runtimeScript}\n</head>`)
       }
     } else if (output.includes('<body')) {
       output = output.replace(/<body([^>]*)>/, `<body$1>\n${runtimeScript}`)
