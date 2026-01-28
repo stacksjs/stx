@@ -47,6 +47,55 @@ let cachedCSS: string = ''
 let isBuilding = false
 
 /**
+ * Try to dynamically import headwind from a given path
+ */
+async function tryImportHeadwind(importPath: string): Promise<HeadwindModule | null> {
+  try {
+    const pkg = await import(importPath)
+    if (pkg && pkg.CSSGenerator) {
+      return {
+        CSSGenerator: pkg.CSSGenerator,
+        config: pkg.config,
+        build: pkg.build,
+        defaultConfig: pkg.defaultConfig,
+      }
+    }
+  }
+  catch {
+    // Silently fail, will try next path
+  }
+  return null
+}
+
+/**
+ * Find potential headwind paths by searching up the directory tree
+ */
+function findHeadwindPaths(): string[] {
+  const paths: string[] = []
+  const homeDir = process.env.HOME || process.env.USERPROFILE || ''
+
+  // Search from current working directory up
+  let currentDir = process.cwd()
+  while (currentDir !== path.dirname(currentDir)) {
+    paths.push(path.join(currentDir, 'node_modules', '@stacksjs', 'headwind', 'dist', 'index.js'))
+    currentDir = path.dirname(currentDir)
+  }
+
+  // Common development locations (relative to home)
+  if (homeDir) {
+    const devPaths = [
+      // crosswind monorepo (headwind package)
+      path.join(homeDir, 'Code', 'Tools', 'crosswind', 'packages', 'headwind', 'dist', 'index.js'),
+      // stx monorepo's node_modules
+      path.join(homeDir, 'Code', 'Tools', 'stx', 'packages', 'stx', 'node_modules', '@stacksjs', 'headwind', 'dist', 'index.js'),
+    ]
+    paths.push(...devPaths)
+  }
+
+  return paths
+}
+
+/**
  * Lazily load the Headwind module
  * Returns null if Headwind is not installed
  */
@@ -57,41 +106,35 @@ export async function loadHeadwind(): Promise<HeadwindModule | null> {
   headwindLoadAttempted = true
 
   try {
-    // Dynamic import to make headwind optional
-    // Try multiple resolution strategies for linked packages
-    let HeadwindPkg
+    // Strategy 1: Standard npm imports
+    const importPaths = [
+      '@stacksjs/headwind',
+      '@stacksjs/headwind/dist/index.js',
+    ]
 
-    // Strategy 1: Standard import
-    try {
-      HeadwindPkg = await import('@stacksjs/headwind')
-    }
-    catch {
-      // Strategy 2: Try importing from dist directly
-      try {
-        HeadwindPkg = await import('@stacksjs/headwind/dist/index.js')
+    for (const importPath of importPaths) {
+      const result = await tryImportHeadwind(importPath)
+      if (result) {
+        headwindModule = result
+        console.log(`${colors.green}[Headwind]${colors.reset} CSS engine loaded`)
+        return headwindModule
       }
-      catch {
-        // Strategy 3: Resolve from this package's node_modules (for linked packages)
-        // This handles cases where stx is linked and headwind is in stx's node_modules
-        const stxDir = path.dirname(path.dirname(path.dirname(new URL(import.meta.url).pathname)))
-        const headwindPath = path.join(stxDir, 'node_modules', '@stacksjs', 'headwind', 'dist', 'index.js')
-        if (fs.existsSync(headwindPath)) {
-          HeadwindPkg = await import(headwindPath)
+    }
+
+    // Strategy 2: Search filesystem for linked packages
+    const localPaths = findHeadwindPaths()
+    for (const localPath of localPaths) {
+      if (fs.existsSync(localPath)) {
+        const result = await tryImportHeadwind(localPath)
+        if (result) {
+          headwindModule = result
+          console.log(`${colors.green}[Headwind]${colors.reset} CSS engine loaded from ${path.dirname(path.dirname(localPath))}`)
+          return headwindModule
         }
       }
     }
 
-    if (HeadwindPkg && HeadwindPkg.CSSGenerator) {
-      headwindModule = {
-        CSSGenerator: HeadwindPkg.CSSGenerator,
-        config: HeadwindPkg.config,
-        build: HeadwindPkg.build,
-        defaultConfig: HeadwindPkg.defaultConfig,
-      }
-      console.log(`${colors.green}[Headwind]${colors.reset} CSS engine loaded`)
-      return headwindModule
-    }
-    throw new Error('Headwind CSSGenerator not found')
+    throw new Error('Headwind CSSGenerator not found in any location')
   }
   catch {
     console.warn(`${colors.yellow}[Headwind] CSS engine not available, Tailwind styles will not be generated${colors.reset}`)

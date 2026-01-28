@@ -526,9 +526,24 @@ export async function processDirectives(
   options: StxOptions,
   dependencies: Set<string>,
 ): Promise<string> {
+  // Track if this is the top-level call (not a recursive call from layout/include)
+  const isTopLevel = !context.__stxProcessingDepth
+  if (!context.__stxProcessingDepth) {
+    context.__stxProcessingDepth = 0
+  }
+  context.__stxProcessingDepth++
+
   try {
     return await performanceMonitor.timeAsync('template-processing', async () => {
-      return await processDirectivesInternal(template, context, filePath, options, dependencies)
+      let result = await processDirectivesInternal(template, context, filePath, options, dependencies)
+
+      // Generate and inject Tailwind CSS using Headwind (only at top level)
+      // This happens after all includes/layouts/components are processed
+      if (isTopLevel) {
+        result = await injectHeadwindCSS(result)
+      }
+
+      return result
     })
   }
   catch (error: unknown) {
@@ -1176,9 +1191,8 @@ async function processOtherDirectives(
   // Transform <script client> to <script>
   output = output.replace(/<script\s+client\b([^>]*)>/gi, '<script$1>')
 
-  // Generate and inject Tailwind CSS using Headwind
-  // This extracts all class names and generates the corresponding CSS
-  output = await injectHeadwindCSS(output)
+  // Note: Headwind CSS injection is done at the top level in processDirectives
+  // to avoid duplicate injection for includes/layouts/components
 
   return output
 }
