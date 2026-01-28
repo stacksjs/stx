@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Client Scripts Test</title>
+  <script>
+    const pageTitle = "My Page";
+    module.exports = { pageTitle };
+  </script>
+</head>
+<body>
+  <h1>{{ pageTitle }}</h1>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Page loaded');
+    });
+  </script>
+</body>
+</html>

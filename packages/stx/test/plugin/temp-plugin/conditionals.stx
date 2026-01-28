@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Conditionals Test</title>
+  <script>
+    const isAdmin = true;
+    const username = "Admin User";
+    module.exports = { isAdmin, username };
+  </script>
+</head>
+<body>
+  @if (isAdmin)
+    <div class="admin-panel">Welcome, {{ username }}</div>
+  @else
+    <div class="user-panel">Welcome, Guest</div>
+  @endif
+</body>
+</html>
