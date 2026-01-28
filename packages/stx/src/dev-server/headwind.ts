@@ -84,9 +84,9 @@ function findHeadwindPaths(): string[] {
   // Common development locations (relative to home)
   if (homeDir) {
     const devPaths = [
-      // crosswind monorepo (headwind package)
-      path.join(homeDir, 'Code', 'Tools', 'crosswind', 'packages', 'headwind', 'dist', 'index.js'),
-      // stx monorepo's node_modules
+      // crosswind monorepo (crosswind package - renamed from headwind)
+      path.join(homeDir, 'Code', 'Tools', 'crosswind', 'packages', 'crosswind', 'dist', 'index.js'),
+      // stx monorepo's node_modules (still uses @stacksjs/headwind for backwards compat)
       path.join(homeDir, 'Code', 'Tools', 'stx', 'packages', 'stx', 'node_modules', '@stacksjs', 'headwind', 'dist', 'index.js'),
     ]
     paths.push(...devPaths)
