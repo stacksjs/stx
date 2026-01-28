@@ -58,16 +58,29 @@ export async function loadHeadwind(): Promise<HeadwindModule | null> {
 
   try {
     // Dynamic import to make headwind optional
-    // Try standard import first, then fallback to direct dist path
-    // (headwind package.json exports are sometimes misconfigured)
+    // Try multiple resolution strategies for linked packages
     let HeadwindPkg
+
+    // Strategy 1: Standard import
     try {
       HeadwindPkg = await import('@stacksjs/headwind')
     }
     catch {
-      // Fallback: try importing from dist directly
-      HeadwindPkg = await import('@stacksjs/headwind/dist/index.js')
+      // Strategy 2: Try importing from dist directly
+      try {
+        HeadwindPkg = await import('@stacksjs/headwind/dist/index.js')
+      }
+      catch {
+        // Strategy 3: Resolve from this package's node_modules (for linked packages)
+        // This handles cases where stx is linked and headwind is in stx's node_modules
+        const stxDir = path.dirname(path.dirname(path.dirname(new URL(import.meta.url).pathname)))
+        const headwindPath = path.join(stxDir, 'node_modules', '@stacksjs', 'headwind', 'dist', 'index.js')
+        if (fs.existsSync(headwindPath)) {
+          HeadwindPkg = await import(headwindPath)
+        }
+      }
     }
+
     if (HeadwindPkg && HeadwindPkg.CSSGenerator) {
       headwindModule = {
         CSSGenerator: HeadwindPkg.CSSGenerator,

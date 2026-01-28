@@ -1,5 +1,6 @@
 import type { StxOptions } from './types'
 import path from 'node:path'
+import { injectHeadwindCSS } from './dev-server/headwind'
 import { processA11yDirectives } from './a11y'
 import { generateLifecycleRuntime } from './composables'
 import { processTemplateBindings } from './reactive-bindings'
@@ -788,6 +789,56 @@ async function processDirectivesInternal(
   return await processOtherDirectives(output, context, filePath, resolvedOptions, dependencies)
 }
 
+/**
+ * Process built-in STX components like <stx-loading-indicator>
+ */
+async function processBuiltInComponents(
+  template: string,
+  _context: Record<string, any>,
+  _filePath: string,
+  _options: StxOptions,
+): Promise<string> {
+  let output = template
+
+  // Process <stx-loading-indicator> component
+  output = output.replace(
+    /<stx-loading-indicator([^>]*?)(?:\s*\/>|><\/stx-loading-indicator>)/gi,
+    (_match, attrs) => {
+      // Parse attributes
+      const colorMatch = attrs.match(/color=["']([^"']+)["']/i)
+      const initialColorMatch = attrs.match(/initial-color=["']([^"']+)["']/i)
+      const heightMatch = attrs.match(/height=["']([^"']+)["']/i)
+      const durationMatch = attrs.match(/duration=["']([^"']+)["']/i)
+      const throttleMatch = attrs.match(/throttle=["']([^"']+)["']/i)
+      const zIndexMatch = attrs.match(/z-index=["']([^"']+)["']/i)
+
+      const options = {
+        color: colorMatch?.[1] || '#6366f1',
+        initialColor: initialColorMatch?.[1] || '',
+        height: heightMatch?.[1] || '3px',
+        duration: durationMatch ? Number.parseInt(durationMatch[1]) : 2000,
+        throttle: throttleMatch ? Number.parseInt(throttleMatch[1]) : 200,
+        zIndex: zIndexMatch ? Number.parseInt(zIndexMatch[1]) : 999999,
+      }
+
+      const gradient = options.initialColor
+        ? `linear-gradient(to right, ${options.initialColor}, ${options.color})`
+        : options.color
+
+      return `
+<div id="stx-loading-indicator" style="position:fixed;top:0;left:0;right:0;height:${options.height};background:${gradient};z-index:${options.zIndex};transform:scaleX(0);transform-origin:left;transition:transform 0.1s ease-out,opacity 0.3s ease;opacity:0;pointer-events:none">
+  <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.4) 50%,transparent 100%);animation:stx-shimmer 1.5s infinite"></div>
+</div>
+<style>@keyframes stx-shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}</style>
+<script>
+(function(){var el=document.getElementById('stx-loading-indicator'),p=0,l=!1,i=null;function u(v){p=Math.min(Math.max(v,0),100);if(el){el.style.opacity=p>0?'1':'0';el.style.transform='scaleX('+(p/100)+')'}}window.stxLoading={start:function(){l=!0;p=0;u(10);if(i)clearInterval(i);i=setInterval(function(){if(!l)return;var r=90-p,inc=Math.max(0.5,r*0.1);if(p<90)u(p+inc)},${options.throttle})},finish:function(){l=!1;if(i){clearInterval(i);i=null}u(100);setTimeout(function(){if(el)el.style.opacity='0';setTimeout(function(){p=0;if(el)el.style.transform='scaleX(0)'},300)},200)},set:function(v){u(v)},clear:function(){l=!1;p=0;if(i){clearInterval(i);i=null}if(el){el.style.opacity='0';el.style.transform='scaleX(0)'}}};document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a');if(!a)return;var h=a.getAttribute('href');if(!h||h.startsWith('http')||h.startsWith('#')||h.startsWith('mailto:')||h.startsWith('tel:')||a.target==='_blank')return;window.stxLoading.start()});window.addEventListener('popstate',function(){window.stxLoading.start()});window.addEventListener('load',function(){window.stxLoading.finish()})})();
+</script>`
+    },
+  )
+
+  return output
+}
+
 // Helper function to process all non-layout directives
 async function processOtherDirectives(
   template: string,
@@ -862,6 +913,9 @@ async function processOtherDirectives(
 
   // Process custom directives
   output = await processCustomDirectives(output, context, filePath, opts)
+
+  // Process built-in STX components
+  output = await processBuiltInComponents(output, context, filePath, opts)
 
   // Process component directives (opts has already-resolved paths)
   if (opts.componentsDir) {
@@ -1121,6 +1175,10 @@ async function processOtherDirectives(
   // Clean up client attribute from script tags (it's not valid HTML)
   // Transform <script client> to <script>
   output = output.replace(/<script\s+client\b([^>]*)>/gi, '<script$1>')
+
+  // Generate and inject Tailwind CSS using Headwind
+  // This extracts all class names and generates the corresponding CSS
+  output = await injectHeadwindCSS(output)
 
   return output
 }
