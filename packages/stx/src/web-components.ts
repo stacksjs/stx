@@ -2068,7 +2068,9 @@ export function parseSFCComponent(source: string, defaultTag: string): ParsedSFC
   }
 
   // Extract template block
-  const templateMatch = source.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
+  // Only match <template> WITHOUT an id attribute - templates with id are HTML template elements
+  // that should be preserved (used for client-side JS template cloning)
+  const templateMatch = source.match(/<template\b(?![^>]*\bid\s*=)[^>]*>([\s\S]*?)<\/template>/i)
   const template = templateMatch ? templateMatch[1].trim() : ''
 
   // Extract style block

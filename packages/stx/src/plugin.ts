@@ -83,8 +83,10 @@ export const plugin: BunPlugin = {
         const { scriptContent, templateContent, allScripts } = performanceMonitor.time('script-extraction', () => {
           // SFC Support: Extract <template> content if present
           // This allows Vue-style single file components with explicit <template> tags
+          // Only match <template> WITHOUT an id attribute - templates with id are HTML template elements
+          // that should be preserved (used for client-side JS template cloning)
           let workingContent = content
-          const templateTagMatch = content.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
+          const templateTagMatch = content.match(/<template\b(?![^>]*\bid\s*=)[^>]*>([\s\S]*?)<\/template>/i)
           if (templateTagMatch) {
             workingContent = templateTagMatch[1].trim()
           }
