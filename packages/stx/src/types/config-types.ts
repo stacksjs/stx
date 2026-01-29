@@ -462,6 +462,8 @@ export interface StxConfig {
   animation?: Partial<AnimationConfig>
   /** Skip adding default SEO tags */
   skipDefaultSeoTags?: boolean
+  /** Skip injecting signals runtime (for nested component processing) */
+  skipSignalsRuntime?: boolean
   /** Markdown configuration */
   markdown?: Partial<MarkdownConfig>
   /** Loop directive configuration */

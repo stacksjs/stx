@@ -930,20 +930,54 @@ export function generateSignalsRuntimeDev(): string {
 
   function toValue(expr) {
     try {
-      const fn = new Function(...Object.keys(componentScope), 'return ' + expr);
-      return fn(...Object.values(componentScope));
+      // Merge componentScope with globals for expression evaluation
+      // This allows component scripts to define variables in global scope
+      const scope = { ...componentScope };
+      // Check for common signal variables in global scope
+      const globalVars = ['loading', 'error', 'pages', 'referrers', 'devices', 'browsers',
+                         'countries', 'campaigns', 'events', 'goals', 'sessions', 'vitals',
+                         'violations', 'insights', 'funnels', 'webhooks', 'flow', 'alerts',
+                         'settings', 'data', 'items', 'list', 'count', 'value', 'visible'];
+      for (const v of globalVars) {
+        if (typeof window[v] !== 'undefined' && !(v in scope)) {
+          scope[v] = window[v];
+        }
+      }
+      const fn = new Function(...Object.keys(scope), 'return ' + expr);
+      return fn(...Object.values(scope));
     } catch (e) {
-      console.warn('[STX] Expression error:', expr, e);
-      return '';
+      // Try evaluating directly if the scope-based approach fails
+      try {
+        return (0, eval)(expr);
+      } catch {
+        console.warn('[STX] Expression error:', expr, e);
+        return '';
+      }
     }
   }
 
   function executeHandler(expr, event) {
     try {
-      const fn = new Function(...Object.keys(componentScope), '$event', expr);
-      fn(...Object.values(componentScope), event);
+      // Merge componentScope with globals for handler execution
+      const scope = { ...componentScope };
+      const globalVars = ['loading', 'error', 'pages', 'referrers', 'devices', 'browsers',
+                         'countries', 'campaigns', 'events', 'goals', 'sessions', 'vitals',
+                         'violations', 'insights', 'funnels', 'webhooks', 'flow', 'alerts',
+                         'settings', 'data', 'items', 'list', 'count', 'value', 'visible'];
+      for (const v of globalVars) {
+        if (typeof window[v] !== 'undefined' && !(v in scope)) {
+          scope[v] = window[v];
+        }
+      }
+      const fn = new Function(...Object.keys(scope), '$event', expr);
+      fn(...Object.values(scope), event);
     } catch (e) {
-      console.warn('[STX] Handler error:', expr, e);
+      // Try evaluating directly if the scope-based approach fails
+      try {
+        (0, eval)(expr);
+      } catch {
+        console.warn('[STX] Handler error:', expr, e);
+      }
     }
   }
 

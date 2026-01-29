@@ -1,6 +1,6 @@
 import type { StxOptions } from './types'
 import path from 'node:path'
-import { injectHeadwindCSS } from './dev-server/headwind'
+import { injectCrosswindCSS } from './dev-server/crosswind'
 import { processA11yDirectives } from './a11y'
 import { generateLifecycleRuntime } from './composables'
 import { processTemplateBindings } from './reactive-bindings'
@@ -161,8 +161,8 @@ function extractExports(setupContent: string): string {
  * The runtime provides client-side reactivity.
  */
 function injectSignalsRuntime(template: string, options: StxOptions): string {
-  // Don't inject if already present
-  if (template.includes('window.stx')) {
+  // Don't inject if already present (check for the actual runtime, not just window.stx prefix)
+  if (template.includes('window.stx =') || template.includes('window.stx=') || template.includes('window.stx.state')) {
     return template
   }
 
@@ -203,6 +203,12 @@ function processSignals(template: string, options: StxOptions): string {
 
   let output = template
 
+  // Skip full processing for nested components - they just keep their scripts
+  // The parent template will inject the runtime once
+  if (options.skipSignalsRuntime) {
+    return output
+  }
+
   // Process <script setup> blocks
   const { output: processedOutput, setupCode } = processScriptSetup(output)
   output = processedOutput
@@ -222,8 +228,12 @@ function processSignals(template: string, options: StxOptions): string {
   }
 
   // If no setup code but has signals syntax, add data-stx-auto to body for auto-processing
-  if (!setupCode && !output.includes('data-stx')) {
-    if (output.includes('<body') && !output.includes('data-stx-auto')) {
+  // Check if body already has data-stx attribute (not just any occurrence in the template)
+  const bodyMatch = output.match(/<body([^>]*)>/i)
+  const bodyHasDataStx = bodyMatch && /data-stx/.test(bodyMatch[1])
+
+  if (!setupCode && !bodyHasDataStx) {
+    if (output.includes('<body') && bodyMatch && !/data-stx-auto/.test(bodyMatch[1])) {
       output = output.replace(/<body([^>]*)>/, '<body$1 data-stx-auto>')
     }
   }
@@ -738,10 +748,10 @@ export async function processDirectives(
     return await performanceMonitor.timeAsync('template-processing', async () => {
       let result = await processDirectivesInternal(template, context, filePath, options, dependencies)
 
-      // Generate and inject Tailwind CSS using Headwind (only at top level)
+      // Generate and inject Tailwind CSS using Crosswind (only at top level)
       // This happens after all includes/layouts/components are processed
       if (isTopLevel) {
-        result = await injectHeadwindCSS(result)
+        result = await injectCrosswindCSS(result)
       }
 
       return result
@@ -1396,7 +1406,7 @@ async function processOtherDirectives(
   // Transform <script client> to <script>
   output = output.replace(/<script\s+client\b([^>]*)>/gi, '<script$1>')
 
-  // Note: Headwind CSS injection is done at the top level in processDirectives
+  // Note: Crosswind CSS injection is done at the top level in processDirectives
   // to avoid duplicate injection for includes/layouts/components
 
   return output

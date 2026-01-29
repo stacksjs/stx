@@ -150,6 +150,35 @@ export async function renderComponentWithSlot(
             }
           }
           if (componentFilePath) break
+
+          // Also search subdirectories (one level deep)
+          if (!componentFilePath) {
+            try {
+              const fs = await import('node:fs')
+              // Check if directory exists before reading
+              const dirStat = fs.statSync(dir, { throwIfNoEntry: false })
+              if (!dirStat?.isDirectory()) continue
+
+              const entries = fs.readdirSync(dir, { withFileTypes: true })
+              for (const entry of entries) {
+                if (entry.isDirectory()) {
+                  const subDir = path.join(dir, entry.name)
+                  for (const variant of uniqueVariants) {
+                    const tryPath = path.join(subDir, variant)
+                    triedPaths.push(tryPath)
+                    if (await fileExists(tryPath)) {
+                      componentFilePath = tryPath
+                      break
+                    }
+                  }
+                  if (componentFilePath) break
+                }
+              }
+            } catch {
+              // Ignore directory read errors
+            }
+          }
+          if (componentFilePath) break
         }
       }
     }
@@ -228,7 +257,14 @@ export async function renderComponentWithSlot(
 
       // Preserve client scripts (non-server scripts)
       if (!isServerScript) {
-        clientScripts.push(`<script${attrs}>${content}</script>`)
+        // If script uses signals API, prepend the destructuring from window.stx
+        const usesSignals = /\b(state|derived|effect|batch|onMount|onDestroy)\s*\(/.test(content)
+        if (usesSignals) {
+          const signalsPreamble = 'const { state, derived, effect, batch, onMount, onDestroy } = window.stx;\n'
+          clientScripts.push(`<script${attrs}>${signalsPreamble}${content}</script>`)
+        } else {
+          clientScripts.push(`<script${attrs}>${content}</script>`)
+        }
       }
     }
 
@@ -280,6 +316,8 @@ export async function renderComponentWithSlot(
     const componentOptions = {
       ...options,
       componentsDir: path.dirname(componentFilePath),
+      // Skip runtime injection for nested components - parent will inject it
+      skipSignalsRuntime: true,
     }
 
     // Process the component content recursively with the new context

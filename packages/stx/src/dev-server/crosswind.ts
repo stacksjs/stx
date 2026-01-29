@@ -1,22 +1,22 @@
-// @ts-nocheck - Skip type checking due to Headwind type version differences
+// @ts-nocheck - Skip type checking due to Crosswind type version differences
 /**
- * Headwind CSS Generation Module
- * Provides on-the-fly Tailwind CSS generation using Headwind
+ * Crosswind CSS Generation Module
+ * Provides on-the-fly Tailwind CSS generation using Crosswind
  */
 
 import fs from 'node:fs'
 import path from 'node:path'
 import { colors } from './terminal-colors'
 
-// Type for Headwind module
-interface HeadwindModule {
-  CSSGenerator: new (config: HeadwindConfig) => CSSGenerator
-  config: HeadwindConfig
-  build?: (config: HeadwindConfig) => Promise<HeadwindBuildResult>
-  defaultConfig?: HeadwindConfig
+// Type for Crosswind module
+interface CrosswindModule {
+  CSSGenerator: new (config: CrosswindConfig) => CSSGenerator
+  config: CrosswindConfig
+  build?: (config: CrosswindConfig) => Promise<CrosswindBuildResult>
+  defaultConfig?: CrosswindConfig
 }
 
-interface HeadwindConfig {
+interface CrosswindConfig {
   content?: string[]
   output?: string
   preflight?: boolean
@@ -26,7 +26,7 @@ interface HeadwindConfig {
   [key: string]: unknown
 }
 
-interface HeadwindBuildResult {
+interface CrosswindBuildResult {
   css: string
   classes: Set<string>
   duration: number
@@ -37,19 +37,19 @@ interface CSSGenerator {
   toCSS(preflight: boolean, minify: boolean): string
 }
 
-// Headwind lazy loading cache
-let headwindModule: HeadwindModule | null = null
-let headwindLoadAttempted = false
+// Crosswind lazy loading cache
+let crosswindModule: CrosswindModule | null = null
+let crosswindLoadAttempted = false
 
 // Cached config and CSS for dev server
-let cachedConfig: HeadwindConfig | null = null
+let cachedConfig: CrosswindConfig | null = null
 let cachedCSS: string = ''
 let isBuilding = false
 
 /**
- * Try to dynamically import headwind from a given path
+ * Try to dynamically import crosswind from a given path
  */
-async function tryImportHeadwind(importPath: string): Promise<HeadwindModule | null> {
+async function tryImportCrosswind(importPath: string): Promise<CrosswindModule | null> {
   try {
     const pkg = await import(importPath)
     if (pkg && pkg.CSSGenerator) {
@@ -68,26 +68,26 @@ async function tryImportHeadwind(importPath: string): Promise<HeadwindModule | n
 }
 
 /**
- * Find potential headwind paths by searching up the directory tree
+ * Find potential crosswind paths by searching up the directory tree
  */
-function findHeadwindPaths(): string[] {
+function findCrosswindPaths(): string[] {
   const paths: string[] = []
   const homeDir = process.env.HOME || process.env.USERPROFILE || ''
 
   // Search from current working directory up
   let currentDir = process.cwd()
   while (currentDir !== path.dirname(currentDir)) {
-    paths.push(path.join(currentDir, 'node_modules', '@stacksjs', 'headwind', 'dist', 'index.js'))
+    paths.push(path.join(currentDir, 'node_modules', '@stacksjs', 'crosswind', 'dist', 'index.js'))
     currentDir = path.dirname(currentDir)
   }
 
   // Common development locations (relative to home)
   if (homeDir) {
     const devPaths = [
-      // crosswind monorepo (crosswind package - renamed from headwind)
+      // crosswind monorepo (crosswind package - renamed from crosswind)
       path.join(homeDir, 'Code', 'Tools', 'crosswind', 'packages', 'crosswind', 'dist', 'index.js'),
-      // stx monorepo's node_modules (still uses @stacksjs/headwind for backwards compat)
-      path.join(homeDir, 'Code', 'Tools', 'stx', 'packages', 'stx', 'node_modules', '@stacksjs', 'headwind', 'dist', 'index.js'),
+      // stx monorepo's node_modules (still uses @stacksjs/crosswind for backwards compat)
+      path.join(homeDir, 'Code', 'Tools', 'stx', 'packages', 'stx', 'node_modules', '@stacksjs', 'crosswind', 'dist', 'index.js'),
     ]
     paths.push(...devPaths)
   }
@@ -96,71 +96,71 @@ function findHeadwindPaths(): string[] {
 }
 
 /**
- * Lazily load the Headwind module
- * Returns null if Headwind is not installed
+ * Lazily load the Crosswind module
+ * Returns null if Crosswind is not installed
  */
-export async function loadHeadwind(): Promise<HeadwindModule | null> {
-  if (headwindLoadAttempted) {
-    return headwindModule
+export async function loadCrosswind(): Promise<CrosswindModule | null> {
+  if (crosswindLoadAttempted) {
+    return crosswindModule
   }
-  headwindLoadAttempted = true
+  crosswindLoadAttempted = true
 
   try {
     // Strategy 1: Standard npm imports
     const importPaths = [
-      '@stacksjs/headwind',
-      '@stacksjs/headwind/dist/index.js',
+      '@stacksjs/crosswind',
+      '@stacksjs/crosswind/dist/index.js',
     ]
 
     for (const importPath of importPaths) {
-      const result = await tryImportHeadwind(importPath)
+      const result = await tryImportCrosswind(importPath)
       if (result) {
-        headwindModule = result
-        console.log(`${colors.green}[Headwind]${colors.reset} CSS engine loaded`)
-        return headwindModule
+        crosswindModule = result
+        console.log(`${colors.green}[Crosswind]${colors.reset} CSS engine loaded`)
+        return crosswindModule
       }
     }
 
     // Strategy 2: Search filesystem for linked packages
-    const localPaths = findHeadwindPaths()
+    const localPaths = findCrosswindPaths()
     for (const localPath of localPaths) {
       if (fs.existsSync(localPath)) {
-        const result = await tryImportHeadwind(localPath)
+        const result = await tryImportCrosswind(localPath)
         if (result) {
-          headwindModule = result
-          console.log(`${colors.green}[Headwind]${colors.reset} CSS engine loaded from ${path.dirname(path.dirname(localPath))}`)
-          return headwindModule
+          crosswindModule = result
+          console.log(`${colors.green}[Crosswind]${colors.reset} CSS engine loaded from ${path.dirname(path.dirname(localPath))}`)
+          return crosswindModule
         }
       }
     }
 
-    throw new Error('Headwind CSSGenerator not found in any location')
+    throw new Error('Crosswind CSSGenerator not found in any location')
   }
   catch {
-    console.warn(`${colors.yellow}[Headwind] CSS engine not available, Tailwind styles will not be generated${colors.reset}`)
-    console.warn(`${colors.yellow}Run 'bun add @stacksjs/headwind' to enable CSS generation${colors.reset}`)
+    console.warn(`${colors.yellow}[Crosswind] CSS engine not available, Tailwind styles will not be generated${colors.reset}`)
+    console.warn(`${colors.yellow}Run 'bun add @stacksjs/crosswind' to enable CSS generation${colors.reset}`)
     return null
   }
 }
 
 /**
- * Reset the Headwind module cache (useful for testing)
+ * Reset the Crosswind module cache (useful for testing)
  */
-export function resetHeadwindCache(): void {
-  headwindModule = null
-  headwindLoadAttempted = false
+export function resetCrosswindCache(): void {
+  crosswindModule = null
+  crosswindLoadAttempted = false
   cachedConfig = null
   cachedCSS = ''
 }
 
 /**
- * Load headwind config from the working directory
+ * Load crosswind config from the working directory
  */
-export async function loadHeadwindConfig(cwd: string): Promise<HeadwindConfig | null> {
+export async function loadCrosswindConfig(cwd: string): Promise<CrosswindConfig | null> {
   const configFiles = [
-    'headwind.config.ts',
-    'headwind.config.js',
-    'headwind.config.mjs',
+    'crosswind.config.ts',
+    'crosswind.config.js',
+    'crosswind.config.mjs',
   ]
 
   for (const configFile of configFiles) {
@@ -169,11 +169,11 @@ export async function loadHeadwindConfig(cwd: string): Promise<HeadwindConfig | 
       try {
         const configModule = await import(configPath)
         const config = configModule.default || configModule
-        console.log(`${colors.green}[Headwind]${colors.reset} Loaded config from ${configFile}`)
+        console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from ${configFile}`)
         return config
       }
       catch (error) {
-        console.warn(`${colors.yellow}[Headwind]${colors.reset} Failed to load ${configFile}:`, error)
+        console.warn(`${colors.yellow}[Crosswind]${colors.reset} Failed to load ${configFile}:`, error)
       }
     }
   }
@@ -182,17 +182,17 @@ export async function loadHeadwindConfig(cwd: string): Promise<HeadwindConfig | 
 }
 
 /**
- * Build Headwind CSS using the build() API
+ * Build Crosswind CSS using the build() API
  * This scans content files and generates CSS for all used classes
  */
-export async function buildHeadwindCSS(cwd: string): Promise<string> {
+export async function buildCrosswindCSS(cwd: string): Promise<string> {
   if (isBuilding) {
     return cachedCSS
   }
   isBuilding = true
 
   try {
-    const hw = await loadHeadwind()
+    const hw = await loadCrosswind()
     if (!hw || !hw.build) {
       isBuilding = false
       return ''
@@ -200,7 +200,7 @@ export async function buildHeadwindCSS(cwd: string): Promise<string> {
 
     // Load config if not cached
     if (!cachedConfig) {
-      cachedConfig = await loadHeadwindConfig(cwd)
+      cachedConfig = await loadCrosswindConfig(cwd)
     }
 
     if (!cachedConfig) {
@@ -212,7 +212,7 @@ export async function buildHeadwindCSS(cwd: string): Promise<string> {
     // Build with the config - deep merge theme to preserve defaults
     const defaultTheme = hw.defaultConfig?.theme || {}
     const userTheme = cachedConfig.theme || {}
-    const config: HeadwindConfig = {
+    const config: CrosswindConfig = {
       ...hw.defaultConfig,
       ...cachedConfig,
       theme: {
@@ -231,7 +231,7 @@ export async function buildHeadwindCSS(cwd: string): Promise<string> {
     const duration = performance.now() - start
 
     cachedCSS = result.css
-    console.log(`${colors.cyan}[Headwind]${colors.reset} Built ${result.classes.size} classes in ${duration.toFixed(1)}ms`)
+    console.log(`${colors.cyan}[Crosswind]${colors.reset} Built ${result.classes.size} classes in ${duration.toFixed(1)}ms`)
 
     // Write to output file if specified
     if (config.output) {
@@ -252,19 +252,19 @@ export async function buildHeadwindCSS(cwd: string): Promise<string> {
     return result.css
   }
   catch (error) {
-    console.error(`${colors.red}[Headwind]${colors.reset} Build error:`, error)
+    console.error(`${colors.red}[Crosswind]${colors.reset} Build error:`, error)
     isBuilding = false
     return cachedCSS
   }
 }
 
 /**
- * Rebuild Headwind CSS (called on file changes)
+ * Rebuild Crosswind CSS (called on file changes)
  */
-export async function rebuildHeadwindCSS(cwd: string): Promise<void> {
+export async function rebuildCrosswindCSS(cwd: string): Promise<void> {
   // Clear cached config to reload it
   cachedConfig = null
-  await buildHeadwindCSS(cwd)
+  await buildCrosswindCSS(cwd)
 }
 
 /**
@@ -297,12 +297,12 @@ export function extractClassNames(htmlContent: string): Set<string> {
 }
 
 /**
- * Extract utility classes from HTML content and generate CSS using Headwind
+ * Extract utility classes from HTML content and generate CSS using Crosswind
  */
-export async function generateHeadwindCSS(htmlContent: string): Promise<string> {
+export async function generateCrosswindCSS(htmlContent: string): Promise<string> {
   try {
-    // Load headwind module
-    const hw = await loadHeadwind()
+    // Load crosswind module
+    const hw = await loadCrosswind()
     if (!hw) {
       return ''
     }
@@ -313,11 +313,11 @@ export async function generateHeadwindCSS(htmlContent: string): Promise<string> 
       return ''
     }
 
-    // Load the project's Headwind config (or use defaults)
+    // Load the project's Crosswind config (or use defaults)
     const projectConfig = hw.config
 
-    // Create a Headwind config for on-the-fly generation
-    const headwindConfig: HeadwindConfig = {
+    // Create a Crosswind config for on-the-fly generation
+    const crosswindConfig: CrosswindConfig = {
       ...projectConfig,
       content: [],
       output: '',
@@ -325,8 +325,8 @@ export async function generateHeadwindCSS(htmlContent: string): Promise<string> 
       minify: false,
     }
 
-    // Generate CSS using Headwind's CSSGenerator
-    const generator = new hw.CSSGenerator(headwindConfig)
+    // Generate CSS using Crosswind's CSSGenerator
+    const generator = new hw.CSSGenerator(crosswindConfig)
 
     for (const className of classes) {
       generator.generate(className)
@@ -335,7 +335,7 @@ export async function generateHeadwindCSS(htmlContent: string): Promise<string> 
     return generator.toCSS(true, false)
   }
   catch (error) {
-    console.warn('Failed to generate Headwind CSS:', error)
+    console.warn('Failed to generate Crosswind CSS:', error)
     return ''
   }
 }
@@ -344,15 +344,15 @@ export async function generateHeadwindCSS(htmlContent: string): Promise<string> 
  * Inject generated CSS into HTML content
  * Tries to inject before </head>, falls back to <body> or prepends
  */
-export async function injectHeadwindCSS(htmlContent: string): Promise<string> {
-  const css = await generateHeadwindCSS(htmlContent)
+export async function injectCrosswindCSS(htmlContent: string): Promise<string> {
+  const css = await generateCrosswindCSS(htmlContent)
 
   if (!css) {
     return htmlContent
   }
 
   // Create a style tag with the generated CSS
-  const styleTag = `<style data-headwind="generated">\n${css}\n</style>`
+  const styleTag = `<style data-crosswind="generated">\n${css}\n</style>`
 
   // Try to inject before </head>
   if (htmlContent.includes('</head>')) {

@@ -5,7 +5,7 @@
  * This handles all the boilerplate for:
  * - Processing STX templates
  * - Extracting server-side variables
- * - Generating Tailwind CSS via Headwind
+ * - Generating Tailwind CSS via Crosswind
  * - Supporting layouts and components
  * - Placeholder token replacement for dynamic values
  */
