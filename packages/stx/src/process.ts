@@ -8,6 +8,7 @@ import { injectAnalytics } from './analytics'
 import { injectHeatmap } from './heatmap'
 import { processAnimationDirectives } from './animation'
 import { processEventDirectives } from './events'
+import { processClientScript } from './client-script'
 import { processReactiveDirectives } from './reactive'
 import { processMarkdownFileDirectives } from './assets'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
@@ -1075,6 +1076,9 @@ async function processOtherDirectives(
 ): Promise<string> {
   let output = template
 
+  // Enable SFC mode so events.ts collects bindings instead of generating standalone scripts
+  context.__stx_sfc_mode = true
+
   // Use opts as alias for options (consistent with processDirectivesInternal)
   const opts = options
 
@@ -1390,21 +1394,17 @@ async function processOtherDirectives(
   // These are used for SSR variable extraction and shouldn't appear in client output
   output = output.replace(/<script\s+server\b[^>]*>[\s\S]*?<\/script>\s*/gi, '')
 
-  // Transform @stores imports in client scripts
-  // import { appStore } from '@stores' → const appStore = window.__STX_STORES__.appStore;
-  output = output.replace(/<script\s+client\b([^>]*)>([\s\S]*?)<\/script>/gi, (_match, attrs, content) => {
-    const { transformStoreImports } = require('./state-management')
-    const transformedContent = transformStoreImports(content)
-
+  // Transform <script client> blocks: resolve @stores imports, inject event
+  // bindings into the script scope, and auto-wrap in a scoped IIFE
+  const eventBindings = (context.__stx_event_bindings || []) as import('./events').ParsedEvent[]
+  output = output.replace(/<script\s+client\b([^>]*)>([\s\S]*?)<\/script>/gi, (_match, _attrs, content) => {
     // Validate client scripts for prohibited patterns
-    validateClientScript(transformedContent, filePath)
+    validateClientScript(content, filePath)
 
-    return `<script${attrs}>${transformedContent}</script>`
+    return processClientScript(content, { eventBindings })
   })
-
-  // Clean up client attribute from script tags (it's not valid HTML)
-  // Transform <script client> to <script>
-  output = output.replace(/<script\s+client\b([^>]*)>/gi, '<script$1>')
+  // Clear event bindings after use
+  context.__stx_event_bindings = []
 
   // Note: Crosswind CSS injection is done at the top level in processDirectives
   // to avoid duplicate injection for includes/layouts/components
