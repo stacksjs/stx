@@ -138,23 +138,151 @@ ${signalScript.content}
 /**
  * Extract exported variable names from setup script.
  * Returns variables that should be exposed to the template.
+ * Only extracts TOP-LEVEL declarations, not variables inside nested functions.
  */
 function extractExports(setupContent: string): string {
-  const exports: string[] = []
+  const code = setupContent
+  const names: string[] = []
+  const seen = new Set<string>()
 
-  // Match const/let/function declarations
-  const constMatches = setupContent.matchAll(/\b(?:const|let)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/g)
-  for (const match of constMatches) {
-    exports.push(match[1])
+  // Track brace depth to only capture top-level declarations
+  let depth = 0
+  let i = 0
+  const len = code.length
+
+  // Skip string literals
+  const skipString = (quote: string): void => {
+    i++ // Skip opening quote
+    while (i < len) {
+      if (code[i] === '\\') {
+        i += 2 // Skip escaped character
+        continue
+      }
+      if (code[i] === quote) {
+        i++ // Skip closing quote
+        return
+      }
+      i++
+    }
   }
 
-  // Match function declarations
-  const funcMatches = setupContent.matchAll(/\bfunction\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g)
-  for (const match of funcMatches) {
-    exports.push(match[1])
+  // Skip template literals with nested expressions
+  const skipTemplateLiteral = (): void => {
+    i++ // Skip opening backtick
+    while (i < len) {
+      if (code[i] === '\\') {
+        i += 2
+        continue
+      }
+      if (code[i] === '`') {
+        i++
+        return
+      }
+      if (code[i] === '$' && code[i + 1] === '{') {
+        i += 2
+        let templateDepth = 1
+        while (i < len && templateDepth > 0) {
+          if (code[i] === '{') templateDepth++
+          else if (code[i] === '}') templateDepth--
+          else if (code[i] === '\'' || code[i] === '"') skipString(code[i])
+          else if (code[i] === '`') skipTemplateLiteral()
+          else i++
+        }
+        continue
+      }
+      i++
+    }
   }
 
-  return exports.join(', ')
+  // Skip comments
+  const skipComment = (): boolean => {
+    if (code[i] === '/' && code[i + 1] === '/') {
+      while (i < len && code[i] !== '\n') i++
+      return true
+    }
+    if (code[i] === '/' && code[i + 1] === '*') {
+      i += 2
+      while (i < len - 1 && !(code[i] === '*' && code[i + 1] === '/')) i++
+      i += 2
+      return true
+    }
+    return false
+  }
+
+  // Check for variable/function declaration at current position (only at depth 0)
+  const checkDeclaration = (): void => {
+    if (depth !== 0) return
+
+    // Check for const/let/var declarations
+    const declMatch = code.slice(i).match(/^(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/)
+    if (declMatch) {
+      const varName = declMatch[2]
+      if (!seen.has(varName)) {
+        names.push(varName)
+        seen.add(varName)
+      }
+      return
+    }
+
+    // Check for function declarations
+    const funcMatch = code.slice(i).match(/^function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/)
+    if (funcMatch) {
+      const funcName = funcMatch[1]
+      if (!seen.has(funcName)) {
+        names.push(funcName)
+        seen.add(funcName)
+      }
+      return
+    }
+
+    // Check for async function declarations
+    const asyncMatch = code.slice(i).match(/^async\s+function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/)
+    if (asyncMatch) {
+      const funcName = asyncMatch[1]
+      if (!seen.has(funcName)) {
+        names.push(funcName)
+        seen.add(funcName)
+      }
+    }
+  }
+
+  while (i < len) {
+    // Skip comments
+    if (skipComment()) continue
+
+    // Skip string literals
+    if (code[i] === '\'' || code[i] === '"') {
+      skipString(code[i])
+      continue
+    }
+
+    // Skip template literals
+    if (code[i] === '`') {
+      skipTemplateLiteral()
+      continue
+    }
+
+    // Track brace depth
+    if (code[i] === '{') {
+      depth++
+      i++
+      continue
+    }
+    if (code[i] === '}') {
+      depth--
+      i++
+      continue
+    }
+
+    // Check for declarations at word boundaries (only at depth 0)
+    if (depth === 0 && /[a-z]/i.test(code[i]) && (i === 0 || /\s|[;{}()]/.test(code[i - 1]))) {
+      checkDeclaration()
+    }
+
+    i++
+  }
+
+  return names.join(', ')
 }
 
 /**
