@@ -3,9 +3,13 @@
  *
  * Video playback with native HTML5 and ts-video-player integration.
  *
- * Note: This module provides a <Video> component that will integrate
- * with the separate ts-video-player library (similar to vidstack)
- * for advanced playback features.
+ * This module provides a <Video> component that integrates with the
+ * ts-video-player library for advanced playback features including:
+ * - HLS/DASH streaming support
+ * - YouTube/Vimeo embeds with custom controls
+ * - Keyboard shortcuts
+ * - Picture-in-Picture
+ * - Full accessibility support
  *
  * @module media/video
  */
@@ -18,6 +22,7 @@ import type { VideoProps, VideoRenderResult, VideoSource } from '../types'
 
 const DEFAULT_CONTROLS = true
 const DEFAULT_PRELOAD = 'metadata'
+const TS_VIDEO_PLAYER_CDN = 'https://cdn.jsdelivr.net/npm/ts-video-player@latest/dist/index.min.js'
 
 // =============================================================================
 // Video Component
@@ -32,10 +37,18 @@ const DEFAULT_PRELOAD = 'metadata'
  *
  * @example
  * ```typescript
+ * // Native HTML5 video
  * const result = await renderVideoComponent({
  *   src: '/videos/intro.mp4',
  *   poster: '/images/poster.jpg',
  *   controls: true,
+ *   lazy: true,
+ * })
+ *
+ * // With ts-video-player for advanced features
+ * const result = await renderVideoComponent({
+ *   src: 'https://youtube.com/watch?v=xxx',
+ *   player: 'ts-video',
  *   lazy: true,
  * })
  * ```
@@ -68,6 +81,11 @@ export async function renderVideoComponent(
   const className = props.class
   const style = props.style
   const id = props.id || `stx-video-${Math.random().toString(36).slice(2, 8)}`
+
+  // Use ts-video-player for advanced features
+  if (player === 'ts-video') {
+    return renderTsVideoPlayer(props, context)
+  }
 
   // Check for external embed (YouTube, Vimeo, etc.)
   if (embedType && embedType !== 'video') {
@@ -223,6 +241,241 @@ function renderEmbed(
 </div>`
 
   return { html }
+}
+
+// =============================================================================
+// ts-video-player Integration
+// =============================================================================
+
+/**
+ * Render video using ts-video-player library
+ *
+ * This provides advanced features like:
+ * - HLS/DASH streaming support
+ * - YouTube/Vimeo with custom controls
+ * - Keyboard shortcuts
+ * - Picture-in-Picture
+ * - Accessibility
+ */
+function renderTsVideoPlayer(
+  props: VideoProps,
+  context: { isDev?: boolean } = {},
+): VideoRenderResult {
+  const {
+    src,
+    sources = [],
+    poster,
+    controls = true,
+    autoplay = false,
+    muted = false,
+    loop = false,
+    preload = 'metadata',
+    playsinline = true,
+    lazy = true,
+    width,
+    height,
+  } = props
+
+  const className = props.class
+  const style = props.style
+  const id = props.id || `ts-video-${Math.random().toString(36).slice(2, 8)}`
+
+  // Build player configuration
+  const playerConfig = {
+    src: sources.length > 0 ? sources : src,
+    autoplay,
+    loop,
+    muted,
+    playsinline,
+    preload,
+    poster,
+    controls,
+    title: props.title,
+  }
+
+  // Build container styles
+  const containerStyle = [
+    'position: relative',
+    width ? `width: ${typeof width === 'number' ? width + 'px' : width}` : 'width: 100%',
+    height ? `height: ${typeof height === 'number' ? height + 'px' : height}` : '',
+    style || '',
+  ].filter(Boolean).join('; ')
+
+  // Build HTML container
+  const html = `
+<div
+  id="${id}"
+  class="ts-video-player${className ? ' ' + escapeAttr(className) : ''}"
+  style="${containerStyle}"
+  data-ts-video-player
+  data-config='${JSON.stringify(playerConfig)}'
+  ${lazy ? 'data-lazy' : ''}
+>
+  <div class="ts-video-player__container">
+    ${poster ? `
+    <div class="ts-video-player__placeholder" style="background-image: url('${escapeAttr(poster)}');">
+      <button class="ts-video-player__play-button" aria-label="Play video">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="64" height="64">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </button>
+    </div>
+    ` : ''}
+  </div>
+</div>
+`.trim()
+
+  // Generate initialization script
+  const script = `
+(function() {
+  var container = document.getElementById('${id}');
+  if (!container) return;
+
+  var config = JSON.parse(container.dataset.config || '{}');
+  var isLazy = container.hasAttribute('data-lazy');
+
+  function loadPlayer() {
+    if (typeof TSVideoPlayer !== 'undefined') {
+      initPlayer();
+      return;
+    }
+
+    // Load ts-video-player from CDN
+    var script = document.createElement('script');
+    script.src = '${TS_VIDEO_PLAYER_CDN}';
+    script.onload = initPlayer;
+    script.onerror = function() {
+      console.error('[stx] Failed to load ts-video-player');
+      fallbackToNative();
+    };
+    document.head.appendChild(script);
+  }
+
+  function initPlayer() {
+    var player = TSVideoPlayer.createPlayer(container, config);
+    if (config.src) {
+      player.setSrc(config.src);
+    }
+    container.__tsVideoPlayer = player;
+
+    // Remove placeholder
+    var placeholder = container.querySelector('.ts-video-player__placeholder');
+    if (placeholder) {
+      placeholder.style.display = 'none';
+    }
+  }
+
+  function fallbackToNative() {
+    // Fallback to native video element
+    var video = document.createElement('video');
+    video.controls = config.controls !== false;
+    video.autoplay = config.autoplay;
+    video.muted = config.muted;
+    video.loop = config.loop;
+    video.playsInline = config.playsinline;
+    video.preload = config.preload || 'metadata';
+    if (config.poster) video.poster = config.poster;
+    if (config.src) video.src = typeof config.src === 'string' ? config.src : config.src[0]?.src || config.src[0];
+    video.style.width = '100%';
+    video.style.height = '100%';
+
+    var containerEl = container.querySelector('.ts-video-player__container');
+    if (containerEl) {
+      containerEl.innerHTML = '';
+      containerEl.appendChild(video);
+    }
+  }
+
+  if (isLazy) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          loadPlayer();
+          observer.disconnect();
+        }
+      });
+    }, { rootMargin: '50px' });
+    observer.observe(container);
+  } else {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadPlayer);
+    } else {
+      loadPlayer();
+    }
+  }
+
+  // Handle play button click
+  var playButton = container.querySelector('.ts-video-player__play-button');
+  if (playButton) {
+    playButton.addEventListener('click', function() {
+      loadPlayer();
+      var check = setInterval(function() {
+        if (container.__tsVideoPlayer && container.__tsVideoPlayer.ready) {
+          container.__tsVideoPlayer.play();
+          clearInterval(check);
+        }
+      }, 100);
+    });
+  }
+})();
+`.trim()
+
+  // Generate styles
+  const css = `
+.ts-video-player {
+  position: relative;
+  background: #000;
+}
+
+.ts-video-player__container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+}
+
+.ts-video-player__container > * {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ts-video-player__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1a1a1a;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+}
+
+.ts-video-player__play-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.ts-video-player__play-button:hover {
+  transform: scale(1.1);
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.ts-video-player__play-button svg {
+  margin-left: 4px;
+}
+`.trim()
+
+  return { html, script, css }
 }
 
 // =============================================================================

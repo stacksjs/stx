@@ -437,16 +437,45 @@ export function processExpressions(template: string, context: Record<string, any
 
   // Replace {{ expr }} with escaped expressions
   output = output.replace(/\{\{([\s\S]*?)\}\}/g, (match, expr, offset) => {
+    const trimmedExpr = expr.trim()
+
+    // Skip common JS built-ins that should be evaluated server-side
+    const jsBuiltins = ['parseInt', 'parseFloat', 'String', 'Number', 'Boolean', 'Array', 'Object', 'JSON', 'Math', 'Date', 'encodeURIComponent', 'decodeURIComponent', 'encodeURI', 'decodeURI', 'true', 'false', 'null', 'undefined']
+
+    // First, check if the expression starts with a known variable in context
+    // This handles cases like `items.filter(...)` where `items` is in context
+    const identifierPattern = /^([a-zA-Z_$][a-zA-Z0-9_$]*)/
+    const identifierMatch = trimmedExpr.match(identifierPattern)
+    const firstVarName = identifierMatch?.[1]
+    const firstVarInContext = firstVarName && (firstVarName in context || jsBuiltins.includes(firstVarName))
+
+    // Detect if this looks like a client-side signal expression
+    // Signals are typically function calls like loading(), sessions().length, etc.
+    // Only preserve for client-side if it's a direct function call that's not in context
+    const directFunctionCall = /^([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/
+    const directFuncMatch = trimmedExpr.match(directFunctionCall)
+    const isLikelySignal = directFuncMatch && !jsBuiltins.includes(directFuncMatch[1]) && !(directFuncMatch[1] in context)
+
+    // Preserve signal-like expressions for client-side processing
+    if (isLikelySignal) {
+      return match
+    }
+
     try {
       const value = evaluateExpression(expr, context)
       // Escape HTML for security
       return value !== undefined && value !== null ? escapeHtml(String(value)) : ''
     }
     catch (error: unknown) {
+      // If evaluation fails and it looks like a client-side signal,
+      // preserve the expression for client-side processing
+      if (isLikelySignal) {
+        return match
+      }
       const msg = error instanceof Error ? error.message : String(error)
       return createDetailedErrorMessage(
         'Expression',
-        `Error evaluating: {{ ${expr.trim()} }}: ${msg}`,
+        `Error evaluating: {{ ${trimmedExpr} }}: ${msg}`,
         filePath,
         template,
         offset,

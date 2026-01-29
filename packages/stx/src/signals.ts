@@ -928,56 +928,48 @@ export function generateSignalsRuntimeDev(): string {
 
   let componentScope = {};
 
-  function toValue(expr) {
-    try {
-      // Merge componentScope with globals for expression evaluation
-      // This allows component scripts to define variables in global scope
-      const scope = { ...componentScope };
-      // Check for common signal variables in global scope
-      const globalVars = ['loading', 'error', 'pages', 'referrers', 'devices', 'browsers',
-                         'countries', 'campaigns', 'events', 'goals', 'sessions', 'vitals',
-                         'violations', 'insights', 'funnels', 'webhooks', 'flow', 'alerts',
-                         'settings', 'data', 'items', 'list', 'count', 'value', 'visible'];
-      for (const v of globalVars) {
-        if (typeof window[v] !== 'undefined' && !(v in scope)) {
-          scope[v] = window[v];
+  // Current element being processed (for scope lookup)
+  let currentElement = null;
+
+  function findElementScope(el) {
+    // Find the nearest ancestor with data-stx-scope
+    let current = el;
+    while (current && current !== document) {
+      if (current.hasAttribute && current.hasAttribute('data-stx-scope')) {
+        const scopeId = current.getAttribute('data-stx-scope');
+        if (window.stx._scopes && window.stx._scopes[scopeId]) {
+          return window.stx._scopes[scopeId];
         }
       }
+      current = current.parentElement || current.parentNode;
+    }
+    return null;
+  }
+
+  function toValue(expr, el) {
+    try {
+      // First try component-level scope
+      const elementScope = findElementScope(el || currentElement);
+      const scope = { ...componentScope, ...(elementScope || {}) };
+
       const fn = new Function(...Object.keys(scope), 'return ' + expr);
       return fn(...Object.values(scope));
     } catch (e) {
-      // Try evaluating directly if the scope-based approach fails
-      try {
-        return (0, eval)(expr);
-      } catch {
-        console.warn('[STX] Expression error:', expr, e);
-        return '';
-      }
+      console.warn('[STX] Expression error:', expr, e);
+      return '';
     }
   }
 
-  function executeHandler(expr, event) {
+  function executeHandler(expr, event, el) {
     try {
-      // Merge componentScope with globals for handler execution
-      const scope = { ...componentScope };
-      const globalVars = ['loading', 'error', 'pages', 'referrers', 'devices', 'browsers',
-                         'countries', 'campaigns', 'events', 'goals', 'sessions', 'vitals',
-                         'violations', 'insights', 'funnels', 'webhooks', 'flow', 'alerts',
-                         'settings', 'data', 'items', 'list', 'count', 'value', 'visible'];
-      for (const v of globalVars) {
-        if (typeof window[v] !== 'undefined' && !(v in scope)) {
-          scope[v] = window[v];
-        }
-      }
+      // First try component-level scope
+      const elementScope = findElementScope(el || currentElement);
+      const scope = { ...componentScope, ...(elementScope || {}) };
+
       const fn = new Function(...Object.keys(scope), '$event', expr);
       fn(...Object.values(scope), event);
     } catch (e) {
-      // Try evaluating directly if the scope-based approach fails
-      try {
-        (0, eval)(expr);
-      } catch {
-        console.warn('[STX] Handler error:', expr, e);
-      }
+      console.warn('[STX] Handler error:', expr, e);
     }
   }
 
@@ -988,13 +980,14 @@ export function generateSignalsRuntimeDev(): string {
         const parts = text.split(/(\\{\\{[^}]+\\}\\})/g);
         if (parts.length > 1) {
           const fragment = document.createDocumentFragment();
+          const parentEl = el.parentElement;
           parts.forEach(part => {
             const match = part.match(/^\\{\\{\\s*(.+?)\\s*\\}\\}$/);
             if (match) {
               const span = document.createElement('span');
               fragment.appendChild(span);
               effect(() => {
-                span.textContent = toValue(match[1]);
+                span.textContent = toValue(match[1], parentEl);
               });
             } else if (part) {
               fragment.appendChild(document.createTextNode(part));
@@ -1039,7 +1032,7 @@ export function generateSignalsRuntimeDev(): string {
       if (name.startsWith('@bind:')) {
         const attrName = name.slice(6);
         effect(() => {
-          const v = toValue(value);
+          const v = toValue(value, el);
           if (v === false || v === null || v === undefined) {
             el.removeAttribute(attrName);
           } else if (v === true) {
@@ -1057,12 +1050,12 @@ export function generateSignalsRuntimeDev(): string {
         el.removeAttribute(name);
       } else if (name === '@text') {
         effect(() => {
-          el.textContent = toValue(value);
+          el.textContent = toValue(value, el);
         });
         el.removeAttribute(name);
       } else if (name === '@html') {
         effect(() => {
-          el.innerHTML = toValue(value);
+          el.innerHTML = toValue(value, el);
         });
         el.removeAttribute(name);
       } else if (name.startsWith('@')) {
@@ -1079,7 +1072,7 @@ export function generateSignalsRuntimeDev(): string {
         el.addEventListener(eventName, (event) => {
           if (modifiers.includes('prevent')) event.preventDefault();
           if (modifiers.includes('stop')) event.stopPropagation();
-          executeHandler(value, event);
+          executeHandler(value, event, el);
         }, {
           capture: modifiers.includes('capture'),
           passive: modifiers.includes('passive'),
@@ -1096,7 +1089,7 @@ export function generateSignalsRuntimeDev(): string {
   function bindShow(el, expr) {
     const originalDisplay = el.style.display || '';
     effect(() => {
-      el.style.display = toValue(expr) ? originalDisplay : 'none';
+      el.style.display = toValue(expr, el) ? originalDisplay : 'none';
     });
     el.removeAttribute('@show');
   }
@@ -1105,14 +1098,18 @@ export function generateSignalsRuntimeDev(): string {
     const tag = el.tagName.toLowerCase();
     const type = el.type;
 
-    const getValue = () => toValue(expr);
+    const getValue = () => toValue(expr, el);
     const setValue = (val) => {
       try {
-        if (componentScope[expr] && componentScope[expr]._isSignal) {
-          componentScope[expr].set(val);
+        // Check component scope first, then element scope
+        const elementScope = findElementScope(el);
+        const scope = { ...componentScope, ...(elementScope || {}) };
+
+        if (scope[expr] && scope[expr]._isSignal) {
+          scope[expr].set(val);
         } else {
-          const fn = new Function(...Object.keys(componentScope), 'v', expr + ' = v');
-          fn(...Object.values(componentScope), val);
+          const fn = new Function(...Object.keys(scope), 'v', expr + ' = v');
+          fn(...Object.values(scope), val);
         }
       } catch (e) {
         console.warn('[STX] @model set error:', expr, e);
@@ -1136,7 +1133,7 @@ export function generateSignalsRuntimeDev(): string {
   function bindClass(el, expr) {
     const originalClasses = el.className;
     effect(() => {
-      const value = toValue(expr);
+      const value = toValue(expr, el);
       if (typeof value === 'object' && value !== null) {
         Object.keys(value).forEach(cls => {
           value[cls] ? el.classList.add(cls) : el.classList.remove(cls);
@@ -1151,7 +1148,7 @@ export function generateSignalsRuntimeDev(): string {
 
   function bindStyle(el, expr) {
     effect(() => {
-      const value = toValue(expr);
+      const value = toValue(expr, el);
       if (typeof value === 'object' && value !== null) {
         Object.assign(el.style, value);
       } else if (typeof value === 'string') {
@@ -1181,16 +1178,19 @@ export function generateSignalsRuntimeDev(): string {
 
     let currentElements = [];
 
+    // Get scope from original element's position
+    const elementScope = findElementScope(el) || findElementScope(parent);
+
     effect(() => {
       currentElements.forEach(e => e.remove());
       currentElements = [];
 
-      const list = toValue(listExpr);
+      const list = toValue(listExpr, parent);
       if (!Array.isArray(list)) return;
 
       list.forEach((item, index) => {
         const clone = template.cloneNode(true);
-        const itemScope = { ...componentScope };
+        const itemScope = { ...componentScope, ...(elementScope || {}) };
         itemScope[itemName] = item;
         if (indexName) itemScope[indexName] = index;
 
@@ -1215,7 +1215,7 @@ export function generateSignalsRuntimeDev(): string {
     el.removeAttribute('@if');
 
     effect(() => {
-      const value = toValue(expr);
+      const value = toValue(expr, el);
       if (value && !isInserted) {
         parent.insertBefore(el, placeholder.nextSibling);
         isInserted = true;
@@ -1241,7 +1241,8 @@ export function generateSignalsRuntimeDev(): string {
     onMount,
     onDestroy,
     _mountCallbacks: mountCallbacks,
-    _destroyCallbacks: destroyCallbacks
+    _destroyCallbacks: destroyCallbacks,
+    _scopes: {}  // Component-level scopes
   };
 
   // ==========================================================================
@@ -1264,6 +1265,11 @@ export function generateSignalsRuntimeDev(): string {
 
     // Auto-process elements with data-stx-auto
     document.querySelectorAll('[data-stx-auto]').forEach(el => {
+      processElement(el);
+    });
+
+    // Process scoped components (their scripts have already registered scope variables)
+    document.querySelectorAll('[data-stx-scope]').forEach(el => {
       processElement(el);
     });
   });

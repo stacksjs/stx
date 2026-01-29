@@ -42,6 +42,34 @@ export {
 // Cache for components to avoid repeated file reads (LRU with max 500 entries)
 const componentsCache = new LRUCache<string, string>(500)
 
+/**
+ * Extract variable names from JavaScript code for scope registration
+ */
+function extractVariableNames(code: string): string[] {
+  const names: string[] = []
+  const seen = new Set<string>()
+
+  // Match const/let declarations
+  const constMatches = code.matchAll(/\b(?:const|let)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/g)
+  for (const match of constMatches) {
+    if (!seen.has(match[1])) {
+      names.push(match[1])
+      seen.add(match[1])
+    }
+  }
+
+  // Match function declarations
+  const funcMatches = code.matchAll(/\bfunction\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g)
+  for (const match of funcMatches) {
+    if (!seen.has(match[1])) {
+      names.push(match[1])
+      seen.add(match[1])
+    }
+  }
+
+  return names
+}
+
 // =============================================================================
 // Component Rendering
 // =============================================================================
@@ -323,13 +351,56 @@ export async function renderComponentWithSlot(
     // Process the component content recursively with the new context
     const result = await processDirectives(templateContent, componentContext, componentFilePath, componentOptions, dependencies)
 
-    // Append preserved style and client scripts for SFC support
+    // Generate unique scope ID for this component instance
+    const scopeId = `stx_${baseName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+
+    // Wrap component in a scope container if it has client scripts with signals
+    const hasSignalScripts = clientScripts.some(s => /\b(state|derived|effect)\s*\(/.test(s))
     let output = result
-    if (preservedStyle) {
-      output += '\n' + preservedStyle
-    }
-    if (clientScripts.length > 0) {
-      output += '\n' + clientScripts.join('\n')
+
+    if (hasSignalScripts) {
+      // Wrap the component output in a scoped container
+      output = `<div data-stx-scope="${scopeId}">${result}</div>`
+
+      // Modify client scripts to register variables in this scope
+      const scopedScripts = clientScripts.map(script => {
+        // Extract script content
+        const scriptMatch = script.match(/<script([^>]*)>([\s\S]*)<\/script>/i)
+        if (!scriptMatch) return script
+
+        const [, attrs, content] = scriptMatch
+        // Wrap script content to register in scope
+        const wrappedContent = `
+(function() {
+  const { state, derived, effect, batch, onMount, onDestroy } = window.stx;
+  const __scope = window.stx._scopes = window.stx._scopes || {};
+  const __scopeVars = __scope['${scopeId}'] = __scope['${scopeId}'] || {};
+
+${content}
+
+  // Register all defined signals and functions in this scope
+  const __localVars = {};
+  try {
+    ${extractVariableNames(content).map(v => `if (typeof ${v} !== 'undefined') __localVars['${v}'] = ${v};`).join('\n    ')}
+  } catch(e) {}
+  Object.assign(__scopeVars, __localVars);
+})();`
+        return `<script${attrs}>${wrappedContent}</script>`
+      })
+
+      // Append preserved style and scoped scripts
+      if (preservedStyle) {
+        output += '\n' + preservedStyle
+      }
+      output += '\n' + scopedScripts.join('\n')
+    } else {
+      // No signals, just append style and scripts normally
+      if (preservedStyle) {
+        output += '\n' + preservedStyle
+      }
+      if (clientScripts.length > 0) {
+        output += '\n' + clientScripts.join('\n')
+      }
     }
 
     return output
