@@ -72,6 +72,208 @@ function hasSignalsSyntax(template: string): boolean {
 }
 
 /**
+ * Check if template uses signals in its script blocks.
+ * This is used to determine if @if/@for directives should be
+ * converted to runtime attributes instead of build-time evaluation.
+ */
+function usesSignalsInScript(template: string): boolean {
+  // Find script blocks (not server, not src)
+  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi
+  let match: RegExpExecArray | null
+
+  while ((match = scriptRegex.exec(template)) !== null) {
+    const content = match[1]
+    // Check if this script uses signal APIs
+    if (/\b(state|derived|effect)\s*\(/.test(content)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+/**
+ * Convert @if(expr)...@endif directive blocks to attribute-style for signal templates.
+ *
+ * This allows the signals runtime to handle reactive conditionals instead of
+ * evaluating them at build time with mock values.
+ *
+ * Converts:
+ *   @if(loading())
+ *     <div>Loading...</div>
+ *   @endif
+ *
+ * To:
+ *   <template @if="loading()">
+ *     <div>Loading...</div>
+ *   </template>
+ *
+ * Note: Uses <template> wrapper for blocks with multiple children or text nodes.
+ */
+function convertSignalDirectivesToAttributes(template: string): string {
+  let output = template
+
+  // Pattern to match @if(expr)...@endif blocks (handles nested parens in expr)
+  // We use a simpler approach: find @if( and then parse balanced parens
+  const ifDirectiveStart = /@if\s*\(/g
+  let match: RegExpExecArray | null
+  const replacements: Array<{ start: number, end: number, replacement: string }> = []
+
+  while ((match = ifDirectiveStart.exec(output)) !== null) {
+    const startIdx = match.index
+    const exprStart = startIdx + match[0].length
+
+    // Find balanced closing paren for the condition
+    let depth = 1
+    let i = exprStart
+    while (i < output.length && depth > 0) {
+      if (output[i] === '(') depth++
+      else if (output[i] === ')') depth--
+      i++
+    }
+
+    if (depth !== 0) continue // Unbalanced parens, skip
+
+    const condition = output.substring(exprStart, i - 1).trim()
+    const afterCondition = i
+
+    // Find the matching @endif (handle nested @if)
+    let ifDepth = 1
+    let endIdx = afterCondition
+    const endifRegex = /@(if\s*\(|endif)/g
+    endifRegex.lastIndex = afterCondition
+
+    let endMatch: RegExpExecArray | null
+    while ((endMatch = endifRegex.exec(output)) !== null) {
+      if (endMatch[1].startsWith('if')) {
+        ifDepth++
+      } else if (endMatch[1] === 'endif') {
+        ifDepth--
+        if (ifDepth === 0) {
+          endIdx = endMatch.index + endMatch[0].length
+          break
+        }
+      }
+    }
+
+    if (ifDepth !== 0) continue // No matching @endif, skip
+
+    // Extract content between ) and @endif
+    const content = output.substring(afterCondition, endIdx - '@endif'.length).trim()
+
+    // Check if content is a single element or needs wrapper
+    const singleElementMatch = content.match(/^<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>([\s\S]*)<\/\1>$/s)
+
+    let replacement: string
+    if (singleElementMatch) {
+      // Single root element - add @if attribute directly
+      const [, tag, attrs, innerContent] = singleElementMatch
+      replacement = `<${tag}${attrs} @if="${condition}">${innerContent}</${tag}>`
+    } else {
+      // Multiple elements or text - wrap in template
+      replacement = `<template @if="${condition}">${content}</template>`
+    }
+
+    replacements.push({ start: startIdx, end: endIdx, replacement })
+  }
+
+  // Apply replacements from end to start to preserve indices
+  for (let i = replacements.length - 1; i >= 0; i--) {
+    const { start, end, replacement } = replacements[i]
+    output = output.substring(0, start) + replacement + output.substring(end)
+  }
+
+  return output
+}
+
+/**
+ * Convert @for(item in items())...@endfor directive blocks to attribute-style.
+ *
+ * Converts:
+ *   @for(item in items())
+ *     <div>{{ item.name }}</div>
+ *   @endfor
+ *
+ * To:
+ *   <template @for="item in items()">
+ *     <div>{{ item.name }}</div>
+ *   </template>
+ */
+function convertSignalLoopsToAttributes(template: string): string {
+  let output = template
+
+  // Pattern to match @for(expr)...@endfor or @foreach(expr)...@endforeach
+  const forDirectiveStart = /@(for|foreach)\s*\(/g
+  let match: RegExpExecArray | null
+  const replacements: Array<{ start: number, end: number, replacement: string }> = []
+
+  while ((match = forDirectiveStart.exec(output)) !== null) {
+    const directive = match[1] // 'for' or 'foreach'
+    const startIdx = match.index
+    const exprStart = startIdx + match[0].length
+
+    // Find balanced closing paren
+    let depth = 1
+    let i = exprStart
+    while (i < output.length && depth > 0) {
+      if (output[i] === '(') depth++
+      else if (output[i] === ')') depth--
+      i++
+    }
+
+    if (depth !== 0) continue
+
+    const expr = output.substring(exprStart, i - 1).trim()
+    const afterExpr = i
+
+    // Find matching @endfor or @endforeach
+    const endTag = directive === 'for' ? '@endfor' : '@endforeach'
+    let forDepth = 1
+    let endIdx = afterExpr
+    const endRegex = new RegExp(`@(${directive}\\s*\\(|end${directive})`, 'g')
+    endRegex.lastIndex = afterExpr
+
+    let endMatch: RegExpExecArray | null
+    while ((endMatch = endRegex.exec(output)) !== null) {
+      if (endMatch[1].startsWith(directive)) {
+        forDepth++
+      } else {
+        forDepth--
+        if (forDepth === 0) {
+          endIdx = endMatch.index + endMatch[0].length
+          break
+        }
+      }
+    }
+
+    if (forDepth !== 0) continue
+
+    const content = output.substring(afterExpr, endIdx - endTag.length).trim()
+
+    // Check for single root element
+    const singleElementMatch = content.match(/^<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>([\s\S]*)<\/\1>$/s)
+
+    let replacement: string
+    if (singleElementMatch) {
+      const [, tag, attrs, innerContent] = singleElementMatch
+      replacement = `<${tag}${attrs} @for="${expr}">${innerContent}</${tag}>`
+    } else {
+      replacement = `<template @for="${expr}">${content}</template>`
+    }
+
+    replacements.push({ start: startIdx, end: endIdx, replacement })
+  }
+
+  // Apply replacements from end to start
+  for (let i = replacements.length - 1; i >= 0; i--) {
+    const { start, end, replacement } = replacements[i]
+    output = output.substring(0, start) + replacement + output.substring(end)
+  }
+
+  return output
+}
+
+/**
  * Process scripts that use STX signal APIs.
  *
  * Automatically detects scripts using state(), derived(), effect() and
@@ -1362,6 +1564,13 @@ async function processOtherDirectives(
 
   // Process includes (@include, @component, etc.)
   output = await processIncludes(output, context, filePath, opts, dependencies)
+
+  // For templates that use signals, convert @if/@for directive blocks to attribute-style
+  // This allows the signals runtime to handle them reactively instead of build-time evaluation
+  if (usesSignalsInScript(output)) {
+    output = convertSignalDirectivesToAttributes(output)
+    output = convertSignalLoopsToAttributes(output)
+  }
 
   // Process loops (@foreach, @for, etc.) - BEFORE conditionals to handle nested scope properly
   output = processLoops(output, context, filePath, opts)

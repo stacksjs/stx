@@ -948,6 +948,10 @@ export function generateSignalsRuntimeDev(): string {
 
   function toValue(expr, el) {
     try {
+      // Skip placeholder expressions like __TITLE__ (build-time placeholders)
+      if (/^__[A-Z_]+__$/.test(expr.trim())) {
+        return expr;
+      }
       // First try component-level scope
       const elementScope = findElementScope(el || currentElement);
       const scope = { ...componentScope, ...(elementScope || {}) };
@@ -962,6 +966,10 @@ export function generateSignalsRuntimeDev(): string {
 
   function executeHandler(expr, event, el) {
     try {
+      // Skip placeholder expressions like __TITLE__ (build-time placeholders)
+      if (/^__[A-Z_]+__$/.test(expr.trim())) {
+        return;
+      }
       // First try component-level scope
       const elementScope = findElementScope(el || currentElement);
       const scope = { ...componentScope, ...(elementScope || {}) };
@@ -980,14 +988,30 @@ export function generateSignalsRuntimeDev(): string {
         const parts = text.split(/(\\{\\{[^}]+\\}\\})/g);
         if (parts.length > 1) {
           const fragment = document.createDocumentFragment();
-          const parentEl = el.parentElement;
+          const parentEl = el.parentNode;
+          // Capture scope NOW before effects run asynchronously
+          // Use componentScope directly since it's set correctly during @for iteration
+          const capturedScope = { ...componentScope, ...(findElementScope(parentEl) || {}) };
           parts.forEach(part => {
             const match = part.match(/^\\{\\{\\s*(.+?)\\s*\\}\\}$/);
             if (match) {
+              const expr = match[1];
+              // Skip placeholder expressions like __TITLE__ (build-time placeholders)
+              if (/^__[A-Z_]+__$/.test(expr.trim())) {
+                fragment.appendChild(document.createTextNode(part));
+                return;
+              }
               const span = document.createElement('span');
               fragment.appendChild(span);
+              // Use captured scope, not dynamic lookup
               effect(() => {
-                span.textContent = toValue(match[1], parentEl);
+                try {
+                  const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
+                  span.textContent = fn(...Object.values(capturedScope));
+                } catch (e) {
+                  console.warn('[STX] Expression error:', expr, e);
+                  span.textContent = '';
+                }
               });
             } else if (part) {
               fragment.appendChild(document.createTextNode(part));
@@ -1023,6 +1047,20 @@ export function generateSignalsRuntimeDev(): string {
       bindModel(el, el.getAttribute('@model'));
     }
 
+    // Capture scope once for all attribute bindings on this element
+    const attrCapturedScope = { ...componentScope, ...(findElementScope(el) || {}) };
+
+    const evalAttrExpr = (expr) => {
+      try {
+        if (/^__[A-Z_]+__$/.test(expr.trim())) return expr;
+        const fn = new Function(...Object.keys(attrCapturedScope), 'return ' + expr);
+        return fn(...Object.values(attrCapturedScope));
+      } catch (e) {
+        console.warn('[STX] Attribute expression error:', expr, e);
+        return '';
+      }
+    };
+
     // Handle attributes
     Array.from(el.attributes).forEach(attr => {
       const name = attr.name;
@@ -1032,7 +1070,7 @@ export function generateSignalsRuntimeDev(): string {
       if (name.startsWith('@bind:')) {
         const attrName = name.slice(6);
         effect(() => {
-          const v = toValue(value, el);
+          const v = evalAttrExpr(value);
           if (v === false || v === null || v === undefined) {
             el.removeAttribute(attrName);
           } else if (v === true) {
@@ -1050,12 +1088,12 @@ export function generateSignalsRuntimeDev(): string {
         el.removeAttribute(name);
       } else if (name === '@text') {
         effect(() => {
-          el.textContent = toValue(value, el);
+          el.textContent = evalAttrExpr(value);
         });
         el.removeAttribute(name);
       } else if (name === '@html') {
         effect(() => {
-          el.innerHTML = toValue(value, el);
+          el.innerHTML = evalAttrExpr(value);
         });
         el.removeAttribute(name);
       } else if (name.startsWith('@')) {
@@ -1088,8 +1126,21 @@ export function generateSignalsRuntimeDev(): string {
 
   function bindShow(el, expr) {
     const originalDisplay = el.style.display || '';
+    // Capture scope at setup time
+    const capturedScope = { ...componentScope, ...(findElementScope(el) || {}) };
+
+    const evalExpr = () => {
+      try {
+        const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
+        return fn(...Object.values(capturedScope));
+      } catch (e) {
+        console.warn('[STX] Show expression error:', expr, e);
+        return false;
+      }
+    };
+
     effect(() => {
-      el.style.display = toValue(expr, el) ? originalDisplay : 'none';
+      el.style.display = evalExpr() ? originalDisplay : 'none';
     });
     el.removeAttribute('@show');
   }
@@ -1132,9 +1183,22 @@ export function generateSignalsRuntimeDev(): string {
 
   function bindClass(el, expr) {
     const originalClasses = el.className;
+    // Capture scope at setup time
+    const capturedScope = { ...componentScope, ...(findElementScope(el) || {}) };
+
+    const evalExpr = () => {
+      try {
+        const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
+        return fn(...Object.values(capturedScope));
+      } catch (e) {
+        console.warn('[STX] Class expression error:', expr, e);
+        return '';
+      }
+    };
+
     effect(() => {
-      const value = toValue(expr, el);
-      if (typeof value === 'object' && value !== null) {
+      const value = evalExpr();
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         Object.keys(value).forEach(cls => {
           value[cls] ? el.classList.add(cls) : el.classList.remove(cls);
         });
@@ -1147,8 +1211,21 @@ export function generateSignalsRuntimeDev(): string {
   }
 
   function bindStyle(el, expr) {
+    // Capture scope at setup time
+    const capturedScope = { ...componentScope, ...(findElementScope(el) || {}) };
+
+    const evalExpr = () => {
+      try {
+        const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
+        return fn(...Object.values(capturedScope));
+      } catch (e) {
+        console.warn('[STX] Style expression error:', expr, e);
+        return {};
+      }
+    };
+
     effect(() => {
-      const value = toValue(expr, el);
+      const value = evalExpr();
       if (typeof value === 'object' && value !== null) {
         Object.assign(el.style, value);
       } else if (typeof value === 'string') {
@@ -1168,39 +1245,97 @@ export function generateSignalsRuntimeDev(): string {
 
     const [, itemName, indexName, listExpr] = match;
     const parent = el.parentNode;
+
+    // Guard: if element has no parent, it's detached - skip processing
+    if (!parent) {
+      console.warn('[STX] bindFor: element has no parent, skipping');
+      return;
+    }
+
     const placeholder = document.createComment('stx-for');
+    const isTemplate = el.tagName === 'TEMPLATE';
+
+    // Check if element also has @if - need to handle together
+    const ifExpr = el.getAttribute('@if');
+
+    // Capture the scope NOW before element is removed from DOM
+    const capturedScope = findElementScope(el) || findElementScope(parent);
 
     parent.insertBefore(placeholder, el);
     parent.removeChild(el);
 
-    const template = el.cloneNode(true);
-    template.removeAttribute('@for');
+    // For <template> elements, use the content; otherwise clone the element
+    let templateContent;
+    if (isTemplate) {
+      templateContent = el.content;
+    } else {
+      const wrapper = el.cloneNode(true);
+      wrapper.removeAttribute('@for');
+      // Also remove @if - we'll handle it inline
+      if (ifExpr) wrapper.removeAttribute('@if');
+      templateContent = wrapper;
+    }
 
     let currentElements = [];
 
-    // Get scope from original element's position
-    const elementScope = findElementScope(el) || findElementScope(parent);
+    // Helper to evaluate with captured scope
+    const evalExpr = (expression, extraScope = {}) => {
+      try {
+        // Skip placeholder expressions like __TITLE__ (build-time placeholders)
+        if (/^__[A-Z_]+__$/.test(expression.trim())) {
+          return expression;
+        }
+        const scope = { ...componentScope, ...(capturedScope || {}), ...extraScope };
+        const fn = new Function(...Object.keys(scope), 'return ' + expression);
+        return fn(...Object.values(scope));
+      } catch (e) {
+        console.warn('[STX] Expression error:', expression, e);
+        return '';
+      }
+    };
 
     effect(() => {
       currentElements.forEach(e => e.remove());
       currentElements = [];
 
-      const list = toValue(listExpr, parent);
+      // Always evaluate list first to track it as a dependency
+      const list = evalExpr(listExpr);
+
+      // If there's an @if condition, check it (after reading list to ensure dependency tracking)
+      if (ifExpr) {
+        const ifValue = evalExpr(ifExpr);
+        if (!ifValue) {
+          // Condition is false, don't render any items
+          return;
+        }
+      }
+
       if (!Array.isArray(list)) return;
 
       list.forEach((item, index) => {
-        const clone = template.cloneNode(true);
-        const itemScope = { ...componentScope, ...(elementScope || {}) };
+        const itemScope = { ...componentScope, ...(capturedScope || {}) };
         itemScope[itemName] = item;
         if (indexName) itemScope[indexName] = index;
 
         const prevScope = componentScope;
         componentScope = itemScope;
-        processElement(clone);
-        componentScope = prevScope;
 
-        parent.insertBefore(clone, placeholder);
-        currentElements.push(clone);
+        if (isTemplate) {
+          // For templates, clone and insert each child node
+          Array.from(templateContent.childNodes).forEach(node => {
+            const clone = node.cloneNode(true);
+            parent.insertBefore(clone, placeholder);
+            if (clone.nodeType === 1) processElement(clone);
+            currentElements.push(clone);
+          });
+        } else {
+          const clone = templateContent.cloneNode(true);
+          parent.insertBefore(clone, placeholder);
+          processElement(clone);
+          currentElements.push(clone);
+        }
+
+        componentScope = prevScope;
       });
     });
   }
@@ -1208,20 +1343,107 @@ export function generateSignalsRuntimeDev(): string {
   function bindIf(el) {
     const expr = el.getAttribute('@if');
     const parent = el.parentNode;
+
+    // Guard: if element has no parent, it's detached - skip processing
+    if (!parent) {
+      console.warn('[STX] bindIf: element has no parent, skipping');
+      return;
+    }
+
     const placeholder = document.createComment('stx-if');
     let isInserted = true;
+    let currentNodes = [];
+
+    // Handle <template> elements specially - clone their content
+    const isTemplate = el.tagName === 'TEMPLATE';
+
+    // Capture BOTH element scope AND componentScope NOW before anything changes
+    // componentScope may contain @for iteration variables (page, index, etc.)
+    const capturedElementScope = findElementScope(el);
+    const capturedComponentScope = { ...componentScope };
 
     parent.insertBefore(placeholder, el);
     el.removeAttribute('@if');
 
+    if (isTemplate) {
+      // For templates, we need to handle the content fragment
+      const content = el.content;
+      currentNodes = Array.from(content.childNodes).map(n => n.cloneNode(true));
+      // Insert cloned content initially
+      currentNodes.forEach(node => parent.insertBefore(node, placeholder.nextSibling));
+      el.remove(); // Remove the template element itself
+    }
+
+    // Helper to evaluate with captured scope
+    const evalExpr = (expression) => {
+      try {
+        // Skip placeholder expressions like __TITLE__ (build-time placeholders)
+        if (/^__[A-Z_]+__$/.test(expression.trim())) {
+          return expression;
+        }
+        // Use captured componentScope (with @for vars) merged with element scope
+        const scope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
+        const fn = new Function(...Object.keys(scope), 'return ' + expression);
+        return fn(...Object.values(scope));
+      } catch (e) {
+        console.warn('[STX] Expression error:', expression, e);
+        return '';
+      }
+    };
+
+    // Track if children have been processed
+    let childrenProcessed = false;
+
+    // Helper to process children with captured scope
+    const processChildrenWithScope = () => {
+      // Temporarily set componentScope to captured scope so children can access @for vars
+      const prevScope = componentScope;
+      componentScope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
+
+      Array.from(el.childNodes).forEach(child => processElement(child));
+
+      componentScope = prevScope;
+      childrenProcessed = true;
+    };
+
     effect(() => {
-      const value = toValue(expr, el);
-      if (value && !isInserted) {
-        parent.insertBefore(el, placeholder.nextSibling);
-        isInserted = true;
-      } else if (!value && isInserted) {
-        el.remove();
-        isInserted = false;
+      const value = evalExpr(expr);
+
+      if (isTemplate) {
+        if (value && !isInserted) {
+          // Re-insert cloned content
+          currentNodes = Array.from(el.content.childNodes).map(n => n.cloneNode(true));
+          currentNodes.forEach(node => parent.insertBefore(node, placeholder.nextSibling));
+          // Process the new nodes for nested directives with captured scope
+          const prevScope = componentScope;
+          componentScope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
+          currentNodes.forEach(node => {
+            if (node.nodeType === 1) processElement(node);
+          });
+          componentScope = prevScope;
+          isInserted = true;
+        } else if (!value && isInserted) {
+          // Remove all current nodes
+          currentNodes.forEach(node => node.remove());
+          currentNodes = [];
+          isInserted = false;
+        }
+      } else {
+        if (value && !isInserted) {
+          parent.insertBefore(el, placeholder.nextSibling);
+          // Process children if not already done
+          if (!childrenProcessed) {
+            processChildrenWithScope();
+          }
+          isInserted = true;
+        } else if (!value && isInserted) {
+          el.remove();
+          isInserted = false;
+        }
+        // Also process children on initial render if element is visible
+        if (value && isInserted && !childrenProcessed) {
+          processChildrenWithScope();
+        }
       }
     });
   }
@@ -1250,6 +1472,9 @@ export function generateSignalsRuntimeDev(): string {
   // ==========================================================================
 
   document.addEventListener('DOMContentLoaded', () => {
+    // Track which scoped elements have been processed
+    const processedScopes = new Set();
+
     // Initialize components with data-stx attribute
     document.querySelectorAll('[data-stx]').forEach(el => {
       const setupName = el.getAttribute('data-stx');
@@ -1263,22 +1488,60 @@ export function generateSignalsRuntimeDev(): string {
       mountCallbacks.forEach(fn => fn());
     });
 
-    // Auto-process elements with data-stx-auto
-    document.querySelectorAll('[data-stx-auto]').forEach(el => {
-      processElement(el);
-    });
-
-    // Process scoped components (their scripts have already registered scope variables)
+    // Process scoped components FIRST (their scripts have already registered scope variables)
     document.querySelectorAll('[data-stx-scope]').forEach(el => {
       const scopeId = el.getAttribute('data-stx-scope');
+      processedScopes.add(el);
       const scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
+
+      // Set componentScope to this component's scope vars before processing
+      // This ensures expressions can access component variables even for elements
+      // where findElementScope might not work (e.g., cloned elements not yet in DOM)
+      const prevScope = componentScope;
+      if (scopeVars) {
+        componentScope = { ...componentScope, ...scopeVars };
+      }
+
       processElement(el);
+
+      // Restore previous scope
+      componentScope = prevScope;
+
       // Run scope-specific mount callbacks
       if (scopeVars && scopeVars.__mountCallbacks) {
         scopeVars.__mountCallbacks.forEach(fn => fn());
       }
     });
+
+    // Auto-process elements with data-stx-auto (skip already processed scoped elements)
+    document.querySelectorAll('[data-stx-auto]').forEach(el => {
+      // Process element but skip children that are in scoped containers
+      processElementSkipScopes(el, processedScopes);
+    });
   });
+
+  // Helper to process elements while skipping already-processed scoped containers
+  function processElementSkipScopes(el, processedScopes) {
+    if (processedScopes.has(el)) return;
+    if (el.nodeType === Node.TEXT_NODE) {
+      processElement(el);
+      return;
+    }
+    if (el.nodeType !== Node.ELEMENT_NODE) return;
+    // Skip scoped elements - they were already processed
+    if (el.hasAttribute && el.hasAttribute('data-stx-scope')) return;
+    // Process this element's directives without recursing into children
+    // (we'll handle children manually to skip scoped ones)
+    const hasFor = el.hasAttribute && el.hasAttribute('@for');
+    const hasIf = el.hasAttribute && el.hasAttribute('@if');
+    if (hasFor) { bindFor(el); return; }
+    if (hasIf) { bindIf(el); return; }
+    // Process other attributes...
+    if (el.hasAttribute && el.hasAttribute('@show')) bindShow(el, el.getAttribute('@show'));
+    if (el.hasAttribute && el.hasAttribute('@model')) bindModel(el, el.getAttribute('@model'));
+    // Process children, skipping scoped containers
+    Array.from(el.childNodes).forEach(child => processElementSkipScopes(child, processedScopes));
+  }
 })();
 `
 }

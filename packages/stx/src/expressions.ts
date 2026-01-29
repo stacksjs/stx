@@ -390,10 +390,79 @@ export function escapeHtml(unsafe: string): string {
 }
 
 /**
+ * Check if a template uses signals (state, derived, effect) in its script blocks
+ * or has reactive attributes (@if, @for) with function call expressions
+ */
+function usesSignalsInScript(template: string): boolean {
+  // Check for signals in script blocks
+  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi
+  let match: RegExpExecArray | null
+  while ((match = scriptRegex.exec(template)) !== null) {
+    const content = match[1]
+    if (/\b(state|derived|effect)\s*\(/.test(content)) {
+      return true
+    }
+  }
+
+  // Also check for reactive attributes with function calls like @if="loading()" or @for="item in items()"
+  // These indicate the template is using signals even if script blocks were removed
+  if (/@(if|for|show)\s*=\s*["'][^"']*\(\s*\)/.test(template)) {
+    return true
+  }
+
+  // Check for @for with function call in the collection expression: @for="item in items()"
+  if (/@for\s*=\s*["'][^"']*\s+(?:in|of)\s+[^"']*\(\s*\)/.test(template)) {
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Check if an expression references only identifiers that exist in the context
+ * Returns true if ALL identifiers in the expression are in context or are JS built-ins
+ */
+function expressionUsesOnlyContextVars(expr: string, context: Record<string, any>): boolean {
+  const jsBuiltins = ['parseInt', 'parseFloat', 'String', 'Number', 'Boolean', 'Array', 'Object', 'JSON', 'Math', 'Date', 'encodeURIComponent', 'decodeURIComponent', 'encodeURI', 'decodeURI', 'true', 'false', 'null', 'undefined', 'NaN', 'Infinity', 'isNaN', 'isFinite', 'window', 'document', 'console']
+
+  // Extract all identifiers from the expression (words that aren't numbers or inside strings)
+  // This is a simplified check - remove strings first, then find identifiers
+  let exprWithoutStrings = expr
+    .replace(/'[^']*'/g, '') // Remove single-quoted strings
+    .replace(/"[^"]*"/g, '') // Remove double-quoted strings
+    .replace(/`[^`]*`/g, '') // Remove template literals
+
+  // Find all identifiers (variable names at the start of property access chains)
+  const identifierRegex = /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\b/g
+  let identifierMatch: RegExpExecArray | null
+
+  while ((identifierMatch = identifierRegex.exec(exprWithoutStrings)) !== null) {
+    const identifier = identifierMatch[1]
+    // Check if this identifier is a property access (preceded by a dot)
+    const beforeIdentifier = exprWithoutStrings.substring(0, identifierMatch.index)
+    const isPropAccess = beforeIdentifier.trimEnd().endsWith('.')
+
+    // Only check top-level identifiers (not property accesses like .foo)
+    if (!isPropAccess) {
+      // If this identifier is not a JS built-in and not in context, it's a runtime variable
+      if (!jsBuiltins.includes(identifier) && !(identifier in context)) {
+        return false
+      }
+    }
+  }
+
+  return true
+}
+
+/**
  * Process template expressions including variables, filters, and operations
  */
 export function processExpressions(template: string, context: Record<string, any>, filePath: string): string {
   let output = template
+
+  // Check if this template uses signals - if so, we need to preserve expressions
+  // that reference runtime variables (like loop variables or signal calls)
+  const hasSignals = usesSignalsInScript(template)
 
   // Replace triple curly braces with unescaped expressions {{{ expr }}} - similar to {!! expr !!}
   output = output.replace(/\{\{\{([\s\S]*?)\}\}\}/g, (match, expr, offset) => {
@@ -456,6 +525,19 @@ export function processExpressions(template: string, context: Record<string, any
     const directFuncMatch = trimmedExpr.match(directFunctionCall)
     const isLikelySignal = directFuncMatch && !jsBuiltins.includes(directFuncMatch[1]) && !(directFuncMatch[1] in context)
 
+    // Skip build-time placeholder expressions like __TITLE__ - these should be handled elsewhere
+    if (/^__[A-Z_]+__$/.test(trimmedExpr)) {
+      // This is a placeholder - don't try to evaluate it as a signal, leave it as is
+      // (it will be replaced by another part of the build process or should be removed)
+      return ''
+    }
+
+    // For signal-based templates, preserve expressions that reference runtime variables
+    // This includes loop variables (page, event, etc.) and component-defined functions (fmt, etc.)
+    if (hasSignals && !expressionUsesOnlyContextVars(trimmedExpr, context)) {
+      return match // Preserve for runtime evaluation
+    }
+
     // Preserve signal-like expressions for client-side processing
     if (isLikelySignal) {
       return match
@@ -470,6 +552,10 @@ export function processExpressions(template: string, context: Record<string, any
       // If evaluation fails and it looks like a client-side signal,
       // preserve the expression for client-side processing
       if (isLikelySignal) {
+        return match
+      }
+      // For signal templates, preserve the expression instead of showing error
+      if (hasSignals) {
         return match
       }
       const msg = error instanceof Error ? error.message : String(error)

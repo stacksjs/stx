@@ -234,13 +234,13 @@ describe('Directive bindings', () => {
     it('should handle @text', () => {
       const runtime = generateSignalsRuntimeDev()
       expect(runtime).toContain("name === '@text'")
-      expect(runtime).toContain('el.textContent = toValue')
+      expect(runtime).toContain('el.textContent = evalAttrExpr')
     })
 
     it('should handle @html', () => {
       const runtime = generateSignalsRuntimeDev()
       expect(runtime).toContain("name === '@html'")
-      expect(runtime).toContain('el.innerHTML = toValue')
+      expect(runtime).toContain('el.innerHTML = evalAttrExpr')
     })
   })
 
@@ -299,7 +299,9 @@ describe('Text interpolation', () => {
     const runtime = generateSignalsRuntimeDev()
     // The effect wrapper around interpolation
     expect(runtime).toContain('effect(() => {')
-    expect(runtime).toContain('toValue(match[1]')
+    // Text interpolation uses new Function with captured scope
+    expect(runtime).toContain('new Function(...Object.keys(capturedScope)')
+    expect(runtime).toContain('span.textContent')
   })
 })
 
