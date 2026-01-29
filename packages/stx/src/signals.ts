@@ -1270,7 +1270,13 @@ export function generateSignalsRuntimeDev(): string {
 
     // Process scoped components (their scripts have already registered scope variables)
     document.querySelectorAll('[data-stx-scope]').forEach(el => {
+      const scopeId = el.getAttribute('data-stx-scope');
+      const scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
       processElement(el);
+      // Run scope-specific mount callbacks
+      if (scopeVars && scopeVars.__mountCallbacks) {
+        scopeVars.__mountCallbacks.forEach(fn => fn());
+      }
     });
   });
 })();

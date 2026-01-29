@@ -407,14 +407,9 @@ export async function renderComponentWithSlot(
 
       // Preserve client scripts (non-server scripts)
       if (!isServerScript) {
-        // If script uses signals API, prepend the destructuring from window.stx
-        const usesSignals = /\b(state|derived|effect|batch|onMount|onDestroy)\s*\(/.test(content)
-        if (usesSignals) {
-          const signalsPreamble = 'const { state, derived, effect, batch, onMount, onDestroy } = window.stx;\n'
-          clientScripts.push(`<script${attrs}>${signalsPreamble}${content}</script>`)
-        } else {
-          clientScripts.push(`<script${attrs}>${content}</script>`)
-        }
+        // Strip any existing signal destructuring - it will be added by the scope wrapper
+        let cleanContent = content.replace(/^\s*const\s*\{\s*state\s*,\s*derived\s*,\s*effect\s*,\s*batch\s*,\s*onMount\s*,\s*onDestroy\s*\}\s*=\s*window\.stx\s*;?\s*\n?/gm, '')
+        clientScripts.push(`<script${attrs}>${cleanContent}</script>`)
       }
     }
 
@@ -492,11 +487,18 @@ export async function renderComponentWithSlot(
 
         const [, attrs, content] = scriptMatch
         // Wrap script content to register in scope
+        // Add data-stx-scoped attribute to prevent double-processing by processScriptSetup
         const wrappedContent = `
 (function() {
-  const { state, derived, effect, batch, onMount, onDestroy } = window.stx;
+  const { state, derived, effect, batch } = window.stx;
   const __scope = window.stx._scopes = window.stx._scopes || {};
   const __scopeVars = __scope['${scopeId}'] = __scope['${scopeId}'] || {};
+
+  // Scope-specific lifecycle callbacks
+  __scopeVars.__mountCallbacks = __scopeVars.__mountCallbacks || [];
+  __scopeVars.__destroyCallbacks = __scopeVars.__destroyCallbacks || [];
+  const onMount = (fn) => __scopeVars.__mountCallbacks.push(fn);
+  const onDestroy = (fn) => __scopeVars.__destroyCallbacks.push(fn);
 
 ${content}
 
@@ -507,7 +509,7 @@ ${content}
   } catch(e) {}
   Object.assign(__scopeVars, __localVars);
 })();`
-        return `<script${attrs}>${wrappedContent}</script>`
+        return `<script data-stx-scoped${attrs}>${wrappedContent}</script>`
       })
 
       // Append preserved style and scoped scripts
