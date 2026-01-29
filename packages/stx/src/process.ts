@@ -38,27 +38,29 @@ import { generateSignalsRuntime, generateSignalsRuntimeDev } from './signals'
 /**
  * Check if template uses STX signals syntax.
  *
- * Client-side reactive directives (processed by signals runtime):
- * - `@show` - Toggle visibility
+ * STX directives work seamlessly on both server and client:
+ * - `@if`, `@else` - Conditional rendering
+ * - `@for` - List iteration
+ * - `@show` - Toggle visibility (keeps element in DOM)
  * - `@model` - Two-way binding
  * - `@bind:attr` - Dynamic attribute binding
  * - `@class`, `@style` - Dynamic class/style binding
  * - `@click`, `@submit` - Event handling
  * - Scripts containing `state(`, `derived(`, `effect(` - Signal APIs
- * - `data-stx` or `data-stx-auto` - Explicit signal containers
  *
- * Note: Server-side `@if`, `@for`, `@foreach` are processed at build time.
- * Client-side uses `@show` for visibility and `@each` for reactive lists.
+ * Server-side directives are processed at build time.
+ * Remaining directives with reactive values are handled by the client runtime.
  */
 function hasSignalsSyntax(template: string): boolean {
-  // Check for STX client-side reactive syntax
+  // Check for STX reactive syntax that needs client runtime
   const signalsPatterns = [
+    /@if\s*=/, // @if="condition"
+    /@for\s*=/, // @for="item in items"
     /@show\s*=/, // @show="visible"
     /@model\s*=/, // @model="value"
     /@bind:/, // @bind:attr="value"
     /@class\s*=/, // @class="{ active: isActive }"
     /@style\s*=/, // @style="{ color: textColor }"
-    /@each\s*=/, // @each="item in items" (client-side reactive list)
     /\bstate\s*\(/, // state() signal API
     /\bderived\s*\(/, // derived() signal API
     /\beffect\s*\(/, // effect() signal API

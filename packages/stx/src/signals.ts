@@ -12,36 +12,36 @@
  * - **Automatic tracking** - Dependencies are tracked automatically in effects
  * - **Fine-grained updates** - Only affected DOM nodes update, not the whole component
  * - **Simple API** - Just `state`, `derived`, and `effect`
+ * - **Seamless syntax** - Same `@if`, `@for` directives work on server and client
  *
  * ## Quick Start
  *
  * ```html
  * <script>
- *   // Create reactive state
  *   const count = state(0)
- *   const name = state('World')
+ *   const items = state(['Apple', 'Banana', 'Cherry'])
+ *   const showList = state(true)
  *
- *   // Derived values update automatically
- *   const greeting = derived(() => `Hello, ${name()}!`)
- *   const doubled = derived(() => count() * 2)
- *
- *   // Side effects run when dependencies change
- *   effect(() => {
- *     console.log(`Count is now: ${count()}`)
- *   })
- *
- *   // Simple functions for events
  *   function increment() {
- *     count.set(count() + 1)
- *     // Or use the updater form:
- *     // count.update(n => n + 1)
+ *     count.update(n => n + 1)
+ *   }
+ *
+ *   function addItem() {
+ *     items.update(list => [...list, 'New Item'])
  *   }
  * </script>
  *
- * <button @click="increment">
- *   Count: {{ count }} (doubled: {{ doubled }})
- * </button>
- * <p>{{ greeting }}</p>
+ * <button @click="increment">Count: {{ count }}</button>
+ *
+ * <button @click="showList.set(!showList())">Toggle List</button>
+ *
+ * @if="showList()"
+ *   <ul>
+ *     <li @for="item in items()">{{ item }}</li>
+ *   </ul>
+ * @endif
+ *
+ * <button @click="addItem">Add Item</button>
  * ```
  *
  * ## Core Concepts
@@ -86,18 +86,45 @@
  *
  * ## Template Syntax (all use @ prefix)
  *
+ * All directives work seamlessly on both server-side and client-side.
+ * Server-side directives are processed at build time. Reactive directives
+ * (those using signals) are handled by the client runtime.
+ *
  * ### Text Interpolation
  * ```html
  * <p>{{ message }}</p>
  * <p>{{ user.name }}</p>
- * <p>{{ items.length }} items</p>
+ * <p>{{ items().length }} items</p>
+ * ```
+ *
+ * ### Conditional Rendering
+ * ```html
+ * <div @if="isVisible()">Shown when true</div>
+ * <div @if="user()">Welcome, {{ user().name }}</div>
+ * ```
+ *
+ * ### List Rendering
+ * ```html
+ * <ul>
+ *   <li @for="item in items()">{{ item.name }}</li>
+ * </ul>
+ *
+ * <div @for="item, index in items()">
+ *   {{ index }}: {{ item }}
+ * </div>
+ * ```
+ *
+ * ### Visibility Toggle
+ * ```html
+ * <!-- @show keeps element in DOM but toggles display -->
+ * <p @show="hasContent()">Toggles visibility</p>
  * ```
  *
  * ### Attribute Binding
  * ```html
- * <img @bind:src="imageUrl" @bind:alt="imageAlt">
- * <button @bind:disabled="isLoading">Submit</button>
- * <div @class="{ active: isActive, hidden: !visible }">
+ * <img @bind:src="imageUrl()" @bind:alt="imageAlt()">
+ * <button @bind:disabled="isLoading()">Submit</button>
+ * <div @class="{ active: isActive(), hidden: !visible() }">
  * ```
  *
  * ### Event Handling
@@ -114,40 +141,20 @@
  * <select @model="selectedOption">
  * ```
  *
- * ### Visibility Toggle
- * ```html
- * <p @show="hasContent">Toggles visibility (stays in DOM)</p>
- * ```
- *
- * ### Reactive List Rendering
- * ```html
- * <ul>
- *   <li @each="item in items">
- *     {{ item.name }}
- *   </li>
- * </ul>
- *
- * <div @each="item, index in items">
- *   {{ index }}: {{ item }}
- * </div>
- * ```
- *
  * ### Text and HTML Content
  * ```html
- * <span @text="message"></span>
- * <div @html="richContent"></div>
+ * <span @text="message()"></span>
+ * <div @html="richContent()"></div>
  * ```
  *
  * ## Lifecycle Hooks
  *
  * ```typescript
  * onMount(() => {
- *   // Called when component is inserted into DOM
  *   console.log('Component mounted')
  * })
  *
  * onDestroy(() => {
- *   // Called when component is removed from DOM
  *   console.log('Component destroyed')
  * })
  * ```
@@ -479,8 +486,12 @@ export function derived<T>(compute: () => T): DerivedSignal<T> {
  */
 export function effect(fn: () => void | CleanupFn, options: EffectOptions = {}): CleanupFn {
   let cleanup: CleanupFn | void
+  let isDisposed = false
 
   const runEffect = () => {
+    // Don't run if disposed
+    if (isDisposed) return
+
     // Run previous cleanup
     if (cleanup) {
       cleanup()
@@ -504,10 +515,10 @@ export function effect(fn: () => void | CleanupFn, options: EffectOptions = {}):
     runEffect()
   }
 
-  // Return cleanup function
+  // Return cleanup function that fully disposes the effect
   return () => {
+    isDisposed = true
     if (cleanup) cleanup()
-    activeEffect = null
   }
 }
 
@@ -696,9 +707,18 @@ export function peek<T>(fn: () => T): T {
  * @returns Minified JavaScript runtime code
  */
 export function generateSignalsRuntime(): string {
-  // Return the dev runtime for now - in production builds, this would be minified
-  // The runtime uses @ prefix for all directives: @show, @model, @each, @class, @style, @bind:, @text, @html
-  return generateSignalsRuntimeDev().replace(/\n\s*/g, '').replace(/\/\/[^\n]*/g, '').trim()
+  // Minify the dev runtime:
+  // 1. Remove single-line comments (but preserve strings containing //)
+  // 2. Remove multi-line comments
+  // 3. Remove excess whitespace
+  return generateSignalsRuntimeDev()
+    .replace(/\/\/[^\n]*/g, '') // Remove single-line comments first (while newlines exist)
+    .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
+    .replace(/\n\s*/g, ' ') // Replace newlines with single space
+    .replace(/\s+/g, ' ') // Collapse multiple spaces
+    .replace(/\s*([{}();,:])\s*/g, '$1') // Remove spaces around punctuation
+    .replace(/;\}/g, '}') // Remove unnecessary semicolons before }
+    .trim()
 }
 
 /**
@@ -828,8 +848,10 @@ export function generateSignalsRuntimeDev(): string {
 
   function effect(fn, options = {}) {
     let cleanup;
+    let isDisposed = false;
 
     const runEffect = () => {
+      if (isDisposed) return;
       if (cleanup) {
         cleanup();
         cleanup = undefined;
@@ -847,8 +869,8 @@ export function generateSignalsRuntimeDev(): string {
 
     if (options.immediate !== false) runEffect();
     return () => {
+      isDisposed = true;
       if (cleanup) cleanup();
-      activeEffect = null;
     };
   }
 
@@ -952,13 +974,19 @@ export function generateSignalsRuntimeDev(): string {
 
     if (el.nodeType !== Node.ELEMENT_NODE) return;
 
-    // Handle @each first (client-side reactive list)
-    if (el.hasAttribute('@each')) {
-      bindEach(el);
+    // Handle @for first (reactive list)
+    if (el.hasAttribute('@for')) {
+      bindFor(el);
       return;
     }
 
-    // Handle @show (client-side visibility toggle)
+    // Handle @if (conditional rendering)
+    if (el.hasAttribute('@if')) {
+      bindIf(el);
+      return;
+    }
+
+    // Handle @show (visibility toggle - keeps element in DOM)
     if (el.hasAttribute('@show')) {
       bindShow(el, el.getAttribute('@show'));
     }
@@ -1009,8 +1037,8 @@ export function generateSignalsRuntimeDev(): string {
         const eventName = parts[0];
         const modifiers = parts.slice(1);
 
-        // Skip special directives
-        if (['show', 'model', 'each', 'class', 'style', 'text', 'html'].includes(eventName)) {
+        // Skip special directives (already handled above or in processElement)
+        if (['if', 'for', 'show', 'model', 'class', 'style', 'text', 'html'].includes(eventName)) {
           return;
         }
 
@@ -1098,24 +1126,24 @@ export function generateSignalsRuntimeDev(): string {
     });
   }
 
-  function bindEach(el) {
-    const expr = el.getAttribute('@each');
+  function bindFor(el) {
+    const expr = el.getAttribute('@for');
     const match = expr.match(/^\\s*(\\w+)(?:\\s*,\\s*(\\w+))?\\s+(?:in|of)\\s+(.+)\\s*$/);
 
     if (!match) {
-      console.warn('[STX] Invalid @each:', expr);
+      console.warn('[STX] Invalid @for:', expr);
       return;
     }
 
     const [, itemName, indexName, listExpr] = match;
     const parent = el.parentNode;
-    const placeholder = document.createComment('stx-each');
+    const placeholder = document.createComment('stx-for');
 
     parent.insertBefore(placeholder, el);
     parent.removeChild(el);
 
     const template = el.cloneNode(true);
-    template.removeAttribute('@each');
+    template.removeAttribute('@for');
 
     let currentElements = [];
 
@@ -1140,6 +1168,27 @@ export function generateSignalsRuntimeDev(): string {
         parent.insertBefore(clone, placeholder);
         currentElements.push(clone);
       });
+    });
+  }
+
+  function bindIf(el) {
+    const expr = el.getAttribute('@if');
+    const parent = el.parentNode;
+    const placeholder = document.createComment('stx-if');
+    let isInserted = true;
+
+    parent.insertBefore(placeholder, el);
+    el.removeAttribute('@if');
+
+    effect(() => {
+      const value = toValue(expr);
+      if (value && !isInserted) {
+        parent.insertBefore(el, placeholder.nextSibling);
+        isInserted = true;
+      } else if (!value && isInserted) {
+        el.remove();
+        isInserted = false;
+      }
     });
   }
 

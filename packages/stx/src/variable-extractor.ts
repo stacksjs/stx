@@ -122,6 +122,15 @@ export function stripTypeScript(scriptContent: string): string {
 }
 
 /**
+ * Check if script content uses STX signals (client-side only APIs)
+ * These should NOT be executed server-side.
+ */
+function usesSignalsAPI(scriptContent: string): boolean {
+  // Check for signal API usage: state(), derived(), effect(), batch()
+  return /\b(?:state|derived|effect|batch)\s*\(/.test(scriptContent)
+}
+
+/**
  * Extract variables from script content and add them to context
  *
  * @param scriptContent - The JavaScript/TypeScript code from a <script> tag
@@ -135,6 +144,12 @@ export async function extractVariables(
 ): Promise<void> {
   if (!scriptContent.trim())
     return
+
+  // Skip client-side scripts that use STX signals API
+  // These are processed by the signals runtime, not the server
+  if (usesSignalsAPI(scriptContent)) {
+    return
+  }
 
   // Strip TypeScript syntax first
   const jsContent = stripTypeScript(scriptContent)
