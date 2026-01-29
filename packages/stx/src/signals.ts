@@ -742,6 +742,119 @@ export function generateSignalsRuntimeDev(): string {
   let isBatching = false;
   const targetMap = new WeakMap();
 
+  // ==========================================================================
+  // Global Helpers (Feature #5)
+  // ==========================================================================
+
+  const globalHelpers = {
+    // Number formatting
+    fmt(n) {
+      if (n == null) return '0';
+      n = Number(n);
+      if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+      if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+      return String(n);
+    },
+
+    // Date formatting
+    formatDate(date, format = 'YYYY-MM-DD') {
+      if (!date) return '';
+      const d = date instanceof Date ? date : new Date(date);
+      if (isNaN(d.getTime())) return '';
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const seconds = String(d.getSeconds()).padStart(2, '0');
+      return format
+        .replace('YYYY', year)
+        .replace('MM', month)
+        .replace('DD', day)
+        .replace('HH', hours)
+        .replace('mm', minutes)
+        .replace('ss', seconds);
+    },
+
+    // Time ago formatting
+    timeAgo(date) {
+      if (!date) return '';
+      const d = date instanceof Date ? date : new Date(date);
+      const now = new Date();
+      const seconds = Math.floor((now - d) / 1000);
+      if (seconds < 60) return 'just now';
+      if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+      if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+      if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
+      return d.toLocaleDateString();
+    },
+
+    // Debounce function
+    debounce(fn, delay = 300) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fn.apply(this, args), delay);
+      };
+    },
+
+    // Throttle function
+    throttle(fn, limit = 300) {
+      let inThrottle;
+      return function(...args) {
+        if (!inThrottle) {
+          fn.apply(this, args);
+          inThrottle = true;
+          setTimeout(() => inThrottle = false, limit);
+        }
+      };
+    },
+
+    // Capitalize first letter
+    capitalize(str) {
+      if (!str) return '';
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    },
+
+    // Truncate string
+    truncate(str, length = 50, suffix = '...') {
+      if (!str || str.length <= length) return str || '';
+      return str.slice(0, length) + suffix;
+    },
+
+    // JSON stringify (safe)
+    json(value, indent = 2) {
+      try {
+        return JSON.stringify(value, null, indent);
+      } catch (e) {
+        return String(value);
+      }
+    },
+
+    // Pluralize
+    pluralize(count, singular, plural) {
+      const p = plural || singular + 's';
+      return count === 1 ? singular : p;
+    },
+
+    // Clamp number
+    clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    },
+
+    // Currency formatting
+    currency(value, symbol = '$', decimals = 2) {
+      if (value == null) return symbol + '0.00';
+      return symbol + Number(value).toFixed(decimals).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');
+    },
+
+    // Percentage formatting
+    percent(value, decimals = 0) {
+      if (value == null) return '0%';
+      return (Number(value) * 100).toFixed(decimals) + '%';
+    }
+  };
+
   function track(target, key) {
     if (!activeEffect) return;
     let depsMap = targetMap.get(target);
@@ -762,6 +875,89 @@ export function generateSignalsRuntimeDev(): string {
         deps.forEach(effect => effect());
       }
     }
+  }
+
+  // ==========================================================================
+  // Auto-unwrap Signals (Feature #1)
+  // ==========================================================================
+
+  // Create a proxy that auto-unwraps signals when accessed
+  function createAutoUnwrapProxy(scope) {
+    return new Proxy(scope, {
+      get(target, prop) {
+        const val = target[prop];
+        // If it's a signal or derived, call it to get the value
+        if (val && typeof val === 'function' && (val._isSignal || val._isDerived)) {
+          return val();
+        }
+        return val;
+      }
+    });
+  }
+
+  // ==========================================================================
+  // Pipe Syntax Support (Feature #2)
+  // ==========================================================================
+
+  // Parse and execute pipe expressions like "value | fmt" or "value | truncate:20"
+  function parsePipeExpression(expr, scope) {
+    // Check if expression contains pipes (but not in strings or template literals)
+    const pipeMatch = expr.match(/^(.+?)\\s*\\|\\s*(.+)$/);
+    if (!pipeMatch) return null;
+
+    const [, valueExpr, pipeChain] = pipeMatch;
+
+    // Parse all pipes in the chain: "fmt | truncate:20 | uppercase"
+    const pipes = pipeChain.split(/\\s*\\|\\s*/).map(p => {
+      const parts = p.trim().split(':');
+      const name = parts[0].trim();
+      const args = parts.slice(1).map(a => a.trim());
+      return { name, args };
+    });
+
+    return { valueExpr: valueExpr.trim(), pipes };
+  }
+
+  function executePipeExpression(valueExpr, pipes, scope) {
+    // First evaluate the base expression
+    let value;
+    try {
+      const fn = new Function(...Object.keys(scope), 'return ' + valueExpr);
+      value = fn(...Object.values(scope));
+    } catch (e) {
+      console.warn('[STX] Pipe base expression error:', valueExpr, e);
+      return '';
+    }
+
+    // Apply each pipe/filter
+    for (const pipe of pipes) {
+      const filterFn = scope[pipe.name] || globalHelpers[pipe.name];
+      if (typeof filterFn === 'function') {
+        try {
+          // Parse args - they might be numbers, strings, or expressions
+          const parsedArgs = pipe.args.map(arg => {
+            // Try to parse as number
+            if (/^-?\\d+(\\.\\d+)?$/.test(arg)) return Number(arg);
+            // Try to parse as string (quoted)
+            if (/^['"].*['"]$/.test(arg)) return arg.slice(1, -1);
+            // Try to evaluate as expression in scope
+            try {
+              const fn = new Function(...Object.keys(scope), 'return ' + arg);
+              return fn(...Object.values(scope));
+            } catch (e) {
+              return arg;
+            }
+          });
+          value = filterFn(value, ...parsedArgs);
+        } catch (e) {
+          console.warn('[STX] Pipe filter error:', pipe.name, e);
+        }
+      } else {
+        console.warn('[STX] Unknown pipe/filter:', pipe.name);
+      }
+    }
+
+    return value;
   }
 
   // ==========================================================================
@@ -923,6 +1119,87 @@ export function generateSignalsRuntimeDev(): string {
   function onDestroy(fn) { destroyCallbacks.push(fn); }
 
   // ==========================================================================
+  // Declarative Data Fetching (Feature #6 - useFetch)
+  // ==========================================================================
+
+  function useFetch(urlOrFn, options = {}) {
+    const data = state(options.initialData ?? null);
+    const loading = state(true);
+    const error = state(null);
+
+    const fetchData = async () => {
+      loading.set(true);
+      error.set(null);
+
+      try {
+        const url = typeof urlOrFn === 'function' ? urlOrFn() : urlOrFn;
+        if (!url) {
+          loading.set(false);
+          return;
+        }
+
+        const fetchOptions = {
+          method: options.method || 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(options.headers || {})
+          }
+        };
+
+        if (options.body) {
+          fetchOptions.body = typeof options.body === 'string'
+            ? options.body
+            : JSON.stringify(options.body);
+        }
+
+        const response = await fetch(url, fetchOptions);
+
+        if (!response.ok) {
+          throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
+        }
+
+        const result = await response.json();
+
+        // Apply transform if provided
+        const transformed = options.transform ? options.transform(result) : result;
+        data.set(transformed);
+      } catch (e) {
+        console.error('[STX] useFetch error:', e);
+        error.set(e.message || 'Fetch failed');
+        if (options.onError) options.onError(e);
+      } finally {
+        loading.set(false);
+      }
+    };
+
+    // Auto-fetch on mount unless disabled
+    if (options.immediate !== false) {
+      onMount(fetchData);
+    }
+
+    // If urlOrFn is a function, watch for changes and refetch
+    if (typeof urlOrFn === 'function') {
+      effect(() => {
+        const url = urlOrFn();
+        if (url && options.immediate !== false) {
+          fetchData();
+        }
+      });
+    }
+
+    return {
+      data,
+      loading,
+      error,
+      refetch: fetchData,
+      // Convenience getters
+      get isLoading() { return loading(); },
+      get hasError() { return !!error(); },
+      get isEmpty() { return !loading() && !data(); }
+    };
+  }
+
+  // ==========================================================================
   // Template Binding
   // ==========================================================================
 
@@ -946,7 +1223,7 @@ export function generateSignalsRuntimeDev(): string {
     return null;
   }
 
-  function toValue(expr, el) {
+  function toValue(expr, el, enableAutoUnwrap = true) {
     try {
       // Skip placeholder expressions like __TITLE__ (build-time placeholders)
       if (/^__[A-Z_]+__$/.test(expr.trim())) {
@@ -954,14 +1231,100 @@ export function generateSignalsRuntimeDev(): string {
       }
       // First try component-level scope
       const elementScope = findElementScope(el || currentElement);
-      const scope = { ...componentScope, ...(elementScope || {}) };
+      const baseScope = { ...componentScope, ...(elementScope || {}), ...globalHelpers };
 
-      const fn = new Function(...Object.keys(scope), 'return ' + expr);
+      // Check for pipe syntax (Feature #2)
+      const pipeResult = parsePipeExpression(expr, baseScope);
+      if (pipeResult) {
+        // Use auto-unwrap proxy for pipe expressions
+        const unwrapScope = enableAutoUnwrap ? createAutoUnwrapProxy(baseScope) : baseScope;
+        return executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope);
+      }
+
+      // Use auto-unwrap proxy if enabled (Feature #1)
+      const scope = enableAutoUnwrap ? createAutoUnwrapProxy(baseScope) : baseScope;
+      const fn = new Function(...Object.keys(baseScope), 'return ' + expr);
       return fn(...Object.values(scope));
     } catch (e) {
       console.warn('[STX] Expression error:', expr, e);
       return '';
     }
+  }
+
+  // ==========================================================================
+  // Event Handler Shorthand (Feature #8)
+  // ==========================================================================
+
+  function parseEventShorthand(expr, scope) {
+    const trimmed = expr.trim();
+
+    // Handle !variable toggle: "!visible" -> toggle the signal
+    if (/^!\\w+$/.test(trimmed)) {
+      const varName = trimmed.slice(1);
+      const signal = scope[varName];
+      if (signal && signal._isSignal) {
+        return () => signal.set(!signal());
+      }
+      return null;
+    }
+
+    // Handle variable++ increment: "count++" -> increment the signal
+    if (/^\\w+\\+\\+$/.test(trimmed)) {
+      const varName = trimmed.slice(0, -2);
+      const signal = scope[varName];
+      if (signal && signal._isSignal) {
+        return () => signal.update(n => n + 1);
+      }
+      return null;
+    }
+
+    // Handle variable-- decrement: "count--" -> decrement the signal
+    if (/^\\w+--$/.test(trimmed)) {
+      const varName = trimmed.slice(0, -2);
+      const signal = scope[varName];
+      if (signal && signal._isSignal) {
+        return () => signal.update(n => n - 1);
+      }
+      return null;
+    }
+
+    // Handle += and -= operators: "count += 5"
+    const assignMatch = trimmed.match(/^(\\w+)\\s*([+\\-*\\/])=\\s*(.+)$/);
+    if (assignMatch) {
+      const [, varName, op, valueExpr] = assignMatch;
+      const signal = scope[varName];
+      if (signal && signal._isSignal) {
+        return () => {
+          const addValue = toValue(valueExpr, null, true);
+          signal.update(n => {
+            switch (op) {
+              case '+': return n + addValue;
+              case '-': return n - addValue;
+              case '*': return n * addValue;
+              case '/': return n / addValue;
+              default: return n;
+            }
+          });
+        };
+      }
+      return null;
+    }
+
+    // Handle simple assignment: "count = 5" or "visible = false"
+    const simpleAssignMatch = trimmed.match(/^(\\w+)\\s*=\\s*(.+)$/);
+    if (simpleAssignMatch && !trimmed.includes('==') && !trimmed.includes('=>')) {
+      const [, varName, valueExpr] = simpleAssignMatch;
+      const signal = scope[varName];
+      if (signal && signal._isSignal) {
+        return () => {
+          const newValue = toValue(valueExpr, null, true);
+          signal.set(newValue);
+        };
+      }
+      return null;
+    }
+
+    return null;
   }
 
   function executeHandler(expr, event, el) {
@@ -972,7 +1335,14 @@ export function generateSignalsRuntimeDev(): string {
       }
       // First try component-level scope
       const elementScope = findElementScope(el || currentElement);
-      const scope = { ...componentScope, ...(elementScope || {}) };
+      const scope = { ...componentScope, ...(elementScope || {}), ...globalHelpers };
+
+      // Check for shorthand syntax (Feature #8)
+      const shorthandFn = parseEventShorthand(expr, scope);
+      if (shorthandFn) {
+        shorthandFn();
+        return;
+      }
 
       const fn = new Function(...Object.keys(scope), '$event', expr);
       fn(...Object.values(scope), event);
@@ -991,7 +1361,7 @@ export function generateSignalsRuntimeDev(): string {
           const parentEl = el.parentNode;
           // Capture scope NOW before effects run asynchronously
           // Use componentScope directly since it's set correctly during @for iteration
-          const capturedScope = { ...componentScope, ...(findElementScope(parentEl) || {}) };
+          const capturedScope = { ...componentScope, ...(findElementScope(parentEl) || {}), ...globalHelpers };
           parts.forEach(part => {
             const match = part.match(/^\\{\\{\\s*(.+?)\\s*\\}\\}$/);
             if (match) {
@@ -1006,8 +1376,17 @@ export function generateSignalsRuntimeDev(): string {
               // Use captured scope, not dynamic lookup
               effect(() => {
                 try {
-                  const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
-                  span.textContent = fn(...Object.values(capturedScope));
+                  // Check for pipe syntax (Feature #2)
+                  const pipeResult = parsePipeExpression(expr, capturedScope);
+                  if (pipeResult) {
+                    const unwrapScope = createAutoUnwrapProxy(capturedScope);
+                    span.textContent = executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope);
+                  } else {
+                    // Use auto-unwrap proxy (Feature #1)
+                    const unwrapScope = createAutoUnwrapProxy(capturedScope);
+                    const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
+                    span.textContent = fn(...Object.values(unwrapScope));
+                  }
                 } catch (e) {
                   console.warn('[STX] Expression error:', expr, e);
                   span.textContent = '';
@@ -1048,13 +1427,23 @@ export function generateSignalsRuntimeDev(): string {
     }
 
     // Capture scope once for all attribute bindings on this element
-    const attrCapturedScope = { ...componentScope, ...(findElementScope(el) || {}) };
+    const attrCapturedScope = { ...componentScope, ...(findElementScope(el) || {}), ...globalHelpers };
 
     const evalAttrExpr = (expr) => {
       try {
         if (/^__[A-Z_]+__$/.test(expr.trim())) return expr;
+
+        // Check for pipe syntax (Feature #2)
+        const pipeResult = parsePipeExpression(expr, attrCapturedScope);
+        if (pipeResult) {
+          const unwrapScope = createAutoUnwrapProxy(attrCapturedScope);
+          return executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope);
+        }
+
+        // Use auto-unwrap proxy (Feature #1)
+        const unwrapScope = createAutoUnwrapProxy(attrCapturedScope);
         const fn = new Function(...Object.keys(attrCapturedScope), 'return ' + expr);
-        return fn(...Object.values(attrCapturedScope));
+        return fn(...Object.values(unwrapScope));
       } catch (e) {
         console.warn('[STX] Attribute expression error:', expr, e);
         return '';
@@ -1066,9 +1455,9 @@ export function generateSignalsRuntimeDev(): string {
       const name = attr.name;
       const value = attr.value;
 
-      // @bind:attr for dynamic attribute binding
-      if (name.startsWith('@bind:')) {
-        const attrName = name.slice(6);
+      // @bind:attr OR :attr shorthand (Feature #4) for dynamic attribute binding
+      if (name.startsWith('@bind:') || (name.startsWith(':') && !name.startsWith('::'))) {
+        const attrName = name.startsWith('@bind:') ? name.slice(6) : name.slice(1);
         effect(() => {
           const v = evalAttrExpr(value);
           if (v === false || v === null || v === undefined) {
@@ -1258,6 +1647,34 @@ export function generateSignalsRuntimeDev(): string {
     // Check if element also has @if - need to handle together
     const ifExpr = el.getAttribute('@if');
 
+    // Feature #3: Check for @loading and @empty siblings/content
+    const loadingExpr = el.getAttribute('@loading');
+    const emptyExpr = el.getAttribute('@empty');
+
+    // Look for sibling elements with @for-loading or @for-empty
+    let loadingTemplate = null;
+    let emptyTemplate = null;
+
+    // Check next siblings for @for-loading and @for-empty
+    let sibling = el.nextElementSibling;
+    while (sibling) {
+      if (sibling.hasAttribute('@for-loading')) {
+        loadingTemplate = sibling.cloneNode(true);
+        loadingTemplate.removeAttribute('@for-loading');
+        sibling.remove();
+        sibling = el.nextElementSibling;
+        continue;
+      }
+      if (sibling.hasAttribute('@for-empty')) {
+        emptyTemplate = sibling.cloneNode(true);
+        emptyTemplate.removeAttribute('@for-empty');
+        sibling.remove();
+        sibling = el.nextElementSibling;
+        continue;
+      }
+      break;
+    }
+
     // Capture the scope NOW before element is removed from DOM
     const capturedScope = findElementScope(el) || findElementScope(parent);
 
@@ -1271,12 +1688,16 @@ export function generateSignalsRuntimeDev(): string {
     } else {
       const wrapper = el.cloneNode(true);
       wrapper.removeAttribute('@for');
+      wrapper.removeAttribute('@loading');
+      wrapper.removeAttribute('@empty');
       // Also remove @if - we'll handle it inline
       if (ifExpr) wrapper.removeAttribute('@if');
       templateContent = wrapper;
     }
 
     let currentElements = [];
+    let loadingElement = null;
+    let emptyElement = null;
 
     // Helper to evaluate with captured scope
     const evalExpr = (expression, extraScope = {}) => {
@@ -1285,7 +1706,7 @@ export function generateSignalsRuntimeDev(): string {
         if (/^__[A-Z_]+__$/.test(expression.trim())) {
           return expression;
         }
-        const scope = { ...componentScope, ...(capturedScope || {}), ...extraScope };
+        const scope = { ...componentScope, ...(capturedScope || {}), ...globalHelpers, ...extraScope };
         const fn = new Function(...Object.keys(scope), 'return ' + expression);
         return fn(...Object.values(scope));
       } catch (e) {
@@ -1294,9 +1715,57 @@ export function generateSignalsRuntimeDev(): string {
       }
     };
 
+    // Helper to show loading state
+    const showLoading = () => {
+      hideLoading();
+      hideEmpty();
+      if (loadingTemplate) {
+        loadingElement = loadingTemplate.cloneNode(true);
+        parent.insertBefore(loadingElement, placeholder);
+      }
+    };
+
+    // Helper to hide loading state
+    const hideLoading = () => {
+      if (loadingElement) {
+        loadingElement.remove();
+        loadingElement = null;
+      }
+    };
+
+    // Helper to show empty state
+    const showEmpty = () => {
+      hideLoading();
+      hideEmpty();
+      if (emptyTemplate) {
+        emptyElement = emptyTemplate.cloneNode(true);
+        parent.insertBefore(emptyElement, placeholder);
+        processElement(emptyElement);
+      }
+    };
+
+    // Helper to hide empty state
+    const hideEmpty = () => {
+      if (emptyElement) {
+        emptyElement.remove();
+        emptyElement = null;
+      }
+    };
+
     effect(() => {
       currentElements.forEach(e => e.remove());
       currentElements = [];
+      hideLoading();
+      hideEmpty();
+
+      // Check loading state if @loading attribute provided (Feature #3)
+      if (loadingExpr) {
+        const isLoading = evalExpr(loadingExpr);
+        if (isLoading) {
+          showLoading();
+          return;
+        }
+      }
 
       // Always evaluate list first to track it as a dependency
       const list = evalExpr(listExpr);
@@ -1312,8 +1781,24 @@ export function generateSignalsRuntimeDev(): string {
 
       if (!Array.isArray(list)) return;
 
+      // Check empty state (Feature #3)
+      if (list.length === 0) {
+        if (emptyExpr) {
+          // If @empty has an expression, evaluate it
+          const emptyContent = evalExpr(emptyExpr);
+          if (emptyContent && typeof emptyContent === 'string') {
+            const textNode = document.createTextNode(emptyContent);
+            parent.insertBefore(textNode, placeholder);
+            currentElements.push(textNode);
+          }
+        } else if (emptyTemplate) {
+          showEmpty();
+        }
+        return;
+      }
+
       list.forEach((item, index) => {
-        const itemScope = { ...componentScope, ...(capturedScope || {}) };
+        const itemScope = { ...componentScope, ...(capturedScope || {}), ...globalHelpers };
         itemScope[itemName] = item;
         if (indexName) itemScope[indexName] = index;
 
@@ -1452,6 +1937,29 @@ export function generateSignalsRuntimeDev(): string {
   // Public API
   // ==========================================================================
 
+  // ==========================================================================
+  // $: Computed Shorthand Support (Feature #7)
+  // ==========================================================================
+
+  // Helper function for $: reactive declarations (transformed by compiler)
+  // Usage: $computed(() => count * 2) is shorthand for derived()
+  function $computed(fn) {
+    return derived(fn);
+  }
+
+  // Helper for watching a value with auto-unwrap
+  function $watch(deps, fn) {
+    effect(() => {
+      // Access all dependencies to track them
+      const values = Array.isArray(deps) ? deps.map(d => {
+        if (typeof d === 'function' && (d._isSignal || d._isDerived)) return d();
+        return d;
+      }) : (typeof deps === 'function' && (deps._isSignal || deps._isDerived)) ? [deps()] : [deps];
+
+      fn(...values);
+    });
+  }
+
   window.stx = {
     state,
     derived,
@@ -1462,10 +1970,25 @@ export function generateSignalsRuntimeDev(): string {
     peek,
     onMount,
     onDestroy,
+    useFetch,
+    $computed,
+    $watch,
+    helpers: globalHelpers,
     _mountCallbacks: mountCallbacks,
     _destroyCallbacks: destroyCallbacks,
     _scopes: {}  // Component-level scopes
   };
+
+  // Also expose globally for convenience
+  window.state = state;
+  window.derived = derived;
+  window.effect = effect;
+  window.batch = batch;
+  window.onMount = onMount;
+  window.onDestroy = onDestroy;
+  window.useFetch = useFetch;
+  window.$computed = $computed;
+  window.$watch = $watch;
 
   // ==========================================================================
   // Auto-initialization

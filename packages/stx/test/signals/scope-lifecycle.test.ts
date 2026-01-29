@@ -79,7 +79,8 @@ describe('Signal scope isolation', () => {
   describe('Runtime scope lookup', () => {
     it('should have toValue function that uses scope', () => {
       const runtime = generateSignalsRuntimeDev()
-      expect(runtime).toContain('function toValue(expr, el)')
+      // toValue now has optional enableAutoUnwrap parameter
+      expect(runtime).toContain('function toValue(expr, el, enableAutoUnwrap')
       expect(runtime).toContain('findElementScope')
     })
 
