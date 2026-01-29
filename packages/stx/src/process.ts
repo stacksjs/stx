@@ -1,5 +1,6 @@
 import type { StxOptions } from './types'
 import path from 'node:path'
+import { injectCrosswindCSS } from './dev-server/crosswind'
 import { processA11yDirectives } from './a11y'
 import { generateLifecycleRuntime } from './composables'
 import { processTemplateBindings } from './reactive-bindings'
@@ -28,6 +29,217 @@ import { processRouteDirectives } from './routes'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
 import { renderComponentWithSlot, resolveTemplatePath } from './utils'
 import { runComposers } from './view-composers'
+import { generateSignalsRuntime, generateSignalsRuntimeDev } from './signals'
+
+// =============================================================================
+// STX SIGNALS INTEGRATION
+// =============================================================================
+
+/**
+ * Check if template uses STX signals syntax.
+ *
+ * STX directives work seamlessly on both server and client:
+ * - `@if`, `@else` - Conditional rendering
+ * - `@for` - List iteration
+ * - `@show` - Toggle visibility (keeps element in DOM)
+ * - `@model` - Two-way binding
+ * - `@bind:attr` - Dynamic attribute binding
+ * - `@class`, `@style` - Dynamic class/style binding
+ * - `@click`, `@submit` - Event handling
+ * - Scripts containing `state(`, `derived(`, `effect(` - Signal APIs
+ *
+ * Server-side directives are processed at build time.
+ * Remaining directives with reactive values are handled by the client runtime.
+ */
+function hasSignalsSyntax(template: string): boolean {
+  // Check for STX reactive syntax that needs client runtime
+  const signalsPatterns = [
+    /@if\s*=/, // @if="condition"
+    /@for\s*=/, // @for="item in items"
+    /@show\s*=/, // @show="visible"
+    /@model\s*=/, // @model="value"
+    /@bind:/, // @bind:attr="value"
+    /@class\s*=/, // @class="{ active: isActive }"
+    /@style\s*=/, // @style="{ color: textColor }"
+    /\bstate\s*\(/, // state() signal API
+    /\bderived\s*\(/, // derived() signal API
+    /\beffect\s*\(/, // effect() signal API
+    /data-stx\b/, // data-stx or data-stx-auto
+  ]
+
+  return signalsPatterns.some(pattern => pattern.test(template))
+}
+
+/**
+ * Process scripts that use STX signal APIs.
+ *
+ * Automatically detects scripts using state(), derived(), effect() and
+ * transforms them into setup functions for the signals runtime.
+ *
+ * ```html
+ * <script>
+ *   const count = state(0)
+ *   const doubled = derived(() => count() * 2)
+ * </script>
+ * ```
+ */
+function processScriptSetup(template: string): { output: string, setupCode: string | null } {
+  // Find client-side scripts (not server, not src, not type=module for external)
+  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi
+  let match: RegExpExecArray | null
+  let signalScript: { fullMatch: string, content: string } | null = null
+
+  while ((match = scriptRegex.exec(template)) !== null) {
+    const content = match[1]
+    // Check if this script uses signal APIs
+    if (/\b(state|derived|effect)\s*\(/.test(content)) {
+      signalScript = { fullMatch: match[0], content }
+      break
+    }
+  }
+
+  if (!signalScript) {
+    return { output: template, setupCode: null }
+  }
+
+  const setupFnName = `__stx_setup_${Date.now()}`
+
+  // Generate the setup function that provides signal APIs
+  const setupCode = `
+<script>
+function ${setupFnName}() {
+  const { state, derived, effect, batch, onMount, onDestroy } = window.stx;
+${signalScript.content}
+  return { ${extractExports(signalScript.content)} };
+}
+</script>`
+
+  // Remove the original script and add data-stx attribute to the root element
+  let output = template.replace(signalScript.fullMatch, '')
+
+  // Try to add data-stx to body or first content element
+  if (output.includes('<body')) {
+    output = output.replace(/<body([^>]*)>/, `<body$1 data-stx="${setupFnName}">`)
+  } else {
+    // Find the first non-meta element and add data-stx
+    const skipTags = ['script', 'style', 'html', 'head', 'meta', 'link', 'title', '!doctype']
+    output = output.replace(/<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>/i, (match, tag, attrs) => {
+      if (skipTags.includes(tag.toLowerCase())) {
+        return match
+      }
+      return `<${tag}${attrs} data-stx="${setupFnName}">`
+    })
+  }
+
+  return { output, setupCode }
+}
+
+/**
+ * Extract exported variable names from setup script.
+ * Returns variables that should be exposed to the template.
+ */
+function extractExports(setupContent: string): string {
+  const exports: string[] = []
+
+  // Match const/let/function declarations
+  const constMatches = setupContent.matchAll(/\b(?:const|let)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/g)
+  for (const match of constMatches) {
+    exports.push(match[1])
+  }
+
+  // Match function declarations
+  const funcMatches = setupContent.matchAll(/\bfunction\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g)
+  for (const match of funcMatches) {
+    exports.push(match[1])
+  }
+
+  return exports.join(', ')
+}
+
+/**
+ * Inject STX signals runtime into the template.
+ * The runtime provides client-side reactivity.
+ */
+function injectSignalsRuntime(template: string, options: StxOptions): string {
+  // Don't inject if already present (check for the actual runtime, not just window.stx prefix)
+  if (template.includes('window.stx =') || template.includes('window.stx=') || template.includes('window.stx.state')) {
+    return template
+  }
+
+  const runtime = options.debug ? generateSignalsRuntimeDev() : generateSignalsRuntime()
+  const runtimeScript = `<script>${runtime}</script>`
+
+  // Inject before other scripts in <head>, or before </head>
+  if (template.includes('</head>')) {
+    const headEndPos = template.indexOf('</head>')
+    const headSection = template.slice(0, headEndPos)
+    const firstScriptPos = headSection.indexOf('<script')
+
+    if (firstScriptPos !== -1) {
+      // Insert runtime before first script in head
+      return template.slice(0, firstScriptPos) + runtimeScript + '\n' + template.slice(firstScriptPos)
+    }
+    // No scripts in head, insert before </head>
+    return template.replace('</head>', `${runtimeScript}\n</head>`)
+  }
+
+  if (template.includes('<body')) {
+    // Insert at start of body
+    return template.replace(/<body([^>]*)>/, `<body$1>\n${runtimeScript}`)
+  }
+
+  // Prepend to output
+  return runtimeScript + '\n' + template
+}
+
+/**
+ * Process STX signals in template.
+ * Handles script setup, runtime injection, and transforms.
+ */
+function processSignals(template: string, options: StxOptions): string {
+  if (!hasSignalsSyntax(template)) {
+    return template
+  }
+
+  let output = template
+
+  // Skip full processing for nested components - they just keep their scripts
+  // The parent template will inject the runtime once
+  if (options.skipSignalsRuntime) {
+    return output
+  }
+
+  // Process <script setup> blocks
+  const { output: processedOutput, setupCode } = processScriptSetup(output)
+  output = processedOutput
+
+  // Inject the signals runtime
+  output = injectSignalsRuntime(output, options)
+
+  // Inject setup code after runtime
+  if (setupCode) {
+    if (output.includes('</head>')) {
+      output = output.replace('</head>', `${setupCode}\n</head>`)
+    } else if (output.includes('<body')) {
+      output = output.replace(/<body([^>]*)>/, `<body$1>\n${setupCode}`)
+    } else {
+      output = output + '\n' + setupCode
+    }
+  }
+
+  // If no setup code but has signals syntax, add data-stx-auto to body for auto-processing
+  // Check if body already has data-stx attribute (not just any occurrence in the template)
+  const bodyMatch = output.match(/<body([^>]*)>/i)
+  const bodyHasDataStx = bodyMatch && /data-stx/.test(bodyMatch[1])
+
+  if (!setupCode && !bodyHasDataStx) {
+    if (output.includes('<body') && bodyMatch && !/data-stx-auto/.test(bodyMatch[1])) {
+      output = output.replace(/<body([^>]*)>/, '<body$1 data-stx-auto>')
+    }
+  }
+
+  return output
+}
 
 // =============================================================================
 // DIRECTIVE PROCESSING ORDER
@@ -525,9 +737,24 @@ export async function processDirectives(
   options: StxOptions,
   dependencies: Set<string>,
 ): Promise<string> {
+  // Track if this is the top-level call (not a recursive call from layout/include)
+  const isTopLevel = !context.__stxProcessingDepth
+  if (!context.__stxProcessingDepth) {
+    context.__stxProcessingDepth = 0
+  }
+  context.__stxProcessingDepth++
+
   try {
     return await performanceMonitor.timeAsync('template-processing', async () => {
-      return await processDirectivesInternal(template, context, filePath, options, dependencies)
+      let result = await processDirectivesInternal(template, context, filePath, options, dependencies)
+
+      // Generate and inject Tailwind CSS using Crosswind (only at top level)
+      // This happens after all includes/layouts/components are processed
+      if (isTopLevel) {
+        result = await injectCrosswindCSS(result)
+      }
+
+      return result
     })
   }
   catch (error: unknown) {
@@ -599,6 +826,11 @@ async function processDirectivesInternal(
   output = output.replace(/@\{\{([\s\S]*?)\}\}/g, (_, content) => {
     return `{{ ${content} }}`
   })
+
+  // Process stx-inline attributes for external JS/CSS bundling
+  // This allows: <script src="./file.js" stx-inline></script>
+  // and: <link href="./file.css" stx-inline />
+  output = await processInlineAssets(output, filePath, dependencies)
 
   // Store stacks for @push/@stack directives
   const stacks: Record<string, string[]> = {}
@@ -783,6 +1015,56 @@ async function processDirectivesInternal(
   return await processOtherDirectives(output, context, filePath, resolvedOptions, dependencies)
 }
 
+/**
+ * Process built-in STX components like <stx-loading-indicator>
+ */
+async function processBuiltInComponents(
+  template: string,
+  _context: Record<string, any>,
+  _filePath: string,
+  _options: StxOptions,
+): Promise<string> {
+  let output = template
+
+  // Process <stx-loading-indicator> component
+  output = output.replace(
+    /<stx-loading-indicator([^>]*?)(?:\s*\/>|><\/stx-loading-indicator>)/gi,
+    (_match, attrs) => {
+      // Parse attributes
+      const colorMatch = attrs.match(/color=["']([^"']+)["']/i)
+      const initialColorMatch = attrs.match(/initial-color=["']([^"']+)["']/i)
+      const heightMatch = attrs.match(/height=["']([^"']+)["']/i)
+      const durationMatch = attrs.match(/duration=["']([^"']+)["']/i)
+      const throttleMatch = attrs.match(/throttle=["']([^"']+)["']/i)
+      const zIndexMatch = attrs.match(/z-index=["']([^"']+)["']/i)
+
+      const options = {
+        color: colorMatch?.[1] || '#6366f1',
+        initialColor: initialColorMatch?.[1] || '',
+        height: heightMatch?.[1] || '3px',
+        duration: durationMatch ? Number.parseInt(durationMatch[1]) : 2000,
+        throttle: throttleMatch ? Number.parseInt(throttleMatch[1]) : 200,
+        zIndex: zIndexMatch ? Number.parseInt(zIndexMatch[1]) : 999999,
+      }
+
+      const gradient = options.initialColor
+        ? `linear-gradient(to right, ${options.initialColor}, ${options.color})`
+        : options.color
+
+      return `
+<div id="stx-loading-indicator" style="position:fixed;top:0;left:0;right:0;height:${options.height};background:${gradient};z-index:${options.zIndex};transform:scaleX(0);transform-origin:left;transition:transform 0.1s ease-out,opacity 0.3s ease;opacity:0;pointer-events:none">
+  <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.4) 50%,transparent 100%);animation:stx-shimmer 1.5s infinite"></div>
+</div>
+<style>@keyframes stx-shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}</style>
+<script>
+(function(){var el=document.getElementById('stx-loading-indicator'),p=0,l=!1,i=null;function u(v){p=Math.min(Math.max(v,0),100);if(el){el.style.opacity=p>0?'1':'0';el.style.transform='scaleX('+(p/100)+')'}}window.stxLoading={start:function(){l=!0;p=0;u(10);if(i)clearInterval(i);i=setInterval(function(){if(!l)return;var r=90-p,inc=Math.max(0.5,r*0.1);if(p<90)u(p+inc)},${options.throttle})},finish:function(){l=!1;if(i){clearInterval(i);i=null}u(100);setTimeout(function(){if(el)el.style.opacity='0';setTimeout(function(){p=0;if(el)el.style.transform='scaleX(0)'},300)},200)},set:function(v){u(v)},clear:function(){l=!1;p=0;if(i){clearInterval(i);i=null}if(el){el.style.opacity='0';el.style.transform='scaleX(0)'}}};document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a');if(!a)return;var h=a.getAttribute('href');if(!h||h.startsWith('http')||h.startsWith('#')||h.startsWith('mailto:')||h.startsWith('tel:')||a.target==='_blank')return;window.stxLoading.start()});window.addEventListener('popstate',function(){window.stxLoading.start()});window.addEventListener('load',function(){window.stxLoading.finish()})})();
+</script>`
+    },
+  )
+
+  return output
+}
+
 // Helper function to process all non-layout directives
 async function processOtherDirectives(
   template: string,
@@ -857,6 +1139,9 @@ async function processOtherDirectives(
 
   // Process custom directives
   output = await processCustomDirectives(output, context, filePath, opts)
+
+  // Process built-in STX components
+  output = await processBuiltInComponents(output, context, filePath, opts)
 
   // Process component directives (opts has already-resolved paths)
   if (opts.componentsDir) {
@@ -1010,6 +1295,10 @@ async function processOtherDirectives(
   const { processXElementDirectives } = await import('./x-element')
   output = processXElementDirectives(output)
 
+  // Process STX signals for reactive UI (state, derived, effect, :if, :for, :model, etc.)
+  // This injects the signals runtime and processes <script setup> blocks
+  output = processSignals(output, opts)
+
   // Run post-processing middleware
   output = await runPostProcessingMiddleware(output, context, filePath, opts)
 
@@ -1116,6 +1405,9 @@ async function processOtherDirectives(
   // Clean up client attribute from script tags (it's not valid HTML)
   // Transform <script client> to <script>
   output = output.replace(/<script\s+client\b([^>]*)>/gi, '<script$1>')
+
+  // Note: Crosswind CSS injection is done at the top level in processDirectives
+  // to avoid duplicate injection for includes/layouts/components
 
   return output
 }
@@ -1688,5 +1980,168 @@ Quick Reference:
 Documentation: https://stx.stacksjs.org/refs
 `
     throw new StxValidationError(errorMessage, filePath)
+  }
+}
+
+/**
+ * Automatically inline local JS/CSS files.
+ *
+ * This function handles:
+ * - `<script src="./file.js"></script>` → `<script>...file contents...</script>`
+ * - `<link href="./file.css" rel="stylesheet">` → `<style>...file contents...</style>`
+ *
+ * Only local/relative paths are inlined. External URLs (http://, https://, //) are left as-is.
+ *
+ * @param template - The template string to process
+ * @param filePath - Path to the current template file (for resolving relative paths)
+ * @param dependencies - Set to track included file dependencies
+ * @returns Template with local assets inlined
+ */
+async function processInlineAssets(
+  template: string,
+  filePath: string,
+  dependencies: Set<string>,
+): Promise<string> {
+  let output = template
+  const templateDir = path.dirname(filePath)
+
+  // Process external scripts with src attribute (local files only)
+  // Matches: <script src="path"></script>
+  const scriptRegex = /<script\b([^>]*)src=["']([^"']+)["']([^>]*)><\/script>/gi
+  let scriptMatch: RegExpExecArray | null
+
+  while ((scriptMatch = scriptRegex.exec(output)) !== null) {
+    const [fullMatch, before, srcPath, after] = scriptMatch
+
+    // Skip external URLs
+    if (isExternalUrl(srcPath)) {
+      continue
+    }
+
+    const resolvedPath = resolveInlinePath(srcPath, templateDir, filePath)
+
+    if (resolvedPath) {
+      try {
+        let fileContent = await Bun.file(resolvedPath).text()
+        dependencies.add(resolvedPath)
+
+        // Transpile TypeScript to JavaScript
+        if (srcPath.endsWith('.ts') || srcPath.endsWith('.tsx')) {
+          const result = await Bun.build({
+            entrypoints: [resolvedPath],
+            target: 'browser',
+            minify: false,
+          })
+          if (result.outputs.length > 0) {
+            fileContent = await result.outputs[0].text()
+          }
+        }
+
+        // Replace with inline script
+        const inlineScript = `<script>\n// Source: ${srcPath}\n${fileContent}\n</script>`
+        output = output.replace(fullMatch, inlineScript)
+
+        // Reset regex to continue searching
+        scriptRegex.lastIndex = 0
+      }
+      catch (error) {
+        // File doesn't exist - leave the tag as-is (might be handled by build tooling)
+      }
+    }
+  }
+
+  // Process external stylesheets (local files only)
+  // Matches: <link href="path" rel="stylesheet"> or <link rel="stylesheet" href="path">
+  const linkRegex = /<link\b([^>]*)href=["']([^"']+)["']([^>]*)(?:\/?>)/gi
+  let linkMatch: RegExpExecArray | null
+
+  while ((linkMatch = linkRegex.exec(output)) !== null) {
+    const [fullMatch, before, hrefPath, after] = linkMatch
+    const combinedAttrs = before + after
+
+    // Skip external URLs
+    if (isExternalUrl(hrefPath)) {
+      continue
+    }
+
+    // Check if it's a stylesheet link
+    const isStylesheet = /rel=["']stylesheet["']/.test(combinedAttrs) || hrefPath.endsWith('.css')
+
+    if (isStylesheet) {
+      const resolvedPath = resolveInlinePath(hrefPath, templateDir, filePath)
+
+      if (resolvedPath) {
+        try {
+          const fileContent = await Bun.file(resolvedPath).text()
+          dependencies.add(resolvedPath)
+
+          // Replace with inline style
+          const inlineStyle = `<style>\n/* Source: ${hrefPath} */\n${fileContent}\n</style>`
+          output = output.replace(fullMatch, inlineStyle)
+
+          // Reset regex to continue searching
+          linkRegex.lastIndex = 0
+        }
+        catch (error) {
+          // File doesn't exist - leave the tag as-is
+        }
+      }
+    }
+  }
+
+  return output
+}
+
+/**
+ * Check if a URL is external (http, https, or protocol-relative)
+ */
+function isExternalUrl(url: string): boolean {
+  return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')
+}
+
+/**
+ * Resolve an inline asset path relative to the template file.
+ *
+ * @param assetPath - The path from the src/href attribute
+ * @param templateDir - Directory containing the template
+ * @param filePath - Full path to the template file
+ * @returns Resolved absolute path, or null if not found
+ */
+function resolveInlinePath(assetPath: string, templateDir: string, filePath: string): string | null {
+  try {
+    let resolvedPath: string
+
+    if (assetPath.startsWith('/')) {
+      // Absolute path from project root - resolve relative to template's parent directories
+      // Try to find a reasonable base (look for common project roots)
+      let baseDir = templateDir
+      for (let i = 0; i < 5; i++) {
+        const potentialPath = path.join(baseDir, assetPath)
+        if (require('node:fs').existsSync(potentialPath)) {
+          return potentialPath
+        }
+        baseDir = path.dirname(baseDir)
+      }
+      // Fallback: resolve from template directory
+      resolvedPath = path.join(templateDir, assetPath)
+    }
+    else if (assetPath.startsWith('./') || assetPath.startsWith('../')) {
+      // Relative path from template location
+      resolvedPath = path.resolve(templateDir, assetPath)
+    }
+    else {
+      // No prefix - treat as relative to template directory
+      resolvedPath = path.resolve(templateDir, assetPath)
+    }
+
+    // Check if file exists
+    if (require('node:fs').existsSync(resolvedPath)) {
+      return resolvedPath
+    }
+
+    return null
+  }
+  catch {
+    return null
   }
 }

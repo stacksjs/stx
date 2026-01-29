@@ -8,6 +8,7 @@ import { stxRouterDirective } from './client/directive'
 // by the built-in processComponentDirectives function in process.ts
 import { heatmapDirective } from './heatmap'
 import { markdownDirectiveHandler } from './markdown'
+import { imgDirective } from './media/image/directive'
 import { pwaDirectives } from './pwa/directives'
 import { metaDirective, structuredDataDirective } from './seo'
 import { webComponentDirectiveHandler } from './web-components'
@@ -62,6 +63,7 @@ export const defaultConfig: StxConfig = {
     scrollAnimateDirective,
     stxRouterDirective,
     heatmapDirective,
+    imgDirective,
     ...pwaDirectives,
   ],
   middleware: [],
@@ -252,6 +254,45 @@ export const defaultConfig: StxConfig = {
       include: [],
       exclude: ['*.map', '*.LICENSE.txt'],
       maxFileSizeKB: 500,
+    },
+  },
+
+  // ==========================================================================
+  // Media Configuration
+  // ==========================================================================
+  media: {
+    enabled: true,
+    image: {
+      enabled: true,
+      defaultWidths: [320, 480, 640, 768, 1024, 1280, 1536, 1920],
+      defaultFormats: ['avif', 'webp', 'jpeg'],
+      defaultQuality: 80,
+      placeholderStrategy: 'thumbhash',
+      lazyByDefault: true,
+      enableDpr: true,
+      defaultDpr: [1, 2, 3],
+    },
+    video: {
+      enabled: true,
+      lazyByDefault: true,
+      defaultControls: true,
+    },
+    upload: {
+      enabled: true,
+      maxSize: 10 * 1024 * 1024, // 10MB
+      allowedTypes: ['image/*', 'video/*', 'audio/*', 'application/pdf'],
+      maxConcurrent: 3,
+    },
+    protected: {
+      enabled: true,
+      expirationSeconds: 3600,
+      batchSize: 10,
+    },
+    cache: {
+      enabled: true,
+      directory: '.stx/media-cache',
+      maxAge: 30,
+      maxSize: 500,
     },
   },
 }

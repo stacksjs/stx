@@ -312,7 +312,7 @@ export interface AnalyzedComponent {
   slots: AnalyzedSlot[]
   /** Component dependencies (other components used) */
   dependencies: string[]
-  /** CSS classes used (for Headwind) */
+  /** CSS classes used (for Crosswind) */
   cssClasses: string[]
   /** Directives used in the component */
   directives?: DirectiveUsage[]

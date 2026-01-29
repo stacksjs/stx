@@ -1,12 +1,12 @@
-# VSCode Extension
+# VS Code Extension
 
-The stx VSCode extension provides comprehensive support for stx development with syntax highlighting, IntelliSense, debugging, and productivity features.
+The stx VS Code extension provides comprehensive support for stx development with syntax highlighting, IntelliSense, automatic prop typing, debugging, and productivity features.
 
 ## Installation
 
-### From VSCode Marketplace
+### From VS Code Marketplace
 
-1. Open VSCode
+1. Open VS Code
 2. Go to Extensions (Ctrl+Shift+X)
 3. Search for "stx Language Support"
 4. Click Install
@@ -180,6 +180,140 @@ Features:
 - Autocomplete based on types
 - Go to definition
 - Find all references
+
+### Props Type Inference
+
+The extension automatically infers and provides types for the `props` variable in your components. This gives you full IntelliSense support for component props without any extra configuration.
+
+#### How It Works
+
+When you define props using `defineProps<T>()`, the extension:
+
+1. **Extracts the type** from your `defineProps` call
+2. **Injects the type** into the virtual TypeScript document
+3. **Provides IntelliSense** for `props.propertyName` access
+
+#### Supported Patterns
+
+**Inline Type Literal:**
+
+```stx
+<script>
+const props = defineProps<{
+  title: string
+  count?: number
+  variant: 'primary' | 'secondary'
+}>()
+</script>
+
+<template>
+  <!-- Full autocomplete and type checking for props -->
+  <h1>{{ props.title }}</h1>
+  <span>Count: {{ props.count }}</span>
+</template>
+```
+
+**Interface Reference:**
+
+```stx
+<script>
+interface ButtonProps {
+  /** Button label text */
+  label: string
+  /** Button variant style */
+  variant?: 'primary' | 'secondary' | 'danger'
+  /** Whether the button is disabled */
+  disabled?: boolean
+}
+
+const props = defineProps<ButtonProps>()
+</script>
+
+<template>
+  <button
+    class="btn btn-{{ props.variant }}"
+    :disabled="props.disabled"
+  >
+    {{ props.label }}
+  </button>
+</template>
+```
+
+**With Default Values:**
+
+```stx
+<script>
+interface CardProps {
+  title?: string
+  subtitle?: string
+  footer?: string
+}
+
+const { title, subtitle, footer } = withDefaults(
+  defineProps<CardProps>(),
+  {
+    title: 'Card Title',
+    subtitle: ''
+  }
+)
+</script>
+
+<template>
+  <div class="card">
+    <h2>{{ title }}</h2>
+    @if(subtitle)
+      <h3>{{ subtitle }}</h3>
+    @endif
+  </div>
+</template>
+```
+
+#### IntelliSense Features
+
+When you type `props.` in your template or script:
+
+- **Autocomplete**: Shows all available prop names with their types
+- **Hover Information**: Displays prop type, whether it's required, and default value
+- **Type Checking**: TypeScript validates that you're accessing valid props
+- **Documentation**: JSDoc comments from your interface are shown in tooltips
+
+```stx
+<script>
+interface UserProps {
+  /** The user's display name */
+  name: string
+  /** The user's email address */
+  email: string
+  /** User's avatar URL (optional) */
+  avatar?: string
+}
+
+const props = defineProps<UserProps>()
+</script>
+
+<template>
+  <!-- Hover over props.name to see:
+       (prop) name: string
+       The user's display name -->
+  <span>{{ props.name }}</span>
+</template>
+```
+
+#### Workspace-Wide Component Registry
+
+The extension maintains a registry of all `.stx` components in your workspace:
+
+- **Automatic scanning** on VS Code startup
+- **File watching** for real-time updates when you create, modify, or delete components
+- **Cross-file type inference** for better IntelliSense across your project
+
+This means when you use a component, the extension knows what props it accepts:
+
+```stx
+<!-- The extension knows UserCard accepts: name, email, avatar -->
+@component('UserCard', { name: userName, email: userEmail })
+@endcomponent
+```
 
 ### Component Intelligence
 

@@ -2,6 +2,7 @@
 import type { VirtualTsDocumentProvider } from './virtualTsDocumentProvider'
 import * as vscode from 'vscode'
 import { TransitionDirection, TransitionEase, TransitionType } from '../interfaces/animation-types'
+import { ComponentRegistry } from '../services/ComponentRegistry'
 import { findCssStylesForClass, isInScriptTag, isInStyleTag } from '../utils/cssUtils'
 import { formatJSDoc } from '../utils/jsdocUtils'
 
@@ -171,6 +172,66 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
       // Special case for file paths in code tags - only show hover if it's a code-like item
       || (isInCodeTag && !shouldShowHoverInCodeTag)) {
         return null
+      }
+
+      // ========== COMPONENT PROPS (HIGH PRIORITY) ==========
+      // Show type information for props variable and props.propertyName access
+
+      // Check if hovering over 'props' keyword
+      if (word === 'props') {
+        const componentInfo = ComponentRegistry.getInstance().getComponentByPath(document.uri.fsPath)
+        if (componentInfo && componentInfo.propDetails.length > 0) {
+          const hover = new vscode.MarkdownString()
+          hover.isTrusted = true
+          hover.supportHtml = true
+
+          // Show the full props type
+          const propsType = componentInfo.propsType || 'Record<string, unknown>'
+          hover.appendCodeblock(`const props: ${propsType}`, 'typescript')
+          hover.appendMarkdown('\n\n**Component Props**\n\n')
+
+          // List all props with their types
+          for (const prop of componentInfo.propDetails) {
+            const required = prop.required ? '' : '?'
+            const defaultVal = prop.defaultValue ? ` = ${prop.defaultValue}` : ''
+            hover.appendMarkdown(`- \`${prop.name}${required}\`: \`${prop.type}\`${defaultVal}\n`)
+            if (prop.description) {
+              hover.appendMarkdown(`  - ${prop.description}\n`)
+            }
+          }
+
+          return createHoverWithDiagnostics(hover, document, position, wordRange)
+        }
+      }
+
+      // Check if hovering over props.propertyName
+      if (propertyAccessMatch && propertyAccessMatch[1] === 'props') {
+        const componentInfo = ComponentRegistry.getInstance().getComponentByPath(document.uri.fsPath)
+        if (componentInfo) {
+          const propDetail = componentInfo.propDetails.find(p => p.name === word)
+          if (propDetail) {
+            const hover = new vscode.MarkdownString()
+            hover.isTrusted = true
+            hover.supportHtml = true
+
+            const required = propDetail.required ? '' : '?'
+            hover.appendCodeblock(`(prop) ${propDetail.name}${required}: ${propDetail.type}`, 'typescript')
+
+            if (propDetail.description) {
+              hover.appendMarkdown(`\n\n${propDetail.description}`)
+            }
+
+            if (propDetail.defaultValue) {
+              hover.appendMarkdown(`\n\n**Default:** \`${propDetail.defaultValue}\``)
+            }
+
+            if (propDetail.required) {
+              hover.appendMarkdown('\n\n**Required**')
+            }
+
+            return createHoverWithDiagnostics(hover, document, position, wordRange)
+          }
+        }
       }
 
       // ========== JAVASCRIPT OPERATORS & GLOBAL OBJECTS (HIGH PRIORITY) ==========

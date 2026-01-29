@@ -500,6 +500,17 @@ export function processEventDirectives(
   _context: Record<string, unknown>,
   _filePath: string,
 ): string {
+  // When signals are used, skip event processing - the signals runtime handles events
+  // Check for signal-related syntax that indicates the signals runtime will be used
+  const usesSignals = /\b(?:state|derived|effect)\s*\(/.test(template)
+    || /@(?:model|show|for|if)\s*=/.test(template)
+    || /data-stx(?:-auto)?\b/.test(template)
+
+  if (usesSignals) {
+    // Leave @ event attributes in the template for the signals runtime to handle
+    return template
+  }
+
   // Find all elements with event attributes
   const elements = findElementsWithEvents(template)
 

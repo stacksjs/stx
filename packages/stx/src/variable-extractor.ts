@@ -48,6 +48,107 @@ interface FunctionDeclarationResult {
 }
 
 /**
+ * Strip TypeScript-specific syntax to make it executable as JavaScript
+ *
+ * @param scriptContent - TypeScript/JavaScript code
+ * @returns JavaScript code with TypeScript syntax stripped
+ */
+export function stripTypeScript(scriptContent: string): string {
+  let result = scriptContent
+
+  // Remove import statements (especially from 'stx' which is build-time only)
+  result = result.replace(/^\s*import\s+.*?from\s+['"][^'"]+['"]\s*;?\s*$/gm, '')
+  result = result.replace(/^\s*import\s+['"][^'"]+['"]\s*;?\s*$/gm, '')
+
+  // Remove TypeScript interface declarations
+  result = result.replace(/^\s*interface\s+\w+\s*\{[\s\S]*?\n\}\s*$/gm, '')
+
+  // Remove TypeScript type alias declarations
+  result = result.replace(/^\s*type\s+\w+\s*=[\s\S]*?(?=\n(?:const|let|var|function|export|interface|type|$))/gm, '')
+
+  // Remove type annotations from variable declarations
+  // e.g., "const foo: Type = value" -> "const foo = value"
+  // e.g., "const foo: Type[] = value" -> "const foo = value"
+  // e.g., "const { a, b }: Type = value" -> "const { a, b } = value"
+  result = result.replace(
+    /^(\s*(?:export\s+)?(?:const|let|var)\s+)(\w+|\{[^}]+\}|\[[^\]]+\])\s*:\s*[^=]+(\s*=)/gm,
+    '$1$2$3',
+  )
+
+  // Remove type annotations from function parameters
+  // e.g., "function foo(a: string, b: number)" -> "function foo(a, b)"
+  // Only match function declarations, not arbitrary parentheses
+  result = result.replace(
+    /\b(function\s+\w*\s*)\(([^)]*)\)/g,
+    (match, prefix, params) => {
+      // Don't process if no type annotations
+      if (!params.includes(':'))
+        return match
+      const cleanedParams = params
+        .split(',')
+        .map((param: string) => {
+          // Remove type annotation but keep default values
+          const [nameWithType, ...defaultParts] = param.split('=')
+          const name = nameWithType.split(':')[0].trim()
+          if (defaultParts.length > 0) {
+            return `${name} = ${defaultParts.join('=').trim()}`
+          }
+          return name
+        })
+        .join(', ')
+      return `${prefix}(${cleanedParams})`
+    },
+  )
+
+  // Also handle arrow function parameters with type annotations
+  // e.g., "(a: string, b: number) =>" -> "(a, b) =>"
+  result = result.replace(
+    /\(([^)]*)\)\s*(?::\s*[^=]+)?\s*=>/g,
+    (match, params) => {
+      // Don't process if no type annotations
+      if (!params.includes(':'))
+        return match
+      // Skip if it looks like an object literal (has { or } inside)
+      if (params.includes('{') || params.includes('}'))
+        return match
+      const cleanedParams = params
+        .split(',')
+        .map((param: string) => {
+          const [nameWithType, ...defaultParts] = param.split('=')
+          const name = nameWithType.split(':')[0].trim()
+          if (defaultParts.length > 0) {
+            return `${name} = ${defaultParts.join('=').trim()}`
+          }
+          return name
+        })
+        .join(', ')
+      return `(${cleanedParams}) =>`
+    },
+  )
+
+  // Remove function return type annotations
+  // e.g., "function foo(): Type {" -> "function foo() {"
+  result = result.replace(/(\))\s*:\s*[^{]+(\s*\{)/g, '$1$2')
+
+  // Remove generic type parameters
+  // e.g., "function foo<T>()" -> "function foo()"
+  result = result.replace(/<[^>]+>/g, '')
+
+  // Remove 'as Type' assertions
+  result = result.replace(/\s+as\s+\w+(?:\[\])?/g, '')
+
+  // Keep defineProps and withDefaults calls but remove generic type parameters
+  // They will be handled by stub functions during execution
+  // e.g., defineProps<SomeType>() -> defineProps()
+  // (Generic removal already handled above)
+
+  // Clean up any double spaces or empty lines created
+  result = result.replace(/\n\s*\n\s*\n/g, '\n\n')
+
+  return result
+}
+
+/**
  * Extract variables from script content and add them to context
  *
  * @param scriptContent - The JavaScript/TypeScript code from a <script> tag
@@ -62,6 +163,9 @@ export async function extractVariables(
   if (!scriptContent.trim())
     return
 
+  // Strip TypeScript syntax first
+  const jsContent = stripTypeScript(scriptContent)
+
   // Create a safe execution environment
   const module = { exports: {} as Record<string, unknown> }
   const exports = module.exports
@@ -72,27 +176,135 @@ export async function extractVariables(
     return require(id)
   }
 
+  // Provide STX stub functions for component scripts
+  // These provide Vue-like defineProps/withDefaults but also support simpler patterns
+  const propsObj = (context.props || {}) as Record<string, unknown>
+
+  // Simple $props function for direct access with defaults
+  // Usage: const { name = 'default' } = $props
+  // Or: const { name } = $props({ name: 'default' })
+  const $props = Object.assign(
+    (defaults?: Record<string, unknown>) => {
+      if (!defaults) return propsObj
+      const result: Record<string, unknown> = {}
+      for (const [key, defaultValue] of Object.entries(defaults)) {
+        const propValue = propsObj[key]
+        if (propValue !== undefined) {
+          result[key] = propValue
+        }
+        else if (typeof defaultValue === 'function') {
+          result[key] = (defaultValue as () => unknown)()
+        }
+        else {
+          result[key] = defaultValue
+        }
+      }
+      return result
+    },
+    propsObj, // Spread props as properties for direct destructuring
+  )
+
+  // Vue-like defineProps
+  const defineProps = () => propsObj
+
+  // Vue-like withDefaults - merge props with defaults
+  const withDefaults = (props: Record<string, unknown>, defaults: Record<string, unknown>) => {
+    const result: Record<string, unknown> = { ...props }
+    for (const [key, defaultValue] of Object.entries(defaults)) {
+      if (result[key] === undefined) {
+        if (typeof defaultValue === 'function') {
+          // Call factory functions to get default values
+          result[key] = (defaultValue as () => unknown)()
+        }
+        else {
+          result[key] = defaultValue
+        }
+      }
+    }
+    return result
+  }
+
+  // Provide mock signal functions for server-side extraction
+  // These allow scripts with signals to be partially executed
+  // The actual signal values will be computed client-side
+
+  // Mock state() - returns a getter function that returns the initial value
+  const state = (initialValue: unknown) => {
+    const getter = () => initialValue
+    getter.set = (_v: unknown) => {}
+    getter.update = (_fn: (v: unknown) => unknown) => {}
+    return getter
+  }
+
+  // Mock derived() - returns a getter that executes the derivation once
+  const derived = (fn: () => unknown) => {
+    let cached: unknown
+    let computed = false
+    return () => {
+      if (!computed) {
+        try {
+          cached = fn()
+          computed = true
+        } catch {
+          // Derivation may fail during SSR if it depends on client-only values
+          cached = undefined
+        }
+      }
+      return cached
+    }
+  }
+
+  // Mock effect() - no-op on server
+  const effect = (_fn: () => void | (() => void)) => {}
+
+  // Mock batch() - just execute the function
+  const batch = (fn: () => void) => fn()
+
+  // Mock onMount() - no-op on server
+  const onMount = (_fn: () => void | (() => void)) => {}
+
+  // Mock onDestroy() - no-op on server
+  const onDestroy = (_fn: () => void) => {}
+
   try {
     // Parse and convert the script content
-    const convertedScript = convertToCommonJS(scriptContent)
+    const convertedScript = convertToCommonJS(jsContent)
 
     // Execute with context variables available
     const contextKeys = Object.keys(context)
     const contextValues = Object.values(context)
 
     // eslint-disable-next-line no-new-func
-    const scriptFn = new Function('module', 'exports', 'require', ...contextKeys, convertedScript)
-    scriptFn(module, exports, requireFn, ...contextValues)
+    const scriptFn = new Function(
+      'module', 'exports', 'require', '$props', 'defineProps', 'withDefaults',
+      'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy',
+      ...contextKeys,
+      convertedScript
+    )
+    scriptFn(
+      module, exports, requireFn, $props, defineProps, withDefaults,
+      state, derived, effect, batch, onMount, onDestroy,
+      ...contextValues
+    )
 
     // Copy results to context
     Object.assign(context, module.exports)
+
+    // Also spread props directly into context for simplest usage
+    // This allows: {{ siteName }} (from props) without any ceremony
+    // Done AFTER script execution to not conflict with script declarations
+    for (const [key, value] of Object.entries(propsObj)) {
+      if (!(key in context)) {
+        context[key] = value
+      }
+    }
   }
   catch (error) {
     console.warn(`Failed to execute script as CommonJS module in ${filePath}:`, error)
 
     // Fallback: Try alternative parsing approaches
     try {
-      await fallbackVariableExtraction(scriptContent, context, filePath)
+      await fallbackVariableExtraction(jsContent, context, filePath)
     }
     catch (fallbackError) {
       console.warn(`Variable extraction issue in ${filePath}:`, fallbackError)

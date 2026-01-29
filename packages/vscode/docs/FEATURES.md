@@ -123,6 +123,48 @@ When working with objects, get completions for their properties:
 <p>{{ currentUser. }}</p>
 ```
 
+### Props Type Inference
+
+When you define props using `defineProps<T>()`, the extension automatically provides IntelliSense for the `props` variable:
+
+```stx
+<script>
+interface ButtonProps {
+  /** Button label text */
+  label: string
+  /** Style variant */
+  variant?: 'primary' | 'secondary' | 'danger'
+  /** Whether the button is disabled */
+  disabled?: boolean
+}
+
+const props = defineProps<ButtonProps>()
+</script>
+
+<template>
+  <!-- Type 'props.' to see: label, variant, disabled -->
+  <button class="btn btn-{{ props.variant }}" :disabled="props.disabled">
+    {{ props.label }}
+  </button>
+</template>
+```
+
+**Features:**
+- **Autocomplete**: Shows all available prop names when you type `props.`
+- **Type information**: Displays the type of each prop
+- **Required indicators**: Shows which props are required
+- **Default values**: Shows default values from `withDefaults()`
+- **JSDoc comments**: Displays any documentation from your interface
+
+The extension also validates props when using components:
+
+```stx
+<!-- Get warnings for missing required props -->
+@component('Button', { variant: 'primary' })
+  <!-- Warning: Missing required prop 'label' -->
+@endcomponent
+```
+
 ### Path Completion
 
 Get file path suggestions for `@include` and `@component`:

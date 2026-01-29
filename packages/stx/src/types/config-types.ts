@@ -8,6 +8,7 @@ import type { ComponentConfig, DocGeneratorConfig, WebComponentConfig } from './
 import type { PwaConfig } from './pwa-types'
 import type { CspConfig } from './csp-types'
 import type { HeatmapConfig } from '../heatmap'
+import type { MediaConfig } from '../media/types'
 
 /**
  * Internationalization (i18n) configuration
@@ -462,6 +463,8 @@ export interface StxConfig {
   animation?: Partial<AnimationConfig>
   /** Skip adding default SEO tags */
   skipDefaultSeoTags?: boolean
+  /** Skip injecting signals runtime (for nested component processing) */
+  skipSignalsRuntime?: boolean
   /** Markdown configuration */
   markdown?: Partial<MarkdownConfig>
   /** Loop directive configuration */
@@ -482,6 +485,8 @@ export interface StxConfig {
   heatmap?: Partial<HeatmapConfig>
   /** Static Site Generation (SSG) build configuration */
   build?: Partial<BuildConfig>
+  /** Media (images, video, uploads) configuration */
+  media?: Partial<MediaConfig>
 }
 
 /**

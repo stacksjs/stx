@@ -84,8 +84,10 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     const hasExtends = content.includes('@extends(') || content.includes('@layout(')
 
     // SFC Support: Extract <template> content if present
+    // Only match <template> WITHOUT an id attribute - templates with id are HTML template elements
+    // that should be preserved (used for client-side JS template cloning)
     let workingContent = content
-    const templateTagMatch = content.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
+    const templateTagMatch = content.match(/<template\b(?![^>]*\bid\s*=)[^>]*>([\s\S]*?)<\/template>/i)
     if (templateTagMatch) {
       workingContent = templateTagMatch[1].trim()
     }

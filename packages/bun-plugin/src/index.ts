@@ -221,7 +221,11 @@ export { content as default };
           const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
           const clientScripts: string[] = []
           const serverScripts: string[] = []
+          const signalsScripts: string[] = [] // Scripts using STX signals API
           let scriptMatch: RegExpExecArray | null
+
+          // Check if script uses STX signals API (state, derived, effect, batch)
+          const usesSignalsAPI = (content: string) => /\b(?:state|derived|effect|batch)\s*\(/.test(content)
 
           while ((scriptMatch = scriptRegex.exec(content)) !== null) {
             const attrs = scriptMatch[1]
@@ -230,8 +234,14 @@ export { content as default };
 
             // Check if it's a client-only script
             const isClientScript = attrs.includes('client') || attrs.includes('type="module"') || attrs.includes('src=')
+            // Check if it uses STX signals API (should be processed by signals runtime)
+            const isSignalsScript = usesSignalsAPI(scriptContent)
 
-            if (isClientScript) {
+            if (isSignalsScript) {
+              // Scripts with signals should be kept in template for processSignals to handle
+              signalsScripts.push(fullScript)
+            }
+            else if (isClientScript) {
               clientScripts.push(fullScript)
             }
             else {
@@ -239,8 +249,17 @@ export { content as default };
             }
           }
 
-          // Remove all script tags from template (use workingContent which may be from <template> tag)
-          const templateContent = workingContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+          // Remove non-signals script tags from template, keep signals scripts for processSignals
+          let templateContent = workingContent
+          // Remove server scripts and client scripts, but keep signals scripts
+          for (const script of serverScripts) {
+            const escapedScript = script.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            templateContent = templateContent.replace(new RegExp(`<script\\b[^>]*>${escapedScript}<\\/script>`, 'gi'), '')
+          }
+          for (const script of clientScripts) {
+            const escapedScript = script.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            templateContent = templateContent.replace(escapedScript, '')
+          }
 
           // Create a sandbox environment to execute the script
           const context: Record<string, any> = {
