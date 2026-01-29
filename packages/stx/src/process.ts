@@ -29,6 +29,205 @@ import { processRouteDirectives } from './routes'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
 import { renderComponentWithSlot, resolveTemplatePath } from './utils'
 import { runComposers } from './view-composers'
+import { generateSignalsRuntime, generateSignalsRuntimeDev } from './signals'
+
+// =============================================================================
+// STX SIGNALS INTEGRATION
+// =============================================================================
+
+/**
+ * Check if template uses STX signals syntax.
+ *
+ * Client-side reactive directives (processed by signals runtime):
+ * - `@show` - Toggle visibility
+ * - `@model` - Two-way binding
+ * - `@bind:attr` - Dynamic attribute binding
+ * - `@class`, `@style` - Dynamic class/style binding
+ * - `@click`, `@submit` - Event handling
+ * - Scripts containing `state(`, `derived(`, `effect(` - Signal APIs
+ * - `data-stx` or `data-stx-auto` - Explicit signal containers
+ *
+ * Note: Server-side `@if`, `@for`, `@foreach` are processed at build time.
+ * Client-side uses `@show` for visibility and `@each` for reactive lists.
+ */
+function hasSignalsSyntax(template: string): boolean {
+  // Check for STX client-side reactive syntax
+  const signalsPatterns = [
+    /@show\s*=/, // @show="visible"
+    /@model\s*=/, // @model="value"
+    /@bind:/, // @bind:attr="value"
+    /@class\s*=/, // @class="{ active: isActive }"
+    /@style\s*=/, // @style="{ color: textColor }"
+    /@each\s*=/, // @each="item in items" (client-side reactive list)
+    /\bstate\s*\(/, // state() signal API
+    /\bderived\s*\(/, // derived() signal API
+    /\beffect\s*\(/, // effect() signal API
+    /data-stx\b/, // data-stx or data-stx-auto
+  ]
+
+  return signalsPatterns.some(pattern => pattern.test(template))
+}
+
+/**
+ * Process scripts that use STX signal APIs.
+ *
+ * Automatically detects scripts using state(), derived(), effect() and
+ * transforms them into setup functions for the signals runtime.
+ *
+ * ```html
+ * <script>
+ *   const count = state(0)
+ *   const doubled = derived(() => count() * 2)
+ * </script>
+ * ```
+ */
+function processScriptSetup(template: string): { output: string, setupCode: string | null } {
+  // Find client-side scripts (not server, not src, not type=module for external)
+  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi
+  let match: RegExpExecArray | null
+  let signalScript: { fullMatch: string, content: string } | null = null
+
+  while ((match = scriptRegex.exec(template)) !== null) {
+    const content = match[1]
+    // Check if this script uses signal APIs
+    if (/\b(state|derived|effect)\s*\(/.test(content)) {
+      signalScript = { fullMatch: match[0], content }
+      break
+    }
+  }
+
+  if (!signalScript) {
+    return { output: template, setupCode: null }
+  }
+
+  const setupFnName = `__stx_setup_${Date.now()}`
+
+  // Generate the setup function that provides signal APIs
+  const setupCode = `
+<script>
+function ${setupFnName}() {
+  const { state, derived, effect, batch, onMount, onDestroy } = window.stx;
+${signalScript.content}
+  return { ${extractExports(signalScript.content)} };
+}
+</script>`
+
+  // Remove the original script and add data-stx attribute to the root element
+  let output = template.replace(signalScript.fullMatch, '')
+
+  // Try to add data-stx to body or first content element
+  if (output.includes('<body')) {
+    output = output.replace(/<body([^>]*)>/, `<body$1 data-stx="${setupFnName}">`)
+  } else {
+    // Find the first non-meta element and add data-stx
+    const skipTags = ['script', 'style', 'html', 'head', 'meta', 'link', 'title', '!doctype']
+    output = output.replace(/<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>/i, (match, tag, attrs) => {
+      if (skipTags.includes(tag.toLowerCase())) {
+        return match
+      }
+      return `<${tag}${attrs} data-stx="${setupFnName}">`
+    })
+  }
+
+  return { output, setupCode }
+}
+
+/**
+ * Extract exported variable names from setup script.
+ * Returns variables that should be exposed to the template.
+ */
+function extractExports(setupContent: string): string {
+  const exports: string[] = []
+
+  // Match const/let/function declarations
+  const constMatches = setupContent.matchAll(/\b(?:const|let)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/g)
+  for (const match of constMatches) {
+    exports.push(match[1])
+  }
+
+  // Match function declarations
+  const funcMatches = setupContent.matchAll(/\bfunction\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g)
+  for (const match of funcMatches) {
+    exports.push(match[1])
+  }
+
+  return exports.join(', ')
+}
+
+/**
+ * Inject STX signals runtime into the template.
+ * The runtime provides client-side reactivity.
+ */
+function injectSignalsRuntime(template: string, options: StxOptions): string {
+  // Don't inject if already present
+  if (template.includes('window.stx')) {
+    return template
+  }
+
+  const runtime = options.debug ? generateSignalsRuntimeDev() : generateSignalsRuntime()
+  const runtimeScript = `<script>${runtime}</script>`
+
+  // Inject before other scripts in <head>, or before </head>
+  if (template.includes('</head>')) {
+    const headEndPos = template.indexOf('</head>')
+    const headSection = template.slice(0, headEndPos)
+    const firstScriptPos = headSection.indexOf('<script')
+
+    if (firstScriptPos !== -1) {
+      // Insert runtime before first script in head
+      return template.slice(0, firstScriptPos) + runtimeScript + '\n' + template.slice(firstScriptPos)
+    }
+    // No scripts in head, insert before </head>
+    return template.replace('</head>', `${runtimeScript}\n</head>`)
+  }
+
+  if (template.includes('<body')) {
+    // Insert at start of body
+    return template.replace(/<body([^>]*)>/, `<body$1>\n${runtimeScript}`)
+  }
+
+  // Prepend to output
+  return runtimeScript + '\n' + template
+}
+
+/**
+ * Process STX signals in template.
+ * Handles script setup, runtime injection, and transforms.
+ */
+function processSignals(template: string, options: StxOptions): string {
+  if (!hasSignalsSyntax(template)) {
+    return template
+  }
+
+  let output = template
+
+  // Process <script setup> blocks
+  const { output: processedOutput, setupCode } = processScriptSetup(output)
+  output = processedOutput
+
+  // Inject the signals runtime
+  output = injectSignalsRuntime(output, options)
+
+  // Inject setup code after runtime
+  if (setupCode) {
+    if (output.includes('</head>')) {
+      output = output.replace('</head>', `${setupCode}\n</head>`)
+    } else if (output.includes('<body')) {
+      output = output.replace(/<body([^>]*)>/, `<body$1>\n${setupCode}`)
+    } else {
+      output = output + '\n' + setupCode
+    }
+  }
+
+  // If no setup code but has signals syntax, add data-stx-auto to body for auto-processing
+  if (!setupCode && !output.includes('data-stx')) {
+    if (output.includes('<body') && !output.includes('data-stx-auto')) {
+      output = output.replace(/<body([^>]*)>/, '<body$1 data-stx-auto>')
+    }
+  }
+
+  return output
+}
 
 // =============================================================================
 // DIRECTIVE PROCESSING ORDER
@@ -1083,6 +1282,10 @@ async function processOtherDirectives(
   // Injects lightweight reactivity runtime for two-way binding
   const { processXElementDirectives } = await import('./x-element')
   output = processXElementDirectives(output)
+
+  // Process STX signals for reactive UI (state, derived, effect, :if, :for, :model, etc.)
+  // This injects the signals runtime and processes <script setup> blocks
+  output = processSignals(output, opts)
 
   // Run post-processing middleware
   output = await runPostProcessingMiddleware(output, context, filePath, opts)

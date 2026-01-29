@@ -78,6 +78,7 @@ export * from './visual-testing'
 export * from './image-optimization'
 export * from './bundle-analyzer'
 export * from './build-views'
+export * from './signals'
 
 // These modules are exported first to establish their types
 export * from './utils'
