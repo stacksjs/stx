@@ -8,6 +8,7 @@ import { injectAnalytics } from './analytics'
 import { injectHeatmap } from './heatmap'
 import { processAnimationDirectives } from './animation'
 import { processEventDirectives } from './events'
+import { processClientScript } from './client-script'
 import { processReactiveDirectives } from './reactive'
 import { processMarkdownFileDirectives } from './assets'
 import { processAuthDirectives, processConditionals, processEnvDirective, processIssetEmptyDirectives } from './conditionals'
@@ -71,6 +72,208 @@ function hasSignalsSyntax(template: string): boolean {
 }
 
 /**
+ * Check if template uses signals in its script blocks.
+ * This is used to determine if @if/@for directives should be
+ * converted to runtime attributes instead of build-time evaluation.
+ */
+function usesSignalsInScript(template: string): boolean {
+  // Find script blocks (not server, not src)
+  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi
+  let match: RegExpExecArray | null
+
+  while ((match = scriptRegex.exec(template)) !== null) {
+    const content = match[1]
+    // Check if this script uses signal APIs
+    if (/\b(state|derived|effect)\s*\(/.test(content)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+/**
+ * Convert @if(expr)...@endif directive blocks to attribute-style for signal templates.
+ *
+ * This allows the signals runtime to handle reactive conditionals instead of
+ * evaluating them at build time with mock values.
+ *
+ * Converts:
+ *   @if(loading())
+ *     <div>Loading...</div>
+ *   @endif
+ *
+ * To:
+ *   <template @if="loading()">
+ *     <div>Loading...</div>
+ *   </template>
+ *
+ * Note: Uses <template> wrapper for blocks with multiple children or text nodes.
+ */
+function convertSignalDirectivesToAttributes(template: string): string {
+  let output = template
+
+  // Pattern to match @if(expr)...@endif blocks (handles nested parens in expr)
+  // We use a simpler approach: find @if( and then parse balanced parens
+  const ifDirectiveStart = /@if\s*\(/g
+  let match: RegExpExecArray | null
+  const replacements: Array<{ start: number, end: number, replacement: string }> = []
+
+  while ((match = ifDirectiveStart.exec(output)) !== null) {
+    const startIdx = match.index
+    const exprStart = startIdx + match[0].length
+
+    // Find balanced closing paren for the condition
+    let depth = 1
+    let i = exprStart
+    while (i < output.length && depth > 0) {
+      if (output[i] === '(') depth++
+      else if (output[i] === ')') depth--
+      i++
+    }
+
+    if (depth !== 0) continue // Unbalanced parens, skip
+
+    const condition = output.substring(exprStart, i - 1).trim()
+    const afterCondition = i
+
+    // Find the matching @endif (handle nested @if)
+    let ifDepth = 1
+    let endIdx = afterCondition
+    const endifRegex = /@(if\s*\(|endif)/g
+    endifRegex.lastIndex = afterCondition
+
+    let endMatch: RegExpExecArray | null
+    while ((endMatch = endifRegex.exec(output)) !== null) {
+      if (endMatch[1].startsWith('if')) {
+        ifDepth++
+      } else if (endMatch[1] === 'endif') {
+        ifDepth--
+        if (ifDepth === 0) {
+          endIdx = endMatch.index + endMatch[0].length
+          break
+        }
+      }
+    }
+
+    if (ifDepth !== 0) continue // No matching @endif, skip
+
+    // Extract content between ) and @endif
+    const content = output.substring(afterCondition, endIdx - '@endif'.length).trim()
+
+    // Check if content is a single element or needs wrapper
+    const singleElementMatch = content.match(/^<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>([\s\S]*)<\/\1>$/s)
+
+    let replacement: string
+    if (singleElementMatch) {
+      // Single root element - add @if attribute directly
+      const [, tag, attrs, innerContent] = singleElementMatch
+      replacement = `<${tag}${attrs} @if="${condition}">${innerContent}</${tag}>`
+    } else {
+      // Multiple elements or text - wrap in template
+      replacement = `<template @if="${condition}">${content}</template>`
+    }
+
+    replacements.push({ start: startIdx, end: endIdx, replacement })
+  }
+
+  // Apply replacements from end to start to preserve indices
+  for (let i = replacements.length - 1; i >= 0; i--) {
+    const { start, end, replacement } = replacements[i]
+    output = output.substring(0, start) + replacement + output.substring(end)
+  }
+
+  return output
+}
+
+/**
+ * Convert @for(item in items())...@endfor directive blocks to attribute-style.
+ *
+ * Converts:
+ *   @for(item in items())
+ *     <div>{{ item.name }}</div>
+ *   @endfor
+ *
+ * To:
+ *   <template @for="item in items()">
+ *     <div>{{ item.name }}</div>
+ *   </template>
+ */
+function convertSignalLoopsToAttributes(template: string): string {
+  let output = template
+
+  // Pattern to match @for(expr)...@endfor or @foreach(expr)...@endforeach
+  const forDirectiveStart = /@(for|foreach)\s*\(/g
+  let match: RegExpExecArray | null
+  const replacements: Array<{ start: number, end: number, replacement: string }> = []
+
+  while ((match = forDirectiveStart.exec(output)) !== null) {
+    const directive = match[1] // 'for' or 'foreach'
+    const startIdx = match.index
+    const exprStart = startIdx + match[0].length
+
+    // Find balanced closing paren
+    let depth = 1
+    let i = exprStart
+    while (i < output.length && depth > 0) {
+      if (output[i] === '(') depth++
+      else if (output[i] === ')') depth--
+      i++
+    }
+
+    if (depth !== 0) continue
+
+    const expr = output.substring(exprStart, i - 1).trim()
+    const afterExpr = i
+
+    // Find matching @endfor or @endforeach
+    const endTag = directive === 'for' ? '@endfor' : '@endforeach'
+    let forDepth = 1
+    let endIdx = afterExpr
+    const endRegex = new RegExp(`@(${directive}\\s*\\(|end${directive})`, 'g')
+    endRegex.lastIndex = afterExpr
+
+    let endMatch: RegExpExecArray | null
+    while ((endMatch = endRegex.exec(output)) !== null) {
+      if (endMatch[1].startsWith(directive)) {
+        forDepth++
+      } else {
+        forDepth--
+        if (forDepth === 0) {
+          endIdx = endMatch.index + endMatch[0].length
+          break
+        }
+      }
+    }
+
+    if (forDepth !== 0) continue
+
+    const content = output.substring(afterExpr, endIdx - endTag.length).trim()
+
+    // Check for single root element
+    const singleElementMatch = content.match(/^<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>([\s\S]*)<\/\1>$/s)
+
+    let replacement: string
+    if (singleElementMatch) {
+      const [, tag, attrs, innerContent] = singleElementMatch
+      replacement = `<${tag}${attrs} @for="${expr}">${innerContent}</${tag}>`
+    } else {
+      replacement = `<template @for="${expr}">${content}</template>`
+    }
+
+    replacements.push({ start: startIdx, end: endIdx, replacement })
+  }
+
+  // Apply replacements from end to start
+  for (let i = replacements.length - 1; i >= 0; i--) {
+    const { start, end, replacement } = replacements[i]
+    output = output.substring(0, start) + replacement + output.substring(end)
+  }
+
+  return output
+}
+
+/**
  * Process scripts that use STX signal APIs.
  *
  * Automatically detects scripts using state(), derived(), effect() and
@@ -84,8 +287,9 @@ function hasSignalsSyntax(template: string): boolean {
  * ```
  */
 function processScriptSetup(template: string): { output: string, setupCode: string | null } {
-  // Find client-side scripts (not server, not src, not type=module for external)
-  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi
+  // Find client-side scripts (not server, not src, not type=module for external, not already scoped)
+  // Scripts with data-stx-scoped are already wrapped by component processing
+  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)[^>]*>([\s\S]*?)<\/script>/gi
   let match: RegExpExecArray | null
   let signalScript: { fullMatch: string, content: string } | null = null
 
@@ -137,23 +341,151 @@ ${signalScript.content}
 /**
  * Extract exported variable names from setup script.
  * Returns variables that should be exposed to the template.
+ * Only extracts TOP-LEVEL declarations, not variables inside nested functions.
  */
 function extractExports(setupContent: string): string {
-  const exports: string[] = []
+  const code = setupContent
+  const names: string[] = []
+  const seen = new Set<string>()
 
-  // Match const/let/function declarations
-  const constMatches = setupContent.matchAll(/\b(?:const|let)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/g)
-  for (const match of constMatches) {
-    exports.push(match[1])
+  // Track brace depth to only capture top-level declarations
+  let depth = 0
+  let i = 0
+  const len = code.length
+
+  // Skip string literals
+  const skipString = (quote: string): void => {
+    i++ // Skip opening quote
+    while (i < len) {
+      if (code[i] === '\\') {
+        i += 2 // Skip escaped character
+        continue
+      }
+      if (code[i] === quote) {
+        i++ // Skip closing quote
+        return
+      }
+      i++
+    }
   }
 
-  // Match function declarations
-  const funcMatches = setupContent.matchAll(/\bfunction\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g)
-  for (const match of funcMatches) {
-    exports.push(match[1])
+  // Skip template literals with nested expressions
+  const skipTemplateLiteral = (): void => {
+    i++ // Skip opening backtick
+    while (i < len) {
+      if (code[i] === '\\') {
+        i += 2
+        continue
+      }
+      if (code[i] === '`') {
+        i++
+        return
+      }
+      if (code[i] === '$' && code[i + 1] === '{') {
+        i += 2
+        let templateDepth = 1
+        while (i < len && templateDepth > 0) {
+          if (code[i] === '{') templateDepth++
+          else if (code[i] === '}') templateDepth--
+          else if (code[i] === '\'' || code[i] === '"') skipString(code[i])
+          else if (code[i] === '`') skipTemplateLiteral()
+          else i++
+        }
+        continue
+      }
+      i++
+    }
   }
 
-  return exports.join(', ')
+  // Skip comments
+  const skipComment = (): boolean => {
+    if (code[i] === '/' && code[i + 1] === '/') {
+      while (i < len && code[i] !== '\n') i++
+      return true
+    }
+    if (code[i] === '/' && code[i + 1] === '*') {
+      i += 2
+      while (i < len - 1 && !(code[i] === '*' && code[i + 1] === '/')) i++
+      i += 2
+      return true
+    }
+    return false
+  }
+
+  // Check for variable/function declaration at current position (only at depth 0)
+  const checkDeclaration = (): void => {
+    if (depth !== 0) return
+
+    // Check for const/let/var declarations
+    const declMatch = code.slice(i).match(/^(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/)
+    if (declMatch) {
+      const varName = declMatch[2]
+      if (!seen.has(varName)) {
+        names.push(varName)
+        seen.add(varName)
+      }
+      return
+    }
+
+    // Check for function declarations
+    const funcMatch = code.slice(i).match(/^function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/)
+    if (funcMatch) {
+      const funcName = funcMatch[1]
+      if (!seen.has(funcName)) {
+        names.push(funcName)
+        seen.add(funcName)
+      }
+      return
+    }
+
+    // Check for async function declarations
+    const asyncMatch = code.slice(i).match(/^async\s+function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/)
+    if (asyncMatch) {
+      const funcName = asyncMatch[1]
+      if (!seen.has(funcName)) {
+        names.push(funcName)
+        seen.add(funcName)
+      }
+    }
+  }
+
+  while (i < len) {
+    // Skip comments
+    if (skipComment()) continue
+
+    // Skip string literals
+    if (code[i] === '\'' || code[i] === '"') {
+      skipString(code[i])
+      continue
+    }
+
+    // Skip template literals
+    if (code[i] === '`') {
+      skipTemplateLiteral()
+      continue
+    }
+
+    // Track brace depth
+    if (code[i] === '{') {
+      depth++
+      i++
+      continue
+    }
+    if (code[i] === '}') {
+      depth--
+      i++
+      continue
+    }
+
+    // Check for declarations at word boundaries (only at depth 0)
+    if (depth === 0 && /[a-z]/i.test(code[i]) && (i === 0 || /\s|[;{}()]/.test(code[i - 1]))) {
+      checkDeclaration()
+    }
+
+    i++
+  }
+
+  return names.join(', ')
 }
 
 /**
@@ -1075,6 +1407,9 @@ async function processOtherDirectives(
 ): Promise<string> {
   let output = template
 
+  // Enable SFC mode so events.ts collects bindings instead of generating standalone scripts
+  context.__stx_sfc_mode = true
+
   // Use opts as alias for options (consistent with processDirectivesInternal)
   const opts = options
 
@@ -1229,6 +1564,13 @@ async function processOtherDirectives(
 
   // Process includes (@include, @component, etc.)
   output = await processIncludes(output, context, filePath, opts, dependencies)
+
+  // For templates that use signals, convert @if/@for directive blocks to attribute-style
+  // This allows the signals runtime to handle them reactively instead of build-time evaluation
+  if (usesSignalsInScript(output)) {
+    output = convertSignalDirectivesToAttributes(output)
+    output = convertSignalLoopsToAttributes(output)
+  }
 
   // Process loops (@foreach, @for, etc.) - BEFORE conditionals to handle nested scope properly
   output = processLoops(output, context, filePath, opts)
@@ -1390,21 +1732,17 @@ async function processOtherDirectives(
   // These are used for SSR variable extraction and shouldn't appear in client output
   output = output.replace(/<script\s+server\b[^>]*>[\s\S]*?<\/script>\s*/gi, '')
 
-  // Transform @stores imports in client scripts
-  // import { appStore } from '@stores' → const appStore = window.__STX_STORES__.appStore;
-  output = output.replace(/<script\s+client\b([^>]*)>([\s\S]*?)<\/script>/gi, (_match, attrs, content) => {
-    const { transformStoreImports } = require('./state-management')
-    const transformedContent = transformStoreImports(content)
-
+  // Transform <script client> blocks: resolve @stores imports, inject event
+  // bindings into the script scope, and auto-wrap in a scoped IIFE
+  const eventBindings = (context.__stx_event_bindings || []) as import('./events').ParsedEvent[]
+  output = output.replace(/<script\s+client\b([^>]*)>([\s\S]*?)<\/script>/gi, (_match, _attrs, content) => {
     // Validate client scripts for prohibited patterns
-    validateClientScript(transformedContent, filePath)
+    validateClientScript(content, filePath)
 
-    return `<script${attrs}>${transformedContent}</script>`
+    return processClientScript(content, { eventBindings })
   })
-
-  // Clean up client attribute from script tags (it's not valid HTML)
-  // Transform <script client> to <script>
-  output = output.replace(/<script\s+client\b([^>]*)>/gi, '<script$1>')
+  // Clear event bindings after use
+  context.__stx_event_bindings = []
 
   // Note: Crosswind CSS injection is done at the top level in processDirectives
   // to avoid duplicate injection for includes/layouts/components

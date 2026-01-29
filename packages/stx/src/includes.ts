@@ -532,15 +532,6 @@ export async function processIncludes(
         workingContent = templateMatch[1].trim()
       }
 
-      // Extract <script> content (look in original content)
-      const scriptMatch = partialContent.match(/<script\b([^>]*)>([\s\S]*?)<\/script>/i)
-      const scriptAttrs = scriptMatch ? scriptMatch[1] : ''
-      const isClientScript = scriptAttrs.includes('client') || scriptAttrs.includes('type="module"')
-      let preservedScript = ''
-      if (scriptMatch && isClientScript) {
-        preservedScript = `<script${scriptAttrs}>${scriptMatch[2]}</script>`
-      }
-
       // Extract <style> content
       const styleMatch = partialContent.match(/<style\b([^>]*)>([\s\S]*?)<\/style>/i)
       let preservedStyle = ''
@@ -559,6 +550,38 @@ export async function processIncludes(
       // Add local variables to the context, ensuring array references are preserved
       for (const [key, value] of Object.entries(localVars)) {
         includeContext[key] = value
+      }
+
+      // Extract <script> content (look in original content)
+      // Handle both server-side and client-side scripts
+      const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
+      const scriptMatches = [...partialContent.matchAll(scriptRegex)]
+      let preservedScript = ''
+
+      for (const scriptMatch of scriptMatches) {
+        const scriptAttrs = scriptMatch[1] || ''
+        const scriptContent = scriptMatch[2] || ''
+
+        const isServerScript = scriptAttrs.includes('server')
+        const isClientScript = scriptAttrs.includes('client') || scriptAttrs.includes('type="module"')
+
+        if (isServerScript || (!isClientScript && !scriptAttrs.includes('src'))) {
+          // Process server-side script to extract variables into includeContext
+          try {
+            const { extractVariables } = await import('./variable-extractor')
+            await extractVariables(scriptContent, includeContext, includeFilePath)
+          } catch (e) {
+            // Script may contain unsupported syntax, continue without extracted variables
+            if (options.debug) {
+              console.warn(`Warning: Could not extract variables from server script in ${includeFilePath}:`, e)
+            }
+          }
+        }
+
+        // Preserve client-only scripts
+        if (isClientScript) {
+          preservedScript += `<script${scriptAttrs}>${scriptContent}</script>\n`
+        }
       }
 
       // Process the partial content

@@ -485,33 +485,101 @@ function generateRuntimeScript(elements: ElementWithEvents[]): string {
 // =============================================================================
 
 /**
+ * Extract and process event attributes from a template without generating
+ * a standalone script. Returns the modified template (with @event attributes
+ * removed and IDs added) and the collected event bindings as data.
+ *
+ * Used by SFC processing to inject event bindings into the component's
+ * <script client> scope instead of a separate script block.
+ *
+ * @param template - The HTML template string
+ * @returns Object with processed template and collected bindings
+ */
+export function extractAndProcessEvents(template: string): {
+  template: string
+  bindings: ParsedEvent[]
+} {
+  const elements = findElementsWithEvents(template)
+
+  if (elements.length === 0) {
+    return { template, bindings: [] }
+  }
+
+  let output = template
+  const allBindings: ParsedEvent[] = []
+
+  // Process elements from end to start to preserve indices
+  for (let i = elements.length - 1; i >= 0; i--) {
+    const element = elements[i]
+    let newTag = element.originalTag
+
+    // Add ID if no id exists
+    if (!newTag.includes(' id=')) {
+      newTag = newTag.replace(/^<([a-z][a-z0-9-]*)/, `<$1 id="${element.elementId}"`)
+    }
+    else {
+      const idMatch = newTag.match(/id=["']([^"']+)["']/)
+      if (idMatch) {
+        for (const evt of element.events) {
+          evt.elementId = idMatch[1]
+        }
+      }
+    }
+
+    // Remove @ attributes from the tag
+    for (const evt of element.events) {
+      const escapedAttr = evt.attribute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const doubleQuotePattern = new RegExp(`\\s*${escapedAttr}\\s*=\\s*"[^"]*"`, 'g')
+      const singleQuotePattern = new RegExp(`\\s*${escapedAttr}\\s*=\\s*'[^']*'`, 'g')
+      newTag = newTag.replace(doubleQuotePattern, '')
+      newTag = newTag.replace(singleQuotePattern, '')
+    }
+
+    output = output.slice(0, element.startIndex) + newTag + output.slice(element.endIndex)
+    allBindings.push(...element.events)
+  }
+
+  return { template: output, bindings: allBindings }
+}
+
+/**
  * Process event directives in a template.
  *
  * Transforms `@click`, `@keydown.enter`, etc. attributes into
  * client-side event listeners.
  *
+ * In SFC mode (context.__stx_sfc_mode), event bindings are collected
+ * on context.__stx_event_bindings instead of generating a standalone script.
+ * This allows them to be injected into the component's <script client> scope.
+ *
  * @param template - The HTML template string
- * @param context - Template context (for future use with x-data)
+ * @param context - Template context
  * @param filePath - Source file path for error messages
- * @returns Processed template with event binding script
+ * @returns Processed template with event binding script (or just template in SFC mode)
  */
 export function processEventDirectives(
   template: string,
-  _context: Record<string, unknown>,
+  context: Record<string, unknown>,
   _filePath: string,
 ): string {
   // When signals are used, skip event processing - the signals runtime handles events
-  // Check for signal-related syntax that indicates the signals runtime will be used
   const usesSignals = /\b(?:state|derived|effect)\s*\(/.test(template)
     || /@(?:model|show|for|if)\s*=/.test(template)
     || /data-stx(?:-auto)?\b/.test(template)
 
   if (usesSignals) {
-    // Leave @ event attributes in the template for the signals runtime to handle
     return template
   }
 
-  // Find all elements with event attributes
+  // SFC mode: collect bindings, don't generate standalone script
+  if (context.__stx_sfc_mode) {
+    const { template: processed, bindings } = extractAndProcessEvents(template)
+    const existing = (context.__stx_event_bindings || []) as ParsedEvent[]
+    context.__stx_event_bindings = [...existing, ...bindings]
+    return processed
+  }
+
+  // Non-SFC mode: existing behavior (generate standalone script)
   const elements = findElementsWithEvents(template)
 
   if (elements.length === 0) {

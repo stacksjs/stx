@@ -38,7 +38,7 @@
 import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processDirectives, readMarkdownFile } from '@stacksjs/stx'
+import { buildWebComponents, cacheTemplate, checkCache, defaultConfig, extractVariables, processClientScript, processDirectives, readMarkdownFile } from '@stacksjs/stx'
 
 // Export watch functionality
 export { createWatcher, startWatchMode, watchAndBuild } from './watch'
@@ -273,6 +273,10 @@ export { content as default };
             },
             // Add stx options for directives that need them (like @component)
             __stx_options: options,
+            // Enable SFC mode: events.ts will collect bindings instead of
+            // generating standalone scripts, so we can inject them into
+            // the component's <script client> scope
+            __stx_sfc_mode: true,
           }
 
           // Execute server script content to extract variables
@@ -286,17 +290,26 @@ export { content as default };
           // Process all directives
           output = await processDirectives(output, context, filePath, options, dependencies)
 
-          // Inject client scripts before </body>
+          // Transform and inject client scripts before </body>
+          // processClientScript resolves @stores imports, injects event
+          // bindings into the script scope, and auto-wraps in a scoped IIFE
           if (clientScripts.length > 0) {
-            const scriptsHtml = clientScripts.join('\n')
+            const eventBindings = (context.__stx_event_bindings || []) as any[]
+            const transformedScripts = clientScripts.map((fullScript: string) => {
+              const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
+              if (!contentMatch) return fullScript
+              return processClientScript(contentMatch[1], { eventBindings })
+            })
+            const scriptsHtml = transformedScripts.join('\n')
             const bodyEndMatch = output.match(/(<\/body>)/i)
             if (bodyEndMatch) {
               output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
             }
             else {
-              // If no </body> tag, append scripts at the end
               output += `\n${scriptsHtml}`
             }
+            // Clear event bindings after use
+            context.__stx_event_bindings = []
           }
 
           // Track dependencies for this file

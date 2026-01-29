@@ -807,7 +807,7 @@ else {
   // Build Command - Static Site Generation (SSG)
   // ==========================================================================
   cli
-    .command('build', 'Generate static HTML files from STX templates (SSG)')
+    .command('build [input]', 'Generate static HTML files from STX templates (SSG)')
     .option('--pages <dir>', 'Directory containing page templates', { default: 'pages' })
     .option('--out <dir>', 'Output directory for generated files', { default: 'dist' })
     .option('--domain <url>', 'Site domain for absolute URLs (e.g., https://example.com)')
@@ -824,11 +824,13 @@ else {
     .option('--public <dir>', 'Directory with static assets to copy', { default: 'public' })
     .option('--trailing-slash', 'Add trailing slashes to URLs')
     .option('--verbose', 'Show detailed build output')
+    .option('--port <number>', 'Development server port for preview')
+    .option('--timeout <ms>', 'Build timeout in milliseconds')
     .example('stx build')
     .example('stx build --pages src/pages --out public')
     .example('stx build --domain https://example.com --sitemap')
     .example('stx build --no-minify --verbose')
-    .action(async (options: {
+    .action(async (input: string | undefined, options: {
       pages: string
       out: string
       domain?: string
@@ -842,14 +844,53 @@ else {
       public: string
       trailingSlash?: boolean
       verbose?: boolean
+      port?: string
+      timeout?: string
     }) => {
       try {
         const startTime = performance.now()
+
+        // Validate port if provided
+        if (options.port !== undefined) {
+          const port = Number.parseInt(options.port, 10)
+          if (port < 1024 || port > 65535) {
+            if (port < 1024) {
+              console.error(`\n  Port must be between 1024 and 65535`)
+              console.error(`\n  suggestion: Try using a port between 1024 and 65535 (e.g., --port 3000)`)
+            } else {
+              console.error(`\n  Port must be between 1024 and 65535`)
+            }
+            process.exit(1)
+          }
+        }
+
+        // Validate timeout if provided
+        if (options.timeout !== undefined) {
+          const timeout = Number.parseInt(options.timeout, 10)
+          if (Number.isNaN(timeout)) {
+            console.error(`\n  Timeout must be a valid number`)
+            process.exit(1)
+          }
+        }
+
+        // If a specific input file is provided, validate it
+        if (input) {
+          const inputPath = path.resolve(input)
+          if (!fs.existsSync(inputPath)) {
+            console.error(`\n  File not found: ${input}`)
+            process.exit(1)
+          }
+          if (!input.endsWith('.stx')) {
+            console.error(`\n  File must have .stx extension: ${input}`)
+            process.exit(1)
+          }
+        }
+
         const pagesDir = path.resolve(options.pages)
         const outputDir = path.resolve(options.out)
 
-        // Check if pages directory exists
-        if (!fs.existsSync(pagesDir)) {
+        // Check if pages directory exists (only if no specific input file)
+        if (!input && !fs.existsSync(pagesDir)) {
           console.error(`\n  Pages directory not found: ${pagesDir}`)
           console.log(`\n  Create a 'pages' directory with .stx files, or use --pages to specify a different directory.`)
           process.exit(1)
