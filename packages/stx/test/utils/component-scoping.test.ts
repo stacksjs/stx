@@ -57,8 +57,9 @@ describe('Component scoping', () => {
       // This is verified through the signals runtime behavior.
       const runtime = generateSignalsRuntimeDev()
 
-      // The runtime should expect scope variables to be properly registered
-      expect(runtime).toContain('__scope')
+      // The runtime should expect scope variables to be properly registered in _scopes
+      expect(runtime).toContain('_scopes')
+      expect(runtime).toContain('window.stx._scopes')
     })
   })
 

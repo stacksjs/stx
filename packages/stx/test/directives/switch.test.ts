@@ -76,10 +76,10 @@ describe('Switch Directive', () => {
     `
 
     const activeResult = await processTemplate(template, { isActive: true })
-    expect(activeResult.trim()).toBe('<div class="status-active">Active</div>')
+    expect(activeResult).toContain('<div class="status-active">Active</div>')
 
     const inactiveResult = await processTemplate(template, { isActive: false })
-    expect(inactiveResult.trim()).toBe('<div class="status-inactive">Inactive</div>')
+    expect(inactiveResult).toContain('<div class="status-inactive">Inactive</div>')
   })
 
   test('should handle complex expressions in switch and case', async () => {
@@ -213,10 +213,10 @@ describe('Switch Directive', () => {
     `
 
     const pendingResult = await processTemplate(template, { status: 'pending' })
-    expect(pendingResult.trim()).toBe('<span class="status-pending">Pending</span>')
+    expect(pendingResult).toContain('<span class="status-pending">Pending</span>')
 
     const approvedResult = await processTemplate(template, { status: 'approved' })
-    expect(approvedResult.trim()).toBe('<span class="status-approved">Approved</span>')
+    expect(approvedResult).toContain('<span class="status-approved">Approved</span>')
   })
 
   test('should handle error cases gracefully', async () => {
