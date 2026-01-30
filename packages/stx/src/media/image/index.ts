@@ -19,6 +19,9 @@ export {
   processImgComponents,
 } from './component'
 
+// Export types separately
+export type { ExtendedImageRenderContext } from './component'
+
 // =============================================================================
 // Directive Exports
 // =============================================================================
