@@ -2119,18 +2119,14 @@ export function generateSignalsRuntimeDev(): string {
       processedScopes.add(el);
       const scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
 
-      // Set componentScope to this component's scope vars before processing
+      // Merge component scope vars into componentScope (don't restore - keep for head elements)
       // This ensures expressions can access component variables even for elements
       // where findElementScope might not work (e.g., cloned elements not yet in DOM)
-      const prevScope = componentScope;
       if (scopeVars) {
         componentScope = { ...componentScope, ...scopeVars };
       }
 
       processElement(el);
-
-      // Restore previous scope
-      componentScope = prevScope;
 
       // Run scope-specific mount callbacks
       if (scopeVars && scopeVars.__mountCallbacks) {
@@ -2142,6 +2138,55 @@ export function generateSignalsRuntimeDev(): string {
     document.querySelectorAll('[data-stx-auto]').forEach(el => {
       // Process element but skip children that are in scoped containers
       processElementSkipScopes(el, processedScopes);
+    });
+
+    // Process <head> elements (title, meta) that may contain {{ }} expressions
+    // Use componentScope which now contains variables from processed components
+    const headElements = document.querySelectorAll('head title, head meta[content]');
+    headElements.forEach(el => {
+      if (el.tagName === 'TITLE') {
+        const text = el.textContent;
+        if (text && text.includes('{{')) {
+          effect(() => {
+            try {
+              let result = text;
+              const matches = text.match(/\{\{\s*(.+?)\s*\}\}/g);
+              if (matches) {
+                matches.forEach(match => {
+                  const expr = match.replace(/^\{\{\s*|\s*\}\}$/g, '');
+                  const fn = new Function(...Object.keys(componentScope), 'return ' + expr);
+                  const value = fn(...Object.values(componentScope));
+                  result = result.replace(match, value != null ? value : '');
+                });
+              }
+              el.textContent = result;
+            } catch (e) {
+              console.warn('[STX] Title expression error:', e);
+            }
+          });
+        }
+      } else if (el.tagName === 'META') {
+        const content = el.getAttribute('content');
+        if (content && content.includes('{{')) {
+          effect(() => {
+            try {
+              let result = content;
+              const matches = content.match(/\{\{\s*(.+?)\s*\}\}/g);
+              if (matches) {
+                matches.forEach(match => {
+                  const expr = match.replace(/^\{\{\s*|\s*\}\}$/g, '');
+                  const fn = new Function(...Object.keys(componentScope), 'return ' + expr);
+                  const value = fn(...Object.values(componentScope));
+                  result = result.replace(match, value != null ? value : '');
+                });
+              }
+              el.setAttribute('content', result);
+            } catch (e) {
+              console.warn('[STX] Meta expression error:', e);
+            }
+          });
+        }
+      }
     });
   });
 
