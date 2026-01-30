@@ -260,6 +260,9 @@ export {
 export {
   renderVideoComponent,
   parseVideoDirectiveOptions,
+  // Directive
+  createVideoDirective,
+  videoDirective,
 } from './video'
 
 // Export types separately

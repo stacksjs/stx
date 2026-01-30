@@ -39,10 +39,17 @@ import type {
 async function getProcessor(): Promise<typeof import('./processor') | null> {
   try {
     return await import('./processor')
-  } catch {
+  } catch (error) {
+    // Log warning only once per session
+    if (!processorWarningLogged) {
+      console.warn('[stx-media] Video processor not available, some features disabled:', error)
+      processorWarningLogged = true
+    }
     return null
   }
 }
+
+let processorWarningLogged = false
 
 /**
  * Extended video render context with ts-videos config
@@ -610,6 +617,15 @@ function escapeAttr(str: string): string {
 
 /**
  * Parse @video directive options
+ */
+// =============================================================================
+// Directive Exports
+// =============================================================================
+
+export { createVideoDirective, videoDirective } from './directive'
+
+/**
+ * Parse @video directive options (legacy - use videoDirective instead)
  */
 export function parseVideoDirectiveOptions(
   content: string,

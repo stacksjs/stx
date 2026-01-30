@@ -43,10 +43,17 @@ import {
 async function getProcessor(): Promise<typeof import('./processor') | null> {
   try {
     return await import('./processor')
-  } catch {
+  } catch (error) {
+    // Log warning only once per session
+    if (!processorWarningLogged) {
+      console.warn('[stx-media] Image processor not available, some features disabled:', error)
+      processorWarningLogged = true
+    }
     return null
   }
 }
+
+let processorWarningLogged = false
 
 /**
  * Extended image render context with ts-images config

@@ -9,6 +9,7 @@ import { stxRouterDirective } from './client/directive'
 import { heatmapDirective } from './heatmap'
 import { markdownDirectiveHandler } from './markdown'
 import { imgDirective } from './media/image/directive'
+import { videoDirective } from './media/video/directive'
 import { pwaDirectives } from './pwa/directives'
 import { metaDirective, structuredDataDirective } from './seo'
 import { webComponentDirectiveHandler } from './web-components'
@@ -64,6 +65,7 @@ export const defaultConfig: StxConfig = {
     stxRouterDirective,
     heatmapDirective,
     imgDirective,
+    videoDirective,
     ...pwaDirectives,
   ],
   middleware: [],

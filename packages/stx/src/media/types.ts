@@ -439,7 +439,9 @@ export interface VideoProps {
   /** Enable lazy loading */
   lazy?: boolean
   /** Video player type */
-  player?: 'native' | 'plyr'
+  player?: 'native' | 'plyr' | 'ts-video'
+  /** Video title for accessibility and metadata */
+  title?: string
   /** Plyr.js options */
   plyrOptions?: PlyrOptions
   /** Embed type */
