@@ -11,10 +11,50 @@
  * - Picture-in-Picture
  * - Full accessibility support
  *
+ * With ts-videos integration:
+ * - Video transcoding with quality presets
+ * - Automatic poster/thumbnail generation
+ * - HLS/DASH streaming manifest generation
+ * - Sprite sheet generation for scrubbing preview
+ *
  * @module media/video
  */
 
-import type { VideoProps, VideoRenderResult, VideoSource } from '../types'
+import type {
+  VideoProps,
+  VideoRenderResult,
+  VideoSource,
+  EnhancedVideoProps,
+  TsVideosConfig,
+  ProcessedVideoResult,
+} from '../types'
+
+// =============================================================================
+// ts-videos Integration
+// =============================================================================
+
+/**
+ * Lazy import processor to avoid blocking module initialization
+ */
+async function getProcessor(): Promise<typeof import('./processor') | null> {
+  try {
+    return await import('./processor')
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Extended video render context with ts-videos config
+ */
+export interface ExtendedVideoRenderContext {
+  /** Development mode */
+  isDev?: boolean
+  /** ts-videos configuration */
+  tsVideosConfig?: TsVideosConfig
+  /** Pre-processed video result */
+  processedResult?: ProcessedVideoResult
+}
 
 // =============================================================================
 // Constants
@@ -31,9 +71,7 @@ const TS_VIDEO_PLAYER_CDN = 'https://cdn.jsdelivr.net/npm/ts-video-player@latest
 /**
  * Render a video component
  *
- * For basic HTML5 video, this renders a standard <video> element.
- * For advanced features, use player="ts-video" to integrate with
- * the ts-video-player library.
+ * Supports both standard VideoProps and EnhancedVideoProps with ts-videos integration.
  *
  * @example
  * ```typescript
@@ -51,16 +89,47 @@ const TS_VIDEO_PLAYER_CDN = 'https://cdn.jsdelivr.net/npm/ts-video-player@latest
  *   player: 'ts-video',
  *   lazy: true,
  * })
+ *
+ * // With ts-videos processing
+ * const result = await renderVideoComponent({
+ *   src: '/videos/raw.mov',
+ *   process: true,
+ *   quality: 'high',
+ *   generatePoster: { timestamp: 5 },
+ *   streaming: { format: 'hls' },
+ * }, { tsVideosConfig: { enabled: true, outputDir: 'dist/videos' } })
  * ```
  */
 export async function renderVideoComponent(
-  props: VideoProps,
-  context: { isDev?: boolean } = {},
+  props: VideoProps | EnhancedVideoProps,
+  context: { isDev?: boolean } | ExtendedVideoRenderContext = {},
 ): Promise<VideoRenderResult> {
+  const extendedContext = context as ExtendedVideoRenderContext
+  const enhancedProps = props as EnhancedVideoProps
+
+  // Check if ts-videos processing is requested
+  if (enhancedProps.process && !enhancedProps.skipProcessing) {
+    const tsVideosConfig = extendedContext.tsVideosConfig
+    if (tsVideosConfig?.enabled && !extendedContext.isDev) {
+      return renderWithTsVideos(enhancedProps, extendedContext)
+    }
+  }
+
+  // Check if we have pre-processed results
+  if (extendedContext.processedResult?.processed) {
+    return renderFromProcessedResult(props, extendedContext.processedResult, context)
+  }
+
+  // Handle poster generation request (even without full processing)
+  let generatedPoster: string | undefined
+  if (enhancedProps.generatePoster && enhancedProps.src && !props.poster) {
+    generatedPoster = await generatePosterOnDemand(enhancedProps, extendedContext)
+  }
+
   const {
     src,
     sources = [],
-    poster,
+    poster: originalPoster,
     posterPlaceholder,
     controls = DEFAULT_CONTROLS,
     autoplay = false,
@@ -77,6 +146,8 @@ export async function renderVideoComponent(
     disablePictureInPicture = false,
     disableRemotePlayback = false,
   } = props
+
+  const poster = generatedPoster || originalPoster
 
   const className = props.class
   const style = props.style
@@ -573,4 +644,231 @@ export function parseVideoDirectiveOptions(
   } catch {
     return { src }
   }
+}
+
+// =============================================================================
+// ts-videos Integration Functions
+// =============================================================================
+
+/**
+ * Render video using ts-videos processor
+ */
+async function renderWithTsVideos(
+  props: EnhancedVideoProps,
+  context: ExtendedVideoRenderContext,
+): Promise<VideoRenderResult> {
+  const processor = await getProcessor()
+  if (!processor) {
+    // Fallback to standard rendering
+    return renderVideoComponent({ ...props, process: false } as VideoProps, context)
+  }
+
+  const tsConfig = context.tsVideosConfig!
+
+  // Process video
+  const processed = await processor.processVideo(
+    props.src!,
+    props,
+    tsConfig,
+    props.onProcessProgress,
+  )
+
+  if (processed.processed) {
+    return renderFromProcessedResult(props, processed, context)
+  }
+
+  // Fallback if processing failed
+  return renderVideoComponent({ ...props, process: false } as VideoProps, context)
+}
+
+/**
+ * Generate poster on demand without full video processing
+ */
+async function generatePosterOnDemand(
+  props: EnhancedVideoProps,
+  context: ExtendedVideoRenderContext,
+): Promise<string | undefined> {
+  const processor = await getProcessor()
+  if (!processor || !props.src) {
+    return undefined
+  }
+
+  const posterOpts = typeof props.generatePoster === 'object'
+    ? props.generatePoster
+    : { timestamp: 0 }
+
+  const tsConfig = context.tsVideosConfig || {
+    enabled: true,
+    outputDir: 'dist/videos',
+    baseUrl: '/videos',
+  }
+
+  const poster = await processor.generatePoster(
+    props.src,
+    posterOpts,
+    tsConfig.outputDir,
+    tsConfig.baseUrl || '/videos',
+  )
+
+  return poster?.url
+}
+
+/**
+ * Render from pre-processed result
+ */
+function renderFromProcessedResult(
+  props: VideoProps | EnhancedVideoProps,
+  processed: ProcessedVideoResult,
+  context: { isDev?: boolean } | ExtendedVideoRenderContext,
+): VideoRenderResult {
+  const {
+    controls = DEFAULT_CONTROLS,
+    autoplay = false,
+    muted = false,
+    loop = false,
+    preload = DEFAULT_PRELOAD,
+    playsinline = true,
+    lazy = true,
+    width,
+    height,
+    crossorigin,
+    disablePictureInPicture = false,
+    disableRemotePlayback = false,
+  } = props
+
+  const className = props.class
+  const style = props.style
+  const id = props.id || `stx-video-${Math.random().toString(36).slice(2, 8)}`
+
+  // Determine video source
+  let videoSrc = props.src!
+  let mimeType = detectMimeType(videoSrc)
+
+  // Use transcoded video if available
+  if (processed.transcoded) {
+    videoSrc = processed.transcoded.url
+    mimeType = 'video/mp4'
+  }
+
+  // Use streaming manifest if available
+  const useStreaming = processed.streaming?.hls || processed.streaming?.dash
+  if (useStreaming) {
+    if (processed.streaming?.hls) {
+      videoSrc = processed.streaming.hls.manifestUrl
+      mimeType = 'application/x-mpegURL'
+    } else if (processed.streaming?.dash) {
+      videoSrc = processed.streaming.dash.manifestUrl
+      mimeType = 'application/dash+xml'
+    }
+  }
+
+  // Use generated poster if available
+  const poster = processed.poster?.url || props.poster
+
+  // Build attributes
+  const attrs: string[] = [`id="${id}"`]
+
+  if (controls) attrs.push('controls')
+  if (autoplay) attrs.push('autoplay')
+  if (muted) attrs.push('muted')
+  if (loop) attrs.push('loop')
+  if (playsinline) attrs.push('playsinline')
+  if (disablePictureInPicture) attrs.push('disablepictureinpicture')
+  if (disableRemotePlayback) attrs.push('disableremoteplayback')
+  if (crossorigin) attrs.push(`crossorigin="${crossorigin}"`)
+
+  // Handle lazy loading
+  if (lazy) {
+    attrs.push(`data-preload="${preload}"`)
+    attrs.push('preload="none"')
+    if (poster) attrs.push(`data-poster="${escapeAttr(poster)}"`)
+    attrs.push('data-stx-lazy')
+  } else {
+    attrs.push(`preload="${preload}"`)
+    if (poster) attrs.push(`poster="${escapeAttr(poster)}"`)
+  }
+
+  // Use processed dimensions if available
+  const videoWidth = width || processed.metadata?.width
+  const videoHeight = height || processed.metadata?.height
+  if (videoWidth) attrs.push(`width="${videoWidth}"`)
+  if (videoHeight) attrs.push(`height="${videoHeight}"`)
+
+  if (className) attrs.push(`class="${escapeAttr(className)}"`)
+  if (style) attrs.push(`style="${escapeAttr(style)}"`)
+
+  // Build source tag
+  const srcAttr = lazy ? `data-src="${escapeAttr(videoSrc)}"` : `src="${escapeAttr(videoSrc)}"`
+  const sourceTag = `  <source ${srcAttr} type="${mimeType}" />`
+
+  // Build HTML
+  let html = `<video ${attrs.join(' ')}>
+${sourceTag}
+  Your browser does not support the video tag.
+</video>`
+
+  // Add sprite sheet data if available
+  if (processed.spriteSheet) {
+    html = `<div class="stx-video-wrapper" data-sprite-sheet="${escapeAttr(processed.spriteSheet.url)}" data-sprite-cols="${processed.spriteSheet.columns}" data-sprite-interval="${processed.spriteSheet.interval}">
+${html}
+</div>`
+  }
+
+  // Generate lazy load script
+  let script: string | undefined
+  if (lazy) {
+    script = `
+(function() {
+  var video = document.getElementById('${id}');
+  if (!video) return;
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        // Load poster
+        if (video.dataset.poster) {
+          video.poster = video.dataset.poster;
+          delete video.dataset.poster;
+        }
+
+        // Load sources
+        var sources = video.querySelectorAll('source[data-src]');
+        sources.forEach(function(source) {
+          source.src = source.dataset.src;
+          delete source.dataset.src;
+        });
+
+        // Set preload
+        if (video.dataset.preload) {
+          video.preload = video.dataset.preload;
+          delete video.dataset.preload;
+        }
+
+        video.load();
+        observer.disconnect();
+      }
+    });
+  }, { rootMargin: '50px' });
+
+  observer.observe(video);
+})();
+`.trim()
+  }
+
+  // Generate CSS for streaming player if needed
+  let css: string | undefined
+  if (useStreaming) {
+    css = `
+.stx-video-wrapper {
+  position: relative;
+  width: 100%;
+}
+.stx-video-wrapper video {
+  width: 100%;
+  height: auto;
+}
+`.trim()
+  }
+
+  return { html, script, css }
 }

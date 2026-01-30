@@ -13,6 +13,10 @@ import type {
   ImageRenderResult,
   ImgProps,
   PlaceholderResult,
+  EnhancedImgProps,
+  TsImagesConfig,
+  ProcessedImageResult,
+  ResponsiveVariantSet,
 } from '../types'
 import {
   DEFAULT_FORMATS,
@@ -28,6 +32,33 @@ import {
   generatePlaceholderCSS,
   BLUR_UP_CSS,
 } from './placeholder'
+
+// =============================================================================
+// ts-images Integration
+// =============================================================================
+
+/**
+ * Lazy import processor to avoid blocking module initialization
+ */
+async function getProcessor(): Promise<typeof import('./processor') | null> {
+  try {
+    return await import('./processor')
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Extended image render context with ts-images config
+ */
+export interface ExtendedImageRenderContext extends ImageRenderContext {
+  /** ts-images configuration */
+  tsImagesConfig?: TsImagesConfig
+  /** Processed image result (pre-computed) */
+  processedResult?: ProcessedImageResult
+  /** Responsive variants (pre-computed) */
+  responsiveVariants?: ResponsiveVariantSet
+}
 
 // =============================================================================
 // Constants
@@ -47,8 +78,11 @@ let cssInjected = false
 /**
  * Render an optimized <Img> component
  *
+ * Supports both standard ImgProps and EnhancedImgProps with ts-images integration.
+ *
  * @example
  * ```typescript
+ * // Standard usage
  * const result = await renderImgComponent({
  *   src: '/images/hero.jpg',
  *   alt: 'Hero image',
@@ -56,13 +90,42 @@ let cssInjected = false
  *   placeholder: 'thumbhash',
  *   lazy: true,
  * })
- * console.log(result.html)
+ *
+ * // With ts-images processing
+ * const result = await renderImgComponent({
+ *   src: '/images/hero.jpg',
+ *   alt: 'Hero image',
+ *   process: true,
+ *   preset: 'web',
+ *   responsiveWidths: [320, 640, 1024, 1920],
+ * }, { tsImagesConfig: { enabled: true, outputDir: 'dist/images' } })
  * ```
  */
 export async function renderImgComponent(
-  props: ImgProps,
-  context: ImageRenderContext = {},
+  props: ImgProps | EnhancedImgProps,
+  context: ImageRenderContext | ExtendedImageRenderContext = {},
 ): Promise<ImageRenderResult> {
+  const extendedContext = context as ExtendedImageRenderContext
+  const enhancedProps = props as EnhancedImgProps
+
+  // Check if ts-images processing is requested
+  if (enhancedProps.process && !enhancedProps.skipOptimization) {
+    const tsImagesConfig = extendedContext.tsImagesConfig
+    if (tsImagesConfig?.enabled && !extendedContext.isDev) {
+      return renderWithTsImages(enhancedProps, extendedContext)
+    }
+  }
+
+  // Check if we have pre-computed processed results
+  if (extendedContext.processedResult?.processed) {
+    return renderFromProcessedResult(props, extendedContext.processedResult, context)
+  }
+
+  // Check if we have pre-computed responsive variants
+  if (extendedContext.responsiveVariants) {
+    return renderFromResponsiveVariants(props, extendedContext.responsiveVariants, context)
+  }
+
   const {
     src,
     alt,
@@ -650,4 +713,272 @@ export async function processImgComponents(
   }
 
   return { html: result, preloadLinks, styles, scripts }
+}
+
+// =============================================================================
+// ts-images Integration Functions
+// =============================================================================
+
+/**
+ * Render image using ts-images processor
+ */
+async function renderWithTsImages(
+  props: EnhancedImgProps,
+  context: ExtendedImageRenderContext,
+): Promise<ImageRenderResult> {
+  const processor = await getProcessor()
+  if (!processor) {
+    // Fallback to standard rendering
+    return renderImgComponent({ ...props, process: false } as ImgProps, context)
+  }
+
+  const tsConfig = context.tsImagesConfig!
+
+  // Determine if we need responsive variants or single image
+  const needsResponsive = (props.responsiveWidths && props.responsiveWidths.length > 0) ||
+    (props.widths && props.widths.length > 0) ||
+    (!props.width && !props.dpr)
+
+  if (needsResponsive) {
+    // Generate responsive variants
+    const variants = await processor.generateResponsiveVariants(props.src, props, tsConfig)
+    if (variants) {
+      return renderFromResponsiveVariants(props, variants, context)
+    }
+  } else {
+    // Process single image
+    const processed = await processor.processImage(props.src, props, tsConfig)
+    if (processed.processed) {
+      return renderFromProcessedResult(props, processed, context)
+    }
+  }
+
+  // Fallback if processing failed
+  return renderImgComponent({ ...props, process: false } as ImgProps, context)
+}
+
+/**
+ * Render from pre-processed result
+ */
+async function renderFromProcessedResult(
+  props: ImgProps | EnhancedImgProps,
+  processed: ProcessedImageResult,
+  context: ImageRenderContext,
+): Promise<ImageRenderResult> {
+  const {
+    alt,
+    width,
+    height,
+    lazy = true,
+    priority = false,
+    objectFit,
+    objectPosition,
+    crossorigin,
+    referrerpolicy,
+  } = props
+
+  const className = props.class
+  const style = props.style
+  const id = props.id || `stx-img-${Math.random().toString(36).slice(2, 8)}`
+  const dataAttrs = props.data || {}
+
+  // Get best variant for fallback
+  const variants = processed.variants || []
+  const fallbackVariant = variants.find(v => v.format === 'jpeg') ||
+    variants.find(v => v.format === 'webp') ||
+    variants[0]
+
+  const fallbackSrc = fallbackVariant?.url || props.src
+
+  // Build srcset from variants
+  const srcset = variants
+    .filter(v => v.format === (fallbackVariant?.format || 'jpeg'))
+    .map(v => `${v.url} ${v.width}w`)
+    .join(', ')
+
+  // Group variants by format for picture element
+  const formatGroups = new Map<string, typeof variants>()
+  for (const variant of variants) {
+    if (!formatGroups.has(variant.format)) {
+      formatGroups.set(variant.format, [])
+    }
+    formatGroups.get(variant.format)!.push(variant)
+  }
+
+  // Build sources for picture element
+  const sources: string[] = []
+  const formatOrder = ['avif', 'webp', 'jpeg', 'png']
+  for (const format of formatOrder) {
+    const formatVariants = formatGroups.get(format)
+    if (formatVariants && formatVariants.length > 0) {
+      const formatSrcset = formatVariants.map(v => `${v.url} ${v.width}w`).join(', ')
+      const mimeType = getMimeType(format as any)
+
+      if (lazy && !priority) {
+        sources.push(`  <source type="${mimeType}" data-srcset="${formatSrcset}" />`)
+      } else {
+        sources.push(`  <source type="${mimeType}" srcset="${formatSrcset}" />`)
+      }
+    }
+  }
+
+  // Build img attributes
+  const imgAttrs: string[] = []
+
+  if (lazy && !priority) {
+    imgAttrs.push(`data-src="${escapeAttr(fallbackSrc)}"`)
+    imgAttrs.push(`src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"`)
+    if (srcset) imgAttrs.push(`data-srcset="${srcset}"`)
+  } else {
+    imgAttrs.push(`src="${escapeAttr(fallbackSrc)}"`)
+    if (srcset) imgAttrs.push(`srcset="${srcset}"`)
+  }
+
+  imgAttrs.push(`alt="${escapeAttr(alt)}"`)
+
+  // Use processed dimensions if available
+  const imgWidth = width || processed.originalWidth
+  const imgHeight = height || processed.originalHeight
+  if (imgWidth) imgAttrs.push(`width="${imgWidth}"`)
+  if (imgHeight) imgAttrs.push(`height="${imgHeight}"`)
+
+  if (!priority) imgAttrs.push(`loading="${lazy ? 'lazy' : 'eager'}"`)
+  imgAttrs.push('decoding="async"')
+  if (priority) imgAttrs.push('fetchpriority="high"')
+  if (crossorigin) imgAttrs.push(`crossorigin="${crossorigin}"`)
+  if (referrerpolicy) imgAttrs.push(`referrerpolicy="${referrerpolicy}"`)
+
+  // Build style
+  const styleProps: string[] = []
+  if (objectFit) styleProps.push(`object-fit: ${objectFit}`)
+  if (objectPosition) styleProps.push(`object-position: ${objectPosition}`)
+  if (processed.placeholder && lazy) styleProps.push('opacity: 0; transition: opacity 300ms ease-out')
+  if (style) styleProps.push(style)
+  if (styleProps.length > 0) imgAttrs.push(`style="${styleProps.join('; ')}"`)
+
+  // Build class
+  const classNames: string[] = []
+  if (className) classNames.push(className)
+  if (processed.placeholder) classNames.push('stx-img-blur')
+  if (classNames.length > 0) imgAttrs.push(`class="${classNames.join(' ')}"`)
+
+  if (lazy && !priority) imgAttrs.push('data-stx-lazy')
+
+  for (const [key, value] of Object.entries(dataAttrs)) {
+    imgAttrs.push(`data-${key}="${escapeAttr(value)}"`)
+  }
+
+  // Build HTML
+  let html: string
+  if (processed.placeholder || (processed.dominantColor && (props as EnhancedImgProps).useDominantColor)) {
+    const bgStyle = processed.placeholder
+      ? `background-image: url('${processed.placeholder}'); background-size: cover; background-position: center;`
+      : `background-color: ${processed.dominantColor};`
+
+    html = `<div id="${id}" class="stx-img-placeholder" style="${bgStyle}">
+  <picture>
+${sources.join('\n')}
+    <img ${imgAttrs.join(' ')} />
+  </picture>
+</div>`
+  } else {
+    html = `<picture${id ? ` id="${id}"` : ''}>
+${sources.join('\n')}
+  <img ${imgAttrs.join(' ')} />
+</picture>`
+  }
+
+  // Collect CSS
+  const cssStyles: string[] = []
+  if (processed.placeholder) {
+    cssStyles.push(BLUR_UP_CSS)
+  }
+
+  // Generate lazy load script
+  const script = lazy ? generateLazyLoadScript(id) : undefined
+
+  // Generate preload link for priority images
+  let preloadLink: string | undefined
+  if (priority && srcset) {
+    preloadLink = `<link rel="preload" as="image" imagesrcset="${srcset}" />`
+  }
+
+  return {
+    html,
+    preloadLink,
+    css: cssStyles.length > 0 ? cssStyles.join('\n') : undefined,
+    script,
+  }
+}
+
+/**
+ * Render from responsive variants
+ */
+async function renderFromResponsiveVariants(
+  props: ImgProps | EnhancedImgProps,
+  variants: ResponsiveVariantSet,
+  context: ImageRenderContext,
+): Promise<ImageRenderResult> {
+  // Convert to processed result format and use that renderer
+  const processed: ProcessedImageResult = {
+    src: variants.src,
+    processed: true,
+    variants: [],
+    placeholder: variants.placeholder?.dataURL,
+    originalWidth: variants.placeholder?.width,
+    originalHeight: variants.placeholder?.height,
+  }
+
+  // Flatten all format variants
+  for (const [format, formatVariants] of Object.entries(variants.byFormat)) {
+    if (formatVariants) {
+      processed.variants!.push(...formatVariants as any)
+    }
+  }
+
+  return renderFromProcessedResult(props, processed, context)
+}
+
+/**
+ * Generate lazy load initialization script
+ */
+function generateLazyLoadScript(componentId: string): string {
+  return `
+(function() {
+  const container = document.getElementById('${componentId}');
+  if (!container) return;
+
+  const img = container.querySelector('img[data-stx-lazy]') || container;
+  if (!img.dataset.src && !img.dataset.srcset) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // Load image
+        if (img.dataset.src) img.src = img.dataset.src;
+        if (img.dataset.srcset) img.srcset = img.dataset.srcset;
+
+        // Load sources
+        const sources = container.querySelectorAll('source[data-srcset]');
+        sources.forEach(source => {
+          if (source.dataset.srcset) source.srcset = source.dataset.srcset;
+          if (source.dataset.sizes) source.sizes = source.dataset.sizes;
+        });
+
+        // Handle load completion
+        img.onload = () => {
+          img.style.opacity = '1';
+          if (container.classList.contains('stx-img-placeholder')) {
+            container.classList.add('stx-img-loaded');
+          }
+        };
+
+        observer.disconnect();
+      }
+    });
+  }, { rootMargin: '50px' });
+
+  observer.observe(container);
+})();
+`.trim()
 }

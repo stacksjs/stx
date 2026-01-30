@@ -99,7 +99,7 @@ describe('Signal scope isolation', () => {
   describe('@for directive scoping', () => {
     it('should handle @for with scope lookup', () => {
       const runtime = generateSignalsRuntimeDev()
-      expect(runtime).toContain('function bindFor(el)')
+      expect(runtime).toContain('function bindFor(el, passedScope')
       expect(runtime).toContain('findElementScope')
     })
 
@@ -113,8 +113,8 @@ describe('Signal scope isolation', () => {
   describe('@if directive scoping', () => {
     it('should handle @if with scope', () => {
       const runtime = generateSignalsRuntimeDev()
-      expect(runtime).toContain('function bindIf(el)')
-      expect(runtime).toContain('toValue(expr, el)')
+      expect(runtime).toContain('function bindIf(el, passedScope')
+      expect(runtime).toContain('toValue(expr, el')
     })
   })
 })
@@ -147,7 +147,7 @@ describe('Directive bindings', () => {
   describe('@model directive', () => {
     it('should have bindModel function', () => {
       const runtime = generateSignalsRuntimeDev()
-      expect(runtime).toContain('function bindModel(el, expr)')
+      expect(runtime).toContain('function bindModel(el, expr, passedScope')
     })
 
     it('should handle checkbox/radio differently', () => {
@@ -171,7 +171,7 @@ describe('Directive bindings', () => {
   describe('@show directive', () => {
     it('should have bindShow function', () => {
       const runtime = generateSignalsRuntimeDev()
-      expect(runtime).toContain('function bindShow(el, expr)')
+      expect(runtime).toContain('function bindShow(el, expr, passedScope')
     })
 
     it('should toggle display property', () => {
@@ -184,7 +184,7 @@ describe('Directive bindings', () => {
   describe('@class directive', () => {
     it('should have bindClass function', () => {
       const runtime = generateSignalsRuntimeDev()
-      expect(runtime).toContain('function bindClass(el, expr)')
+      expect(runtime).toContain('function bindClass(el, expr, passedScope')
     })
 
     it('should handle object syntax', () => {
@@ -203,7 +203,7 @@ describe('Directive bindings', () => {
   describe('@style directive', () => {
     it('should have bindStyle function', () => {
       const runtime = generateSignalsRuntimeDev()
-      expect(runtime).toContain('function bindStyle(el, expr)')
+      expect(runtime).toContain('function bindStyle(el, expr, passedScope')
     })
 
     it('should handle object and string syntax', () => {

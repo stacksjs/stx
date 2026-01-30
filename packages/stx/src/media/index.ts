@@ -72,6 +72,19 @@ export type {
   ImageRenderContext as MediaImageRenderContext,
   ImageRenderResult,
 
+  // Enhanced image types (ts-images integration)
+  EnhancedImgProps,
+  ProcessedImageResult,
+  ResponsiveVariantSet,
+  TsImagesConfig,
+  ImageOptimizationPreset,
+  ImageTransformation,
+  ImageTransformationConfig,
+  FormatQualitySettings,
+  WatermarkConfig,
+  WatermarkPosition,
+  ArtDirectionConfig,
+
   // Video types
   VideoSource,
   VideoEmbedType,
@@ -80,6 +93,25 @@ export type {
   VideoProps,
   VideoDirectiveOptions,
   VideoRenderResult,
+
+  // Enhanced video types (ts-videos integration)
+  EnhancedVideoProps,
+  ProcessedVideoResult,
+  TsVideosConfig,
+  VideoQualityPreset,
+  VideoPlatformPreset,
+  VideoCodec,
+  AudioCodec,
+  TranscodeConfig,
+  TranscodeResult,
+  ThumbnailResult,
+  PosterGenerationConfig,
+  SpriteSheetConfig,
+  StreamingConfig,
+  StreamingQualityLevel,
+  HLSResult,
+  DASHResult,
+  WaveformConfig,
 
   // Upload types
   UploadConfig,
@@ -206,6 +238,22 @@ export {
 } from './image'
 
 // =============================================================================
+// Image Processor Module (ts-images integration)
+// =============================================================================
+
+export {
+  processImage,
+  optimizeImage,
+  applyTransformations,
+  generateResponsiveVariants,
+  generateSrcset,
+  getCachedImageResult,
+  setCachedImageResult,
+  clearImageCache,
+  ImageProcessorCache,
+} from './image/processor'
+
+// =============================================================================
 // Video Module
 // =============================================================================
 
@@ -213,6 +261,27 @@ export {
   renderVideoComponent,
   parseVideoDirectiveOptions,
 } from './video'
+
+// Export types separately
+export type { ExtendedVideoRenderContext } from './video'
+
+// =============================================================================
+// Video Processor Module (ts-videos integration)
+// =============================================================================
+
+export {
+  processVideo,
+  analyzeVideo,
+  generatePoster,
+  generateThumbnails,
+  generateSpriteSheet,
+  generateHLSManifest,
+  generateDASHManifest,
+  getCachedVideoResult,
+  setCachedVideoResult,
+  clearVideoCache,
+  VideoProcessorCache,
+} from './video/processor'
 
 // =============================================================================
 // Upload Module
@@ -300,6 +369,26 @@ export {
   generateMediaRuntime,
   generateMinifiedMediaRuntime,
 } from './client'
+
+// =============================================================================
+// Shared Utilities
+// =============================================================================
+
+export {
+  hashFile,
+  hashBuffer,
+  hashString,
+  generateCacheKey,
+  getFileMtime,
+  fileExists,
+  getCached,
+  setCached,
+  clearCache,
+  getCacheStats,
+  pruneCache,
+} from './shared'
+
+export type { CacheConfig, CacheEntry } from './shared'
 
 // =============================================================================
 // Default Configuration

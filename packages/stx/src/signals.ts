@@ -900,22 +900,127 @@ export function generateSignalsRuntimeDev(): string {
   // ==========================================================================
 
   // Parse and execute pipe expressions like "value | fmt" or "value | truncate:20"
+  // Must distinguish single | (pipe) from || (logical OR) and ?? (nullish coalescing)
   function parsePipeExpression(expr, scope) {
-    // Check if expression contains pipes (but not in strings or template literals)
-    const pipeMatch = expr.match(/^(.+?)\\s*\\|\\s*(.+)$/);
-    if (!pipeMatch) return null;
+    // Find pipe operators: single | that's not part of || or preceded by ?
+    // We need to find | that is:
+    // 1. Not preceded by | or ?
+    // 2. Not followed by |
+    // Use a manual scan to handle this correctly
+    let pipeIndex = -1;
+    let inString = false;
+    let stringChar = '';
+    let depth = 0; // Track parentheses/brackets depth
 
-    const [, valueExpr, pipeChain] = pipeMatch;
+    for (let i = 0; i < expr.length; i++) {
+      const char = expr[i];
+      const prevChar = i > 0 ? expr[i - 1] : '';
+      const nextChar = i < expr.length - 1 ? expr[i + 1] : '';
 
-    // Parse all pipes in the chain: "fmt | truncate:20 | uppercase"
-    const pipes = pipeChain.split(/\\s*\\|\\s*/).map(p => {
-      const parts = p.trim().split(':');
-      const name = parts[0].trim();
-      const args = parts.slice(1).map(a => a.trim());
-      return { name, args };
-    });
+      // Handle string literals
+      if ((char === '"' || char === "'" || char === '\`') && prevChar !== '\\\\') {
+        if (!inString) {
+          inString = true;
+          stringChar = char;
+        } else if (char === stringChar) {
+          inString = false;
+        }
+        continue;
+      }
 
-    return { valueExpr: valueExpr.trim(), pipes };
+      if (inString) continue;
+
+      // Track depth for parentheses and brackets
+      if (char === '(' || char === '[' || char === '{') depth++;
+      if (char === ')' || char === ']' || char === '}') depth--;
+
+      // Only look for pipes at top level (depth 0)
+      if (depth !== 0) continue;
+
+      // Check for single pipe (not || and not ??)
+      if (char === '|') {
+        // Skip if it's || (logical OR)
+        if (nextChar === '|') {
+          i++; // Skip next |
+          continue;
+        }
+        // Skip if preceded by | (second part of ||)
+        if (prevChar === '|') continue;
+        // Skip if preceded by ? (part of ??)
+        if (prevChar === '?') continue;
+
+        // Found a pipe operator
+        pipeIndex = i;
+        break;
+      }
+    }
+
+    if (pipeIndex === -1) return null;
+
+    const valueExpr = expr.slice(0, pipeIndex).trim();
+    const pipeChain = expr.slice(pipeIndex + 1).trim();
+
+    // Parse all pipes in the chain, being careful about || and ??
+    const pipes = [];
+    let currentPipe = '';
+    inString = false;
+    stringChar = '';
+    depth = 0;
+
+    for (let i = 0; i < pipeChain.length; i++) {
+      const char = pipeChain[i];
+      const prevChar = i > 0 ? pipeChain[i - 1] : '';
+      const nextChar = i < pipeChain.length - 1 ? pipeChain[i + 1] : '';
+
+      // Handle string literals
+      if ((char === '"' || char === "'" || char === '\`') && prevChar !== '\\\\') {
+        if (!inString) {
+          inString = true;
+          stringChar = char;
+        } else if (char === stringChar) {
+          inString = false;
+        }
+        currentPipe += char;
+        continue;
+      }
+
+      if (inString) {
+        currentPipe += char;
+        continue;
+      }
+
+      // Track depth
+      if (char === '(' || char === '[' || char === '{') depth++;
+      if (char === ')' || char === ']' || char === '}') depth--;
+
+      // Check for pipe at top level
+      if (depth === 0 && char === '|' && nextChar !== '|' && prevChar !== '|' && prevChar !== '?') {
+        // End of current pipe, start new one
+        if (currentPipe.trim()) {
+          const parts = currentPipe.trim().split(':');
+          pipes.push({
+            name: parts[0].trim(),
+            args: parts.slice(1).map(a => a.trim())
+          });
+        }
+        currentPipe = '';
+      } else {
+        currentPipe += char;
+      }
+    }
+
+    // Add last pipe
+    if (currentPipe.trim()) {
+      const parts = currentPipe.trim().split(':');
+      pipes.push({
+        name: parts[0].trim(),
+        args: parts.slice(1).map(a => a.trim())
+      });
+    }
+
+    if (pipes.length === 0) return null;
+
+    return { valueExpr, pipes };
   }
 
   function executePipeExpression(valueExpr, pipes, scope) {
@@ -1360,8 +1465,9 @@ export function generateSignalsRuntimeDev(): string {
           const fragment = document.createDocumentFragment();
           const parentEl = el.parentNode;
           // Capture scope NOW before effects run asynchronously
-          // Use componentScope directly since it's set correctly during @for iteration
-          const capturedScope = { ...componentScope, ...(findElementScope(parentEl) || {}), ...globalHelpers };
+          // Use the passed scope parameter (not global componentScope) to preserve context
+          // through nested @if/@for processing where componentScope may be restored
+          const capturedScope = { ...scope, ...(findElementScope(parentEl) || {}), ...globalHelpers };
           parts.forEach(part => {
             const match = part.match(/^\\{\\{\\s*(.+?)\\s*\\}\\}$/);
             if (match) {
@@ -1406,28 +1512,29 @@ export function generateSignalsRuntimeDev(): string {
 
     // Handle @for first (reactive list)
     if (el.hasAttribute('@for')) {
-      bindFor(el);
+      bindFor(el, scope);
       return;
     }
 
     // Handle @if (conditional rendering)
     if (el.hasAttribute('@if')) {
-      bindIf(el);
+      bindIf(el, scope);
       return;
     }
 
     // Handle @show (visibility toggle - keeps element in DOM)
     if (el.hasAttribute('@show')) {
-      bindShow(el, el.getAttribute('@show'));
+      bindShow(el, el.getAttribute('@show'), scope);
     }
 
     // Handle @model (two-way binding)
     if (el.hasAttribute('@model')) {
-      bindModel(el, el.getAttribute('@model'));
+      bindModel(el, el.getAttribute('@model'), scope);
     }
 
     // Capture scope once for all attribute bindings on this element
-    const attrCapturedScope = { ...componentScope, ...(findElementScope(el) || {}), ...globalHelpers };
+    // Use the passed scope parameter to preserve context through nested processing
+    const attrCapturedScope = { ...scope, ...(findElementScope(el) || {}), ...globalHelpers };
 
     const evalAttrExpr = (expr) => {
       try {
@@ -1470,10 +1577,10 @@ export function generateSignalsRuntimeDev(): string {
         });
         el.removeAttribute(name);
       } else if (name === '@class') {
-        bindClass(el, value);
+        bindClass(el, value, scope);
         el.removeAttribute(name);
       } else if (name === '@style') {
-        bindStyle(el, value);
+        bindStyle(el, value, scope);
         el.removeAttribute(name);
       } else if (name === '@text') {
         effect(() => {
@@ -1513,10 +1620,10 @@ export function generateSignalsRuntimeDev(): string {
     Array.from(el.childNodes).forEach(child => processElement(child, scope));
   }
 
-  function bindShow(el, expr) {
+  function bindShow(el, expr, passedScope = componentScope) {
     const originalDisplay = el.style.display || '';
-    // Capture scope at setup time
-    const capturedScope = { ...componentScope, ...(findElementScope(el) || {}) };
+    // Capture scope at setup time - use passed scope to preserve context
+    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}) };
 
     const evalExpr = () => {
       try {
@@ -1534,16 +1641,16 @@ export function generateSignalsRuntimeDev(): string {
     el.removeAttribute('@show');
   }
 
-  function bindModel(el, expr) {
+  function bindModel(el, expr, passedScope = componentScope) {
     const tag = el.tagName.toLowerCase();
     const type = el.type;
 
     const getValue = () => toValue(expr, el);
     const setValue = (val) => {
       try {
-        // Check component scope first, then element scope
+        // Check component scope first, then element scope - use passed scope
         const elementScope = findElementScope(el);
-        const scope = { ...componentScope, ...(elementScope || {}) };
+        const scope = { ...passedScope, ...(elementScope || {}) };
 
         if (scope[expr] && scope[expr]._isSignal) {
           scope[expr].set(val);
@@ -1570,10 +1677,10 @@ export function generateSignalsRuntimeDev(): string {
     el.removeAttribute('@model');
   }
 
-  function bindClass(el, expr) {
+  function bindClass(el, expr, passedScope = componentScope) {
     const originalClasses = el.className;
-    // Capture scope at setup time
-    const capturedScope = { ...componentScope, ...(findElementScope(el) || {}) };
+    // Capture scope at setup time - use passed scope to preserve context
+    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}) };
 
     const evalExpr = () => {
       try {
@@ -1599,9 +1706,9 @@ export function generateSignalsRuntimeDev(): string {
     });
   }
 
-  function bindStyle(el, expr) {
-    // Capture scope at setup time
-    const capturedScope = { ...componentScope, ...(findElementScope(el) || {}) };
+  function bindStyle(el, expr, passedScope = componentScope) {
+    // Capture scope at setup time - use passed scope to preserve context
+    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}) };
 
     const evalExpr = () => {
       try {
@@ -1623,7 +1730,7 @@ export function generateSignalsRuntimeDev(): string {
     });
   }
 
-  function bindFor(el) {
+  function bindFor(el, passedScope = componentScope) {
     const expr = el.getAttribute('@for');
     const match = expr.match(/^\\s*(\\w+)(?:\\s*,\\s*(\\w+))?\\s+(?:in|of)\\s+(.+)\\s*$/);
 
@@ -1706,7 +1813,8 @@ export function generateSignalsRuntimeDev(): string {
         if (/^__[A-Z_]+__$/.test(expression.trim())) {
           return expression;
         }
-        const scope = { ...componentScope, ...(capturedScope || {}), ...globalHelpers, ...extraScope };
+        // Use passedScope instead of componentScope to preserve context through nested processing
+        const scope = { ...passedScope, ...(capturedScope || {}), ...globalHelpers, ...extraScope };
         const fn = new Function(...Object.keys(scope), 'return ' + expression);
         return fn(...Object.values(scope));
       } catch (e) {
@@ -1798,34 +1906,31 @@ export function generateSignalsRuntimeDev(): string {
       }
 
       list.forEach((item, index) => {
-        const itemScope = { ...componentScope, ...(capturedScope || {}), ...globalHelpers };
+        // Build item scope using passedScope instead of componentScope
+        const itemScope = { ...passedScope, ...(capturedScope || {}), ...globalHelpers };
         itemScope[itemName] = item;
         if (indexName) itemScope[indexName] = index;
 
-        const prevScope = componentScope;
-        componentScope = itemScope;
-
+        // Pass scope explicitly to processElement instead of modifying global componentScope
         if (isTemplate) {
           // For templates, clone and insert each child node
           Array.from(templateContent.childNodes).forEach(node => {
             const clone = node.cloneNode(true);
             parent.insertBefore(clone, placeholder);
-            if (clone.nodeType === 1) processElement(clone);
+            if (clone.nodeType === 1) processElement(clone, itemScope);
             currentElements.push(clone);
           });
         } else {
           const clone = templateContent.cloneNode(true);
           parent.insertBefore(clone, placeholder);
-          processElement(clone);
+          processElement(clone, itemScope);
           currentElements.push(clone);
         }
-
-        componentScope = prevScope;
       });
     });
   }
 
-  function bindIf(el) {
+  function bindIf(el, passedScope = componentScope) {
     const expr = el.getAttribute('@if');
     const parent = el.parentNode;
 
@@ -1842,10 +1947,10 @@ export function generateSignalsRuntimeDev(): string {
     // Handle <template> elements specially - clone their content
     const isTemplate = el.tagName === 'TEMPLATE';
 
-    // Capture BOTH element scope AND componentScope NOW before anything changes
-    // componentScope may contain @for iteration variables (page, index, etc.)
+    // Capture BOTH element scope AND passedScope NOW before anything changes
+    // passedScope may contain @for iteration variables or parent component signals
     const capturedElementScope = findElementScope(el);
-    const capturedComponentScope = { ...componentScope };
+    const capturedComponentScope = { ...passedScope };
 
     parent.insertBefore(placeholder, el);
     el.removeAttribute('@if');
@@ -1881,13 +1986,12 @@ export function generateSignalsRuntimeDev(): string {
 
     // Helper to process children with captured scope
     const processChildrenWithScope = () => {
-      // Temporarily set componentScope to captured scope so children can access @for vars
-      const prevScope = componentScope;
-      componentScope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
+      // Build the combined scope for children - no need to modify global componentScope
+      // Just pass the scope explicitly to processElement
+      const childScope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
 
-      Array.from(el.childNodes).forEach(child => processElement(child));
+      Array.from(el.childNodes).forEach(child => processElement(child, childScope));
 
-      componentScope = prevScope;
       childrenProcessed = true;
     };
 
@@ -1899,13 +2003,11 @@ export function generateSignalsRuntimeDev(): string {
           // Re-insert cloned content
           currentNodes = Array.from(el.content.childNodes).map(n => n.cloneNode(true));
           currentNodes.forEach(node => parent.insertBefore(node, placeholder.nextSibling));
-          // Process the new nodes for nested directives with captured scope
-          const prevScope = componentScope;
-          componentScope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
+          // Process the new nodes for nested directives with captured scope - pass scope explicitly
+          const childScope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
           currentNodes.forEach(node => {
-            if (node.nodeType === 1) processElement(node);
+            if (node.nodeType === 1) processElement(node, childScope);
           });
-          componentScope = prevScope;
           isInserted = true;
         } else if (!value && isInserted) {
           // Remove all current nodes
@@ -2017,18 +2119,14 @@ export function generateSignalsRuntimeDev(): string {
       processedScopes.add(el);
       const scopeVars = window.stx._scopes && window.stx._scopes[scopeId];
 
-      // Set componentScope to this component's scope vars before processing
+      // Merge component scope vars into componentScope (don't restore - keep for head elements)
       // This ensures expressions can access component variables even for elements
       // where findElementScope might not work (e.g., cloned elements not yet in DOM)
-      const prevScope = componentScope;
       if (scopeVars) {
         componentScope = { ...componentScope, ...scopeVars };
       }
 
       processElement(el);
-
-      // Restore previous scope
-      componentScope = prevScope;
 
       // Run scope-specific mount callbacks
       if (scopeVars && scopeVars.__mountCallbacks) {
@@ -2040,6 +2138,55 @@ export function generateSignalsRuntimeDev(): string {
     document.querySelectorAll('[data-stx-auto]').forEach(el => {
       // Process element but skip children that are in scoped containers
       processElementSkipScopes(el, processedScopes);
+    });
+
+    // Process <head> elements (title, meta) that may contain {{ }} expressions
+    // Use componentScope which now contains variables from processed components
+    const headElements = document.querySelectorAll('head title, head meta[content]');
+    headElements.forEach(el => {
+      if (el.tagName === 'TITLE') {
+        const text = el.textContent;
+        if (text && text.includes('{{')) {
+          effect(() => {
+            try {
+              let result = text;
+              const matches = text.match(/\{\{\s*(.+?)\s*\}\}/g);
+              if (matches) {
+                matches.forEach(match => {
+                  const expr = match.replace(/^\{\{\s*|\s*\}\}$/g, '');
+                  const fn = new Function(...Object.keys(componentScope), 'return ' + expr);
+                  const value = fn(...Object.values(componentScope));
+                  result = result.replace(match, value != null ? value : '');
+                });
+              }
+              el.textContent = result;
+            } catch (e) {
+              console.warn('[STX] Title expression error:', e);
+            }
+          });
+        }
+      } else if (el.tagName === 'META') {
+        const content = el.getAttribute('content');
+        if (content && content.includes('{{')) {
+          effect(() => {
+            try {
+              let result = content;
+              const matches = content.match(/\{\{\s*(.+?)\s*\}\}/g);
+              if (matches) {
+                matches.forEach(match => {
+                  const expr = match.replace(/^\{\{\s*|\s*\}\}$/g, '');
+                  const fn = new Function(...Object.keys(componentScope), 'return ' + expr);
+                  const value = fn(...Object.values(componentScope));
+                  result = result.replace(match, value != null ? value : '');
+                });
+              }
+              el.setAttribute('content', result);
+            } catch (e) {
+              console.warn('[STX] Meta expression error:', e);
+            }
+          });
+        }
+      }
     });
   });
 

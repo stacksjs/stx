@@ -971,3 +971,658 @@ export interface SrcsetData {
   /** Array of variants included */
   variants: ImageVariant[]
 }
+
+// =============================================================================
+// ts-images Integration Types
+// =============================================================================
+
+/**
+ * Image optimization presets for ts-images
+ */
+export type ImageOptimizationPreset = 'web' | 'quality' | 'performance'
+
+/**
+ * Image transformation types supported by ts-images
+ */
+export type ImageTransformation =
+  | 'resize'
+  | 'blur'
+  | 'sharpen'
+  | 'grayscale'
+  | 'rotate'
+  | 'flip'
+  | 'flop'
+  | 'brightness'
+  | 'contrast'
+  | 'saturation'
+
+/**
+ * Watermark position options
+ */
+export type WatermarkPosition =
+  | 'center'
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+
+/**
+ * Watermark configuration
+ */
+export interface WatermarkConfig {
+  /** Watermark image path */
+  image?: string
+  /** Watermark text */
+  text?: string
+  /** Position of the watermark */
+  position?: WatermarkPosition
+  /** Opacity (0-1) */
+  opacity?: number
+  /** Scale factor (0-1) */
+  scale?: number
+  /** Font for text watermark */
+  font?: string
+  /** Font size for text watermark */
+  fontSize?: number
+  /** Color for text watermark */
+  color?: string
+}
+
+/**
+ * Art direction configuration for responsive images
+ */
+export interface ArtDirectionConfig {
+  /** Media query (e.g., "(max-width: 768px)") */
+  media: string
+  /** Source image for this breakpoint */
+  src: string
+  /** Optional specific widths for this breakpoint */
+  widths?: number[]
+  /** Optional crop settings for this breakpoint */
+  crop?: ImageCrop
+  /** Optional aspect ratio override */
+  aspectRatio?: string
+}
+
+/**
+ * Image transformation configuration
+ */
+export interface ImageTransformationConfig {
+  /** Type of transformation */
+  type: ImageTransformation
+  /** Transformation-specific options */
+  options?: {
+    // Resize options
+    width?: number
+    height?: number
+    fit?: ImageFit
+    // Blur options
+    sigma?: number
+    // Sharpen options
+    amount?: number
+    // Rotation options
+    angle?: number
+    // Adjustment options
+    value?: number
+  }
+}
+
+/**
+ * Format-specific quality settings for ts-images
+ */
+export interface FormatQualitySettings {
+  /** JPEG optimization settings */
+  jpeg?: {
+    /** Quality (1-100) */
+    quality?: number
+    /** Use MozJPEG encoder */
+    mozjpeg?: boolean
+    /** Chroma subsampling */
+    chromaSubsampling?: '4:4:4' | '4:2:2' | '4:2:0'
+    /** Progressive encoding */
+    progressive?: boolean
+    /** Optimize Huffman coding */
+    optimizeCoding?: boolean
+  }
+  /** PNG optimization settings */
+  png?: {
+    /** Quality (1-100) */
+    quality?: number
+    /** Compression level (0-9) */
+    compressionLevel?: number
+    /** Use palette mode */
+    palette?: boolean
+    /** Adaptive filtering */
+    adaptiveFiltering?: boolean
+    /** Progressive scan */
+    progressive?: boolean
+  }
+  /** WebP optimization settings */
+  webp?: {
+    /** Quality (1-100) */
+    quality?: number
+    /** Lossless encoding */
+    lossless?: boolean
+    /** Compression effort (0-6) */
+    effort?: number
+    /** Smart chroma subsampling */
+    smartSubsample?: boolean
+    /** Near-lossless mode (0-100) */
+    nearLossless?: number
+  }
+  /** AVIF optimization settings */
+  avif?: {
+    /** Quality (1-100) */
+    quality?: number
+    /** Lossless encoding */
+    lossless?: boolean
+    /** Compression effort (0-9) */
+    effort?: number
+    /** Chroma subsampling */
+    chromaSubsampling?: '4:4:4' | '4:2:2' | '4:2:0'
+  }
+}
+
+/**
+ * ts-images integration configuration
+ */
+export interface TsImagesConfig {
+  /** Enable ts-images processing */
+  enabled: boolean
+  /** Output directory for processed images */
+  outputDir: string
+  /** Base URL for generated images (CDN prefix) */
+  baseUrl?: string
+  /** Format-specific quality settings */
+  formatQuality?: FormatQualitySettings
+  /** Default responsive breakpoints */
+  breakpoints?: number[]
+  /** Default output formats */
+  defaultFormats?: ImageFormat[]
+  /** Default quality (1-100) */
+  defaultQuality?: number
+  /** Batch processing options */
+  batchOptions?: {
+    /** Max concurrent processing */
+    concurrency?: number
+    /** Optimization preset */
+    optimizationPreset?: ImageOptimizationPreset
+  }
+  /** Generate sprite sheets for icons */
+  generateSprites?: boolean
+  /** Sprite output directory */
+  spriteOutputDir?: string
+}
+
+/**
+ * Enhanced image props with ts-images integration
+ */
+export interface EnhancedImgProps extends ImgProps {
+  /** ts-images optimization preset */
+  preset?: ImageOptimizationPreset
+  /** Process at build time (true) or runtime URL generation (false) */
+  process?: boolean
+  /** Custom transformations to apply */
+  transformations?: ImageTransformationConfig[]
+  /** Generate responsive variants at these widths (overrides config) */
+  responsiveWidths?: number[]
+  /** Watermark configuration */
+  watermark?: WatermarkConfig
+  /** Art direction: different images for breakpoints */
+  artDirection?: ArtDirectionConfig[]
+  /** Extract and use dominant color as placeholder background */
+  useDominantColor?: boolean
+  /** Generate and embed thumbhash at build time */
+  embedThumbhash?: boolean
+  /** Blur amount for placeholder (when using blur strategy) */
+  blurAmount?: number
+  /** Custom output filename pattern */
+  outputPattern?: string
+  /** Skip optimization for this image */
+  skipOptimization?: boolean
+  /** Force specific output format */
+  outputFormat?: ImageFormat
+}
+
+/**
+ * Result from processing an image with ts-images
+ */
+export interface ProcessedImageResult {
+  /** Original source path */
+  src: string
+  /** Whether processing was performed */
+  processed: boolean
+  /** Generated variants by format and width */
+  variants?: Array<{
+    /** Output path */
+    path: string
+    /** URL for srcset */
+    url: string
+    /** Width in pixels */
+    width: number
+    /** Height in pixels */
+    height: number
+    /** Output format */
+    format: ImageFormat
+    /** File size in bytes */
+    size: number
+    /** Device pixel ratio (for DPR-based srcsets) */
+    dpr?: number
+  }>
+  /** Placeholder data URL (thumbhash/blur) */
+  placeholder?: string
+  /** Dominant color extracted */
+  dominantColor?: string
+  /** Original dimensions */
+  originalWidth?: number
+  originalHeight?: number
+  /** Content hash for cache invalidation */
+  hash?: string
+  /** Processing errors if any */
+  errors?: string[]
+}
+
+/**
+ * Responsive variant set result
+ */
+export interface ResponsiveVariantSet {
+  /** Source image */
+  src: string
+  /** Variants grouped by format */
+  byFormat: Record<ImageFormat, ProcessedImageResult['variants']>
+  /** Generated srcset strings by format */
+  srcsets: Record<ImageFormat, string>
+  /** Recommended sizes attribute */
+  sizes?: string
+  /** Placeholder data */
+  placeholder?: {
+    dataURL: string
+    width: number
+    height: number
+    strategy: PlaceholderStrategy
+  }
+}
+
+// =============================================================================
+// ts-videos Integration Types
+// =============================================================================
+
+/**
+ * Video quality presets
+ */
+export type VideoQualityPreset =
+  | 'very-low'
+  | 'low'
+  | 'medium'
+  | 'high'
+  | 'very-high'
+  | 'lossless'
+
+/**
+ * Platform-specific video presets
+ */
+export type VideoPlatformPreset =
+  | 'youtube'
+  | 'twitter'
+  | 'instagram-feed'
+  | 'instagram-story'
+  | 'instagram-reels'
+  | 'tiktok'
+  | 'discord'
+  | 'linkedin'
+  | 'facebook'
+  | 'web-progressive'
+  | 'web-streaming'
+
+/**
+ * Video codec options
+ */
+export type VideoCodec = 'h264' | 'h265' | 'vp9' | 'av1'
+
+/**
+ * Audio codec options
+ */
+export type AudioCodec = 'aac' | 'opus' | 'mp3' | 'flac'
+
+/**
+ * Poster/thumbnail generation options
+ */
+export interface PosterGenerationConfig {
+  /** Timestamp in seconds to extract frame */
+  timestamp?: number
+  /** Output width */
+  width?: number
+  /** Output height (auto-calculated if not specified) */
+  height?: number
+  /** Output format */
+  format?: 'jpeg' | 'png' | 'webp'
+  /** Quality (1-100) */
+  quality?: number
+}
+
+/**
+ * Sprite sheet configuration for video scrubbing preview
+ */
+export interface SpriteSheetConfig {
+  /** Number of columns in sprite sheet */
+  columns?: number
+  /** Thumbnail width */
+  thumbnailWidth?: number
+  /** Thumbnail height */
+  thumbnailHeight?: number
+  /** Interval between frames in seconds */
+  interval?: number
+  /** Output format */
+  format?: 'jpeg' | 'png' | 'webp'
+  /** Quality (1-100) */
+  quality?: number
+}
+
+/**
+ * Streaming quality level configuration
+ */
+export interface StreamingQualityLevel {
+  /** Display label (e.g., "1080p") */
+  label: string
+  /** Video width */
+  width: number
+  /** Video height (auto-calculated if not specified) */
+  height?: number
+  /** Video bitrate in bps */
+  bitrate: number
+  /** Audio bitrate in bps */
+  audioBitrate?: number
+}
+
+/**
+ * Adaptive streaming configuration
+ */
+export interface StreamingConfig {
+  /** Streaming format */
+  format?: 'hls' | 'dash'
+  /** Segment duration in seconds */
+  segmentDuration?: number
+  /** Quality levels */
+  qualities?: StreamingQualityLevel[]
+  /** Enable encryption */
+  encryption?: {
+    enabled: boolean
+    keyUrl?: string
+    iv?: string
+  }
+}
+
+/**
+ * Video transcoding options
+ */
+export interface TranscodeConfig {
+  /** Video codec */
+  codec?: VideoCodec
+  /** Video bitrate in bps */
+  bitrate?: number
+  /** Maximum width */
+  maxWidth?: number
+  /** Maximum height */
+  maxHeight?: number
+  /** Frame rate */
+  frameRate?: number
+  /** Audio codec */
+  audioCodec?: AudioCodec
+  /** Audio bitrate in bps */
+  audioBitrate?: number
+  /** Sample rate in Hz */
+  sampleRate?: number
+  /** Number of audio channels */
+  channels?: number
+  /** Two-pass encoding for better quality */
+  twoPass?: boolean
+  /** Speed preset */
+  speedPreset?: 'ultrafast' | 'superfast' | 'veryfast' | 'faster' | 'fast' | 'medium' | 'slow' | 'slower' | 'veryslow'
+  /** CRF value (0-51 for H.264, lower = better quality) */
+  crf?: number
+}
+
+/**
+ * Waveform visualization configuration
+ */
+export interface WaveformConfig {
+  /** Output width */
+  width?: number
+  /** Output height */
+  height?: number
+  /** Waveform color */
+  color?: string
+  /** Background color */
+  backgroundColor?: string
+  /** Output format */
+  format?: 'png' | 'svg' | 'json'
+  /** Number of samples to render */
+  samples?: number
+}
+
+/**
+ * ts-videos integration configuration
+ */
+export interface TsVideosConfig {
+  /** Enable ts-videos processing */
+  enabled: boolean
+  /** Output directory for processed videos */
+  outputDir: string
+  /** Base URL for video assets */
+  baseUrl?: string
+  /** Default quality preset */
+  defaultQuality?: VideoQualityPreset
+  /** Streaming configuration */
+  streaming?: {
+    /** Enable streaming manifest generation */
+    enabled: boolean
+    /** Default format */
+    format?: 'hls' | 'dash'
+    /** Segment duration */
+    segmentDuration?: number
+    /** Default quality levels */
+    defaultQualities?: StreamingQualityLevel[]
+  }
+  /** Thumbnail generation configuration */
+  thumbnails?: {
+    /** Enable thumbnail generation */
+    enabled: boolean
+    /** Number of thumbnails to generate */
+    count?: number
+    /** Interval between thumbnails in seconds */
+    interval?: number
+    /** Output format */
+    format?: 'jpeg' | 'png' | 'webp'
+    /** Thumbnail width */
+    width?: number
+  }
+  /** Default transcoding settings */
+  transcoding?: {
+    /** Default codec */
+    defaultCodec?: VideoCodec
+    /** Default audio codec */
+    defaultAudioCodec?: AudioCodec
+    /** Default speed preset */
+    speedPreset?: TranscodeConfig['speedPreset']
+  }
+}
+
+/**
+ * Enhanced video props with ts-videos integration
+ */
+export interface EnhancedVideoProps extends VideoProps {
+  /** ts-videos quality preset */
+  quality?: VideoQualityPreset
+  /** Platform-specific optimization preset */
+  platform?: VideoPlatformPreset
+  /** Process video at build time */
+  process?: boolean
+  /** Generate poster from video frame */
+  generatePoster?: boolean | PosterGenerationConfig
+  /** Generate sprite sheet for scrubbing preview */
+  spriteSheet?: boolean | SpriteSheetConfig
+  /** Adaptive streaming configuration */
+  streaming?: boolean | StreamingConfig
+  /** Transcoding options */
+  transcode?: TranscodeConfig
+  /** Generate waveform for audio visualization */
+  waveform?: boolean | WaveformConfig
+  /** Progress callback for video processing */
+  onProcessProgress?: (progress: {
+    percentage: number
+    currentTime: number
+    duration: number
+    stage: 'analyzing' | 'transcoding' | 'generating-manifests' | 'complete'
+  }) => void
+  /** Custom output filename pattern */
+  outputPattern?: string
+  /** Skip processing for this video */
+  skipProcessing?: boolean
+  /** Title for accessibility and metadata */
+  title?: string
+}
+
+/**
+ * Result from generating a thumbnail
+ */
+export interface ThumbnailResult {
+  /** Output path */
+  path: string
+  /** URL for use in poster attribute */
+  url: string
+  /** Width in pixels */
+  width: number
+  /** Height in pixels */
+  height: number
+  /** Timestamp in seconds */
+  timestamp: number
+  /** File size in bytes */
+  size: number
+}
+
+/**
+ * Result from generating HLS manifest
+ */
+export interface HLSResult {
+  /** Master playlist URL */
+  manifestUrl: string
+  /** Path to master playlist file */
+  manifestPath: string
+  /** Individual quality level playlists */
+  playlists: Array<{
+    quality: StreamingQualityLevel
+    url: string
+    path: string
+  }>
+  /** Total segment count */
+  segmentCount: number
+  /** Total duration in seconds */
+  duration: number
+}
+
+/**
+ * Result from generating DASH manifest
+ */
+export interface DASHResult {
+  /** MPD manifest URL */
+  manifestUrl: string
+  /** Path to MPD file */
+  manifestPath: string
+  /** Adaptation sets */
+  adaptationSets: Array<{
+    type: 'video' | 'audio'
+    representations: Array<{
+      bandwidth: number
+      width?: number
+      height?: number
+      url: string
+    }>
+  }>
+  /** Total duration in seconds */
+  duration: number
+}
+
+/**
+ * Result from video transcoding
+ */
+export interface TranscodeResult {
+  /** Output file path */
+  path: string
+  /** URL for use in video source */
+  url: string
+  /** Duration in seconds */
+  duration: number
+  /** File size in bytes */
+  size: number
+  /** Video properties */
+  video: {
+    codec: VideoCodec
+    width: number
+    height: number
+    bitrate: number
+    frameRate: number
+  }
+  /** Audio properties */
+  audio?: {
+    codec: AudioCodec
+    bitrate: number
+    sampleRate: number
+    channels: number
+  }
+}
+
+/**
+ * Result from processing a video with ts-videos
+ */
+export interface ProcessedVideoResult {
+  /** Original source path */
+  src: string
+  /** Whether processing was performed */
+  processed: boolean
+  /** Transcoded video result */
+  transcoded?: TranscodeResult
+  /** Generated poster/thumbnail */
+  poster?: ThumbnailResult
+  /** Additional thumbnails */
+  thumbnails?: ThumbnailResult[]
+  /** Sprite sheet for scrubbing */
+  spriteSheet?: {
+    url: string
+    path: string
+    columns: number
+    rows: number
+    thumbnailWidth: number
+    thumbnailHeight: number
+    interval: number
+    totalFrames: number
+  }
+  /** Streaming manifests */
+  streaming?: {
+    hls?: HLSResult
+    dash?: DASHResult
+  }
+  /** Waveform data */
+  waveform?: {
+    url: string
+    path: string
+    data?: number[]
+  }
+  /** Video metadata */
+  metadata?: {
+    duration: number
+    width: number
+    height: number
+    frameRate: number
+    bitrate: number
+    codec: string
+    audioCodec?: string
+  }
+  /** Content hash for cache invalidation */
+  hash?: string
+  /** Processing errors if any */
+  errors?: string[]
+}
