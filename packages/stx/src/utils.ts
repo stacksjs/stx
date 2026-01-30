@@ -16,6 +16,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 // Import from expressions
+import { processClientScript } from './client-script'
 import { unescapeHtml } from './expressions'
 import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
@@ -518,12 +519,21 @@ ${content}
       }
       output += '\n' + scopedScripts.join('\n')
     } else {
-      // No signals, just append style and scripts normally
+      // No signals, transform and append style and scripts
       if (preservedStyle) {
         output += '\n' + preservedStyle
       }
       if (clientScripts.length > 0) {
-        output += '\n' + clientScripts.join('\n')
+        // Use event bindings collected during template processing (from @click, @input, etc.)
+        const eventBindings = (componentContext.__stx_event_bindings || []) as any[]
+        const transformedScripts = clientScripts.map((fullScript: string) => {
+          const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
+          if (!contentMatch) return fullScript
+          return processClientScript(contentMatch[1], { eventBindings })
+        })
+        output += '\n' + transformedScripts.join('\n')
+        // Clear bindings after use
+        componentContext.__stx_event_bindings = []
       }
     }
 

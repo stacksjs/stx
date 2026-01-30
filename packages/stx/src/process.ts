@@ -65,7 +65,7 @@ function hasSignalsSyntax(template: string): boolean {
     /\bstate\s*\(/, // state() signal API
     /\bderived\s*\(/, // derived() signal API
     /\beffect\s*\(/, // effect() signal API
-    /data-stx\b/, // data-stx or data-stx-auto
+    /data-stx(?:-auto)?(?![-\w])/, // data-stx or data-stx-auto (not data-stx-ref, data-stx-id, etc.)
   ]
 
   return signalsPatterns.some(pattern => pattern.test(template))
@@ -1738,14 +1738,20 @@ async function processOtherDirectives(
   // Transform <script client> blocks: resolve @stores imports, inject event
   // bindings into the script scope, and auto-wrap in a scoped IIFE
   const eventBindings = (context.__stx_event_bindings || []) as import('./events').ParsedEvent[]
+  let clientScriptsTransformed = false
   output = output.replace(/<script\s+client\b([^>]*)>([\s\S]*?)<\/script>/gi, (_match, _attrs, content) => {
+    clientScriptsTransformed = true
     // Validate client scripts for prohibited patterns
     validateClientScript(content, filePath)
 
     return processClientScript(content, { eventBindings })
   })
-  // Clear event bindings after use
-  context.__stx_event_bindings = []
+  // Only clear event bindings if scripts were found and transformed.
+  // When processing a component whose scripts were extracted separately
+  // (e.g., renderComponentWithSlot), bindings must be preserved for the caller.
+  if (clientScriptsTransformed) {
+    context.__stx_event_bindings = []
+  }
 
   // Note: Crosswind CSS injection is done at the top level in processDirectives
   // to avoid duplicate injection for includes/layouts/components

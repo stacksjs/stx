@@ -135,8 +135,8 @@ function generateSingleEventBinding(binding: ParsedEvent, index: number): string
   }
 
   // Standard event binding
-  return `  var __evt${index} = document.getElementById('${elementId}')
-  if (__evt${index}) __evt${index}.addEventListener('${event}', function($event) {
+  return `  var $el = document.getElementById('${elementId}')
+  if ($el) $el.addEventListener('${event}', function($event) {
     ${handlerBody}${handler}
   }${optionsStr})`
 }

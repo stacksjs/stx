@@ -563,9 +563,10 @@ export function processEventDirectives(
   _filePath: string,
 ): string {
   // When signals are used, skip event processing - the signals runtime handles events
+  // Note: data-stx-ref (from @ref) should NOT trigger this — only data-stx or data-stx-auto
   const usesSignals = /\b(?:state|derived|effect)\s*\(/.test(template)
     || /@(?:model|show|for|if)\s*=/.test(template)
-    || /data-stx(?:-auto)?\b/.test(template)
+    || /data-stx(?:-auto)?(?![-\w])/.test(template)
 
   if (usesSignals) {
     return template
