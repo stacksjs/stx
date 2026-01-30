@@ -1,4 +1,4 @@
-name: Publish to NPM
+name: Releaser
 
 on:
   push:
@@ -7,15 +7,17 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish:
+  npm:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       id-token: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.1
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -50,6 +52,13 @@ jobs:
           echo "$PWD/zig-out/bin" >> $GITHUB_PATH
 
       - name: Publish
-        run: pantry publish --access public
+        run: pantry npm:publish --access public
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
