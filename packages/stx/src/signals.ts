@@ -900,22 +900,127 @@ export function generateSignalsRuntimeDev(): string {
   // ==========================================================================
 
   // Parse and execute pipe expressions like "value | fmt" or "value | truncate:20"
+  // Must distinguish single | (pipe) from || (logical OR) and ?? (nullish coalescing)
   function parsePipeExpression(expr, scope) {
-    // Check if expression contains pipes (but not in strings or template literals)
-    const pipeMatch = expr.match(/^(.+?)\\s*\\|\\s*(.+)$/);
-    if (!pipeMatch) return null;
+    // Find pipe operators: single | that's not part of || or preceded by ?
+    // We need to find | that is:
+    // 1. Not preceded by | or ?
+    // 2. Not followed by |
+    // Use a manual scan to handle this correctly
+    let pipeIndex = -1;
+    let inString = false;
+    let stringChar = '';
+    let depth = 0; // Track parentheses/brackets depth
 
-    const [, valueExpr, pipeChain] = pipeMatch;
+    for (let i = 0; i < expr.length; i++) {
+      const char = expr[i];
+      const prevChar = i > 0 ? expr[i - 1] : '';
+      const nextChar = i < expr.length - 1 ? expr[i + 1] : '';
 
-    // Parse all pipes in the chain: "fmt | truncate:20 | uppercase"
-    const pipes = pipeChain.split(/\\s*\\|\\s*/).map(p => {
-      const parts = p.trim().split(':');
-      const name = parts[0].trim();
-      const args = parts.slice(1).map(a => a.trim());
-      return { name, args };
-    });
+      // Handle string literals
+      if ((char === '"' || char === "'" || char === '\`') && prevChar !== '\\\\') {
+        if (!inString) {
+          inString = true;
+          stringChar = char;
+        } else if (char === stringChar) {
+          inString = false;
+        }
+        continue;
+      }
 
-    return { valueExpr: valueExpr.trim(), pipes };
+      if (inString) continue;
+
+      // Track depth for parentheses and brackets
+      if (char === '(' || char === '[' || char === '{') depth++;
+      if (char === ')' || char === ']' || char === '}') depth--;
+
+      // Only look for pipes at top level (depth 0)
+      if (depth !== 0) continue;
+
+      // Check for single pipe (not || and not ??)
+      if (char === '|') {
+        // Skip if it's || (logical OR)
+        if (nextChar === '|') {
+          i++; // Skip next |
+          continue;
+        }
+        // Skip if preceded by | (second part of ||)
+        if (prevChar === '|') continue;
+        // Skip if preceded by ? (part of ??)
+        if (prevChar === '?') continue;
+
+        // Found a pipe operator
+        pipeIndex = i;
+        break;
+      }
+    }
+
+    if (pipeIndex === -1) return null;
+
+    const valueExpr = expr.slice(0, pipeIndex).trim();
+    const pipeChain = expr.slice(pipeIndex + 1).trim();
+
+    // Parse all pipes in the chain, being careful about || and ??
+    const pipes = [];
+    let currentPipe = '';
+    inString = false;
+    stringChar = '';
+    depth = 0;
+
+    for (let i = 0; i < pipeChain.length; i++) {
+      const char = pipeChain[i];
+      const prevChar = i > 0 ? pipeChain[i - 1] : '';
+      const nextChar = i < pipeChain.length - 1 ? pipeChain[i + 1] : '';
+
+      // Handle string literals
+      if ((char === '"' || char === "'" || char === '\`') && prevChar !== '\\\\') {
+        if (!inString) {
+          inString = true;
+          stringChar = char;
+        } else if (char === stringChar) {
+          inString = false;
+        }
+        currentPipe += char;
+        continue;
+      }
+
+      if (inString) {
+        currentPipe += char;
+        continue;
+      }
+
+      // Track depth
+      if (char === '(' || char === '[' || char === '{') depth++;
+      if (char === ')' || char === ']' || char === '}') depth--;
+
+      // Check for pipe at top level
+      if (depth === 0 && char === '|' && nextChar !== '|' && prevChar !== '|' && prevChar !== '?') {
+        // End of current pipe, start new one
+        if (currentPipe.trim()) {
+          const parts = currentPipe.trim().split(':');
+          pipes.push({
+            name: parts[0].trim(),
+            args: parts.slice(1).map(a => a.trim())
+          });
+        }
+        currentPipe = '';
+      } else {
+        currentPipe += char;
+      }
+    }
+
+    // Add last pipe
+    if (currentPipe.trim()) {
+      const parts = currentPipe.trim().split(':');
+      pipes.push({
+        name: parts[0].trim(),
+        args: parts.slice(1).map(a => a.trim())
+      });
+    }
+
+    if (pipes.length === 0) return null;
+
+    return { valueExpr, pipes };
   }
 
   function executePipeExpression(valueExpr, pipes, scope) {
