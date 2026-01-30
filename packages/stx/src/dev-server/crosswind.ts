@@ -313,20 +313,50 @@ export async function generateCrosswindCSS(htmlContent: string): Promise<string>
       return ''
     }
 
-    // Load the project's Crosswind config (or use defaults)
-    const projectConfig = hw.config
+    // Load the project's crosswind.config.ts (or use module defaults)
+    if (!cachedConfig) {
+      cachedConfig = await loadCrosswindConfig(process.cwd())
+    }
 
-    // Create a Crosswind config for on-the-fly generation
+    const baseConfig = hw.defaultConfig || hw.config
+    const userConfig = cachedConfig || {}
+
+    // Merge user theme.extend into base theme, preserving extend for CSSGenerator
+    const baseTheme = baseConfig.theme || {}
+    const userTheme = userConfig.theme || {}
+    const userExtend = (userTheme as any).extend || {}
+
+    // Build theme with extend preserved — CSSGenerator's constructor deep-merges extend
+    const theme: Record<string, any> = { ...baseTheme }
+    if (Object.keys(userExtend).length > 0) {
+      theme.extend = userExtend
+    }
+
+    // Merge safelist
+    const safelist = [
+      ...(baseConfig.safelist || []),
+      ...(userConfig.safelist || []),
+    ]
+
+    // Create config — CSSGenerator constructor handles theme.extend merging
     const crosswindConfig: CrosswindConfig = {
-      ...projectConfig,
+      ...baseConfig,
+      ...userConfig,
       content: [],
       output: '',
       preflight: true,
       minify: false,
+      theme,
+      safelist,
     }
 
     // Generate CSS using Crosswind's CSSGenerator
     const generator = new hw.CSSGenerator(crosswindConfig)
+
+    // Generate safelist classes
+    for (const cls of safelist) {
+      generator.generate(cls)
+    }
 
     for (const className of classes) {
       generator.generate(className)
