@@ -499,7 +499,10 @@ function injectSignalsRuntime(template: string, options: StxOptions): string {
   }
 
   const runtime = options.debug ? generateSignalsRuntimeDev() : generateSignalsRuntime()
-  const runtimeScript = `<script>${runtime}</script>`
+  // Escape $ as $$ to prevent interpretation as replacement patterns in String.replace()
+  // (e.g., $' means "text after match" in replacement strings)
+  const escapedRuntime = runtime.replace(/\$/g, '$$$$')
+  const runtimeScript = `<script>${escapedRuntime}</script>`
 
   // Inject before other scripts in <head>, or before </head>
   if (template.includes('</head>')) {

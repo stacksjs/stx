@@ -1360,8 +1360,9 @@ export function generateSignalsRuntimeDev(): string {
           const fragment = document.createDocumentFragment();
           const parentEl = el.parentNode;
           // Capture scope NOW before effects run asynchronously
-          // Use componentScope directly since it's set correctly during @for iteration
-          const capturedScope = { ...componentScope, ...(findElementScope(parentEl) || {}), ...globalHelpers };
+          // Use the passed scope parameter (not global componentScope) to preserve context
+          // through nested @if/@for processing where componentScope may be restored
+          const capturedScope = { ...scope, ...(findElementScope(parentEl) || {}), ...globalHelpers };
           parts.forEach(part => {
             const match = part.match(/^\\{\\{\\s*(.+?)\\s*\\}\\}$/);
             if (match) {
@@ -1406,28 +1407,29 @@ export function generateSignalsRuntimeDev(): string {
 
     // Handle @for first (reactive list)
     if (el.hasAttribute('@for')) {
-      bindFor(el);
+      bindFor(el, scope);
       return;
     }
 
     // Handle @if (conditional rendering)
     if (el.hasAttribute('@if')) {
-      bindIf(el);
+      bindIf(el, scope);
       return;
     }
 
     // Handle @show (visibility toggle - keeps element in DOM)
     if (el.hasAttribute('@show')) {
-      bindShow(el, el.getAttribute('@show'));
+      bindShow(el, el.getAttribute('@show'), scope);
     }
 
     // Handle @model (two-way binding)
     if (el.hasAttribute('@model')) {
-      bindModel(el, el.getAttribute('@model'));
+      bindModel(el, el.getAttribute('@model'), scope);
     }
 
     // Capture scope once for all attribute bindings on this element
-    const attrCapturedScope = { ...componentScope, ...(findElementScope(el) || {}), ...globalHelpers };
+    // Use the passed scope parameter to preserve context through nested processing
+    const attrCapturedScope = { ...scope, ...(findElementScope(el) || {}), ...globalHelpers };
 
     const evalAttrExpr = (expr) => {
       try {
@@ -1470,10 +1472,10 @@ export function generateSignalsRuntimeDev(): string {
         });
         el.removeAttribute(name);
       } else if (name === '@class') {
-        bindClass(el, value);
+        bindClass(el, value, scope);
         el.removeAttribute(name);
       } else if (name === '@style') {
-        bindStyle(el, value);
+        bindStyle(el, value, scope);
         el.removeAttribute(name);
       } else if (name === '@text') {
         effect(() => {
@@ -1513,10 +1515,10 @@ export function generateSignalsRuntimeDev(): string {
     Array.from(el.childNodes).forEach(child => processElement(child, scope));
   }
 
-  function bindShow(el, expr) {
+  function bindShow(el, expr, passedScope = componentScope) {
     const originalDisplay = el.style.display || '';
-    // Capture scope at setup time
-    const capturedScope = { ...componentScope, ...(findElementScope(el) || {}) };
+    // Capture scope at setup time - use passed scope to preserve context
+    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}) };
 
     const evalExpr = () => {
       try {
@@ -1534,16 +1536,16 @@ export function generateSignalsRuntimeDev(): string {
     el.removeAttribute('@show');
   }
 
-  function bindModel(el, expr) {
+  function bindModel(el, expr, passedScope = componentScope) {
     const tag = el.tagName.toLowerCase();
     const type = el.type;
 
     const getValue = () => toValue(expr, el);
     const setValue = (val) => {
       try {
-        // Check component scope first, then element scope
+        // Check component scope first, then element scope - use passed scope
         const elementScope = findElementScope(el);
-        const scope = { ...componentScope, ...(elementScope || {}) };
+        const scope = { ...passedScope, ...(elementScope || {}) };
 
         if (scope[expr] && scope[expr]._isSignal) {
           scope[expr].set(val);
@@ -1570,10 +1572,10 @@ export function generateSignalsRuntimeDev(): string {
     el.removeAttribute('@model');
   }
 
-  function bindClass(el, expr) {
+  function bindClass(el, expr, passedScope = componentScope) {
     const originalClasses = el.className;
-    // Capture scope at setup time
-    const capturedScope = { ...componentScope, ...(findElementScope(el) || {}) };
+    // Capture scope at setup time - use passed scope to preserve context
+    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}) };
 
     const evalExpr = () => {
       try {
@@ -1599,9 +1601,9 @@ export function generateSignalsRuntimeDev(): string {
     });
   }
 
-  function bindStyle(el, expr) {
-    // Capture scope at setup time
-    const capturedScope = { ...componentScope, ...(findElementScope(el) || {}) };
+  function bindStyle(el, expr, passedScope = componentScope) {
+    // Capture scope at setup time - use passed scope to preserve context
+    const capturedScope = { ...passedScope, ...(findElementScope(el) || {}) };
 
     const evalExpr = () => {
       try {
@@ -1623,7 +1625,7 @@ export function generateSignalsRuntimeDev(): string {
     });
   }
 
-  function bindFor(el) {
+  function bindFor(el, passedScope = componentScope) {
     const expr = el.getAttribute('@for');
     const match = expr.match(/^\\s*(\\w+)(?:\\s*,\\s*(\\w+))?\\s+(?:in|of)\\s+(.+)\\s*$/);
 
@@ -1706,7 +1708,8 @@ export function generateSignalsRuntimeDev(): string {
         if (/^__[A-Z_]+__$/.test(expression.trim())) {
           return expression;
         }
-        const scope = { ...componentScope, ...(capturedScope || {}), ...globalHelpers, ...extraScope };
+        // Use passedScope instead of componentScope to preserve context through nested processing
+        const scope = { ...passedScope, ...(capturedScope || {}), ...globalHelpers, ...extraScope };
         const fn = new Function(...Object.keys(scope), 'return ' + expression);
         return fn(...Object.values(scope));
       } catch (e) {
@@ -1798,34 +1801,31 @@ export function generateSignalsRuntimeDev(): string {
       }
 
       list.forEach((item, index) => {
-        const itemScope = { ...componentScope, ...(capturedScope || {}), ...globalHelpers };
+        // Build item scope using passedScope instead of componentScope
+        const itemScope = { ...passedScope, ...(capturedScope || {}), ...globalHelpers };
         itemScope[itemName] = item;
         if (indexName) itemScope[indexName] = index;
 
-        const prevScope = componentScope;
-        componentScope = itemScope;
-
+        // Pass scope explicitly to processElement instead of modifying global componentScope
         if (isTemplate) {
           // For templates, clone and insert each child node
           Array.from(templateContent.childNodes).forEach(node => {
             const clone = node.cloneNode(true);
             parent.insertBefore(clone, placeholder);
-            if (clone.nodeType === 1) processElement(clone);
+            if (clone.nodeType === 1) processElement(clone, itemScope);
             currentElements.push(clone);
           });
         } else {
           const clone = templateContent.cloneNode(true);
           parent.insertBefore(clone, placeholder);
-          processElement(clone);
+          processElement(clone, itemScope);
           currentElements.push(clone);
         }
-
-        componentScope = prevScope;
       });
     });
   }
 
-  function bindIf(el) {
+  function bindIf(el, passedScope = componentScope) {
     const expr = el.getAttribute('@if');
     const parent = el.parentNode;
 
@@ -1842,10 +1842,10 @@ export function generateSignalsRuntimeDev(): string {
     // Handle <template> elements specially - clone their content
     const isTemplate = el.tagName === 'TEMPLATE';
 
-    // Capture BOTH element scope AND componentScope NOW before anything changes
-    // componentScope may contain @for iteration variables (page, index, etc.)
+    // Capture BOTH element scope AND passedScope NOW before anything changes
+    // passedScope may contain @for iteration variables or parent component signals
     const capturedElementScope = findElementScope(el);
-    const capturedComponentScope = { ...componentScope };
+    const capturedComponentScope = { ...passedScope };
 
     parent.insertBefore(placeholder, el);
     el.removeAttribute('@if');
@@ -1881,13 +1881,12 @@ export function generateSignalsRuntimeDev(): string {
 
     // Helper to process children with captured scope
     const processChildrenWithScope = () => {
-      // Temporarily set componentScope to captured scope so children can access @for vars
-      const prevScope = componentScope;
-      componentScope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
+      // Build the combined scope for children - no need to modify global componentScope
+      // Just pass the scope explicitly to processElement
+      const childScope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
 
-      Array.from(el.childNodes).forEach(child => processElement(child));
+      Array.from(el.childNodes).forEach(child => processElement(child, childScope));
 
-      componentScope = prevScope;
       childrenProcessed = true;
     };
 
@@ -1899,13 +1898,11 @@ export function generateSignalsRuntimeDev(): string {
           // Re-insert cloned content
           currentNodes = Array.from(el.content.childNodes).map(n => n.cloneNode(true));
           currentNodes.forEach(node => parent.insertBefore(node, placeholder.nextSibling));
-          // Process the new nodes for nested directives with captured scope
-          const prevScope = componentScope;
-          componentScope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
+          // Process the new nodes for nested directives with captured scope - pass scope explicitly
+          const childScope = { ...capturedComponentScope, ...(capturedElementScope || {}) };
           currentNodes.forEach(node => {
-            if (node.nodeType === 1) processElement(node);
+            if (node.nodeType === 1) processElement(node, childScope);
           });
-          componentScope = prevScope;
           isInserted = true;
         } else if (!value && isInserted) {
           // Remove all current nodes
