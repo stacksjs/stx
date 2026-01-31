@@ -74,6 +74,157 @@ import { LRUCache } from './performance-utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
 import { createDetailedErrorMessage, fileExists } from './utils'
 
+// =============================================================================
+// Signal Script Processing for Included Components
+// =============================================================================
+
+/**
+ * Check if script content uses signal APIs (state, derived, effect)
+ */
+function hasSignalApis(scriptContent: string): boolean {
+  return /\b(state|derived|effect)\s*\(/.test(scriptContent)
+}
+
+/**
+ * Extract top-level variable/function names from script for scope registration.
+ * Only extracts TOP-LEVEL declarations, not variables inside nested functions.
+ */
+function extractExports(setupContent: string): string {
+  const code = setupContent
+  const names: string[] = []
+  const seen = new Set<string>()
+
+  let depth = 0
+  let i = 0
+  const len = code.length
+
+  const skipString = (quote: string): void => {
+    i++
+    while (i < len) {
+      if (code[i] === '\\') { i += 2; continue }
+      if (code[i] === quote) { i++; return }
+      i++
+    }
+  }
+
+  const skipTemplateLiteral = (): void => {
+    i++
+    while (i < len) {
+      if (code[i] === '\\') { i += 2; continue }
+      if (code[i] === '`') { i++; return }
+      if (code[i] === '$' && code[i + 1] === '{') {
+        i += 2
+        let templateDepth = 1
+        while (i < len && templateDepth > 0) {
+          if (code[i] === '{') templateDepth++
+          else if (code[i] === '}') templateDepth--
+          else if (code[i] === '\'' || code[i] === '"') skipString(code[i])
+          else if (code[i] === '`') skipTemplateLiteral()
+          else i++
+        }
+        continue
+      }
+      i++
+    }
+  }
+
+  const skipComment = (): boolean => {
+    if (code[i] === '/' && code[i + 1] === '/') {
+      while (i < len && code[i] !== '\n') i++
+      return true
+    }
+    if (code[i] === '/' && code[i + 1] === '*') {
+      i += 2
+      while (i < len - 1 && !(code[i] === '*' && code[i + 1] === '/')) i++
+      i += 2
+      return true
+    }
+    return false
+  }
+
+  const checkDeclaration = (): void => {
+    if (depth !== 0) return
+    const declMatch = code.slice(i).match(/^(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/)
+    if (declMatch) {
+      const varName = declMatch[2]
+      if (!seen.has(varName)) { names.push(varName); seen.add(varName) }
+      return
+    }
+    const funcMatch = code.slice(i).match(/^function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/)
+    if (funcMatch) {
+      const funcName = funcMatch[1]
+      if (!seen.has(funcName)) { names.push(funcName); seen.add(funcName) }
+      return
+    }
+    const asyncMatch = code.slice(i).match(/^async\s+function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/)
+    if (asyncMatch) {
+      const funcName = asyncMatch[1]
+      if (!seen.has(funcName)) { names.push(funcName); seen.add(funcName) }
+    }
+  }
+
+  while (i < len) {
+    if (skipComment()) continue
+    if (code[i] === '\'' || code[i] === '"') { skipString(code[i]); continue }
+    if (code[i] === '`') { skipTemplateLiteral(); continue }
+    if (code[i] === '{') { depth++; i++; continue }
+    if (code[i] === '}') { depth--; i++; continue }
+    if (depth === 0 && /[a-z]/i.test(code[i]) && (i === 0 || /\s|[;{}()]/.test(code[i - 1]))) {
+      checkDeclaration()
+    }
+    i++
+  }
+
+  return names.join(', ')
+}
+
+/**
+ * Transform a signal script into a scope-registering IIFE.
+ * This allows the STX runtime to pick up component variables.
+ */
+function transformSignalScript(scriptContent: string, scopeId: string): string {
+  const exports = extractExports(scriptContent)
+
+  return `
+(function() {
+  var __stx = window.stx || {};
+  var state = __stx.state || function(v) { var s = function() { return s._v; }; s._v = v; s.set = function(nv) { s._v = nv; }; s.update = function(fn) { s._v = fn(s._v); }; return s; };
+  var derived = __stx.derived || function(fn) { return fn; };
+  var effect = __stx.effect || function(fn) { fn(); return function() {}; };
+  var batch = __stx.batch || function(fn) { fn(); };
+  var onMount = __stx.onMount || function(fn) { if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', fn); } else { fn(); } };
+  var onDestroy = __stx.onDestroy || function() {};
+
+${scriptContent}
+
+  // Register scope variables for STX runtime
+  if (!window.stx) window.stx = { _scopes: {} };
+  if (!window.stx._scopes) window.stx._scopes = {};
+  window.stx._scopes['${scopeId}'] = { ${exports} };
+})();
+`
+}
+
+/**
+ * Add data-stx-scope attribute to the first element in HTML content
+ */
+function addScopeToRootElement(html: string, scopeId: string): string {
+  // Skip comments, whitespace, and find the first real element
+  const elementMatch = html.match(/^(\s*(?:<!--[\s\S]*?-->\s*)*)(<[a-zA-Z][a-zA-Z0-9-]*)([\s>])/s)
+  if (elementMatch) {
+    const [, before, tagStart, afterTag] = elementMatch
+    // Check if it already has data-stx-scope
+    if (html.includes('data-stx-scope')) {
+      return html
+    }
+    return `${before}${tagStart} data-stx-scope="${scopeId}"${afterTag}${html.slice(elementMatch[0].length)}`
+  }
+  return html
+}
+
+// Counter for generating unique scope IDs
+let scopeIdCounter = 0
+
 // Cache for partials to avoid repeated file reads (LRU with max 500 entries)
 export const partialsCache: LRUCache<string, string> = new LRUCache<string, string>(500)
 
@@ -553,10 +704,11 @@ export async function processIncludes(
       }
 
       // Extract <script> content (look in original content)
-      // Handle both server-side and client-side scripts
+      // Handle server-side, client-side, and signal scripts
       const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
       const scriptMatches = [...partialContent.matchAll(scriptRegex)]
       let preservedScript = ''
+      let signalScopeId: string | null = null
 
       for (const scriptMatch of scriptMatches) {
         const scriptAttrs = scriptMatch[1] || ''
@@ -564,8 +716,21 @@ export async function processIncludes(
 
         const isServerScript = scriptAttrs.includes('server')
         const isClientScript = scriptAttrs.includes('client') || scriptAttrs.includes('type="module"')
+        const isSignalScript = hasSignalApis(scriptContent)
 
-        if (isServerScript || (!isClientScript && !scriptAttrs.includes('src'))) {
+        // Handle signal scripts - transform them for client-side reactivity
+        if (isSignalScript && !isServerScript) {
+          // Generate unique scope ID for this component
+          signalScopeId = `stx_scope_${path.basename(includeFilePath, '.stx').replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeIdCounter}`
+
+          // Transform the script to register scope variables
+          // Add data-stx-scoped attribute to prevent re-processing by processScriptSetup
+          const transformedScript = transformSignalScript(scriptContent, signalScopeId)
+          preservedScript += `<script data-stx-scoped>${transformedScript}</script>\n`
+          continue
+        }
+
+        if (isServerScript || (!isClientScript && !scriptAttrs.includes('src') && !isSignalScript)) {
           // Process server-side script to extract variables into includeContext
           try {
             const { extractVariables } = await import('./variable-extractor')
@@ -578,10 +743,15 @@ export async function processIncludes(
           }
         }
 
-        // Preserve client-only scripts
-        if (isClientScript) {
+        // Preserve client-only scripts (non-signal)
+        if (isClientScript && !isSignalScript) {
           preservedScript += `<script${scriptAttrs}>${scriptContent}</script>\n`
         }
+      }
+
+      // If we have a signal script, add data-stx-scope to the root element
+      if (signalScopeId) {
+        workingContent = addScopeToRootElement(workingContent, signalScopeId)
       }
 
       // Process the partial content
