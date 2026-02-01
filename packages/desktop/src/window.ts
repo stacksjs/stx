@@ -80,10 +80,16 @@ export function resetDesktopConfig(): void {
 const DEFAULT_SEARCH_PATHS = [
   // Global bun installation
   join(process.env.HOME || '', '.bun/bin/craft'),
-  // From linked ts-craft in monorepo
+  // Absolute path to craft in standard location
+  join(process.env.HOME || '', 'Code/Tools/craft/packages/zig/zig-out/bin/craft'),
+  join(process.env.HOME || '', 'Code/craft/packages/zig/zig-out/bin/craft'),
+  // From linked ts-craft in monorepo (both craft and craft-minimal)
+  join(process.cwd(), '../../craft/packages/zig/zig-out/bin/craft'),
   join(process.cwd(), '../../craft/packages/zig/zig-out/bin/craft-minimal'),
+  join(process.cwd(), '../../../craft/packages/zig/zig-out/bin/craft'),
   join(process.cwd(), '../../../craft/packages/zig/zig-out/bin/craft-minimal'),
   // If running from stx repo root
+  join(process.cwd(), '../craft/packages/zig/zig-out/bin/craft'),
   join(process.cwd(), '../craft/packages/zig/zig-out/bin/craft-minimal'),
   // Local craft installation
   join(process.cwd(), 'node_modules/.bin/craft'),
@@ -333,6 +339,9 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
     // Try to find craft binary in common locations
     const craftPath = getCraftBinaryPath()
 
+    // When native sidebar is enabled, don't use system tray (they're mutually exclusive in Craft)
+    const useSystemTray = !options.nativeSidebar
+
     const app = createApp({
       url,
       craftPath,
@@ -341,10 +350,14 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
         width: options.width || 1400,
         height: options.height || 900,
         resizable: true,
-        systemTray: true, // craft requires system tray to function properly
+        systemTray: useSystemTray,
         darkMode: options.darkMode ?? true,
         hotReload: options.hotReload ?? true,
         devTools: true,
+        // Native sidebar support (macOS Tahoe style)
+        nativeSidebar: options.nativeSidebar ?? false,
+        sidebarWidth: options.sidebarWidth ?? 260,
+        sidebarConfig: options.sidebarConfig,
       },
     })
 

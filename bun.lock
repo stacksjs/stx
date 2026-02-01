@@ -6,6 +6,7 @@
       "name": "stx",
       "dependencies": {
         "@stacksjs/headwind": "^0.1.3",
+        "ts-craft": "link:../craft/packages/typescript",
         "very-happy-dom": "^0.0.9",
       },
       "devDependencies": {
@@ -1661,7 +1662,6 @@
       "dependencies": {
         "@stacksjs/clapp": "^0.2.0",
         "@stacksjs/desktop": "workspace:*",
-        "@stacksjs/headwind": "^0.1.3",
         "@stacksjs/sanitizer": "workspace:*",
         "bun-plugin-stx": "workspace:*",
         "bunfig": "^0.15.6",
@@ -2800,6 +2800,8 @@
     "trim-lines": ["trim-lines@3.0.1", "", {}, "sha512-kRj8B+YHZCc9kQYdWfJB2/oUl9rA99qbowYYBtr4ui4mZyAQ2JpvVBd/6U2YloATfqBhBTSMhTpgBHtU0Mf3Rg=="],
 
     "trough": ["trough@2.2.0", "", {}, "sha512-tmMpK00BjZiUyVyvrBK7knerNgmgvcV/KLVyuma/SC+TQN167GrMRciANTz09+k3zW8L8t60jWO1GpfkZdjTaw=="],
+
+    "ts-craft": ["ts-craft@link:../craft/packages/typescript", { "bin": { "craft": "./bin/cli.ts" } }],
 
     "ts-error-handling": ["ts-error-handling@0.1.0", "", {}, "sha512-v0t9+8PBJkyQoOG2SY/PGKJLPrahsRA/4ZbU/C7+RWVviXtUrXRyGKkHa+2+UwgVFJVdI//D9PINuSfciqNKOQ=="],
 

@@ -28,6 +28,7 @@ import { clearComponentCache } from './utils'
 import {
   buildCrosswindCSS,
   colors,
+  extractSidebarConfig,
   findAvailablePort,
   getFrontmatterHtml,
   getThemeSelectorHtml,
@@ -361,7 +362,9 @@ async function serveMarkdownFile(filePath: string, options: DevServerOptions = {
 
   // Open native window if requested
   if (options.native) {
-    await openNativeWindow(actualPort)
+    await openNativeWindow(actualPort, {
+      title: path.basename(absolutePath, '.md'),
+    })
   }
 
   // Set up file watching if enabled
@@ -524,6 +527,20 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
           // Inject HMR client script if hot reload is enabled
           if (hotReload) {
             content = injectHotReload(content, actualHmrPort)
+          }
+          // Inject native sidebar styles and flag when running in native mode
+          // CSS is injected to immediately hide web sidebar before any rendering
+          if (options.native) {
+            const nativeSidebarInjection = `<style>[data-stx-sidebar],.stx-sidebar{display:none!important}</style><script>window.__craftNativeSidebar=true;document.documentElement.classList.add('has-native-sidebar')</script>`
+            if (content.includes('<head>')) {
+              content = content.replace('<head>', `<head>${nativeSidebarInjection}`)
+            }
+            else if (content.includes('<html')) {
+              content = content.replace(/(<html[^>]*>)/, `$1<head>${nativeSidebarInjection}</head>`)
+            }
+            else {
+              content = `<head>${nativeSidebarInjection}</head>` + content
+            }
           }
           return content
         }
@@ -789,7 +806,15 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
 
   // Open native window if requested
   if (options.native) {
-    await openNativeWindow(actualPort)
+    // Read template to extract native sidebar configuration
+    const templateContent = await Bun.file(absolutePath).text()
+    const sidebarConfig = extractSidebarConfig(templateContent)
+
+    await openNativeWindow(actualPort, {
+      title: path.basename(absolutePath, '.stx'),
+      nativeSidebar: !!sidebarConfig,
+      sidebarConfig,
+    })
   }
 
   // Set up file watching if enabled
@@ -1775,6 +1800,17 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
             content = injectHotReload(content, actualHmrPort)
           }
 
+          // Inject native sidebar styles and flag when running in native mode
+          if (options.native) {
+            const nativeSidebarInjection = `<style>[data-stx-sidebar],.stx-sidebar{display:none!important}</style><script>window.__craftNativeSidebar=true;document.documentElement.classList.add('has-native-sidebar')</script>`
+            if (content.includes('<head>')) {
+              content = content.replace('<head>', `<head>${nativeSidebarInjection}`)
+            }
+            else {
+              content = `<head>${nativeSidebarInjection}</head>` + content
+            }
+          }
+
           return new Response(content, {
             headers: {
               'Content-Type': 'text/html',
@@ -1793,6 +1829,16 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
         content = await injectCrosswindCSS(content)
         if (hotReload) {
           content = injectHotReload(content, actualHmrPort)
+        }
+        // Inject native sidebar styles and flag when running in native mode
+        if (options.native) {
+          const nativeSidebarInjection = `<style>[data-stx-sidebar],.stx-sidebar{display:none!important}</style><script>window.__craftNativeSidebar=true;document.documentElement.classList.add('has-native-sidebar')</script>`
+          if (content.includes('<head>')) {
+            content = content.replace('<head>', `<head>${nativeSidebarInjection}`)
+          }
+          else {
+            content = `<head>${nativeSidebarInjection}</head>` + content
+          }
         }
         return new Response(content, {
           headers: {
@@ -1840,7 +1886,19 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
 
   // Open native window if requested
   if (options.native) {
-    await openNativeWindow(actualPort)
+    // For app mode, try to find sidebar config from index page or layout
+    let sidebarConfig
+    const indexPath = path.join(pagesDir, 'index.stx')
+    if (fs.existsSync(indexPath)) {
+      const templateContent = await Bun.file(indexPath).text()
+      sidebarConfig = extractSidebarConfig(templateContent)
+    }
+
+    await openNativeWindow(actualPort, {
+      title: path.basename(absoluteAppDir) || 'stx App',
+      nativeSidebar: !!sidebarConfig,
+      sidebarConfig,
+    })
   }
 
   // File watching

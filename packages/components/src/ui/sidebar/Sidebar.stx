@@ -40,7 +40,15 @@ export const onItemClick = $props.onItemClick
 let isHovered = false
 let nativeSidebarId = null
 
-// Check if running in Craft environment
+// Check if running in Craft environment with native sidebar enabled
+// When Craft uses --native-sidebar, it sets these flags and we should NOT render the web sidebar
+const hasNativeSidebar = typeof window !== 'undefined' && (
+  window.__craftNativeSidebar === true ||
+  window.craft?.hasNativeSidebar?.() ||
+  (window.webkit?.messageHandlers?.craft && document.body?.dataset?.nativeSidebar === 'true')
+)
+
+// Check if running in Craft environment (may not have native sidebar)
 const isCraft = typeof window !== 'undefined' && window.craft?.isCraft?.()
 
 // Variant styles - macOS Tahoe inspired
@@ -179,6 +187,8 @@ if (typeof window !== 'undefined') {
 }
 </script>
 
+<!-- Only render web sidebar when NOT running in Craft native sidebar mode -->
+@if(!hasNativeSidebar)
 <aside
   class="{{ containerClasses }} sidebar-container"
   style="width: {{ getSidebarWidth() }}"
@@ -244,6 +254,7 @@ if (typeof window !== 'undefined') {
     </button>
   @endif
 </aside>
+@endif
 
 <style scoped>
 /* Smooth scrollbar styling for macOS feel */

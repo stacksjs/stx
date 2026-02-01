@@ -3,6 +3,68 @@
  */
 
 /**
+ * Sidebar item configuration
+ */
+export interface SidebarItem {
+  /** Unique identifier */
+  id: string
+  /** Display label */
+  label: string
+  /** SF Symbol name (macOS) or emoji icon */
+  icon?: string
+  /** Badge text (e.g., unread count) */
+  badge?: string | number
+  /** Tint color for the icon (hex color) */
+  tintColor?: string
+  /** Whether this item is currently selected */
+  selected?: boolean
+  /** Whether this item is disabled */
+  disabled?: boolean
+  /** Nested items (for expandable sections) */
+  children?: SidebarItem[]
+  /** Custom data to pass with selection events */
+  data?: Record<string, unknown>
+}
+
+/**
+ * Sidebar section with header
+ */
+export interface SidebarSection {
+  /** Unique identifier */
+  id: string
+  /** Section title (displayed as header) */
+  title: string
+  /** Whether section can be collapsed */
+  collapsible?: boolean
+  /** Whether section is currently collapsed */
+  collapsed?: boolean
+  /** Items in this section */
+  items: SidebarItem[]
+}
+
+/**
+ * Native sidebar configuration
+ */
+export interface SidebarConfig {
+  /** Sidebar sections */
+  sections: SidebarSection[]
+  /** Minimum width in pixels */
+  minWidth?: number
+  /** Maximum width in pixels */
+  maxWidth?: number
+  /** Whether sidebar can be collapsed */
+  canCollapse?: boolean
+  /** Search placeholder text */
+  searchPlaceholder?: string
+  /** Header configuration */
+  header?: {
+    title?: string
+    subtitle?: string
+    icon?: string
+  }
+}
+
+/**
  * Window configuration options
  */
 export interface WindowOptions {
@@ -30,6 +92,12 @@ export interface WindowOptions {
   frameless?: boolean
   /** Window background color */
   backgroundColor?: string
+  /** Enable native macOS sidebar (Finder-style with vibrancy) */
+  nativeSidebar?: boolean
+  /** Width of the native sidebar in pixels (default: 220) */
+  sidebarWidth?: number
+  /** Sidebar configuration (sections and items) */
+  sidebarConfig?: SidebarConfig
 }
 
 /**
