@@ -98,9 +98,9 @@ const { initialTab, theme } = withDefaults(
 
 // Trainer Profile
 const trainer: TrainerProfile = {
-  name: "Alex Rivera",
-  title: "Certified Personal Trainer",
-  avatar: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=150&h=150&fit=crop&crop=face",
+  name: "Pawel Dregan",
+  title: "Ultra Runner & Coach",
+  avatar: "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=150&h=150&fit=crop&crop=face",
   rating: 4.9
 }
 
@@ -135,6 +135,13 @@ const clients: Client[] = [
   { id: 3, name: "Emma Wilson", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face", goal: "Marathon Prep", progress: 85, nextSession: "Tomorrow, 7:00 AM", streak: 21, status: "active", plan: "Endurance Builder" },
   { id: 4, name: "James Rodriguez", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face", goal: "Flexibility", progress: 45, nextSession: "Wed, 5:00 PM", streak: 5, status: "active", plan: "Mobility Mastery" },
   { id: 5, name: "Lisa Park", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face", goal: "Strength", progress: 91, nextSession: "Thu, 11:00 AM", streak: 34, status: "active", plan: "Powerlifting Basics" }
+]
+
+// Top performing clients - sorted by progress (highest first)
+const topClients: Client[] = [
+  clients[4], // Lisa Park - 91%
+  clients[2], // Emma Wilson - 85%
+  clients[0], // Sarah Johnson - 72%
 ]
 
 // Today's Schedule
@@ -188,8 +195,6 @@ const nutritionPlans: NutritionPlan[] = [
 const weekDays: string[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 const weekSessions: number[] = [4, 5, 3, 6, 4, 2, 0]
 const weekHours: number[] = [4.5, 5.0, 3.5, 6.5, 4.0, 2.5, 0]
-
-// Upcoming Week Dates
 const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
 </script>
 
@@ -198,7 +203,7 @@ const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FitCoach - Personal Training Platform</title>
+  <title>FitCoach - Ultra Running & Coaching Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -238,50 +243,353 @@ const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
       border-radius: 4px 4px 0 0;
       transition: height 0.3s ease;
     }
+
+    /* Light Mode Styles */
+    body.light {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #f1f5f9;
+      --bg-card: #ffffff;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --border-color: #e2e8f0;
+    }
+
+    /* Light mode overrides using .light class */
+    body.light {
+      background-color: #f8fafc !important;
+      color: #0f172a !important;
+    }
+
+    /* Header */
+    body.light header {
+      background-color: rgba(255, 255, 255, 0.9) !important;
+      border-color: #e2e8f0 !important;
+    }
+
+    /* Sidebar */
+    body.light aside {
+      background-color: rgba(255, 255, 255, 0.8) !important;
+      border-color: #e2e8f0 !important;
+    }
+
+    /* Cards and panels */
+    body.light .bg-slate-800,
+    body.light .bg-slate-800\/50,
+    body.light .bg-slate-800\/80 {
+      background-color: #ffffff !important;
+    }
+
+    body.light .bg-slate-700,
+    body.light .bg-slate-700\/50 {
+      background-color: #f1f5f9 !important;
+    }
+
+    /* Cards and inner panels - lighter background */
+    body.light .bg-slate-700\/30 {
+      background-color: #f8fafc !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+
+    body.light .bg-slate-900 {
+      background-color: #f8fafc !important;
+    }
+
+    /* Text colors */
+    body.light .text-slate-100,
+    body.light .text-white {
+      color: #0f172a !important;
+    }
+
+    body.light .text-slate-200,
+    body.light .text-slate-300 {
+      color: #334155 !important;
+    }
+
+    body.light .text-slate-400 {
+      color: #64748b !important;
+    }
+
+    body.light .text-slate-500 {
+      color: #94a3b8 !important;
+    }
+
+    /* Borders */
+    body.light .border-slate-700,
+    body.light .border-slate-700\/50,
+    body.light .border-slate-600,
+    body.light .border-slate-600\/50 {
+      border-color: #e2e8f0 !important;
+    }
+
+    /* Inputs */
+    body.light input,
+    body.light textarea,
+    body.light select {
+      background-color: #f1f5f9 !important;
+      border-color: #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+
+    body.light input::placeholder {
+      color: #94a3b8 !important;
+    }
+
+    /* Hover states */
+    body.light .hover\:bg-slate-700:hover,
+    body.light .hover\:bg-slate-700\/50:hover {
+      background-color: #e2e8f0 !important;
+    }
+
+    body.light .hover\:bg-slate-700\/30:hover {
+      background-color: #f1f5f9 !important;
+    }
+
+    /* Card hover effect in light mode */
+    body.light .card-hover:hover {
+      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* Nav buttons in light mode */
+    body.light .nav-btn {
+      color: #475569 !important;
+    }
+
+    body.light .nav-btn.bg-emerald-500\/20 {
+      background-color: rgba(16, 185, 129, 0.15) !important;
+      color: #059669 !important;
+    }
+
+    /* Profile dropdown */
+    body.light #profile-dropdown {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    /* Toast */
+    body.light #toast {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+    }
+
+    /* Mobile nav */
+    body.light nav.fixed.bottom-0 {
+      background-color: rgba(255, 255, 255, 0.95) !important;
+      border-color: #e2e8f0 !important;
+    }
+
+    /* Ring colors */
+    body.light .ring-emerald-500\/50 {
+      --tw-ring-color: rgba(16, 185, 129, 0.3) !important;
+    }
+
+    /* Filter buttons in light mode */
+    body.light button.bg-slate-700\/50 {
+      background-color: #e2e8f0 !important;
+      color: #475569 !important;
+    }
+
+    body.light button.bg-slate-700\/50:hover {
+      background-color: #cbd5e1 !important;
+    }
+
+    /* Progress bar backgrounds */
+    body.light .bg-slate-600 {
+      background-color: #e2e8f0 !important;
+    }
+
+    body.light .bg-slate-600\/50 {
+      background-color: #e2e8f0 !important;
+    }
+
+    /* Status badges and indicators */
+    body.light .bg-emerald-500\/10,
+    body.light .bg-emerald-500\/20 {
+      background-color: rgba(16, 185, 129, 0.1) !important;
+    }
+
+    body.light .bg-amber-500\/10,
+    body.light .bg-amber-500\/20 {
+      background-color: rgba(245, 158, 11, 0.1) !important;
+    }
+
+    body.light .bg-cyan-500\/10,
+    body.light .bg-cyan-500\/20 {
+      background-color: rgba(6, 182, 212, 0.1) !important;
+    }
+
+    body.light .bg-red-500\/10,
+    body.light .bg-red-500\/20 {
+      background-color: rgba(239, 68, 68, 0.1) !important;
+    }
+
+    body.light .bg-blue-500\/10,
+    body.light .bg-blue-500\/20 {
+      background-color: rgba(59, 130, 246, 0.1) !important;
+    }
+
+    body.light .bg-green-500\/10,
+    body.light .bg-green-500\/20 {
+      background-color: rgba(34, 197, 94, 0.1) !important;
+    }
+
+    body.light .bg-purple-500\/10,
+    body.light .bg-purple-500\/20 {
+      background-color: rgba(168, 85, 247, 0.1) !important;
+    }
+
+    /* Scrollbar styling for light mode */
+    body.light ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    body.light ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+    }
+
+    body.light ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Section headers */
+    body.light h2.font-semibold {
+      color: #0f172a !important;
+    }
+
+    /* Stat numbers */
+    body.light .text-2xl,
+    body.light .text-3xl,
+    body.light .text-4xl {
+      color: #0f172a !important;
+    }
+
+    /* Table-like row styling */
+    body.light [class*="border-b"][class*="border-slate"] {
+      border-color: #e2e8f0 !important;
+    }
+
+    /* Theme toggle icon visibility */
+    body.light #theme-icon-sun {
+      display: none !important;
+    }
+    body.light #theme-icon-moon {
+      display: block !important;
+    }
+
+    /* Smooth transition for theme change */
+    body, header, aside, .bg-slate-800, .bg-slate-700, .bg-slate-900,
+    .text-slate-100, .text-slate-200, .text-slate-300, .text-slate-400,
+    .border-slate-700, input, #profile-dropdown, #toast, nav.fixed,
+    .bg-slate-700\/30, .bg-slate-700\/50, button {
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
   </style>
 </head>
 
-<body class="bg-slate-900 text-slate-100 min-h-screen antialiased">
+<body class="bg-slate-900 text-slate-100 min-h-screen antialiased" id="app-body">
   <!-- Header -->
-  <header class="bg-slate-800/80 backdrop-blur-xl border-b border-slate-700/50 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-16">
-        <!-- Logo -->
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center">
-            <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <span class="text-xl font-bold gradient-text">FitCoach</span>
+  <header class="bg-slate-800/80 backdrop-blur-xl border-b border-slate-700/50 fixed top-0 left-0 right-0 z-50 h-16">
+    <div class="flex justify-between items-center h-full px-4 sm:px-6">
+      <!-- Logo -->
+      <div class="flex items-center gap-3 w-64 shrink-0">
+        <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center">
+          <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
         </div>
+        <span class="text-xl font-bold gradient-text">FitCoach</span>
+      </div>
 
-        <!-- Search -->
-        <div class="hidden md:flex flex-1 max-w-md mx-8">
-          <div class="relative w-full">
-            <input type="text" placeholder="Search clients, workouts..." class="w-full bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
+      <!-- Search -->
+      <div class="hidden md:flex flex-1 max-w-xl mx-8">
+        <div class="relative w-full">
+          <input type="text" placeholder="Search clients, workouts..." class="w-full bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
+      </div>
 
-        <!-- Right Section -->
-        <div class="flex items-center gap-4">
-          <!-- Notifications -->
-          <button class="relative p-2 rounded-xl bg-slate-700/50 hover:bg-slate-700 transition-colors">
-            <svg class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      <!-- Right Section -->
+      <div class="flex items-center gap-4">
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" id="theme-toggle-btn" class="relative p-2 rounded-xl bg-slate-700/50 hover:bg-slate-700 transition-colors" title="Toggle theme">
+          <!-- Sun icon (shown in dark mode, click to switch to light) -->
+          <svg id="theme-icon-sun" class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <!-- Moon icon (shown in light mode, click to switch to dark) -->
+          <svg id="theme-icon-moon" class="w-5 h-5 text-slate-600 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </button>
+
+        <!-- Notifications -->
+        <button id="notifications-btn" class="relative p-2 rounded-xl bg-slate-700/50 hover:bg-slate-700 transition-colors">
+          <svg class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+          <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center font-bold text-white">2</span>
+        </button>
+
+        <!-- Profile Dropdown -->
+        <div class="relative" id="profile-dropdown-container">
+          <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 cursor-pointer hover:bg-slate-700/50 rounded-xl p-2 transition-colors">
+            <img src="{{ trainerAvatar }}" alt="{{ trainerName }}" class="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/50" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'; this.alt='PD'">
+            <div class="hidden sm:block text-left">
+              <div class="text-sm font-semibold">{{ trainerName }}</div>
+              <div class="text-xs text-slate-400">Ultra Coach</div>
+            </div>
+            <svg class="w-4 h-4 text-slate-400 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
-            <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center font-bold">2</span>
           </button>
 
-          <!-- Profile -->
-          <div class="flex items-center gap-3 cursor-pointer hover:bg-slate-700/50 rounded-xl p-2 transition-colors">
-            <img src="{{ trainerAvatar }}" alt="{{ trainerName }}" class="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/50" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'; this.alt='AR'">
-            <div class="hidden sm:block">
-              <div class="text-sm font-semibold">{{ trainerName }}</div>
-              <div class="text-xs text-slate-400">Trainer</div>
+          <!-- Dropdown Menu -->
+          <div id="profile-dropdown" class="hidden absolute right-0 top-full mt-2 w-64 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50">
+            <div class="p-4 border-b border-slate-700">
+              <div class="flex items-center gap-3">
+                <img src="{{ trainerAvatar }}" alt="{{ trainerName }}" class="w-12 h-12 rounded-full object-cover ring-2 ring-emerald-500/50" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'">
+                <div>
+                  <div class="font-semibold">{{ trainerName }}</div>
+                  <div class="text-sm text-slate-400">{{ trainerTitle }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="p-2">
+              <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 transition-colors">
+                <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span>My Profile</span>
+              </a>
+              <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 transition-colors">
+                <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Settings</span>
+              </a>
+              <a href="https://www.instagram.com/ultrarunnerpaw" target="_blank" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 transition-colors">
+                <svg class="w-5 h-5 text-slate-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+                <span>Instagram</span>
+              </a>
+              <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 transition-colors">
+                <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Help & Support</span>
+              </a>
+            </div>
+            <div class="p-2 border-t border-slate-700">
+              <button class="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Sign Out</span>
+              </button>
             </div>
           </div>
         </div>
@@ -289,10 +597,10 @@ const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
     </div>
   </header>
 
-  <div class="flex">
+  <div class="pt-16"> <!-- Offset for fixed header -->
     <!-- Sidebar -->
-    <aside class="hidden lg:flex flex-col w-64 bg-slate-800/50 border-r border-slate-700/50 min-h-[calc(100vh-4rem)] sticky top-16">
-      <nav class="flex-1 p-4 space-y-2">
+    <aside class="hidden lg:flex flex-col w-64 bg-slate-800/50 border-r border-slate-700/50 fixed top-16 bottom-0 left-0">
+      <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
         <button onclick="showTab('dashboard')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500/20 text-emerald-400 font-medium transition-colors" data-tab="dashboard">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -331,8 +639,8 @@ const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
         </button>
       </nav>
 
-      <!-- Upgrade Card -->
-      <div class="p-4">
+      <!-- Upgrade Card - Pinned to bottom -->
+      <div class="p-4 mt-auto border-t border-slate-700/50 bg-slate-800/50">
         <div class="bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-2xl p-4 border border-emerald-500/30">
           <div class="text-sm font-semibold mb-1">Go Pro</div>
           <p class="text-xs text-slate-400 mb-3">Unlock advanced features and unlimited clients</p>
@@ -342,13 +650,13 @@ const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 lg:ml-64 min-h-[calc(100vh-4rem)]">
 
       <!-- Dashboard Tab -->
       <div id="tab-dashboard" class="tab-content">
         <!-- Welcome Section -->
         <div class="mb-8">
-          <h1 class="text-2xl sm:text-3xl font-bold mb-2">Good morning, Alex!</h1>
+          <h1 class="text-2xl sm:text-3xl font-bold mb-2">Good morning, Pawel!</h1>
           <p class="text-slate-400">You have <span class="text-emerald-400 font-semibold">{{ upcomingToday }} sessions</span> scheduled for today</p>
         </div>
 
@@ -412,9 +720,9 @@ const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
               <h2 class="font-semibold text-lg">Today's Schedule</h2>
               <button onclick="showTab('schedule')" class="text-sm text-emerald-400 hover:text-emerald-300 font-medium">View All</button>
             </div>
-            <div class="divide-y divide-slate-700/50">
+            <div>
               @foreach (todaySchedule as session)
-                <div class="p-4 hover:bg-slate-700/30 transition-colors">
+                <div class="p-4 hover:bg-slate-700/30 transition-colors border-b border-slate-700/50 last:border-b-0">
                   <div class="flex items-center gap-4">
                     <div class="text-center min-w-[60px]">
                       <div class="text-sm font-semibold">{{ session.time }}</div>
@@ -451,9 +759,9 @@ const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
             <div class="p-5 border-b border-slate-700/50">
               <h2 class="font-semibold text-lg">Recent Activity</h2>
             </div>
-            <div class="divide-y divide-slate-700/50">
+            <div>
               @foreach (recentActivity as activity)
-                <div class="p-4 flex items-start gap-3">
+                <div class="p-4 flex items-start gap-3 border-b border-slate-700/50 last:border-b-0">
                   <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0
                     @if (activity.type === 'workout') bg-emerald-500/20
                     @elseif(activity.type === 'milestone') bg-amber-500/20
@@ -744,9 +1052,9 @@ const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
         <div>
           <h2 class="text-xl font-bold mb-4">Exercise Library</h2>
           <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
-            <div class="divide-y divide-slate-700/50">
+            <div>
               @foreach (exercises as exercise)
-                <div class="p-4 flex items-center justify-between hover:bg-slate-700/30 transition-colors">
+                <div class="p-4 flex items-center justify-between hover:bg-slate-700/30 transition-colors border-b border-slate-700/50 last:border-b-0">
                   <div class="flex items-center gap-4">
                     <div class="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center">
                       <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -885,12 +1193,16 @@ const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
         <div class="grid lg:grid-cols-2 gap-6">
           <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-5">
             <h2 class="font-semibold text-lg mb-4">Weekly Sessions</h2>
-            <div class="flex items-end justify-between gap-2 h-32">
+            <div class="flex items-end gap-2" style="height: 100px;">
               @foreach (weekSessions as index => sessions)
-                <div class="flex-1 flex flex-col items-center gap-2">
-                  <div class="w-full rounded-t-lg transition-all" style="height: {{ (sessions / 6) * 100 }}%; background: linear-gradient(to top, #10b981, #06b6d4);"></div>
-                  <span class="text-xs text-slate-400">{{ weekDays[index] }}</span>
+                <div class="flex-1 h-full flex flex-col justify-end">
+                  <div class="w-full rounded-t-lg transition-all" style="height: {{ (sessions / 6) * 100 }}%; min-height: 4px; background: linear-gradient(to top, #10b981, #06b6d4);"></div>
                 </div>
+              @endforeach
+            </div>
+            <div class="flex justify-between gap-2 mt-2">
+              @foreach (weekDays as day)
+                <span class="flex-1 text-center text-xs text-slate-400">{{ day }}</span>
               @endforeach
             </div>
           </div>
@@ -943,27 +1255,25 @@ const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
           <div class="p-5 border-b border-slate-700/50">
             <h2 class="font-semibold text-lg">Top Performing Clients</h2>
           </div>
-          <div class="divide-y divide-slate-700/50">
-            @foreach (clients as index => client)
-              @if (index < 3)
-                <div class="p-4 flex items-center gap-4 hover:bg-slate-700/30 transition-colors">
-                  <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm
-                    @if (index === 0) bg-amber-500/20 text-amber-400
-                    @elseif(index === 1) bg-slate-400/20 text-slate-300
-                    @else bg-orange-500/20 text-orange-400
-                    @endif
-                  ">{{ index + 1 }}</div>
-                  <img src="{{ client.avatar }}" alt="{{ client.name }}" class="w-10 h-10 rounded-full object-cover" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'">
-                  <div class="flex-1">
-                    <div class="font-medium">{{ client.name }}</div>
-                    <div class="text-sm text-slate-400">{{ client.goal }}</div>
-                  </div>
-                  <div class="text-right">
-                    <div class="font-bold text-emerald-400">{{ client.progress }}%</div>
-                    <div class="text-xs text-slate-400">{{ client.streak }} day streak</div>
-                  </div>
+          <div>
+            @foreach (topClients as index => client)
+              <div class="p-4 flex items-center gap-4 hover:bg-slate-700/30 transition-colors border-b border-slate-700/50 last:border-b-0">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm
+                  @if (index === 0) bg-amber-500/20 text-amber-400
+                  @elseif(index === 1) bg-slate-400/20 text-slate-300
+                  @else bg-orange-500/20 text-orange-400
+                  @endif
+                ">{{ index + 1 }}</div>
+                <img src="{{ client.avatar }}" alt="{{ client.name }}" class="w-10 h-10 rounded-full object-cover" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'">
+                <div class="flex-1">
+                  <div class="font-medium">{{ client.name }}</div>
+                  <div class="text-sm text-slate-400">{{ client.goal }}</div>
                 </div>
-              @endif
+                <div class="text-right">
+                  <div class="font-bold text-emerald-400">{{ client.progress }}%</div>
+                  <div class="text-xs text-slate-400">{{ client.streak }} day streak</div>
+                </div>
+              </div>
             @endforeach
           </div>
         </div>
@@ -1020,9 +1330,9 @@ const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
       document.querySelectorAll('.nav-btn').forEach(btn => {
         if (btn.dataset.tab === tabName) {
           btn.classList.remove('text-slate-400', 'hover:bg-slate-700/50', 'hover:text-slate-200');
-          btn.classList.add('bg-emerald-500/20', 'text-emerald-400');
+          btn.classList.add('bg-emerald-500/20', 'text-emerald-400', 'font-medium');
         } else {
-          btn.classList.remove('bg-emerald-500/20', 'text-emerald-400');
+          btn.classList.remove('bg-emerald-500/20', 'text-emerald-400', 'font-medium');
           btn.classList.add('text-slate-400', 'hover:bg-slate-700/50', 'hover:text-slate-200');
         }
       });
@@ -1046,6 +1356,95 @@ const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
       toast.classList.remove('hidden');
       setTimeout(() => toast.classList.add('hidden'), 3000);
     }
+
+    // Profile Dropdown
+    function toggleProfileDropdown() {
+      const dropdown = document.getElementById('profile-dropdown');
+      dropdown.classList.toggle('hidden');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const container = document.getElementById('profile-dropdown-container');
+      const dropdown = document.getElementById('profile-dropdown');
+      if (container && !container.contains(event.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    // Theme Toggle
+    function toggleTheme() {
+      const body = document.body;
+      const isLight = body.classList.toggle('light');
+
+      // Update icon visibility
+      updateThemeIcons(isLight);
+
+      // Save preference to localStorage
+      localStorage.setItem('fitcoach-theme', isLight ? 'light' : 'dark');
+
+      // Show toast notification
+      showToast(isLight ? 'Switched to light mode ☀️' : 'Switched to dark mode 🌙');
+    }
+
+    // Update theme icons based on current theme
+    function updateThemeIcons(isLight) {
+      const sunIcon = document.getElementById('theme-icon-sun');
+      const moonIcon = document.getElementById('theme-icon-moon');
+      const toggleBtn = document.getElementById('theme-toggle-btn');
+      const notificationsBtn = document.getElementById('notifications-btn');
+
+      if (isLight) {
+        // Show moon icon (to switch back to dark)
+        sunIcon.classList.add('hidden');
+        moonIcon.classList.remove('hidden');
+
+        // Update button backgrounds for light mode
+        toggleBtn.classList.remove('bg-slate-700/50', 'hover:bg-slate-700');
+        toggleBtn.classList.add('bg-slate-200', 'hover:bg-slate-300');
+
+        if (notificationsBtn) {
+          notificationsBtn.classList.remove('bg-slate-700/50', 'hover:bg-slate-700');
+          notificationsBtn.classList.add('bg-slate-200', 'hover:bg-slate-300');
+          notificationsBtn.querySelector('svg').classList.remove('text-slate-300');
+          notificationsBtn.querySelector('svg').classList.add('text-slate-600');
+        }
+      } else {
+        // Show sun icon (to switch to light)
+        sunIcon.classList.remove('hidden');
+        moonIcon.classList.add('hidden');
+
+        // Update button backgrounds for dark mode
+        toggleBtn.classList.remove('bg-slate-200', 'hover:bg-slate-300');
+        toggleBtn.classList.add('bg-slate-700/50', 'hover:bg-slate-700');
+
+        if (notificationsBtn) {
+          notificationsBtn.classList.remove('bg-slate-200', 'hover:bg-slate-300');
+          notificationsBtn.classList.add('bg-slate-700/50', 'hover:bg-slate-700');
+          notificationsBtn.querySelector('svg').classList.remove('text-slate-600');
+          notificationsBtn.querySelector('svg').classList.add('text-slate-300');
+        }
+      }
+    }
+
+    // Initialize theme from localStorage on page load
+    function initTheme() {
+      const savedTheme = localStorage.getItem('fitcoach-theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+      // Use saved theme, or fall back to system preference, or default to dark
+      const shouldBeLight = savedTheme === 'light' || (!savedTheme && !prefersDark);
+
+      if (shouldBeLight) {
+        document.body.classList.add('light');
+      }
+
+      // Update icons to match initial state
+      updateThemeIcons(shouldBeLight);
+    }
+
+    // Run on page load
+    initTheme();
   </script>
 </body>
 </html>

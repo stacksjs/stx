@@ -7,7 +7,28 @@
  * - `@continue` - Skip to next iteration
  * - `@continue(condition)` - Skip if condition is true
  *
- * @example
+ * @foreach syntax variants:
+ * - `@foreach(items as item)` - Basic iteration
+ * - `@foreach(items as index => item)` - With index variable
+ *
+ * @example Basic iteration
+ * ```html
+ * @foreach(items as item)
+ *   {{ item.name }}
+ * @endforeach
+ * ```
+ *
+ * @example With index variable
+ * ```html
+ * @foreach(items as index => item)
+ *   {{ index }}: {{ item.name }}
+ *   @if(index === 0)
+ *     (first item)
+ *   @endif
+ * @endforeach
+ * ```
+ *
+ * @example With loop control
  * ```html
  * @foreach(items as item)
  *   @if(item.skip)
@@ -352,10 +373,31 @@ export function processLoops(template: string, context: Record<string, any>, fil
         // Get loop configuration (useAltLoopVar reserved for future use when exclusively using $loop)
         const _useAltLoopVar = options?.loops?.useAltLoopVariable ?? DEFAULT_USE_ALT_LOOP_VARIABLE
 
+        // Parse itemVar to check for index syntax: "index => item" or just "item"
+        const trimmedItemVar = itemVar.trim()
+        let indexName: string | null = null
+        let itemName: string
+
+        if (trimmedItemVar.includes('=>')) {
+          // Syntax: @foreach (items as index => item)
+          const parts = trimmedItemVar.split('=>').map(p => p.trim())
+          if (parts.length === 2) {
+            indexName = parts[0]
+            itemName = parts[1]
+          }
+          else {
+            // Invalid syntax, use the whole thing as item name
+            itemName = trimmedItemVar
+          }
+        }
+        else {
+          // Syntax: @foreach (items as item)
+          itemName = trimmedItemVar
+        }
+
         let loopResult = ''
         for (let index = 0; index < array.length; index++) {
           const item = array[index]
-          const itemName = itemVar.trim()
 
           // Create loop context object
           const loopContext = {
@@ -368,11 +410,16 @@ export function processLoops(template: string, context: Record<string, any>, fil
 
           // Create a new context with loop variable for this iteration
           // Always provide both loop and $loop for maximum compatibility
-          const itemContext = {
+          const itemContext: Record<string, any> = {
             ...ctx,
             [itemName]: item,
             loop: loopContext,
             $loop: loopContext, // Alternative name to avoid conflicts with user's 'loop' variable
+          }
+
+          // Add index variable if using "index => item" syntax
+          if (indexName) {
+            itemContext[indexName] = index
           }
 
           // Step 1: Process conditional @break(condition) and @continue(condition)

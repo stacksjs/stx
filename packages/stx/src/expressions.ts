@@ -532,32 +532,26 @@ export function processExpressions(template: string, context: Record<string, any
       return ''
     }
 
-    // For signal-based templates, preserve expressions that reference runtime variables
-    // This includes loop variables (page, event, etc.) and component-defined functions (fmt, etc.)
-    if (hasSignals && !expressionUsesOnlyContextVars(trimmedExpr, context)) {
-      return match // Preserve for runtime evaluation
-    }
-
-    // Preserve signal-like expressions for client-side processing
-    if (isLikelySignal) {
-      return match
-    }
-
+    // Try evaluation first - this allows user-defined helper functions to work
+    // Only preserve for client-side if evaluation fails AND it looks like a signal
     try {
       const value = evaluateExpression(expr, context)
       // Escape HTML for security
       return value !== undefined && value !== null ? escapeHtml(String(value)) : ''
     }
     catch (error: unknown) {
+      // For signal-based templates, preserve expressions that reference runtime variables
+      // This includes loop variables (page, event, etc.) and component-defined functions (fmt, etc.)
+      if (hasSignals && !expressionUsesOnlyContextVars(trimmedExpr, context)) {
+        return match // Preserve for runtime evaluation
+      }
+
       // If evaluation fails and it looks like a client-side signal,
       // preserve the expression for client-side processing
       if (isLikelySignal) {
         return match
       }
-      // For signal templates, preserve the expression instead of showing error
-      if (hasSignals) {
-        return match
-      }
+
       const msg = error instanceof Error ? error.message : String(error)
       return createDetailedErrorMessage(
         'Expression',

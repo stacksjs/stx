@@ -518,4 +518,59 @@ describe('stx Loop Directives', () => {
     expect(outputHtml).toContain('<li>4</li>')
     expect(outputHtml).toContain('<li>5</li>')
   })
+
+  // Test @foreach with index syntax (index => item)
+  it('should process @foreach with index => item syntax', async () => {
+    const testFile = await createTestFile('foreach-index-syntax.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Foreach Index Syntax Test</title>
+        <script>
+          module.exports = {
+            days: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+            sessions: [4, 5, 3, 6, 4]
+          };
+        </script>
+      </head>
+      <body>
+        <!-- Basic index usage -->
+        <ul id="indexed-list">
+          @foreach (days as idx => day)
+            <li data-index="{{ idx }}">{{ day }}</li>
+          @endforeach
+        </ul>
+
+        <!-- Using index to access parallel array -->
+        <ul id="parallel-list">
+          @foreach (sessions as index => count)
+            <li>{{ days[index] }}: {{ count }} sessions</li>
+          @endforeach
+        </ul>
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin()],
+    })
+
+    const outputHtml = await getHtmlOutput(result)
+
+    // Check basic index usage
+    expect(outputHtml).toContain('<li data-index="0">Mon</li>')
+    expect(outputHtml).toContain('<li data-index="1">Tue</li>')
+    expect(outputHtml).toContain('<li data-index="2">Wed</li>')
+    expect(outputHtml).toContain('<li data-index="3">Thu</li>')
+    expect(outputHtml).toContain('<li data-index="4">Fri</li>')
+
+    // Check parallel array access
+    expect(outputHtml).toContain('<li>Mon: 4 sessions</li>')
+    expect(outputHtml).toContain('<li>Tue: 5 sessions</li>')
+    expect(outputHtml).toContain('<li>Wed: 3 sessions</li>')
+    expect(outputHtml).toContain('<li>Thu: 6 sessions</li>')
+    expect(outputHtml).toContain('<li>Fri: 4 sessions</li>')
+  })
 })
