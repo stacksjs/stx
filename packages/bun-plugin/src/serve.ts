@@ -14,6 +14,7 @@
 
 import { serve as bunServe, Glob } from 'bun'
 import process from 'node:process'
+import { loadConfig } from 'bunfig'
 
 export interface ServeOptions {
   patterns: string[]
@@ -23,12 +24,31 @@ export interface ServeOptions {
   partialsDir?: string
 }
 
+// Default STX config for serving - matches @stacksjs/stx defaults
+const defaultStxConfig = {
+  partialsDir: 'partials',
+  componentsDir: 'components',
+  layoutsDir: 'layouts',
+}
+
 /**
  * Start the STX development server
  * @param options Server options with patterns and port
  */
 export async function serve(options: ServeOptions): Promise<void> {
-  const { patterns, port = 3456, componentsDir, layoutsDir, partialsDir } = options
+  // Load STX config via bunfig - supports stx.config.ts, .stx.config.ts, etc.
+  const stxConfig = await loadConfig({
+    name: 'stx',
+    cwd: process.cwd(),
+    defaultConfig: defaultStxConfig,
+  })
+
+  // Options passed directly take precedence, then bunfig config, then defaults
+  const componentsDir = options.componentsDir ?? stxConfig.componentsDir ?? defaultStxConfig.componentsDir
+  const layoutsDir = options.layoutsDir ?? stxConfig.layoutsDir ?? defaultStxConfig.layoutsDir
+  const partialsDir = options.partialsDir ?? stxConfig.partialsDir ?? defaultStxConfig.partialsDir
+
+  const { patterns, port = 3456 } = options
 
   if (patterns.length === 0) {
     console.error('Usage: serve <files...> [--port 3000]')
@@ -108,41 +128,43 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
   }
 
-  // Headwind CSS lazy loading
-  let headwindModule: { CSSGenerator: any, config: any } | null = null
-  let headwindLoadAttempted = false
+  // Crosswind CSS lazy loading
+  let crosswindModule: { CSSGenerator: any, config: any } | null = null
+  let crosswindLoadAttempted = false
 
-  async function loadHeadwind(): Promise<{ CSSGenerator: any, config: any } | null> {
-    if (headwindLoadAttempted)
-      return headwindModule
-    headwindLoadAttempted = true
+  async function loadCrosswind(): Promise<{ CSSGenerator: any, config: any } | null> {
+    if (crosswindLoadAttempted)
+      return crosswindModule
+    crosswindLoadAttempted = true
 
     try {
-      const mod = await import('@stacksjs/headwind')
-      headwindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
-      console.log('✅ Headwind CSS engine loaded')
-      return headwindModule
+      // Try the npm package first
+      const mod = await import('@cwcss/crosswind')
+      crosswindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
+      console.log('✅ Crosswind CSS engine loaded')
+      return crosswindModule
     }
     catch {
       try {
+        // Fallback to local development path
         const nodePath = await import('node:path')
-        const localPath = nodePath.join(process.env.HOME || '', 'Code/headwind/packages/headwind/src/index.ts')
+        const localPath = nodePath.join(process.env.HOME || '', 'Code/Tools/crosswind/packages/crosswind/src/index.ts')
         const mod = await import(localPath)
-        headwindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
-        console.log('✅ Headwind CSS engine loaded from local path')
-        return headwindModule
+        crosswindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
+        console.log('✅ Crosswind CSS engine loaded from local path')
+        return crosswindModule
       }
       catch {
-        console.warn('⚠️ Headwind CSS engine not available')
+        console.warn('⚠️ Crosswind CSS engine not available')
         return null
       }
     }
   }
 
-  async function generateHeadwindCSS(htmlContent: string): Promise<string> {
+  async function generateCrosswindCSS(htmlContent: string): Promise<string> {
     try {
-      const hw = await loadHeadwind()
-      if (!hw)
+      const cw = await loadCrosswind()
+      if (!cw)
         return ''
 
       const classRegex = /class\s*=\s*["']([^"']+)["']/gi
@@ -159,14 +181,14 @@ export async function serve(options: ServeOptions): Promise<void> {
       if (classes.size === 0)
         return ''
 
-      const generator = new hw.CSSGenerator({ ...hw.config, preflight: true, minify: false })
+      const generator = new cw.CSSGenerator({ ...cw.config, preflight: true, minify: false })
       for (const className of classes) {
         generator.generate(className)
       }
       return generator.toCSS(true, false)
     }
     catch (error) {
-      console.warn('Failed to generate Headwind CSS:', error)
+      console.warn('Failed to generate Crosswind CSS:', error)
       return ''
     }
   }
@@ -206,10 +228,10 @@ export async function serve(options: ServeOptions): Promise<void> {
     // STX uses <template> in source but output should be renderable HTML
     output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
 
-    // Generate and inject Headwind CSS
-    const headwindCSS = await generateHeadwindCSS(output)
-    if (headwindCSS) {
-      const styleTag = `<style>/* headwind css */\n${headwindCSS}</style>`
+    // Generate and inject Crosswind CSS
+    const crosswindCSS = await generateCrosswindCSS(output)
+    if (crosswindCSS) {
+      const styleTag = `<style>/* crosswind css */\n${crosswindCSS}</style>`
       if (output.includes('</head>')) {
         output = output.replace('</head>', `${styleTag}\n</head>`)
       }
@@ -247,9 +269,17 @@ export async function serve(options: ServeOptions): Promise<void> {
     }
 
     // Strategy 2: Look for index files in directory
-    possibleFiles.push(`${normalizedPath}/index.stx`)
-    possibleFiles.push(`${normalizedPath}/index.md`)
-    possibleFiles.push(`${normalizedPath}/index.html`)
+    // For root path (empty normalizedPath), use index.* directly without leading slash
+    if (normalizedPath === '') {
+      possibleFiles.push('index.stx')
+      possibleFiles.push('index.md')
+      possibleFiles.push('index.html')
+    }
+    else {
+      possibleFiles.push(`${normalizedPath}/index.stx`)
+      possibleFiles.push(`${normalizedPath}/index.md`)
+      possibleFiles.push(`${normalizedPath}/index.html`)
+    }
 
     // Strategy 3: Simple filename match (legacy behavior)
     const filename = nodePath.basename(normalizedPath, nodePath.extname(normalizedPath))
@@ -294,11 +324,16 @@ export async function serve(options: ServeOptions): Promise<void> {
       const fileRoute = relativeFilePath.replace(/\.(stx|md|html)$/, '')
 
       // Check various possible route formats
+      // Special case: index files should map to root path
+      const isIndexFile = fileRoute === 'index' || fileRoute.endsWith('/index')
+      const isRootRequest = requestPath === '/' || normalizedPath === ''
+
       if (`/${fileRoute}` === requestPath ||
           fileRoute === normalizedPath ||
           `/${fileRoute}.stx` === requestPath ||
           `/${fileRoute}.md` === requestPath ||
-          `/${fileRoute}.html` === requestPath) {
+          `/${fileRoute}.html` === requestPath ||
+          (isIndexFile && isRootRequest)) {
         const output = await processTemplate(filePath)
         routes.set(requestPath, output)
         return output
@@ -414,9 +449,9 @@ export async function serve(options: ServeOptions): Promise<void> {
 
     output = output.replace(/<template[^>]*>/gi, '').replace(/<\/template>/gi, '')
 
-    const headwindCSS = await generateHeadwindCSS(output)
-    if (headwindCSS) {
-      const styleTag = `<style>/* headwind css */\n${headwindCSS}</style>`
+    const crosswindCSS = await generateCrosswindCSS(output)
+    if (crosswindCSS) {
+      const styleTag = `<style>/* crosswind css */\n${crosswindCSS}</style>`
       if (output.includes('</head>')) {
         output = output.replace('</head>', `${styleTag}\n</head>`)
       }
