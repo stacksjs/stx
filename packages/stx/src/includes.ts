@@ -73,7 +73,7 @@ import { processExpressions } from './expressions'
 import { LRUCache } from './performance-utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
 import { transformStoreImports } from './state-management'
-import { createDetailedErrorMessage, fileExists } from './utils'
+import { createDetailedErrorMessage, fileExists, isTypeScriptScript, transpileTypeScript } from './utils'
 
 // =============================================================================
 // Signal Script Processing for Included Components
@@ -713,10 +713,17 @@ export async function processIncludes(
 
       for (const scriptMatch of scriptMatches) {
         const scriptAttrs = scriptMatch[1] || ''
-        const scriptContent = scriptMatch[2] || ''
+        let scriptContent = scriptMatch[2] || ''
 
         const isServerScript = scriptAttrs.includes('server')
         const isClientScript = scriptAttrs.includes('client') || scriptAttrs.includes('type="module"')
+        const isTsScript = isTypeScriptScript(scriptAttrs)
+
+        // Transpile TypeScript if needed
+        if (isTsScript && scriptContent.trim()) {
+          scriptContent = transpileTypeScript(scriptContent)
+        }
+
         const isSignalScript = hasSignalApis(scriptContent)
 
         // Handle signal scripts - transform them for client-side reactivity

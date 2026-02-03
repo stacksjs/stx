@@ -29,7 +29,7 @@ import { performanceMonitor } from './performance-utils'
 import { processRouteDirectives } from './routes'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
 import { transformStoreImports } from './state-management'
-import { renderComponentWithSlot, resolveTemplatePath } from './utils'
+import { isTypeScriptScript, renderComponentWithSlot, resolveTemplatePath, transpileTypeScript } from './utils'
 import { runComposers } from './view-composers'
 import { generateSignalsRuntime, generateSignalsRuntimeDev } from './signals'
 
@@ -290,15 +290,23 @@ function convertSignalLoopsToAttributes(template: string): string {
 function processScriptSetup(template: string): { output: string, setupCode: string | null } {
   // Find client-side scripts (not server, not src, not type=module for external, not already scoped)
   // Scripts with data-stx-scoped are already wrapped by component processing
-  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)[^>]*>([\s\S]*?)<\/script>/gi
+  // Capture attributes to check for TypeScript
+  const scriptRegex = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)([^>]*)>([\s\S]*?)<\/script>/gi
   let match: RegExpExecArray | null
-  let signalScript: { fullMatch: string, content: string } | null = null
+  let signalScript: { fullMatch: string, attrs: string, content: string } | null = null
 
   while ((match = scriptRegex.exec(template)) !== null) {
-    const content = match[1]
+    const attrs = match[1]
+    let content = match[2]
+
+    // Transpile TypeScript if needed
+    if (isTypeScriptScript(attrs)) {
+      content = transpileTypeScript(content)
+    }
+
     // Check if this script uses signal APIs
     if (/\b(state|derived|effect)\s*\(/.test(content)) {
-      signalScript = { fullMatch: match[0], content }
+      signalScript = { fullMatch: match[0], attrs, content }
       break
     }
   }
@@ -1744,15 +1752,29 @@ async function processOtherDirectives(
 
   // Transform <script client> blocks: resolve @stores imports, inject event
   // bindings into the script scope, and auto-wrap in a scoped IIFE
+  // Also handles <script client ts> or <script client lang="ts"> for TypeScript
   const eventBindings = (context.__stx_event_bindings || []) as import('./events').ParsedEvent[]
   let clientScriptsTransformed = false
-  output = output.replace(/<script\s+client\b([^>]*)>([\s\S]*?)<\/script>/gi, (_match, _attrs, content) => {
-    clientScriptsTransformed = true
-    // Validate client scripts for prohibited patterns
-    validateClientScript(content, filePath)
-
-    return processClientScript(content, { eventBindings })
+  const clientScriptMatches: { match: string, attrs: string, content: string }[] = []
+  output.replace(/<script\s+client\b([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs, content) => {
+    clientScriptMatches.push({ match, attrs, content })
+    return match
   })
+
+  for (const { match, attrs, content } of clientScriptMatches) {
+    clientScriptsTransformed = true
+    let processedContent = content
+
+    // Transpile TypeScript if needed
+    if (isTypeScriptScript(attrs)) {
+      processedContent = transpileTypeScript(content)
+    }
+
+    // Validate client scripts for prohibited patterns
+    validateClientScript(processedContent, filePath)
+
+    output = output.replace(match, processClientScript(processedContent, { eventBindings }))
+  }
   // Only clear event bindings if scripts were found and transformed.
   // When processing a component whose scripts were extracted separately
   // (e.g., renderComponentWithSlot), bindings must be preserved for the caller.

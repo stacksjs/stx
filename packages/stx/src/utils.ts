@@ -45,6 +45,33 @@ export {
 const componentsCache = new LRUCache<string, string>(500)
 
 /**
+ * Check if script attributes indicate TypeScript
+ * Supports: <script ts>, <script lang="ts">, <script lang="typescript">
+ */
+export function isTypeScriptScript(attrs: string): boolean {
+  // Check for standalone 'ts' attribute or lang="ts"/lang="typescript"
+  return /\bts\b/.test(attrs) || /\blang\s*=\s*["']?(ts|typescript)["']?/i.test(attrs)
+}
+
+/**
+ * Transpile TypeScript code to JavaScript using Bun (sync version)
+ */
+export function transpileTypeScript(code: string): string {
+  try {
+    // Use Bun's transpiler directly for inline code
+    const transpiler = new Bun.Transpiler({
+      loader: 'ts',
+      target: 'browser',
+    })
+    return transpiler.transformSync(code)
+  }
+  catch (e) {
+    console.warn('[STX] TypeScript transpilation error:', e)
+    return code // Return original on error
+  }
+}
+
+/**
  * Extract variable names from JavaScript code for scope registration
  * Only extracts TOP-LEVEL declarations, not variables inside nested functions
  */
@@ -405,10 +432,16 @@ export async function renderComponentWithSlot(
 
     for (const match of scriptMatches) {
       const attrs = match[1] || ''
-      const content = match[2] || ''
+      let content = match[2] || ''
 
       const isServerScript = attrs.includes('server')
       const isClientOnlyScript = attrs.includes('client') || attrs.includes('type="module"')
+      const isTsScript = isTypeScriptScript(attrs)
+
+      // Transpile TypeScript if needed
+      if (isTsScript && content.trim()) {
+        content = transpileTypeScript(content)
+      }
 
       // Extract variables from server scripts (or scripts without client marker)
       if (!isClientOnlyScript && content) {
@@ -424,7 +457,9 @@ export async function renderComponentWithSlot(
       if (!isServerScript) {
         // Strip any existing signal destructuring - it will be added by the scope wrapper
         let cleanContent = content.replace(/^\s*const\s*\{[^}]+\}\s*=\s*window\.stx\s*;?\s*\n?/gm, '')
-        clientScripts.push(`<script${attrs}>${cleanContent}</script>`)
+        // Remove ts/lang attributes from output since it's now JavaScript
+        const cleanAttrs = attrs.replace(/\s*\bts\b/g, '').replace(/\s*\blang\s*=\s*["']?(ts|typescript)["']?/gi, '')
+        clientScripts.push(`<script${cleanAttrs}>${cleanContent}</script>`)
       }
     }
 
