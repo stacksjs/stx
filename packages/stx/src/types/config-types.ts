@@ -465,6 +465,8 @@ export interface StxConfig {
   skipDefaultSeoTags?: boolean
   /** Skip injecting signals runtime (for nested component processing) */
   skipSignalsRuntime?: boolean
+  /** Skip event directive processing (for signal components where runtime handles @click etc.) */
+  skipEventDirectives?: boolean
   /** Markdown configuration */
   markdown?: Partial<MarkdownConfig>
   /** Loop directive configuration */

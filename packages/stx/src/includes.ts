@@ -72,6 +72,7 @@ import { processConditionals } from './conditionals'
 import { processExpressions } from './expressions'
 import { LRUCache } from './performance-utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
+import { transformStoreImports } from './state-management'
 import { createDetailedErrorMessage, fileExists } from './utils'
 
 // =============================================================================
@@ -723,9 +724,11 @@ export async function processIncludes(
           // Generate unique scope ID for this component
           signalScopeId = `stx_scope_${path.basename(includeFilePath, '.stx').replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeIdCounter}`
 
+          // Transform store imports before IIFE wrapping (import statements can't be inside functions)
+          const resolvedContent = transformStoreImports(scriptContent)
           // Transform the script to register scope variables
           // Add data-stx-scoped attribute to prevent re-processing by processScriptSetup
-          const transformedScript = transformSignalScript(scriptContent, signalScopeId)
+          const transformedScript = transformSignalScript(resolvedContent, signalScopeId)
           preservedScript += `<script data-stx-scoped>${transformedScript}</script>\n`
           continue
         }

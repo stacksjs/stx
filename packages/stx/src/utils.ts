@@ -18,6 +18,7 @@ import process from 'node:process'
 // Import from expressions
 import { processClientScript } from './client-script'
 import { unescapeHtml } from './expressions'
+import { transformStoreImports } from './state-management'
 import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
 
@@ -120,6 +121,19 @@ function extractVariableNames(code: string): string[] {
   // Check for variable declaration at current position (only at depth 0)
   const checkDeclaration = (): void => {
     if (depth !== 0) return
+
+    // Check for destructuring declarations: const { a, b } = or const [a, b] =
+    const destructMatch = code.slice(i).match(/^(const|let|var)\s*\{([^}]+)\}\s*=/)
+    if (destructMatch) {
+      const vars = destructMatch[2].split(',').map(v => v.trim().split(':')[0].trim())
+      for (const varName of vars) {
+        if (varName && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(varName) && !seen.has(varName)) {
+          names.push(varName)
+          seen.add(varName)
+        }
+      }
+      return
+    }
 
     // Check for const/let/var declarations
     const declMatch = code.slice(i).match(/^(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/)
@@ -409,7 +423,7 @@ export async function renderComponentWithSlot(
       // Preserve client scripts (non-server scripts)
       if (!isServerScript) {
         // Strip any existing signal destructuring - it will be added by the scope wrapper
-        let cleanContent = content.replace(/^\s*const\s*\{\s*state\s*,\s*derived\s*,\s*effect\s*,\s*batch\s*,\s*onMount\s*,\s*onDestroy\s*\}\s*=\s*window\.stx\s*;?\s*\n?/gm, '')
+        let cleanContent = content.replace(/^\s*const\s*\{[^}]+\}\s*=\s*window\.stx\s*;?\s*\n?/gm, '')
         clientScripts.push(`<script${attrs}>${cleanContent}</script>`)
       }
     }
@@ -458,12 +472,18 @@ export async function renderComponentWithSlot(
       }
     }
 
+    // Check if component has signal scripts - if so, skip event directive processing
+    // because the runtime will handle @click, @keydown etc. via processElement()
+    const hasSignalScripts = clientScripts.some(s => /\b(state|derived|effect)\s*\(/.test(s))
+
     // First, process any nested components in this component
     const componentOptions = {
       ...options,
       componentsDir: path.dirname(componentFilePath),
       // Skip runtime injection for nested components - parent will inject it
       skipSignalsRuntime: true,
+      // Skip event directive processing for signal components - runtime handles @click etc.
+      skipEventDirectives: hasSignalScripts,
     }
 
     // Process the component content recursively with the new context
@@ -473,7 +493,7 @@ export async function renderComponentWithSlot(
     const scopeId = `stx_${baseName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 
     // Wrap component in a scope container if it has client scripts with signals
-    const hasSignalScripts = clientScripts.some(s => /\b(state|derived|effect)\s*\(/.test(s))
+    // (hasSignalScripts already computed above for componentOptions)
     let output = result
 
     if (hasSignalScripts) {
@@ -486,7 +506,9 @@ export async function renderComponentWithSlot(
         const scriptMatch = script.match(/<script([^>]*)>([\s\S]*)<\/script>/i)
         if (!scriptMatch) return script
 
-        const [, attrs, content] = scriptMatch
+        const [, attrs, rawContent] = scriptMatch
+        // Transform store imports before IIFE wrapping (import statements can't be inside functions)
+        const content = transformStoreImports(rawContent)
         // Wrap script content to register in scope
         // Add data-stx-scoped attribute to prevent double-processing by processScriptSetup
         const wrappedContent = `
@@ -513,11 +535,12 @@ ${content}
         return `<script data-stx-scoped${attrs}>${wrappedContent}</script>`
       })
 
-      // Append preserved style and scoped scripts
+      // Prepend scoped scripts BEFORE HTML so scope is registered before DOMContentLoaded processes elements
+      // Append preserved style after HTML
+      output = scopedScripts.join('\n') + '\n' + output
       if (preservedStyle) {
         output += '\n' + preservedStyle
       }
-      output += '\n' + scopedScripts.join('\n')
     } else {
       // No signals, transform and append style and scripts
       if (preservedStyle) {

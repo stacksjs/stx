@@ -28,6 +28,7 @@ import { runPostProcessingMiddleware, runPreProcessingMiddleware } from './middl
 import { performanceMonitor } from './performance-utils'
 import { processRouteDirectives } from './routes'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
+import { transformStoreImports } from './state-management'
 import { renderComponentWithSlot, resolveTemplatePath } from './utils'
 import { runComposers } from './view-composers'
 import { generateSignalsRuntime, generateSignalsRuntimeDev } from './signals'
@@ -308,13 +309,16 @@ function processScriptSetup(template: string): { output: string, setupCode: stri
 
   const setupFnName = `__stx_setup_${Date.now()}`
 
+  // Transform store imports before wrapping in function (import statements can't be inside functions)
+  const resolvedContent = transformStoreImports(signalScript.content)
+
   // Generate the setup function that provides signal APIs
   const setupCode = `
 <script>
 function ${setupFnName}() {
   const { state, derived, effect, batch, onMount, onDestroy } = window.stx;
-${signalScript.content}
-  return { ${extractExports(signalScript.content)} };
+${resolvedContent}
+  return { ${extractExports(resolvedContent)} };
 }
 </script>`
 
@@ -1623,7 +1627,10 @@ async function processOtherDirectives(
   output = processOnceDirective(output)
 
   // Process event directives (@click, @keydown.enter, etc.) - Alpine-style events
-  output = processEventDirectives(output, context, filePath)
+  // Skip for signal components - runtime handles @click etc. via processElement()
+  if (!opts.skipEventDirectives) {
+    output = processEventDirectives(output, context, filePath)
+  }
 
   // Process reactive directives (x-data, x-model, x-show, etc.) - Alpine-style reactivity
   output = processReactiveDirectives(output, context, filePath)
