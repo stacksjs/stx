@@ -367,22 +367,25 @@ export async function extractVariables(
     const convertedScript = convertToCommonJS(jsContent)
 
     // Execute with context variables available
-    const contextKeys = Object.keys(context)
-    const contextValues = Object.values(context)
+    // IMPORTANT: Filter out keys that are also in props to avoid duplicate variable declarations
+    // when scripts use defineProps/withDefaults pattern like: const { title } = withDefaults(defineProps(), {...})
+    const propsKeys = new Set(Object.keys(propsObj))
+    const filteredContextKeys = Object.keys(context).filter(key => !propsKeys.has(key) && key !== 'props')
+    const filteredContextValues = filteredContextKeys.map(key => context[key])
 
     // eslint-disable-next-line no-new-func
     const scriptFn = new Function(
       'module', 'exports', 'require', '$props', 'defineProps', 'withDefaults',
       'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy',
       'window', 'document', 'console', 'confirm', 'alert', 'fetch',
-      ...contextKeys,
+      ...filteredContextKeys,
       convertedScript
     )
     scriptFn(
       module, exports, requireFn, $props, defineProps, withDefaults,
       state, derived, effect, batch, onMount, onDestroy,
       windowProxy, mockDocument, mockConsole, mockWindow.confirm, mockWindow.alert, mockWindow.fetch,
-      ...contextValues
+      ...filteredContextValues
     )
 
     // Copy results to context

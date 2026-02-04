@@ -1493,6 +1493,10 @@ async function processOtherDirectives(
   // Process built-in STX components
   output = await processBuiltInComponents(output, context, filePath, opts)
 
+  // Process loops FIRST - BEFORE components so that loop variables are evaluated
+  // when components are processed, not after components have already been expanded
+  output = processLoops(output, context, filePath, opts)
+
   // Process component directives (opts has already-resolved paths)
   if (opts.componentsDir) {
     // Process @component directives
@@ -1587,8 +1591,8 @@ async function processOtherDirectives(
     output = convertSignalLoopsToAttributes(output)
   }
 
-  // Process loops (@foreach, @for, etc.) - BEFORE conditionals to handle nested scope properly
-  output = processLoops(output, context, filePath, opts)
+  // Note: Loop processing moved earlier, before component processing
+  // This ensures loop variables like 'trail' are available when components are rendered
 
   // Process conditionals (@if, @unless, etc.) - AFTER loops to allow loop variables in scope
   output = processConditionals(output, context, filePath)
@@ -2060,7 +2064,29 @@ async function processCustomElements(
           continue
         }
 
-        // Handle Vue-style :prop="expression" binding
+        // Handle pre-evaluated props from loop processing (__stx_propName="serialized_json")
+        // These were evaluated at loop iteration time and serialized as JSON
+        if (attrName.startsWith('__stx_')) {
+          const propName = attrName.slice(6) // Remove __stx_ prefix
+          try {
+            // Unescape HTML entities and parse JSON
+            const unescaped = (attrValue as string)
+              .replace(/&quot;/g, '"')
+              .replace(/&lt;/g, '<')
+              .replace(/&gt;/g, '>')
+              .replace(/&amp;/g, '&')
+            props[propName] = JSON.parse(unescaped)
+          }
+          catch (error) {
+            if (options.debug) {
+              console.error(`Error parsing __stx_${propName}:`, error)
+            }
+            props[propName] = attrValue
+          }
+          continue
+        }
+
+        // Handle :prop="expression" dynamic binding
         if (attrName.startsWith(':')) {
           const propName = attrName.slice(1) // Remove the : prefix
           try {
