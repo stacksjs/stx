@@ -84,8 +84,11 @@ export * from './signals'
 
 // These modules are exported first to establish their types
 export * from './utils'
-export * from './testing'
 export * from './slots'
+
+// Testing module - has overlapping 'render' export with ssr
+// Import from stx/testing directly if needed
+// export * from './testing'
 
 // Server components - has overlapping exports (RenderResult, clearComponentCache)
 // Import from stx/server-components directly if needed

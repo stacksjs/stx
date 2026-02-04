@@ -51,7 +51,7 @@ describe('Feature #2: Pipe syntax for formatters', () => {
   it('should parse pipe expressions with regex', () => {
     const runtime = generateSignalsRuntimeDev()
     // Check for pipe parsing pattern
-    expect(runtime).toContain('pipeMatch')
+    expect(runtime).toContain('pipeIndex')
     expect(runtime).toContain('pipeChain')
   })
 

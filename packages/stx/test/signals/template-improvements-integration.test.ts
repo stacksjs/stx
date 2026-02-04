@@ -16,8 +16,8 @@ describe('Template Improvements Integration', () => {
 
     it('should support chained pipes', () => {
       const runtime = generateSignalsRuntimeDev()
-      // Verify pipe parsing supports chains
-      expect(runtime).toContain('pipeChain.split')
+      // Verify pipe parsing supports chains (iterates over pipeChain)
+      expect(runtime).toContain('pipeChain.length')
     })
   })
 

@@ -75,8 +75,8 @@ describe('Component scoping', () => {
     it('should pass element to toValue for scope lookup', () => {
       const runtime = generateSignalsRuntimeDev()
 
-      // toValue should accept el parameter
-      expect(runtime).toContain('function toValue(expr, el)')
+      // toValue should accept el parameter (with optional enableAutoUnwrap)
+      expect(runtime).toContain('function toValue(expr, el, enableAutoUnwrap')
     })
 
     it('should pass element to executeHandler for scope lookup', () => {
