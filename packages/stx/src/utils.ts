@@ -45,12 +45,21 @@ export {
 const componentsCache = new LRUCache<string, string>(500)
 
 /**
- * Check if script attributes indicate TypeScript
- * Supports: <script ts>, <script lang="ts">, <script lang="typescript">
+ * Check if script should be treated as plain JavaScript (opt-out from TypeScript)
+ * By default ALL scripts are TypeScript. Use <script js> or <script lang="js"> to opt-out.
  */
-export function isTypeScriptScript(attrs: string): boolean {
-  // Check for standalone 'ts' attribute or lang="ts"/lang="typescript"
-  return /\bts\b/.test(attrs) || /\blang\s*=\s*["']?(ts|typescript)["']?/i.test(attrs)
+export function isJavaScriptScript(attrs: string): boolean {
+  // Check for explicit JS opt-out: js attribute or lang="js"/lang="javascript"
+  return /\bjs\b/.test(attrs) || /\blang\s*=\s*["']?(js|javascript)["']?/i.test(attrs)
+}
+
+/**
+ * Check if script should be transpiled as TypeScript
+ * Default: ALL scripts are TypeScript unless explicitly marked as JS
+ */
+export function shouldTranspileTypeScript(attrs: string): boolean {
+  // Skip transpilation only if explicitly marked as JavaScript
+  return !isJavaScriptScript(attrs)
 }
 
 /**
@@ -436,10 +445,10 @@ export async function renderComponentWithSlot(
 
       const isServerScript = attrs.includes('server')
       const isClientOnlyScript = attrs.includes('client') || attrs.includes('type="module"')
-      const isTsScript = isTypeScriptScript(attrs)
+      const shouldTranspile = shouldTranspileTypeScript(attrs)
 
       // Transpile TypeScript if needed
-      if (isTsScript && content.trim()) {
+      if (shouldTranspile && content.trim()) {
         content = transpileTypeScript(content)
       }
 

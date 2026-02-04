@@ -29,7 +29,7 @@ import { performanceMonitor } from './performance-utils'
 import { processRouteDirectives } from './routes'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
 import { transformStoreImports } from './state-management'
-import { isTypeScriptScript, renderComponentWithSlot, resolveTemplatePath, transpileTypeScript } from './utils'
+import { renderComponentWithSlot, resolveTemplatePath, shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { runComposers } from './view-composers'
 import { generateSignalsRuntime, generateSignalsRuntimeDev } from './signals'
 
@@ -300,7 +300,7 @@ function processScriptSetup(template: string): { output: string, setupCode: stri
     let content = match[2]
 
     // Transpile TypeScript if needed
-    if (isTypeScriptScript(attrs)) {
+    if (shouldTranspileTypeScript(attrs)) {
       content = transpileTypeScript(content)
     }
 
@@ -1770,7 +1770,7 @@ async function processOtherDirectives(
     let processedContent = content
 
     // Transpile TypeScript if needed
-    if (isTypeScriptScript(attrs)) {
+    if (shouldTranspileTypeScript(attrs)) {
       processedContent = transpileTypeScript(content)
     }
 

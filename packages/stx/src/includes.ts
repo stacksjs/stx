@@ -73,7 +73,7 @@ import { processExpressions } from './expressions'
 import { LRUCache } from './performance-utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
 import { transformStoreImports } from './state-management'
-import { createDetailedErrorMessage, fileExists, isTypeScriptScript, transpileTypeScript } from './utils'
+import { createDetailedErrorMessage, fileExists, shouldTranspileTypeScript, transpileTypeScript } from './utils'
 
 // =============================================================================
 // Signal Script Processing for Included Components
@@ -717,10 +717,10 @@ export async function processIncludes(
 
         const isServerScript = scriptAttrs.includes('server')
         const isClientScript = scriptAttrs.includes('client') || scriptAttrs.includes('type="module"')
-        const isTsScript = isTypeScriptScript(scriptAttrs)
+        const shouldTranspile = shouldTranspileTypeScript(scriptAttrs)
 
         // Transpile TypeScript if needed
-        if (isTsScript && scriptContent.trim()) {
+        if (shouldTranspile && scriptContent.trim()) {
           scriptContent = transpileTypeScript(scriptContent)
         }
 
