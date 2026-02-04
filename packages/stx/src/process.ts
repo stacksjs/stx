@@ -2086,12 +2086,16 @@ async function processCustomElements(
           continue
         }
 
-        // Handle :prop="expression" dynamic binding
+        // Handle :prop="expression" or :prop (shorthand) dynamic binding
+        // Shorthand syntax: :propName is equivalent to :propName="propName"
         if (attrName.startsWith(':')) {
           const propName = attrName.slice(1) // Remove the : prefix
+          // If value is 'true' (boolean attribute), use shorthand syntax
+          // :trail becomes :trail="trail"
+          const expression = attrValue === 'true' ? propName : attrValue
           try {
             // eslint-disable-next-line no-new-func
-            const valueFn = new Function(...Object.keys(context), `return ${attrValue}`)
+            const valueFn = new Function(...Object.keys(context), `return ${expression}`)
             props[propName] = valueFn(...Object.values(context))
           }
           catch (error) {
