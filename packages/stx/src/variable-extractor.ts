@@ -379,9 +379,13 @@ export async function extractVariables(
       'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy',
       'window', 'document', 'console', 'confirm', 'alert', 'fetch',
       ...filteredContextKeys,
-      convertedScript
+      // Wrap in async IIFE to support top-level await
+      `return (async () => {
+        ${convertedScript}
+        return module.exports
+      })()`
     )
-    scriptFn(
+    const result = await scriptFn(
       module, exports, requireFn, $props, defineProps, withDefaults,
       state, derived, effect, batch, onMount, onDestroy,
       windowProxy, mockDocument, mockConsole, mockWindow.confirm, mockWindow.alert, mockWindow.fetch,
@@ -389,7 +393,7 @@ export async function extractVariables(
     )
 
     // Copy results to context
-    Object.assign(context, module.exports)
+    Object.assign(context, result)
 
     // Also spread props directly into context for simplest usage
     // This allows: {{ siteName }} (from props) without any ceremony

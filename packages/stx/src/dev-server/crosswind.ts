@@ -77,6 +77,10 @@ function findCrosswindPaths(): string[] {
   // Search from current working directory up
   let currentDir = process.cwd()
   while (currentDir !== path.dirname(currentDir)) {
+    // Try @cwcss/crosswind first (new package name)
+    paths.push(path.join(currentDir, 'node_modules', '@cwcss', 'crosswind', 'dist', 'index.js'))
+    paths.push(path.join(currentDir, 'node_modules', '@cwcss', 'crosswind', 'src', 'index.ts'))
+    // Also try @stacksjs/crosswind (legacy package name)
     paths.push(path.join(currentDir, 'node_modules', '@stacksjs', 'crosswind', 'dist', 'index.js'))
     currentDir = path.dirname(currentDir)
   }
@@ -84,13 +88,21 @@ function findCrosswindPaths(): string[] {
   // Common development locations (relative to home)
   if (homeDir) {
     const devPaths = [
-      // crosswind monorepo (crosswind package - renamed from crosswind)
+      // crosswind monorepo (both dist and src)
       path.join(homeDir, 'Code', 'Tools', 'crosswind', 'packages', 'crosswind', 'dist', 'index.js'),
-      // stx monorepo's node_modules (still uses @stacksjs/crosswind for backwards compat)
+      path.join(homeDir, 'Code', 'Tools', 'crosswind', 'packages', 'crosswind', 'src', 'index.ts'),
+      path.join(homeDir, 'repos', 'stacks-org', 'crosswind', 'packages', 'crosswind', 'dist', 'index.js'),
+      path.join(homeDir, 'repos', 'stacks-org', 'crosswind', 'packages', 'crosswind', 'src', 'index.ts'),
+      // stx monorepo's node_modules
+      path.join(homeDir, 'Code', 'Tools', 'stx', 'packages', 'stx', 'node_modules', '@cwcss', 'crosswind', 'dist', 'index.js'),
       path.join(homeDir, 'Code', 'Tools', 'stx', 'packages', 'stx', 'node_modules', '@stacksjs', 'crosswind', 'dist', 'index.js'),
     ]
     paths.push(...devPaths)
   }
+
+  // Also try relative to cwd for linked packages
+  paths.push(path.join(process.cwd(), '..', 'crosswind', 'packages', 'crosswind', 'dist', 'index.js'))
+  paths.push(path.join(process.cwd(), '..', 'crosswind', 'packages', 'crosswind', 'src', 'index.ts'))
 
   return paths
 }
@@ -108,6 +120,8 @@ export async function loadCrosswind(): Promise<CrosswindModule | null> {
   try {
     // Strategy 1: Standard npm imports
     const importPaths = [
+      '@cwcss/crosswind',
+      '@cwcss/crosswind/dist/index.js',
       '@stacksjs/crosswind',
       '@stacksjs/crosswind/dist/index.js',
     ]
