@@ -501,6 +501,89 @@ function extractExports(setupContent: string): string {
 }
 
 /**
+ * Inject @stacksjs/browser initialization script into the template.
+ * This sets up window.StacksBrowser for auto-imports to work.
+ *
+ * IMPORTANT: Only checks CLIENT scripts (not <script server>).
+ * Server scripts should use the server ORM directly, not browser functions.
+ */
+function injectBrowserRuntime(template: string): string {
+  // Don't inject if already present
+  if (template.includes('window.StacksBrowser') || template.includes('StacksBrowser =')) {
+    return template
+  }
+
+  // Extract only CLIENT script content (exclude <script server> blocks)
+  // Client scripts are: <script>, <script client>, <script type="module">, etc.
+  // Server scripts are: <script server>
+  const clientScriptRegex = /<script\b(?![^>]*\bserver\b)[^>]*>([\s\S]*?)<\/script>/gi
+  let clientCode = ''
+  let match: RegExpExecArray | null
+
+  while ((match = clientScriptRegex.exec(template)) !== null) {
+    clientCode += match[1] + '\n'
+  }
+
+  // Also check template expressions ({{ }}) which execute on client
+  const templateExprRegex = /\{\{([\s\S]*?)\}\}/g
+  while ((match = templateExprRegex.exec(template)) !== null) {
+    clientCode += match[1] + '\n'
+  }
+
+  // If no client code, no need for browser runtime
+  if (!clientCode.trim()) {
+    return template
+  }
+
+  // Core browser utilities (framework-provided, not app-specific)
+  const coreSymbols = [
+    'auth', 'useAuth', 'formatAreaSize', 'formatDistance', 'formatElevation',
+    'formatDuration', 'getRelativeTime', 'fetchData', 'browserQuery',
+    'BrowserQueryBuilder', 'configureBrowser', 'createBrowserModel',
+  ]
+
+  // Check for core browser utilities in CLIENT code only
+  const usesCoreSymbols = coreSymbols.some(sym => {
+    const regex = new RegExp(`\\b${sym}\\b`)
+    return regex.test(clientCode)
+  })
+
+  // Check for model usage in CLIENT code only (PascalCase + query methods)
+  const modelPattern = /\b([A-Z][a-zA-Z0-9]*)\s*\.\s*(all|find|first|get|where|orderBy|orderByDesc|limit|select|pluck|create|update|delete)\s*\(/g
+  const usesModels = modelPattern.test(clientCode)
+
+  if (!usesCoreSymbols && !usesModels) {
+    return template
+  }
+
+  // Inject a module script that loads @stacksjs/browser
+  // The browser module auto-initializes and loads all app models dynamically
+  // This must run before component scripts
+  const browserScript = `<script type="module">
+// STX: Auto-load @stacksjs/browser (auto-initializes API and loads models)
+import '@stacksjs/browser'
+</script>`
+
+  // Inject before other scripts in <head>, or before </head>
+  if (template.includes('</head>')) {
+    const headEndPos = template.indexOf('</head>')
+    const headSection = template.slice(0, headEndPos)
+    const firstScriptPos = headSection.indexOf('<script')
+
+    if (firstScriptPos !== -1) {
+      return template.slice(0, firstScriptPos) + browserScript + '\n' + template.slice(firstScriptPos)
+    }
+    return template.replace('</head>', `${browserScript}\n</head>`)
+  }
+
+  if (template.includes('<body')) {
+    return template.replace(/<body([^>]*)>/, `<body$1>\n${browserScript}`)
+  }
+
+  return browserScript + '\n' + template
+}
+
+/**
  * Inject STX signals runtime into the template.
  * The runtime provides client-side reactivity.
  */
@@ -562,6 +645,9 @@ function processSignals(template: string, options: StxOptions): string {
 
   // Inject the signals runtime
   output = injectSignalsRuntime(output, options)
+
+  // Inject browser runtime if needed (for auto-imports from @stacksjs/browser)
+  output = injectBrowserRuntime(output)
 
   // Inject setup code after runtime
   if (setupCode) {
@@ -1754,14 +1840,16 @@ async function processOtherDirectives(
   // These are used for SSR variable extraction and shouldn't appear in client output
   output = output.replace(/<script\s+server\b[^>]*>[\s\S]*?<\/script>\s*/gi, '')
 
-  // Transform <script client> blocks: resolve @stores imports, inject event
-  // bindings into the script scope, and auto-wrap in a scoped IIFE
-  // Also handles <script client ts> or <script client lang="ts"> for TypeScript
+  // Transform client <script> blocks: resolve @stores imports, inject event
+  // bindings into the script scope, and auto-wrap in a scoped IIFE.
+  // Client scripts include: <script>, <script client>, <script type="module">, etc.
+  // Excludes: <script server>, <script src="...">, <script data-stx-scoped>
   const eventBindings = (context.__stx_event_bindings || []) as import('./events').ParsedEvent[]
   let clientScriptsTransformed = false
   const clientScriptMatches: { match: string, attrs: string, content: string }[] = []
-  output.replace(/<script\s+client\b([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs, content) => {
-    clientScriptMatches.push({ match, attrs, content })
+  // Match all client scripts: NOT server, NOT external src, NOT already processed (data-stx-scoped)
+  output.replace(/<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)(?![^>]*\bdata-stx-scoped\b)([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs, content) => {
+    clientScriptMatches.push({ match, attrs: attrs || '', content })
     return match
   })
 
