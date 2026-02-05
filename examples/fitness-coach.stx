@@ -2,200 +2,459 @@
 import { defineProps, withDefaults } from 'stx'
 
 // ============================================================================
-// TypeScript Interfaces
+// TypeScript Interfaces - TrainingPeaks-style data model
 // ============================================================================
 
-interface TrainerProfile {
-  name: string
-  title: string
-  avatar: string
-  rating: number
-}
-
-interface DashboardStats {
-  activeClients: number
-  sessionsThisWeek: number
-  upcomingToday: number
-  completionRate: number
-  revenue: number
-  newClientsThisMonth: number
-}
-
-interface Client {
-  id: number
+// Athlete Profile with Performance Settings
+interface AthleteProfile {
   name: string
   avatar: string
-  goal: 'Weight Loss' | 'Muscle Gain' | 'Marathon Prep' | 'Flexibility' | 'Strength'
-  progress: number
-  nextSession: string
-  streak: number
-  status: 'active' | 'paused' | 'completed'
-  plan: string
+  age: number
+  weight: number // kg
+  restingHR: number
+  maxHR: number
+  lthr: number // Lactate Threshold HR
+  thresholdPace: number // seconds per km at threshold
+  ftp?: number // Functional Threshold Power
+  vo2max: number
+  vdot: number
+  fitnessAge: number
+  weeklyTssTarget: number
+  annualHours: number
 }
 
-interface Session {
-  time: string
-  client: string
-  type: 'personal' | 'group' | 'consultation'
+// Daily Metrics (like TrainingPeaks daily view)
+interface DailyMetrics {
+  date: string
+  ctl: number // Chronic Training Load (Fitness)
+  atl: number // Acute Training Load (Fatigue)
+  tsb: number // Training Stress Balance (Form)
+  tss: number // Today's TSS
+  plannedTss: number
+  ifactor: number // Intensity Factor
+  compliance: number // percentage
+}
+
+// Performance Management Chart Data
+interface PMCData {
+  date: string
+  ctl: number
+  atl: number
+  tsb: number
+  tss: number
+  annotation?: string
+}
+
+// Workout/Activity with TrainingPeaks metrics
+interface Workout {
+  id: string
+  name: string
+  date: string
+  dayOfWeek: string
+  sport: 'run' | 'bike' | 'swim' | 'strength' | 'other'
+  workoutType: 'easy' | 'tempo' | 'interval' | 'long' | 'race' | 'recovery' | 'rest'
+  planned: boolean
+  completed: boolean
+  // Planned metrics
+  plannedDuration?: number // seconds
+  plannedDistance?: number // meters
+  plannedTss?: number
+  plannedDescription?: string
+  // Actual metrics
+  duration?: number
+  distance?: number
+  tss?: number
+  ifactor?: number // Intensity Factor
+  normalizedPace?: number // NGP - seconds per km
+  avgPace?: number
+  avgHR?: number
+  maxHR?: number
+  avgCadence?: number
+  totalAscent?: number
+  calories?: number
+  // Efficiency
+  efficiencyFactor?: number // NGP / Avg HR
+  decoupling?: number // aerobic decoupling %
+  // Running Dynamics
+  groundContactTime?: number
+  strideLength?: number
+  verticalOscillation?: number
+  // Laps
+  laps?: WorkoutLap[]
+}
+
+interface WorkoutLap {
+  lapNumber: number
+  distance: number
   duration: number
-  participants: number
+  avgPace: number
+  avgHR: number
+  maxHR: number
+  avgCadence?: number
+}
+
+// Peak Performance (power/pace curves)
+interface PeakPerformance {
+  duration: number // seconds
+  durationLabel: string
+  pace: number // seconds per km
+  power?: number // watts
+  date: string
+  activityName: string
+}
+
+// Training Phase/Period
+interface TrainingPhase {
+  name: string
+  type: 'base' | 'build' | 'peak' | 'race' | 'transition'
+  startDate: string
+  endDate: string
+  weeklyTssTarget: number
   focus: string
-  status: 'completed' | 'upcoming' | 'cancelled'
+  color: string
 }
 
-interface WorkoutTemplate {
-  id: number
+// Weekly Summary (like TrainingPeaks weekly totals)
+interface WeeklySummary {
+  weekNumber: number
+  startDate: string
+  endDate: string
+  phase: string
+  // Planned
+  plannedDuration: number
+  plannedDistance: number
+  plannedTss: number
+  plannedWorkouts: number
+  // Actual
+  actualDuration: number
+  actualDistance: number
+  actualTss: number
+  completedWorkouts: number
+  // Compliance
+  compliance: number
+  tssCompliance: number
+  // Metrics
+  avgCtl: number
+  avgAtl: number
+  avgTsb: number
+}
+
+// Zone Distribution
+interface ZoneTime {
+  zone: number
   name: string
-  exercises: number
-  duration: number
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
-  category: 'Strength' | 'Cardio' | 'Core' | 'Mobility'
-  usageCount: number
+  color: string
+  timeInZone: number // seconds
+  percentage: number
+  hrRange?: string
+  paceRange?: string
 }
 
-interface Exercise {
-  name: string
-  muscle: string
-  equipment: string
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
+// Annual Training Plan
+interface ATPWeek {
+  weekNumber: number
+  startDate: string
+  phase: string
+  phaseColor: string
+  targetTss: number
+  targetHours: number
+  actualTss?: number
+  actualHours?: number
+  priority: 'A' | 'B' | 'C' | '-'
+  race?: string
 }
 
-interface Activity {
-  type: 'workout' | 'milestone' | 'message' | 'payment' | 'signup'
-  message: string
-  time: string
-}
-
-interface NutritionPlan {
-  name: string
-  calories: number
-  protein: number
-  carbs: number
-  fat: number
-  clientCount: number
+// Health Metrics
+interface HealthMetrics {
+  date: string
+  restingHR: number
+  hrv: number
+  hrvStatus: 'low' | 'unbalanced' | 'balanced' | 'high'
+  sleep: number // hours
+  sleepQuality: number // 0-100
+  bodyBattery: number
+  weight?: number
+  fatigue: number // 1-10 subjective
+  mood: number // 1-10
+  soreness: number // 1-10
 }
 
 // ============================================================================
-// Props Definition (for component reuse)
+// Props
 // ============================================================================
 
 interface FitCoachProps {
-  initialTab?: 'dashboard' | 'clients' | 'schedule' | 'workouts' | 'nutrition' | 'analytics'
+  initialTab?: string
   theme?: 'dark' | 'light'
 }
 
 const { initialTab, theme } = withDefaults(
   defineProps<FitCoachProps>(),
-  {
-    initialTab: 'dashboard',
-    theme: 'dark'
-  }
+  { initialTab: 'dashboard', theme: 'dark' }
 )
 
 // ============================================================================
-// Data
+// Sample Data - TrainingPeaks style
 // ============================================================================
 
-// Trainer Profile
-const trainer: TrainerProfile = {
+const athlete: AthleteProfile = {
   name: "Pawel Dregan",
-  title: "Ultra Runner & Coach",
   avatar: "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=150&h=150&fit=crop&crop=face",
-  rating: 4.9
+  age: 35,
+  weight: 72,
+  restingHR: 48,
+  maxHR: 185,
+  lthr: 165,
+  thresholdPace: 256, // 4:16/km
+  vo2max: 52.4,
+  vdot: 48.2,
+  fitnessAge: 28,
+  weeklyTssTarget: 450,
+  annualHours: 520
 }
 
-// Expose for template
-const trainerName = trainer.name
-const trainerTitle = trainer.title
-const trainerAvatar = trainer.avatar
-const trainerRating = trainer.rating
-
-// Dashboard Stats
-const stats: DashboardStats = {
-  activeClients: 24,
-  sessionsThisWeek: 18,
-  upcomingToday: 5,
-  completionRate: 94,
-  revenue: 4250,
-  newClientsThisMonth: 6
+// Current fitness metrics
+const currentMetrics: DailyMetrics = {
+  date: "2024-12-15",
+  ctl: 52,
+  atl: 58,
+  tsb: -6,
+  tss: 45,
+  plannedTss: 50,
+  ifactor: 0.78,
+  compliance: 90
 }
 
-// Expose for template
-const activeClients = stats.activeClients
-const sessionsThisWeek = stats.sessionsThisWeek
-const upcomingToday = stats.upcomingToday
-const completionRate = stats.completionRate
-const revenue = stats.revenue
-const newClientsThisMonth = stats.newClientsThisMonth
-
-// Client List
-const clients: Client[] = [
-  { id: 1, name: "Sarah Johnson", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face", goal: "Weight Loss", progress: 72, nextSession: "Today, 10:00 AM", streak: 12, status: "active", plan: "12-Week Transformation" },
-  { id: 2, name: "Mike Chen", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face", goal: "Muscle Gain", progress: 58, nextSession: "Today, 2:00 PM", streak: 8, status: "active", plan: "Hypertrophy Program" },
-  { id: 3, name: "Emma Wilson", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face", goal: "Marathon Prep", progress: 85, nextSession: "Tomorrow, 7:00 AM", streak: 21, status: "active", plan: "Endurance Builder" },
-  { id: 4, name: "James Rodriguez", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face", goal: "Flexibility", progress: 45, nextSession: "Wed, 5:00 PM", streak: 5, status: "active", plan: "Mobility Mastery" },
-  { id: 5, name: "Lisa Park", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face", goal: "Strength", progress: 91, nextSession: "Thu, 11:00 AM", streak: 34, status: "active", plan: "Powerlifting Basics" }
+// PMC Data (8 weeks history)
+const pmcData: PMCData[] = [
+  { date: "Oct 21", ctl: 42, atl: 45, tsb: -3, tss: 320 },
+  { date: "Oct 28", ctl: 44, atl: 52, tsb: -8, tss: 380 },
+  { date: "Nov 4", ctl: 45, atl: 48, tsb: -3, tss: 290, annotation: "Recovery Week" },
+  { date: "Nov 11", ctl: 46, atl: 55, tsb: -9, tss: 420 },
+  { date: "Nov 18", ctl: 48, atl: 58, tsb: -10, tss: 445 },
+  { date: "Nov 25", ctl: 49, atl: 52, tsb: -3, tss: 310, annotation: "Taper Start" },
+  { date: "Dec 2", ctl: 50, atl: 48, tsb: 2, tss: 285 },
+  { date: "Dec 9", ctl: 52, atl: 58, tsb: -6, tss: 385 }
 ]
 
-// Top performing clients - sorted by progress (highest first)
-const topClients: Client[] = [
-  clients[4], // Lisa Park - 91%
-  clients[2], // Emma Wilson - 85%
-  clients[0], // Sarah Johnson - 72%
+// This week's calendar
+const thisWeekWorkouts: Workout[] = [
+  {
+    id: "w1", name: "Easy Run", date: "2024-12-09", dayOfWeek: "Mon",
+    sport: "run", workoutType: "easy", planned: true, completed: true,
+    plannedDuration: 2700, plannedDistance: 8000, plannedTss: 35,
+    plannedDescription: "Easy aerobic run. Stay in Z2. Focus on relaxed form.",
+    duration: 2820, distance: 8200, tss: 38, ifactor: 0.72, normalizedPace: 344,
+    avgPace: 344, avgHR: 138, maxHR: 152, avgCadence: 172, totalAscent: 45, calories: 520,
+    efficiencyFactor: 1.42, decoupling: 2.1,
+    groundContactTime: 248, strideLength: 1.15, verticalOscillation: 8.6,
+    laps: [
+      { lapNumber: 1, distance: 1000, duration: 342, avgPace: 342, avgHR: 135, maxHR: 142, avgCadence: 170 },
+      { lapNumber: 2, distance: 1000, duration: 340, avgPace: 340, avgHR: 137, maxHR: 145, avgCadence: 172 },
+      { lapNumber: 3, distance: 1000, duration: 345, avgPace: 345, avgHR: 138, maxHR: 148, avgCadence: 171 },
+      { lapNumber: 4, distance: 1000, duration: 346, avgPace: 346, avgHR: 139, maxHR: 150, avgCadence: 172 }
+    ]
+  },
+  {
+    id: "w2", name: "Rest Day", date: "2024-12-10", dayOfWeek: "Tue",
+    sport: "other", workoutType: "rest", planned: true, completed: true
+  },
+  {
+    id: "w3", name: "Tempo Run", date: "2024-12-11", dayOfWeek: "Wed",
+    sport: "run", workoutType: "tempo", planned: true, completed: true,
+    plannedDuration: 3000, plannedDistance: 10000, plannedTss: 65,
+    plannedDescription: "15min warm-up, 20min @ threshold pace, 10min cool-down",
+    duration: 2940, distance: 9800, tss: 68, ifactor: 0.92, normalizedPace: 302,
+    avgPace: 300, avgHR: 162, maxHR: 175, avgCadence: 178, totalAscent: 52, calories: 680,
+    efficiencyFactor: 1.86, decoupling: 4.2,
+    laps: [
+      { lapNumber: 1, distance: 3000, duration: 960, avgPace: 320, avgHR: 145, maxHR: 155, avgCadence: 174 },
+      { lapNumber: 2, distance: 4000, duration: 1040, avgPace: 260, avgHR: 168, maxHR: 175, avgCadence: 182 },
+      { lapNumber: 3, distance: 2800, duration: 940, avgPace: 336, avgHR: 148, maxHR: 158, avgCadence: 172 }
+    ]
+  },
+  {
+    id: "w4", name: "Recovery Run", date: "2024-12-12", dayOfWeek: "Thu",
+    sport: "run", workoutType: "recovery", planned: true, completed: true,
+    plannedDuration: 1800, plannedDistance: 5000, plannedTss: 20,
+    plannedDescription: "Very easy. HR under 130. Shake out the legs.",
+    duration: 1920, distance: 5200, tss: 22, ifactor: 0.62, normalizedPace: 369,
+    avgPace: 369, avgHR: 125, maxHR: 138, avgCadence: 168, totalAscent: 18, calories: 320,
+    efficiencyFactor: 1.18
+  },
+  {
+    id: "w5", name: "Intervals", date: "2024-12-13", dayOfWeek: "Fri",
+    sport: "run", workoutType: "interval", planned: true, completed: true,
+    plannedDuration: 3600, plannedDistance: 12000, plannedTss: 85,
+    plannedDescription: "WU 2km, 6x1000m @ 3:50-3:55 w/ 400m jog, CD 2km",
+    duration: 3480, distance: 11800, tss: 82, ifactor: 0.95, normalizedPace: 295,
+    avgPace: 295, avgHR: 165, maxHR: 182, avgCadence: 180, totalAscent: 65, calories: 820,
+    efficiencyFactor: 1.79, decoupling: 5.8,
+    laps: [
+      { lapNumber: 1, distance: 2000, duration: 640, avgPace: 320, avgHR: 142, maxHR: 155, avgCadence: 174 },
+      { lapNumber: 2, distance: 1000, duration: 232, avgPace: 232, avgHR: 172, maxHR: 178, avgCadence: 186 },
+      { lapNumber: 3, distance: 400, duration: 150, avgPace: 375, avgHR: 148, maxHR: 158, avgCadence: 168 },
+      { lapNumber: 4, distance: 1000, duration: 234, avgPace: 234, avgHR: 174, maxHR: 180, avgCadence: 185 },
+      { lapNumber: 5, distance: 400, duration: 152, avgPace: 380, avgHR: 150, maxHR: 160, avgCadence: 166 },
+      { lapNumber: 6, distance: 1000, duration: 236, avgPace: 236, avgHR: 175, maxHR: 182, avgCadence: 184 }
+    ]
+  },
+  {
+    id: "w6", name: "Easy Run + Strides", date: "2024-12-14", dayOfWeek: "Sat",
+    sport: "run", workoutType: "easy", planned: true, completed: true,
+    plannedDuration: 2400, plannedDistance: 7000, plannedTss: 32,
+    plannedDescription: "Easy run with 6x20s strides at end",
+    duration: 2520, distance: 7400, tss: 35, ifactor: 0.74, normalizedPace: 340,
+    avgPace: 340, avgHR: 140, maxHR: 168, avgCadence: 174, totalAscent: 38, calories: 480
+  },
+  {
+    id: "w7", name: "Long Run", date: "2024-12-15", dayOfWeek: "Sun",
+    sport: "run", workoutType: "long", planned: true, completed: false,
+    plannedDuration: 6300, plannedDistance: 21000, plannedTss: 120,
+    plannedDescription: "Long run. First 16km easy, last 5km at marathon pace."
+  }
 ]
 
-// Today's Schedule
-const todaySchedule: Session[] = [
-  { time: "7:00 AM", client: "Group HIIT", type: "group", duration: 45, participants: 8, focus: "Full Body", status: "completed" },
-  { time: "10:00 AM", client: "Sarah Johnson", type: "personal", duration: 60, participants: 1, focus: "Lower Body", status: "upcoming" },
-  { time: "2:00 PM", client: "Mike Chen", type: "personal", duration: 60, participants: 1, focus: "Push Day", status: "upcoming" },
-  { time: "4:00 PM", client: "New Client Consultation", type: "consultation", duration: 30, participants: 1, focus: "Assessment", status: "upcoming" },
-  { time: "5:30 PM", client: "Evening Bootcamp", type: "group", duration: 60, participants: 12, focus: "HIIT Circuit", status: "upcoming" }
+// Weekly summaries (recent weeks)
+const weeklySummaries: WeeklySummary[] = [
+  {
+    weekNumber: 50, startDate: "Dec 9", endDate: "Dec 15", phase: "Build 2",
+    plannedDuration: 22500, plannedDistance: 73000, plannedTss: 357, plannedWorkouts: 6,
+    actualDuration: 16380, actualDistance: 52200, actualTss: 280, completedWorkouts: 5,
+    compliance: 83, tssCompliance: 78,
+    avgCtl: 52, avgAtl: 55, avgTsb: -3
+  },
+  {
+    weekNumber: 49, startDate: "Dec 2", endDate: "Dec 8", phase: "Build 2",
+    plannedDuration: 21600, plannedDistance: 68000, plannedTss: 340, plannedWorkouts: 6,
+    actualDuration: 20400, actualDistance: 65500, actualTss: 328, completedWorkouts: 6,
+    compliance: 100, tssCompliance: 96,
+    avgCtl: 50, avgAtl: 52, avgTsb: -2
+  },
+  {
+    weekNumber: 48, startDate: "Nov 25", endDate: "Dec 1", phase: "Build 1",
+    plannedDuration: 18000, plannedDistance: 55000, plannedTss: 280, plannedWorkouts: 5,
+    actualDuration: 17280, actualDistance: 52800, actualTss: 268, completedWorkouts: 5,
+    compliance: 100, tssCompliance: 96,
+    avgCtl: 49, avgAtl: 48, avgTsb: 1
+  },
+  {
+    weekNumber: 47, startDate: "Nov 18", endDate: "Nov 24", phase: "Build 1",
+    plannedDuration: 21000, plannedDistance: 65000, plannedTss: 350, plannedWorkouts: 6,
+    actualDuration: 20100, actualDistance: 62400, actualTss: 335, completedWorkouts: 6,
+    compliance: 100, tssCompliance: 96,
+    avgCtl: 48, avgAtl: 55, avgTsb: -7
+  }
 ]
 
-// Workout Templates
-const workoutTemplates: WorkoutTemplate[] = [
-  { id: 1, name: "Full Body Blast", exercises: 8, duration: 45, difficulty: "Intermediate", category: "Strength", usageCount: 24 },
-  { id: 2, name: "HIIT Inferno", exercises: 12, duration: 30, difficulty: "Advanced", category: "Cardio", usageCount: 18 },
-  { id: 3, name: "Core Crusher", exercises: 10, duration: 20, difficulty: "Beginner", category: "Core", usageCount: 32 },
-  { id: 4, name: "Upper Body Power", exercises: 9, duration: 50, difficulty: "Intermediate", category: "Strength", usageCount: 15 },
-  { id: 5, name: "Leg Day Supreme", exercises: 10, duration: 55, difficulty: "Advanced", category: "Strength", usageCount: 21 },
-  { id: 6, name: "Flexibility Flow", exercises: 15, duration: 40, difficulty: "Beginner", category: "Mobility", usageCount: 12 }
+// Peak performances (power/pace curve data)
+const peakPerformances: PeakPerformance[] = [
+  { duration: 60, durationLabel: "1 min", pace: 192, date: "Nov 15", activityName: "Track Intervals" },
+  { duration: 300, durationLabel: "5 min", pace: 218, date: "Nov 15", activityName: "Track Intervals" },
+  { duration: 600, durationLabel: "10 min", pace: 235, date: "Dec 13", activityName: "Intervals" },
+  { duration: 1200, durationLabel: "20 min", pace: 248, date: "Nov 22", activityName: "Tempo Run" },
+  { duration: 1800, durationLabel: "30 min", pace: 256, date: "Nov 22", activityName: "Tempo Run" },
+  { duration: 3600, durationLabel: "60 min", pace: 268, date: "Dec 8", activityName: "Long Run" },
+  { duration: 5400, durationLabel: "90 min", pace: 278, date: "Dec 1", activityName: "Long Run" }
 ]
 
-// Exercise Library
-const exercises: Exercise[] = [
-  { name: "Barbell Squat", muscle: "Quadriceps", equipment: "Barbell", difficulty: "Intermediate" },
-  { name: "Deadlift", muscle: "Back", equipment: "Barbell", difficulty: "Advanced" },
-  { name: "Bench Press", muscle: "Chest", equipment: "Barbell", difficulty: "Intermediate" },
-  { name: "Pull-ups", muscle: "Back", equipment: "Pull-up Bar", difficulty: "Intermediate" },
-  { name: "Plank", muscle: "Core", equipment: "None", difficulty: "Beginner" },
-  { name: "Dumbbell Lunges", muscle: "Legs", equipment: "Dumbbells", difficulty: "Beginner" },
-  { name: "Overhead Press", muscle: "Shoulders", equipment: "Barbell", difficulty: "Intermediate" },
-  { name: "Lat Pulldown", muscle: "Back", equipment: "Cable Machine", difficulty: "Beginner" }
+// Training phases (ATP)
+const trainingPhases: TrainingPhase[] = [
+  { name: "Base 1", type: "base", startDate: "Oct 7", endDate: "Oct 27", weeklyTssTarget: 280, focus: "Aerobic foundation", color: "blue" },
+  { name: "Base 2", type: "base", startDate: "Oct 28", endDate: "Nov 17", weeklyTssTarget: 320, focus: "Aerobic endurance", color: "blue" },
+  { name: "Build 1", type: "build", startDate: "Nov 18", endDate: "Dec 1", weeklyTssTarget: 380, focus: "Threshold development", color: "green" },
+  { name: "Build 2", type: "build", startDate: "Dec 2", endDate: "Dec 22", weeklyTssTarget: 420, focus: "Race-specific fitness", color: "green" },
+  { name: "Peak", type: "peak", startDate: "Dec 23", endDate: "Jan 5", weeklyTssTarget: 350, focus: "Sharpening", color: "yellow" },
+  { name: "Race", type: "race", startDate: "Jan 6", endDate: "Jan 12", weeklyTssTarget: 180, focus: "Race week", color: "red" }
 ]
 
-// Recent Activity
-const recentActivity: Activity[] = [
-  { type: "workout", message: "Sarah completed Full Body Blast", time: "2 hours ago" },
-  { type: "milestone", message: "Mike reached 10-session milestone", time: "3 hours ago" },
-  { type: "message", message: "New message from Emma Wilson", time: "4 hours ago" },
-  { type: "payment", message: "Payment received from James R.", time: "Yesterday" },
-  { type: "signup", message: "New client registration: David L.", time: "Yesterday" }
+// Annual Training Plan weeks
+const atpWeeks: ATPWeek[] = [
+  { weekNumber: 45, startDate: "Nov 4", phase: "Base 2", phaseColor: "blue", targetTss: 320, targetHours: 8, actualTss: 310, actualHours: 7.8, priority: "-" },
+  { weekNumber: 46, startDate: "Nov 11", phase: "Base 2", phaseColor: "blue", targetTss: 340, targetHours: 8.5, actualTss: 335, actualHours: 8.2, priority: "-" },
+  { weekNumber: 47, startDate: "Nov 18", phase: "Build 1", phaseColor: "green", targetTss: 380, targetHours: 9, actualTss: 365, actualHours: 8.8, priority: "-" },
+  { weekNumber: 48, startDate: "Nov 25", phase: "Build 1", phaseColor: "green", targetTss: 350, targetHours: 8, actualTss: 340, actualHours: 7.9, priority: "-" },
+  { weekNumber: 49, startDate: "Dec 2", phase: "Build 2", phaseColor: "green", targetTss: 400, targetHours: 9.5, actualTss: 385, actualHours: 9.2, priority: "-" },
+  { weekNumber: 50, startDate: "Dec 9", phase: "Build 2", phaseColor: "green", targetTss: 420, targetHours: 10, actualTss: 280, actualHours: 6.8, priority: "-" },
+  { weekNumber: 51, startDate: "Dec 16", phase: "Build 2", phaseColor: "green", targetTss: 400, targetHours: 9.5, priority: "-" },
+  { weekNumber: 52, startDate: "Dec 23", phase: "Peak", phaseColor: "yellow", targetTss: 320, targetHours: 7.5, priority: "-" },
+  { weekNumber: 1, startDate: "Dec 30", phase: "Peak", phaseColor: "yellow", targetTss: 280, targetHours: 6.5, priority: "-" },
+  { weekNumber: 2, startDate: "Jan 6", phase: "Race", phaseColor: "red", targetTss: 180, targetHours: 4, priority: "A", race: "City Marathon" }
 ]
 
-// Nutrition Plans
-const nutritionPlans: NutritionPlan[] = [
-  { name: "Muscle Building", calories: 2800, protein: 180, carbs: 300, fat: 90, clientCount: 12 },
-  { name: "Fat Loss", calories: 1800, protein: 150, carbs: 150, fat: 60, clientCount: 8 },
-  { name: "Maintenance", calories: 2200, protein: 140, carbs: 220, fat: 75, clientCount: 4 }
+// Zone distribution (this week)
+const hrZones: ZoneTime[] = [
+  { zone: 1, name: "Recovery", color: "slate", timeInZone: 1800, percentage: 11, hrRange: "93-111" },
+  { zone: 2, name: "Aerobic", color: "blue", timeInZone: 7200, percentage: 44, hrRange: "111-130" },
+  { zone: 3, name: "Tempo", color: "green", timeInZone: 3600, percentage: 22, hrRange: "130-148" },
+  { zone: 4, name: "Threshold", color: "yellow", timeInZone: 2700, percentage: 16, hrRange: "148-167" },
+  { zone: 5, name: "VO2max", color: "red", timeInZone: 1080, percentage: 7, hrRange: "167-185" }
 ]
 
-// Weekly Progress Data
-const weekDays: string[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-const weekSessions: number[] = [4, 5, 3, 6, 4, 2, 0]
-const weekHours: number[] = [4.5, 5.0, 3.5, 6.5, 4.0, 2.5, 0]
-const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
+const paceZones: ZoneTime[] = [
+  { zone: 1, name: "Recovery", color: "slate", timeInZone: 1200, percentage: 7, paceRange: ">6:00" },
+  { zone: 2, name: "Endurance", color: "blue", timeInZone: 7800, percentage: 48, paceRange: "5:20-6:00" },
+  { zone: 3, name: "Tempo", color: "green", timeInZone: 3000, percentage: 18, paceRange: "4:40-5:20" },
+  { zone: 4, name: "Threshold", color: "yellow", timeInZone: 2400, percentage: 15, paceRange: "4:10-4:40" },
+  { zone: 5, name: "VO2max", color: "orange", timeInZone: 1200, percentage: 7, paceRange: "3:40-4:10" },
+  { zone: 6, name: "Anaerobic", color: "red", timeInZone: 780, percentage: 5, paceRange: "<3:40" }
+]
+
+// Health metrics (last 7 days)
+const healthMetrics: HealthMetrics[] = [
+  { date: "Dec 15", restingHR: 48, hrv: 58, hrvStatus: "balanced", sleep: 7.5, sleepQuality: 82, bodyBattery: 72, fatigue: 4, mood: 8, soreness: 3 },
+  { date: "Dec 14", restingHR: 49, hrv: 52, hrvStatus: "unbalanced", sleep: 6.8, sleepQuality: 68, bodyBattery: 65, fatigue: 5, mood: 7, soreness: 4 },
+  { date: "Dec 13", restingHR: 50, hrv: 48, hrvStatus: "low", sleep: 6.2, sleepQuality: 62, bodyBattery: 58, fatigue: 6, mood: 6, soreness: 5 },
+  { date: "Dec 12", restingHR: 48, hrv: 62, hrvStatus: "balanced", sleep: 8.0, sleepQuality: 88, bodyBattery: 85, fatigue: 3, mood: 8, soreness: 3 },
+  { date: "Dec 11", restingHR: 49, hrv: 55, hrvStatus: "balanced", sleep: 7.2, sleepQuality: 75, bodyBattery: 70, fatigue: 4, mood: 7, soreness: 4 },
+  { date: "Dec 10", restingHR: 47, hrv: 65, hrvStatus: "high", sleep: 8.5, sleepQuality: 92, bodyBattery: 95, fatigue: 2, mood: 9, soreness: 2 },
+  { date: "Dec 9", restingHR: 48, hrv: 60, hrvStatus: "balanced", sleep: 7.8, sleepQuality: 80, bodyBattery: 78, fatigue: 3, mood: 8, soreness: 3 }
+]
+
+// Expose variables
+const athleteName = athlete.name
+const athleteAvatar = athlete.avatar
+const athleteVo2max = athlete.vo2max
+const ctl = currentMetrics.ctl
+const atl = currentMetrics.atl
+const tsb = currentMetrics.tsb
+const weeklyTssTarget = athlete.weeklyTssTarget
+const currentPhase = trainingPhases.find(p => p.name === "Build 2")
+
+// Helper functions
+function formatPace(secondsPerKm: number): string {
+  const mins = Math.floor(secondsPerKm / 60)
+  const secs = Math.round(secondsPerKm % 60)
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+function formatDuration(seconds: number): string {
+  const hours = Math.floor(seconds / 3600)
+  const mins = Math.floor((seconds % 3600) / 60)
+  if (hours > 0) {
+    return `${hours}h ${mins}m`
+  }
+  return `${mins}m`
+}
+
+function formatDistance(meters: number): string {
+  return `${(meters / 1000).toFixed(1)} km`
+}
+
+function formatTime(seconds: number): string {
+  const hours = Math.floor(seconds / 3600)
+  const mins = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+  if (hours > 0) {
+    return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+const fmtPace = formatPace
+const fmtDuration = formatDuration
+const fmtDistance = formatDistance
+const fmtTime = formatTime
 </script>
 
 <!DOCTYPE html>
@@ -203,7 +462,7 @@ const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FitCoach - Ultra Running & Coaching Platform</title>
+  <title>FitCoach - TrainingPeaks-Style Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -218,1233 +477,1067 @@ const weekDates: number[] = [9, 10, 11, 12, 13, 14, 15]
       background-clip: text;
     }
     .card-hover {
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
     }
     .card-hover:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.3);
-    }
-    .pulse-dot {
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-    .bar-chart {
-      display: flex;
-      align-items: flex-end;
-      gap: 8px;
-      height: 120px;
-    }
-    .bar {
-      flex: 1;
-      background: linear-gradient(to top, #10b981, #06b6d4);
-      border-radius: 4px 4px 0 0;
-      transition: height 0.3s ease;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.3);
     }
 
-    /* Light Mode Styles */
+    /* PMC Chart */
+    .pmc-chart {
+      position: relative;
+      height: 200px;
+      background: linear-gradient(to bottom, rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.8));
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .pmc-line {
+      stroke-width: 2;
+      fill: none;
+    }
+    .pmc-area {
+      opacity: 0.2;
+    }
+
+    /* Calendar grid */
+    .calendar-day {
+      min-height: 120px;
+      border: 1px solid rgba(71, 85, 105, 0.3);
+      transition: all 0.2s;
+    }
+    .calendar-day:hover {
+      background: rgba(71, 85, 105, 0.2);
+    }
+    .calendar-day.today {
+      border-color: rgba(16, 185, 129, 0.5);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    /* Workout type colors */
+    .workout-easy { border-left: 3px solid #3b82f6; }
+    .workout-tempo { border-left: 3px solid #22c55e; }
+    .workout-interval { border-left: 3px solid #f97316; }
+    .workout-long { border-left: 3px solid #8b5cf6; }
+    .workout-recovery { border-left: 3px solid #06b6d4; }
+    .workout-race { border-left: 3px solid #ef4444; }
+    .workout-rest { border-left: 3px solid #64748b; }
+
+    /* Phase colors */
+    .phase-base { background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; }
+    .phase-build { background: rgba(34, 197, 94, 0.2); border-color: #22c55e; }
+    .phase-peak { background: rgba(234, 179, 8, 0.2); border-color: #eab308; }
+    .phase-race { background: rgba(239, 68, 68, 0.2); border-color: #ef4444; }
+    .phase-transition { background: rgba(148, 163, 184, 0.2); border-color: #94a3b8; }
+
+    /* Light Mode */
     body.light {
-      --bg-primary: #f8fafc;
-      --bg-secondary: #f1f5f9;
-      --bg-card: #ffffff;
-      --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --border-color: #e2e8f0;
-    }
-
-    /* Light mode overrides using .light class */
-    body.light {
       background-color: #f8fafc !important;
       color: #0f172a !important;
     }
+    body.light header { background-color: rgba(255, 255, 255, 0.9) !important; border-color: #e2e8f0 !important; }
+    body.light aside { background-color: rgba(255, 255, 255, 0.8) !important; border-color: #e2e8f0 !important; }
+    body.light .bg-slate-800, body.light .bg-slate-800\/50 { background-color: #ffffff !important; }
+    body.light .bg-slate-700, body.light .bg-slate-700\/50, body.light .bg-slate-700\/30 { background-color: #f1f5f9 !important; }
+    body.light .bg-slate-900 { background-color: #f8fafc !important; }
+    body.light .text-slate-100, body.light .text-white { color: #0f172a !important; }
+    body.light .text-slate-300, body.light .text-slate-400 { color: #64748b !important; }
+    body.light .border-slate-700, body.light .border-slate-700\/50 { border-color: #e2e8f0 !important; }
+    body.light .calendar-day { border-color: #e2e8f0; }
+    body.light .calendar-day:hover { background: rgba(0, 0, 0, 0.02); }
+    body.light #theme-icon-sun { display: none !important; }
+    body.light #theme-icon-moon { display: block !important; }
 
-    /* Header */
-    body.light header {
-      background-color: rgba(255, 255, 255, 0.9) !important;
-      border-color: #e2e8f0 !important;
-    }
-
-    /* Sidebar */
-    body.light aside {
-      background-color: rgba(255, 255, 255, 0.8) !important;
-      border-color: #e2e8f0 !important;
-    }
-
-    /* Cards and panels */
-    body.light .bg-slate-800,
-    body.light .bg-slate-800\/50,
-    body.light .bg-slate-800\/80 {
-      background-color: #ffffff !important;
-    }
-
-    body.light .bg-slate-700,
-    body.light .bg-slate-700\/50 {
-      background-color: #f1f5f9 !important;
-    }
-
-    /* Cards and inner panels - lighter background */
-    body.light .bg-slate-700\/30 {
-      background-color: #f8fafc !important;
-      border: 1px solid #e2e8f0 !important;
-    }
-
-    body.light .bg-slate-900 {
-      background-color: #f8fafc !important;
-    }
-
-    /* Text colors */
-    body.light .text-slate-100,
-    body.light .text-white {
-      color: #0f172a !important;
-    }
-
-    body.light .text-slate-200,
-    body.light .text-slate-300 {
-      color: #334155 !important;
-    }
-
-    body.light .text-slate-400 {
-      color: #64748b !important;
-    }
-
-    body.light .text-slate-500 {
-      color: #94a3b8 !important;
-    }
-
-    /* Borders */
-    body.light .border-slate-700,
-    body.light .border-slate-700\/50,
-    body.light .border-slate-600,
-    body.light .border-slate-600\/50 {
-      border-color: #e2e8f0 !important;
-    }
-
-    /* Inputs */
-    body.light input,
-    body.light textarea,
-    body.light select {
-      background-color: #f1f5f9 !important;
-      border-color: #e2e8f0 !important;
-      color: #0f172a !important;
-    }
-
-    body.light input::placeholder {
-      color: #94a3b8 !important;
-    }
-
-    /* Hover states */
-    body.light .hover\:bg-slate-700:hover,
-    body.light .hover\:bg-slate-700\/50:hover {
-      background-color: #e2e8f0 !important;
-    }
-
-    body.light .hover\:bg-slate-700\/30:hover {
-      background-color: #f1f5f9 !important;
-    }
-
-    /* Card hover effect in light mode */
-    body.light .card-hover:hover {
-      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.1) !important;
-    }
-
-    /* Nav buttons in light mode */
-    body.light .nav-btn {
-      color: #475569 !important;
-    }
-
-    body.light .nav-btn.bg-emerald-500\/20 {
-      background-color: rgba(16, 185, 129, 0.15) !important;
-      color: #059669 !important;
-    }
-
-    /* Profile dropdown */
-    body.light #profile-dropdown {
-      background-color: #ffffff !important;
-      border-color: #e2e8f0 !important;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
-    }
-
-    /* Toast */
-    body.light #toast {
-      background-color: #ffffff !important;
-      border-color: #e2e8f0 !important;
-    }
-
-    /* Mobile nav */
-    body.light nav.fixed.bottom-0 {
-      background-color: rgba(255, 255, 255, 0.95) !important;
-      border-color: #e2e8f0 !important;
-    }
-
-    /* Ring colors */
-    body.light .ring-emerald-500\/50 {
-      --tw-ring-color: rgba(16, 185, 129, 0.3) !important;
-    }
-
-    /* Filter buttons in light mode */
-    body.light button.bg-slate-700\/50 {
-      background-color: #e2e8f0 !important;
-      color: #475569 !important;
-    }
-
-    body.light button.bg-slate-700\/50:hover {
-      background-color: #cbd5e1 !important;
-    }
-
-    /* Progress bar backgrounds */
-    body.light .bg-slate-600 {
-      background-color: #e2e8f0 !important;
-    }
-
-    body.light .bg-slate-600\/50 {
-      background-color: #e2e8f0 !important;
-    }
-
-    /* Status badges and indicators */
-    body.light .bg-emerald-500\/10,
-    body.light .bg-emerald-500\/20 {
-      background-color: rgba(16, 185, 129, 0.1) !important;
-    }
-
-    body.light .bg-amber-500\/10,
-    body.light .bg-amber-500\/20 {
-      background-color: rgba(245, 158, 11, 0.1) !important;
-    }
-
-    body.light .bg-cyan-500\/10,
-    body.light .bg-cyan-500\/20 {
-      background-color: rgba(6, 182, 212, 0.1) !important;
-    }
-
-    body.light .bg-red-500\/10,
-    body.light .bg-red-500\/20 {
-      background-color: rgba(239, 68, 68, 0.1) !important;
-    }
-
-    body.light .bg-blue-500\/10,
-    body.light .bg-blue-500\/20 {
-      background-color: rgba(59, 130, 246, 0.1) !important;
-    }
-
-    body.light .bg-green-500\/10,
-    body.light .bg-green-500\/20 {
-      background-color: rgba(34, 197, 94, 0.1) !important;
-    }
-
-    body.light .bg-purple-500\/10,
-    body.light .bg-purple-500\/20 {
-      background-color: rgba(168, 85, 247, 0.1) !important;
-    }
-
-    /* Scrollbar styling for light mode */
-    body.light ::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-
-    body.light ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-    }
-
-    body.light ::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
-
-    /* Section headers */
-    body.light h2.font-semibold {
-      color: #0f172a !important;
-    }
-
-    /* Stat numbers */
-    body.light .text-2xl,
-    body.light .text-3xl,
-    body.light .text-4xl {
-      color: #0f172a !important;
-    }
-
-    /* Table-like row styling */
-    body.light [class*="border-b"][class*="border-slate"] {
-      border-color: #e2e8f0 !important;
-    }
-
-    /* Theme toggle icon visibility */
-    body.light #theme-icon-sun {
-      display: none !important;
-    }
-    body.light #theme-icon-moon {
-      display: block !important;
-    }
-
-    /* Smooth transition for theme change */
-    body, header, aside, .bg-slate-800, .bg-slate-700, .bg-slate-900,
-    .text-slate-100, .text-slate-200, .text-slate-300, .text-slate-400,
-    .border-slate-700, input, #profile-dropdown, #toast, nav.fixed,
-    .bg-slate-700\/30, .bg-slate-700\/50, button {
+    body, header, aside, .bg-slate-800, .bg-slate-700, .bg-slate-900, .text-slate-100, .border-slate-700 {
       transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
     }
+
+    /* Compliance indicator */
+    .compliance-ring {
+      transform: rotate(-90deg);
+    }
+    .compliance-ring-bg { stroke: #334155; }
+    .compliance-ring-fill { transition: stroke-dashoffset 0.5s ease; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #64748b; }
   </style>
 </head>
 
 <body class="bg-slate-900 text-slate-100 min-h-screen antialiased" id="app-body">
   <!-- Header -->
-  <header class="bg-slate-800/80 backdrop-blur-xl border-b border-slate-700/50 fixed top-0 left-0 right-0 z-50 h-16">
-    <div class="flex justify-between items-center h-full px-4 sm:px-6">
+  <header class="bg-slate-800/80 backdrop-blur-xl border-b border-slate-700/50 fixed top-0 left-0 right-0 z-50 h-14">
+    <div class="flex justify-between items-center h-full px-4">
       <!-- Logo -->
-      <div class="flex items-center gap-3 w-64 shrink-0">
-        <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center">
-          <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
         </div>
-        <span class="text-xl font-bold gradient-text">FitCoach</span>
+        <span class="text-lg font-bold gradient-text">FitCoach</span>
       </div>
 
-      <!-- Search -->
-      <div class="hidden md:flex flex-1 max-w-xl mx-8">
-        <div class="relative w-full">
-          <input type="text" placeholder="Search clients, workouts..." class="w-full bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent">
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
+      <!-- Center Nav -->
+      <div class="hidden md:flex items-center gap-1">
+        <button onclick="showTab('dashboard')" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500/20 text-emerald-400" data-tab="dashboard">Dashboard</button>
+        <button onclick="showTab('calendar')" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-700/50" data-tab="calendar">Calendar</button>
+        <button onclick="showTab('workouts')" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-700/50" data-tab="workouts">Workouts</button>
+        <button onclick="showTab('performance')" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-700/50" data-tab="performance">Performance</button>
+        <button onclick="showTab('plan')" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-700/50" data-tab="plan">Plan</button>
+        <button onclick="showTab('health')" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-700/50" data-tab="health">Health</button>
       </div>
 
-      <!-- Right Section -->
-      <div class="flex items-center gap-4">
-        <!-- Theme Toggle -->
-        <button onclick="toggleTheme()" id="theme-toggle-btn" class="relative p-2 rounded-xl bg-slate-700/50 hover:bg-slate-700 transition-colors" title="Toggle theme">
-          <!-- Sun icon (shown in dark mode, click to switch to light) -->
-          <svg id="theme-icon-sun" class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <!-- Right -->
+      <div class="flex items-center gap-3">
+        <button onclick="toggleTheme()" class="p-2 rounded-lg bg-slate-700/50 hover:bg-slate-700">
+          <svg id="theme-icon-sun" class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
-          <!-- Moon icon (shown in light mode, click to switch to dark) -->
-          <svg id="theme-icon-moon" class="w-5 h-5 text-slate-600 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg id="theme-icon-moon" class="w-4 h-4 text-slate-400 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
           </svg>
         </button>
-
-        <!-- Notifications -->
-        <button id="notifications-btn" class="relative p-2 rounded-xl bg-slate-700/50 hover:bg-slate-700 transition-colors">
-          <svg class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-          <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center font-bold text-white">2</span>
-        </button>
-
-        <!-- Profile Dropdown -->
-        <div class="relative" id="profile-dropdown-container">
-          <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 cursor-pointer hover:bg-slate-700/50 rounded-xl p-2 transition-colors">
-            <img src="{{ trainerAvatar }}" alt="{{ trainerName }}" class="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/50" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'; this.alt='PD'">
-            <div class="hidden sm:block text-left">
-              <div class="text-sm font-semibold">{{ trainerName }}</div>
-              <div class="text-xs text-slate-400">Ultra Coach</div>
-            </div>
-            <svg class="w-4 h-4 text-slate-400 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          <!-- Dropdown Menu -->
-          <div id="profile-dropdown" class="hidden absolute right-0 top-full mt-2 w-64 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50">
-            <div class="p-4 border-b border-slate-700">
-              <div class="flex items-center gap-3">
-                <img src="{{ trainerAvatar }}" alt="{{ trainerName }}" class="w-12 h-12 rounded-full object-cover ring-2 ring-emerald-500/50" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'">
-                <div>
-                  <div class="font-semibold">{{ trainerName }}</div>
-                  <div class="text-sm text-slate-400">{{ trainerTitle }}</div>
-                </div>
-              </div>
-            </div>
-            <div class="p-2">
-              <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 transition-colors">
-                <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <span>My Profile</span>
-              </a>
-              <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 transition-colors">
-                <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>Settings</span>
-              </a>
-              <a href="https://www.instagram.com/ultrarunnerpaw" target="_blank" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 transition-colors">
-                <svg class="w-5 h-5 text-slate-400" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                </svg>
-                <span>Instagram</span>
-              </a>
-              <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 transition-colors">
-                <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Help & Support</span>
-              </a>
-            </div>
-            <div class="p-2 border-t border-slate-700">
-              <button class="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                <span>Sign Out</span>
-              </button>
-            </div>
-          </div>
+        <div class="flex items-center gap-2">
+          <img src="{{ athleteAvatar }}" alt="{{ athleteName }}" class="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/50">
+          <span class="hidden sm:block text-sm font-medium">{{ athleteName }}</span>
         </div>
       </div>
     </div>
   </header>
 
-  <div class="pt-16"> <!-- Offset for fixed header -->
-    <!-- Sidebar -->
-    <aside class="hidden lg:flex flex-col w-64 bg-slate-800/50 border-r border-slate-700/50 fixed top-16 bottom-0 left-0">
-      <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-        <button onclick="showTab('dashboard')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500/20 text-emerald-400 font-medium transition-colors" data-tab="dashboard">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-          Dashboard
-        </button>
-        <button onclick="showTab('clients')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 transition-colors" data-tab="clients">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-          Clients
-        </button>
-        <button onclick="showTab('schedule')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 transition-colors" data-tab="schedule">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          Schedule
-        </button>
-        <button onclick="showTab('workouts')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 transition-colors" data-tab="workouts">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-          Workouts
-        </button>
-        <button onclick="showTab('nutrition')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 transition-colors" data-tab="nutrition">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-          </svg>
-          Nutrition
-        </button>
-        <button onclick="showTab('analytics')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 transition-colors" data-tab="analytics">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          Analytics
-        </button>
-      </nav>
+  <!-- Main Content -->
+  <main class="pt-14 min-h-screen">
 
-      <!-- Upgrade Card - Pinned to bottom -->
-      <div class="p-4 mt-auto border-t border-slate-700/50 bg-slate-800/50">
-        <div class="bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-2xl p-4 border border-emerald-500/30">
-          <div class="text-sm font-semibold mb-1">Go Pro</div>
-          <p class="text-xs text-slate-400 mb-3">Unlock advanced features and unlimited clients</p>
-          <button class="w-full py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">Upgrade Now</button>
+    <!-- Dashboard Tab -->
+    <div id="tab-dashboard" class="tab-content p-4 lg:p-6">
+      <!-- Top Stats Bar -->
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div class="text-xs text-slate-400 uppercase tracking-wide">Fitness (CTL)</div>
+          <div class="text-2xl font-bold text-cyan-400 mt-1">{{ ctl }}</div>
+        </div>
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div class="text-xs text-slate-400 uppercase tracking-wide">Fatigue (ATL)</div>
+          <div class="text-2xl font-bold text-orange-400 mt-1">{{ atl }}</div>
+        </div>
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div class="text-xs text-slate-400 uppercase tracking-wide">Form (TSB)</div>
+          <div class="text-2xl font-bold mt-1 @if (tsb >= 0) text-emerald-400 @else text-amber-400 @endif">{{ tsb }}</div>
+        </div>
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div class="text-xs text-slate-400 uppercase tracking-wide">Week TSS</div>
+          <div class="text-2xl font-bold text-purple-400 mt-1">{{ weeklySummaries[0].actualTss }}</div>
+          <div class="text-xs text-slate-500">/ {{ weeklySummaries[0].plannedTss }}</div>
+        </div>
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div class="text-xs text-slate-400 uppercase tracking-wide">Compliance</div>
+          <div class="text-2xl font-bold text-emerald-400 mt-1">{{ weeklySummaries[0].compliance }}%</div>
+        </div>
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div class="text-xs text-slate-400 uppercase tracking-wide">VO2max</div>
+          <div class="text-2xl font-bold text-blue-400 mt-1">{{ athleteVo2max }}</div>
+        </div>
+        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div class="text-xs text-slate-400 uppercase tracking-wide">Phase</div>
+          <div class="text-lg font-bold text-green-400 mt-1">{{ currentPhase.name }}</div>
         </div>
       </div>
-    </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 lg:ml-64 min-h-[calc(100vh-4rem)]">
-
-      <!-- Dashboard Tab -->
-      <div id="tab-dashboard" class="tab-content">
-        <!-- Welcome Section -->
-        <div class="mb-8">
-          <h1 class="text-2xl sm:text-3xl font-bold mb-2">Good morning, Pawel!</h1>
-          <p class="text-slate-400">You have <span class="text-emerald-400 font-semibold">{{ upcomingToday }} sessions</span> scheduled for today</p>
-        </div>
-
-        <!-- Stats Grid -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div class="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50 card-hover">
-            <div class="flex items-center justify-between mb-3">
-              <div class="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <span class="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">+{{ newClientsThisMonth }} new</span>
-            </div>
-            <div class="text-2xl font-bold">{{ activeClients }}</div>
-            <div class="text-sm text-slate-400">Active Clients</div>
-          </div>
-
-          <div class="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50 card-hover">
-            <div class="flex items-center justify-between mb-3">
-              <div class="w-10 h-10 bg-cyan-500/20 rounded-xl flex items-center justify-center">
-                <svg class="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-            <div class="text-2xl font-bold">{{ sessionsThisWeek }}</div>
-            <div class="text-sm text-slate-400">Sessions This Week</div>
-          </div>
-
-          <div class="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50 card-hover">
-            <div class="flex items-center justify-between mb-3">
-              <div class="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                <svg class="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-            <div class="text-2xl font-bold">{{ completionRate }}%</div>
-            <div class="text-sm text-slate-400">Completion Rate</div>
-          </div>
-
-          <div class="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50 card-hover">
-            <div class="flex items-center justify-between mb-3">
-              <div class="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
-                <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-            <div class="text-2xl font-bold">${{ revenue }}</div>
-            <div class="text-sm text-slate-400">Revenue This Month</div>
+      <!-- PMC Chart -->
+      <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-semibold">Performance Management Chart</h2>
+          <div class="flex items-center gap-4 text-xs">
+            <div class="flex items-center gap-1"><span class="w-3 h-0.5 bg-cyan-400 rounded"></span> CTL (Fitness)</div>
+            <div class="flex items-center gap-1"><span class="w-3 h-0.5 bg-orange-400 rounded"></span> ATL (Fatigue)</div>
+            <div class="flex items-center gap-1"><span class="w-3 h-0.5 bg-emerald-400 rounded"></span> TSB (Form)</div>
           </div>
         </div>
 
-        <!-- Main Grid -->
-        <div class="grid lg:grid-cols-3 gap-6">
-          <!-- Today's Schedule -->
-          <div class="lg:col-span-2 bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
-            <div class="p-5 border-b border-slate-700/50 flex justify-between items-center">
-              <h2 class="font-semibold text-lg">Today's Schedule</h2>
-              <button onclick="showTab('schedule')" class="text-sm text-emerald-400 hover:text-emerald-300 font-medium">View All</button>
-            </div>
-            <div>
-              @foreach (todaySchedule as session)
-                <div class="p-4 hover:bg-slate-700/30 transition-colors border-b border-slate-700/50 last:border-b-0">
-                  <div class="flex items-center gap-4">
-                    <div class="text-center min-w-[60px]">
-                      <div class="text-sm font-semibold">{{ session.time }}</div>
-                      <div class="text-xs text-slate-500">{{ session.duration }}min</div>
-                    </div>
-                    <div class="flex-1">
-                      <div class="flex items-center gap-2">
-                        <span class="font-medium">{{ session.client }}</span>
-                        @if (session.type === 'group')
-                          <span class="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full">{{ session.participants }} people</span>
-                        @elseif(session.type === 'consultation')
-                          <span class="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">New</span>
-                        @endif
-                      </div>
-                      <div class="text-sm text-slate-400">{{ session.focus }}</div>
-                    </div>
-                    @if (session.status === 'completed')
-                      <div class="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                        <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        <!-- Chart Grid -->
+        <div class="relative h-48 bg-slate-900/50 rounded-lg overflow-hidden">
+          <!-- Grid lines -->
+          <div class="absolute inset-0 flex flex-col justify-between py-2">
+            <div class="border-b border-slate-700/30 text-xs text-slate-500 px-2">60</div>
+            <div class="border-b border-slate-700/30 text-xs text-slate-500 px-2">40</div>
+            <div class="border-b border-slate-700/30 text-xs text-slate-500 px-2">20</div>
+            <div class="border-b border-slate-700/30 text-xs text-slate-500 px-2">0</div>
+            <div class="text-xs text-slate-500 px-2">-20</div>
+          </div>
+
+          <!-- SVG Chart -->
+          <svg class="absolute inset-0 w-full h-full" viewBox="0 0 800 180" preserveAspectRatio="none">
+            <!-- TSB Area (Form) -->
+            <path class="pmc-area fill-emerald-500" d="M0,108 L100,96 L200,108 L300,84 L400,72 L500,108 L600,132 L700,96 L700,180 L0,180 Z" />
+
+            <!-- CTL Line (Fitness) -->
+            <path class="pmc-line stroke-cyan-400" d="M0,126 L100,120 L200,117 L300,114 L400,108 L500,105 L600,102 L700,96" />
+
+            <!-- ATL Line (Fatigue) -->
+            <path class="pmc-line stroke-orange-400" d="M0,117 L100,96 L200,108 L300,87 L400,78 L500,96 L600,108 L700,78" />
+
+            <!-- TSB Line (Form) -->
+            <path class="pmc-line stroke-emerald-400" d="M0,108 L100,96 L200,108 L300,84 L400,72 L500,108 L600,132 L700,96" />
+
+            <!-- Data points -->
+            @foreach (pmcData as index => point)
+              <circle cx="{{ 100 * index }}" cy="{{ 180 - (point.ctl * 2) }}" r="4" class="fill-cyan-400" />
+              <circle cx="{{ 100 * index }}" cy="{{ 180 - (point.atl * 2) }}" r="4" class="fill-orange-400" />
+            @endforeach
+          </svg>
+
+          <!-- X-axis labels -->
+          <div class="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-slate-500">
+            @foreach (pmcData as point)
+              <span>{{ point.date }}</span>
+            @endforeach
+          </div>
+        </div>
+      </div>
+
+      <!-- Two Column Layout -->
+      <div class="grid lg:grid-cols-3 gap-6">
+        <!-- This Week's Calendar -->
+        <div class="lg:col-span-2 bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
+          <div class="p-4 border-b border-slate-700/50 flex items-center justify-between">
+            <h2 class="font-semibold">This Week</h2>
+            <button onclick="showTab('calendar')" class="text-sm text-emerald-400 hover:text-emerald-300">View Calendar</button>
+          </div>
+
+          <div class="grid grid-cols-7 text-center text-xs text-slate-400 py-2 border-b border-slate-700/50">
+            <div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div><div>SUN</div>
+          </div>
+
+          <div class="grid grid-cols-7">
+            @foreach (thisWeekWorkouts as workout)
+              <div class="calendar-day p-2 @if (workout.dayOfWeek === 'Sun') today @endif">
+                <div class="text-xs text-slate-400 mb-2">{{ workout.date.split('-')[2] }}</div>
+                @if (workout.workoutType !== 'rest')
+                  <div class="bg-slate-700/50 rounded-lg p-2 workout-{{ workout.workoutType }} cursor-pointer hover:bg-slate-700 transition-colors">
+                    <div class="text-xs font-medium truncate">{{ workout.name }}</div>
+                    @if (workout.completed)
+                      <div class="flex items-center gap-1 mt-1">
+                        <svg class="w-3 h-3 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                         </svg>
+                        <span class="text-xs text-slate-400">{{ workout.tss }} TSS</span>
                       </div>
                     @else
-                      <button class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-xl transition-colors">Start</button>
+                      <div class="text-xs text-slate-500 mt-1">{{ workout.plannedTss }} TSS planned</div>
                     @endif
                   </div>
-                </div>
-              @endforeach
-            </div>
+                @else
+                  <div class="text-xs text-slate-500 text-center py-4">Rest</div>
+                @endif
+              </div>
+            @endforeach
           </div>
 
-          <!-- Recent Activity -->
-          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
-            <div class="p-5 border-b border-slate-700/50">
-              <h2 class="font-semibold text-lg">Recent Activity</h2>
+          <!-- Week Totals -->
+          <div class="grid grid-cols-4 gap-4 p-4 bg-slate-700/30 border-t border-slate-700/50">
+            <div class="text-center">
+              <div class="text-lg font-bold">{{ fmtDuration(weeklySummaries[0].actualDuration) }}</div>
+              <div class="text-xs text-slate-400">Duration</div>
             </div>
-            <div>
-              @foreach (recentActivity as activity)
-                <div class="p-4 flex items-start gap-3 border-b border-slate-700/50 last:border-b-0">
-                  <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0
-                    @if (activity.type === 'workout') bg-emerald-500/20
-                    @elseif(activity.type === 'milestone') bg-amber-500/20
-                    @elseif(activity.type === 'message') bg-blue-500/20
-                    @elseif(activity.type === 'payment') bg-green-500/20
-                    @else bg-purple-500/20
-                    @endif
-                  ">
-                    @if (activity.type === 'workout')
-                      <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                    @elseif(activity.type === 'milestone')
-                      <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
-                    @elseif(activity.type === 'message')
-                      <svg class="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                    @elseif(activity.type === 'payment')
-                      <svg class="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    @else
-                      <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
-                    @endif
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm">{{ activity.message }}</p>
-                    <p class="text-xs text-slate-500 mt-1">{{ activity.time }}</p>
-                  </div>
-                </div>
-              @endforeach
+            <div class="text-center">
+              <div class="text-lg font-bold">{{ fmtDistance(weeklySummaries[0].actualDistance) }}</div>
+              <div class="text-xs text-slate-400">Distance</div>
+            </div>
+            <div class="text-center">
+              <div class="text-lg font-bold text-emerald-400">{{ weeklySummaries[0].actualTss }}</div>
+              <div class="text-xs text-slate-400">TSS</div>
+            </div>
+            <div class="text-center">
+              <div class="text-lg font-bold">{{ weeklySummaries[0].completedWorkouts }}/{{ weeklySummaries[0].plannedWorkouts }}</div>
+              <div class="text-xs text-slate-400">Workouts</div>
             </div>
           </div>
         </div>
 
-        <!-- Client Progress Section -->
-        <div class="mt-6 bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
-          <div class="p-5 border-b border-slate-700/50 flex justify-between items-center">
-            <h2 class="font-semibold text-lg">Client Progress</h2>
-            <button onclick="showTab('clients')" class="text-sm text-emerald-400 hover:text-emerald-300 font-medium">View All Clients</button>
+        <!-- Weekly Progress -->
+        <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
+          <h2 class="font-semibold mb-4">Weekly Progress</h2>
+
+          <!-- Compliance Ring -->
+          <div class="flex items-center justify-center mb-6">
+            <div class="relative">
+              <svg class="w-32 h-32 compliance-ring" viewBox="0 0 100 100">
+                <circle class="compliance-ring-bg" cx="50" cy="50" r="42" fill="none" stroke-width="8" />
+                <circle class="compliance-ring-fill stroke-emerald-500" cx="50" cy="50" r="42" fill="none" stroke-width="8"
+                  stroke-dasharray="264" stroke-dashoffset="{{ 264 - (264 * weeklySummaries[0].compliance / 100) }}" stroke-linecap="round" />
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span class="text-3xl font-bold">{{ weeklySummaries[0].compliance }}%</span>
+                <span class="text-xs text-slate-400">Compliance</span>
+              </div>
+            </div>
           </div>
-          <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-5">
-            @foreach (clients as client)
-              <div class="bg-slate-700/30 rounded-xl p-4 card-hover cursor-pointer">
-                <div class="flex items-center gap-3 mb-3">
-                  <img src="{{ client.avatar }}" alt="{{ client.name }}" class="w-10 h-10 rounded-full object-cover" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'">
-                  <div class="min-w-0">
-                    <div class="font-medium text-sm truncate">{{ client.name }}</div>
-                    <div class="text-xs text-slate-400">{{ client.goal }}</div>
+
+          <!-- TSS Progress -->
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span class="text-slate-400">TSS Progress</span>
+                <span>{{ weeklySummaries[0].actualTss }} / {{ weeklySummaries[0].plannedTss }}</span>
+              </div>
+              <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full bg-emerald-500 rounded-full" style="width: {{ Math.min((weeklySummaries[0].actualTss / weeklySummaries[0].plannedTss) * 100, 100) }}%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span class="text-slate-400">Distance</span>
+                <span>{{ fmtDistance(weeklySummaries[0].actualDistance) }} / {{ fmtDistance(weeklySummaries[0].plannedDistance) }}</span>
+              </div>
+              <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full bg-cyan-500 rounded-full" style="width: {{ Math.min((weeklySummaries[0].actualDistance / weeklySummaries[0].plannedDistance) * 100, 100) }}%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span class="text-slate-400">Duration</span>
+                <span>{{ fmtDuration(weeklySummaries[0].actualDuration) }} / {{ fmtDuration(weeklySummaries[0].plannedDuration) }}</span>
+              </div>
+              <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full bg-purple-500 rounded-full" style="width: {{ Math.min((weeklySummaries[0].actualDuration / weeklySummaries[0].plannedDuration) * 100, 100) }}%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Training Phase -->
+          <div class="mt-6 p-3 rounded-lg phase-build border">
+            <div class="text-sm font-medium">{{ currentPhase.name }}</div>
+            <div class="text-xs text-slate-400 mt-1">{{ currentPhase.focus }}</div>
+            <div class="text-xs text-slate-500 mt-1">{{ currentPhase.startDate }} - {{ currentPhase.endDate }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Workouts -->
+      <div class="mt-6 bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
+        <div class="p-4 border-b border-slate-700/50">
+          <h2 class="font-semibold">Recent Workouts</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="text-left text-xs text-slate-400 border-b border-slate-700/50">
+                <th class="p-3 font-medium">Date</th>
+                <th class="p-3 font-medium">Workout</th>
+                <th class="p-3 font-medium">Distance</th>
+                <th class="p-3 font-medium">Duration</th>
+                <th class="p-3 font-medium">TSS</th>
+                <th class="p-3 font-medium">IF</th>
+                <th class="p-3 font-medium">Pace</th>
+                <th class="p-3 font-medium">HR</th>
+                <th class="p-3 font-medium">EF</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach (thisWeekWorkouts.filter(w => w.completed && w.workoutType !== 'rest') as workout)
+                <tr class="border-b border-slate-700/30 hover:bg-slate-700/20 cursor-pointer">
+                  <td class="p-3 text-sm">{{ workout.dayOfWeek }}</td>
+                  <td class="p-3">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full
+                        @if (workout.workoutType === 'easy') bg-blue-400
+                        @elseif (workout.workoutType === 'tempo') bg-green-400
+                        @elseif (workout.workoutType === 'interval') bg-orange-400
+                        @elseif (workout.workoutType === 'long') bg-purple-400
+                        @else bg-cyan-400
+                        @endif
+                      "></span>
+                      <span class="font-medium">{{ workout.name }}</span>
+                    </div>
+                  </td>
+                  <td class="p-3 text-sm">{{ fmtDistance(workout.distance) }}</td>
+                  <td class="p-3 text-sm">{{ fmtDuration(workout.duration) }}</td>
+                  <td class="p-3 text-sm font-semibold text-emerald-400">{{ workout.tss }}</td>
+                  <td class="p-3 text-sm">{{ workout.ifactor?.toFixed(2) }}</td>
+                  <td class="p-3 text-sm">{{ fmtPace(workout.avgPace) }}/km</td>
+                  <td class="p-3 text-sm">{{ workout.avgHR }} bpm</td>
+                  <td class="p-3 text-sm">{{ workout.efficiencyFactor?.toFixed(2) }}</td>
+                </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar Tab -->
+    <div id="tab-calendar" class="tab-content hidden p-4 lg:p-6">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-4">
+          <button class="p-2 hover:bg-slate-700/50 rounded-lg">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <h1 class="text-xl font-bold">December 2024</h1>
+          <button class="p-2 hover:bg-slate-700/50 rounded-lg">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="px-3 py-1.5 text-sm bg-slate-700/50 rounded-lg">Week</button>
+          <button class="px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-700/50 rounded-lg">Month</button>
+        </div>
+      </div>
+
+      <!-- Weekly Summary Cards -->
+      <div class="grid md:grid-cols-4 gap-4 mb-6">
+        @foreach (weeklySummaries as week)
+          <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4 card-hover">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium">Week {{ week.weekNumber }}</span>
+              <span class="text-xs px-2 py-0.5 rounded-full
+                @if (week.phase.includes('Build')) bg-green-500/20 text-green-400
+                @elseif (week.phase.includes('Base')) bg-blue-500/20 text-blue-400
+                @else bg-slate-500/20 text-slate-400
+                @endif
+              ">{{ week.phase }}</span>
+            </div>
+            <div class="text-xs text-slate-400 mb-3">{{ week.startDate }} - {{ week.endDate }}</div>
+
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <div class="text-slate-400 text-xs">Distance</div>
+                <div class="font-semibold">{{ fmtDistance(week.actualDistance) }}</div>
+              </div>
+              <div>
+                <div class="text-slate-400 text-xs">Duration</div>
+                <div class="font-semibold">{{ fmtDuration(week.actualDuration) }}</div>
+              </div>
+              <div>
+                <div class="text-slate-400 text-xs">TSS</div>
+                <div class="font-semibold text-emerald-400">{{ week.actualTss }}</div>
+              </div>
+              <div>
+                <div class="text-slate-400 text-xs">Compliance</div>
+                <div class="font-semibold @if (week.compliance >= 90) text-emerald-400 @elseif (week.compliance >= 75) text-yellow-400 @else text-red-400 @endif">{{ week.compliance }}%</div>
+              </div>
+            </div>
+
+            <div class="mt-3 pt-3 border-t border-slate-700/50">
+              <div class="flex justify-between text-xs text-slate-400">
+                <span>CTL: {{ week.avgCtl }}</span>
+                <span>ATL: {{ week.avgAtl }}</span>
+                <span>TSB: {{ week.avgTsb }}</span>
+              </div>
+            </div>
+          </div>
+        @endforeach
+      </div>
+
+      <!-- Full Calendar Grid -->
+      <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
+        <div class="grid grid-cols-7 text-center text-sm font-medium py-3 border-b border-slate-700/50 bg-slate-700/30">
+          <div>Monday</div><div>Tuesday</div><div>Wednesday</div><div>Thursday</div><div>Friday</div><div>Saturday</div><div>Sunday</div>
+        </div>
+
+        <div class="grid grid-cols-7">
+          @foreach (thisWeekWorkouts as workout)
+            <div class="calendar-day p-3 min-h-[140px] @if (workout.dayOfWeek === 'Sun') today @endif">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium">{{ workout.date.split('-')[2] }}</span>
+                @if (workout.completed && workout.tss)
+                  <span class="text-xs text-emerald-400">{{ workout.tss }} TSS</span>
+                @endif
+              </div>
+
+              @if (workout.workoutType !== 'rest')
+                <div class="space-y-2">
+                  <!-- Planned workout -->
+                  <div class="bg-slate-700/30 rounded-lg p-2 workout-{{ workout.workoutType }} text-xs">
+                    <div class="font-medium">{{ workout.name }}</div>
+                    @if (workout.plannedDescription)
+                      <div class="text-slate-400 mt-1 line-clamp-2">{{ workout.plannedDescription }}</div>
+                    @endif
+                    <div class="flex gap-2 mt-2 text-slate-400">
+                      @if (workout.plannedDistance)
+                        <span>{{ fmtDistance(workout.plannedDistance) }}</span>
+                      @endif
+                      @if (workout.plannedDuration)
+                        <span>{{ fmtDuration(workout.plannedDuration) }}</span>
+                      @endif
+                    </div>
                   </div>
-                </div>
-                <div class="mb-2">
-                  <div class="flex justify-between text-xs mb-1">
-                    <span class="text-slate-400">Progress</span>
-                    <span class="font-semibold text-emerald-400">{{ client.progress }}%</span>
-                  </div>
-                  <div class="h-1.5 bg-slate-600 rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full" style="width: {{ client.progress }}%"></div>
-                  </div>
-                </div>
-                <div class="flex items-center justify-between text-xs">
-                  <span class="text-slate-500">{{ client.streak }} day streak</span>
-                  @if (client.streak > 7)
-                    <span class="text-amber-400">🔥</span>
+
+                  <!-- Completed indicator -->
+                  @if (workout.completed)
+                    <div class="flex items-center gap-1 text-xs text-emerald-400">
+                      <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                      </svg>
+                      <span>Completed</span>
+                    </div>
                   @endif
                 </div>
-              </div>
-            @endforeach
-          </div>
+              @else
+                <div class="flex items-center justify-center h-20 text-slate-500 text-sm">
+                  Rest Day
+                </div>
+              @endif
+            </div>
+          @endforeach
         </div>
       </div>
+    </div>
 
-      <!-- Clients Tab -->
-      <div id="tab-clients" class="tab-content hidden">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 class="text-2xl font-bold">Clients</h1>
-            <p class="text-slate-400">Manage your {{ activeClients }} active clients</p>
-          </div>
-          <button class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Add Client
-          </button>
-        </div>
+    <!-- Workouts Tab -->
+    <div id="tab-workouts" class="tab-content hidden p-4 lg:p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-xl font-bold">Workouts</h1>
+        <button class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+          New Workout
+        </button>
+      </div>
 
-        <!-- Filters -->
-        <div class="flex flex-wrap gap-3 mb-6">
-          <button class="px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-xl text-sm font-medium">All Clients</button>
-          <button class="px-4 py-2 bg-slate-700/50 text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors">Active</button>
-          <button class="px-4 py-2 bg-slate-700/50 text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors">On Break</button>
-          <button class="px-4 py-2 bg-slate-700/50 text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors">New This Month</button>
-        </div>
-
-        <!-- Client Cards -->
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          @foreach (clients as client)
-            <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden card-hover">
-              <div class="p-5">
-                <div class="flex items-start gap-4 mb-4">
-                  <img src="{{ client.avatar }}" alt="{{ client.name }}" class="w-14 h-14 rounded-xl object-cover" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'">
-                  <div class="flex-1 min-w-0">
-                    <h3 class="font-semibold truncate">{{ client.name }}</h3>
-                    <p class="text-sm text-slate-400">{{ client.plan }}</p>
-                    <div class="flex items-center gap-2 mt-1">
-                      <span class="w-2 h-2 bg-emerald-400 rounded-full pulse-dot"></span>
-                      <span class="text-xs text-emerald-400">Active</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="space-y-3">
+      <!-- Workout Detail -->
+      <div class="grid lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-4">
+          @foreach (thisWeekWorkouts.filter(w => w.completed && w.workoutType !== 'rest') as workout)
+            <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
+              <div class="p-4 border-b border-slate-700/50">
+                <div class="flex items-start justify-between">
                   <div>
-                    <div class="flex justify-between text-sm mb-1">
-                      <span class="text-slate-400">Goal Progress</span>
-                      <span class="font-semibold">{{ client.progress }}%</span>
-                    </div>
-                    <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
-                      <div class="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full transition-all" style="width: {{ client.progress }}%"></div>
-                    </div>
-                  </div>
-
-                  <div class="flex items-center justify-between text-sm">
                     <div class="flex items-center gap-2">
-                      <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      <span>{{ client.streak }} day streak</span>
+                      <h3 class="font-semibold text-lg">{{ workout.name }}</h3>
+                      <span class="text-xs px-2 py-0.5 rounded-full capitalize
+                        @if (workout.workoutType === 'easy') bg-blue-500/20 text-blue-400
+                        @elseif (workout.workoutType === 'tempo') bg-green-500/20 text-green-400
+                        @elseif (workout.workoutType === 'interval') bg-orange-500/20 text-orange-400
+                        @elseif (workout.workoutType === 'long') bg-purple-500/20 text-purple-400
+                        @else bg-cyan-500/20 text-cyan-400
+                        @endif
+                      ">{{ workout.workoutType }}</span>
                     </div>
-                    <span class="text-slate-400">{{ client.goal }}</span>
+                    <div class="text-sm text-slate-400 mt-1">{{ workout.dayOfWeek }}, {{ workout.date }}</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-2xl font-bold text-emerald-400">{{ workout.tss }}</div>
+                    <div class="text-xs text-slate-400">TSS</div>
                   </div>
                 </div>
               </div>
 
-              <div class="px-5 py-3 bg-slate-700/30 border-t border-slate-700/50 flex items-center justify-between">
-                <div class="text-sm">
-                  <span class="text-slate-400">Next:</span>
-                  <span class="font-medium ml-1">{{ client.nextSession }}</span>
+              <!-- Metrics Grid -->
+              <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 p-4 bg-slate-700/20">
+                <div>
+                  <div class="text-xs text-slate-400">Distance</div>
+                  <div class="font-semibold">{{ fmtDistance(workout.distance) }}</div>
                 </div>
-                <button class="p-2 hover:bg-slate-700 rounded-lg transition-colors">
-                  <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </button>
+                <div>
+                  <div class="text-xs text-slate-400">Duration</div>
+                  <div class="font-semibold">{{ fmtDuration(workout.duration) }}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-400">Avg Pace</div>
+                  <div class="font-semibold">{{ fmtPace(workout.avgPace) }}/km</div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-400">Avg HR</div>
+                  <div class="font-semibold">{{ workout.avgHR }} bpm</div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-400">IF</div>
+                  <div class="font-semibold">{{ workout.ifactor?.toFixed(2) }}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-400">EF</div>
+                  <div class="font-semibold">{{ workout.efficiencyFactor?.toFixed(2) }}</div>
+                </div>
               </div>
-            </div>
-          @endforeach
-        </div>
-      </div>
 
-      <!-- Schedule Tab -->
-      <div id="tab-schedule" class="tab-content hidden">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 class="text-2xl font-bold">Schedule</h1>
-            <p class="text-slate-400">{{ sessionsThisWeek }} sessions scheduled this week</p>
-          </div>
-          <button class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            New Session
-          </button>
-        </div>
-
-        <!-- Week View -->
-        <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
-          <div class="p-5 border-b border-slate-700/50 flex justify-between items-center">
-            <div class="flex items-center gap-4">
-              <button class="p-2 hover:bg-slate-700 rounded-lg transition-colors">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <h2 class="font-semibold text-lg">December 9 - 15, 2024</h2>
-              <button class="p-2 hover:bg-slate-700 rounded-lg transition-colors">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-            <button class="text-sm text-emerald-400 hover:text-emerald-300 font-medium">Today</button>
-          </div>
-
-          <!-- Week Days -->
-          <div class="grid grid-cols-7 border-b border-slate-700/50">
-            @foreach (weekDays as index => day)
-              <div class="p-4 text-center border-r border-slate-700/50 last:border-r-0 @if (index === 0) bg-emerald-500/10 @endif">
-                <div class="text-xs text-slate-400 uppercase">{{ day }}</div>
-                <div class="text-lg font-semibold mt-1 @if (index === 0) text-emerald-400 @endif">{{ weekDates[index] }}</div>
-              </div>
-            @endforeach
-          </div>
-
-          <!-- Schedule Grid -->
-          <div class="p-5">
-            <div class="space-y-3">
-              @foreach (todaySchedule as session)
-                <div class="flex items-center gap-4 p-4 bg-slate-700/30 rounded-xl hover:bg-slate-700/50 transition-colors cursor-pointer">
-                  <div class="w-1 h-12 rounded-full
-                    @if (session.type === 'personal') bg-emerald-500
-                    @elseif(session.type === 'group') bg-purple-500
-                    @else bg-amber-500
-                    @endif
-                  "></div>
-                  <div class="flex-1">
-                    <div class="font-medium">{{ session.client }}</div>
-                    <div class="text-sm text-slate-400">{{ session.time }} - {{ session.duration }} min - {{ session.focus }}</div>
+              <!-- Laps -->
+              @if (workout.laps && workout.laps.length > 0)
+                <div class="p-4 border-t border-slate-700/50">
+                  <h4 class="text-sm font-medium mb-3">Laps</h4>
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                      <thead>
+                        <tr class="text-xs text-slate-400">
+                          <th class="text-left pb-2">Lap</th>
+                          <th class="text-left pb-2">Distance</th>
+                          <th class="text-left pb-2">Time</th>
+                          <th class="text-left pb-2">Pace</th>
+                          <th class="text-left pb-2">Avg HR</th>
+                          <th class="text-left pb-2">Max HR</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @foreach (workout.laps as lap)
+                          <tr class="border-t border-slate-700/30">
+                            <td class="py-2">{{ lap.lapNumber }}</td>
+                            <td class="py-2">{{ (lap.distance / 1000).toFixed(2) }} km</td>
+                            <td class="py-2">{{ fmtTime(lap.duration) }}</td>
+                            <td class="py-2 font-medium">{{ fmtPace(lap.avgPace) }}/km</td>
+                            <td class="py-2">{{ lap.avgHR }}</td>
+                            <td class="py-2">{{ lap.maxHR }}</td>
+                          </tr>
+                        @endforeach
+                      </tbody>
+                    </table>
                   </div>
-                  <span class="text-xs px-2 py-1 rounded-full capitalize
-                    @if (session.type === 'personal') bg-emerald-500/20 text-emerald-400
-                    @elseif(session.type === 'group') bg-purple-500/20 text-purple-400
-                    @else bg-amber-500/20 text-amber-400
-                    @endif
-                  ">{{ session.type }}</span>
                 </div>
-              @endforeach
-            </div>
-          </div>
-        </div>
-      </div>
+              @endif
 
-      <!-- Workouts Tab -->
-      <div id="tab-workouts" class="tab-content hidden">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 class="text-2xl font-bold">Workout Library</h1>
-            <p class="text-slate-400">{{ workoutTemplates.length }} workout templates available</p>
-          </div>
-          <button class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Create Workout
-          </button>
-        </div>
-
-        <!-- Category Filters -->
-        <div class="flex flex-wrap gap-3 mb-6">
-          <button class="px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-xl text-sm font-medium">All</button>
-          <button class="px-4 py-2 bg-slate-700/50 text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors">Strength</button>
-          <button class="px-4 py-2 bg-slate-700/50 text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors">Cardio</button>
-          <button class="px-4 py-2 bg-slate-700/50 text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors">Core</button>
-          <button class="px-4 py-2 bg-slate-700/50 text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors">Mobility</button>
-        </div>
-
-        <!-- Workout Templates Grid -->
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          @foreach (workoutTemplates as workout)
-            <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden card-hover cursor-pointer">
-              <div class="p-5">
-                <div class="flex items-start justify-between mb-3">
-                  <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl
-                    @if (workout.category === 'Strength') bg-red-500/20
-                    @elseif(workout.category === 'Cardio') bg-orange-500/20
-                    @elseif(workout.category === 'Core') bg-blue-500/20
-                    @else bg-green-500/20
-                    @endif
-                  ">
-                    @if (workout.category === 'Strength')
-                      <svg class="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                    @elseif(workout.category === 'Cardio')
-                      <svg class="w-6 h-6 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                    @elseif(workout.category === 'Core')
-                      <svg class="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
-                    @else
-                      <svg class="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                    @endif
-                  </div>
-                  <span class="text-xs px-2 py-1 rounded-full
-                    @if (workout.difficulty === 'Beginner') bg-green-500/20 text-green-400
-                    @elseif(workout.difficulty === 'Intermediate') bg-yellow-500/20 text-yellow-400
-                    @else bg-red-500/20 text-red-400
-                    @endif
-                  ">{{ workout.difficulty }}</span>
-                </div>
-                <h3 class="font-semibold text-lg mb-2">{{ workout.name }}</h3>
-                <div class="flex items-center gap-4 text-sm text-slate-400">
-                  <span>{{ workout.exercises }} exercises</span>
-                  <span>{{ workout.duration }} min</span>
-                </div>
-              </div>
-              <div class="px-5 py-3 bg-slate-700/30 border-t border-slate-700/50 flex justify-between items-center">
-                <span class="text-xs text-slate-400">Used {{ workout.usageCount }} times</span>
-                <button class="text-sm text-emerald-400 hover:text-emerald-300 font-medium">Use Template</button>
-              </div>
-            </div>
-          @endforeach
-        </div>
-
-        <!-- Exercise Library -->
-        <div>
-          <h2 class="text-xl font-bold mb-4">Exercise Library</h2>
-          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
-            <div>
-              @foreach (exercises as exercise)
-                <div class="p-4 flex items-center justify-between hover:bg-slate-700/30 transition-colors border-b border-slate-700/50 last:border-b-0">
-                  <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center">
-                      <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                      </svg>
+              <!-- Running Dynamics -->
+              @if (workout.groundContactTime)
+                <div class="p-4 border-t border-slate-700/50 bg-slate-700/10">
+                  <h4 class="text-sm font-medium mb-3">Running Dynamics</h4>
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <div class="text-xs text-slate-400">Ground Contact</div>
+                      <div class="font-semibold">{{ workout.groundContactTime }} ms</div>
                     </div>
                     <div>
-                      <div class="font-medium">{{ exercise.name }}</div>
-                      <div class="text-sm text-slate-400">{{ exercise.muscle }} - {{ exercise.equipment }}</div>
+                      <div class="text-xs text-slate-400">Stride Length</div>
+                      <div class="font-semibold">{{ workout.strideLength }} m</div>
                     </div>
-                  </div>
-                  <span class="text-xs px-2 py-1 bg-slate-700 rounded-full">{{ exercise.difficulty }}</span>
-                </div>
-              @endforeach
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Nutrition Tab -->
-      <div id="tab-nutrition" class="tab-content hidden">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 class="text-2xl font-bold">Nutrition Plans</h1>
-            <p class="text-slate-400">{{ nutritionPlans.length }} meal plans configured</p>
-          </div>
-          <button class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Create Plan
-          </button>
-        </div>
-
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          @foreach (nutritionPlans as plan)
-            <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden card-hover">
-              <div class="p-5">
-                <h3 class="font-semibold text-lg mb-4">{{ plan.name }}</h3>
-                <div class="space-y-4">
-                  <div class="flex justify-between items-center">
-                    <span class="text-slate-400">Daily Calories</span>
-                    <span class="text-2xl font-bold text-emerald-400">{{ plan.calories }}</span>
-                  </div>
-                  <div class="grid grid-cols-3 gap-3">
-                    <div class="text-center p-3 bg-slate-700/30 rounded-xl">
-                      <div class="text-lg font-bold text-red-400">{{ plan.protein }}g</div>
-                      <div class="text-xs text-slate-400">Protein</div>
+                    <div>
+                      <div class="text-xs text-slate-400">Vertical Osc.</div>
+                      <div class="font-semibold">{{ workout.verticalOscillation }} cm</div>
                     </div>
-                    <div class="text-center p-3 bg-slate-700/30 rounded-xl">
-                      <div class="text-lg font-bold text-amber-400">{{ plan.carbs }}g</div>
-                      <div class="text-xs text-slate-400">Carbs</div>
-                    </div>
-                    <div class="text-center p-3 bg-slate-700/30 rounded-xl">
-                      <div class="text-lg font-bold text-blue-400">{{ plan.fat }}g</div>
-                      <div class="text-xs text-slate-400">Fat</div>
+                    <div>
+                      <div class="text-xs text-slate-400">Cadence</div>
+                      <div class="font-semibold">{{ workout.avgCadence }} spm</div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div class="px-5 py-3 bg-slate-700/30 border-t border-slate-700/50 flex justify-between items-center">
-                <span class="text-sm text-slate-400">{{ plan.clientCount }} clients using</span>
-                <button class="text-sm text-emerald-400 hover:text-emerald-300 font-medium">Customize</button>
-              </div>
+              @endif
             </div>
           @endforeach
         </div>
 
-        <!-- Macro Calculator -->
-        <div class="mt-8 bg-slate-800/50 rounded-2xl border border-slate-700/50 p-6">
-          <h2 class="text-xl font-bold mb-4">Quick Macro Calculator</h2>
-          <div class="grid sm:grid-cols-4 gap-4">
-            <div>
-              <label class="block text-sm text-slate-400 mb-2">Weight (lbs)</label>
-              <input type="number" placeholder="165" class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        <!-- Sidebar -->
+        <div class="space-y-4">
+          <!-- Zone Distribution -->
+          <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
+            <h3 class="font-semibold mb-4">HR Zone Distribution</h3>
+            <div class="space-y-2">
+              @foreach (hrZones as zone)
+                <div class="flex items-center gap-2">
+                  <div class="w-12 text-xs text-slate-400">Z{{ zone.zone }}</div>
+                  <div class="flex-1 h-4 bg-slate-700 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full
+                      @if (zone.color === 'slate') bg-slate-400
+                      @elseif (zone.color === 'blue') bg-blue-400
+                      @elseif (zone.color === 'green') bg-green-400
+                      @elseif (zone.color === 'yellow') bg-yellow-400
+                      @else bg-red-400
+                      @endif
+                    " style="width: {{ zone.percentage }}%"></div>
+                  </div>
+                  <div class="w-10 text-right text-xs">{{ zone.percentage }}%</div>
+                </div>
+              @endforeach
             </div>
-            <div>
-              <label class="block text-sm text-slate-400 mb-2">Goal</label>
-              <select class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                <option>Weight Loss</option>
-                <option>Maintenance</option>
-                <option>Muscle Gain</option>
-              </select>
+          </div>
+
+          <!-- Workout Types -->
+          <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
+            <h3 class="font-semibold mb-4">Workout Types</h3>
+            <div class="space-y-2 text-sm">
+              <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-400"></span> Easy / Recovery</div>
+              <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-400"></span> Tempo / Threshold</div>
+              <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-orange-400"></span> Intervals / VO2max</div>
+              <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-purple-400"></span> Long Run</div>
+              <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-400"></span> Race</div>
             </div>
-            <div>
-              <label class="block text-sm text-slate-400 mb-2">Activity Level</label>
-              <select class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                <option>Sedentary</option>
-                <option>Moderate</option>
-                <option>Active</option>
-                <option>Very Active</option>
-              </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Tab -->
+    <div id="tab-performance" class="tab-content hidden p-4 lg:p-6">
+      <h1 class="text-xl font-bold mb-6">Performance Analysis</h1>
+
+      <div class="grid lg:grid-cols-2 gap-6 mb-6">
+        <!-- Peak Performance Curve -->
+        <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
+          <h3 class="font-semibold mb-4">Peak Pace Curve (90 days)</h3>
+          <div class="space-y-3">
+            @foreach (peakPerformances as peak)
+              <div class="flex items-center gap-4">
+                <div class="w-16 text-sm text-slate-400">{{ peak.durationLabel }}</div>
+                <div class="flex-1">
+                  <div class="h-6 bg-slate-700 rounded-full overflow-hidden relative">
+                    <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full" style="width: {{ Math.max(100 - ((peak.pace - 180) / 2), 20) }}%"></div>
+                    <span class="absolute inset-0 flex items-center justify-center text-xs font-medium">{{ fmtPace(peak.pace) }}/km</span>
+                  </div>
+                </div>
+                <div class="w-20 text-right text-xs text-slate-400 truncate">{{ peak.date }}</div>
+              </div>
+            @endforeach
+          </div>
+        </div>
+
+        <!-- Fitness Trends -->
+        <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
+          <h3 class="font-semibold mb-4">Fitness Trends</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-slate-700/30 rounded-lg p-4 text-center">
+              <div class="text-3xl font-bold text-cyan-400">{{ ctl }}</div>
+              <div class="text-sm text-slate-400">Current CTL</div>
+              <div class="text-xs text-emerald-400 mt-1">+4 from last week</div>
             </div>
-            <div class="flex items-end">
-              <button class="w-full py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold hover:opacity-90 transition-opacity">Calculate</button>
+            <div class="bg-slate-700/30 rounded-lg p-4 text-center">
+              <div class="text-3xl font-bold text-blue-400">{{ athleteVo2max }}</div>
+              <div class="text-sm text-slate-400">VO2max</div>
+              <div class="text-xs text-emerald-400 mt-1">+0.8 from last month</div>
+            </div>
+            <div class="bg-slate-700/30 rounded-lg p-4 text-center">
+              <div class="text-3xl font-bold text-purple-400">{{ athlete.vdot }}</div>
+              <div class="text-sm text-slate-400">VDOT</div>
+              <div class="text-xs text-emerald-400 mt-1">+1.2 from last month</div>
+            </div>
+            <div class="bg-slate-700/30 rounded-lg p-4 text-center">
+              <div class="text-3xl font-bold text-emerald-400">{{ athlete.fitnessAge }}</div>
+              <div class="text-sm text-slate-400">Fitness Age</div>
+              <div class="text-xs text-slate-400 mt-1">vs actual age {{ athlete.age }}</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Analytics Tab -->
-      <div id="tab-analytics" class="tab-content hidden">
-        <div class="mb-6">
-          <h1 class="text-2xl font-bold">Analytics</h1>
-          <p class="text-slate-400">Track your business performance</p>
-        </div>
-
-        <!-- Stats Overview -->
-        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-5 card-hover">
-            <div class="text-sm text-slate-400 mb-1">Total Sessions</div>
-            <div class="text-3xl font-bold">{{ sessionsThisWeek * 4 }}</div>
-            <div class="text-sm text-emerald-400 mt-2">+12% from last month</div>
-          </div>
-          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-5 card-hover">
-            <div class="text-sm text-slate-400 mb-1">Active Clients</div>
-            <div class="text-3xl font-bold">{{ activeClients }}</div>
-            <div class="text-sm text-emerald-400 mt-2">+{{ newClientsThisMonth }} new this month</div>
-          </div>
-          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-5 card-hover">
-            <div class="text-sm text-slate-400 mb-1">Avg. Session Rating</div>
-            <div class="text-3xl font-bold">{{ trainerRating }}</div>
-            <div class="text-sm text-amber-400 mt-2 flex items-center gap-1">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-              Excellent
-            </div>
-          </div>
-          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-5 card-hover">
-            <div class="text-sm text-slate-400 mb-1">Monthly Revenue</div>
-            <div class="text-3xl font-bold">${{ revenue }}</div>
-            <div class="text-sm text-emerald-400 mt-2">+18% from last month</div>
+      <!-- Training Zones Analysis -->
+      <div class="grid lg:grid-cols-2 gap-6">
+        <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
+          <h3 class="font-semibold mb-4">Heart Rate Zones (This Week)</h3>
+          <div class="space-y-3">
+            @foreach (hrZones as zone)
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span>{{ zone.name }} ({{ zone.hrRange }} bpm)</span>
+                  <span>{{ fmtDuration(zone.timeInZone) }} ({{ zone.percentage }}%)</span>
+                </div>
+                <div class="h-3 bg-slate-700 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full
+                    @if (zone.color === 'slate') bg-slate-400
+                    @elseif (zone.color === 'blue') bg-blue-400
+                    @elseif (zone.color === 'green') bg-green-400
+                    @elseif (zone.color === 'yellow') bg-yellow-400
+                    @else bg-red-400
+                    @endif
+                  " style="width: {{ zone.percentage }}%"></div>
+                </div>
+              </div>
+            @endforeach
           </div>
         </div>
 
-        <!-- Weekly Sessions Chart -->
-        <div class="grid lg:grid-cols-2 gap-6">
-          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-5">
-            <h2 class="font-semibold text-lg mb-4">Weekly Sessions</h2>
-            <div class="flex items-end gap-2" style="height: 100px;">
-              @foreach (weekSessions as index => sessions)
-                <div class="flex-1 h-full flex flex-col justify-end">
-                  <div class="w-full rounded-t-lg transition-all" style="height: {{ (sessions / 6) * 100 }}%; min-height: 4px; background: linear-gradient(to top, #10b981, #06b6d4);"></div>
-                </div>
-              @endforeach
-            </div>
-            <div class="flex justify-between gap-2 mt-2">
-              @foreach (weekDays as day)
-                <span class="flex-1 text-center text-xs text-slate-400">{{ day }}</span>
-              @endforeach
-            </div>
-          </div>
-
-          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-5">
-            <h2 class="font-semibold text-lg mb-4">Client Goals Distribution</h2>
-            <div class="space-y-4">
+        <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
+          <h3 class="font-semibold mb-4">Pace Zones (This Week)</h3>
+          <div class="space-y-3">
+            @foreach (paceZones as zone)
               <div>
                 <div class="flex justify-between text-sm mb-1">
-                  <span>Weight Loss</span>
-                  <span class="text-emerald-400">35%</span>
+                  <span>{{ zone.name }} ({{ zone.paceRange }})</span>
+                  <span>{{ fmtDuration(zone.timeInZone) }} ({{ zone.percentage }}%)</span>
                 </div>
-                <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
-                  <div class="h-full bg-emerald-500 rounded-full" style="width: 35%"></div>
-                </div>
-              </div>
-              <div>
-                <div class="flex justify-between text-sm mb-1">
-                  <span>Muscle Gain</span>
-                  <span class="text-cyan-400">30%</span>
-                </div>
-                <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
-                  <div class="h-full bg-cyan-500 rounded-full" style="width: 30%"></div>
-                </div>
-              </div>
-              <div>
-                <div class="flex justify-between text-sm mb-1">
-                  <span>Endurance</span>
-                  <span class="text-purple-400">20%</span>
-                </div>
-                <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
-                  <div class="h-full bg-purple-500 rounded-full" style="width: 20%"></div>
-                </div>
-              </div>
-              <div>
-                <div class="flex justify-between text-sm mb-1">
-                  <span>Flexibility</span>
-                  <span class="text-amber-400">15%</span>
-                </div>
-                <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
-                  <div class="h-full bg-amber-500 rounded-full" style="width: 15%"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Top Performers -->
-        <div class="mt-6 bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
-          <div class="p-5 border-b border-slate-700/50">
-            <h2 class="font-semibold text-lg">Top Performing Clients</h2>
-          </div>
-          <div>
-            @foreach (topClients as index => client)
-              <div class="p-4 flex items-center gap-4 hover:bg-slate-700/30 transition-colors border-b border-slate-700/50 last:border-b-0">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm
-                  @if (index === 0) bg-amber-500/20 text-amber-400
-                  @elseif(index === 1) bg-slate-400/20 text-slate-300
-                  @else bg-orange-500/20 text-orange-400
-                  @endif
-                ">{{ index + 1 }}</div>
-                <img src="{{ client.avatar }}" alt="{{ client.name }}" class="w-10 h-10 rounded-full object-cover" onerror="this.style.background='linear-gradient(135deg, #10b981, #06b6d4)'">
-                <div class="flex-1">
-                  <div class="font-medium">{{ client.name }}</div>
-                  <div class="text-sm text-slate-400">{{ client.goal }}</div>
-                </div>
-                <div class="text-right">
-                  <div class="font-bold text-emerald-400">{{ client.progress }}%</div>
-                  <div class="text-xs text-slate-400">{{ client.streak }} day streak</div>
+                <div class="h-3 bg-slate-700 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full
+                    @if (zone.color === 'slate') bg-slate-400
+                    @elseif (zone.color === 'blue') bg-blue-400
+                    @elseif (zone.color === 'green') bg-green-400
+                    @elseif (zone.color === 'yellow') bg-yellow-400
+                    @elseif (zone.color === 'orange') bg-orange-400
+                    @else bg-red-400
+                    @endif
+                  " style="width: {{ zone.percentage }}%"></div>
                 </div>
               </div>
             @endforeach
           </div>
         </div>
       </div>
+    </div>
 
-    </main>
-  </div>
+    <!-- Plan Tab (ATP) -->
+    <div id="tab-plan" class="tab-content hidden p-4 lg:p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-xl font-bold">Annual Training Plan</h1>
+        <div class="flex items-center gap-2 text-sm">
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-blue-500"></span> Base</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-green-500"></span> Build</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-yellow-500"></span> Peak</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-red-500"></span> Race</span>
+        </div>
+      </div>
 
-  <!-- Mobile Bottom Navigation -->
-  <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700 z-50">
+      <!-- Training Phases Timeline -->
+      <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4 mb-6">
+        <h3 class="font-semibold mb-4">Training Phases</h3>
+        <div class="flex gap-1">
+          @foreach (trainingPhases as phase)
+            <div class="flex-1 rounded-lg p-3 phase-{{ phase.type }} border">
+              <div class="text-sm font-medium">{{ phase.name }}</div>
+              <div class="text-xs text-slate-400 mt-1">{{ phase.startDate }} - {{ phase.endDate }}</div>
+              <div class="text-xs text-slate-400 mt-1">{{ phase.weeklyTssTarget }} TSS/wk</div>
+            </div>
+          @endforeach
+        </div>
+      </div>
+
+      <!-- ATP Table -->
+      <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
+        <table class="w-full">
+          <thead>
+            <tr class="text-left text-xs text-slate-400 border-b border-slate-700/50 bg-slate-700/30">
+              <th class="p-3 font-medium">Week</th>
+              <th class="p-3 font-medium">Date</th>
+              <th class="p-3 font-medium">Phase</th>
+              <th class="p-3 font-medium">Target TSS</th>
+              <th class="p-3 font-medium">Actual TSS</th>
+              <th class="p-3 font-medium">Target Hours</th>
+              <th class="p-3 font-medium">Actual Hours</th>
+              <th class="p-3 font-medium">Priority</th>
+              <th class="p-3 font-medium">Race</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (atpWeeks as week)
+              <tr class="border-b border-slate-700/30 hover:bg-slate-700/20 @if (week.weekNumber === 50) bg-emerald-500/5 @endif">
+                <td class="p-3 font-medium">{{ week.weekNumber }}</td>
+                <td class="p-3 text-sm">{{ week.startDate }}</td>
+                <td class="p-3">
+                  <span class="text-xs px-2 py-0.5 rounded-full
+                    @if (week.phaseColor === 'blue') bg-blue-500/20 text-blue-400
+                    @elseif (week.phaseColor === 'green') bg-green-500/20 text-green-400
+                    @elseif (week.phaseColor === 'yellow') bg-yellow-500/20 text-yellow-400
+                    @else bg-red-500/20 text-red-400
+                    @endif
+                  ">{{ week.phase }}</span>
+                </td>
+                <td class="p-3 text-sm">{{ week.targetTss }}</td>
+                <td class="p-3 text-sm @if (week.actualTss) font-semibold text-emerald-400 @else text-slate-500 @endif">{{ week.actualTss || '-' }}</td>
+                <td class="p-3 text-sm">{{ week.targetHours }}h</td>
+                <td class="p-3 text-sm @if (week.actualHours) font-semibold @else text-slate-500 @endif">{{ week.actualHours ? week.actualHours + 'h' : '-' }}</td>
+                <td class="p-3">
+                  @if (week.priority !== '-')
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">{{ week.priority }}</span>
+                  @else
+                    <span class="text-slate-500">-</span>
+                  @endif
+                </td>
+                <td class="p-3 text-sm @if (week.race) text-red-400 font-medium @else text-slate-500 @endif">{{ week.race || '-' }}</td>
+              </tr>
+            @endforeach
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Health Tab -->
+    <div id="tab-health" class="tab-content hidden p-4 lg:p-6">
+      <h1 class="text-xl font-bold mb-6">Health & Recovery</h1>
+
+      <!-- Today's Readiness -->
+      <div class="grid md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4 card-hover">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </div>
+            <div class="text-xs text-slate-400">Resting HR</div>
+          </div>
+          <div class="text-3xl font-bold">{{ healthMetrics[0].restingHR }} <span class="text-sm font-normal text-slate-400">bpm</span></div>
+        </div>
+
+        <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4 card-hover">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <div class="text-xs text-slate-400">HRV</div>
+          </div>
+          <div class="text-3xl font-bold">{{ healthMetrics[0].hrv }} <span class="text-sm font-normal text-slate-400">ms</span></div>
+          <div class="text-xs capitalize mt-1
+            @if (healthMetrics[0].hrvStatus === 'balanced') text-emerald-400
+            @elseif (healthMetrics[0].hrvStatus === 'high') text-blue-400
+            @elseif (healthMetrics[0].hrvStatus === 'unbalanced') text-yellow-400
+            @else text-red-400
+            @endif
+          ">{{ healthMetrics[0].hrvStatus }}</div>
+        </div>
+
+        <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4 card-hover">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            </div>
+            <div class="text-xs text-slate-400">Sleep</div>
+          </div>
+          <div class="text-3xl font-bold">{{ healthMetrics[0].sleep }} <span class="text-sm font-normal text-slate-400">hrs</span></div>
+          <div class="text-xs text-slate-400 mt-1">Quality: {{ healthMetrics[0].sleepQuality }}%</div>
+        </div>
+
+        <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4 card-hover">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div class="text-xs text-slate-400">Body Battery</div>
+          </div>
+          <div class="text-3xl font-bold">{{ healthMetrics[0].bodyBattery }}</div>
+          <div class="mt-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+            <div class="h-full bg-orange-500 rounded-full" style="width: {{ healthMetrics[0].bodyBattery }}%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Health Trends -->
+      <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
+        <div class="p-4 border-b border-slate-700/50">
+          <h3 class="font-semibold">7-Day Health Trends</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="text-left text-xs text-slate-400 border-b border-slate-700/50">
+                <th class="p-3 font-medium">Date</th>
+                <th class="p-3 font-medium">Resting HR</th>
+                <th class="p-3 font-medium">HRV</th>
+                <th class="p-3 font-medium">Status</th>
+                <th class="p-3 font-medium">Sleep</th>
+                <th class="p-3 font-medium">Quality</th>
+                <th class="p-3 font-medium">Battery</th>
+                <th class="p-3 font-medium">Fatigue</th>
+                <th class="p-3 font-medium">Mood</th>
+                <th class="p-3 font-medium">Soreness</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach (healthMetrics as day)
+                <tr class="border-b border-slate-700/30 hover:bg-slate-700/20">
+                  <td class="p-3 font-medium">{{ day.date }}</td>
+                  <td class="p-3">{{ day.restingHR }} bpm</td>
+                  <td class="p-3 font-semibold">{{ day.hrv }} ms</td>
+                  <td class="p-3">
+                    <span class="text-xs px-2 py-0.5 rounded-full capitalize
+                      @if (day.hrvStatus === 'balanced') bg-emerald-500/20 text-emerald-400
+                      @elseif (day.hrvStatus === 'high') bg-blue-500/20 text-blue-400
+                      @elseif (day.hrvStatus === 'unbalanced') bg-yellow-500/20 text-yellow-400
+                      @else bg-red-500/20 text-red-400
+                      @endif
+                    ">{{ day.hrvStatus }}</span>
+                  </td>
+                  <td class="p-3">{{ day.sleep }}h</td>
+                  <td class="p-3">
+                    <div class="flex items-center gap-2">
+                      <div class="w-12 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-blue-400 rounded-full" style="width: {{ day.sleepQuality }}%"></div>
+                      </div>
+                      <span class="text-xs">{{ day.sleepQuality }}%</span>
+                    </div>
+                  </td>
+                  <td class="p-3">
+                    <div class="flex items-center gap-2">
+                      <div class="w-12 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-orange-400 rounded-full" style="width: {{ day.bodyBattery }}%"></div>
+                      </div>
+                      <span class="text-xs">{{ day.bodyBattery }}</span>
+                    </div>
+                  </td>
+                  <td class="p-3 text-center">
+                    <span class="@if (day.fatigue <= 3) text-emerald-400 @elseif (day.fatigue <= 5) text-yellow-400 @else text-red-400 @endif">{{ day.fatigue }}/10</span>
+                  </td>
+                  <td class="p-3 text-center">
+                    <span class="@if (day.mood >= 7) text-emerald-400 @elseif (day.mood >= 5) text-yellow-400 @else text-red-400 @endif">{{ day.mood }}/10</span>
+                  </td>
+                  <td class="p-3 text-center">
+                    <span class="@if (day.soreness <= 3) text-emerald-400 @elseif (day.soreness <= 5) text-yellow-400 @else text-red-400 @endif">{{ day.soreness }}/10</span>
+                  </td>
+                </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Mobile Bottom Nav -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700 z-50">
     <div class="flex justify-around py-2">
       <button onclick="showTab('dashboard')" class="mobile-nav flex flex-col items-center gap-1 p-2 text-emerald-400" data-tab="dashboard">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
         <span class="text-xs">Home</span>
       </button>
-      <button onclick="showTab('clients')" class="mobile-nav flex flex-col items-center gap-1 p-2 text-slate-500" data-tab="clients">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-        <span class="text-xs">Clients</span>
+      <button onclick="showTab('calendar')" class="mobile-nav flex flex-col items-center gap-1 p-2 text-slate-400" data-tab="calendar">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+        <span class="text-xs">Calendar</span>
       </button>
-      <button onclick="showTab('schedule')" class="mobile-nav flex flex-col items-center gap-1 p-2 text-slate-500" data-tab="schedule">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-        <span class="text-xs">Schedule</span>
-      </button>
-      <button onclick="showTab('workouts')" class="mobile-nav flex flex-col items-center gap-1 p-2 text-slate-500" data-tab="workouts">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+      <button onclick="showTab('workouts')" class="mobile-nav flex flex-col items-center gap-1 p-2 text-slate-400" data-tab="workouts">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
         <span class="text-xs">Workouts</span>
       </button>
-      <button onclick="showTab('analytics')" class="mobile-nav flex flex-col items-center gap-1 p-2 text-slate-500" data-tab="analytics">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+      <button onclick="showTab('performance')" class="mobile-nav flex flex-col items-center gap-1 p-2 text-slate-400" data-tab="performance">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
         <span class="text-xs">Stats</span>
+      </button>
+      <button onclick="showTab('health')" class="mobile-nav flex flex-col items-center gap-1 p-2 text-slate-400" data-tab="health">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+        <span class="text-xs">Health</span>
       </button>
     </div>
   </nav>
 
-  <!-- Toast Notification -->
-  <div id="toast" class="hidden fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-700 rounded-xl px-6 py-3 shadow-2xl flex items-center gap-3 z-50">
-    <span class="text-emerald-400">
-      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-    </span>
-    <span id="toast-message">Action completed</span>
-  </div>
-
   <script>
-    // Tab Navigation
     function showTab(tabName) {
-      // Hide all tabs
       document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-
-      // Show selected tab
       const selectedTab = document.getElementById('tab-' + tabName);
       if (selectedTab) selectedTab.classList.remove('hidden');
 
-      // Update sidebar nav
-      document.querySelectorAll('.nav-btn').forEach(btn => {
+      document.querySelectorAll('.nav-tab').forEach(btn => {
         if (btn.dataset.tab === tabName) {
-          btn.classList.remove('text-slate-400', 'hover:bg-slate-700/50', 'hover:text-slate-200');
-          btn.classList.add('bg-emerald-500/20', 'text-emerald-400', 'font-medium');
+          btn.classList.remove('text-slate-400', 'hover:bg-slate-700/50');
+          btn.classList.add('bg-emerald-500/20', 'text-emerald-400');
         } else {
-          btn.classList.remove('bg-emerald-500/20', 'text-emerald-400', 'font-medium');
-          btn.classList.add('text-slate-400', 'hover:bg-slate-700/50', 'hover:text-slate-200');
+          btn.classList.remove('bg-emerald-500/20', 'text-emerald-400');
+          btn.classList.add('text-slate-400', 'hover:bg-slate-700/50');
         }
       });
 
-      // Update mobile nav
       document.querySelectorAll('.mobile-nav').forEach(btn => {
-        if (btn.dataset.tab === tabName) {
-          btn.classList.remove('text-slate-500');
-          btn.classList.add('text-emerald-400');
-        } else {
-          btn.classList.remove('text-emerald-400');
-          btn.classList.add('text-slate-500');
-        }
+        btn.classList.toggle('text-emerald-400', btn.dataset.tab === tabName);
+        btn.classList.toggle('text-slate-400', btn.dataset.tab !== tabName);
       });
     }
 
-    // Toast
-    function showToast(message) {
-      const toast = document.getElementById('toast');
-      document.getElementById('toast-message').textContent = message;
-      toast.classList.remove('hidden');
-      setTimeout(() => toast.classList.add('hidden'), 3000);
-    }
-
-    // Profile Dropdown
-    function toggleProfileDropdown() {
-      const dropdown = document.getElementById('profile-dropdown');
-      dropdown.classList.toggle('hidden');
-    }
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(event) {
-      const container = document.getElementById('profile-dropdown-container');
-      const dropdown = document.getElementById('profile-dropdown');
-      if (container && !container.contains(event.target)) {
-        dropdown.classList.add('hidden');
-      }
-    });
-
-    // Theme Toggle
     function toggleTheme() {
       const body = document.body;
       const isLight = body.classList.toggle('light');
-
-      // Update icon visibility
-      updateThemeIcons(isLight);
-
-      // Save preference to localStorage
+      document.getElementById('theme-icon-sun').classList.toggle('hidden', isLight);
+      document.getElementById('theme-icon-moon').classList.toggle('hidden', !isLight);
       localStorage.setItem('fitcoach-theme', isLight ? 'light' : 'dark');
-
-      // Show toast notification
-      showToast(isLight ? 'Switched to light mode ☀️' : 'Switched to dark mode 🌙');
     }
 
-    // Update theme icons based on current theme
-    function updateThemeIcons(isLight) {
-      const sunIcon = document.getElementById('theme-icon-sun');
-      const moonIcon = document.getElementById('theme-icon-moon');
-      const toggleBtn = document.getElementById('theme-toggle-btn');
-      const notificationsBtn = document.getElementById('notifications-btn');
-
-      if (isLight) {
-        // Show moon icon (to switch back to dark)
-        sunIcon.classList.add('hidden');
-        moonIcon.classList.remove('hidden');
-
-        // Update button backgrounds for light mode
-        toggleBtn.classList.remove('bg-slate-700/50', 'hover:bg-slate-700');
-        toggleBtn.classList.add('bg-slate-200', 'hover:bg-slate-300');
-
-        if (notificationsBtn) {
-          notificationsBtn.classList.remove('bg-slate-700/50', 'hover:bg-slate-700');
-          notificationsBtn.classList.add('bg-slate-200', 'hover:bg-slate-300');
-          notificationsBtn.querySelector('svg').classList.remove('text-slate-300');
-          notificationsBtn.querySelector('svg').classList.add('text-slate-600');
-        }
-      } else {
-        // Show sun icon (to switch to light)
-        sunIcon.classList.remove('hidden');
-        moonIcon.classList.add('hidden');
-
-        // Update button backgrounds for dark mode
-        toggleBtn.classList.remove('bg-slate-200', 'hover:bg-slate-300');
-        toggleBtn.classList.add('bg-slate-700/50', 'hover:bg-slate-700');
-
-        if (notificationsBtn) {
-          notificationsBtn.classList.remove('bg-slate-200', 'hover:bg-slate-300');
-          notificationsBtn.classList.add('bg-slate-700/50', 'hover:bg-slate-700');
-          notificationsBtn.querySelector('svg').classList.remove('text-slate-600');
-          notificationsBtn.querySelector('svg').classList.add('text-slate-300');
-        }
-      }
-    }
-
-    // Initialize theme from localStorage on page load
-    function initTheme() {
+    (function initTheme() {
       const savedTheme = localStorage.getItem('fitcoach-theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-      // Use saved theme, or fall back to system preference, or default to dark
-      const shouldBeLight = savedTheme === 'light' || (!savedTheme && !prefersDark);
-
-      if (shouldBeLight) {
+      if (savedTheme === 'light') {
         document.body.classList.add('light');
+        document.getElementById('theme-icon-sun').classList.add('hidden');
+        document.getElementById('theme-icon-moon').classList.remove('hidden');
       }
-
-      // Update icons to match initial state
-      updateThemeIcons(shouldBeLight);
-    }
-
-    // Run on page load
-    initTheme();
+    })();
   </script>
 </body>
 </html>
